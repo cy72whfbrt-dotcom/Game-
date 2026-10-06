@@ -792,7 +792,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `saison_test`, `saison_anfang_test` (Boss/Drache Anfang 100.000/50.000 aus 5.000 Start-Truppen), Server `schummel_test` (Text).
   Zahlen aus Spieler-Sicht (Spieler-Durchsicht): Stufen-Belohnung nie unter 10 Münzen/10 Truppen (`STUFE_LOHN_MIN`, 02a – vorher
   „+1 Münze, +1 Truppe“), Bündnis gründen 20 statt 17 Münzen (auf 10 gerundet), „0,03 Eisen/Std.“ ist mit ROH_FAKTOR weg (Burg allein
-  ~75/Std.). Pass-Münzen, Händler und Thron-Shop bleiben „n Stunden eigener Ertrag“ (wachsen mit dem Reich).
+  ~75/Std.). Pass-Münzen 4 statt 1 Stunde Ertrag (Premium 12 statt 3 – vorher „10 Münzen“; Hauptbuch rechnet aus `passRewardAt`
+  mit). Händler und Thron-Shop bleiben „n Stunden eigener Ertrag“. Grenz-Tore 5.000–20.000 Truppen (vorher 500–12.000).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
@@ -1125,7 +1126,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   | Ring 6 / 5 / 4 / 3 | 0 / 0 / 0–1 / 0–3 | bis 200 / 300 / 450 / 700 |
   | Ring 2 | 0–17 | 700–1.000 (+ 100–300) |
   | Tempel normal (Ring 3/5) | 1–9 | 150–260 % einer Basis des Rings (450–1.820) |
-  | Grenz-Tore (außen → innen) | 1 / 7 / 56 / 222 | 500 / 2.000 / 6.000 / 12.000 |
+  | Grenz-Tore (außen → innen) | 1 / 7 / 56 / 222 | 5.000 / 8.000 / 12.000 / 20.000 (+ 1.500 … 6.000) |
   | Wächter-Türme / Wächter-Tempel / Wächter-Tor | 56–556 / 2.778 / 1.111 | 5.000–20.000 / 60.000 / 30.000 (+ 10.000) |
   | Thron-Türme / Mega-Tempel / Thron-Tor | 2.778–11.111 / 138.889 / 150.000 | 50.000–150.000 / 500.000 / 200.000 (+ 60.000) |
   | Start-Truppen | 100.000 | 5.000 |

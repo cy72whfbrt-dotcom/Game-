@@ -4035,7 +4035,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openGoals` :309
 
 ### Game/spiel/06b-pass-anleitung.js — Saison-Pass und Anleitung für neue Spieler
-- `passRewardAt` :8 — what level L gives in each row
+- `passRewardAt` :8 — what level L gives in each row (Münzen: n Stunden Ertrag – 6.10. 4/12 statt 1/3…
 - `passLoad` :14
 - `passSave` :15
 - `passNo` :16

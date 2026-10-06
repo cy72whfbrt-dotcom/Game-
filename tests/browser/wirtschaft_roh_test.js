@@ -38,6 +38,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.tore = { guardian: tore('guardian')[0], throne: tore('throne')[0], border: tore('border').reduce((a, t) => [Math.min(a[0], t[0]), Math.max(a[1], t[0])], [Infinity, 0]) };
     o.tempel = { mega: islands.find(i => i.type === 'megaTemple').neutralTroops, waechter: islands.find(i => i.type === 'temple' && i.guardian).neutralTroops,
       normal: islands.filter(i => i.type === 'temple' && !i.guardian).map(i => i.neutralTroops).reduce((a, t) => [Math.min(a[0], t), Math.max(a[1], t)], [Infinity, 0]) };
+    // 6b) Pass-Münzen: n Stunden Ertrag – frei 4, Premium 12 (nicht mehr „10 Münzen“)
+    o.pass = [2, 14].map(L => [passRewardAt(L, false), passRewardAt(L, true)]);
     // 7) Mitspieler: dieselben Kosten und derselbe Rohstoff-Ertrag
     const X = BOT_DEFS.find(x => !x.mensch && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).id;
     o.bot = { k: JSON.stringify(AUF.stadtKosten('keep', 3)) === JSON.stringify(o.burg3), h: AUF.rohStunde(X).h, start: JSON.stringify(AUF.ROH_START) };
@@ -63,8 +65,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(['r3', 'r4', 'r5', 'r6', 'r7'].every((k, i, a) => R[k] && R[k][1] <= 1000 && (i === 0 || R[a[i - 1]][1] >= R[k][1])), 'nach innen steigend', R);
   ok(R.guardian && R.guardian[0] > 5000 - 1 && R.guardian[1] <= 2e4, 'Wächter-Türme 5.000–20.000 (mehr als die Start-Truppen)', R.guardian);
   ok(R.throne && R.throne[0] >= 5e4 && R.throne[1] <= 1.5e5, 'Thron-Türme 50.000–150.000', R.throne);
+  ok(r.pass.every(([f, p]) => f.k === 'coins' && f.n === 4 && p.k === 'coins' && p.n === 12), 'Pass-Münzen: 4 / 12 Stunden Ertrag', r.pass);
   const T = r.tore;
-  ok(T.guardian && T.guardian[0] >= 3e4 && T.throne && T.throne[0] >= 150000 && T.throne[1] >= 50000 && T.border[0] >= 500 && T.border[1] <= 12000, 'Tore: Wächter 30.000, Thron mind. 150.000 + 50.000, Grenze 500–12.000', T);
+  ok(T.guardian && T.guardian[0] >= 3e4 && T.throne && T.throne[0] >= 150000 && T.throne[1] >= 50000 && T.border[0] >= 5000 && T.border[1] <= 20000, 'Tore: Wächter 30.000, Thron mind. 150.000 + 50.000, Grenze 5.000–20.000', T);
   ok(r.tempel.mega >= 5e5 && r.tempel.waechter >= 6e4 && r.tempel.normal[0] > 100, 'Tempel: Mega 500.000, Wächter 60.000, normal über einer Basis', r.tempel);
   ok(r.bot.k && r.bot.h > 30 && r.bot.start === '{"h":3000,"s":2000,"e":500}', 'Mitspieler: gleiche Kosten, Ertrag, Start-Rohstoffe', r.bot);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();

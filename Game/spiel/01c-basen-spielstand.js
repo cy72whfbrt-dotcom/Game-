@@ -10,10 +10,10 @@ let playerIslandId = null;
 let id = 0;
 // Tore first (the bases keep clear of them): a capturable gate on the outer bank of every bridge.
 // Whoever owns a gate crosses its bridge for free and collects the toll everyone else pays. Unowned gates are shut.
-// Truppen in festen Zahlen (Alexander 6.10., Z4: 5.000 Start-Truppen): die Grenz-Tore etwa 5–15 Basen des Rings, die Wächter-Tore über
+// Truppen in festen Zahlen (Alexander 6.10., Z4: 5.000 Start-Truppen): die Grenz-Tore 5.000–20.000 (deutlich über den Basen), die Wächter-Tore über
 // den stärksten Wächter-Türmen, die Thron-Tore darüber – nie unter THRON_TOR_MIN (sonst nähme man den Thron am ersten Tag)
 const GATE_STATS = { guardian: { troops: 3e4, def: 1e4, level: 25, toll: 0.25 }, throne: { troops: 2e5, def: 6e4, level: 45, toll: 0.5 } };
-const BORDER_GATE = { 4: { troops: 500, def: 150, level: 3 }, 3: { troops: 2000, def: 500, level: 8 }, 2: { troops: 6000, def: 1500, level: 14 }, 1: { troops: 12000, def: 3000, level: 18 } };
+const BORDER_GATE = { 4: { troops: 5000, def: 1500, level: 3 }, 3: { troops: 8000, def: 2500, level: 8 }, 2: { troops: 12000, def: 4000, level: 14 }, 1: { troops: 20000, def: 6000, level: 18 } };
 const THRON_TOR_MIN = { troops: 150000, def: 50000 };
 const gateSpots = bridges.map(br => {
     const A = landmasses[br.a], B = landmasses[br.b], ta = A.tier, tb = B.tier;

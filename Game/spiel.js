@@ -616,10 +616,10 @@ let playerIslandId = null;
 let id = 0;
 // Tore first (the bases keep clear of them): a capturable gate on the outer bank of every bridge.
 // Whoever owns a gate crosses its bridge for free and collects the toll everyone else pays. Unowned gates are shut.
-// Truppen in festen Zahlen (Alexander 6.10., Z4: 5.000 Start-Truppen): die Grenz-Tore etwa 5–15 Basen des Rings, die Wächter-Tore über
+// Truppen in festen Zahlen (Alexander 6.10., Z4: 5.000 Start-Truppen): die Grenz-Tore 5.000–20.000 (deutlich über den Basen), die Wächter-Tore über
 // den stärksten Wächter-Türmen, die Thron-Tore darüber – nie unter THRON_TOR_MIN (sonst nähme man den Thron am ersten Tag)
 const GATE_STATS = { guardian: { troops: 3e4, def: 1e4, level: 25, toll: 0.25 }, throne: { troops: 2e5, def: 6e4, level: 45, toll: 0.5 } };
-const BORDER_GATE = { 4: { troops: 500, def: 150, level: 3 }, 3: { troops: 2000, def: 500, level: 8 }, 2: { troops: 6000, def: 1500, level: 14 }, 1: { troops: 12000, def: 3000, level: 18 } };
+const BORDER_GATE = { 4: { troops: 5000, def: 1500, level: 3 }, 3: { troops: 8000, def: 2500, level: 8 }, 2: { troops: 12000, def: 4000, level: 14 }, 1: { troops: 20000, def: 6000, level: 18 } };
 const THRON_TOR_MIN = { troops: 150000, def: 50000 };
 const gateSpots = bridges.map(br => {
     const A = landmasses[br.a], B = landmasses[br.b], ta = A.tier, tb = B.tier;
@@ -6737,10 +6737,10 @@ var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 1
 var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
 var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle drei Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
     ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15]];
-function passRewardAt(L, prem) {                          // what level L gives in each row
-    if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 1 } : { k: 'gems', n: 15 };
+function passRewardAt(L, prem) {                          // what level L gives in each row (Münzen: n Stunden Ertrag – 6.10. 4/12 statt 1/3, „10 Münzen“ sah kaputt aus)
+    if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 4 } : { k: 'gems', n: 15 };
     return L === 20 ? { k: 'march', id: 'saison' } : L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
-        L % 6 === 0 ? { k: 'tp', n: 150 } : L % 3 === 0 ? { k: 'shield', n: 8 } : L % 2 === 0 ? { k: 'coins', n: 3 } : { k: 'gems', n: 40 };
+        L % 6 === 0 ? { k: 'tp', n: 150 } : L % 3 === 0 ? { k: 'shield', n: 8 } : L % 2 === 0 ? { k: 'coins', n: 12 } : { k: 'gems', n: 40 };
 }
 var passState = null, passArm = 0, passTimer = null;
 function passLoad() { if (!passState) { try { passState = JSON.parse(store.get('openWaterPass')); } catch (e) {} if (!passState || typeof passState !== 'object' || !passState.s) passState = { s: {} }; } return passState; }
