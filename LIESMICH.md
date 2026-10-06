@@ -709,6 +709,15 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Kachel reicht); Truppen: Schieber + 25/50/75/Alle, die Zahl ist nur Anzeige (antippen = eintippen); Helden in einer Zeile zum
   Wischen (`.chips-quer`, auch Armee-Fenster 09d); „Angreifen“ fest unten. Funktion unverändert (Befehle, Server-Filter).
   Stil: neue Klassen nur in spielseite/03. Test `tests/browser/handy_basis_test.js` (Handy + Desktop).
+- **6.10. – Design 11b F, Paket P4 (Stadt, Burg, Labor, Helden, Shop), NICHT hochgeladen:** Gebäude-/Burg-Fenster: Haupt-Knopf
+  (Aufwerten/Bauen) fest unten, nie unter dem Falz; Burg: Voraussetzungen und „Jetzt/schaltet frei“ zuerst, Schild-Kasten unten;
+  fehlt nur ein Rohstoff, sagt der Knopf „Fehlt: 2.000 Holz“ (`cityFehlt`, 08b), der rote Kreis fällt weg (rote Zahl reicht).
+  Labor: „Forschen“ bleibt beim Scrollen sichtbar. Heldenhalle: Reiter **Helden | Paare**, gesperrte Helden kleiner unter
+  „17 gesperrt“ (`hhSeite`, 08c). Shop: Heldenkisten-Knöpfe vor den Chancen, Chancen hinter „Chancen“ eingeklappt, Preis groß;
+  „Kiste öffnen“ zeigt 150. Hinweise (Toast) liegen bei Shop, Gebäude-Fenster und Heldenhalle über der Fußzeile statt darauf.
+  Knöpfe/X/Reiter dort mind. 44 px. Stil in spielseite/05 (eigene Klassen), Funktion unverändert. Test `stadt_fenster_test`
+  (neu), `handy_stadt_test` (Chancen aufklappen).
+
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

@@ -8657,7 +8657,13 @@ var SKIN_DEFS = {
 function loadSkins() { let v; try { v = JSON.parse(store.get('openWaterSkins')); } catch (e) {} return Object.assign({ own: ['standard'], active: 'standard' }, v || {}); }
 function activeSkin() { const v = loadSkins(), d = SKIN_DEFS[v.active]; return d && d.stone ? d : null; }
 function shieldStock() { let v; try { v = JSON.parse(store.get('openWaterShieldStock')); } catch (e) {} return Object.assign({ 2: 0, 8: 0, 24: 0 }, v || {}); }
-function renderKeepSheet() { return AUF.renderKeep(); }   // die Burg-Stufe (aufbau.js)
+function renderKeepSheet() { AUF.renderKeep(); const f = cityFehlt('keep'); if (f) setBtnLabel(document.getElementById('cityUpgradeBtn'), f); }   // die Burg-Stufe (aufbau.js)
+function cityFehlt(id) {                           // fehlt nur etwas zum Bezahlen: der Knopf sagt, was („Fehlt: 2.000 Holz“) statt nur grau zu sein
+    if (!AUF || cityBlocker(id)) return '';
+    const c = loadCity(), k = AUF.stadtKosten(id, id === 'keep' ? AUF.burgStufe('player') : c.levels[id] || 0), r = AUF.rohVon('player') || {};
+    const f = k.c > coins ? [k.c - coins, 'Münzen'] : ['h', 's', 'e'].filter(x => k[x] > (r[x] || 0)).map(x => [k[x] - (r[x] || 0), AUF.ROH_DEF[x].name])[0];
+    return f ? 'Fehlt: ' + fmtCompact(Math.ceil(f[0])) + ' ' + f[1] : '';
+}
 // ===== AUSSEHEN: every look in one place - Wappen, Rahmen, Titel, Basis-Skin (+ Ring), Marsch-Skin. Only to buy (Gems or Thron-Punkte) or a title from the middle =====
 var lkTab = 'frame';
 function lkPrice(d) { if (d.buy === 'pass') return '<span class="lk-cost">' + icon('crown') + 'Saison-Pass</span>'; return d.tp ? '<span class="lk-cost' + ((throneState.pts || 0) < d.tp ? ' is-bad' : '') + '">' + icon('crown') + fmtNum(d.tp) + '</span>' : '<span class="lk-cost' + (gems < d.gems ? ' is-bad' : '') + '">' + icon('gem') + fmtNum(d.gems) + '</span>'; }
@@ -8804,6 +8810,7 @@ function cityAnfHtml(id, lvl, k) {                 // Voraussetzungen für die n
 function citySeite(id, lvl) {                      // Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
     const sh = document.getElementById('citySheet'), tabs = document.getElementById('cityTabs'), n = id === '_keep' ? null : cityNutz(id, lvl);
     if (!n) cityPage = 'bau';
+    sh.classList.toggle('cs-keep', id === '_keep');                           // (Burg: Schild-Kasten nach unten)
     sh.classList.toggle('cs-nutz', !!n && cityPage === 'nutz'); sh.classList.toggle('cs-bau', !!n && cityPage === 'bau');
     tabs.hidden = !n;
     if (n) liveHtml(tabs, '<button type="button" data-cpage="bau"' + (cityPage === 'bau' ? ' class="on"' : '') + '>' + icon('upgrade') + 'Aufwerten</button><button type="button" data-cpage="nutz"' + (cityPage === 'nutz' ? ' class="on"' : '') + '>' + icon(n[1]) + n[0] + '</button>');
@@ -8832,7 +8839,7 @@ function renderCitySheet() {                       // (läuft auch jede Sekunde 
     liveHtml(note, nh);
     const cost = !max ? cityCost(id, lvl) : 0, kost = !max ? (AUF ? AUF.stadtKosten(id, lvl) : { c: cost }) : null;
     liveHtml(document.getElementById('cityBStats'), !max && !building ? cityAnfHtml(id, lvl, kost) : '');
-    setBtnLabel(up, max ? 'Höchste Stufe' : lvl ? 'Aufwerten' : 'Bauen');
+    setBtnLabel(up, max ? 'Höchste Stufe' : (!building && cityFehlt(id)) || (lvl ? 'Aufwerten' : 'Bauen'));
     setText(document.getElementById('cityUpTime'), max ? '' : fmtDuration(cityTimeSec(id, lvl)));
     up.disabled = !!blocker || (AUF ? !AUF.kannZahlen('player', kost) : coins < cost);
     up.title = blocker || '';
@@ -9140,14 +9147,19 @@ function heroSvg(id) {
     if (fr === 'nugget') o += P('M76,92l4,-6l7,-1l5,4l-1,6l-7,3l-6,-1z', 'url(#gd)') + P('M80,86l3,3l4,-4', '#fff8c0', op(.6));
     return o + '<rect width="100" height="100" fill="url(#vg)"/></svg>';
 }
+var hhSeite = 'helden';                               // Reiter der Heldenhalle: Helden | Paare
 function hhGrid() {
-    const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q);
+    const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q), zu = list.filter(h => !H[h.id].own);
+    const karte = h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
+        return '<button type="button" class="hh-card' + (s.own ? '' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
+            '<span class="hh-art">' + heroImg(h.id) + '</span>' + (heroCanDo('player', h.id) ? '<span class="hh-dot"></span>' : '') + (s.own ? '' : '<span class="hh-lk">Gesperrt</span>') +
+            '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; };
     return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
-        '<div class="hh-count">' + HEROES.filter(h => H[h.id].own).length + ' / ' + HEROES.length + ' freigeschaltet · Splitter gibt es von Bossen, für Aufgaben und als Heldenkisten im Shop</div>' +
-        '<div class="hh-cards">' + list.map(h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
-            return '<button type="button" class="hh-card' + (s.own ? '' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
-                '<span class="hh-art">' + heroImg(h.id) + '</span>' + (heroCanDo('player', h.id) ? '<span class="hh-dot"></span>' : '') + (s.own ? '' : '<span class="hh-lk">Gesperrt</span>') +
-                '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; }).join('') + '</div>' + hhPairs();
+        '<div class="seg hh-seiten">' + [['helden', 'Helden'], ['paare', 'Paare']].map(([k, t]) => '<button type="button" data-hh-seite="' + k + '"' + (hhSeite === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
+        (hhSeite === 'paare' ? hhPairs() :
+        '<div class="hh-count">' + (list.length - zu.length) + ' / ' + HEROES.length + ' freigeschaltet · Splitter gibt es von Bossen, für Aufgaben und als Heldenkisten im Shop</div>' +
+        '<div class="hh-cards">' + list.filter(h => H[h.id].own).map(karte).join('') + '</div>' +
+        (zu.length ? '<div class="hh-zu-h">' + zu.length + ' gesperrt</div><div class="hh-cards hh-cards--zu">' + zu.map(karte).join('') + '</div>' : ''));   // gesperrte kleiner darunter
 }
 function hhPairs() {                                  // Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwerte
     const H = loadHeroes();
@@ -9206,6 +9218,7 @@ function closeHeroHall() { document.getElementById('heroHall').hidden = true; hh
 document.getElementById('heroHall').addEventListener('click', e => {
     const el = document.getElementById('heroHall');
     if (e.target.closest('[data-hh-close]')) return closeHeroHall();
+    const sei = e.target.closest('[data-hh-seite]'); if (sei) { hhSeite = sei.dataset.hhSeite; renderHeroHall(); el.scrollTop = 0; return; }
     if (e.target.closest('[data-hh-back]')) { hhCur = null; renderHeroHall(); el.scrollTop = 0; return; }
     const c = e.target.closest('[data-hh]'); if (c) { hhCur = c.dataset.hh; renderHeroHall(); el.scrollTop = 0; return; }
     if (!hhCur) return; const h = heroById(hhCur), s = heroSt('player', hhCur);

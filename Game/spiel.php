@@ -1696,6 +1696,35 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #popupBund:empty{display:none} #popupBund{display:flex;flex-direction:column;gap:8px}
 .bd-insel{display:flex;flex-wrap:wrap;align-items:center;gap:6px} .bd-insel .btn .icon{width:14px;height:14px}
 .bd-insel-l{display:inline-flex;align-items:center;gap:5px;margin-right:2px;font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)} .bd-insel-l .icon{width:13px;height:13px}
+/* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
+/* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen und Wirkung zuerst, Schild-Kasten unten */
+.city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}
+.city-sheet.cs-keep > #cityBNote.city-wirkung{order:4}
+.city-bfoot .btn{min-height:48px}
+.city-sheet .fo-go{position:sticky;bottom:0;z-index:3;width:100%;min-height:48px;box-shadow:0 0 0 10px #15161b}   /* Forschen: bleibt sichtbar, solange die Forschung offen ist */
+.anf.is-bad > i{visibility:hidden}   /* fehlt etwas: die rote Zahl reicht, der Knopf sagt „Fehlt: …“ */
+#citySheet .btn-x,.hh .btn-x{width:44px;height:44px}
+.city-tabs button,.city-sheet .seg button,.gate-ctl .seg button{min-height:44px}
+button.cb-slot{position:relative} button.cb-slot::before{content:"";position:absolute;inset:-6px 0}   /* Tippfläche 44 px, der Streifen bleibt schmal */
+/* Heldenhalle: Reiter Helden | Paare, gesperrte Helden kleiner darunter */
+.hh-seiten{grid-template-columns:1fr 1fr;margin-top:12px}
+.hh-seiten button{min-height:44px;font-size:var(--fs-13)}
+.hh-zu-h{margin:12px 0 4px;font:700 var(--fs-11)/1.2 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
+.hh-cards--zu{grid-template-columns:repeat(auto-fill,minmax(82px,1fr));gap:8px}
+.hh-cards--zu .hh-card{aspect-ratio:3/4;border-width:1px}
+.hh-cards--zu .hh-foot{padding:4px 2px 5px} .hh-cards--zu .hh-foot b{font-size:var(--fs-12,12px)} .hh-cards--zu .hh-foot > small:first-of-type{display:none}
+.hh-cards--zu .hh-lk{font-size:8px;padding:2px 4px;right:3px;top:3px}
+.hh-plus{width:44px;height:44px}
+/* Shop: Kaufknöpfe zuerst, Chancen hinter „i“; Preis groß im Knopf */
+.odds-mehr{margin-top:8px} .odds-mehr > summary{display:inline-flex;align-items:center;gap:6px;min-height:44px;cursor:pointer;list-style:none;font:600 var(--fs-13)/1 var(--font-ui);color:var(--tx-2)}
+.odds-mehr > summary::-webkit-details-marker{display:none} .odds-mehr > summary .icon{width:16px;height:16px;color:var(--gold-300)} .odds-mehr[open] > summary{color:var(--gold-100)}
+.odds-mehr .odds{margin-top:0}
+.hchest-opts .btn{min-height:48px} .hchest-opts .cost b{font-size:var(--fs-15,15px)}
+/* Hinweise (Toast) nie über Kopf oder Fußzeile dieser Fenster */
+body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96px)}
+@media (max-width:899px),(max-height:500px){
+  body:has(#shopPopup.is-open) .toast.toast.toast,body:has(#citySheet:not([hidden])) .toast.toast.toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-bd) + 104px)}   /* (.toast dreifach: geht vor die allgemeine Fenster-Regel in 02) */
+}
     </style>
 </head>
 <body>
@@ -2121,7 +2150,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <div class="offer-text">
         <h4>Ausrüstungskiste</h4>
         <p>Enthält ein zufälliges Ausrüstungsteil (Waffe, Rüstung, Schild oder Stiefel) in einer von sechs Seltenheiten.</p>
-        <div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div>
+        <details class="odds-mehr"><summary><svg class="icon"><use href="#i-info"/></svg>Chancen</summary><div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div></details>
       </div>
     </article>
     <div id="shopCrateResult" class="loot" style="display:none"></div>
@@ -2130,8 +2159,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
       <div class="offer-text">
         <h4>Heldenkisten</h4>
         <p>Splitter für zufällige Helden – je gewöhnlicher, desto öfter. Damit schaltest du Helden frei und wertest sie um Viertel-Sterne auf.</p>
-        <div id="heroChestOdds" class="odds"></div>
         <div id="heroChestOpts" class="shield-opts hchest-opts"></div>
+        <details class="odds-mehr"><summary><svg class="icon"><use href="#i-info"/></svg>Chancen</summary><div id="heroChestOdds" class="odds"></div></details>
       </div>
     </article>
     <div id="shopHeroResult" class="hchest-res" hidden></div>

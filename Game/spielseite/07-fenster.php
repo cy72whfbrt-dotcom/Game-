@@ -279,7 +279,7 @@
       <div class="offer-text">
         <h4>Ausrüstungskiste</h4>
         <p>Enthält ein zufälliges Ausrüstungsteil (Waffe, Rüstung, Schild oder Stiefel) in einer von sechs Seltenheiten.</p>
-        <div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div>
+        <details class="odds-mehr"><summary><svg class="icon"><use href="#i-info"/></svg>Chancen</summary><div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div></details>
       </div>
     </article>
     <div id="shopCrateResult" class="loot" style="display:none"></div>
@@ -288,8 +288,8 @@
       <div class="offer-text">
         <h4>Heldenkisten</h4>
         <p>Splitter für zufällige Helden – je gewöhnlicher, desto öfter. Damit schaltest du Helden frei und wertest sie um Viertel-Sterne auf.</p>
-        <div id="heroChestOdds" class="odds"></div>
         <div id="heroChestOpts" class="shield-opts hchest-opts"></div>
+        <details class="odds-mehr"><summary><svg class="icon"><use href="#i-info"/></svg>Chancen</summary><div id="heroChestOdds" class="odds"></div></details>
       </div>
     </article>
     <div id="shopHeroResult" class="hchest-res" hidden></div>
