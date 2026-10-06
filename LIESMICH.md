@@ -1563,6 +1563,12 @@ Nacht – vorher bauen und testen.
      `saisonWelt`/Bot-Zweig und ob der Reset die Thron-Punkte der Mitspieler überhaupt anfasst.
    - Beobachtung: 30 Min. nach dem Reset haben Mitspieler schon 15–24 Basen (Clara_V 15, Elias_G 24, Nebelreiter 19) – mit
      5.000 Start und neutralen Basen 100–1.000 evtl. zu schnell? Prüfen (Alexander fragen).
+9. **Gebäude-Fenster lässt sich seitlich verschieben** (Bilder 45a3037b, b728884b, 18:39, Mauer): Der Inhalt des Fensters
+   kann nach links/rechts gewischt werden (1. Bild: rechts abgeschnitten, Holz-Zahl „17“ halb weg; 2. Bild: nach links
+   verschoben). Fenster darf nur senkrecht scrollen (`overflow-x: hidden`, `touch-action: pan-y`, Breiten prüfen).
+   Dazu: Hinweis „Angriff unterwegs zu Turm #19259“ liegt mitten über dem Inhalt (Verteidigungs-Helden) und zeigt
+   „Turm #…“-Nummer (soll Name/Ort sein, siehe Blick C). Und: Mauer Stufe 1 kostet 280 Münzen + 150 Holz – nach der neuen
+   Wirtschaft (Münzen ×1.000, Holz RoK-Größe) wirken diese Gebäude-Kosten zu klein → Gebäude-Kosten prüfen.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
