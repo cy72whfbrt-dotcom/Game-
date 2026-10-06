@@ -156,6 +156,8 @@ function spielVersion() {
     const t = +(window.__OW || {}).version || (v && /^\d{10}$/.test(v[1]) ? +v[1] : 0);
     return t ? new Date(t * 1000).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : v ? v[1].slice(0, 7) : '–';
 }
+document.querySelector('#tabSet .p5-sprung').addEventListener('click', e => { const b = e.target.closest('[data-sprung]'); if (!b) return;   // Sprung zu einer Gruppe
+    const z = document.getElementById(b.dataset.sprung), pb = profilePopup.querySelector('.pbody'); if (z) pb.scrollTop += z.getBoundingClientRect().top - pb.getBoundingClientRect().top - 8; });
 document.getElementById('setTon').addEventListener('click', e => { const b = e.target.closest('[data-ton]'); if (!b) return; Music.setMode(b.dataset.ton); einstellungenZeigen(); });
 document.getElementById('setAkku').addEventListener('change', e => {
     akkuSparen = e.target.checked; store.set('openWaterAkku', akkuSparen ? '1' : '0'); onViewportResize();

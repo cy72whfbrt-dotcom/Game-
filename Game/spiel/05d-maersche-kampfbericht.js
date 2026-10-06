@@ -9,7 +9,14 @@ const activeMarchesEl = document.getElementById('activeMarches');
 activeMarchesEl.addEventListener('click', e => { const bt = e.target.closest('[data-mact]'); if (!bt) return;
     e.stopPropagation(); if (bt.dataset.mact === 'recall') recallMarch(bt.dataset.k); else if (bt.dataset.mact === 'speedAll') speedUpAll(bt); else speedUpMarch(bt.dataset.k, bt); });
 const combatLogListEl = document.getElementById('combatLogList');
-let battleLogRefreshTimer = null;
+let battleLogRefreshTimer = null, battleTab = 'unterwegs', battleGesehenBis = 0;   // Reiter Unterwegs | Berichte; Berichte bis hier schon gesehen
+function showBattleTab(t) {
+    battleTab = t;
+    for (const b of battleLogPopup.querySelectorAll('[data-ktab]')) { const on = b.dataset.ktab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+    for (const pn of battleLogPopup.querySelectorAll('[data-kpane]')) pn.hidden = pn.dataset.kpane !== t;
+    battleLogPopup.querySelector('.pbody').scrollTop = 0;
+}
+document.getElementById('battleTabs').addEventListener('click', e => { const b = e.target.closest('[data-ktab]'); if (b) showBattleTab(b.dataset.ktab); });
 
 function timeAgoLabel(timestamp) {
     const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
@@ -100,6 +107,7 @@ function renderActiveMarches() {
     const total = relevantAttackCount + relevantSendCount + pendingScouts.length + pendingRetreats.length + bm.length + fm.length;
     setText(battleLogBadge, total);
     setShown(battleLogBadge, total > 0);
+    const tb = document.getElementById('battleTabBadge'); setText(tb, total); setShown(tb, total > 0);
 }
 
 // Stufe, Titel, die 4 Ausrüstungsteile, Helden, Fähigkeiten und Stadt einer Seite (Kampfbericht und Spähbericht)
@@ -514,7 +522,12 @@ const kampflogUmbauen = (function () {
 
     return umbauen;
 })();
-combatLogListEl.addEventListener('click', e => {
+combatLogListEl.addEventListener('click', e => {   // ganze Karte antippbar: Details öffnen, sonst auf der Karte zeigen
+    const row = e.target.closest('.logRow');
+    if (row && row.parentElement === combatLogListEl && !e.target.closest('button, a, summary, details, input, .who-link, [data-profile]')) {
+        const s = row.querySelector('summary'), z = row.querySelector('[data-logzeigen]');
+        if (s) { s.click(); return; } if (z) { z.click(); return; }
+    }
     const b = e.target.closest('[data-logzeigen]'); if (!b) return;
     e.preventDefault(); e.stopPropagation();
     const isl = islandById[+b.dataset.logzeigen]; if (!isl) return;
@@ -526,6 +539,8 @@ battleLogBtn.addEventListener('click', () => {
     closeAllPopups();
     renderActiveMarches();
     renderCombatLog();
+    const neu = combatLog.some(x => x.at > battleGesehenBis), unterwegs = !!activeMarchesEl.querySelector('.logRow');   // neue Berichte zuerst, sonst die Märsche
+    showBattleTab(neu || !unterwegs ? 'berichte' : 'unterwegs'); battleGesehenBis = Date.now();
     openPanel(battleLogPopup);
     battleLogRefreshTimer = setInterval(refreshBattleLog, 1000);
 });

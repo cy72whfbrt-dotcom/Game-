@@ -254,6 +254,8 @@ function updateGoalsBadge(nAch) {
     const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxList().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
     set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
     const jetzt = evJetzt(); for (const k of ['inv', 'drache']) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), jetzt === k);   // „!“ am Ereignis, das gerade läuft
+    const g = k => goalsPopup.querySelector('[data-ggbadge="' + k + '"]');   // die 4 Reiter: Summe ihrer Unterreiter
+    set(g('aufgaben'), nd + nAch); set(g('abholen'), nr); set(g('pass'), np); setShown(g('ereignisse'), jetzt === 'inv' || jetzt === 'drache');
 }
 function renderQuestPanel() {
     const q = loadQuests();
@@ -286,13 +288,18 @@ function renderQuestPanel() {
         (q.bonusClaimed ? '<span class="quest-ok">Abgeholt</span>' : allClaimed ? '<button class="btn btn--primary btn--sm" type="button" data-bonus><span>Abholen</span></button>' : '') + '</div></div>';
     document.getElementById('questList').innerHTML = html;
 }
-// ---- Events: one sheet - oben die Aufgaben: Täglich (tasks + week chain), Belohnung (Abholfach + 7-day login chest), Erfolge, Pass;
-// unten die Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager (renderEvents) ----
+// ---- Events: one sheet, 4 Reiter - Aufgaben: Täglich (tasks + week chain), Erfolge · Abholen: Belohnung (Abholfach + 7-day login chest) ·
+// Pass · Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager (renderEvents); Unterreiter als Chips ----
 const EV_TABS = ['tour', 'inv', 'drache', 'boss'];
+const GOALS_GRP = { aufgaben: ['daily', 'ach'], abholen: ['reward'], pass: ['pass'], ereignisse: EV_TABS }, goalsGrpLetzt = {};
+const goalsGrpVon = t => Object.keys(GOALS_GRP).find(k => GOALS_GRP[k].includes(t));
 function showGoalsTab(t) {
     if (t === 'alle') t = 'boss';
     goalsTab = t; const ev = EV_TABS.includes(t);
-    for (const b of goalsPopup.querySelectorAll('[data-gtab]')) { const on = b.dataset.gtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+    const grp = goalsGrpVon(t), chips = document.getElementById('goalsTabs'); goalsGrpLetzt[grp] = t;
+    for (const b of goalsPopup.querySelectorAll('[data-gtab]')) { const on = b.dataset.gtab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); b.hidden = b.dataset.ggrpVon !== grp; }
+    for (const b of goalsPopup.querySelectorAll('[data-ggrp]')) { const on = b.dataset.ggrp === grp; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+    chips.hidden = GOALS_GRP[grp].length < 2;   // Abholen und Pass: keine Chips
     for (const pn of goalsPopup.querySelectorAll('[data-gpane]')) pn.hidden = pn.dataset.gpane !== (ev ? 'ev' : t);
     if (ev) { evTab = t; renderEvents(); } else if (t === 'ach') renderAchievements(); else if (t === 'pass') renderPass(); else renderQuestPanel(); if (t === 'reward') renderInbox();
     goalsPopup.querySelector('.pbody').scrollTop = 0; if (t === 'pass') requestAnimationFrame(passScroll); updateGoalsBadge();
@@ -302,11 +309,13 @@ function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.cl
 function openGoals(tab) {
     closeAllPopups(); if (barbView) closeBarbSheet(); renderGoalsSub();
     const nd = dailyGoalCount(), na = achClaimable().length;
-    showGoalsTab(tab || (nd ? 'daily' : dailyClaimable() || inboxList().length ? 'reward' : na ? 'ach' : passReadyAll().length ? 'pass' : evJetzt() || goalsTab)); openPanel(goalsPopup);
+    showGoalsTab(tab || (dailyClaimable() || inboxList().length ? 'reward' : nd ? 'daily' : na ? 'ach' : passReadyAll().length ? 'pass' : evJetzt() || goalsTab)); openPanel(goalsPopup);   // roter Punkt: zuerst Abholen
 }
 document.getElementById('goalsBtn').addEventListener('click', () => { if (isPanelOpen(goalsPopup)) closePanel(goalsPopup); else openGoals(); });
 document.getElementById('goalsCloseBtn').addEventListener('click', () => closePanel(goalsPopup));
 document.getElementById('goalsTabs').addEventListener('click', e => { const b = e.target.closest('[data-gtab]'); if (b) showGoalsTab(b.dataset.gtab); });
+document.getElementById('goalsGruppen').addEventListener('click', e => { const b = e.target.closest('[data-ggrp]'); if (!b) return; const g = b.dataset.ggrp;   // Reiter: der zuletzt offene Unterreiter
+    showGoalsTab(goalsGrpLetzt[g] || (g === 'ereignisse' ? evJetzt() || 'tour' : GOALS_GRP[g][0])); });
 goalsPopup.addEventListener('click', e => {
     const b = e.target.closest('button'); if (b && b.hasAttribute('data-daily')) return showDailyModal();   // Belohnung: the quick-claim window does the rest
     if (!b || !e.target.closest('[data-gpane="daily"]')) return;

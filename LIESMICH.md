@@ -718,6 +718,21 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Knöpfe/X/Reiter dort mind. 44 px. Stil in spielseite/05 (eigene Klassen), Funktion unverändert. Test `stadt_fenster_test`
   (neu), `handy_stadt_test` (Chancen aufklappen).
 
+- **6.10. – Fenster-Design P5 (11b F I–L, Branch `design-p5`, NICHT hochgeladen):** Farben/Stil und Funktion gleich, nur
+  Aufbau. **Events** (spielseite/07, spiel/06a): 4 Reiter statt 8 in zwei Reihen – Aufgaben (Chips Täglich · Erfolge) ·
+  Abholen (Abholfach + tägliche Belohnung) · Pass · Ereignisse (Chips Wochen-Event · Invasion · Drache · Boss & Lager); jeder
+  Reiter merkt sich seinen letzten Chip, rote Zahl = Summe der Chips. Der rote Punkt am Events-Knopf öffnet zuerst „Abholen“,
+  wenn dort etwas liegt. **Kampf** (05d): Reiter „Unterwegs | Berichte“ (neue Berichte → Berichte, sonst Märsche); die ganze
+  Berichtskarte ist antippbar (Details, sonst „Zeigen“ auf der Karte). **Bündnis ohne Bündnis** (buendnis/04): „Suchen“ zeigt
+  erst die Liste (Beitreten = 1 Tipp), darunter „Eigenes Bündnis gründen“ → erst dann das Formular (`#bundUnten`).
+  **Profil** (05a): Kopf 3 Zeilen (Rang · Titel, Name, Stufe), „Stufe 2: …“ in den Spieler-Reiter; Truppen, Münzen und
+  Edelsteine nicht mehr doppelt zum HUD; Reiter „Rangliste“ raus (es gibt das eigene Ranglisten-Fenster) – im Spieler-Reiter
+  eine Zeile „Rangliste ›“. **Einstellungen** (07, 10c): Sprung-Knöpfe Benachrichtigungen · Ton & Grafik · Konto · Hilfe,
+  Benachrichtigungen in Gruppen Angriff/Bündnis/Events/Stadt, Hilfe-Text eingeklappt. Reiter 12 px, ≥ 44 px hoch, Beschriftung
+  nie abgeschnitten. Stil im `<style>` am Anfang von spielseite/07 (eigene Klassen `p5-…`, 01/02/06 unberührt). Hinweis für
+  P1: die Regeln `#goalsTabs .tab:nth-child…` in spielseite/02 wirken nicht mehr (Chips statt `.tab`) und können weg.
+  Test `tests/browser/handy_fenster_test.js` (neu); `alles_test`/`klick_test`: Kampf-Reiter mit durchgeklickt, neue Reiter
+  nicht als Knopf gedrückt.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
