@@ -476,28 +476,29 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `buildPlinth` → Game/baukunst/02-buehne-grundbasis.js:72
 - `buildTerritoryChunk` → Game/spiel/03a-karte-hintergrund.js:162
 - `bund_geschenk_ok` → Game/server/03-nebel-maersche-seite.php:114
+- `bundAerger` → Game/buendnis/03-mitspieler.js:137
 - `bundAlleMelden` → Game/buendnis/01-daten-regeln.js:115
-- `bundAngriffKraft` → Game/buendnis/03-mitspieler.js:223
+- `bundAngriffKraft` → Game/buendnis/03-mitspieler.js:245
 - `bundBasen` → Game/buendnis/01-daten-regeln.js:88
 - `bundBasenText` → Game/buendnis/01-daten-regeln.js:85
 - `bundBedroht` → Game/buendnis/01-daten-regeln.js:100
 - `bundBefehl` → Game/buendnis/04-fenster-karte-welt.js:8
 - `bundBerichtDaten` → Game/buendnis/04-fenster-karte-welt.js:402
-- `bundBerichtLesen` → Game/buendnis/03-mitspieler.js:234
+- `bundBerichtLesen` → Game/buendnis/03-mitspieler.js:256
 - `bundBonus` → Game/buendnis/02-rally-geschenke.js:260
 - `bundBotBereit` → Game/buendnis/03-mitspieler.js:17
 - `bundBotGetippt` → Game/buendnis/03-mitspieler.js:18
 - `bundCap` → Game/buendnis/01-daten-regeln.js:87
 - `bundChat` → Game/buendnis/01-daten-regeln.js:52
-- `bundChatAntworten` → Game/buendnis/03-mitspieler.js:161
+- `bundChatAntworten` → Game/buendnis/03-mitspieler.js:183
 - `bundChatDazu` → Game/buendnis/01-daten-regeln.js:57
 - `bundChatHtml` → Game/buendnis/04-fenster-karte-welt.js:83
 - `bundChatNeu` → Game/buendnis/04-fenster-karte-welt.js:93
 - `bundChatSpeichern` → Game/buendnis/01-daten-regeln.js:53
-- `bundChatTakt` → Game/buendnis/03-mitspieler.js:195
+- `bundChatTakt` → Game/buendnis/03-mitspieler.js:217
 - `bundChatText` → Game/buendnis/04-fenster-karte-welt.js:66
 - `bundChatZeilen` → Game/buendnis/04-fenster-karte-welt.js:82
-- `bundDanke` → Game/buendnis/03-mitspieler.js:254
+- `bundDanke` → Game/buendnis/03-mitspieler.js:276
 - `bundEingeladen` → Game/buendnis/04-fenster-karte-welt.js:417
 - `bundEinladungen` → Game/buendnis/01-daten-regeln.js:147
 - `bundEinladungenHtml` → Game/buendnis/04-fenster-karte-welt.js:30
@@ -508,8 +509,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundGehoert` → Game/buendnis/01-daten-regeln.js:117
 - `bundGeschenk` → Game/buendnis/02-rally-geschenke.js:234
 - `bundGesehen` → Game/buendnis/04-fenster-karte-welt.js:262
-- `bundGeteilt` → Game/buendnis/03-mitspieler.js:194
-- `bundGutGemacht` → Game/buendnis/03-mitspieler.js:259
+- `bundGeteilt` → Game/buendnis/03-mitspieler.js:216
+- `bundGutGemacht` → Game/buendnis/03-mitspieler.js:281
 - `bundHeimschicken` → Game/buendnis/01-daten-regeln.js:353
 - `bundHelfen` → Game/buendnis/01-daten-regeln.js:393
 - `bundHilfe` → Game/buendnis/01-daten-regeln.js:296
@@ -530,10 +531,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundMacht` → Game/buendnis/01-daten-regeln.js:86
 - `bundMarsch` → Game/buendnis/01-daten-regeln.js:303
 - `bundMelden` → Game/buendnis/01-daten-regeln.js:110
-- `bundMitspielerAntworten` → Game/buendnis/03-mitspieler.js:284
-- `bundMitspielerRally` → Game/buendnis/03-mitspieler.js:326
+- `bundMitspielerAntworten` → Game/buendnis/03-mitspieler.js:306
+- `bundMitspielerRally` → Game/buendnis/03-mitspieler.js:348
 - `bundMitspielerRunde` → Game/buendnis/03-mitspieler.js:25
-- `bundMitspielerSignale` → Game/buendnis/03-mitspieler.js:138
+- `bundMitspielerSignale` → Game/buendnis/03-mitspieler.js:160
 - `bundMitte` → Game/buendnis/01-daten-regeln.js:89
 - `bundName` → Game/buendnis/01-daten-regeln.js:80
 - `bundObenSchluessel` → Game/buendnis/04-fenster-karte-welt.js:127
@@ -551,11 +552,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundRallyBeute` → Game/buendnis/02-rally-geschenke.js:213
 - `bundRallyDazu` → Game/buendnis/02-rally-geschenke.js:33
 - `bundRallyEnde` → Game/buendnis/02-rally-geschenke.js:55
-- `bundRallyFuer` → Game/buendnis/03-mitspieler.js:367
+- `bundRallyFuer` → Game/buendnis/03-mitspieler.js:389
 - `bundRallyHeim` → Game/buendnis/02-rally-geschenke.js:170
 - `bundRallyHtml` → Game/buendnis/04-fenster-karte-welt.js:111
+- `bundRallyLage` → Game/buendnis/03-mitspieler.js:154
 - `bundRallyLos` → Game/buendnis/02-rally-geschenke.js:64
-- `bundRallyPlan` → Game/buendnis/03-mitspieler.js:375
+- `bundRallyPlan` → Game/buendnis/03-mitspieler.js:404
+- `bundRallyReiz` → Game/buendnis/03-mitspieler.js:399
 - `bundRallyStart` → Game/buendnis/02-rally-geschenke.js:5
 - `bundRallyTruppen` → Game/buendnis/02-rally-geschenke.js:53
 - `bundRallyUnterwegs` → Game/buendnis/02-rally-geschenke.js:54
@@ -563,7 +566,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundRaus` → Game/buendnis/01-daten-regeln.js:132
 - `bundRein` → Game/buendnis/01-daten-regeln.js:142
 - `bundRender` → Game/buendnis/04-fenster-karte-welt.js:17
-- `bundRueckzugTun` → Game/buendnis/03-mitspieler.js:266
+- `bundRueckzugTun` → Game/buendnis/03-mitspieler.js:288
 - `bundSaisonNeu` → Game/buendnis/04-fenster-karte-welt.js:351
 - `bundSchliessen` → Game/buendnis/04-fenster-karte-welt.js:15
 - `bundSendAnkunft` → Game/buendnis/01-daten-regeln.js:316
@@ -575,9 +578,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundTagFuer` → Game/buendnis/03-mitspieler.js:19
 - `bundTagHeute` → Game/buendnis/02-rally-geschenke.js:232
 - `bundTagVon` → Game/buendnis/01-daten-regeln.js:79
-- `bundTakt` → Game/buendnis/03-mitspieler.js:404
+- `bundTakt` → Game/buendnis/03-mitspieler.js:434
 - `bundTeilenKnopf` → Game/buendnis/04-fenster-karte-welt.js:398
 - `bundTempo` → Game/buendnis/02-rally-geschenke.js:285
+- `bundTreffpunkt` → Game/buendnis/03-mitspieler.js:145
 - `bundUnterAngriff` → Game/buendnis/01-daten-regeln.js:91
 - `bundVerbuendet` → Game/buendnis/01-daten-regeln.js:78
 - `bundVon` → Game/buendnis/01-daten-regeln.js:77
@@ -1380,7 +1384,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `konto` → Game/spiel/10d-welt-weltrechner.js:135
 - `kontoProfil` → Game/spiel/10d-welt-weltrechner.js:248
 - `kostenHtml` → Game/aufbau.js:76
-- `kraft` → Game/buendnis/03-mitspieler.js:381
+- `kraft` → Game/buendnis/03-mitspieler.js:410
 - `kreis` → Game/spiel/08e-stadtbild-haeuser.js:369
 - `kWert` → Game/spiel/10d-welt-weltrechner.js:540
 - `label` → Game/spiel/03d-maersche-tagnacht.js:116
@@ -2136,7 +2140,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spaehVom` → Game/spiel/02c-spaeher-ankunft.js:108
 - `spaehWann` → Game/spiel/02c-spaeher-ankunft.js:112
 - `spaehWerte` → Game/spiel/02c-spaeher-ankunft.js:68
-- `spaeter` → Game/buendnis/03-mitspieler.js:163
+- `spaeter` → Game/buendnis/03-mitspieler.js:185
 - `spawnBattleFx` → Game/spiel/07a-schlachten.js:356
 - `spawnMapBattle` → Game/spiel/07a-schlachten.js:24
 - `spawnWander` → Game/spiel/07b-kriegsherr.js:57
@@ -3169,22 +3173,26 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundBotGetippt` :18
 - `bundTagFuer` :19
 - `bundMitspielerRunde` :25 — alle 15 s: gründen, beitreten, Anfragen beantworten
-- `bundMitspielerSignale` :138 — Signale der Mitglieder: angegriffen und allein zu schwach → „Hilfe!“ – auch für…
-- `bundChatAntworten` :161 — Mitspieler antworten im Chat – kurz danach, wie ein Mensch, und nur, was sie da…
-- `spaeter` :163
-- `bundGeteilt` :194
-- `bundChatTakt` :195 — (Weltrechner) fällige Antworten der Mitspieler schreiben
-- `bundAngriffKraft` :223 — Was ein Mitspieler von EINER Basis aus gegen z werfen kann (wie bei seinen Angr…
-- `bundBerichtLesen` :234 — Kampfbericht geteilt: die Mitspieler lesen ihn – nur einen frischen (Kampf dort…
-- `bundDanke` :254 — „Danke!“ – selten: wenn bei einem Mitspieler Hilfe oder Verstärkung ankommt (hö…
-- `bundGutGemacht` :259 — „Gut gemacht!“ – nach einem gemeinsamen Sieg sagt es manchmal einer der Mitspie…
-- `bundRueckzugTun` :266 — Rückzug: ein Mitspieler kehrt mit allem um, was zu z unterwegs ist (Angriffe, H…
-- `bundMitspielerAntworten` :284 — Antworten mit Taten: Hilfe schicken, mit angreifen, zur Rally kommen
-- `bundMitspielerRally` :326
-- `bundRallyFuer` :367 — Eine Rally auf ein bestimmtes Ziel (Chat: „machst du eine Rally?“): die stärkst…
-- `bundRallyPlan` :375 — → { basis, ziel, min, n } oder null
-- `kraft` :381 — was das Bündnis in ~3 Minuten zum Sammelpunkt bringen kann (grob: die halbe Bes…
-- `bundTakt` :404 — (Weltrechner) jede Sekunde: Rallys losschicken, alte Signale weg, die Mitspiele…
+- `bundAerger` :137 — Ärger beim Bündnis: Basen der anderen Mitglieder, die gerade angegriffen werden…
+- `bundTreffpunkt` :145 — Wohin das Bündnis rückt (für ohne): viel Ärger hinten (2 Orte und mehr) → dorth…
+- `bundRallyLage` :154 — Wie viel ein Mitspieler aus seinen Basen in eine Rally schickt: nicht pauschal,…
+- `bundMitspielerSignale` :160 — Signale der Mitglieder: angegriffen und allein zu schwach → „Hilfe!“ – auch für…
+- `bundChatAntworten` :183 — Mitspieler antworten im Chat – kurz danach, wie ein Mensch, und nur, was sie da…
+- `spaeter` :185
+- `bundGeteilt` :216
+- `bundChatTakt` :217 — (Weltrechner) fällige Antworten der Mitspieler schreiben
+- `bundAngriffKraft` :245 — Was ein Mitspieler von EINER Basis aus gegen z werfen kann (wie bei seinen Angr…
+- `bundBerichtLesen` :256 — Kampfbericht geteilt: die Mitspieler lesen ihn – nur einen frischen (Kampf dort…
+- `bundDanke` :276 — „Danke!“ – selten: wenn bei einem Mitspieler Hilfe oder Verstärkung ankommt (hö…
+- `bundGutGemacht` :281 — „Gut gemacht!“ – nach einem gemeinsamen Sieg sagt es manchmal einer der Mitspie…
+- `bundRueckzugTun` :288 — Rückzug: ein Mitspieler kehrt mit allem um, was zu z unterwegs ist (Angriffe, H…
+- `bundMitspielerAntworten` :306 — Antworten mit Taten: Hilfe schicken, mit angreifen, zur Rally kommen
+- `bundMitspielerRally` :348
+- `bundRallyFuer` :389 — Eine Rally auf ein bestimmtes Ziel (Chat: „machst du eine Rally?“): die stärkst…
+- `bundRallyReiz` :399 — Reiz eines Rally-Ziels (kleiner = lieber): der Thron, Tempel und Tore vor Türme…
+- `bundRallyPlan` :404 — → { basis, ziel, min, n } oder null
+- `kraft` :410 — was das Bündnis in ~3 Minuten zum Sammelpunkt bringen kann (grob: die halbe Bes…
+- `bundTakt` :434 — (Weltrechner) jede Sekunde: Rallys losschicken, alte Signale weg, die Mitspiele…
 
 ### Game/buendnis/04-fenster-karte-welt.js — Bündnis: Fenster, Karte (Gebiet, Signale, Fahnen), Verbindung zur Welt
 - `bundBefehl` :8

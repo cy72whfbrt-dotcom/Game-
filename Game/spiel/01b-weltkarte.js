@@ -254,9 +254,9 @@ for (let i = 0; i < landmasses.length; i++) {
 function bridgeBetween(a, b) {
     return bridges.find(br => (br.a === a && br.b === b) || (br.a === b && br.b === a)) || null;
 }
-// Passes (wie in großen Strategiespielen): the bridges into the Wächter-Inseln open on day 2 of a world,
-// the bridges into the Thron-Insel on day 4. Until then they are chained shut for everyone.
-const PASS_OPEN_DAYS = { guardian: 0, throne: 0 };        // Pass-Timer aus (Alexander 4.10.: „Tor-Pass-Timer kommt auch raus“) – zum Wieder-Anmachen: Tage ab Welt-Start, z. B. { guardian: .25, throne: 1 }
+// Pässe: die Brücken zu den Wächter-Inseln und zur Thron-Insel öffnen erst 3 Tage nach dem Welt-Start (Alexander 6.10.: „dann haben
+// alle genug Zeit“) – bis dahin für alle zu, Spieler wie Mitspieler. Der Welt-Start kommt bei jedem Saison-Reset neu (saisonWelt).
+const PASS_OPEN_DAYS = { guardian: 3, throne: 3 };        // Tage ab Welt-Start (0 = Timer aus)
 function worldStartAt() {
     let t = parseInt(store.get('openWaterWorldStart'), 10);
     if (!t) { t = Date.now(); store.set('openWaterWorldStart', String(t)); }
