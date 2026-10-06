@@ -656,6 +656,15 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   vhBest), `08d` (Mauer-Fenster), `01e`, `02c`, `04` (defGoldRateHx), `05d`, `bots/02`, `bots/04`, `10d`, `server/02`.
   Test `tests/browser/mauer_helden_test.js`, `tests/server_test.php`. Offen: Drache/Kriegsherr-Angriffe auf Basen nehmen nur
   Angriff + Gefolge der Verteidigungs-Helden (keine Verluste/Krankenhaus/Gold).
+- **6.10. – Spähbericht kompakt (Spieler-Durchsicht Bereich D, Branch `blick-d`, NICHT hochgeladen):** Der Spähbericht ist keine
+  Tabelle voller „–“ mehr (Vorbild RoK): Truppen, Verstärkung (nur wenn da), Verteidigung Teil für Teil (Teile mit 0 fallen weg),
+  Gesamt; darunter kompakt **Herr** (Stufe, Titel, nur angelegte Ausrüstung, Fähigkeiten), **Verteidigungs-Held** als eine Karte
+  mit seinen echten Werten (sonst eine Zeile „keiner“), **Basis** und **Rohstoffe** (was zu holen ist). Kein „Gefallen/Geflohen“,
+  keine leeren Heldenplätze. Das Alter steht nur EINMAL oben (vorher „vor 11 s“ oben, „vor 0 s“ unten) und läuft auch in der
+  offenen Bericht-Seite mit; Sterne der Helden zu Hause stimmen jetzt („3 Sterne“ statt 6 ★). Desktop: Bericht/Kampfdetails als
+  Fenster (max. 600 px) über der abgedunkelten Karte statt schwarzer Vollseite, Klick daneben schließt. Code: `05d`
+  (`kampflogUmbauen` → `spaeh`, `spaehHerr`, `spaehHeld`, `spaehBasis`, `spaehRoh`, `fensterArt`; `refreshBattleLog`),
+  `02c` (`spaeherBlickHtml`). Test `tests/browser/spaeh_bericht_test.js`. Offen: Kampf-Fenster auf Desktop sehr leer (Punkt 19).
 - **6.10. – Design P1: Grundwerte, HUD, Leiste, Streifen (11b F, Branch `design-p1`, NICHT hochgeladen):** **Grundwerte**
   (`spielseite/01`, andere Design-Pakete bauen darauf): Abstände `--ab-1…4` (4/8/12/16), Schriftstufen `--fs-11/13/15/17/22`
   (`--fs-9`/`--fs-10` = 11 px, nichts Kleineres mehr), Knopf-Arten `--k-haupt` 48 · `--k-zweit` 44 · `--k-gefahr` 48 · `--k-chip` 36

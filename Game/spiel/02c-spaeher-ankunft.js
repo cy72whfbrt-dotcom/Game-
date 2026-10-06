@@ -121,10 +121,10 @@ function spaehVerst(id) {
 }
 function spaeherBlickHtml(s) {
     if (!s) return '';
-    const stern = n => n ? ' ' + '★'.repeat(Math.floor(n)) + (n % 1 ? '½' : '') : '', zeile = (a, b) => '<div class="logLine"><span>' + a + '</span><span>' + b + '</span></div>';
+    const stern = n => n ? ' ' + heroStarTxt(Math.round(n * 2)) : '', zeile = (a, b) => '<div class="logLine"><span>' + a + '</span><span>' + b + '</span></div>';   // (held: Sterne/2 – wie die Heldenkarte)
     const A = s.auf || {}, R = A.roh;
-    const gear = s.gear ? Object.keys(EQUIPMENT_DEFS).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span' + (g ? ' style="color:' + RARITY_DEFS[g[0]].color + '"' : '') + '>' +
-        (g ? RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') : '—') + '</span></div>'; }).join('') : '';
+    const gear = s.gear ? Object.keys(EQUIPMENT_DEFS).filter(k => s.gear[k]).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span style="color:' + RARITY_DEFS[g[0]].color + '">' +
+        RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') + '</span></div>'; }).join('') : '';   // (nur angelegte Teile)
     const beute = v => fmtCompact(v) + (R && v > R.schutz ? ' <small>(' + fmtCompact(Math.floor((v - R.schutz) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt)</small>' : '');
     return '<details><summary>Spähbericht</summary><div class="logSide" style="margin-top:6px">' +
         zeile('Herr', escapeHtml(s.name) + ' · Spieler-Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '')) +
