@@ -214,7 +214,8 @@ function bundChatTakt(now) {                                      // (Weltrechne
         }
         bundChatDazu(a, q.w, q.k, q.z);
         if (q.tat && q.tat.ziel !== undefined) bundMem.ziel[q.w] = { t: q.tat.ziel, until: now + 10 * 60000 };   // „Ja“ heißt: sie greifen das geteilte Ziel an
-        if (q.k === 'spaeter') bleibt.push({ at: now + (5 + Math.random() * 10) * 60000, aid: a.id, w: q.w, k: 'jetzt', z: null, tat: { folge: q.tat && q.tat.spaeter !== undefined ? q.tat.spaeter : null, bis: now + 45 * 60000 } });
+        const folgt = x => x.w === q.w && x.tat && x.tat.folge !== undefined;   // (je Mitspieler höchstens eine offene Folge – sonst häuft Fragen-Spam sie an)
+        if (q.k === 'spaeter' && !bleibt.some(folgt) && !bundMem.chatQ.some(folgt)) bleibt.push({ at: now + (5 + Math.random() * 10) * 60000, aid: a.id, w: q.w, k: 'jetzt', z: null, tat: { folge: q.tat && q.tat.spaeter !== undefined ? q.tat.spaeter : null, bis: now + 45 * 60000 } });
     }
     bundMem.chatQ = bleibt;
 }
@@ -238,7 +239,7 @@ function bundBerichtLesen(a, who, z, on, sag, now) {
     let zusammen = 0, schwach = 0; const stark = [];
     for (const w of on.slice(0, 4)) {
         const bot = botById[w]; if (bundZielOk(w, z) || botFreeSlots(bot) <= 0) continue;
-        const it = botIntelMem[w] || (botIntelMem[w] = {}); it[z] = { s: S, ready: now, pending: false };
+        botLearn(w, z); botIntelMem[w][z].s = S;                       // (wie ein Späher – der Merker bleibt begrenzt)
         const k = bundAngriffKraft(bot, z); zusammen += k;
         if (k >= S * 1.15) { schwach++; sag(w, 'schwach', null, { ziel: z }); }
         else { stark.push(w); if (bundMem.ziel[w] && bundMem.ziel[w].t === z) delete bundMem.ziel[w]; }   // nicht allein angreifen
@@ -267,10 +268,11 @@ function bundRueckzugTun(w, z) {
     for (const liste of [pendingAttacks, pendingSends]) for (const m of liste.slice()) {
         const an = liste === pendingAttacks ? m.attackerBotId === w && m.targetId === z : m.senderBotId === w && m.toId === z && !m.back;
         if (!an || m.fightEndsAt || m.rally) continue;
-        const von = m.sourceId ?? m.fromId, tr = m.rawTroops ?? m.troops;
+        const von = m.sourceId ?? m.fromId, tr = m.rawTroops ?? m.troops, heim = bundBasen(w).has(von) ? von : bundCap(w);
+        if (heim === null || heim === undefined || !islandById[heim]) continue;   // (keine Basis mehr: der Marsch läuft weiter, sonst wären die Truppen weg)
         if (liste === pendingAttacks) heroWutZurueck(w, m.hx);       // (nicht gekämpft: die Wut bleibt)
         liste.splice(liste.indexOf(m), 1); n++;
-        pendingSends.push({ fromId: z, toId: bundBasen(w).has(von) ? von : bundCap(w), troops: tr, startedAt: now, resolveAt: now + Math.max(1000, Math.min(now, m.resolveAt) - m.startedAt), senderBotId: w, back: true });
+        pendingSends.push({ fromId: z, toId: heim, troops: tr, startedAt: now, resolveAt: now + Math.max(1000, Math.min(now, m.resolveAt) - m.startedAt), senderBotId: w, back: true });
     }
     for (const v of verst.l.filter(v => v.w === w && v.t === z)) { verstHolen(v); n++; }
     for (const r of bund.r.filter(r => r.by === w && r.t === z)) { bundRallyEnde(r, bundName(w) + ' hat sich zurückgezogen'); n++; }

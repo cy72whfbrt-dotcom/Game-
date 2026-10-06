@@ -515,7 +515,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   5.300“. Die Mitspieler lesen nur frische Berichte (Kampf dort vor höchstens 15 Min.; der Bericht zählt wie ein Späher):
   schwach → „Schwach – ich greife mit an!“ und greifen an; für jeden allein zu stark → „Zu stark – lieber eine Rally!“, keiner
   allein, reicht das Bündnis zusammen, startet einer eine Rally; gehört der Ort dem Bündnis → „Gut gemacht!“. **Thron-Punkte:**
-  Halter weiter 30, jeder mit Verstärkung im Thron 15 (`THRONE_PTS_VERST`, `throneHelfer`, 06c). Neue Tests
+  Halter weiter 30, jeder mit Verstärkung im Thron 15 – nur beim verbündeten Halter (`THRONE_PTS_VERST`, `throneHelfer`, 06c).
+  Selbstprüfung: Rückzug ohne Basis zum Heimkehren lässt den Marsch laufen (Truppen nie weg), je Mitspieler höchstens eine
+  offene „Später“-Folge (Fragen-Spam), Bericht-Wissen über `botLearn` (Merker begrenzt). Neue Tests
   `bund_rueckzug_test`, `rally_warnung_test`, `verst_heim_test`, `bund_bericht_test`, `thron_verst_test`.
 
 ## 9. Fehlerliste (Alexander)

@@ -50,6 +50,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const heim2 = pendingSends.filter(m => m.senderBotId === H.id && m.back && m.fromId === T);
       out.verst = { bleibt: verst.l.filter(v => v.w === H.id && v.t === T).length, heim: heim2.length, heimTruppen: heim2.reduce((s, m) => s + m.troops, 0), unterwegs: pendingSends.filter(m => m.senderBotId === H.id && m.toId === T && !m.back).length,
         gleich: truppen(H.id) === h1, meld: meld.filter(m => m.w === M.id && /holt seine 2[.,]?500 Truppen aus .* heim/.test(m.text)).length, chat: zeilen('s_heim').filter(x => x.w === H.id && x.z === T && x.d && x.d.n === 2500).length };
+      // 2b) ohne Basis, in die er heim kann: der Marsch läuft weiter (sonst wären die Truppen weg)
+      a.sig.forEach(s => s.at -= 60000); bundMem.chatAt = {};
+      const ohne = { sourceId: F, targetId: E, rawTroops: 1234, startedAt: Date.now() - 20000, resolveAt: Date.now() + 3600000, attackerBotId: H.id, attackBonus: 0, atkTitle: 1, atkKraft: 1 };
+      pendingAttacks.push(ohne); const capAlt = window.bundCap; window.bundCap = () => null;
+      try { bundOp(S.id, { op: 'chat', k: 'rueckzug', z: E }); runde(); } finally { window.bundCap = capAlt; }
+      out.ohneHeim = { laeuft: pendingAttacks.includes(ohne), heim: pendingSends.filter(m => m.senderBotId === H.id && m.back && m.troops === 1234).length };
+      pendingAttacks.splice(pendingAttacks.indexOf(ohne), 1);
       // 3) „Später“ → nach 5–15 Min. „Jetzt!“ (mit Ziel, sie greifen an) bzw. „Nein“ (ohne Ziel)
       const zufall = Math.random; bundMem.chatQ = []; bundMem.ziel = {}; bundMem.chatAt = {};
       bundOp(M.id, { op: 'chat', k: 'teilen', z: E }); bundMem.chatAt = {};
@@ -67,6 +74,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       bundMem.chatQ = [{ at: 0, aid: a.id, w: H.id, k: 'jetzt', z: null, tat: { folge: null, bis: Date.now() + 1e9 } }]; bundChat[a.id].l = bundChat[a.id].l.filter(x => x.k !== 'teilen');
       const n1 = zeilen('nein').length; bundChatTakt(Date.now() + 60000);
       out.ohneZiel = { nein: zeilen('nein').length - n1 };
+      // Fragen-Spam: zwei „Später“ desselben Mitspielers → nur eine offene Folge
+      bundMem.chatQ = [0, 1].map(() => ({ at: 0, aid: a.id, w: H.id, k: 'spaeter', z: null, tat: { spaeter: E } })); bundChatTakt(Date.now());
+      out.spam = bundMem.chatQ.filter(q => q.w === H.id && q.tat && q.tat.folge !== undefined).length;
       // 4) „Danke!“ wenn Verstärkung bei einem Mitspieler ankommt (selten – hier mit Glück)
       const hb = loadBotState()[H.id]; hb.city.levels.keep = Math.max(5, hb.city.levels.keep || 0); hb.city.levels.embassy = Math.max(1, hb.city.levels.embassy || 0); saveBotState();
       bundMem.chatQ = []; bundMeldeZeit.clear(); Math.random = () => .1;
@@ -90,6 +100,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.spaeter.zeile >= 1 && r.spaeter.folge === 1 && r.spaeter.ab >= 5 && r.spaeter.ab <= 15, '„Später“: Folge-Antwort in 5–15 Min. geplant', r.spaeter);
   ok(r.jetzt.jetzt === 1 && r.jetzt.ziel === r.spaeter.ziel && r.jetzt.ziel !== null, 'nach „Später“ kommt „Jetzt!“ – und er greift das geteilte Ziel an', r.jetzt);
   ok(r.ohneZiel.nein === 1, 'ohne Ziel: nach „Später“ kommt „Nein“', r.ohneZiel);
+  ok(r.ohneHeim.laeuft && r.ohneHeim.heim === 0, 'ohne Basis zum Heimkehren: der Marsch läuft weiter (Truppen nicht weg)', r.ohneHeim);
+  ok(r.spam === 1, 'zweimal „Später“: nur eine offene Folge je Mitspieler', r.spam);
   ok(r.danke === 1, '„Danke!“, wenn Verstärkung bei einem Mitspieler ankommt', r.danke);
   ok(r.gut === 1, '„Gut gemacht!“ nach einem gemeinsamen Sieg', r.gut);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();

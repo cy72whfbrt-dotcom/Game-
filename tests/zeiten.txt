@@ -5,4 +5,4 @@ armee_test 80
 kiste_test 304
 klick_test 426
 schummel_test 767
-verst_test 294
+verst_test 298

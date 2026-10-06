@@ -6751,7 +6751,8 @@ var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone'))
 function saveThrone() { store.set('openWaterThrone', JSON.stringify(throneState)); }
 function throneEarnedOf(who, bs) { const ts = throneState, w = (ts.week || {})[who] || 0;   // all Thron-Punkte ever earned (the ranking) - the larger of the tally and the old totals, so nobody loses any
     return Math.floor(Math.max(w, who === 'player' ? ts.earned || 0 : (((bs || loadBotState())[who] || {}).stats || {}).tpEarned || 0)); }
-function throneHelfer() { return typeof verst === 'undefined' ? new Set() : new Set(verst.l.filter(v => v.t === megaTempleId && v.n >= 1).map(v => v.w)); }   // wer Verstärkung im Thron stehen hat (Bündnis, Botschaft)
+function throneHelfer() { const hd = rulerOwner();               // wer Verstärkung im Thron stehen hat (Bündnis, Botschaft) – nur beim verbündeten Halter (sonst geht sie gerade heim)
+    return typeof verst === 'undefined' || !hd ? new Set() : new Set(verst.l.filter(v => v.t === megaTempleId && v.n >= 1 && bundVerbuendet(v.w, hd)).map(v => v.w)); }
 function throneIncome(who) { return (rulerOwner() === who ? THRONE_PTS_MEGA : 0) + (throneHelfer().has(who) ? THRONE_PTS_VERST : 0) + guardianTempleIds.filter(g => islandOwnerOf(g) === who).length * THRONE_PTS_GUARD; }
 function throneShooters() { const hd = rulerOwner(); return hd ? guardianTempleIds.filter(g => islandOwnerOf(g) !== hd) : []; }
 function hourProduction(who) {                       // what an empire makes in an hour (the coin and troop offers pay this much)
