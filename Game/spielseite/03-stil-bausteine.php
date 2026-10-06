@@ -121,7 +121,7 @@
 .sect::before{content:"";width:5px;height:5px;transform:rotate(45deg);border:1px solid var(--gold-300);flex:none}
 .sect h4{margin:0;font:600 var(--fs-12)/1 var(--font-display);letter-spacing:.08em;color:var(--gold-100);white-space:nowrap}
 .sect::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line-2),transparent);order:5;min-width:12px}
-.sect-aside{order:6;display:inline-flex;align-items:center;gap:6px}
+.sect-aside{order:6;display:inline-flex;align-items:center;gap:6px} .sect > span.sect-aside{font:500 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)}   /* Randnotiz wie „Neu um …“ (nicht größer als der Rest) */
 /* Handy-Benachrichtigungen im Profil (benachrichtigung.js) */
 .push-karte{display:flex;flex-direction:column;gap:8px}
 .set-liste{display:flex;flex-direction:column}

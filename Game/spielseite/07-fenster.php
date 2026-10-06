@@ -19,9 +19,9 @@
 .p5-chip .badge{position:static}
 #combatLogList > .logRow{cursor:pointer}
 /* Profil: Kopf in 3 Zeilen (Rang + Titel, Name, Stufe) */
-.p5-kopfzeile{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
-.p5-kopfzeile .ptitle-tag{margin:0}
-.p5-kopfzeile .ptitle-tag::before{content:"· ";color:var(--tx-3)}
+.p5-kopfzeile{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
+.p5-kopfzeile .ptitle-tag{position:relative;margin:0;white-space:nowrap}
+.p5-kopfzeile .ptitle-tag:not(:empty)::before{content:"·";position:absolute;left:-10px;color:var(--tx-3)}   /* der Punkt steht in der Lücke: bricht der Titel um, schneidet der Rand ihn ab */
 .p5-naechste{margin:0 0 8px;padding:8px 12px;border:1px solid var(--line-1);border-radius:8px;font-size:13px;color:var(--tx-2)}
 .p5-zeile{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;margin:0 0 8px;padding:8px 12px;border:1px solid var(--line-2);border-radius:10px;
   background:rgba(255,255,255,.03);color:var(--tx-1);font:600 15px/1.2 var(--font-ui);text-align:left;cursor:pointer}
@@ -45,6 +45,17 @@
 #bundUnten:not(:empty){margin-top:16px}
 .p5-gruenden{width:100%;min-height:44px;gap:8px}
 .p5-gruenden .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}
+/* Spieltest: Tippflächen mind. 44 px (sichtbar kleiner), nichts abgeschnitten */
+button.rp-bund{position:relative} button.rp-bund::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}
+.rp-bund.is-leer{font-size:var(--fs-11)} .rp-bund.is-leer > span{white-space:normal}   /* „Kein Bündnis – jetzt eins suchen“ ganz, notfalls in zwei Zeilen */
+.panel--island .seg button{position:relative;min-height:36px}
+.panel--island .seg button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}   /* (ab der Innenkante: 1 px Rand dazu) */
+.panel--island .hero-seg.chips-quer{padding-block:4px}   /* (die Liste schiebt quer: die Tippfläche braucht Platz im Rahmen) */
+.panel--island .pfoot .btn{min-height:var(--k-zweit)}
+.from-field{grid-template-columns:minmax(0,1fr);gap:4px}   /* Startbasis: Name, Truppen und Marschzeit ganz zu lesen */
+.from-sel{padding:0 6px 0 10px;font-weight:500}   /* („· reicht“ dahinter passt auch noch) */
+.mact button{position:relative} .logRow .mact button,.march-all .mact button{min-height:36px} .mact button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}
+@media (pointer:coarse){ .mapctl button{width:44px;height:44px} .ap-kopf .from-sel{height:44px} }
 </style>
 
 <!-- ============ PROFILE ============ -->
@@ -53,7 +64,7 @@
   <header class="phead phead--hero">
     <div id="pAvatarRing" class="avatar-ring"><span class="avatar"><svg class="icon"><use href="#i-profile"/></svg></span><span id="profileLevelBadge" class="lvl">1</span></div>
     <div class="phead-text">
-      <div class="overline p5-kopfzeile">Profil · Rang <b id="profileRank">Bronze</b><span id="profileTitle" class="ptitle-tag"></span></div>
+      <div class="overline p5-kopfzeile"><span>Profil · Rang <b id="profileRank">Bronze</b></span><span id="profileTitle" class="ptitle-tag"></span></div>
       <input id="profileName" class="ptitle ptitle--input" type="text" maxlength="20" placeholder="Dein Name" autocomplete="off" spellcheck="false">
       <div class="xp"><span class="xp-l">Stufe <b id="xpLevelNum">1</b></span><div class="xp-track"><i id="xpFill" class="xpFill"></i></div><span id="xpNums" class="xp-n">0 / 50 XP</span></div>
       <div id="profileBund"></div>

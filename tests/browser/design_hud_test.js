@@ -1,6 +1,7 @@
 // Design 11b F, Paket P1 (Handy 390×844 + Desktop 1280×800): Grundwerte als CSS-Variablen, HUD mit Spielerbild (antippen = Profil),
 // EIN Streifen für alle Dauer-Hinweise („+N“ klappt auf), Leiste mit 5 runden Knöpfen (Profil nicht mehr dort),
 // Fenster am Handy höchstens 70 % hoch mit fester Fußzeile, Hinweis nie über Fenster-Kopf/Fuß oder den Zoom-Knöpfen.
+// Spieltest: Tippflächen ≥ 44 px, Angriffs-Karte über der Leiste, Startbasis/Kopfzeile/Profil nicht abgeschnitten, Bauarbeiter unter dem HUD.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 (async () => {
@@ -45,7 +46,41 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       closeAllPopups(); flashHint('Kurzer Hinweis', 4000); await warte(200);
       const zoom = document.getElementById('mapControls'); fenster.zoomFrei = !sicht(zoom) || !ueber(box(h), box(zoom));
       flashHint('', 1);
-      return { tokens, hud, leiste, streifen, fenster };
+      // 6) Spieltest: Tippflächen ≥ 44 px (sichtbar darf kleiner sein), Angriffs-Karte über der Leiste, nichts abgeschnitten
+      const trifft = e => { const r = box(e), x = r.left + r.width / 2, y = r.top + r.height / 2, in_ = (a, c) => { const t = document.elementFromPoint(a, c); return !!t && (t === e || e.contains(t)); };
+        return in_(x - 21, y) && in_(x + 21, y) && in_(x, y - 21) && in_(x, y + 21); };
+      const klein = sel => [...document.querySelectorAll(sel)].filter(sicht).filter(e => { e.scrollIntoView({ block: 'center', inline: 'nearest' });   // (erst ins Bild: nicht unter der festen Fußzeile)
+        const q = e.closest('.chips-quer'); return (!q || (box(e).left >= box(q).left - 1 && box(e).right <= box(q).right + 1)) && !trifft(e); }).map(e => e.id || e.textContent.trim().slice(0, 20));
+      const passt = e => e.scrollWidth <= e.clientWidth + 1;
+      await warte(600);   // (der Hinweis ist ganz weg)
+      const st = { klein: klein('#midBar .mb-chip, .hud > .res--roh' + (innerWidth < 900 ? ', #mapControls button' : '')) };
+      const h0 = islandById[playerIslandId], ziel = islands.filter(i => !islandOwnerOf(i.id) && !/temple|gate/i.test(i.type || '')).sort((a, c) => Math.hypot(a.x - h0.x, a.y - h0.y) - Math.hypot(c.x - h0.x, c.y - h0.y))[0];
+      openIslandPopup(ziel); await warte(400); document.getElementById('attackBtn').click(); await warte(600);
+      st.klein.push(...klein('.panel--island .seg button, .panel--island .pfoot .btn'));
+      const sel = document.getElementById('attackFromSel'), mass = document.createElement('canvas').getContext('2d'); mass.font = getComputedStyle(sel).font;
+      const selText = Math.round(mass.measureText(sel.options[sel.selectedIndex].text).width);
+      const selCs = getComputedStyle(sel); st.startbasis = selText + parseFloat(selCs.paddingLeft) + parseFloat(selCs.paddingRight) + 22 <= sel.offsetWidth || [selText, sel.offsetWidth];   // (22: Pfeil + Rand)
+      st.kopfzeile = [...document.querySelectorAll('#popupSub > span')].filter(sicht).every(passt);
+      if (uiLayout() === 'desktop') {                      // Basis ganz unten über der Leiste: die Karte daneben endet über der Leiste
+        const nav = box(document.getElementById('cornerButtons'));
+        mapState.offsetX = (nav.left + nav.right) / 2 - ziel.x * mapState.zoom; mapState.offsetY = innerHeight - 30 - ziel.y * mapState.zoom; positionIslandPopover();
+        const pr = box(document.querySelector('.panel--island')); st.ueberLeiste = !ueber(pr, nav) && pr.top >= 72; st.karte = [Math.round(pr.left), Math.round(pr.top), Math.round(pr.bottom), Math.round(nav.top)];
+      }
+      closeAllPopups(); await warte(300);
+      document.getElementById('hudPlayer').click(); await warte(500);
+      const bund = document.querySelector('#profilePopup .rp-bund'), tag = document.getElementById('profileTitle'), rang = document.getElementById('profileRank');
+      st.klein.push(...klein('#profilePopup button.rp-bund')); st.bundGanz = !!bund && passt(bund.querySelector('span'));
+      st.titel = !tag.textContent || Math.abs(box(tag).top - box(rang).top) < 2 || getComputedStyle(tag, '::before').position === 'absolute';   // „· Neuling“ nie mit Punkt allein in der Zeile
+      closeAllPopups(); await warte(200);
+      document.getElementById('battleLogBtn').click(); await warte(400);
+      document.getElementById('combatLogList').insertAdjacentHTML('afterbegin', '<div class="logRow" id="testZeile"><span class="mact"><button type="button">Zurück</button><button type="button">Schneller</button></span></div>');
+      st.klein.push(...klein('#testZeile .mact button')); document.getElementById('testZeile').remove(); closeAllPopups(); await warte(200);
+      const randnotiz = [...document.querySelectorAll('#goalsPopup .sect > span.sect-aside')].map(e => getComputedStyle(e).fontSize);   // „verpasster Tag = Tag 1“ so klein wie „Neu um …“
+      st.randnotiz = randnotiz.length > 1 && new Set(randnotiz).size === 1 ? randnotiz[0] : randnotiz;
+      openCity(); await warte(2500);
+      const hudU = box(document.getElementById('hud')).bottom; st.bauarbeiter = [...document.querySelectorAll('#cityBuilder .cb-slot')].filter(sicht).every(e => box(e).top >= hudU);
+      st.klein.push(...klein('#cityBuilder button.cb-slot')); closeCity(); await warte(1500);
+      return { tokens, hud, leiste, streifen, fenster, st };
     }).catch(e => ({ fehler: e.message }));
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
@@ -58,6 +93,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     if (art === 'Handy') ok(r.fenster.hoehe <= 0.705, art + ': Fenster höchstens 70 % hoch (Karte bleibt sichtbar)', r.fenster);
     ok(r.fenster.fussGanz, art + ': Fußzeile mit dem Haupt-Knopf ganz zu sehen', r.fenster);
     ok(r.fenster.hinweisFrei && r.fenster.zoomFrei, art + ': Hinweis nie über Fenster-Kopf/Fuß oder den Zoom-Knöpfen', r.fenster);
+    ok(!r.st.klein.length, art + ': Tippflächen ≥ 44 px (Zoom-Knöpfe, Rohstoff-Knopf, Angriff-Chips/Held/Knöpfe, Bündnis im Profil, Zurück/Schneller, Bauarbeiter)', r.st);
+    ok(r.st.startbasis === true && r.st.kopfzeile && r.st.bundGanz && r.st.titel, art + ': nicht abgeschnitten – Startbasis, „Von Hauptstadt“, „Kein Bündnis – jetzt eins suchen“, Titel nie mit Punkt allein', r.st);
+    ok(r.st.randnotiz === '11px', art + ': Events – Randnotizen („verpasster Tag = Tag 1“) klein wie „Neu um …“', r.st.randnotiz);
+    ok(r.st.bauarbeiter, art + ': Bauarbeiter-Zeile in der Stadt unter dem HUD', r.st);
+    if (art === 'Desktop') ok(r.st.ueberLeiste, art + ': Angriffs-Karte endet über der Leiste (Events/Shop antippbar)', r.st);
     await ctx.close();
   }
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();

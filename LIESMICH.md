@@ -744,6 +744,16 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (benachrichtigung.js): Server-Frist 10 s, danach „Der Server antwortet gerade nicht …“ + „Nochmal versuchen“ statt ewig
   „Einen Moment …“ (in der Vorschau ohne Server bleibt der Satz, das Skript wird dort nicht geladen). Tests: `anleitung_test`,
   `rang_profil_test` erweitert, neu `spieltexte_test`, `push_frist_test`.
+- **6.10. Layout aus dem Nacht-Spieltest (Handy 390×844, Desktop 1440×900):** Desktop: die Angriffs-/Späh-Karte neben der
+  Basis endet über der Leiste (03e `positionIslandPopover`, `--amax`), Events/Shop bleiben antippbar; Bauarbeiter-Zeile in der
+  Stadt unter dem HUD-Streifen (04). Tippflächen ≥ 44 px (sichtbar teils kleiner): Zoom/Heim/Marke/Armee am Handy 44 px,
+  Rohstoff-Knopf, Angriff-Chips 25/50/75 %/Alle und Heldenwahl, Angreifen/Zurück, „Kein Bündnis – jetzt eins suchen“,
+  Zurück/Schneller bei „Unterwegs“, „2. Bauarbeiter“ (Block am Ende des `<style>` in spielseite/07). Nicht mehr abgeschnitten:
+  Startbasis-Auswahl (Beschriftung darüber, Desktop 15 px), „Von Hauptstadt“ im Kopf (Desktop ohne „Marsch ca.“, die Sanduhr
+  bleibt), „Kein Bündnis – jetzt eins suchen“; Profil-Kopf: bricht der Titel um, steht er ohne „·“ in der zweiten Zeile.
+  Events: Randnotizen („verpasster Tag = Tag 1“) klein wie „Neu um …“. Stadt am Handy (Mauer/Krankenhaus/Steinbruch am Rand):
+  bleibt – weiter herauszoomen geht nicht, weil das gemalte Land am hohen Handy-Bild sonst oben/unten endet (08f
+  `cityClampCam`, `CITY_BOUNDS`); dafür müsste mehr Land gemalt werden. Test `design_hud_test` (Abschnitt 6).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

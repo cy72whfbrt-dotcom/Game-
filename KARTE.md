@@ -964,9 +964,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fieldTick` → Game/spiel/09a-funde-felder.js:271
 - `fieldTravelSec` → Game/spiel/09a-funde-felder.js:200
 - `fieldWhoName` → Game/spiel/09a-funde-felder.js:196
-- `fightDurationMs` → Game/spiel/03e-kamera-eingabe.js:538
+- `fightDurationMs` → Game/spiel/03e-kamera-eingabe.js:541
 - `fighterSnapshot` → Game/spiel/01e-nebel-kampfwerte-hud.js:106
-- `fightEstimate` → Game/spiel/03e-kamera-eingabe.js:527
+- `fightEstimate` → Game/spiel/03e-kamera-eingabe.js:530
 - `findAnyCombinableGroup` → Game/spiel/02a-shop-stufen.js:94
 - `finGeo` → Game/baukunst/04-vielfalt-stile.js:320
 - `finish` → Game/spiel/10c-start-einstellungen.js:214
@@ -1037,7 +1037,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `foZeitRoh` → Game/aufbau.js:177
 - `frame` → Game/ladebildschirm.js:161
 - `frame` → Game/spiel/03e-kamera-eingabe.js:378
-- `frameIslandInView` → Game/spiel/03e-kamera-eingabe.js:472
+- `frameIslandInView` → Game/spiel/03e-kamera-eingabe.js:475
 - `free` → Game/spiel/01c-basen-spielstand.js:46
 - `freezeCamera` → Game/spiel/03e-kamera-eingabe.js:247
 - `frei` → Game/spiel/08e-stadtbild-haeuser.js:351
@@ -1336,7 +1336,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `invWelle` → Game/spiel/09c-events-drache.js:130
 - `invZiele` → Game/spiel/09c-events-drache.js:118
 - `invZielOk` → Game/spiel/09c-events-drache.js:114
-- `isCapital` → Game/spiel/03e-kamera-eingabe.js:507
+- `isCapital` → Game/spiel/03e-kamera-eingabe.js:510
 - `isCellOpen` → Game/spiel/01e-nebel-kampfwerte-hud.js:30
 - `isExplored` → Game/spiel/01e-nebel-kampfwerte-hud.js:39
 - `islandOwnerOf` → Game/spiel/01d-helden-mitspieler.js:152
@@ -2057,7 +2057,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `senden` → Game/speichern.js:160
 - `sendenAlle` → Game/weltrechner/push.js:205
 - `sendenAn` → Game/weltrechner/push.js:191
-- `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:516
+- `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:519
 - `server` → Game/benachrichtigung.js:20
 - `server` → Game/weltrechner/push.js:168
 - `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:177
@@ -2331,7 +2331,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verstPlatz` → Game/buendnis/01-daten-regeln.js:460
 - `verstPlatzStufe` → Game/buendnis/01-daten-regeln.js:459
 - `verstPruefen` → Game/buendnis/01-daten-regeln.js:482
-- `verstSchaetzung` → Game/spiel/03e-kamera-eingabe.js:519
+- `verstSchaetzung` → Game/spiel/03e-kamera-eingabe.js:522
 - `verstSpeichern` → Game/buendnis/01-daten-regeln.js:456
 - `verstStufe` → Game/buendnis/01-daten-regeln.js:457
 - `verstUnbekannt` → Game/buendnis/01-daten-regeln.js:468
@@ -3809,12 +3809,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mapFocusPoint` :441 — ---------------- map controls ----------------
 - `updateMapControls` :450
 - `positionIslandPopover` :456 — ---------------- island popup placement ----------------
-- `frameIslandInView` :472 — ease the base into the free map area (next to the sheet / clear of the desktop …
-- `isCapital` :507
-- `sentLossFor` :516
-- `verstSchaetzung` :519 — Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mi…
-- `fightEstimate` :527 — the fight as it stands right now (no side effects) - same maths as resolveAttac…
-- `fightDurationMs` :538 — a skirmish is over in ~4 s, a clash of millions takes ~12 s
+- `frameIslandInView` :475 — ease the base into the free map area (next to the sheet / clear of the desktop …
+- `isCapital` :510
+- `sentLossFor` :519
+- `verstSchaetzung` :522 — Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mi…
+- `fightEstimate` :530 — the fight as it stands right now (no side effects) - same maths as resolveAttac…
+- `fightDurationMs` :541 — a skirmish is over in ~4 s, a clash of millions takes ~12 s
 
 ### Game/spiel/04-kampf.js — Titel (Mega-Tempel), Takt der Mitspieler, Ankunft und Kämpfe (kampfDazu, Warten…
 - `loadTitles` :16
