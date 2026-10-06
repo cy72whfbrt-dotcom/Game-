@@ -45,13 +45,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const ohne = [];                                  // Grenzabschnitte ohne Kette (alle 8.000 Einheiten eine Probe; nicht an Toren/Knoten)
     const tore = bridges.map(br => torMitte(islandById[br.gateId]));
     for (const senk of [true, false]) for (const L of linien) for (let t = -ende + 4000; t < ende - 4000; t += 8000) {
-      const x = senk ? grenzLinie(true, L, t) : t, y = senk ? t : grenzLinie(false, L, t);
+      const aus = Math.abs(L) > GRID_HALF ? Math.sign(L) * RAND_AUSSEN : 0, x = senk ? grenzLinie(true, L, t) + aus : t, y = senk ? t : grenzLinie(false, L, t) + aus;   // (Kartenrand: nach außen versetzt)
       if (tore.some(g => Math.hypot(g.x - x, g.y - y) < KETTE_GERADE.hoch + 2000)) continue;   // (am Tor läuft die Kette absichtlich gerade)
       if (!K.liste.some(o => o.n.startsWith('kette') && x > o.bb.l && x < o.bb.r && y > o.bb.t && y < o.bb.b)) ohne.push([senk ? 'senk' : 'waag', L, Math.round(t)]); }
     const mess = bridges.map(br => { const isl = islandById[br.gateId], tm = torMitte(isl), senk = Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1);
       const L = senk ? Math.round(tm.x / S - .5) + .5 : Math.round(tm.y / S - .5) + .5, punkt = senk ? grenzLinie(true, L, tm.y) : grenzLinie(false, L, tm.x);
       const luecke = Math.abs((senk ? tm.x : tm.y) - punkt) / KARTE_MASS.tor * 100;
-      if (senk) { const nb = K.liste.filter(o => o.n.startsWith('kette_hoch') && Math.abs(o.y - tm.y) < 4800 && Math.abs(o.x - tm.x) < 3000), mitte = l => l.reduce((s, o) => s + o.x, 0) / Math.max(1, l.length);
+      if (senk) { const nb = K.liste.filter(o => o.n.startsWith('kette_hoch') && Math.abs(o.y - tm.y) < 6000 && Math.abs(o.x - tm.x) < 3000), mitte = l => l.reduce((s, o) => s + o.x, 0) / Math.max(1, l.length);
         const oben = nb.filter(o => o.y < tm.y), unten = nb.filter(o => o.y > tm.y);
         const v = s => { const o = oben.filter(q => (q.x < tm.x) === s), u = unten.filter(q => (q.x < tm.x) === s); return o.length && u.length ? Math.abs(mitte(o) - mitte(u)) : 0; };   // je Reihe
         return { id: isl.id, senk, luecke, versatz: oben.length && unten.length ? Math.max(v(true), v(false)) / KARTE_MASS.tor * 100 : 99 }; }
