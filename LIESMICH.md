@@ -1552,6 +1552,10 @@ Nacht – vorher bauen und testen.
      Seltenheitsfarbe, Belohnungen fliegen einzeln heraus). Designer: Vorbilder online suchen.
    - **Heldenkiste: Splitter auf verschiedene Helden verteilen** – heute kommen alle Splitter (z. B. 6) von EINEM Helden. Gewünscht:
      mehrere verschiedene Helden je Kiste (z. B. 6 Splitter → 2–3 Helden), gewichtet nach Seltenheit wie bisher.
+7. **Rahmen wird auf der Karte nicht gezeigt** (Bilder 85e486a0, 7a00098b, 18:36): Alexander hat „Saison-Champion“ (Platz 1)
+   angelegt – im Aussehen-Fenster sieht man den Ring, auf der Karte zeigt die Hauptstadt-Fahne aber nur das Burg-Symbol ohne
+   Wappen/Ring, und der Kreis um die Hauptstadt hat keinen Rahmen. Auch oben links (HUD-Wappen) kein Ring. Gewünscht: der
+   angelegte Rahmen sichtbar an der eigenen Hauptstadt (Fahne/Plakette + Kreis), im HUD, für andere Spieler genauso.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
