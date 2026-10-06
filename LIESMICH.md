@@ -1627,6 +1627,11 @@ Nacht – vorher bauen und testen.
     Karte/Inhalt (wie Punkt 9).
 20. **Helden-Fenster: Aufbau/Design schlecht** (19:08, „Aufbau ist Arsch“): Helden-Fenster komplett neu gestalten wie RoK/
     Call of Dragons (große Helden-Figur, Stufe/Sterne, Talente, Ausrüstung um den Helden, Liste als Karten). → Designer.
+21. **Gebäude kann man umgehen** (Bilder 6cae086c, 52d01b40, 19:07–19:09): Heldenhalle „Noch nicht gebaut“, aber „Helden
+    öffnen“ geht trotzdem, Helden aufwerten/Fähigkeiten verteilen klappt ohne Halle („Deine Helden kannst du schon jetzt
+    nutzen“). → Gebäude sinnlos. Alle Gebäude prüfen: was geht ohne das Gebäude? FRAGE an Alexander beim Abarbeiten:
+    Helden erst mit Heldenhalle (Stufe 1) nutzbar? (Empfehlung ja, wie RoK.) Außerdem Zahlen: Heldenhalle kostet 280 Münzen /
+    300 Holz bei 180 Mio. Münzen (vgl. Punkt 9: Kosten zu klein); „Fehlt: 259 Holz“ ok.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
