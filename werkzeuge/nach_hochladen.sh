@@ -20,9 +20,8 @@ echo "Prüfe Live-Server seit $(date -d "@$SEIT" '+%d.%m. %H:%M:%S') …"
 holen -c "$T/jar" -b "$T/jar" -L 'https://office.hobbitonhill.de/index.php?' --data-binary @"$T/anmelden" -o "$T/login.html"; rm -f "$T/anmelden"
 SID=$(grep -o 'sid=[a-f0-9]*' "$T/login.html" 2>/dev/null | head -1 | cut -d= -f2)
 [ -n "$SID" ] || { echo "FEHLER: Office-Login fehlgeschlagen"; exit 1; }
-# lesen <datei unter Game/> → Inhalt (aus dem Textfeld des Editors, HTML-Zeichen zurückverwandelt)
-lesen() { holen -b "$T/jar" "$E?h=48&w=138&sid=$SID&path=$B/Game/$1&charset=&lines=" \
-  | sed -n '/<textarea/,/<\/textarea>/p' | php -r '$s = stream_get_contents(STDIN); $s = preg_replace(["~^.*?<textarea[^>]*>~s", "~</textarea>.*$~s"], "", $s); echo html_entity_decode($s, ENT_QUOTES | ENT_HTML5, "UTF-8");'; }
+# lesen <datei unter Game/> → Inhalt (aus dem Textfeld des Editors, HTML-Zeichen und Kürzel <bsl>/<n> … zurückverwandelt)
+lesen() { holen -b "$T/jar" "$E?h=48&w=138&sid=$SID&path=$B/Game/$1&charset=&lines=" | php werkzeuge/editor_text.php; }
 lesen weltrechner/herz.php > "$T/herz"
 lesen weltrechner/log.php > "$T/log"
 CODE=$(holen -o /dev/null -w '%{http_code}' "$U")

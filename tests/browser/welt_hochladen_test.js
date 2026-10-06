@@ -91,6 +91,11 @@ function dateien(d, r = '') { return fs.readdirSync(path.join(d, r)).flatMap(x =
   execFileSync('cp', ['-r', path.join(REPO, 'Game'), path.join(REPO, 'werkzeuge'), path.join(REPO, 'hochladen.sh'), kopie]);
   const soll = dateien(path.join(kopie, 'Game')).filter(f => !TEILE.test(f) && !NUR_SERVER.test(f) && f !== 'config.php');
 
+  // 0) werkzeuge/editor_text.php (hochladen.sh + nach_hochladen.sh): Textfeld von stdin, Kürzel zurück wie der echte Editor
+  const roh = '{"a":"x\\\\y","b":"z\\n"} \\\\n \\r\\n &amp; <nbsp>', seite = '<html><textarea name="text">' + esc(kuerzel(roh)) + '</textarea>' + esc('<nbsp> <bsl> <r> <n> <rn>') + '</html>';
+  ok(execFileSync('php', [path.join(REPO, 'werkzeuge/editor_text.php')], { input: seite }).toString() === roh, 'editor_text.php: Kürzel <bsl>/<n>/<rn> zurück, Rest unverändert');
+  ok(/werkzeuge\/editor_text\.php/.test(fs.readFileSync(path.join(REPO, 'werkzeuge/nach_hochladen.sh'), 'utf8')), 'nach_hochladen.sh liest das Textfeld über editor_text.php');
+
   // 1) jede 3. Verbindung gekappt, eine hängt, bots.js kommt einmal halb an → am Ende alles gleich, Wartung aus
   const w1 = path.join(ARBEIT, 'server1'); fs.rmSync(w1, { recursive: true, force: true });
   fs.mkdirSync(path.join(w1, 'Game/api'), { recursive: true }); fs.writeFileSync(path.join(w1, 'Game/altes.txt'), 'alt'); fs.writeFileSync(path.join(w1, 'Game/api/x.php'), '<?php');

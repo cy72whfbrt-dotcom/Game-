@@ -47,15 +47,9 @@ ed_tun() { local code; code=$(ed "$@" -o /dev/null -w '%{http_code}') || return 
 # ls_ordner <pfad>: Namen in einem Ordner auf dem Server (Ergebnis in $T/liste; Fehler, wenn nicht lesbar)
 ls_ordner() { c -b "$T/jar" "$E?h=48&w=138&sid=$SID&path=$B$1" -o "$T/ls.html" || return 1
   grep -o 'path=[^"&]*' "$T/ls.html" | sed "s#.*klassenarbeit_GR4$1/##" | grep -v '^\.\.$\|^path=' | sort -u > "$T/liste"; }
-# ed_lesen <datei unter Game/> <ziel>: Inhalt aus dem Textfeld des Editors (wie werkzeuge/nach_hochladen.sh)
-# Der Editor zeigt Rückstriche als Kürzel (Legende unter dem Textfeld: <nbsp> <bsl> <r> <n> <rn>; aus \\n wird <bsl><n>) –
-# zurückverwandelt in einem Durchgang (strtr, längstes Kürzel zuerst). Gemessen 6.10. am echten Editor (server.php);
-# ein geschütztes Leerzeichen zeigt er unverändert (darum <nbsp> nicht zurück).
-ed_lesen() { ed "/Game/$1" -o "$T/roh.html" || return 1
-  php -r '$s = file_get_contents($argv[1]); $a = stripos($s, "<textarea"); $e = strripos($s, "</textarea>"); if ($a === false || $e === false) exit(1);
-    $a = strpos($s, ">", $a); if ($a === false || $a > $e) exit(1);
-    $t = html_entity_decode(substr($s, $a + 1, $e - $a - 1), ENT_QUOTES | ENT_HTML5, "UTF-8");
-    file_put_contents($argv[2], strtr($t, ["<rn>" => "\\r\\n", "<r>" => "\\r", "<n>" => "\\n", "<bsl>" => "\\"]));' "$T/roh.html" "$2"; }
+# ed_lesen <datei unter Game/> <ziel>: Inhalt aus dem Textfeld des Editors, Kürzel <bsl>/<n> … zurückverwandelt
+# (werkzeuge/editor_text.php, auch für werkzeuge/nach_hochladen.sh)
+ed_lesen() { ed "/Game/$1" -o "$T/roh.html" || return 1; php werkzeuge/editor_text.php "$T/roh.html" "$2"; }
 # Vergleich mit dem Editor: Zeilenenden und Leerzeilen am Anfang/Ende zählen nicht (so zeigt ihn das Textfeld) – alles andere schon
 text_gleich() { php -r '$n = function ($f) { return trim(str_replace("\r", "", file_get_contents($f)), "\n"); }; exit($n($argv[1]) === $n($argv[2]) ? 0 : 1);' "$1" "$2"; }
 url_holen() { c -H 'Cache-Control: no-cache' "$U/$1?v=$RANDOM$RANDOM" -o "$T/url"; }
