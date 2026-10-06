@@ -976,6 +976,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Fenster), Bündnis-Chat leer, Shop → Markt noch nicht gebaut („Markt bauen“ bzw. „Burg ausbauen“ öffnet die Stadt beim
   Gebäude, aufbau.js), Schild-Vorrat leer (ein Satz statt drei „0×“-Kästen). Desktop-Angriff: Zweitheld-Wahl war schon da
   (fehlt nur, wenn man nur einen Helden hat – wie am Handy), jetzt mit Test. Test `aufgabe_bild_test`.
+- **6.10. – Stadt-Gebäude-Fenster wie RoK (Branch `stadt-fenster`, NICHT hochgeladen):** Jedes Gebäude-Fenster zeigt
+  „Jetzt / Stufe N+1“ als Tabelle (Mauer: Verteidigung, Botschaft: Verstärkung/Rally/Hilfen, Holzfäller: Holz pro Stunde …)
+  statt Pfeil-Text („1 Hilfen“ weg); fehlt die Burg-Stufe, ist die Zeile rot mit Knopf „Zur Burg“ und der Bauen-Knopf sagt
+  „Burg Stufe 5 nötig“; Kopf „Stufe 1 → 2“ + klein „von 25“; ungebaute Gebäude zeigen ihr eigenes Bild (ausgegraut) statt
+  alle dasselbe Fundament; Heldenhalle ungebaut: kurzer Satz + dunkler „Helden öffnen“ (nur „Bauen“ ist gold).
+  Basis-Fenster „Aufwerten“ an der Hauptstadt öffnet die Burg erst, wenn die Stadt da ist (`openCity(dann)`, vorher feste
+  300 ms → bei langsamem Handy wieder zu). Stadt-Übergang: Schleier warm (#f3e6c4), höchstens 30 %, unter HUD und Leiste,
+  nach 1,1 s weg; Karten-Hinweise (Invasion …) verschwinden in der Stadt hart statt durchzuscheinen; Desktop startet
+  etwas weiter weg (× 0,85) und 40 px tiefer. „ab Burg-Stufe 4“ bricht nicht mehr am Bindestrich um.
+  Test: `stadt_fenster_test` erweitert.
+
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

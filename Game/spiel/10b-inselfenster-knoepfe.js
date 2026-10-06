@@ -14,7 +14,7 @@ function ausbauDrueber() {
 // keeps levelling up as long as the coins last.
 upgradeBtn.addEventListener('click', () => {
     if (popupIslandId === null) return;
-    if (popupIslandId === playerIslandId) { closeIslandPopup(); openCity(); setTimeout(() => { cityOpenId = '_keep'; renderCitySheet(); }, 300); return; }   // Hauptstadt: nur über die Burg
+    if (popupIslandId === playerIslandId) { closeIslandPopup(); openCity(() => { cityOpenId = '_keep'; cityPage = 'bau'; renderCitySheet(); }); return; }   // Hauptstadt: nur über die Burg (erst, wenn die Stadt da ist – sonst schließt cityShow das Fenster wieder)
     const level = islandLevels[popupIslandId] || 1;
     if (level >= MAX_BASE_LEVEL) { flashHint('Maximale Stufe ' + MAX_BASE_LEVEL + ' erreicht.', 2500); return; }
     const cost = upgradeCost(level);
