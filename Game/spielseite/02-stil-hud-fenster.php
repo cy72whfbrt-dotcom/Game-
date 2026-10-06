@@ -35,6 +35,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mb-chip.is-warn{border-color:rgba(225,72,60,.6);background:linear-gradient(90deg,rgba(150,30,30,.75),rgba(20,12,12,.88));color:#ffd9d3} .mb-chip.is-warn > .icon:first-child{color:#ffb3aa}
 .mb-chip > span{overflow:hidden;text-overflow:ellipsis}
 .mb-chip .mb-platz{flex:none;min-width:6.3ch;text-align:right} .mb-chip .mb-platz.is-leer{visibility:hidden}   /* Wochen-Event: feste Breite, auch ohne Rang */
+@media (max-width:899px) and (min-height:501px){ .mb-chip.is-tour{flex:1 1 auto} .mb-chip .mb-platz.is-leer{display:none} }   /* Handy: der Chip füllt die Leiste – der Name bleibt ganz, der Rang kommt ohne Sprung */
 .mb-chip::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
 .res{position:relative;flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;justify-content:center;gap:var(--ab-1);padding:0 var(--ab-1)}
 .res > .icon{width:16px;height:16px}

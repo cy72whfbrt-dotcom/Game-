@@ -1100,7 +1100,7 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   „Spähen“, Kartenknöpfe auf dem Desktop jetzt 44 px. **Heldenkisten:** die ganze Karte kauft (Tipp aufs Bild lief ins Leere),
   ab 500 weiter „Wirklich?“. Profil → Rangliste/Einstellungen geprüft: kein Fehler (Test mit echtem Tipp). **Funde** (Münz-Kreis
   auf der Karte) mit Beschriftung „+Menge“, auf einem Namensschild unsichtbar und nicht antippbar. **Wochen-Event-Chip:**
-  feste Breite (Platz für „Platz 12“ schon ohne Rang), die Leiste lässt rechts das Schild „Rohstoffe“ frei. **Stadt auf dem
+  feste Breite (Handy: füllt die Leiste, Desktop: Platz für „Platz 12“ schon ohne Rang), die Leiste lässt rechts das Schild „Rohstoffe“ frei. **Stadt auf dem
   Handy:** Start-Blick zeigt alle Baufelder samt Steinbruch und Mauer (`cityStartZoom`, Schilder ab Zoom 0,7). Test `handy_tipp_test`
   (Handy + Desktop), erweitert: `anleitung_test`, `mitspieler_schaetzen_test`, `stadt_fenster_test`.
 - **Befehle der Zuschauer** (in `spiel.js`, Helfer `alsBefehl`): Angreifen (mit gewähltem Held), Senden, Zurückrufen,
