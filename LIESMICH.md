@@ -1591,6 +1591,11 @@ Nacht – vorher bauen und testen.
 13. **DRINGEND – Münzen explodieren durch Basis-Aufwerten** (Bilder d5be07d4 18:40 → 4e504f53 18:43): in 2 Minuten Basis
     Stufe 11 → 64, Münzen 3.617 → 152,9 Mio., Münzen/Std. 40.000 → 66,7 Mio. Gewinnschleife beim Aufwerten (Kosten
     vs. Ertrag/Belohnung). Ursache wird gesucht (Sucher such-muenz) → sofort beheben + hochladen (mit Alexanders Ja).
+14. **Insel-Design + Berge „komplett Dreck“** (Bild 192e18ee, 18:43): Landfläche ist eine flache rosa-beige Fläche voller
+    kleiner gleicher Krabbel-Symbole (Barbaren-Lager? Steinchen?), wirkt wie Muster/Tapete; Berge sind kleine graue Dreiecke
+    (wie Zelte) verstreut; Fluss ok. Gewünscht: Landschaft wie Million Lords/RoK – Gelände mit Struktur (Gras, Sand,
+    Wald, echte Bergketten mit Schatten), weniger wiederholte Kleinsymbole. Designer: Vorbilder online + neue Vorgabe;
+    alle Biome prüfen (Wüste, Wiese, Schnee …). Auch die vielen gleichen Kleinsymbole klären (was sind sie?).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
