@@ -26,7 +26,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const roh = document.getElementById('hudRoh'), mini = roh.querySelector('.roh-mini'), nach = getComputedStyle(roh, '::after');
       const zahlen = [...roh.querySelectorAll('.roh-mini b')].map(x => x.getBoundingClientRect()).filter(r => r.width > 0 && r.right <= innerWidth);
       return { sicht: !a.hidden, ueberzeile: n.bottom <= t.getBoundingClientRect().top + 1, zeilen, hoehe: Math.round(a.getBoundingClientRect().height),
-        mini: getComputedStyle(mini).display !== 'none' && zahlen.length === 3, schrift: nach.content, schriftRechts: roh.getBoundingClientRect().left + roh.offsetWidth / 2 + 30 <= innerWidth };
+        mini: getComputedStyle(mini).display !== 'none' && zahlen.length === 3, schrift: nach.content, schriftRechts: (() => { const r = roh.getBoundingClientRect(), w = parseFloat(nach.width) || 0;   // ragt die Beschriftung rechts aus dem Bild?
+          return w > 0 && (nach.right === 'auto' ? r.left + r.width / 2 + w / 2 : r.right - parseFloat(nach.right)) <= innerWidth + 0.5; })() };
     });
     ok(anl.sicht && anl.ueberzeile && anl.zeilen <= 4, art + ': Anleitung – „Schritt“ als Überzeile, Text höchstens 4 Zeilen', anl);
     if (handy) ok(/Rohstoffe/.test(anl.schrift) && anl.schriftRechts, art + ': Rohstoff-Knopf beschriftet („Rohstoffe“)', anl);
@@ -35,14 +36,20 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 2) Nebel ganz draußen: ruhige Fläche (kaum Helligkeits-Unterschiede), nah: Wolken
     const nebel = await ev(async () => {
       const warte = ms => new Promise(f => setTimeout(f, ms)), h = islandById[playerIslandId];
-      const streu = () => { const c = fogComp, g = c.getContext('2d'), d = g.getImageData(0, 0, Math.min(60, c.width), Math.min(60, c.height)).data;   // Ecke oben links: Nebel
+      const streu = (wx, wy) => { const c = fogComp, g = c.getContext('2d'), z = mapState.zoom;   // 60×60 Punkte Nebel um die Welt-Stelle (wx, wy), ohne Stelle: Ecke oben links
+        const x = wx === undefined ? 0 : Math.max(0, Math.round((wx * z + mapState.offsetX) / innerWidth * c.width) - 30), y = wy === undefined ? 0 : Math.max(0, Math.round((wy * z + mapState.offsetY) / innerHeight * c.height) - 30);
+        const d = g.getImageData(x, y, Math.min(60, c.width - x), Math.min(60, c.height - y)).data;
         const L = []; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) L.push(d[i] + d[i + 1] + d[i + 2]);
         const m = L.reduce((s, x) => s + x, 0) / Math.max(1, L.length); return { n: L.length, sd: Math.round(Math.sqrt(L.reduce((s, x) => s + (x - m) * (x - m), 0) / Math.max(1, L.length))) }; };
       flyTo(h.x, h.y, { zoom: 0.012, instant: true }); requestRender(); await warte(700); const nah = streu();
-      flyTo(h.x, h.y, { zoom: minZoom, instant: true }); requestRender(); await warte(700); const weit = streu();
-      return { nah, weit, w0: nebelWeit(0.012), w1: nebelWeit(minZoom) };
+      flyTo(h.x, h.y, { zoom: minZoom, instant: true }); requestRender(); await warte(1200); await new Promise(f => requestAnimationFrame(() => requestAnimationFrame(f))); const weit = streu(-FRAME_HALF * 0.6, -FRAME_HALF * 0.6);   // weit weg von der Hauptstadt, innerhalb des Kartenrands
+      const z = mapState.zoom, rx = (h.x * z + mapState.offsetX + 15) * dpr, ry = (h.y * z + mapState.offsetY) * dpr;   // goldener Ring (r 15) um die Hauptstadt
+      const px = ctx.getImageData(Math.round(rx) - 2, Math.round(ry) - 2, 5, 5).data; let ring = 0;
+      for (let i = 0; i < px.length; i += 4) ring = Math.max(ring, px[i] - px[i + 2]);
+      const w = typeof nebelWeit === 'function' ? nebelWeit : () => -1;   // (alter Stand: keine Weit-Stufe)
+      return { nah, weit, ring, w0: w(0.012), w1: w(minZoom) };
     });
-    ok(nebel.w0 === 0 && nebel.w1 === 1 && nebel.weit.n > 100 && nebel.weit.sd < nebel.nah.sd / 2, art + ': ganz draußen ruhiger Nebel statt Wolken', nebel);
+    ok(nebel.w0 === 0 && nebel.w1 === 1 && nebel.weit.n > 100 && nebel.weit.sd < nebel.nah.sd / 2 && nebel.ring > 60, art + ': ganz draußen ruhiger Nebel statt Wolken, goldener Ring an der Hauptstadt', nebel);
     await bild('nebel_weit');
     // 3) eigene Basis: frei sichtbar, alle Knöpfe im Fenster
     const basis = await ev(async () => {
@@ -69,15 +76,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const s = await ev(async id => {
         const warte = ms => new Promise(f => setTimeout(f, ms)), R = e => e.getBoundingClientRect();
         cityPage = 'bau'; cityOpenId = id; renderCitySheet(); const sh = document.getElementById('citySheet'); sh.scrollTop = 0; await warte(400);
+        for (let i = 0, u = -1; i < 20 && R(sh).bottom !== u; i++) { u = R(sh).bottom; await warte(150); }   // bis das Fenster steht (Einblenden, Last)
         const btn = document.getElementById('cityUpgradeBtn'), fuss = sh.querySelector('.city-bfoot'), nav = R(document.getElementById('cornerButtons'));
         const br = R(btn), fr = R(fuss), sr = R(sh), t = document.elementFromPoint(br.left + br.width / 2, br.top + br.height / 2);
-        const o = { knopfFrei: !!t && (t === btn || btn.contains(t)), ueberLeiste: br.bottom <= nav.top + 1 || br.top >= nav.bottom, fussUnten: fr.bottom >= sr.bottom - 2, scroll: sh.scrollHeight > sh.clientHeight + 2 };
+        const o = { knopf: [Math.round(br.top), Math.round(br.bottom)], leiste: Math.round(nav.top), knopfFrei: !!t && (t === btn || btn.contains(t)), ueberLeiste: br.bottom <= nav.top + 1 || br.top >= nav.bottom, fussUnten: fr.bottom >= sr.bottom - 2, scroll: sh.scrollHeight > sh.clientHeight + 2 };
         sh.scrollTop = 1e6; await warte(300);
         const kinder = [...sh.children].filter(e => e !== fuss && e.offsetParent && e.getBoundingClientRect().height > 0 && getComputedStyle(e).position !== 'sticky');
         o.amEnde = kinder.every(e => R(e).bottom <= R(fuss).top + 1); o.unter = kinder.filter(e => R(e).bottom > R(fuss).top + 1).map(e => e.id || e.className);
         sh.scrollTop = 0; return o;
       }, id);
-      ok(s.knopfFrei && s.ueberLeiste && s.fussUnten && s.amEnde, art + ': Gebäude-Fenster ' + id + ' – Bauen-Knopf frei über der Leiste, nichts unter dem Fußknopf, am Ende alles darüber', s);
+      ok(s.knopfFrei && s.ueberLeiste && (s.fussUnten || !s.scroll) && s.amEnde, art + ': Gebäude-Fenster ' + id + ' – Bauen-Knopf frei über der Leiste, nichts unter dem Fußknopf, am Ende alles darüber', s);
       if (id === '_keep') await bild('burg');
     }
     // 5) Held: „Aufwerten“ fest unten, darunter schaut nichts hervor

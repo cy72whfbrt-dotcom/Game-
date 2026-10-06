@@ -194,8 +194,8 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .hud > .res--roh{flex:none;width:var(--hud-h);height:var(--hud-h);padding:0;justify-content:center;border-radius:50%;
   background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .hud > .res--roh .roh-mini b{min-width:0;font-size:var(--fs-13)}
-@media (max-width:899px) and (min-height:501px){   /* Handy: Beschriftung unter dem runden Knopf (wie „Du“ unter dem Wappen) – antippen öffnet Holz/Stein/Eisen */
-  .hud > .res--roh::after{content:"Rohstoffe";position:absolute;top:calc(100% + 4px);left:50%;transform:translateX(-50%);pointer-events:none;
+@media (max-width:899px) and (min-height:501px){   /* Handy: Beschriftung unter dem runden Knopf (wie „Du“ unter dem Wappen, rechtsbündig – sonst ragt sie aus dem Bild) – antippen öffnet Holz/Stein/Eisen */
+  .hud > .res--roh::after{content:"Rohstoffe";position:absolute;top:calc(100% + 4px);right:-2px;pointer-events:none;
     font:600 10px/1 var(--font-ui);color:var(--gold-100);white-space:nowrap;text-shadow:0 1px 2px #000} }
 @media (min-width:900px) and (min-height:501px){ .hud > .res--roh .roh-mini{display:flex} }   /* Desktop: Holz · Stein · Eisen immer im HUD */
 .hud > .res--roh::before{content:"";position:absolute;inset:-7px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */

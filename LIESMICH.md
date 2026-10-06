@@ -779,6 +779,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
   `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+- **6.10. – Blick „mit den Augen eines Spielers“ A+J: Fenster und HUD (Branch `blick-a-j`, NICHT hochgeladen):**
+  Desktop: Gebäude-Fenster in der Stadt endet über der Leiste unten (Bauen-Knopf war darunter). Feste Fußknöpfe (Burg/Gebäude
+  „Bauen“, Held „Aufwerten“) reichen bis an die Fensterkante, darunter schaut kein Inhalt mehr hervor (Schatten oben). Eigene
+  Basis: Kamera rückt sie am Desktop über die Leiste (03e `frameIslandInView`), Anleitung am Handy mit offenem Basis-Fenster
+  oben unter dem HUD. Anleitung kompakt: „Schritt 1/7“ als kleine Überzeile, Text volle Breite. HUD: Desktop zeigt Holz/Stein/
+  Eisen am Rohstoff-Knopf, Handy beschriftet ihn „Rohstoffe“. Karte ganz draußen: ruhige dunkle Fläche mit Kartengitter statt
+  Wolken-Brei, goldener Ring an der eigenen Hauptstadt (06e `nebelWeit`). Test `handy_leiste_test` (rot auf altem Stand).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
