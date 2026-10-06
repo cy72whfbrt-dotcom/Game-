@@ -790,6 +790,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   ersten Start und Neustart). Neutrale Werte fest statt ÷ 1.800 (01b `RING_TRUPPEN`, `TIER_STATS`, 01c Tore). Anzeige-Fix Feld-Vorrat
   (`drawResFields`: höchstens `f.cap`). Tests `wirtschaft_roh_test` (neu), `forschung_kosten_test`, `profil_stunde_test`,
   `saison_test`, `saison_anfang_test` (Boss/Drache Anfang 100.000/50.000 aus 5.000 Start-Truppen), Server `schummel_test` (Text).
+  Zahlen aus Spieler-Sicht (Spieler-Durchsicht): Stufen-Belohnung nie unter 10 Münzen/10 Truppen (`STUFE_LOHN_MIN`, 02a – vorher
+  „+1 Münze, +1 Truppe“), Bündnis gründen 20 statt 17 Münzen (auf 10 gerundet), „0,03 Eisen/Std.“ ist mit ROH_FAKTOR weg (Burg allein
+  ~75/Std.). Pass-Münzen, Händler und Thron-Shop bleiben „n Stunden eigener Ertrag“ (wachsen mit dem Reich).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
