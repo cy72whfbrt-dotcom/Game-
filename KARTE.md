@@ -20,7 +20,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `add` → Game/baukunst/08-himmelsfeste-bilder.js:161
 - `add` → Game/spiel/01c-basen-spielstand.js:54
 - `add` → Game/spiel/03a-karte-hintergrund.js:155
-- `add` → Game/spiel/06c-thron-mitte.js:63
+- `add` → Game/spiel/06c-thron-mitte.js:65
 - `addBotXp` → Game/bots/04-stand-stadt.js:205
 - `addCombatLogEntry` → Game/spiel/02b-maersche.js:65
 - `addInventoryItem` → Game/spiel/02a-shop-stufen.js:72
@@ -425,12 +425,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botTooStrong` → Game/bots/02-kampf-karte.js:370
 - `botUseShield` → Game/bots/05-verteidigen-takt.js:100
 - `botVendetta` → Game/bots/02-kampf-karte.js:284
-- `bountyCheck` → Game/spiel/06c-thron-mitte.js:197
-- `bountyGems` → Game/spiel/06c-thron-mitte.js:187
-- `bountyGrow` → Game/spiel/06c-thron-mitte.js:188
-- `bountyOf` → Game/spiel/06c-thron-mitte.js:186
-- `bountyPay` → Game/spiel/06c-thron-mitte.js:193
-- `bountyState` → Game/spiel/06c-thron-mitte.js:184
+- `bountyCheck` → Game/spiel/06c-thron-mitte.js:199
+- `bountyGems` → Game/spiel/06c-thron-mitte.js:189
+- `bountyGrow` → Game/spiel/06c-thron-mitte.js:190
+- `bountyOf` → Game/spiel/06c-thron-mitte.js:188
+- `bountyPay` → Game/spiel/06c-thron-mitte.js:195
+- `bountyState` → Game/spiel/06c-thron-mitte.js:186
 - `box` → Game/spiel/03b-gebaeude-3d.js:14
 - `box` → Game/spiel/03d-maersche-tagnacht.js:43
 - `boxGeo` → Game/baukunst/04-vielfalt-stile.js:264
@@ -733,7 +733,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `clipHalf` → Game/spiel/03e-kamera-eingabe.js:73
 - `clipToBox` → Game/spiel/03e-kamera-eingabe.js:80
 - `clock` → Game/spiel/05d-maersche-kampfbericht.js:50
-- `clock` → Game/spiel/06c-thron-mitte.js:112
+- `clock` → Game/spiel/06c-thron-mitte.js:114
 - `closeAllPopups` → Game/spiel/09e-inselfenster.js:75
 - `closeArmySheet` → Game/spiel/09d-armeen-wegmarken.js:205
 - `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:363
@@ -857,7 +857,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawTerritoriesInto` → Game/spiel/03a-karte-hintergrund.js:246
 - `drawThroneFx` → Game/spiel/03c-wappen-thronplatz.js:251
 - `drawThronePlaza` → Game/spiel/03c-wappen-thronplatz.js:192
-- `drawThroneShots` → Game/spiel/06c-thron-mitte.js:117
+- `drawThroneShots` → Game/spiel/06c-thron-mitte.js:119
 - `drawTitleBadges` → Game/spiel/03c-wappen-thronplatz.js:328
 - `drawWander` → Game/spiel/07b-kriegsherr.js:148
 - `drawWorldFrame` → Game/spiel/06e-nebel-zeichnen.js:3
@@ -1101,7 +1101,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gateControlsHtml` → Game/spiel/10a-inselfenster-vorschau.js:36
 - `gateOnRoute` → Game/spiel/01b-weltkarte.js:308
 - `gateSettings` → Game/spiel/01b-weltkarte.js:316
-- `geben` → Game/spiel/06c-thron-mitte.js:178
+- `geben` → Game/spiel/06c-thron-mitte.js:180
 - `gehoert` → Game/spiel/10d-welt-weltrechner.js:94
 - `geldVon` → Game/aufbau.js:67
 - `gem` → Game/baukunst/08-himmelsfeste-bilder.js:70
@@ -1533,9 +1533,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `merlons` → Game/spiel/03b-gebaeude-3d.js:46
 - `merlons` → Game/spiel/06e-nebel-zeichnen.js:138
 - `mid` → Game/spiel/03a-karte-hintergrund.js:29
-- `midAnzeige` → Game/spiel/06c-thron-mitte.js:231
-- `midFight` → Game/spiel/06c-thron-mitte.js:176
-- `midNotice` → Game/spiel/06c-thron-mitte.js:235
+- `midAnzeige` → Game/spiel/06c-thron-mitte.js:233
+- `midFight` → Game/spiel/06c-thron-mitte.js:178
+- `midNotice` → Game/spiel/06c-thron-mitte.js:237
 - `mine` → Game/spiel/08c-helden.js:109
 - `mini` → Game/spiel/05a-aussehen-profil.js:117
 - `minuten` → Game/weltrechner/push.js:124
@@ -1908,7 +1908,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderLook` → Game/spiel/05a-aussehen-profil.js:93
 - `renderLookSheet` → Game/spiel/08b-burg-aussehen.js:75
 - `renderLookTop` → Game/spiel/08b-burg-aussehen.js:56
-- `renderMidBar` → Game/spiel/06c-thron-mitte.js:211
+- `renderMidBar` → Game/spiel/06c-thron-mitte.js:213
 - `renderPass` → Game/spiel/06b-pass-anleitung.js:83
 - `renderPopup` → Game/spiel/10a-inselfenster-vorschau.js:92
 - `renderProfile` → Game/spiel/05a-aussehen-profil.js:135
@@ -1919,7 +1919,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:47
 - `renderShop` → Game/spiel/06d-schild-produktion.js:87
 - `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:299
-- `renderThroneShop` → Game/spiel/06c-thron-mitte.js:140
+- `renderThroneShop` → Game/spiel/06c-thron-mitte.js:142
 - `renderTile` → Game/spiel/03a-karte-hintergrund.js:308
 - `renderTitleModal` → Game/spiel/04-kampf.js:60
 - `repaintBackgroundRect` → Game/spiel/03a-karte-hintergrund.js:337
@@ -2028,7 +2028,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveArmies` → Game/spiel/09d-armeen-wegmarken.js:9
 - `saveBarb` → Game/spiel/09b-lager-tagesboss.js:13
 - `saveBotState` → Game/bots/04-stand-stadt.js:73
-- `saveBounty` → Game/spiel/06c-thron-mitte.js:185
+- `saveBounty` → Game/spiel/06c-thron-mitte.js:187
 - `saveCity` → Game/spiel/08a-stadt-bauen.js:75
 - `saveEv` → Game/spiel/09c-events-drache.js:55
 - `saveFields` → Game/spiel/09a-funde-felder.js:193
@@ -2102,7 +2102,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `showDailyModal` → Game/spiel/06a-aufgaben.js:66
 - `showGoalsTab` → Game/spiel/06a-aufgaben.js:296
 - `showProfileTab` → Game/spiel/05b-truhe-skills.js:362
-- `showShopTab` → Game/spiel/06c-thron-mitte.js:161
+- `showShopTab` → Game/spiel/06c-thron-mitte.js:163
 - `showTip` → Game/ladebildschirm.js:183
 - `showWelcome` → Game/spiel/06d-schild-produktion.js:307
 - `shrineMult` → Game/spiel/01e-nebel-kampfwerte-hud.js:211
@@ -2218,20 +2218,20 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `terr` → Game/baukunst/02-buehne-grundbasis.js:337
 - `territorySigs` → Game/spiel/03a-karte-hintergrund.js:153
 - `textOf` → Game/spiel/05d-maersche-kampfbericht.js:365
-- `throneAmount` → Game/spiel/06c-thron-mitte.js:36
-- `throneAward` → Game/spiel/06c-thron-mitte.js:60
-- `throneBuy` → Game/spiel/06c-thron-mitte.js:52
+- `throneAmount` → Game/spiel/06c-thron-mitte.js:38
+- `throneAward` → Game/spiel/06c-thron-mitte.js:62
+- `throneBuy` → Game/spiel/06c-thron-mitte.js:54
 - `throneEarnedOf` → Game/spiel/06c-thron-mitte.js:21
-- `throneGive` → Game/spiel/06c-thron-mitte.js:38
+- `throneGive` → Game/spiel/06c-thron-mitte.js:40
 - `throneHelfer` → Game/spiel/06c-thron-mitte.js:23
 - `throneIncome` → Game/spiel/06c-thron-mitte.js:25
 - `throneNotice` → Game/spiel/10a-inselfenster-vorschau.js:62
 - `throneOwned` → Game/spiel/06c-thron-mitte.js:15
 - `throneShooters` → Game/spiel/06c-thron-mitte.js:26
 - `throneState` → Game/spiel/06c-thron-mitte.js:16
-- `throneTick` → Game/spiel/06c-thron-mitte.js:98
-- `throneUhren` → Game/spiel/06c-thron-mitte.js:111
-- `throneVolley` → Game/spiel/06c-thron-mitte.js:76
+- `throneTick` → Game/spiel/06c-thron-mitte.js:100
+- `throneUhren` → Game/spiel/06c-thron-mitte.js:113
+- `throneVolley` → Game/spiel/06c-thron-mitte.js:78
 - `tickPickups` → Game/spiel/09a-funde-felder.js:32
 - `tierFor` → Game/spiel/03c-wappen-thronplatz.js:125
 - `tierOf` → Game/baukunst/02-buehne-grundbasis.js:141
@@ -4073,30 +4073,30 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `throneIncome` :25
 - `throneShooters` :26
 - `hourProduction` :27 — what an empire makes in an hour (the coin and troop offers pay this much)
-- `throneAmount` :36
-- `throneGive` :38 — hands one offer over; returns what it was, for the hint
-- `throneBuy` :52
-- `throneAward` :60 — at: when this award happened (the time you were away is caught up afterwards)
-- `add` :63
-- `throneVolley` :76 — times: several volleys at once (the time you were away)
-- `throneTick` :98
-- `throneUhren` :111
-- `clock` :112
-- `drawThroneShots` :117 — glowing shots on an arc from each Wächter-Tempel to the throne
-- `renderThroneShop` :140
-- `showShopTab` :161
-- `midFight` :176 — nach jedem Kampf um eine Basis: Punkte für die Krieger-Woche (überall)
-- `geben` :178 — gemeinsam (Rally, Verstärkung): jeder nach seinem Anteil – aTeile/dTeile = [[we…
-- `bountyState` :184
-- `saveBounty` :185
-- `bountyOf` :186
-- `bountyGems` :187
-- `bountyGrow` :188
-- `bountyPay` :193
-- `bountyCheck` :197 — a new ruler: whoever took the throne collects everything, the bounty starts aga…
-- `renderMidBar` :211
-- `midAnzeige` :231 — jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event …
-- `midNotice` :235 — das Kopfgeld auf dem Mega-Tempel
+- `throneAmount` :38
+- `throneGive` :40 — hands one offer over; returns what it was, for the hint
+- `throneBuy` :54
+- `throneAward` :62 — at: when this award happened (the time you were away is caught up afterwards)
+- `add` :65
+- `throneVolley` :78 — times: several volleys at once (the time you were away)
+- `throneTick` :100
+- `throneUhren` :113
+- `clock` :114
+- `drawThroneShots` :119 — glowing shots on an arc from each Wächter-Tempel to the throne
+- `renderThroneShop` :142
+- `showShopTab` :163
+- `midFight` :178 — nach jedem Kampf um eine Basis: Punkte für die Krieger-Woche (überall)
+- `geben` :180 — gemeinsam (Rally, Verstärkung): jeder nach seinem Anteil – aTeile/dTeile = [[we…
+- `bountyState` :186
+- `saveBounty` :187
+- `bountyOf` :188
+- `bountyGems` :189
+- `bountyGrow` :190
+- `bountyPay` :195
+- `bountyCheck` :199 — a new ruler: whoever took the throne collects everything, the bounty starts aga…
+- `renderMidBar` :213
+- `midAnzeige` :233 — jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event …
+- `midNotice` :237 — das Kopfgeld auf dem Mega-Tempel
 
 ### Game/spiel/06d-schild-produktion.js — Friedensschild, Willkommen zurück, Produktion
 - `shieldUntil` :5

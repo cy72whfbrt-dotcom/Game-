@@ -35,5 +35,15 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.bund && r.X === 0, 'Verstärkung bei einem Halter außerhalb des Bündnisses: nichts', k);
   ok(r.ein.K >= 30 && r.ein.V1 >= 15 && r.ein.ich >= 15, 'Anzeige „Du bekommst“ rechnet die Verstärkung mit', r.ein);
   ok(/Verstärkung stehen hat 15/.test(r.text), 'Thron-Shop erklärt die 15 Punkte für Verstärkung', r.text.slice(0, 200));
+  // Thron-Shop wie Händler/Markt (Alexander 6.10.): ein Kauf Münzen/Truppen = 2 × Stundenproduktion (Kosten ÷ Ertrag), auch für Mitspieler
+  const m = await p.evaluate(() => {
+    const bot = BOT_DEFS.find(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size), hp = hourProduction('player'), hb = hourProduction(bot.id);
+    renderThroneShop(); const text = (document.getElementById('throneShop') || {}).innerText || '';
+    return { f: WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG, c: throneAmount('player', 'coins'), t: throneAmount('player', 'troops'), hc: hp.coins, ht: hp.troops,
+      bc: throneAmount(bot.id, 'coins'), bhc: hb.coins, minC: wirtK(5000), minT: wirtK(1000), text: text.replace(/\s+/g, ' '), cTxt: fmtCompact(throneAmount('player', 'coins')) };
+  });
+  ok(m.f === 2 && m.c === Math.max(m.minC, Math.round(2 * m.hc)) && m.t === Math.max(m.minT, Math.round(2 * m.ht)) && m.c > m.minC, 'Thron-Shop: Münzen/Truppen = 2 × Stundenproduktion (wie Händler/Markt)', m);
+  ok(m.bc === Math.max(m.minC, Math.round(2 * m.bhc)), 'Thron-Shop für Mitspieler genauso: 2 × Stundenproduktion', { bc: m.bc, bhc: m.bhc });
+  ok(m.text.includes(m.cTxt + ' – so viel, wie dein Reich in 2 Std. verdient') && /2 Std\. deiner Ausbildung/.test(m.text), 'Shop zeigt die neue Menge („in 2 Std.“)', m.text.slice(0, 400));
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

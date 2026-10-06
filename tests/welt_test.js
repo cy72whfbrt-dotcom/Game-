@@ -59,6 +59,12 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     const t = S.spielraumTeile('u1', { lvl: 1, lvlLog: [], ein: [], hp0: 0, initT: Date.now() - 2 * 3600000 });
     pruefe('Hauptbuch: fester Münz-Spielraum × WIRTSCHAFT_KOSTEN (28 + 3 × 3 statt 65.000)', t.fix === 28 + 3 * 3 && t.lv === 0);
     pruefe('Hauptbuch: Mindest-Truppen (Thron-Shop 1.000, Fund 100) × WIRTSCHAFT_KOSTEN, nie unter 1', S.TR_STUNDE_MIN === 1 && S.FUND_TR_MIN === 1);
+    // Thron-Shop zahlt wie Händler/Markt 2 Stunden Produktion (Alexander 6.10.): 3 freie Käufe = 3 × 2 Stunden ohne Fehlalarm
+    const MG = new Function('PASS_LVLS', 'passRewardAt', 'SR_STUNDE_MIN', 'nn', 'hourProduction', 'passNo', 'throneEarnedOf', 'saveBotState', 'THRONE_STUNDEN',
+        stueck('    let passMuenzH', '    function spielraumFrei') + '; return muenzGutscheine;')(0, null, 3, x => +x || 0, () => ({ coins: 1000 }), () => 7, () => 0, () => {}, 1 / 1800 / (1 / 3600));
+    const dT = { pS: 7, pM: 0, tC: 0 }, h12 = 1000 * 1.2;
+    pruefe('Hauptbuch: 3 Thron-Käufe à 2 Stunden Münzen gedeckt (je Kauf 2 × Stundenproduktion)', MG('u1', 3 * 2 * h12, dT) === 3 * 2 * h12 && Math.abs(dT.tC - 3) < 1e-9);
+    pruefe('Hauptbuch: … ein 4. Kauf ohne Thron-Punkte nicht', MG('u1', 2 * h12, dT) === 0);
 }
 
 // 4) Welt-Saison (09f-saison.js): der Termin ist immer ein Sonntag 18 Uhr deutscher Zeit, 8 Wochen nach dem Start (auch über

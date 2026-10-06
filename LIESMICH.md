@@ -775,6 +775,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   bei viel Ärger hinten (≥ 2 angegriffene Basen der Mitglieder oder Hilferufe, `bundAerger`) liegt er dort – sie verlegen zurück
   und helfen. **Rally nach Lage** (`bundRallyLage`): Quelle und Mitmacher schicken nicht pauschal 90 % bzw. 80 % – je eigene
   bedrohte Basis 15 % weniger, bei Ärger im Bündnis noch 15 % weniger (mind. 40 %). Tests `pass_test`, `bund_mitte_test` (neu).
+- **6.10. – Thron-Shop wie Händler – Alexander 6.10. (11b, Frage 6 = B), NICHT hochgeladen:** Münzen/Truppen im Thron-Shop
+  (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
+  (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
+  `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
