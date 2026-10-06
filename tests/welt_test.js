@@ -136,5 +136,20 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Burg fair: saisonWelt für alle Mitspieler und echten Spieler, nur beim ersten Reset (saison.burgFair)', /if \(B > 0 && AUF\) burgFairWer\(b, B\)/.test(s9) && /B = burgFair === nr \? BURG_FAIR : 0/.test(s9) && /wirtAb, burgFair, last/.test(s9));
 }
 
+// 7) Rahmen (Endprüfung 6.10.): nach einem Neustart kommt zuerst ein altes Profil (ohne look.frames/titles) – das Hauptbuch merkt
+// sich die Rahmen erst am ersten neuen Profil (vorher blieben gekaufte Rahmen für immer leer), danach kommt keiner mehr dazu
+{
+    const w = fs.readFileSync(path.join(G, 'welt.js'), 'utf8'), s10 = fs.readFileSync(path.join(G, 'spiel', '10d-welt-weltrechner.js'), 'utf8');
+    const stueck = (q, von, bis) => { const i = q.indexOf(von), j = q.indexOf(bis, i); if (i < 0 || j < 0) throw new Error('Stück fehlt: ' + von); return q.slice(i, j); };
+    const roh = new Function('SYSTEM', stueck(w, 'function profilZuBotRoh', '    W.profilZuBot =') + 'return profilZuBotRoh;')(true);
+    const hbRahmen = new Function(stueck(s10, 'function hbRahmen', '    // Nach dem Zurückspielen') + 'return hbRahmen;')();
+    const hb = {}, p1 = { look: { frame: 'gold', title: 'conq' } }, b1 = roh(p1, null); hbRahmen(hb, b1, p1); const lk1 = hb.lk;
+    const p2 = { look: { frame: 'gold', frames: ['gold'], titles: ['conq'] } }, b2 = roh(p2, b1); hbRahmen(hb, b2, p2);
+    const p3 = { look: { frame: 'legend', frames: ['gold', 'legend'], titles: ['conq', 'king'] } }, b3 = roh(p3, b2); hbRahmen(hb, b3, p3);
+    pruefe('Rahmen: altes Profil zuerst (wie bisher: der angelegte), noch nichts gemerkt', J(b1.frames) === '["gold"]' && J(b1.titles) === '["conq"]' && !lk1);
+    pruefe('Rahmen: … dann das neue Profil – gekaufte Rahmen/Titel bleiben sichtbar', J(b2.frames) === '["gold"]' && J(b2.titles) === '["conq"]' && hb.lk && J(hb.lk.f) === '["gold"]');
+    pruefe('Rahmen: … danach kommen erfundene nicht dazu', J(b3.frames) === '["gold"]' && J(b3.titles) === '["conq"]');
+}
+
 console.log(fehler ? fehler + ' von ' + n + ' Tests FEHLGESCHLAGEN' : 'Alle ' + n + ' Spiel-Tests bestanden.');
 process.exit(fehler ? 1 : 0);

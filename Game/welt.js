@@ -261,7 +261,7 @@
         b.neuBis = Math.max(0, Math.min(+p.neuBis || 0, jetzt + 48 * 3600000, alt && alt.neuBis !== undefined ? +alt.neuBis || 0 : Infinity));
         const lk = p.look || {};
         b.ring = lk.ring || null; b.rings = lk.rings || []; b.march = lk.march || null; b.marchs = lk.marchs || [];
-        b.frames = Array.isArray(lk.frames) ? lk.frames.slice(0, 60) : []; b.titles = Array.isArray(lk.titles) ? lk.titles.slice(0, 60) : []; b.throneLook = lk.throne ? 1 : 0;   // (beim Weltrechner gegen das Hauptbuch geklemmt: hbRahmen)
+        b.frames = Array.isArray(lk.frames) ? lk.frames.slice(0, 60) : lk.frame ? [lk.frame] : []; b.titles = Array.isArray(lk.titles) ? lk.titles.slice(0, 60) : lk.title ? [lk.title] : []; b.throneLook = lk.throne ? 1 : 0;   // (altes Profil ohne Listen: der angelegte wie bisher; beim Weltrechner gegen das Hauptbuch geklemmt: hbRahmen)
         b.lookFrame = lk.frame || null;
         const st = p.stats || {};
         b.stats = Object.assign({}, b.stats || {}, { caps: st.captures || 0, pvp: st.pvpWins || 0, defs: st.defends || 0, bosses: st.bosses || 0,

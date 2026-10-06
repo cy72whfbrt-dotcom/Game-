@@ -14766,7 +14766,7 @@ if (window.WELT) {
         hbPruefen(who, hb, p, m, now, b.schildAlt);
         if (m.rDeckel && m.rDeckelP === p && b.res) for (const k in m.rDeckel) if (nn(b.res[k]) > m.rDeckel[k]) b.res[k] = m.rDeckel[k];   // Rohstoff-Sprung: die Welt bekommt nur das Mögliche – auch wenn dasselbe Profil nach 10 s nochmal angewendet wird (wartet etwas im Hauptbuch; vorher kam das erfundene Holz dann doch in die Welt und schaukelte sich hoch)
         hbSchreiben(who, hb, b, p, alt);
-        hbRahmen(hb, b);
+        hbRahmen(hb, b, p);
         if (m.init && m.gGeeicht && now - (m.hbMerkT || 0) > 60000) hbKontenMerken(hb, m, now);
         const d = b.wache; if (m.init && m.geeicht && d) d.u = Math.round(m.c.u);
         saveBotState();                                // (das Hauptbuch geht mit der Welt mit)
@@ -14775,8 +14775,11 @@ if (window.WELT) {
     // Rahmen (Alexander 6.10.): nicht mehr zu kaufen – was er bis jetzt hatte, merkt sich das Hauptbuch einmal (neu: nichts), danach
     // kommt aus dem Profil keiner mehr dazu. Saison-Rahmen und die aus der Mitte führt die Welt selbst (05a rahmenHat / rahmenVon).
     // (Saisonkrone: Saison-Pass Stufe 40 – die Stufe kennt das Hauptbuch nicht genau, darum erlaubt)
-    function hbRahmen(hb, b) {
-        if (!hb.lk) hb.lk = { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60), th: b.throneLook ? 1 : 0 };
+    // Gemerkt wird erst am ersten Profil mit look.frames (nach dem Neustart kommen zuerst alte Profile ohne die Listen – sonst blieben
+    // gekaufte Rahmen für immer leer); bis dahin wie vorher der angelegte (welt.js profilZuBotRoh)
+    function hbRahmen(hb, b, p) {
+        if (!hb.lk && Array.isArray(((p || {}).look || {}).frames)) hb.lk = { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60), th: b.throneLook ? 1 : 0 };
+        if (!hb.lk) return;
         b.frames = (b.frames || []).filter(x => x === 'saison' || hb.lk.f.includes(x)); b.titles = (b.titles || []).filter(x => hb.lk.t.includes(x)); if (!hb.lk.th) b.throneLook = 0;
     }
     // Nach dem Zurückspielen einer Sicherung (server.php: ow_welt_info.zurueck) ist die Welt – mit dem Hauptbuch – wieder alt, die
