@@ -21,6 +21,24 @@
 /* Events (Blick 6.10.): am Handy passen alle 4 Ereignis-Chips (kurze Namen), Welt-Saison linksbündig, Preise gut lesbar */
 .p5-kurz{display:none}
 @media (max-width:480px){ #goalsTabs{gap:6px;padding-inline:12px} #goalsTabs .p5-chip{padding:0 12px} #goalsTabs .p5-lang{display:none} #goalsTabs .p5-kurz{display:inline} }
+/* Events/Bündnis (Gesamt-Blick 6.10.): Bild-Banner je Ereignis mit Titel + Uhr darauf, lange Erklärungen hinter „i“, leere Zustände mit Bild + Knopf */
+.ev-banner{position:relative;flex:none;height:96px;margin:0 0 10px;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line-2);background:#100b08}
+.ev-banner .ev-bild{position:absolute;inset:0;width:100%;height:100%;display:block}
+.ev-banner::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,6,4,.82) 0%,rgba(8,6,4,.45) 48%,rgba(8,6,4,0) 72%);pointer-events:none}
+.ev-banner-t{position:absolute;left:12px;right:30%;bottom:10px;z-index:1;display:flex;flex-direction:column;gap:4px;text-shadow:0 1px 3px rgba(0,0,0,.9)}
+.ev-banner-t > b{display:flex;align-items:center;gap:7px;font:600 17px/1.3 var(--font-display);color:var(--gold-100);letter-spacing:.02em}
+.ev-banner-t > b .icon{width:18px;height:18px;flex:none;color:var(--gold-300)}
+.ev-banner-t small{font:600 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-1)} .ev-banner-t small b{font-variant-numeric:tabular-nums;color:var(--gold-200)}
+@media (max-width:480px){ .ev-banner-t{right:22%} .ev-banner-t > b{font-size:15px} }
+.ev-card.ev-mit-bild{padding-top:0;overflow:hidden} .ev-card.ev-mit-bild > .ev-banner{margin:0 -10px 4px;border-radius:0;border:0;border-bottom:1px solid var(--line-1)}
+.ev-zeilen{display:grid;gap:8px} .ev-zeilen > div{display:flex;flex-direction:column;gap:2px} .ev-zeilen small{font:600 var(--fs-11)/1.3 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
+.ev-zeilen span{font:600 var(--fs-13)/1.4 var(--font-ui);color:var(--tx-1)}
+.ev-info{margin:6px 0 2px} .ev-info summary > span{flex:1} .ev-info .tour-rules{padding:2px 0 8px} .ev-info .mail-intro{margin:0 0 8px}
+.bd-kurz{margin:0 0 4px;font:500 var(--fs-13)/1.4 var(--font-ui);color:var(--tx-2)}
+.empty-state.ev-leer{padding:22px 16px;gap:8px;border:1px dashed var(--line-2);border-radius:10px;background:rgba(255,255,255,.02)}
+.empty-state.ev-leer > .icon{width:40px;height:40px;color:var(--gold-300)} .empty-state.ev-leer > span{max-width:34ch}
+.empty-state.ev-leer > b{font-size:var(--fs-15)} .empty-state.ev-leer .btn{margin-top:8px;max-width:100%}
+#shieldUse > .lb-leer{grid-column:1/-1}
 .ev-saison{margin-top:12px} .ev-saison .field-lines b{text-align:left;justify-content:flex-start}
 .tour-prize{gap:4px;padding:9px 4px} .tour-prize b{font-size:var(--fs-13)} .tour-prize span{font-size:12px} .tour-prize .icon{width:14px;height:14px} .tour-prize em{font-size:10px}
 .lb-info summary{display:flex;align-items:center;gap:6px;min-height:44px;list-style:none;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-2)} .lb-info summary::-webkit-details-marker{display:none}

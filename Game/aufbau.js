@@ -372,7 +372,9 @@ function extraHtml(id, lvl) {
 }
 function marktHtml() {                                         // Shop → Markt: Rohstoffe gegen Münzen (die Stufe des Markt-Gebäudes bestimmt Gebühr und Limit)
     const lvl = bauStufe('player', 'market');
-    if (!lvl) return '<div class="notice">' + icon('lock') + '<span>Baue zuerst den Markt in deiner Stadt (ab Burg-Stufe ' + BAU_AB_BURG.market + ').</span></div>';
+    if (!lvl) { const ab = burgStufe('player') >= BAU_AB_BURG.market;   // noch kein Markt: Bild + EIN Knopf in die Stadt (Markt bauen, sonst erst die Burg)
+        return leerHtml('crate', 'Noch kein Markt', 'Tausche Rohstoffe gegen Münzen – den Markt baust du in deiner Stadt' + (ab ? '.' : ' ab Burg-Stufe ' + BAU_AB_BURG.market + '.'),
+            '<button type="button" class="btn btn--primary btn--haupt" data-markt-bauen="' + (ab ? 'market' : '_keep') + '">' + icon('upgrade') + '<span>' + (ab ? 'Markt bauen' : 'Burg ausbauen') + '</span></button>'); }
     const c = loadCity(), m = marktHeute(c), lim = marktLimit('player'), f = marktGebuehr(lvl), N = marktMenge;
     return '<div class="seg" data-mk-n>' + [1, 10, 100, 1000].map(v => '<button type="button" data-mk-menge="' + v + '"' + (v === N ? ' class="on"' : '') + '>' + fmtCompact(v) + '</button>').join('') + '</div><div class="fo-list">' +
             ROH.map(x => '<div class="fo-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span class="fo-t"><b>' + ROH_DEF[x].name + '</b><small>' + fmtNum(Math.floor(roh[x])) + ' vorhanden</small></span>' +
@@ -390,6 +392,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
     if (e.target.closest('[data-markt-shop]')) { closeCity(); openShop('markt'); }
 });
 { const mp = document.getElementById('shopMarkt'); if (mp) mp.addEventListener('click', e => {   // Shop → Markt
+    const mb = e.target.closest('[data-markt-bauen]'); if (mb) { const id = mb.dataset.marktBauen; closeAllPopups(); openCity(); setTimeout(() => { cityOpenId = id; renderCitySheet(); }, 300); return; }
     const mm = e.target.closest('[data-mk-menge]'); if (mm) { marktMenge = +mm.dataset.mkMenge; renderShop(); return; }
     const mk = e.target.closest('[data-mk]:not([disabled])'); if (mk) { const [art, x] = mk.dataset.mk.split(':'), why = marktTausch('player', art, x, marktMenge); if (why) flashHint(why, 3000); else sfx('coin'); renderShop(); }
 }); }

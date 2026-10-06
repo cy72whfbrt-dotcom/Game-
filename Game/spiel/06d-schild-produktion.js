@@ -46,7 +46,7 @@ function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spi
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
 function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock(), now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
     liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Schild aktiv.') + '</span>');
-    liveHtml(document.getElementById('shieldUse'), [2, 8, 24].map(h => '<button type="button" class="btn btn--' + (st[h] ? 'primary' : 'secondary') + '" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '><span>' + h + ' Std.</span><span class="cost">' + st[h] + '× im Vorrat</span></button>').join('')); }
+    liveHtml(document.getElementById('shieldUse'), !(st[2] || st[8] || st[24]) ? '<div class="empty-state lb-leer">' + icon('shield') + '<span><b>Kein Schild im Vorrat</b>Oben kaufen – dann hier einschalten, wann du willst.</span></div>' : [2, 8, 24].map(h => '<button type="button" class="btn btn--' + (st[h] ? 'primary' : 'secondary') + '" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '><span>' + h + ' Std.</span><span class="cost">' + st[h] + '× im Vorrat</span></button>').join('')); }   // (leer: ein Satz statt drei grauer „0×“-Kästen)
 shopPopup.addEventListener('click', e => {                 // Shop → Schilde: kaufen (in den Vorrat) und einschalten – beides nur hier
     const su = e.target.closest('[data-shield-use]');
     if (su) { const h = +su.dataset.shieldUse, stock = shieldStock(); if (!stock[h]) return;
