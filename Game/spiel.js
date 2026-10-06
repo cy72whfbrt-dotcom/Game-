@@ -2,6 +2,11 @@
 // Wirtschaft (Alexander 5.10.): Ertrag pro Stunde statt pro Sekunde; Kosten-Faktor siehe LIESMICH 11b A
 const WIRTSCHAFT_ERTRAG = 1 / 3600;   // was früher pro Sekunde kam, kommt jetzt pro Stunde
 const WIRTSCHAFT_KOSTEN = 1 / 1800;   // Kosten/Gegner: kleiner, aber nur halb so stark wie der Ertrag → alles etwa 2× langsamer als vorher (nie zu einfach)
+// Holz/Stein/Eisen in normalen RoK-Größen (Alexander 6.10., Z1): ihre Kosten ohne ÷ 1.800, ihr Ertrag × 1.800
+const ROH_FAKTOR = 1800;
+// Münzen auch in normalen Zahlen (Alexander 6.10., „B“): Ertrag, Kosten und Belohnungen in Münzen × 1.000 – das Verhältnis bleibt
+const MUENZ_FAKTOR = 1000;
+const ROH_JE_MUENZE = ROH_FAKTOR / MUENZ_FAKTOR;   // Burg-Schutz: je Münze Schutz 1,8 je Holz/Stein/Eisen
 // Rechnet dieses Spiel gerade die Welt (Weltrechner)? Ohne welt.js: immer.
 function rechnet() { return !window.WELT || WELT.leiter; }
 // Läuft hier der Weltrechner auf dem Server (weltrechner/start.js)? Dann: kein eigener Spieler, keine Basis, nichts zeichnen.
@@ -51,8 +56,6 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
 // alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
-// Erster Reset nach der Umstellung auf „pro Stunde“ (11b A): Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN (openWaterSaisonRoh aus der Nachricht,
-// sonst aus der Welt: saison.wirtAb liegt zwischen der alten und der neuen Saison dieses Spielstands) – wie beim Weltrechner abgerundet.
 // Burg fair (Alexander 6.10. A): der erste Reset danach setzt jede Burg über Stufe BURG_FAIR auf BURG_FAIR (saison.burgFair = diese Saison,
 // sonst openWaterSaisonBurg aus der Nachricht) – Gebäude, Forschung, Bauten passt aufbau.js beim Laden an (openWaterBurgFair, burgFair).
 // Alexander 6.10.: einmalige Ausnahme (wegen des Fehlers, damit es fair bleibt) – im selben Schritt Edelsteine auf genau 1.000 und
@@ -64,9 +67,9 @@ var saisonNeuGeladen = 0, saisonZurueckGeladen = 0, saisonBurgGeladen = 0;  // (
 const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000, SAISON_TP_MAX = 20000, SAISON_TP_JE_GEM = 10;
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
-    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, wirtAb = 0, fairNr = 0;
+    let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, fairNr = 0;
     const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
-    try { const sw = JSON.parse(store.get('openWaterSaison')) || {}; nrW = sw.nr | 0; wirtAb = sw.wirtAb | 0; fairNr = sw.burgFair | 0; } catch (e) {}
+    try { const sw = JSON.parse(store.get('openWaterSaison')) || {}; nrW = sw.nr | 0; fairNr = sw.burgFair | 0; } catch (e) {}
     if (!mein) {                                     // ganz neu: die laufende Saison · ein Spielstand von vor der Saison-Regel: Saison 1
         mein = store.get('openWaterLevel') === null && store.get('openWaterCity') === null ? Math.max(1, nrW) : 1;
         store.set('openWaterSaisonMein', String(mein));
@@ -92,9 +95,6 @@ if (!SYSTEM) {
         const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
         for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
         try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
-        const f = wirtAb > mein && wirtAb <= neu ? WIRTSCHAFT_KOSTEN : parseFloat(store.get('openWaterSaisonRoh')) || 1;
-        if (f > 0 && f < 1) try { const r = JSON.parse(store.get('openWaterRes'));
-            if (r && typeof r === 'object') { vorher.res = store.get('openWaterRes'); for (const k of ['h', 's', 'e']) r[k] = Math.floor((+r[k] || 0) * f); store.set('openWaterRes', JSON.stringify(r)); store.set('openWaterSaisonVorher', JSON.stringify(vorher)); } } catch (e) {}
         if (fair > 0) {                               // einmalige Ausnahme (Alexander 6.10.): Edelsteine genau 1.000, Holz/Stein/Eisen 0
             if (vorher.res === undefined && store.get('openWaterRes') !== null) vorher.res = store.get('openWaterRes');
             if (store.get('openWaterGems') !== null) vorher.gems = store.get('openWaterGems');
@@ -287,34 +287,42 @@ const FRAME_HALF = (GRID_HALF + .5) * HEX_SPACING + 9000;   // the square map bo
 // not a rigid grid) - only constraint is a minimum distance from
 // every other base and the temple, so nothing ends up crowded.
 // Neutral strength of the inner islands (the outer ring keeps the small starter values):
-// the Thron-Insel is late-game, the Wächter-Inseln mid-game.
+// the Thron-Insel is late-game, the Wächter-Inseln mid-game. Truppen in festen Zahlen (Alexander 6.10., Z4: Start 5.000 –
+// reicht außen, aber nicht für den Wächter, „muss ja schwer sein“)
 const TIER_STATS = {
-    throne:   { troops: [5e6, 2e7],   def: [1e6, 4e6],   level: 40, temple: [2.5e8, 6e7], templeLevel: 60 },
-    guardian: { troops: [1e5, 1e6],   def: [2e4, 2e5],   level: 20, temple: [5e6, 1e6],   templeLevel: 30 }
+    throne:   { troops: [5e4, 1.5e5], def: [1e4, 4e4],   level: 40, temple: [5e5, 1.5e5], templeLevel: 60 },
+    guardian: { troops: [5e3, 2e4],   def: [1e3, 4e3],   level: 20, temple: [6e4, 1.5e4], templeLevel: 30 }
 };
+// Neutrale Basen außen: höchste Besatzung je Ring (außen 100, nach innen steigend bis 1.000 im Ring 2) – Basis 70–100 %, Tempel 150–260 %
+const RING_TRUPPEN = { 2: 1000, 3: 700, 4: 450, 5: 300, 6: 200, 7: 100, 8: 100 };
+const ringTruppen = lm => RING_TRUPPEN[lm.ring] || 100;
 const RING_MULT = { 2: 300, 3: 60, 4: 20, 5: 8, 6: 2, 7: 1 };   // neutral strength of outer regions: the edge is easy, near the middle hard
 function ringMult(lm) { return lm.tier === 'outer' ? (RING_MULT[lm.ring] || 1) : 1; }
 function niceRoundW(n) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1)); return Math.round(n / p) * p; }
 // Wirtschaft 5.10. (LIESMICH 11b A): Kosten und Gegner × WIRTSCHAFT_KOSTEN – als ganze Zahl, nie unter mn (sonst 1)
 function wirtK(n, mn = 1) { return Math.max(mn, Math.round(n * WIRTSCHAFT_KOSTEN)); }
+// Holz/Stein/Eisen (Z1, 6.10.): Kosten in RoK-Größe – × WIRTSCHAFT_KOSTEN × ROH_FAKTOR, ganze Zahl, nie unter 1
+function wirtR(n) { return Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN * ROH_FAKTOR)); }
+// Münzen (6.10., „B“): Kosten und Belohnungen × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR, ganze Zahl, nie unter 1
+function wirtM(n) { return Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR)); }
 const ISLAND_RADIUS = 650; // tower footprint - bigger again, still well under the guaranteed minimum spacing between towers
-const NEUTRAL_DEFENSE_MAX = 100;
-const NEUTRAL_DEFENSE_MIN = 20;
+const NEUTRAL_DEFENSE_MAX = 30;    // (alle neutralen Werte außen: % von ringTruppen)
+const NEUTRAL_DEFENSE_MIN = 10;
 const NEUTRAL_TROOPS_MAX = 100;
-const NEUTRAL_TROOPS_MIN = 0;
+const NEUTRAL_TROOPS_MIN = 70;
 // Temples: one per landmass except the center, which gets the
 // stronger Mega-Tempel instead. Harder to hold than a regular tower,
 // and reward Gold/Truppen/Gems on top of the normal per-level
 // production for as long as the player keeps holding them.
-const TEMPLE_DEFENSE_MIN = 220;
-const TEMPLE_DEFENSE_MAX = 380;
+const TEMPLE_DEFENSE_MIN = 40;
+const TEMPLE_DEFENSE_MAX = 80;
 const TEMPLE_TROOPS_MIN = 150;
 const TEMPLE_TROOPS_MAX = 260;
 const MEGA_TEMPLE_MULT = 8;        // Mega-Tempel (centre): 8x a normal temple's bonus
 const GUARDIAN_TEMPLE_MULT = 3;    // Wächter-Tempel (the 4 guardian islands): 3x
 function templeBaseMult(isl) { return isl.type === 'megaTemple' ? MEGA_TEMPLE_MULT : isl.guardian ? GUARDIAN_TEMPLE_MULT : 1; }
 const TEMPLE_GEMS_PER_TICK = 0.0015;   // ~5 Gems an hour (up to ~24 held with a full Tempelschrein): a few hundred a day, not tens of thousands
-const TEMPLE_COIN_BONUS_PER_TICK = 15 * WIRTSCHAFT_ERTRAG;    // 15 Münzen und 6 Truppen pro Stunde (Gems bleiben wie sie sind)
+const TEMPLE_COIN_BONUS_PER_TICK = 15 * WIRTSCHAFT_ERTRAG * MUENZ_FAKTOR;    // 15.000 Münzen und 6 Truppen pro Stunde (Gems bleiben wie sie sind)
 const TEMPLE_TROOP_BONUS_PER_TICK = 6 * WIRTSCHAFT_ERTRAG;
 const TEMPLE_HOLD_STREAK_MS = 30 * 60 * 1000; // 30min to reach the max hold bonus
 const TEMPLE_HOLD_STREAK_MAX_MULT = 2; // holding it long enough doubles its output
@@ -386,8 +394,12 @@ const UPGRADE_BASE_COST = 120, UPGRADE_COST_GROWTH = 1.27;
 // The level-based defense every base gets, with no equipment/
 // skill bonus - used for bot- and (in a future PvP defense) other-
 // player-owned bases, which don't have the human player's gear.
+// Grundverteidigung (6.10.): mindestens GRUND_VERT_STUFE je Stufe (Stufe 1: 50, Stufe 10: 500 – wie neutrale Basen außen 10–300),
+// ab etwa Stufe 47 wächst sie wie bisher (× WIRTSCHAFT_KOSTEN: Stufe 60 ~46.000) – vorher stand sie bis Stufe 10 bei 1
+const GRUND_VERT_STUFE = 50;
 function baseDefenseForLevel(level) {
-    return wirtK(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));   // (× WIRTSCHAFT_KOSTEN)
+    const L = Math.max(1, Math.min(level, MAX_BASE_LEVEL));
+    return Math.max(GRUND_VERT_STUFE * L, wirtK(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, L - 1)));
 }
 function defenseForLevel(level) {
     return Math.round(baseDefenseForLevel(level) * (1 + armorDefensePct() / 100));
@@ -395,12 +407,14 @@ function defenseForLevel(level) {
 // Ertrag je Produktions-Tick (1 s, mit „Geschwindigkeit“ kürzer): der runde Wert der Stufe kommt pro STUNDE (Alexander 5.10.) –
 // je Tick also ein Bruchteil, die Reste sammeln prodCarry/botProdCarry (06d), damit nichts verloren geht
 function coinsPerTick(level) {
-    return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG;
+    return Math.round(BASE_COINS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG * MUENZ_FAKTOR;   // (Stufe 1: 10.000 / Std.)
 }
 function troopsPerTick(level) {
     return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG;
 }
-function upgradeCostRoh(level) { return wirtK(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)); }   // ohne Rabatt (× WIRTSCHAFT_KOSTEN)
+// Basis aufwerten (ohne Rabatt): Münzen wirtM, gerundet, nie unter AUFWERTEN_MIN (6.10.: sonst „67 Münzen“ bei einem Ertrag von 10.000 / Std.)
+const AUFWERTEN_MIN = 1000;
+function upgradeCostRoh(level) { return Math.max(AUFWERTEN_MIN, niceRoundW(wirtM(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)))); }
 function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 20 % günstiger
     let r = 1; try { if (evThemaAktiv('bau')) r = .8; } catch (e) {}
     return Math.round(upgradeCostRoh(level) * r);
@@ -584,13 +598,16 @@ var gateCfg = null;
 function loadGateCfg() { if (!gateCfg) { try { gateCfg = JSON.parse(store.get('openWaterGateCfg')) || {}; } catch (e) { gateCfg = {}; } } return gateCfg; }
 function gateSettings(gate) { return Object.assign({ toll: gate.toll, closed: false }, loadGateCfg()[gate.id] || {}); }
 function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = Object.assign(gateSettings(islandById[gateId]), patch); store.set('openWaterGateCfg', JSON.stringify(c)); }
-const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], TOLL_MIN = 100, TOLL_MAX = 1e6;   // per troop, at least 100 and never more than 1 Mio. per march (beides × WIRTSCHAFT_KOSTEN)
+// Maut je Truppe: die Stufe (gespeichert wie vorher 0,1 … 2) × MUENZ_FAKTOR = 100 … 2.000 Münzen; je Marsch mindestens 100 Münzen
+// (eine Truppe zur kleinsten Maut) und höchstens 1 Mio. × WIRTSCHAFT_KOSTEN (wirtM, gerundet: 560.000)
+const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], MAUT_MIN = 100, MAUT_MAX = niceRoundW(wirtM(1e6));
+const mautJeTruppe = t => t * MUENZ_FAKTOR;
 function tollFor(fromLm, toLm, troops, payer, targetId, cut) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself); cut = a hero's −% Maut
     const gate = gateOnRoute(fromLm, toLm);
     if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId || bundFreund(islandOwnerOf(gate.id), payer)) return { gate, cost: 0 };   // Bündnis: Tore der Mitglieder sind für alle Mitglieder frei und offen
     const cfg = gateSettings(gate);
     if (!islandOwnerOf(gate.id) || cfg.closed) return { gate, cost: Infinity, closed: true };   // unowned gates are shut
-    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(wirtK(TOLL_MIN), Math.min(wirtK(TOLL_MAX), Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };   // (ganze Münzen – auch mit Helden-Rabatt)
+    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(MAUT_MIN, Math.min(MAUT_MAX, Math.round(Math.max(0, troops) * mautJeTruppe(cfg.toll)))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };   // (ganze Münzen – auch mit Helden-Rabatt)
 }
 function payToll(fromLm, toLm, troops, payer, targetId, cut) { // payer: 'player' | bot id → false when it can't pay
     const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId, cut);
@@ -635,10 +652,10 @@ let playerIslandId = null;
 let id = 0;
 // Tore first (the bases keep clear of them): a capturable gate on the outer bank of every bridge.
 // Whoever owns a gate crosses its bridge for free and collects the toll everyone else pays. Unowned gates are shut.
-const GATE_STATS = { guardian: { troops: 2e6, def: 5e5, level: 25, toll: 0.25 }, throne: { troops: 5e7, def: 1e7, level: 45, toll: 0.5 } };
-const BORDER_GATE = { 4: { troops: 1500, def: 400, level: 3 }, 3: { troops: 12000, def: 3000, level: 8 }, 2: { troops: 1e5, def: 25000, level: 14 }, 1: { troops: 4e5, def: 1e5, level: 18 } };
-// Wirtschaft 5.10.: alle neutralen Werte (Basen, Tempel, Tore) × WIRTSCHAFT_KOSTEN (wirtK). Die Thron-Tore aber nie unter der Start-Armee:
-// sonst nähme ein neuer Spieler mit seinen 100.000 Start-Truppen (bleiben – Alexander) den Thron am ersten Tag (÷1800: 28.000 + 5.600)
+// Truppen in festen Zahlen (Alexander 6.10., Z4: 5.000 Start-Truppen): die Grenz-Tore 5.000–20.000 (deutlich über den Basen), die Wächter-Tore über
+// den stärksten Wächter-Türmen, die Thron-Tore darüber – nie unter THRON_TOR_MIN (sonst nähme man den Thron am ersten Tag)
+const GATE_STATS = { guardian: { troops: 3e4, def: 1e4, level: 25, toll: 0.25 }, throne: { troops: 2e5, def: 6e4, level: 45, toll: 0.5 } };
+const BORDER_GATE = { 4: { troops: 5000, def: 1500, level: 3 }, 3: { troops: 8000, def: 2500, level: 8 }, 2: { troops: 12000, def: 4000, level: 14 }, 1: { troops: 20000, def: 6000, level: 18 } };
 const THRON_TOR_MIN = { troops: 150000, def: 50000 };
 const gateSpots = bridges.map(br => {
     const A = landmasses[br.a], B = landmasses[br.b], ta = A.tier, tb = B.tier;
@@ -647,7 +664,7 @@ const gateSpots = bridges.map(br => {
     const ex = outerA ? br.x1 : br.x2, ey = outerA ? br.y1 : br.y2, ox = outerA ? br.x2 : br.x1, oy = outerA ? br.y2 : br.y1;
     const bl = Math.hypot(ox - ex, oy - ey) || 1, key = Math.max(1, Math.min(4, Math.ceil((Math.min(A.ring, B.ring) - 1) / 1.5)));
     const st0 = kind === 'border' ? Object.assign({ toll: 0.1 }, BORDER_GATE[key]) : GATE_STATS[kind], mn = kind === 'throne' ? THRON_TOR_MIN : { troops: 1, def: 1 };
-    const st = Object.assign({}, st0, { troops: wirtK(st0.troops, mn.troops), def: wirtK(st0.def, mn.def) });
+    const st = Object.assign({}, st0, { troops: Math.max(st0.troops, mn.troops), def: Math.max(st0.def, mn.def) });
     return { br, kind, st, lm: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, ex, ey };
 });
 // Start places: 4 per region on the outermost two rings (player and bot capitals go there, the rest stays empty land).
@@ -691,8 +708,8 @@ for (const lm of landmasses) {
     }
     for (const p of mine) islands.push({
         id: id++, landmassId: lm.id, x: p.x, y: p.y, radius: ISLAND_RADIUS, type: 'tower',
-        neutralTroops: wirtK(tierStats ? niceRoundW(tierStats.troops[0] + rand() * (tierStats.troops[1] - tierStats.troops[0])) : (NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1))) * ringMult(lm), 0),
-        neutralDefense: wirtK(tierStats ? niceRoundW(tierStats.def[0] + rand() * (tierStats.def[1] - tierStats.def[0])) : (NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))) * ringMult(lm)),
+        neutralTroops: tierStats ? niceRoundW(tierStats.troops[0] + rand() * (tierStats.troops[1] - tierStats.troops[0])) : Math.round((NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1))) * ringTruppen(lm) / 100),
+        neutralDefense: tierStats ? niceRoundW(tierStats.def[0] + rand() * (tierStats.def[1] - tierStats.def[0])) : Math.max(1, Math.round((NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))) * ringTruppen(lm) / 100)),
         neutralLevel: tierStats ? tierStats.level : 1 + Math.round(Math.log2(ringMult(lm)))
     });
     if (hasTemple) islands.push({
@@ -700,8 +717,8 @@ for (const lm of landmasses) {
         radius: ISLAND_RADIUS * (isMega ? 1.6 : lm.tier === 'guardian' ? 1.45 : 1.3),
         type: isMega ? 'megaTemple' : 'temple',
         guardian: lm.tier === 'guardian',
-        neutralTroops: wirtK(tierStats ? tierStats.temple[0] : Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * ringMult(lm)),
-        neutralDefense: wirtK(tierStats ? tierStats.temple[1] : Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * ringMult(lm)),
+        neutralTroops: tierStats ? tierStats.temple[0] : Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * ringTruppen(lm) / 100),
+        neutralDefense: tierStats ? tierStats.temple[1] : Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * ringTruppen(lm) / 100),
         neutralLevel: tierStats ? tierStats.templeLevel : 1
     });
 }
@@ -712,7 +729,7 @@ for (const lm of landmasses) {
     for (let k = 0; k < want && k * step < order.length; k++) {
         const sl = order[Math.floor(k * step)], lm = landmasses[sl.lm];
         islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true,
-            neutralTroops: wirtK(NEUTRAL_TROOPS_MIN * ringMult(lm), 0), neutralDefense: wirtK(NEUTRAL_DEFENSE_MIN * ringMult(lm)), neutralLevel: 1 });
+            neutralTroops: 0, neutralDefense: 1, neutralLevel: 1 });   // (Startplätze: leer – hier ziehen neue Hauptstädte ein)
     }
 }
 for (const gsp of gateSpots) {
@@ -841,7 +858,7 @@ try {
 // troop record for their home base yet) do they start with a
 // 100,000-troop head start - not on every reload where troops
 // happen to be at 0 from actual gameplay, and not for bots.
-const PLAYER_START_TROOPS = 100000;
+const PLAYER_START_TROOPS = 5000;   // neue Spieler, Mitspieler und jede neue Saison (Alexander 6.10., Z4)
 const isFreshPlayerSave = !(playerIslandId in islandTroops);
 for (const ownedId of ownedIslands) {
     if (!islandLevels[ownedId]) islandLevels[ownedId] = 1;
@@ -1018,7 +1035,7 @@ if (rechnet()) {
         if (!tower || usedTowerIds.has(tower.id)) return;
         botOwnedIslands[bot.id].add(tower.id);
         islandLevels[tower.id] = 1;
-        islandTroops[tower.id] = 0;                       // every player starts from nothing and builds up
+        islandTroops[tower.id] = PLAYER_START_TROOPS;     // Start-Truppen wie jeder neue Spieler (Alexander 6.10.: Mitspieler gleich)
         usedTowerIds.add(tower.id);
     });
     // more players than start places: the rest start on a free outer base, as far as possible from everyone else
@@ -1036,7 +1053,7 @@ if (rechnet()) {
                 if (dmin > bestD) { bestD = dmin; best = c; }
             }
             if (!best) break;
-            botOwnedIslands[bot.id].add(best.id); islandLevels[best.id] = 1; islandTroops[best.id] = 0; usedTowerIds.add(best.id); taken.push(best);
+            botOwnedIslands[bot.id].add(best.id); islandLevels[best.id] = 1; islandTroops[best.id] = PLAYER_START_TROOPS; usedTowerIds.add(best.id); taken.push(best);
         }
     }
 }
@@ -1324,10 +1341,10 @@ const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
   troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },
   defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3, max: 50 },
-  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 },
+  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 },
   attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
-  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN, max: 50 }
-};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN wie alle Münzen außerhalb der Produktion – die 100.000 Start-Truppen bleiben, Kosten sind ÷ 1.800)
+  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 }
+};   // (Gold je Truppe × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR wie alle Münzen außerhalb der Produktion: je Stufe ~0,17 Münzen je Kill)
 const EQUIPMENT_BASE_COST = 100;
 
 // Alexander 5.10.: „Karte bleibt wie jetzt, dazu einige Berge/Felsen; Märsche laufen drumherum (Wege etwas länger, Basen dahinter
@@ -1801,16 +1818,19 @@ function xpNeededForLevel(level) {
     return Math.round(50 * Math.pow(1.3, Math.min(level, 400) - 1));
 }
 // Level rewards: small at the start, 2 Mio. troops at level 30, then linear growth – × WIRTSCHAFT_KOSTEN (5.10.: heute 1.100 bei Stufe 30).
+// Nie unter STUFE_LOHN_MIN (6.10.: „+1 Münze, +1 Truppe“ sah kaputt aus – 10 ist etwa eine Stunde Ertrag einer Basis); Münzen
+// × MUENZ_FAKTOR (mindestens 10.000, Stufe 30: 250.000)
+const STUFE_LOHN_MIN = 10;
 function niceRound(n) {
     if (n < 100) return Math.round(n);
     const p = Math.pow(10, Math.floor(Math.log10(n)) - 1);
     return Math.round(n / p) * p;
 }
 function levelRewardTroops(level) {
-    return niceRound(wirtK(level <= 30 ? 2000000 * Math.pow(level / 30, 3) : 2000000 + (level - 30) * 100000));
+    return niceRound(Math.max(STUFE_LOHN_MIN, wirtK(level <= 30 ? 2000000 * Math.pow(level / 30, 3) : 2000000 + (level - 30) * 100000)));
 }
 function levelRewardCoins(level) {
-    return niceRound(wirtK(level <= 30 ? 500 * level * level : 450000 + (level - 30) * 20000));
+    return niceRound(Math.max(STUFE_LOHN_MIN * MUENZ_FAKTOR, wirtM(level <= 30 ? 500 * level * level : 450000 + (level - 30) * 20000)));
 }
 function levelRewardGems(level) {
     return level % 10 === 0 ? 10 : level % 5 === 0 ? 5 : 0;
@@ -2383,7 +2403,7 @@ function spaeherBlickHtml(s) {
     const A = s.auf || {}, R = A.roh;
     const gear = s.gear ? Object.keys(EQUIPMENT_DEFS).filter(k => s.gear[k]).map(k => { const g = s.gear[k]; return '<div class="logLine"><span>' + EQUIPMENT_DEFS[k].name + '</span><span style="color:' + RARITY_DEFS[g[0]].color + '">' +
         RARITY_DEFS[g[0]].label + ' · St. ' + g[1] + (g[2] ? ' · ' + g[2] + '★' : '') + '</span></div>'; }).join('') : '';   // (nur angelegte Teile)
-    const beute = v => fmtCompact(v) + (R && v > R.schutz ? ' <small>(' + fmtCompact(Math.floor((v - R.schutz) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt)</small>' : '');
+    const beute = (v, sch) => fmtCompact(v) + (R && v > sch ? ' <small>(' + fmtCompact(Math.floor((v - sch) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt)</small>' : ''), schR = R ? R.schutzR || R.schutz * ROH_JE_MUENZE : 0;   // (Holz/Stein/Eisen: Schutz × ROH_JE_MUENZE)
     return '<details><summary>Spähbericht</summary><div class="logSide" style="margin-top:6px">' +
         zeile('Herr', escapeHtml(s.name) + ' · Spieler-Stufe ' + fmtNum(s.lvl) + (s.titel ? ' · ' + escapeHtml(s.titel) : '')) +
         (s.bl ? zeile('Basis', 'Stufe ' + fmtNum(s.bl)) : '') +
@@ -2391,8 +2411,8 @@ function spaeherBlickHtml(s) {
         (s.wall !== undefined ? zeile('Mauer', 'Stufe ' + s.wall) : '') +
         (s.held ? zeile('Helden', s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') : '') +
         (s.vh !== undefined ? zeile('Verteidigungs-Held', s.vh && heroById(s.vh.id) ? escapeHtml(heroTag(Object.assign({}, s.vh, { id2: s.vh.h2 && s.vh.h2.id }))) : 'keiner') : '') +
-        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' je Rohstoff' : '')) : '') +
-        (R ? zeile('Gold', beute(R.c)) + (R.h !== undefined ? zeile('Holz', beute(R.h)) + zeile('Stein', beute(R.s)) + zeile('Eisen', beute(R.e)) : '') : '') +
+        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' Gold, ' + fmtCompact(schR) + ' je Rohstoff' : '')) : '') +
+        (R ? zeile('Gold', beute(R.c, R.schutz)) + (R.h !== undefined ? zeile('Holz', beute(R.h, schR)) + zeile('Stein', beute(R.s, schR)) + zeile('Eisen', beute(R.e, schR)) : '') : '') +
         (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
         (A.fo ? zeile('Forschung', 'Angriff ' + (A.fo.atk | 0) + ' · Vert. ' + (A.fo.def | 0) + ' · Krankenhaus ' + (A.fo.laz | 0)) : '') + gear + '</div></details>';
 }
@@ -5171,12 +5191,12 @@ function attackFlatBonus(troops) {
 function goldPerKillRate() {
     return (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate;
 }
-function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy killed; a hero's +X % Gold: X % on it, and X % of a coin per kill of his own (× WIRTSCHAFT_KOSTEN wie der Satz)
+function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy killed; a hero's +X % Gold: X % on it, and X % of a coin per kill of his own (× WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR wie der Satz)
     const g = hx ? (hx.gold || 0) / 100 : 0;
-    return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g * WIRTSCHAFT_KOSTEN;
+    return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR;
 }
 function defGoldRate(who) { return who === 'player' ? (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate : botGoldRate(who, 'defenseGold'); }
-function defGoldRateHx(who, hx) { const g = hx ? (hx.gold || 0) / 100 : 0; return defGoldRate(who) * (1 + g) + g * WIRTSCHAFT_KOSTEN; }   // "Verteidigung: Gold" + der Held des Verteidigers (wie killGoldRate)
+function defGoldRateHx(who, hx) { const g = hx ? (hx.gold || 0) / 100 : 0; return defGoldRate(who) * (1 + g) + g * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR; }   // "Verteidigung: Gold" + der Held des Verteidigers (wie killGoldRate)
 function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') inboxAdd({ src: 'fight', coins: n }); else botCoins[who] = (botCoins[who] || 0) + n; return n; }
 function fieldGold(aWho, dWho, fb, aHx, dHx) {  // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed (+ each side's hero)
     return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * defGoldRateHx(dWho, dHx)) };
@@ -5190,7 +5210,7 @@ function skillBonusText(def, level) {
     if (def.atkPct) return '+' + fmtNum(level * def.atkPct) + ' % Truppen';
     if (def.defPct) return '+' + fmtNum(level * def.defPct) + ' % Truppen';
     if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
-    if (def.rate) return '+' + (level * def.rate * 1000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Gold je 1.000 Kills';
+    if (def.rate) return '+' + fmtNum(Math.round(level * def.rate * 1000)) + ' Gold je 1.000 Kills';   // (Münzen × MUENZ_FAKTOR: Stufe 1 = 167)
     if (def.msPerLevel) { const l = Math.min(level, def.max || level); return '+' + fmtNum(Math.round(1000 / (1000 - l * def.msPerLevel) * 100 - 100)) + ' % Produktion, +' + fmtNum(l * 5) + ' % Marschtempo' + (def.max && level >= def.max ? ' (max.)' : ''); }
     return '';
 }
@@ -5436,7 +5456,7 @@ function renderProfile(live) {                  // live = the per-second refresh
     setText(document.getElementById('xpLevelNum'), playerLvl);
     setText(document.getElementById('xpNums'), fmtNum(playerXp) + ' / ' + fmtNum(xpNeeded) + ' XP');
     document.getElementById('xpFill').style.width = Math.min(100, Math.round(playerXp / xpNeeded * 100)) + '%';
-    const nx = playerLvl + 1, nM = levelRewardCoins(nx), nT = levelRewardTroops(nx), nG = levelRewardGems(nx);   // Belohnung beim nächsten Aufstieg (1 Münze, 2 Münzen …)
+    const nx = playerLvl + 1, nM = levelRewardCoins(nx), nT = levelRewardTroops(nx), nG = levelRewardGems(nx);   // Belohnung beim nächsten Aufstieg
     liveHtml(document.getElementById('xpNext'), 'Belohnung für Stufe ' + nx + ': <b>+' + fmtCompact(nM) + '</b> ' + (nM === 1 ? 'Münze' : 'Münzen') + ', <b>+' + fmtCompact(nT) + '</b> ' + (nT === 1 ? 'Truppe' : 'Truppen') +
         (nG ? ', <b>+' + nG + '</b> ' + (nG === 1 ? 'Edelstein' : 'Edelsteine') : ''));
 
@@ -5913,7 +5933,7 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'gate1',   name: 'Torhüter',         icon: 'lock',    desc: 'Halte ein Tor.',                         goal: 1,    k: 'gates', gems: 50 },
     { id: 'gate3',   name: 'Herr der Brücken', icon: 'lock',    desc: 'Halte 3 Tore gleichzeitig.',             goal: 3,    k: 'gates', gems: 250 },
     { id: 'toll10',  name: 'Brückengänger',    icon: 'coin',    desc: 'Zahl 10 Mal Maut an einem Tor.',         goal: 10,   k: 'tolls', gems: 40 },
-    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm ' + fmtNum(wirtK(100000)) + ' Münzen Maut ein.', goal: wirtK(100000), k: 'tollCoins', gems: 300 },   // (Maut und Krankenhaus-Platz × WIRTSCHAFT_KOSTEN – die Ziele mit)
+    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm ' + fmtNum(niceRound(wirtM(1e5))) + ' Münzen Maut ein.', goal: niceRound(wirtM(1e5)), k: 'tollCoins', gems: 300 },   // (Maut und Krankenhaus-Platz × WIRTSCHAFT_KOSTEN – die Ziele mit)
     { id: 'army5',   name: 'Feldschlacht',     icon: 'troops',  desc: 'Gewinn 5 Kämpfe mit Armeen im Feld.',    goal: 5,    k: 'armyWins', gems: 80 },
     { id: 'army50',  name: 'Heerführer',       icon: 'troops',  desc: 'Gewinn 50 Kämpfe mit Armeen im Feld.',   goal: 50,   k: 'armyWins', gems: 400 },
     { id: 'hero1',   name: 'Erster Held',      icon: 'profile', desc: 'Schalte einen Helden frei.',             goal: 1,    k: 'heroes', gems: 30 },
@@ -6589,7 +6609,7 @@ const kampflogUmbauen = (function () {
         box.insertAdjacentHTML('beforeend', '<div class="kl-rss"><div class="logGearHead">Rohstoffe</div>' +
             [['g', 'Gold'], ['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].map(([k, n]) => { const v = roh[k] || 0;
                 return zl(n, (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v)), v > 0 ? ' buff' : v < 0 ? ' buff malus' : ''); }).join('') +
-            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' je Rohstoff</small>', '') : '') + '</div>');
+            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' Gold · ' + fmt(schutz * ROH_JE_MUENZE) + ' je Rohstoff</small>', '') : '') + '</div>');
         return box;
     }
     const rohTeil = (beute, anteil, vz) => ({ g: vz * Math.round(beute.g * anteil), h: vz * Math.round(beute.h * anteil), s: vz * Math.round(beute.s * anteil), e: vz * Math.round(beute.e * anteil) });
@@ -7112,10 +7132,10 @@ var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 1
 var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
 var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle drei Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
     ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15]];
-function passRewardAt(L, prem) {                          // what level L gives in each row
-    if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 1 } : { k: 'gems', n: 15 };
+function passRewardAt(L, prem) {                          // what level L gives in each row (Münzen: n Stunden Ertrag – 6.10. 4/12 statt 1/3, „10 Münzen“ sah kaputt aus)
+    if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 4 } : { k: 'gems', n: 15 };
     return L === 20 ? { k: 'march', id: 'saison' } : L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
-        L % 6 === 0 ? { k: 'tp', n: 150 } : L % 3 === 0 ? { k: 'shield', n: 8 } : L % 2 === 0 ? { k: 'coins', n: 3 } : { k: 'gems', n: 40 };
+        L % 6 === 0 ? { k: 'tp', n: 150 } : L % 3 === 0 ? { k: 'shield', n: 8 } : L % 2 === 0 ? { k: 'coins', n: 12 } : { k: 'gems', n: 40 };
 }
 var passState = null, passArm = 0, passTimer = null;
 function passLoad() { if (!passState) { try { passState = JSON.parse(store.get('openWaterPass')); } catch (e) {} if (!passState || typeof passState !== 'object' || !passState.s) passState = { s: {} }; } return passState; }
@@ -7137,7 +7157,7 @@ function passXp(v) {
 }
 function passGive(who, r) {                               // one reward to anyone (you or the others) - returns the text for the hint
     const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
-    if (r.k === 'coins') { const c = Math.max(wirtK(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
+    if (r.k === 'coins') { const c = Math.max(wirtM(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
     if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
     if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
     if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
@@ -7169,7 +7189,7 @@ function passBuy() {
 }
 function passCellHtml(r, hp, got) {                            // icon + amount of one reward
     const k = r.k, n = r.n || 1, row = (ic, b, s, cls) => '<span class="pc-ic' + (cls ? ' ' + cls : '') + '">' + ic + '</span><span class="pc-t"><b>' + b + '</b><small>' + s + '</small></span>';
-    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(wirtK(5000), Math.round(hp.coins)) * n), 'Münzen');
+    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(wirtM(5000), Math.round(hp.coins)) * n), 'Münzen');
     if (k === 'gems') return row(icon('gem', 'ico-gem'), '+' + n, 'Edelsteine');
     if (k === 'tp') return row(icon('crown', 'ico-tp'), '+' + n, 'Thron-Punkte');
     if (k === 'shards') return row(icon('star', 'ico-shard'), '+' + n, 'Helden-Splitter');
@@ -7365,9 +7385,10 @@ function hourProduction(who) {                       // what an empire makes in 
     return { coins: c * k, troops: t * k };
 }
 // Münzen/Truppen wie Händler und Markt (Alexander 6.10.): Stunden-Produktion × Kosten ÷ Ertrag (= 2 Stunden), Mindestwerte × WIRTSCHAFT_KOSTEN
+// (Münzen: wirtM)
 const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG;
 function throneAmount(who, id) { const hp = hourProduction(who);
-    return id === 'coins' ? Math.max(wirtK(5000), Math.round(hp.coins * THRONE_STUNDEN)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
+    return id === 'coins' ? Math.max(wirtM(5000), Math.round(hp.coins * THRONE_STUNDEN)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
 function throneGive(who, id) {                        // hands one offer over; returns what it was, for the hint
     const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
     if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; return '+' + fmtCompact(n) + ' Münzen'; }
@@ -7528,7 +7549,7 @@ function bountyGems() { const b = bountyState; return b.ruler && b.ruler === rul
 function bountyGrow() {
     const r = rulerOwner(); bountyCheck(r); if (!r) return;
     const b = bountyState, hc = hourProduction(r).coins;
-    b.gems = Math.min(BOUNTY_GEMS_MAX, (b.gems || 0) + BOUNTY_GEMS); b.coins = Math.min(Math.max(wirtK(1e4), hc * BOUNTY_COIN_MAX_H), (b.coins || 0) + Math.max(wirtK(500), hc * BOUNTY_COIN_H)); saveBounty();   // (Mindestwerte × WIRTSCHAFT_KOSTEN)
+    b.gems = Math.min(BOUNTY_GEMS_MAX, (b.gems || 0) + BOUNTY_GEMS); b.coins = Math.min(Math.max(wirtM(1e4), hc * BOUNTY_COIN_MAX_H), (b.coins || 0) + Math.max(wirtM(500), hc * BOUNTY_COIN_H)); saveBounty();   // (Mindestwerte in Münzen: wirtM)
 }
 function bountyPay(who, g, c) {
     if (who !== 'player') { botBountyReward(who, g, c); return; }
@@ -8903,12 +8924,12 @@ var CITY_BUILDINGS = [
 // Angreifer, bekommt er von JEDEM Rohstoff einen kleinen Teil über dem Schutz (HAUPT_BEUTE) und die Hauptstadt brennt (nur zu
 // sehen). Gewinnt der Verteidiger, bekommt der Angreifer nichts. Rohstoffe gibt es nur aus der Hauptstadt.
 const HAUPT_BEUTE = .1;                              // Hauptstadt: 10 % von jedem Rohstoff über dem Schutz – klein, damit man oft angreifen muss
-const schutzVon = who => AUF ? AUF.burgSchutz(who) : 0;
+const schutzVon = who => AUF ? AUF.burgSchutz(who) : 0;   // Gold – Holz/Stein/Eisen × ROH_JE_MUENZE (6.10.: Rohstoffe und Münzen in RoK-Größe)
 function plunderOf(who, capital) {                  // { loot (Gold), roh: {h, s, e} (nur Hauptstadt), safe }
     const have = Math.max(0, who === 'player' ? coins : botCoins[who] || 0), safe = schutzVon(who);
     if (capital) { const r = AUF ? AUF.rohVon(who) : null, roh = { h: 0, s: 0, e: 0 };
-        if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe) * HAUPT_BEUTE);
-        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe }; }   // (safe: der Burg-Schutz je Rohstoff – so steht er im Bericht)
+        if (r) for (const x of ['h', 's', 'e']) roh[x] = Math.floor(Math.max(0, (r[x] || 0) - safe * ROH_JE_MUENZE) * HAUPT_BEUTE);
+        return { loot: Math.floor(Math.max(0, have - safe) * HAUPT_BEUTE), roh, safe }; }   // (safe: der Burg-Schutz für Gold – so steht er im Bericht, je Rohstoff × ROH_JE_MUENZE)
     return { loot: 0, safe: 0 };   // Beute (Gold, Holz, Stein, Eisen) gibt es NUR an der Hauptstadt (Alexander 4.10.)
 }
 function plunderMove(from, to, loot, roh) {         // Gold (und bei der Hauptstadt Holz, Stein, Eisen) wechselt den Besitzer
@@ -8950,9 +8971,9 @@ const cityBuildOf = (c, id) => c.builds.find(b => b.id === id) || null;
 function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
 const KEEP_DEF = { id: 'keep', name: 'Burg', icon: 'castle' };   // die Burg als „Gebäude“ (Bauarbeiter, Bauzeit) – Paket D
 function cityDef(id) { return id === 'keep' ? KEEP_DEF : CITY_BUILDINGS.find(b => b.id === id); }
-function cityCost(id, level) {                    // coins to go from `level` to level + 1 (× WIRTSCHAFT_KOSTEN)
-    if (id === 'keep') return niceRound(wirtK(2000 * Math.pow(1.85, level - 1)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
-    return niceRound(wirtK(500 * Math.pow(1.9, level)));
+function cityCost(id, level) {                    // coins to go from `level` to level + 1 (Münzen: wirtM)
+    if (id === 'keep') return niceRound(wirtM(2000 * Math.pow(1.85, level - 1)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
+    return niceRound(wirtM(500 * Math.pow(1.9, level)));
 }
 function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)
     // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
@@ -9806,7 +9827,7 @@ function hospitalLevel() { return loadCity().levels.hospital || 0; }
 function hospitalPct() { return Math.min(60, hospitalLevel() * 5) + (AUF ? AUF.lazarettPlus('player') : 0); }   // (+ Forschung Krankenhaus)
 function hospitalPlatz(l) { return l ? wirtK(1e6 * Math.pow(1.6, l - 1)) : 0; }   // Platz für Verwundete bei Krankenhaus-Stufe l (für alle gleich, × WIRTSCHAFT_KOSTEN)
 function hospitalCapacity() { return hospitalPlatz(hospitalLevel()); }
-const HEAL_COIN_PER_TROOP = 0.1;
+const HEAL_COIN_PER_TROOP = 0.1 * MUENZ_FAKTOR;   // 100 Münzen je Truppe (6.10.: Münzen × MUENZ_FAKTOR)
 function hospitalTake(fallen, pct) {              // Krankenhaus: part of your fallen (attack won or lost, or defending) are only wounded → how many
     if (!hospitalLevel() || fallen <= 0) return 0;
     const c = loadCity(), room = Math.max(0, hospitalCapacity() - c.wounded), w = Math.min(room, Math.floor(fallen * (pct ?? hospitalPct()) / 100));
@@ -10764,7 +10785,7 @@ function pickupAmount(kind) {
     const L = Math.max(playerLvl, 1);
     if (kind === 'gem') return 1 + Math.floor(Math.random() * 3);
     if (kind === 'troops') return Math.max(wirtK(100), niceRound(levelRewardTroops(Math.max(L, 2)) * 0.05));   // (Stufen-Belohnung und Mindestwert × WIRTSCHAFT_KOSTEN)
-    return Math.max(wirtK(200), niceRound(levelRewardCoins(L) * 0.1));
+    return Math.max(wirtM(200), niceRound(levelRewardCoins(L) * 0.1));   // (Münzen: wirtM)
 }
 function pickupScreenPos(p) { return { x: p.x * mapState.zoom + mapState.offsetX, y: p.y * mapState.zoom + mapState.offsetY }; }
 function trySpawnPickup() {
@@ -10910,8 +10931,11 @@ const FIELD_KINDS = {
 const fArt = (K, fall) => ({ dat: K.g === 'm' ? 'dem' : 'der', akk: K.g === 'm' ? 'den' : 'die', zu: K.g === 'm' ? 'zum' : 'zur' })[fall] + ' ' + K.name;   // „an der Goldmine“, „zum Steinbruch“
 // Sammeln wie bei RoK (2.10.): ein Feld leert sich in fester Zeit – außen 1 Std., ganz innen 4 Std. –, egal wie viele Truppen.
 // Die Truppen bestimmen nur, wie viel sie tragen können. Gems: außen 20, innen ~150 (vorher bis 18.000 in unter einer Minute).
-// Gold, Holz, Stein, Eisen: × WIRTSCHAFT_ERTRAG wie jede Produktion (5.10.: was vorher in einer Sekunde kam, kommt in einer Stunde) – Gems bleiben
-const fieldCapFor = (kind, rm) => kind === 'gem' ? Math.round(FIELD_KINDS.gem.base * Math.pow(rm, .35)) : Math.max(1, Math.round(FIELD_KINDS[kind].base * rm * WIRTSCHAFT_ERTRAG));
+// Gold, Holz, Stein, Eisen: × WIRTSCHAFT_ERTRAG wie jede Produktion (5.10.: was vorher in einer Sekunde kam, kommt in einer Stunde) – Gems bleiben.
+// 6.10. (Z1): Holz/Stein/Eisen dazu × ROH_FAKTOR, Gold × MUENZ_FAKTOR (RoK-Größe; die Traglast je Truppe bleibt – außen braucht
+// eine volle Goldmine ~1.100 Truppen wie ein Holzfeld ~2.000); innen nur mit der Wurzel des Ring-Faktors (Ring 2 sonst 300× außen)
+const fieldCapFor = (kind, rm) => kind === 'gem' ? Math.round(FIELD_KINDS.gem.base * Math.pow(rm, .35))
+    : Math.max(1, Math.round(FIELD_KINDS[kind].base * Math.sqrt(rm) * WIRTSCHAFT_ERTRAG * (FIELD_KINDS[kind].roh ? ROH_FAKTOR : MUENZ_FAKTOR)));
 const fieldDauerSec = rm => 3600 * (1 + 3 * Math.log(Math.max(1, rm)) / Math.log(300));
 const FIELD_REGEN_MS = 60 * 60000;
 const resFields = (() => {
@@ -11049,7 +11073,7 @@ function drawResFields(now, wallNow) {
     const k = Math.max(.6, Math.min(2.2, z / .012));
     for (const f of resFields) {
         const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(f.x, f.y)) continue;
-        const st = fieldState[f.id], left = st ? st.left : f.cap, empty = left <= 0;
+        const st = fieldState[f.id], left = st ? Math.min(st.left, f.cap) : f.cap, empty = left <= 0;
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
         ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
         if (f.kind === 'gold') {                                             // a rocky mine mouth with a heap of gold
@@ -11122,7 +11146,7 @@ document.getElementById('fieldSheet').addEventListener('click', e => {
 // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
 const BARB_MAX_L = 25, BARB_DAY = 20, BARB_WANT = 110, DBOSS_HITS = 10, DBOSS_CAP = .05;   // camps on the map · a boss hit takes at most 5 % of its life
 const barbTroopsOf = L => niceRound(wirtK(2000 * Math.pow(2, L - 1)));                  // × WIRTSCHAFT_KOSTEN (5.10.): 1 at 1, ~570 at 10, ~19 Mio. at 25 (vorher 2 Tsd. · 1 Mio. · 34 Mrd.)
-const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 + wirtK(500 * L * L));             // coins for a win (+ Angriff: Gold per warrior)
+const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 * MUENZ_FAKTOR + wirtM(500 * L * L));   // coins for a win (+ Angriff: Gold per warrior) – Münzen × MUENZ_FAKTOR
 const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
 const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
 const DBOSS_PRIZE = [{ gems: 300, crate: 3, sh: 30 }, { gems: 200, crate: 3, sh: 20 }, { gems: 150, crate: 3, sh: 15 }, { gems: 80, crate: 2, sh: 10 }, { gems: 30, crate: -1, sh: 5 }];   // 1 · 2 · 3 · 4-10 · everyone else who hit it
@@ -11176,8 +11200,8 @@ function dbossEnsure() {                            // today's boss: the kind tu
     return dayBoss;
 }
 // Neue Welt-Saison (09f saisonAnfang): in den ersten 3 Tagen haben alle nur Start-Truppen – die Untergrenze so, dass 8 Spieler mit je
-// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Die Start-Truppen bleiben
-// 100.000 (Alexander 5.10.) – darum bleibt auch diese Untergrenze (sonst fiele er am ersten Tag mit einem Angriff)
+// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Start-Truppen 5.000
+// (Alexander 6.10.) → 100.000 Leben (sonst fiele er am ersten Tag mit einem Angriff)
 const DBOSS_MIN_ANFANG = 8 * DBOSS_HITS * PLAYER_START_TROOPS * .25;
 function dbossEntkommen(b) {                        // (nur wer rechnet) der Boss ist nicht gefallen: wie beim Drachen alle, die getroffen haben, etwas Kleines –
     const rk = dbossRanks(b); if (!rk.length) return;   //   fester Schlüssel je Tag (derselbe wie der Preis beim Fallen: nie beides, nie doppelt)
@@ -11280,7 +11304,7 @@ function dbossHit(m, now) {                         // every attack takes life o
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
     const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
-    const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * (1 + h.gold / 100));   // (Gold je Schaden × WIRTSCHAFT_KOSTEN wie das Kampf-Gold)
+    const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     barbHome(m, m.troops - loss, now);
     if (isP) {
         const rk = dbossRanks(b), gef = heroGefOf(h, m.troops);
@@ -11671,7 +11695,7 @@ function invTreffer(m, now) {                        // deine (oder ihre) Truppe
     const I = invAktiv(now), a = I && I.armies.find(x => x.id === m.tid), who = m.who, isP = who === 'player';
     if (!a) { barbHome(m, m.troops, now); if (isP) flashHint('Die Barbaren-Armee ist schon weg – deine Truppen kehren um.', 3500); return; }
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), fb = barbFight(who, m.troops, hx, a.t), wounded = fieldHurt(who, fb.loss, hx);
-    const gold = payGold(who, fb.kill * .3 * WIRTSCHAFT_KOSTEN * (1 + (hx || HX0).gold / 100)), pts = fb.won ? INV_PTS_SIEG : Math.max(1, Math.round(INV_PTS_SIEG * fb.kill / a.max));
+    const gold = payGold(who, fb.kill * .3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + (hx || HX0).gold / 100)), pts = fb.won ? INV_PTS_SIEG : Math.max(1, Math.round(INV_PTS_SIEG * fb.kill / a.max));
     if (fb.won) I.armies = I.armies.filter(x => x !== a); else a.t = Math.max(1, Math.round(a.t - fb.kill));
     invPunkteDazu(I, who, pts); evPunkte('krieg', who, fb.kill / WO_KILL_PER); goalBump(who, 'barb');
     barbHome(m, m.troops - fb.loss, now); evDirty = true;
@@ -11712,7 +11736,7 @@ function invTakt(now) {                              // (nur Weltrechner) Wellen
 // Fällt er: Platz 1 lila Kiste, Platz 2–10 blaue Kiste (nie Legendär – Alexander 2.10.), alle anderen etwas Kleines. Entkommt er: alle etwas Kleines.
 const DR_STUNDE = 19, DR_DAUER = 3 * 3600000, DR_HITS = 10, DR_CAP = .02, DR_NAME = 'Urdrache Vharak', DR_COL = '#d8452e';
 const DR_PREISE = [{ gems: 150, crate: 3, sh: 20, t: '1.' }, { gems: 60, crate: 2, sh: 8, t: '2.–10.' }, { gems: 15, crate: -1, sh: 2, t: 'Alle anderen' }];
-const DR_MIN_ANFANG = 4 * DR_HITS * PLAYER_START_TROOPS * .25;   // neue Welt-Saison (erste 3 Tage, nur Start-Truppen): 4 Spieler mit je 10 Angriffen aus einem Viertel schaffen ihn (sonst 1e7 × WIRTSCHAFT_KOSTEN) – die Start-Truppen bleiben 100.000, darum bleibt sie
+const DR_MIN_ANFANG = 4 * DR_HITS * PLAYER_START_TROOPS * .25;   // neue Welt-Saison (erste 3 Tage, nur Start-Truppen): 4 Spieler mit je 10 Angriffen aus einem Viertel schaffen ihn (sonst 1e7 × WIRTSCHAFT_KOSTEN) – bei 5.000 Start-Truppen 50.000 Leben
 const drPreisVon = i => DR_PREISE[i < 1 ? 0 : i < 10 ? 1 : 2];
 function drPlan(now) {
     now = now || Date.now();
@@ -11734,7 +11758,7 @@ function drTreffer(m, now) {                         // wie beim Tagesboss: Scha
     const dmg = Math.max(1, Math.min(D.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(D.max * DR_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .33 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);
     D.hp -= dmg; D.dmg[who] = (D.dmg[who] || 0) + dmg; evDirty = true;
-    const gold = payGold(who, dmg * .2 * WIRTSCHAFT_KOSTEN * (1 + h.gold / 100));   // (Gold je Schaden × WIRTSCHAFT_KOSTEN wie das Kampf-Gold)
+    const gold = payGold(who, dmg * .2 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     evPunkte('boss', who, 30 * dmg / (D.max * DR_CAP));
     barbHome(m, m.troops - loss, now);
     const rk = evRang(D.dmg), pl = rk.findIndex(e => e[0] === who) + 1;
@@ -12570,8 +12594,6 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
-// Umstellung auf „pro Stunde“ (Alexander 5.10., 11b A): der ERSTE Reset danach rechnet die behaltenen Holz/Stein/Eisen × WIRTSCHAFT_KOSTEN
-// um (sonst wäre jeder mit den alten Beständen ewig reich). saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt).
 // Burg fair (Alexander 6.10. A): der ERSTE Reset danach setzt EINMAL jede Burg über Stufe BURG_FAIR auf BURG_FAIR (bis 5.10. galt die alte,
 // kurze Bauzeit – Burg 13–14 bei Mitspielern, mit den neuen Regeln geht höchstens 3–4), für Mitspieler und echte Spieler gleich.
 // Gebäude/Forschung fallen auf das, was Burg/Labor dann erlauben (aufbau.js burgFair), ohne Erstattung. saison.burgFair = diese Saison.
@@ -12579,6 +12601,9 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // Holz/Stein/Eisen auf 0 (saisonAusnahme; echte Spieler: Handy 01a-grundlagen.js + Hauptbuch 10d WELT.saisonKonto). Später nie wieder.
 // Thron-Punkte (Alexander 6.10., JEDER Reset): höchstens SAISON_TP_MAX gehen mit, der Rest 10 : 1 als Edelsteine ins Abholfach
 // (Mitspieler: gleich abgeholt; echte Spieler: ihr Handy beim Neuladen, das Hauptbuch erlaubt es – 10d saisonKonto).
+// Umstellung auf „pro Stunde“ (Alexander 5.10., 11b A): der ERSTE Reset danach rechnet beim Weltrechner die Münz-Töpfe des Hauptbuchs
+// × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR um (Münzen 6.10. in normalen Zahlen). saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt). Holz/Stein/Eisen bleiben bei jedem
+// Reset unverändert (Alexander 6.10.: sie sind wieder in RoK-Größe, ROH_FAKTOR).
 const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5, SAISON_ANFANG_MS = 3 * 864e5;
 const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
 var saison = null, saisonSichT = 0;
@@ -12629,7 +12654,7 @@ function saisonTop() {                                // die besten 10 nach Mach
     return l.sort((a, b) => b[1] - a[1]).slice(0, SAISON_PREISE.length);
 }
 function saisonNeu(now) {
-    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN : 1;   // f: Holz/Stein/Eisen umrechnen (nur beim ersten Reset nach der Umstellung)
+    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
     const burgFair = saison.burgFair > 0 ? saison.burgFair : nr, B = burgFair === nr ? BURG_FAIR : 0;   // B: Burg fair (nur beim ersten Reset danach)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
     if (B) saisonAusnahme();                           // (vor den Preisen: die kommen wie bei echten Spielern zusätzlich dazu)
@@ -12642,15 +12667,15 @@ function saisonNeu(now) {
     saisonWelt(now, f, B);
     // 4) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu) –
     //    Nummer je Reset eindeutig (mit Zeitpunkt): nach dem Zurückspielen kommt ein neuer Reset derselben Nummer sonst nie an
-    for (const id of menschen) { try { WELT.saisonKonto(id, f, B); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), Object.assign({ art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, f < 1 ? { roh: f } : {}, B ? { burg: B } : {}), 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
+    for (const id of menschen) { try { WELT.saisonKonto(id, f, B); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), Object.assign({ art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, B ? { burg: B } : {}), 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
     saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
-        store.set('openWaterSaisonNeu', String(nr)); if (f < 1) store.set('openWaterSaisonRoh', String(f)); if (B) store.set('openWaterSaisonBurg', String(B)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
+        store.set('openWaterSaisonNeu', String(nr)); if (B) store.set('openWaterSaisonBurg', String(B)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 600);
     }
 }
-function saisonWelt(now, f, B) {                      // alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Holz/Stein/Eisen umrechnen, B: Burg fair)
+function saisonWelt(now, f, B) {                      // alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Münz-Töpfe umrechnen, B: Burg fair)
     const bs = loadBotState(), wer = (SYSTEM || window.WELT ? [] : ['player']).concat(BOT_DEFS.map(b => b.id).filter(id => bs[id]));
     const hatte = wer.filter(w => (w === 'player' ? ownedIslands : botOwnedIslands[w] || new Set()).size > 0);   // wer gerade Basen hat, bekommt eine Hauptstadt (die anderen wie bisher: Neustart der Mitspieler)
     // Märsche, Späher, Armeen, Felder, Barbaren-Märsche, Verstärkungen, Rallys, Bündnisse – mit allen Truppen darin
@@ -12688,7 +12713,6 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     for (const w of wer) { if (w === 'player') continue; const b = bs[w];
         b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
-        if (f < 1 && b.res) for (const k of ['h', 's', 'e']) b.res[k] = Math.floor((+b.res[k] || 0) * f);   // (echte Spieler: ihr Handy rechnet genauso – 01a-grundlagen.js)
         if (B > 0 && AUF) burgFairWer(b, B);
         if (!(botById[w] && botById[w].mensch) && b.tp > SAISON_TP_MAX) { const g = Math.floor((b.tp - SAISON_TP_MAX) / SAISON_TP_JE_GEM); b.tp = SAISON_TP_MAX;   // Thron-Punkte (echte Spieler: ihr Handy)
             if (g > 0) evPreis(w, 'saison', 'Thron-Punkte aus Saison ' + saison.nr + ' umgetauscht', { gems: g }, 'tp' + saison.nr); } }
@@ -12733,7 +12757,6 @@ if (window.WELT && !SYSTEM) {
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'saison' || !(e.nr > 0) || e.nr <= (parseInt(store.get('openWaterSaisonMein'), 10) || 1)) return;   // (schon übernommen)
         WELT.saisonHalt = true; store.set('openWaterSaisonNeu', String(e.nr));                // → nach dem Neuladen übernimmt 01a-grundlagen.js den Reset
-        if (e.roh > 0 && e.roh < 1) store.set('openWaterSaisonRoh', String(e.roh));         // (erster Reset nach der Umstellung: Rohstoffe umrechnen)
         if (e.burg > 0) store.set('openWaterSaisonBurg', String(e.burg));                    // (Burg fair)
         if (e.neuBis > Date.now()) store.set('openWaterSaisonSchutz', String(Math.min(e.neuBis, Date.now() + NEULING_MS)));   // Anfängerschutz (die Zeit sagt der Weltrechner)
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 1500);
@@ -12799,14 +12822,14 @@ function islandTitle(island) {
 function gateControlsHtml(gate) {
     const cfg = gateSettings(gate);
     return '<div class="gate-ctl"><div class="gate-row"><span class="stat-l">' + icon('coin') + 'Maut pro Truppe</span><div class="seg">' +
-        GATE_TOLLS.map(v => '<button type="button" data-toll="' + v + '" class="' + (cfg.toll === v ? 'is-on' : '') + '">' + (v ? v.toLocaleString('de-DE') : 'frei') + '</button>').join('') + '</div></div>' +
+        GATE_TOLLS.map(v => '<button type="button" data-toll="' + v + '" class="' + (cfg.toll === v ? 'is-on' : '') + '">' + (v ? fmtNum(mautJeTruppe(v)) : 'frei') + '</button>').join('') + '</div></div>' +
         '<button type="button" data-gate-toggle class="btn ' + (cfg.closed ? 'btn--primary' : 'btn--secondary') + ' btn--grow">' + icon('lock') + '<span>' + (cfg.closed ? 'Tor öffnen' : 'Tor schließen') + '</span></button>' +
-        '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich – höchstens ' + fmtNum(wirtK(TOLL_MAX)) + ' Münzen pro Marsch.') + '</p></div>';
+        '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich – höchstens ' + fmtNum(MAUT_MAX) + ' Münzen pro Marsch.') + '</p></div>';
 }
 popupStats.addEventListener('click', e => {
     const isl = islandById[popupIslandId]; if (!isl || isl.type !== 'gate' || !ownedIslands.has(isl.id)) return;
     const t = e.target.closest('[data-toll]'), tg = e.target.closest('[data-gate-toggle]');
-    if (t) { setGateSettings(isl.id, { toll: +t.dataset.toll }); alsBefehl('tor', { tor: isl.id, patch: { toll: +t.dataset.toll } }); flashHint('Maut: ' + (+t.dataset.toll ? (+t.dataset.toll).toLocaleString('de-DE') + ' Münzen pro Truppe' : 'frei') + '.', 2200); }
+    if (t) { setGateSettings(isl.id, { toll: +t.dataset.toll }); alsBefehl('tor', { tor: isl.id, patch: { toll: +t.dataset.toll } }); flashHint('Maut: ' + (+t.dataset.toll ? fmtNum(mautJeTruppe(+t.dataset.toll)) + ' Münzen pro Truppe' : 'frei') + '.', 2200); }
     else if (tg) { const c = !gateSettings(isl).closed; setGateSettings(isl.id, { closed: c }); alsBefehl('tor', { tor: isl.id, patch: { closed: c } }); flashHint(c ? 'Tor geschlossen.' : 'Tor geöffnet.', 2000); }
     else return;
     openIslandPopup(isl); requestRender();
@@ -14011,8 +14034,8 @@ if (window.WELT) {
     // Zwei Töpfe (Alexander 5.10.): Stufen-Münzen (sicher: die EP kommen vom Weltrechner) je Stunde – der feste Rest nur EINMAL
     // am Tag (vorher jede Stunde neu: ~8 Mio. Münzen am Tag „ohne Beleg“). Der Tages-Topf steht in der Welt (überlebt Neustarts).
     // Feste Größen × WIRTSCHAFT_KOSTEN (5.10., wie die Münzen/Truppen außerhalb der Produktion): Tages-Rest vorher 50.000, Thron-Shop/
-    // Saison-Pass mindestens 5.000 Münzen bzw. 1.000 Truppen, Fund mindestens 100 Truppen
-    const kW = n => Math.max(1, Math.round(n * WIRTSCHAFT_KOSTEN)), SR_FIX = kW(50000), SR_STUNDE_MIN = kW(5000), TR_STUNDE_MIN = kW(1000), FUND_TR_MIN = kW(100);
+    // Saison-Pass mindestens 5.000 Münzen bzw. 1.000 Truppen, Fund mindestens 100 Truppen – Münzen wirtM (6.10.: × MUENZ_FAKTOR)
+    const SR_FIX = wirtM(50000), SR_STUNDE_MIN = wirtM(5000), TR_STUNDE_MIN = wirtK(1000), FUND_TR_MIN = wirtK(100);
     function spielraumTeile(who, m) {
         const L = Math.max(1, m.lvl), now = Date.now();
         let von = L; for (const x of m.lvlLog) if (x.l < von) von = x.l;
@@ -14101,7 +14124,7 @@ if (window.WELT) {
     // ist auffällig und zählt nicht. Was sein Profil weniger zeigt, hat er ausgegeben (Topf hb.rA – bezahlt Burg, Gebäude,
     // Forschung, Truppen-Stufe im Hauptbuch).
     const ROHK = ['h', 's', 'e'];
-    const ROH_RAUM = Math.max(10, Math.round(2000 * WIRTSCHAFT_KOSTEN));   // (vor der Umstellung 5.10.: 2.000 – ein Bestand, umgerechnet wie die Kosten; 10 gegen Rundungen)
+    const ROH_RAUM = Math.max(10, Math.round(2000 * WIRTSCHAFT_KOSTEN * ROH_FAKTOR));   // (ein Bestand in RoK-Größe wie die Kosten: wieder 2.000; 10 gegen Rundungen)
     function rohWacheProfil(who, m, p, P, M, now) {
         if (!p || !p.res || typeof p.res !== 'object') return;
         m.rDeckel = null; m.rDeckelP = p;              // (die Grenze gilt für genau dieses Profil – auch wenn es nochmal angewendet wird)
@@ -14705,8 +14728,8 @@ if (window.WELT) {
     // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen 0, keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
     // Helden, Schild, Gems und Rohstoffe (Konten, Topf des Ausgegebenen – ein laufender Bau ist schon bezahlt). Sein altes Profil
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
-    // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – Rohstoff-Konten und die Töpfe des Ausgegebenen (Rohstoffe, Münzen,
-    // Admin-Münzen) werden wie seine Bestände umgerechnet (aufgerundet: sein Handy rundet ab – nie ein Fehlalarm, nie eine Lücke).
+    // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – die Münz-Töpfe des Ausgegebenen (Münzen, Admin-Münzen) werden
+    // umgerechnet (abgerundet). Holz/Stein/Eisen bleiben unverändert wie am Handy (6.10.: wieder RoK-Größe).
     // Thron-Punkte (Alexander 6.10., jeder Reset): sein Handy behält höchstens SAISON_TP_MAX, der Rest kommt 10 : 1 als Edelsteine ins
     // Abholfach (01a-grundlagen.js) – das Hauptbuch zählt sie als sicher geschickt (hb.gIn), aber nur so viele, wie er haben kann:
     // was er nach dem letzten Reset behalten durfte (hb.tpB) + was der Weltrechner ihm seitdem gab (Thron, throneEarnedOf) + der
@@ -14730,7 +14753,7 @@ if (window.WELT) {
         if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; }
         if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; }
         if (f > 0 && f < 1) {
-            if (hb) { for (const k of ROHK) { if (hb.rU) hb.rU[k] = Math.ceil(nn(hb.rU[k]) * f); hb.rA[k] = Math.floor(nn(hb.rA[k]) * f); } hb.cA = Math.floor(nn(hb.cA) * f); }
+            if (hb) hb.cA = Math.floor(nn(hb.cA) * f);   // (Holz/Stein/Eisen bleiben – auch ihre Töpfe rU/rA, 6.10.)
             if (d) d.gC = Math.floor(nn(d.gC) * f);
         }
         if (B > 0) {                                   // einmalige Ausnahme (Alexander 6.10.): wie sein Handy beim Neuladen

@@ -942,6 +942,30 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Reiter „Ubersicht“): Ursache war Zeilenhöhe 1–1,2 zusammen mit `overflow:hidden` – das schnitt die Punkte über Ä/Ö/Ü oben ab;
   einzeilige Texte mit „…“ (Reiter, Überzeilen, Titel, Werte) schneiden jetzt nur seitlich ab (`overflow-x:clip`, 05 Ende).
   Test `handy_leiste_test` (rot auf altem Stand).
+- **6.10. – Wirtschaft 3: Holz/Stein/Eisen in RoK-Größe, Start 5.000 Truppen, neutrale Basen fest (Alexander Z1–Z4, 11b A3,
+  Branch `wirtschaft-roh`, NICHT hochgeladen):** `ROH_FAKTOR = 1800` (01a), `wirtR()` (01b). Holz/Stein/Eisen-Kosten (Burg, Gebäude,
+  Forschung, aufbau.js) ohne ÷ 1.800, Münzen bleiben klein (Z3: beides). Ertrag Hauptstadt (`rohStunde`) × ROH_FAKTOR, Sammel-Felder
+  Holz/Stein/Eisen × ROH_FAKTOR; alle Felder außer Edelsteinen mit √Ring-Faktor (Ring 2 Gold war 300× außen). Burg-Schutz getrennt:
+  Gold `burgSchutz`, Rohstoffe `burgSchutzRoh` (× 1.800) – Beute (`plunderOf`), Spähbericht, Kampfbericht, Burg-Fenster. Markt:
+  `MARKT_WERT = 5 / ROH_FAKTOR` (360 Rohstoffe = 1 Münze – sonst Münzen ohne Ende), Mengen 1.000 … 1 Mio. `ROH_START` 3.000/2.000/500,
+  `ROH_RAUM` 2.000 (Hauptbuch). Saison-Reset (Z2): Holz/Stein/Eisen bleiben **unverändert** (keine Umrechnung mehr – 09f, Handy 01a,
+  `saisonKonto`; Münz-Töpfe weiter einmal × WIRTSCHAFT_KOSTEN). Start-Truppen `PLAYER_START_TROOPS` **5.000** (auch Mitspieler beim
+  ersten Start und Neustart). Neutrale Werte fest statt ÷ 1.800 (01b `RING_TRUPPEN`, `TIER_STATS`, 01c Tore). Anzeige-Fix Feld-Vorrat
+  (`drawResFields`: höchstens `f.cap`). Tests `wirtschaft_roh_test` (neu), `forschung_kosten_test`, `profil_stunde_test`,
+  `saison_test`, `saison_anfang_test` (Boss/Drache Anfang 100.000/50.000 aus 5.000 Start-Truppen), Server `schummel_test` (Text).
+  Zahlen aus Spieler-Sicht (Spieler-Durchsicht): Stufen-Belohnung nie unter 10 Münzen/10 Truppen (`STUFE_LOHN_MIN`, 02a – vorher
+  „+1 Münze, +1 Truppe“), Bündnis gründen 20 statt 17 Münzen (auf 10 gerundet), „0,03 Eisen/Std.“ ist mit ROH_FAKTOR weg (Burg allein
+  ~75/Std.). Pass-Münzen 4 statt 1 Stunde Ertrag (Premium 12 statt 3 – vorher „10 Münzen“; Hauptbuch rechnet aus `passRewardAt`
+  mit). Händler und Thron-Shop bleiben „n Stunden eigener Ertrag“. Grenz-Tore 5.000–20.000 Truppen (vorher 500–12.000).
+- **6.10. – Wirtschaft 4: Münzen × 1.000 + Grundverteidigung (Alexander „B“, 11b A4, Branch `wirtschaft-roh`, NICHT hochgeladen):**
+  `MUENZ_FAKTOR = 1000` (01a), `wirtM()` (01b) für alle Münz-Kosten/-Belohnungen; Ertrag (`coinsPerTick`, Tempel, Goldminen) × 1.000;
+  Kampf-Gold je Kill/Schaden (01e, 04, 09b, 09c), Heilen (`HEAL_COIN_PER_TROOP` 100), Maut je Truppe (`mautJeTruppe`, gespeichert wie
+  vorher 0,1–2; `MAUT_MIN` 100, `MAUT_MAX` 560.000), Markt (`MARKT_WERT` 5.000/1.800), Burg-Schutz Gold (Rohstoffe: × `ROH_JE_MUENZE`),
+  Händler, Thron-Shop, Pass, Kopfgeld, Bündnis (20.000) und Geschenk, Stufen-Belohnung (mind. 10.000), Funde, Barbaren-Beute, Erfolg
+  „Zöllner“ (56.000), Hauptbuch-Spielraum (10d), Saison-Umrechnung der Münz-Töpfe (09f). Basis aufwerten nie unter 1.000 (sonst
+  „67 Münzen“). Grundverteidigung mindestens 50 je Stufe (vorher bis Stufe 10 nur 1). Mitspieler rechnen mit denselben Funktionen.
+  Tabelle: 11b A4. Tests `wirtschaft_muenz_test` (neu), `forschung_kosten_test`, `wirtschaft_gold_test`, `wirtschaft_roh_test`,
+  `profil_stunde_test`, `thron_verst_test`, `welt_test`.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
@@ -1284,6 +1308,64 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
   | Basis aufwerten 60 → 61 (eine Basis) | 1,2 Std. | 2,3 Std. | 2× |
   | Basis aufwerten 1 → 2 (eine Basis) | 12 s | 6 Min. | 30× (mindestens 1 Münze) |
   | Thron-Tor, Reich „Mitte“ | 1,9 Std. | 23 Std. | 12× (Absicht: nie mit der Start-Armee) |
+
+**A3. Holz/Stein/Eisen in RoK-Größe, Start 5.000, Gegner fest (Alexander 6.10., Z1–Z4) – gebaut, NICHT hochgeladen**
+- Z1: `ROH_FAKTOR = 1800` – Rohstoff-Kosten wieder die alten Zahlen, Rohstoff-Ertrag × 1.800 (Stunden zum Sammeln bleiben wie in A2).
+  Z2: Saison-Reset: Holz/Stein/Eisen bleiben unverändert (das einmalige „alles auf 0“ für den kommenden Reset baut burg-fair).
+  Z3: Burg/Gebäude/Forschung kosten Münzen (klein) **und** Rohstoffe. Z4: Start 5.000 Truppen, neutrale Werte fest.
+
+  | Burg (Stufe → +1) | Münzen | Holz / Stein / Eisen vorher (A2) | jetzt | Std. Holz aus der Stadt* | Holz-Feld außen** |
+  |---|---|---|---|---|---|
+  | 2 → 3 | 9 | 4 / 4 / 2 | 8.000 / 6.400 / 4.000 | 16 | 2 Märsche |
+  | 4 → 5 | 23 | 11 / 9 / 6 | 20.000 / 16.000 / 10.000 | 21 | 5 |
+  | 6 → 7 | 58 | 29 / 23 / 15 | 52.000 / 42.000 / 26.000 | 29 | 13 |
+  | 10 → 11 | 380 | 190 / 150 / 95 | 340.000 / 270.000 / 170.000 | 48 | 85 |
+  | 15 → 16 | 12.000 | 6.100 / 4.900 / 3.100 | 11 Mio. / 8,8 Mio. / 5,5 Mio. | 270 | – |
+  | 20 → 21 | 390.000 | 200.000 / … | 350 Mio. / 280 Mio. / 180 Mio. | 1.490 | – |
+
+  \* Holzfäller auf Burg-Stufe, Landschaft 1, ohne Forschung (Burg allein: 75 Holz/Std.). \*\* Feld außen: 4.000 Holz je Leerung
+  (1 Std.), Ring 2: 69.000; Tragen 2 Holz je Truppe (4.000 Holz = 2.000 Truppen).
+
+  | Gegner (Truppen) | vorher (A2, ÷ 1.800) | jetzt |
+  |---|---|---|
+  | Basis außen (Ring 7/8) | 0 | 70–100 (+ 10–30 Verteidigung) |
+  | Ring 6 / 5 / 4 / 3 | 0 / 0 / 0–1 / 0–3 | bis 200 / 300 / 450 / 700 |
+  | Ring 2 | 0–17 | 700–1.000 (+ 100–300) |
+  | Tempel normal (Ring 3/5) | 1–9 | 150–260 % einer Basis des Rings (450–1.820) |
+  | Grenz-Tore (außen → innen) | 1 / 7 / 56 / 222 | 5.000 / 8.000 / 12.000 / 20.000 (+ 1.500 … 6.000) |
+  | Wächter-Türme / Wächter-Tempel / Wächter-Tor | 56–556 / 2.778 / 1.111 | 5.000–20.000 / 60.000 / 30.000 (+ 10.000) |
+  | Thron-Türme / Mega-Tempel / Thron-Tor | 2.778–11.111 / 138.889 / 150.000 | 50.000–150.000 / 500.000 / 200.000 (+ 60.000) |
+  | Start-Truppen | 100.000 | 5.000 |
+
+**A4. Münzen in normalen Zahlen (Alexander 6.10., „B“) – gebaut, NICHT hochgeladen**
+- `MUENZ_FAKTOR = 1000` (01a), `wirtM()` (01b): alles mit Münzen × 1.000 – Ertrag, Kosten und Belohnungen gleich, das Verhältnis
+  bleibt. Truppen, Edelsteine, Holz/Stein/Eisen unverändert. Dazu die Grundverteidigung in normaler Größe.
+
+  | Was | vorher (A3) | jetzt |
+  |---|---|---|
+  | Basis Stufe 1 / 10 / Tempel (Ertrag pro Std.) | 10 / 35 / 15 | 10.000 / 35.000 / 15.000 |
+  | Burg 2 → 3 / 10 → 11 (Münzen) | 9 / 380 | 8.900 / 380.000 |
+  | Basis aufwerten 1 → 2 / 30 → 31 | 1 / 68 | 1.000 (Mindestwert, gerundet) / 68.000 |
+  | Bündnis gründen | 20 | 20.000 |
+  | Stufen-Belohnung (mindestens / Stufe 30) | 10 / 250 | 10.000 / 250.000 |
+  | Saison-Pass Münzen (4 / 12 Std. Ertrag, 1 Basis) | 40 / 120 | 40.000 / 120.000 |
+  | Thron-Shop Münzen (2 Std. Ertrag, 1 Basis) | 20 | 20.000 |
+  | Händler (1 Basis): Kiste / Söldner / Beschleuniger | 60 / 30 / 20 | 60.000 / 30.000 / 20.000 |
+  | Maut je Truppe / höchstens je Marsch | 0,1–2 / 556 | 100–2.000 / 560.000 |
+  | Kopfgeld je 3 Min. (mindestens) / Topf mindestens | 0 / 6 | 278 / 5.556 |
+  | Heilen je Truppe | 0,1 | 100 |
+  | Burg-Schutz Gold Stufe 1 / 10 | 6 / 556 | 5.556 / 555.556 (Rohstoffe unverändert 10.000 / 1 Mio.) |
+  | Markt | 360 Rohstoffe = 1 Münze | 100 Rohstoffe = 278 Münzen |
+  | „Angriff: Gold“ Stufe 1 | 0,2 je 1.000 Kills | 167 je 1.000 Kills |
+  | Goldmine außen (eine Leerung) | 11 | 11.111 (Traglast bleibt 10 je Truppe: ~1.100 Truppen wie beim Holz) |
+  | Barbaren-Lager Beute Stufe 1 / 10 | 2 / 370 | 880 / 370.000 |
+  | Fund (Münzbeutel) mindestens | 1 | 1.000 (Mindestwert 111) |
+  | **Grundverteidigung** Basis Stufe 1 / 10 / 20 / 40 / 60 | 1 / 1 / 4 / 455 / 46.408 | 50 / 500 / 1.000 / 2.000 / 46.408 |
+
+  Grundverteidigung: mindestens 50 je Stufe (wie neutrale Basen außen: 10–300 Verteidigung bei 70–1.000 Truppen), ab etwa
+  Stufe 47 wie bisher (`baseDefenseForLevel`, 01b). Hauptbuch: Münz-Spielraum (Tages-Rest 27.778, Mindest-Stunde 2.778) wirtM;
+  der erste Saison-Reset rechnet die Münz-Töpfe × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR um (0,56 statt 1/1.800). Burg-Schutz der
+  Rohstoffe = Gold-Schutz × `ROH_JE_MUENZE` (1,8).
 
 **B. Alexanders 3 Fehler** (Einzelheiten Abschnitt 11)
 1. ✅ *gebaut (nicht hochgeladen), Verlauf 5./6.10. Nacht:* Späher: hin Zurück + Schneller, heim Schneller; Zurück = sofort umkehren, kein Bericht; ab 500 Edelsteine „Wirklich?“.

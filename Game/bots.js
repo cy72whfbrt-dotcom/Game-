@@ -1598,7 +1598,7 @@ function botRespawn(bot, now) {                   // knocked out: like a player 
         free = big && botOwnedIslands[big.id].size >= 40 ? [...botOwnedIslands[big.id]].map(id => islandById[id]).filter(i => edge(i) && !isCapital(i.id) && !pendingAttacks.some(a => a.targetId === i.id)) : []; }
     if (!free.length) return;
     const t = free[Math.floor(Math.random() * free.length)]; clearIslandOwner(t.id);
-    botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = 0; b.outAt = 0; b.outNext = 0; b.capital = t.id; b.capMovedAt = now; b.capWish = null; capitalCache = null;
+    botOwnedIslands[bot.id].add(t.id); islandLevels[t.id] = 1; islandTroops[t.id] = PLAYER_START_TROOPS; b.outAt = 0; b.outNext = 0; b.capital = t.id; b.capMovedAt = now; b.capWish = null; capitalCache = null;
     b.shieldUntil = now + 3600000; b.shieldWhy = 'start'; b.shieldAt = now;                   // an hour of peace to get going (a lone base in someone's land would fall at once)
     if (window.WELT) b.neuBis = now + NEULING_MS;                                                // Neustart: wieder Anfängerschutz (wie jeder Neue)
     saveBotState(); saveGame();

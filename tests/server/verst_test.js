@@ -32,7 +32,7 @@ const rein = name => G.rein(b, name, { fehler });
   sql(`UPDATE ow_spielstand SET wert='${esc(JSON.stringify(bu))}' WHERE spieler_id=0 AND schluessel='openWaterBuendnisse'`);
   php('echo wachhund_neustart();'); await warte(60000);
   h = await rein(HN);
-  console.log(G.geschenk(HID, 0, 500000)); await warte(6000);
+  console.log(G.geschenk(HID, 0, 5e6)); await warte(6000);   // (Maut seit 6.10. in Münzen × 1.000: bis 560.000 je Marsch)
   await h.evaluate(() => { for (const x of inboxList().slice()) inboxClaim(x.id); saveGame(); }); await warte(75000);   // Münzen für die Maut (Profil → Weltrechner)
   const zw = JSON.parse(sql(`SELECT zustand FROM ow_bots WHERE spieler_id=0 AND bot_id='${wahl.wirt}'`));
   ok('Gastgeber hat jetzt eine Botschaft (Welt)', (zw.city.levels.embassy || 0) >= 1, JSON.stringify(zw.city.levels));

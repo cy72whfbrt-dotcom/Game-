@@ -54,10 +54,12 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     hb = hbLeer(); hb.hs.a = [1, 12, 0, 0, 0, 0, 0]; hb.shB = 95;
     pruefe('Hauptbuch: Helden nicht voll → keine Gems aus Splittern', H.hbSplitterGems(hb, { hs: { a: { own: true, q: 12 } } }, 100) === 0);
     pruefe('Hauptbuch: … außer sein Profil zeigt sie gerade voll', H.hbSplitterGems(hb, { hs: { a: { own: true, q: 20 } } }, 100) === 100);
-    // Münz-Spielraum (Wirtschaft 5.10.): der feste Tages-Rest und die Mindest-Stunde × WIRTSCHAFT_KOSTEN (vorher 50.000 + 3 × 5.000)
-    const S = new Function('levelRewardCoins', 'WIRTSCHAFT_KOSTEN', stueck('    const kW', '    function spielraumTag') + '; return { spielraumTeile, TR_STUNDE_MIN, FUND_TR_MIN };')(() => 0, 1 / 1800);
+    // Münz-Spielraum (Wirtschaft 5.10.): der feste Tages-Rest und die Mindest-Stunde × WIRTSCHAFT_KOSTEN (vorher 50.000 + 3 × 5.000),
+    // Münzen seit 6.10. dazu × MUENZ_FAKTOR (wirtM); Truppen wirtK
+    const WK = 1 / 1800, wirtK = n => Math.max(1, Math.round(n * WK)), wirtM = n => Math.max(1, Math.round(n * WK * 1000));
+    const S = new Function('levelRewardCoins', 'wirtK', 'wirtM', stueck('    const SR_FIX', '    function spielraumTag') + '; return { spielraumTeile, TR_STUNDE_MIN, FUND_TR_MIN };')(() => 0, wirtK, wirtM);
     const t = S.spielraumTeile('u1', { lvl: 1, lvlLog: [], ein: [], hp0: 0, initT: Date.now() - 2 * 3600000 });
-    pruefe('Hauptbuch: fester Münz-Spielraum × WIRTSCHAFT_KOSTEN (28 + 3 × 3 statt 65.000)', t.fix === 28 + 3 * 3 && t.lv === 0);
+    pruefe('Hauptbuch: fester Münz-Spielraum in Münzen × 1.000 (27.778 + 3 × 2.778 statt 65.000 vor dem 5.10.)', t.fix === 27778 + 3 * 2778 && t.lv === 0);
     pruefe('Hauptbuch: Mindest-Truppen (Thron-Shop 1.000, Fund 100) × WIRTSCHAFT_KOSTEN, nie unter 1', S.TR_STUNDE_MIN === 1 && S.FUND_TR_MIN === 1);
     // Thron-Shop zahlt wie Händler/Markt 2 Stunden Produktion (Alexander 6.10.): 3 freie Käufe = 3 × 2 Stunden ohne Fehlalarm
     const MG = new Function('PASS_LVLS', 'passRewardAt', 'SR_STUNDE_MIN', 'nn', 'hourProduction', 'passNo', 'throneEarnedOf', 'saveBotState', 'THRONE_STUNDEN',

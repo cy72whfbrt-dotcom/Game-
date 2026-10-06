@@ -12,7 +12,7 @@
 // ---------------------------------------------------------------------------------------------------------------
 const ROH = ['h', 's', 'e'];
 const ROH_DEF = { h: { name: 'Holz', icon: 'wood', col: '#c08a4c' }, s: { name: 'Stein', icon: 'stone', col: '#aab3bd' }, e: { name: 'Eisen', icon: 'iron', col: '#8fb6e0' } };
-const ROH_START = { h: Math.ceil(3000 * WIRTSCHAFT_KOSTEN), s: Math.ceil(2000 * WIRTSCHAFT_KOSTEN), e: Math.ceil(500 * WIRTSCHAFT_KOSTEN) };   // so viel hat jeder am Anfang (auch alte Spielstände ohne Rohstoffe) – ein Bestand: umgerechnet wie die Kosten (11b A)
+const ROH_START = { h: wirtR(3000), s: wirtR(2000), e: wirtR(500) };   // so viel hat jeder am Anfang (auch alte Spielstände ohne Rohstoffe) – in RoK-Größe wie die Kosten (Z1, 6.10.)
 const ROH_BIOM = { green: { h: 1, s: .5, e: .25 }, sand: { h: .3, s: 1, e: .5 }, snow: { h: .45, s: .6, e: 1 },   // Wiese: Holz · Wüste: Stein · Schnee/Gebirge: Eisen
     ice: { h: .2, s: .5, e: 1.3 }, volcano: { h: .15, s: 1.2, e: 1.1 }, swamp: { h: 1.3, s: .3, e: .3 } };   // (Paket C) Eis: viel Eisen · Vulkan: Stein + Eisen · Sumpf: viel Holz
 const rohLeer = () => ({ h: 0, s: 0, e: 0 });
@@ -41,12 +41,12 @@ function rohDazu(who, d, faktor) {                             // d: {h, s, e} (
 // kleines Grundeinkommen der Burg. Die Landschaft der Hauptstadt färbt es etwas (Schnee: mehr Eisen …). Die Basen draußen
 // machen Münzen und Truppen, keine Rohstoffe mehr. (produceTicks ruft das für jede Basis – gezählt wird nur die Hauptstadt.)
 const ROH_GEB = { h: 'lumber', s: 'quarry', e: 'mine' };      // Rohstoff → Gebäude
-const ROH_GEB_STUNDE = 600, ROH_GEB_WACHS = 1.42, ROH_BURG_STUNDE = 150;   // Grundwerte (vor 5.10. pro Stunde, jetzt × WIRTSCHAFT_ERTRAG): Stufe 1: 600 … Stufe 25: ~2,7 Mio.; Burg allein: 150 je Rohstoff
+const ROH_GEB_STUNDE = 600, ROH_GEB_WACHS = 1.42, ROH_BURG_STUNDE = 150;   // Grundwerte (vor 5.10. pro Stunde, jetzt × WIRTSCHAFT_ERTRAG × ROH_FAKTOR = ½): Stufe 1: 300 … Stufe 25: ~1,4 Mio.; Burg allein: 75 je Rohstoff
 const rohGebStunde = L => L > 0 ? ROH_GEB_STUNDE * Math.pow(ROH_GEB_WACHS, L - 1) : 0;
-function rohStunde(who) {                                      // was ein Reich in einer Stunde an Rohstoffen macht (Anzeige, Markt, Schummel-Schutz) – 3.600× weniger als vor dem 5.10.
+function rohStunde(who) {                                      // was ein Reich in einer Stunde an Rohstoffen macht (Anzeige, Markt, Schummel-Schutz) – halb so viel wie vor dem 5.10.
     const out = rohLeer(), cap = who === 'player' ? playerIslandId : botCapitalOf(who), isl = islandById[cap]; if (!isl) return out;
     const rg = rohRegion(isl.landmassId), e = ertrag(who);
-    for (const x of ROH) out[x] = (ROH_BURG_STUNDE + rohGebStunde(bauStufe(who, ROH_GEB[x]))) * (.6 + .4 * rg[x]) * e * WIRTSCHAFT_ERTRAG;
+    for (const x of ROH) out[x] = (ROH_BURG_STUNDE + rohGebStunde(bauStufe(who, ROH_GEB[x]))) * (.6 + .4 * rg[x]) * e * WIRTSCHAFT_ERTRAG * ROH_FAKTOR;
     return out;
 }
 const rohCarry = {};
@@ -94,20 +94,22 @@ function burgStufe(who) { const c = stadtVon(who); return Math.max(1, Math.min(B
 // Die Burg ist die Hauptstadt (Alexander 4.10.): langsam – nicht in 5 Tagen auf 25, sondern über viele Server-Resets.
 // Jede Stufe kostet Gold, Holz, Stein und Eisen (die ersten mittelmäßig, später viel mehr) und dauert 1 Tag (Stufe 1 → 2)
 // bis 60 Tage (Stufe 24 → 25) – zusammen rund ein Jahr. Mit Gems geht es schneller (wie jeder Bau).
-function burgKosten(L) {                                       // von Stufe L auf L + 1 – alles × WIRTSCHAFT_KOSTEN (5.10.)
-    const b = 5000 * Math.pow(1.6, L - 1) * (L > 10 ? Math.pow(1.25, L - 10) : 1);   // vorher Stufe 1: 5.000 · 10: 340.000 · 24: 5,6 Mrd. (heute ÷ 1.800)
-    return { c: niceRound(wirtK(b * 2)), h: niceRound(wirtK(b)), s: niceRound(wirtK(b * .8)), e: niceRound(wirtK(b * .5)) };
+function burgKosten(L) {                                       // von Stufe L auf L + 1 – Münzen (wirtM) und Holz/Stein/Eisen (wirtR) in RoK-Größe (6.10.)
+    const b = 5000 * Math.pow(1.6, L - 1) * (L > 10 ? Math.pow(1.25, L - 10) : 1);   // Stufe 1: 5.000 · 10: 340.000 · 24: 5,6 Mrd. (Münzen × 2 × 1.000 ÷ 1.800)
+    return { c: niceRound(wirtM(b * 2)), h: niceRound(wirtR(b)), s: niceRound(wirtR(b * .8)), e: niceRound(wirtR(b * .5)) };
 }
 function burgZeitRoh(L) { return 86400 * Math.pow(60, (Math.max(1, Math.min(BURG_MAX - 1, L)) - 1) / (BURG_MAX - 2)); }   // 1 Tag … 60 Tage
 // Burg-Schutz (statt Lager): so viel von jedem Rohstoff (Gold, Holz, Stein, Eisen) kann kein Angreifer holen.
-// Stufe 1: 10.000 · Stufe 10: 1 Mio. · Stufe 25: 100 Mio. (dazwischen gleichmäßig steigend) – × WIRTSCHAFT_KOSTEN (5.10.: 6 … 55.556)
-function burgSchutzStufe(B) { B = Math.max(1, Math.min(BURG_MAX, B | 0 || 1)); return wirtK(B <= 10 ? 1e4 * Math.pow(100, (B - 1) / 9) : 1e6 * Math.pow(100, (B - 10) / 15)); }
-const burgSchutz = (who, B) => Math.round(burgSchutzStufe(B || burgStufe(who)) * (1 + foWert(who, 'w_schutz') / 100));   // (+ Forschung Burg-Schutz+)
+// Stufe 1: 10.000 · Stufe 10: 1 Mio. · Stufe 25: 100 Mio. (dazwischen gleichmäßig steigend) – Gold wirtM (6.10.: 5.556 … 55,6 Mio.),
+// Holz/Stein/Eisen × ROH_JE_MUENZE darüber (burgSchutzRoh: wieder 10.000 … 100 Mio.)
+function burgSchutzStufe(B) { B = Math.max(1, Math.min(BURG_MAX, B | 0 || 1)); return wirtM(B <= 10 ? 1e4 * Math.pow(100, (B - 1) / 9) : 1e6 * Math.pow(100, (B - 10) / 15)); }
+const burgSchutz = (who, B) => Math.round(burgSchutzStufe(B || burgStufe(who)) * (1 + foWert(who, 'w_schutz') / 100));   // (+ Forschung Burg-Schutz+) – Gold
+const burgSchutzRoh = (who, B) => Math.round(burgSchutz(who, B) * ROH_JE_MUENZE);   // je Holz, Stein, Eisen
 const STADT_MIX = { lumber: { h: .3, s: .9, e: .2 }, quarry: { h: 1.1, s: .2, e: .2 }, mine: { h: 1, s: .9, e: 0 }, wall: { h: .5, s: 1.3, e: .3 }, forge: { h: .6, s: .6, e: 1 }, market: { h: 1.2, s: .6, e: .2 } };
 function stadtKosten(id, L) {                                  // alles für ein Gebäude von Stufe L auf L + 1 (Burg: eigene Tabelle)
     if (id === 'keep') return burgKosten(L);
-    const m = STADT_MIX[id] || { h: 1, s: .7, e: .35 }, b = 300 * Math.pow(1.75, L);   // (× WIRTSCHAFT_KOSTEN wie die Münzen in cityCost)
-    return { c: cityCost(id, L), h: niceRound(wirtK(b * m.h)), s: L >= 2 ? niceRound(wirtK(b * m.s)) : 0, e: L >= 6 ? niceRound(wirtK(b * m.e)) : 0 };
+    const m = STADT_MIX[id] || { h: 1, s: .7, e: .35 }, b = 300 * Math.pow(1.75, L);   // (Holz/Stein/Eisen in RoK-Größe wie bei der Burg)
+    return { c: cityCost(id, L), h: niceRound(wirtR(b * m.h)), s: L >= 2 ? niceRound(wirtR(b * m.s)) : 0, e: L >= 6 ? niceRound(wirtR(b * m.e)) : 0 };
 }
 function stadtCapB(id, B) { return id === 'keep' ? BURG_MAX : B >= BURG_MAX ? cityMaxLevel(id) : Math.min(cityMaxLevel(id), B); }   // höchste Stufe bei Burg-Stufe B
 function stadtCap(who, id) { return stadtCapB(id, burgStufe(who)); }   // höchste Stufe, die die Burg gerade erlaubt
@@ -186,7 +188,7 @@ const foSumme = who => FORSCHUNG.reduce((a, d) => a + foStufe(who, d.id), 0);   
 const foGesamt = () => FORSCHUNG.reduce((a, d) => a + d.max, 0);
 function foKosten(d, L) {                                      // Stufe L erforschen
     const k = Math.pow(1.6, d.aka - 1), g = Math.pow(1.8, L - 1);
-    return { c: niceRound(wirtK(3000 * k * g)), h: niceRound(wirtK(1500 * k * g)), s: niceRound(wirtK(1200 * k * g)), e: niceRound(wirtK(600 * k * g * (d.ast === 'm' ? 1.6 : 1))) };   // (× WIRTSCHAFT_KOSTEN)
+    return { c: niceRound(wirtM(3000 * k * g)), h: niceRound(wirtR(1500 * k * g)), s: niceRound(wirtR(1200 * k * g)), e: niceRound(wirtR(600 * k * g * (d.ast === 'm' ? 1.6 : 1))) };   // (Münzen wirtM, Rohstoffe wirtR)
 }
 function foZeitRoh(d, L) { return Math.min(7 * 86400, 300 * Math.pow(1.7, L - 1) * Math.pow(1.35, d.aka - 1)); }   // 5 Min. … Tage
 const foZeit = (who, d, L) => Math.round(foZeitRoh(d, L));
@@ -241,21 +243,23 @@ const botschaftTempo = who => 1 + bauStufe(who, 'embassy') * .03;   // Hilfe und
 const botschaftGeschenk = who => 1 + bauStufe(who, 'embassy') * .04;
 
 // ---------------------------------------------------------------------------------------------------------------
-// 5) MARKT: Rohstoffe gegen Münzen (Gebühr, Tageslimit) – ein Rohstoff ist 5 Münzen wert
+// 5) MARKT: Rohstoffe gegen Münzen (Gebühr, Tageslimit) – ein Rohstoff war 5 Münzen wert; seit 6.10. sind Rohstoffe × ROH_FAKTOR
+//    und Münzen × MUENZ_FAKTOR – darum 1 Rohstoff = 2,78 Münzen (das Verhältnis wie vorher)
 // ---------------------------------------------------------------------------------------------------------------
-const MARKT_WERT = 5;
+const MARKT_WERT = 5 * MUENZ_FAKTOR / ROH_FAKTOR;
+const MARKT_MENGEN = [1000, 1e4, 1e5, 1e6];                    // (das kleinste Tageslimit – 27.778 Münzen-Wert – sind 10.000 Rohstoffe)
 const marktGebuehr = L => Math.max(5, 25 - L) / 100;           // Stufe 1: 24 %, ab Stufe 20: 5 %
-function marktLimit(who) {                                     // Münz-Wert pro Tag und Richtung (wie alle Kosten × WIRTSCHAFT_KOSTEN – die
+function marktLimit(who) {                                     // Münz-Wert pro Tag und Richtung (wie alle Münz-Kosten wirtM – die
     const L = bauStufe(who, 'market'); if (!L) return 0;          //   Stunden-Produktion ist × WIRTSCHAFT_ERTRAG, darum × Kosten ÷ Ertrag)
     let hp = 0; try { hp = hourProduction(who).coins * WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG; } catch (e) {}
-    return Math.round(Math.max(wirtK(50000), hp * (.2 + .032 * L)));
+    return Math.round(Math.max(wirtM(50000), hp * (.2 + .032 * L)));
 }
 function marktHeute(c) { const d = todayKey(); if (!c.markt || c.markt.d !== d) c.markt = { d, k: 0, v: 0 }; return c.markt; }
 function marktTausch(who, art, x, n) {                         // art 'k' = kaufen (Münzen → Rohstoff), 'v' = verkaufen; → '' oder warum nicht
     const c = stadtVon(who), L = bauStufe(who, 'market'); if (!c || !L) return 'Baue zuerst den Markt.';
     if (!ROH_DEF[x] || !(n >= 1)) return 'kaputt';
     n = Math.floor(n); const m = marktHeute(c), lim = marktLimit(who), f = marktGebuehr(L), wert = n * MARKT_WERT;
-    if (m[art] + wert > lim) return 'Tageslimit erreicht – heute noch ' + fmtCompact(Math.max(0, lim - m[art]) / MARKT_WERT) + ' ' + ROH_DEF[x].name + '.';
+    if (m[art] + wert > lim) return 'Tageslimit erreicht – heute noch ' + fmtCompact(Math.floor(Math.max(0, lim - m[art]) / MARKT_WERT)) + ' ' + ROH_DEF[x].name + '.';
     const r = rohVon(who);
     if (art === 'v') { if ((r[x] || 0) < n) return 'So viel ' + ROH_DEF[x].name + ' hast du nicht.'; r[x] -= n; const g = Math.floor(wert * (1 - f)); if (who === 'player') coins += g; else botCoins[who] = (botCoins[who] || 0) + g; }
     else { const p = Math.ceil(wert * (1 + f)); if (geldVon(who) < p) return 'Nicht genug Münzen (' + fmtCompact(p) + ').'; if (who === 'player') coins -= p; else botCoins[who] -= p; r[x] += n; }
@@ -284,14 +288,14 @@ function rohDropMalen() {
     const d = document.getElementById('rohDrop'); if (!d) return;
     const ps = rohStunde('player');
     liveHtml(d, ROH.map(x => '<div class="roh-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + '</span><b>' + fmtNum(Math.floor(roh[x])) + '</b><small>+' + fmtStunde(ps[x]) + '/Std.</small></div>').join('') +
-        '<small class="roh-hint">Holzfäller, Steinbruch und Eisenmine in deiner Stadt machen Rohstoffe (je nach Landschaft der Hauptstadt). Mehr durch Sammeln auf Holz-, Stein- und Eisen-Feldern der Karte. Gebraucht für Burg, Gebäude und Forschung. Die Burg schützt ' + fmtCompact(burgSchutz('player')) + ' von jedem Rohstoff vor Angreifern.</small>');
+        '<small class="roh-hint">Holzfäller, Steinbruch und Eisenmine in deiner Stadt machen Rohstoffe (je nach Landschaft der Hauptstadt). Mehr durch Sammeln auf Holz-, Stein- und Eisen-Feldern der Karte. Gebraucht für Burg, Gebäude und Forschung. Die Burg schützt ' + fmtCompact(burgSchutzRoh('player')) + ' von jedem Rohstoff und ' + fmtCompact(burgSchutz('player')) + ' Gold vor Angreifern.</small>');
 }
 function rohUmschalten(an) { rohOffen = an === undefined ? !rohOffen : an; const d = document.getElementById('rohDrop'); if (!d) return; d.hidden = !rohOffen; document.getElementById('hudRoh').classList.toggle('on', rohOffen); if (rohOffen) rohDropMalen(); }
 
 function freiText(B) {                                         // was die Burg-Stufe B freischaltet
     const out = ['Gebäude bis Stufe ' + (B >= BURG_MAX ? 'zum Höchstwert' : B)];
     const m = 2 + Math.floor((B - 1) / 6); if (B === 1 || (B - 1) % 6 === 0) out.push(m + ' Marsch-Plätze');
-    out.push('Schutz: ' + fmtCompact(burgSchutz('player', B)) + ' von jedem Rohstoff');
+    out.push('Schutz: ' + fmtCompact(burgSchutzRoh('player', B)) + ' von jedem Rohstoff, ' + fmtCompact(burgSchutz('player', B)) + ' Gold');
     for (const id in BAU_AB_BURG) if (BAU_AB_BURG[id] === B) out.push('neues Gebäude: ' + cityDef(id).name);
     return out;
 }
@@ -315,7 +319,7 @@ function renderKeep() {                                        // das Burg-Fenst
     sp.style.display = bau ? '' : 'none'; if (bau) renderCitySheetTimer();
     const belegt = marschBelegt('player');
     liveHtml(document.getElementById('cityBExtra'),
-        '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Schutz</span><b>' + fmtCompact(burgSchutz('player')) + ' je Rohstoff</b></div></div>' +
+        '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Schutz</span><b>' + fmtCompact(burgSchutzRoh('player')) + ' je Rohstoff · ' + fmtCompact(burgSchutz('player')) + ' Gold</b></div></div>' +
         (max ? '' : '<div class="keep-h">Burg-Stufe ' + (B + 1) + ' schaltet frei</div><ul class="auf-frei">' + freiText(B + 1).map(t => '<li>' + icon('check') + t + '</li>').join('') + '</ul>') +
         '<small class="keep-note">Fällt nie · Sieger nimmt ' + Math.round(HAUPT_BEUTE * 100) + ' % über dem Schutz</small>');
 }
@@ -329,7 +333,7 @@ function effektText(id, lvl) {
     if (id === 'market') return lvl ? 'Gebühr ' + Math.round(marktGebuehr(lvl) * 100) + ' % · Tageslimit ' + fmtCompact(marktLimit('player')) + ' Münzen je Richtung.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: Gebühr ' + Math.round(marktGebuehr(lvl + 1) * 100) + ' %, höheres Limit.' : '') : 'Baue den Markt, um Rohstoffe gegen Münzen zu tauschen.';
     return '';
 }
-let foAst = 'w', marktMenge = 1;   // (Markt-Mengen 1 … 1.000: das kleinste Tageslimit ist 28 Münzen-Wert = 5 Rohstoffe)
+let foAst = 'w', marktMenge = MARKT_MENGEN[0];
 // Forschung als Baum (wie in Rise of Kingdoms): Spalten nach der nötigen Labor-Stufe, jede Forschung ein Feld mit
 // Stufen-Balken; antippen zeigt unten alles dazu (Wirkung jetzt → nächste Stufe, Voraussetzungen, hast / brauchst, Forschen)
 let foSel = null;
@@ -374,11 +378,11 @@ function marktHtml() {                                         // Shop → Markt
     const lvl = bauStufe('player', 'market');
     if (!lvl) return '<div class="notice">' + icon('lock') + '<span>Baue zuerst den Markt in deiner Stadt (ab Burg-Stufe ' + BAU_AB_BURG.market + ').</span></div>';
     const c = loadCity(), m = marktHeute(c), lim = marktLimit('player'), f = marktGebuehr(lvl), N = marktMenge;
-    return '<div class="seg" data-mk-n>' + [1, 10, 100, 1000].map(v => '<button type="button" data-mk-menge="' + v + '"' + (v === N ? ' class="on"' : '') + '>' + fmtCompact(v) + '</button>').join('') + '</div><div class="fo-list">' +
+    return '<div class="seg" data-mk-n>' + MARKT_MENGEN.map(v => '<button type="button" data-mk-menge="' + v + '"' + (v === N ? ' class="on"' : '') + '>' + fmtCompact(v) + '</button>').join('') + '</div><div class="fo-list">' +
             ROH.map(x => '<div class="fo-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span class="fo-t"><b>' + ROH_DEF[x].name + '</b><small>' + fmtNum(Math.floor(roh[x])) + ' vorhanden</small></span>' +
                 '<button type="button" class="btn btn--secondary btn--sm" data-mk="v:' + x + '"' + (roh[x] < N || m.v + N * MARKT_WERT > lim ? ' disabled' : '') + '>+' + fmtCompact(Math.floor(N * MARKT_WERT * (1 - f))) + ' ' + icon('coin', 'icon--coin') + '</button>' +
                 '<button type="button" class="btn btn--primary btn--sm" data-mk="k:' + x + '"' + (coins < Math.ceil(N * MARKT_WERT * (1 + f)) || m.k + N * MARKT_WERT > lim ? ' disabled' : '') + '>−' + fmtCompact(Math.ceil(N * MARKT_WERT * (1 + f))) + ' ' + icon('coin', 'icon--coin') + '</button></div>').join('') +
-            '</div><small class="keep-note">Links verkaufen, rechts kaufen (' + fmtCompact(N) + ' Stück). 1 Rohstoff = ' + MARKT_WERT + ' Münzen, Gebühr ' + Math.round(f * 100) + ' % (Markt Stufe ' + lvl + '). Heute noch: verkaufen ' + fmtCompact(Math.max(0, lim - m.v)) + ', kaufen ' + fmtCompact(Math.max(0, lim - m.k)) + ' Münzen-Wert.</small>';
+            '</div><small class="keep-note">Links verkaufen, rechts kaufen (' + fmtCompact(N) + ' Stück). ' + '100 Rohstoffe = ' + fmtNum(Math.round(100 * MARKT_WERT)) + ' Münzen, Gebühr ' + Math.round(f * 100) + ' % (Markt Stufe ' + lvl + '). Heute noch: verkaufen ' + fmtCompact(Math.max(0, lim - m.v)) + ', kaufen ' + fmtCompact(Math.max(0, lim - m.k)) + ' Münzen-Wert.</small>';
 }
 // Klicks im Gebäude-Fenster (Labor, Markt)
 document.getElementById('citySheet').addEventListener('click', e => {
@@ -401,7 +405,7 @@ if (!SYSTEM) {
 // Spähbericht: der Späher sieht alles (Alexander 4.10.) – Burg, Rohstoffe (und wie viel davon zu holen ist), Forschung
 function spaeherMehr(owner) {
     if (!owner) return null;
-    const r = owner === 'player' ? roh : (loadBotState()[owner] || {}).res, o = { burg: burgStufe(owner), roh: { schutz: burgSchutz(owner), c: Math.floor(geldVon(owner)) } };
+    const r = owner === 'player' ? roh : (loadBotState()[owner] || {}).res, o = { burg: burgStufe(owner), roh: { schutz: burgSchutz(owner), schutzR: burgSchutzRoh(owner), c: Math.floor(geldVon(owner)) } };
     if (r) for (const x of ROH) o.roh[x] = Math.floor(r[x] || 0);
     o.fo = { atk: foStufe(owner, 'm_atk'), def: foStufe(owner, 'm_def'), laz: foStufe(owner, 'm_laz') };
     return o;
@@ -493,7 +497,7 @@ AUF = {
     ROH_START, foZeitRoh, foAkaFuer,                           // (für das Hauptbuch 3B in spiel.js)
     ROH_DEF, BURG_MAX, BAU_AB_BURG, FORSCHUNG, MARKT_WERT,
     rohVon, rohDazu, rohSpeichern, basisRoh, rohBuchen, rohStunde, kannZahlen, zahlen, kostenHtml,
-    burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzStufe, burgFair,
+    burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzRoh, burgSchutzStufe, burgFair,
     marschFrei, marschOk, marschVoll, gruppeLaeuft, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
     foStufe, foWert, foSumme, foGesamt, foKosten, foFertig, marktLimit, marktHtml, marktGebuehr, marktStufe: who => bauStufe(who, 'market'),
     kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, tempelPlus, botschaftTempo, botschaftGeschenk, botschaftStufe: who => bauStufe(who, 'embassy'),

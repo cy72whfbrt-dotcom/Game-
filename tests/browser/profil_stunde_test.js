@@ -1,5 +1,5 @@
 // Wirtschaft „pro Stunde“ (Alexander 5.10., LIESMICH 11b A): was früher pro Sekunde kam, kommt jetzt pro Stunde. Geprüft wird, dass
-// genau das ankommt, was das Profil anzeigt (Beispiel Alexander: 2 Türme je 94/Std. → Profil 188/Std.), auch mit der Fähigkeit
+// genau das ankommt, was das Profil anzeigt (Beispiel Alexander: 2 Türme je 94/Std. → Profil 188/Std.; Münzen seit 6.10. × 1.000), auch mit der Fähigkeit
 // „Geschwindigkeit“ und allen Boni; Basis-Fenster und Tempel zeigen „/ Std.“; die Hauptstadt macht Holz/Stein/Eisen pro Stunde wie
 // angezeigt; Mitspieler genau gleich; die Saison endet sonntags 18 Uhr deutscher Zeit – auch wenn die Uhr des Geräts woanders steht.
 const { chromium, devices } = require('playwright');
@@ -19,7 +19,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const meine = () => [...ownedIslands].reduce((a, id) => a + (islandTroops[id] || 0), 0);
     const stunde = n => { prodCarry.coins = 0; prodCarry.troops = {}; const t0 = meine(), c0 = coins; produceTicks(n); return { troops: meine() - t0, coins: coins - c0 }; };
     const out = {};
-    // 1) Alexanders Beispiel: 2 Türme Stufe 22 ohne Boni → je 94 Truppen und 188 Münzen pro Stunde
+    // 1) Alexanders Beispiel: 2 Türme Stufe 22 ohne Boni → je 94 Truppen und 188.000 Münzen pro Stunde
     const pt = playerTroopMult, pc = playerCoinMult; playerTroopMult = () => 1; playerCoinMult = () => 1; skills.speed = 0;
     const hp = hourProduction('player'); renderProfile(true);
     out.grund = { hp, profil: [document.getElementById('kTroopsRate').textContent, document.getElementById('kCoinsRate').textContent],
@@ -59,21 +59,21 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return out;
   });
   console.log(JSON.stringify(r));
-  const G = r.grund;
-  ok(Math.round(G.hp.troops) === 188 && Math.round(G.hp.coins) === 376 && G.profil[0] === '+188' && G.profil[1] === '+376', 'Profil: 2 Türme je 94 Truppen/188 Münzen pro Stunde → +188 / +376', G);
+  const G = r.grund, fmtN = n => n.toLocaleString('de-DE');
+  ok(Math.round(G.hp.troops) === 188 && Math.round(G.hp.coins) === 376000 && G.profil[0] === '+188' && G.profil[1] === '+376.000', 'Profil: 2 Türme je 94 Truppen/188.000 Münzen pro Stunde → +188 / +376.000', G);
   ok(/Std\./.test(G.label) && !/Tick/.test(G.label), 'Profil sagt „Truppen / Std.“ (nicht mehr „/ Tick“)', G.label);
-  ok(G.kommt.troops === 188 && G.kommt.coins === 376, 'eine Stunde: genau 188 Truppen und 376 Münzen kommen an', G.kommt);
-  ok(r.takte.troops === 188 && r.takte.coins === 376, 'eine Stunde in 3.600 Sekunden-Takten: genau so viel (nichts geht verloren)', r.takte);
-  ok(/Truppen \/ Std\.\s*\+94/i.test(r.fenster) && /Münzen \/ Std\.\s*\+188/i.test(r.fenster) && !/\/ s\b/i.test(r.fenster), 'Basis-Fenster: „/ Std.“ mit dem Wert der Basis', r.fenster);
+  ok(G.kommt.troops === 188 && G.kommt.coins === 376000, 'eine Stunde: genau 188 Truppen und 376.000 Münzen kommen an', G.kommt);
+  ok(r.takte.troops === 188 && r.takte.coins === 376000, 'eine Stunde in 3.600 Sekunden-Takten: genau so viel (nichts geht verloren)', r.takte);
+  ok(/Truppen \/ Std\.\s*\+94/i.test(r.fenster) && /Münzen \/ Std\.\s*\+188\.000/i.test(r.fenster) && !/\/ s\b/i.test(r.fenster), 'Basis-Fenster: „/ Std.“ mit dem Wert der Basis', r.fenster);
   const T = r.tempo, sollT = T.hp.troops * T.anteil;
   ok(T.ms === 600 && Math.round(T.hp.troops) === Math.round(188 * 1000 / 600) && T.profil === '+' + Math.round(T.hp.troops) && T.kommt.troops <= sollT && sollT - T.kommt.troops < 2, 'Geschwindigkeit (Tick 0,6 s): Profil zeigt mehr pro Stunde – genau das kommt an (je Basis wartet höchstens der Bruchteil einer Truppe)', T);
   const O = r.boni;
-  ok(O.profil[0] === '+' + O.fmt[0] && O.profil[1] === '+' + O.fmt[1] && O.hp.troops > 188 && O.hp.coins > 376 && Math.abs(O.kommt.troops - O.hp.troops) < 2 && Math.abs(O.kommt.coins - O.hp.coins) < 1, 'mit Boni: was im Profil steht, kommt in einer Stunde an (±1)', O);
-  ok(/pro Stunde/.test(r.tempel) && !/Tick/.test(r.tempel) && r.tempel.includes('+' + Math.round(15 * r.tempelMult) + ' Münzen') && r.tempel.includes('+' + Math.round(6 * r.tempelMult) + ' Truppen pro Stunde'), 'Tempel: Münzen und Truppen pro Stunde', r.tempel);
+  ok(O.profil[0] === '+' + O.fmt[0] && O.profil[1] === '+' + O.fmt[1] && O.hp.troops > 188 && O.hp.coins > 376000 && Math.abs(O.kommt.troops - O.hp.troops) < 2 && Math.abs(O.kommt.coins - O.hp.coins) < 1, 'mit Boni: was im Profil steht, kommt in einer Stunde an (±1)', O);
+  ok(/pro Stunde/.test(r.tempel) && !/Tick/.test(r.tempel) && r.tempel.includes('+' + fmtN(Math.round(15000 * r.tempelMult)) + ' Münzen') && r.tempel.includes('+' + Math.round(6 * r.tempelMult) + ' Truppen pro Stunde'), 'Tempel: Münzen und Truppen pro Stunde', r.tempel);
   const R = r.roh;
-  ok(['h', 's', 'e'].every(k => Math.abs(R.kam[k] - R.rs[k]) <= 1) && R.rs.h > 50 && R.rs.h < 1000, 'Hauptstadt: Holz/Stein/Eisen pro Stunde wie angezeigt (Holzfäller 20: ' + Math.round(R.rs.h) + ' Holz/Std.)', R);
+  ok(['h', 's', 'e'].every(k => Math.abs(R.kam[k] - R.rs[k]) <= 1) && R.rs.h > 5e4 && R.rs.h < 1e6, 'Hauptstadt: Holz/Stein/Eisen pro Stunde wie angezeigt (RoK-Größe, × ROH_FAKTOR) (Holzfäller 20: ' + Math.round(R.rs.h) + ' Holz/Std.)', R);
   const K = r.klein;
-  ok(K.f.join('|') === '0,04|0|1,3|150' && K.burg > 0 && K.burg < 1 && K.burgText !== '0' && K.burgText === String(Math.round(K.burg * 100) / 100).replace('.', ','), 'kleine Erträge: unter 1 mit zwei Nachkommastellen (nur die Burg: ' + K.burgText + ' Holz/Std., nicht „0“)', K);
+  ok(K.f.join('|') === '0,04|0|1,3|150' && K.burg > 30 && K.burg < 150 && K.burgText === String(Math.round(K.burg * 10) / 10).replace('.', ','), 'kleine Erträge: unter 1 mit zwei Nachkommastellen, nur die Burg ' + K.burgText + ' Holz/Std. (75 × Landschaft)', K);
   const M = r.bot;
   ok(Math.abs(M.troops - M.hp.troops * M.anteil) <= 2 && Math.abs(M.coins - M.hp.coins * M.anteil) <= 2 && M.hp.troops > 0, 'Mitspieler: eine Stunde bringt genau seine Produktion pro Stunde', M);
   ok(r.ortszeit !== -60 && r.ortszeit !== -120 && r.saison.every(s => s.ende === 'So., 18:00' && s.tage >= 56 - 1 / 12 && s.tage < 63), 'Saison-Ende: immer Sonntag 18:00 deutscher Zeit (Gerät in Los Angeles, Sommer-/Winterzeit)', r.saison);

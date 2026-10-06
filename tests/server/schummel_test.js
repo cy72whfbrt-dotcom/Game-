@@ -39,8 +39,8 @@ let b;
   ok('keine Skript-Fehler', !fehler.length, fehler.join(' | '));
   // 4) Das Labor wartet noch im Hauptbuch → dasselbe (alte) Profil wird alle 10 s nochmal angewendet. Früher sprangen die
   //    Welt-Rohstoffe dabei auf die Profil-Werte zurück (Ertrag/Beute weg, der Unterschied ging als Nachricht ans Handy).
-  //    Handy zu (kein neues Profil mehr): was in der Welt steht, bleibt (Ertrag pro Stunde, in 5 Min. nicht messbar: nur die Burg
-  //    gibt etwa 0,04 Holz pro Stunde – darum „nicht weniger“ statt „wächst“; ein Holz-Gutschein per SQL ginge nicht: der Weltrechner
+  //    Handy zu (kein neues Profil mehr): was in der Welt steht, bleibt (Ertrag pro Stunde, in 5 Min. kaum messbar: die Burg allein
+  //    gibt etwa 75 Holz pro Stunde – darum „nicht weniger“ statt „wächst“; ein Holz-Gutschein per SQL ginge nicht: der Weltrechner
   //    rechnet im Speicher und liest ow_bots nicht zurück)
   await p.close();
   await warte(RUNDE);

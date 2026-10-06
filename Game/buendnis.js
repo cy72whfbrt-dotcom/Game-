@@ -14,7 +14,7 @@
 // 1) DATEN
 // ==============================================================================================================
 const BUND = {
-    MAX: 5, KOSTEN: wirtK(30000),                             // höchstens 5 Mitglieder (Spieler und Mitspieler zusammen – Alexander 3.10.) · Gründen kostet 30.000 Münzen × WIRTSCHAFT_KOSTEN (17)
+    MAX: 5, KOSTEN: Math.round(wirtM(30000) / 1e4) * 1e4,     // höchstens 5 Mitglieder (Spieler und Mitspieler zusammen – Alexander 3.10.) · Gründen kostet 30.000 Münzen (wirtM), auf 10.000 gerundet (20.000 statt krumm 16.667)
     SIG_MS: 10 * 60000, SIG_PAUSE: 30000, SIG_MAX: 30,        // Signale: 10 Min. auf der Karte, 1 pro 30 s und Spieler
     RALLY_MIN: [1, 3, 5], RALLY_PRO_BUND: 3,
     GESCHENKE_TAG: 5, KISTEN_TAG: 3,                          // pro Mitglied höchstens 5 Geschenke am Tag · pro Geber 3 Kisten-Geschenke
@@ -781,7 +781,7 @@ function bundGeschenk(geber, grund) {
     for (const w of a.mit) {
         if (w === geber || (g.n[w] || 0) >= BUND.GESCHENKE_TAG) continue;
         g.n[w] = (g.n[w] || 0) + 1;
-        const hp = hourProduction(w), bg = AUF ? AUF.botschaftGeschenk(w) : 1, c = Math.round(Math.max(wirtK(2000), hp.coins * .05) * bg), tr = Math.round(Math.max(wirtK(500), hp.troops * .05) * bg);   // (Botschaft: größer · Mindestwerte × WIRTSCHAFT_KOSTEN)
+        const hp = hourProduction(w), bg = AUF ? AUF.botschaftGeschenk(w) : 1, c = Math.round(Math.max(wirtM(2000), hp.coins * .05) * bg), tr = Math.round(Math.max(wirtK(500), hp.troops * .05) * bg);   // (Botschaft: größer · Mindestwerte × WIRTSCHAFT_KOSTEN, Münzen wirtM)
         const x = Math.random(), crate = x < .03 ? 1 : x < .12 ? 0 : -1;                       // selten eine graue oder grüne Ausrüstung
         if (botById[w] && botById[w].mensch) {
             if (WELT.wache) WELT.wache.gutschrift(w, c, tr);                                   // (damit der Schummel-Schutz das Abholen durchlässt)

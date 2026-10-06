@@ -280,12 +280,12 @@ function attackFlatBonus(troops) {
 function goldPerKillRate() {
     return (skills.attackGold || 0) * SKILL_DEFS.attackGold.rate;
 }
-function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy killed; a hero's +X % Gold: X % on it, and X % of a coin per kill of his own (× WIRTSCHAFT_KOSTEN wie der Satz)
+function killGoldRate(who, hx) {               // "Angriff: Gold" per enemy killed; a hero's +X % Gold: X % on it, and X % of a coin per kill of his own (× WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR wie der Satz)
     const g = hx ? (hx.gold || 0) / 100 : 0;
-    return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g * WIRTSCHAFT_KOSTEN;
+    return (who === 'player' ? goldPerKillRate() : botGoldRate(who, 'attackGold')) * (1 + g) + g * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR;
 }
 function defGoldRate(who) { return who === 'player' ? (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate : botGoldRate(who, 'defenseGold'); }
-function defGoldRateHx(who, hx) { const g = hx ? (hx.gold || 0) / 100 : 0; return defGoldRate(who) * (1 + g) + g * WIRTSCHAFT_KOSTEN; }   // "Verteidigung: Gold" + der Held des Verteidigers (wie killGoldRate)
+function defGoldRateHx(who, hx) { const g = hx ? (hx.gold || 0) / 100 : 0; return defGoldRate(who) * (1 + g) + g * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR; }   // "Verteidigung: Gold" + der Held des Verteidigers (wie killGoldRate)
 function payGold(who, n) { n = Math.round(n); if (n <= 0 || !who) return 0; if (who === 'player') inboxAdd({ src: 'fight', coins: n }); else botCoins[who] = (botCoins[who] || 0) + n; return n; }
 function fieldGold(aWho, dWho, fb, aHx, dHx) {  // fights in the open pay like fights for bases: the attacker per enemy killed, the defender per attacker killed (+ each side's hero)
     return { a: payGold(aWho, fb.dLoss * killGoldRate(aWho, aHx)), d: payGold(dWho, fb.aLoss * defGoldRateHx(dWho, dHx)) };
@@ -299,7 +299,7 @@ function skillBonusText(def, level) {
     if (def.atkPct) return '+' + fmtNum(level * def.atkPct) + ' % Truppen';
     if (def.defPct) return '+' + fmtNum(level * def.defPct) + ' % Truppen';
     if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
-    if (def.rate) return '+' + (level * def.rate * 1000).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' Gold je 1.000 Kills';
+    if (def.rate) return '+' + fmtNum(Math.round(level * def.rate * 1000)) + ' Gold je 1.000 Kills';   // (Münzen × MUENZ_FAKTOR: Stufe 1 = 167)
     if (def.msPerLevel) { const l = Math.min(level, def.max || level); return '+' + fmtNum(Math.round(1000 / (1000 - l * def.msPerLevel) * 100 - 100)) + ' % Produktion, +' + fmtNum(l * 5) + ' % Marschtempo' + (def.max && level >= def.max ? ' (max.)' : ''); }
     return '';
 }

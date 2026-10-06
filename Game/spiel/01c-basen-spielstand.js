@@ -10,10 +10,10 @@ let playerIslandId = null;
 let id = 0;
 // Tore first (the bases keep clear of them): a capturable gate on the outer bank of every bridge.
 // Whoever owns a gate crosses its bridge for free and collects the toll everyone else pays. Unowned gates are shut.
-const GATE_STATS = { guardian: { troops: 2e6, def: 5e5, level: 25, toll: 0.25 }, throne: { troops: 5e7, def: 1e7, level: 45, toll: 0.5 } };
-const BORDER_GATE = { 4: { troops: 1500, def: 400, level: 3 }, 3: { troops: 12000, def: 3000, level: 8 }, 2: { troops: 1e5, def: 25000, level: 14 }, 1: { troops: 4e5, def: 1e5, level: 18 } };
-// Wirtschaft 5.10.: alle neutralen Werte (Basen, Tempel, Tore) × WIRTSCHAFT_KOSTEN (wirtK). Die Thron-Tore aber nie unter der Start-Armee:
-// sonst nähme ein neuer Spieler mit seinen 100.000 Start-Truppen (bleiben – Alexander) den Thron am ersten Tag (÷1800: 28.000 + 5.600)
+// Truppen in festen Zahlen (Alexander 6.10., Z4: 5.000 Start-Truppen): die Grenz-Tore 5.000–20.000 (deutlich über den Basen), die Wächter-Tore über
+// den stärksten Wächter-Türmen, die Thron-Tore darüber – nie unter THRON_TOR_MIN (sonst nähme man den Thron am ersten Tag)
+const GATE_STATS = { guardian: { troops: 3e4, def: 1e4, level: 25, toll: 0.25 }, throne: { troops: 2e5, def: 6e4, level: 45, toll: 0.5 } };
+const BORDER_GATE = { 4: { troops: 5000, def: 1500, level: 3 }, 3: { troops: 8000, def: 2500, level: 8 }, 2: { troops: 12000, def: 4000, level: 14 }, 1: { troops: 20000, def: 6000, level: 18 } };
 const THRON_TOR_MIN = { troops: 150000, def: 50000 };
 const gateSpots = bridges.map(br => {
     const A = landmasses[br.a], B = landmasses[br.b], ta = A.tier, tb = B.tier;
@@ -22,7 +22,7 @@ const gateSpots = bridges.map(br => {
     const ex = outerA ? br.x1 : br.x2, ey = outerA ? br.y1 : br.y2, ox = outerA ? br.x2 : br.x1, oy = outerA ? br.y2 : br.y1;
     const bl = Math.hypot(ox - ex, oy - ey) || 1, key = Math.max(1, Math.min(4, Math.ceil((Math.min(A.ring, B.ring) - 1) / 1.5)));
     const st0 = kind === 'border' ? Object.assign({ toll: 0.1 }, BORDER_GATE[key]) : GATE_STATS[kind], mn = kind === 'throne' ? THRON_TOR_MIN : { troops: 1, def: 1 };
-    const st = Object.assign({}, st0, { troops: wirtK(st0.troops, mn.troops), def: wirtK(st0.def, mn.def) });
+    const st = Object.assign({}, st0, { troops: Math.max(st0.troops, mn.troops), def: Math.max(st0.def, mn.def) });
     return { br, kind, st, lm: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, ex, ey };
 });
 // Start places: 4 per region on the outermost two rings (player and bot capitals go there, the rest stays empty land).
@@ -66,8 +66,8 @@ for (const lm of landmasses) {
     }
     for (const p of mine) islands.push({
         id: id++, landmassId: lm.id, x: p.x, y: p.y, radius: ISLAND_RADIUS, type: 'tower',
-        neutralTroops: wirtK(tierStats ? niceRoundW(tierStats.troops[0] + rand() * (tierStats.troops[1] - tierStats.troops[0])) : (NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1))) * ringMult(lm), 0),
-        neutralDefense: wirtK(tierStats ? niceRoundW(tierStats.def[0] + rand() * (tierStats.def[1] - tierStats.def[0])) : (NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))) * ringMult(lm)),
+        neutralTroops: tierStats ? niceRoundW(tierStats.troops[0] + rand() * (tierStats.troops[1] - tierStats.troops[0])) : Math.round((NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1))) * ringTruppen(lm) / 100),
+        neutralDefense: tierStats ? niceRoundW(tierStats.def[0] + rand() * (tierStats.def[1] - tierStats.def[0])) : Math.max(1, Math.round((NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))) * ringTruppen(lm) / 100)),
         neutralLevel: tierStats ? tierStats.level : 1 + Math.round(Math.log2(ringMult(lm)))
     });
     if (hasTemple) islands.push({
@@ -75,8 +75,8 @@ for (const lm of landmasses) {
         radius: ISLAND_RADIUS * (isMega ? 1.6 : lm.tier === 'guardian' ? 1.45 : 1.3),
         type: isMega ? 'megaTemple' : 'temple',
         guardian: lm.tier === 'guardian',
-        neutralTroops: wirtK(tierStats ? tierStats.temple[0] : Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * ringMult(lm)),
-        neutralDefense: wirtK(tierStats ? tierStats.temple[1] : Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * ringMult(lm)),
+        neutralTroops: tierStats ? tierStats.temple[0] : Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * ringTruppen(lm) / 100),
+        neutralDefense: tierStats ? tierStats.temple[1] : Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * ringTruppen(lm) / 100),
         neutralLevel: tierStats ? tierStats.templeLevel : 1
     });
 }
@@ -87,7 +87,7 @@ for (const lm of landmasses) {
     for (let k = 0; k < want && k * step < order.length; k++) {
         const sl = order[Math.floor(k * step)], lm = landmasses[sl.lm];
         islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true,
-            neutralTroops: wirtK(NEUTRAL_TROOPS_MIN * ringMult(lm), 0), neutralDefense: wirtK(NEUTRAL_DEFENSE_MIN * ringMult(lm)), neutralLevel: 1 });
+            neutralTroops: 0, neutralDefense: 1, neutralLevel: 1 });   // (Startplätze: leer – hier ziehen neue Hauptstädte ein)
     }
 }
 for (const gsp of gateSpots) {
@@ -216,7 +216,7 @@ try {
 // troop record for their home base yet) do they start with a
 // 100,000-troop head start - not on every reload where troops
 // happen to be at 0 from actual gameplay, and not for bots.
-const PLAYER_START_TROOPS = 100000;
+const PLAYER_START_TROOPS = 5000;   // neue Spieler, Mitspieler und jede neue Saison (Alexander 6.10., Z4)
 const isFreshPlayerSave = !(playerIslandId in islandTroops);
 for (const ownedId of ownedIslands) {
     if (!islandLevels[ownedId]) islandLevels[ownedId] = 1;

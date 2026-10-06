@@ -83,7 +83,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(n.lvl === '1' && n.sp === '0' && n.skills && Object.values(n.skills).every(x => !x), 'Stufe 1, keine Fähigkeitspunkte', { lvl: n.lvl, sp: n.sp, skills: n.skills });
   ok(n.coins === '0', 'Start-Gold wie ein neuer Spieler (0)', n.coins);
   ok(n.ownN === 1 && n.capNeu && n.rand && n.zweite === null, 'nur noch die Hauptstadt – auf einem neuen Platz am Rand, die zweite Basis ist neutral', { ownN: n.ownN, neu: n.capNeu, rand: n.rand, zweite: n.zweite });
-  ok(n.truppen >= 100000 && n.truppen < 2e5, 'Start-Truppen wie ein neuer Spieler (100.000)', n.truppen);
+  ok(n.truppen >= 5000 && n.truppen < 6000, 'Start-Truppen wie ein neuer Spieler (5.000)', n.truppen);
   ok(n.bund === 0, 'keine Bündnisse mehr', n.bund);
   ok(!n.log && (!n.fog || !n.weit) && n.wounded === 0, 'Kampfberichte, Nebel (um die alten Basen wieder zu) und Verwundete neu', { log: n.log, alteFelder: n.fog, wounded: n.wounded });
   ok(n.keep === 4 && n.aca === 4 && n.lumber === 4 && n.forge === 2 && JSON.stringify(n.fo) === '{"w_prod":2,"m_atk":1}' && n.bau === 0 && !n.foRun, 'Burg fair: deine Burg 7 → 4, Gebäude bis 4 (Schmiede 2 bleibt), Forschung bis Labor 4 (Ertrag 3 → 2, Kundschaft weg), Burg-Bau und Forschung darüber abgebrochen', { keep: n.keep, aca: n.aca, lumber: n.lumber, forge: n.forge, fo: n.fo, bau: n.bau, foRun: n.foRun });
@@ -103,7 +103,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(/['"]saison\|['"]\s*\+\s*\w+\s*\+\s*['"]\|['"]\s*\+\s*\w+/.test(await p.evaluate(() => saisonNeu.toString())), 'Nachricht „saison“: Nummer je Reset eindeutig (mit Zeitpunkt)');
   const B = n.bot;
   ok(B.lvl === 1 && B.skills === 0 && B.coins < 1e5 && B.basen === 1, 'Mitspieler: Stufe 1, keine Fähigkeiten, Start-Gold, nur die Hauptstadt', B);
-  ok(B.truppen >= 100000 && B.truppen < 2e5, 'Mitspieler: Start-Truppen wie ein neuer Spieler', B.truppen);
+  ok(B.truppen >= 5000 && B.truppen < 6000, 'Mitspieler: Start-Truppen wie ein neuer Spieler', B.truppen);
   ok(B.keep === 4 && B.aca === 4 && B.lumber === 4 && B.wall === 3 && JSON.stringify(B.fo) === '{"w_prod":2,"m_atk":2,"x_tempo":2}' && !B.bau.length && !B.foRun,
     'Burg fair beim Mitspieler: Burg 14 → 4, Gebäude bis 4, Forschung bis Labor 4, Burg-Bau (15) und Forschung (Sammeln 3) abgebrochen', B);
   ok(B.gear && B.hs && ['h', 's', 'e'].every(k => B.res[k] === 0) && resVor.h >= 4444, 'Mitspieler: Ausrüstung, Helden bleiben, Holz/Stein/Eisen 0 (einmalige Ausnahme)', { B, resVor });
