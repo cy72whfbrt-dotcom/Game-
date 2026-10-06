@@ -1575,6 +1575,14 @@ Nacht – vorher bauen und testen.
     abgeschnitten, viel Platz. → Komplett neu mit Designer + Online-Vorbildern (RoK „Marsch aufstellen“: große Helden-
     Porträts, Truppen-Regler mit Symbol, Kraftvergleich als Balken; Million Lords: kleines Popup). Ziel: sieht aus wie ein
     Spiel, nicht wie ein Formular; deutlich weniger Kästen.
+11. **Fenster „Deine Basis“: Design gefällt nicht** („Design Scheiße“, Bild d5be07d4, 18:40). Wirkt wie Tabelle: 4 graue
+    Kacheln (Truppen hier / Verteidigung / Münzen/Std. / Truppen/Std.), großer gelber Balken „Aufwerten“, 3 graue Knöpfe;
+    Titel „Turm #19259“ + „X 194 · Y 47“ (Nummern/Koordinaten statt Name). → Neu mit Designer + Vorbildern (RoK/Million
+    Lords Basis-Popup: Bild der Basis, Name, Stufe, wenige Werte als Symbol-Zeile, runde Aktions-Knöpfe).
+    Zahlen dabei auffällig: Münzen/Std. **+40.000** aber Truppen/Std. **+20** (passt das zusammen? Alexander hat „Truppen wie
+    auf dem Server lassen“ gesagt – trotzdem zeigen); eroberte Basis zeigt Stufe **11** (neutral war Stufe 1?) – prüfen;
+    „Sammeln“ und „Mehrfach“ kosten je **1 Edelstein** – sinnvoll?; „Aufwerten 1.000“ rot (zu wenig Münzen) – ok, aber
+    Grund zeigen („Fehlt: 217 Münzen“).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
