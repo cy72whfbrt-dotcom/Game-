@@ -72,6 +72,20 @@ const holen = (port, pfad, gzip) => new Promise((ja, nein) => http.get({ host: '
       if (mit3D) pruef(reihe.join(',') === 'three,baukunst' && st.stub === 1 && !st.ow, 'nach three.js kommt baukunst.js (ohne echtes three: keine 3D-Bilder, kein Fehler)' + wie + ': ' + reihe.join(','));
       else pruef(reihe.join(',') === 'three', 'ohne three.js wird baukunst.js gar nicht geladen' + wie + ': ' + reihe.join(','));
       pruef(st.insel > 0 && errs.length === 0, 'Spiel läuft ohne Fehler' + wie + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
+      if (!mit3D) {   // Profil → Einstellungen → Version: aus jeder Skript-Adresse (früher stand dort „–“, weil nur spiel.js?v=<Zeit> ging)
+        const sha7 = crypto.createHash('sha1').update(fs.readFileSync(path.join(GAME, 'spiel.js'))).digest('hex').slice(0, 7);
+        const ver = await p.evaluate(() => {
+          const r = {}; openPanel(profilePopup); showProfileTab('set'); r.fenster = document.getElementById('setVersion').textContent;
+          [...document.scripts].find(s => /spiel\.js/.test(s.src)).remove();
+          const s = document.createElement('script'); s.type = 'text/plain'; s.src = 'skript.php?d=spiel&v=0123456789ab'; document.head.appendChild(s); r.server = spielVersion();
+          s.src = 'spiel.js?v=1759700000'; r.original = spielVersion();
+          window.__OW = { version: 1759750000 }; r.ow = spielVersion(); delete window.__OW;
+          s.remove(); r.keine = spielVersion(); return r;
+        });
+        const datum = /^\d\d\.\d\d\.\d{4}, \d\d:\d\d$/;
+        pruef(ver.fenster === sha7 && ver.server === '0123456' && datum.test(ver.original) && ver.original.includes('.10.2025') && datum.test(ver.ow) && ver.ow !== ver.original && ver.keine === '–',
+          'Einstellungen → Version (Vorschau, skript.php, spiel.js?v=Zeit, Zeit vom Server, keine): ' + JSON.stringify(ver));
+      }
       await p.context().close();
     }
   } finally { await b.close(); srv.close(); }

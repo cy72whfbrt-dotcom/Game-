@@ -232,5 +232,11 @@ $sk = file_get_contents("$g/skript.php"); preg_match("/const SKRIPTE = \[([^\]]*
 pruefe('Startseite holt die Skripte vorab (nicht in der Wartung)', strpos($ix, "if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung'] as \$s) echo '<link rel=\"prefetch\" href=\"' . skript(\$s) . '\">'") !== false, true);
 pruefe('Spielseite gepackt (nach dem Login-Teil)', preg_match("/spielseite_vorbereiten\(\);[^\n]*\nif \(!ini_get\('zlib.output_compression'\) && function_exists\('ob_gzhandler'\)\) ob_start\('ob_gzhandler'\);/", file_get_contents("$g/spiel.php")), 1);
 pruefe('skript.php und verkleinern.js: dieselbe Liste', [$m1[1] ?? 'fehlt', strpos($sk, "in_array(\$name, SKRIPTE, true)") !== false], [$m2[1] ?? 'fehlt2', true]);
+// Game/klein/ ist nicht im Git: Vorschau/alle_tests.sh und hochladen.sh prüfen nach dem Bauen, dass jede Datei da ist
+$w = __DIR__ . '/../werkzeuge'; $hs = file_get_contents(__DIR__ . '/../hochladen.sh');
+pruefe('hochladen.sh: klein/ vollständig vor dem Hochladen', [strpos($hs, 'node werkzeuge/verkleinern.js voll ||') > strpos($hs, 'werkzeuge/spiel_bauen.sh ||'), strpos($hs, 'node werkzeuge/verkleinern.js voll ||') < strpos($hs, 'AENDERN=""')], [true, true]);
+pruefe('Vorschau und alle_tests.sh: klein/ vollständig', [strpos(file_get_contents("$w/vorschau_bauen.php"), "verkleinern.js') . ' voll") !== false, strpos(file_get_contents(__DIR__ . '/alle_tests.sh'), 'node werkzeuge/verkleinern.js voll ') !== false], [true, true]);
+// Profil → Einstellungen → Version: Zeit von spiel.js kommt mit der Spielseite (die Skript-Adresse hat jetzt die sha1)
+pruefe('Spielseite nennt die Version', strpos(file_get_contents("$g/server/03-nebel-maersche-seite.php"), "'version' => filemtime(__DIR__ . '/spiel.js'),") !== false, true);
 echo ($fehler ? "$fehler von $n Tests FEHLGESCHLAGEN\n" : "Alle $n Server-Tests bestanden.\n");
 exit($fehler ? 1 : 0);

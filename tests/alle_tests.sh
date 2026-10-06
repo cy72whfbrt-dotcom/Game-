@@ -37,6 +37,8 @@ test1() { local g=$1 n=$2; shift 2; fortschritt "$g" "$n" läuft; lauf "$n" "$T/
   if rot "$T/$n.log"; then fortschritt "$g" "$n" FEHLER; else fortschritt "$g" "$n" OK; fi; }
 php werkzeuge/vorschau_bauen.php "$V" test viele >/dev/null || fertig 1 "FEHLER: Vorschau (test) nicht gebaut"   # Test-Modus: alle Mitspieler, fast unbegrenzt alles
 php werkzeuge/vorschau_bauen.php "$N" >/dev/null || fertig 1 "FEHLER: Vorschau (normal) nicht gebaut"            # normal: echte Zahlen (für Kampf-Rechnungen)
+# (die Vorschau setzt spiel.js usw. zusammen und erzeugt Game/klein/ – nicht im Git, fehlt in frischen Kopien; hier sicher da)
+node werkzeuge/verkleinern.js voll >/dev/null || fertig 1 "FEHLER: Game/klein/ unvollständig (werkzeuge/spiel_bauen.sh)"
 declare -A BEFEHL=([welt_test.js]="node tests/welt_test.js" [server_test.php]="php tests/server_test.php" [karte_test.js]="node tests/karte_test.js")
 EINHEIT="welt_test.js server_test.php karte_test.js"
 for x in $EINHEIT; do test1 Einheit "$x" ${BEFEHL[$x]} & done   # (erst nach dem Zusammensetzen von spiel.js)

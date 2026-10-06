@@ -199,6 +199,7 @@ function spielseite_vorbereiten() {
         'stand' => (object)$stand, 'neu' => $neu, 'token' => $tok, 'name' => $ich['name'],
         'uid' => (int)$ich['id'], 'leiter' => $leiter, 'welt' => $welt, 'spieler' => $spieler, 'sicht_v' => $sicht['v'],
         'nameGewaehlt' => !empty($ich['anzeigename']), 'admin' => ist_admin($ich),
+        'version' => filemtime(__DIR__ . '/spiel.js'),   // Profil → Einstellungen → Version (Zeit des Hochladens)
     ], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
     if ($ow === false) { http_response_code(503); exit('Der Server hat gerade ein Problem. Bitte gleich nochmal versuchen.'); }
     return '<script nonce="' . csp_nonce() . '">window.__OW = ' . $ow . ';</script>'
