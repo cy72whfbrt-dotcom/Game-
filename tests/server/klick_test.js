@@ -35,7 +35,7 @@ let b;
       for (let k = 0; k < Math.min(n, 30); k++) {
         const r = await ev(([pan, k]) => { const bs = [...document.getElementById(pan).querySelectorAll('button')].filter(x => x.offsetParent && !x.disabled); const x = bs[k]; if (!x) return null;
           const t = (x.textContent || x.getAttribute('aria-label') || x.id || '').trim().slice(0, 30);
-          if (/close|schlie|abmelden|zurück|Close/i.test(t + x.className + x.id) || x.closest('form[action]') || x.matches('[id^=tabBtn],[data-gtab],[data-ggrp],[data-ktab],[data-stab],[data-btab]') || /Passwort|Name ändern|Verkaufen|Verlassen|Austreten|Auflösen|löschen/i.test(t)) return '-';
+          if (/close|schlie|abmelden|zurück|Close/i.test(t + x.className + x.id) || x.closest('form[action]') || x.matches('[id^=tabBtn],[data-gtab],[data-ggrp],[data-ktab],[data-stab],[data-btab]') || /Passwort|Name ändern|Verkaufen|Verlassen|Austreten|Auflösen|löschen/i.test(t) || /^(beitreten|anfrage|anfrageWeg|einlJa|einlNein|einlAn|einlWeg)$/.test(x.dataset.bact || '')) return '-';   // (Beitreten-Knöpfe der Bündnis-Startseite: sonst > 40 Bündnis-Befehle/Minute = Flut-Hinweis)
           x.click(); return t; }, [pan, k]);
         if (r && r !== '-') { gedrueckt++; wo = pan + '/' + nm + ' Knopf „' + r + '“'; await p.waitForTimeout(250); await zu(); await pruef(wo);
           const offen = await ev(pan => isPanelOpen(document.getElementById(pan)), pan);
