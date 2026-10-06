@@ -129,14 +129,15 @@ function cityNutz(id, lvl) {                       // die eigene Seite eines Geb
     if (!lvl) return null;
     return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], wall: ['Helden', 'defense'] }[id] || null;   // (Mauer: die Verteidigungs-Helden)
 }
-function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt
+function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt (noch nicht gebaut: das Gebäude der Stufe 1, ausgegraut – jedes sein eigenes)
     if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
-    const t = cityTierOf(lvl);
+    const t = cityTierOf(lvl) || 1;
     if (id === 'wall') return citySprite('gatehouse', t);
-    return t ? citySprite(id, t, id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '') : citySprite('ghost', 0, id);
+    return citySprite(id, t, id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '');
 }
 function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben links im Fenster (nur neu gemalt, wenn sich die Stufe ändert)
-    const el = document.getElementById('cityBIcon'), s = cityBildSpr(id, lvl), key = id + ':' + (id === 'keep' ? Math.floor((lvl || 1) / 5) : cityTierOf(lvl)) + ':' + s.c.width;
+    const el = document.getElementById('cityBIcon'), s = cityBildSpr(id, lvl), zu = id !== 'keep' && !lvl, key = id + ':' + (id === 'keep' ? Math.floor((lvl || 1) / 5) : cityTierOf(lvl)) + ':' + s.c.width;
+    el.classList.toggle('is-zu', zu);
     if (el.dataset.bild === key && el.firstChild && el.firstChild.tagName === 'CANVAS') return;
     el.dataset.bild = key; el._lh = undefined;
     const N = 192, cv = document.createElement('canvas'); cv.width = cv.height = N;
@@ -144,9 +145,10 @@ function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben lin
     g.imageSmoothingQuality = 'high'; g.drawImage(s.c, (N - w) / 2, Math.min(N - h, (N - h) / 2 + N * .04), w, h);
     el.replaceChildren(cv);
 }
-function anfZeile(ok, ic, txt, val) {              // eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz
-    const [n, k] = Array.isArray(ic) ? ic : [ic];
-    return '<div class="anf' + (ok ? ' is-ok' : ' is-bad') + '">' + icon(n, k) + '<span>' + txt + '</span>' + (val ? '<b>' + val + '</b>' : '') + '<i>' + icon(ok ? 'check' : 'close') + '</i></div>';
+function anfZeile(ok, ic, txt, val, geh) {         // eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz – geh [Fenster, Knopf]: fehlt ein Gebäude, springt der Knopf dorthin
+    const [n, k] = Array.isArray(ic) ? ic : [ic], zu = geh && !ok;
+    return '<div class="anf' + (ok ? ' is-ok' : ' is-bad') + (zu ? ' is-geh' : '') + '">' + icon(n, k) + '<span>' + txt + '</span>' + (val ? '<b>' + val + '</b>' : '') +
+        (zu ? '<button type="button" class="btn btn--secondary btn--sm anf-geh" data-anf-geh="' + geh[0] + '">' + geh[1] + icon('send') + '</button>' : '<i>' + icon(ok ? 'check' : 'close') + '</i>') + '</div>';
 }
 function anfKosten(k) {                            // Münzen und Rohstoffe: hast / brauchst
     if (!k) return ''; const r = AUF ? AUF.rohVon('player') || {} : {}, out = [];
@@ -157,11 +159,21 @@ function anfKosten(k) {                            // Münzen und Rohstoffe: has
 function cityAnfHtml(id, lvl, k) {                 // Voraussetzungen für die nächste Stufe (Burg, Bauarbeiter, Münzen, Rohstoffe)
     const c = loadCity(), rows = [];
     if (AUF && id !== 'keep') { const B = AUF.burgStufe('player'), need = !lvl ? AUF.BAU_AB_BURG[id] || 0 : B >= AUF.BURG_MAX ? 0 : lvl + 1;
-        if (need > 1) rows.push(anfZeile(B >= need, 'castle', 'Burg Stufe ' + need)); }
+        if (need > 1) rows.push(anfZeile(B >= need, 'castle', 'Burg Stufe ' + need, B < need ? 'jetzt ' + B : '', ['_keep', 'Zur Burg'])); }
     const frei = c.builds.length < citySlots(c);
     rows.push(anfZeile(frei, 'upgrade', frei ? 'Bauarbeiter frei' : 'Bauarbeiter beschäftigt (' + cityDef(c.builds[0].id).name + ')'));
     return '<div class="anf-h">Voraussetzungen</div><div class="anf-list">' + rows.join('') + anfKosten(k) + '</div>';
 }
+function cityBurgFehlt(id, lvl) {                 // reicht die Burg-Stufe nicht: der Knopf sagt es („Burg Stufe 5 nötig“) statt nur grau zu sein
+    if (!AUF || id === 'keep') return ''; const B = AUF.burgStufe('player'), need = !lvl ? AUF.BAU_AB_BURG[id] || 0 : lvl + 1;
+    return B < need && !cityBuildOf(loadCity(), id) ? 'Burg Stufe ' + need + ' nötig' : '';
+}
+function cityVglHtml(id, lvl, max) {               // Jetzt / Nächste Stufe (wie die Gebäude-Fenster in Rise of Kingdoms) – je Wert eine Zeile
+    const z = cityVergleich(id, lvl); if (!z || !z.length) return '';
+    return '<div class="vgl' + (max ? ' is-max' : '') + '"><div class="vgl-h"><span></span><span>Jetzt</span>' + (max ? '' : '<span>Stufe ' + (lvl + 1) + '</span>') + '</div>' +
+        z.map(([n, a, b]) => '<div class="vgl-z"><span>' + n + '</span><b>' + a + '</b>' + (max ? '' : '<b class="vgl-neu">' + b + '</b>') + '</div>').join('') + '</div>';
+}
+const cityStufeHtml = (lvl, max, von) => max ? 'Stufe ' + lvl + ' · höchste Stufe' : 'Stufe ' + lvl + ' → ' + (lvl + 1) + ' <small>von ' + von + '</small>';
 function citySeite(id, lvl) {                      // Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
     const sh = document.getElementById('citySheet'), tabs = document.getElementById('cityTabs'), n = id === '_keep' ? null : cityNutz(id, lvl);
     if (!n) cityPage = 'bau';
@@ -170,6 +182,8 @@ function citySeite(id, lvl) {                      // Reiter oben (Aufwerten | F
     tabs.hidden = !n;
     if (n) liveHtml(tabs, '<button type="button" data-cpage="bau"' + (cityPage === 'bau' ? ' class="on"' : '') + '>' + icon('upgrade') + 'Aufwerten</button><button type="button" data-cpage="nutz"' + (cityPage === 'nutz' ? ' class="on"' : '') + '>' + icon(n[1]) + n[0] + '</button>');
 }
+document.getElementById('citySheet').addEventListener('click', e => { const g = e.target.closest('[data-anf-geh]'); if (!g) return;   // „Zur Burg“: das fehlende Gebäude öffnen
+    cityPage = 'bau'; cityOpenId = g.dataset.anfGeh; cityFocus(cityOpenId); renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; });
 document.getElementById('cityTabs').addEventListener('click', e => { const b = e.target.closest('[data-cpage]'); if (b) { cityPage = b.dataset.cpage; renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; } });
 function renderCitySheet() {                       // (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
     if (cityOpenId === 'keep') cityOpenId = '_keep';
@@ -182,19 +196,19 @@ function renderCitySheet() {                       // (läuft auch jede Sekunde 
     cityBildSetzen(id, lvl);
     setText(document.getElementById('cityBOver'), 'Gebäude');
     setText(document.getElementById('cityBName'), def.name);
-    setText(document.getElementById('cityBLevel'), max ? 'Stufe ' + lvl + ' · höchste Stufe' : lvl ? 'Stufe ' + lvl + ' → ' + (lvl + 1) : 'Noch nicht gebaut');
-    setText(document.getElementById('cityBDesc'), def.desc);
+    liveHtml(document.getElementById('cityBLevel'), lvl ? cityStufeHtml(lvl, max, cityMaxLevel(id)) : 'Noch nicht gebaut');
+    setText(document.getElementById('cityBDesc'), def.desc.replace(/Burg-Stufe (\d+)/g, 'Burg-\u2060Stufe\u00a0$1'));   // („ab Burg-Stufe 4“ bricht nie am Bindestrich um)
     const note = document.getElementById('cityBNote'), up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');
     const bld = cityBuildOf(c, id), building = !!bld, blocker = cityBlocker(id);
     let cls, nh;
     if (building) { cls = 'notice notice--gold';
         nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('bau', id, bld.to, bld.endsAt) : '') + '</span>'; }
-    else { cls = 'notice city-wirkung'; nh = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>'; }
+    else { nh = cityVglHtml(id, lvl, max); cls = nh ? 'city-vgl' : 'notice city-wirkung'; if (!nh) nh = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>'; }
     if (note.className !== cls) note.className = cls;
     liveHtml(note, nh);
     const cost = !max ? cityCost(id, lvl) : 0, kost = !max ? (AUF ? AUF.stadtKosten(id, lvl) : { c: cost }) : null;
     liveHtml(document.getElementById('cityBStats'), !max && !building ? cityAnfHtml(id, lvl, kost) : '');
-    setBtnLabel(up, max ? 'Höchste Stufe' : (!building && cityFehlt(id)) || (lvl ? 'Aufwerten' : 'Bauen'));
+    setBtnLabel(up, max ? 'Höchste Stufe' : (!building && (cityBurgFehlt(id, lvl) || cityFehlt(id))) || (lvl ? 'Aufwerten' : 'Bauen'));
     setText(document.getElementById('cityUpTime'), max ? '' : fmtDuration(cityTimeSec(id, lvl)));
     up.disabled = !!blocker || (AUF ? !AUF.kannZahlen('player', kost) : coins < cost);
     up.title = blocker || '';

@@ -157,16 +157,16 @@ function cloudsRun(dur, c0, c1, then) {                                   // cov
         const a = cloudAnim; if (!a) return;
         const q = Math.min(1, (now - a.t0) / a.dur), e = q < .5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2, c = a.c0 + (a.c1 - a.c0) * e;
         cloudCover = c;
+        const z = cityView.hidden ? 19 : 51; if (cloudFx.style.zIndex !== String(z)) cloudFx.style.zIndex = z;   // nie über den Leisten: unter HUD/Leiste der Karte (20/25), in der Stadt unter ihren (52)
         const dpr3 = CLOUD_RES, W = window.innerWidth, H = window.innerHeight;
         if (cloudFx.width !== Math.round(W * dpr3) || cloudFx.height !== Math.round(H * dpr3)) { cloudFx.width = Math.round(W * dpr3); cloudFx.height = Math.round(H * dpr3); }
         const g = cloudFx.getContext('2d'); g.setTransform(dpr3, 0, 0, dpr3, 0, 0); g.clearRect(0, 0, W, H);
         const R = Math.hypot(W, H);
-        if (c > .6) { g.fillStyle = 'rgba(236,240,244,' + Math.min(1, (c - .6) / .35) + ')'; g.fillRect(0, 0, W, H); }   // deep inside: white-out
         for (const p of CLOUD_PUFFS) {                                     // puffs drift in from the edges as the cover grows, part again as it falls
             const dist = (p.d + (1 - c) * .9) * R * .6, x = W / 2 + Math.cos(p.a) * dist, y = H / 2 + Math.sin(p.a) * dist * .75, rad = p.s * R * (.55 + c * .5);
             const gr = g.createRadialGradient(x - rad * .2, y - rad * .25, rad * .05, x, y, rad);
-            const al = Math.min(1, c * 1.6);
-            gr.addColorStop(0, 'rgba(255,255,255,' + al + ')'); gr.addColorStop(.55, 'rgba(' + Math.round(235 * p.sh) + ',' + Math.round(240 * p.sh) + ',' + Math.round(246 * p.sh) + ',' + (al * .85) + ')'); gr.addColorStop(1, 'rgba(220,228,236,0)');
+            const al = Math.min(.3, c * .86);                                // ein leichter, warmer Schleier (höchstens .3) – kein Milchglas, das wie „lädt“ wirkt
+            gr.addColorStop(0, 'rgba(243,230,196,' + al + ')'); gr.addColorStop(.55, 'rgba(' + Math.round(243 * p.sh) + ',' + Math.round(230 * p.sh) + ',' + Math.round(196 * p.sh) + ',' + (al * .85) + ')'); gr.addColorStop(1, 'rgba(243,230,196,0)');
             g.fillStyle = gr; g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
         }
         if (q < 1) requestAnimationFrame(step);
@@ -200,17 +200,18 @@ function stadtBlende(von, bis, dann) {                                       // 
     const a = cityView.animate([{ opacity: von }, { opacity: bis }], { duration: CITY_BLENDE_MS, easing: 'ease-out', fill: 'forwards' });
     a.onfinish = () => { a.cancel(); if (dann) dann(); };
 }
-function openCity() {
+function openCity(dann) {                                                   // dann: läuft, sobald die Stadt da ist (z. B. die Burg öffnen) – nicht nach fester Zeit
+    if (!cityView.hidden && !cityBusy) { if (dann) dann(); return; }
     if (cityBusy || !cityView.hidden) return;
     closeAllPopups();
     const home = islandById[playerIslandId];
     cityMapReturn = { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };   // where the map was, to go back there
-    if (!home) { cityShow(); return; }
+    if (!home) { cityShow(); if (dann) dann(); return; }
     cityBusy = true;
     flyTo(home.x, home.y, { zoom: maxZoom * CITY_NAH, ms: 650 });           // 1) the map flies to your capital …
     setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, CITY_TAUCH_MS, home);   // 2) … dives on a little, getting soft …
-        cloudsRun(400, 0, .35, () => setTimeout(() => cloudsRun(600, .35, 0, () => { cityBusy = false; }), CITY_TAUCH_MS - 400));   // (nur Wolken am Rand, nie ganz weiß)
-        setTimeout(() => { cityShow(); stadtBlende(0, 1);                     // 3) … and the town fades in, coming up from below
+        cloudsRun(240, 0, .35, () => cloudsRun(300, .35, 0, () => { cityBusy = false; }));   // (nur Wolken am Rand, nie ganz weiß – ab dem Tipp nach 1,1 s ganz weg)
+        setTimeout(() => { cityShow(); stadtBlende(0, 1); if (dann) dann();    // 3) … and the town fades in, coming up from below
             if (cityCam) cityCam.anim = { from: .62, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
         setTimeout(() => { if (tauch) tauch.cancel(); }, CITY_TAUCH_MS); }, 560);
 }

@@ -306,7 +306,7 @@ function renderKeep() {                                        // das Burg-Fenst
     cityBildSetzen('keep', B);
     setText(document.getElementById('cityBOver'), 'Deine Burg');
     setText(document.getElementById('cityBName'), 'Burg');
-    setText(document.getElementById('cityBLevel'), max ? 'Burg-Stufe ' + B + ' · höchste Stufe' : 'Burg-Stufe ' + B + ' → ' + (B + 1) + ' (von ' + BURG_MAX + ')');
+    liveHtml(document.getElementById('cityBLevel'), cityStufeHtml(B, max, BURG_MAX));   // „Stufe 1 → 2“ groß, „von 25“ klein (08b)
     setText(document.getElementById('cityBDesc'), 'Das Herz deines Reiches – unabhängig von der Basis-Stufe draußen auf der Karte. Die Burg-Stufe bestimmt, wie hoch deine Gebäude gehen, wie viele Märsche gleichzeitig laufen und wie viel Gold, Holz, Stein und Eisen vor Angreifern sicher ist. Jede Stufe dauert lange (1 bis 60 Tage).');
     const note = document.getElementById('cityBNote'), blk = !bau && !max ? cityBlocker('keep') : null; let cls, nh;
     if (bau) { cls = 'notice notice--gold'; nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Burg-Stufe ' + bau.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('bau', 'keep', bau.to, bau.endsAt) : '') + '</span>'; }
@@ -325,8 +325,8 @@ function renderKeep() {                                        // das Burg-Fenst
 }
 function effektText(id, lvl) {
     if (id === 'academy') return (lvl ? 'Forschung bis Labor-Stufe ' + lvl + ' · Truppen laufen +' + lvl * 2 + ' % schneller.' : 'Baue das Labor, um zu forschen.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: mehr Forschung, +' + (lvl + 1) * 2 + ' % Tempo.' : '');
-    if (id === 'embassy') { const t = L => 'Verstärkung ' + fmtCompact(typeof verstPlatzStufe === 'function' ? verstPlatzStufe('player', L) : 0) + ' · Rally +' + fmtCompact(typeof rallyPlatzStufe === 'function' ? rallyPlatzStufe('player', L) : 0) + ' · ' + L + ' Hilfen';
-        return (lvl ? t(lvl) : 'Verstärkung, Rally, Bündnis-Hilfe') + (lvl < CITY_MAX_LEVEL ? ' → ' + t(lvl + 1) : ''); }
+    if (id === 'embassy') { const t = L => 'Verstärkung ' + fmtCompact(typeof verstPlatzStufe === 'function' ? verstPlatzStufe('player', L) : 0) + ' · Rally +' + fmtCompact(typeof rallyPlatzStufe === 'function' ? rallyPlatzStufe('player', L) : 0) + ' · ' + L + (L === 1 ? ' Hilfe' : ' Hilfen');
+        return (lvl ? 'Jetzt: ' + t(lvl) + '.' : 'Mehr Verstärkung, größere Rallys, Bündnis-Hilfe.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + t(lvl + 1) + '.' : ''); }
     const rx = { lumber: ['h', 'Holz'], quarry: ['s', 'Stein'], mine: ['e', 'Eisen'] }[id];
     if (rx) { const k = rx[0], jetzt = rohStunde('player')[k], f = jetzt / Math.max(1, ROH_BURG_STUNDE + rohGebStunde(lvl));
         return (lvl ? 'Jetzt: ' : 'Ohne Gebäude (nur die Burg): ') + fmtStunde(jetzt) + ' ' + rx[1] + ' pro Stunde.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: ' + fmtStunde((ROH_BURG_STUNDE + rohGebStunde(lvl + 1)) * f) + '.' : ''); }
@@ -376,7 +376,7 @@ function extraHtml(id, lvl) {
 }
 function marktHtml() {                                         // Shop → Markt: Rohstoffe gegen Münzen (die Stufe des Markt-Gebäudes bestimmt Gebühr und Limit)
     const lvl = bauStufe('player', 'market');
-    if (!lvl) return '<div class="notice">' + icon('lock') + '<span>Baue zuerst den Markt in deiner Stadt (ab Burg-Stufe ' + BAU_AB_BURG.market + ').</span></div>';
+    if (!lvl) return '<div class="notice">' + icon('lock') + '<span>Baue zuerst den Markt in deiner Stadt (ab Burg-\u2060Stufe\u00a0' + BAU_AB_BURG.market + ').</span></div>';   // (bricht nie am Bindestrich um)
     const c = loadCity(), m = marktHeute(c), lim = marktLimit('player'), f = marktGebuehr(lvl), N = marktMenge;
     return '<div class="seg" data-mk-n>' + MARKT_MENGEN.map(v => '<button type="button" data-mk-menge="' + v + '"' + (v === N ? ' class="on"' : '') + '>' + fmtCompact(v) + '</button>').join('') + '</div><div class="fo-list">' +
             ROH.map(x => '<div class="fo-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span class="fo-t"><b>' + ROH_DEF[x].name + '</b><small>' + fmtNum(Math.floor(roh[x])) + ' vorhanden</small></span>' +
@@ -501,6 +501,7 @@ AUF = {
     marschFrei, marschOk, marschVoll, gruppeLaeuft, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
     foStufe, foWert, foSumme, foGesamt, foKosten, foFertig, marktLimit, marktHtml, marktGebuehr, marktStufe: who => bauStufe(who, 'market'),
     kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, tempelPlus, botschaftTempo, botschaftGeschenk, botschaftStufe: who => bauStufe(who, 'embassy'),
+    rohJeStunde: (x, L) => rohStunde('player')[x] / Math.max(1, ROH_BURG_STUNDE + rohGebStunde(bauStufe('player', ROH_GEB[x]))) * (ROH_BURG_STUNDE + rohGebStunde(L)),   // (Gebäude-Fenster: Holz/Std. bei Stufe L)
     spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, spaeherMehr,
     botStadtFix, botForschung, botMarkt, botBurgWert, botRohWunsch
 };

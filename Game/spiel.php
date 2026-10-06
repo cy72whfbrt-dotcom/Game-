@@ -1868,6 +1868,24 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .hh-cards--zu .hh-foot{padding:4px 2px 5px} .hh-cards--zu .hh-foot b{font-size:var(--fs-12,12px)} .hh-cards--zu .hh-foot > small:first-of-type{display:none}
 .hh-cards--zu .hh-lk{font-size:8px;padding:2px 4px;right:3px;top:3px}
 .hh-plus{width:44px;height:44px}
+/* ===== Stadt-Gebäude-Fenster wie in Rise of Kingdoms (6.10.): Bild + Stufe, Jetzt / Nächste Stufe, Voraussetzungen mit Sprung-Knopf ===== */
+.city-blevel small{margin-left:4px;font:500 var(--fs-11,11px)/1.2 var(--font-ui);color:var(--tx-3);white-space:nowrap}
+.city-bicon.is-zu canvas{filter:grayscale(.8) brightness(.8);opacity:.85}   /* noch nicht gebaut: das eigene Bild, ausgegraut */
+.city-vgl{border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22);padding:4px 10px 6px}
+.city-vgl .vgl-h,.city-vgl .vgl-z{display:grid;grid-template-columns:1fr minmax(64px,auto) minmax(64px,auto);gap:10px;align-items:baseline}
+.city-vgl .is-max .vgl-h,.city-vgl .is-max .vgl-z{grid-template-columns:1fr auto}
+.city-vgl .vgl-h{padding:4px 0 2px;font:700 var(--fs-10,10px)/1.35 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
+.city-vgl .vgl-h span:not(:first-child),.city-vgl .vgl-z b{text-align:right}
+.city-vgl .vgl-z{padding:5px 0;border-top:1px solid var(--line-1)}
+.city-vgl .vgl-z span{min-width:0;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--tx-2)}
+.city-vgl .vgl-z b{font:700 var(--fs-13)/1.3 var(--font-ui);color:var(--tx-1);font-variant-numeric:tabular-nums;white-space:nowrap}
+.city-vgl .vgl-z b.vgl-neu{color:var(--good)}
+.anf.is-geh{grid-template-columns:22px 1fr auto auto;background:rgba(150,30,30,.16);border-color:rgba(255,120,100,.5)}
+.anf.is-geh > span{color:var(--blood-300)} .anf.is-geh > .icon{color:var(--blood-300)}
+.anf .anf-geh{min-height:36px;padding:0 10px;gap:4px;white-space:nowrap}
+.anf .anf-geh::before{content:"";position:absolute;inset:-4px 0}   /* Tippfläche 44 px */
+.anf .anf-geh{position:relative} .anf .anf-geh .icon{width:13px;height:13px}
+body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) beim Überblenden nicht unter der Bauarbeiter-Zeile durchscheinen – hart getauscht */
 /* Umlaut-Punkte über Großbuchstaben (Ä/Ö/Ü in Überschriften, Reitern, Versalien) nicht abschneiden: einzeilige Texte mit
    „…“ schneiden nur noch seitlich ab (overflow-x:clip), nach oben bleibt Platz – die Zeilenhöhe (oft 1) war kleiner als die Punkte hoch sind */
 @supports (overflow:clip) {

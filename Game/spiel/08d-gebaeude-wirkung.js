@@ -24,10 +24,23 @@ function cityEffectRoh(id, lvl) {
     if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + (Math.min(60, (lvl + 1) * 5) + (AUF ? AUF.lazarettPlus('player') : 0)) + ' %, Platz für ' + fmtCompact(hospitalPlatz(lvl + 1)) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
     return '';
 }
+function cityVergleich(id, L) {                    // Gebäude-Fenster „Jetzt / Nächste Stufe“: [[Wert, jetzt, nächste Stufe], …] (noch nicht gebaut: jetzt „–“)
+    const pr = v => '+' + v + '\u00a0%', z = (n, f) => [n, L ? f(L) : '–', f(L + 1)];
+    if (id === 'wall') return [z('Verteidigung aller Basen', l => pr(l * 2))];
+    if (id === 'academy') return [z('Marsch-Tempo', l => pr(l * 2)), z('Forschung', l => 'bis Stufe ' + l)];
+    if (id === 'forge') return [z('Sterne je Ausrüstung', l => Math.min(STAR_MAX, l))];
+    if (id === 'heroes') return [z('Gefolge aller Helden', l => pr(l * HERO_HALL_GEF))];
+    if (id === 'hospital') return [z('Gefallene gerettet', l => (Math.min(60, l * 5) + (AUF ? AUF.lazarettPlus('player') : 0)) + '\u00a0%'), z('Platz', l => fmtCompact(hospitalPlatz(l)))];
+    if (id === 'embassy' && typeof verstPlatzStufe === 'function') return [z('Verstärkung', l => fmtCompact(verstPlatzStufe('player', l))), z('Rally', l => '+' + fmtCompact(rallyPlatzStufe('player', l))), z('Bündnis-Hilfen', l => l + '×')];
+    if (!AUF) return null;
+    if (id === 'market') return [z('Gebühr', l => Math.round(AUF.marktGebuehr(l) * 100) + '\u00a0%')];
+    const x = { lumber: 'h', quarry: 's', mine: 'e' }[id];
+    return x ? [[AUF.ROH_DEF[x].name + ' pro Stunde', fmtStunde(AUF.rohJeStunde(x, L)), fmtStunde(AUF.rohJeStunde(x, L + 1))]] : null;   // (ohne Gebäude: was die Burg allein macht)
+}
 function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
     if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
-        return '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
+        return (lvl ? '' : '<small class="keep-note">Deine Helden kannst du schon jetzt nutzen – die Halle gibt allen Helden Gefolge-Bonus.</small>') + '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
     if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
     if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest

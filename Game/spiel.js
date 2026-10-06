@@ -9053,16 +9053,16 @@ function cloudsRun(dur, c0, c1, then) {                                   // cov
         const a = cloudAnim; if (!a) return;
         const q = Math.min(1, (now - a.t0) / a.dur), e = q < .5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2, c = a.c0 + (a.c1 - a.c0) * e;
         cloudCover = c;
+        const z = cityView.hidden ? 19 : 51; if (cloudFx.style.zIndex !== String(z)) cloudFx.style.zIndex = z;   // nie über den Leisten: unter HUD/Leiste der Karte (20/25), in der Stadt unter ihren (52)
         const dpr3 = CLOUD_RES, W = window.innerWidth, H = window.innerHeight;
         if (cloudFx.width !== Math.round(W * dpr3) || cloudFx.height !== Math.round(H * dpr3)) { cloudFx.width = Math.round(W * dpr3); cloudFx.height = Math.round(H * dpr3); }
         const g = cloudFx.getContext('2d'); g.setTransform(dpr3, 0, 0, dpr3, 0, 0); g.clearRect(0, 0, W, H);
         const R = Math.hypot(W, H);
-        if (c > .6) { g.fillStyle = 'rgba(236,240,244,' + Math.min(1, (c - .6) / .35) + ')'; g.fillRect(0, 0, W, H); }   // deep inside: white-out
         for (const p of CLOUD_PUFFS) {                                     // puffs drift in from the edges as the cover grows, part again as it falls
             const dist = (p.d + (1 - c) * .9) * R * .6, x = W / 2 + Math.cos(p.a) * dist, y = H / 2 + Math.sin(p.a) * dist * .75, rad = p.s * R * (.55 + c * .5);
             const gr = g.createRadialGradient(x - rad * .2, y - rad * .25, rad * .05, x, y, rad);
-            const al = Math.min(1, c * 1.6);
-            gr.addColorStop(0, 'rgba(255,255,255,' + al + ')'); gr.addColorStop(.55, 'rgba(' + Math.round(235 * p.sh) + ',' + Math.round(240 * p.sh) + ',' + Math.round(246 * p.sh) + ',' + (al * .85) + ')'); gr.addColorStop(1, 'rgba(220,228,236,0)');
+            const al = Math.min(.3, c * .86);                                // ein leichter, warmer Schleier (höchstens .3) – kein Milchglas, das wie „lädt“ wirkt
+            gr.addColorStop(0, 'rgba(243,230,196,' + al + ')'); gr.addColorStop(.55, 'rgba(' + Math.round(243 * p.sh) + ',' + Math.round(230 * p.sh) + ',' + Math.round(196 * p.sh) + ',' + (al * .85) + ')'); gr.addColorStop(1, 'rgba(243,230,196,0)');
             g.fillStyle = gr; g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
         }
         if (q < 1) requestAnimationFrame(step);
@@ -9096,17 +9096,18 @@ function stadtBlende(von, bis, dann) {                                       // 
     const a = cityView.animate([{ opacity: von }, { opacity: bis }], { duration: CITY_BLENDE_MS, easing: 'ease-out', fill: 'forwards' });
     a.onfinish = () => { a.cancel(); if (dann) dann(); };
 }
-function openCity() {
+function openCity(dann) {                                                   // dann: läuft, sobald die Stadt da ist (z. B. die Burg öffnen) – nicht nach fester Zeit
+    if (!cityView.hidden && !cityBusy) { if (dann) dann(); return; }
     if (cityBusy || !cityView.hidden) return;
     closeAllPopups();
     const home = islandById[playerIslandId];
     cityMapReturn = { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };   // where the map was, to go back there
-    if (!home) { cityShow(); return; }
+    if (!home) { cityShow(); if (dann) dann(); return; }
     cityBusy = true;
     flyTo(home.x, home.y, { zoom: maxZoom * CITY_NAH, ms: 650 });           // 1) the map flies to your capital …
     setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, CITY_TAUCH_MS, home);   // 2) … dives on a little, getting soft …
-        cloudsRun(400, 0, .35, () => setTimeout(() => cloudsRun(600, .35, 0, () => { cityBusy = false; }), CITY_TAUCH_MS - 400));   // (nur Wolken am Rand, nie ganz weiß)
-        setTimeout(() => { cityShow(); stadtBlende(0, 1);                     // 3) … and the town fades in, coming up from below
+        cloudsRun(240, 0, .35, () => cloudsRun(300, .35, 0, () => { cityBusy = false; }));   // (nur Wolken am Rand, nie ganz weiß – ab dem Tipp nach 1,1 s ganz weg)
+        setTimeout(() => { cityShow(); stadtBlende(0, 1); if (dann) dann();    // 3) … and the town fades in, coming up from below
             if (cityCam) cityCam.anim = { from: .62, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
         setTimeout(() => { if (tauch) tauch.cancel(); }, CITY_TAUCH_MS); }, 560);
 }
@@ -9295,14 +9296,15 @@ function cityNutz(id, lvl) {                       // die eigene Seite eines Geb
     if (!lvl) return null;
     return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], wall: ['Helden', 'defense'] }[id] || null;   // (Mauer: die Verteidigungs-Helden)
 }
-function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt
+function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt (noch nicht gebaut: das Gebäude der Stufe 1, ausgegraut – jedes sein eigenes)
     if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
-    const t = cityTierOf(lvl);
+    const t = cityTierOf(lvl) || 1;
     if (id === 'wall') return citySprite('gatehouse', t);
-    return t ? citySprite(id, t, id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '') : citySprite('ghost', 0, id);
+    return citySprite(id, t, id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '');
 }
 function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben links im Fenster (nur neu gemalt, wenn sich die Stufe ändert)
-    const el = document.getElementById('cityBIcon'), s = cityBildSpr(id, lvl), key = id + ':' + (id === 'keep' ? Math.floor((lvl || 1) / 5) : cityTierOf(lvl)) + ':' + s.c.width;
+    const el = document.getElementById('cityBIcon'), s = cityBildSpr(id, lvl), zu = id !== 'keep' && !lvl, key = id + ':' + (id === 'keep' ? Math.floor((lvl || 1) / 5) : cityTierOf(lvl)) + ':' + s.c.width;
+    el.classList.toggle('is-zu', zu);
     if (el.dataset.bild === key && el.firstChild && el.firstChild.tagName === 'CANVAS') return;
     el.dataset.bild = key; el._lh = undefined;
     const N = 192, cv = document.createElement('canvas'); cv.width = cv.height = N;
@@ -9310,9 +9312,10 @@ function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben lin
     g.imageSmoothingQuality = 'high'; g.drawImage(s.c, (N - w) / 2, Math.min(N - h, (N - h) / 2 + N * .04), w, h);
     el.replaceChildren(cv);
 }
-function anfZeile(ok, ic, txt, val) {              // eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz
-    const [n, k] = Array.isArray(ic) ? ic : [ic];
-    return '<div class="anf' + (ok ? ' is-ok' : ' is-bad') + '">' + icon(n, k) + '<span>' + txt + '</span>' + (val ? '<b>' + val + '</b>' : '') + '<i>' + icon(ok ? 'check' : 'close') + '</i></div>';
+function anfZeile(ok, ic, txt, val, geh) {         // eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz – geh [Fenster, Knopf]: fehlt ein Gebäude, springt der Knopf dorthin
+    const [n, k] = Array.isArray(ic) ? ic : [ic], zu = geh && !ok;
+    return '<div class="anf' + (ok ? ' is-ok' : ' is-bad') + (zu ? ' is-geh' : '') + '">' + icon(n, k) + '<span>' + txt + '</span>' + (val ? '<b>' + val + '</b>' : '') +
+        (zu ? '<button type="button" class="btn btn--secondary btn--sm anf-geh" data-anf-geh="' + geh[0] + '">' + geh[1] + icon('send') + '</button>' : '<i>' + icon(ok ? 'check' : 'close') + '</i>') + '</div>';
 }
 function anfKosten(k) {                            // Münzen und Rohstoffe: hast / brauchst
     if (!k) return ''; const r = AUF ? AUF.rohVon('player') || {} : {}, out = [];
@@ -9323,11 +9326,21 @@ function anfKosten(k) {                            // Münzen und Rohstoffe: has
 function cityAnfHtml(id, lvl, k) {                 // Voraussetzungen für die nächste Stufe (Burg, Bauarbeiter, Münzen, Rohstoffe)
     const c = loadCity(), rows = [];
     if (AUF && id !== 'keep') { const B = AUF.burgStufe('player'), need = !lvl ? AUF.BAU_AB_BURG[id] || 0 : B >= AUF.BURG_MAX ? 0 : lvl + 1;
-        if (need > 1) rows.push(anfZeile(B >= need, 'castle', 'Burg Stufe ' + need)); }
+        if (need > 1) rows.push(anfZeile(B >= need, 'castle', 'Burg Stufe ' + need, B < need ? 'jetzt ' + B : '', ['_keep', 'Zur Burg'])); }
     const frei = c.builds.length < citySlots(c);
     rows.push(anfZeile(frei, 'upgrade', frei ? 'Bauarbeiter frei' : 'Bauarbeiter beschäftigt (' + cityDef(c.builds[0].id).name + ')'));
     return '<div class="anf-h">Voraussetzungen</div><div class="anf-list">' + rows.join('') + anfKosten(k) + '</div>';
 }
+function cityBurgFehlt(id, lvl) {                 // reicht die Burg-Stufe nicht: der Knopf sagt es („Burg Stufe 5 nötig“) statt nur grau zu sein
+    if (!AUF || id === 'keep') return ''; const B = AUF.burgStufe('player'), need = !lvl ? AUF.BAU_AB_BURG[id] || 0 : lvl + 1;
+    return B < need && !cityBuildOf(loadCity(), id) ? 'Burg Stufe ' + need + ' nötig' : '';
+}
+function cityVglHtml(id, lvl, max) {               // Jetzt / Nächste Stufe (wie die Gebäude-Fenster in Rise of Kingdoms) – je Wert eine Zeile
+    const z = cityVergleich(id, lvl); if (!z || !z.length) return '';
+    return '<div class="vgl' + (max ? ' is-max' : '') + '"><div class="vgl-h"><span></span><span>Jetzt</span>' + (max ? '' : '<span>Stufe ' + (lvl + 1) + '</span>') + '</div>' +
+        z.map(([n, a, b]) => '<div class="vgl-z"><span>' + n + '</span><b>' + a + '</b>' + (max ? '' : '<b class="vgl-neu">' + b + '</b>') + '</div>').join('') + '</div>';
+}
+const cityStufeHtml = (lvl, max, von) => max ? 'Stufe ' + lvl + ' · höchste Stufe' : 'Stufe ' + lvl + ' → ' + (lvl + 1) + ' <small>von ' + von + '</small>';
 function citySeite(id, lvl) {                      // Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
     const sh = document.getElementById('citySheet'), tabs = document.getElementById('cityTabs'), n = id === '_keep' ? null : cityNutz(id, lvl);
     if (!n) cityPage = 'bau';
@@ -9336,6 +9349,8 @@ function citySeite(id, lvl) {                      // Reiter oben (Aufwerten | F
     tabs.hidden = !n;
     if (n) liveHtml(tabs, '<button type="button" data-cpage="bau"' + (cityPage === 'bau' ? ' class="on"' : '') + '>' + icon('upgrade') + 'Aufwerten</button><button type="button" data-cpage="nutz"' + (cityPage === 'nutz' ? ' class="on"' : '') + '>' + icon(n[1]) + n[0] + '</button>');
 }
+document.getElementById('citySheet').addEventListener('click', e => { const g = e.target.closest('[data-anf-geh]'); if (!g) return;   // „Zur Burg“: das fehlende Gebäude öffnen
+    cityPage = 'bau'; cityOpenId = g.dataset.anfGeh; cityFocus(cityOpenId); renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; });
 document.getElementById('cityTabs').addEventListener('click', e => { const b = e.target.closest('[data-cpage]'); if (b) { cityPage = b.dataset.cpage; renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; } });
 function renderCitySheet() {                       // (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
     if (cityOpenId === 'keep') cityOpenId = '_keep';
@@ -9348,19 +9363,19 @@ function renderCitySheet() {                       // (läuft auch jede Sekunde 
     cityBildSetzen(id, lvl);
     setText(document.getElementById('cityBOver'), 'Gebäude');
     setText(document.getElementById('cityBName'), def.name);
-    setText(document.getElementById('cityBLevel'), max ? 'Stufe ' + lvl + ' · höchste Stufe' : lvl ? 'Stufe ' + lvl + ' → ' + (lvl + 1) : 'Noch nicht gebaut');
-    setText(document.getElementById('cityBDesc'), def.desc);
+    liveHtml(document.getElementById('cityBLevel'), lvl ? cityStufeHtml(lvl, max, cityMaxLevel(id)) : 'Noch nicht gebaut');
+    setText(document.getElementById('cityBDesc'), def.desc.replace(/Burg-Stufe (\d+)/g, 'Burg-\u2060Stufe\u00a0$1'));   // („ab Burg-Stufe 4“ bricht nie am Bindestrich um)
     const note = document.getElementById('cityBNote'), up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');
     const bld = cityBuildOf(c, id), building = !!bld, blocker = cityBlocker(id);
     let cls, nh;
     if (building) { cls = 'notice notice--gold';
         nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Stufe ' + bld.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('bau', id, bld.to, bld.endsAt) : '') + '</span>'; }
-    else { cls = 'notice city-wirkung'; nh = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>'; }
+    else { nh = cityVglHtml(id, lvl, max); cls = nh ? 'city-vgl' : 'notice city-wirkung'; if (!nh) nh = icon('info') + '<span>' + cityEffectText(id, lvl) + '</span>'; }
     if (note.className !== cls) note.className = cls;
     liveHtml(note, nh);
     const cost = !max ? cityCost(id, lvl) : 0, kost = !max ? (AUF ? AUF.stadtKosten(id, lvl) : { c: cost }) : null;
     liveHtml(document.getElementById('cityBStats'), !max && !building ? cityAnfHtml(id, lvl, kost) : '');
-    setBtnLabel(up, max ? 'Höchste Stufe' : (!building && cityFehlt(id)) || (lvl ? 'Aufwerten' : 'Bauen'));
+    setBtnLabel(up, max ? 'Höchste Stufe' : (!building && (cityBurgFehlt(id, lvl) || cityFehlt(id))) || (lvl ? 'Aufwerten' : 'Bauen'));
     setText(document.getElementById('cityUpTime'), max ? '' : fmtDuration(cityTimeSec(id, lvl)));
     up.disabled = !!blocker || (AUF ? !AUF.kannZahlen('player', kost) : coins < cost);
     up.title = blocker || '';
@@ -9845,10 +9860,23 @@ function cityEffectRoh(id, lvl) {
     if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + (Math.min(60, (lvl + 1) * 5) + (AUF ? AUF.lazarettPlus('player') : 0)) + ' %, Platz für ' + fmtCompact(hospitalPlatz(lvl + 1)) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
     return '';
 }
+function cityVergleich(id, L) {                    // Gebäude-Fenster „Jetzt / Nächste Stufe“: [[Wert, jetzt, nächste Stufe], …] (noch nicht gebaut: jetzt „–“)
+    const pr = v => '+' + v + '\u00a0%', z = (n, f) => [n, L ? f(L) : '–', f(L + 1)];
+    if (id === 'wall') return [z('Verteidigung aller Basen', l => pr(l * 2))];
+    if (id === 'academy') return [z('Marsch-Tempo', l => pr(l * 2)), z('Forschung', l => 'bis Stufe ' + l)];
+    if (id === 'forge') return [z('Sterne je Ausrüstung', l => Math.min(STAR_MAX, l))];
+    if (id === 'heroes') return [z('Gefolge aller Helden', l => pr(l * HERO_HALL_GEF))];
+    if (id === 'hospital') return [z('Gefallene gerettet', l => (Math.min(60, l * 5) + (AUF ? AUF.lazarettPlus('player') : 0)) + '\u00a0%'), z('Platz', l => fmtCompact(hospitalPlatz(l)))];
+    if (id === 'embassy' && typeof verstPlatzStufe === 'function') return [z('Verstärkung', l => fmtCompact(verstPlatzStufe('player', l))), z('Rally', l => '+' + fmtCompact(rallyPlatzStufe('player', l))), z('Bündnis-Hilfen', l => l + '×')];
+    if (!AUF) return null;
+    if (id === 'market') return [z('Gebühr', l => Math.round(AUF.marktGebuehr(l) * 100) + '\u00a0%')];
+    const x = { lumber: 'h', quarry: 's', mine: 'e' }[id];
+    return x ? [[AUF.ROH_DEF[x].name + ' pro Stunde', fmtStunde(AUF.rohJeStunde(x, L)), fmtStunde(AUF.rohJeStunde(x, L + 1))]] : null;   // (ohne Gebäude: was die Burg allein macht)
+}
 function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
     if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
-        return '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
+        return (lvl ? '' : '<small class="keep-note">Deine Helden kannst du schon jetzt nutzen – die Halle gibt allen Helden Gefolge-Bonus.</small>') + '<button type="button" class="btn btn--primary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
     if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
     if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest
@@ -10562,7 +10590,8 @@ function cityFrame(now) {
     cityFrame.drawn = now;
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
-    if (!cityCam) { const [kx, ky] = cIso(CC, CC); cityCam = { x: kx, y: ky + 6, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 420)) };   // (Handy: das Mauer-Tor samt Schild im Bild)
+    if (!cityCam) { const [kx, ky] = cIso(CC, CC), desk = W >= 900 && H >= 501, z = Math.max(cityFitZoom(W, H), Math.min(2.2, W / 420) * (desk ? .85 : 1));   // (Handy: das Mauer-Tor samt Schild im Bild)
+        cityCam = { x: kx, y: ky + 6 - (desk ? 40 / z : 0), z };                                                // (Desktop: etwas weiter weg und 40 px tiefer – die ganze Mauer-Raute unter der Leiste oben)
         if (cityPendingAnim) { cityCam.anim = { from: .62, t0: now, dur: 1100 }; cityPendingAnim = false; } }
     let animZ = 1;
     if (cityCam.anim) { const a = cityCam.anim, q = Math.min(1, (now - a.t0) / a.dur), e = 1 - Math.pow(1 - q, 3), to = a.to ?? 1;
@@ -13229,7 +13258,7 @@ function ausbauDrueber() {
 // keeps levelling up as long as the coins last.
 upgradeBtn.addEventListener('click', () => {
     if (popupIslandId === null) return;
-    if (popupIslandId === playerIslandId) { closeIslandPopup(); openCity(); setTimeout(() => { cityOpenId = '_keep'; renderCitySheet(); }, 300); return; }   // Hauptstadt: nur über die Burg
+    if (popupIslandId === playerIslandId) { closeIslandPopup(); openCity(() => { cityOpenId = '_keep'; cityPage = 'bau'; renderCitySheet(); }); return; }   // Hauptstadt: nur über die Burg (erst, wenn die Stadt da ist – sonst schließt cityShow das Fenster wieder)
     const level = islandLevels[popupIslandId] || 1;
     if (level >= MAX_BASE_LEVEL) { flashHint('Maximale Stufe ' + MAX_BASE_LEVEL + ' erreicht.', 2500); return; }
     const cost = upgradeCost(level);
