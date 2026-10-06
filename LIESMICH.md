@@ -50,6 +50,7 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
     manifest.webmanifest  App-Datei (Name, Logo, startet ohne Browser-Leiste)
     logo.svg           das App-Logo (Krone über Burg auf einer Insel im Meer)
     icon-192.png, icon-512.png, apple-touch-icon.png   das Logo als Bild (aus logo.svg gerendert)
+  schrift/             Cinzel + Inter (woff2, selbst ausgeliefert statt Google Fonts), schrift.css, Lizenzen (OFL)
   weltrechner/         der Weltrechner auf dem Server (rechnet die Welt, nie ein Handy) – siehe Abschnitt 13
     start.js           das Programm (Node.js): Spiel ohne Bildschirm, Prüfer, Herzschlag, Speichergrenze
     jsdom.js           „Browser ohne Bildschirm“ (jsdom 24.1.3, eine Datei)
@@ -1035,6 +1036,16 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   Ausrüstung“. **Fähigkeiten:** große runde Knoten mit Stufe „0/50“ und Namen darunter, ungelernte blasser. **Einstellungen**
   (10c): ohne Konto „Benachrichtigungen gibt es nur nach der Anmeldung.“ statt ewig „Einen Moment …“, keine Zeile
   „Spieler-Nummer –“. Offen (Wirtschaft): „Belohnung für Stufe 2: +1 Münze, +1 Truppe“. Test `profil_kopf_test` (neu).
+- **6.10. – Einheitlicher Stil (Designer-Gesamtblick, Regeln a1–a12; Branch `design-stil`, NICHT hochgeladen):** **Schrift
+  selbst ausgeliefert:** Cinzel (Überschriften) und Inter (Text) liegen als woff2 in `Game/schrift/` (+ `schrift.css`,
+  Lizenzen `OFL-Cinzel.txt`/`OFL-Inter.txt`, SIL Open Font License) – Spielseite (spielseite/01) und Startseite (index.php)
+  laden sie von dort, kein Google-Fonts-Aufruf mehr (Datenschutz), Sicherheitsregel (server/02) ohne Google; Vorschau
+  kopiert den Ordner mit, Fotos zeigen jetzt die echte Schrift. `hochladen.sh` nimmt `schrift/` von selbst mit (woff2 wird
+  über die Adresse geprüft). **Stil-Block** am Ende von spielseite/03: Edelstein immer blau (`--res-gem`) und Münze immer
+  in Münzfarbe – auch auf Gold-Knöpfen, in Reitern, Erfolgen, Marsch-Knöpfen; Reiter/Overlines mit Platz für Ä/Ö/Ü
+  („Ubersicht“, „SPAHBERICHT“); Unter-Chips nicht größer als die Hauptreiter; kleine Knöpfe nicht zusammengedrückt;
+  gesperrter Knopf in `--tx-3`; Platzhalter normal/gedämpft; lesbarer Kleintext mindestens `--fs-11`; Zahlen-Klassen
+  `.zahl`, `.zahl--plus`, `.zahl--minus`. Test `design_stil_test` (+ server_test Startseite).
 - **Befehle der Zuschauer** (in `spiel.js`, Helfer `alsBefehl`): Angreifen (mit gewähltem Held), Senden, Zurückrufen,
   Beschleunigen (Gems zahlt man selbst), Basis/Burg ausbauen (Münzen zahlt man selbst), Hauptstadt verlegen,
   Truppen-Geschenke (Stufe, Thron-Shop, Lazarett, Funde → `eigeneTruppenDazu`), Tore (Maut/zu), Titel vergeben als

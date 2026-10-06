@@ -22,9 +22,9 @@ if (!ini_get('zlib.output_compression') && function_exists('ob_gzhandler')) ob_s
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Open Water</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preload" href="schrift/cinzel.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="schrift/inter.woff2" as="font" type="font/woff2" crossorigin>
+    <link href="schrift/schrift.css" rel="stylesheet">
     <style>
 /* =====================================================================
    OPEN WATER - UI stylesheet (Obsidian & Gold, final)

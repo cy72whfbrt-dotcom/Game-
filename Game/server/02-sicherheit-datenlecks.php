@@ -11,7 +11,7 @@ header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 // Skripte nur aus eigenen Dateien, three.js und den eigenen Inline-Skripten mit der Nonce dieser Seite (csp_nonce()) – ein
 // eingeschleustes <script> oder onclick=… liefe nicht ('unsafe-inline' gibt es nur noch für Styles)
 function csp_nonce() { static $n = null; if ($n === null) $n = base64_encode(random_bytes(16)); return $n; }
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . csp_nonce() . "' https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js; script-src-attr 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
+header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . csp_nonce() . "' https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'");
 
 // Admins (dürfen admin.php benutzen; während der Wartung kommen auch sie nicht ins Spiel): feste Spieler-Nummern aus config.php
 // ('admin_ids'), nicht Namen – einen Namen könnte sich sonst jemand anderes registrieren.

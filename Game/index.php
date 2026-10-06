@@ -68,9 +68,8 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Open Water">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preload" href="schrift/cinzel.woff2" as="font" type="font/woff2" crossorigin>
+<link href="schrift/schrift.css" rel="stylesheet">
 <style>
   /* Farben + Schrift wie die Spielseite (Obsidian & Gold, Cinzel/Inter wie dort) */
   :root { color-scheme: dark; --ink-0: #050608; --ink-1: #0a0c10;
