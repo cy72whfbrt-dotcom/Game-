@@ -790,6 +790,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `karteTauchen`): die Karte fliegt zur Hauptstadt und taucht weiter hinein (CSS-Zoom ×3,2 des Karten-Bilds, kostet am Handy
   fast nichts), Wolken, dann kommt die Stadt von weit unten näher (0,4 → 1 in 1,15 s, Wolken reißen schneller auf); zurück
   umgekehrt (Stadt fällt weg, Karte kommt aus der Nähe zurück, dann zurück an die alte Stelle). Test `stadt_bild_test` (neu).
+  **Nachbesserung (Designer):** Übergang ohne Aufblasen – die Karte taucht nur noch ×1,8 ein (weich, `blur(2px)`), ab 280 ms
+  blendet die Stadt darüber (`stadtBlende`, 320 ms) und kommt von 0,62 näher; dünne Wolken nur am Rand (nie ganz weiß); zurück
+  blendet die Stadt aus, während die Karte zurückkommt. Boden-Bild läuft am Rand 90 Einheiten weich in die Grundfarbe aus (keine
+  harte Kante). Schilder nur, wenn sie ganz im Bild sind (Mauer-Schild nicht mehr halb am Rand). Handy-Start etwas weiter weg
+  (`W / 420`, ganze Mauer im Bild), vorn 4 Felsgruppen mit Palmen/Bäumen als Rand-Kulisse.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

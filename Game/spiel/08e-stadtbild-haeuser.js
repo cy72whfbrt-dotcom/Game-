@@ -365,6 +365,11 @@ function cityPaintGround() {
         const [a, b] = cIso(x, y), pine = R() < pal.pines, r = 4.2 + R() * 2.4, hell = R() < .5;
         dinge.push({ d: x + y, f: pine ? (pal.palm ? () => cityPalmAt(g, a, b, r * 4.4, pal) : () => cityPineAt(g, a, b, r * 4.2, pal)) : () => cityTreeAt(g, a, b, r, pal, hell) });
     }
+    for (const [x, y, r] of [[490, 640, 24], [620, 600, 20], [590, 540, 18], [400, 740, 22]]) if (frei(x, y)) {   // vorn: ein paar Felsgruppen mit Palmen/Bäumen als Rand-Kulisse
+        dinge.push({ d: x + y, f: () => cityMountain(g, K, x, y, r, r * .9, pal, R) });
+        for (let i = 0; i < 4; i++) { const rx = x + (R() - .5) * r * 3.4, ry = y + (R() - .5) * r * 3.4, rr = 2.5 + R() * 3; if (!frei(rx, ry)) continue; const [a, b] = cIso(rx, ry); dinge.push({ d: rx + ry, f: () => cityRockAt(g, a, b, rr, pal.rock) }); }
+        for (let i = 0; i < 3; i++) { const tx = x + r * (1 + R()) * (i - 1), ty = y + r * (.6 + R() * .8), r2 = 4.4 + R() * 2; if (!frei(tx, ty)) continue; const [a, b] = cIso(tx, ty), hell = R() < .5;
+            dinge.push({ d: tx + ty, f: R() < pal.pines ? (pal.palm ? () => cityPalmAt(g, a, b, r2 * 4.4, pal) : () => cityPineAt(g, a, b, r2 * 4.2, pal)) : () => cityTreeAt(g, a, b, r2, pal, hell) }); } }
     for (let i = 0; i < 50; i++) { const x = -60 + R() * 420, y = -100 + R() * 300, rr = 2 + R() * 3.5; if (x + y > 300 || !frei(x, y)) continue; const [a, b] = cIso(x, y); dinge.push({ d: x + y, f: () => cityRockAt(g, a, b, rr, pal.rock) }); }
     dinge.sort((p, q) => p.d - q.d).forEach(t => t.f());
     // 6) in der Mauer: gepflegter Rasen, Straßen wie ein „#“ mit Randsteinen, der Burgplatz, gepflasterte Bauplätze
@@ -386,6 +391,12 @@ function cityPaintGround() {
     const farben = pal.schnee ? ['#c0392b', '#ffffff'] : ['#e74c3c', '#f1c40f', '#ecf0f1', '#9b59b6', '#e67e22'];
     for (const [x, y, w, d] of [[186, 158, 40, 8], [262, 158, 40, 8], [338, 158, 40, 8], [414, 158, 40, 8], [158, 186, 8, 40], [158, 262, 8, 40], [158, 338, 8, 40], [158, 414, 8, 40]]) {
         cityGroundPoly(g, cityRect(x, y, x + w, y + d), '#6b4a2c'); for (let i = 0; i < w * d / 9; i++) { const [a, b] = cIso(x + 1 + R() * (w - 2), y + 1 + R() * (d - 2)); g.fillStyle = farben[Math.floor(R() * farben.length)]; g.beginPath(); g.arc(a, b, .9, 0, 7); g.fill(); } }
+    // 7) der Rand läuft weich in die Grundfarbe aus (kein hartes Rechteck, wenn die Stadt beim Öffnen von weit unten kommt)
+    const bx0 = CITY_BOUNDS.x0, bx1 = CITY_BOUNDS.x1, by0 = CITY_BOUNDS.y0, by1 = CITY_BOUNDS.y1, RB = 90, rgb = [1, 3, 5].map(i => parseInt(pal.bg.slice(i, i + 2), 16)).join(',');
+    for (const [x0, y0, x1, y1, rx, ry, rw, rh] of [[bx0, 0, bx0 + RB, 0, bx0, by0, RB, by1 - by0], [bx1, 0, bx1 - RB, 0, bx1 - RB, by0, RB, by1 - by0],
+        [0, by0, 0, by0 + RB, bx0, by0, bx1 - bx0, RB], [0, by1, 0, by1 - RB, bx0, by1 - RB, bx1 - bx0, RB]]) {
+        const lg = g.createLinearGradient(x0, y0, x1, y1); lg.addColorStop(0, 'rgba(' + rgb + ',1)'); lg.addColorStop(1, 'rgba(' + rgb + ',0)');
+        g.fillStyle = lg; g.fillRect(rx, ry, rw, rh); }
     CITY_GROUND_BIO = cityGrundKey();
     return CITY_GROUND = c;
 }

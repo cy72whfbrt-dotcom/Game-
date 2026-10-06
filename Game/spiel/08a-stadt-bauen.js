@@ -182,14 +182,22 @@ function cityShow() {
     updateCityBuilder();
     cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
 }
-// Eintauchen wie bei RoK: die Karte zoomt über die Hauptstadt hinaus weiter (nur ein CSS-Zoom des Karten-Bilds, kostet am
-// Handy fast nichts), die Wolken ziehen zu; dann liegt die Stadt tief unten und kommt näher, während die Wolken aufreißen.
-// Beim Verlassen umgekehrt: die Stadt fällt weg, die Karte kommt aus der Nähe zurück auf ihre Höhe.
-const CITY_TAUCH = 3.2;
+// Eintauchen wie bei RoK: die Kamera fliegt bis kurz vor die Hauptstadt, die Karte taucht noch ein Stück weiter (nur ein
+// CSS-Zoom des Karten-Bilds, höchstens CITY_TAUCH – sonst wird das flache Basis-Symbol riesig und unscharf) und wird weich;
+// schon bei ~40 % blendet die Stadt darüber und kommt von unten näher, dünne Wolken am Rand decken die Kanten.
+// Beim Verlassen umgekehrt: die Stadt fällt weg und blendet aus, die Karte kommt aus der Nähe zurück auf ihre Höhe.
+const CITY_TAUCH = 1.8, CITY_TAUCH_MS = 700, CITY_BLENDE_AB = 280, CITY_BLENDE_MS = 320;
 function karteTauchen(von, bis, ms, isl) {
     if (!canvas.animate || !isl) return null;
     canvas.style.transformOrigin = Math.round(toSX(isl.x)) + 'px ' + Math.round(toSY(isl.y)) + 'px';
-    return canvas.animate([{ transform: 'scale(' + von + ')' }, { transform: 'scale(' + bis + ')' }], { duration: ms, easing: von < bis ? 'cubic-bezier(.55,0,.85,.45)' : 'cubic-bezier(.15,.6,.35,1)', fill: 'forwards' });
+    const weich = s => s > 1 ? 'blur(2px)' : 'blur(0px)';
+    return canvas.animate([{ transform: 'scale(' + von + ')', filter: weich(von) }, { transform: 'scale(' + bis + ')', filter: weich(bis) }],
+        { duration: ms, easing: von < bis ? 'cubic-bezier(.45,0,.75,.6)' : 'cubic-bezier(.15,.6,.35,1)', fill: 'forwards' });
+}
+function stadtBlende(von, bis, dann) {                                       // die Stadt über der Karte ein-/ausblenden
+    if (!cityView.animate) { if (dann) dann(); return; }
+    const a = cityView.animate([{ opacity: von }, { opacity: bis }], { duration: CITY_BLENDE_MS, easing: 'ease-out', fill: 'forwards' });
+    a.onfinish = () => { a.cancel(); if (dann) dann(); };
 }
 function openCity() {
     if (cityBusy || !cityView.hidden) return;
@@ -199,31 +207,27 @@ function openCity() {
     if (!home) { cityShow(); return; }
     cityBusy = true;
     flyTo(home.x, home.y, { zoom: maxZoom, ms: 650 });                      // 1) the map flies to your capital …
-    setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, 560, home);  // 2) … dives on past it into the clouds …
-        cloudsRun(500, 0, 1, () => {
-            if (tauch) tauch.cancel();
-            cityShow(); if (cityCam) cityCam.anim = { from: .4, t0: performance.now(), dur: 1150 };   // 3) … the town comes up from below
-            else cityPendingAnim = true;
-            cloudsRun(650, 1, 0, () => { cityBusy = false; });
-        }); }, 560);
+    setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, CITY_TAUCH_MS, home);   // 2) … dives on a little, getting soft …
+        cloudsRun(CITY_TAUCH_MS, 0, .5, () => cloudsRun(600, .5, 0, () => { cityBusy = false; }));   // (nur Wolken am Rand, nie ganz weiß)
+        setTimeout(() => { cityShow(); stadtBlende(0, 1);                     // 3) … and the town fades in, coming up from below
+            if (cityCam) cityCam.anim = { from: .62, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
+        setTimeout(() => { if (tauch) tauch.cancel(); }, CITY_TAUCH_MS); }, 560);
 }
 let cityPendingAnim = false;
 function closeCity() {
     if (cityView.hidden) return false;
     if (cityBusy) return true;
     cityBusy = true; cityOpenId = null; cityRingZu(); document.getElementById('citySheet').hidden = true;
-    if (cityCam) cityCam.anim = { from: 1, to: .3, t0: performance.now(), dur: 520 };   // the town falls away …
-    cloudsRun(480, 0, 1, () => {                                              // … into the clouds …
-        cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); cityLagenFrei();
-        const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
-        cityMapReturn = null;
-        if (home) flyTo(home.x, home.y, { zoom: maxZoom, instant: true });
-        const auf = karteTauchen(CITY_TAUCH, 1, 650, home);                  // … the map comes back up from close by …
-        cloudsRun(600, 1, 0);
-        setTimeout(() => { if (auf) auf.cancel();
-            flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });            // … and opens up again where it was
-            cityBusy = false; }, 650);
-    });
+    const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
+    cityMapReturn = null;
+    if (home) flyTo(home.x, home.y, { zoom: maxZoom, instant: true });       // unter der Stadt liegt die Karte schon über der Hauptstadt
+    if (cityCam) cityCam.anim = { from: 1, to: .62, t0: performance.now(), dur: 650 };   // the town falls away …
+    const auf = karteTauchen(CITY_TAUCH, 1, 650, home);                      // … the map comes back up from close by …
+    cloudsRun(300, 0, .5, () => cloudsRun(500, .5, 0));
+    setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); cityLagenFrei(); requestRender(); }), 120);
+    setTimeout(() => { if (auf) auf.cancel();
+        flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });                // … and opens up again where it was
+        cityBusy = false; }, 650);
     return true;
 }
 let cityB2Armed = 0;                              // the buy button asks once more before 500 gems go

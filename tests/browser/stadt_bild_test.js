@@ -1,6 +1,7 @@
 // Stadtansicht (Alexander 6.10.) – Handy + Desktop: Namensschilder kleben an ihrem Gebäude (nach Verschieben/Zoomen, nie an den
 // Bildrand geschoben, keine Überlappung, die Burg hat Vorrang); draußen nur Landschaft der Weltkarte (keine Mühle/Höfe/Felder,
-// Meer + Strand, wo die Karte Wasser hat, die Stadt immer auf Land); Übergang Karte → Stadt taucht mit der Karte ein und zurück.
+// Meer + Strand, wo die Karte Wasser hat, die Stadt immer auf Land); Übergang Karte → Stadt taucht mit der Karte ein und zurück,
+// die Stadt blendet darüber (kein riesiges Basis-Symbol, keine harte Bodenkante), Schilder nur ganz im Bild.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -19,15 +20,22 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       // 1) Übergang: die Karte taucht ein (CSS-Zoom auf dem Karten-Bild), danach die Stadt; zurück genauso
       let zooms = [];                                                     // jeder CSS-Zoom der Karte (unter Last kann er zwischen zwei Blicken schon vorbei sein)
       const echt = canvas.animate; canvas.animate = function (k, o) { zooms.push(k.map(x => x.transform).join(' → ')); return echt.call(this, k, o); };
-      openCity(); let n = 0; while ((cityBusy || cityView.hidden) && n++ < 60) await warte(100);
+      openCity(); let n = 0, ueber = false;                              // die Stadt blendet schon ein, während die Karte noch eintaucht
+      while ((cityBusy || cityView.hidden) && n++ < 120) { await warte(50); if (!cityView.hidden && canvas.getAnimations().length) ueber = true; }
       const tauchAuf = zooms.join() === 'scale(1) → scale(' + CITY_TAUCH + ')'; zooms = [];
-      o.auf = { tauchAuf, stadt: !cityView.hidden, frei: !cityBusy, kartenZoomWeg: !canvas.getAnimations().length };
+      o.auf = { tauchAuf, stadt: !cityView.hidden, frei: !cityBusy, kartenZoomWeg: !canvas.getAnimations().length, ueber, tauchKlein: CITY_TAUCH <= 2 };
+      // der Boden läuft am Rand weich in die Grundfarbe aus (keine harte Bildkante, wenn die Stadt von weit unten kommt)
+      const gb = CITY_GROUND.getContext('2d'), gw = CITY_GROUND.width, gh = CITY_GROUND.height, bg = [1, 3, 5].map(i => parseInt(CITY_BG_COL.slice(i, i + 2), 16));
+      const px = (x, y) => [...gb.getImageData(x, y, 1, 1).data].slice(0, 3);
+      o.rand = [[2, gh / 2], [gw - 3, gh / 2], [gw / 2, 2], [gw / 2, gh - 3]].map(([x, y]) => Math.max(...px(Math.round(x), Math.round(y)).map((v, i) => Math.abs(v - bg[i]))));
+      { const W = innerWidth, Z = cityCam.z, ox = W / 2 - cityCam.x * Z;   // die ganze Mauer-Raute im Startbild
+        o.mauerImBild = [[CITY_WALL.a, CITY_WALL.b], [CITY_WALL.b, CITY_WALL.a]].every(([x, y]) => { const sx = cIso(x, y)[0] * Z + ox; return sx >= 0 && sx <= W; }); }
       await warte(400);
       // 2) Schilder an mehreren Kamera-Stellen: Mitte unter dem Gebäude, im Bild, keine Überlappung
       const pruef = async (name, f) => { f(); cityCam.tx = cityCam.ty = undefined; await warte(350);
         const W = innerWidth, H = innerHeight, mitte = Object.fromEntries(cityHitRects.map(h => [h.id, h.cx]));
         const kleben = cityNamen.every(s => mitte[s.id] !== undefined && Math.abs(s.x + s.w / 2 - mitte[s.id]) < 1.5);
-        const imBild = cityNamen.every(s => s.x + s.w / 2 >= 0 && s.x + s.w / 2 <= W && s.y + s.h / 2 >= 0 && s.y + s.h / 2 <= H);
+        const imBild = cityNamen.every(s => s.x >= 0 && s.x + s.w <= W && s.y >= 0 && s.y + s.h <= H);   // ganz im Bild, nichts halb am Rand
         const deckt = cityNamen.some((s, i) => cityNamen.some((t, j) => j > i && s.x < t.x + t.w && t.x < s.x + s.w && s.y < t.y + t.h && t.y < s.y + s.h));
         const burg = cityHitRects.find(h => h.id === '_keep'), burgDa = !burg || burg.cx < 0 || burg.cx > W || cityNamen.some(s => s.id === '_keep');
         return { name, n: cityNamen.length, kleben, imBild, deckt, burgDa }; };
@@ -55,7 +63,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     }).catch(e => ({ fehler: e.message }));
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
-    ok(r.auf.tauchAuf && r.auf.stadt && r.auf.frei && r.auf.kartenZoomWeg, art + ': Karte → Stadt: die Karte taucht ein, dann die Stadt', r.auf);
+    ok(r.auf.tauchAuf && r.auf.stadt && r.auf.frei && r.auf.kartenZoomWeg && r.auf.ueber && r.auf.tauchKlein, art + ': Karte → Stadt: die Karte taucht ein (höchstens 2×), die Stadt blendet darüber', r.auf);
+    ok(r.rand.every(d => d <= 3), art + ': Boden läuft am Rand weich in die Grundfarbe aus', r.rand);
+    ok(r.mauerImBild, art + ': Startbild zeigt die ganze Mauer');
     for (const s of r.schilder) ok(s.n > 0 && s.kleben && s.imBild && !s.deckt && s.burgDa, art + ': Schilder kleben am Gebäude, im Bild, ohne Überlappung (' + s.name + ')', s);
     ok(!r.draussen.gebaut.length && r.draussen.landMitte, art + ': draußen keine Mühle/Höfe/Karren, die Stadt steht auf Land', r.draussen);
     ok(!r.meer || (r.meer.nass && r.meer.wasser > 0 && r.meer.stadtLand && !r.meer.fehler), art + ': Hauptstadt an der Küste: Meer der Karte um die Stadt, Stadt auf Land', r.meer);

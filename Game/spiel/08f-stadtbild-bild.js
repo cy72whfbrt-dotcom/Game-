@@ -22,7 +22,7 @@ function cityPathPoint(p, t) {                                              // a
 const CITY_VIEW = { x0: -420, x1: 420, y0: 0, y1: 650 };                    // what the camera may show (the town, the land around it)
 function cityFitZoom(W, H) { return Math.min(W / (CITY_VIEW.x1 - CITY_VIEW.x0), H / (CITY_VIEW.y1 - CITY_VIEW.y0)); }
 function cityClampCam(W, H) {
-    const c = cityCam, zMin = Math.max(cityFitZoom(W, H) * .95, W / (CITY_BOUNDS.x1 - CITY_BOUNDS.x0 - 60), H / (CITY_BOUNDS.y1 - CITY_BOUNDS.y0 - 60)), zMax = 3;   // (nie weiter als das gemalte Land)
+    const c = cityCam, zMin = Math.max(cityFitZoom(W, H) * .95, W / (CITY_BOUNDS.x1 - CITY_BOUNDS.x0 - 60), H / (CITY_BOUNDS.y1 - CITY_BOUNDS.y0 + 60)), zMax = 3;   // (nie weiter als das gemalte Land; oben/unten läuft es weich in die Grundfarbe aus)
     c.z = Math.max(zMin, Math.min(zMax, c.z));
     const hw = W / 2 / c.z, hh = H / 2 / c.z, V = CITY_VIEW;                  // keep the town in view (centred when it is smaller than the screen)
     c.x = V.x1 - V.x0 <= 2 * hw ? (V.x0 + V.x1) / 2 : Math.max(V.x0 + hw, Math.min(V.x1 - hw, c.x));
@@ -97,12 +97,11 @@ function citySprDraw(g, s, dx, dy, k, dpr2, zStill) {
         const cg = c.getContext('2d'); cg.imageSmoothingQuality = 'high'; cg.setTransform(f, 0, 0, f, 0, 0); cg.drawImage(s.c, 0, 0); m = { f, c }; CITY_SPR_FERTIG.set(s, m); }
     g.drawImage(m.c, dx, dy, m.c.width / dpr2, m.c.height / dpr2);
 }
-// Namensschilder: wo sie in diesem Bild liegen (Bildschirm-Punkte). Ein Schild kommt nur hin, wenn seine Mitte im Bild ist
-// und es kein schon gesetztes überdeckt (2 Punkte Luft).
+// Namensschilder: wo sie in diesem Bild liegen (Bildschirm-Punkte). Ein Schild kommt nur hin, wenn es ganz im Bild ist
+// (2 Punkte Rand) und kein schon gesetztes überdeckt (2 Punkte Luft).
 let cityNamen = [];
 function cityNamePlatz(id, x, y, w, h, W, H) {
-    const mx = x + w / 2, my = y + h / 2;
-    if (mx < 0 || mx > W || my < 0 || my > H) return false;
+    if (x < 2 || x + w > W - 2 || y < 2 || y + h > H - 2) return false;
     if (cityNamen.some(n => x < n.x + n.w + 2 && n.x < x + w + 2 && y < n.y + n.h + 2 && n.y < y + h + 2)) return false;
     cityNamen.push({ id, x, y, w, h }); return true;
 }
@@ -116,8 +115,8 @@ function cityFrame(now) {
     cityFrame.drawn = now;
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
-    if (!cityCam) { const [kx, ky] = cIso(CC, CC); cityCam = { x: kx, y: ky + 6, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 385)) };
-        if (cityPendingAnim) { cityCam.anim = { from: .4, t0: now, dur: 1150 }; cityPendingAnim = false; } }
+    if (!cityCam) { const [kx, ky] = cIso(CC, CC); cityCam = { x: kx, y: ky + 6, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 420)) };   // (Handy: die ganze Mauer-Raute im Bild)
+        if (cityPendingAnim) { cityCam.anim = { from: .62, t0: now, dur: 1100 }; cityPendingAnim = false; } }
     let animZ = 1;
     if (cityCam.anim) { const a = cityCam.anim, q = Math.min(1, (now - a.t0) / a.dur), e = 1 - Math.pow(1 - q, 3), to = a.to ?? 1;
         animZ = a.from + (to - a.from) * e; if (q >= 1 && to === 1) cityCam.anim = null; }
