@@ -1625,6 +1625,8 @@ Nacht – vorher bauen und testen.
     zeigen (prüfen: fehlt die Figur oder ist sie nur außerhalb des Bildes?). (b) Grenztor zeigt Schloss „2T23h15m“, obwohl
     angreifbar – verwirrend (Schloss = Pass-Frist?). (c) Hinweis „Keine deiner Basen grenzt an dieses Gebiet…“ liegt über der
     Karte/Inhalt (wie Punkt 9).
+20. **Helden-Fenster: Aufbau/Design schlecht** (19:08, „Aufbau ist Arsch“): Helden-Fenster komplett neu gestalten wie RoK/
+    Call of Dragons (große Helden-Figur, Stufe/Sterne, Talente, Ausrüstung um den Helden, Liste als Karten). → Designer.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
