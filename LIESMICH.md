@@ -966,6 +966,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   „67 Münzen“). Grundverteidigung mindestens 50 je Stufe (vorher bis Stufe 10 nur 1). Mitspieler rechnen mit denselben Funktionen.
   Tabelle: 11b A4. Tests `wirtschaft_muenz_test` (neu), `forschung_kosten_test`, `wirtschaft_gold_test`, `wirtschaft_roh_test`,
   `profil_stunde_test`, `thron_verst_test`, `welt_test`.
+- **6.10. – Stadt-Gebäude-Fenster wie RoK (Branch `stadt-fenster`, NICHT hochgeladen):** Jedes Gebäude-Fenster zeigt
+  „Jetzt / Stufe N+1“ als Tabelle (Mauer: Verteidigung, Botschaft: Verstärkung/Rally/Hilfen, Holzfäller: Holz pro Stunde …)
+  statt Pfeil-Text („1 Hilfen“ weg); fehlt die Burg-Stufe, ist die Zeile rot mit Knopf „Zur Burg“ und der Bauen-Knopf sagt
+  „Burg Stufe 5 nötig“; Kopf „Stufe 1 → 2“ + klein „von 25“; ungebaute Gebäude zeigen ihr eigenes Bild (ausgegraut) statt
+  alle dasselbe Fundament; Heldenhalle ungebaut: kurzer Satz + dunkler „Helden öffnen“ (nur „Bauen“ ist gold).
+  Basis-Fenster „Aufwerten“ an der Hauptstadt öffnet die Burg erst, wenn die Stadt da ist (`openCity(dann)`, vorher feste
+  300 ms → bei langsamem Handy wieder zu). Stadt-Übergang: Schleier warm (#f3e6c4), höchstens 30 %, unter HUD und Leiste,
+  nach 1,1 s weg; Karten-Hinweise (Invasion …) verschwinden in der Stadt hart statt durchzuscheinen; Desktop startet
+  etwas weiter weg (× 0,85) und 40 px tiefer. „ab Burg-Stufe 4“ bricht nicht mehr am Bindestrich um.
+  Test: `stadt_fenster_test` erweitert.
+
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
