@@ -1610,6 +1610,10 @@ Nacht – vorher bauen und testen.
       Login über dem Titelbild (gleiche Szene wie Ladebild), Eingabefelder im Spielstil (dunkel, Goldrand, kein Autofill-Gelb –
       `-webkit-autofill` überschreiben), großer Gold-Knopf, wie Spiel-Startbildschirme.
     → Designer mit Online-Vorbildern (Start-/Login-Bildschirme RoK, Call of Dragons, Lords Mobile).
+17. **Tore auf der Karte nicht mehr markiert + eigene Basen nicht erkennbar** (Bild 4b1cd453, 18:48): Tore (Brücken über
+    die Flüsse) haben keine Markierung mehr; Gebiets-Blöcke grün/orange, aber man sieht nicht, welche Basis die eigene ist
+    (Hauptstadt hervorheben, z. B. eigener Ring/Wappen/Name). Im HUD außerdem Truppen „111,1 Mrd.“ – Folge von Punkt 13?
+    prüfen.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
