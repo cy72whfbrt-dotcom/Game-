@@ -277,7 +277,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bkPreviews` → Game/spiel/03b-gebaeude-3d.js:351
 - `bkSprite` → Game/spiel/03b-gebaeude-3d.js:344
 - `blit` → Game/spiel/03a-karte-hintergrund.js:488
-- `blob` → Game/spiel/01f-felsen.js:188
+- `blob` → Game/spiel/01f-felsen.js:210
 - `blob` → Game/spiel/03a-karte-hintergrund.js:66
 - `block` → Game/ladebildschirm.js:58
 - `boardsGeo` → Game/baukunst/04-vielfalt-stile.js:331
@@ -947,24 +947,27 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:77
 - `feldBericht` → Game/spiel/09a-funde-felder.js:265
 - `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:250
-- `felsAbstand` → Game/spiel/01f-felsen.js:70
-- `felsAbstandStrecke` → Game/spiel/01f-felsen.js:76
-- `felsAuf` → Game/spiel/01f-felsen.js:121
-- `felsBergstock` → Game/spiel/01f-felsen.js:46
-- `felsBild` → Game/spiel/01f-felsen.js:182
-- `felsBogen` → Game/spiel/01f-felsen.js:139
-- `felsenBei` → Game/spiel/01f-felsen.js:119
+- `felsAbstand` → Game/spiel/01f-felsen.js:72
+- `felsAbstandStrecke` → Game/spiel/01f-felsen.js:78
+- `felsAuf` → Game/spiel/01f-felsen.js:123
+- `felsBergstock` → Game/spiel/01f-felsen.js:47
+- `felsBild` → Game/spiel/01f-felsen.js:203
+- `felsBogen` → Game/spiel/01f-felsen.js:141
+- `felsenBei` → Game/spiel/01f-felsen.js:121
 - `felsenListe` → Game/spiel/01f-felsen.js:16
-- `felsenMalen` → Game/spiel/01f-felsen.js:224
-- `felsenPfad` → Game/spiel/01f-felsen.js:166
-- `felsenWeg` → Game/spiel/01f-felsen.js:152
-- `felsErreichbar` → Game/spiel/01f-felsen.js:96
-- `felsHuelle` → Game/spiel/01f-felsen.js:63
-- `felsKreuzt` → Game/spiel/01f-felsen.js:104
-- `felsLaenge` → Game/spiel/01f-felsen.js:115
-- `felsLmAn` → Game/spiel/01f-felsen.js:116
-- `felsPasst` → Game/spiel/01f-felsen.js:82
-- `felsWegUm` → Game/spiel/01f-felsen.js:122
+- `felsenMalen` → Game/spiel/01f-felsen.js:244
+- `felsenPfad` → Game/spiel/01f-felsen.js:168
+- `felsenWeg` → Game/spiel/01f-felsen.js:154
+- `felsErreichbar` → Game/spiel/01f-felsen.js:98
+- `felsFacetten` → Game/spiel/01f-felsen.js:187
+- `felsFlaechen` → Game/spiel/01f-felsen.js:239
+- `felsHuelle` → Game/spiel/01f-felsen.js:65
+- `felsKreuzt` → Game/spiel/01f-felsen.js:106
+- `felsLaenge` → Game/spiel/01f-felsen.js:117
+- `felsLmAn` → Game/spiel/01f-felsen.js:118
+- `felsMisch` → Game/spiel/01f-felsen.js:184
+- `felsPasst` → Game/spiel/01f-felsen.js:84
+- `felsWegUm` → Game/spiel/01f-felsen.js:124
 - `fertig` → Game/buendnis/01-daten-regeln.js:152
 - `fertig` → Game/speichern.js:153
 - `fest_lesen` → Game/server/05-datenbank-welt.php:9
@@ -1001,6 +1004,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `finishSplash` → Game/spiel/10c-start-einstellungen.js:188
 - `first` → Game/spiel/10c-start-einstellungen.js:137
 - `fits` → Game/baukunst/05-umland.js:729
+- `flaeche` → Game/spiel/01f-felsen.js:192
 - `flag` → Game/spiel/03b-gebaeude-3d.js:50
 - `flameTexture` → Game/baukunst/03-wahrzeichen-feuer.js:299
 - `flankAngle` → Game/baukunst/04-vielfalt-stile.js:71
@@ -1409,7 +1413,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kostenHtml` → Game/aufbau.js:76
 - `kraft` → Game/buendnis/03-mitspieler.js:410
 - `kreis` → Game/spiel/08e-stadtbild-haeuser.js:369
-- `kreuz` → Game/spiel/01f-felsen.js:65
+- `kreuz` → Game/spiel/01f-felsen.js:67
 - `kWert` → Game/spiel/10d-welt-weltrechner.js:540
 - `label` → Game/spiel/03d-maersche-tagnacht.js:116
 - `lacq` → Game/baukunst/04-vielfalt-stile.js:231
@@ -3573,25 +3577,29 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 
 ### Game/spiel/01f-felsen.js — Lebendige Welt (11b G): Bergstöcke auf den Regionen, Märsche laufen darum herum…
 - `felsenListe` :16 — alle Bergstöcke (einmal berechnet; beim Laden, bevor Felder/Basen da sind: noch…
-- `felsBergstock` :46 — 3–7 Gipfel entlang einer leicht gebogenen Linie, dazu Hülle und Wegpunkte
-- `felsHuelle` :63 — konvexe Hülle (gegen den Uhrzeigersinn)
-- `kreuz` :65
-- `felsAbstand` :70 — Abstand eines Punkts zur Hülle (0 = drin)
-- `felsAbstandStrecke` :76 — Abstand einer Strecke zur Hülle (0 = berührt)
-- `felsPasst` :82
-- `felsErreichbar` :96 — keine Basis eingemauert: jeder Weg, den der neue Bergstock schneidet, höchstens…
-- `felsKreuzt` :104 — geht die Strecke a→b durch die Hülle?
-- `felsLaenge` :115
-- `felsLmAn` :116 — Region unter einem Punkt (Raster der Regionen; Berge liegen innen)
-- `felsenBei` :119
-- `felsAuf` :121 — Liegt (x, y) auf einem Bergstock (mit Rand)? Für Lager, Tagesboss und Wälder, d…
-- `felsWegUm` :122 — kürzester Weg a → b um die Hüllen fs (Ecken-Graph, Dijkstra) → Ecken-Punkte, od…
-- `felsBogen` :139 — Ecken als Bogen (quadratische Kurve), in Punkte alle ~150 Einheiten zerlegt
-- `felsenWeg` :152 — a → b um die Berge herum: [a, Bogen-Punkte …, b]
-- `felsenPfad` :166 — jede Strecke eines Marschwegs um die Berge herum
-- `felsBild` :182 — die Pfade einer Region (einmal gebaut): ≤ 9 fill/stroke je Region und Kachel
-- `blob` :188
-- `felsenMalen` :224 — in paintBackground: zd = Zoom der Kachel (Übersicht: 0 = nur Schattierung, 1 = …
+- `felsBergstock` :47 — 3–7 Gipfel in zwei versetzten Reihen entlang einer leicht gebogenen Linie: in d…
+- `felsHuelle` :65 — konvexe Hülle (gegen den Uhrzeigersinn)
+- `kreuz` :67
+- `felsAbstand` :72 — Abstand eines Punkts zur Hülle (0 = drin)
+- `felsAbstandStrecke` :78 — Abstand einer Strecke zur Hülle (0 = berührt)
+- `felsPasst` :84
+- `felsErreichbar` :98 — keine Basis eingemauert: jeder Weg, den der neue Bergstock schneidet, höchstens…
+- `felsKreuzt` :106 — geht die Strecke a→b durch die Hülle?
+- `felsLaenge` :117
+- `felsLmAn` :118 — Region unter einem Punkt (Raster der Regionen; Berge liegen innen)
+- `felsenBei` :121
+- `felsAuf` :123 — Liegt (x, y) auf einem Bergstock (mit Rand)? Für Lager, Tagesboss und Wälder, d…
+- `felsWegUm` :124 — kürzester Weg a → b um die Hüllen fs (Ecken-Graph, Dijkstra) → Ecken-Punkte, od…
+- `felsBogen` :141 — Ecken als Bogen (quadratische Kurve), in Punkte alle ~150 Einheiten zerlegt
+- `felsenWeg` :154 — a → b um die Berge herum: [a, Bogen-Punkte …, b]
+- `felsenPfad` :168 — jede Strecke eines Marschwegs um die Berge herum
+- `felsMisch` :184
+- `felsFacetten` :187 — ein Gipfel (oder Felsbrocken) aus 5 Flächen; Fuß-Mitte (x, y)
+- `flaeche` :192
+- `felsBild` :203 — die Pfade einer Region (einmal gebaut): ≤ 14 fill/stroke je Region und Kachel, …
+- `blob` :210
+- `felsFlaechen` :239 — Bodenschatten + 5 Flächen-Töne (+ Grat-Kante)
+- `felsenMalen` :244 — in paintBackground: zd = Zoom der Kachel (Übersicht: 0 = weit, 1 = alles), zl =…
 
 ### Game/spiel/02a-shop-stufen.js — Shop: Kisten, Gegenstände (vereinen, zerlegen, verbessern), Erfahrung und Stufe…
 - `itemScore` :29

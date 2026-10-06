@@ -385,7 +385,7 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
     g.fillStyle = lm.fill; g.fill(lm.path);
     if (grassA > 0) { g.globalAlpha = grassA * (lm.stone ? .35 : lm.bio === 'snow' || lm.bio === 'ice' ? .12 : lm.bio === 'sand' ? .2 : lm.bio === 'volcano' ? .3 : lm.bio === 'swamp' ? .8 : 1); g.fillStyle = GRASS_PATTERN; g.fill(lm.path); g.globalAlpha = 1; }
     if (lm.deko) paintDeko(g, lm, Math.max(forestA, Math.min(1, Math.max(0, (zd - 0.007) / 0.008))));                                        // Paket C: Eis, Vulkan, Sumpf (statt Wald)
-    else if (forestA > 0) { g.globalAlpha = forestA;
+    else if (forestA > 0 && !(WELT_FELSEN && (lm.stone || lm.bio === 'sand'))) { g.globalAlpha = forestA;   // (Wüste/Stein: statt der runden Häufchen die Felsen aus 01f)
       if (lm.bio === 'snow' && !lm.stone) { g.fillStyle = '#3f5a4c'; g.fill(lm.forest[0]); g.fillStyle = '#56735f'; g.fill(lm.forest[1]);   // snowy firs
         g.fillStyle = 'rgba(250,252,255,.7)'; g.fill(lm.forest[2]); }
       else if (lm.bio === 'sand' && !lm.stone) { g.fillStyle = '#9c7e4c'; g.fill(lm.forest[0]); g.fillStyle = '#b39360'; g.fill(lm.forest[1]);   // dunes and dry scrub

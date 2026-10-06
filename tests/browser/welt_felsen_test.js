@@ -6,7 +6,10 @@
 // D) Marsch um einen Berg: länger als Luftlinie (Strecke, Angriff, Mitspieler, Späher), marchPath = gezeichnete Linie
 // E) Handy (Zuschauer, vorläufiger Marsch) und Weltrechner (WELT nachgebaut, leiter) rechnen dieselbe Marschzeit
 // F) Schalter WELT_FELSEN = false (Kopie der Vorschau): keine Berge, alle Wege wie vorher (Luftlinie über die Brücken)
-// Bilder (Handy, 3 Zoomstufen, Marsch um einen Berg) in den Arbeitsordner.
+// G) Aussehen: Low-Poly-Gipfel (5 Flächen-Töne), 1–3 Stöcke je Region; Wüste/Stein: Felsen statt der alten runden Häufchen
+// H) Marsch-Zeitschild: die Zahl steht links neben der Sanduhr (textAlign 'left'; vorher 'center' von den Namensschildern →
+//    Zahl über der Sanduhr, „9̶1:43“)
+// Bilder (Handy + Desktop, 3 Zoomstufen, Marsch um einen Berg) in den Arbeitsordner.
 //   node tests/browser/welt_felsen_test.js <vorschau> [arbeitsordner]
 const { chromium, devices } = require('playwright');
 const fs = require('fs'), path = require('path');
@@ -16,7 +19,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   fs.mkdirSync(OUT, { recursive: true });
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] }), fe = [];
   const seite = async (ordner, geraet) => { const p = await (await b.newContext(geraet)).newPage(); p.on('pageerror', e => fe.push(e.message));
-    await p.goto('file://' + ordner + '/index.html'); await p.waitForTimeout(8000);
+    await p.goto('file://' + ordner + '/index.html', { timeout: 120000 }); await p.waitForTimeout(8000);
     await p.waitForFunction(() => typeof islands !== 'undefined' && islands.length && typeof resFields !== 'undefined', null, { timeout: 60000, polling: 500 }).catch(() => {});
     await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
       const lange = Date.now() + 1e9; for (const d of BOT_DEFS) botNextAt[d.id] = lange; });   // (Mitspieler ruhig)
@@ -65,6 +68,23 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(c.paare > 50 && c.nFehler === 0, 'jede Basis bleibt erreichbar: ' + c.paare + ' Wege zwischen Basen gehen um die Berge herum (nicht hindurch, nicht über Gipfel, auf dem Land)', c.fehler);
   ok(c.maxV > 1 && c.maxV <= 1.6, 'Umweg höchstens 1,6 × Luftlinie', c.maxV);
 
+  // ===== G) Aussehen =====
+  const gg = await p.evaluate(() => {
+    const L = felsenListe(), je = {}; for (const f of L) je[f.lm] = (je[f.lm] || 0) + 1;
+    const gross = landmasses.filter(l => l.tier !== 'throne' && !FELS_OHNE[l.bio] && (islandsByLandmass[l.id] || []).length >= 8);
+    const ohne = gross.filter(l => !je[l.id]).length, max = Math.max(...Object.values(je));
+    const toene = Object.values(FELS_TOENE).every(t => t.length === 5 && new Set(t).size === 5);
+    const wueste = landmasses.find(l => l.bio === 'sand' && !l.stone && felsBild(l)), stein = landmasses.find(l => l.stone);
+    const zaehl = lm => { let n = 0; const d = Object.getOwnPropertyDescriptor(lm, 'forest'); Object.defineProperty(lm, 'forest', { get: () => (n++, d.get()), configurable: true });
+      const c = document.createElement('canvas'); c.width = c.height = 128; paintBackground({ c, g: c.getContext('2d'), z: .03, l: lm.x - 2000, t: lm.y - 2000, noSea: true }, null, true);
+      Object.defineProperty(lm, 'forest', d); return n; };
+    return { je: Object.keys(je).length, ohne, gross: gross.length, max, toene, felsW: wueste && wueste.felsBild.fels ? 1 : 0, wald: [zaehl(wueste), zaehl(stein)],
+             gruen: (() => { const l = landmasses.find(x => x.bio === 'green' && !x.stone); return zaehl(l); })() };
+  });
+  ok(gg.max <= 3 && gg.ohne <= gg.gross * .15, '1–3 Bergstöcke je Region (große Regionen fast alle mit Bergen)', gg);
+  ok(gg.toene, 'Low-Poly: 5 verschiedene Flächen-Töne je Landschaft (hell, licht, mittel, dunkel, tief)');
+  ok(gg.felsW && gg.wald[0] === 0 && gg.wald[1] === 0 && gg.gruen > 0, 'Wüste/Stein: Felsen statt der runden Häufchen (Wiese: Wald bleibt)', gg);
+
   // ===== D) Marsch um einen Berg + E) Handy = Weltrechner =====
   const d = await p.evaluate(({ a: aId, c: cId }) => {
     const A = islandById[aId], C = islandById[cId], luft = Math.hypot(A.x - C.x, A.y - C.y), lm = landmasses[A.landmassId];
@@ -99,11 +119,21 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(d.weg <= d.luft * 1.6, 'auch dieser Umweg höchstens 1,6 × Luftlinie', d.weg / d.luft);
 
   // Bilder: Handy, drei Zoomstufen, Marsch um den Berg
-  if (c.paar) for (const [name, z] of [['weit', .004], ['mittel', .011], ['nah', .03]]) {
-    await p.evaluate(({ id, z }) => { closeAllPopups(); const A = islandById[id.a], C = islandById[id.c]; flyTo((A.x + C.x) / 2, (A.y + C.y) / 2, { zoom: z }); }, { id: c.paar, z });
-    await p.waitForTimeout(3500); await p.screenshot({ path: path.join(OUT, 'felsen_' + name + '.png') });
-  }
+  const bilder = async (seite, vor) => { if (c.paar) for (const [name, z] of [['weit', .004], ['mittel', .011], ['nah', .03]]) {
+    await seite.evaluate(({ id, z }) => { closeAllPopups(); const A = islandById[id.a], C = islandById[id.c]; flyTo((A.x + C.x) / 2, (A.y + C.y) / 2, { zoom: z }); }, { id: c.paar, z });
+    await seite.waitForTimeout(3500); await seite.screenshot({ path: path.join(OUT, vor + 'felsen_' + name + '.png') });
+  } };
+  await bilder(p, '');
+  // ===== H) Marsch-Zeitschild: Zahl links neben der Sanduhr =====
+  const h = await p.evaluate(() => new Promise(fertig => { const o = ctx.fillText, z = [];
+    ctx.fillText = function (t, x, y) { if (/^\d+:\d\d/.test(t)) z.push({ t, a: ctx.textAlign }); return o.apply(this, arguments); };
+    requestRender(); setTimeout(() => { ctx.fillText = o; fertig(z); }, 1500); }));
+  ok(h.length > 0 && h.every(x => x.a === 'left'), 'Marsch-Zeitschild: Zahl links neben der Sanduhr (nicht darüber)', h.slice(0, 3));
   await p.context().close();
+  { const p4 = await seite(VS, { viewport: { width: 1440, height: 900 } });   // Desktop: derselbe Marsch
+    await p4.evaluate(({ a: aId, c: cId }) => { const A = islandById[aId], C = islandById[cId], now = Date.now();
+      pendingSends = [{ fromId: aId, toId: cId, troops: 100, startedAt: now - 20000, resolveAt: now + 600000, senderBotId: null }]; revealAround((A.x + C.x) / 2, (A.y + C.y) / 2, 40000, false); }, c.paar || { a: 0, c: 0 });
+    await bilder(p4, 'd_'); await p4.context().close(); }
 
   // ===== F) Schalter aus =====
   const AUS = path.join(OUT, 'vorschau_aus'); fs.rmSync(AUS, { recursive: true, force: true }); fs.cpSync(VS, AUS, { recursive: true });

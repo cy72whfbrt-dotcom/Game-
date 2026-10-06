@@ -1333,13 +1333,14 @@ function felsenListe() {                             // alle Bergstöcke (einmal
             if (Math.hypot(A.x - B.x, A.y - B.y) <= TERRITORY_CONNECT_MAX_DIST) band.push([A.x, A.y, B.x, B.y]); }
         for (const g of gateSpots) if (g.lm === lm.id) band.push([g.x, g.y, g.ex, g.ey]);   // der Weg vom Tor auf die Brücke
         if (lm.tier === 'throne' || FELS_OHNE[lm.bio]) continue;
-        const want = 1 + Math.floor(r() * 3), enden = [];
+        const want = eigene.length < 8 ? Math.floor(r() * 2) : 2 + Math.floor(r() * 2), enden = [];   // kleine Regionen 0–1, sonst 2–3 (passen nicht alle: 1–3)
         for (const br of bridges) { if (br.a === lm.id || br.b === lm.id) enden.push([br.x1, br.y1], [br.x2, br.y2]); }
         const meineFelder = felder.filter(f => f.landmassId === lm.id);
-        for (let k = 0, tries = 0; k < want && tries < 80; tries++) {
+        for (let k = 0, tries = 0; k < want && tries < 160; tries++) {
             const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .75, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .75;
             if (eigene.some(i => Math.abs(i.x - x) < 3200 && Math.abs(i.y - y) < 3200 && Math.hypot(i.x - x, i.y - y) < i.radius + FELS_ABSTAND.basis + 1200)) continue;   // (schnell: zu nah an einer Basis)
-            const b = felsBergstock(x, y, r);
+            if (!aufLand(lm, x, y) || band.some(q => pointToSegmentDistance(x, y, q[0], q[1], q[2], q[3]) < FELS_ABSTAND.band + 800)) continue;   // (schnell: Wasser oder Band)
+            const b = felsBergstock(x, y, r, tries >= 60);                         // (findet sich lange kein Platz: kleinerer Stock)
             if (!felsPasst(lm, b, eigene, band, enden, meineFelder, hier)) continue;
             hier.push(b);
             if (!felsErreichbar(eigene, b, hier)) { hier.pop(); continue; }
@@ -1349,12 +1350,13 @@ function felsenListe() {                             // alle Bergstöcke (einmal
     felsenDaten = { liste, proLm, baender };
     return liste;
 }
-function felsBergstock(x, y, r) {                    // 3–7 Gipfel entlang einer leicht gebogenen Linie, dazu Hülle und Wegpunkte
-    const n = 3 + Math.floor(r() * 5), ang = (r() - .5) * Math.PI * .9, bieg = (r() - .5) * .5, ca = Math.cos(ang), sa = Math.sin(ang);
-    const gipfel = [], w0 = 1000 + r() * 500; let t = 0;
-    for (let i = 0; i < n; i++) { const w = Math.max(900, Math.min(1700, w0 * (.75 + r() * .5))); gipfel.push({ t, w, h: w * (.65 + r() * .3), off: w * (.1 + r() * .1) }); t += w * (.55 + r() * .2); }
+function felsBergstock(x, y, r, klein) {             // 3–7 Gipfel in zwei versetzten Reihen entlang einer leicht gebogenen Linie: in der Mitte der höchste,
+    const n = klein ? 3 + Math.floor(r() * 2) : 3 + Math.floor(r() * 5), ang = (r() - .5) * Math.PI * .9, bieg = (r() - .5) * .5, ca = Math.cos(ang), sa = Math.sin(ang);   // dazu Hülle und Wegpunkte
+    const gipfel = [], w0 = (klein ? 1150 : 1400) + r() * 300, haupt = Math.floor(n / 2 + (r() - .5)); let t = 0;
+    for (let i = 0; i < n; i++) { const s = Math.max(.55, 1 - .17 * Math.abs(i - haupt) + (r() - .5) * .2), w = Math.max(800, Math.min(1700, w0 * s));
+        gipfel.push({ t, v: (i % 2 ? 1 : -1) * w0 * (.12 + r() * .2), w, h: w * (.65 + r() * .3), off: w * (.1 + r() * .1) }); t += w * (.55 + r() * .2); }
     const mitte = t / 2;
-    for (const g of gipfel) { const u = g.t - mitte, v = bieg * u * u / Math.max(1, mitte) * .5; g.x = x + u * ca - v * sa; g.y = y + u * sa + v * ca; }
+    for (const g of gipfel) { const u = g.t - mitte, v = bieg * u * u / Math.max(1, mitte) * .5 + g.v; g.x = x + u * ca - v * sa; g.y = y + u * sa + v * ca; }
     const ymin = Math.min(...gipfel.map(g => g.y)), ymax = Math.max(...gipfel.map(g => g.y));
     for (const g of gipfel) { const f = ymax > ymin ? (ymax - g.y) / (ymax - ymin) : .5; g.w *= .85 + f * .3; g.h *= .85 + f * .3; }   // hinten größer, vorne kleiner
     gipfel.sort((p, q) => p.y - q.y);
@@ -1476,7 +1478,7 @@ function felsenPfad(pts) {                           // jede Strecke eines Marsc
     return out;
 }
 
-// ===== Zeichnen (im Kachel-Bild, Welt-Koordinaten – wie Wälder): Low-Poly-Gipfel, Licht oben links, keine Verläufe =====
+// ===== Zeichnen (im Kachel-Bild, Welt-Koordinaten – wie Wälder): Low-Poly wie die Berge im Stadtbild, Licht oben links, keine Verläufe =====
 // Farben je Landschaft: Licht, Schatten, Grat-Kante, Kappe (Schnee auf den 1–2 höchsten, Wüste: Tafelberge ohne Kappe)
 const FELS_FARBE = {
     green: ['#9a8a72', '#5e5242', 'rgba(30,24,16,.55)', '#eef2f5'],
@@ -1485,64 +1487,81 @@ const FELS_FARBE = {
     ice:   ['#e9eef3', '#87a9c3', 'rgba(50,66,82,.5)', null],
     stone: ['#8e8f8c', '#55575a', 'rgba(24,24,26,.6)', null]
 };
-function felsBild(lm) {                              // die Pfade einer Region (einmal gebaut): ≤ 9 fill/stroke je Region und Kachel
+const felsMisch = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
+const FELS_TOENE = {};                               // 5 Flächen-Töne je Landschaft: hell (oben links) · licht · mittel (vorne) · dunkel (rechts) · tief (hinten rechts)
+for (const k in FELS_FARBE) { const [L, S] = FELS_FARBE[k]; FELS_TOENE[k] = [felsMisch(L, '#ffffff', .16), L, felsMisch(L, S, .45), S, felsMisch(S, '#000000', .22)]; }
+function felsFacetten(d, x, y, w, h, off, rnd, tafel, kappe) {   // ein Gipfel (oder Felsbrocken) aus 5 Flächen; Fuß-Mitte (x, y)
+    const hw = w / 2, j = () => (rnd() - .5) * w * .1, P = (px, py) => ({ x: px + j(), y: py + j() });
+    const B0 = P(x - hw, y - h * .05), B1 = P(x - hw * .5, y + w * .16), B2 = P(x + hw * .1, y + w * .22), B3 = P(x + hw * .6, y + w * .14), B4 = P(x + hw, y - h * .04);
+    const S = { x: x - off, y: y - h }, SL = P(x - hw * .62, y - h * (.4 + rnd() * .15)), SR = P(x + hw * .55, y - h * (.42 + rnd() * .16)), K = P(x - off * .3 + hw * .06, y - h * .36);
+    const S1 = tafel ? { x: S.x - w * .14, y: S.y + h * .16 } : S, S2 = tafel ? { x: S.x + w * .16, y: S.y + h * .16 } : S;   // Wüste: Spitze abgeflacht
+    const flaeche = (p, ...q) => { p.moveTo(q[0].x, q[0].y); for (let i = 1; i < q.length; i++) p.lineTo(q[i].x, q[i].y); p.closePath(); };
+    d.boden.moveTo(x + w * .12 + hw * 1.05, y + w * .12); d.boden.ellipse(x + w * .12, y + w * .12, hw * 1.05, w * .24, 0, 0, Math.PI * 2);
+    flaeche(d.ton[0], SL, S1, S2, K); flaeche(d.ton[1], B0, SL, K, B1); flaeche(d.ton[2], B1, K, B2);
+    flaeche(d.ton[3], S2, SR, B3, B2, K); flaeche(d.ton[4], SR, B4, B3);
+    d.kante.moveTo(B0.x, B0.y); d.kante.lineTo(SL.x, SL.y); d.kante.lineTo(S1.x, S1.y); d.kante.lineTo(S2.x, S2.y); d.kante.lineTo(SR.x, SR.y); d.kante.lineTo(B4.x, B4.y);
+    d.kante.moveTo(S2.x, S2.y); d.kante.lineTo(K.x, K.y); d.kante.lineTo(B2.x, B2.y);
+    d.sil.moveTo(B0.x, B0.y); for (const q of [SL, S1, S2, SR, B4, B3, B2, B1]) d.sil.lineTo(q.x, q.y); d.sil.closePath();
+    if (kappe) { const m = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });   // Schneekappe: oberes Drittel, unten gezackt
+        const a = m(S, SL, .55), b = m(S, SR, .5), c = m(S, K, .6);
+        flaeche(d.kappe, S, b, { x: (b.x + c.x) / 2, y: (b.y + c.y) / 2 - h * .06 }, c, { x: (a.x + c.x) / 2, y: (a.y + c.y) / 2 - h * .05 }, a); }
+}
+function felsBild(lm) {                              // die Pfade einer Region (einmal gebaut): ≤ 14 fill/stroke je Region und Kachel, egal wie viele Gipfel
     if (lm.felsBild !== undefined) return lm.felsBild;
-    const fs = felsenListe().filter(f => f.lm === lm.id);
-    if (!fs.length) return (lm.felsBild = null);
-    const P = () => new Path2D(), d = { huelle: P(), grat: P(), schatten: P(), licht: P(), dunkel: P(), kante: P(), kappe: P(), geroell: P(), baum: P(), baumL: P() };
-    const tafel = lm.bio === 'sand' && !lm.stone;
+    if (FELS_OHNE[lm.bio] && !lm.stone) return (lm.felsBild = null);
+    felsenListe();
+    const fs = felsenDaten.liste.filter(f => f.lm === lm.id), P = () => new Path2D();
+    const d = { boden: P(), ton: [P(), P(), P(), P(), P()], kante: P(), sil: P(), kappe: P(), geroell: P(), baum: P(), baumL: P(), fels: null };
+    const tafel = lm.bio === 'sand' && !lm.stone, schnee = (FELS_FARBE[lm.stone ? 'stone' : lm.bio] || FELS_FARBE.green)[3];
     const blob = (p, x, y, rx, ry, rnd, k) => { for (let i = 0; i <= k; i++) { const t = i / k * Math.PI * 2, f = .78 + rnd() * .3, px = x + Math.cos(t) * rx * f, py = y + Math.sin(t) * ry * f; i ? p.lineTo(px, py) : p.moveTo(px, py); } p.closePath(); };
     for (const f of fs) {
         const rnd = mulberry32(f.saat);
-        d.huelle.moveTo(f.poly[0].x, f.poly[0].y); for (const p of f.poly) d.huelle.lineTo(p.x, p.y); d.huelle.closePath();
-        const g0 = f.gipfel.slice().sort((p, q) => p.t - q.t); d.grat.moveTo(g0[0].x, g0[0].y - g0[0].h * .5); for (const g of g0) d.grat.lineTo(g.x, g.y - g.h * .5);
         const hoechste = f.gipfel.slice().sort((p, q) => q.h - p.h).slice(0, 1 + (rnd() < .5 ? 1 : 0));
-        for (const g of f.gipfel) {                  // hinten zuerst (nach y sortiert)
-            const L = { x: g.x - g.w / 2, y: g.y }, R = { x: g.x + g.w / 2, y: g.y }, S = { x: g.x - g.off, y: g.y - g.h }, F = { x: g.x + g.w * .08, y: g.y + g.w * .1 };
-            d.schatten.moveTo(g.x + g.w * .12 + g.w / 2, g.y + g.w * .12); d.schatten.ellipse(g.x + g.w * .12, g.y + g.w * .12, g.w / 2, g.w * .2, 0, 0, Math.PI * 2);
-            const s1 = tafel ? { x: S.x - g.w * .12, y: S.y + g.h * .18 } : S, s2 = tafel ? { x: S.x + g.w * .14, y: S.y + g.h * .18 } : S;   // Wüste: Spitze abgeflacht
-            d.licht.moveTo(L.x, L.y); d.licht.lineTo(s1.x, s1.y); d.licht.lineTo(s2.x, s2.y); d.licht.lineTo(F.x, F.y); d.licht.closePath();
-            d.dunkel.moveTo(s2.x, s2.y); d.dunkel.lineTo(R.x, R.y); d.dunkel.lineTo(F.x, F.y); d.dunkel.closePath();
-            d.kante.moveTo(L.x, L.y); d.kante.lineTo(s1.x, s1.y); d.kante.lineTo(s2.x, s2.y); d.kante.lineTo(R.x, R.y); d.kante.moveTo(s2.x, s2.y); d.kante.lineTo(F.x, F.y);
-            if (!tafel && hoechste.includes(g)) {     // Schneekappe: oberes Drittel, unten gezackt
-                const k = .32, a = { x: S.x + (L.x - S.x) * k, y: S.y + (L.y - S.y) * k }, b = { x: S.x + (R.x - S.x) * k, y: S.y + (R.y - S.y) * k }, m = { x: S.x + (F.x - S.x) * k * .8, y: S.y + (F.y - S.y) * k * .8 };
-                d.kappe.moveTo(S.x, S.y); d.kappe.lineTo(b.x, b.y); d.kappe.lineTo((b.x + m.x) / 2, (b.y + m.y) / 2 - g.h * .05); d.kappe.lineTo(m.x, m.y);
-                d.kappe.lineTo((a.x + m.x) / 2, (a.y + m.y) / 2 - g.h * .06); d.kappe.lineTo(a.x, a.y); d.kappe.closePath(); }
-        }
+        for (const g of f.gipfel) felsFacetten(d, g.x, g.y, g.w, g.h, g.off, rnd, tafel, !tafel && !!schnee && g.w > 1300 && hoechste.includes(g));   // hinten zuerst (nach y sortiert)
         const fuss = f.gipfel.slice().sort((p, q) => q.y - p.y);
         for (let i = 0, n = 4 + Math.floor(rnd() * 7); i < n; i++) { const g = fuss[Math.floor(rnd() * Math.min(3, fuss.length))], rr = 60 + rnd() * 80;   // Geröll am Fuß
-            blob(d.geroell, g.x + (rnd() - .5) * g.w * 1.2, g.y + g.w * (.12 + rnd() * .18), rr, rr * .7, rnd, 5); }
+            blob(d.geroell, g.x + (rnd() - .5) * g.w * 1.2, g.y + g.w * (.2 + rnd() * .16), rr, rr * .7, rnd, 5); }
         if ((lm.bio === 'green' || lm.bio === 'snow') && !lm.stone) for (let i = 0, n = 1 + Math.floor(rnd() * 2); i < n; i++) {   // 1–2 Baumgruppen am Fuß
-            const g = fuss[Math.floor(rnd() * fuss.length)], bx = g.x + (rnd() < .5 ? -1 : 1) * g.w * (.5 + rnd() * .3), by = g.y + g.w * .2;
+            const g = fuss[Math.floor(rnd() * fuss.length)], bx = g.x + (rnd() < .5 ? -1 : 1) * g.w * (.55 + rnd() * .3), by = g.y + g.w * .25;
             for (let k = 0; k < 4; k++) { const x = bx + (rnd() - .5) * 500, y = by + (rnd() - .5) * 260, rr = 100 + rnd() * 90;
                 d.baum.moveTo(x + rr, y); d.baum.arc(x, y, rr, 0, Math.PI * 2); d.baumL.moveTo(x - .12 * rr + .74 * rr, y - .18 * rr); d.baumL.arc(x - .12 * rr, y - .18 * rr, .74 * rr, 0, Math.PI * 2); } }
     }
-    { const rnd = mulberry32(lm.id * 4243 + 17), bas = islandsByLandmass[lm.id] || [], band = felsenDaten.baender[lm.id] || [];   // 2–5 Einzelfelsen (nur nah sichtbar, kein Hindernis)
-        for (let i = 0, ok = 0, want = 2 + Math.floor(rnd() * 4); i < 40 && ok < want; i++) {
-            const x = lm.x + (rnd() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (rnd() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!aufLand(lm, x, y) || bas.some(b => Math.hypot(b.x - x, b.y - y) < b.radius + 1400) || band.some(s => pointToSegmentDistance(x, y, s[0], s[1], s[2], s[3]) < 900) || felsAuf(x, y, 600)) continue;
+    {   // Einzelfelsen (nur nah sichtbar, kein Hindernis): Wiese/Schnee 2–5 Gruppen; Wüste/Stein 10–16 – sie ersetzen dort die alten runden Häufchen
+        const rnd = mulberry32(lm.id * 4243 + 17), bas = islandsByLandmass[lm.id] || [], band = felsenDaten.baender[lm.id] || [], viel = lm.stone || lm.bio === 'sand';
+        const e = d.fels = { boden: P(), ton: [P(), P(), P(), P(), P()], kante: P(), sil: P(), kappe: null };
+        for (let i = 0, ok = 0, want = viel ? 10 + Math.floor(rnd() * 7) : 2 + Math.floor(rnd() * 4); i < want * 12 && ok < want; i++) {
+            const a = rnd() * Math.PI * 2, r0 = Math.sqrt(rnd()) * lm.shapeMaxR * .85, x = lm.x + Math.cos(a) * r0, y = lm.y + Math.sin(a) * r0;
+            if (!aufLand(lm, x, y) || bas.some(b => Math.abs(b.x - x) < 3000 && Math.abs(b.y - y) < 3000 && Math.hypot(b.x - x, b.y - y) < b.radius + 1400) || felsAuf(x, y, 600)
+                || band.some(s => pointToSegmentDistance(x, y, s[0], s[1], s[2], s[3]) < 900)) continue;
             ok++;
-            for (let k = 0, n = 2 + Math.floor(rnd() * 3); k < n; k++) { const bx = x + (rnd() - .5) * 700, by = y + (rnd() - .5) * 400, s = 120 + rnd() * 180;
-                d.schatten.moveTo(bx + s * .15 + s, by + s * .35); d.schatten.ellipse(bx + s * .15, by + s * .35, s, s * .35, 0, 0, Math.PI * 2);
-                blob(d.dunkel, bx, by, s, s * .72, rnd, 5); blob(d.licht, bx - s * .18, by - s * .16, s * .62, s * .45, rnd, 5); } } }
+            const n = 2 + Math.floor(rnd() * 3), br = [];
+            for (let k = 0; k < n; k++) { const s = (k ? 240 : 380) + rnd() * 260; br.push([x + (rnd() - .5) * 800, y + (rnd() - .5) * 420, s]); }
+            br.sort((p, q) => p[1] - q[1]);
+            for (const [bx, by, s] of br) felsFacetten(e, bx, by, s, s * (.5 + rnd() * .3), s * (.05 + rnd() * .12), rnd, false, false);
+        }
+    }
     return (lm.felsBild = d);
 }
-function felsenMalen(g, lm, zd, zl) {                // in paintBackground: zd = Zoom der Kachel (Übersicht: 0 = nur Schattierung, 1 = alles)
+function felsFlaechen(g, d, t, kante, kw) {          // Bodenschatten + 5 Flächen-Töne (+ Grat-Kante)
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.fill(d.boden);
+    for (let i = 4; i >= 0; i--) { g.fillStyle = t[i]; g.fill(d.ton[i]); }
+    if (kante) { g.lineJoin = 'round'; g.strokeStyle = kante; g.lineWidth = kw; g.stroke(d.kante); }
+}
+function felsenMalen(g, lm, zd, zl) {                // in paintBackground: zd = Zoom der Kachel (Übersicht: 0 = weit, 1 = alles), zl = Maßstab der Kachel
     if (!WELT_FELSEN) return;
     const d = felsBild(lm); if (!d) return;
-    const f = FELS_FARBE[lm.stone ? 'stone' : lm.bio] || FELS_FARBE.green;
-    const gipfelA = Math.min(1, Math.max(0, (zd - 0.006) / 0.004)), feinA = Math.min(1, Math.max(0, (zd - 0.016) / 0.006));
-    if (gipfelA < 1) { g.globalAlpha = 1 - gipfelA;                            // weit weg: weiche Schattierung + heller Grat
-        g.fillStyle = 'rgba(0,0,0,.14)'; g.fill(d.huelle); g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = 'rgba(255,255,255,.18)'; g.lineWidth = 1.4 / zl; g.stroke(d.grat); }
+    const k = lm.stone ? 'stone' : FELS_FARBE[lm.bio] ? lm.bio : 'green', f = FELS_FARBE[k], t = FELS_TOENE[k];
+    const gipfelA = Math.min(1, Math.max(0, (Math.max(zd, zl) - 0.0042) / 0.002)), feinA = Math.min(1, Math.max(0, (zd - 0.016) / 0.006));
+    if (gipfelA < 1) { g.globalAlpha = 1 - gipfelA; g.fillStyle = f[1]; g.fill(d.sil); }   // weit weg (Gipfel < 6 px): nur die dunkle Silhouette
     if (gipfelA > 0) { g.globalAlpha = gipfelA;
-        g.fillStyle = 'rgba(0,0,0,.18)'; g.fill(d.schatten);
-        if (feinA > 0) { g.fillStyle = '#284d22'; g.fill(d.baum); g.fillStyle = '#35652c'; g.fill(d.baumL); }
-        g.fillStyle = f[1]; g.fill(d.dunkel); g.fillStyle = f[0]; g.fill(d.licht);
+        if (feinA > 0) { g.globalAlpha = gipfelA * feinA; g.fillStyle = '#284d22'; g.fill(d.baum); g.fillStyle = '#35652c'; g.fill(d.baumL); g.globalAlpha = gipfelA; }
+        felsFlaechen(g, d, t, null);
         if (feinA > 0) { g.globalAlpha = gipfelA * feinA;
             if (f[3]) { g.fillStyle = f[3]; g.fill(d.kappe); }
-            g.fillStyle = f[1]; g.fill(d.geroell);
-            g.lineJoin = 'round'; g.strokeStyle = f[2]; g.lineWidth = 40; g.stroke(d.kante); } }
-    g.globalAlpha = 1; g.lineCap = 'butt';
+            g.fillStyle = t[3]; g.fill(d.geroell);
+            g.lineJoin = 'round'; g.strokeStyle = f[2]; g.lineWidth = 30; g.stroke(d.kante);
+            felsFlaechen(g, d.fels, t, f[2], 18); } }
+    g.globalAlpha = 1;
 }
 // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
 // A second, separate equipment layer on top of the existing coin-
@@ -2976,7 +2995,7 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
     g.fillStyle = lm.fill; g.fill(lm.path);
     if (grassA > 0) { g.globalAlpha = grassA * (lm.stone ? .35 : lm.bio === 'snow' || lm.bio === 'ice' ? .12 : lm.bio === 'sand' ? .2 : lm.bio === 'volcano' ? .3 : lm.bio === 'swamp' ? .8 : 1); g.fillStyle = GRASS_PATTERN; g.fill(lm.path); g.globalAlpha = 1; }
     if (lm.deko) paintDeko(g, lm, Math.max(forestA, Math.min(1, Math.max(0, (zd - 0.007) / 0.008))));                                        // Paket C: Eis, Vulkan, Sumpf (statt Wald)
-    else if (forestA > 0) { g.globalAlpha = forestA;
+    else if (forestA > 0 && !(WELT_FELSEN && (lm.stone || lm.bio === 'sand'))) { g.globalAlpha = forestA;   // (Wüste/Stein: statt der runden Häufchen die Felsen aus 01f)
       if (lm.bio === 'snow' && !lm.stone) { g.fillStyle = '#3f5a4c'; g.fill(lm.forest[0]); g.fillStyle = '#56735f'; g.fill(lm.forest[1]);   // snowy firs
         g.fillStyle = 'rgba(250,252,255,.7)'; g.fill(lm.forest[2]); }
       else if (lm.bio === 'sand' && !lm.stone) { g.fillStyle = '#9c7e4c'; g.fill(lm.forest[0]); g.fillStyle = '#b39360'; g.fill(lm.forest[1]);   // dunes and dry scrub
@@ -4086,7 +4105,7 @@ function drawMarchChips() {                       // after the nameplates: one c
   for (const c of clusters) c.y = c.sy / c.n;
   const lastSlot = chipSlotOf; chipSlotOf = new Map();
   if (!clusters.length) return;
-  ctx.font = '600 10.5px Inter, system-ui, sans-serif'; ctx.textBaseline = 'alphabetic';
+  ctx.font = '600 10.5px Inter, system-ui, sans-serif'; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';   // (sonst steht noch 'center' von den Namensschildern: Zahl über der Sanduhr)
   if (!chipDigit) chipDigit = [...'0123456789'].reduce((w, d) => ctx.measureText(d).width > ctx.measureText(w).width ? d : w, '0');
   const label = c => marschUhr(c.secs) + (c.n > 1 ? '  ×' + c.n : '');
   const tokens = marchTokens.map(m => ({ x: m.x - 8.5, y: m.y - 8.5, w: 17, h: 17 }));
