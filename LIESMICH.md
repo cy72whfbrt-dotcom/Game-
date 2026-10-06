@@ -1569,6 +1569,12 @@ Nacht – vorher bauen und testen.
    Dazu: Hinweis „Angriff unterwegs zu Turm #19259“ liegt mitten über dem Inhalt (Verteidigungs-Helden) und zeigt
    „Turm #…“-Nummer (soll Name/Ort sein, siehe Blick C). Und: Mauer Stufe 1 kostet 280 Münzen + 150 Holz – nach der neuen
    Wirtschaft (Münzen ×1.000, Holz RoK-Größe) wirken diese Gebäude-Kosten zu klein → Gebäude-Kosten prüfen.
+10. **Angriffs-Fenster: Design gefällt nicht** („Design Scheiße“, Bild 105903c8, 18:39). Trotz Umbau wirkt es wie ein
+    Formular: graue Kästen untereinander (Auswahlfeld, Angriff/Abwehr-Karten, Regler, 4 Prozent-Kästen + Zahlenfeld,
+    Helden-Chips + aufgeklappte Liste), Titel „Turm #19259“ (Nummer statt Name), Text „5.005 Truppen + 1.002 Sigrun …“
+    abgeschnitten, viel Platz. → Komplett neu mit Designer + Online-Vorbildern (RoK „Marsch aufstellen“: große Helden-
+    Porträts, Truppen-Regler mit Symbol, Kraftvergleich als Balken; Million Lords: kleines Popup). Ziel: sieht aus wie ein
+    Spiel, nicht wie ein Formular; deutlich weniger Kästen.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
