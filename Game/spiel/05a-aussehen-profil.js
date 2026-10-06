@@ -160,7 +160,7 @@ function renderProfile(live) {                  // live = the per-second refresh
     setText(document.getElementById('profileLevelBadge'), playerLvl);      // (live: jede Sekunde aus liveTick – geschrieben wird nur, was sich ändert)
     setText(document.getElementById('profileRank'), currentRank());
     const nr = window.__OW && !__OW.system && __OW.uid;                    // Kopf wie bei einem Herrscher: Macht und Spieler-Nummer
-    liveHtml(document.getElementById('profileKennung'), icon('attack') + 'Macht <b>' + fmtCompact(powerOf(whoProfile('player'))) + '</b>' + (nr ? '<span>Nr. <b>' + nr + '</b></span>' : ''));
+    liveHtml(document.getElementById('profileKennung'), '<span>' + icon('attack') + 'Macht <b>' + fmtCompact(powerOf(whoProfile('player'))) + '</b></span>' + (nr ? '<span>Nr. <b>' + nr + '</b></span>' : ''));
     liveHtml(document.getElementById('profileBund'), profilBundHtml('player'));   // dein Bündnis (antippen: Bündnis-Fenster)
     if (!live) renderLook();
     const nRang = naechsterRang();                        // statt Weltanteil (bei tausenden Basen immer „< 0,1 %“): wie weit bis zum nächsten Rang
