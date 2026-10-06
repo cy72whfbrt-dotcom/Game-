@@ -1532,6 +1532,11 @@ Nacht – vorher bauen und testen.
 3. **Pass-Timer** (Bild 956987de): Tore/Pässe klappen (alle ~3 Tage zu). Aber die **4 Tore direkt zur Mitte (Thron-Insel)
    sollen 5 Tage** haben, die übrigen bleiben bei 3 Tagen → `PASS_OPEN_DAYS = { guardian: 3, throne: 5 }` (01b) – prüfen,
    ob „throne“ genau diese 4 Tore sind; ab dem nächsten Hochladen gilt es ab Welt-Start (6.10. 18 Uhr) → Mitte offen ~11.10.
+4. **Saison-Pass wurde beim Reset nicht zurückgesetzt** (Bild 93ce738c, 18:32): Stufen 34–40 noch abgehakt (Fortschritt +
+   abgeholte Belohnungen aus der alten Saison). Beim Saison-Reset muss der Pass von vorn beginnen (Punkte 0, nichts abgeholt).
+   Auch prüfen: Pass-Belohnung Stufe 40 Premium „Saisonkrone · Rahmen“ – passt das zur Regel „Rahmen nicht kaufbar, nur Saison-
+   Top-10 und Mitte“? (Alexander fragen.) Nebenbei: Edelsteine 4.000 statt 1.000 – vermutlich Thron-Punkte-Umtausch aus dem
+   Postfach abgeholt; prüfen, dass die Summe stimmt.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
