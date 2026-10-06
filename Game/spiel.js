@@ -4335,6 +4335,7 @@ function drawMap() {
   drawMarchButtons();
   drawPasses(view, now);                                                                                               // chained, time-locked bridges
   drawPickups(now);                                                                                                    // 11 mini-event pickups
+  drawHeimWappen(z);                                                                                                   // ganz draußen: Wappen an der Hauptstadt, über allem
   drawMapBattles(now);                                                                                                 // fights playing out at the bases
   drawThroneShots(now);                                                                                                // the Wächter-Tempel firing on the throne
   drawMarkers();                                                                                                       // your own Wegmarken
@@ -4441,6 +4442,8 @@ function camInsetTarget(now, fresh) {    // the island sheet (phone: bottom, lan
   if (sheet && sheet.classList.contains('is-open') && layout !== 'desktop') { const pr = sheet.getBoundingClientRect();
     if (layout === 'phone') v.b = Math.max(0, Math.min(viewH * 0.8, viewH - pr.top));
     else v.r = Math.max(0, Math.min(viewW * 0.8, viewW - pr.left)); }
+  const nav = layout === 'desktop' && document.getElementById('cornerButtons');   // Desktop: die Leiste unten in der Mitte – der Kartenrand darf darüber geschoben werden
+  if (nav) { const nr = nav.getBoundingClientRect(); if (nr.height && nr.top > viewH / 2) v.b = Math.max(v.b, viewH - nr.top + 28); }   // (+ Platz fürs Wappen der Hauptstadt ganz draußen)
   insetCache = { at: now, v }; return v;
 }
 function camRange(h, W, mid, a, b, sl) { // allowed centre interval on one axis; a / b: world units covered at the low / high side; sl: slack
@@ -4825,7 +4828,8 @@ function frameIslandInView(island) {      // ease the base into the free map are
   else {                                   // desktop: keep the base (tower + nameplate) out from under the HUD, nav and map controls
     const hud = document.getElementById('hud').getBoundingClientRect(), nav = document.getElementById('cornerButtons').getBoundingClientRect();
     const mc = document.getElementById('mapControls').getBoundingClientRect();
-    const safe = { l: 24, t: Math.max(hud.bottom, nav.bottom) + 16, r: (mc.width ? mc.left : viewW) - 24, b: viewH - 24 };
+    const navUnten = nav.top > viewH / 2;                                   // die Leiste steht unten in der Mitte: die Basis darüber, nicht dahinter
+    const safe = { l: 24, t: Math.max(hud.bottom, navUnten ? 0 : nav.bottom) + 16, r: (mc.width ? mc.left : viewW) - 24, b: (navUnten && nav.height ? nav.top : viewH) - 24 };
     const z = mapState.zoom, up = island.radius * z * 1.3 + 8, down = island.radius * z + 40, side = Math.max(island.radius * z, 60);
     const s = { x: island.x * z + mapState.offsetX, y: island.y * z + mapState.offsetY };
     const tx = Math.min(safe.r - side, Math.max(safe.l + side, s.x)), ty = Math.min(safe.b - down, Math.max(safe.t + up, s.y));
@@ -8044,6 +8048,16 @@ function fogMask(now) {                                 // canvas over the whole
     g.globalAlpha = 1; fogMaskCv.o = o; fogMaskCv.n = n;
     return fogMaskCv;
 }
+const nebelWeit = z => Math.max(0, Math.min(1, (0.009 - z) / 0.003));   // 0 = Wolken (nah), 1 = flache Fläche (weit/ganz draußen)
+const NEBEL_LAND_FARBE = { ice: '#dfe7ec', snow: '#b9c4cc', green: '#8fa66a', swamp: '#7c8a5c', volcano: '#9a5a44', sand: '#c9a86a' };
+let nebelLand = null;                                   // Umrisse aller Gebiete je Landschaft (einmal gebaut): schimmern weit draußen durch den Nebel
+function nebelLandPfade() {
+    if (nebelLand) return nebelLand;
+    nebelLand = {};
+    for (const lm of landmasses) { const P = nebelLand[lm.bio] || (nebelLand[lm.bio] = new Path2D());
+        P.moveTo(lm.shape[0].x, lm.shape[0].y); for (const q of lm.shape) P.lineTo(q.x, q.y); P.closePath(); }
+    return nebelLand;
+}
 function drawFog(view, now) {
     const z = mapState.zoom;
     fogFx = fogFx.filter(f => now - f.t < 1500 + f.d / 5);
@@ -8069,9 +8083,21 @@ function drawFog(view, now) {
     g.globalCompositeOperation = 'source-atop';                                                      // a finer, brighter layer on top
     const p2 = g.createPattern(FOG_TEX, 'repeat'); p2.setTransform(new DOMMatrix().rotate(23).scale(Math.max(26000, 0.9 / z) / 256));   // never finer than ~1 px of noise
     g.globalAlpha = .55 * Math.max(0, Math.min(1, (z - 0.004) / 0.006)); g.fillStyle = p2; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5); g.globalAlpha = 1;
+    const weit = nebelWeit(z);
+    if (weit > 0) {                                                                                  // weit draußen: ruhige dunkle Fläche, die Gebiete schimmern als Sand durch (wie eine Weltübersicht)
+        g.globalAlpha = weit; g.fillStyle = '#1a2433'; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
+        g.globalAlpha = weit * .4; for (const [bio, P] of Object.entries(nebelLandPfade())) { g.fillStyle = NEBEL_LAND_FARBE[bio] || '#c9a86a'; g.fill(P); } g.globalAlpha = 1;
+    }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore();
     }
     if (fogFx.length) liveAnimation = true;
+    if (nebelWeit(z) > 0) {                            // weit draußen: eigenes Gebiet in Gold (nie dünner als ein paar Pixel)
+        ctx.save(); ctx.globalAlpha = nebelWeit(z);
+        ctx.setTransform(dpr * z, 0, 0, dpr * z, dpr * mapState.offsetX, dpr * mapState.offsetY);
+        ctx.lineJoin = 'round'; ctx.fillStyle = ctx.strokeStyle = 'rgba(228,200,134,.55)'; ctx.lineWidth = 6 / z;
+        for (const t of TERR.player.values()) { ctx.fill(t.path); ctx.stroke(t.path); }
+        ctx.restore();
+    }
     if (fogPrompt) {                                   // confirm chip: "Späher senden · 0:25" above a marker at the spot
         setScreen(ctx);
         const px = fogPrompt.x * z + mapState.offsetX, py = fogPrompt.y * z + mapState.offsetY, k = Math.min(1, (now - fogPrompt.at) / 180);
@@ -8147,6 +8173,16 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         drawGlyph(ctx, 'lock', mx - w / 2 + 12, cy, 12, '#f0d69a');
         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, mx - w / 2 + 22, cy + .5);
     }
+}
+function drawHeimWappen(z) {                           // ganz draußen (die Basis selbst ist nur noch ein Punkt): das eigene Wappen an der Hauptstadt, über allem
+    const k = Math.max(0, Math.min(1, (0.005 - z) / 0.002)), heim = k > 0 && islandById[playerIslandId]; if (!heim) return;
+    setScreen(ctx);
+    const hx = heim.x * z + mapState.offsetX, hy = heim.y * z + mapState.offsetY;
+    ctx.save(); ctx.globalAlpha = k;
+    ctx.beginPath(); ctx.arc(hx, hy, 22, 0, Math.PI * 2); ctx.fillStyle = 'rgba(8,10,14,.6)'; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#e4c886'; ctx.stroke();
+    drawCrest(ctx, hx, hy, 28);
+    ctx.restore();
 }
 // ===== BATTLES ON THE MAP =====
 // When a fight the player is part of resolves, it plays out at the base itself: the arriving column

@@ -282,6 +282,7 @@ function drawMap() {
   drawMarchButtons();
   drawPasses(view, now);                                                                                               // chained, time-locked bridges
   drawPickups(now);                                                                                                    // 11 mini-event pickups
+  drawHeimWappen(z);                                                                                                   // ganz draußen: Wappen an der Hauptstadt, über allem
   drawMapBattles(now);                                                                                                 // fights playing out at the bases
   drawThroneShots(now);                                                                                                // the Wächter-Tempel firing on the throne
   drawMarkers();                                                                                                       // your own Wegmarken

@@ -96,6 +96,8 @@ function camInsetTarget(now, fresh) {    // the island sheet (phone: bottom, lan
   if (sheet && sheet.classList.contains('is-open') && layout !== 'desktop') { const pr = sheet.getBoundingClientRect();
     if (layout === 'phone') v.b = Math.max(0, Math.min(viewH * 0.8, viewH - pr.top));
     else v.r = Math.max(0, Math.min(viewW * 0.8, viewW - pr.left)); }
+  const nav = layout === 'desktop' && document.getElementById('cornerButtons');   // Desktop: die Leiste unten in der Mitte – der Kartenrand darf darüber geschoben werden
+  if (nav) { const nr = nav.getBoundingClientRect(); if (nr.height && nr.top > viewH / 2) v.b = Math.max(v.b, viewH - nr.top + 28); }   // (+ Platz fürs Wappen der Hauptstadt ganz draußen)
   insetCache = { at: now, v }; return v;
 }
 function camRange(h, W, mid, a, b, sl) { // allowed centre interval on one axis; a / b: world units covered at the low / high side; sl: slack
@@ -480,7 +482,8 @@ function frameIslandInView(island) {      // ease the base into the free map are
   else {                                   // desktop: keep the base (tower + nameplate) out from under the HUD, nav and map controls
     const hud = document.getElementById('hud').getBoundingClientRect(), nav = document.getElementById('cornerButtons').getBoundingClientRect();
     const mc = document.getElementById('mapControls').getBoundingClientRect();
-    const safe = { l: 24, t: Math.max(hud.bottom, nav.bottom) + 16, r: (mc.width ? mc.left : viewW) - 24, b: viewH - 24 };
+    const navUnten = nav.top > viewH / 2;                                   // die Leiste steht unten in der Mitte: die Basis darüber, nicht dahinter
+    const safe = { l: 24, t: Math.max(hud.bottom, navUnten ? 0 : nav.bottom) + 16, r: (mc.width ? mc.left : viewW) - 24, b: (navUnten && nav.height ? nav.top : viewH) - 24 };
     const z = mapState.zoom, up = island.radius * z * 1.3 + 8, down = island.radius * z + 40, side = Math.max(island.radius * z, 60);
     const s = { x: island.x * z + mapState.offsetX, y: island.y * z + mapState.offsetY };
     const tx = Math.min(safe.r - side, Math.max(safe.l + side, s.x)), ty = Math.min(safe.b - down, Math.max(safe.t + up, s.y));

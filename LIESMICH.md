@@ -921,6 +921,19 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `drawMarchChips` setzte `textAlign` nicht, es galt noch 'center' von den Armee-Schildern (09d), die Zahl lag über der Sanduhr.
   „ca. 0:41“ oben vs. „9:35“ am Schild (Designer-Prüfung): kein Spielfehler – das Testbild setzte einen erfundenen 10-Min.-Marsch
   ein; jetzt zeigt es den echten Marsch (Dauer aus dem Umweg), der Test prüft, dass Hinweis und Schild zusammenpassen.
+- **6.10. – Blick „mit den Augen eines Spielers“ A+J: Fenster und HUD (Branch `blick-a-j`, NICHT hochgeladen):**
+  Desktop: Gebäude-Fenster in der Stadt endet über der Leiste unten (Bauen-Knopf war darunter). Feste Fußknöpfe (Burg/Gebäude
+  „Bauen“, Held „Aufwerten“) reichen bis an die Fensterkante, darunter schaut kein Inhalt mehr hervor (Schatten oben). Eigene
+  Basis: Kamera rückt sie am Desktop über die Leiste (03e `frameIslandInView`), Anleitung am Handy mit offenem Basis-Fenster
+  oben unter dem HUD. Anleitung kompakt: „Schritt 1/7“ als kleine Überzeile, Text volle Breite. HUD: Desktop zeigt Holz/Stein/
+  Eisen am Rohstoff-Knopf, Handy beschriftet ihn „Rohstoffe“. Karte weit/ganz draußen (Designer-Runde 3): statt Wolken-Brei eine
+  ruhige dunkle Nebelfläche (#1a2433), darunter schimmern alle Gebiete in ihrer Landschaftsfarbe (Eis/Schnee/Grün/Sumpf/Vulkan/Sand,
+  40 %) wie eine Weltübersicht; eigenes Gebiet in Gold, ganz draußen das eigene Wappen (28 px, goldener Rand) an der Hauptstadt
+  (06e `nebelWeit`, `nebelLandPfade`, `drawHeimWappen`). Desktop: die Kamera darf die Karte über die Leiste unten schieben
+  (03e `camInsetTarget`), die Hauptstadt am Südrand lag ganz draußen unter der Leiste. Umlaute in Versalien („SPAHBERICHT“,
+  Reiter „Ubersicht“): Ursache war Zeilenhöhe 1–1,2 zusammen mit `overflow:hidden` – das schnitt die Punkte über Ä/Ö/Ü oben ab;
+  einzeilige Texte mit „…“ (Reiter, Überzeilen, Titel, Werte) schneiden jetzt nur seitlich ab (`overflow-x:clip`, 05 Ende).
+  Test `handy_leiste_test` (rot auf altem Stand).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

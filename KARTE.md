@@ -98,7 +98,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `APRON` → Game/baukunst/07-hafen-palast.js:18
 - `arc` → Game/baukunst/07-hafen-palast.js:54
 - `arch` → Game/baukunst/06-turmhof-festung.js:22
-- `arch` → Game/spiel/06e-nebel-zeichnen.js:151
+- `arch` → Game/spiel/06e-nebel-zeichnen.js:173
 - `archGeo` → Game/baukunst/07-hafen-palast.js:440
 - `archGeo` → Game/baukunst/08-himmelsfeste-bilder.js:82
 - `archShape` → Game/baukunst/07-hafen-palast.js:439
@@ -623,10 +623,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bytes` → Game/benachrichtigung.js:31
 - `CAM_PIECES` → Game/spiel/03e-kamera-eingabe.js:49
 - `camInsetTarget` → Game/spiel/03e-kamera-eingabe.js:93
-- `camPiece` → Game/spiel/03e-kamera-eingabe.js:121
-- `camRange` → Game/spiel/03e-kamera-eingabe.js:101
-- `camRegion` → Game/spiel/03e-kamera-eingabe.js:109
-- `cancelGesture` → Game/spiel/03e-kamera-eingabe.js:331
+- `camPiece` → Game/spiel/03e-kamera-eingabe.js:123
+- `camRange` → Game/spiel/03e-kamera-eingabe.js:103
+- `camRegion` → Game/spiel/03e-kamera-eingabe.js:111
+- `cancelGesture` → Game/spiel/03e-kamera-eingabe.js:333
 - `cancelMultiAttack` → Game/spiel/09e-inselfenster.js:167
 - `canConnectHalos` → Game/spiel/09a-funde-felder.js:133
 - `canReach` → Game/spiel/01b-weltkarte.js:294
@@ -736,8 +736,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `claimQuestBonus` → Game/spiel/06a-aufgaben.js:196
 - `clamp` → Game/baukunst/04-vielfalt-stile.js:135
 - `clamp` → Game/ladebildschirm.js:13
-- `clampCamera` → Game/spiel/03e-kamera-eingabe.js:142
-- `clampCentre` → Game/spiel/03e-kamera-eingabe.js:127
+- `clampCamera` → Game/spiel/03e-kamera-eingabe.js:144
+- `clampCentre` → Game/spiel/03e-kamera-eingabe.js:129
 - `clampZoom` → Game/spiel/03e-kamera-eingabe.js:19
 - `classOf` → Game/baukunst/04-vielfalt-stile.js:199
 - `clear` → Game/baukunst/04-vielfalt-stile.js:522
@@ -852,10 +852,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawCrown` → Game/spiel/07b-kriegsherr.js:185
 - `drawDragonName` → Game/spiel/09c-events-drache.js:322
 - `drawEvents` → Game/spiel/09c-events-drache.js:293
-- `drawFog` → Game/spiel/06e-nebel-zeichnen.js:84
-- `drawGatehouse` → Game/spiel/06e-nebel-zeichnen.js:133
+- `drawFog` → Game/spiel/06e-nebel-zeichnen.js:94
+- `drawGatehouse` → Game/spiel/06e-nebel-zeichnen.js:155
 - `drawGlyph` → Game/spiel/01a-grundlagen.js:227
 - `drawHaendler` → Game/haendler.js:152
+- `drawHeimWappen` → Game/spiel/06e-nebel-zeichnen.js:210
 - `drawMap` → Game/spiel/03d-maersche-tagnacht.js:233
 - `drawMapBattles` → Game/spiel/07a-schlachten.js:103
 - `drawMarchButtons` → Game/spiel/03d-maersche-tagnacht.js:71
@@ -866,7 +867,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:326
 - `drawn` → Game/spiel/03a-karte-hintergrund.js:459
 - `drawNacht` → Game/spiel/03d-maersche-tagnacht.js:206
-- `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:165
+- `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:187
 - `drawPickups` → Game/spiel/09a-funde-felder.js:61
 - `drawResFields` → Game/spiel/09a-funde-felder.js:287
 - `drawRings` → Game/spiel/03c-wappen-thronplatz.js:376
@@ -1011,9 +1012,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fieldTick` → Game/spiel/09a-funde-felder.js:271
 - `fieldTravelSec` → Game/spiel/09a-funde-felder.js:200
 - `fieldWhoName` → Game/spiel/09a-funde-felder.js:196
-- `fightDurationMs` → Game/spiel/03e-kamera-eingabe.js:541
+- `fightDurationMs` → Game/spiel/03e-kamera-eingabe.js:544
 - `fighterSnapshot` → Game/spiel/01e-nebel-kampfwerte-hud.js:109
-- `fightEstimate` → Game/spiel/03e-kamera-eingabe.js:530
+- `fightEstimate` → Game/spiel/03e-kamera-eingabe.js:533
 - `findAnyCombinableGroup` → Game/spiel/02a-shop-stufen.js:94
 - `finGeo` → Game/baukunst/04-vielfalt-stile.js:320
 - `finish` → Game/spiel/10c-start-einstellungen.js:216
@@ -1038,7 +1039,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `flushBannerSprites` → Game/spiel/03c-wappen-thronplatz.js:125
 - `flushBotState` → Game/bots/04-stand-stadt.js:71
 - `flute` → Game/spiel/10c-start-einstellungen.js:49
-- `flyTo` → Game/spiel/03e-kamera-eingabe.js:168
+- `flyTo` → Game/spiel/03e-kamera-eingabe.js:170
 - `fmt` → Game/spiel/05d-maersche-kampfbericht.js:357
 - `fmt1` → Game/spiel/05b-truhe-skills.js:196
 - `fmt1` → Game/spiel/05d-maersche-kampfbericht.js:153
@@ -1084,10 +1085,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `foZeit` → Game/aufbau.js:192
 - `foZeitRoh` → Game/aufbau.js:191
 - `frame` → Game/ladebildschirm.js:161
-- `frame` → Game/spiel/03e-kamera-eingabe.js:378
-- `frameIslandInView` → Game/spiel/03e-kamera-eingabe.js:475
+- `frame` → Game/spiel/03e-kamera-eingabe.js:380
+- `frameIslandInView` → Game/spiel/03e-kamera-eingabe.js:477
 - `free` → Game/spiel/01c-basen-spielstand.js:46
-- `freezeCamera` → Game/spiel/03e-kamera-eingabe.js:247
+- `freezeCamera` → Game/spiel/03e-kamera-eingabe.js:249
 - `frei` → Game/spiel/08e-stadtbild-haeuser.js:361
 - `freierStartplatz` → Game/spiel/01c-basen-spielstand.js:153
 - `freiText` → Game/aufbau.js:291
@@ -1388,7 +1389,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `invWelle` → Game/spiel/09c-events-drache.js:130
 - `invZiele` → Game/spiel/09c-events-drache.js:118
 - `invZielOk` → Game/spiel/09c-events-drache.js:114
-- `isCapital` → Game/spiel/03e-kamera-eingabe.js:510
+- `isCapital` → Game/spiel/03e-kamera-eingabe.js:513
 - `isCellOpen` → Game/spiel/01e-nebel-kampfwerte-hud.js:30
 - `isExplored` → Game/spiel/01e-nebel-kampfwerte-hud.js:39
 - `islandOwnerOf` → Game/spiel/01d-helden-mitspieler.js:152
@@ -1524,7 +1525,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `macht` → Game/spiel/05c-erfolge-rangliste.js:298
 - `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:36
 - `mapBattleShake` → Game/spiel/07a-schlachten.js:304
-- `mapFocusPoint` → Game/spiel/03e-kamera-eingabe.js:441
+- `mapFocusPoint` → Game/spiel/03e-kamera-eingabe.js:443
 - `marchButtons` → Game/spiel/02b-maersche.js:329
 - `marchFlag` → Game/spiel/03d-maersche-tagnacht.js:4
 - `marchKeyOf` → Game/spiel/02b-maersche.js:212
@@ -1580,7 +1581,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `merke` → Game/speichern.js:29
 - `merlonGeo` → Game/baukunst/04-vielfalt-stile.js:348
 - `merlons` → Game/spiel/03b-gebaeude-3d.js:46
-- `merlons` → Game/spiel/06e-nebel-zeichnen.js:138
+- `merlons` → Game/spiel/06e-nebel-zeichnen.js:160
 - `mid` → Game/spiel/03a-karte-hintergrund.js:29
 - `midAnzeige` → Game/spiel/06c-thron-mitte.js:239
 - `midFight` → Game/spiel/06c-thron-mitte.js:184
@@ -1683,8 +1684,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nebel_sieht` → Game/server/03-nebel-maersche-seite.php:10
 - `nebel_teil` → Game/server/03-nebel-maersche-seite.php:17
 - `nebel_welt` → Game/server/03-nebel-maersche-seite.php:90
+- `nebelLandPfade` → Game/spiel/06e-nebel-zeichnen.js:87
 - `nebelRunde` → Game/spiel/10d-welt-weltrechner.js:936
 - `nebelVomServer` → Game/spiel/01e-nebel-kampfwerte-hud.js:37
+- `nebelWeit` → Game/spiel/06e-nebel-zeichnen.js:84
 - `nebelWeite` → Game/aufbau.js:237
 - `neueNummer` → Game/welt.js:384
 - `neulingBis` → Game/spiel/06d-schild-produktion.js:26
@@ -1705,8 +1708,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `offene_befehle` → Game/server/05-datenbank-welt.php:229
 - `okPt` → Game/baukunst/05-umland.js:714
 - `one` → Game/baukunst/04-vielfalt-stile.js:525
-- `onPointerEnd` → Game/spiel/03e-kamera-eingabe.js:316
-- `onViewportResize` → Game/spiel/03e-kamera-eingabe.js:405
+- `onPointerEnd` → Game/spiel/03e-kamera-eingabe.js:318
+- `onViewportResize` → Game/spiel/03e-kamera-eingabe.js:407
 - `openArmySheet` → Game/spiel/09d-armeen-wegmarken.js:204
 - `openBarbSheet` → Game/spiel/09b-lager-tagesboss.js:363
 - `openChestItemPopup` → Game/spiel/05b-truhe-skills.js:182
@@ -1774,7 +1777,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `paintTowerTier` → Game/spiel/03b-gebaeude-3d.js:63
 - `paketText` → Game/speichern.js:125
 - `palm` → Game/baukunst/05-umland.js:598
-- `panBy` → Game/spiel/03e-kamera-eingabe.js:428
+- `panBy` → Game/spiel/03e-kamera-eingabe.js:430
 - `parapet` → Game/baukunst/07-hafen-palast.js:202
 - `parseTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:296
 - `partLines` → Game/spiel/05d-maersche-kampfbericht.js:160
@@ -1814,7 +1817,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pentRoof` → Game/baukunst/06-turmhof-festung.js:42
 - `pfad` → Game/spiel/08e-stadtbild-haeuser.js:416
 - `pick` → Game/baukunst/05-umland.js:688
-- `pickIslandAtScreen` → Game/spiel/03e-kamera-eingabe.js:361
+- `pickIslandAtScreen` → Game/spiel/03e-kamera-eingabe.js:363
 - `pickRandomRarity` → Game/spiel/02a-shop-stufen.js:63
 - `pickRandomSlot` → Game/spiel/02a-shop-stufen.js:59
 - `pickupAmount` → Game/spiel/09a-funde-felder.js:6
@@ -1853,7 +1856,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `poly` → Game/spiel/03b-gebaeude-3d.js:12
 - `poly` → Game/spiel/03b-gebaeude-3d.js:181
 - `polygonPointAtAngle` → Game/spiel/01b-weltkarte.js:97
-- `positionIslandPopover` → Game/spiel/03e-kamera-eingabe.js:456
+- `positionIslandPopover` → Game/spiel/03e-kamera-eingabe.js:458
 - `post` → Game/baukunst/07-hafen-palast.js:457
 - `powerOf` → Game/spiel/05c-erfolge-rangliste.js:177
 - `privaterSchluessel` → Game/weltrechner/push.js:48
@@ -1895,7 +1898,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `push_speichern` → Game/server/05-datenbank-welt.php:275
 - `push_weg` → Game/server/05-datenbank-welt.php:300
 - `push_weg_sitzung` → Game/server/05-datenbank-welt.php:284
-- `pushSample` → Game/spiel/03e-kamera-eingabe.js:260
+- `pushSample` → Game/spiel/03e-kamera-eingabe.js:262
 - `put` → Game/baukunst/01-werkzeugkasten.js:157
 - `put` → Game/baukunst/04-vielfalt-stile.js:523
 - `pvpWins` → Game/spiel/05c-erfolge-rangliste.js:19
@@ -1906,7 +1909,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questChain` → Game/spiel/06a-aufgaben.js:179
 - `questProgress` → Game/spiel/06a-aufgaben.js:154
 - `questStadtGeht` → Game/spiel/06a-aufgaben.js:114
-- `queueHover` → Game/spiel/03e-kamera-eingabe.js:359
+- `queueHover` → Game/spiel/03e-kamera-eingabe.js:361
 - `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:291
 - `rahmenDef` → Game/spiel/05a-aussehen-profil.js:18
 - `rahmenHat` → Game/spiel/05a-aussehen-profil.js:22
@@ -1933,7 +1936,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `reach` → Game/bots/05-verteidigen-takt.js:174
 - `recallMarch` → Game/spiel/02b-maersche.js:222
 - `recallSources` → Game/spiel/10b-inselfenster-knoepfe.js:46
-- `recenterOnHome` → Game/spiel/03e-kamera-eingabe.js:194
+- `recenterOnHome` → Game/spiel/03e-kamera-eingabe.js:196
 - `rechnerStatus` → Game/spiel/10d-welt-weltrechner.js:10
 - `rechnet` → Game/spiel/01a-grundlagen.js:6
 - `recol` → Game/baukunst/04-vielfalt-stile.js:214
@@ -1942,7 +1945,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `refreshTerritory` → Game/spiel/03a-karte-hintergrund.js:224
 - `regionBiome` → Game/spiel/01b-weltkarte.js:182
 - `regionHasTemple` → Game/spiel/01b-weltkarte.js:194
-- `releaseVelocity` → Game/spiel/03e-kamera-eingabe.js:264
+- `releaseVelocity` → Game/spiel/03e-kamera-eingabe.js:266
 - `render` → Game/baukunst/08-himmelsfeste-bilder.js:375
 - `renderAchievements` → Game/spiel/05c-erfolge-rangliste.js:124
 - `renderActiveMarches` → Game/spiel/05d-maersche-kampfbericht.js:47
@@ -1982,8 +1985,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderTile` → Game/spiel/03a-karte-hintergrund.js:309
 - `renderTitleModal` → Game/spiel/04-kampf.js:60
 - `repaintBackgroundRect` → Game/spiel/03a-karte-hintergrund.js:338
-- `requestRender` → Game/spiel/03e-kamera-eingabe.js:377
-- `resetGesture` → Game/spiel/03e-kamera-eingabe.js:243
+- `requestRender` → Game/spiel/03e-kamera-eingabe.js:379
+- `resetGesture` → Game/spiel/03e-kamera-eingabe.js:245
 - `resetSkills` → Game/spiel/05b-truhe-skills.js:278
 - `resFields` → Game/spiel/09a-funde-felder.js:160
 - `resize` → Game/ladebildschirm.js:35
@@ -2127,7 +2130,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `senden` → Game/speichern.js:160
 - `sendenAlle` → Game/weltrechner/push.js:205
 - `sendenAn` → Game/weltrechner/push.js:191
-- `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:519
+- `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:522
 - `server` → Game/benachrichtigung.js:20
 - `server` → Game/weltrechner/push.js:168
 - `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:177
@@ -2177,7 +2180,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sitOf` → Game/bots/03-angreifen.js:185
 - `sitzung_hash` → Game/server/01-grundlagen-login.php:78
 - `size` → Game/bots/05-verteidigen-takt.js:290
-- `sizeBackingStore` → Game/spiel/03e-kamera-eingabe.js:397
+- `sizeBackingStore` → Game/spiel/03e-kamera-eingabe.js:399
 - `skillBonusText` → Game/spiel/04-kampf.js:297
 - `skript` → Game/server/03-nebel-maersche-seite.php:145
 - `skyAt` → Game/ladebildschirm.js:23
@@ -2249,7 +2252,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `start_text` → Game/admin.php:146
 - `startMerken` → Game/weltrechner/start.js:49
 - `startMultiAttack` → Game/spiel/09e-inselfenster.js:157
-- `startPinch` → Game/spiel/03e-kamera-eingabe.js:254
+- `startPinch` → Game/spiel/03e-kamera-eingabe.js:256
 - `statBump` → Game/spiel/05c-erfolge-rangliste.js:15
 - `statTile` → Game/spiel/01a-grundlagen.js:171
 - `statue` → Game/baukunst/03-wahrzeichen-feuer.js:30
@@ -2261,7 +2264,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `stoneLantern` → Game/baukunst/04-vielfalt-stile.js:497
 - `stoneWarte` → Game/baukunst/05-umland.js:356
 - `stop` → Game/spiel/10c-start-einstellungen.js:129
-- `stopFlight` → Game/spiel/03e-kamera-eingabe.js:137
+- `stopFlight` → Game/spiel/03e-kamera-eingabe.js:139
 - `Strip` → Game/baukunst/05-umland.js:151
 - `strip` → Game/spiel/08e-stadtbild-haeuser.js:430
 - `Strip.prototype.line` → Game/baukunst/05-umland.js:153
@@ -2378,12 +2381,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `UMRECHNEN.openWaterVerstaerkung` → Game/welt.js:128
 - `unb64` → Game/weltrechner/push.js:19
 - `unten` → Game/spiel/08d-gebaeude-wirkung.js:61
-- `updateCamera` → Game/spiel/03e-kamera-eingabe.js:201
+- `updateCamera` → Game/spiel/03e-kamera-eingabe.js:203
 - `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:236
 - `updateGoalsBadge` → Game/spiel/06a-aufgaben.js:252
 - `updateHud` → Game/spiel/01e-nebel-kampfwerte-hud.js:232
 - `updateHudPlayer` → Game/spiel/01e-nebel-kampfwerte-hud.js:248
-- `updateMapControls` → Game/spiel/03e-kamera-eingabe.js:450
+- `updateMapControls` → Game/spiel/03e-kamera-eingabe.js:452
 - `updateMultiAttackBar` → Game/spiel/09e-inselfenster.js:145
 - `updateZoomBounds` → Game/spiel/03e-kamera-eingabe.js:21
 - `upgradeCost` → Game/spiel/01b-weltkarte.js:135
@@ -2409,7 +2412,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verstPlatz` → Game/buendnis/01-daten-regeln.js:460
 - `verstPlatzStufe` → Game/buendnis/01-daten-regeln.js:459
 - `verstPruefen` → Game/buendnis/01-daten-regeln.js:482
-- `verstSchaetzung` → Game/spiel/03e-kamera-eingabe.js:522
+- `verstSchaetzung` → Game/spiel/03e-kamera-eingabe.js:525
 - `verstSpeichern` → Game/buendnis/01-daten-regeln.js:456
 - `verstStufe` → Game/buendnis/01-daten-regeln.js:457
 - `verstUnbekannt` → Game/buendnis/01-daten-regeln.js:468
@@ -2592,7 +2595,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zeitGrenze` → Game/weltrechner/start.js:170
 - `zielPruefen` → Game/spiel/10d-welt-weltrechner.js:1017
 - `zitadelle` → Game/baukunst/02-buehne-grundbasis.js:330
-- `zoomAt` → Game/spiel/03e-kamera-eingabe.js:151
+- `zoomAt` → Game/spiel/03e-kamera-eingabe.js:153
 - `zug` → Game/spiel/08e-stadtbild-haeuser.js:333
 - `zuOft` → Game/spiel/10d-welt-weltrechner.js:142
 
@@ -3917,39 +3920,39 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `projectConvex` :81 — nearest point of the convex polygon Q (positive orientation) to (x, y)
 - `insideConvex` :89
 - `camInsetTarget` :93 — the island sheet (phone: bottom, landscape: right side) covers part of the map
-- `camRange` :101 — allowed centre interval on one axis; a / b: world units covered at the low / hi…
-- `camRegion` :109 — → { R: [{ l, t, r, b }] the pieces' boxes (camPiece(G, p): the polygon, built o…
-- `camPiece` :121 — a piece of R: grown, cut to the box ([] when the cut leaves nothing)
-- `clampCentre` :127 — nearest point of R(z) (ins: the sheet slack, default the current one)
-- `stopFlight` :137 — cancel / end a flight where it is: its view is valid for its inset, so that
-- `clampCamera` :142 — ins: the sheet slack (optional) → true when it moved the centre: the caller re-…
-- `zoomAt` :151 — the ONE zoom primitive: keeps the world point under (sx, sy) fixed
-- `flyTo` :168 — animated camera move; the world point ends at screen (sx, sy)
-- `recenterOnHome` :194 — harness calls it without an argument → instant
-- `updateCamera` :201 — Called once per frame BEFORE drawMap(). Returns true while something is moving.
-- `resetGesture` :243
-- `freezeCamera` :247 — nothing may move under a resting finger
-- `startPinch` :254
-- `pushSample` :260
-- `releaseVelocity` :264
-- `onPointerEnd` :316
-- `cancelGesture` :331
-- `queueHover` :359
-- `pickIslandAtScreen` :361
-- `requestRender` :377
-- `frame` :378
-- `sizeBackingStore` :397 — ---------------- resize / rotation / dpr ----------------
-- `onViewportResize` :405 — registered after boot; keeps the world point at the view centre
-- `panBy` :428
-- `mapFocusPoint` :441 — ---------------- map controls ----------------
-- `updateMapControls` :450
-- `positionIslandPopover` :456 — ---------------- island popup placement ----------------
-- `frameIslandInView` :475 — ease the base into the free map area (next to the sheet / clear of the desktop …
-- `isCapital` :510
-- `sentLossFor` :519
-- `verstSchaetzung` :522 — Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mi…
-- `fightEstimate` :530 — the fight as it stands right now (no side effects) - same maths as resolveAttac…
-- `fightDurationMs` :541 — a skirmish is over in ~4 s, a clash of millions takes ~12 s
+- `camRange` :103 — allowed centre interval on one axis; a / b: world units covered at the low / hi…
+- `camRegion` :111 — → { R: [{ l, t, r, b }] the pieces' boxes (camPiece(G, p): the polygon, built o…
+- `camPiece` :123 — a piece of R: grown, cut to the box ([] when the cut leaves nothing)
+- `clampCentre` :129 — nearest point of R(z) (ins: the sheet slack, default the current one)
+- `stopFlight` :139 — cancel / end a flight where it is: its view is valid for its inset, so that
+- `clampCamera` :144 — ins: the sheet slack (optional) → true when it moved the centre: the caller re-…
+- `zoomAt` :153 — the ONE zoom primitive: keeps the world point under (sx, sy) fixed
+- `flyTo` :170 — animated camera move; the world point ends at screen (sx, sy)
+- `recenterOnHome` :196 — harness calls it without an argument → instant
+- `updateCamera` :203 — Called once per frame BEFORE drawMap(). Returns true while something is moving.
+- `resetGesture` :245
+- `freezeCamera` :249 — nothing may move under a resting finger
+- `startPinch` :256
+- `pushSample` :262
+- `releaseVelocity` :266
+- `onPointerEnd` :318
+- `cancelGesture` :333
+- `queueHover` :361
+- `pickIslandAtScreen` :363
+- `requestRender` :379
+- `frame` :380
+- `sizeBackingStore` :399 — ---------------- resize / rotation / dpr ----------------
+- `onViewportResize` :407 — registered after boot; keeps the world point at the view centre
+- `panBy` :430
+- `mapFocusPoint` :443 — ---------------- map controls ----------------
+- `updateMapControls` :452
+- `positionIslandPopover` :458 — ---------------- island popup placement ----------------
+- `frameIslandInView` :477 — ease the base into the free map area (next to the sheet / clear of the desktop …
+- `isCapital` :513
+- `sentLossFor` :522
+- `verstSchaetzung` :525 — Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mi…
+- `fightEstimate` :533 — the fight as it stands right now (no side effects) - same maths as resolveAttac…
+- `fightDurationMs` :544 — a skirmish is over in ~4 s, a clash of millions takes ~12 s
 
 ### Game/spiel/04-kampf.js — Titel (Mega-Tempel), Takt der Mitspieler, Ankunft und Kämpfe (kampfDazu, Warten…
 - `loadTitles` :16
@@ -4277,11 +4280,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fogTexture` :28
 - `fogBlob` :48 — soft round eraser, 1 fog cell ≈ half its width
 - `fogMask` :54 — canvas over the whole frame: alpha = fog
-- `drawFog` :84
-- `drawGatehouse` :133 — front view like the towers: two turrets, a wall, an arch with a portcullis
-- `merlons` :138
-- `arch` :151
-- `drawPasses` :165 — a gatehouse on every gated bridge; closed ones carry a countdown
+- `nebelWeit` :84 — 0 = Wolken (nah), 1 = flache Fläche (weit/ganz draußen)
+- `nebelLandPfade` :87
+- `drawFog` :94
+- `drawGatehouse` :155 — front view like the towers: two turrets, a wall, an arch with a portcullis
+- `merlons` :160
+- `arch` :173
+- `drawPasses` :187 — a gatehouse on every gated bridge; closed ones carry a countdown
+- `drawHeimWappen` :210 — ganz draußen (die Basis selbst ist nur noch ein Punkt): das eigene Wappen an de…
 
 ### Game/spiel/07a-schlachten.js — Schlachten auf der Karte (auch Zuschauer-Anzeige) und Kampf-Effekte
 - `mbT` :8
