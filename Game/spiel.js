@@ -576,9 +576,9 @@ var gateCfg = null;
 function loadGateCfg() { if (!gateCfg) { try { gateCfg = JSON.parse(store.get('openWaterGateCfg')) || {}; } catch (e) { gateCfg = {}; } } return gateCfg; }
 function gateSettings(gate) { return Object.assign({ toll: gate.toll, closed: false }, loadGateCfg()[gate.id] || {}); }
 function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = Object.assign(gateSettings(islandById[gateId]), patch); store.set('openWaterGateCfg', JSON.stringify(c)); }
-// Maut je Truppe: die Stufe (gespeichert wie vorher 0,1 … 2) × MUENZ_FAKTOR = 100 … 2.000 Münzen; je Marsch mindestens 100 und
-// höchstens 1 Mio. (beides wirtM, gerundet: 56 … 560.000)
-const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], MAUT_MIN = niceRoundW(wirtM(100)), MAUT_MAX = niceRoundW(wirtM(1e6));
+// Maut je Truppe: die Stufe (gespeichert wie vorher 0,1 … 2) × MUENZ_FAKTOR = 100 … 2.000 Münzen; je Marsch mindestens 100 Münzen
+// (eine Truppe zur kleinsten Maut) und höchstens 1 Mio. × WIRTSCHAFT_KOSTEN (wirtM, gerundet: 560.000)
+const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], MAUT_MIN = 100, MAUT_MAX = niceRoundW(wirtM(1e6));
 const mautJeTruppe = t => t * MUENZ_FAKTOR;
 function tollFor(fromLm, toLm, troops, payer, targetId, cut) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself); cut = a hero's −% Maut
     const gate = gateOnRoute(fromLm, toLm);
