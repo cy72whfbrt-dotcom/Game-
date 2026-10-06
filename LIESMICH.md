@@ -779,6 +779,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
   `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+- **6.10. – Aussehen: Rahmen + Titel in einem Reiter (Alexander 6.10., Branch `fix-aussehen-rahmen`, NICHT hochgeladen):** Im Fenster
+  „Profil · Aussehen“ nur noch die Reiter Wappen · Rahmen · Basis · Marsch (spielseite/08, 4 Spalten in spielseite/03). Im Reiter
+  „Rahmen“ (08b `renderLookSheet`) erst die Rahmen, darunter Titel aus der Mitte, Deine Titel, Titel zu kaufen. `openLookSheet('title')`
+  öffnet „Rahmen“ und rollt zu den Titeln (`#lkTitel`). Preise, Käufe, „Wirklich?“ ab 500 unverändert. Test `aussehen_rahmen_test` (neu).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

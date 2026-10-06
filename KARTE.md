@@ -62,8 +62,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `alsBefehl` → Game/spiel/01a-grundlagen.js:13
 - `analyse` → Game/baukunst/04-vielfalt-stile.js:366
 - `andere_sitzungen_loeschen` → Game/server/05-datenbank-welt.php:292
-- `anfKosten` → Game/spiel/08b-burg-aussehen.js:149
-- `anfZeile` → Game/spiel/08b-burg-aussehen.js:145
+- `anfKosten` → Game/spiel/08b-burg-aussehen.js:152
+- `anfZeile` → Game/spiel/08b-burg-aussehen.js:148
 - `angreiferZeilen` → Game/spiel/01a-grundlagen.js:169
 - `angriffQuellen` → Game/spiel/10b-inselfenster-knoepfe.js:122
 - `angriffReicht` → Game/spiel/10b-inselfenster-knoepfe.js:127
@@ -643,11 +643,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `CITY_PAINT.mine` → Game/spiel/08e-stadtbild-haeuser.js:175
 - `CITY_PAINT.plot` → Game/spiel/08e-stadtbild-haeuser.js:87
 - `CITY_PAINT.quarry` → Game/spiel/08e-stadtbild-haeuser.js:168
-- `cityAnfHtml` → Game/spiel/08b-burg-aussehen.js:155
+- `cityAnfHtml` → Game/spiel/08b-burg-aussehen.js:158
 - `cityBanner` → Game/spiel/08e-stadtbild-haeuser.js:81
 - `cityBauId` → Game/spiel/08a-stadt-bauen.js:238
-- `cityBildSetzen` → Game/spiel/08b-burg-aussehen.js:136
-- `cityBildSpr` → Game/spiel/08b-burg-aussehen.js:130
+- `cityBildSetzen` → Game/spiel/08b-burg-aussehen.js:139
+- `cityBildSpr` → Game/spiel/08b-burg-aussehen.js:133
 - `cityBio` → Game/spiel/08e-stadtbild-haeuser.js:244
 - `cityBlocker` → Game/spiel/08a-stadt-bauen.js:98
 - `cityBuildOf` → Game/spiel/08a-stadt-bauen.js:74
@@ -681,7 +681,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityMaxLevel` → Game/spiel/08a-stadt-bauen.js:51
 - `cityMinLevel` → Game/spiel/05c-erfolge-rangliste.js:18
 - `cityMountain` → Game/spiel/08e-stadtbild-haeuser.js:287
-- `cityNutz` → Game/spiel/08b-burg-aussehen.js:124
+- `cityNutz` → Game/spiel/08b-burg-aussehen.js:127
 - `cityOben` → Game/spiel/08f-stadtbild-bild.js:89
 - `cityPainter` → Game/spiel/08e-stadtbild-haeuser.js:47
 - `cityPaintGround` → Game/spiel/08e-stadtbild-haeuser.js:309
@@ -692,10 +692,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityPlinth` → Game/spiel/08e-stadtbild-haeuser.js:82
 - `cityPointerEnd` → Game/spiel/08f-stadtbild-bild.js:48
 - `cityRect` → Game/spiel/08e-stadtbild-haeuser.js:39
-- `cityRingAuf` → Game/spiel/08b-burg-aussehen.js:205
-- `cityRingZu` → Game/spiel/08b-burg-aussehen.js:217
+- `cityRingAuf` → Game/spiel/08b-burg-aussehen.js:208
+- `cityRingZu` → Game/spiel/08b-burg-aussehen.js:220
 - `cityRockAt` → Game/spiel/08e-stadtbild-haeuser.js:279
-- `citySeite` → Game/spiel/08b-burg-aussehen.js:163
+- `citySeite` → Game/spiel/08b-burg-aussehen.js:166
 - `cityShow` → Game/spiel/08a-stadt-bauen.js:177
 - `citySlots` → Game/spiel/08a-stadt-bauen.js:73
 - `citySpeedCost` → Game/spiel/08a-stadt-bauen.js:118
@@ -743,7 +743,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeHeroHall` → Game/spiel/08c-helden.js:350
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:110
 - `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:316
-- `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:111
+- `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:114
 - `closeMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:309
 - `closePanel` → Game/spiel/09e-inselfenster.js:35
 - `closeTopmostPanel` → Game/spiel/09e-inselfenster.js:50
@@ -1891,7 +1891,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:220
 - `renderChestEquipment` → Game/spiel/05b-truhe-skills.js:44
 - `renderChestItemPopup` → Game/spiel/05b-truhe-skills.js:183
-- `renderCitySheet` → Game/spiel/08b-burg-aussehen.js:172
+- `renderCitySheet` → Game/spiel/08b-burg-aussehen.js:175
 - `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:239
 - `renderCombatLog` → Game/spiel/05d-maersche-kampfbericht.js:145
 - `renderCrestCard` → Game/spiel/05a-aussehen-profil.js:108
@@ -4234,18 +4234,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderLookTop` :56 — what you wear now + what you can pay with
 - `lkMarchPrev` :63 — the march cards: a little column with your flag and the trail
 - `renderLookSheet` :75 — live = jede Sekunde aus liveTick: der Wappen-Editor bleibt, wie er ist
-- `openLookSheet` :110
-- `closeLookSheet` :111
-- `cityNutz` :124 — die eigene Seite eines Gebäudes (Forschen, Heilen …) → [Name, Zeichen] oder null
-- `cityBildSpr` :130 — dasselbe Bild wie in der Stadt
-- `cityBildSetzen` :136 — das Gebäude-Bild oben links im Fenster (nur neu gemalt, wenn sich die Stufe änd…
-- `anfZeile` :145 — eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz
-- `anfKosten` :149 — Münzen und Rohstoffe: hast / brauchst
-- `cityAnfHtml` :155 — Voraussetzungen für die nächste Stufe (Burg, Bauarbeiter, Münzen, Rohstoffe)
-- `citySeite` :163 — Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
-- `renderCitySheet` :172 — (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
-- `cityRingAuf` :205 — ---- die runden Knöpfe am angetippten Gebäude ----
-- `cityRingZu` :217
+- `openLookSheet` :110 — tab 'title': die Titel stehen im Reiter „Rahmen“ unten – dorthin rollen
+- `closeLookSheet` :114
+- `cityNutz` :127 — die eigene Seite eines Gebäudes (Forschen, Heilen …) → [Name, Zeichen] oder null
+- `cityBildSpr` :133 — dasselbe Bild wie in der Stadt
+- `cityBildSetzen` :139 — das Gebäude-Bild oben links im Fenster (nur neu gemalt, wenn sich die Stufe änd…
+- `anfZeile` :148 — eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz
+- `anfKosten` :152 — Münzen und Rohstoffe: hast / brauchst
+- `cityAnfHtml` :158 — Voraussetzungen für die nächste Stufe (Burg, Bauarbeiter, Münzen, Rohstoffe)
+- `citySeite` :166 — Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
+- `renderCitySheet` :175 — (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
+- `cityRingAuf` :208 — ---- die runden Knöpfe am angetippten Gebäude ----
+- `cityRingZu` :220
 
 ### Game/spiel/08c-helden.js — Helden: Splitter, Freischalten, Sterne, Skillpunkte, Helden-Fenster
 - `heroFresh` :4
