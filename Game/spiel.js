@@ -2892,6 +2892,14 @@ function karteObjekte() {
         if (senk) neu(warm(n, p, t), p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3, f);
         else neu(warm(n, t, p), t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p, f);
       } } }
+  // Wald am Fuß der Ketten (wie RoK: dichte Nadelwälder an den Pässen und Bergen) – nicht auf Basen, Feldern, Toren, Knoten
+  const frei = (x, y, w) => { const id = felsLmAn(x, y); if (id === undefined) return false;
+    return !(islandsByLandmass[id] || []).some(b => Math.hypot(b.x - x, b.y - y) < b.radius + w * .5) && !resFields.some(f => f.landmassId === id && Math.hypot(f.x - x, f.y - y) < f.radius + w * .5)
+      && !tore.some(t => Math.hypot(t.x - x, t.y - y) < M.tor * .6) && !Object.values(knoten).some(k => Math.hypot(k.x - x, k.y - y) < M.knoten * .55) && ringAn(x, y) > BODEN_BIS_RING.innen; };
+  for (const senk of [true, false]) for (const L of linien) for (let t = -ende + 6000; t < ende - 6000; t += 7000) {
+    if (rnd() < .45) continue;
+    const s = rnd() < .5 ? -1 : 1, w = M.wald[0] * (.8 + rnd() * .3), q = grenzLinie(senk, L, t) + s * (senk ? 2900 : s < 0 ? 2600 : 2300), x = senk ? q : t, y = senk ? t : q;
+    if (frei(x, y, w)) neu(rnd() < .55 ? 'wald1' : 'wald2', x, y, w, .5, .78, 0, 0, y, rnd() < .5 ? -1 : 1); }
   // Wälder: lockere Gruppen auf freier Wiese – nicht auf Basen, Feldern, Wegen (Bändern), Bergen, nicht an der Kette
   for (const lm of landmasses) {
     const r2 = mulberry32(lm.id * 7919 + 41), bases = islandsByLandmass[lm.id] || [], band = (felsenDaten && felsenDaten.baender[lm.id]) || [];
