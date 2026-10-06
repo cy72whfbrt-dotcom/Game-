@@ -15,7 +15,7 @@
 // 1) DATEN
 // ==============================================================================================================
 const BUND = {
-    MAX: 5, KOSTEN: 30000,                                    // höchstens 5 Mitglieder (Spieler und Mitspieler zusammen – Alexander 3.10.) · Gründen kostet 30.000 Münzen
+    MAX: 5, KOSTEN: wirtK(30000),                             // höchstens 5 Mitglieder (Spieler und Mitspieler zusammen – Alexander 3.10.) · Gründen kostet 30.000 Münzen × WIRTSCHAFT_KOSTEN (17)
     SIG_MS: 10 * 60000, SIG_PAUSE: 30000, SIG_MAX: 30,        // Signale: 10 Min. auf der Karte, 1 pro 30 s und Spieler
     RALLY_MIN: [1, 3, 5], RALLY_PRO_BUND: 3,
     GESCHENKE_TAG: 5, KISTEN_TAG: 3,                          // pro Mitglied höchstens 5 Geschenke am Tag · pro Geber 3 Kisten-Geschenke
@@ -437,10 +437,10 @@ function verstLesen() { let v = null; try { v = JSON.parse(store.get('openWaterV
 function verstSpeichern() { store.set('openWaterVerstaerkung', JSON.stringify(verst)); requestRender(); }
 function verstStufe(w) { return AUF && AUF.botschaftStufe ? AUF.botschaftStufe(w) : 0; }
 function eigeneTruppen(w) { let eigen = 0; for (const id of bundBasen(w)) eigen += islandTroops[id] || 0; return eigen; }
-function verstPlatzStufe(w, L) { return L ? L * Math.max(20000, eigeneTruppen(w) * .1) : 0; }
+function verstPlatzStufe(w, L) { return L ? L * Math.max(wirtK(20000), eigeneTruppen(w) * .1) : 0; }   // (Mindestwert × WIRTSCHAFT_KOSTEN)
 function verstPlatz(w) { return verstPlatzStufe(w, verstStufe(w)); }
 // Rally-Größe (Botschaft, Alexander 4.10.): so viele Truppen dürfen einer Rally beitreten – die Botschaft des Starters zählt
-function rallyPlatzStufe(w, L) { return (L + 1) * Math.max(20000, eigeneTruppen(w) * .1); }
+function rallyPlatzStufe(w, L) { return (L + 1) * Math.max(wirtK(20000), eigeneTruppen(w) * .1); }
 function rallyPlatz(w) { return rallyPlatzStufe(w, verstStufe(w)); }
 const rallyFrei = r => Math.max(0, Math.floor(rallyPlatz(r.by) - r.j.reduce((s, j) => s + j.n, 0)));
 function verstBelegt(w) { return verst.l.reduce((s, v) => s + (islandOwnerOf(v.t) === w ? v.n : 0), 0); }

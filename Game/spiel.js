@@ -273,6 +273,8 @@ const TIER_STATS = {
 const RING_MULT = { 2: 300, 3: 60, 4: 20, 5: 8, 6: 2, 7: 1 };   // neutral strength of outer regions: the edge is easy, near the middle hard
 function ringMult(lm) { return lm.tier === 'outer' ? (RING_MULT[lm.ring] || 1) : 1; }
 function niceRoundW(n) { const p = Math.pow(10, Math.max(0, Math.floor(Math.log10(n)) - 1)); return Math.round(n / p) * p; }
+// Wirtschaft 5.10. (LIESMICH 11b A): Kosten und Gegner × WIRTSCHAFT_KOSTEN – als ganze Zahl, nie unter mn (sonst 1)
+function wirtK(n, mn = 1) { return Math.max(mn, Math.round(n * WIRTSCHAFT_KOSTEN)); }
 const ISLAND_RADIUS = 650; // tower footprint - bigger again, still well under the guaranteed minimum spacing between towers
 const NEUTRAL_DEFENSE_MAX = 100;
 const NEUTRAL_DEFENSE_MIN = 20;
@@ -363,7 +365,7 @@ const UPGRADE_BASE_COST = 120, UPGRADE_COST_GROWTH = 1.27;
 // skill bonus - used for bot- and (in a future PvP defense) other-
 // player-owned bases, which don't have the human player's gear.
 function baseDefenseForLevel(level) {
-    return Math.round(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));
+    return wirtK(BASE_DEFENSE * Math.pow(DEFENSE_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1));   // (× WIRTSCHAFT_KOSTEN)
 }
 function defenseForLevel(level) {
     return Math.round(baseDefenseForLevel(level) * (1 + armorDefensePct() / 100));
@@ -376,7 +378,7 @@ function coinsPerTick(level) {
 function troopsPerTick(level) {
     return Math.round(BASE_TROOPS * Math.pow(PRODUCTION_GROWTH, Math.min(level, MAX_BASE_LEVEL) - 1)) * WIRTSCHAFT_ERTRAG;
 }
-function upgradeCostRoh(level) { return Math.round(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)); }   // ohne Rabatt
+function upgradeCostRoh(level) { return wirtK(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)); }   // ohne Rabatt (× WIRTSCHAFT_KOSTEN)
 function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 20 % günstiger
     let r = 1; try { if (evThemaAktiv('bau')) r = .8; } catch (e) {}
     return Math.round(upgradeCostRoh(level) * r);
@@ -560,13 +562,13 @@ var gateCfg = null;
 function loadGateCfg() { if (!gateCfg) { try { gateCfg = JSON.parse(store.get('openWaterGateCfg')) || {}; } catch (e) { gateCfg = {}; } } return gateCfg; }
 function gateSettings(gate) { return Object.assign({ toll: gate.toll, closed: false }, loadGateCfg()[gate.id] || {}); }
 function setGateSettings(gateId, patch) { const c = loadGateCfg(); c[gateId] = Object.assign(gateSettings(islandById[gateId]), patch); store.set('openWaterGateCfg', JSON.stringify(c)); }
-const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], TOLL_MAX = 1e6;   // per troop, but never more than 1 Mio. per march
+const GATE_TOLLS = [0, 0.1, 0.25, 0.5, 1, 2], TOLL_MIN = 100, TOLL_MAX = 1e6;   // per troop, at least 100 and never more than 1 Mio. per march (beides × WIRTSCHAFT_KOSTEN)
 function tollFor(fromLm, toLm, troops, payer, targetId, cut) {  // → { gate, cost, closed } (free for the gate's owner - and for an attack ON the gate itself); cut = a hero's −% Maut
     const gate = gateOnRoute(fromLm, toLm);
     if (!gate || islandOwnerOf(gate.id) === payer || gate.id === targetId || bundFreund(islandOwnerOf(gate.id), payer)) return { gate, cost: 0 };   // Bündnis: Tore der Mitglieder sind für alle Mitglieder frei und offen
     const cfg = gateSettings(gate);
     if (!islandOwnerOf(gate.id) || cfg.closed) return { gate, cost: Infinity, closed: true };   // unowned gates are shut
-    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(100, Math.min(TOLL_MAX, Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };   // (ganze Münzen – auch mit Helden-Rabatt)
+    return { gate, cost: cfg.toll > 0 ? Math.round(Math.max(wirtK(TOLL_MIN), Math.min(wirtK(TOLL_MAX), Math.round(Math.max(0, troops) * cfg.toll))) * (1 - Math.min(90, cut || 0) / 100)) : 0 };   // (ganze Münzen – auch mit Helden-Rabatt)
 }
 function payToll(fromLm, toLm, troops, payer, targetId, cut) { // payer: 'player' | bot id → false when it can't pay
     const { gate, cost, closed } = tollFor(fromLm, toLm, troops, payer, targetId, cut);
@@ -613,13 +615,17 @@ let id = 0;
 // Whoever owns a gate crosses its bridge for free and collects the toll everyone else pays. Unowned gates are shut.
 const GATE_STATS = { guardian: { troops: 2e6, def: 5e5, level: 25, toll: 0.25 }, throne: { troops: 5e7, def: 1e7, level: 45, toll: 0.5 } };
 const BORDER_GATE = { 4: { troops: 1500, def: 400, level: 3 }, 3: { troops: 12000, def: 3000, level: 8 }, 2: { troops: 1e5, def: 25000, level: 14 }, 1: { troops: 4e5, def: 1e5, level: 18 } };
+// Wirtschaft 5.10.: alle neutralen Werte (Basen, Tempel, Tore) × WIRTSCHAFT_KOSTEN (wirtK). Die Thron-Tore aber nie unter der Start-Armee:
+// sonst nähme ein neuer Spieler mit seinen 100.000 Start-Truppen (bleiben – Alexander) den Thron am ersten Tag (÷1800: 28.000 + 5.600)
+const THRON_TOR_MIN = { troops: 150000, def: 50000 };
 const gateSpots = bridges.map(br => {
     const A = landmasses[br.a], B = landmasses[br.b], ta = A.tier, tb = B.tier;
     const kind = ta === 'throne' || tb === 'throne' ? 'throne' : ta === 'guardian' || tb === 'guardian' ? 'guardian' : 'border';
     const outerA = A.ring > B.ring || (A.ring === B.ring && A.id > B.id);                   // the gate stands on the side farther from the middle
     const ex = outerA ? br.x1 : br.x2, ey = outerA ? br.y1 : br.y2, ox = outerA ? br.x2 : br.x1, oy = outerA ? br.y2 : br.y1;
     const bl = Math.hypot(ox - ex, oy - ey) || 1, key = Math.max(1, Math.min(4, Math.ceil((Math.min(A.ring, B.ring) - 1) / 1.5)));
-    const st = kind === 'border' ? Object.assign({ toll: 0.1 }, BORDER_GATE[key]) : GATE_STATS[kind];
+    const st0 = kind === 'border' ? Object.assign({ toll: 0.1 }, BORDER_GATE[key]) : GATE_STATS[kind], mn = kind === 'throne' ? THRON_TOR_MIN : { troops: 1, def: 1 };
+    const st = Object.assign({}, st0, { troops: wirtK(st0.troops, mn.troops), def: wirtK(st0.def, mn.def) });
     return { br, kind, st, lm: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, ex, ey };
 });
 // Start places: 4 per region on the outermost two rings (player and bot capitals go there, the rest stays empty land).
@@ -663,8 +669,8 @@ for (const lm of landmasses) {
     }
     for (const p of mine) islands.push({
         id: id++, landmassId: lm.id, x: p.x, y: p.y, radius: ISLAND_RADIUS, type: 'tower',
-        neutralTroops: tierStats ? niceRoundW(tierStats.troops[0] + rand() * (tierStats.troops[1] - tierStats.troops[0])) : (NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1))) * ringMult(lm),
-        neutralDefense: tierStats ? niceRoundW(tierStats.def[0] + rand() * (tierStats.def[1] - tierStats.def[0])) : (NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))) * ringMult(lm),
+        neutralTroops: wirtK(tierStats ? niceRoundW(tierStats.troops[0] + rand() * (tierStats.troops[1] - tierStats.troops[0])) : (NEUTRAL_TROOPS_MIN + Math.floor(rand() * (NEUTRAL_TROOPS_MAX - NEUTRAL_TROOPS_MIN + 1))) * ringMult(lm), 0),
+        neutralDefense: wirtK(tierStats ? niceRoundW(tierStats.def[0] + rand() * (tierStats.def[1] - tierStats.def[0])) : (NEUTRAL_DEFENSE_MIN + Math.floor(rand() * (NEUTRAL_DEFENSE_MAX - NEUTRAL_DEFENSE_MIN + 1))) * ringMult(lm)),
         neutralLevel: tierStats ? tierStats.level : 1 + Math.round(Math.log2(ringMult(lm)))
     });
     if (hasTemple) islands.push({
@@ -672,8 +678,8 @@ for (const lm of landmasses) {
         radius: ISLAND_RADIUS * (isMega ? 1.6 : lm.tier === 'guardian' ? 1.45 : 1.3),
         type: isMega ? 'megaTemple' : 'temple',
         guardian: lm.tier === 'guardian',
-        neutralTroops: tierStats ? tierStats.temple[0] : Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * ringMult(lm)),
-        neutralDefense: tierStats ? tierStats.temple[1] : Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * ringMult(lm)),
+        neutralTroops: wirtK(tierStats ? tierStats.temple[0] : Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * ringMult(lm)),
+        neutralDefense: wirtK(tierStats ? tierStats.temple[1] : Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * ringMult(lm)),
         neutralLevel: tierStats ? tierStats.templeLevel : 1
     });
 }
@@ -684,7 +690,7 @@ for (const lm of landmasses) {
     for (let k = 0; k < want && k * step < order.length; k++) {
         const sl = order[Math.floor(k * step)], lm = landmasses[sl.lm];
         islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true,
-            neutralTroops: NEUTRAL_TROOPS_MIN * ringMult(lm), neutralDefense: NEUTRAL_DEFENSE_MIN * ringMult(lm), neutralLevel: 1 });
+            neutralTroops: wirtK(NEUTRAL_TROOPS_MIN * ringMult(lm), 0), neutralDefense: wirtK(NEUTRAL_DEFENSE_MIN * ringMult(lm)), neutralLevel: 1 });
     }
 }
 for (const gsp of gateSpots) {
@@ -1321,7 +1327,7 @@ const RARITY_DEFS = [
 ];
 const ITEM_MAX_LEVEL = 20;
 const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen (seit 2.10. auch kein Preis mehr mit „mind. Legendär“)
-const CRATE_GEM_COST = 30;   // (2.10.: vorher 5 – Gold-Ausrüstung kam zu schnell)
+const CRATE_GEM_COST = 150;  // (5.10. Alexander: vorher 30, davor 5 – Gold-Ausrüstung kam zu schnell)
 const COMBINE_COUNT = 3;
 const RARITY_PCT_PER_SCORE = 0.15;
 const RARITY_FLAT_PER_SCORE = 0.3;
@@ -1511,17 +1517,17 @@ let playerLvl = parseInt(store.get('openWaterLevel'), 10) || 1;
 function xpNeededForLevel(level) {
     return Math.round(50 * Math.pow(1.3, Math.min(level, 400) - 1));
 }
-// Level rewards: small at the start, 2 Mio. troops at level 30, then linear growth.
+// Level rewards: small at the start, 2 Mio. troops at level 30, then linear growth – × WIRTSCHAFT_KOSTEN (5.10.: heute 1.100 bei Stufe 30).
 function niceRound(n) {
     if (n < 100) return Math.round(n);
     const p = Math.pow(10, Math.floor(Math.log10(n)) - 1);
     return Math.round(n / p) * p;
 }
 function levelRewardTroops(level) {
-    return niceRound(level <= 30 ? 2000000 * Math.pow(level / 30, 3) : 2000000 + (level - 30) * 100000);
+    return niceRound(wirtK(level <= 30 ? 2000000 * Math.pow(level / 30, 3) : 2000000 + (level - 30) * 100000));
 }
 function levelRewardCoins(level) {
-    return niceRound(level <= 30 ? 500 * level * level : 450000 + (level - 30) * 20000);
+    return niceRound(wirtK(level <= 30 ? 500 * level * level : 450000 + (level - 30) * 20000));
 }
 function levelRewardGems(level) {
     return level % 10 === 0 ? 10 : level % 5 === 0 ? 5 : 0;
@@ -1548,9 +1554,11 @@ function grantLevelRewards(from, to) {
 const KAMPF_EP_ANTEIL = 0.25;
 // … und nur, wenn der Gegner ebenbürtig war: wer mit der zehnfachen Übermacht eine schwache Basis überrennt, bekommt nur ein
 // Zehntel davon (vorher holten sich die Mitspieler so in 4 Std. Stufe 60 – mit hunderten leichten Siegen)
+// Wirtschaft 5.10.: Gegner sind × WIRTSCHAFT_KOSTEN kleiner – ein besiegter Krieger zählt darum so viel wie vorher 1.800 (EP und
+// Stufen kommen so schnell wie vorher; was eine Stufe bringt, ist mit kleiner geworden)
 function kampfEp(roh, lvl, gegner, eigene) {
     const anteil = eigene > 0 && gegner >= 0 ? Math.min(1, gegner / eigene) : 1;
-    return Math.max(0, Math.min(roh || 0, Math.ceil(xpNeededForLevel(Math.max(1, lvl || 1)) * KAMPF_EP_ANTEIL * anteil)));
+    return Math.max(0, Math.min((roh || 0) / WIRTSCHAFT_KOSTEN, Math.ceil(xpNeededForLevel(Math.max(1, lvl || 1)) * KAMPF_EP_ANTEIL * anteil)));
 }
 function addXp(amount) {
     const before = playerLvl;
@@ -5508,7 +5516,7 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'gate1',   name: 'Torhüter',         icon: 'lock',    desc: 'Halte ein Tor.',                         goal: 1,    k: 'gates', gems: 50 },
     { id: 'gate3',   name: 'Herr der Brücken', icon: 'lock',    desc: 'Halte 3 Tore gleichzeitig.',             goal: 3,    k: 'gates', gems: 250 },
     { id: 'toll10',  name: 'Brückengänger',    icon: 'coin',    desc: 'Zahl 10 Mal Maut an einem Tor.',         goal: 10,   k: 'tolls', gems: 40 },
-    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm 100.000 Münzen Maut ein.',          goal: 100000, k: 'tollCoins', gems: 300 },
+    { id: 'tollin',  name: 'Zöllner',          icon: 'coin',    desc: 'Nimm ' + fmtNum(wirtK(100000)) + ' Münzen Maut ein.', goal: wirtK(100000), k: 'tollCoins', gems: 300 },   // (Maut und Krankenhaus-Platz × WIRTSCHAFT_KOSTEN – die Ziele mit)
     { id: 'army5',   name: 'Feldschlacht',     icon: 'troops',  desc: 'Gewinn 5 Kämpfe mit Armeen im Feld.',    goal: 5,    k: 'armyWins', gems: 80 },
     { id: 'army50',  name: 'Heerführer',       icon: 'troops',  desc: 'Gewinn 50 Kämpfe mit Armeen im Feld.',   goal: 50,   k: 'armyWins', gems: 400 },
     { id: 'hero1',   name: 'Erster Held',      icon: 'profile', desc: 'Schalte einen Helden frei.',             goal: 1,    k: 'heroes', gems: 30 },
@@ -5518,8 +5526,8 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'star5',   name: 'Sternenheld',      icon: 'star',    desc: 'Bring einen Helden auf 5 Sterne.',       goal: 5,    k: 'heroStars', gems: 600 },
     { id: 'fire10',  name: 'Kampfrausch',      icon: 'level',   desc: 'Lass Helden 10 Mal ihre Fähigkeit zünden.', goal: 10, k: 'heroFires', gems: 80 },
     { id: 'fire100', name: 'Heldensturm',      icon: 'level',   desc: 'Lass Helden 100 Mal ihre Fähigkeit zünden.', goal: 100, k: 'heroFires', gems: 400 },
-    { id: 'heal10k', name: 'Feldscher',        icon: 'plus',    desc: 'Heil 10.000 Verwundete im Krankenhaus.',    goal: 10000, k: 'healed', gems: 60 },
-    { id: 'heal1m',  name: 'Heiler der Meere', icon: 'plus',    desc: 'Heil 1.000.000 Verwundete im Krankenhaus.', goal: 1000000, k: 'healed', gems: 500 },
+    { id: 'heal10k', name: 'Feldscher',        icon: 'plus',    desc: 'Heil ' + fmtNum(wirtK(1e4)) + ' Verwundete im Krankenhaus.', goal: wirtK(1e4), k: 'healed', gems: 60 },
+    { id: 'heal1m',  name: 'Heiler der Meere', icon: 'plus',    desc: 'Heil ' + fmtNum(wirtK(1e6)) + ' Verwundete im Krankenhaus.', goal: wirtK(1e6), k: 'healed', gems: 500 },
     { id: 'shield1', name: 'Schutzschild',     icon: 'shield',  desc: 'Setz einen Friedensschild ein.',         goal: 1,    k: 'shields', gems: 20 },
     { id: 'shield10', name: 'Vorsichtig',      icon: 'shield',  desc: 'Setz 10 Friedensschilde ein.',           goal: 10,   k: 'shields', gems: 150 },
     { id: 'tele1',   name: 'Umzug',            icon: 'home',    desc: 'Verlege deine Hauptstadt.',              goal: 1,    k: 'teleports', gems: 30 },
@@ -6599,7 +6607,7 @@ function passXp(v) {
 }
 function passGive(who, r) {                               // one reward to anyone (you or the others) - returns the text for the hint
     const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
-    if (r.k === 'coins') { const c = Math.max(5000, Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
+    if (r.k === 'coins') { const c = Math.max(wirtK(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
     if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
     if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
     if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
@@ -6631,7 +6639,7 @@ function passBuy() {
 }
 function passCellHtml(r, hp, got) {                            // icon + amount of one reward
     const k = r.k, n = r.n || 1, row = (ic, b, s, cls) => '<span class="pc-ic' + (cls ? ' ' + cls : '') + '">' + ic + '</span><span class="pc-t"><b>' + b + '</b><small>' + s + '</small></span>';
-    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(5000, Math.round(hp.coins)) * n), 'Münzen');
+    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(wirtK(5000), Math.round(hp.coins)) * n), 'Münzen');
     if (k === 'gems') return row(icon('gem', 'ico-gem'), '+' + n, 'Edelsteine');
     if (k === 'tp') return row(icon('crown', 'ico-tp'), '+' + n, 'Thron-Punkte');
     if (k === 'shards') return row(icon('star', 'ico-shard'), '+' + n, 'Helden-Splitter');
@@ -6779,7 +6787,7 @@ function hourProduction(who) {                       // what an empire makes in 
     return { coins: c * k, troops: t * k };
 }
 function throneAmount(who, id) { const hp = hourProduction(who);
-    return id === 'coins' ? Math.max(5000, Math.round(hp.coins)) : id === 'troops' ? Math.max(1000, Math.round(hp.troops)) : id === 'gems' ? 100 : 1; }
+    return id === 'coins' ? Math.max(wirtK(5000), Math.round(hp.coins)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops)) : id === 'gems' ? 100 : 1; }   // (Mindestwerte × WIRTSCHAFT_KOSTEN)
 function throneGive(who, id) {                        // hands one offer over; returns what it was, for the hint
     const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
     if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; return '+' + fmtCompact(n) + ' Münzen'; }
@@ -6913,8 +6921,9 @@ document.getElementById('shopTabs').addEventListener('click', e => { const b = e
 document.getElementById('throneShop').addEventListener('click', e => { const b = e.target.closest('[data-throne-buy]'); if (b && !b.disabled) throneBuy(b.dataset.throneBuy); });
 
 // ===== DIE MITTE: Thron, Wächter-Tempel und Tore
-// Punkte für Kämpfe gibt es nur noch im Wochen-Event (Krieger-Woche): 1 je 1.000 besiegte, höchstens 30 auf einmal, im Schnitt 10 pro Minute.
-const WO_KILL_PER = 1000, WO_KILL_MAX = 30, WO_KILL_MIN = 10, WO_TOP = 10;
+// Punkte für Kämpfe gibt es nur noch im Wochen-Event (Krieger-Woche): 1 je 1.000 besiegte (× WIRTSCHAFT_KOSTEN: heute je 0,56 – die
+// Gegner sind so viel kleiner), höchstens 30 auf einmal, im Schnitt 10 pro Minute.
+const WO_KILL_PER = 1000 * WIRTSCHAFT_KOSTEN, WO_KILL_MAX = 30, WO_KILL_MIN = 10, WO_TOP = 10;
 const midZoneIds = new Set(islands.filter(i => { const lm = landmasses[i.landmassId]; return i.type === 'megaTemple' || i.guardian || i.type === 'gate' && (i.gateKind === 'throne' || i.gateKind === 'guardian') || !!lm && (lm.tier === 'throne' || lm.tier === 'guardian'); }).map(i => i.id));
 function midFight(tid, aWho, aKills, dWho, dKills, aTeile, dTeile) {     // nach jedem Kampf um eine Basis: Punkte für die Krieger-Woche (überall)
     // gemeinsam (Rally, Verstärkung): jeder nach seinem Anteil – aTeile/dTeile = [[wer, Anteil 0…1], …] (kampfTeile, verstAnteile)
@@ -6931,7 +6940,7 @@ function bountyGems() { const b = bountyState; return b.ruler && b.ruler === rul
 function bountyGrow() {
     const r = rulerOwner(); bountyCheck(r); if (!r) return;
     const b = bountyState, hc = hourProduction(r).coins;
-    b.gems = Math.min(BOUNTY_GEMS_MAX, (b.gems || 0) + BOUNTY_GEMS); b.coins = Math.min(Math.max(1e4, hc * BOUNTY_COIN_MAX_H), (b.coins || 0) + Math.max(500, hc * BOUNTY_COIN_H)); saveBounty();
+    b.gems = Math.min(BOUNTY_GEMS_MAX, (b.gems || 0) + BOUNTY_GEMS); b.coins = Math.min(Math.max(wirtK(1e4), hc * BOUNTY_COIN_MAX_H), (b.coins || 0) + Math.max(wirtK(500), hc * BOUNTY_COIN_H)); saveBounty();   // (Mindestwerte × WIRTSCHAFT_KOSTEN)
 }
 function bountyPay(who, g, c) {
     if (who !== 'player') { botBountyReward(who, g, c); return; }
@@ -8053,7 +8062,7 @@ function spawnWander() {
     const cand = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= 3);
     if (!cand.length) return false;
     const isl = cand[Math.floor(Math.random() * cand.length)], now = Date.now();
-    const troops = niceRound(Math.max(1e6, worldArmy() * (1.5 + Math.random())));
+    const troops = niceRound(Math.max(wirtK(1e6), worldArmy() * (1.5 + Math.random())));   // (Mindeststärke × WIRTSCHAFT_KOSTEN)
     wander = { wander: true, name: WANDER_NAMES[Math.floor(Math.random() * WANDER_NAMES.length)], troops, defense: niceRound(troops * .15), max: troops,
         at: isl.id, from: null, to: null, departAt: 0, arriveAt: 0, campUntil: now + 60000, endsAt: now + 25 * 60 * 1000 };
     scoutedIslands.add(isl.id);
@@ -8219,7 +8228,7 @@ var CITY_BUILDINGS = [
     { id: 'hospital', name: 'Krankenhaus',   icon: 'plus',    x: 215, y: 670, roof: '#e8e2d2', cross: true,
       desc: 'Von deinen Gefallenen (Angriff oder Verteidigung) kommen Verwundete hierher statt zu sterben (5 % pro Stufe, bis 60 % – mit Forschung mehr). Heile sie gegen Münzen – sie gehen in die Hauptstadt.' },
     { id: 'wall',     name: 'Mauer',         icon: 'defense', x: 715, y: 815, roof: '#6b6456', gate: true,
-      desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10 Mio. Verteidigung und Mauer Stufe 5 ergeben 11 Mio.' },
+      desc: 'Stärkt die Verteidigung aller deiner Basen: +2 % pro Stufe (Stufe 25: +50 %). Beispiel: 10.000 Verteidigung und Mauer Stufe 5 ergeben 11.000.' },
     { id: 'heroes',   name: 'Heldenhalle',   icon: 'profile', x: 285, y: 815, roof: '#7a2e2a',
       desc: 'Hier leben deine Helden: mit Splittern freischalten, Sterne aufwerten, Fähigkeiten wählen. Ein Held führt einen Angriff oder eine Armee. Jede Stufe gibt allen Helden +' + HERO_HALL_GEF + ' % Gefolge.' },
     { id: 'embassy',  name: 'Botschaft',     icon: 'bund',
@@ -8286,9 +8295,9 @@ const cityBuildOf = (c, id) => c.builds.find(b => b.id === id) || null;
 function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
 const KEEP_DEF = { id: 'keep', name: 'Burg', icon: 'castle' };   // die Burg als „Gebäude“ (Bauarbeiter, Bauzeit) – Paket D
 function cityDef(id) { return id === 'keep' ? KEEP_DEF : CITY_BUILDINGS.find(b => b.id === id); }
-function cityCost(id, level) {                    // coins to go from `level` to level + 1
-    if (id === 'keep') return niceRound(2000 * Math.pow(1.85, level - 1));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
-    return niceRound(500 * Math.pow(1.9, level));
+function cityCost(id, level) {                    // coins to go from `level` to level + 1 (× WIRTSCHAFT_KOSTEN)
+    if (id === 'keep') return niceRound(wirtK(2000 * Math.pow(1.85, level - 1)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
+    return niceRound(wirtK(500 * Math.pow(1.9, level)));
 }
 function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)
     // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
@@ -9057,7 +9066,8 @@ function academyLevel() { return loadCity().levels.academy || 0; }
 function forgeLevel() { return loadCity().levels.forge || 0; }
 function hospitalLevel() { return loadCity().levels.hospital || 0; }
 function hospitalPct() { return Math.min(60, hospitalLevel() * 5) + (AUF ? AUF.lazarettPlus('player') : 0); }   // (+ Forschung Krankenhaus)
-function hospitalCapacity() { const l = hospitalLevel(); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
+function hospitalPlatz(l) { return l ? wirtK(1e6 * Math.pow(1.6, l - 1)) : 0; }   // Platz für Verwundete bei Krankenhaus-Stufe l (für alle gleich, × WIRTSCHAFT_KOSTEN)
+function hospitalCapacity() { return hospitalPlatz(hospitalLevel()); }
 const HEAL_COIN_PER_TROOP = 0.1;
 function hospitalTake(fallen, pct) {              // Krankenhaus: part of your fallen (attack won or lost, or defending) are only wounded → how many
     if (!hospitalLevel() || fallen <= 0) return 0;
@@ -9073,7 +9083,7 @@ function cityEffectRoh(id, lvl) {
     if (id === 'academy') return 'Jetzt: Truppen laufen +' + (lvl * 2) + ' % schneller.' + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + ((lvl + 1) * 2) + ' %.' : '');
     if (id === 'forge') return lvl ? 'Bis zu ' + Math.min(STAR_MAX, lvl) + (Math.min(STAR_MAX, lvl) === 1 ? ' Stern' : ' Sterne') + ' pro Ausrüstungsteil.' + (lvl < STAR_MAX ? ' Nächste Stufe: ' + (lvl + 1) + ' Sterne.' : '') : 'Baue die Schmiede, um Sterne zu setzen.';
     if (id === 'heroes') { const n = HEROES.filter(h => heroOwned('player', h.id)).length; return (lvl ? 'Jetzt: +' + lvl * HERO_HALL_GEF + ' % Gefolge für alle Helden.' : 'Noch kein Bonus aufs Gefolge.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: +' + (lvl + 1) * HERO_HALL_GEF + ' %.' : '') + ' ' + n + ' von ' + HEROES.length + ' Helden freigeschaltet.'; }
-    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + (Math.min(60, (lvl + 1) * 5) + (AUF ? AUF.lazarettPlus('player') : 0)) + ' %, Platz für ' + fmtCompact(Math.round(1e6 * Math.pow(1.6, lvl))) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
+    if (id === 'hospital') return lvl ? hospitalPct() + ' % der Gefallenen kommen ins Krankenhaus · Platz für ' + fmtCompact(hospitalCapacity()) + (lvl < cityMaxLevel('hospital') ? ' · Nächste Stufe: ' + (Math.min(60, (lvl + 1) * 5) + (AUF ? AUF.lazarettPlus('player') : 0)) + ' %, Platz für ' + fmtCompact(hospitalPlatz(lvl + 1)) : '') : 'Baue das Krankenhaus, um Verwundete zu retten.';
     return '';
 }
 function cityExtraHtml(id, lvl) {
@@ -9941,8 +9951,8 @@ let pickups = [], pickupFx = [], nextPickupAt = Date.now() + 8000;
 function pickupAmount(kind) {
     const L = Math.max(playerLvl, 1);
     if (kind === 'gem') return 1 + Math.floor(Math.random() * 3);
-    if (kind === 'troops') return Math.max(100, niceRound(levelRewardTroops(Math.max(L, 2)) * 0.05));
-    return Math.max(200, niceRound(levelRewardCoins(L) * 0.1));
+    if (kind === 'troops') return Math.max(wirtK(100), niceRound(levelRewardTroops(Math.max(L, 2)) * 0.05));   // (Stufen-Belohnung und Mindestwert × WIRTSCHAFT_KOSTEN)
+    return Math.max(wirtK(200), niceRound(levelRewardCoins(L) * 0.1));
 }
 function pickupScreenPos(p) { return { x: p.x * mapState.zoom + mapState.offsetX, y: p.y * mapState.zoom + mapState.offsetY }; }
 function trySpawnPickup() {
@@ -10299,8 +10309,8 @@ document.getElementById('fieldSheet').addEventListener('click', e => {
 // ===== BARBAREN-LAGER + TAGESBOSS: camps (Stufe 1-25) out on the land and one boss a day with a big pool of life for everyone.
 // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
 const BARB_MAX_L = 25, BARB_DAY = 20, BARB_WANT = 110, DBOSS_HITS = 10, DBOSS_CAP = .05;   // camps on the map · a boss hit takes at most 5 % of its life
-const barbTroopsOf = L => niceRound(2000 * Math.pow(2, L - 1));                         // 2 Tsd. at 1, ~1 Mio. at 10, ~34 Mrd. at 25
-const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 + 500 * L * L);                    // coins for a win (+ Angriff: Gold per warrior)
+const barbTroopsOf = L => niceRound(wirtK(2000 * Math.pow(2, L - 1)));                  // × WIRTSCHAFT_KOSTEN (5.10.): 1 at 1, ~570 at 10, ~19 Mio. at 25 (vorher 2 Tsd. · 1 Mio. · 34 Mrd.)
+const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 + wirtK(500 * L * L));             // coins for a win (+ Angriff: Gold per warrior)
 const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
 const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
 const DBOSS_PRIZE = [{ gems: 300, crate: 3, sh: 30 }, { gems: 200, crate: 3, sh: 20 }, { gems: 150, crate: 3, sh: 15 }, { gems: 80, crate: 2, sh: 10 }, { gems: 30, crate: -1, sh: 5 }];   // 1 · 2 · 3 · 4-10 · everyone else who hit it
@@ -10347,13 +10357,14 @@ function dbossEnsure() {                            // today's boss: the kind tu
     for (let t = 0; t < 20 && !p; t++) { lm = lms[Math.floor(r() * lms.length)]; p = barbSpot(lm, r, 3.5); }
     if (!p) p = { x: lm.x, y: lm.y };
     let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DBOSS_HITS * barbFa(bot.id); }
-    const hp = niceRound(Math.max(saisonAnfang() ? DBOSS_MIN_ANFANG : 5e7, pool * .8)), had = !!dayBoss;   // life: about 80 % of what everyone's strikes (× their Angriff) can take in a day - it falls in the evening
+    const hp = niceRound(Math.max(saisonAnfang() ? DBOSS_MIN_ANFANG : wirtK(5e7), pool * .8)), had = !!dayBoss;   // life: about 80 % of what everyone's strikes (× their Angriff) can take in a day - it falls in the evening
     dayBoss = { d, k: K.k, name: K.name, x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, hp, max: hp, dmg: {}, fell: 0 };
     saveBarb(); if (had) flashHint('Neuer Tagesboss: ' + K.name + ' ist erschienen!', 5000);
     return dayBoss;
 }
 // Neue Welt-Saison (09f saisonAnfang): in den ersten 3 Tagen haben alle nur Start-Truppen – die Untergrenze so, dass 8 Spieler mit je
-// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7: über 1000 Angriffe mit 50.000)
+// 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Die Start-Truppen bleiben
+// 100.000 (Alexander 5.10.) – darum bleibt auch diese Untergrenze (sonst fiele er am ersten Tag mit einem Angriff)
 const DBOSS_MIN_ANFANG = 8 * DBOSS_HITS * PLAYER_START_TROOPS * .25;
 function dbossEntkommen(b) {                        // (nur wer rechnet) der Boss ist nicht gefallen: wie beim Drachen alle, die getroffen haben, etwas Kleines –
     const rk = dbossRanks(b); if (!rk.length) return;   //   fester Schlüssel je Tag (derselbe wie der Preis beim Fallen: nie beides, nie doppelt)
@@ -10816,7 +10827,7 @@ function invWelle(I, now) {                          // eine Welle: jede Armee s
     const w = I.welle + 1; let mich = 0;
     for (const tid of invZiele(I, now)) {
         const isl = islandById[tid], s = invStartPunkt(isl), base = effectiveTroops(isl) + effectiveDefense(isl);
-        const t = niceRound(Math.max(5000, base * (.5 + .13 * w) * (.8 + Math.random() * .4) * (invNeuling(islandOwnerOf(tid), now) ? .5 : 1)));
+        const t = niceRound(Math.max(wirtK(5000), base * (.5 + .13 * w) * (.8 + Math.random() * .4) * (invNeuling(islandOwnerOf(tid), now) ? .5 : 1)));   // (Mindeststärke × WIRTSCHAFT_KOSTEN)
         I.armies.push({ id: 'i' + (I.n++), x0: Math.round(s.x), y0: Math.round(s.y), lm: isl.landmassId, tid, t, max: t, at0: now, at1: now + (5 + Math.random() * 2) * 60000, w });
         if (islandOwnerOf(tid) === 'player') mich++;
     }
@@ -10888,7 +10899,7 @@ function invTakt(now) {                              // (nur Weltrechner) Wellen
 // Fällt er: Platz 1 lila Kiste, Platz 2–10 blaue Kiste (nie Legendär – Alexander 2.10.), alle anderen etwas Kleines. Entkommt er: alle etwas Kleines.
 const DR_STUNDE = 19, DR_DAUER = 3 * 3600000, DR_HITS = 10, DR_CAP = .02, DR_NAME = 'Urdrache Vharak', DR_COL = '#d8452e';
 const DR_PREISE = [{ gems: 150, crate: 3, sh: 20, t: '1.' }, { gems: 60, crate: 2, sh: 8, t: '2.–10.' }, { gems: 15, crate: -1, sh: 2, t: 'Alle anderen' }];
-const DR_MIN_ANFANG = 4 * DR_HITS * PLAYER_START_TROOPS * .25;   // neue Welt-Saison (erste 3 Tage, nur Start-Truppen): 4 Spieler mit je 10 Angriffen aus einem Viertel schaffen ihn (sonst 1e7)
+const DR_MIN_ANFANG = 4 * DR_HITS * PLAYER_START_TROOPS * .25;   // neue Welt-Saison (erste 3 Tage, nur Start-Truppen): 4 Spieler mit je 10 Angriffen aus einem Viertel schaffen ihn (sonst 1e7 × WIRTSCHAFT_KOSTEN) – die Start-Truppen bleiben 100.000, darum bleibt sie
 const drPreisVon = i => DR_PREISE[i < 1 ? 0 : i < 10 ? 1 : 2];
 function drPlan(now) {
     now = now || Date.now();
@@ -10900,7 +10911,7 @@ function drOnMap(now) { const D = evState.dr; now = now || Date.now(); return D 
 function drNeu(p) {                                  // über dem Thron; Leben: etwa 75 % von dem, was alle mit ihren Angriffen schaffen können
     const m = islandById[megaTempleId] || islands[0];
     let pool = 0; for (const bot of BOT_DEFS) { let big = 0; for (const id of botOwnedIslands[bot.id] || []) big = Math.max(big, islandTroops[id] || 0); pool += big * .25 * DR_HITS * barbFa(bot.id); }
-    const hp = niceRound(Math.max(saisonAnfang() ? DR_MIN_ANFANG : 1e7, pool * .75));
+    const hp = niceRound(Math.max(saisonAnfang() ? DR_MIN_ANFANG : wirtK(1e7), pool * .75));
     return { start: p.start, end: p.end, x: Math.round(m.x), y: Math.round(m.y - ISLAND_RADIUS * 6), lm: m.landmassId, name: DR_NAME, hp, max: hp, dmg: {}, hits: {}, fell: 0, paid: false };
 }
 function drTreffer(m, now) {                         // wie beim Tagesboss: Schaden (höchstens 2 %), ein Drittel der Kämpfer fällt, Münzen nach Schaden
@@ -11078,7 +11089,7 @@ function woHtml() {                                   // das Wochen-Event: Thema
     const preise = WO_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + '</div>').join('');
     const plan = [1, 2, 3, 4].map(i => { const t = w.start + 7 * 864e5 * i + 3600000, x = woThemaAm(t), a = new Date(t), e = new Date(t + 4 * 864e5); return '<span>Mo ' + a.getDate() + '.' + (a.getMonth() === e.getMonth() ? '' : (a.getMonth() + 1) + '.') + ' – Fr ' + e.getDate() + '.' + (e.getMonth() + 1) + '.</span><b>' + icon(x.ic) + ' ' + x.name + '</b>'; }).join('');
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
-    return evKarte(th.ic, 'Wochen-Event · ' + th.name, kopf, '<div class="field-lines"><span>Punkte für</span><b>' + th.pkt + (th.k === 'krieg' ? ' (1 Punkt pro ' + fmtNum(WO_KILL_PER) + ')' : '') + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
+    return evKarte(th.ic, 'Wochen-Event · ' + th.name, kopf, '<div class="field-lines"><span>Punkte für</span><b>' + th.pkt + (th.k === 'krieg' ? ' (' + (1 / WO_KILL_PER).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' Punkte pro besiegtem Krieger)' : '') + '</b><span>Bonus</span><b>' + th.bonus + '</b>' +
             (live ? '<span>Dein Platz</span><b>' + (mine || '–') + ' · ' + fmtNum(Math.floor((W.pts || {}).player || 0)) + ' Punkte</b>' : '') + '</div>', 'is-tour') +
         '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
         (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || '<div class="war-empty">' + (w.on ? 'Noch hat niemand Punkte – sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.') + '</div>') +
@@ -11937,7 +11948,7 @@ function gateControlsHtml(gate) {
     return '<div class="gate-ctl"><div class="gate-row"><span class="stat-l">' + icon('coin') + 'Maut pro Truppe</span><div class="seg">' +
         GATE_TOLLS.map(v => '<button type="button" data-toll="' + v + '" class="' + (cfg.toll === v ? 'is-on' : '') + '">' + (v ? v.toLocaleString('de-DE') : 'frei') + '</button>').join('') + '</div></div>' +
         '<button type="button" data-gate-toggle class="btn ' + (cfg.closed ? 'btn--primary' : 'btn--secondary') + ' btn--grow">' + icon('lock') + '<span>' + (cfg.closed ? 'Tor öffnen' : 'Tor schließen') + '</span></button>' +
-        '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich – höchstens 1 Mio. Münzen pro Marsch.') + '</p></div>';
+        '<p class="gate-note">' + (cfg.closed ? 'Geschlossen: niemand sonst kommt über die Brücke – nur wer das Tor erobert.' : 'Offen: andere zahlen die Maut an dich – höchstens ' + fmtNum(wirtK(TOLL_MAX)) + ' Münzen pro Marsch.') + '</p></div>';
 }
 popupStats.addEventListener('click', e => {
     const isl = islandById[popupIslandId]; if (!isl || isl.type !== 'gate' || !ownedIslands.has(isl.id)) return;

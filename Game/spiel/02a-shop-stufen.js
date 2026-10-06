@@ -21,7 +21,7 @@ const RARITY_DEFS = [
 ];
 const ITEM_MAX_LEVEL = 20;
 const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen (seit 2.10. auch kein Preis mehr mit „mind. Legendär“)
-const CRATE_GEM_COST = 30;   // (2.10.: vorher 5 – Gold-Ausrüstung kam zu schnell)
+const CRATE_GEM_COST = 150;  // (5.10. Alexander: vorher 30, davor 5 – Gold-Ausrüstung kam zu schnell)
 const COMBINE_COUNT = 3;
 const RARITY_PCT_PER_SCORE = 0.15;
 const RARITY_FLAT_PER_SCORE = 0.3;
@@ -211,17 +211,17 @@ let playerLvl = parseInt(store.get('openWaterLevel'), 10) || 1;
 function xpNeededForLevel(level) {
     return Math.round(50 * Math.pow(1.3, Math.min(level, 400) - 1));
 }
-// Level rewards: small at the start, 2 Mio. troops at level 30, then linear growth.
+// Level rewards: small at the start, 2 Mio. troops at level 30, then linear growth – × WIRTSCHAFT_KOSTEN (5.10.: heute 1.100 bei Stufe 30).
 function niceRound(n) {
     if (n < 100) return Math.round(n);
     const p = Math.pow(10, Math.floor(Math.log10(n)) - 1);
     return Math.round(n / p) * p;
 }
 function levelRewardTroops(level) {
-    return niceRound(level <= 30 ? 2000000 * Math.pow(level / 30, 3) : 2000000 + (level - 30) * 100000);
+    return niceRound(wirtK(level <= 30 ? 2000000 * Math.pow(level / 30, 3) : 2000000 + (level - 30) * 100000));
 }
 function levelRewardCoins(level) {
-    return niceRound(level <= 30 ? 500 * level * level : 450000 + (level - 30) * 20000);
+    return niceRound(wirtK(level <= 30 ? 500 * level * level : 450000 + (level - 30) * 20000));
 }
 function levelRewardGems(level) {
     return level % 10 === 0 ? 10 : level % 5 === 0 ? 5 : 0;
@@ -248,9 +248,11 @@ function grantLevelRewards(from, to) {
 const KAMPF_EP_ANTEIL = 0.25;
 // … und nur, wenn der Gegner ebenbürtig war: wer mit der zehnfachen Übermacht eine schwache Basis überrennt, bekommt nur ein
 // Zehntel davon (vorher holten sich die Mitspieler so in 4 Std. Stufe 60 – mit hunderten leichten Siegen)
+// Wirtschaft 5.10.: Gegner sind × WIRTSCHAFT_KOSTEN kleiner – ein besiegter Krieger zählt darum so viel wie vorher 1.800 (EP und
+// Stufen kommen so schnell wie vorher; was eine Stufe bringt, ist mit kleiner geworden)
 function kampfEp(roh, lvl, gegner, eigene) {
     const anteil = eigene > 0 && gegner >= 0 ? Math.min(1, gegner / eigene) : 1;
-    return Math.max(0, Math.min(roh || 0, Math.ceil(xpNeededForLevel(Math.max(1, lvl || 1)) * KAMPF_EP_ANTEIL * anteil)));
+    return Math.max(0, Math.min((roh || 0) / WIRTSCHAFT_KOSTEN, Math.ceil(xpNeededForLevel(Math.max(1, lvl || 1)) * KAMPF_EP_ANTEIL * anteil)));
 }
 function addXp(amount) {
     const before = playerLvl;

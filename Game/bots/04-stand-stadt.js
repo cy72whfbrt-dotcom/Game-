@@ -113,7 +113,7 @@ function botCityBuild(bot, now) {                         // one builder (two on
 // ---- the bot's Krankenhaus ----
 function botHospitalPct(botId) { return Math.min(60, 5 * botBld(botId, 'hospital')) + (AUF ? AUF.lazarettPlus(botId) : 0); }   // (+ Forschung Krankenhaus)
 
-function botHospitalCapacity(botId) { const l = botBld(botId, 'hospital'); return l ? Math.round(1e6 * Math.pow(1.6, l - 1)) : 0; }
+function botHospitalCapacity(botId) { return hospitalPlatz(botBld(botId, 'hospital')); }   // (wie deins)
 
 function botHospitalTake(botId, fallen, pct) {
     const b = loadBotState()[botId]; if (!b || fallen <= 0 || !botBld(botId, 'hospital')) return 0;

@@ -227,7 +227,7 @@ function bundMitspielerAntworten(now) {
                     if (!bundBotBereit(bot, now) || botFreeSlots(bot) <= 0) { if (botOnline(bot, now)) offen = true; continue; }
                     bundMem.sigGemacht.add(key);                            // (geschickt oder kommt nicht rechtzeitig: dieser Helfer ist für das Signal fertig)
                     const thr = botThreatened(w); let best = null;
-                    for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId) continue; const n = Math.floor((islandTroops[sid] || 0) * .5); if (n < 1000) continue;
+                    for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId) continue; const n = Math.floor((islandTroops[sid] || 0) * .5); if (n < wirtK(1000)) continue;
                         const src = islandById[sid]; if (!bundWeg(src.landmassId, isl.landmassId, w, n)) continue;
                         const eta = travelDurationSeconds(src, isl, w) * 1000; if (now + eta > g.at - 1500) continue;
                         if (!best || n > best.n) best = { id: sid, n }; }
@@ -255,7 +255,7 @@ function bundMitspielerRally(now) {
             const bot = botById[w], key = r.id + ':' + w; if (!bot || bot.mensch || w === r.by || bundMem.rallyGemacht.has(key) || r.j.some(j => j.w === w) || !bundBotBereit(bot, now) || botFreeSlots(bot) <= 0) continue;
             const zielOw = islandOwnerOf(r.t); if (zielOw && (bundVerbuendet(w, zielOw) || zielOw === w)) continue;
             const thr = botThreatened(w); let best = null;
-            for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId || sid === r.at) continue; const n = Math.floor((islandTroops[sid] || 0) * (botStyle(bot).commit || .7) * .8); if (n < 1000) continue;
+            for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId || sid === r.at) continue; const n = Math.floor((islandTroops[sid] || 0) * (botStyle(bot).commit || .7) * .8); if (n < wirtK(1000)) continue;
                 const src = islandById[sid];                                // (Tore egal beim Beitreten)
                 if (!best || n > best.n) best = { id: sid, n }; }
             bundMem.rallyGemacht.add(key);
@@ -290,14 +290,14 @@ function bundMitspielerRally(now) {
 function bundRallyFuer(w, z, now) {
     const T = islandById[z], thr = botThreatened(w); if (!T) return null; let best = null;
     for (const id of botOwnedIslands[w] || []) { if (thr.has(id) || id === megaTempleId) continue;
-        const n = Math.floor((islandTroops[id] || 0) * .8), I = islandById[id]; if (n < 5000 || !I) continue;
+        const n = Math.floor((islandTroops[id] || 0) * .8), I = islandById[id]; if (n < wirtK(5000) || !I) continue;   // (Truppen-Grenzen × WIRTSCHAFT_KOSTEN)
         if (!routeFor(I.landmassId, T.landmassId, w) || !bundWeg(I.landmassId, T.landmassId, w, n)) continue;
         if (!best || n > best.n) best = { basis: id, ziel: z, min: 3, n }; }
     return best;
 }
 function bundRallyPlan(a, bot, now) {                            // → { basis, ziel, min, n } oder null
     const own = [...botOwnedIslands[bot.id]], thr = botThreatened(bot.id);
-    const quellen = own.filter(id => !thr.has(id) && id !== megaTempleId && (islandTroops[id] || 0) > 5000).sort((x, y) => (islandTroops[y] || 0) - (islandTroops[x] || 0)).slice(0, 3);
+    const quellen = own.filter(id => !thr.has(id) && id !== megaTempleId && (islandTroops[id] || 0) > wirtK(5000)).sort((x, y) => (islandTroops[y] || 0) - (islandTroops[x] || 0)).slice(0, 3);
     if (!quellen.length) return null;
     const kennt = botKennt(bot.id), atk = botAtkFactor(bot, true);
     // was das Bündnis in ~3 Minuten zum Sammelpunkt bringen kann (grob: die halbe Besatzung der großen Basen in der Nähe)

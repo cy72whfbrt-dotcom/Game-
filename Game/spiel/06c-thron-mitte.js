@@ -32,7 +32,7 @@ function hourProduction(who) {                       // what an empire makes in 
     return { coins: c * k, troops: t * k };
 }
 function throneAmount(who, id) { const hp = hourProduction(who);
-    return id === 'coins' ? Math.max(5000, Math.round(hp.coins)) : id === 'troops' ? Math.max(1000, Math.round(hp.troops)) : id === 'gems' ? 100 : 1; }
+    return id === 'coins' ? Math.max(wirtK(5000), Math.round(hp.coins)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops)) : id === 'gems' ? 100 : 1; }   // (Mindestwerte × WIRTSCHAFT_KOSTEN)
 function throneGive(who, id) {                        // hands one offer over; returns what it was, for the hint
     const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
     if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; return '+' + fmtCompact(n) + ' Münzen'; }
@@ -166,8 +166,9 @@ document.getElementById('shopTabs').addEventListener('click', e => { const b = e
 document.getElementById('throneShop').addEventListener('click', e => { const b = e.target.closest('[data-throne-buy]'); if (b && !b.disabled) throneBuy(b.dataset.throneBuy); });
 
 // ===== DIE MITTE: Thron, Wächter-Tempel und Tore
-// Punkte für Kämpfe gibt es nur noch im Wochen-Event (Krieger-Woche): 1 je 1.000 besiegte, höchstens 30 auf einmal, im Schnitt 10 pro Minute.
-const WO_KILL_PER = 1000, WO_KILL_MAX = 30, WO_KILL_MIN = 10, WO_TOP = 10;
+// Punkte für Kämpfe gibt es nur noch im Wochen-Event (Krieger-Woche): 1 je 1.000 besiegte (× WIRTSCHAFT_KOSTEN: heute je 0,56 – die
+// Gegner sind so viel kleiner), höchstens 30 auf einmal, im Schnitt 10 pro Minute.
+const WO_KILL_PER = 1000 * WIRTSCHAFT_KOSTEN, WO_KILL_MAX = 30, WO_KILL_MIN = 10, WO_TOP = 10;
 const midZoneIds = new Set(islands.filter(i => { const lm = landmasses[i.landmassId]; return i.type === 'megaTemple' || i.guardian || i.type === 'gate' && (i.gateKind === 'throne' || i.gateKind === 'guardian') || !!lm && (lm.tier === 'throne' || lm.tier === 'guardian'); }).map(i => i.id));
 function midFight(tid, aWho, aKills, dWho, dKills, aTeile, dTeile) {     // nach jedem Kampf um eine Basis: Punkte für die Krieger-Woche (überall)
     // gemeinsam (Rally, Verstärkung): jeder nach seinem Anteil – aTeile/dTeile = [[wer, Anteil 0…1], …] (kampfTeile, verstAnteile)
@@ -184,7 +185,7 @@ function bountyGems() { const b = bountyState; return b.ruler && b.ruler === rul
 function bountyGrow() {
     const r = rulerOwner(); bountyCheck(r); if (!r) return;
     const b = bountyState, hc = hourProduction(r).coins;
-    b.gems = Math.min(BOUNTY_GEMS_MAX, (b.gems || 0) + BOUNTY_GEMS); b.coins = Math.min(Math.max(1e4, hc * BOUNTY_COIN_MAX_H), (b.coins || 0) + Math.max(500, hc * BOUNTY_COIN_H)); saveBounty();
+    b.gems = Math.min(BOUNTY_GEMS_MAX, (b.gems || 0) + BOUNTY_GEMS); b.coins = Math.min(Math.max(wirtK(1e4), hc * BOUNTY_COIN_MAX_H), (b.coins || 0) + Math.max(wirtK(500), hc * BOUNTY_COIN_H)); saveBounty();   // (Mindestwerte × WIRTSCHAFT_KOSTEN)
 }
 function bountyPay(who, g, c) {
     if (who !== 'player') { botBountyReward(who, g, c); return; }

@@ -69,7 +69,8 @@ function profil_bereinigen($text) {
               'keep' => 25, 'embassy' => 25, 'market' => 25];   // cityMaxLevel · Burg-Stufe (keep), Labor (academy), Krankenhaus (hospital), Botschaft, Markt
     $stadt = []; foreach ($STADT as $k => $mx) if (isset($p['city']['levels'][$k])) $stadt[$k] = (int)$plus($p['city']['levels'][$k], $mx);
     // Paket D: Forschung im Labor (feste Liste, Höchststufen wie FORSCHUNG in aufbau.js), Rohstoffe wie Münzen
-    $FO = ['w_prod' => 10, 'w_sam' => 10, 'w_last' => 10, 'w_tempel' => 10, 'm_atk' => 10, 'm_def' => 10, 'm_laz' => 10, 'x_tempo' => 10, 'x_spaeh' => 10, 'x_nebel' => 5];
+    $FO = ['w_prod' => 10, 'w_sam' => 10, 'w_last' => 10, 'w_tempel' => 10, 'm_atk' => 10, 'm_def' => 10, 'm_laz' => 10, 'x_tempo' => 10, 'x_spaeh' => 10, 'x_nebel' => 5,
+           'w_schutz' => 3, 'm_laz2' => 3, 'x_tempo2' => 3];   // (ab Labor 23, 5.10.)
     $fo = []; foreach ($FO as $k => $mx) if (isset($p['fo'][$k])) $fo[$k] = (int)$plus($p['fo'][$k], $mx);
     $res = []; foreach (['h', 's', 'e'] as $k) $res[$k] = $plus($p['res'][$k] ?? 0, 1e15);
     // 3B: Gems kommen mit ins Profil – nur der Weltrechner sieht sie (spieler_liste) und hält sie gegen sein Hauptbuch
