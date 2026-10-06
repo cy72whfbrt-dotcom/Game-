@@ -104,6 +104,11 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 - Maschine hat 4 Kerne: nie mehrere volle Testreihen gleichzeitig (nur Endprüfer/Zusammenführen); Programmierer testen nur
   ihre betroffenen Tests. Zusammenführen: zuerst Branch + Commit prüfen (`git log -1 <branch>`).
 - Fragen an Alexander: immer mit Beispiel aus dem Spiel, Folge für den Spieler in einem Satz, Auswahl A/B mit Empfehlung.
+- Design-Aufgaben (Alexander 6.10.): ZUERST ein Agent online Vorbilder suchen lassen (RoK, Million Lords, Lords Mobile …) →
+  Vorgabe in `<scratchpad>/design_*.md`; Programmierer baut danach. Vor dem Zeigen an Alexander prüft ein Agent die Bilder
+  gegen die Vorgabe („sieht es aus wie ein Spiel, nicht wie eine Liste?“). Alexander nie nach Vorbildern fragen.
+- Zahlen (Kosten, Erträge, Gegner) immer aus Spieler-Sicht prüfen, bevor sie live gehen: „Burg 4 kostet 7 Holz“ ist ein Fehler,
+  auch wenn die Tests grün sind. Vergleich mit RoK-Größen.
 
 ## Regeln von Alexander
 - Code zuerst auf GitHub (Branch `claude/neues-projekt-8agldl`), **vor jedem Hochladen Alexander fragen**
