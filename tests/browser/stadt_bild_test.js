@@ -20,10 +20,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       // 1) Übergang: die Karte taucht ein (CSS-Zoom auf dem Karten-Bild), danach die Stadt; zurück genauso
       let zooms = [];                                                     // jeder CSS-Zoom der Karte (unter Last kann er zwischen zwei Blicken schon vorbei sein)
       const echt = canvas.animate; canvas.animate = function (k, o) { zooms.push(k.map(x => x.transform).join(' → ')); return echt.call(this, k, o); };
-      openCity(); let n = 0, ueber = false;                              // die Stadt blendet schon ein, während die Karte noch eintaucht
-      while ((cityBusy || cityView.hidden) && n++ < 120) { await warte(50); if (!cityView.hidden && canvas.getAnimations().length) ueber = true; }
+      openCity(); let n = 0, ueber = false, zoomDa = 0;                  // die Stadt blendet schon ein, während die Karte noch eintaucht
+      while ((cityBusy || cityView.hidden) && n++ < 120) { await warte(50); if (!cityView.hidden && canvas.getAnimations().length) ueber = true; if (!cityView.hidden && !zoomDa) zoomDa = mapState.zoom; }
       const tauchAuf = zooms.join() === 'scale(1) → scale(' + CITY_TAUCH + ')'; zooms = [];
-      o.auf = { tauchAuf, stadt: !cityView.hidden, frei: !cityBusy, kartenZoomWeg: !canvas.getAnimations().length, ueber, tauchKlein: CITY_TAUCH <= 2 };
+      o.auf = { tauchAuf, stadt: !cityView.hidden, frei: !cityBusy, kartenZoomWeg: !canvas.getAnimations().length, ueber, tauchKlein: CITY_TAUCH <= 2, nichtGanzNah: zoomDa > 0 && zoomDa < maxZoom * .6 };   // Kamera nur bis kurz vor die Basis (kein riesiges Symbol)
       // der Boden läuft am Rand weich in die Grundfarbe aus (keine harte Bildkante, wenn die Stadt von weit unten kommt)
       const gb = CITY_GROUND.getContext('2d'), gw = CITY_GROUND.width, gh = CITY_GROUND.height, bg = [1, 3, 5].map(i => parseInt(CITY_BG_COL.slice(i, i + 2), 16));
       const px = (x, y) => [...gb.getImageData(x, y, 1, 1).data].slice(0, 3);
@@ -63,7 +63,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     }).catch(e => ({ fehler: e.message }));
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
-    ok(r.auf.tauchAuf && r.auf.stadt && r.auf.frei && r.auf.kartenZoomWeg && r.auf.ueber && r.auf.tauchKlein, art + ': Karte → Stadt: die Karte taucht ein (höchstens 2×), die Stadt blendet darüber', r.auf);
+    ok(r.auf.tauchAuf && r.auf.stadt && r.auf.frei && r.auf.kartenZoomWeg && r.auf.ueber && r.auf.tauchKlein && r.auf.nichtGanzNah, art + ': Karte → Stadt: die Kamera bleibt vor der Basis, die Karte taucht ein (höchstens 2×), die Stadt blendet darüber', r.auf);
     ok(r.rand.every(d => d <= 3), art + ': Boden läuft am Rand weich in die Grundfarbe aus', r.rand);
     ok(r.mauerImBild, art + ': Startbild zeigt die ganze Mauer');
     for (const s of r.schilder) ok(s.n > 0 && s.kleben && s.imBild && !s.deckt && s.burgDa, art + ': Schilder kleben am Gebäude, im Bild, ohne Überlappung (' + s.name + ')', s);

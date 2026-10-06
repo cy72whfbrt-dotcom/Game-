@@ -646,7 +646,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityAnfHtml` → Game/spiel/08b-burg-aussehen.js:155
 - `cityAussen` → Game/spiel/08e-stadtbild-haeuser.js:408
 - `cityBanner` → Game/spiel/08e-stadtbild-haeuser.js:81
-- `cityBauId` → Game/spiel/08a-stadt-bauen.js:256
+- `cityBauId` → Game/spiel/08a-stadt-bauen.js:257
 - `cityBildSetzen` → Game/spiel/08b-burg-aussehen.js:136
 - `cityBildSpr` → Game/spiel/08b-burg-aussehen.js:130
 - `cityBio` → Game/spiel/08e-stadtbild-haeuser.js:245
@@ -655,7 +655,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityBuildOf` → Game/spiel/08a-stadt-bauen.js:74
 - `cityBuildsFix` → Game/spiel/08a-stadt-bauen.js:65
 - `cityBushAt` → Game/spiel/08e-stadtbild-haeuser.js:275
-- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:243
+- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:244
 - `cityClampBuild` → Game/spiel/08a-stadt-bauen.js:89
 - `cityClampCam` → Game/spiel/08f-stadtbild-bild.js:24
 - `cityCost` → Game/spiel/08a-stadt-bauen.js:78
@@ -741,7 +741,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeAllPopups` → Game/spiel/09e-inselfenster.js:75
 - `closeArmySheet` → Game/spiel/09d-armeen-wegmarken.js:205
 - `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:363
-- `closeCity` → Game/spiel/08a-stadt-bauen.js:217
+- `closeCity` → Game/spiel/08a-stadt-bauen.js:218
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:81
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:353
 - `closeHeroHall` → Game/spiel/08c-helden.js:350
@@ -1377,7 +1377,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kannZahlen` → Game/aufbau.js:68
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:159
 - `karte` → Game/spiel/08c-helden.js:286
-- `karteTauchen` → Game/spiel/08a-stadt-bauen.js:190
+- `karteTauchen` → Game/spiel/08a-stadt-bauen.js:191
 - `keep` → Game/baukunst/06-turmhof-festung.js:69
 - `kennung` → Game/buendnis/01-daten-regeln.js:151
 - `kennungOk` → Game/spiel/10d-welt-weltrechner.js:125
@@ -1664,7 +1664,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openArmySheet` → Game/spiel/09d-armeen-wegmarken.js:204
 - `openBarbSheet` → Game/spiel/09b-lager-tagesboss.js:362
 - `openChestItemPopup` → Game/spiel/05b-truhe-skills.js:176
-- `openCity` → Game/spiel/08a-stadt-bauen.js:202
+- `openCity` → Game/spiel/08a-stadt-bauen.js:203
 - `openCrate` → Game/spiel/02a-shop-stufen.js:80
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:335
 - `openGoals` → Game/spiel/06a-aufgaben.js:309
@@ -1899,7 +1899,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderChestEquipment` → Game/spiel/05b-truhe-skills.js:44
 - `renderChestItemPopup` → Game/spiel/05b-truhe-skills.js:183
 - `renderCitySheet` → Game/spiel/08b-burg-aussehen.js:172
-- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:257
+- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:258
 - `renderCombatLog` → Game/spiel/05d-maersche-kampfbericht.js:145
 - `renderCrestCard` → Game/spiel/05a-aussehen-profil.js:108
 - `renderCrestEditor` → Game/spiel/05a-aussehen-profil.js:113
@@ -2173,7 +2173,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `SPRAY` → Game/baukunst/07-hafen-palast.js:419
 - `squarePlate` → Game/baukunst/02-buehne-grundbasis.js:155
 - `stadt` → Game/spiel/08e-stadtbild-haeuser.js:413
-- `stadtBlende` → Game/spiel/08a-stadt-bauen.js:197
+- `stadtBlende` → Game/spiel/08a-stadt-bauen.js:198
 - `stadtCap` → Game/aufbau.js:112
 - `stadtKopf` → Game/spiel/08d-gebaeude-wirkung.js:76
 - `stadtKosten` → Game/aufbau.js:107
@@ -2318,7 +2318,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `UMRECHNEN.openWaterVerstaerkung` → Game/welt.js:128
 - `unb64` → Game/weltrechner/push.js:19
 - `updateCamera` → Game/spiel/03e-kamera-eingabe.js:201
-- `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:234
+- `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:235
 - `updateGoalsBadge` → Game/spiel/06a-aufgaben.js:252
 - `updateHud` → Game/spiel/01e-nebel-kampfwerte-hud.js:229
 - `updateHudPlayer` → Game/spiel/01e-nebel-kampfwerte-hud.js:245
@@ -2390,7 +2390,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wartung` → Game/server/02-sicherheit-datenlecks.php:26
 - `wd` → Game/spiel/10d-welt-weltrechner.js:137
 - `wegOk` → Game/spiel/10d-welt-weltrechner.js:1000
-- `weich` → Game/spiel/08a-stadt-bauen.js:193
+- `weich` → Game/spiel/08a-stadt-bauen.js:194
 - `weight` → Game/bots/04-stand-stadt.js:285
 - `welcomeListHtml` → Game/spiel/06d-schild-produktion.js:320
 - `welcomeNachziehen` → Game/spiel/06d-schild-produktion.js:323
@@ -4223,15 +4223,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cloudsRun` :154 — cover goes c0 → c1 (0 = clear sky, 1 = inside the cloud)
 - `step` :156
 - `cityShow` :177
-- `karteTauchen` :190
-- `weich` :193
-- `stadtBlende` :197 — die Stadt über der Karte ein-/ausblenden
-- `openCity` :202
-- `closeCity` :217
-- `updateCityBuilder` :234
-- `cityBuyBuilder2` :243
-- `cityBauId` :256 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
-- `renderCitySheetTimer` :257
+- `karteTauchen` :191
+- `weich` :194
+- `stadtBlende` :198 — die Stadt über der Karte ein-/ausblenden
+- `openCity` :203
+- `closeCity` :218
+- `updateCityBuilder` :235
+- `cityBuyBuilder2` :244
+- `cityBauId` :257 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
+- `renderCitySheetTimer` :258
 
 ### Game/spiel/08b-burg-aussehen.js — Burg (Ausbau, Skin, Friedensschild) und Fenster Aussehen
 - `loadSkins` :10

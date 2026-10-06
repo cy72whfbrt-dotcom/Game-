@@ -145,7 +145,7 @@ const cityView = document.getElementById('cityView'), cityCanvas = document.getE
 const cloudFx = document.createElement('canvas');
 cloudFx.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:60;pointer-events:none;display:none';
 document.body.appendChild(cloudFx);
-const CLOUD_PUFFS = (() => { const r = mulberry32(31), out = []; for (let i = 0; i < 22; i++) { const a = r() * Math.PI * 2; out.push({ a, d: .15 + r() * .55, s: .28 + r() * .32, sh: .82 + r() * .14 }); } return out; })();
+const CLOUD_PUFFS = (() => { const r = mulberry32(31), out = []; for (let i = 0; i < 22; i++) { const a = r() * Math.PI * 2; out.push({ a, d: .15 + r() * .55, s: .28 + r() * .32, sh: .93 + r() * .07 }); } return out; })();
 let cloudAnim = null, cityMapReturn = null, cityBusy = false, cloudCover = 0;   // cloudCover: wie dicht die Wolken gerade sind (ab .95 alles weiß – dahinter muss nichts gezeichnet werden)
 // Die Wolken sind weiche Verläufe ohne Kanten: sie werden in halber Auflösung gemalt (CLOUD_RES Bildpunkte pro Bildschirm-
 // Punkt) und vom Browser hochgezogen – sieht gleich aus, kostet am Handy aber nur einen Bruchteil (vorher ~22 bildschirmgroße
@@ -182,11 +182,12 @@ function cityShow() {
     updateCityBuilder();
     cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
 }
-// Eintauchen wie bei RoK: die Kamera fliegt bis kurz vor die Hauptstadt, die Karte taucht noch ein Stück weiter (nur ein
-// CSS-Zoom des Karten-Bilds, höchstens CITY_TAUCH – sonst wird das flache Basis-Symbol riesig und unscharf) und wird weich;
-// schon bei ~40 % blendet die Stadt darüber und kommt von unten näher, dünne Wolken am Rand decken die Kanten.
-// Beim Verlassen umgekehrt: die Stadt fällt weg und blendet aus, die Karte kommt aus der Nähe zurück auf ihre Höhe.
-const CITY_TAUCH = 1.8, CITY_TAUCH_MS = 700, CITY_BLENDE_AB = 280, CITY_BLENDE_MS = 320;
+// Eintauchen wie bei RoK: die Kamera fliegt bis kurz vor die Hauptstadt (CITY_NAH × größter Zoom, die Basis noch klein),
+// die Karte taucht noch ein Stück weiter (nur ein CSS-Zoom des Karten-Bilds, höchstens CITY_TAUCH – sonst wird das flache
+// Basis-Symbol riesig und unscharf) und wird weich; schon bei ~40 % blendet die Stadt darüber und kommt von unten näher,
+// dünne Wolken am Rand decken die Kanten. Beim Verlassen umgekehrt: die Stadt fällt weg und blendet aus, die Karte kommt
+// aus der Nähe zurück auf ihre Höhe.
+const CITY_TAUCH = 1.8, CITY_NAH = .4, CITY_TAUCH_MS = 700, CITY_BLENDE_AB = 280, CITY_BLENDE_MS = 320;
 function karteTauchen(von, bis, ms, isl) {
     if (!canvas.animate || !isl) return null;
     canvas.style.transformOrigin = Math.round(toSX(isl.x)) + 'px ' + Math.round(toSY(isl.y)) + 'px';
@@ -206,9 +207,9 @@ function openCity() {
     cityMapReturn = { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };   // where the map was, to go back there
     if (!home) { cityShow(); return; }
     cityBusy = true;
-    flyTo(home.x, home.y, { zoom: maxZoom, ms: 650 });                      // 1) the map flies to your capital …
+    flyTo(home.x, home.y, { zoom: maxZoom * CITY_NAH, ms: 650 });           // 1) the map flies to your capital …
     setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, CITY_TAUCH_MS, home);   // 2) … dives on a little, getting soft …
-        cloudsRun(CITY_TAUCH_MS, 0, .5, () => cloudsRun(600, .5, 0, () => { cityBusy = false; }));   // (nur Wolken am Rand, nie ganz weiß)
+        cloudsRun(400, 0, .35, () => setTimeout(() => cloudsRun(600, .35, 0, () => { cityBusy = false; }), CITY_TAUCH_MS - 400));   // (nur Wolken am Rand, nie ganz weiß)
         setTimeout(() => { cityShow(); stadtBlende(0, 1);                     // 3) … and the town fades in, coming up from below
             if (cityCam) cityCam.anim = { from: .62, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
         setTimeout(() => { if (tauch) tauch.cancel(); }, CITY_TAUCH_MS); }, 560);
@@ -220,10 +221,10 @@ function closeCity() {
     cityBusy = true; cityOpenId = null; cityRingZu(); document.getElementById('citySheet').hidden = true;
     const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
     cityMapReturn = null;
-    if (home) flyTo(home.x, home.y, { zoom: maxZoom, instant: true });       // unter der Stadt liegt die Karte schon über der Hauptstadt
+    if (home) flyTo(home.x, home.y, { zoom: maxZoom * CITY_NAH, instant: true });   // unter der Stadt liegt die Karte schon über der Hauptstadt
     if (cityCam) cityCam.anim = { from: 1, to: .62, t0: performance.now(), dur: 650 };   // the town falls away …
     const auf = karteTauchen(CITY_TAUCH, 1, 650, home);                      // … the map comes back up from close by …
-    cloudsRun(300, 0, .5, () => cloudsRun(500, .5, 0));
+    cloudsRun(300, 0, .35, () => cloudsRun(500, .35, 0));
     setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); cityLagenFrei(); requestRender(); }), 120);
     setTimeout(() => { if (auf) auf.cancel();
         flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });                // … and opens up again where it was
