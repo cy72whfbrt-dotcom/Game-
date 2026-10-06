@@ -192,10 +192,7 @@ document.addEventListener('click', e => { const bt = e.target.closest && e.targe
     if (!sp) return;
     const skip = navigator.webdriver && !window.__FORCE_SPLASH;          // automated tests
     if (skip) { if (window.__stopSplashScene) window.__stopSplashScene(); sp.remove(); splashDone(); return; }
-    const pctEl = document.getElementById('splashPct'), barEl = sp.querySelector('.splash-bar');
-    (function pct() { if (!sp.isConnected) return; const f = document.getElementById('splashFill');
-        const v = Math.min(100, Math.round(f.getBoundingClientRect().width / Math.max(1, barEl.clientWidth - 4) * 100)); pctEl.textContent = v + ' %'; requestAnimationFrame(pct); })();
-    const statusEl = document.getElementById('splashStatus');   // (the tips rotate in the loading screen's own script)
+    const statusEl = document.getElementById('splashStatus');   // (Tipps und Prozent laufen im eigenen Skript des Ladebilds)
     const steps = ['Welt wird erschaffen …', 'Inseln werden besiedelt …', 'Truppen werden gerüstet …', 'Bereit'];
     // Everything the map draws is painted once up front (every building, owner and size step), so nothing has to be
     // drawn for the first time while you play - no stutter when zooming or scrolling. Later: images and music too.
@@ -210,7 +207,7 @@ document.addEventListener('click', e => { const bt = e.target.closest && e.targe
     (function work() {
         const until = performance.now() + 12;
         while (ji < jobs.length && performance.now() < until) { const j = jobs[ji++]; try { buildingSprite(j[0], j[1], j[2], j[3], j[4]); } catch (e) {} }
-        if (ji < jobs.length) { statusEl.textContent = 'Gebäude werden vorbereitet … ' + Math.round(ji / jobs.length * 100) + ' %'; requestAnimationFrame(work); return; }
+        if (ji < jobs.length) { requestAnimationFrame(work); return; }
         finish();
     })();
     function finish() {

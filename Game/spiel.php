@@ -1550,64 +1550,47 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .quest-ok{font:600 var(--fs-11)/1 var(--font-ui);color:#5cbf62;letter-spacing:.06em;text-transform:uppercase}
 
 /* =====================================================================
-   LOADING SCREEN: sea, an island with a castle, sky by the real time of day, tips with pictures
+   LOADING SCREEN: a painted dusk scene (castle on the cliff, fog, reflection), gold logo, thin gold bar
    ===================================================================== */
-.splash{position:fixed;inset:0;z-index:200;overflow:hidden;background:#081c2e;color:var(--tx-1);
-  display:flex;flex-direction:column;justify-content:flex-start;align-items:center;
-  padding:calc(var(--safe-t) + 7vh) 16px calc(var(--safe-b) + 5vh);transition:opacity .7s ease,visibility .7s}
+.splash{position:fixed;inset:0;z-index:200;overflow:hidden;background:#0b1430;color:var(--tx-1);
+  display:flex;flex-direction:column;align-items:center;
+  padding:calc(var(--safe-t) + 9vh) 24px calc(var(--safe-b) + 40px);transition:opacity .7s ease,visibility .7s}
 .splash.is-leaving{opacity:0;visibility:hidden}
 .splash.is-leaving .splash-bg{transform:scale(1.05)}
 .splash-bg{position:absolute;inset:0;width:100%;height:100%;display:block;transition:transform 1.4s cubic-bezier(.2,.8,.2,1);animation:sp-zoom 12s ease-out both}
-@keyframes sp-zoom{from{transform:scale(1.06)}to{transform:scale(1)}}
+@keyframes sp-zoom{from{transform:scale(1.04)}to{transform:scale(1)}}
+/* vignette + a darker bottom for the tip and the bar */
 .splash-vig{position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(ellipse at 50% 50%,transparent 45%,rgba(0,0,0,.35) 80%,rgba(0,0,0,.6)),linear-gradient(180deg,rgba(0,0,0,.35),transparent 26%,transparent 62%,rgba(0,0,0,.55))}
+  background:radial-gradient(ellipse 90% 80% at 50% 45%,transparent 55%,rgba(3,5,12,.65)),linear-gradient(180deg,rgba(3,5,12,.35),transparent 22%,transparent 70%,rgba(4,6,14,.85))}
 .splash-top,.splash-bottom{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center}
-.splash-title{position:relative;margin:0;font:700 clamp(38px,11vw,88px)/1 var(--font-display);letter-spacing:.07em;text-transform:uppercase;   /* engraved gold with a light sweep */
-  background-image:linear-gradient(100deg,#8a5d22 0%,#e9c77e 22%,#fff6dc 30%,#e9c77e 38%,#b07b30 60%,#f3dca0 80%,#8a5d22 100%);background-size:250% 100%;
-  -webkit-background-clip:text;background-clip:text;color:transparent;
-  filter:drop-shadow(0 2px 0 rgba(0,0,0,.6)) drop-shadow(0 0 18px rgba(0,0,0,.45));animation:sp-rise 1.1s .15s cubic-bezier(.2,.8,.2,1) both,sp-shine 4.5s 1s ease-in-out infinite}
-.splash-sub{display:flex;align-items:center;gap:12px;margin-top:12px;font:600 var(--fs-13)/1 var(--font-ui);letter-spacing:.34em;text-transform:uppercase;color:#f0d6a0;
+/* logo: embossed gold, "OPEN" small above "WATER" */
+.splash-title{margin:0;display:flex;flex-direction:column;align-items:center;font:700 clamp(46px,13vw,58px)/.98 var(--font-display);letter-spacing:.06em;text-transform:uppercase;
+  filter:drop-shadow(0 2px 0 #5a3f14) drop-shadow(0 4px 14px rgba(0,0,0,.75));animation:sp-rise 1.1s .15s cubic-bezier(.2,.8,.2,1) both}
+.splash-title span{background-image:linear-gradient(180deg,#fff3cf 8%,#e4c886 45%,#a27832 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.splash-title span:first-child{font-size:.55em;letter-spacing:.34em;margin-right:-.34em}
+.splash-sub{display:flex;align-items:center;gap:12px;margin-top:14px;font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:.34em;text-transform:uppercase;color:#f0d6a0;
   text-shadow:0 1px 8px rgba(0,0,0,.9),0 0 2px rgba(0,0,0,.9);animation:sp-rise 1.1s .3s cubic-bezier(.2,.8,.2,1) both}
 .splash-sub span{width:34px;height:1px;background:linear-gradient(90deg,transparent,#d9b56a)}
 .splash-sub span:last-child{transform:scaleX(-1)}
 @keyframes sp-rise{from{opacity:0;transform:translateY(14px)}}
-@keyframes sp-shine{0%{background-position:100% 0}60%,100%{background-position:0 0}}
-.splash-bottom{margin-top:auto}
-/* tip card: a small drawn picture + the tip */
-.splash-tipcard{display:flex;align-items:center;gap:12px;width:100%;min-height:76px;padding:10px 12px;text-align:left;border-radius:12px;
-  background:linear-gradient(180deg,rgba(14,16,22,.82),rgba(8,9,13,.9));border:1px solid rgba(217,181,106,.4);box-shadow:0 8px 28px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,236,190,.08)}
-.splash-tippic{flex:none;width:56px;height:56px;border-radius:10px;display:grid;place-items:center;color:#e4c886;
-  background:radial-gradient(circle at 50% 35%,rgba(214,170,90,.2),rgba(0,0,0,.35) 75%);border:1px solid rgba(217,181,106,.35);transition:opacity .35s,transform .35s}
-.splash-tippic svg{width:46px;height:46px}
-.splash-tiptxt{display:grid;gap:4px;min-width:0;transition:opacity .35s}
-.splash-tiptxt b{font:700 var(--fs-10)/1 var(--font-ui);letter-spacing:.2em;text-transform:uppercase;color:#d4ad66}
-.splash-tip{font:500 var(--fs-13)/1.35 var(--font-ui);color:#e6dcc4}
-.splash-tipcard.is-swap .splash-tippic{opacity:0;transform:scale(.85)} .splash-tipcard.is-swap .splash-tiptxt{opacity:0}
-/* ornate loading bar */
-.splash-barwrap{display:flex;align-items:center;width:100%;gap:0}
-.splash-cap{flex:none;width:12px;height:12px;transform:rotate(45deg);border:1.5px solid #d9b56a;background:#1a1208;box-shadow:0 0 10px rgba(236,190,110,.5)}
-.splash-barwrap .splash-bar{flex:1;height:10px;border-radius:0;margin:0 -2px;padding:2px;background:linear-gradient(180deg,#0b0806,#1a130b);
-  border:1.5px solid #b98f47;box-shadow:inset 0 0 6px rgba(0,0,0,.9),0 0 22px rgba(0,0,0,.7)}
-.splash-barwrap .splash-bar i{inset:2px auto 2px 2px;height:auto;max-width:calc(100% - 4px);background:linear-gradient(180deg,#fff0c4,#e3b35c 45%,#9a651f)}
-.splash-barwrap .splash-bar i::before{content:"";position:absolute;right:-6px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:50%;
-  background:radial-gradient(circle,#fff8e0,rgba(255,200,110,.6) 40%,transparent 70%)}
-.splash-meta{display:flex;justify-content:space-between;width:100%;padding:0 4px}
-.splash-pct{font:700 var(--fs-12)/1 var(--font-ui);color:#f0d69a;font-variant-numeric:tabular-nums;letter-spacing:.06em;text-shadow:0 1px 4px rgba(0,0,0,.9)}
-.splash-bottom{width:min(440px,100%);gap:12px;animation:sp-rise 1s .45s ease-out both}
-.splash-bar{position:relative;width:100%;height:6px;border-radius:3px;background:rgba(0,0,0,.55);border:1px solid rgba(217,181,106,.45);overflow:hidden;
-  box-shadow:0 0 18px rgba(0,0,0,.6)}
-.splash-bar i{position:absolute;inset:0;width:0;background:linear-gradient(90deg,#8a5d22,#e7c173 70%,#fff3cf);box-shadow:0 0 12px rgba(236,190,110,.7);
+/* bottom: one tip line, status + percent, a thin gold bar */
+.splash-bottom{margin-top:auto;width:min(560px,100%);animation:sp-rise 1s .45s ease-out both}
+.splash-tipline{margin:0 0 14px;max-width:460px;min-height:2.7em;font:500 var(--fs-13)/1.35 var(--font-ui);color:#e6dcc4;text-shadow:0 1px 3px #000;transition:opacity .35s}
+.splash-tipline b{color:#d4ad66;font-weight:700}
+.splash-tipline.is-swap{opacity:0}
+.splash-meta{display:flex;justify-content:space-between;align-items:baseline;gap:12px;width:100%;margin-bottom:8px}
+.splash-status{font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:.18em;text-transform:uppercase;color:#cbb994;text-shadow:0 1px 4px rgba(0,0,0,.9)}
+.splash-pct{font:700 var(--fs-12)/1 var(--font-ui);color:#f0d69a;font-variant-numeric:tabular-nums;letter-spacing:.04em;text-shadow:0 1px 4px rgba(0,0,0,.9)}
+.splash-bar{position:relative;width:100%;height:4px;border-radius:2px;background:rgba(0,0,0,.5);box-shadow:0 0 0 1px rgba(212,173,102,.45)}   /* (Rand als Schatten: die Füllung hat die volle Breite der Spur → Prozent stimmt) */
+.splash-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:2px;background:linear-gradient(90deg,#a27832,#e4c886 70%,#fff3cf);box-shadow:0 0 8px rgba(236,190,110,.6);
   animation:sp-load 1.8s cubic-bezier(.3,.7,.3,1) forwards}
-.splash-bar i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);
-  transform:translateX(-100%);animation:sp-sheen 1.3s linear infinite}
+.splash-bar i::after{content:"";position:absolute;right:-3px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#fff8e0;box-shadow:0 0 8px 2px rgba(255,214,140,.9)}
 @keyframes sp-load{to{width:72%}}
-@keyframes sp-sheen{to{transform:translateX(100%)}}
 .splash.is-done .splash-bar i{animation:none;width:100%;transition:width .6s ease-out}
-.splash-status{font:600 var(--fs-11)/1 var(--font-ui);letter-spacing:.22em;text-transform:uppercase;color:#cbb994;text-shadow:0 1px 4px rgba(0,0,0,.9)}
-/* dark halo behind the title keeps it readable over a bright day sky */
-.splash-top::before{content:"";position:absolute;inset:-30px -80px;z-index:-1;background:radial-gradient(ellipse at center,rgba(2,3,8,.42),transparent 70%)}
-@media (min-width:700px){.splash-tip{font-size:14px}}
-@media (max-height:500px){.splash{padding-top:calc(var(--safe-t) + 3vh);padding-bottom:calc(var(--safe-b) + 3vh)}.splash-title{font-size:clamp(30px,8vh,56px)}.splash-sub{margin-top:6px}.splash-tipcard{min-height:0;padding:6px 10px}.splash-tippic{width:40px;height:40px}.splash-tippic svg{width:32px;height:32px}}
+/* desktop: logo top left like a poster, bar centred */
+@media (min-width:900px) and (min-aspect-ratio:11/10){.splash{align-items:stretch;padding:12vh 7vw calc(var(--safe-b) + 56px)}.splash-top{align-items:flex-start;text-align:left}
+  .splash-title{font-size:96px;align-items:flex-start}.splash-sub{margin-top:18px}.splash-bottom{align-self:center}.splash-tipline{font-size:14px}}
+@media (max-height:500px){.splash{padding-top:calc(var(--safe-t) + 4vh);padding-bottom:calc(var(--safe-b) + 20px)}.splash-title{font-size:clamp(30px,9vh,48px)}.splash-sub{margin-top:8px}.splash-tipline{margin-bottom:8px}}
 @media (prefers-reduced-motion:reduce){.splash *,.splash-bg{animation:none!important;transition:none!important}.splash-bar i{width:72%}}
 
 /* =====================================================================
@@ -1961,13 +1944,13 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
   <canvas id="splashCanvas" class="splash-bg" aria-hidden="true"></canvas>
   <div class="splash-vig" aria-hidden="true"></div>
   <div class="splash-top">
-    <h1 class="splash-title">Open Water</h1>
+    <h1 class="splash-title"><span>Open</span> <span>Water</span></h1>
     <div class="splash-sub"><span></span>Erobere die Inseln<span></span></div>
   </div>
   <div class="splash-bottom">
-    <div id="splashTipCard" class="splash-tipcard"><div id="splashTipPic" class="splash-tippic" aria-hidden="true"></div><div class="splash-tiptxt"><b>Tipp</b><span id="splashTip" class="splash-tip">Späh eine Basis aus, bevor du angreifst – dann siehst du ihre Truppen.</span></div></div>
-    <div class="splash-barwrap"><span class="splash-cap"></span><div class="splash-bar"><i id="splashFill"></i></div><span class="splash-cap"></span></div>
+    <p id="splashTipCard" class="splash-tipline"><b>Tipp:</b> <span id="splashTip" class="splash-tip">Späh eine Basis aus, bevor du angreifst – dann siehst du ihre Truppen.</span></p>
     <div class="splash-meta"><span id="splashStatus" class="splash-status">Welt wird erschaffen …</span><span id="splashPct" class="splash-pct">0 %</span></div>
+    <div class="splash-bar"><i id="splashFill"></i></div>
   </div>
 </div>
 <script src="<?= skript('ladebildschirm') ?>"></script>
