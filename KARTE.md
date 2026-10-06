@@ -71,6 +71,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `angriffStart` → Game/spiel/10b-inselfenster-knoepfe.js:133
 - `anleitung` → Game/spiel/06b-pass-anleitung.js:158
 - `anleitungAbgeholt` → Game/spiel/06b-pass-anleitung.js:164
+- `anleitungAlleAusHaupt` → Game/spiel/06b-pass-anleitung.js:156
 - `anleitungFenster` → Game/spiel/06b-pass-anleitung.js:168
 - `anleitungInsel` → Game/spiel/06b-pass-anleitung.js:157
 - `anleitungNeutral` → Game/spiel/06b-pass-anleitung.js:131
@@ -630,7 +631,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `camRegion` → Game/spiel/03e-kamera-eingabe.js:111
 - `cancelGesture` → Game/spiel/03e-kamera-eingabe.js:333
 - `cancelMultiAttack` → Game/spiel/09e-inselfenster.js:167
-- `canConnectHalos` → Game/spiel/09a-funde-felder.js:133
+- `canConnectHalos` → Game/spiel/09a-funde-felder.js:137
 - `canReach` → Game/spiel/01b-weltkarte.js:308
 - `canvasTex` → Game/baukunst/01-werkzeugkasten.js:31
 - `card` → Game/spiel/05c-erfolge-rangliste.js:131
@@ -671,7 +672,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityBushAt` → Game/spiel/08e-stadtbild-haeuser.js:275
 - `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:247
 - `cityClampBuild` → Game/spiel/08a-stadt-bauen.js:89
-- `cityClampCam` → Game/spiel/08f-stadtbild-bild.js:24
+- `cityClampCam` → Game/spiel/08f-stadtbild-bild.js:26
 - `cityCost` → Game/spiel/08a-stadt-bauen.js:78
 - `cityDeco` → Game/spiel/08e-stadtbild-haeuser.js:425
 - `cityDef` → Game/spiel/08a-stadt-bauen.js:77
@@ -682,25 +683,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityFehlt` → Game/spiel/08b-burg-aussehen.js:14
 - `cityFinishBuild` → Game/spiel/08a-stadt-bauen.js:122
 - `cityFitZoom` → Game/spiel/08f-stadtbild-bild.js:23
-- `cityFocus` → Game/spiel/08f-stadtbild-bild.js:64
-- `cityFrame` → Game/spiel/08f-stadtbild-bild.js:109
+- `cityFocus` → Game/spiel/08f-stadtbild-bild.js:66
+- `cityFrame` → Game/spiel/08f-stadtbild-bild.js:111
 - `cityGable` → Game/spiel/08e-stadtbild-haeuser.js:54
 - `cityGableY` → Game/spiel/08e-stadtbild-haeuser.js:63
 - `cityGhost` → Game/spiel/08e-stadtbild-haeuser.js:216
 - `cityGroundPoly` → Game/spiel/08e-stadtbild-haeuser.js:35
 - `cityGrundKey` → Game/spiel/08e-stadtbild-haeuser.js:404
 - `cityKante` → Game/spiel/08e-stadtbild-haeuser.js:53
-- `cityLage` → Game/spiel/08f-stadtbild-bild.js:71
-- `cityLagenFrei` → Game/spiel/08f-stadtbild-bild.js:76
+- `cityLage` → Game/spiel/08f-stadtbild-bild.js:73
+- `cityLagenFrei` → Game/spiel/08f-stadtbild-bild.js:78
 - `cityLevelSafe` → Game/spiel/01e-nebel-kampfwerte-hud.js:201
-- `cityLotOf` → Game/spiel/08f-stadtbild-bild.js:63
+- `cityLotOf` → Game/spiel/08f-stadtbild-bild.js:65
 - `cityMakeFolk` → Game/spiel/08f-stadtbild-bild.js:8
 - `cityMaxLevel` → Game/spiel/08a-stadt-bauen.js:51
 - `cityMinLevel` → Game/spiel/05c-erfolge-rangliste.js:18
 - `cityMountain` → Game/spiel/08e-stadtbild-haeuser.js:288
-- `cityNamePlatz` → Game/spiel/08f-stadtbild-bild.js:103
+- `cityNamePlatz` → Game/spiel/08f-stadtbild-bild.js:105
 - `cityNutz` → Game/spiel/08b-burg-aussehen.js:126
-- `cityOben` → Game/spiel/08f-stadtbild-bild.js:89
+- `cityOben` → Game/spiel/08f-stadtbild-bild.js:91
 - `cityPainter` → Game/spiel/08e-stadtbild-haeuser.js:47
 - `cityPaintGround` → Game/spiel/08e-stadtbild-haeuser.js:310
 - `cityPaintWalls` → Game/spiel/08e-stadtbild-haeuser.js:450
@@ -708,7 +709,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityPathPoint` → Game/spiel/08f-stadtbild-bild.js:14
 - `cityPineAt` → Game/spiel/08e-stadtbild-haeuser.js:256
 - `cityPlinth` → Game/spiel/08e-stadtbild-haeuser.js:82
-- `cityPointerEnd` → Game/spiel/08f-stadtbild-bild.js:48
+- `cityPointerEnd` → Game/spiel/08f-stadtbild-bild.js:50
 - `cityRect` → Game/spiel/08e-stadtbild-haeuser.js:39
 - `cityRingAuf` → Game/spiel/08b-burg-aussehen.js:221
 - `cityRingZu` → Game/spiel/08b-burg-aussehen.js:233
@@ -717,9 +718,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityShow` → Game/spiel/08a-stadt-bauen.js:177
 - `citySlots` → Game/spiel/08a-stadt-bauen.js:73
 - `citySpeedCost` → Game/spiel/08a-stadt-bauen.js:118
-- `citySprDraw` → Game/spiel/08f-stadtbild-bild.js:93
+- `citySprDraw` → Game/spiel/08f-stadtbild-bild.js:95
 - `citySprite` → Game/spiel/08e-stadtbild-haeuser.js:205
 - `cityStartBuild` → Game/spiel/08a-stadt-bauen.js:108
+- `cityStartZoom` → Game/spiel/08f-stadtbild-bild.js:24
 - `cityStaticSprite` → Game/spiel/08e-stadtbild-haeuser.js:435
 - `cityStrip` → Game/spiel/08e-stadtbild-haeuser.js:40
 - `cityStufeHtml` → Game/spiel/08b-burg-aussehen.js:176
@@ -729,7 +731,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityTimeRoh` → Game/spiel/08a-stadt-bauen.js:82
 - `cityTimeSec` → Game/spiel/08a-stadt-bauen.js:86
 - `cityTreeAt` → Game/spiel/08e-stadtbild-haeuser.js:247
-- `cityUnten` → Game/spiel/08f-stadtbild-bild.js:80
+- `cityUnten` → Game/spiel/08f-stadtbild-bild.js:82
 - `cityVergleich` → Game/spiel/08d-gebaeude-wirkung.js:27
 - `cityVglHtml` → Game/spiel/08b-burg-aussehen.js:171
 - `cityWindows` → Game/spiel/08e-stadtbild-haeuser.js:72
@@ -760,10 +762,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:364
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:220
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:81
-- `closeFieldSheet` → Game/spiel/09a-funde-felder.js:356
+- `closeFieldSheet` → Game/spiel/09a-funde-felder.js:360
 - `closeHeroHall` → Game/spiel/08c-helden.js:396
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:110
-- `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:323
+- `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:325
 - `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:113
 - `closeMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:309
 - `closePanel` → Game/spiel/09e-inselfenster.js:35
@@ -779,7 +781,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `col` → Game/spiel/03b-gebaeude-3d.js:124
 - `col` → Game/spiel/03b-gebaeude-3d.js:143
 - `col` → Game/spiel/03b-gebaeude-3d.js:228
-- `collectPickupAt` → Game/spiel/09a-funde-felder.js:39
+- `collectPickupAt` → Game/spiel/09a-funde-felder.js:40
 - `column` → Game/baukunst/03-wahrzeichen-feuer.js:29
 - `combatLogKey` → Game/spiel/05d-maersche-kampfbericht.js:128
 - `cone` → Game/ladebildschirm.js:60
@@ -836,7 +838,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `deltaEinen` → Game/welt.js:337
 - `deltaMerken` → Game/welt.js:361
 - `deltasSammeln` → Game/welt.js:334
-- `dismissTutorialHint` → Game/spiel/09a-funde-felder.js:102
+- `dismissTutorialHint` → Game/spiel/09a-funde-felder.js:106
 - `dockLuecke` → Game/spiel/01a-grundlagen.js:28
 - `dome` → Game/spiel/03b-gebaeude-3d.js:194
 - `dome` → Game/spiel/03b-gebaeude-3d.js:39
@@ -874,8 +876,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawn` → Game/spiel/03a-karte-hintergrund.js:459
 - `drawNacht` → Game/spiel/03d-maersche-tagnacht.js:206
 - `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:187
-- `drawPickups` → Game/spiel/09a-funde-felder.js:61
-- `drawResFields` → Game/spiel/09a-funde-felder.js:290
+- `drawPickups` → Game/spiel/09a-funde-felder.js:62
+- `drawResFields` → Game/spiel/09a-funde-felder.js:294
 - `drawRings` → Game/spiel/03c-wappen-thronplatz.js:376
 - `drawRulerCrowns` → Game/spiel/07b-kriegsherr.js:195
 - `drawTerritoriesInto` → Game/spiel/03a-karte-hintergrund.js:247
@@ -970,13 +972,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `faceWindow` → Game/spiel/03b-gebaeude-3d.js:54
 - `fachwerk` → Game/baukunst/06-turmhof-festung.js:48
 - `fade` → Game/spiel/10c-start-einstellungen.js:121
-- `fArt` → Game/spiel/09a-funde-felder.js:153
+- `fArt` → Game/spiel/09a-funde-felder.js:157
 - `fehler` → Game/weltrechner/start.js:160
 - `fehlgeschlagen` → Game/speichern.js:141
 - `feld` → Game/buendnis/04-fenster-karte-welt.js:149
 - `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:76
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:77
-- `feldBericht` → Game/spiel/09a-funde-felder.js:268
+- `feldBericht` → Game/spiel/09a-funde-felder.js:272
 - `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:252
 - `felsAbstand` → Game/spiel/01f-felsen.js:72
 - `felsAbstandStrecke` → Game/spiel/01f-felsen.js:78
@@ -1004,28 +1006,28 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fertig` → Game/speichern.js:153
 - `fest_lesen` → Game/server/05-datenbank-welt.php:9
 - `festeNummer` → Game/welt.js:381
-- `fieldArrive` → Game/spiel/09a-funde-felder.js:218
-- `fieldAt` → Game/spiel/09a-funde-felder.js:289
+- `fieldArrive` → Game/spiel/09a-funde-felder.js:222
+- `fieldAt` → Game/spiel/09a-funde-felder.js:293
 - `fieldAtkPct` → Game/spiel/09d-armeen-wegmarken.js:91
 - `fieldBattle` → Game/spiel/09d-armeen-wegmarken.js:93
-- `fieldCapFor` → Game/spiel/09a-funde-felder.js:159
-- `fieldCapOf` → Game/spiel/09a-funde-felder.js:201
-- `fieldDauerSec` → Game/spiel/09a-funde-felder.js:161
-- `fieldGoHome` → Game/spiel/09a-funde-felder.js:212
+- `fieldCapFor` → Game/spiel/09a-funde-felder.js:163
+- `fieldCapOf` → Game/spiel/09a-funde-felder.js:205
+- `fieldDauerSec` → Game/spiel/09a-funde-felder.js:165
+- `fieldGoHome` → Game/spiel/09a-funde-felder.js:216
 - `fieldGold` → Game/spiel/04-kampf.js:290
 - `fieldHeroDet` → Game/spiel/05d-maersche-kampfbericht.js:159
 - `fieldHeroLine` → Game/spiel/05d-maersche-kampfbericht.js:158
-- `fieldHurt` → Game/spiel/09a-funde-felder.js:202
-- `fieldInfo` → Game/spiel/09a-funde-felder.js:198
-- `fieldLoadCap` → Game/spiel/09a-funde-felder.js:200
-- `fieldMarches` → Game/spiel/09a-funde-felder.js:194
-- `fieldSend` → Game/spiel/09a-funde-felder.js:204
+- `fieldHurt` → Game/spiel/09a-funde-felder.js:206
+- `fieldInfo` → Game/spiel/09a-funde-felder.js:202
+- `fieldLoadCap` → Game/spiel/09a-funde-felder.js:204
+- `fieldMarches` → Game/spiel/09a-funde-felder.js:198
+- `fieldSend` → Game/spiel/09a-funde-felder.js:208
 - `fieldShield` → Game/spiel/09d-armeen-wegmarken.js:92
-- `fieldSource` → Game/spiel/09a-funde-felder.js:336
-- `fieldState` → Game/spiel/09a-funde-felder.js:193
-- `fieldTick` → Game/spiel/09a-funde-felder.js:274
-- `fieldTravelSec` → Game/spiel/09a-funde-felder.js:203
-- `fieldWhoName` → Game/spiel/09a-funde-felder.js:199
+- `fieldSource` → Game/spiel/09a-funde-felder.js:340
+- `fieldState` → Game/spiel/09a-funde-felder.js:197
+- `fieldTick` → Game/spiel/09a-funde-felder.js:278
+- `fieldTravelSec` → Game/spiel/09a-funde-felder.js:207
+- `fieldWhoName` → Game/spiel/09a-funde-felder.js:203
 - `fightDurationMs` → Game/spiel/03e-kamera-eingabe.js:544
 - `fighterSnapshot` → Game/spiel/01e-nebel-kampfwerte-hud.js:109
 - `fightEstimate` → Game/spiel/03e-kamera-eingabe.js:533
@@ -1494,7 +1496,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:134
 - `levelRewardCoins` → Game/spiel/02a-shop-stufen.js:226
 - `levelRewardGems` → Game/spiel/02a-shop-stufen.js:229
-- `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:287
+- `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:289
 - `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:223
 - `levelUpItem` → Game/spiel/02a-shop-stufen.js:171
 - `LILY` → Game/baukunst/08-himmelsfeste-bilder.js:20
@@ -1732,7 +1734,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openChestItemPopup` → Game/spiel/05b-truhe-skills.js:182
 - `openCity` → Game/spiel/08a-stadt-bauen.js:203
 - `openCrate` → Game/spiel/02a-shop-stufen.js:80
-- `openFieldSheet` → Game/spiel/09a-funde-felder.js:338
+- `openFieldSheet` → Game/spiel/09a-funde-felder.js:342
 - `openGoals` → Game/spiel/06a-aufgaben.js:309
 - `openHeroHall` → Game/spiel/08c-helden.js:395
 - `openIslandPopup` → Game/spiel/09e-inselfenster.js:102
@@ -1839,6 +1841,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pickRandomSlot` → Game/spiel/02a-shop-stufen.js:59
 - `pickupAmount` → Game/spiel/09a-funde-felder.js:6
 - `pickupScreenPos` → Game/spiel/09a-funde-felder.js:12
+- `pickupVerdeckt` → Game/spiel/09a-funde-felder.js:13
 - `piecesPath` → Game/spiel/03a-karte-hintergrund.js:200
 - `pille` → Game/buendnis/04-fenster-karte-welt.js:341
 - `pinnGeo` → Game/baukunst/04-vielfalt-stile.js:342
@@ -1869,7 +1872,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `podGeo` → Game/baukunst/07-hafen-palast.js:504
 - `podShape` → Game/baukunst/07-hafen-palast.js:499
 - `pointInPolygon` → Game/spiel/01b-weltkarte.js:84
-- `pointToSegmentDistance` → Game/spiel/09a-funde-felder.js:121
+- `pointToSegmentDistance` → Game/spiel/09a-funde-felder.js:125
 - `poly` → Game/spiel/03b-gebaeude-3d.js:12
 - `poly` → Game/spiel/03b-gebaeude-3d.js:181
 - `polygonPointAtAngle` → Game/spiel/01b-weltkarte.js:105
@@ -1927,7 +1930,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questProgress` → Game/spiel/06a-aufgaben.js:154
 - `questStadtGeht` → Game/spiel/06a-aufgaben.js:114
 - `queueHover` → Game/spiel/03e-kamera-eingabe.js:361
-- `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:292
+- `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:294
 - `rahmenDef` → Game/spiel/05a-aussehen-profil.js:18
 - `rahmenHat` → Game/spiel/05a-aussehen-profil.js:22
 - `rahmenPlatzText` → Game/spiel/05a-aussehen-profil.js:19
@@ -1942,7 +1945,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rallySchild` → Game/buendnis/02-rally-geschenke.js:137
 - `rallyVerluste` → Game/buendnis/02-rally-geschenke.js:140
 - `rallyWerte` → Game/buendnis/02-rally-geschenke.js:121
-- `rang` → Game/spiel/08f-stadtbild-bild.js:248
+- `rang` → Game/spiel/08f-stadtbild-bild.js:250
 - `rangLeer` → Game/spiel/09c-events-drache.js:433
 - `rankIndexFor` → Game/spiel/05a-aussehen-profil.js:94
 - `rankPeople` → Game/spiel/05c-erfolge-rangliste.js:280
@@ -1984,7 +1987,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderInbox` → Game/spiel/06a-aufgaben.js:239
 - `renderKeep` → Game/aufbau.js:304
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:13
-- `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:302
+- `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:304
 - `renderLook` → Game/spiel/05a-aussehen-profil.js:110
 - `renderLookSheet` → Game/spiel/08b-burg-aussehen.js:74
 - `renderLookTop` → Game/spiel/08b-burg-aussehen.js:56
@@ -2006,7 +2009,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `requestRender` → Game/spiel/03e-kamera-eingabe.js:379
 - `resetGesture` → Game/spiel/03e-kamera-eingabe.js:245
 - `resetSkills` → Game/spiel/05b-truhe-skills.js:278
-- `resFields` → Game/spiel/09a-funde-felder.js:163
+- `resFields` → Game/spiel/09a-funde-felder.js:167
 - `resize` → Game/ladebildschirm.js:35
 - `resolveAttack` → Game/spiel/02c-spaeher-ankunft.js:183
 - `resolveBotAttack` → Game/bots/02-kampf-karte.js:21
@@ -2064,7 +2067,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `roofMat` → Game/baukunst/04-vielfalt-stile.js:226
 - `roofUV` → Game/baukunst/06-turmhof-festung.js:30
 - `routeFor` → Game/spiel/01b-weltkarte.js:292
-- `row` → Game/spiel/08f-stadtbild-bild.js:310
+- `row` → Game/spiel/08f-stadtbild-bild.js:312
 - `row` → Game/spiel/09b-lager-tagesboss.js:344
 - `row` → Game/spiel/09c-events-drache.js:370
 - `row` → Game/spiel/09c-events-drache.js:390
@@ -2072,7 +2075,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rueckzuegeZuClient` → Game/welt.js:204
 - `rulerOwner` → Game/spiel/01d-helden-mitspieler.js:164
 - `runBotTick` → Game/bots/05-verteidigen-takt.js:325
-- `rund` → Game/spiel/08f-stadtbild-bild.js:247
+- `rund` → Game/spiel/08f-stadtbild-bild.js:249
 - `runde` → Game/weltrechner/push.js:224
 - `rundturm` → Game/baukunst/02-buehne-grundbasis.js:204
 - `runeGeo` → Game/baukunst/04-vielfalt-stile.js:500
@@ -2116,7 +2119,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveBounty` → Game/spiel/06c-thron-mitte.js:194
 - `saveCity` → Game/spiel/08a-stadt-bauen.js:75
 - `saveEv` → Game/spiel/09c-events-drache.js:55
-- `saveFields` → Game/spiel/09a-funde-felder.js:196
+- `saveFields` → Game/spiel/09a-funde-felder.js:200
 - `saveGame` → Game/spiel/01e-nebel-kampfwerte-hud.js:173
 - `saveGameNow` → Game/spiel/01e-nebel-kampfwerte-hud.js:176
 - `saveHeroes` → Game/spiel/08c-helden.js:20
@@ -2326,7 +2329,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `throneTick` → Game/spiel/06c-thron-mitte.js:98
 - `throneUhren` → Game/spiel/06c-thron-mitte.js:111
 - `throneVolley` → Game/spiel/06c-thron-mitte.js:76
-- `tickPickups` → Game/spiel/09a-funde-felder.js:32
+- `tickPickups` → Game/spiel/09a-funde-felder.js:33
 - `tierFor` → Game/spiel/03c-wappen-thronplatz.js:141
 - `tierOf` → Game/baukunst/02-buehne-grundbasis.js:141
 - `tilesTex` → Game/baukunst/04-vielfalt-stile.js:154
@@ -2344,7 +2347,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `topf` → Game/welt.js:327
 - `TOPI` → Game/baukunst/07-hafen-palast.js:414
 - `torusGeo` → Game/baukunst/04-vielfalt-stile.js:265
-- `toS` → Game/spiel/08f-stadtbild-bild.js:131
+- `toS` → Game/spiel/08f-stadtbild-bild.js:133
 - `toSX` → Game/spiel/03a-karte-hintergrund.js:6
 - `totalCoinProductionPerTick` → Game/spiel/01e-nebel-kampfwerte-hud.js:215
 - `totalTroopProductionPerTick` → Game/spiel/01e-nebel-kampfwerte-hud.js:205
@@ -2374,7 +2377,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `truppenVon` → Game/spiel/10d-welt-weltrechner.js:1026
 - `trW` → Game/spiel/03c-wappen-thronplatz.js:88
 - `tryPlace` → Game/baukunst/05-umland.js:740
-- `trySpawnPickup` → Game/spiel/09a-funde-felder.js:13
+- `trySpawnPickup` → Game/spiel/09a-funde-felder.js:14
 - `turm` → Game/spiel/01c-basen-spielstand.js:160
 - `u` → Game/ladebildschirm.js:57
 - `uebersicht` → Game/server/05-datenbank-welt.php:336
@@ -4217,6 +4220,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `passScroll` :106 — the level you're on in view
 - `maybeShowDaily` :119
 - `anleitungNeutral` :131 — ANLEITUNG für neue Spieler (Idee 45): 7 kurze Schritte unten am Bildschirm, jed…
+- `anleitungAlleAusHaupt` :156 — nur ein Hinweis, keine Regel
 - `anleitungInsel` :157
 - `anleitung` :158
 - `anleitungAbgeholt` :164
@@ -4580,59 +4584,61 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityMakeFolk` :8
 - `cityPathPoint` :14 — a point along a polyline, t in 0..1
 - `cityFitZoom` :23
-- `cityClampCam` :24
-- `cityPointerEnd` :48
-- `cityLotOf` :63
-- `cityFocus` :64 — glide (or jump) the camera to a building
-- `cityLage` :71
-- `cityLagenFrei` :76 — the town is closed: give the memory back
-- `cityUnten` :80 — background, ground, back walls and the soft shadows of all houses
-- `cityOben` :89
-- `citySprDraw` :93
-- `cityNamePlatz` :103
-- `cityFrame` :109 — ---- one frame ----
-- `toS` :131
-- `rund` :247 — name plates last: jedes Schild klebt unter seinem Gebäude (nie an den Bildrand …
-- `rang` :248
-- `levelRewardText` :287
-- `queueLevelUpModal` :292
-- `renderLevelUpModal` :302
-- `row` :310
-- `closeLevelUpModal` :323
+- `cityStartZoom` :24 — Desktop: etwas weiter weg · Handy: alle Bauplätze samt Steinbruch und Mauer im …
+- `cityClampCam` :26
+- `cityPointerEnd` :50
+- `cityLotOf` :65
+- `cityFocus` :66 — glide (or jump) the camera to a building
+- `cityLage` :73
+- `cityLagenFrei` :78 — the town is closed: give the memory back
+- `cityUnten` :82 — background, ground, back walls and the soft shadows of all houses
+- `cityOben` :91
+- `citySprDraw` :95
+- `cityNamePlatz` :105
+- `cityFrame` :111 — ---- one frame ----
+- `toS` :133
+- `rund` :249 — name plates last: jedes Schild klebt unter seinem Gebäude (nie an den Bildrand …
+- `rang` :250
+- `levelRewardText` :289
+- `queueLevelUpModal` :294
+- `renderLevelUpModal` :304
+- `row` :312
+- `closeLevelUpModal` :325
 
 ### Game/spiel/09a-funde-felder.js — Funde auf der Karte und Ressourcenfelder
 - `pickupAmount` :6
 - `pickupScreenPos` :12
-- `trySpawnPickup` :13
-- `tickPickups` :32
-- `collectPickupAt` :39
-- `drawPickups` :61 — screen space (setScreen active)
-- `dismissTutorialHint` :102
-- `pointToSegmentDistance` :121
-- `canConnectHalos` :133 — Only bridges a and b if NO other base on the same landmass - not owned by eithe…
-- `fArt` :153 — „an der Goldmine“, „zum Steinbruch“
-- `fieldCapFor` :159 — Sammeln wie bei RoK (2.10.): ein Feld leert sich in fester Zeit – außen 1 Std.,…
-- `fieldDauerSec` :161
-- `resFields` :163
-- `fieldState` :193
-- `fieldMarches` :194
-- `saveFields` :196
-- `fieldInfo` :198
-- `fieldWhoName` :199
-- `fieldLoadCap` :200
-- `fieldCapOf` :201 — Packesel, Lastträger: they carry more (+ Forschung Traglast)
-- `fieldHurt` :202
-- `fieldTravelSec` :203
-- `fieldSend` :204 — troops leave a base for a field (gathering, or attacking whoever sits there) - …
-- `fieldGoHome` :212 — the gatherers pack up and walk home with what they have
-- `fieldArrive` :218
-- `feldBericht` :268 — aus Sicht des Angreifers (istA) oder des Sammlers: Du, Gegner, Verluste, Verwun…
-- `fieldTick` :274
-- `fieldAt` :289 — drawing: the mine or the vein, the gatherers' tent in their colour with a progr…
-- `drawResFields` :290
-- `fieldSource` :336
-- `openFieldSheet` :338
-- `closeFieldSheet` :356
+- `pickupVerdeckt` :13 — auf einem Namensschild: nicht zeigen (nach Zoom/Verschieben)
+- `trySpawnPickup` :14
+- `tickPickups` :33
+- `collectPickupAt` :40
+- `drawPickups` :62 — screen space (setScreen active)
+- `dismissTutorialHint` :106
+- `pointToSegmentDistance` :125
+- `canConnectHalos` :137 — Only bridges a and b if NO other base on the same landmass - not owned by eithe…
+- `fArt` :157 — „an der Goldmine“, „zum Steinbruch“
+- `fieldCapFor` :163 — Sammeln wie bei RoK (2.10.): ein Feld leert sich in fester Zeit – außen 1 Std.,…
+- `fieldDauerSec` :165
+- `resFields` :167
+- `fieldState` :197
+- `fieldMarches` :198
+- `saveFields` :200
+- `fieldInfo` :202
+- `fieldWhoName` :203
+- `fieldLoadCap` :204
+- `fieldCapOf` :205 — Packesel, Lastträger: they carry more (+ Forschung Traglast)
+- `fieldHurt` :206
+- `fieldTravelSec` :207
+- `fieldSend` :208 — troops leave a base for a field (gathering, or attacking whoever sits there) - …
+- `fieldGoHome` :216 — the gatherers pack up and walk home with what they have
+- `fieldArrive` :222
+- `feldBericht` :272 — aus Sicht des Angreifers (istA) oder des Sammlers: Du, Gegner, Verluste, Verwun…
+- `fieldTick` :278
+- `fieldAt` :293 — drawing: the mine or the vein, the gatherers' tent in their colour with a progr…
+- `drawResFields` :294
+- `fieldSource` :340
+- `openFieldSheet` :342
+- `closeFieldSheet` :360
 
 ### Game/spiel/09b-lager-tagesboss.js — Barbaren-Lager und Tagesboss
 - `barbTroopsOf` :5 — × WIRTSCHAFT_KOSTEN (5.10.): 1 at 1, ~570 at 10, ~19 Mio. at 25 (vorher 2 Tsd. …

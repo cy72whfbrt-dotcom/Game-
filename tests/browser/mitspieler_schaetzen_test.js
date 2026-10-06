@@ -47,6 +47,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const i = pendingAttacks.indexOf(a); if (i >= 0) pendingAttacks.splice(i, 1);
       for (let k = pendingSends.length - 1; k >= 0; k--) if (pendingSends[k].senderBotId === Y.id && pendingSends[k].toId === zid) { islandTroops[pendingSends[k].fromId] += pendingSends[k].troops; pendingSends.splice(k, 1); }
     }
+    // botGather ohne Helfer (Quelle allein stark genug) fragte botFrei nach „undefined“ → TypeError landmassId
+    try { out.freiOhne = botFrei(Y.id, undefined, now); out.freiAlt = botFrei(Y.id, 'gibtsNicht', now); } catch (e) { out.freiFehler = e.message; }
     return out;
   });
   console.log(JSON.stringify(r));
@@ -58,6 +60,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.fMin >= .7 && r.fMax <= 1.3 && r.fMax - r.fMin > .2, 'Schätzungen streuen im Rahmen ±30 %', [r.fMin, r.fMax]);
   ok(Math.abs(r.kampf - r.echt) < 1, 'im Kampf: die echte Stärke', [r.kampf, r.echt]);
   ok(r.armee === 5000, 'Feld-Armee: nur ihre Truppenzahl', r.armee);
+  ok(!r.freiFehler && r.freiOhne === 0 && r.freiAlt === 0, 'botFrei ohne Insel wirft nicht (0 Truppen frei)', r.freiFehler || [r.freiOhne, r.freiAlt]);
   ok(fe.length === 0, 'keine Seitenfehler', fe.slice(0, 3));
   await b.close();
 })();

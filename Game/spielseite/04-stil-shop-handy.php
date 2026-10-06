@@ -79,6 +79,7 @@
 @keyframes ware-glanz{0%,70%{left:-60%}100%{left:130%}}
 @media (prefers-reduced-motion:reduce){.ware.glanz::after,.ware--gross .ware-bild::before{animation:none}}
 .waren--3 .ware{padding:6px 6px 0} .waren--3 .ware-bild{height:64px} .waren--3 .ware-preis{margin:8px -6px 0;font-size:15px} .waren--3 .ware-name{font-size:14px} .waren--3 .ware-txt small{font-size:11px}
+#heroChestOpts .ware{cursor:pointer}   /* Heldenkisten: die ganze Karte kauft (wie der Preis-Knopf) */
 .ware-mehr{display:grid;gap:8px;align-content:stretch}
 .ware-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 8px;border-radius:12px;border:1px dashed var(--line-3);background:rgba(0,0,0,.22);cursor:pointer;
   font:600 var(--fs-13) var(--font-ui);color:var(--gold-200)} .ware-link .icon{width:16px;height:16px;color:var(--gold-300)} .ware-link.on{color:var(--gold-100);border-style:solid}

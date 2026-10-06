@@ -14,6 +14,7 @@
 .btn--full{flex:1 1 100%}
 .btn--sm{height:var(--btn-h-sm);padding:0 10px;font-size:var(--fs-11);gap:6px}
 .btn--sm .icon{width:14px;height:14px}
+.btn--sm::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px (sichtbar 28/36) */
 .btn--primary{color:var(--tx-inv);text-shadow:0 1px 0 rgba(255,238,200,.35);border-color:#f1d898;
   background:linear-gradient(180deg,#ecd08a 0%,#cfa458 45%,#a67b34 100%);box-shadow:inset 0 1px 0 rgba(255,248,222,.7),inset 0 -1px 0 rgba(90,60,15,.55),0 2px 10px rgba(0,0,0,.45)}
 .btn--secondary{color:var(--gold-100);border-color:var(--line-2);background:linear-gradient(180deg,#1d222c,#12151b);box-shadow:var(--hi-inset),0 2px 8px rgba(0,0,0,.35)}
@@ -567,7 +568,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .ap-kopf .force small,#popupStats .ap-kopf .force--foe small[data-foe="sub"]{margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ap-kopf .force--foe{align-items:flex-end} .ap-kopf .force--foe > *{max-width:100%} .ap-kopf .force--me .stat-l{justify-content:flex-start}
 .ap-spaehen{position:relative;display:inline-flex;align-items:center;gap:4px;height:24px;margin-top:3px;padding:0 8px;border:1px solid var(--line-3);border-radius:var(--r-xs);background:rgba(214,170,90,.12);color:var(--gold-100);font:600 var(--fs-11)/1 var(--font-ui)}
-.ap-spaehen::before{content:"";position:absolute;inset:-10px -4px} .ap-spaehen .icon{width:12px;height:12px} .ap-spaehen:disabled{opacity:.5}   /* (Tippfläche 44 px) */
+.ap-spaehen::before{content:"";position:absolute;inset:-11px -4px} .ap-spaehen .icon{width:12px;height:12px} .ap-spaehen:disabled{opacity:.5}   /* (Tippfläche 44 px) */
 .ap-bal{display:flex;align-items:center;gap:8px} .ap-bal .balance{flex:1 1 auto} .ap-bal .balance-note{margin:0;white-space:nowrap}   /* Balken + „Überlegen 190×“ in einer Zeile */
 #previewToll{color:var(--gold-200)} #previewToll .icon{width:11px;height:11px;margin:0 3px 0 1px;vertical-align:-1px}   /* Maut/Tor in der Überzeile: keine zweite Kopfzeile */
 /* Truppen: Schieber über die ganze Breite (Daumen), darunter 25/50/75/Alle und die Zahl */

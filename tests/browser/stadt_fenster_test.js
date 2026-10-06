@@ -30,7 +30,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         const zStadt = await dicht(); cityView.hidden = true; const zKarte = await dicht(); cityView.hidden = false; cityRaf = requestAnimationFrame(cityFrame);   // (ganz dicht: so stark wird der Schleier höchstens)
         const maxA = Math.max(+zStadt.split(':')[1], +zKarte.split(':')[1]), zs = [zKarte.split(':')[0] + 'k', zStadt.split(':')[0] + 's'];
         o.uebergang = { burg: cityOpenId === '_keep' && !document.getElementById('citySheet').hidden, z: zs, maxA, weg: 560 + durs.slice(0, 2).reduce((a, b) => a + b, 0), midbar: getComputedStyle(document.getElementById('midBar')).visibility,
-          desk: innerWidth >= 900 && innerHeight >= 501, camZ: Math.round(cityCam.z * 100) / 100, sollZ: Math.round(Math.max(cityFitZoom(innerWidth, innerHeight), Math.min(2.2, innerWidth / 420) * (innerWidth >= 900 && innerHeight >= 501 ? .85 : 1)) * 100) / 100 };
+          desk: innerWidth >= 900 && innerHeight >= 501, camZ: Math.round(cityCam.z * 100) / 100, sollZ: Math.round(cityStartZoom(innerWidth, innerHeight) * 100) / 100 };
         cityOpenId = null; document.getElementById('citySheet').hidden = true; }
       // 0b) Gebäude-Fenster: Botschaft bei Burg 1 – Jetzt / Stufe 1, „Burg Stufe 5“ rot mit „Zur Burg“, Knopf sagt, was fehlt
       { const C = loadCity(); C.builds = []; C.levels.embassy = 0; C.levels.market = 0; C.levels.wall = 0;

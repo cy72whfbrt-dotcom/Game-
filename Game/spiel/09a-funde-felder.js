@@ -10,6 +10,7 @@ function pickupAmount(kind) {
     return Math.max(wirtM(200), niceRound(levelRewardCoins(L) * 0.1));   // (Münzen: wirtM)
 }
 function pickupScreenPos(p) { return { x: p.x * mapState.zoom + mapState.offsetX, y: p.y * mapState.zoom + mapState.offsetY }; }
+const pickupVerdeckt = s => bannerHitRects.some(b => s.x > b.x - 22 && s.x < b.x + b.w + 22 && s.y > b.y - 22 && s.y < b.y + b.h + 22);   // auf einem Namensschild: nicht zeigen (nach Zoom/Verschieben)
 function trySpawnPickup() {
     if (pickups.length >= PICKUP_MAX || document.hidden || mapState.zoom < 0.012) return;
     const top = 110, bottom = viewH - 150;
@@ -39,7 +40,7 @@ function tickPickups() {
 function collectPickupAt(sx, sy) {
     for (let i = pickups.length - 1; i >= 0; i--) {
         const p = pickups[i], s = pickupScreenPos(p);
-        if (Math.hypot(s.x - sx, s.y - sy) > PICKUP_HIT_PX) continue;
+        if (Math.hypot(s.x - sx, s.y - sy) > PICKUP_HIT_PX || pickupVerdeckt(s)) continue;
         pickups.splice(i, 1);
         let label;
         if (p.kind === 'gem') { gems += p.amount; label = '+' + fmtNum(p.amount) + (p.amount === 1 ? ' Edelstein' : ' Edelsteine'); }
@@ -61,7 +62,7 @@ function collectPickupAt(sx, sy) {
 function drawPickups(now) {          // screen space (setScreen active)
     for (const p of pickups) {
         const s = pickupScreenPos(p);
-        if (s.x < -40 || s.y < -40 || s.x > viewW + 40 || s.y > viewH + 40) continue;
+        if (s.x < -40 || s.y < -40 || s.x > viewW + 40 || s.y > viewH + 40 || pickupVerdeckt(s)) continue;
         const age = now - p.born, left = p.expires - Date.now();
         let a = Math.min(1, age / 400);
         if (left < 5000) a *= 0.55 + 0.45 * Math.abs(Math.sin(left / 160));   // blinks before it disappears
@@ -78,6 +79,9 @@ function drawPickups(now) {          // screen space (setScreen active)
         ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke();
         drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : 'coin', cx, cy, r * 1.3,
             p.kind === 'gem' ? '#8fd8ff' : p.kind === 'troops' ? '#efe8d6' : '#e8c46e');
+        const t = '+' + fmtCompact(p.amount); ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';   // Beschriftung: was es gibt
+        const w = ctx.measureText(t).width + 12; ctx.fillStyle = 'rgba(14,14,20,.85)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - w / 2, cy + r + 2, w, 15, 7) : ctx.rect(cx - w / 2, cy + r + 2, w, 15); ctx.fill();
+        ctx.fillStyle = p.kind === 'gem' ? '#9fe0ff' : p.kind === 'troops' ? '#f1ece0' : '#f0d58f'; ctx.fillText(t, cx, cy + r + 5);
         ctx.restore();
     }
     pickupFx = pickupFx.filter(f => now - f.born < 1200);

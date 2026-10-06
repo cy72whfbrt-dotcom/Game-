@@ -171,8 +171,8 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
   background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-pill);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 /* der EINE Streifen unter der Werte-Zeile: alle Dauer-Hinweise (Wochen-Event, Kopfgeld, Thron, Invasion, Drache, Händler, Saison), einzeilig –
    der dringendste sichtbar, der Rest als Zähler „+2“ (antippen klappt alle auf) */
-.midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 70px);right:calc(var(--safe-r) + 10px);
-  display:flex;align-items:flex-start;gap:var(--ab-1);pointer-events:none}
+.midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 70px);right:calc(var(--safe-r) + 64px);
+  display:flex;align-items:flex-start;gap:var(--ab-1);pointer-events:none}   /* (rechts frei: das Schild „Rohstoffe“ unter dem Würfel) */
 .midbar.offen{flex-direction:column}
 .midbar[hidden]{display:none} .midbar > *{pointer-events:auto}
 .mb-mehr{position:relative;flex:none;min-width:34px;height:26px;padding:0 8px;border-radius:var(--r-pill);background:var(--glass-strong);border:1px solid var(--line-3);
@@ -187,6 +187,8 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mb-chip.is-drache{border-color:rgba(255,140,70,.6);background:linear-gradient(90deg,rgba(170,50,20,.78),rgba(22,10,8,.88))} .mb-chip.is-drache .icon{color:#ffc46a} .mb-chip.is-drache i{color:#ffd9c0}
 .mb-chip.is-warn{border-color:rgba(225,72,60,.6);background:linear-gradient(90deg,rgba(150,30,30,.75),rgba(20,12,12,.88));color:#ffd9d3} .mb-chip.is-warn > .icon:first-child{color:#ffb3aa}
 .mb-chip > span{overflow:hidden;text-overflow:ellipsis}
+.mb-chip .mb-platz{flex:none;min-width:6.3ch;text-align:right} .mb-chip .mb-platz.is-leer{visibility:hidden}   /* Wochen-Event: feste Breite, auch ohne Rang */
+@media (max-width:899px) and (min-height:501px){ .mb-chip.is-tour{flex:1 1 auto} .mb-chip .mb-platz.is-leer{display:none} }   /* Handy: der Chip füllt die Leiste – der Name bleibt ganz, der Rang kommt ohne Sprung */
 .mb-chip::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
 .res{position:relative;flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;justify-content:center;gap:var(--ab-1);padding:0 var(--ab-1)}
 .res > .icon{width:16px;height:16px}
@@ -246,7 +248,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mapctl{position:fixed;z-index:var(--z-mapctl);right:calc(var(--safe-r) + 10px);bottom:calc(var(--dock-h) + var(--safe-bd) + 14px);
   display:flex;flex-direction:column;background:rgba(14,16,22,.52);border:1px solid rgba(214,170,90,.16);border-radius:var(--r-sm);box-shadow:var(--sh-1);
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.mapctl button{width:34px;height:34px;display:grid;place-items:center;color:var(--tx-2)}
+.mapctl button{width:44px;height:44px;display:grid;place-items:center;color:var(--tx-2)}
 .mapctl button + button{border-top-color:rgba(255,255,255,.05)}
 .mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
 [data-frame="bronze"]{--fr1:#c9854f;--fr2:#7a4a26} [data-frame="silver"]{--fr1:#e8eef5;--fr2:#8a95a3} [data-frame="gold"]{--fr1:#ffd35a;--fr2:#a0701c}
@@ -611,6 +613,7 @@ body.has-panel .mapctl{display:none}
 .btn--full{flex:1 1 100%}
 .btn--sm{height:var(--btn-h-sm);padding:0 10px;font-size:var(--fs-11);gap:6px}
 .btn--sm .icon{width:14px;height:14px}
+.btn--sm::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px (sichtbar 28/36) */
 .btn--primary{color:var(--tx-inv);text-shadow:0 1px 0 rgba(255,238,200,.35);border-color:#f1d898;
   background:linear-gradient(180deg,#ecd08a 0%,#cfa458 45%,#a67b34 100%);box-shadow:inset 0 1px 0 rgba(255,248,222,.7),inset 0 -1px 0 rgba(90,60,15,.55),0 2px 10px rgba(0,0,0,.45)}
 .btn--secondary{color:var(--gold-100);border-color:var(--line-2);background:linear-gradient(180deg,#1d222c,#12151b);box-shadow:var(--hi-inset),0 2px 8px rgba(0,0,0,.35)}
@@ -1164,7 +1167,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .ap-kopf .force small,#popupStats .ap-kopf .force--foe small[data-foe="sub"]{margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ap-kopf .force--foe{align-items:flex-end} .ap-kopf .force--foe > *{max-width:100%} .ap-kopf .force--me .stat-l{justify-content:flex-start}
 .ap-spaehen{position:relative;display:inline-flex;align-items:center;gap:4px;height:24px;margin-top:3px;padding:0 8px;border:1px solid var(--line-3);border-radius:var(--r-xs);background:rgba(214,170,90,.12);color:var(--gold-100);font:600 var(--fs-11)/1 var(--font-ui)}
-.ap-spaehen::before{content:"";position:absolute;inset:-10px -4px} .ap-spaehen .icon{width:12px;height:12px} .ap-spaehen:disabled{opacity:.5}   /* (Tippfläche 44 px) */
+.ap-spaehen::before{content:"";position:absolute;inset:-11px -4px} .ap-spaehen .icon{width:12px;height:12px} .ap-spaehen:disabled{opacity:.5}   /* (Tippfläche 44 px) */
 .ap-bal{display:flex;align-items:center;gap:8px} .ap-bal .balance{flex:1 1 auto} .ap-bal .balance-note{margin:0;white-space:nowrap}   /* Balken + „Überlegen 190×“ in einer Zeile */
 #previewToll{color:var(--gold-200)} #previewToll .icon{width:11px;height:11px;margin:0 3px 0 1px;vertical-align:-1px}   /* Maut/Tor in der Überzeile: keine zweite Kopfzeile */
 /* Truppen: Schieber über die ganze Breite (Daumen), darunter 25/50/75/Alle und die Zahl */
@@ -1292,6 +1295,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 @keyframes ware-glanz{0%,70%{left:-60%}100%{left:130%}}
 @media (prefers-reduced-motion:reduce){.ware.glanz::after,.ware--gross .ware-bild::before{animation:none}}
 .waren--3 .ware{padding:6px 6px 0} .waren--3 .ware-bild{height:64px} .waren--3 .ware-preis{margin:8px -6px 0;font-size:15px} .waren--3 .ware-name{font-size:14px} .waren--3 .ware-txt small{font-size:11px}
+#heroChestOpts .ware{cursor:pointer}   /* Heldenkisten: die ganze Karte kauft (wie der Preis-Knopf) */
 .ware-mehr{display:grid;gap:8px;align-content:stretch}
 .ware-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 8px;border-radius:12px;border:1px dashed var(--line-3);background:rgba(0,0,0,.22);cursor:pointer;
   font:600 var(--fs-13) var(--font-ui);color:var(--gold-200)} .ware-link .icon{width:16px;height:16px;color:var(--gold-300)} .ware-link.on{color:var(--gold-100);border-style:solid}
