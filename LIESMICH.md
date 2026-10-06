@@ -754,6 +754,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Events: Randnotizen („verpasster Tag = Tag 1“) klein wie „Neu um …“. Stadt am Handy (Mauer/Krankenhaus/Steinbruch am Rand):
   bleibt – weiter herauszoomen geht nicht, weil das gemalte Land am hohen Handy-Bild sonst oben/unten endet (08f
   `cityClampCam`, `CITY_BOUNDS`); dafür müsste mehr Land gemalt werden. Test `design_hud_test` (Abschnitt 6).
+- **6.10. – Mitte: Bündnisse erobern die Mitte + Pass-Timer (11b „Mitte“, Branch `mitte-bund`, NICHT hochgeladen):**
+  **Pass-Timer wieder an** (01b `PASS_OPEN_DAYS` = 3 Tage für Wächter- und Thron-Insel, ab `openWaterWorldStart`; den setzt
+  `saisonWelt` bei jedem Reset neu): 3 Tage zu für alle (Spieler und Mitspieler), Torhaus mit Countdown, Hinweis „öffnet in …“.
+  Achtung beim Hochladen in die laufende Saison (Welt-Start 3.10.): die Pässe sind dann sofort offen; nach dem Saison-Reset
+  wieder 3 Tage zu. **Bündnis-Rallys auf die Mitte** (buendnis/03 `bundRallyPlan`, `bundRallyReiz`): auch neutrale Tore,
+  Tempel (Wächter-Tempel) und der freie Thron sind Ziele (freie Türme nicht); Thron vor Wächter-Tempel vor Tor, innen vor außen;
+  Ziele hinter einem verschlossenen Tor nicht (erst das Tor). **Gemeinsam vorrücken** (`bundMitspielerRunde` h,
+  `bundTreffpunkt`): Treffpunkt = Schwerpunkt der anderen Mitglieder 40 % näher am Thron, öfter und schon bei kleinerem Gewinn;
+  bei viel Ärger hinten (≥ 2 angegriffene Basen der Mitglieder oder Hilferufe, `bundAerger`) liegt er dort – sie verlegen zurück
+  und helfen. **Rally nach Lage** (`bundRallyLage`): Quelle und Mitmacher schicken nicht pauschal 90 % bzw. 80 % – je eigene
+  bedrohte Basis 15 % weniger, bei Ärger im Bündnis noch 15 % weniger (mind. 40 %). Tests `pass_test`, `bund_mitte_test` (neu).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
