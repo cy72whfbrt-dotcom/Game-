@@ -1591,6 +1591,10 @@ Nacht – vorher bauen und testen.
 13. **DRINGEND – Münzen explodieren durch Basis-Aufwerten** (Bilder d5be07d4 18:40 → 4e504f53 18:43): in 2 Minuten Basis
     Stufe 11 → 64, Münzen 3.617 → 152,9 Mio., Münzen/Std. 40.000 → 66,7 Mio. Gewinnschleife beim Aufwerten (Kosten
     vs. Ertrag/Belohnung). Ursache wird gesucht (Sucher such-muenz) → sofort beheben + hochladen (mit Alexanders Ja).
+    **Nachtrag 18:50:** Die Münzen (und Truppen) hat sich Alexander selbst gegeben (Admin), also KEINE Münz-Quelle aus dem Nichts.
+    Bleibt: (a) Aufwerten zu billig – Kosten 66,7×1,27^(L−1) vs. Ertrag 10.000×1,15^(L−1), mit 150 Mio. in 2 Min. von Stufe
+    11 auf 64 (66,7 Mio./h); (b) echte Schleife laut Sucher: Pass-/Thron-Belohnungen zahlen „Stunden-Ertrag × n“ aus der
+    aktuellen Stufe (passGive/throneAmount) und das Hauptbuch erlaubt hourProduction×1,2 → Hotfix hotfix-muenz läuft.
 14. **Insel-Design + Berge „komplett Dreck“** (Bild 192e18ee, 18:43): Landfläche ist eine flache rosa-beige Fläche voller
     kleiner gleicher Krabbel-Symbole (Barbaren-Lager? Steinchen?), wirkt wie Muster/Tapete; Berge sind kleine graue Dreiecke
     (wie Zelte) verstreut; Fluss ok. Gewünscht: Landschaft wie Million Lords/RoK – Gelände mit Struktur (Gras, Sand,
@@ -1612,8 +1616,7 @@ Nacht – vorher bauen und testen.
     → Designer mit Online-Vorbildern (Start-/Login-Bildschirme RoK, Call of Dragons, Lords Mobile).
 17. **Tore auf der Karte nicht mehr markiert + eigene Basen nicht erkennbar** (Bild 4b1cd453, 18:48): Tore (Brücken über
     die Flüsse) haben keine Markierung mehr; Gebiets-Blöcke grün/orange, aber man sieht nicht, welche Basis die eigene ist
-    (Hauptstadt hervorheben, z. B. eigener Ring/Wappen/Name). Im HUD außerdem Truppen „111,1 Mrd.“ – Folge von Punkt 13?
-    prüfen.
+    (Hauptstadt hervorheben, z. B. eigener Ring/Wappen/Name). (Truppen „111,1 Mrd.“ im HUD: von Alexander selbst gegeben, ok.)
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
