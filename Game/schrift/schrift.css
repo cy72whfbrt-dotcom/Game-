@@ -1,0 +1,4 @@
+/* Schriften selbst ausgeliefert (statt Google Fonts: kein fremder Aufruf, Fotos = Handy). Lateinischer Teil, variable Stärke.
+   Cinzel (Überschriften) und Inter (Text), beide SIL Open Font License 1.1 – siehe OFL-Cinzel.txt / OFL-Inter.txt. */
+@font-face{font-family:'Cinzel';font-style:normal;font-weight:400 900;font-display:swap;src:url(cinzel.woff2) format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:100 900;font-display:swap;src:url(inter.woff2) format('woff2')}

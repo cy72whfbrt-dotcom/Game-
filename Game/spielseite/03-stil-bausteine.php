@@ -592,3 +592,26 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .hero-seg.chips-quer{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding-bottom:2px}
 .hero-seg.chips-quer::-webkit-scrollbar{display:none}
 .hero-seg.chips-quer > button{flex:none;min-width:max-content;padding:0 12px}
+
+/* ---------------- Einheitlichkeit (Designer-Gesamtblick 6.10., Regeln a1–a12) – gilt für alle Fenster ---------------- */
+/* a1: Edelstein und Münze sind überall dasselbe Bild in derselben Farbe (auch auf Gold-Knöpfen, in Reitern, Chips, HUD) */
+use[href="#i-gem"]{color:var(--res-gem)}
+use[href="#i-coin"]{color:var(--res-coin)}
+.icon:has(> use[href="#i-gem"]),.icon:has(> use[href="#i-coin"]){filter:drop-shadow(0 1px 0 rgba(0,0,0,.35))}
+.btn:disabled .icon:has(> use[href="#i-gem"]),.btn:disabled .icon:has(> use[href="#i-coin"]){opacity:.75}
+/* a2: Zahlen – rechtsbündig, gleich breite Ziffern; Plus grün, Minus/fehlt rot */
+.zahl{font-variant-numeric:tabular-nums;font-weight:600;color:var(--tx-1);text-align:right;white-space:nowrap}
+.zahl--plus{color:var(--good)} .zahl--minus{color:var(--blood-300)}
+/* a4: Unter-Reiter (Chips) nie größer als die Hauptreiter darüber */
+.tabs + .p5-chips .p5-chip{height:var(--k-chip);font-size:var(--fs-12)}
+/* a5: Zeilen mit overflow:hidden – Platz für die Punkte über Ä/Ö/Ü */
+.tab span{line-height:1.35;padding-top:1px}
+.overline,.kl-seite .kl-kopf .overline{line-height:1.4}
+.hud-me-text b,.rp-stat b,.pc-t b,.act-s,.gslot small,.vh-chip-t small,.lk-me-t b,.ap-hchip-t b,.ap-hchip-t small,.slot-r,.lb-name small{line-height:1.35}
+/* a11: Knopftext passt immer in den Knopf (kleine Knöpfe neben Text: nicht zusammendrücken) */
+.btn--sm,.btn--chip{flex-shrink:0;min-width:max-content}
+.btn:disabled{color:var(--tx-3)}
+/* a12: Platzhalter in Eingabefeldern ruhig: normal, gedämpft, nicht größer als Text */
+input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(--fs-15));color:var(--tx-4);opacity:1;letter-spacing:normal}
+/* Schriftstufen: lesbarer Kleintext mindestens --fs-11 (10/10,5 px gibt es nicht mehr; Plaketten/Stufenzahlen ausgenommen) */
+.logGearMeta,.logSrc,.rp-gear small,.pc-t small,.ghero small,.hh-foot small,.hh-skt small,.hh-steps span,.hud-me-text small,.auf-grid span,.fo-wirk span,.ptitle-tag{font-size:var(--fs-11)}
