@@ -19,13 +19,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `activeSkin` → Game/spiel/08b-burg-aussehen.js:11
 - `add` → Game/baukunst/08-himmelsfeste-bilder.js:161
 - `add` → Game/spiel/01c-basen-spielstand.js:54
-- `add` → Game/spiel/03a-karte-hintergrund.js:239
+- `add` → Game/spiel/03a-karte-hintergrund.js:244
 - `add` → Game/spiel/06c-thron-mitte.js:63
 - `addBotXp` → Game/bots/04-stand-stadt.js:210
 - `addCombatLogEntry` → Game/spiel/02b-maersche.js:65
 - `addInventoryItem` → Game/spiel/02a-shop-stufen.js:72
 - `addMat` → Game/baukunst/04-vielfalt-stile.js:232
-- `addPoly` → Game/spiel/03a-karte-hintergrund.js:252
+- `addPoly` → Game/spiel/03a-karte-hintergrund.js:257
 - `addProps` → Game/baukunst/04-vielfalt-stile.js:514
 - `addXp` → Game/spiel/02a-shop-stufen.js:260
 - `adminBefehl` → Game/spiel/10d-welt-weltrechner.js:1202
@@ -57,7 +57,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `Aktion 'wr_sicherung'` → Game/admin.php:107
 - `aktueller_spieler` → Game/server/01-grundlagen-login.php:65
 - `ALGAE` → Game/baukunst/07-hafen-palast.js:21
-- `alike` → Game/spiel/03a-karte-hintergrund.js:498
+- `alike` → Game/spiel/03a-karte-hintergrund.js:503
 - `allowed` → Game/baukunst/05-umland.js:660
 - `alsBefehl` → Game/spiel/01a-grundlagen.js:18
 - `alter` → Game/spiel/05d-maersche-kampfbericht.js:573
@@ -83,9 +83,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `antwort` → Game/speichern.js:136
 - `antwort` → Game/weltrechner/start.js:333
 - `antwortVerarbeiten` → Game/welt.js:459
-- `anyIn` → Game/spiel/03a-karte-hintergrund.js:473
+- `anyIn` → Game/spiel/03a-karte-hintergrund.js:478
 - `anzahl_teile` → Game/server/05-datenbank-welt.php:99
-- `anzeigeStufe` → Game/spiel/03a-karte-hintergrund.js:586
+- `anzeigeStufe` → Game/spiel/03a-karte-hintergrund.js:591
 - `apHeldChip` → Game/spiel/10a-inselfenster-vorschau.js:223
 - `api.clear` → Game/speichern.js:39
 - `api.getItem` → Game/speichern.js:36
@@ -164,7 +164,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `band` → Game/baukunst/08-himmelsfeste-bilder.js:159
 - `banner` → Game/baukunst/06-turmhof-festung.js:275
 - `banner` → Game/baukunst/07-hafen-palast.js:477
-- `bannerModel` → Game/spiel/03b-gebaeude-3d.js:384
+- `bannerModel` → Game/spiel/03b-gebaeude-3d.js:390
 - `bannerSprite` → Game/spiel/03c-wappen-thronplatz.js:126
 - `barbAlong` → Game/spiel/09b-lager-tagesboss.js:221
 - `barbArrive` → Game/spiel/09b-lager-tagesboss.js:124
@@ -202,7 +202,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `barrel` → Game/baukunst/05-umland.js:169
 - `barrel` → Game/baukunst/07-hafen-palast.js:169
 - `baseDefenseForLevel` → Game/spiel/01b-weltkarte.js:131
-- `baseLevelOf` → Game/spiel/03a-karte-hintergrund.js:587
+- `baseLevelOf` → Game/spiel/03a-karte-hintergrund.js:592
 - `baseShieldedFor` → Game/spiel/06d-schild-produktion.js:41
 - `basesTxt` → Game/spiel/05c-erfolge-rangliste.js:295
 - `basis_pfad` → Game/server/01-grundlagen-login.php:28
@@ -231,7 +231,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `Batch.prototype.flush` → Game/baukunst/07-hafen-palast.js:427
 - `Batch.prototype.flush` → Game/baukunst/08-himmelsfeste-bilder.js:38
 - `bausch` → Game/ladebildschirm.js:120
-- `baustilOf` → Game/spiel/03b-gebaeude-3d.js:347
+- `baustilOf` → Game/spiel/03b-gebaeude-3d.js:353
 - `bauStufe` → Game/aufbau.js:243
 - `beam` → Game/baukunst/03-wahrzeichen-feuer.js:12
 - `beam` → Game/baukunst/06-turmhof-festung.js:19
@@ -266,31 +266,31 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `beute` → Game/spiel/02c-spaeher-ankunft.js:130
 - `beuteChips` → Game/spiel/01a-grundlagen.js:205
 - `beuteText` → Game/spiel/08a-stadt-bauen.js:44
-- `bgDropGen` → Game/spiel/03a-karte-hintergrund.js:373
-- `bgGen` → Game/spiel/03a-karte-hintergrund.js:374
-- `bgKept` → Game/spiel/03a-karte-hintergrund.js:380
-- `bgMissing` → Game/spiel/03a-karte-hintergrund.js:385
-- `bgOverview` → Game/spiel/03a-karte-hintergrund.js:403
-- `bgRange` → Game/spiel/03a-karte-hintergrund.js:381
-- `bgShow` → Game/spiel/03a-karte-hintergrund.js:375
-- `bgWarm` → Game/spiel/03a-karte-hintergrund.js:402
+- `bgDropGen` → Game/spiel/03a-karte-hintergrund.js:378
+- `bgGen` → Game/spiel/03a-karte-hintergrund.js:379
+- `bgKept` → Game/spiel/03a-karte-hintergrund.js:385
+- `bgMissing` → Game/spiel/03a-karte-hintergrund.js:390
+- `bgOverview` → Game/spiel/03a-karte-hintergrund.js:408
+- `bgRange` → Game/spiel/03a-karte-hintergrund.js:386
+- `bgShow` → Game/spiel/03a-karte-hintergrund.js:380
+- `bgWarm` → Game/spiel/03a-karte-hintergrund.js:407
 - `bild30` → Game/ladebildschirm.js:289
 - `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:307
 - `bitHat` → Game/spiel/10d-welt-weltrechner.js:918
 - `bitsZu` → Game/spiel/10d-welt-weltrechner.js:917
-- `bk3d` → Game/spiel/03b-gebaeude-3d.js:348
-- `bkDraw` → Game/spiel/03b-gebaeude-3d.js:382
-- `bkModel` → Game/spiel/03b-gebaeude-3d.js:351
-- `bkPreviews` → Game/spiel/03b-gebaeude-3d.js:374
-- `bkSprite` → Game/spiel/03b-gebaeude-3d.js:367
-- `blit` → Game/spiel/03a-karte-hintergrund.js:526
+- `bk3d` → Game/spiel/03b-gebaeude-3d.js:354
+- `bkDraw` → Game/spiel/03b-gebaeude-3d.js:388
+- `bkModel` → Game/spiel/03b-gebaeude-3d.js:357
+- `bkPreviews` → Game/spiel/03b-gebaeude-3d.js:380
+- `bkSprite` → Game/spiel/03b-gebaeude-3d.js:373
+- `blit` → Game/spiel/03a-karte-hintergrund.js:531
 - `blob` → Game/spiel/01f-felsen.js:210
 - `block` → Game/spiel/05d-maersche-kampfbericht.js:452
 - `boardsGeo` → Game/baukunst/04-vielfalt-stile.js:331
 - `BODEN_RING` → Game/spiel/01b-weltkarte.js:207
-- `bodenAnteil` → Game/spiel/03a-karte-hintergrund.js:95
-- `bodenMasken` → Game/spiel/03a-karte-hintergrund.js:71
-- `bodenMuster` → Game/spiel/03a-karte-hintergrund.js:102
+- `bodenAnteil` → Game/spiel/03a-karte-hintergrund.js:92
+- `bodenMasken` → Game/spiel/03a-karte-hintergrund.js:68
+- `bodenMuster` → Game/spiel/03a-karte-hintergrund.js:99
 - `bollard` → Game/baukunst/07-hafen-palast.js:171
 - `bonusPct` → Game/spiel/04-kampf.js:255
 - `bonusText` → Game/spiel/05b-truhe-skills.js:198
@@ -485,11 +485,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `build` → Game/baukunst/07-hafen-palast.js:167
 - `build` → Game/baukunst/07-hafen-palast.js:579
 - `build` → Game/baukunst/08-himmelsfeste-bilder.js:182
-- `buildForest` → Game/spiel/03a-karte-hintergrund.js:210
+- `buildForest` → Game/spiel/03a-karte-hintergrund.js:215
 - `buildingSprite` → Game/spiel/03b-gebaeude-3d.js:251
 - `buildModel` → Game/baukunst/02-buehne-grundbasis.js:93
 - `buildPlinth` → Game/baukunst/02-buehne-grundbasis.js:72
-- `buildTerritoryChunk` → Game/spiel/03a-karte-hintergrund.js:246
+- `buildTerritoryChunk` → Game/spiel/03a-karte-hintergrund.js:251
 - `bund_geschenk_ok` → Game/server/03-nebel-maersche-seite.php:114
 - `bundAerger` → Game/buendnis/03-mitspieler.js:137
 - `bundAlleMelden` → Game/buendnis/01-daten-regeln.js:115
@@ -794,8 +794,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `coordText` → Game/spiel/10a-inselfenster-vorschau.js:91
 - `CORE` → Game/baukunst/08-himmelsfeste-bilder.js:24
 - `cornersOk` → Game/baukunst/04-vielfalt-stile.js:379
-- `count` → Game/spiel/03a-karte-hintergrund.js:574
-- `covered` → Game/spiel/03a-karte-hintergrund.js:499
+- `count` → Game/spiel/03a-karte-hintergrund.js:579
+- `covered` → Game/spiel/03a-karte-hintergrund.js:504
 - `cow` → Game/baukunst/05-umland.js:182
 - `crate` → Game/baukunst/07-hafen-palast.js:170
 - `crestDataUrl` → Game/spiel/03c-wappen-thronplatz.js:54
@@ -848,13 +848,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drAuszahlen` → Game/spiel/09c-events-drache.js:238
 - `drawArmies` → Game/spiel/09d-armeen-wegmarken.js:161
 - `drawArmyCamps` → Game/spiel/09d-armeen-wegmarken.js:172
-- `drawBackground` → Game/spiel/03a-karte-hintergrund.js:463
+- `drawBackground` → Game/spiel/03a-karte-hintergrund.js:468
 - `drawBarb` → Game/spiel/09b-lager-tagesboss.js:256
 - `drawBaseAuras` → Game/spiel/03c-wappen-thronplatz.js:293
 - `drawBaseSparks` → Game/spiel/03c-wappen-thronplatz.js:315
 - `drawBattleFx` → Game/spiel/07a-schlachten.js:398
-- `drawBrand` → Game/spiel/03b-gebaeude-3d.js:323
-- `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:274
+- `drawBrand` → Game/spiel/03b-gebaeude-3d.js:329
+- `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:289
 - `drawCrest` → Game/spiel/03c-wappen-thronplatz.js:19
 - `drawCrown` → Game/spiel/07b-kriegsherr.js:185
 - `drawDragonName` → Game/spiel/09c-events-drache.js:322
@@ -872,18 +872,20 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawMarchLine` → Game/spiel/03c-wappen-thronplatz.js:449
 - `drawMarchTokens` → Game/spiel/03d-maersche-tagnacht.js:41
 - `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:326
-- `drawn` → Game/spiel/03a-karte-hintergrund.js:497
+- `drawn` → Game/spiel/03a-karte-hintergrund.js:502
 - `drawNacht` → Game/spiel/03d-maersche-tagnacht.js:205
 - `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:189
 - `drawPickups` → Game/spiel/09a-funde-felder.js:62
 - `drawResFields` → Game/spiel/09a-funde-felder.js:294
 - `drawRings` → Game/spiel/03c-wappen-thronplatz.js:377
 - `drawRulerCrowns` → Game/spiel/07b-kriegsherr.js:195
-- `drawTerritoriesInto` → Game/spiel/03a-karte-hintergrund.js:330
+- `drawTerritoriesInto` → Game/spiel/03a-karte-hintergrund.js:335
 - `drawThroneFx` → Game/spiel/03c-wappen-thronplatz.js:274
 - `drawThronePlaza` → Game/spiel/03c-wappen-thronplatz.js:215
 - `drawThroneShots` → Game/spiel/06c-thron-mitte.js:117
 - `drawTitleBadges` → Game/spiel/03c-wappen-thronplatz.js:351
+- `drawTorBild` → Game/spiel/03b-gebaeude-3d.js:273
+- `drawToreImNebel` → Game/spiel/03b-gebaeude-3d.js:281
 - `drawWander` → Game/spiel/07b-kriegsherr.js:148
 - `drawWorldFrame` → Game/spiel/06e-nebel-zeichnen.js:3
 - `drDraw` → Game/spiel/09c-events-drache.js:333
@@ -908,7 +910,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `E.sub` → Game/baukunst/05-umland.js:780
 - `edge` → Game/bots/05-verteidigen-takt.js:311
 - `edge` → Game/spiel/01b-weltkarte.js:177
-- `edgeDist` → Game/spiel/03a-karte-hintergrund.js:214
+- `edgeDist` → Game/spiel/03a-karte-hintergrund.js:219
 - `effectiveDefense` → Game/spiel/01e-nebel-kampfwerte-hud.js:66
 - `effectiveTroops` → Game/spiel/01e-nebel-kampfwerte-hud.js:58
 - `effektText` → Game/aufbau.js:328
@@ -1158,7 +1160,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gateOnRoute` → Game/spiel/01b-weltkarte.js:335
 - `gateSettings` → Game/spiel/01b-weltkarte.js:343
 - `geben` → Game/spiel/06c-thron-mitte.js:187
-- `gebirgsPfad` → Game/spiel/03a-karte-hintergrund.js:193
+- `gebirgsPfad` → Game/spiel/03a-karte-hintergrund.js:198
 - `gehoert` → Game/spiel/10d-welt-weltrechner.js:94
 - `geldVon` → Game/aufbau.js:67
 - `gem` → Game/baukunst/08-himmelsfeste-bilder.js:70
@@ -1199,8 +1201,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `grenzLinie` → Game/spiel/01b-weltkarte.js:167
 - `groesse_nach` → Game/server/05-datenbank-welt.php:210
 - `groundGlow` → Game/baukunst/03-wahrzeichen-feuer.js:25
-- `grow` → Game/spiel/03a-karte-hintergrund.js:300
-- `grow` → Game/spiel/03a-karte-hintergrund.js:310
+- `grow` → Game/spiel/03a-karte-hintergrund.js:305
+- `grow` → Game/spiel/03a-karte-hintergrund.js:315
 - `gruppeBezahlt` → Game/spiel/10d-welt-weltrechner.js:1034
 - `gruppeLaeuft` → Game/aufbau.js:134
 - `h` → Game/admin.php:161
@@ -1211,10 +1213,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `haendlerOeffnen` → Game/haendler.js:183
 - `hall` → Game/baukunst/06-turmhof-festung.js:115
 - `handleTap` → Game/spiel/10b-inselfenster-knoepfe.js:246
-- `has` → Game/spiel/03a-karte-hintergrund.js:472
-- `HATCH_PX` → Game/spiel/03a-karte-hintergrund.js:319
-- `hatchPatterns` → Game/spiel/03a-karte-hintergrund.js:324
-- `hatchTile` → Game/spiel/03a-karte-hintergrund.js:320
+- `has` → Game/spiel/03a-karte-hintergrund.js:477
+- `HATCH_PX` → Game/spiel/03a-karte-hintergrund.js:324
+- `hatchPatterns` → Game/spiel/03a-karte-hintergrund.js:329
+- `hatchTile` → Game/spiel/03a-karte-hintergrund.js:325
 - `hauptstadtStufen` → Game/aufbau.js:481
 - `hauptVon` → Game/aufbau.js:479
 - `hauptVor` → Game/aufbau.js:480
@@ -1439,10 +1441,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:160
 - `karte` → Game/spiel/08c-helden.js:330
 - `karteBilder` → Game/spiel/03a-karte-hintergrund.js:35
-- `karteObjekte` → Game/spiel/03a-karte-hintergrund.js:133
+- `karteObjekte` → Game/spiel/03a-karte-hintergrund.js:130
 - `karteTauchen` → Game/spiel/08a-stadt-bauen.js:191
-- `kbBild` → Game/spiel/03a-karte-hintergrund.js:51
-- `kbVariante` → Game/spiel/03a-karte-hintergrund.js:43
+- `kbBild` → Game/spiel/03a-karte-hintergrund.js:47
+- `kbVariante` → Game/spiel/03a-karte-hintergrund.js:42
 - `keep` → Game/baukunst/06-turmhof-festung.js:69
 - `kegel` → Game/ladebildschirm.js:50
 - `kennung` → Game/buendnis/01-daten-regeln.js:151
@@ -1514,6 +1516,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `LIME` → Game/baukunst/07-hafen-palast.js:408
 - `LIMEDK` → Game/baukunst/07-hafen-palast.js:409
 - `LIMELT` → Game/baukunst/07-hafen-palast.js:410
+- `linie` → Game/spiel/03a-karte-hintergrund.js:154
 - `liste` → Game/spiel/08d-gebaeude-wirkung.js:75
 - `liveBald` → Game/spiel/10c-start-einstellungen.js:261
 - `liveHtml` → Game/spiel/01a-grundlagen.js:145
@@ -1527,7 +1530,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `lkPrice` → Game/spiel/08b-burg-aussehen.js:22
 - `lkUse` → Game/spiel/08b-burg-aussehen.js:35
 - `lmAt` → Game/spiel/08e-stadtbild-haeuser.js:414
-- `loadBaustil` → Game/spiel/03b-gebaeude-3d.js:345
+- `loadBaustil` → Game/spiel/03b-gebaeude-3d.js:351
 - `loadBotState` → Game/bots/04-stand-stadt.js:12
 - `loadCity` → Game/spiel/08a-stadt-bauen.js:53
 - `loadCrest` → Game/spiel/03c-wappen-thronplatz.js:7
@@ -1622,7 +1625,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mine` → Game/spiel/08c-helden.js:109
 - `mini` → Game/spiel/05a-aussehen-profil.js:134
 - `minuten` → Game/weltrechner/push.js:124
-- `missing` → Game/spiel/03a-karte-hintergrund.js:503
+- `missing` → Game/spiel/03a-karte-hintergrund.js:508
 - `mitspieler_kuerzen` → Game/server/02-sicherheit-datenlecks.php:139
 - `mix` → Game/spiel/03d-maersche-tagnacht.js:193
 - `mixHue` → Game/baukunst/04-vielfalt-stile.js:136
@@ -1722,7 +1725,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nebelWeit` → Game/spiel/06e-nebel-zeichnen.js:84
 - `nebelWeite` → Game/aufbau.js:241
 - `neu` → Game/ladebildschirm.js:233
-- `neu` → Game/spiel/03a-karte-hintergrund.js:136
+- `neu` → Game/spiel/03a-karte-hintergrund.js:133
 - `neueNummer` → Game/welt.js:384
 - `neulingBis` → Game/spiel/06d-schild-produktion.js:26
 - `neulingEnde` → Game/spiel/06d-schild-produktion.js:38
@@ -1760,7 +1763,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openShop` → Game/spiel/06d-schild-produktion.js:131
 - `opts` → Game/spiel/04-kampf.js:65
 - `out` → Game/spiel/10c-start-einstellungen.js:32
-- `overHole` → Game/spiel/03a-karte-hintergrund.js:540
+- `overHole` → Game/spiel/03a-karte-hintergrund.js:545
 - `overlap` → Game/spiel/03c-wappen-thronplatz.js:143
 - `OW.crestCloth` → Game/baukunst/04-vielfalt-stile.js:22
 - `OW.models.basis.build` → Game/baukunst/02-buehne-grundbasis.js:392
@@ -1791,19 +1794,19 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ownerKeys` → Game/baukunst/02-buehne-grundbasis.js:92
 - `ownerShielded` → Game/spiel/06d-schild-produktion.js:39
 - `ownerShieldUntil` → Game/spiel/06d-schild-produktion.js:11
-- `ownershipDelta` → Game/spiel/03a-karte-hintergrund.js:295
+- `ownershipDelta` → Game/spiel/03a-karte-hintergrund.js:300
 - `ownerWeak` → Game/bots/02-kampf-karte.js:271
 - `packen` → Game/speichern.js:132
 - `packen` → Game/welt.js:385
 - `pagoda` → Game/baukunst/04-vielfalt-stile.js:410
 - `pagoda` → Game/baukunst/05-umland.js:222
-- `paintBackground` → Game/spiel/03a-karte-hintergrund.js:437
-- `paintBaender` → Game/spiel/03a-karte-hintergrund.js:201
+- `paintBackground` → Game/spiel/03a-karte-hintergrund.js:442
+- `paintBaender` → Game/spiel/03a-karte-hintergrund.js:206
 - `paintBanners` → Game/spiel/03c-wappen-thronplatz.js:187
-- `paintBoden` → Game/spiel/03a-karte-hintergrund.js:109
+- `paintBoden` → Game/spiel/03a-karte-hintergrund.js:106
 - `paintGateIso` → Game/spiel/03b-gebaeude-3d.js:156
-- `paintGelaende` → Game/spiel/03a-karte-hintergrund.js:181
-- `paintGrund` → Game/spiel/03a-karte-hintergrund.js:431
+- `paintGelaende` → Game/spiel/03a-karte-hintergrund.js:186
+- `paintGrund` → Game/spiel/03a-karte-hintergrund.js:436
 - `paintGuardianTemple` → Game/spiel/03b-gebaeude-3d.js:135
 - `paintMegaTemple` → Game/spiel/03b-gebaeude-3d.js:176
 - `paintPlate` → Game/spiel/03c-wappen-thronplatz.js:80
@@ -1857,7 +1860,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pickupAmount` → Game/spiel/09a-funde-felder.js:6
 - `pickupScreenPos` → Game/spiel/09a-funde-felder.js:12
 - `pickupVerdeckt` → Game/spiel/09a-funde-felder.js:13
-- `piecesPath` → Game/spiel/03a-karte-hintergrund.js:283
+- `piecesPath` → Game/spiel/03a-karte-hintergrund.js:288
 - `pille` → Game/buendnis/04-fenster-karte-welt.js:341
 - `pinnGeo` → Game/baukunst/04-vielfalt-stile.js:342
 - `Pipeline` → Game/baukunst/02-buehne-grundbasis.js:28
@@ -1966,7 +1969,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rankIndexFor` → Game/spiel/05a-aussehen-profil.js:94
 - `rankPeople` → Game/spiel/05c-erfolge-rangliste.js:280
 - `rankRowHtml` → Game/spiel/05c-erfolge-rangliste.js:285
-- `ratio` → Game/spiel/03a-karte-hintergrund.js:481
+- `ratio` → Game/spiel/03a-karte-hintergrund.js:486
 - `raus` → Game/spiel/01d-helden-mitspieler.js:118
 - `raus.push` → Game/spiel/10d-welt-weltrechner.js:241
 - `rauswurf` → Game/speichern.js:111
@@ -1980,7 +1983,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rect` → Game/ladebildschirm.js:48
 - `refreshBattleLog` → Game/spiel/05d-maersche-kampfbericht.js:571
 - `refreshOpenCombatLog` → Game/spiel/05d-maersche-kampfbericht.js:131
-- `refreshTerritory` → Game/spiel/03a-karte-hintergrund.js:307
+- `refreshTerritory` → Game/spiel/03a-karte-hintergrund.js:312
 - `regionBiome` → Game/spiel/01b-weltkarte.js:209
 - `regionHasTemple` → Game/spiel/01b-weltkarte.js:221
 - `reiter` → Game/ladebildschirm.js:185
@@ -2021,9 +2024,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderShop` → Game/spiel/06d-schild-produktion.js:118
 - `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:305
 - `renderThroneShop` → Game/spiel/06c-thron-mitte.js:140
-- `renderTile` → Game/spiel/03a-karte-hintergrund.js:392
+- `renderTile` → Game/spiel/03a-karte-hintergrund.js:397
 - `renderTitleModal` → Game/spiel/04-kampf.js:60
-- `repaintBackgroundRect` → Game/spiel/03a-karte-hintergrund.js:419
+- `repaintBackgroundRect` → Game/spiel/03a-karte-hintergrund.js:424
 - `requestRender` → Game/spiel/03e-kamera-eingabe.js:380
 - `resetGesture` → Game/spiel/03e-kamera-eingabe.js:245
 - `resetSkills` → Game/spiel/05b-truhe-skills.js:278
@@ -2088,7 +2091,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `row` → Game/spiel/09b-lager-tagesboss.js:344
 - `row` → Game/spiel/09c-events-drache.js:370
 - `row` → Game/spiel/09c-events-drache.js:390
-- `rr` → Game/spiel/03a-karte-hintergrund.js:582
+- `rr` → Game/spiel/03a-karte-hintergrund.js:587
 - `rueckzuegeZuClient` → Game/welt.js:204
 - `rulerOwner` → Game/spiel/01d-helden-mitspieler.js:164
 - `runBotTick` → Game/bots/05-verteidigen-takt.js:325
@@ -2183,7 +2186,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `setShown` → Game/spiel/01e-nebel-kampfwerte-hud.js:231
 - `setText` → Game/spiel/01e-nebel-kampfwerte-hud.js:230
 - `setTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:306
-- `setW` → Game/spiel/03a-karte-hintergrund.js:331
+- `setW` → Game/spiel/03a-karte-hintergrund.js:336
 - `setze_cookie` → Game/server/01-grundlagen-login.php:37
 - `setzen` → Game/spiel/01a-grundlagen.js:29
 - `sfx` → Game/spiel/07a-schlachten.js:355
@@ -2308,7 +2311,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `Strip.prototype.line` → Game/baukunst/05-umland.js:153
 - `Strip.prototype.mesh` → Game/baukunst/05-umland.js:161
 - `Strip.prototype.tri` → Game/baukunst/05-umland.js:152
-- `strokeBox` → Game/spiel/03a-karte-hintergrund.js:581
+- `strokeBox` → Game/spiel/03a-karte-hintergrund.js:586
 - `suche` → Game/spiel/01b-weltkarte.js:326
 - `sumBox` → Game/spiel/03e-kamera-eingabe.js:66
 - `surf` → Game/baukunst/04-vielfalt-stile.js:271
@@ -2329,7 +2332,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `templeHoldMultiplier` → Game/spiel/01c-basen-spielstand.js:258
 - `tent` → Game/baukunst/02-buehne-grundbasis.js:176
 - `terr` → Game/baukunst/02-buehne-grundbasis.js:337
-- `territorySigs` → Game/spiel/03a-karte-hintergrund.js:237
+- `territorySigs` → Game/spiel/03a-karte-hintergrund.js:242
 - `textOf` → Game/spiel/05d-maersche-kampfbericht.js:366
 - `throneAmount` → Game/spiel/06c-thron-mitte.js:38
 - `throneAward` → Game/spiel/06c-thron-mitte.js:60
@@ -2387,7 +2390,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `troopProductionMultiplier` → Game/spiel/04-kampf.js:259
 - `troopsPerTick` → Game/spiel/01b-weltkarte.js:143
 - `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:295
-- `trunc` → Game/spiel/03b-gebaeude-3d.js:417
+- `trunc` → Game/spiel/03b-gebaeude-3d.js:423
 - `truppenBekannt` → Game/spiel/01e-nebel-kampfwerte-hud.js:38
 - `truppenGeben` → Game/spiel/10d-welt-weltrechner.js:446
 - `truppenMitRest` → Game/spiel/06d-schild-produktion.js:185
@@ -2503,14 +2506,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wanderDepart` → Game/spiel/07b-kriegsherr.js:69
 - `wanderTick` → Game/spiel/07b-kriegsherr.js:138
 - `warDays` → Game/spiel/05c-erfolge-rangliste.js:7
-- `warm` → Game/spiel/03a-karte-hintergrund.js:139
+- `warm` → Game/spiel/03a-karte-hintergrund.js:136
 - `warnen` → Game/spiel/10d-welt-weltrechner.js:128
 - `warStat` → Game/spiel/05c-erfolge-rangliste.js:8
 - `wartung` → Game/server/02-sicherheit-datenlecks.php:26
 - `wd` → Game/spiel/10d-welt-weltrechner.js:137
 - `wegOk` → Game/spiel/10d-welt-weltrechner.js:1031
 - `weich` → Game/ladebildschirm.js:217
-- `weich` → Game/spiel/03a-karte-hintergrund.js:75
+- `weich` → Game/spiel/03a-karte-hintergrund.js:72
 - `weich` → Game/spiel/08a-stadt-bauen.js:194
 - `weight` → Game/bots/04-stand-stadt.js:290
 - `welcomeListHtml` → Game/spiel/06d-schild-produktion.js:351
@@ -2595,7 +2598,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `woPay` → Game/spiel/09c-events-drache.js:40
 - `woPunkteJe` → Game/spiel/09c-events-drache.js:434
 - `work` → Game/spiel/10c-start-einstellungen.js:207
-- `world` → Game/spiel/03a-karte-hintergrund.js:445
+- `world` → Game/spiel/03a-karte-hintergrund.js:450
 - `WORLD` → Game/spiel/03a-karte-hintergrund.js:9
 - `worldArmy` → Game/spiel/07b-kriegsherr.js:10
 - `worldStartAt` → Game/spiel/01b-weltkarte.js:287
@@ -3812,63 +3815,64 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `WORLD` :9 — World bounds (camera clamp)
 - `mid` :17
 - `karteBilder` :35 — true, sobald alle Bilder geladen sind (beim ersten Aufruf geht das Laden los)
-- `kbVariante` :43 — „name~warm“: in den inneren Ringen warm getönt (kein grünes Moos auf Ocker) · „…
-- `kbBild` :51 — Bild n, so oft halbiert, wie es noch ≥ px breit bleibt (verkleinert flimmert es…
-- `bodenMasken` :71
-- `weich` :75 — Kastenfilter ±1 px, zweimal, waagrecht und senkrecht
-- `bodenAnteil` :95 — [kleinster, größter] Anteil der Bodenart im Weltrechteck (0…255)
-- `bodenMuster` :102 — Muster der Bodenkachel in passender Größe (Welt-verankert, setTransform im Welt…
-- `paintBoden` :109 — Boden in den Ausschnitt (Weltrechteck cl, ct, W, H) einer Kachel T; bild = Kach…
-- `karteObjekte` :133
-- `neu` :136 — f = -1: gespiegelt
-- `warm` :139
-- `paintGelaende` :181 — die Gelände-Bilder im Weltrechteck v in die Kachel T (Reihenfolge der Liste)
-- `gebirgsPfad` :193
-- `paintBaender` :201 — (Weltmaß gesetzt) dunkles Band, oben eine Lichtkante
-- `buildForest` :210 — (Stadtbild: wo um die Stadt herum Bäume stehen)
-- `edgeDist` :214
-- `territorySigs` :237 — cheap: ~2000 ids, order-independent sum hash
-- `add` :239
-- `buildTerritoryChunk` :246
-- `addPoly` :252
-- `piecesPath` :283 — Path2D of the pieces touching world rect v (same winding as chunk.path)
-- `ownershipDelta` :295 — world rects a capture can influence (one per changed base: base ± connect dista…
-- `grow` :300
-- `refreshTerritory` :307
-- `grow` :310
-- `HATCH_PX` :319
-- `hatchTile` :320
-- `hatchPatterns` :324
-- `drawTerritoriesInto` :330 — g/lay: target + scratch layer (same device size)
-- `setW` :331
-- `bgDropGen` :373
-- `bgGen` :374
-- `bgShow` :375 — gen becomes the displayed generation; the replaced one fills gaps until gen cov…
-- `bgKept` :380 — a hop's end generation and its current far one: kept as filler until it lands
-- `bgRange` :381 — tile index range covering the view (v: another view { x, y, z } centre + zoom) …
-- `bgMissing` :385 — missing tiles, nearest to the view centre first
-- `renderTile` :392
-- `bgWarm` :402
-- `bgOverview` :403 — whole-world map for gaps (Farbflächen + Bänder, no territory), painted at idle …
-- `repaintBackgroundRect` :419 — partial repaint of a WORLD rect (after a capture); pixels are deterministic → n…
-- `paintGrund` :431 — Lückenfüller: die Farbfläche der Ringe ins Geräte-Rechteck x,y,w,h von g (Welt …
-- `paintBackground` :437 — T = tile {c, g, z, l, t}; clip = device-px rect inside T.c, or null for everyth…
-- `world` :445
-- `drawBackground` :463 — per frame: blit the cached tiles; render the missing ones within a pixel budget
-- `has` :472
-- `anyIn` :473
-- `ratio` :481 — render for where the zoom is heading: the wheel / button ease and camera flight…
-- `drawn` :497 — (a filler never pays a first raster)
-- `alike` :498 — a hop's kept generations fill in near their zoom only
-- `covered` :499 — an older generation already shows this tile
-- `missing` :503
-- `blit` :526 — scaled only mid-zoom: cheap bilinear
-- `overHole` :540 — does old tile (tx, ty) overlap a hole?
-- `count` :574
-- `strokeBox` :581
-- `rr` :582
-- `anzeigeStufe` :586 — Auf der Karte steht bei einer Hauptstadt ihre Burg-Stufe (1–25) – Alexander 4.1…
-- `baseLevelOf` :587
+- `kbVariante` :42 — „name~warm“: in den inneren Ringen warm getönt (kein grünes Moos auf Ocker)
+- `kbBild` :47 — Bild n, so oft halbiert, wie es noch ≥ px breit bleibt (verkleinert flimmert es…
+- `bodenMasken` :68
+- `weich` :72 — Kastenfilter ±1 px, zweimal, waagrecht und senkrecht
+- `bodenAnteil` :92 — [kleinster, größter] Anteil der Bodenart im Weltrechteck (0…255)
+- `bodenMuster` :99 — Muster der Bodenkachel in passender Größe (Welt-verankert, setTransform im Welt…
+- `paintBoden` :106 — Boden in den Ausschnitt (Weltrechteck cl, ct, W, H) einer Kachel T; bild = Kach…
+- `karteObjekte` :130
+- `neu` :133 — f = -1: gespiegelt
+- `warm` :136
+- `linie` :154
+- `paintGelaende` :186 — die Gelände-Bilder im Weltrechteck v in die Kachel T (Reihenfolge der Liste)
+- `gebirgsPfad` :198
+- `paintBaender` :206 — (Weltmaß gesetzt) dunkles Band, oben eine Lichtkante
+- `buildForest` :215 — (Stadtbild: wo um die Stadt herum Bäume stehen)
+- `edgeDist` :219
+- `territorySigs` :242 — cheap: ~2000 ids, order-independent sum hash
+- `add` :244
+- `buildTerritoryChunk` :251
+- `addPoly` :257
+- `piecesPath` :288 — Path2D of the pieces touching world rect v (same winding as chunk.path)
+- `ownershipDelta` :300 — world rects a capture can influence (one per changed base: base ± connect dista…
+- `grow` :305
+- `refreshTerritory` :312
+- `grow` :315
+- `HATCH_PX` :324
+- `hatchTile` :325
+- `hatchPatterns` :329
+- `drawTerritoriesInto` :335 — g/lay: target + scratch layer (same device size)
+- `setW` :336
+- `bgDropGen` :378
+- `bgGen` :379
+- `bgShow` :380 — gen becomes the displayed generation; the replaced one fills gaps until gen cov…
+- `bgKept` :385 — a hop's end generation and its current far one: kept as filler until it lands
+- `bgRange` :386 — tile index range covering the view (v: another view { x, y, z } centre + zoom) …
+- `bgMissing` :390 — missing tiles, nearest to the view centre first
+- `renderTile` :397
+- `bgWarm` :407
+- `bgOverview` :408 — whole-world map for gaps (Farbflächen + Bänder, no territory), painted at idle …
+- `repaintBackgroundRect` :424 — partial repaint of a WORLD rect (after a capture); pixels are deterministic → n…
+- `paintGrund` :436 — Lückenfüller: die Farbfläche der Ringe ins Geräte-Rechteck x,y,w,h von g (Welt …
+- `paintBackground` :442 — T = tile {c, g, z, l, t}; clip = device-px rect inside T.c, or null for everyth…
+- `world` :450
+- `drawBackground` :468 — per frame: blit the cached tiles; render the missing ones within a pixel budget
+- `has` :477
+- `anyIn` :478
+- `ratio` :486 — render for where the zoom is heading: the wheel / button ease and camera flight…
+- `drawn` :502 — (a filler never pays a first raster)
+- `alike` :503 — a hop's kept generations fill in near their zoom only
+- `covered` :504 — an older generation already shows this tile
+- `missing` :508
+- `blit` :531 — scaled only mid-zoom: cheap bilinear
+- `overHole` :545 — does old tile (tx, ty) overlap a hole?
+- `count` :579
+- `strokeBox` :586
+- `rr` :587
+- `anzeigeStufe` :591 — Auf der Karte steht bei einer Hauptstadt ihre Burg-Stufe (1–25) – Alexander 4.1…
+- `baseLevelOf` :592
 
 ### Game/spiel/03b-gebaeude-3d.js — 3D-Gebäude und Baukunst-Bilder der Basen
 - `shade` :5 — darken (f < 1) or lighten (f > 1) a #rrggbb colour
@@ -3900,18 +3904,20 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `temple` :224
 - `col` :228
 - `buildingSprite` :251
-- `torMitte` :265 — Pass-Tor als Karten-Bild: steht genau auf der Grenzlinie (Fuß auf der Linie der…
-- `drawBuilding` :274 — screen space (setScreen active)
-- `drawBrand` :323 — Flammen auf den Dächern und Rauch, der aufsteigt
-- `loadBaustil` :345
-- `baustilOf` :347
-- `bk3d` :348
-- `bkModel` :351 — → [cache id, model config]; style: try another one (keep sheet)
-- `bkSprite` :367 — → { s: sprite, W: width in px } or null
-- `bkPreviews` :374 — the keep sheet's style cards: your capital in each style
-- `bkDraw` :382
-- `bannerModel` :384
-- `trunc` :417
+- `torMitte` :265 — Pass-Tor als Karten-Bild: steht genau auf der Grenzlinie (die Kette läuft dort …
+- `drawTorBild` :273 — (Bildschirm) Pass-Tor offen/zu; dunkel: noch im Nebel
+- `drawToreImNebel` :281 — die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel…
+- `drawBuilding` :289 — screen space (setScreen active)
+- `drawBrand` :329 — Flammen auf den Dächern und Rauch, der aufsteigt
+- `loadBaustil` :351
+- `baustilOf` :353
+- `bk3d` :354
+- `bkModel` :357 — → [cache id, model config]; style: try another one (keep sheet)
+- `bkSprite` :373 — → { s: sprite, W: width in px } or null
+- `bkPreviews` :380 — the keep sheet's style cards: your capital in each style
+- `bkDraw` :388
+- `bannerModel` :390
+- `trunc` :423
 
 ### Game/spiel/03c-wappen-thronplatz.js — Wappen und der Thronplatz in der Mitte
 - `loadCrest` :7

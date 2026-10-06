@@ -39,13 +39,9 @@ function karteBilder() {                             // true, sobald alle Bilder
       im.onload = () => ende(im.naturalWidth > 0); im.onerror = () => ende(false); im.src = 'bilder/karte_' + n + '.webp'; } }
   return KB.fertig;
 }
-const TOR_MITTE = { l: .3, r: .7 };                  // Tor an einer senkrechten Grenze: nur dieser Teil des Bilds (Mauer + Türme, ohne die Seitenfelsen)
-function kbVariante(n) {                             // „name~warm“: in den inneren Ringen warm getönt (kein grünes Moos auf Ocker) · „name~mitte“: Tor-Mitte, Ränder weich
-  const [art, v] = n.split('~'), im = KB.img[art], c = document.createElement('canvas'), x = c.getContext('2d');
-  if (v === 'warm') { c.width = im.width; c.height = im.height; x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(214,170,104,.32)'; x.fillRect(0, 0, c.width, c.height); }
-  else { const l = Math.round(im.width * TOR_MITTE.l), w = Math.round(im.width * (TOR_MITTE.r - TOR_MITTE.l)); c.width = w; c.height = im.height; x.drawImage(im, l, 0, w, im.height, 0, 0, w, im.height);
-    const gr = x.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.14, '#000'); gr.addColorStop(.86, '#000'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-    x.globalCompositeOperation = 'destination-in'; x.fillStyle = gr; x.fillRect(0, 0, w, im.height); }
+function kbVariante(n) {                             // „name~warm“: in den inneren Ringen warm getönt (kein grünes Moos auf Ocker)
+  const im = KB.img[n.split('~')[0]], c = document.createElement('canvas'), x = c.getContext('2d');
+  c.width = im.width; c.height = im.height; x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(214,170,104,.32)'; x.fillRect(0, 0, c.width, c.height);
   return c;
 }
 function kbBild(n, px) {                             // Bild n, so oft halbiert, wie es noch ≥ px breit bleibt (verkleinert flimmert es sonst)
@@ -58,12 +54,13 @@ function kbBild(n, px) {                             // Bild n, so oft halbiert,
   return m[i];
 }
 // Maße (Welt-Einheiten, Burg ≈ 1.000; Vorgabe Designer): Achse = wo im Bild die Gratlinie liegt (Bilder vorab gerade geschert)
-const KARTE_MASS = { boden: 7000, quer: 11000, hoch: 11000, knoten: 9000, tor: 11000, wald: [2600, 3400], abstand: .42 };
-const KETTE_REIHEN = { quer: [[-1100, .5, .85], [0, 0, 1]], hoch: [[-850, 0, 1], [850, .5, .9]] };   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe
+const KARTE_MASS = { boden: 7000, quer: 12500, hoch: 12500, knoten: 11000, tor: 12500, wald: [2600, 3400], abstand: .42 };
+const KETTE_GERADE = { quer: 16000, hoch: 9000 }, TOR_KNICK = .32;   // so weit vor/nach einem Tor läuft die Kette gerade · senkrechte Grenze: Knick um 0,32 Torbreite zu den Torenden
+const KETTE_REIHEN = { quer: [[-1500, .5, .85], [0, 0, 1], [1300, .25, .8]], hoch: [[-700, 0, 1], [700, .5, .9]] };   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe – ein breiter Gebirgszug
 const KETTE_ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_hoch2: .485, tor_zu: .553, tor_offen: .553, kette_knoten: .6 };
 const KARTE_BILD_ZOOM = 0.0025, BODEN_BILD_ZOOM = 0.006;   // darunter (ganz draußen): nur Farbflächen + Bänder (schont das Handy) · Boden-Kacheln erst ab hier (weiter draußen wäre es ein Punkte-Raster)
 const BODEN_ARTEN = ['aussen', 'mitte', 'innen', 'sand'], BODEN_BIS_RING = { mitte: 5, innen: 3, sand: 1 };
-const BODEN_FARBE = { aussen: [122, 154, 44], mitte: [163, 152, 56], innen: [190, 138, 76], sand: [207, 176, 131] };   // weit draußen (Mittel der Bilder, etwas ruhiger)
+const BODEN_FARBE = { aussen: [114, 140, 44], mitte: [140, 142, 60], innen: [186, 138, 80], sand: [207, 176, 131] };   // weit draußen (Mittel der Bilder, etwas ruhiger)
 
 // Boden-Masken: für jede innere Bodenart, wie stark sie an einer Stelle liegt (0…255, über die geschlängelten Grenzen,
 // an der Grenze weich auf ±1.500 überblendet – die Kette deckt die Naht). Einmal gebaut, 640 × 640 über die ganze Karte.
@@ -148,7 +145,15 @@ function karteObjekte() {
   const tore = bridges.map(br => ({ x: (br.x1 + br.x2) / 2, y: (br.y1 + br.y2) / 2, senk: Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1) }));
   for (const senk of [true, false]) for (const L of linien) {
     const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .3]; });
-    for (const t of tore) if (t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3) sperren.push([senk ? t.y : t.x, senk ? 1500 : 3000]);   // (die Nachbarstücke laufen hinter die Torfelsen)
+    const hier = tore.filter(t => t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3).map(t => senk ? t.y : t.x);
+    for (const t of hier) sperren.push([t, senk ? 1500 : 3000]);   // (die Nachbarstücke laufen hinter die Torfelsen)
+    // Das Tor-Bild ist quer: seine Mauer muss in Richtung der Kette laufen. Waagrechte Grenze: die Kette läuft vor und nach dem Tor gerade
+    // auf das Tor zu. Senkrechte Grenze: kurzer Knick – die Kette kommt von oben auf das linke Ende des Tors (Gipfel), läuft quer durch das
+    // Tor und geht am rechten Ende (Gipfel) nach unten weiter. Weich zurück in den Schwung der Grenze, kein Versatz.
+    const knick = M.tor * TOR_KNICK;
+    const linie = t => { let p = grenzLinie(senk, L, t); for (const g of hier) { const u = Math.abs(t - g) / KETTE_GERADE[senk ? 'hoch' : 'quer']; if (u < 1) {
+      const w = u < .4 ? 1 : 1 - (u - .4) / .6, s = w * w * (3 - 2 * w); p += (grenzLinie(senk, L, g) + (senk ? (t < g ? -knick : knick) : 0) - p) * s; } } return p; };
+    if (senk) for (const g of hier) for (const k of [-1, 1]) { const x = grenzLinie(true, L, g) + k * knick; neu(warm('kette_knoten', x, g), x, g, M.knoten * .62, .5, KETTE_ACHSE.kette_knoten, 0, 0, g - 1, k); }
     sperren.sort((a, b) => a[0] - b[0]);
     const len = senk ? M.hoch : M.quer, schritt = len * M.abstand;
     for (let i = 0; i + 1 < sperren.length; i++) {
@@ -156,7 +161,7 @@ function karteObjekte() {
       const anz = Math.max(1, Math.round((b - a) / schritt));
       for (const [ab, ph, gs] of KETTE_REIHEN[senk ? 'hoch' : 'quer']) for (let s = 0; s < anz - (ph ? 1 : 0); s++) {   // zwei Reihen: ein breiter Gebirgszug
         const t = a + (s + .5 + ph) * (b - a) / anz, gr = len * gs * (.92 + rnd() * .16), n = (senk ? 'kette_hoch' : 'kette_quer') + (rnd() < .5 ? 1 : 2), f = rnd() < .5 ? -1 : 1;
-        const p = grenzLinie(senk, L, t) + ab, steig = Math.max(-.5, Math.min(.5, (grenzLinie(senk, L, t + gr / 2) - grenzLinie(senk, L, t - gr / 2)) / gr));
+        const p = linie(t) + ab, steig = Math.max(-.5, Math.min(.5, (linie(t + gr / 2) - linie(t - gr / 2)) / gr));
         if (senk) neu(warm(n, p, t), p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3, f);
         else neu(warm(n, t, p), t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p, f);
       } } }

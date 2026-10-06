@@ -2714,13 +2714,9 @@ function karteBilder() {                             // true, sobald alle Bilder
       im.onload = () => ende(im.naturalWidth > 0); im.onerror = () => ende(false); im.src = 'bilder/karte_' + n + '.webp'; } }
   return KB.fertig;
 }
-const TOR_MITTE = { l: .3, r: .7 };                  // Tor an einer senkrechten Grenze: nur dieser Teil des Bilds (Mauer + Türme, ohne die Seitenfelsen)
-function kbVariante(n) {                             // „name~warm“: in den inneren Ringen warm getönt (kein grünes Moos auf Ocker) · „name~mitte“: Tor-Mitte, Ränder weich
-  const [art, v] = n.split('~'), im = KB.img[art], c = document.createElement('canvas'), x = c.getContext('2d');
-  if (v === 'warm') { c.width = im.width; c.height = im.height; x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(214,170,104,.32)'; x.fillRect(0, 0, c.width, c.height); }
-  else { const l = Math.round(im.width * TOR_MITTE.l), w = Math.round(im.width * (TOR_MITTE.r - TOR_MITTE.l)); c.width = w; c.height = im.height; x.drawImage(im, l, 0, w, im.height, 0, 0, w, im.height);
-    const gr = x.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, 'rgba(0,0,0,0)'); gr.addColorStop(.14, '#000'); gr.addColorStop(.86, '#000'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-    x.globalCompositeOperation = 'destination-in'; x.fillStyle = gr; x.fillRect(0, 0, w, im.height); }
+function kbVariante(n) {                             // „name~warm“: in den inneren Ringen warm getönt (kein grünes Moos auf Ocker)
+  const im = KB.img[n.split('~')[0]], c = document.createElement('canvas'), x = c.getContext('2d');
+  c.width = im.width; c.height = im.height; x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(214,170,104,.32)'; x.fillRect(0, 0, c.width, c.height);
   return c;
 }
 function kbBild(n, px) {                             // Bild n, so oft halbiert, wie es noch ≥ px breit bleibt (verkleinert flimmert es sonst)
@@ -2733,12 +2729,13 @@ function kbBild(n, px) {                             // Bild n, so oft halbiert,
   return m[i];
 }
 // Maße (Welt-Einheiten, Burg ≈ 1.000; Vorgabe Designer): Achse = wo im Bild die Gratlinie liegt (Bilder vorab gerade geschert)
-const KARTE_MASS = { boden: 7000, quer: 11000, hoch: 11000, knoten: 9000, tor: 11000, wald: [2600, 3400], abstand: .42 };
-const KETTE_REIHEN = { quer: [[-1100, .5, .85], [0, 0, 1]], hoch: [[-850, 0, 1], [850, .5, .9]] };   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe
+const KARTE_MASS = { boden: 7000, quer: 12500, hoch: 12500, knoten: 11000, tor: 12500, wald: [2600, 3400], abstand: .42 };
+const KETTE_GERADE = { quer: 16000, hoch: 9000 }, TOR_KNICK = .32;   // so weit vor/nach einem Tor läuft die Kette gerade · senkrechte Grenze: Knick um 0,32 Torbreite zu den Torenden
+const KETTE_REIHEN = { quer: [[-1500, .5, .85], [0, 0, 1], [1300, .25, .8]], hoch: [[-700, 0, 1], [700, .5, .9]] };   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe – ein breiter Gebirgszug
 const KETTE_ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_hoch2: .485, tor_zu: .553, tor_offen: .553, kette_knoten: .6 };
 const KARTE_BILD_ZOOM = 0.0025, BODEN_BILD_ZOOM = 0.006;   // darunter (ganz draußen): nur Farbflächen + Bänder (schont das Handy) · Boden-Kacheln erst ab hier (weiter draußen wäre es ein Punkte-Raster)
 const BODEN_ARTEN = ['aussen', 'mitte', 'innen', 'sand'], BODEN_BIS_RING = { mitte: 5, innen: 3, sand: 1 };
-const BODEN_FARBE = { aussen: [122, 154, 44], mitte: [163, 152, 56], innen: [190, 138, 76], sand: [207, 176, 131] };   // weit draußen (Mittel der Bilder, etwas ruhiger)
+const BODEN_FARBE = { aussen: [114, 140, 44], mitte: [140, 142, 60], innen: [186, 138, 80], sand: [207, 176, 131] };   // weit draußen (Mittel der Bilder, etwas ruhiger)
 
 // Boden-Masken: für jede innere Bodenart, wie stark sie an einer Stelle liegt (0…255, über die geschlängelten Grenzen,
 // an der Grenze weich auf ±1.500 überblendet – die Kette deckt die Naht). Einmal gebaut, 640 × 640 über die ganze Karte.
@@ -2823,7 +2820,15 @@ function karteObjekte() {
   const tore = bridges.map(br => ({ x: (br.x1 + br.x2) / 2, y: (br.y1 + br.y2) / 2, senk: Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1) }));
   for (const senk of [true, false]) for (const L of linien) {
     const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .3]; });
-    for (const t of tore) if (t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3) sperren.push([senk ? t.y : t.x, senk ? 1500 : 3000]);   // (die Nachbarstücke laufen hinter die Torfelsen)
+    const hier = tore.filter(t => t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3).map(t => senk ? t.y : t.x);
+    for (const t of hier) sperren.push([t, senk ? 1500 : 3000]);   // (die Nachbarstücke laufen hinter die Torfelsen)
+    // Das Tor-Bild ist quer: seine Mauer muss in Richtung der Kette laufen. Waagrechte Grenze: die Kette läuft vor und nach dem Tor gerade
+    // auf das Tor zu. Senkrechte Grenze: kurzer Knick – die Kette kommt von oben auf das linke Ende des Tors (Gipfel), läuft quer durch das
+    // Tor und geht am rechten Ende (Gipfel) nach unten weiter. Weich zurück in den Schwung der Grenze, kein Versatz.
+    const knick = M.tor * TOR_KNICK;
+    const linie = t => { let p = grenzLinie(senk, L, t); for (const g of hier) { const u = Math.abs(t - g) / KETTE_GERADE[senk ? 'hoch' : 'quer']; if (u < 1) {
+      const w = u < .4 ? 1 : 1 - (u - .4) / .6, s = w * w * (3 - 2 * w); p += (grenzLinie(senk, L, g) + (senk ? (t < g ? -knick : knick) : 0) - p) * s; } } return p; };
+    if (senk) for (const g of hier) for (const k of [-1, 1]) { const x = grenzLinie(true, L, g) + k * knick; neu(warm('kette_knoten', x, g), x, g, M.knoten * .62, .5, KETTE_ACHSE.kette_knoten, 0, 0, g - 1, k); }
     sperren.sort((a, b) => a[0] - b[0]);
     const len = senk ? M.hoch : M.quer, schritt = len * M.abstand;
     for (let i = 0; i + 1 < sperren.length; i++) {
@@ -2831,7 +2836,7 @@ function karteObjekte() {
       const anz = Math.max(1, Math.round((b - a) / schritt));
       for (const [ab, ph, gs] of KETTE_REIHEN[senk ? 'hoch' : 'quer']) for (let s = 0; s < anz - (ph ? 1 : 0); s++) {   // zwei Reihen: ein breiter Gebirgszug
         const t = a + (s + .5 + ph) * (b - a) / anz, gr = len * gs * (.92 + rnd() * .16), n = (senk ? 'kette_hoch' : 'kette_quer') + (rnd() < .5 ? 1 : 2), f = rnd() < .5 ? -1 : 1;
-        const p = grenzLinie(senk, L, t) + ab, steig = Math.max(-.5, Math.min(.5, (grenzLinie(senk, L, t + gr / 2) - grenzLinie(senk, L, t - gr / 2)) / gr));
+        const p = linie(t) + ab, steig = Math.max(-.5, Math.min(.5, (linie(t + gr / 2) - linie(t - gr / 2)) / gr));
         if (senk) neu(warm(n, p, t), p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3, f);
         else neu(warm(n, t, p), t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p, f);
       } } }
@@ -3521,16 +3526,31 @@ function buildingSprite(kind, ownerKey, home, sizePx, tier) {
   else if (kind === 'gate' || kind === 'gateShut') paintGateIso(g, ownerKey, detail, kind === 'gate'); else paintMegaTemple(g, ownerKey, detail);
   BUILDING_SPRITES.set(key, s = { c, bucket }); return s;
 }
-// Pass-Tor als Karten-Bild: steht genau auf der Grenzlinie (Fuß auf der Linie der Kette, quer geschert wie die Nachbarstücke)
-// → { x, y, r: Abstand Mitte–Schild, senk: Grenze läuft senkrecht (dann nur Mauer + Türme, die Kette läuft oben/unten an), steig } oder null
+// Pass-Tor als Karten-Bild: steht genau auf der Grenzlinie (die Kette läuft dort gerade auf das Tor zu, 03a karteObjekte)
+// → { x, y, r: Abstand Mitte–Schild } oder null
 function torMitte(island) {
   if (island.type !== 'gate' || !karteBilder()) return null;
   if (island.torMitte) return island.torMitte;
-  const [[x1, y1], [x2, y2]] = island.ends, im = KB.img.tor_zu, senk = Math.abs(x2 - x1) > Math.abs(y2 - y1), w = KARTE_MASS.tor, S = HEX_SPACING;
-  let x = (x1 + x2) / 2, y = (y1 + y2) / 2, steig = 0;
-  if (senk) x = grenzLinie(true, Math.round(x / S - .5) + .5, y);
-  else { const L = Math.round(y / S - .5) + .5; y = grenzLinie(false, L, x); steig = Math.max(-.5, Math.min(.5, (grenzLinie(false, L, x + w / 2) - grenzLinie(false, L, x - w / 2)) / w)); }
-  return (island.torMitte = { x, y, senk, steig, r: w * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });
+  const [[x1, y1], [x2, y2]] = island.ends, im = KB.img.tor_zu, S = HEX_SPACING;
+  let x = (x1 + x2) / 2, y = (y1 + y2) / 2;
+  if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) x = grenzLinie(true, Math.round(x / S - .5) + .5, y); else y = grenzLinie(false, Math.round(y / S - .5) + .5, x);
+  return (island.torMitte = { x, y, r: KARTE_MASS.tor * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });
+}
+function drawTorBild(island, open, z, dunkel) {                                // (Bildschirm) Pass-Tor offen/zu; dunkel: noch im Nebel
+  const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z, mx = toSX(tm.x), my = toSY(tm.y);
+  if (w < 16) { if (dunkel) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
+    ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
+  const h = w * KB.img[n].height / KB.img[n].width;
+  if (mx + w < 0 || mx - w > viewW || my + h < 0 || my - h > viewH) return;
+  ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
+}
+function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
+  if (!karteBilder() || KARTE_MASS.tor * z < 16) return;
+  setScreen(ctx);
+  const m = KARTE_MASS.tor;
+  for (const br of bridges) { const isl = islandById[br.gateId]; if (!isl || islandSeen(isl)) continue;
+    const tm = torMitte(isl); if (tm.x < view.l - m || tm.x > view.r + m || tm.y < view.t - m || tm.y > view.b + m) continue;
+    drawTorBild(isl, false, z, true); }
 }
 function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)
   const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
@@ -3538,18 +3558,7 @@ function drawBuilding(island, ownerKey, z) {                                   /
   const tier = island.type === 'tower' ? towerTier(baseLevelOf(island)) : 1;
   const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
   if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
-    const tm = torMitte(island);
-    if (tm) {                                                                  // Karte wie RoK: das Pass-Tor (Bild) in der Lücke der Kette, offen/zu wie heute
-      const open = ownerKey !== 'neutral' && !gateSettings(island).closed, n = open ? 'tor_offen' : 'tor_zu';
-      const w = KARTE_MASS.tor * z, mx = toSX(tm.x), my = toSY(tm.y);
-      if (w < 16) { ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: goldener Punkt (zu: rot)
-        ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
-      const k = tm.senk ? TOR_MITTE.r - TOR_MITTE.l : 1, h = w * KB.img[n].height / KB.img[n].width, im = kbBild(tm.senk ? n + '~mitte' : n, w * k * dpr);
-      ctx.save(); ctx.translate(mx, my); ctx.transform(1, tm.steig, 0, 1, 0, 0);
-      ctx.drawImage(im, -w * k / 2, -h * KETTE_ACHSE[n], w * k, h);
-      ctx.restore();
-      return;
-    }
+    if (torMitte(island)) { drawTorBild(island, ownerKey !== 'neutral' && !gateSettings(island).closed, z); return; }   // Karte wie RoK: das Pass-Tor (Bild) in der Kette, offen/zu wie heute
     if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
     // the same 3D gate tower on BOTH banks where the bridge lands (open: portcullis up; shut or unowned: down)
     const S = Math.max(16, size * 1.25), open = ownerKey !== 'neutral' && !gateSettings(island).closed;
@@ -3561,6 +3570,8 @@ function drawBuilding(island, ownerKey, z) {                                   /
     for (const [gx, gy] of spots) if (!bkDraw(bk, gx, gy)) ctx.drawImage(sp.c, gx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
     return;
   }
+  if (kind === 'tower' && ownerKey === 'neutral' && size < 30 && karteBilder()) {   // Karte wie RoK: freie Basen von weitem nur ein leiser Fleck, keine Symbol-Tapete (Alexander)
+    ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, size * .07), 0, Math.PI * 2); ctx.fillStyle = 'rgba(40,30,18,.3)'; ctx.fill(); return; }
   if (size < 6) {                                                              // LOD: dot / diamond
     ctx.fillStyle = kind !== 'tower' ? '#d9b566' : ownerKey === 'neutral' ? 'rgba(205,212,224,.55)' : (ownerKey === 'player' ? '#8cc0ff' : '#ff8d82');
     const r = kind !== 'tower' ? 3.5 : ownerKey === 'neutral' ? 1.4 : 2.5;
@@ -4383,6 +4394,7 @@ function drawMap() {
   refreshTerritory();                                                            // rebuild only chunks whose ownership changed
   if (dirty && BG.valid) for (const d of dirty) repaintBackgroundRect(d);        // partial repaints, clipped (no full re-render)
   drawBackground();                                                              // 1-4: sea, land, bridges, territory
+  drawToreImNebel(view, z);                                                      // (unerforschte Pass-Tore: Lücke in der Kette nicht leer, Nebel darüber)
   drawFog(view, now);
   drawWorldFrame();                                                            // Nebel des Krieges over unexplored islands
   const vis = visibleIslands(viewPad);

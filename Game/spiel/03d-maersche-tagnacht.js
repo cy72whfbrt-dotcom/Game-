@@ -235,6 +235,7 @@ function drawMap() {
   refreshTerritory();                                                            // rebuild only chunks whose ownership changed
   if (dirty && BG.valid) for (const d of dirty) repaintBackgroundRect(d);        // partial repaints, clipped (no full re-render)
   drawBackground();                                                              // 1-4: sea, land, bridges, territory
+  drawToreImNebel(view, z);                                                      // (unerforschte Pass-Tore: Lücke in der Kette nicht leer, Nebel darüber)
   drawFog(view, now);
   drawWorldFrame();                                                            // Nebel des Krieges over unexplored islands
   const vis = visibleIslands(viewPad);
