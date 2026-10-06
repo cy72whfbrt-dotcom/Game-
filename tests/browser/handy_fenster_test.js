@@ -69,7 +69,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     coins = 0; await new Promise(r => setTimeout(r, 1300)); const leer = stand();
     coins = BUND.KOSTEN; await new Promise(r => setTimeout(r, 1300)); const voll = stand(); coins = c0;
     return { leer, voll, soll: 'Fehlt: ' + fmtCompact(BUND.KOSTEN) + ' Münzen' }; });
-  ok(bm.leer.aus && bm.leer.text === bm.soll && bm.leer.bg === 'none', 'Bündnis gründen: 0 Münzen → Knopf grau „Fehlt: … Münzen“ (nicht gold)', bm.leer);
+  const fehlt = +(String(bm.leer.text).replace(/\D/g, '')), soll0 = +(String(bm.soll).replace(/\D/g, ''));   // (in 1,3 s kommen schon ein paar Münzen Ertrag dazu)
+  ok(bm.leer.aus && /^Fehlt: /.test(bm.leer.text) && fehlt <= soll0 && fehlt > soll0 - 1000 && bm.leer.bg === 'none', 'Bündnis gründen: 0 Münzen → Knopf grau „Fehlt: … Münzen“ (nicht gold)', bm.leer);
   ok(!bm.voll.aus && bm.voll.text === 'Gründen', 'Bündnis gründen: genug Münzen → „Gründen“ wieder an', bm.voll);
   const b3 = await ev(async () => { const n = document.getElementById('bdName'), t = document.getElementById('bdTag'); n.value = 'Seewölfe'; n.dispatchEvent(new Event('input', { bubbles: true }));
     t.value = 'sw'; t.dispatchEvent(new Event('input', { bubbles: true })); const v = document.getElementById('bdVorschau'), w = v.querySelector('.bd-wappen');
