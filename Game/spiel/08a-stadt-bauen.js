@@ -182,6 +182,15 @@ function cityShow() {
     updateCityBuilder();
     cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
 }
+// Eintauchen wie bei RoK: die Karte zoomt über die Hauptstadt hinaus weiter (nur ein CSS-Zoom des Karten-Bilds, kostet am
+// Handy fast nichts), die Wolken ziehen zu; dann liegt die Stadt tief unten und kommt näher, während die Wolken aufreißen.
+// Beim Verlassen umgekehrt: die Stadt fällt weg, die Karte kommt aus der Nähe zurück auf ihre Höhe.
+const CITY_TAUCH = 3.2;
+function karteTauchen(von, bis, ms, isl) {
+    if (!canvas.animate || !isl) return null;
+    canvas.style.transformOrigin = Math.round(toSX(isl.x)) + 'px ' + Math.round(toSY(isl.y)) + 'px';
+    return canvas.animate([{ transform: 'scale(' + von + ')' }, { transform: 'scale(' + bis + ')' }], { duration: ms, easing: von < bis ? 'cubic-bezier(.55,0,.85,.45)' : 'cubic-bezier(.15,.6,.35,1)', fill: 'forwards' });
+}
 function openCity() {
     if (cityBusy || !cityView.hidden) return;
     closeAllPopups();
@@ -189,12 +198,14 @@ function openCity() {
     cityMapReturn = { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };   // where the map was, to go back there
     if (!home) { cityShow(); return; }
     cityBusy = true;
-    flyTo(home.x, home.y, { zoom: maxZoom, ms: 650 });                      // 1) the map dives towards your capital
-    setTimeout(() => cloudsRun(420, 0, 1, () => {                            // 2) into the clouds …
-        cityShow(); if (cityCam) cityCam.anim = { from: .35, t0: performance.now(), dur: 900 };   // 3) … the town comes up from below
-        else cityPendingAnim = true;
-        cloudsRun(750, 1, 0, () => { cityBusy = false; });
-    }), 300);
+    flyTo(home.x, home.y, { zoom: maxZoom, ms: 650 });                      // 1) the map flies to your capital …
+    setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, 560, home);  // 2) … dives on past it into the clouds …
+        cloudsRun(500, 0, 1, () => {
+            if (tauch) tauch.cancel();
+            cityShow(); if (cityCam) cityCam.anim = { from: .4, t0: performance.now(), dur: 1150 };   // 3) … the town comes up from below
+            else cityPendingAnim = true;
+            cloudsRun(650, 1, 0, () => { cityBusy = false; });
+        }); }, 560);
 }
 let cityPendingAnim = false;
 function closeCity() {
@@ -207,8 +218,11 @@ function closeCity() {
         const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
         cityMapReturn = null;
         if (home) flyTo(home.x, home.y, { zoom: maxZoom, instant: true });
-        flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });                // … and the map opens up again where it was
-        cloudsRun(700, 1, 0, () => { cityBusy = false; });
+        const auf = karteTauchen(CITY_TAUCH, 1, 650, home);                  // … the map comes back up from close by …
+        cloudsRun(600, 1, 0);
+        setTimeout(() => { if (auf) auf.cancel();
+            flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });            // … and opens up again where it was
+            cityBusy = false; }, 650);
     });
     return true;
 }

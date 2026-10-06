@@ -8607,6 +8607,15 @@ function cityShow() {
     updateCityBuilder();
     cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
 }
+// Eintauchen wie bei RoK: die Karte zoomt über die Hauptstadt hinaus weiter (nur ein CSS-Zoom des Karten-Bilds, kostet am
+// Handy fast nichts), die Wolken ziehen zu; dann liegt die Stadt tief unten und kommt näher, während die Wolken aufreißen.
+// Beim Verlassen umgekehrt: die Stadt fällt weg, die Karte kommt aus der Nähe zurück auf ihre Höhe.
+const CITY_TAUCH = 3.2;
+function karteTauchen(von, bis, ms, isl) {
+    if (!canvas.animate || !isl) return null;
+    canvas.style.transformOrigin = Math.round(toSX(isl.x)) + 'px ' + Math.round(toSY(isl.y)) + 'px';
+    return canvas.animate([{ transform: 'scale(' + von + ')' }, { transform: 'scale(' + bis + ')' }], { duration: ms, easing: von < bis ? 'cubic-bezier(.55,0,.85,.45)' : 'cubic-bezier(.15,.6,.35,1)', fill: 'forwards' });
+}
 function openCity() {
     if (cityBusy || !cityView.hidden) return;
     closeAllPopups();
@@ -8614,12 +8623,14 @@ function openCity() {
     cityMapReturn = { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };   // where the map was, to go back there
     if (!home) { cityShow(); return; }
     cityBusy = true;
-    flyTo(home.x, home.y, { zoom: maxZoom, ms: 650 });                      // 1) the map dives towards your capital
-    setTimeout(() => cloudsRun(420, 0, 1, () => {                            // 2) into the clouds …
-        cityShow(); if (cityCam) cityCam.anim = { from: .35, t0: performance.now(), dur: 900 };   // 3) … the town comes up from below
-        else cityPendingAnim = true;
-        cloudsRun(750, 1, 0, () => { cityBusy = false; });
-    }), 300);
+    flyTo(home.x, home.y, { zoom: maxZoom, ms: 650 });                      // 1) the map flies to your capital …
+    setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, 560, home);  // 2) … dives on past it into the clouds …
+        cloudsRun(500, 0, 1, () => {
+            if (tauch) tauch.cancel();
+            cityShow(); if (cityCam) cityCam.anim = { from: .4, t0: performance.now(), dur: 1150 };   // 3) … the town comes up from below
+            else cityPendingAnim = true;
+            cloudsRun(650, 1, 0, () => { cityBusy = false; });
+        }); }, 560);
 }
 let cityPendingAnim = false;
 function closeCity() {
@@ -8632,8 +8643,11 @@ function closeCity() {
         const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
         cityMapReturn = null;
         if (home) flyTo(home.x, home.y, { zoom: maxZoom, instant: true });
-        flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });                // … and the map opens up again where it was
-        cloudsRun(700, 1, 0, () => { cityBusy = false; });
+        const auf = karteTauchen(CITY_TAUCH, 1, 650, home);                  // … the map comes back up from close by …
+        cloudsRun(600, 1, 0);
+        setTimeout(() => { if (auf) auf.cancel();
+            flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });            // … and opens up again where it was
+            cityBusy = false; }, 650);
     });
     return true;
 }
@@ -9396,14 +9410,14 @@ document.getElementById('citySpeedBtn').addEventListener('click', e => {
 });
 // ===== THE CITY, ISOMETRIC =====
 // Your capital like in the big mobile strategy games: a walled town seen from above at an angle, every building on
-// its own lot and growing with its level, the keep in the middle, fields, woods, a river and a windmill outside,
-// people walking the streets. Drag to move, pinch or wheel to zoom, tap a building to open it.
+// its own lot and growing with its level, the keep in the middle; outside the land of the world map around your capital
+// (woods where the map has forest, the coast where it has sea), people walking the streets. Drag to move, pinch or wheel to zoom, tap a building to open it.
 // World: 640 × 640 units (a tile is 10), the same isometric projection as the buildings on the map.
 const CW = 640, CC = 320;                                                   // world size and centre
 const CITY_WALL = { a: 150, b: 490 };                                       // the curtain wall (square, world units)
 // Die Stadt im Raster (Alexander 2.10.: „innen Base neu“): 12 Bauplätze rund um den Burgplatz (4 × 4, die Mitte ist die Burg),
-// Straßen dazwischen wie ein „#“, vorn das Tor mit der Hauptstraße. Draußen: Wald (Holzfäller), Berge (Steinbruch),
-// ein Hügel (Eisenmine), Felder, ein Fluss und die Mühle.
+// Straßen dazwischen wie ein „#“, vorn das Tor mit der Hauptstraße. Draußen nur Landschaft (Alexander 6.10.: wie bei RoK
+// liegt die Stadt in der Weltkarte – keine Felder, Mühle oder Höfe): Wald, Küste und Meer wie auf der Karte, Berge, ein Fluss.
 const CITY_LOTS = {                                                          // building lots (ground centre, world units)
     lumber: [206, 206], academy: [282, 206], heroes: [358, 206], quarry: [434, 206],
     forge: [206, 282],
@@ -9636,7 +9650,8 @@ const CITY_PAL = {
                leaf: ['#33462a', '#445c34', '#5e7a46'], pine: ['#2a3a26', '#384e32', '#4c6644'], rock: '#4f4743', peak: '#e0662e', bank: '#7a6a5e', pines: .5, wald: .5,
                field: ['#a58f5c', '#93804e', '#b29d66', '#8a7848'], water: ['#2c5a78', '#3f7898', '#8fbcd4'], bg: '#625953' }
 };
-function cityBio() { const lm = landmasses[(islandById[playerIslandId] || {}).landmassId] || {}; return lm.bio === 'ice' ? 'snow' : CITY_PAL[lm.bio] ? lm.bio : 'green'; }
+function cityBioVon(lm) { return lm.bio === 'ice' ? 'snow' : CITY_PAL[lm.bio] ? lm.bio : 'green'; }
+function cityBio() { const lm = landmasses[(islandById[playerIslandId] || {}).landmassId]; return lm ? cityBioVon(lm) : 'green'; }
 // Bäume, Büsche, Felsen: in Bildschirm-Einheiten um den Fußpunkt (a, b) gemalt – im Boden-Bild und als Deko-Bild gleich
 function cityTreeAt(g, a, b, r, pal, v) {             // ein Laubbaum: Krone aus Kugeln, oben links im Licht
     g.fillStyle = 'rgba(20,30,10,.26)'; g.beginPath(); g.ellipse(a + r * .55, b + r * .08, r * 1.2, r * .46, 0, 0, Math.PI * 2); g.fill();
@@ -9729,32 +9744,37 @@ function cityPaintGround() {
     zug(54, shade(pal.land, .82)); zug(46, pal.bank); zug(38, pal.water[0]); zug(28, pal.water[1]); zug(10, 'rgba(255,255,255,.12)');
     for (let i = 0; i < 70; i++) { const k = Math.floor(R() * (fluss.length - 1)), t = R(), a = fluss[k][0] + (fluss[k + 1][0] - fluss[k][0]) * t + (R() - .5) * 22, b = fluss[k][1] + (fluss[k + 1][1] - fluss[k][1]) * t + (R() - .5) * 10;
         g.fillStyle = 'rgba(255,255,255,' + (.25 + R() * .35) + ')'; g.fillRect(a, b, 2 + R() * 5, .7); }
-    // 3) Felder vorn links und rechts der Hauptstraße, mit Furchen und Hecken
-    const feld = (x0, y0, x1, y1) => { const col = pal.field[Math.floor(R() * pal.field.length)], quer = R() < .5;
-        cityGroundPoly(g, cityRect(x0 - 2, y0 - 2, x1 + 2, y1 + 2), shade(pal.leaf[0], 1.05)); cityGroundPoly(g, cityRect(x0, y0, x1, y1), col);
-        g.strokeStyle = shade(col, .78); g.lineWidth = .7;
-        for (let v = (quer ? y0 : x0) + 2.5; v < (quer ? y1 : x1); v += 3.4) { const [a, b] = cIso(quer ? x0 : v, quer ? v : y0), [a2, b2] = cIso(quer ? x1 : v, quer ? v : y1); g.beginPath(); g.moveTo(a, b); g.lineTo(a2, b2); g.stroke(); } };
-    for (const f of [[176, 516, 238, 568], [246, 516, 304, 568], [176, 576, 238, 636], [246, 576, 304, 636], [338, 516, 404, 556], [338, 600, 420, 650], [176, 644, 304, 700]]) feld(...f);
-    // 4) Wege draußen: die Hauptstraße vom Tor nach Süden, Pfade zu Holzfäller, Steinbruch und Eisenmine
-    cityStrip(g, [[320, 492], [320, 600], [306, 700], [300, 780]], 22, 'rgba(92,78,56,.85)'); cityStrip(g, [[320, 492], [320, 600], [306, 700], [300, 780]], 17, dirt);
-    cityStrip(g, [[320, 492], [320, 540]], 17, cob);
-    // 5) Berge hinten, Wald links, hinten rechts, jenseits des Flusses und hinter den Feldern – in Tiefen-Reihenfolge gemalt
+    // 3) die Weltkarte rund um die Hauptstadt: andere Regionen in ihrer Farbe, Meer mit Strand, wo die Karte Wasser hat
+    const aus = cityAussen();
+    for (const lm of aus.fremd) { g.save(); g.clip(aus.pfad(lm)); const fp = CITY_PAL[cityBioVon(lm)];
+        g.fillStyle = pat(25, fp.land, fp.spots, 900); g.fillRect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0); g.restore(); }
+    if (aus.nass) {
+        const meer = new Path2D(); meer.rect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0);
+        for (const lm of aus.lms) meer.addPath(aus.pfad(lm));
+        g.save(); g.clip(meer, 'evenodd');
+        g.fillStyle = pat(26, pal.water[0], [shade(pal.water[0], .9), shade(pal.water[0], 1.1), pal.water[1]], 700); g.fillRect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0);
+        g.lineJoin = 'round';
+        for (const [w, col] of [[26, pal.water[1]], [12, shade(pal.water[1], 1.2)], [6, pal.bank]]) for (const lm of aus.lms) { g.strokeStyle = col; g.lineWidth = w; g.stroke(aus.pfad(lm)); }
+        for (let i = 0; i < 160; i++) { const x = -170 + R() * 980, y = -170 + R() * 980; if (aus.land(x, y)) continue; const [a, b] = cIso(x, y);   // Wellen
+            g.fillStyle = 'rgba(255,255,255,' + (.18 + R() * .25) + ')'; g.fillRect(a, b, 3 + R() * 6, .8); }
+        g.restore();
+        cityGroundPoly(g, cityRect(105, 105, 545, 545), land);                // die Stadt steht immer auf festem Land
+    }
+    // 4) vor dem Tor ein kurzes Pflaster
+    cityStrip(g, [[320, 492], [320, 516]], 17, 'rgba(92,78,56,.85)'); cityStrip(g, [[320, 492], [320, 514]], 13.5, cob);
+    // 5) Berge hinten, Bäume (dicht, wo die Karte Wald hat), Felsen – nur auf Land, in Tiefen-Reihenfolge gemalt
     const dinge = [];
     for (const [x, y, r, h] of [[110, 6, 62, 92], [232, -34, 58, 80], [36, 92, 54, 72], [-36, 178, 50, 62], [334, -62, 52, 70], [-96, 292, 46, 54], [432, -104, 50, 62], [-130, 410, 40, 44]])
-        for (const [dx, dy, k] of [[0, 0, 1], [-r * .55, r * .25, .62], [r * .4, -r * .45, .7]]) dinge.push({ d: x + dx + y + dy, f: () => cityMountain(g, K, x + dx, y + dy, r * k, h * k * (.85 + R() * .3), pal, R) });
-    for (const [x, y, r, h] of [[166, 24, 30, 34], [60, 160, 26, 26], [-60, 262, 24, 24], [300, 10, 26, 28]]) dinge.push({ d: x + y, f: () => cityMountain(g, K, x, y, r, h, pal, R) });   // Hügel davor
-    const frei = (x, y) => {
-        return !(x > 120 && x < 520 && y > 120 && y < 520) && !(x > 160 && x < 430 && y > 500 && y < 712) && !(x > 480 && y > 470 && x + y < 1110) && !(x > 548 && x < 668 && y < 470) && !(x > 610 && x < 740 && y > 420 && y < 640); };
-    for (let i = 0, n = Math.round(420 * pal.wald); i < n; i++) {
-        const x = -170 + R() * 980, y = -170 + R() * 980;
-        if (!frei(x, y) || x + y < 60 && R() < .7) continue;
-        const dicht = x < 130 || y < 130 || x > 640 || y > 690;
-        if (!dicht && R() < .7) continue;
-        const [a, b] = cIso(x, y), pine = R() < pal.pines, r = 4.2 + R() * 2.4;
-        dinge.push({ d: x + y, f: pine ? (pal.palm ? () => cityPalmAt(g, a, b, r * 4.4, pal) : () => cityPineAt(g, a, b, r * 4.2, pal)) : () => cityTreeAt(g, a, b, r, pal, R() < .5) });
+        for (const [dx, dy, k] of [[0, 0, 1], [-r * .55, r * .25, .62], [r * .4, -r * .45, .7]]) { const mh = h * k * (.85 + R() * .3); if (aus.land(x + dx, y + dy)) dinge.push({ d: x + dx + y + dy, f: () => cityMountain(g, K, x + dx, y + dy, r * k, mh, pal, R) }); }
+    for (const [x, y, r, h] of [[166, 24, 30, 34], [60, 160, 26, 26], [-60, 262, 24, 24], [300, 10, 26, 28]]) if (aus.land(x, y)) dinge.push({ d: x + y, f: () => cityMountain(g, K, x, y, r, h, pal, R) });   // Hügel davor
+    const frei = (x, y) => !(x > 105 && x < 545 && y > 105 && y < 545) && !(x > 270 && x < 370 && y > 540 && y < 620) && !(x > 548 && x < 668 && y < 470) && !(x > 610 && x < 740 && y > 420 && y < 640) && aus.land(x, y);
+    for (let i = 0, n = Math.round(900 * pal.wald); i < n; i++) {
+        const x = -170 + R() * 980, y = -170 + R() * 980, zufall = R(), dicht = aus.wald(x, y) || x < 60 || y < 60;
+        if (!frei(x, y) || zufall > (dicht ? .85 : .1)) continue;
+        const [a, b] = cIso(x, y), pine = R() < pal.pines, r = 4.2 + R() * 2.4, hell = R() < .5;
+        dinge.push({ d: x + y, f: pine ? (pal.palm ? () => cityPalmAt(g, a, b, r * 4.4, pal) : () => cityPineAt(g, a, b, r * 4.2, pal)) : () => cityTreeAt(g, a, b, r, pal, hell) });
     }
-    for (let i = 0; i < 50; i++) { const x = -60 + R() * 420, y = -100 + R() * 300; if (x + y > 300 || !frei(x, y)) continue; const [a, b] = cIso(x, y); dinge.push({ d: x + y, f: () => cityRockAt(g, a, b, 2 + R() * 3.5, pal.rock) }); }
-    for (const [x, y] of [[420, 520], [494, 530], [478, 600], [436, 606], [404, 590]]) { const [a, b] = cIso(x, y); dinge.push({ d: x + y, f: () => cityRockAt(g, a, b, 3 + R() * 3, pal.rock) }); }
+    for (let i = 0; i < 50; i++) { const x = -60 + R() * 420, y = -100 + R() * 300, rr = 2 + R() * 3.5; if (x + y > 300 || !frei(x, y)) continue; const [a, b] = cIso(x, y); dinge.push({ d: x + y, f: () => cityRockAt(g, a, b, rr, pal.rock) }); }
     dinge.sort((p, q) => p.d - q.d).forEach(t => t.f());
     // 6) in der Mauer: gepflegter Rasen, Straßen wie ein „#“ mit Randsteinen, der Burgplatz, gepflasterte Bauplätze
     cityGroundPoly(g, cityRect(CITY_WALL.a, CITY_WALL.a, CITY_WALL.b, CITY_WALL.b), grass);
@@ -9775,11 +9795,30 @@ function cityPaintGround() {
     const farben = pal.schnee ? ['#c0392b', '#ffffff'] : ['#e74c3c', '#f1c40f', '#ecf0f1', '#9b59b6', '#e67e22'];
     for (const [x, y, w, d] of [[186, 158, 40, 8], [262, 158, 40, 8], [338, 158, 40, 8], [414, 158, 40, 8], [158, 186, 8, 40], [158, 262, 8, 40], [158, 338, 8, 40], [158, 414, 8, 40]]) {
         cityGroundPoly(g, cityRect(x, y, x + w, y + d), '#6b4a2c'); for (let i = 0; i < w * d / 9; i++) { const [a, b] = cIso(x + 1 + R() * (w - 2), y + 1 + R() * (d - 2)); g.fillStyle = farben[Math.floor(R() * farben.length)]; g.beginPath(); g.arc(a, b, .9, 0, 7); g.fill(); } }
-    CITY_GROUND_BIO = bio;
+    CITY_GROUND_BIO = cityGrundKey();
     return CITY_GROUND = c;
 }
 let CITY_GROUND_BIO = '';
-// ---- Deko (eigene kleine Bilder, in Tiefen-Reihenfolge mit den Häusern): Brunnen, Bäume an der Mauer, Laternen, Statuen, Mühle, Hof ----
+const cityGrundKey = () => cityBio() + ':' + playerIslandId;                 // neu malen, wenn die Hauptstadt umzieht
+// Die Weltkarte um die Hauptstadt, ins Stadtbild gelegt: die Basis (Halbmesser ISLAND_RADIUS·1,3) füllt die Mauer (170 Einheiten
+// von der Mitte). Ein Stadt-Punkt (x, y) liegt auf der Karte bei Basis + ((x−y)·S, (x+y)·S) – „oben“ ist auf beiden oben.
+// So ist das Bild einer Karten-Form im Stadtbild einfach gestaucht: sx = (wx − hx)·0,866/S, sy = 320 + (wy − hy)·0,5/S.
+function cityAussen() {
+    const h = islandById[playerIslandId], S = ISLAND_RADIUS * 1.3 / 170;
+    if (!h) return { lms: [], fremd: [], nass: false, land: () => true, wald: () => false, pfad: null };
+    const welt = (x, y) => [h.x + (x - y) * S, h.y + (x + y - 2 * CC) * S], weit = 1000 * S;
+    const lms = landmasses.filter(lm => Math.abs(lm.x - h.x) < lm.shapeMaxR + weit && Math.abs(lm.y - h.y) < lm.shapeMaxR + weit);
+    const stadt = (x, y) => x > 105 && x < 545 && y > 105 && y < 545;
+    const lmAt = (x, y) => { const [wx, wy] = welt(x, y); return lms.find(lm => aufLand(lm, wx, wy)) || null; };
+    const M = new DOMMatrix([.866 / S, 0, 0, .5 / S, -h.x * .866 / S, cIso(CC, CC)[1] - h.y * .5 / S]), pfade = new Map();
+    const pfad = lm => { let p = pfade.get(lm); if (!p) { p = new Path2D(); p.addPath(lm.path, M); pfade.set(lm, p); } return p; };
+    const probe = document.createElement('canvas').getContext('2d'), heim = landmasses[h.landmassId];
+    let nass = false; for (let x = -170; x <= 810 && !nass; x += 70) for (let y = -170; y <= 810; y += 70) if (!stadt(x, y) && !lmAt(x, y)) { nass = true; break; }
+    return { lms, nass, pfad, fremd: lms.filter(lm => lm !== heim && cityBioVon(lm) !== cityBio()),
+        land: (x, y) => stadt(x, y) || !!lmAt(x, y),
+        wald: (x, y) => { const lm = lmAt(x, y); if (!lm || lm.stone) return false; const [wx, wy] = welt(x, y); return probe.isPointInPath(lm.forest[0], wx, wy); } };
+}
+// ---- Deko (eigene kleine Bilder, in Tiefen-Reihenfolge mit den Häusern): Brunnen, Bäume an der Mauer, Laternen, Statuen ----
 let CITY_DECO = null;
 function cityDeco() {
     const bio = cityBio(); if (CITY_DECO && CITY_DECO.bio === bio) return CITY_DECO.list;
@@ -9789,12 +9828,11 @@ function cityDeco() {
     const strip = (fest, quer) => { for (let v = 182; v <= 460; v += 20) { if (Math.abs(v - 244) < 13 || Math.abs(v - 396) < 13 || Math.abs(v - 320) < (fest > 400 && !quer ? 24 : 13)) continue;
         const kind = R() < pal.pines ? 'pine' : R() < .3 ? 'bush' : 'tree', o = (R() - .5) * 4; out.push({ at: quer ? [fest + o, v] : [v, fest + o], kind, col: R() < .5 ? 'a' : 'b' }); } };
     strip(165, true); strip(165, false); strip(475, true); strip(475, false);
-    out.push({ at: [560, 604], kind: 'mill' }, { at: [612, 566], kind: 'house' }, { at: [588, 540], kind: 'well' }, { at: [252, 652], kind: 'hay' }, { at: [214, 650], kind: 'hay' }, { at: [338, 612], kind: 'cart' });
     CITY_DECO = { bio, list: out }; return out;
 }
 function cityStaticSprite(kind, col) {
     const bio = cityBio(), key = 's:' + kind + (col || '') + ':' + bio; let s = CITY_SPRITES.get(key); if (s) return s;
-    const pal = CITY_PAL[bio], w = 30, up = kind === 'mill' ? 62 : 50, down = 12, c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
+    const pal = CITY_PAL[bio], w = 30, up = 50, down = 12, c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
     const g = c.getContext('2d'), K = cityPainter(g, CITY_SPR_SCALE, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE);
     if (kind === 'fountain') { K.cyl(0, 0, 10, 0, 3, '#c9c1ae', .6); K.cyl(0, 0, 8.6, 3, 3.3, pal.schnee ? '#cfe6f2' : '#4d9ad0', .3); K.cyl(0, 0, 1.8, 3, 10, '#d8d1c1', .5); K.cyl(0, 0, 4, 10, 11.2, '#c9c1ae', .5); K.cyl(0, 0, 1, 11.2, 14, '#d8d1c1', .4); }
     else if (kind === 'tree') cityTreeAt(g, 0, 0, 5.4, pal, col === 'b');
@@ -9803,11 +9841,6 @@ function cityStaticSprite(kind, col) {
     else if (kind === 'lamp') { K.box(-.5, .5, -.5, .5, 0, 12, '#3a3530', .3); K.box(-1.4, 1.4, -1.4, 1.4, 12, 14.6, '#f2d27a', .4); K.pyramid(0, 0, 1.8, 14.6, 2.2, '#3a3530'); }
     else if (kind === 'statue') { K.box(-4, 4, -4, 4, 0, 5, '#bdb3a0', .6); K.box(-3, 3, -3, 3, 5, 6, '#a89f8c', .5); K.cyl(0, 0, 1.6, 6, 13, '#9a8a5a', .5); K.dome(0, 0, 1.3, 13, 2.4, '#b39a5a');
         const [a, b] = K.P(0, 0, 11); K.poly([[a + 1, b], [a + 5, b - 6], [a + 5.6, b - 5.5], [a + 1.8, b + .5]], '#8a7a4a', .3); }
-    else if (kind === 'well') { K.cyl(0, 0, 4, 0, 4, '#bdb3a0', .6); K.cyl(0, 0, 3, 3.6, 4, '#2a4a6a', .3, false); for (const x of [-3.5, 3.5]) K.box(x - .4, x + .4, -.4, .4, 4, 11, '#6b4a2c', .3); cityGable(K, -5, 5, -3, 3, 11, 3, '#8a3a2a'); }
-    else if (kind === 'hay') { K.cyl(0, 0, 4.5, 0, 4, '#d9b85a', .4); K.cone(0, 0, 4.6, 4, 4, '#e2c46a'); }
-    else if (kind === 'cart') { K.box(-5, 5, -2.5, 2.5, 2, 5, '#8a6440', .4); K.box(-4.5, 4.5, -2, 2, 5, 7, '#d9b85a', .3); for (const x of [-3, 3]) { const [a, b] = K.P(x, 2.6, 2); g.fillStyle = '#3a2616'; g.beginPath(); g.arc(a, b, 1.8, 0, 7); g.fill(); } }
-    else if (kind === 'mill') { K.cyl(0, 0, 7, 0, 26, '#e3d7c0', .8); K.cone(0, 0, 8, 26, 10, '#8a3a2a'); cityDoor(K, 0, 7, 6); cityWindows(K, -2, 2, 7, 16, 1, false); }
-    else { K.box(-9, 9, -6, 6, 0, 8, '#e9dfc8', .7); cityGable(K, -10, 10, -7, 7, 8, 6, '#8e3a2c'); cityWindows(K, -6, 6, 6, 5, 2, false); cityDoor(K, 5, 6, 5); K.box(11, 16, -4, 4, 0, 5, '#c9a86a', .5); K.box(-12, -10, -2, 2, 0, 3.5, '#8a6440', .3); }
     s = { c, w, up, down }; CITY_SPRITES.set(key, s); return s;
 }
 
@@ -9839,7 +9872,7 @@ function cityPaintWalls(lvl) {
 
 // ---- people: villagers on the streets ----
 const CITY_PATHS = [
-    [[CC, 600], [CC, 494], [CC, 380]], [[244, 244], [396, 244], [396, 396], [244, 396], [244, 244]],
+    [[CC, 520], [CC, 494], [CC, 380]], [[244, 244], [396, 244], [396, 396], [244, 396], [244, 244]],
     [[244, 178], [244, 462]], [[396, 462], [396, 178]], [[178, 244], [462, 244]], [[462, 396], [178, 396]], [[CC, 172], [CC, 260]], [[172, CC], [260, CC]]
 ];
 let cityFolk = null;
@@ -9935,6 +9968,15 @@ function citySprDraw(g, s, dx, dy, k, dpr2, zStill) {
         const cg = c.getContext('2d'); cg.imageSmoothingQuality = 'high'; cg.setTransform(f, 0, 0, f, 0, 0); cg.drawImage(s.c, 0, 0); m = { f, c }; CITY_SPR_FERTIG.set(s, m); }
     g.drawImage(m.c, dx, dy, m.c.width / dpr2, m.c.height / dpr2);
 }
+// Namensschilder: wo sie in diesem Bild liegen (Bildschirm-Punkte). Ein Schild kommt nur hin, wenn seine Mitte im Bild ist
+// und es kein schon gesetztes überdeckt (2 Punkte Luft).
+let cityNamen = [];
+function cityNamePlatz(id, x, y, w, h, W, H) {
+    const mx = x + w / 2, my = y + h / 2;
+    if (mx < 0 || mx > W || my < 0 || my > H) return false;
+    if (cityNamen.some(n => x < n.x + n.w + 2 && n.x < x + w + 2 && y < n.y + n.h + 2 && n.y < y + h + 2)) return false;
+    cityNamen.push({ id, x, y, w, h }); return true;
+}
 // ---- one frame ----
 function cityFrame(now) {
     if (cityView.hidden) return;
@@ -9946,7 +9988,7 @@ function cityFrame(now) {
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
     if (!cityCam) { const [kx, ky] = cIso(CC, CC); cityCam = { x: kx, y: ky + 6, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 385)) };
-        if (cityPendingAnim) { cityCam.anim = { from: .35, t0: now, dur: 900 }; cityPendingAnim = false; } }
+        if (cityPendingAnim) { cityCam.anim = { from: .4, t0: now, dur: 1150 }; cityPendingAnim = false; } }
     let animZ = 1;
     if (cityCam.anim) { const a = cityCam.anim, q = Math.min(1, (now - a.t0) / a.dur), e = 1 - Math.pow(1 - q, 3), to = a.to ?? 1;
         animZ = a.from + (to - a.from) * e; if (q >= 1 && to === 1) cityCam.anim = null; }
@@ -9955,7 +9997,7 @@ function cityFrame(now) {
         if (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3) cityCam.tx = cityCam.ty = undefined; }
     cityClampCam(W, H - sheetH * .6);
     const g = cityCtx, c = loadCity(), Z = cityCam.z * animZ;
-    if (!CITY_GROUND || CITY_GROUND_BIO !== cityBio()) cityPaintGround();   // (neu, wenn die Hauptstadt in eine andere Gegend zieht)
+    if (!CITY_GROUND || CITY_GROUND_BIO !== cityGrundKey()) cityPaintGround();   // (neu, wenn die Hauptstadt in eine andere Gegend zieht)
     const ox = W / 2 - cityCam.x * Z, oy = (H - sheetH * .6) / 2 - cityCam.y * Z;
     const toS = (x, y, z) => { const [sx, sy] = cIso(x, y); return [sx * Z + ox, (sy - (z || 0)) * Z + oy]; };
     // ground and walls (back half), then buildings and people in depth order, then the front walls
@@ -9982,7 +10024,7 @@ function cityFrame(now) {
     // Mauerbilder und ~20 Farbverläufe. Bewegt sich die Kamera, wird wie bisher direkt gezeichnet (genau gleich).
     const LG = CITY_LAGEN, lkey = [W, H, dpr2, Z, ox, oy, walls.key, CITY_GROUND_BIO].join(','), still = lkey === LG.letzt, zStill = Z === LG.letztZ;
     LG.letzt = lkey; LG.letztZ = Z;
-    const mitSchatten = items.filter(it => it.spr && (!it.deco || ['fountain', 'mill', 'house', 'well', 'statue'].includes(it.deco)));   // (Bäume, Büsche, Laternen haben ihren eigenen Schatten)
+    const mitSchatten = items.filter(it => it.spr && (!it.deco || ['fountain', 'statue'].includes(it.deco)));   // (Bäume, Büsche, Laternen haben ihren eigenen Schatten)
     if (still) {
         if (LG.key !== lkey) { cityLage('unten', W, H, dpr2, gg => cityUnten(gg, W, H, Z, ox, oy, walls, mitSchatten, toS)); cityLage('oben', W, H, dpr2, gg => cityOben(gg, Z, ox, oy, walls)); LG.key = lkey; }
         g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(LG.unten, 0, 0);
@@ -10013,14 +10055,6 @@ function cityFrame(now) {
             g.save(); g.strokeStyle = 'rgba(255,220,140,.95)'; g.lineWidth = 2; g.setLineDash([6, 4]); g.lineDashOffset = -now / 40;
             g.beginPath(); const r = (it.keep ? 40 : 26) * Z; g.ellipse(sx, sy, r * .866 * 1.4, r * .5 * 1.4, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
         citySprDraw(g, s, dx, dy, k, dpr2, zStill);                         // (the soft shadow underneath is part of cityUnten)
-        if (it.deco === 'mill') {                                           // turning sails
-            const [hx, hy] = toS(it.x + 5, it.y + 5, 22), L = 17 * Z, a0 = now / 1400;
-            g.save(); g.strokeStyle = '#5a3d24'; g.lineWidth = Math.max(1, Z * .8); g.fillStyle = 'rgba(240,232,212,.92)';
-            for (let i = 0; i < 4; i++) { const a = a0 + i * Math.PI / 2, ex = hx + Math.cos(a) * L, ey = hy + Math.sin(a) * L * .9;
-                g.beginPath(); g.moveTo(hx, hy); g.lineTo(ex, ey); g.stroke();
-                const px = -Math.sin(a) * 3.2 * Z, py = Math.cos(a) * 3.2 * Z * .9;
-                g.beginPath(); g.moveTo(hx + (ex - hx) * .25, hy + (ey - hy) * .25); g.lineTo(ex, ey); g.lineTo(ex + px, ey + py); g.lineTo(hx + (ex - hx) * .25 + px, hy + (ey - hy) * .25 + py); g.closePath(); g.fill(); g.stroke(); }
-            g.restore(); }
         if (it.id === 'forge' && it.lvl) for (let i = 0; i < 5; i++) {       // chimney smoke
             const t = ((now / 1800) + i / 5) % 1, [cx2, cy2] = toS(it.x - 9, it.y - 5, 31);
             g.fillStyle = 'rgba(120,120,120,' + (.5 * (1 - t)) + ')'; g.beginPath(); g.arc(cx2 + t * 8 * Z, cy2 - t * 26 * Z, (1.5 + t * 4) * Z, 0, 7); g.fill(); }
@@ -10079,8 +10113,12 @@ function cityFrame(now) {
           const vg = gg.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.hypot(W, H) * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(10,16,8,.38)');
           gg.fillStyle = vg; gg.fillRect(0, 0, W, H); }); CITY_LAGEN.lichtKey = lk; }
       g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(CITY_LAGEN.licht, 0, 0); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); }
-    // name plates last
+    // name plates last: jedes Schild klebt unter seinem Gebäude (nie an den Bildrand geschoben); ragt es aus dem Bild oder
+    // läge es auf einem anderen, bleibt es weg – die Burg zuerst, dann was gerade gebaut wird, gebaute Häuser, leere Plätze
     const rund = (x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
+    const rang = q => q.it.keep ? 0 : q.building ? 1 : q.it.gate ? 2 : q.ghost ? 4 : 3;
+    plates.sort((p, q) => rang(p) - rang(q) || q.sy - p.sy);
+    cityNamen = [];
     for (const { it, sx, sy, building, ghost } of plates) {
         if (ghost && !building && Z >= .8) {                                 // leerer Platz: ein schwebendes Zeichen – „+“ = hier bauen, Schloss = braucht eine höhere Burg
             const zu = !!(AUF && AUF.BAU_AB_BURG[it.id] > AUF.burgStufe('player')), r = Math.max(9, Math.min(14, 5.5 * Z));
@@ -10091,11 +10129,13 @@ function cityFrame(now) {
             drawGlyph(g, zu ? 'lock' : 'plus', bx, by, r * 1.25, zu ? '#e6dccb' : '#4a2c08');
         }
         if (Z < .8 && !building) {                                           // weit weg: nur die Stufe
-            if (!it.lvl) continue; const r2 = 7.5, [bx, by] = [sx, sy + 4 * Z + r2]; g.font = '800 10px Inter, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+            if (!it.lvl) continue; const r2 = 7.5, [bx, by] = [sx, sy + 4 * Z + r2];
+            if (!cityNamePlatz(it.id, bx - r2, by - r2, r2 * 2, r2 * 2, W, H)) continue; g.font = '800 10px Inter, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
             g.fillStyle = it.keep ? '#c98f22' : '#2f6fb8'; g.strokeStyle = 'rgba(255,236,190,.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(bx, by, r2, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillText(String(it.lvl), bx, by + .5); continue; }
         const wnd = it.id === 'hospital' ? c.wounded : 0, name = it.name + (wnd ? ' · ' + fmtCompact(wnd) + ' verw.' : ''), lv = it.lvl ? String(it.lvl) : '';
         const fs = Math.max(9.5, Math.min(12.5, 4.6 * Z)), h2 = fs + 7; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
-        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = Math.max(6, Math.min(W - 6 - W2, sx - W2 / 2)), py = sy + (it.keep ? 12 : it.gate ? 2 : 7) * Z;   // am Rand: ganz im Bild
+        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = sx - W2 / 2, py = sy + (it.keep ? 12 : it.gate ? 2 : 7) * Z;
+        if (!cityNamePlatz(it.id, x0, py, W2, building ? h2 * 2 + 3 : h2, W, H)) continue;
         g.fillStyle = ghost ? 'rgba(18,16,12,.58)' : 'rgba(18,16,12,.84)'; g.strokeStyle = building ? '#ffd98a' : ghost ? 'rgba(228,200,134,.35)' : 'rgba(228,200,134,.7)'; g.lineWidth = 1;
         rund(x0, py, W2, h2, h2 / 2); g.fill(); g.stroke();
         g.textAlign = 'center'; g.textBaseline = 'middle';

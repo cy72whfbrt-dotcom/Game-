@@ -1,7 +1,7 @@
 // Teil 08f-stadtbild-bild.js: Stadtansicht: Leute, Kamera, Bild; Stufenaufstieg-Fenster
 // ---- people: villagers on the streets ----
 const CITY_PATHS = [
-    [[CC, 600], [CC, 494], [CC, 380]], [[244, 244], [396, 244], [396, 396], [244, 396], [244, 244]],
+    [[CC, 520], [CC, 494], [CC, 380]], [[244, 244], [396, 244], [396, 396], [244, 396], [244, 244]],
     [[244, 178], [244, 462]], [[396, 462], [396, 178]], [[178, 244], [462, 244]], [[462, 396], [178, 396]], [[CC, 172], [CC, 260]], [[172, CC], [260, CC]]
 ];
 let cityFolk = null;
@@ -97,6 +97,15 @@ function citySprDraw(g, s, dx, dy, k, dpr2, zStill) {
         const cg = c.getContext('2d'); cg.imageSmoothingQuality = 'high'; cg.setTransform(f, 0, 0, f, 0, 0); cg.drawImage(s.c, 0, 0); m = { f, c }; CITY_SPR_FERTIG.set(s, m); }
     g.drawImage(m.c, dx, dy, m.c.width / dpr2, m.c.height / dpr2);
 }
+// Namensschilder: wo sie in diesem Bild liegen (Bildschirm-Punkte). Ein Schild kommt nur hin, wenn seine Mitte im Bild ist
+// und es kein schon gesetztes überdeckt (2 Punkte Luft).
+let cityNamen = [];
+function cityNamePlatz(id, x, y, w, h, W, H) {
+    const mx = x + w / 2, my = y + h / 2;
+    if (mx < 0 || mx > W || my < 0 || my > H) return false;
+    if (cityNamen.some(n => x < n.x + n.w + 2 && n.x < x + w + 2 && y < n.y + n.h + 2 && n.y < y + h + 2)) return false;
+    cityNamen.push({ id, x, y, w, h }); return true;
+}
 // ---- one frame ----
 function cityFrame(now) {
     if (cityView.hidden) return;
@@ -108,7 +117,7 @@ function cityFrame(now) {
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
     if (!cityCam) { const [kx, ky] = cIso(CC, CC); cityCam = { x: kx, y: ky + 6, z: Math.max(cityFitZoom(W, H), Math.min(2.2, W / 385)) };
-        if (cityPendingAnim) { cityCam.anim = { from: .35, t0: now, dur: 900 }; cityPendingAnim = false; } }
+        if (cityPendingAnim) { cityCam.anim = { from: .4, t0: now, dur: 1150 }; cityPendingAnim = false; } }
     let animZ = 1;
     if (cityCam.anim) { const a = cityCam.anim, q = Math.min(1, (now - a.t0) / a.dur), e = 1 - Math.pow(1 - q, 3), to = a.to ?? 1;
         animZ = a.from + (to - a.from) * e; if (q >= 1 && to === 1) cityCam.anim = null; }
@@ -117,7 +126,7 @@ function cityFrame(now) {
         if (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3) cityCam.tx = cityCam.ty = undefined; }
     cityClampCam(W, H - sheetH * .6);
     const g = cityCtx, c = loadCity(), Z = cityCam.z * animZ;
-    if (!CITY_GROUND || CITY_GROUND_BIO !== cityBio()) cityPaintGround();   // (neu, wenn die Hauptstadt in eine andere Gegend zieht)
+    if (!CITY_GROUND || CITY_GROUND_BIO !== cityGrundKey()) cityPaintGround();   // (neu, wenn die Hauptstadt in eine andere Gegend zieht)
     const ox = W / 2 - cityCam.x * Z, oy = (H - sheetH * .6) / 2 - cityCam.y * Z;
     const toS = (x, y, z) => { const [sx, sy] = cIso(x, y); return [sx * Z + ox, (sy - (z || 0)) * Z + oy]; };
     // ground and walls (back half), then buildings and people in depth order, then the front walls
@@ -144,7 +153,7 @@ function cityFrame(now) {
     // Mauerbilder und ~20 Farbverläufe. Bewegt sich die Kamera, wird wie bisher direkt gezeichnet (genau gleich).
     const LG = CITY_LAGEN, lkey = [W, H, dpr2, Z, ox, oy, walls.key, CITY_GROUND_BIO].join(','), still = lkey === LG.letzt, zStill = Z === LG.letztZ;
     LG.letzt = lkey; LG.letztZ = Z;
-    const mitSchatten = items.filter(it => it.spr && (!it.deco || ['fountain', 'mill', 'house', 'well', 'statue'].includes(it.deco)));   // (Bäume, Büsche, Laternen haben ihren eigenen Schatten)
+    const mitSchatten = items.filter(it => it.spr && (!it.deco || ['fountain', 'statue'].includes(it.deco)));   // (Bäume, Büsche, Laternen haben ihren eigenen Schatten)
     if (still) {
         if (LG.key !== lkey) { cityLage('unten', W, H, dpr2, gg => cityUnten(gg, W, H, Z, ox, oy, walls, mitSchatten, toS)); cityLage('oben', W, H, dpr2, gg => cityOben(gg, Z, ox, oy, walls)); LG.key = lkey; }
         g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(LG.unten, 0, 0);
@@ -175,14 +184,6 @@ function cityFrame(now) {
             g.save(); g.strokeStyle = 'rgba(255,220,140,.95)'; g.lineWidth = 2; g.setLineDash([6, 4]); g.lineDashOffset = -now / 40;
             g.beginPath(); const r = (it.keep ? 40 : 26) * Z; g.ellipse(sx, sy, r * .866 * 1.4, r * .5 * 1.4, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
         citySprDraw(g, s, dx, dy, k, dpr2, zStill);                         // (the soft shadow underneath is part of cityUnten)
-        if (it.deco === 'mill') {                                           // turning sails
-            const [hx, hy] = toS(it.x + 5, it.y + 5, 22), L = 17 * Z, a0 = now / 1400;
-            g.save(); g.strokeStyle = '#5a3d24'; g.lineWidth = Math.max(1, Z * .8); g.fillStyle = 'rgba(240,232,212,.92)';
-            for (let i = 0; i < 4; i++) { const a = a0 + i * Math.PI / 2, ex = hx + Math.cos(a) * L, ey = hy + Math.sin(a) * L * .9;
-                g.beginPath(); g.moveTo(hx, hy); g.lineTo(ex, ey); g.stroke();
-                const px = -Math.sin(a) * 3.2 * Z, py = Math.cos(a) * 3.2 * Z * .9;
-                g.beginPath(); g.moveTo(hx + (ex - hx) * .25, hy + (ey - hy) * .25); g.lineTo(ex, ey); g.lineTo(ex + px, ey + py); g.lineTo(hx + (ex - hx) * .25 + px, hy + (ey - hy) * .25 + py); g.closePath(); g.fill(); g.stroke(); }
-            g.restore(); }
         if (it.id === 'forge' && it.lvl) for (let i = 0; i < 5; i++) {       // chimney smoke
             const t = ((now / 1800) + i / 5) % 1, [cx2, cy2] = toS(it.x - 9, it.y - 5, 31);
             g.fillStyle = 'rgba(120,120,120,' + (.5 * (1 - t)) + ')'; g.beginPath(); g.arc(cx2 + t * 8 * Z, cy2 - t * 26 * Z, (1.5 + t * 4) * Z, 0, 7); g.fill(); }
@@ -241,8 +242,12 @@ function cityFrame(now) {
           const vg = gg.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.hypot(W, H) * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(10,16,8,.38)');
           gg.fillStyle = vg; gg.fillRect(0, 0, W, H); }); CITY_LAGEN.lichtKey = lk; }
       g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(CITY_LAGEN.licht, 0, 0); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); }
-    // name plates last
+    // name plates last: jedes Schild klebt unter seinem Gebäude (nie an den Bildrand geschoben); ragt es aus dem Bild oder
+    // läge es auf einem anderen, bleibt es weg – die Burg zuerst, dann was gerade gebaut wird, gebaute Häuser, leere Plätze
     const rund = (x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
+    const rang = q => q.it.keep ? 0 : q.building ? 1 : q.it.gate ? 2 : q.ghost ? 4 : 3;
+    plates.sort((p, q) => rang(p) - rang(q) || q.sy - p.sy);
+    cityNamen = [];
     for (const { it, sx, sy, building, ghost } of plates) {
         if (ghost && !building && Z >= .8) {                                 // leerer Platz: ein schwebendes Zeichen – „+“ = hier bauen, Schloss = braucht eine höhere Burg
             const zu = !!(AUF && AUF.BAU_AB_BURG[it.id] > AUF.burgStufe('player')), r = Math.max(9, Math.min(14, 5.5 * Z));
@@ -253,11 +258,13 @@ function cityFrame(now) {
             drawGlyph(g, zu ? 'lock' : 'plus', bx, by, r * 1.25, zu ? '#e6dccb' : '#4a2c08');
         }
         if (Z < .8 && !building) {                                           // weit weg: nur die Stufe
-            if (!it.lvl) continue; const r2 = 7.5, [bx, by] = [sx, sy + 4 * Z + r2]; g.font = '800 10px Inter, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+            if (!it.lvl) continue; const r2 = 7.5, [bx, by] = [sx, sy + 4 * Z + r2];
+            if (!cityNamePlatz(it.id, bx - r2, by - r2, r2 * 2, r2 * 2, W, H)) continue; g.font = '800 10px Inter, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
             g.fillStyle = it.keep ? '#c98f22' : '#2f6fb8'; g.strokeStyle = 'rgba(255,236,190,.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(bx, by, r2, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillText(String(it.lvl), bx, by + .5); continue; }
         const wnd = it.id === 'hospital' ? c.wounded : 0, name = it.name + (wnd ? ' · ' + fmtCompact(wnd) + ' verw.' : ''), lv = it.lvl ? String(it.lvl) : '';
         const fs = Math.max(9.5, Math.min(12.5, 4.6 * Z)), h2 = fs + 7; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
-        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = Math.max(6, Math.min(W - 6 - W2, sx - W2 / 2)), py = sy + (it.keep ? 12 : it.gate ? 2 : 7) * Z;   // am Rand: ganz im Bild
+        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = sx - W2 / 2, py = sy + (it.keep ? 12 : it.gate ? 2 : 7) * Z;
+        if (!cityNamePlatz(it.id, x0, py, W2, building ? h2 * 2 + 3 : h2, W, H)) continue;
         g.fillStyle = ghost ? 'rgba(18,16,12,.58)' : 'rgba(18,16,12,.84)'; g.strokeStyle = building ? '#ffd98a' : ghost ? 'rgba(228,200,134,.35)' : 'rgba(228,200,134,.7)'; g.lineWidth = 1;
         rund(x0, py, W2, h2, h2 / 2); g.fill(); g.stroke();
         g.textAlign = 'center'; g.textBaseline = 'middle';

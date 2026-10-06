@@ -779,6 +779,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
   `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+- **6.10. – Stadtansicht wie RoK (Alexander, Handy; Branch `fix-stadtbild`, NICHT hochgeladen):** **Schilder** (08f
+  `cityFrame`, `cityNamePlatz`): Ursache – jedes Schild wurde in den Bildschirm geklemmt (`Math.max(6, Math.min(W − 6 − Breite, …))`),
+  darum stapelten sie sich am Rand, wenn das Gebäude draußen lag. Jetzt klebt jedes Schild unter seinem Gebäude, liegt seine
+  Mitte außerhalb des Bilds, bleibt es weg; überdeckt es ein schon gesetztes, auch (Vorrang: Burg, im Bau, Mauer, gebaut,
+  leere Plätze). **Draußen** (08e `cityPaintGround`, `cityAussen`): Felder, Weg, Karren, Windmühle, Hof, Brunnen, Heu weg; um die
+  Mauer liegt die Weltkarte der Hauptstadt (Basis füllt die Mauer, Karte gestaucht wie das Stadtbild): Bäume dicht, wo die Karte
+  Wald hat, Nachbar-Regionen in ihrer Farbe, Meer mit Strand, wo die Karte Wasser hat (die Stadt selbst steht immer auf Land);
+  Berge hinten und der Fluss bleiben (nur auf Land). Innen alles wie vorher. **Übergang** (08a `openCity`/`closeCity`,
+  `karteTauchen`): die Karte fliegt zur Hauptstadt und taucht weiter hinein (CSS-Zoom ×3,2 des Karten-Bilds, kostet am Handy
+  fast nichts), Wolken, dann kommt die Stadt von weit unten näher (0,4 → 1 in 1,15 s, Wolken reißen schneller auf); zurück
+  umgekehrt (Stadt fällt weg, Karte kommt aus der Nähe zurück, dann zurück an die alte Stelle). Test `stadt_bild_test` (neu).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
