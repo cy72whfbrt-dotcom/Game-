@@ -88,13 +88,13 @@ if (!wartung()) foreach (['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel'
   .szene { display: block; }
   .schleier { background: radial-gradient(ellipse 90% 80% at 50% 40%, transparent 55%, rgba(3,5,12,.6)),
                           linear-gradient(180deg, rgba(3,5,12,.3), transparent 20%, transparent 45%, rgba(4,6,14,.9)); }
-  .logo, .karte { position: relative; }
+  .logo, .karte { position: relative; z-index: 1; }   /* (eigene Ebene: der dunkle Fleck hinter dem Logo liegt über dem Bild) */
   .logo { display: flex; flex-direction: column; align-items: center; text-align: center; }
   h1 { margin: 0; display: flex; flex-direction: column; align-items: center; font: 700 clamp(42px, 12vw, 54px)/.98 var(--font-display); letter-spacing: .06em; text-transform: uppercase;
        filter: drop-shadow(0 2px 0 #5a3f14) drop-shadow(0 4px 14px rgba(0,0,0,.75)); }
   h1 span { background-image: linear-gradient(180deg, #fff3cf 8%, #e4c886 45%, #a27832 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
   h1 span:first-child { font-size: .55em; letter-spacing: .34em; margin-right: -.34em; }
-  .logo::before { content: ""; position: absolute; inset: -40px -70px; z-index: -1; background: radial-gradient(ellipse 75% 65% at 40% 50%, rgba(6,10,28,.68), transparent 75%); }   /* Kontrast auf hellem Himmel */
+  .logo::before { content: ""; position: absolute; inset: -40px -70px; z-index: -1; background: radial-gradient(ellipse 80% 75% at 40% 62%, rgba(6,10,28,.75), transparent 78%); }   /* Kontrast auf hellem Himmel */
   .unter { display: flex; align-items: center; gap: 12px; margin: 12px 0 0; font: 700 13px/1 var(--font-ui); letter-spacing: .3em; text-transform: uppercase; color: #fff1d0;
            text-shadow: 0 1px 3px #000, 0 0 10px rgba(0,0,0,.7); }
   .unter span { width: 30px; height: 1px; background: linear-gradient(90deg, transparent, #d9b56a); } .unter span:last-child { transform: scaleX(-1); }

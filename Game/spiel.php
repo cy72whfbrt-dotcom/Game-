@@ -1564,7 +1564,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 /* vignette + a darker bottom for the tip and the bar */
 .splash-vig{position:absolute;inset:0;pointer-events:none;
   background:radial-gradient(ellipse 90% 80% at 50% 45%,transparent 55%,rgba(3,5,12,.65)),linear-gradient(180deg,rgba(3,5,12,.35),transparent 22%,transparent 68%,rgba(4,6,12,.8) 86%,#04060c)}
-.splash-top,.splash-bottom{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center}
+.splash-top,.splash-bottom{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;text-align:center}
 /* logo: embossed gold, "OPEN" small above "WATER" */
 .splash-title{margin:0;display:flex;flex-direction:column;align-items:center;font:700 clamp(46px,13vw,58px)/.98 var(--font-display);letter-spacing:.06em;text-transform:uppercase;
   filter:drop-shadow(0 2px 0 #5a3f14) drop-shadow(0 4px 14px rgba(0,0,0,.75));animation:sp-rise 1.1s .15s cubic-bezier(.2,.8,.2,1) both}
@@ -1572,7 +1572,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .splash-title span:first-child{font-size:.55em;letter-spacing:.34em;margin-right:-.34em}
 .splash-sub{display:flex;align-items:center;gap:12px;margin-top:14px;font:700 13px/1 var(--font-ui);letter-spacing:.3em;text-transform:uppercase;color:#fff1d0;
   text-shadow:0 1px 3px #000,0 0 10px rgba(0,0,0,.7);animation:sp-rise 1.1s .3s cubic-bezier(.2,.8,.2,1) both}
-.splash-top::before{content:"";position:absolute;inset:-40px -70px;z-index:-1;background:radial-gradient(ellipse 75% 65% at 40% 50%,rgba(6,10,28,.68),transparent 75%)}   /* Kontrast auf hellem Himmel */
+.splash-top::before{content:"";position:absolute;inset:-40px -70px;z-index:-1;background:radial-gradient(ellipse 80% 75% at 40% 62%,rgba(6,10,28,.75),transparent 78%)}   /* Kontrast auf hellem Himmel */
 .splash-sub span{width:34px;height:1px;background:linear-gradient(90deg,transparent,#d9b56a)}
 .splash-sub span:last-child{transform:scaleX(-1)}
 @keyframes sp-rise{from{opacity:0;transform:translateY(14px)}}
