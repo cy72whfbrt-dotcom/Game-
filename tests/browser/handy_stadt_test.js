@@ -21,7 +21,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       // 1) Rohstoff-Liste: auf, dann den Shop öffnen → zu
       document.getElementById('hudRoh').click(); await warte(200); const auf = !document.getElementById('rohDrop').hidden;
       document.getElementById('shopBtn').click(); await warte(400); o.roh = { auf, zuNachFenster: document.getElementById('rohDrop').hidden };
-      document.querySelectorAll('#shopPopup .odds-mehr').forEach(d => { d.open = true; });   // Chancen sind eingeklappt
+      document.querySelector('#shopPopup [data-sinfo="aus"]').click(); await warte(100);   // Chancen liegen hinter „i“
       const rar = document.querySelector('#shopPopup .chip--rar'), box = rar && rar.parentElement.getBoundingClientRect(), rr = rar && rar.getBoundingClientRect();
       o.rar = rar ? { drin: rr.right <= box.right + 1 && rr.right <= innerWidth, ganz: ganz(rar), oben: parseFloat(getComputedStyle(rar).paddingTop) >= 3, hoch: rr.height >= rar.scrollHeight - 1 } : null;
       // 2) Rahmen für 1000 Gems: erster Tipp fragt, Doppel-Tipp zählt nicht, zweiter Tipp nach >450 ms kauft

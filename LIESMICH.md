@@ -779,6 +779,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
   `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+- **6.10. – Shop neu (Alexander 6.10., Handy: „Shop komisch, neu“), NICHT hochgeladen:** Reiter Kisten wie die Thron-Zeilen:
+  jede Kiste eine Zeile mit Bild, Name, Inhalt in einer Zeile und EIGENEM Preis-Knopf (ein Tipp = kaufen, ab 500 weiter
+  „Wirklich?“ `gemsWirklich`). Der feste Unten-Knopf „Kiste öffnen“ (unklar, welche Kiste) ist weg; „Inventar ›“ steht neben
+  „Ausrüstung“. Erklärungen und Chancen hinter „i“ (`data-sinfo`, 06c `shopInfoKnopf`/`shopInfoAuf`) – auch bei Schilden und
+  Thron (bleibt beim Neuzeichnen offen). Alle Kisten auf 390×844 ohne Scrollen. Preise/Regeln gleich. CSS-Block „Shop-Zeilen“
+  (spielseite/04); der Hinweis beim offenen Shop liegt nicht mehr unten (es gibt keine Fußzeile). Test `shop_test` (neu),
+  `stadt_fenster_test` (Shop-Teil nach shop_test), `design_hud_test`, `handy_stadt_test` angepasst.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
