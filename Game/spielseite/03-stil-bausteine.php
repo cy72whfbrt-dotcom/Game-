@@ -544,11 +544,31 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 #popupActions > .act.act--haupt:disabled > .act-t,#popupActions > .act.act--haupt:disabled > .act-s{color:var(--tx-4)}
 .ap-kopf{position:sticky;top:-14px;z-index:2;display:flex;flex-direction:column;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--line-1);background:#11151c;
   box-shadow:-14px 0 0 #11151c,14px 0 0 #11151c,0 -14px 0 #11151c,-14px -14px 0 #11151c,14px -14px 0 #11151c}   /* (Schatten statt Rand: deckt den Innenabstand, ohne waagrecht zu scrollen) */
-.ap-kopf .force{padding:8px 10px} .ap-kopf .force b{font-size:var(--fs-15)} .ap-kopf .from-sel{height:40px}
-#popupStats .force--foe small[data-foe="sub"]{white-space:normal}
-.ap-truppen .troop-in{width:7.5em;max-width:40vw;height:32px;padding:0 4px;border:0;border-bottom:1px dashed var(--line-3);border-radius:0;background:transparent;font-size:var(--fs-15)}
+.ap-kopf{gap:6px;padding-bottom:6px} .ap-kopf .from-sel{height:40px}
+/* Angriff kompakt (Vorbild Million Lords): Angriff | VS | Abwehr je eine Zeile, die Aufschlüsselung klein darunter (höchstens 2 Zeilen) */
+.ap-kopf .versus{grid-template-columns:minmax(0,1fr) 20px minmax(0,1fr);gap:4px} .ap-kopf .vs{width:18px;height:18px} .ap-kopf .vs span{font-size:8px}
+.ap-kopf .force{display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;column-gap:6px;padding:6px 8px}
+.ap-kopf .force > .icon{width:15px;height:15px;color:var(--f-player)} .ap-kopf .force--foe > .icon{color:var(--f-enemy)}
+.ap-kopf .force b{margin-top:0;font-size:var(--fs-15);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-kopf .force--foe{grid-template-columns:minmax(0,1fr) auto} .ap-kopf .force--foe b{text-align:right}
+.ap-kopf .force small{grid-column:1/-1;margin-top:2px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ap-kopf .balance-note{margin-top:3px}
+#popupSub:has(> #previewToll:only-child:empty){display:none}   /* Kopfzeile nur mit Maut/Tor */
+.ap-truppen .troop-in{width:7.5em;max-width:40vw;height:28px;padding:0 4px;border:0;border-bottom:1px dashed var(--line-3);border-radius:0;background:transparent;font-size:var(--fs-15)}
 .ap-truppen .troop-in:focus{border-bottom-style:solid;box-shadow:none}
-.ap-truppen .field-top{align-items:center}
+.ap-truppen .field-top{align-items:center;margin-bottom:0}
+.ap-regler{display:flex;align-items:center;gap:8px} .ap-regler .slider{flex:1 1 auto;min-width:0} .ap-regler .seg{flex:none;grid-template-columns:repeat(4,44px);margin-top:0}   /* Schieber + 25/50/75/Alle in einer Zeile */
+/* Held + Zweitheld: zwei Chips in einer Zeile, antippen klappt die Auswahl darunter auf */
+.ap-held{display:flex;flex-direction:column;gap:4px} .ap-held-zeile{display:flex;gap:6px}
+.ap-hchip{position:relative;flex:1 1 0;min-width:0;display:flex;align-items:center;gap:6px;min-height:var(--k-tipp);padding:0 24px 0 8px;border-radius:var(--r-xs);background:var(--ink-3);border:1px solid var(--line-1);border-left:3px solid var(--hc,var(--line-1));color:var(--tx-1);text-align:left}
+.ap-hchip::after{content:"";position:absolute;right:10px;top:50%;width:6px;height:6px;margin-top:-5px;border-right:1.5px solid var(--tx-3);border-bottom:1.5px solid var(--tx-3);transform:rotate(45deg)}
+.ap-hchip.on{background:rgba(214,170,90,.12);border-color:var(--line-3);border-left-color:var(--hc,var(--line-3))} .ap-hchip.on::after{margin-top:-1px;transform:rotate(-135deg)}
+.ap-hchip .hero-pic{width:26px;height:26px;flex:none;border-radius:5px;border:1px solid var(--hc)}
+.ap-hchip-t{display:flex;flex-direction:column;min-width:0}
+.ap-hchip-t b{font:600 var(--fs-13)/1.15 var(--font-ui);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ap-hchip-t small{font:500 var(--fs-11)/1.2 var(--font-ui);color:var(--gold-200);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ap-hchip-t small .icon{width:10px;height:10px;vertical-align:-1px}
+.ap-held .seg.hero-seg2{margin-top:0} .ap-held .hero-seg2-l{display:none}   /* („Zweitheld · 50 %“ steht im Chip) */
+.ap-herofx{font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .ap-herofx:empty{display:none}
 .hero-seg.chips-quer{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding-bottom:2px}
 .hero-seg.chips-quer::-webkit-scrollbar{display:none}
 .hero-seg.chips-quer > button{flex:none;min-width:max-content;padding:0 12px}

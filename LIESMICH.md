@@ -709,6 +709,16 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Kachel reicht); Truppen: Schieber + 25/50/75/Alle, die Zahl ist nur Anzeige (antippen = eintippen); Helden in einer Zeile zum
   Wischen (`.chips-quer`, auch Armee-Fenster 09d); „Angreifen“ fest unten. Funktion unverändert (Befehle, Server-Filter).
   Stil: neue Klassen nur in spielseite/03. Test `tests/browser/handy_basis_test.js` (Handy + Desktop).
+- **6.10. – Angriffsfenster kompakt (Alexander 6.10., Handy-Bild „noch doof“; Branch `fix-angriff-fenster`, NICHT
+  hochgeladen):** „Angriff vorbereiten“ nach Vorbild Million Lords, Farben/Stil gleich (spiel/10a `renderAttackPreview`,
+  `patchAttackPreview`, neu `apQuelleText`/`apHeldChip`; CSS spielseite/03). Startbasis + Truppen + Marschzeit nur noch
+  EINMAL in der Auswahl (Zeit mit dem Tempo des Helden – vorher Kopfzeile 0:24 und Auswahl 0:25); Kopfzeile nur noch bei
+  Maut/Tor; kein abgeschnittenes „Von Basis“ mehr. Angriff | VS | Abwehr je eine Zeile (Zeichen + Zahl, darunter klein
+  woraus; Abwehr kurz „100 Mrd.“). Schieber und 25/50/75/Alle in einer Zeile. Held + Zweitheld als zwei Chips in einer
+  Zeile (Bild, Name, Sterne bzw. „Zweitheld · 50 %“/„Paar +x %“) – antippen klappt die Auswahl auf, eine Wahl klappt sie zu;
+  darunter klein, was der Held bewirkt. Handy 390×844: höchstens 55 % hoch, ohne Scrollen (vorher 62 % + Scrollen),
+  Tippflächen ≥ 44 px, Desktop-Karte kleiner. Tests: handy_basis_test (4b: Höhe, einmal, Chips auf/zu), maersche_knoepfe_test
+  (Startbasis in der Auswahl), design_hud_test (Held-Chips ≥ 44 px).
 - **6.10. – Design 11b F, Paket P4 (Stadt, Burg, Labor, Helden, Shop), NICHT hochgeladen:** Gebäude-/Burg-Fenster: Haupt-Knopf
   (Aufwerten/Bauen) fest unten, nie unter dem Falz; Burg: Voraussetzungen und „Jetzt/schaltet frei“ zuerst, Schild-Kasten unten;
   fehlt nur ein Rohstoff, sagt der Knopf „Fehlt: 2.000 Holz“ (`cityFehlt`, 08b), der rote Kreis fällt weg (rote Zahl reicht).

@@ -92,7 +92,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       if (sel) { const r = sel.getBoundingClientRect(); out.box = { h: Math.round(r.height), l: Math.round(r.left), r: Math.round(r.right), w: innerWidth, sichtbar: r.width > 0 && r.height > 0 };
         out.optionen = [...sel.options].map(o => +o.value); out.vorgewaehlt = +sel.value; out.texte = [...sel.options].map(o => o.textContent);
         sel.value = String(C.id); sel.dispatchEvent(new Event('change', { bubbles: true }));
-        out.gewechselt = previewSourceId; out.kopf = popupSub.textContent.includes('Von ' + islandTitle(C)); }
+        out.gewechselt = previewSourceId; const s2 = document.getElementById('attackFromSel'); out.kopf = !!s2 && s2.selectedOptions[0].textContent.startsWith(islandTitle(C)) && !popupSub.textContent.includes('Von '); }   // (Startbasis nur EINMAL: in der Auswahl)
       return out;
     });
     console.log(name, JSON.stringify(b0).slice(0, 700));
