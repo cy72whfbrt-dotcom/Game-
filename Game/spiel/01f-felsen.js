@@ -208,6 +208,7 @@ function felsBild(lm) {                              // die Pfade einer Region (
     const d = { boden: P(), ton: [P(), P(), P(), P(), P()], kante: P(), sil: P(), kappe: P(), geroell: P(), baum: P(), baumL: P(), fels: null };
     const tafel = lm.bio === 'sand' && !lm.stone, schnee = (FELS_FARBE[lm.stone ? 'stone' : lm.bio] || FELS_FARBE.green)[3];
     const blob = (p, x, y, rx, ry, rnd, k) => { for (let i = 0; i <= k; i++) { const t = i / k * Math.PI * 2, f = .78 + rnd() * .3, px = x + Math.cos(t) * rx * f, py = y + Math.sin(t) * ry * f; i ? p.lineTo(px, py) : p.moveTo(px, py); } p.closePath(); };
+    d.stuecke = fs.map(felsStuecke).flat().sort((p, q) => p.y - q.y);   // Bild-Stücke (KI-Bilder), hinten zuerst
     for (const f of fs) {
         const rnd = mulberry32(f.saat);
         const hoechste = f.gipfel.slice().sort((p, q) => q.h - p.h).slice(0, 1 + (rnd() < .5 ? 1 : 0));
@@ -241,11 +242,62 @@ function felsFlaechen(g, d, t, kante, kw) {          // Bodenschatten + 5 Fläch
     for (let i = 4; i >= 0; i--) { g.fillStyle = t[i]; g.fill(d.ton[i]); }
     if (kante) { g.lineJoin = 'round'; g.strokeStyle = kante; g.lineWidth = kw; g.stroke(d.kante); }
 }
+// ===== Bergstöcke als KI-Bilder (Durchlauf „Karte wie RoK“, nur Aussehen: Hülle, Wege, Marschzeiten bleiben) =====
+// Je Bergstock 1–3 Bild-Stücke nebeneinander entlang der Gipfel-Linie, der Fuß deckt die Hülle; Bild und Spiegelung fest aus
+// der Saat. Getönt je Landschaft (einmal vorab, kein ctx.filter) und je Größe eine halbierte Stufe (scharf auch weit weg).
+// Geladen wird erst beim ersten Zeichnen (der Weltrechner zeichnet nie); bis dahin die Low-Poly-Gipfel von oben.
+const FELS_BILDER = ['bilder/fels_1.webp', 'bilder/fels_2.webp'];
+const FELS_TOENUNG = {                               // [Mischart, Farbe, Stärke] je Landschaft (Wiese: Bild wie es ist)
+    sand:  [['saturation', '#808080', .45], ['multiply', '#e8b878', .55]],
+    snow:  [['saturation', '#808080', .7], ['screen', '#c4d4e4', .5]],
+    ice:   [['saturation', '#808080', .7], ['screen', '#c4d4e4', .5]],
+    stone: [['saturation', '#808080', .85], ['multiply', '#b4b4b4', .3]]
+};
+const felsBilder = { img: null, fertig: 0, stufen: {} };
+function felsBilderLaden() {                         // einmal; danach die Kacheln neu (dann mit Bildern)
+    if (felsBilder.img || (window.WELT && WELT.leiter) || typeof Image === 'undefined') return;
+    felsBilder.img = FELS_BILDER.map(src => { const i = new Image();
+        i.onload = () => { if (++felsBilder.fertig === FELS_BILDER.length) { BG.valid = false; requestRender(); } };   // (Übersicht weit weg bleibt: Berge dort nur Punkte)
+        i.src = src; return i; });
+}
+function felsStuecke(f) {                            // Bild-Stücke eines Bergstocks: { v: Bild, sp: gespiegelt, x: Mitte, y: Fuß, w: Breite } (Welt)
+    const rnd = mulberry32(f.saat ^ 0x5bd1e995), W = f.bb.r - f.bb.l, H = f.bb.b - f.bb.t;
+    const gs = f.gipfel.slice().sort((p, q) => p.t - q.t), k = Math.max(1, Math.min(3, gs.length, Math.round(W / (H * 1.7)))), v0 = Math.floor(rnd() * 2), out = [];
+    for (let i = 0; i < k; i++) {
+        const teil = gs.slice(Math.round(i * gs.length / k), Math.round((i + 1) * gs.length / k));
+        const l = Math.min(...teil.map(g => g.x - g.w / 2)) - FELS_RAND, r = Math.max(...teil.map(g => g.x + g.w / 2)) + FELS_RAND;
+        const fuss = Math.max(...teil.map(g => g.y + g.w * .25)) + FELS_RAND;
+        out.push({ v: (v0 + i) % 2, sp: rnd() < .5, x: (l + r) / 2, y: fuss, w: (r - l) * 1.12 * (.92 + rnd() * .16) });
+    }
+    return out;
+}
+function felsStufe(v, ton, px) {                     // getöntes Bild v in der kleinsten Stufe, die noch ≥ px Geräte-Pixel breit ist
+    const key = v + ton, st = felsBilder.stufen[key] || (felsBilder.stufen[key] = []);
+    if (!st.length) { const img = felsBilder.img[v], c = document.createElement('canvas'), x = c.getContext('2d');
+        c.width = img.naturalWidth; c.height = img.naturalHeight; x.drawImage(img, 0, 0);
+        for (const [art, farbe, a] of FELS_TOENUNG[ton] || []) { x.globalCompositeOperation = art; x.globalAlpha = a; x.fillStyle = farbe; x.fillRect(0, 0, c.width, c.height); }
+        if (FELS_TOENUNG[ton]) { x.globalCompositeOperation = 'destination-in'; x.globalAlpha = 1; x.drawImage(img, 0, 0); }
+        st.push(c); }
+    while (st[st.length - 1].width / 2 >= Math.max(8, px)) { const a = st[st.length - 1], c = document.createElement('canvas'), x = c.getContext('2d');
+        c.width = Math.round(a.width / 2); c.height = Math.round(a.height / 2); x.imageSmoothingQuality = 'high'; x.drawImage(a, 0, 0, c.width, c.height); st.push(c); }
+    let i = st.length - 1; while (i > 0 && st[i].width < px) i--;
+    return st[i];
+}
+function felsStueckeMalen(g, d, ton) {               // alle Bild-Stücke einer Region (Kachel in Welt-Koordinaten)
+    const s = Math.abs(g.getTransform().a) || 1;     // Geräte-Pixel je Welt-Einheit
+    for (const p of d.stuecke) { const c = felsStufe(p.v, ton, p.w * s), h = p.w * c.height / c.width;
+        if (p.sp) { g.save(); g.translate(p.x, 0); g.scale(-1, 1); g.drawImage(c, -p.w / 2, p.y - h, p.w, h); g.restore(); }
+        else g.drawImage(c, p.x - p.w / 2, p.y - h, p.w, h); }
+}
 function felsenMalen(g, lm, zd, zl) {                // in paintBackground: zd = Zoom der Kachel (Übersicht: 0 = weit, 1 = alles), zl = Maßstab der Kachel
     if (!WELT_FELSEN) return;
     const d = felsBild(lm); if (!d) return;
     const k = lm.stone ? 'stone' : FELS_FARBE[lm.bio] ? lm.bio : 'green', f = FELS_FARBE[k], t = FELS_TOENE[k];
     const gipfelA = Math.min(1, Math.max(0, (Math.max(zd, zl) - 0.0042) / 0.002)), feinA = Math.min(1, Math.max(0, (zd - 0.016) / 0.006));
+    felsBilderLaden();
+    if (felsBilder.fertig === FELS_BILDER.length) {  // Bilder da: Bergstöcke als Bild
+        felsStueckeMalen(g, d, lm.boden === 'innen' || lm.boden === 'sand' ? 'sand' : 'green');   // (getönt nach dem Boden-Ring; die kleinen Low-Poly-Einzelfelsen fallen weg: Stilbruch)
+        return; }
     if (gipfelA < 1) { g.globalAlpha = 1 - gipfelA; g.fillStyle = f[1]; g.fill(d.sil); }   // weit weg (Gipfel < 6 px): nur die dunkle Silhouette
     if (gipfelA > 0) { g.globalAlpha = gipfelA;
         if (feinA > 0) { g.globalAlpha = gipfelA * feinA; g.fillStyle = '#284d22'; g.fill(d.baum); g.fillStyle = '#35652c'; g.fill(d.baumL); g.globalAlpha = gipfelA; }

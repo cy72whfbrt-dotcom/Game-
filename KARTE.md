@@ -987,21 +987,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `felsAuf` → Game/spiel/01f-felsen.js:123
 - `felsBergstock` → Game/spiel/01f-felsen.js:47
 - `felsBild` → Game/spiel/01f-felsen.js:203
+- `felsBilderLaden` → Game/spiel/01f-felsen.js:257
 - `felsBogen` → Game/spiel/01f-felsen.js:141
 - `felsenBei` → Game/spiel/01f-felsen.js:121
 - `felsenListe` → Game/spiel/01f-felsen.js:16
-- `felsenMalen` → Game/spiel/01f-felsen.js:244
+- `felsenMalen` → Game/spiel/01f-felsen.js:292
 - `felsenPfad` → Game/spiel/01f-felsen.js:168
 - `felsenWeg` → Game/spiel/01f-felsen.js:154
 - `felsErreichbar` → Game/spiel/01f-felsen.js:98
 - `felsFacetten` → Game/spiel/01f-felsen.js:187
-- `felsFlaechen` → Game/spiel/01f-felsen.js:239
+- `felsFlaechen` → Game/spiel/01f-felsen.js:240
 - `felsHuelle` → Game/spiel/01f-felsen.js:65
 - `felsKreuzt` → Game/spiel/01f-felsen.js:106
 - `felsLaenge` → Game/spiel/01f-felsen.js:117
 - `felsLmAn` → Game/spiel/01f-felsen.js:118
 - `felsMisch` → Game/spiel/01f-felsen.js:184
 - `felsPasst` → Game/spiel/01f-felsen.js:84
+- `felsStuecke` → Game/spiel/01f-felsen.js:263
+- `felsStueckeMalen` → Game/spiel/01f-felsen.js:286
+- `felsStufe` → Game/spiel/01f-felsen.js:274
 - `felsWegUm` → Game/spiel/01f-felsen.js:124
 - `fensterArt` → Game/spiel/05d-maersche-kampfbericht.js:528
 - `fertig` → Game/buendnis/01-daten-regeln.js:152
@@ -3727,8 +3731,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `flaeche` :192
 - `felsBild` :203 — die Pfade einer Region (einmal gebaut): ≤ 14 fill/stroke je Region und Kachel, …
 - `blob` :210
-- `felsFlaechen` :239 — Bodenschatten + 5 Flächen-Töne (+ Grat-Kante)
-- `felsenMalen` :244 — in paintBackground: zd = Zoom der Kachel (Übersicht: 0 = weit, 1 = alles), zl =…
+- `felsFlaechen` :240 — Bodenschatten + 5 Flächen-Töne (+ Grat-Kante)
+- `felsBilderLaden` :257 — einmal; danach die Kacheln neu (dann mit Bildern)
+- `felsStuecke` :263 — Bild-Stücke eines Bergstocks: { v: Bild, sp: gespiegelt, x: Mitte, y: Fuß, w: B…
+- `felsStufe` :274 — getöntes Bild v in der kleinsten Stufe, die noch ≥ px Geräte-Pixel breit ist
+- `felsStueckeMalen` :286 — alle Bild-Stücke einer Region (Kachel in Welt-Koordinaten)
+- `felsenMalen` :292 — in paintBackground: zd = Zoom der Kachel (Übersicht: 0 = weit, 1 = alles), zl =…
 
 ### Game/spiel/02a-shop-stufen.js — Shop: Kisten, Gegenstände (vereinen, zerlegen, verbessern), Erfahrung und Stufe…
 - `itemScore` :29

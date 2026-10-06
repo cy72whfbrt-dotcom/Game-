@@ -30,7 +30,7 @@ for (const lm of landmasses) {
 // KI-Bildern Game/bilder/karte_*.webp. Geladen erst beim ersten Zeichnen (der Weltrechner zeichnet nie: lädt nie ein Bild).
 // Bis alle da sind (oder wenn eins fehlt) und weit draußen: Farbflächen, Gebirge als Bänder, die gezeichneten Berge aus 01f.
 const KB_DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
-  'kette_knoten', 'tor_zu', 'tor_offen', 'bergstock', 'fels1', 'fels2', 'wald1', 'wald2'];
+  'kette_knoten', 'tor_zu', 'tor_offen', 'wald1', 'wald2'];   // (Bergstöcke: fels_1/2.webp, 01f)
 const KB = { img: {}, mip: {}, muster: {}, offen: -1, fertig: false };
 function karteBilder() {                             // true, sobald alle Bilder geladen sind (beim ersten Aufruf geht das Laden los)
   if (KB.offen < 0) { KB.offen = KB_DATEIEN.length;
