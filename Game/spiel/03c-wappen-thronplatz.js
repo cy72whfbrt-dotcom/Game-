@@ -56,25 +56,42 @@ function crestDataUrl(px, who) {                      // for the HTML avatars (y
     const c = document.createElement('canvas'), d = 2; c.width = c.height = px * d; const g = c.getContext('2d'); g.scale(d, d);
     drawCrest(g, px / 2, px / 2, px * .86, cr); return crestUrlCache[k] = c.toDataURL();
 }
+const FONT = (w, px) => w + ' ' + px + 'px Inter, system-ui, sans-serif';
+function plateW(T) { return T.tw ? T.av + 4 + T.tw + T.pad : T.av + T.lv / 2; }   // feste Breite je Stufe (N: nur Wappen + Stufen-Chip)
+function plateText(g, t, x, y, maxW, color) {     // mit 1px Schatten; zu breit → schmaler gesetzt, nie abgeschnitten
+  g.fillStyle = 'rgba(0,0,0,.55)'; g.fillText(t, x, y + 1, maxW); g.fillStyle = color; g.fillText(t, x, y, maxW);
+}
 function paintPlate(g, T, m, withDef) {           // g translated so the plate's top-left is (0,0); returns nothing
-  const o = PLATE[m.kind], name = trunc(m.name, T.max);
-  g.font = '600 ' + T.fn + 'px Inter, system-ui, sans-serif'; const nw = g.measureText(name).width;
-  g.font = '600 ' + T.fs + 'px Inter, system-ui, sans-serif';
-  const tw = g.measureText(m.troops).width + T.fs * 1.25 + (withDef ? g.measureText(m.def).width + T.fs * 2.4 : 0);
-  const W = T.av + 4 + Math.max(nw, tw) + T.pad, H = T.H, px = T.av / 2, pw = W - T.av / 2;
-  const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, o.top); gr.addColorStop(1, o.bot);
-  rr(g, px + .5, .5, pw - 1, H - 1, 3); g.fillStyle = gr; g.fill(); g.lineWidth = 1; g.strokeStyle = o.line; g.stroke();          // plate
-  g.strokeStyle = 'rgba(0,0,0,.55)'; rr(g, px - .5, -.5, pw + 1, H + 1, 3.5); g.stroke();                                          // 0.5px black outer line (no blur)
-  g.strokeStyle = 'rgba(255,255,255,.13)'; g.beginPath(); g.moveTo(px + T.av / 2, 1.5); g.lineTo(px + pw - 3, 1.5); g.stroke();    // top highlight
-  const tx = T.av + 4; g.textBaseline = 'alphabetic';
-  g.fillStyle = 'rgba(0,0,0,.55)'; g.font = '600 ' + T.fn + 'px Inter, system-ui, sans-serif'; g.fillText(name, tx, H * .47 + 1);   // 1px text shadow (no blur)
-  g.fillStyle = '#f5f0e5'; g.fillText(name, tx, H * .47);
-  g.font = '600 ' + T.fs + 'px Inter, system-ui, sans-serif'; const ly = H * .86;
-  drawGlyph(g, 'troops', tx + T.fs * .5, ly - T.fs * .36, T.fs * 1.05, 'rgba(238,230,212,.78)');
-  g.fillStyle = m.troops === '?' ? 'rgba(238,230,212,.62)' : '#eee6d4'; g.fillText(m.troops, tx + T.fs * 1.25, ly);
-  if (withDef) { const dx = tx + T.fs * 1.25 + g.measureText(m.troops).width + T.fs * .7;
-    drawGlyph(g, 'shield', dx + T.fs * .5, ly - T.fs * .36, T.fs * 1.05, 'rgba(238,230,212,.78)');
-    g.fillStyle = '#eee6d4'; g.fillText(m.def, dx + T.fs * 1.25, ly); }
+  const o = PLATE[m.kind], W = plateW(T), H = T.H, px = T.av / 2, pw = W - T.av / 2, tx = T.av + 4, tw = T.tw;
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+  if (tw) {
+    const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, o.top); gr.addColorStop(1, o.bot);
+    rr(g, px + .5, .5, pw - 1, H - 1, 3); g.fillStyle = gr; g.fill(); g.lineWidth = 1; g.strokeStyle = o.line; g.stroke();          // plate
+    g.strokeStyle = 'rgba(0,0,0,.55)'; rr(g, px - .5, -.5, pw + 1, H + 1, 3.5); g.stroke();                                          // 0.5px black outer line (no blur)
+    g.strokeStyle = 'rgba(255,255,255,.13)'; g.beginPath(); g.moveTo(px + T.av / 2, 1.5); g.lineTo(px + pw - 3, 1.5); g.stroke();    // top highlight
+    const trW = (y, size) => {                                                                                                     // Zeile Truppen (+ Abwehr)
+      g.font = FONT(600, size); const s = size, t1 = g.measureText(m.troops).width, d1 = withDef ? g.measureText(m.def).width : 0;
+      const need = s * 1.25 + t1 + (withDef ? s * 1.95 + d1 : 0), k = Math.min(1, tw / need);
+      g.save(); g.translate(tx, 0); g.scale(k, 1);
+      drawGlyph(g, 'troops', s * .5, y - s * .36, s * 1.05, 'rgba(238,230,212,.78)');
+      plateText(g, m.troops, s * 1.25, y, undefined, m.troops === '?' ? 'rgba(238,230,212,.62)' : '#eee6d4');
+      if (withDef) { const dx = s * 1.25 + t1 + s * .7; drawGlyph(g, 'shield', dx + s * .5, y - s * .36, s * 1.05, 'rgba(238,230,212,.78)'); plateText(g, m.def, dx + s * 1.25, y, undefined, '#eee6d4'); }
+      g.restore();
+    };
+    if (T.max) {                                                                                                                   // A/B: Zeile 1 Kürzel-Chip + Name, Zeile 2 Truppen
+      const y1 = 3 + T.fn * .78, y2 = H - 3 - T.fs * .22; let nx = tx;
+      if (m.tag) {
+        g.font = FONT(700, 11); const cw = Math.ceil(g.measureText(m.tag).width) + 8, ch = 14, cy = y1 - 11;
+        rr(g, nx, cy, cw, ch, 3); g.fillStyle = 'rgba(0,0,0,.38)'; g.fill(); g.lineWidth = 1; g.strokeStyle = o.hi; g.stroke();
+        g.fillStyle = o.hi; g.fillText(m.tag, nx + 4, cy + 11); nx += cw + 4;
+      }
+      const name = trunc(m.name, T.max), room = tx + tw - nx; let fn = T.fn;
+      g.font = FONT(600, fn); const nw = g.measureText(name).width;
+      if (nw > room) { fn = Math.max(11, fn * room / nw); g.font = FONT(600, fn); }                                                  // erst kleiner (bis 11 px), dann schmaler
+      plateText(g, name, nx, y1, room, '#f5f0e5');
+      trW(y2, T.fs);
+    } else trW(H / 2 + T.fs * .36, T.fs);                                                                                           // C: nur die Zahl
+  }
   const ax = T.av / 2, ay = H / 2, ar = T.av / 2;                                                                                  // avatar medallion
   const rg = g.createRadialGradient(ax, ay - ar * .35, 1, ax, ay, ar); rg.addColorStop(0, o.top); rg.addColorStop(1, o.bot);
   g.beginPath(); g.arc(ax, ay, ar - .5, 0, Math.PI * 2); g.fillStyle = rg; g.fill();
@@ -84,23 +101,18 @@ function paintPlate(g, T, m, withDef) {           // g translated so the plate's
   drawGlyph(g, m.glyph, ax - 1.5, ay - 1.5, T.av * .52, '#f5f0e5');                                                                // up-left, clear of the chip
   const ls = T.lv, lx = ax + ar * .78, lyy = Math.min(ay + ar * .66, H + 1.5 - ls / 2);                                          // gold level chip on the rim
   rr(g, lx - ls / 2, lyy - ls / 2, ls, ls, 2); g.fillStyle = '#14110b'; g.fill(); g.lineWidth = 1; g.strokeStyle = '#d8b56c'; g.stroke();
-  g.fillStyle = '#f0dfb0'; g.font = '700 ' + (ls * .66) + 'px Inter, system-ui, sans-serif'; g.textAlign = 'center';
-  g.fillText(String(m.level), lx, lyy + ls * .24); g.textAlign = 'left';
+  g.fillStyle = '#f0dfb0'; g.font = FONT(700, Math.max(11, ls * .66)); g.textAlign = 'center';
+  g.fillText(String(m.level), lx, lyy + 4); g.textAlign = 'left';
 }
 
-const MEASURE = document.createElement('canvas').getContext('2d');
 const BANNER_SPRITES = new Map();
 function flushBannerSprites() { BANNER_SPRITES.clear(); }
 function bannerSprite(tierKey, m) {
-  const T = TIER[tierKey], withDef = m.def != null && tierKey !== 'C';
-  const key = tierKey + '|' + m.kind + '|' + m.glyph + '|' + m.name + '|' + m.troops + '|' + (withDef ? m.def : '') + '|' + m.level + '|' + (m.temple ? 1 : 0) + '|' + dpr;
+  const T = TIER[tierKey], withDef = m.def != null && !!T.max;
+  const key = tierKey + '|' + m.kind + '|' + m.glyph + '|' + (m.tag || '') + '|' + (T.max ? m.name : '') + '|' + (T.tw ? m.troops : '') + '|' + (withDef ? m.def : '') + '|' + m.level + '|' + (m.temple ? 1 : 0) + '|' + dpr;
   let s = BANNER_SPRITES.get(key);
   if (s) { BANNER_SPRITES.delete(key); BANNER_SPRITES.set(key, s); return s; }           // LRU refresh
-  const name = trunc(m.name, T.max);
-  MEASURE.font = '600 ' + T.fn + 'px Inter, system-ui, sans-serif'; const nw = MEASURE.measureText(name).width;
-  MEASURE.font = '600 ' + T.fs + 'px Inter, system-ui, sans-serif';
-  const tw = MEASURE.measureText(m.troops).width + T.fs * 1.25 + (withDef ? MEASURE.measureText(m.def).width + T.fs * 2.4 : 0);
-  const W = Math.ceil(T.av + 4 + Math.max(nw, tw) + T.pad), H = T.H;
+  const W = Math.ceil(plateW(T)), H = T.H;
   const c = document.createElement('canvas'); c.width = Math.ceil((W + 4) * dpr); c.height = Math.ceil((H + 4) * dpr);
   const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 2 * dpr, 2 * dpr);
   paintPlate(g, T, m, withDef);
@@ -109,7 +121,7 @@ function bannerSprite(tierKey, m) {
   while (BANNER_SPRITES.size > 400) BANNER_SPRITES.delete(BANNER_SPRITES.keys().next().value);   // (die Truppenzahl steckt im Schlüssel – 1500 hielten bis ~100 MB im Handy)
   return s;
 }
-const DOWN = { A: 'B', B: 'C', C: 'C' };
+const DOWN = { A: 'B', B: 'C', C: 'C', N: 'N' };
 function tierFor(z) { return z >= 0.06 ? 'A' : z >= 0.026 ? 'B' : 'C'; }
 let bannerHitRects = [];
 function overlap(a, b) { return Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); }
@@ -125,7 +137,8 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const items = visible.map(isl => {
     const m = bannerModel(isl);
     let p = m.p; if (isl.id === selectedId) p = 5;
-    let tier = m.filler ? DOWN[base] : base;
+    let tier = base;
+    if (m.filler && isl.id !== selectedId) tier = z >= 0.1 ? DOWN[base] : m.troops === '?' ? 'N' : 'C';   // neutrale Basen ruhig: Wappen + Stufe (gespäht: + Zahl), Name erst beim Antippen/ganz nah
     if (m.mega) { if (tier === 'C') tier = 'B'; if (p < 5) p = 4.5; }                  // placed first: temple > player > bot > neutral
     return { isl, m, p, tier };
   }).sort((a, b) => b.p - a.p || a.isl.y - b.isl.y);
@@ -142,7 +155,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
         for (const tw of towers) if (tw.id !== it.isl.id) sc += 0.35 * overlap(rect, tw);
         if (!best || sc < best.sc) best = { sc, rect, sp, t };
       }
-      if (best.sc <= 0.25 * best.rect.w * best.rect.h || it.p > 3 || t === 'C') break;
+      if (best.sc <= 0.25 * best.rect.w * best.rect.h || it.p > 3 || DOWN[t] === t) break;
     }
     it.rect = best.rect; it.sp = best.sp; placed.push(best.rect);
   }

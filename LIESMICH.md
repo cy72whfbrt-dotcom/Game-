@@ -499,6 +499,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   zahlen die Maut neu verteilt und marschieren. Kann der Anführer selbst nicht zahlen, fällt die Rally wie bisher ganz aus
   (`bundRallyLos`, buendnis/02; wirft dabei etwas, geht die Rally nicht los und alle Truppen genau einmal heim). Test
   `rally_maut_test` (Fall 2, 2b, 6; der Test schaltet die Mitspieler-Runde ab – sonst trat Z zufällig dem Test-Bündnis bei).
+- **6.10. Design 11b F – Namensfahnen auf der Karte (P2):** Bündnis-Kürzel als eigenes Chip vor dem Namen (statt „[WEL] …“),
+  Name bis 14 Zeichen (danach „…“; zu breit → erst kleiner bis 11 px, dann schmaler, nie abgeschnitten), feste Breite je Stufe,
+  Schrift überall mind. 11 px, Fahne höher (Zeilen berühren sich nicht). Weit weg (Stufe C) nur Wappen + Truppenzahl.
+  Neutrale Basen ruhig: nur Wappen + Stufe (gespäht: + Zahl), die volle Fahne „Neutral“ erst beim Antippen oder ganz nah
+  (`TIER`/`bannerModel` spiel/03b, `paintPlate`/`layoutBanners` spiel/03c). Test `karte_fahnen_test`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
