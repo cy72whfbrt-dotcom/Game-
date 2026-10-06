@@ -1326,7 +1326,7 @@ function bundInfoHtml(a) {
     const chef = a.anf === 'player', bon = bundBonus(a), heute = a.gesch && a.gesch.tag === bundTagHeute() ? (a.gesch.n || {}).player || 0 : 0, now = Date.now();
     const mit = a.mit.slice().sort((x, y) => (y === a.anf) - (x === a.anf) || staerke(y) - staerke(x));
     return '<div class="bd-kopf">' + bundZeichenHtml(a, true) + '<div><b>[' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '</b><small>Macht ' + fmtCompact(bundMacht(a)) + ' · ' + (a.offen ? 'offen für alle' : 'nur auf Anfrage') + '</small></div></div>' +
-        evBanner('tempel', icon('temple') + ' Tempel-Bonus +' + bon.pct + ' %', (bon.n.t || bon.n.m ? 'Ihr haltet ' + (bon.n.t ? bon.n.t + ' Tempel' : '') + (bon.n.t && bon.n.m ? ' und ' : '') + (bon.n.m ? 'den Mega-Tempel' : '') : 'Noch kein Tempel – erobert einen') + ' · Gebiet +10 % Tempo') +
+        evBanner('tempel', icon('temple') + ' Tempel-Bonus +' + bon.pct + ' %', (bon.n.t || bon.n.m ? 'Ihr haltet ' + (bon.n.t ? bon.n.t + ' Tempel' : '') + (bon.n.t && bon.n.m ? ' und ' : '') + (bon.n.m ? 'den Mega-Tempel' : '') : 'Noch kein Tempel') + ' · Gebiet +10 % Tempo') +
         infoKlapp('tempel', 'So wirkt der Tempel-Bonus', '<p class="mail-intro">Hält ein Mitglied einen Tempel, produzieren alle Mitglieder mehr Münzen und Truppen: +' + BUND.TEMPEL_PCT + ' % je Tempel, Mega-Tempel +' + BUND.MEGA_PCT + ' % (höchstens +' + BUND.BONUS_MAX + ' %). Im eigenen Gebiet marschiert ihr 10 % schneller.</p>') +
         bundHilfeHtml(a) +
         '<div class="notice">' + icon('shop') + '<span>Bündnis-Geschenke heute: ' + heute + ' / ' + BUND.GESCHENKE_TAG + ' – wenn ein Mitglied einen Boss besiegt oder eine große Kiste kauft.</span></div>' +
