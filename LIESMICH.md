@@ -1619,6 +1619,12 @@ Nacht – vorher bauen und testen.
     (Hauptstadt hervorheben, z. B. eigener Ring/Wappen/Name). (Truppen „111,1 Mrd.“ im HUD: von Alexander selbst gegeben, ok.)
 18. **Zuletzt benutzte Helden werden nicht gespeichert** (18:58): bei jedem Marsch/Angriff muss man die Helden neu
     auswählen. Gewünscht: letzte Auswahl (Haupt- + Zweitheld) vorbelegen (im Spielstand speichern, nicht im Browser).
+19. **Tore/Märsche** (Bilder df83b871, 73a65145, 98f12b4b, 19:04): Erstes Tor (Grenztor) kann man schon angreifen, Thron-Tor
+    noch zu (2T23h) – so gewollt, ok. ABER: (a) roter gestrichelter Strich quer über die Karte („Mila_T greift Grenztor an!“)
+    ohne Truppen-Figur – sieht nicht wie ein Marsch aus (eigener Marsch hat Figuren). Fremde Märsche auch mit Figur/Fahne
+    zeigen (prüfen: fehlt die Figur oder ist sie nur außerhalb des Bildes?). (b) Grenztor zeigt Schloss „2T23h15m“, obwohl
+    angreifbar – verwirrend (Schloss = Pass-Frist?). (c) Hinweis „Keine deiner Basen grenzt an dieses Gebiet…“ liegt über der
+    Karte/Inhalt (wie Punkt 9).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
