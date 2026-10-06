@@ -1,4 +1,4 @@
-// Langzeit (6.10.): Ranglisten-Reiter „Hauptstadt“ (Burg-Stufe, bei Gleichstand Forschung – von anderen nur die Summe foP vom
+// Langzeit (6.10.): Ranglisten-Reiter „Hauptstadt“ (Burg-Stufe, bei Gleichstand Forschung, dann Macht – du nie bevorzugt – von anderen nur die Summe foP vom
 // Weltrechner) und das Bündnis im Profil (eigenes + fremdes: Wappen, Name; antippen öffnet gleich das Bündnis-Fenster).
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 300) : ''));
@@ -24,8 +24,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // Zuschauer: fremde Forschung kennt das Handy nicht – es nimmt die Summe vom Weltrechner (foP)
     const alt = window.fremdGeheim; window.fremdGeheim = () => true; bs[x.id].foP = 40;
     try { out.zuschauer = [foPunkte(x.id), foPunkte(z.id), foPunkte('player')]; } finally { window.fremdGeheim = alt; }
+    // Gleichstand (alle Burg 1, keine Forschung): du stehst nicht einfach oben – erst Macht, sonst hinter den Gleichen
+    for (const d of BOT_DEFS) if (bs[d.id]) { bs[d.id].city.levels.keep = 1; bs[d.id].city.fo = {}; } c.levels.keep = 1; c.fo = {}; saveCity();
+    openRankings('burg');
+    const ids = [...document.querySelectorAll('#rankBody .lb-row')].map(e => e.dataset.profile), ich = ids.indexOf('player');
+    const wert = w => { const pr = whoProfile(w); return [AUF.burgStufe(w), foPunkte(w, bs), w === 'player' ? playerLvl : (bs[w] || {}).lvl || 1, pr ? powerOf(pr) : 0]; }, mw = wert('player');
+    out.gleich = { platz: ich + 1, zeilen: ids.length, vorgezogen: ich < 0 ? [] : ids.slice(ich + 1).filter(w => { const v = wert(w); return v[0] === mw[0] && v[1] === mw[1] && v[2] === mw[2] && v[3] >= mw[3]; }) };
+    c.levels.keep = 25; c.fo = { w_prod: 3 }; saveCity();
     closeAllPopups(); return out;
   });
+  ok(r.gleich.zeilen > 1 && !r.gleich.vorgezogen.length, 'Gleichstand: du stehst nicht vor Gleichen (erst Macht, sonst hinter den anderen)', r.gleich);
   ok(r.titel === 'Hauptstadt' && r.tab, 'Reiter „Hauptstadt“ da und aktiv', r.titel);
   ok(JSON.stringify(r.reihen) === JSON.stringify(r.soll), 'Reihenfolge: Burg-Stufe, bei Gleichstand Forschung', r);
   ok(/25/.test(r.text) && /Forschung 3/.test(r.text) && /Burg-Stufe/i.test(r.text) && !r.schlecht, 'Zeile zeigt Burg-Stufe und Forschung', r.text);

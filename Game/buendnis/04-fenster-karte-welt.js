@@ -121,7 +121,7 @@ function bundSuchenHtml(a) {
             '<div class="bd-zeile">' + bundZeichenHtml(x) + '<span class="bd-name"><b>[' + escapeHtml(x.tag) + '] ' + escapeHtml(x.name) + '</b><small>' + x.mit.length + ' / ' + BUND.MAX + ' · Macht ' + fmtCompact(m) + ' · ' + (x.mit.length >= BUND.MAX ? 'voll – der Anführer kann tauschen' : x.offen ? 'offen' : 'auf Anfrage') + ' · Anführer ' + escapeHtml(bundName(x.anf)) + '</small></span>' +
             (a ? '' : angefragt(x.id) ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="anfrageWeg">Angefragt ✕</button>'
                 : '<button type="button" class="btn btn--primary btn--sm" data-bact="beitreten" data-aid="' + x.id + '">' + (x.offen && x.mit.length < BUND.MAX ? 'Beitreten' : 'Anfragen') + '</button>') + '</div>').join('')
-            : '<div class="inbox-empty">Noch gibt es keine Bündnisse.</div>') + '</div>';
+            : '<div class="inbox-empty">Noch gibt es keine Bündnisse – gründe unten dein eigenes und sei der Erste.</div>') + '</div>';
 }
 // oben im Fenster: was sich nicht jede Sekunde ändern darf (Eingaben, Auswahl)
 function bundObenSchluessel() { const a = bundIch(); return bundTab + '|' + (a ? a.id : '-') + '|' + (bundWahl ? JSON.stringify(bundWahl) : '') + '|' + bundGruendenAuf; }
@@ -132,11 +132,11 @@ function bundObenZeichnen() {
     if (bundWahl) { bundOben.innerHTML = bundWahlHtml(); bundWahlRechnen(); return; }
     bundOben.innerHTML = '';
     if (bundTab === 'suchen' && !a && !bundGruendenAuf) {   // unter der Liste: erst ein Knopf
-        bundUnten.innerHTML = '<button type="button" class="btn btn--secondary btn--full p5-gruenden" data-bact="gruendenAuf">' + icon('flag') + '<span>Eigenes Bündnis gründen</span><span class="cost">' + icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + '</span></button>';
+        bundUnten.innerHTML = '<button type="button" class="btn btn--secondary btn--full p5-gruenden" data-bact="gruendenAuf" aria-label="Eigenes Bündnis gründen – kostet ' + fmtNum(BUND.KOSTEN) + ' Münzen">' + icon('flag') + '<span>Eigenes Bündnis gründen</span><span class="cost">' + icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + ' Münzen</span></button>';
         return;
     }
     if (bundTab === 'suchen' && !a) {
-        bundUnten.innerHTML = '<div class="bd-form"><div class="sect"><h4>Bündnis gründen</h4><span class="sect-aside">' + icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + '</span></div>' +
+        bundUnten.innerHTML = '<div class="bd-form"><div class="sect"><h4>Bündnis gründen</h4><span class="sect-aside">Preis: ' + icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + ' Münzen</span></div>' +
             '<input id="bdName" maxlength="20" placeholder="Name (3–20 Buchstaben)" autocomplete="off"><input id="bdTag" maxlength="4" placeholder="Kürzel (2–4)" autocomplete="off" class="bd-tag">' +
             '<div class="bd-farben" id="bdFarben">' + BUND.FARBEN.map((f, i) => '<button type="button" data-farbe="' + i + '" style="--bf:' + f + '"' + (i === 0 ? ' class="on"' : '') + ' aria-label="Farbe ' + (i + 1) + '"></button>').join('') + '</div>' +
             '<div class="bd-zeichen" id="bdZeichen">' + BUND.ZEICHEN.map((z, i) => '<button type="button" data-zeichen="' + i + '"' + (i === 0 ? ' class="on"' : '') + '>' + icon(z) + '</button>').join('') + '</div>' +

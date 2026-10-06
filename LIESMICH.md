@@ -733,6 +733,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   P1: die Regeln `#goalsTabs .tab:nth-child…` in spielseite/02 wirken nicht mehr (Chips statt `.tab`) und können weg.
   Test `tests/browser/handy_fenster_test.js` (neu); `alles_test`/`klick_test`: Kampf-Reiter mit durchgeklickt, neue Reiter
   nicht als Knopf gedrückt.
+- **6.10. – Texte aus dem Spieltest (Branch `fix-design-texte`, NICHT hochgeladen):** **Anleitung** (spiel/06b): Schritt 1
+  springt gleich zu Schritt 2, wenn schon eine neutrale Basis offen ist (auch „Angriff vorbereiten“) oder angegriffen wurde; eine
+  fremde Basis in Schritt 1 → „Das ist nicht deine Hauptstadt …“ statt des stehengebliebenen Satzes. Schritt 2 mit noch offener
+  Hauptstadt beginnt positiv („Gut! Schließe das Fenster …“), die Fehler-Variante nur bei einer falschen Basis. **Events → Abholen**
+  (06a): leeres Abholfach, aber tägliche Belohnung bereit → der Satz nennt sie („wartet gleich hier unten“). **Bündnis gründen**
+  (buendnis/04): Preis „17 Münzen“ am Knopf/Formular (17 = 30.000 × `WIRTSCHAFT_KOSTEN`, gewollt, siehe Wirtschaft 2), leere
+  Liste → „gründe unten dein eigenes“. **Rangliste** (05c): Gleichstand → erst Macht, sonst du hinter den Gleichen (vorher
+  stand „Du“ immer oben). **Profil** (05a): „Belohnung für Stufe 2: +1 Münze, +1 Truppe“. **Benachrichtigungen**
+  (benachrichtigung.js): Server-Frist 10 s, danach „Der Server antwortet gerade nicht …“ + „Nochmal versuchen“ statt ewig
+  „Einen Moment …“ (in der Vorschau ohne Server bleibt der Satz, das Skript wird dort nicht geladen). Tests: `anleitung_test`,
+  `rang_profil_test` erweitert, neu `spieltexte_test`, `push_frist_test`.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

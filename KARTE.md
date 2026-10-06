@@ -68,15 +68,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `angriffQuellen` → Game/spiel/10b-inselfenster-knoepfe.js:122
 - `angriffReicht` → Game/spiel/10b-inselfenster-knoepfe.js:127
 - `angriffStart` → Game/spiel/10b-inselfenster-knoepfe.js:133
-- `anleitung` → Game/spiel/06b-pass-anleitung.js:155
-- `anleitungAbgeholt` → Game/spiel/06b-pass-anleitung.js:161
-- `anleitungFenster` → Game/spiel/06b-pass-anleitung.js:165
-- `anleitungInsel` → Game/spiel/06b-pass-anleitung.js:154
+- `anleitung` → Game/spiel/06b-pass-anleitung.js:158
+- `anleitungAbgeholt` → Game/spiel/06b-pass-anleitung.js:164
+- `anleitungFenster` → Game/spiel/06b-pass-anleitung.js:168
+- `anleitungInsel` → Game/spiel/06b-pass-anleitung.js:157
 - `anleitungNeutral` → Game/spiel/06b-pass-anleitung.js:131
-- `anleitungPuls` → Game/spiel/06b-pass-anleitung.js:164
-- `anleitungSpeichern` → Game/spiel/06b-pass-anleitung.js:163
-- `anleitungStarten` → Game/spiel/06b-pass-anleitung.js:199
-- `anleitungZeigen` → Game/spiel/06b-pass-anleitung.js:169
+- `anleitungPuls` → Game/spiel/06b-pass-anleitung.js:167
+- `anleitungSpeichern` → Game/spiel/06b-pass-anleitung.js:166
+- `anleitungStarten` → Game/spiel/06b-pass-anleitung.js:202
+- `anleitungZeigen` → Game/spiel/06b-pass-anleitung.js:172
 - `anmelden` → Game/server/01-grundlagen-login.php:71
 - `antwort` → Game/speichern.js:136
 - `antwort` → Game/weltrechner/start.js:333
@@ -146,7 +146,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ausbauPruefen` → Game/spiel/10d-welt-weltrechner.js:390
 - `ausgangSichern` → Game/welt.js:83
 - `ausgespaeht` → Game/bots/03-angreifen.js:90
-- `ausschalten` → Game/benachrichtigung.js:89
+- `ausschalten` → Game/benachrichtigung.js:95
 - `autoCombineAll` → Game/spiel/02a-shop-stufen.js:107
 - `b64` → Game/weltrechner/push.js:18
 - `b64url` → Game/server/06-speichern-push-konto.php:74
@@ -601,7 +601,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `burgStufe` → Game/aufbau.js:93
 - `burgZeitAlt` → Game/spiel/10d-welt-weltrechner.js:502
 - `burgZeitRoh` → Game/aufbau.js:101
-- `bytes` → Game/benachrichtigung.js:26
+- `bytes` → Game/benachrichtigung.js:31
 - `CAM_PIECES` → Game/spiel/03e-kamera-eingabe.js:49
 - `camInsetTarget` → Game/spiel/03e-kamera-eingabe.js:93
 - `camPiece` → Game/spiel/03e-kamera-eingabe.js:121
@@ -881,7 +881,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `eigeneFeldBarb` → Game/spiel/09b-lager-tagesboss.js:74
 - `eigeneTruppen` → Game/buendnis/01-daten-regeln.js:458
 - `eigeneTruppenDazu` → Game/spiel/01a-grundlagen.js:20
-- `einschalten` → Game/benachrichtigung.js:75
+- `einschalten` → Game/benachrichtigung.js:81
 - `einstellungenZeigen` → Game/spiel/10c-start-einstellungen.js:144
 - `empireSnapshot` → Game/spiel/06d-schild-produktion.js:234
 - `enclose` → Game/baukunst/04-vielfalt-stile.js:402
@@ -903,7 +903,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evBossTakt` → Game/spiel/09c-events-drache.js:50
 - `evChips` → Game/spiel/09c-events-drache.js:462
 - `evDrHtml` → Game/spiel/09c-events-drache.js:422
-- `eventsBereit` → Game/spiel/06b-pass-anleitung.js:162
+- `eventsBereit` → Game/spiel/06b-pass-anleitung.js:165
 - `evHinweise` → Game/spiel/09c-events-drache.js:268
 - `evInvHtml` → Game/spiel/09c-events-drache.js:404
 - `evJetzt` → Game/spiel/09c-events-drache.js:378
@@ -1108,7 +1108,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gilt` → Game/baukunst/04-vielfalt-stile.js:237
 - `giveTitle` → Game/spiel/04-kampf.js:53
 - `GLA` → Game/baukunst/06-turmhof-festung.js:236
-- `gleich` → Game/benachrichtigung.js:30
+- `gleich` → Game/benachrichtigung.js:35
+- `gleich` → Game/spiel/05c-erfolge-rangliste.js:299
 - `glowy` → Game/baukunst/04-vielfalt-stile.js:236
 - `glyph` → Game/spiel/01a-grundlagen.js:192
 - `GOAL_VAL.armyWins` → Game/spiel/05c-erfolge-rangliste.js:30
@@ -1463,6 +1464,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `los` → Game/speichern.js:100
 - `los` → Game/weltrechner/start.js:239
 - `lute` → Game/spiel/10c-start-einstellungen.js:33
+- `macht` → Game/spiel/05c-erfolge-rangliste.js:298
 - `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:34
 - `mapBattleShake` → Game/spiel/07a-schlachten.js:304
 - `mapFocusPoint` → Game/spiel/03e-kamera-eingabe.js:441
@@ -1508,7 +1510,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mbReplan` → Game/spiel/07a-schlachten.js:20
 - `mbT` → Game/spiel/07a-schlachten.js:8
 - `MDK` → Game/baukunst/08-himmelsfeste-bilder.js:16
-- `meinAbo` → Game/benachrichtigung.js:31
+- `meinAbo` → Game/benachrichtigung.js:36
 - `meinProfil` → Game/welt.js:215
 - `melder` → Game/weltrechner/push.js:161
 - `memo` → Game/baukunst/04-vielfalt-stile.js:149
@@ -1658,7 +1660,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openLookSheet` → Game/spiel/08b-burg-aussehen.js:110
 - `openMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:300
 - `openPanel` → Game/spiel/09e-inselfenster.js:34
-- `openRankings` → Game/spiel/05c-erfolge-rangliste.js:325
+- `openRankings` → Game/spiel/05c-erfolge-rangliste.js:327
 - `openRulerProfile` → Game/spiel/05c-erfolge-rangliste.js:196
 - `openShop` → Game/spiel/06d-schild-produktion.js:100
 - `opts` → Game/spiel/04-kampf.js:65
@@ -1806,7 +1808,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `profilZuBotRoh` → Game/welt.js:243
 - `projectConvex` → Game/spiel/03e-kamera-eingabe.js:81
 - `proStunde` → Game/spiel/01e-nebel-kampfwerte-hud.js:224
-- `pruefen` → Game/benachrichtigung.js:54
+- `pruefen` → Game/benachrichtigung.js:60
 - `pruefen` → Game/weltrechner/start.js:172
 - `puls` → Game/welt.js:387
 - `puls_wachhund` → Game/server/07-welt-puls.php:163
@@ -2056,7 +2058,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sendenAlle` → Game/weltrechner/push.js:205
 - `sendenAn` → Game/weltrechner/push.js:191
 - `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:516
-- `server` → Game/benachrichtigung.js:19
+- `server` → Game/benachrichtigung.js:20
 - `server` → Game/weltrechner/push.js:168
 - `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:177
 - `setArmyPlace` → Game/spiel/09d-armeen-wegmarken.js:280
@@ -2492,7 +2494,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zahlOderNull` → Game/spiel/10d-welt-weltrechner.js:149
 - `zahlOk` → Game/spiel/10d-welt-weltrechner.js:123
 - `zeige` → Game/speichern.js:65
-- `zeigen` → Game/benachrichtigung.js:44
+- `zeigen` → Game/benachrichtigung.js:50
 - `zeile` → Game/buendnis/01-daten-regeln.js:530
 - `zeitGrenze` → Game/weltrechner/start.js:170
 - `zielPruefen` → Game/spiel/10d-welt-weltrechner.js:989
@@ -3937,7 +3939,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rankRowHtml` :285
 - `renderRankings` :293
 - `basesTxt` :295
-- `openRankings` :325
+- `macht` :298
+- `gleich` :299 — Gleichstand: erst Macht, sonst du hinter den anderen (nie bevorzugt)
+- `openRankings` :327
 
 ### Game/spiel/05d-maersche-kampfbericht.js — Liste der Märsche und Kampfbericht
 - `showBattleTab` :13
@@ -4034,15 +4038,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `passScroll` :106 — the level you're on in view
 - `maybeShowDaily` :119
 - `anleitungNeutral` :131 — ANLEITUNG für neue Spieler (Idee 45): 7 kurze Schritte unten am Bildschirm, jed…
-- `anleitungInsel` :154
-- `anleitung` :155
-- `anleitungAbgeholt` :161
-- `eventsBereit` :162
-- `anleitungSpeichern` :163
-- `anleitungPuls` :164
-- `anleitungFenster` :165 — Hauptstadt-Fenster: ein Satz, was es zeigt (solange die Anleitung läuft)
-- `anleitungZeigen` :169
-- `anleitungStarten` :199
+- `anleitungInsel` :157
+- `anleitung` :158
+- `anleitungAbgeholt` :164
+- `eventsBereit` :165
+- `anleitungSpeichern` :166
+- `anleitungPuls` :167
+- `anleitungFenster` :168 — Hauptstadt-Fenster: ein Satz, was es zeigt (solange die Anleitung läuft)
+- `anleitungZeigen` :172
+- `anleitungStarten` :202
 
 ### Game/spiel/06c-thron-mitte.js — Thron-Punkte, die Mitte (Thron, Wächter-Tempel, Tore), Kopfgeld auf den Herrsch…
 - `throneOwned` :15
@@ -4959,14 +4963,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 
 ### Game/benachrichtigung.js — benachrichtigung.js – „Benachrichtigungen erlauben“ im Profil (Web-Push aufs Ha…
 - `hinweis` :17
-- `server` :19
-- `bytes` :26 — base64url → Uint8Array (öffentlicher Schlüssel des Servers)
-- `gleich` :30
-- `meinAbo` :31
-- `zeigen` :44
-- `pruefen` :54 — Beim Laden: wie ist es gerade? (ein kleiner Aufruf; ein bestehendes Abo wird fü…
-- `einschalten` :75
-- `ausschalten` :89
+- `server` :20
+- `bytes` :31 — base64url → Uint8Array (öffentlicher Schlüssel des Servers)
+- `gleich` :35
+- `meinAbo` :36
+- `zeigen` :50
+- `pruefen` :60 — Beim Laden: wie ist es gerade? (ein kleiner Aufruf; ein bestehendes Abo wird fü…
+- `einschalten` :81
+- `ausschalten` :95
 
 ### Game/haendler.js — haendler.js – Wandernde Händler (Paket C)
 - `hdState` :34
