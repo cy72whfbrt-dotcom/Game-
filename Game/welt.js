@@ -226,8 +226,8 @@
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
             look: { ring: look.ring || null, rings: look.rings || [], march: look.march || null, marchs: look.marchs || [], frame: look.frame || null, title: look.title || null, throne: !!(look.bought && look.bought.throne) },
             saison: parseInt(d.openWaterSaisonMein, 10) || 1,   // Welt-Saison dieses Spielstands (ein Profil von vor dem Reset zählt nicht)
-            stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
-            crest: P(d.openWaterCrest), baustil: P(d.openWaterBaustil)
+            stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, tp: thr.pts || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
+            crest: P(d.openWaterCrest), baustil: P(d.openWaterBaustil)   // (tp: Thron-Punkte im Geldbeutel – nur für die Kappe beim Saison-Reset, 10d hbThronReset)
         };
     }
     // Mitspieler-Datensatz für einen echten Spieler: Kampfwerte aus seinem Profil, Welt-Felder (Hauptstadt, Groll …) bleiben.

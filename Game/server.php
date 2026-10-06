@@ -178,6 +178,7 @@ function profil_bereinigen($text) {
         'saison' => (int)max(1, $plus($p['saison'] ?? 1, 1e6)),   // Welt-Saison seines Spielstands (ein älteres Profil zählt beim Weltrechner nicht)
         'earned' => $plus($p['earned'] ?? 0, 1e12), 'coins' => $plus($p['coins'] ?? 0, 1e15), 'gems' => isset($p['gems']) ? $plus($p['gems'], 1e13) : null,
         'stW' => isset($p['stW']) ? $plus($p['stW'], 1e9) : null,   // Gems in allen Sternen (Hauptbuch: Rückgabe beim Verkaufen)
+        'tp' => isset($p['tp']) ? $plus($p['tp'], 1e12) : null,   // Thron-Punkte im Geldbeutel (Hauptbuch: Kappe beim Saison-Reset – nur der Weltrechner)
         'crest' => $cr ? array_map(function ($k) use ($cr, $zahl) { return (int)$zahl($cr[$k] ?? 0, 99); }, ['shape' => 'shape', 'div' => 'div', 'c1' => 'c1', 'c2' => 'c2', 'sym' => 'sym', 'ink' => 'ink']) : null,
         'baustil' => $bs ? ['style' => $id($bs['style'] ?? null) ?: 'klassisch', 'cap' => ($bs['cap'] ?? '') === 'wasser' ? 'wasser' : 'huegel'] : null,
     ], JSON_UNESCAPED_UNICODE);

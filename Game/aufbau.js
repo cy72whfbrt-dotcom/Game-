@@ -502,5 +502,5 @@ AUF = {
 };
 for (const id in (loadBotState() || {})) try { botStadtFix(botState[id]); } catch (e) {}
 // Burg fair beim Saison-Reset: dein Spielstand wie die Welt (01a-grundlagen.js merkt es vor – bis es hier erledigt ist)
-{ const B = SYSTEM ? 0 : parseInt(store.get('openWaterBurgFair'), 10) || 0; if (B > 0) { if (burgFair(loadCity(), B)) saisonBurgGeladen = B; saveCity(); store.remove('openWaterBurgFair'); } }
+{ const B = SYSTEM ? 0 : parseInt(store.get('openWaterBurgFair'), 10) || 0; if (B > 0) { burgFair(loadCity(), B); saisonBurgGeladen = B; saveCity(); store.remove('openWaterBurgFair'); } }
 hudRoh();

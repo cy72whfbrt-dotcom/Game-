@@ -28,8 +28,10 @@ pruefe('Armee mit Koordinaten (auch minus)', befehl_ok(['art' => 'armee', 'op' =
 // --- Profil: Fantasiewerte werden auf echte Spielgrenzen gekappt
 $p = json_decode(profil_bereinigen(json_encode(['lvl' => 99999, 'coins' => 1e19, 'wounded' => -5, 'shieldUntil' => 1e15, 'neuBis' => 1e15,
     'skills' => ['attack' => 99999, 'speed' => 99, 'erfunden' => 5], 'gear' => ['weapon' => ['r' => 9, 'lvl' => 999, 'st' => 99]],
-    'city' => ['levels' => ['wall' => 1000, 'forge' => 9, 'gibtsnicht' => 5]], 'hs' => ['h1' => ['q' => 99, 'sk' => [99, 1], 'sh' => 1e12]], 'stats' => ['x' => 1e30], 'earned' => 1e30])), true);
+    'city' => ['levels' => ['wall' => 1000, 'forge' => 9, 'gibtsnicht' => 5]], 'hs' => ['h1' => ['q' => 99, 'sk' => [99, 1], 'sh' => 1e12]], 'stats' => ['x' => 1e30], 'earned' => 1e30, 'tp' => 1e30])), true);
 pruefe('Stufe gedeckelt', $p['lvl'], 2000);
+pruefe('Thron-Punkte im Profil gedeckelt (Kappe beim Saison-Reset)', (float)$p['tp'], 1e12);
+pruefe('Thron-Punkte im Profil nicht öffentlich', isset(profil_oeffentlich(json_decode(json_encode($p)))->tp), false);
 pruefe('Münzen gedeckelt', (float)$p['coins'], 1e15);
 pruefe('Verwundete nie negativ', $p['wounded'], 0);
 pruefe('Schild höchstens 8 Tage', $p['shieldUntil'] <= time() * 1000 + 8 * 86400000, true);

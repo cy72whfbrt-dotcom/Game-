@@ -55,10 +55,13 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // sonst aus der Welt: saison.wirtAb liegt zwischen der alten und der neuen Saison dieses Spielstands) – wie beim Weltrechner abgerundet.
 // Burg fair (Alexander 6.10. A): der erste Reset danach setzt jede Burg über Stufe BURG_FAIR auf BURG_FAIR (saison.burgFair = diese Saison,
 // sonst openWaterSaisonBurg aus der Nachricht) – Gebäude, Forschung, Bauten passt aufbau.js beim Laden an (openWaterBurgFair, burgFair).
+// Alexander 6.10.: einmalige Ausnahme (wegen des Fehlers, damit es fair bleibt) – im selben Schritt Edelsteine auf genau 1.000 und
+// Holz/Stein/Eisen auf 0 (Münzen sind beim Reset immer 0). Bei späteren Resets nicht.
+// Thron-Punkte (Alexander 6.10., jeder Reset): höchstens 20.000 gehen mit, der Rest wird 10 : 1 zu Edelsteinen – ins Abholfach.
 // Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
 var saisonNeuGeladen = 0, saisonZurueckGeladen = 0, saisonBurgGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen · Burg: aufbau.js)
-const BURG_FAIR = 4;
+const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000, SAISON_TP_MAX = 20000, SAISON_TP_JE_GEM = 10;
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
     let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, wirtAb = 0, fairNr = 0;
@@ -73,7 +76,8 @@ if (!SYSTEM) {
         if (v && v.nr === nrW && v.k) { for (const k of SAISON_PRIVAT) { if (typeof v.k[k] === 'string') store.set(k, v.k[k]); else if (k === 'openWaterNeulingBis') store.set(k, '0'); else store.remove(k); }   // (ohne NeulingBis gäbe 10d-welt-weltrechner.js neuen Schutz)
             try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object' && v.w >= 0) { c.wounded = v.w; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
             if (typeof v.res === 'string') store.set('openWaterRes', v.res);   // (Rohstoffe vor der Umrechnung)
-            if (typeof v.city === 'string') { store.set('openWaterCity', v.city); store.remove('openWaterBurgFair'); } }   // (Stadt vor „Burg fair“)
+            if (typeof v.city === 'string') { store.set('openWaterCity', v.city); store.remove('openWaterBurgFair'); }   // (Stadt vor „Burg fair“)
+            if (typeof v.gems === 'string') store.set('openWaterGems', v.gems); }   // (Edelsteine vor der Ausnahme)
         mein = nrW; store.set('openWaterSaisonMein', String(mein)); saisonZurueckGeladen = nrW;
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }
     }
@@ -91,6 +95,18 @@ if (!SYSTEM) {
         const f = wirtAb > mein && wirtAb <= neu ? WIRTSCHAFT_KOSTEN : parseFloat(store.get('openWaterSaisonRoh')) || 1;
         if (f > 0 && f < 1) try { const r = JSON.parse(store.get('openWaterRes'));
             if (r && typeof r === 'object') { vorher.res = store.get('openWaterRes'); for (const k of ['h', 's', 'e']) r[k] = Math.floor((+r[k] || 0) * f); store.set('openWaterRes', JSON.stringify(r)); store.set('openWaterSaisonVorher', JSON.stringify(vorher)); } } catch (e) {}
+        if (fair > 0) {                               // einmalige Ausnahme (Alexander 6.10.): Edelsteine genau 1.000, Holz/Stein/Eisen 0
+            if (vorher.res === undefined && store.get('openWaterRes') !== null) vorher.res = store.get('openWaterRes');
+            if (store.get('openWaterGems') !== null) vorher.gems = store.get('openWaterGems');
+            store.set('openWaterGems', String(SAISON_AUSNAHME_GEMS));
+            let r = null; try { r = JSON.parse(store.get('openWaterRes')); } catch (e) {} r = r && typeof r === 'object' ? r : {};
+            for (const k of ['h', 's', 'e']) r[k] = 0; store.set('openWaterRes', JSON.stringify(r));
+            store.set('openWaterSaisonVorher', JSON.stringify(vorher));
+        }
+        try { const t = JSON.parse(store.get('openWaterThrone'));   // Thron-Punkte: höchstens 20.000, der Rest 10 : 1 als Edelsteine ins Abholfach
+            if (t && t.pts > SAISON_TP_MAX) { const g = Math.floor((t.pts - SAISON_TP_MAX) / SAISON_TP_JE_GEM); t.pts = SAISON_TP_MAX; store.set('openWaterThrone', JSON.stringify(t));
+                let L = null; try { L = JSON.parse(store.get('openWaterInbox')); } catch (e) {} if (!Array.isArray(L)) L = [];
+                const t0 = Date.now(); if (g > 0) { L.unshift({ src: 'saison', title: 'Thron-Punkte aus Saison ' + mein + ' umgetauscht', gems: g, coins: 0, sh: 0, crate: -1, tr: 0, n: 1, id: t0.toString(36) + 'tp', at: t0 }); store.set('openWaterInbox', JSON.stringify(L)); } } } catch (e) {}
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }   // (welt.js hat die alten Befehle schon gelesen – sie gehören zur alten Welt)
         store.set('openWaterSaisonMein', String(neu)); saisonNeuGeladen = neu;
     }
@@ -11977,6 +11993,10 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // Burg fair (Alexander 6.10. A): der ERSTE Reset danach setzt EINMAL jede Burg über Stufe BURG_FAIR auf BURG_FAIR (bis 5.10. galt die alte,
 // kurze Bauzeit – Burg 13–14 bei Mitspielern, mit den neuen Regeln geht höchstens 3–4), für Mitspieler und echte Spieler gleich.
 // Gebäude/Forschung fallen auf das, was Burg/Labor dann erlauben (aufbau.js burgFair), ohne Erstattung. saison.burgFair = diese Saison.
+// Alexander 6.10.: einmalige Ausnahme (wegen des Fehlers, damit es fair bleibt) – derselbe Schritt setzt Edelsteine auf genau 1.000 und
+// Holz/Stein/Eisen auf 0 (saisonAusnahme; echte Spieler: Handy 01a-grundlagen.js + Hauptbuch 10d WELT.saisonKonto). Später nie wieder.
+// Thron-Punkte (Alexander 6.10., JEDER Reset): höchstens SAISON_TP_MAX gehen mit, der Rest 10 : 1 als Edelsteine ins Abholfach
+// (Mitspieler: gleich abgeholt; echte Spieler: ihr Handy beim Neuladen, das Hauptbuch erlaubt es – 10d saisonKonto).
 const SAISON_WOCHEN = 8, SAISON_STUNDE = 18, SAISON_BALD_MS = 3 * 864e5, SAISON_ANFANG_MS = 3 * 864e5;
 const SAISON_PREISE = [3000, 2000, 1500, 500, 500, 500, 500, 500, 500, 500];   // Gems für Platz 1–10 (Vorschlag, LIESMICH)
 var saison = null, saisonSichT = 0;
@@ -12030,6 +12050,7 @@ function saisonNeu(now) {
     const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN : 1;   // f: Holz/Stein/Eisen umrechnen (nur beim ersten Reset nach der Umstellung)
     const burgFair = saison.burgFair > 0 ? saison.burgFair : nr, B = burgFair === nr ? BURG_FAIR : 0;   // B: Burg fair (nur beim ersten Reset danach)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
+    if (B) saisonAusnahme();                           // (vor den Preisen: die kommen wie bei echten Spielern zusätzlich dazu)
     // 1) Preise: Gems ins Abholfach (Mitspieler direkt) und der Saison-Titel – feste Nummer je Saison (nie doppelt)
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
     // 2) echte Spieler: was die Welt ihnen noch schuldet, geht jetzt raus (vor der Nachricht „saison“ – sein Handy verbucht es noch in der alten Saison)
@@ -12039,7 +12060,7 @@ function saisonNeu(now) {
     saisonWelt(now, f, B);
     // 4) echte Spieler: Konto beim Weltrechner zurücksetzen, die Nachricht „saison“ (sein Handy übernimmt den Reset und lädt neu) –
     //    Nummer je Reset eindeutig (mit Zeitpunkt): nach dem Zurückspielen kommt ein neuer Reset derselben Nummer sonst nie an
-    for (const id of menschen) { try { WELT.saisonKonto(id, f); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), Object.assign({ art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, f < 1 ? { roh: f } : {}, B ? { burg: B } : {}), 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
+    for (const id of menschen) { try { WELT.saisonKonto(id, f, B); } catch (e) { console.warn('Saison:', e); } WELT.nachricht(parseInt(id.slice(1), 10), Object.assign({ art: 'saison', nr, alt, neuBis: (loadBotState()[id] || {}).neuBis || now + NEULING_MS }, f < 1 ? { roh: f } : {}, B ? { burg: B } : {}), 'saison|' + nr + '|' + now); try { WELT.deltaBasis(id); } catch (e) {} }
     saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
@@ -12086,10 +12107,17 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
         b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
         if (f < 1 && b.res) for (const k of ['h', 's', 'e']) b.res[k] = Math.floor((+b.res[k] || 0) * f);   // (echte Spieler: ihr Handy rechnet genauso – 01a-grundlagen.js)
-        if (B > 0 && AUF) burgFairWer(b, B); }
+        if (B > 0 && AUF) burgFairWer(b, B);
+        if (!(botById[w] && botById[w].mensch) && b.tp > SAISON_TP_MAX) { const g = Math.floor((b.tp - SAISON_TP_MAX) / SAISON_TP_JE_GEM); b.tp = SAISON_TP_MAX;   // Thron-Punkte (echte Spieler: ihr Handy)
+            if (g > 0) evPreis(w, 'saison', 'Thron-Punkte aus Saison ' + saison.nr + ' umgetauscht', { gems: g }, 'tp' + saison.nr); } }
     capitalCache = null; ownVer++;
     saveGameNow(); flushBotState(); saveProgressionNow(); saveFields(); saveBarb(); saveArmies(); saveEv();
     requestRender();
+}
+function saisonAusnahme() {                          // Alexander 6.10.: einmalige Ausnahme – Mitspieler: Edelsteine genau 1.000, Holz/Stein/Eisen 0
+    const bs = loadBotState();
+    for (const bd of BOT_DEFS) { const b = bs[bd.id]; if (!b || bd.mensch) continue; b.gems = SAISON_AUSNAHME_GEMS; b.res = Object.assign(b.res || {}, { h: 0, s: 0, e: 0 }); }
+    saveBotState();
 }
 // Burg fair für einen Mitspieler oder echten Spieler in der Welt: seine Stadt und (echte Spieler) das Hauptbuch des Weltrechners
 // (10d hb.st/hb.fo) – sonst nähme das Hauptbuch die alten Stufen weiter als möglich an und die Welt bliebe hoch.
@@ -12113,7 +12141,8 @@ function saisonKarte() {
     const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Edelsteine + Saison-Titel für immer';
     const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
-        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung' + (S.burgFair ? '' : ' – einmalig für alle: Burg höchstens Stufe ' + BURG_FAIR) + '), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes</b>' +
+        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes · Thron-Punkte bis ' + fmtNum(SAISON_TP_MAX) + ' (der Rest ' + SAISON_TP_JE_GEM + ' : 1 als Edelsteine)</b>' +
+        (S.burgFair ? '' : '<span>Einmalig</span><b>Ausnahme wegen eines Fehlers, für alle gleich: Burg höchstens Stufe ' + BURG_FAIR + ', Edelsteine genau ' + fmtNum(SAISON_AUSNAHME_GEMS) + ', Holz/Stein/Eisen 0</b>') +
         '<span>Neu</span><b>Basen, Truppen, Münzen, Stufe, Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }
 // ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
@@ -12150,7 +12179,7 @@ function saisonWeltZurueck() {
 }
 if (saisonZurueckGeladen) afterSplash(() => setTimeout(() => flashHint('Die Welt wurde auf einen früheren Stand zurückgesetzt (Saison ' + saisonZurueckGeladen + ') – dein Spielstand passt wieder dazu.', 8000), 1500));
 if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison ' + saisonNeuGeladen + ' hat begonnen! Deine Hauptstadt steht an einem neuen Platz am Rand – ' +
-    (saisonBurgGeladen ? 'für alle gleich: jede Burg über Stufe ' + saisonBurgGeladen + ' steht jetzt auf Stufe ' + saisonBurgGeladen + ' (Gebäude und Forschung passend). Helden' : 'Burg, Gebäude, Forschung, Helden') + ', Ausrüstung, Edelsteine und Rohstoffe sind geblieben.', 9000), 1500));
+    (saisonBurgGeladen ? 'einmalige Ausnahme wegen eines Fehlers, für alle gleich: Burg höchstens Stufe ' + saisonBurgGeladen + ' (Gebäude und Forschung passend), Edelsteine ' + fmtNum(SAISON_AUSNAHME_GEMS) + ', Holz/Stein/Eisen 0. Helden und Ausrüstung sind geblieben.' : 'Burg, Gebäude, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffe sind geblieben.'), 9000), 1500));
 // ===== UI boot (design-spec §4.4): constants into the markup, shop odds,
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))
@@ -14063,9 +14092,23 @@ if (window.WELT) {
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
     // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – Rohstoff-Konten und die Töpfe des Ausgegebenen (Rohstoffe, Münzen,
     // Admin-Münzen) werden wie seine Bestände umgerechnet (aufgerundet: sein Handy rundet ab – nie ein Fehlalarm, nie eine Lücke).
-    WELT.saisonKonto = function (who, f) {
+    // Thron-Punkte (Alexander 6.10., jeder Reset): sein Handy behält höchstens SAISON_TP_MAX, der Rest kommt 10 : 1 als Edelsteine ins
+    // Abholfach (01a-grundlagen.js) – das Hauptbuch zählt sie als sicher geschickt (hb.gIn), aber nur so viele, wie er haben kann:
+    // was er nach dem letzten Reset behalten durfte (hb.tpB) + was der Weltrechner ihm seitdem gab (Thron, throneEarnedOf) + der
+    // Saison-Pass; mit Profil höchstens seine Punkte darin (+ was danach noch kam). B: einmalige Ausnahme (Alexander 6.10.) –
+    // Edelsteine genau SAISON_AUSNAHME_GEMS, Holz/Stein/Eisen 0, die Töpfe des Ausgegebenen leer (Abholfach hb.gIn bleibt).
+    function hbPassTp() { let n = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem); if (r.k === 'tp') n += r.n || 1; } return n; }
+    function hbThronReset(who, hb, p, now) {
+        const E = throneEarnedOf(who), pass = hbPassTp() * (Math.floor(Math.max(0, now - Math.max(PASS_EPOCH, nn(hb.tpT))) / PASS_LEN) + 1);
+        let hoch = (hb.tpE === undefined ? E : nn(hb.tpB) + Math.max(0, E - nn(hb.tpE))) + pass;
+        if (p && p.tp != null) hoch = Math.min(hoch, nn(p.tp) + Math.max(0, E - nn(p.earned)) + 500);
+        const g = Math.floor(Math.max(0, hoch - SAISON_TP_MAX) / SAISON_TP_JE_GEM); if (g > 0) hb.gIn = nn(hb.gIn) + g;
+        hb.tpB = Math.min(hoch, SAISON_TP_MAX); hb.tpE = E; hb.tpT = now;
+    }
+    WELT.saisonKonto = function (who, f, B) {
         const b = loadBotState()[who]; if (!b) return;
-        const m = wacheMem[who], hb = hbDa(who), d = wd(who);
+        const m = wacheMem[who], hb = hbDa(who), d = wd(who), x = WELT.menschen[who];
+        if (hb) try { hbThronReset(who, hb, (m && m.prof) || (x && x.profil) || null, Date.now()); } catch (e) { console.warn('Saison:', e); }
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
@@ -14075,7 +14118,12 @@ if (window.WELT) {
             if (hb) { for (const k of ROHK) { if (hb.rU) hb.rU[k] = Math.ceil(nn(hb.rU[k]) * f); hb.rA[k] = Math.floor(nn(hb.rA[k]) * f); } hb.cA = Math.floor(nn(hb.cA) * f); }
             if (d) d.gC = Math.floor(nn(d.gC) * f);
         }
-        const x = WELT.menschen[who]; if (x) { x.profil = null; x.profilNeu = false; }
+        if (B > 0) {                                   // einmalige Ausnahme (Alexander 6.10.): wie sein Handy beim Neuladen
+            if (hb) { hb.gU = SAISON_AUSNAHME_GEMS; hb.rU = { h: 0, s: 0, e: 0 }; hb.rA = { h: 0, s: 0, e: 0 }; hb.gA = 0; hb.cA = 0; }
+            if (d) d.gC = 0;
+            if (b.res) b.res = Object.assign(b.res, { h: 0, s: 0, e: 0 });
+        }
+        if (x) { x.profil = null; x.profilNeu = false; }
         saveBotState();
     };
 

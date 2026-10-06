@@ -854,9 +854,23 @@ if (window.WELT) {
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
     // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – Rohstoff-Konten und die Töpfe des Ausgegebenen (Rohstoffe, Münzen,
     // Admin-Münzen) werden wie seine Bestände umgerechnet (aufgerundet: sein Handy rundet ab – nie ein Fehlalarm, nie eine Lücke).
-    WELT.saisonKonto = function (who, f) {
+    // Thron-Punkte (Alexander 6.10., jeder Reset): sein Handy behält höchstens SAISON_TP_MAX, der Rest kommt 10 : 1 als Edelsteine ins
+    // Abholfach (01a-grundlagen.js) – das Hauptbuch zählt sie als sicher geschickt (hb.gIn), aber nur so viele, wie er haben kann:
+    // was er nach dem letzten Reset behalten durfte (hb.tpB) + was der Weltrechner ihm seitdem gab (Thron, throneEarnedOf) + der
+    // Saison-Pass; mit Profil höchstens seine Punkte darin (+ was danach noch kam). B: einmalige Ausnahme (Alexander 6.10.) –
+    // Edelsteine genau SAISON_AUSNAHME_GEMS, Holz/Stein/Eisen 0, die Töpfe des Ausgegebenen leer (Abholfach hb.gIn bleibt).
+    function hbPassTp() { let n = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem); if (r.k === 'tp') n += r.n || 1; } return n; }
+    function hbThronReset(who, hb, p, now) {
+        const E = throneEarnedOf(who), pass = hbPassTp() * (Math.floor(Math.max(0, now - Math.max(PASS_EPOCH, nn(hb.tpT))) / PASS_LEN) + 1);
+        let hoch = (hb.tpE === undefined ? E : nn(hb.tpB) + Math.max(0, E - nn(hb.tpE))) + pass;
+        if (p && p.tp != null) hoch = Math.min(hoch, nn(p.tp) + Math.max(0, E - nn(p.earned)) + 500);
+        const g = Math.floor(Math.max(0, hoch - SAISON_TP_MAX) / SAISON_TP_JE_GEM); if (g > 0) hb.gIn = nn(hb.gIn) + g;
+        hb.tpB = Math.min(hoch, SAISON_TP_MAX); hb.tpE = E; hb.tpT = now;
+    }
+    WELT.saisonKonto = function (who, f, B) {
         const b = loadBotState()[who]; if (!b) return;
-        const m = wacheMem[who], hb = hbDa(who), d = wd(who);
+        const m = wacheMem[who], hb = hbDa(who), d = wd(who), x = WELT.menschen[who];
+        if (hb) try { hbThronReset(who, hb, (m && m.prof) || (x && x.profil) || null, Date.now()); } catch (e) { console.warn('Saison:', e); }
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
@@ -866,7 +880,12 @@ if (window.WELT) {
             if (hb) { for (const k of ROHK) { if (hb.rU) hb.rU[k] = Math.ceil(nn(hb.rU[k]) * f); hb.rA[k] = Math.floor(nn(hb.rA[k]) * f); } hb.cA = Math.floor(nn(hb.cA) * f); }
             if (d) d.gC = Math.floor(nn(d.gC) * f);
         }
-        const x = WELT.menschen[who]; if (x) { x.profil = null; x.profilNeu = false; }
+        if (B > 0) {                                   // einmalige Ausnahme (Alexander 6.10.): wie sein Handy beim Neuladen
+            if (hb) { hb.gU = SAISON_AUSNAHME_GEMS; hb.rU = { h: 0, s: 0, e: 0 }; hb.rA = { h: 0, s: 0, e: 0 }; hb.gA = 0; hb.cA = 0; }
+            if (d) d.gC = 0;
+            if (b.res) b.res = Object.assign(b.res, { h: 0, s: 0, e: 0 });
+        }
+        if (x) { x.profil = null; x.profilNeu = false; }
         saveBotState();
     };
 
