@@ -10,11 +10,13 @@ function renderEquipGrid() {
         const r = Math.round(v);
         return '<div class="statChip">' + icon(ic) + '<b' + (r > 0 ? ' class="good">' + sign : '>') + fmtNum(r) + unit + '</b><span>' + label + '</span></div>';
     };
+    const w = [bonusPct('weapon', 'troops'), bonusPct('boots', null), armorDefensePct(), shieldLossReductionPct()];
+    equipStats.hidden = w.every(v => Math.round(v) <= 0);   // noch nichts angelegt: keine Reihe „0 %“ (die leeren Felder darunter führen zur Kiste)
     liveHtml(equipStats,
-        chip('troops', bonusPct('weapon', 'troops'), '+', ' %', 'Truppen') +
-        chip('coin', bonusPct('boots', null), '+', ' %', 'Münzen') +
-        chip('defense', armorDefensePct(), '+', ' %', 'Verteidigung') +
-        chip('losses', shieldLossReductionPct(), '−', ' %', 'Verluste'));
+        chip('troops', w[0], '+', ' %', 'Truppen') +
+        chip('coin', w[1], '+', ' %', 'Münzen') +
+        chip('defense', w[2], '+', ' %', 'Verteidigung') +
+        chip('losses', w[3], '−', ' %', 'Verluste'));
 }
 
 // The gem-crate rarity item layer: one equipped card per slot
@@ -61,14 +63,16 @@ function renderChestEquipment() {
             tile.addEventListener('click', () => openChestItemPopup(item.id));
             makeTileKeyboard(tile, def.name + ', ' + rd.label + ', Stufe ' + item.level + ', ausgerüstet');
         } else {
-            tile.className = 'tile empty';
-            tile.innerHTML = icon(def.icon);
-            tile.title = def.name + ' – leer';
+            tile.className = 'tile empty';                 // leer: antippen → Ausrüstungskiste im Shop
+            tile.innerHTML = icon(def.icon) + '<span class="p5-plus">' + icon('plus') + '</span>';
+            tile.title = def.name + ' – leer: Ausrüstungskiste holen';
+            tile.addEventListener('click', () => openShop('gems'));
+            makeTileKeyboard(tile, def.name + ', leer – Ausrüstungskiste holen');
         }
         slot.appendChild(tile);
         slot.insertAdjacentHTML('beforeend', '<span class="slot-l">' + def.name + '</span>' + (item
             ? '<span class="slot-r" data-r="' + RARITY_DEFS[item.rarity].key + '">' + RARITY_DEFS[item.rarity].label + ' · ' + item.level + '</span>'
-            : '<span class="slot-r">leer</span>'));
+            : '<span class="slot-r">Kiste holen</span>'));
         chestEquippedGrid.appendChild(slot);
     }
 
@@ -79,7 +83,9 @@ function renderChestEquipment() {
     chestInventoryLabel.textContent = 'Inventar · ' + items.length;
     if (items.length === 0) {
         chestInventoryGrid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">' + icon('shop') +
-            '<b>Noch keine Ausrüstung</b><span>Kaufe eine Ausrüstungskiste im Shop.</span></div>';
+            '<b>Noch keine Ausrüstung</b><span>Kaufe eine Ausrüstungskiste im Shop.</span>' +
+            '<button type="button" class="btn btn--secondary btn--sm" data-kiste>Zur Ausrüstungskiste</button></div>';
+        chestInventoryGrid.querySelector('[data-kiste]').addEventListener('click', () => openShop('gems'));
     }
     for (const item of items) {
         const def = EQUIPMENT_DEFS[item.slot];
@@ -342,9 +348,10 @@ function renderSkillGrid() {
         node.style.gridColumn = pos.col;
         node.style.gridRow = pos.row;
         node.classList.toggle('selected', key === selectedSkillKey);
-        node.innerHTML =
+        node.innerHTML =                                    // runder Knoten, Stufe darin, Name darunter
             '<div class="nIcon">' + icon(skillInfo.icon) + '</div>' +
-            '<div class="nLevel">' + skillLevel + '</div>';
+            '<div class="nLevel">' + skillLevel + (skillInfo.max ? '/' + skillInfo.max : '') + '</div>' +
+            '<span class="nName">' + escapeHtml(skillInfo.name) + '</span>';
         node.addEventListener('click', () => {
             selectedSkillKey = key;
             renderSkillGrid();

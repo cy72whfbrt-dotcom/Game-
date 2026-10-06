@@ -282,7 +282,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `boardsGeo` → Game/baukunst/04-vielfalt-stile.js:331
 - `bollard` → Game/baukunst/07-hafen-palast.js:171
 - `bonusPct` → Game/spiel/04-kampf.js:255
-- `bonusText` → Game/spiel/05b-truhe-skills.js:192
+- `bonusText` → Game/spiel/05b-truhe-skills.js:198
 - `bossAt` → Game/spiel/07b-kriegsherr.js:4
 - `bossTick` → Game/spiel/07b-kriegsherr.js:32
 - `BOT_GOAL_VAL.armyWins` → Game/bots/06-aussehen-felder-barbaren.js:39
@@ -862,7 +862,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawWander` → Game/spiel/07b-kriegsherr.js:148
 - `drawWorldFrame` → Game/spiel/06e-nebel-zeichnen.js:3
 - `drDraw` → Game/spiel/09c-events-drache.js:328
-- `dreiDLaden` → Game/spiel/10c-start-einstellungen.js:241
+- `dreiDLaden` → Game/spiel/10c-start-einstellungen.js:243
 - `dressing` → Game/baukunst/04-vielfalt-stile.js:504
 - `dressing` → Game/baukunst/05-umland.js:669
 - `drK` → Game/spiel/09c-events-drache.js:291
@@ -945,7 +945,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:75
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:76
 - `feldBericht` → Game/spiel/09a-funde-felder.js:265
-- `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:250
+- `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:252
 - `fertig` → Game/buendnis/01-daten-regeln.js:152
 - `fertig` → Game/speichern.js:153
 - `fest_lesen` → Game/server/05-datenbank-welt.php:9
@@ -977,9 +977,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fightEstimate` → Game/spiel/03e-kamera-eingabe.js:530
 - `findAnyCombinableGroup` → Game/spiel/02a-shop-stufen.js:94
 - `finGeo` → Game/baukunst/04-vielfalt-stile.js:320
-- `finish` → Game/spiel/10c-start-einstellungen.js:214
+- `finish` → Game/spiel/10c-start-einstellungen.js:216
 - `finishMapBattle` → Game/spiel/07a-schlachten.js:42
-- `finishSplash` → Game/spiel/10c-start-einstellungen.js:188
+- `finishSplash` → Game/spiel/10c-start-einstellungen.js:190
 - `first` → Game/spiel/10c-start-einstellungen.js:137
 - `fits` → Game/baukunst/05-umland.js:729
 - `flag` → Game/spiel/03b-gebaeude-3d.js:50
@@ -1000,7 +1000,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `flute` → Game/spiel/10c-start-einstellungen.js:49
 - `flyTo` → Game/spiel/03e-kamera-eingabe.js:168
 - `fmt` → Game/spiel/05d-maersche-kampfbericht.js:357
-- `fmt1` → Game/spiel/05b-truhe-skills.js:190
+- `fmt1` → Game/spiel/05b-truhe-skills.js:196
 - `fmt1` → Game/spiel/05d-maersche-kampfbericht.js:153
 - `fmtAway` → Game/spiel/06d-schild-produktion.js:281
 - `fmtClock` → Game/spiel/01a-grundlagen.js:117
@@ -1106,9 +1106,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `geldVon` → Game/aufbau.js:67
 - `gem` → Game/baukunst/08-himmelsfeste-bilder.js:70
 - `gemGeo` → Game/baukunst/08-himmelsfeste-bilder.js:67
-- `gemsArmAus` → Game/spiel/05b-truhe-skills.js:295
-- `gemsArmed` → Game/spiel/05b-truhe-skills.js:294
-- `gemsWirklich` → Game/spiel/05b-truhe-skills.js:285
+- `gemsArmAus` → Game/spiel/05b-truhe-skills.js:301
+- `gemsArmed` → Game/spiel/05b-truhe-skills.js:300
+- `gemsWirklich` → Game/spiel/05b-truhe-skills.js:291
 - `generateRegionShape` → Game/spiel/01b-weltkarte.js:151
 - `geprueftHolen` → Game/weltrechner/start.js:283
 - `geraet_bekannt` → Game/server/02-sicherheit-datenlecks.php:45
@@ -1394,7 +1394,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kWert` → Game/spiel/10d-welt-weltrechner.js:540
 - `label` → Game/spiel/03d-maersche-tagnacht.js:116
 - `lacq` → Game/baukunst/04-vielfalt-stile.js:231
-- `laden` → Game/spiel/10c-start-einstellungen.js:245
+- `laden` → Game/spiel/10c-start-einstellungen.js:247
 - `lager` → Game/baukunst/02-buehne-grundbasis.js:158
 - `lager` → Game/server/01-grundlagen-login.php:43
 - `LAMP` → Game/baukunst/07-hafen-palast.js:24
@@ -1437,9 +1437,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `LIME` → Game/baukunst/07-hafen-palast.js:408
 - `LIMEDK` → Game/baukunst/07-hafen-palast.js:409
 - `LIMELT` → Game/baukunst/07-hafen-palast.js:410
-- `liveBald` → Game/spiel/10c-start-einstellungen.js:262
+- `liveBald` → Game/spiel/10c-start-einstellungen.js:264
 - `liveHtml` → Game/spiel/01a-grundlagen.js:123
-- `liveTick` → Game/spiel/10c-start-einstellungen.js:266
+- `liveTick` → Game/spiel/10c-start-einstellungen.js:268
 - `liveUhren` → Game/spiel/01a-grundlagen.js:141
 - `lkBuy` → Game/spiel/08b-burg-aussehen.js:41
 - `lkCard` → Game/spiel/08b-burg-aussehen.js:23
@@ -1473,7 +1473,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `los` → Game/weltrechner/start.js:239
 - `lute` → Game/spiel/10c-start-einstellungen.js:33
 - `macht` → Game/spiel/05c-erfolge-rangliste.js:298
-- `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:34
+- `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:36
 - `mapBattleShake` → Game/spiel/07a-schlachten.js:304
 - `mapFocusPoint` → Game/spiel/03e-kamera-eingabe.js:441
 - `marchButtons` → Game/spiel/02b-maersche.js:329
@@ -1615,6 +1615,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `MysqlLager->tx_ende` → Game/server/04-datenbank-spieler.php:11
 - `MysqlLager->zuletzt_gespeichert` → Game/server/04-datenbank-spieler.php:165
 - `nachrichtBauen` → Game/weltrechner/push.js:126
+- `naechsterRang` → Game/spiel/05a-aussehen-profil.js:155
 - `name` → Game/weltrechner/push.js:69
 - `name_anfrage` → Game/server/06-speichern-push-konto.php:176
 - `name_erlaubt` → Game/server/02-sicherheit-datenlecks.php:48
@@ -1650,7 +1651,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `noteBattle` → Game/bots/02-kampf-karte.js:259
 - `oculus` → Game/baukunst/07-hafen-palast.js:449
 - `oeffnen` → Game/spiel/05d-maersche-kampfbericht.js:509
-- `offen` → Game/spiel/10c-start-einstellungen.js:269
+- `offen` → Game/spiel/10c-start-einstellungen.js:271
 - `offene_befehle` → Game/server/05-datenbank-welt.php:229
 - `okPt` → Game/baukunst/05-umland.js:714
 - `one` → Game/baukunst/04-vielfalt-stile.js:525
@@ -1658,7 +1659,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `onViewportResize` → Game/spiel/03e-kamera-eingabe.js:405
 - `openArmySheet` → Game/spiel/09d-armeen-wegmarken.js:204
 - `openBarbSheet` → Game/spiel/09b-lager-tagesboss.js:362
-- `openChestItemPopup` → Game/spiel/05b-truhe-skills.js:176
+- `openChestItemPopup` → Game/spiel/05b-truhe-skills.js:182
 - `openCity` → Game/spiel/08a-stadt-bauen.js:185
 - `openCrate` → Game/spiel/02a-shop-stufen.js:80
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:335
@@ -1759,7 +1760,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `PAVE` → Game/baukunst/07-hafen-palast.js:411
 - `payGold` → Game/spiel/04-kampf.js:288
 - `payToll` → Game/spiel/01b-weltkarte.js:326
-- `pct` → Game/spiel/10c-start-einstellungen.js:194
+- `pct` → Game/spiel/10c-start-einstellungen.js:196
 - `pentRoof` → Game/baukunst/06-turmhof-festung.js:42
 - `pick` → Game/baukunst/05-umland.js:688
 - `pickIslandAtScreen` → Game/spiel/03e-kamera-eingabe.js:361
@@ -1893,8 +1894,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderActiveMarches` → Game/spiel/05d-maersche-kampfbericht.js:47
 - `renderArmySheet` → Game/spiel/09d-armeen-wegmarken.js:217
 - `renderAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:220
-- `renderChestEquipment` → Game/spiel/05b-truhe-skills.js:44
-- `renderChestItemPopup` → Game/spiel/05b-truhe-skills.js:183
+- `renderChestEquipment` → Game/spiel/05b-truhe-skills.js:46
+- `renderChestItemPopup` → Game/spiel/05b-truhe-skills.js:189
 - `renderCitySheet` → Game/spiel/08b-burg-aussehen.js:174
 - `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:239
 - `renderCombatLog` → Game/spiel/05d-maersche-kampfbericht.js:145
@@ -1915,21 +1916,21 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderMidBar` → Game/spiel/06c-thron-mitte.js:210
 - `renderPass` → Game/spiel/06b-pass-anleitung.js:83
 - `renderPopup` → Game/spiel/10a-inselfenster-vorschau.js:92
-- `renderProfile` → Game/spiel/05a-aussehen-profil.js:152
+- `renderProfile` → Game/spiel/05a-aussehen-profil.js:156
 - `renderQuestPanel` → Game/spiel/06a-aufgaben.js:260
 - `renderRankings` → Game/spiel/05c-erfolge-rangliste.js:293
 - `renderRecallPreview` → Game/spiel/10b-inselfenster-knoepfe.js:56
 - `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:305
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:47
 - `renderShop` → Game/spiel/06d-schild-produktion.js:87
-- `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:299
+- `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:305
 - `renderThroneShop` → Game/spiel/06c-thron-mitte.js:139
 - `renderTile` → Game/spiel/03a-karte-hintergrund.js:308
 - `renderTitleModal` → Game/spiel/04-kampf.js:60
 - `repaintBackgroundRect` → Game/spiel/03a-karte-hintergrund.js:337
 - `requestRender` → Game/spiel/03e-kamera-eingabe.js:377
 - `resetGesture` → Game/spiel/03e-kamera-eingabe.js:243
-- `resetSkills` → Game/spiel/05b-truhe-skills.js:272
+- `resetSkills` → Game/spiel/05b-truhe-skills.js:278
 - `resFields` → Game/spiel/09a-funde-felder.js:160
 - `resize` → Game/ladebildschirm.js:35
 - `resolveAttack` → Game/spiel/02c-spaeher-ankunft.js:177
@@ -2103,10 +2104,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ship` → Game/baukunst/07-hafen-palast.js:121
 - `shoreAt` → Game/baukunst/05-umland.js:665
 - `showBattleTab` → Game/spiel/05d-maersche-kampfbericht.js:13
-- `showChestFlash` → Game/spiel/05b-truhe-skills.js:150
+- `showChestFlash` → Game/spiel/05b-truhe-skills.js:156
 - `showDailyModal` → Game/spiel/06a-aufgaben.js:66
 - `showGoalsTab` → Game/spiel/06a-aufgaben.js:296
-- `showProfileTab` → Game/spiel/05b-truhe-skills.js:362
+- `showProfileTab` → Game/spiel/05b-truhe-skills.js:369
 - `showShopTab` → Game/spiel/06c-thron-mitte.js:160
 - `showTip` → Game/ladebildschirm.js:183
 - `showWelcome` → Game/spiel/06d-schild-produktion.js:307
@@ -2165,7 +2166,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spielraumTag` → Game/spiel/10d-welt-weltrechner.js:180
 - `spielraumTeile` → Game/spiel/10d-welt-weltrechner.js:171
 - `spielseite_vorbereiten` → Game/server/03-nebel-maersche-seite.php:159
-- `spielVersion` → Game/spiel/10c-start-einstellungen.js:154
+- `spielVersion` → Game/spiel/10c-start-einstellungen.js:156
 - `splashDone` → Game/spiel/06d-schild-produktion.js:352
 - `spots` → Game/baukunst/03-wahrzeichen-feuer.js:316
 - `SPRAY` → Game/baukunst/07-hafen-palast.js:419
@@ -2212,7 +2213,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapFog` → Game/spiel/10b-inselfenster-knoepfe.js:226
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
-- `teil` → Game/spiel/10c-start-einstellungen.js:270
+- `teil` → Game/spiel/10c-start-einstellungen.js:272
 - `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:91
 - `tempelPlus` → Game/aufbau.js:224
 - `temple` → Game/spiel/03b-gebaeude-3d.js:224
@@ -2462,7 +2463,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `woHtml` → Game/spiel/09c-events-drache.js:390
 - `woOn` → Game/spiel/09c-events-drache.js:24
 - `woPay` → Game/spiel/09c-events-drache.js:40
-- `work` → Game/spiel/10c-start-einstellungen.js:208
+- `work` → Game/spiel/10c-start-einstellungen.js:210
 - `WORLD` → Game/spiel/03a-karte-hintergrund.js:20
 - `world` → Game/spiel/03a-karte-hintergrund.js:371
 - `worldArmy` → Game/spiel/07b-kriegsherr.js:10
@@ -3895,24 +3896,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderCrestEditor` :130
 - `mini` :134
 - `applyCrestAvatars` :148 — HUD + profile header show the crest instead of the plain helmet
-- `renderProfile` :152 — live = the per-second refresh: numbers only, the editor and pickers stay put
+- `naechsterRang` :155
+- `renderProfile` :156 — live = the per-second refresh: numbers only, the editor and pickers stay put
 
 ### Game/spiel/05b-truhe-skills.js — Truhe und Ausrüstung im Profil, Skills
 - `renderEquipGrid` :7 — The old coin-upgraded weapon/armor/shield/boots cards were removed - the gem-cr…
 - `chip` :9 — A zero bonus is shown neutral ("0 %"), the sign and the success colour only onc…
-- `makeTileKeyboard` :34 — The gem-crate rarity item layer: one equipped card per slot (shows what's equip…
-- `renderChestEquipment` :44
-- `showChestFlash` :150
-- `openChestItemPopup` :176 — Item detail popup: tapping any tile (outside select mode) opens this with the i…
-- `renderChestItemPopup` :183
-- `fmt1` :190
-- `bonusText` :192
-- `resetSkills` :272
-- `gemsWirklich` :285 — → true: jetzt zahlen
-- `gemsArmed` :294
-- `gemsArmAus` :295
-- `renderSkillGrid` :299
-- `showProfileTab` :362
+- `makeTileKeyboard` :36 — The gem-crate rarity item layer: one equipped card per slot (shows what's equip…
+- `renderChestEquipment` :46
+- `showChestFlash` :156
+- `openChestItemPopup` :182 — Item detail popup: tapping any tile (outside select mode) opens this with the i…
+- `renderChestItemPopup` :189
+- `fmt1` :196
+- `bonusText` :198
+- `resetSkills` :278
+- `gemsWirklich` :291 — → true: jetzt zahlen
+- `gemsArmed` :300
+- `gemsArmAus` :301
+- `renderSkillGrid` :305
+- `showProfileTab` :369
 
 ### Game/spiel/05c-erfolge-rangliste.js — Erfolge, Profil antippen, Rangliste
 - `playerStats` :3 — ERFOLGE: badges for what you've done, each with gems to collect (only gems - th…
@@ -4720,18 +4722,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `first` :137
 - `setMode` :139
 - `einstellungenZeigen` :144 — EINSTELLUNGEN (Profil → Einstellungen): Benachrichtigungen (benachrichtigung.js…
-- `spielVersion` :154 — Version: Zeit von spiel.js auf dem Server (window.__OW.version) – sonst aus der…
-- `finishSplash` :188
-- `pct` :194
-- `work` :208
-- `finish` :214
-- `dreiDLaden` :241 — 3D-Basen erst jetzt laden (three.js vom CDN, dann baukunst.js) – vorher würden …
-- `laden` :245
-- `feldErlaubt` :250 — Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefe…
-- `liveBald` :262 — neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
-- `liveTick` :266
-- `offen` :269
-- `teil` :270
+- `spielVersion` :156 — Version: Zeit von spiel.js auf dem Server (window.__OW.version) – sonst aus der…
+- `finishSplash` :190
+- `pct` :196
+- `work` :210
+- `finish` :216
+- `dreiDLaden` :243 — 3D-Basen erst jetzt laden (three.js vom CDN, dann baukunst.js) – vorher würden …
+- `laden` :247
+- `feldErlaubt` :252 — Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefe…
+- `liveBald` :264 — neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
+- `liveTick` :268
+- `offen` :271
+- `teil` :272
 
 ### Game/spiel/10d-welt-weltrechner.js — Die eine Welt: Verbindung zu welt.js, Weltrechner-Befehle, Schummel-Schutz, Sta…
 - `rechnerStatus` :10 — (welt.js meldet jede Änderung von „rechner“)

@@ -5090,22 +5090,22 @@ function applyCrestAvatars() {                    // HUD + profile header show t
     for (const av of document.querySelectorAll('#hudPlayer .avatar, #pAvatarRing .avatar')) av.innerHTML = '<img alt="" src="' + crestDataUrl(64) + '">';
 }
 applyCrestAvatars();
+// Spielername überall derselbe (HUD, Profil, Rangliste, Einstellungen): fehlt er im Spielstand, der Name vom Konto –
+// ohne Konto (Vorschau) „Statthalter“; gespeichert wird erst, was der Spieler selbst einträgt
+if (!profileName.value.trim()) profileName.value = (window.__OW && !__OW.system && __OW.name) || 'Statthalter';
+function naechsterRang() { return RANK_TIERS.find(t => t.min > ownedIslands.size) || null; }   // → { min, name } oder null (höchster Rang)
 function renderProfile(live) {                  // live = the per-second refresh: numbers only, the editor and pickers stay put
     if (!live) renderCrestEditor();
     const home = islandById[playerIslandId];
-    const homeLandmass = landmasses.find(lm => lm.id === home.landmassId);
-    const homeLabel = homeLandmass
-        ? 'Insel ' + (homeLandmass.id + 1) + ' · Turm #' + (home.id + 1)
-        : 'Turm #' + (home.id + 1);
 
     setText(document.getElementById('profileLevelBadge'), playerLvl);      // (live: jede Sekunde aus liveTick – geschrieben wird nur, was sich ändert)
     setText(document.getElementById('profileRank'), currentRank());
+    const nr = window.__OW && !__OW.system && __OW.uid;                    // Kopf wie bei einem Herrscher: Macht und Spieler-Nummer
+    liveHtml(document.getElementById('profileKennung'), icon('attack') + 'Macht <b>' + fmtCompact(powerOf(whoProfile('player'))) + '</b>' + (nr ? '<span>Nr. <b>' + nr + '</b></span>' : ''));
     liveHtml(document.getElementById('profileBund'), profilBundHtml('player'));   // dein Bündnis (antippen: Bündnis-Fenster)
     if (!live) renderLook();
-    const worldPct = ownedIslands.size / islands.length * 100;
-    setText(document.getElementById('profileProgress'), worldPct > 0 && worldPct < 0.1
-        ? '< 0,1 %'
-        : worldPct.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' %');
+    const nRang = naechsterRang();                        // statt Weltanteil (bei tausenden Basen immer „< 0,1 %“): wie weit bis zum nächsten Rang
+    setText(document.getElementById('profileNextRank'), nRang ? nRang.name + ' ab ' + fmtNum(nRang.min) + ' Basen' : 'Höchster Rang');
 
     // XP sits in the profile header, always visible.
     const xpNeeded = xpNeededForLevel(playerLvl);
@@ -5116,22 +5116,27 @@ function renderProfile(live) {                  // live = the per-second refresh
     liveHtml(document.getElementById('xpNext'), 'Belohnung für Stufe ' + nx + ': <b>+' + fmtCompact(nM) + '</b> ' + (nM === 1 ? 'Münze' : 'Münzen') + ', <b>+' + fmtCompact(nT) + '</b> ' + (nT === 1 ? 'Truppe' : 'Truppen') +
         (nG ? ', <b>+' + nG + '</b> ' + (nG === 1 ? 'Edelstein' : 'Edelsteine') : ''));
 
-    setText(document.getElementById('kBases'), fmtNum(ownedIslands.size) + ' / ' + fmtNum(islands.length));   // (Truppen, Münzen, Edelsteine stehen oben im HUD)
+    setText(document.getElementById('kBases'), fmtNum(ownedIslands.size));   // (Truppen, Münzen, Edelsteine stehen oben im HUD)
     const hp = hourProduction('player');                 // alle Basen zusammen (mit Tempeln und Boni), pro Stunde – genau das kommt an
     setText(document.getElementById('kTroopsRate'), '+' + fmtStunde(hp.troops));
     setText(document.getElementById('kCoinsRate'), '+' + fmtStunde(hp.coins));
 
-    const progressPct = Math.round(ownedIslands.size / islands.length * 100);
+    const vorher = RANK_TIERS.filter(t => t.min <= ownedIslands.size).pop().min;   // Ring ums Wappen: Weg zum nächsten Rang
     const avatarRing = document.getElementById('pAvatarRing');
-    if (avatarRing) avatarRing.style.setProperty('--progress', progressPct);
+    if (avatarRing) avatarRing.style.setProperty('--progress', nRang ? Math.round((ownedIslands.size - vorher) / (nRang.min - vorher) * 100) : 100);
 
     const activeCount = playerRelevantAttackCount() + playerRelevantSendCount() + pendingScouts.length + pendingRetreats.length;
     liveHtml(profileStats,
         '<div class="statRow"><span>' + icon('star') + 'Fähigkeitspunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
         (activeCount > 0 ? '<div class="statRow"><span>' + icon('hourglass') + 'Unterwegs</span><b>' + fmtNum(activeCount) + '</b></div>' : '') +
-        '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>');
+        (home ? '<div class="statRow"><span>' + icon('home') + 'Hauptstadt</span><b class="p5-heimat">' + coordText(home.x, home.y) +
+            ' <button type="button" class="btn btn--ghost btn--sm" data-heimzeigen>Zeigen</button></b></div>' : ''));   // Koordinaten wie auf der Karte statt interner Nummern
     updateHudPlayer();
 }
+profileStats.addEventListener('click', e => {        // Hauptstadt „Zeigen“: Profil zu, Karte fährt hin
+    if (!e.target.closest('[data-heimzeigen]')) return;
+    profileCloseBtn.click(); recenterOnHome(true);
+});
 
 // The old coin-upgraded weapon/armor/shield/boots cards were
 // removed - the gem-crate rarity system below (renderChestEquipment)
@@ -5144,11 +5149,13 @@ function renderEquipGrid() {
         const r = Math.round(v);
         return '<div class="statChip">' + icon(ic) + '<b' + (r > 0 ? ' class="good">' + sign : '>') + fmtNum(r) + unit + '</b><span>' + label + '</span></div>';
     };
+    const w = [bonusPct('weapon', 'troops'), bonusPct('boots', null), armorDefensePct(), shieldLossReductionPct()];
+    equipStats.hidden = w.every(v => Math.round(v) <= 0);   // noch nichts angelegt: keine Reihe „0 %“ (die leeren Felder darunter führen zur Kiste)
     liveHtml(equipStats,
-        chip('troops', bonusPct('weapon', 'troops'), '+', ' %', 'Truppen') +
-        chip('coin', bonusPct('boots', null), '+', ' %', 'Münzen') +
-        chip('defense', armorDefensePct(), '+', ' %', 'Verteidigung') +
-        chip('losses', shieldLossReductionPct(), '−', ' %', 'Verluste'));
+        chip('troops', w[0], '+', ' %', 'Truppen') +
+        chip('coin', w[1], '+', ' %', 'Münzen') +
+        chip('defense', w[2], '+', ' %', 'Verteidigung') +
+        chip('losses', w[3], '−', ' %', 'Verluste'));
 }
 
 // The gem-crate rarity item layer: one equipped card per slot
@@ -5195,14 +5202,16 @@ function renderChestEquipment() {
             tile.addEventListener('click', () => openChestItemPopup(item.id));
             makeTileKeyboard(tile, def.name + ', ' + rd.label + ', Stufe ' + item.level + ', ausgerüstet');
         } else {
-            tile.className = 'tile empty';
-            tile.innerHTML = icon(def.icon);
-            tile.title = def.name + ' – leer';
+            tile.className = 'tile empty';                 // leer: antippen → Ausrüstungskiste im Shop
+            tile.innerHTML = icon(def.icon) + '<span class="p5-plus">' + icon('plus') + '</span>';
+            tile.title = def.name + ' – leer: Ausrüstungskiste holen';
+            tile.addEventListener('click', () => openShop('gems'));
+            makeTileKeyboard(tile, def.name + ', leer – Ausrüstungskiste holen');
         }
         slot.appendChild(tile);
         slot.insertAdjacentHTML('beforeend', '<span class="slot-l">' + def.name + '</span>' + (item
             ? '<span class="slot-r" data-r="' + RARITY_DEFS[item.rarity].key + '">' + RARITY_DEFS[item.rarity].label + ' · ' + item.level + '</span>'
-            : '<span class="slot-r">leer</span>'));
+            : '<span class="slot-r">Kiste holen</span>'));
         chestEquippedGrid.appendChild(slot);
     }
 
@@ -5213,7 +5222,9 @@ function renderChestEquipment() {
     chestInventoryLabel.textContent = 'Inventar · ' + items.length;
     if (items.length === 0) {
         chestInventoryGrid.innerHTML = '<div class="empty-state" style="grid-column:1/-1">' + icon('shop') +
-            '<b>Noch keine Ausrüstung</b><span>Kaufe eine Ausrüstungskiste im Shop.</span></div>';
+            '<b>Noch keine Ausrüstung</b><span>Kaufe eine Ausrüstungskiste im Shop.</span>' +
+            '<button type="button" class="btn btn--secondary btn--sm" data-kiste>Zur Ausrüstungskiste</button></div>';
+        chestInventoryGrid.querySelector('[data-kiste]').addEventListener('click', () => openShop('gems'));
     }
     for (const item of items) {
         const def = EQUIPMENT_DEFS[item.slot];
@@ -5476,9 +5487,10 @@ function renderSkillGrid() {
         node.style.gridColumn = pos.col;
         node.style.gridRow = pos.row;
         node.classList.toggle('selected', key === selectedSkillKey);
-        node.innerHTML =
+        node.innerHTML =                                    // runder Knoten, Stufe darin, Name darunter
             '<div class="nIcon">' + icon(skillInfo.icon) + '</div>' +
-            '<div class="nLevel">' + skillLevel + '</div>';
+            '<div class="nLevel">' + skillLevel + (skillInfo.max ? '/' + skillInfo.max : '') + '</div>' +
+            '<span class="nName">' + escapeHtml(skillInfo.name) + '</span>';
         node.addEventListener('click', () => {
             selectedSkillKey = key;
             renderSkillGrid();
@@ -13058,7 +13070,9 @@ function einstellungenZeigen() {
     for (const b of document.querySelectorAll('#setTon [data-ton]')) { const on = b.dataset.ton === Music.mode; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
     document.getElementById('setAkku').checked = akkuSparen;
     setText(document.getElementById('setName'), profileName.value || '–');
-    setText(document.getElementById('setNr'), String((window.__OW || {}).uid || '–'));
+    const nr = (window.__OW || {}).uid, nrEl = document.getElementById('setNr');
+    setText(nrEl, String(nr || '')); nrEl.parentElement.style.display = nr ? '' : 'none';   // ohne Konto (Vorschau) keine leere Zeile „–“
+    if (!window.__OW) setText(document.getElementById('pushText'), 'Benachrichtigungen gibt es nur nach der Anmeldung.');   // (benachrichtigung.js braucht den Server)
     setText(document.getElementById('setVersion'), spielVersion());
 }
 // Version: Zeit von spiel.js auf dem Server (window.__OW.version) – sonst aus der Skript-Adresse: spiel.js?v=<Zeit>
