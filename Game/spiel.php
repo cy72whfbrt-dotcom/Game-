@@ -1790,7 +1790,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .p5-hilfe p{font-size:13px}
 /* Bündnis ohne Bündnis: Gründen unter der Liste */
 #bundUnten:not(:empty){margin-top:16px}
-.p5-gruenden{min-height:44px;gap:8px}
+.p5-gruenden{width:100%;min-height:44px;gap:8px}
 .p5-gruenden .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}
 </style>
 

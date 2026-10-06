@@ -18,7 +18,7 @@ let b;
   await zu();
   const pruef = async (name) => { const t = await ev(() => [...document.querySelectorAll('.panel.is-open, #citySheet:not([hidden]), #armySheet:not([hidden]), .marker-sheet:not([hidden]), #midBar, #anleitung:not([hidden])')].map(e => e.innerText).join('\n')); for (const z of t.split('\n')) if (SCHLECHT.test(z)) texte.push(name + ' → ' + z.trim().slice(0, 140)); return t.length; };
   const out = { fenster: {} };
-  const PANELS = [['#bundBtn', 'bundPopup', '#bundPopup [data-btab]'], ['#battleLogBtn', 'battleLogPopup', null], ['#goalsBtn', 'goalsPopup', '#goalsPopup [data-gtab]'], ['#shopBtn', 'shopPopup', '#shopPopup [data-stab]'], ['#profileBtn', 'profilePopup', '#profilePopup [id^=tabBtn]']];
+  const PANELS = [['#bundBtn', 'bundPopup', '#bundPopup [data-btab]'], ['#battleLogBtn', 'battleLogPopup', '#battleLogPopup [data-ktab]'], ['#goalsBtn', 'goalsPopup', '#goalsPopup [data-gtab]'], ['#shopBtn', 'shopPopup', '#shopPopup [data-stab]'], ['#profileBtn', 'profilePopup', '#profilePopup [id^=tabBtn]']];
   for (const [btn, pan, tabs] of PANELS) {
     wo = pan; await zu(); await ev(() => document.querySelectorAll('.panel.is-open').forEach(x => closePanel(x)));
     await klick(btn); await p.waitForTimeout(600);
@@ -35,7 +35,7 @@ let b;
       for (let k = 0; k < Math.min(n, 30); k++) {
         const r = await ev(([pan, k]) => { const bs = [...document.getElementById(pan).querySelectorAll('button')].filter(x => x.offsetParent && !x.disabled); const x = bs[k]; if (!x) return null;
           const t = (x.textContent || x.getAttribute('aria-label') || x.id || '').trim().slice(0, 30);
-          if (/close|schlie|abmelden|zurück|Close/i.test(t + x.className + x.id) || x.closest('form[action]') || x.matches('[id^=tabBtn],[data-gtab],[data-stab],[data-btab]') || /Passwort|Name ändern|Verkaufen|Verlassen|Austreten|Auflösen|löschen/i.test(t)) return '-';
+          if (/close|schlie|abmelden|zurück|Close/i.test(t + x.className + x.id) || x.closest('form[action]') || x.matches('[id^=tabBtn],[data-gtab],[data-ggrp],[data-ktab],[data-stab],[data-btab]') || /Passwort|Name ändern|Verkaufen|Verlassen|Austreten|Auflösen|löschen/i.test(t)) return '-';
           x.click(); return t; }, [pan, k]);
         if (r && r !== '-') { gedrueckt++; wo = pan + '/' + nm + ' Knopf „' + r + '“'; await p.waitForTimeout(250); await zu(); await pruef(wo);
           const offen = await ev(pan => isPanelOpen(document.getElementById(pan)), pan);
