@@ -1167,6 +1167,24 @@ der Nähe 30 %, Grenzland (mehr fremde als eigene Basen auf der Insel) 60 %, son
 jedem Zug weiter. Test: `mitspieler_mitte_test` (1 Ring vor, Ärger → zurück + Hilfe, bedrohte Basen bleiben besetzt).
 Ein Langzeit-/Simulationswerkzeug gibt es nicht – ob sie live in Wächter-/Thron-Ring ankommen, zeigt erst die Welt.
 
+**Checkliste 6.10. (Alexander, nach dem ersten Hochladen am Morgen) – alles muss vor dem Saison-Ende drin sein:**
+1. Burg-Stufen fair: **Einmalig** beim kommenden Reset alle (Spieler + Mitspieler): Burg 4, Holz/Stein/Eisen 0, Gold 0,
+   Edelsteine genau 1.000; Helden + Ausrüstung bleiben (Branch `burg-fair`). Spätere Resets: alles bleibt (Burg, Gebäude,
+   Forschung, Edelsteine, Holz/Stein/Eisen, Helden, Ausrüstung), neu nur Karte, Truppen (5.000), Gold.
+2. Thron-Punkte bei jedem Reset: max. 20.000 behalten, Rest 10 = 1 Edelstein ins Postfach „Zum Abholen“ (`burg-fair`).
+3. Wirtschaft „normale Zahlen“ (Z1 A): Holz/Stein/Eisen RoK-Größen (Burg 4 ≈ 13.000 Holz), Felder gedämpft, Münzen bleiben
+   klein, Stadt kostet Münzen + Rohstoffe, Start 5.000 Truppen, neutrale Basen 100–1.000, Wächter/Tore viel stärker,
+   unsinnige Belohnungs-Zahlen weg (`wirtschaft-roh`).
+4. Mauer: Verteidigungs-Helden (Haupt ab Mauer 1, Zweit ab Mauer 5), verteidigen jede Basis, unterwegs nicht (`mauer-helden`).
+5. Rahmen = Titel + Ring in einem, nicht kaufbar; Saison-Rahmen Platz 1 / 2–3 / 4–5 / 6–10 nur bis zum nächsten Reset; Mitte
+   wie jetzt; Reiter Wappen · Rahmen · Basis · Marsch (`fix-aussehen-rahmen`).
+6. Design nach Live-Bildern: Fahnen beim Rauszoomen, Angriffs-Fenster kompakt, Shop als Schaufenster, Stadt (Schilder fest,
+   Zoom-Übergang wie RoK, außen Landschaft statt Felder/Windmühle) – jeweils Designer-Prüfung vor dem Zeigen.
+7. Spieler-Durchsicht (45 Funde, `scratchpad/blick.md`, Bereiche A–J) – alle Bereiche abarbeiten.
+8. G lebendige Welt (Berge, Märsche drumherum, keine „Umweg“-Zeile) – vorgezogen, mit Schalter (`welt-felsen`).
+9. Mitspieler starten alle gleich. Thron-Shop gibt 2 Std. (live). Mitte/Pässe 3 Tage/Bündnis-Rally (gemergt).
+10. Offen aus 11b I: **Sortier-Tag** (alter Code raus) – nach dem Zusammenführen.
+
 **H. Ganz zum Schluss:** wenn alles fertig ist, **alles komplett testen** (`tests/komplett.sh` + Spieltester auf Handy
 und Desktop über alle Fenster) – erst danach Alexander wegen Hochladen fragen.
 
