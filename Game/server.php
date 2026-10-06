@@ -495,7 +495,7 @@ function weltrechner_seite($sys) {
 
 // ===== MySQL =====
 class MysqlLager {
-    const TABELLEN_STAND = '2026-10-05s';   // (siehe Konstruktor)
+    const TABELLEN_STAND = '2026-10-06t';   // (siehe Konstruktor)
     private $db;
     // Transaktionen (auch verschachtelt): was zusammengehört, gilt ganz oder gar nicht – stirbt PHP mittendrin, nimmt die Datenbank
     // alles zurück (z. B. Welt + Nachrichten + Quittungen des Weltrechners, Spielstand + „verbucht“ eines Spielers)
@@ -633,7 +633,7 @@ class MysqlLager {
         foreach (['ow_befehle' => ['cid' => 'VARCHAR(24) NULL', 'fertig' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0', 'art' => 'VARCHAR(16) NULL', 'fertig_v' => 'BIGINT UNSIGNED NULL', 'ok' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0', 'nach' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
                   'ow_ereignisse' => ['mid' => 'VARCHAR(24) NULL', 'abgeholt' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
                   'ow_push' => ['sitzung' => "CHAR(64) NOT NULL DEFAULT ''"],
-                  'ow_sicherungen' => ['behalten_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0']] as $tab => $spalten) {   // (behalten_bis: die Saison-Sicherung bleibt 2 Wochen)   // (sitzung: mit welchem Login das Gerät eingetragen ist – Abmelden trägt es aus)
+                  'ow_sicherungen' => ['behalten_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'konten' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0']] as $tab => $spalten) {   // (behalten_bis: die Saison-Sicherung bleibt 2 Wochen; konten: mit Spielerkonten, einmal am Tag)   // (sitzung: mit welchem Login das Gerät eingetragen ist – Abmelden trägt es aus)
             $q = $this->db->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?"); $q->execute([$tab]);
             $hat = $q->fetchAll(PDO::FETCH_COLUMN);
             foreach ($spalten as $sp => $typ) if (!in_array($sp, $hat, true)) $this->db->exec("ALTER TABLE $tab ADD COLUMN $sp $typ");
@@ -942,39 +942,47 @@ class MysqlLager {
         return count($da);
     }
     // ===== Sicherungen der Welt =====
+    // $konten (6.10., einmal am Tag – wachhund.php): dazu die Spielerkonten (ow_spieler; Passwörter nur als gespeicherte Prüfwerte
+    // pw_hash) und die privaten Spielstände (ow_spielstand/ow_bots der Spieler) – aus demselben festen Stand wie die Welt.
     public $sicherung_info = null;   // (für das Log des Wachhunds: Dauer, Größe)
-    function sicherung_anlegen($behalten_bis = 0) {   // behalten_bis (Unix-Zeit): so lange nicht wegräumen (Saison-Sicherung: 2 Wochen)
+    function sicherung_anlegen($behalten_bis = 0, $konten = false) {   // behalten_bis (Unix-Zeit): so lange nicht wegräumen (Saison-Sicherung: 2 Wochen)
         $t0 = microtime(true);
-        // beide Tabellen aus demselben Stand (fester Stand statt Welt-Sperre: der Weltrechner muss nicht warten)
-        [$sp, $bo, $v] = $this->fest_lesen(function () {
+        // alle Tabellen aus demselben Stand (fester Stand statt Welt-Sperre: der Weltrechner muss nicht warten)
+        [$sp, $bo, $v, $k] = $this->fest_lesen(function () use ($konten) {
             return [$this->db->query('SELECT schluessel, wert FROM ow_spielstand WHERE spieler_id = 0')->fetchAll(),
                 $this->db->query('SELECT bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id = 0')->fetchAll(),
-                $this->db->query('SELECT version FROM ow_welt_info WHERE id = 1')->fetchColumn()];   // welcher Welt-Stand das ist
+                $this->db->query('SELECT version FROM ow_welt_info WHERE id = 1')->fetchColumn(),   // welcher Welt-Stand das ist
+                $konten ? ['spieler' => $this->db->query('SELECT * FROM ow_spieler ORDER BY id')->fetchAll(),
+                    'staende' => $this->db->query('SELECT spieler_id, schluessel, wert FROM ow_spielstand WHERE spieler_id > 0')->fetchAll(),
+                    'bots' => $this->db->query('SELECT spieler_id, bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand FROM ow_bots WHERE spieler_id > 0')->fetchAll()] : null];
         });
         if (!sicherung_gueltig(['spielstand' => $sp, 'bots' => $bo])) return 0;   // eine leere/kaputte Welt verdrängt nie eine gute Sicherung
-        $j = json_encode(['spielstand' => $sp, 'bots' => $bo, 'version' => (int)$v], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-        unset($sp, $bo);   // (Speicher früh freigeben)
+        $d = ['spielstand' => $sp, 'bots' => $bo, 'version' => (int)$v]; if ($k !== null) $d['konten'] = $k;
+        unset($sp, $bo, $k);   // (Speicher früh freigeben)
+        $j = json_encode($d, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE); unset($d);   // (ein alter Name mit kaputtem UTF-8 verhindert nie die ganze Sicherung)
         if ($j === false) return 0;
         $roh = strlen($j);
         $gz = gzencode($j, 3); unset($j);   // (Stufe 3: kaum größer als 6, aber viel weniger Rechenzeit auf dem geteilten Server)
         if ($gz === false || gzdecode($gz) === false) return 0;   // (nur ganz lesbare Sicherungen)
-        $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten, behalten_bis) VALUES (?, ?, ?)')->execute([strlen($gz), $gz, (int)$behalten_bis]);
+        $this->db->prepare('INSERT INTO ow_sicherungen (groesse, daten, behalten_bis, konten) VALUES (?, ?, ?, ?)')->execute([strlen($gz), $gz, (int)$behalten_bis, $konten ? 1 : 0]);
         $id = (int)$this->db->lastInsertId();
         $this->db->exec('DELETE FROM ow_sicherungen WHERE id <= ' . ($id - 48) . ' AND behalten_bis < ' . time());   // die letzten 48 bleiben (und die Saison-Sicherung 2 Wochen)
-        $this->sicherung_info = ['ms' => (int)round((microtime(true) - $t0) * 1000), 'roh' => $roh, 'gz' => strlen($gz)];
+        $this->sicherung_info = ['ms' => (int)round((microtime(true) - $t0) * 1000), 'roh' => $roh, 'gz' => strlen($gz), 'konten' => (bool)$konten];
         return $id;
     }
-    function letzte_sicherung_zeit() { return (int)$this->db->query('SELECT UNIX_TIMESTAMP(MAX(erstellt)) FROM ow_sicherungen')->fetchColumn(); }
-    function sicherungen_liste() { return $this->db->query('SELECT id, erstellt, groesse, behalten_bis FROM ow_sicherungen ORDER BY id DESC')->fetchAll(); }
+    function letzte_sicherung_zeit($konten = false) { return (int)$this->db->query('SELECT UNIX_TIMESTAMP(MAX(erstellt)) FROM ow_sicherungen' . ($konten ? ' WHERE konten = 1' : ''))->fetchColumn(); }
+    function sicherungen_liste() { return $this->db->query('SELECT id, erstellt, groesse, behalten_bis, konten FROM ow_sicherungen ORDER BY id DESC')->fetchAll(); }
     // Eine Sicherung zurückspielen (der Weltrechner muss dafür aus sein). Alle Teile bekommen eine neue Version → alle laden neu.
     // Vorher wird der jetzige Stand selbst gesichert (nichts geht still verloren – auch das Zurückspielen lässt sich zurückspielen).
     // Bereits ausgeführte Befehle bleiben quittiert (sie laufen nie ein zweites Mal), nicht ausgeführte warten weiter;
     // Auszahlungen, die der Weltrechner danach nochmal macht, haben feste Nummern und kommen nicht doppelt an.
-    function sicherung_zurueck($id) {
-        $q = $this->db->prepare('SELECT daten FROM ow_sicherungen WHERE id = ?'); $q->execute([(int)$id]);
-        $d = json_decode((string)@gzdecode((string)$q->fetchColumn()), true);
-        if (!sicherung_gueltig($d)) return false;
-        $vorher = $this->sicherung_anlegen();   // der jetzige Stand – ist er selbst kaputt (oft der Grund fürs Zurückspielen), gibt es keine
+    // $alles (6.10., nur mit Rückfrage im Admin, nur Sicherungen mit Konten): dazu die Spielerkonten und privaten Spielstände
+    // (konten_zurueck). Ohne: nur die Welt wie bisher – die Spielstände der Spieler bleiben.
+    function sicherung_zurueck($id, $alles = false) {
+        $q = $this->db->prepare('SELECT daten, erstellt FROM ow_sicherungen WHERE id = ?'); $q->execute([(int)$id]); $z = $q->fetch() ?: ['daten' => '', 'erstellt' => ''];
+        $d = json_decode((string)@gzdecode((string)$z['daten']), true); $damals = (string)$z['erstellt']; unset($z);
+        if (!sicherung_gueltig($d) || ($alles && !konten_gueltig($d['konten'] ?? null))) return false;
+        $vorher = $this->sicherung_anlegen(0, $alles);   // der jetzige Stand (bei „alles“ mit Konten) – ist er selbst kaputt (oft der Grund fürs Zurückspielen), gibt es keine
         if (!$vorher) error_log('Open Water: Zurückspielen ohne Vorab-Sicherung – der jetzige Stand ist nicht vollständig');   // Sicherung davon, aber das Zurückspielen geht
         $this->welt_sperren();
         try {
@@ -996,11 +1004,46 @@ class MysqlLager {
         // Alles andere (Angriffe, Märsche …) bleibt erledigt – die Welt ist eben wieder auf dem Stand von damals.
         // Nur die der Weltrechner damals angenommen hat (ok) – die laufen jetzt OHNE nochmal zu bezahlen (nach): bezahlt hat er schon,
         // und das Hauptbuch wird gerade an seinen Spielstand angeglichen (der die Zahlung schon enthält).
-        if (isset($d['version'])) $this->db->prepare("UPDATE ow_befehle SET fertig = 0, fertig_v = NULL, nach = 1 WHERE fertig = 1 AND ok = 1 AND fertig_v > ? AND art IN ('" . implode("','", BEFEHLE_BEZAHLT) . "')")->execute([(int)$d['version']]);
+        // Bei „alles“ von den zurückgespielten Spielern nur die vor der Sicherung gegebenen: nur deren Zahlung steckt in ihrem Spielstand
+        // von damals (spätere siehe konten_zurueck). Wer seitdem neu ist, behält seinen Spielstand – bei ihm wie bisher.
+        $wer = $alles ? implode(',', array_map(function ($z) { return (int)$z['id']; }, $d['konten']['spieler'])) : '';
+        if (isset($d['version'])) $this->db->prepare("UPDATE ow_befehle SET fertig = 0, fertig_v = NULL, nach = 1 WHERE fertig = 1 AND ok = 1 AND fertig_v > ? AND art IN ('" . implode("','", BEFEHLE_BEZAHLT) . "')" . ($alles ? " AND (erstellt <= ? OR spieler_id NOT IN ($wer))" : ''))->execute($alles ? [(int)$d['version'], $damals] : [(int)$d['version']]);
+        if ($alles) $this->konten_zurueck($d['konten'], $damals);
         $this->db->commit();
         } catch (Throwable $e) { if ($this->db->inTransaction()) $this->db->rollBack(); $this->welt_entsperren(); throw $e; }   // ganz oder gar nicht
         $this->welt_entsperren();
         return true;
+    }
+    // Spielerkonten + private Spielstände aus einer Sicherung von $damals (in der Transaktion von sicherung_zurueck). Wer damals
+    // schon da war, bekommt Konto und Spielstand von damals; wer sich seitdem angemeldet hat, bleibt unverändert. Nur Spalten, die es
+    // heute noch gibt. Offene Spiele dieser Spieler müssen neu laden (spiel_token leer → „anderswo geöffnet“) – sonst schickte ein
+    // offenes Handy seinen neueren Stand über den zurückgespielten. Genau einmal, bezogen auf den Stand von damals:
+    //   - Nachrichten von damals, die sein Spielstand noch nicht verbucht hatte (Nummer über der höchsten in openWaterEreignisFertig),
+    //     kommen wieder; spätere gehören zur zurückgedrehten Welt und verfallen
+    //   - seine Befehle seit damals, die noch nicht ausgeführt sind, verfallen (ihre Zahlung ist mit dem Spielstand zurückgedreht)
+    function konten_zurueck($k, $damals) {
+        $q = $this->db->query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ow_spieler'");
+        $heute = array_flip($q->fetchAll(PDO::FETCH_COLUMN)); $ids = [];
+        foreach ($k['spieler'] as $z) {
+            $z = array_intersect_key($z, $heute); unset($z['spiel_token'], $z['speicher_nr']);
+            $sp = array_keys($z); $ids[] = (int)$z['id'];
+            $this->db->prepare('INSERT INTO ow_spieler (' . implode(', ', $sp) . ', spiel_token, speicher_nr) VALUES (' . implode(', ', array_fill(0, count($sp), '?')) . ", '', 0)"
+                . ' ON DUPLICATE KEY UPDATE ' . implode(', ', array_map(function ($c) { return "$c = VALUES($c)"; }, array_diff($sp, ['id']))) . ", spiel_token = '', speicher_nr = 0")->execute(array_values($z));
+        }
+        $in = implode(',', $ids);
+        $this->db->exec("DELETE FROM ow_spielstand WHERE spieler_id IN ($in)");
+        $this->db->exec("DELETE FROM ow_bots WHERE spieler_id IN ($in)");
+        $s = $this->db->prepare('INSERT INTO ow_spielstand (spieler_id, schluessel, wert) VALUES (?, ?, ?)'); $fertig = [];
+        foreach ($k['staende'] as $z) if (in_array((int)$z['spieler_id'], $ids, true)) {
+            $s->execute([(int)$z['spieler_id'], $z['schluessel'], $z['wert']]);
+            if ($z['schluessel'] === 'openWaterEreignisFertig') $fertig[(int)$z['spieler_id']] = max(array_merge([0], array_map('intval', (array)json_decode($z['wert'], true))));
+        }
+        $b = $this->db->prepare('INSERT INTO ow_bots (spieler_id, bot_id, nr, stufe, muenzen, anzahl_basen, basen, zustand) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+        foreach ($k['bots'] as $z) if (in_array((int)$z['spieler_id'], $ids, true)) $b->execute([(int)$z['spieler_id'], $z['bot_id'], $z['nr'], $z['stufe'], $z['muenzen'], $z['anzahl_basen'], $z['basen'], $z['zustand']]);
+        $wieder = $this->db->prepare('UPDATE ow_ereignisse SET abgeholt = 0 WHERE spieler_id = ? AND id > ? AND erstellt <= ?');
+        foreach ($ids as $uid) $wieder->execute([$uid, $fertig[$uid] ?? 0, $damals]);
+        $this->db->prepare("UPDATE ow_ereignisse SET abgeholt = 1 WHERE spieler_id IN ($in) AND erstellt > ?")->execute([$damals]);
+        $this->db->prepare("UPDATE ow_befehle SET fertig = 1 WHERE fertig = 0 AND spieler_id IN ($in) AND erstellt > ?")->execute([$damals]);
     }
     // Wie groß wäre der Spielstand eines Spielers mit diesen neuen Teilen? (Bytes)
     function groesse_nach($uid, $setzen) {
@@ -1207,7 +1250,7 @@ function speichern_anfrage() {
 
 // ===== Handy-Benachrichtigungen (Web-Push) =====
 // Spieler (nur mit Login):  push_info → {an, schluessel}   push_an {abo:{endpoint, keys:{p256dh, auth}}}   push_ab {endpoint}
-// Weltrechner (nur mit X-Weltrechner-Schlüssel): push_abos → alle Abos + VAPID-Schlüssel   push_weg {ids} (abgelaufene Abos)
+// Weltrechner (nur mit X-Weltrechner-Schlüssel): push_abos → alle Abos + VAPID-Schlüssel + Admin-Nummern   push_weg {ids} (abgelaufene Abos)
 // Gesendet wird vom Weltrechner (weltrechner/push.js).
 // VAPID-Schlüssel: aus config.php (vapid_public/vapid_private), sonst erzeugt der Server sie EINMAL selbst und legt sie in
 // weltrechner/vapid.php ab (von außen 404, nie im Git, hochladen.sh überschreibt sie nie) – sie ändern sich also nie.
@@ -1260,7 +1303,7 @@ function push_anfrage($ich, $d, $aktion) {
     $l = lager();
     $s = push_schluessel();
     if (!empty($ich['system'])) {   // der Weltrechner
-        if ($aktion === 'push_abos') json_antwort(200, $s ? ['an' => true, 'public' => $s['public'], 'private' => $s['private'], 'sub' => (string)(cfg()['spiel_url'] ?? 'mailto:admin@hobbitonhill.de'), 'abos' => $l->push_alle()] : ['an' => false]);
+        if ($aktion === 'push_abos') json_antwort(200, $s ? ['an' => true, 'public' => $s['public'], 'private' => $s['private'], 'sub' => (string)(cfg()['spiel_url'] ?? 'mailto:admin@hobbitonhill.de'), 'abos' => $l->push_alle(), 'admins' => array_values(array_map('intval', (array)(cfg()['admin_ids'] ?? [])))] : ['an' => false]);   // (admins: Schummel-Verdacht geht an diese Konten)
         if ($aktion === 'push_weg') { $l->push_weg(array_slice(array_filter(array_map('intval', (array)($d['ids'] ?? []))), 0, 500)); json_antwort(200, ['ok' => true]); }
         json_antwort(400, ['fehler' => 'unbekannt']);
     }
@@ -1333,6 +1376,10 @@ function name_anfrage($ich, $d) {
 // Antwort:  {leiter, version, welt:{setzen,loeschen}, befehle:[{von,b}] (nur Weltrechner), ereignisse:[…], spieler:[…]}
 // Weltrechner ist nur der Server-Weltrechner (weltrechner/start.js) – nie das Gerät eines Spielers.
 const LEITER_SEK = 45;   // so lange gilt der Weltrechner nach seinem letzten Puls als „läuft“ (bei Last dauert ein Puls 15–30 s; einen Absturz erkennt der Wachhund am Herzschlag)
+const LEITER_SEK_LAST = 180;   // höchstens so lange, wenn der Server überlastet ist (6.10.: Puls bis 93 s)
+// Wie lange gilt die Leitung? Dauerte diese Anfrage lange (Server überlastet), kommt auch der nächste Puls später: doppelte Dauer,
+// mindestens LEITER_SEK, höchstens LEITER_SEK_LAST – sonst sähen alle Spieler unnötig „Verbindung wird wiederhergestellt …“
+function leiter_sek($dauer) { return (int)min(LEITER_SEK_LAST, max(LEITER_SEK, 2 * $dauer)); }
 const SAISON_SICHERUNG_SEK = 14 * 86400;   // die Sicherung vor einer neuen Welt-Saison bleibt 2 Wochen (Alexander 5.10.)
 // Eine Sicherung ist nur gültig, wenn sie ganz ist: Welt-Teile (Schlüssel + gültiges JSON) und Mitspieler vorhanden.
 function sicherung_gueltig($d) {
@@ -1341,6 +1388,17 @@ function sicherung_gueltig($d) {
     foreach ($d['spielstand'] as $z) { if (!isset($z['schluessel'], $z['wert']) || !is_string($z['wert']) || json_decode($z['wert']) === null && $z['wert'] !== 'null') return false; $keys[$z['schluessel']] = 1; }
     foreach ($d['bots'] as $z) if (!isset($z['bot_id']) || !array_key_exists('basen', $z) || !array_key_exists('zustand', $z)) return false;
     return isset($keys['openWaterIslandTroops'], $keys['openWaterKarte']);   // die Karte und die Truppen gehören immer dazu
+}
+// Konten-Teil einer Sicherung (6.10.): Spieler mit Nummer, Name und Passwort-Prüfwert; Spielstände/Mitspieler je Spieler (> 0)
+function konten_gueltig($k) {
+    if (!is_array($k) || !isset($k['spieler'], $k['staende'], $k['bots']) || !is_array($k['spieler']) || !$k['spieler'] || !is_array($k['staende']) || !is_array($k['bots'])) return false;
+    foreach ($k['spieler'] as $z) {
+        if (!is_array($z) || !((int)($z['id'] ?? 0) > 0) || !is_string($z['name'] ?? null) || !is_string($z['pw_hash'] ?? null) || $z['pw_hash'] === '') return false;
+        foreach (array_keys($z) as $c) if (!preg_match('/^[a-z_]{1,40}$/', (string)$c)) return false;   // (die Spaltennamen kommen ins SQL)
+    }
+    foreach ($k['staende'] as $z) if (!is_array($z) || !((int)($z['spieler_id'] ?? 0) > 0) || !is_string($z['schluessel'] ?? null) || !is_string($z['wert'] ?? null)) return false;
+    foreach ($k['bots'] as $z) if (!is_array($z) || !((int)($z['spieler_id'] ?? 0) > 0) || !isset($z['bot_id']) || !array_key_exists('basen', $z) || !array_key_exists('zustand', $z)) return false;
+    return true;
 }
 // Welt-Saison nach dem Zurückspielen (Alexander 5.10.): war in der Sicherung der Reset schon fällig (Termin vorbei oder Admin-Knopf),
 // würde der Weltrechner sofort wieder neu beginnen – das Zurückspielen wäre umsonst. Dann ist der Reset ANGEHALTEN (halt), bis der
@@ -1452,7 +1510,7 @@ function welt_puls($ich, $d) {
     $neu_leiter = false;
     if ($sys) {   // Weltrechner bleibt (oder übernimmt nach einem Neustart)
         $neu_leiter = !$bin_leiter;
-        $l->leiter_setzen(0, $tok, time() + LEITER_SEK);   // ab dem Ende der Anfrage (nicht ab ihrem Anfang: eine langsame wäre sonst schon fast abgelaufen)
+        $l->leiter_setzen(0, $tok, time() + leiter_sek(time() - (int)($_SERVER['REQUEST_TIME'] ?? time())));   // ab dem Ende der Anfrage (nicht ab ihrem Anfang: eine langsame wäre sonst schon fast abgelaufen)
         $bin_leiter = true;
     }
     $seit = (int)($d['seit'] ?? 0);
@@ -1466,7 +1524,7 @@ function welt_puls($ich, $d) {
     $antwort['neu_leiter'] = $neu_leiter;
     $antwort['version'] = $antwort['welt']['version'];
     $antwort['ereignisse'] = $sys ? [] : $l->ereignisse_abholen($uid);   // (schon verbuchte, noch nicht gesicherte überspringt das Handy)
-    $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), $sys);
+    $antwort['spieler'] = $l->spieler_liste((int)($d['spieler_seit'] ?? 0), $sys, !array_key_exists('spieler_alle', $d) || !empty($d['spieler_alle']));   // (auch der Weltrechner: die ganze Liste nur alle 10 s)
     if (!$sys && !empty($d['befehle'])) $antwort['befehle_ok'] = $befehle_ok;
     if (!$sys && isset($profil_ok)) $antwort['profil_ok'] = $profil_ok;
     $antwort['zeit'] = $jetzt;

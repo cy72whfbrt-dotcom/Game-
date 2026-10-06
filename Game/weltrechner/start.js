@@ -17,7 +17,7 @@
 //   - Wartung → sauber beenden (kein Absturz)
 'use strict';
 process.env.TZ = process.env.TZ || 'Europe/Berlin';   // Tage, Wochen-Event, Invasion, Drache: deutsche Zeit (wie bei den Spielern)
-const fs = require('fs'), path = require('path');
+const fs = require('fs'), path = require('path'), os = require('os');
 
 const ORDNER = __dirname, GAME = path.join(__dirname, '..');
 const URL_BASIS = String(process.env.OW_URL || '').replace(/\/?$/, '/');
@@ -27,6 +27,7 @@ const SPEICHER_MB = Math.min(600, parseInt(process.env.OW_SPEICHER_MB || '600', 
 const HERZ = path.join(ORDNER, 'herz.php');   // .php mit Sperre davor: im Browser nie lesbar (nur wachhund.php/admin.php lesen es)
 const SPERRE = '<?php http_response_code(404); exit; ?>\n';
 const START = Date.now();
+const NODE_MS = Math.round(process.uptime() * 1000);   // so lange brauchte Node selbst zum Starten (auf einem überlasteten Server: Sekunden)
 
 function log(...t) { console.log(new Date().toISOString(), ...t); }
 // Ende mit Grund – der Code sagt dem Wachhund, was los war: 0 = geplant (Wartung, läuft schon), sonst Absturz
@@ -41,12 +42,32 @@ process.on('unhandledRejection', e => log('Warnung (Promise):', e && e.message |
 
 // ===== Zahlen für Herzschlag und Admin-Seite =====
 let phase = 'start';   // 'start' (Welt holen und einlesen – darf bei großer Welt / langsamem Server lange dauern) | 'läuft'
-const stat = { pulseOk: 0, pulseFehler: 0, letzterPuls: 0, pulsMs: 0, fehlerMinute: [], prueferFehler: 0, prueferHintereinander: 0, };
+const stat = { pulseOk: 0, pulseFehler: 0, letzterPuls: 0, pulsMs: 0, fehlerMinute: [], prueferFehler: 0, prueferHintereinander: 0, geduld: 0 };
+// Dauer des Starts (6.10.): Node, Laden (Spielseite mit der ganzen Welt vom Server), Einlesen (Spiel starten), erster Puls –
+// ins Log, in den Herzschlag und so auf die Admin-Seite (der Wachhund merkt sich die letzten Starts)
+const startZeit = { node: NODE_MS };
+function startMerken(was) {
+    if (startZeit[was] !== undefined) return;
+    startZeit[was] = Date.now() - START;
+    if (startZeit.einlesen === undefined || startZeit.puls === undefined) return;
+    const s = ms => (ms / 1000).toFixed(1).replace('.', ',') + ' s', z = startZeit;
+    z.gesamt = NODE_MS + Math.max(z.einlesen, z.puls);
+    log('Start-Dauer: Node ' + s(z.node) + ' · Laden ' + s(z.laden) + ' · Einlesen ' + s(z.einlesen - z.laden) + ' · erster Puls ' + s(Math.max(0, z.puls - z.einlesen)) + ' · gesamt ' + s(z.gesamt) + ' (Server-Last ' + lastJeKern().toFixed(1).replace('.', ',') + ' je Kern)');
+}
+// Server-Last je Kern (1-Minuten-Mittel). Über 1,5 ist der Office-Server überlastet: dann kommt der Puls langsam, obwohl der
+// Weltrechner selbst gesund ist (5.10. 21:07 und 21:37: Last 30–53 bei 16 Kernen, Puls 93 s → unnötige Neustarts)
+const KERNE = Math.max(1, (os.cpus() || []).length);
+function lastJeKern() { try { return os.loadavg()[0] / KERNE; } catch (e) { return 0; } }
+const PULS_FRIST = 120000, PULS_FRIST_LAST = 600000, LAST_HOCH = 1.5;
+// Wie lange darf der Puls fehlen? Normal 2 Min.; bei überlastetem Server 10 Min. – dieser Prozess lebt ja (er prüft das hier
+// selbst) und speichert, sobald der Server antwortet. Ein Neustart würde den Server nur noch mehr belasten (ganze Welt laden).
+function pulsFrist(last) { return last > LAST_HOCH ? PULS_FRIST_LAST : PULS_FRIST; }
 function herzSchreiben(extra) {
     const m = process.memoryUsage();
     const h = Object.assign({ zeit: Date.now(), pid: process.pid, gestartet: START, phase, speicherMb: Math.round(m.rss / 1048576), heapMb: Math.round(m.heapUsed / 1048576), heapGesamtMb: Math.round(m.heapTotal / 1048576), externMb: Math.round(m.external / 1048576),
         grenzeMb: SPEICHER_MB, pulseOk: stat.pulseOk, pulseFehler: stat.pulseFehler, letzterPuls: stat.letzterPuls, pulsMs: stat.pulsMs,
-        fehlerProMinute: stat.fehlerMinute.length, prueferFehler: stat.prueferFehler, befehle: befehleGezaehlt(), gcLang: stat.gcLang || 0, push: stat.push || null, pauseMaxMs: stat.pauseMax, pauseStundeMs: stat.pauseMaxStunde }, extra || {});
+        fehlerProMinute: stat.fehlerMinute.length, prueferFehler: stat.prueferFehler, befehle: befehleGezaehlt(), gcLang: stat.gcLang || 0, push: stat.push || null, pauseMaxMs: stat.pauseMax, pauseStundeMs: stat.pauseMaxStunde,
+        startDauer: startZeit, geduld: stat.geduld }, extra || {});
     const neu = path.join(ORDNER, 'herz_neu.php'); fs.writeFileSync(neu, SPERRE + JSON.stringify(h)); fs.renameSync(neu, HERZ);
 }
 // Befehle zählt welt.js beim Lesen der Antwort (vorher hier ein zweites Mal die ganze Antwort gelesen – je Puls)
@@ -74,16 +95,43 @@ setInterval(() => {
     if (rss > SPEICHER_MB * .8 && typeof global.gc === 'function' && (Date.now() - gcZuletzt >= 60000 || rss > SPEICHER_MB)) { gcZuletzt = Date.now(); global.gc(); rss = process.memoryUsage().rss / 1048576; stat.aufgeraeumt = (stat.aufgeraeumt || 0) + 1; }
     if (rss > SPEICHER_MB) ende(3, 'Speicher voll: ' + Math.round(rss) + ' MB (Grenze ' + SPEICHER_MB + ' MB)');
     const jetzt = Date.now(); stat.fehlerMinute = stat.fehlerMinute.filter(t => jetzt - t < 60000);
-    if (stat.letzterPuls && jetzt - stat.letzterPuls > 120000) ende(7, 'seit 2 Minuten kein Puls beim Server angekommen');   // (Code 7: der Server antwortet nicht – zählt beim Wachhund nicht als Absturz)
+    pulsPruefen(jetzt);
     herzSchreiben();
 }, 5000).unref();
+// Kommt der Puls noch beim Server an? (alle 5 s) Frist siehe pulsFrist – Code 7: der Server antwortet nicht (zählt beim Wachhund
+// nicht als Absturz, er versucht es mit Pause wieder)
+function pulsPruefen(jetzt) {
+    if (stat.letzterPuls && jetzt - stat.letzterPuls > PULS_FRIST) {
+        const last = lastJeKern(), frist = pulsFrist(last), ohne = Math.round((jetzt - stat.letzterPuls) / 1000);
+        if (jetzt - stat.letzterPuls > frist) return ende(7, 'seit ' + ohne + ' s kein Puls beim Server angekommen (Server-Last ' + last.toFixed(1) + ' je Kern)');
+        if (!stat.geduld) { stat.geduld = jetzt; log('Server überlastet (Last ' + last.toFixed(1) + ' je Kern, ' + KERNE + ' Kerne): seit ' + ohne + ' s kein Puls – warte bis ' + Math.round(frist / 60000) + ' Min. statt neu zu starten'); }
+    } else if (stat.geduld) { log('Puls kommt wieder an (nach ' + Math.round((jetzt - stat.geduld) / 1000) + ' s Geduld)'); stat.geduld = 0; }
+}
 // ===== Auffälligkeiten (Schummel-Schutz in spiel.js → WELT.warnungen) → schummel.php → Admin-Seite =====
 // Höchstens die letzten 200; gleiche (selber Spieler, selbe Art, gleicher Text bis auf die Zahlen, innerhalb einer
 // Stunde) werden zusammengefasst (Anzahl, letzter Text).
 // Die Datei überlebt Neustarts (wird beim Start gelesen) und ist wie herz.php gesperrt (im Browser 404).
 const SCHUMMEL = path.join(ORDNER, 'schummel.php');
 let auffaellig = [];
-try { const t = fs.readFileSync(SCHUMMEL, 'utf8'); const v = JSON.parse(t.slice(t.indexOf('{'))); if (Array.isArray(v.liste)) auffaellig = v.liste.slice(0, 200); } catch (e) {}
+// Schummel-Verdacht (6.10., Alexander): sammeln sich bei einem Spieler VERDACHT_AB Auffälligkeiten in einer Stunde, bekommen die
+// Admin-Konten eine Handy-Nachricht (push.js adminMelden) – höchstens 1× pro Spieler und Stunde. Nur eine Nachricht: der Spieler
+// wird nie automatisch gebremst. „gemeldet“ steht mit in schummel.php (übersteht Neustarts).
+const VERDACHT_AB = 5, STUNDE = 3600000;
+const haeufung = new Map();    // uid → Zeiten seiner Auffälligkeiten (letzte Stunde)
+let gemeldet = {};             // uid → wann zuletzt gemeldet
+const adminOffen = [];         // Nachrichten an die Admins, bis der Melder (push.js) läuft
+let pushMelder = null;
+try { const t = fs.readFileSync(SCHUMMEL, 'utf8'); const v = JSON.parse(t.slice(t.indexOf('{'))); if (Array.isArray(v.liste)) auffaellig = v.liste.slice(0, 200); if (v.gemeldet && typeof v.gemeldet === 'object') gemeldet = v.gemeldet; } catch (e) {}
+function verdachtPruefen(uid, jetzt) {
+    const z = (haeufung.get(uid) || []).filter(t => jetzt - t < STUNDE).slice(-200); haeufung.set(uid, z);   // (höchstens 200 Zeiten je Spieler)
+    if (z.length < VERDACHT_AB || jetzt - (+gemeldet[uid] || 0) < STUNDE) return;
+    gemeldet[uid] = jetzt;
+    const arten = [...new Set(auffaellig.filter(x => x.uid === uid && jetzt - x.letzte < STUNDE).map(x => x.was))].slice(0, 5).join(', ');
+    let name = 'Spieler ' + uid; try { const m = spielFenster && spielFenster.WELT && spielFenster.WELT.menschen['u' + uid]; if (m && m.name) name = String(m.name).slice(0, 30); } catch (e) {}
+    const daten = { titel: 'Schummel-Verdacht', text: name + ': ' + z.length + ' Auffälligkeiten in der letzten Stunde' + (arten ? ' (' + arten + ')' : '') + '. Nur zur Info – nichts wurde gebremst. Mehr auf der Admin-Seite unter „Auffälligkeiten“.' };
+    log('Schummel-Verdacht an die Admins: ' + daten.text);
+    if (pushMelder) pushMelder.adminMelden(daten); else adminOffen.push(daten);
+}
 const muster = t => String(t || '').replace(/[0-9][0-9.,]*([\s ]*(Tsd|Mio|Mrd|Bio|Brd|Trill|Trd|Quadr)\.)?/g, '#').replace(/#\.+/g, '#');
 function auffaelligSammeln(neu) {
     if (!neu || !neu.length) return;
@@ -93,11 +141,15 @@ function auffaelligSammeln(neu) {
         const gleich = auffaellig.find(x => x.uid === w.uid && x.was === w.was && muster(x.text) === m && w.zeit - x.letzte < 3600000);
         if (gleich) { gleich.anzahl++; gleich.letzte = w.zeit; gleich.text = text; gleich.wert = Math.max(gleich.wert || 0, w.wert || 0); }
         else auffaellig.push({ uid: w.uid, was: String(w.was).slice(0, 20), text, wert: w.wert || 0, erste: w.zeit, letzte: w.zeit, anzahl: 1 });
+        (haeufung.get(w.uid) || haeufung.set(w.uid, []).get(w.uid)).push(w.zeit);
     }
+    const jetzt = Date.now();
+    for (const uid of new Set(neu.map(w => w && w.uid).filter(u => u > 0))) verdachtPruefen(uid, jetzt);
+    for (const u in gemeldet) if (jetzt - gemeldet[u] >= STUNDE) delete gemeldet[u];
     auffaellig.sort((a, b) => b.letzte - a.letzte);
     const jeSpieler = {};   // höchstens 20 Einträge je Spieler – einer allein kann die Liste nicht fluten und andere verdrängen
     auffaellig = auffaellig.filter(x => (jeSpieler[x.uid] = (jeSpieler[x.uid] || 0) + 1) <= 20).slice(0, 200);
-    try { const neuD = path.join(ORDNER, 'schummel_neu.php'); fs.writeFileSync(neuD, SPERRE + JSON.stringify({ zeit: Date.now(), liste: auffaellig })); fs.renameSync(neuD, SCHUMMEL); }
+    try { const neuD = path.join(ORDNER, 'schummel_neu.php'); fs.writeFileSync(neuD, SPERRE + JSON.stringify({ zeit: Date.now(), liste: auffaellig, gemeldet })); fs.renameSync(neuD, SCHUMMEL); }
     catch (e) { log('Warnung: schummel.php nicht schreibbar (' + e.message + ')'); }
 }
 let spielFenster = null;   // (los) das Fenster des Spiels – daraus holt der Takt unten die Auffälligkeiten
@@ -111,6 +163,8 @@ function fehler(t) {
 }
 
 // ===== Mit dem Server reden: immer mit Schlüssel, nie länger als 60 s warten (die Spielseite beim Start: 5 Min.) =====
+// Bei überlastetem Server (6.10.) 2 Min.: eine abgebrochene Anfrage rechnet der Server trotzdem zu Ende, und der Weltrechner schickt
+// danach alles nochmal – doppelte Arbeit genau dann, wenn der Server am wenigsten Zeit hat.
 // Bei Last beim Hoster dauert ein Puls 15–30 s. Stand Node selbst (großer Rechen-Schritt), kommt die Uhr zu spät dran – die
 // Antwort liegt dann oft schon bereit: einmal 2 s Nachfrist, statt sie als Fehler zu verwerfen.
 function zeitGrenze(ms) {
@@ -128,7 +182,7 @@ async function holen(url, opt) {
     let body = opt.body; if (body && typeof body !== 'string') body = Buffer.from(body.buffer ? new Uint8Array(body.buffer, body.byteOffset, body.byteLength) : body);
     const ziel = new URL(url, URL_BASIS + 'spiel.php').href;
     if (!ziel.startsWith(URL_BASIS)) throw new Error('fremde Adresse – der Schlüssel geht nur an den eigenen Server');
-    const zg = zeitGrenze(opt.zeit || 60000);
+    const zg = zeitGrenze(opt.zeit || (lastJeKern() > LAST_HOCH ? 120000 : 60000));
     try {
         const r = await fetch(ziel, { method: opt.method || 'GET', headers: kopf, body, redirect: 'error', signal: zg.signal });   // (nie einer Umleitung folgen – der Schlüssel ginge mit)
         // Inhalt noch unter der Zeitgrenze lesen: hängt der Server mitten in der Antwort, bricht auch das nach der Frist ab
@@ -192,6 +246,7 @@ async function los() {
     if (r.status === 409) ende(0, 'es läuft schon ein Weltrechner');
     if (!r.ok) ende(5, 'Spielseite: HTTP ' + r.status);
     let html; try { html = await r.text(); } catch (e) { ende(8, 'Server zu langsam beim Start (Welt nicht ganz angekommen): ' + (e && e.message || e)); }
+    startMerken('laden');
     if (!html.includes('"system":true')) ende(5, 'Spielseite ohne Weltrechner-Zugang (Schlüssel falsch?)');
     // Grundlinie für den Prüfer: so groß ist die Welt in der Datenbank (bevor das Spiel irgendetwas tut)
     let grundlinie = null;
@@ -242,7 +297,7 @@ async function los() {
         try {
             const antwort = await holen(url, opt);
             if (istPuls) {
-                if (antwort.ok) { stat.pulseOk++; stat.letzterPuls = Date.now(); stat.pulsMs = Date.now() - t0; }
+                if (antwort.ok) { stat.pulseOk++; stat.letzterPuls = Date.now(); stat.pulsMs = Date.now() - t0; startMerken('puls'); }
                 else stat.pulseFehler++;
             }
             return antwort;
@@ -292,13 +347,14 @@ async function los() {
     log('Welt geladen: ' + geladen + ' Basen in Besitz');
     log('Spiel läuft – ' + w.eval('BOT_DEFS.length') + ' Mitspieler, Welt-Version ' + w.WELT.version);
 
-    stat.letzterPuls = Date.now(); phase = 'läuft';
+    stat.letzterPuls = Date.now(); phase = 'läuft'; startMerken('einlesen');
     herzSchreiben();
 
     // Handy-Benachrichtigungen (push.js): alle 5 s schauen, ob ein echter Spieler angegriffen wird, eine Basis verliert
     // oder ein Späher kommt – und ihm (nur wenn er nicht im Spiel ist) eine Nachricht aufs Handy schicken
     const push = require('./push.js').melder(holen, log);
-    stat.push = push.stat;
+    stat.push = push.stat; pushMelder = push;
+    for (const d of adminOffen.splice(0)) push.adminMelden(d);
     setInterval(() => push.runde(w), 5000).unref();
 }
 los().catch(e => ende(5, 'Start fehlgeschlagen: ' + (e && e.stack || e)));

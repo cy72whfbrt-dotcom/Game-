@@ -66,7 +66,7 @@ function speichern_anfrage() {
 
 // ===== Handy-Benachrichtigungen (Web-Push) =====
 // Spieler (nur mit Login):  push_info → {an, schluessel}   push_an {abo:{endpoint, keys:{p256dh, auth}}}   push_ab {endpoint}
-// Weltrechner (nur mit X-Weltrechner-Schlüssel): push_abos → alle Abos + VAPID-Schlüssel   push_weg {ids} (abgelaufene Abos)
+// Weltrechner (nur mit X-Weltrechner-Schlüssel): push_abos → alle Abos + VAPID-Schlüssel + Admin-Nummern   push_weg {ids} (abgelaufene Abos)
 // Gesendet wird vom Weltrechner (weltrechner/push.js).
 // VAPID-Schlüssel: aus config.php (vapid_public/vapid_private), sonst erzeugt der Server sie EINMAL selbst und legt sie in
 // weltrechner/vapid.php ab (von außen 404, nie im Git, hochladen.sh überschreibt sie nie) – sie ändern sich also nie.
@@ -119,7 +119,7 @@ function push_anfrage($ich, $d, $aktion) {
     $l = lager();
     $s = push_schluessel();
     if (!empty($ich['system'])) {   // der Weltrechner
-        if ($aktion === 'push_abos') json_antwort(200, $s ? ['an' => true, 'public' => $s['public'], 'private' => $s['private'], 'sub' => (string)(cfg()['spiel_url'] ?? 'mailto:admin@hobbitonhill.de'), 'abos' => $l->push_alle()] : ['an' => false]);
+        if ($aktion === 'push_abos') json_antwort(200, $s ? ['an' => true, 'public' => $s['public'], 'private' => $s['private'], 'sub' => (string)(cfg()['spiel_url'] ?? 'mailto:admin@hobbitonhill.de'), 'abos' => $l->push_alle(), 'admins' => array_values(array_map('intval', (array)(cfg()['admin_ids'] ?? [])))] : ['an' => false]);   // (admins: Schummel-Verdacht geht an diese Konten)
         if ($aktion === 'push_weg') { $l->push_weg(array_slice(array_filter(array_map('intval', (array)($d['ids'] ?? []))), 0, 500)); json_antwort(200, ['ok' => true]); }
         json_antwort(400, ['fehler' => 'unbekannt']);
     }

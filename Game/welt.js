@@ -319,6 +319,9 @@
     // ===================================================================================================
     const PULS_MS = 2000;
     let pulsLaeuft = false, letztesProfil = '', profilAt = 0, pulsStart = 0, gleichNochmal = false, pulsFehler = false, spielerAlleAt = 0;
+    // (Weltrechner) Office-Server überlastet (6.10.): nach einem langsamen Puls (über 8 s) eine Pause (halbe Puls-Dauer, höchstens
+    // 20 s) bevor der nächste regelmäßige kommt – neue Befehle der Spieler holt er trotzdem sofort ab
+    let pulsDauer = 0, ruheBis = 0;
     const basis = {};   // (Weltrechner) Stand der Mitspieler-Töpfe der anderen Menschen beim letzten Puls → Unterschiede = Nachrichten
 
     function topf(id) {
@@ -386,9 +389,9 @@
         pulsLaeuft = true; pulsStart = Date.now(); pulsFehler = false;
         let neuGesendet = null;
         const anfrage = { aktion: 'puls', token: S.token, seit: W.version, spieler_seit: W.spielerSeit };
-        if (!SYSTEM) { anfrage.sicht_v = W.sichtV;                            // 3B: welche Sicht (Nebel auf dem Server) ich schon habe
-            const alle = pulsStart - spielerAlleAt > 10000; anfrage.spieler_alle = alle ? 1 : 0; if (alle) spielerAlleAt = pulsStart; }   // ganze Spieler-Liste (Namen, online) nur alle 10 s, sonst nur Änderungen
-        else { if (Object.keys(W.sichtRaus).length) { anfrage.sicht = W.sichtRaus; W.sichtRaus = {}; }   // (Weltrechner) neue Sicht einzelner Spieler
+        if (!SYSTEM) anfrage.sicht_v = W.sichtV;                              // 3B: welche Sicht (Nebel auf dem Server) ich schon habe
+        { const alle = pulsStart - spielerAlleAt > 10000; anfrage.spieler_alle = alle ? 1 : 0; if (alle) spielerAlleAt = pulsStart; }   // ganze Spieler-Liste (Namen, online) nur alle 10 s, sonst nur Änderungen (auch der Weltrechner, 6.10.)
+        if (SYSTEM) { if (Object.keys(W.sichtRaus).length) { anfrage.sicht = W.sichtRaus; W.sichtRaus = {}; }   // (Weltrechner) neue Sicht einzelner Spieler
             if (Object.keys(W.armeeSichtRaus).length) { anfrage.armee_sicht = W.armeeSichtRaus; W.armeeSichtRaus = {}; }
             if (W.sicherungBitte) anfrage.sicherung = 1; }   // (Welt-Saison: vor dem Reset eine Sicherung der Welt beim Server)
         try {
@@ -447,6 +450,7 @@
             console.warn('Welt-Puls:', e); pulsFehler = true;
         } finally {
             pulsLaeuft = false;
+            if (SYSTEM) { pulsDauer = Date.now() - pulsStart; ruheBis = pulsDauer > 8000 ? Date.now() + Math.min(20000, pulsDauer / 2) : 0; }
             if (gleichNochmal) { gleichNochmal = false; setTimeout(puls, 60); }   // (Weltrechner) Befehle ausgeführt: Ergebnis gleich speichern, nicht erst in 2 s
             else if (W.befehle.length && !S.gestoppt && !pulsFehler) setTimeout(puls, 150);   // noch Befehle übrig (z. B. Mehrfachangriff auf 100 Ziele): gleich weiter – nach einem Fehler nicht (sonst ~7 Anfragen/s im Funkloch)
         }
@@ -536,13 +540,18 @@
         // erst, wenn alle Skripte da sind (bündnis.js, haendler.js, aufbau.js hängen sich an die Nachrichten) – sonst gingen die
         // Nachrichten des ersten Pulses verloren
         if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', W.start, { once: true }); return; }
-        puls(); setInterval(puls, PULS_MS); document.addEventListener('visibilitychange', () => { if (!document.hidden) puls(); });
+        puls(); setInterval(() => { if (!SYSTEM || Date.now() >= ruheBis) puls(); }, PULS_MS); document.addEventListener('visibilitychange', () => { if (!document.hidden) puls(); });
         // (Weltrechner) jede Sekunde kurz nachsehen, ob Befehle da sind – dann sofort rechnen, statt bis zum nächsten Puls zu warten
-        // (vorher alle 0,3 s: auf dem geteilten Server zu viele Anfragen; ein Befehl kommt so höchstens ~0,7 s später an)
+        // (vorher alle 0,3 s: auf dem geteilten Server zu viele Anfragen; ein Befehl kommt so höchstens ~0,7 s später an).
+        // Immer nur EINE Nachfrage gleichzeitig (6.10.: bei Last dauerte sie 20–30 s und es liefen bis zu 30 nebeneinander), und nach
+        // einem langsamen Puls nur alle 5 s.
+        let nachfrage = false, nachfrageAt = 0;
         if (SYSTEM) setInterval(async () => {
-            if (pulsLaeuft || S.gestoppt || !W.leiter || Date.now() - pulsStart < 300) return;
+            if (nachfrage || pulsLaeuft || S.gestoppt || !W.leiter || Date.now() - pulsStart < 300 || (pulsDauer > 8000 && Date.now() - nachfrageAt < 5000)) return;
+            nachfrage = true; nachfrageAt = Date.now();
             try { const r = await fetch('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, body: J({ aktion: 'befehle_da' }), credentials: 'same-origin', cache: 'no-store' });
                 if (r.ok && (await r.json()).offen > W.befehlFertig.size + W.befehlWartet.size) puls(); } catch (e) {}   // mehr offen, als ich schon ausgeführt habe (oder warten lasse)
+            finally { nachfrage = false; }
         }, 1000);
     };
 })();

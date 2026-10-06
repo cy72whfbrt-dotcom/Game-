@@ -2,7 +2,7 @@
 
 // ===== MySQL =====
 class MysqlLager {
-    const TABELLEN_STAND = '2026-10-05s';   // (siehe Konstruktor)
+    const TABELLEN_STAND = '2026-10-06t';   // (siehe Konstruktor)
     private $db;
     // Transaktionen (auch verschachtelt): was zusammengehört, gilt ganz oder gar nicht – stirbt PHP mittendrin, nimmt die Datenbank
     // alles zurück (z. B. Welt + Nachrichten + Quittungen des Weltrechners, Spielstand + „verbucht“ eines Spielers)
@@ -140,7 +140,7 @@ class MysqlLager {
         foreach (['ow_befehle' => ['cid' => 'VARCHAR(24) NULL', 'fertig' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0', 'art' => 'VARCHAR(16) NULL', 'fertig_v' => 'BIGINT UNSIGNED NULL', 'ok' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0', 'nach' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
                   'ow_ereignisse' => ['mid' => 'VARCHAR(24) NULL', 'abgeholt' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0'],
                   'ow_push' => ['sitzung' => "CHAR(64) NOT NULL DEFAULT ''"],
-                  'ow_sicherungen' => ['behalten_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0']] as $tab => $spalten) {   // (behalten_bis: die Saison-Sicherung bleibt 2 Wochen)   // (sitzung: mit welchem Login das Gerät eingetragen ist – Abmelden trägt es aus)
+                  'ow_sicherungen' => ['behalten_bis' => 'INT UNSIGNED NOT NULL DEFAULT 0', 'konten' => 'TINYINT UNSIGNED NOT NULL DEFAULT 0']] as $tab => $spalten) {   // (behalten_bis: die Saison-Sicherung bleibt 2 Wochen; konten: mit Spielerkonten, einmal am Tag)   // (sitzung: mit welchem Login das Gerät eingetragen ist – Abmelden trägt es aus)
             $q = $this->db->prepare("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?"); $q->execute([$tab]);
             $hat = $q->fetchAll(PDO::FETCH_COLUMN);
             foreach ($spalten as $sp => $typ) if (!in_array($sp, $hat, true)) $this->db->exec("ALTER TABLE $tab ADD COLUMN $sp $typ");

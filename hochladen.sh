@@ -4,22 +4,91 @@
 # NUR nach Alexanders Ja benutzen (Regel in LIESMICH.md).
 # Zugangsdaten nur aus den Umgebungsvariablen: OFFICE_USER, OFFICE_PASS, DB_USER, DB_PASS (DB_HOST, DB_NAME optional).
 # config.php (Datenbank-Zugang) wird dabei aus den Variablen erzeugt – sie liegt nie im Git.
-set -e
-cd "$(dirname "$0")"
+# Robust (6.10.; vorher brach spiel.php 2× mit „curl: (35) Connection reset by peer“ ab): jede Anfrage hat Zeitgrenzen und wird
+# bis zu 3× wiederholt (Pausen 5/15/30 s). Jede hochgeladene Datei wird danach über den Editor zurückgelesen und mit dem lokalen
+# Stand verglichen (anders → nochmal hochladen). Erst wenn alles gleich ist: Wartung aus – und geprüft, dass wartung.txt weg ist.
+# Klappt etwas auch nach 3 Wiederholungen nicht: große Meldung „WARTUNG NOCH AN – …“, Ende mit Fehler (einfach neu starten).
+# Zum Testen umleitbar (tests/browser/welt_hochladen_test.js, nachgebauter Editor): OW_OFFICE (statt https://office.hobbitonhill.de),
+# OW_PAUSEN („5 15 30“), OW_WARTUNG_PAUSE (10 s), OW_MAXZEIT (300 s je Anfrage), OW_VERBINDEN (20 s Verbindungsaufbau).
+cd "$(dirname "$0")" || exit 1
+O=${OW_OFFICE:-https://office.hobbitonhill.de}
 B=/var/www/vhosts/hosting126306.a2feb.netcup.net/httpdocs/office.hobbitonhill.de/html/725/klassenarbeit_GR4
-E=https://office.hobbitonhill.de/html/editor.php
-U=https://office.hobbitonhill.de/html/725/klassenarbeit_GR4/Game
+E=$O/html/editor.php
+U=$O/html/725/klassenarbeit_GR4/Game
+read -r -a PAUSEN <<< "${OW_PAUSEN:-5 15 30}"
 T=$(mktemp -d)
 trap 'rm -rf "$T"' EXIT
+umask 077
+WARTUNG=0   # 1: wartung.txt liegt auf dem Server
+
+# Ende mit Fehler – bei eingeschalteter Wartung unübersehbar (das Spiel bleibt zu, bis das Hochladen ganz geklappt hat)
+abbruch() {
+  if [ "$WARTUNG" = 1 ]; then
+    echo; echo "####################################################################"
+    echo "  WARTUNG NOCH AN – $1"
+    echo "  ./hochladen.sh erneut starten"
+    echo "####################################################################"
+  else echo "FEHLER: $1 – Wartung nicht eingeschaltet, nichts hochgeladen"; fi
+  exit 1
+}
+# nochmal <befehl…>: klappt der Befehl nicht, bis zu 3 Wiederholungen mit Pause
+nochmal() {
+  "$@" && return 0
+  local p
+  for p in "${PAUSEN[@]}"; do echo "  … nicht geklappt, neuer Versuch in $p s" >&2; sleep "$p"; "$@" && return 0; done
+  return 1
+}
+c() { curl -sS --connect-timeout "${OW_VERBINDEN:-20}" --max-time "${OW_MAXZEIT:-300}" "$@"; }
+# ed <pfad> [curl-args…]: Editor des Hosters (Inhalt bzw. Ordnerliste) · ed_tun: Aktion, Erfolg nur bei Antwort 2xx/3xx
+ed() { local pfad=$1; shift; c -b "$T/jar" "$E?h=48&w=138&sid=$SID&path=$B$pfad&charset=&lines=" "$@"; }
+ed_tun() { local code; code=$(ed "$@" -o /dev/null -w '%{http_code}') || return 1
+  case "$code" in 2*|3*) return 0;; esac; echo "  Editor antwortet $code" >&2; return 1; }
+# ls_ordner <pfad>: Namen in einem Ordner auf dem Server (Ergebnis in $T/liste; Fehler, wenn nicht lesbar)
+ls_ordner() { c -b "$T/jar" "$E?h=48&w=138&sid=$SID&path=$B$1" -o "$T/ls.html" || return 1
+  grep -o 'path=[^"&]*' "$T/ls.html" | sed "s#.*klassenarbeit_GR4$1/##" | grep -v '^\.\.$\|^path=' | sort -u > "$T/liste"; }
+# ed_lesen <datei unter Game/> <ziel>: Inhalt aus dem Textfeld des Editors (wie werkzeuge/nach_hochladen.sh)
+ed_lesen() { ed "/Game/$1" -o "$T/roh.html" || return 1
+  php -r '$s = file_get_contents($argv[1]); $a = stripos($s, "<textarea"); $e = strripos($s, "</textarea>"); if ($a === false || $e === false) exit(1);
+    $a = strpos($s, ">", $a); if ($a === false || $a > $e) exit(1);
+    file_put_contents($argv[2], html_entity_decode(substr($s, $a + 1, $e - $a - 1), ENT_QUOTES | ENT_HTML5, "UTF-8"));' "$T/roh.html" "$2"; }
+# Vergleich mit dem Editor: Zeilenenden und Leerzeilen am Anfang/Ende zählen nicht (so zeigt ihn das Textfeld) – alles andere schon
+text_gleich() { php -r '$n = function ($f) { return trim(str_replace("\r", "", file_get_contents($f)), "\n"); }; exit($n($argv[1]) === $n($argv[2]) ? 0 : 1);' "$1" "$2"; }
+url_holen() { c -H 'Cache-Control: no-cache' "$U/$1?v=$RANDOM$RANDOM" -o "$T/url"; }
+url_gleich() { url_holen "$1" && [ "$(sha1sum < "$2")" = "$(sha1sum < "$T/url")" ]; }
+# gleich <datei> <lokale quelle>: ist die Datei genau so auf dem Server? PHP nur über den Editor (über die Adresse liefe sie),
+# Bilder über die Adresse (Textfeld zeigt keine Bytes), alles andere über den Editor – zeigt er sie anders, zählt die Adresse
+gleich() {
+  case "$1" in
+    *.png|*.jpg|*.jpeg|*.gif|*.ico|*.webp|*.woff|*.woff2) nochmal url_gleich "$1" "$2"; return;;
+  esac
+  if nochmal ed_lesen "$1" "$T/zurueck" && text_gleich "$2" "$T/zurueck"; then return 0; fi
+  case "$1" in *.php) return 1;; esac
+  nochmal url_gleich "$1" "$2"
+}
+# hoch <datei unter Game/> [lokale quelle]: Ordner anlegen, hochladen, zurücklesen + vergleichen; anders angekommen → nochmal
+hoch() {
+  local f=$1 q=${2:-Game/$1} dir i
+  dir=$(dirname "$f"); [ "$dir" = . ] && dir="" || dir="/$dir"
+  for i in 0 "${!PAUSEN[@]}"; do
+    [ -z "$dir" ] || nochmal ed_tun /Game -F text= -F "file=${dir#/}" -F "button=new folder" || return 1
+    nochmal ed_tun "/Game$dir" -F "file=@$q;filename=$(basename "$f")" -F "button=upload" || return 1
+    if gleich "$f" "$q"; then echo "$f hochgeladen + geprüft"; return 0; fi
+    echo "  $f ist auf dem Server anders als hier – nochmal hochladen"
+  done
+  return 1
+}
+nur_server() {   # entstehen nur auf dem Server (Weltrechner) – nie hochladen, nie löschen
+  case "$1" in weltrechner/herz*.php|weltrechner/log*.php|weltrechner/zustand*.php|weltrechner/sperre.php|weltrechner/crontab*.php|weltrechner/schummel*.php|weltrechner/vapid*.php) return 0;; esac
+  return 1
+}
 
 # 1) Anmelden
 # (Zugangsdaten über eine Datei statt in der Befehlszeile – dort wären sie in der Prozessliste sichtbar)
-umask 077; printf 'name=%s&pw=%s&login=login' "$(php -r 'echo rawurlencode(getenv("OFFICE_USER"));')" "$(php -r 'echo rawurlencode(getenv("OFFICE_PASS"));')" > $T/anmelden
-curl -sS -c $T/jar -b $T/jar -L 'https://office.hobbitonhill.de/index.php?' --data-binary @$T/anmelden -o $T/login.html; rm -f $T/anmelden
-SID=$(grep -o 'sid=[a-f0-9]*' $T/login.html | head -1 | cut -d= -f2)
-[ -n "$SID" ] || { echo "Office-Login fehlgeschlagen"; exit 1; }
-ed() { local pfad=$1; shift; curl -sS -b $T/jar "$E?h=48&w=138&sid=$SID&path=$B$pfad&charset=&lines=" "$@"; }
-ls_ordner() { curl -sS -b $T/jar "$E?h=48&w=138&sid=$SID&path=$B$1" | grep -o 'path=[^"&]*' | sed "s#.*klassenarbeit_GR4$1/##" | grep -v '^\.\.$\|^path=' | sort -u; }
+printf 'name=%s&pw=%s&login=login' "$(php -r 'echo rawurlencode(getenv("OFFICE_USER"));')" "$(php -r 'echo rawurlencode(getenv("OFFICE_PASS"));')" > "$T/anmelden"
+anmelden() { c -c "$T/jar" -b "$T/jar" -L "$O/index.php?" --data-binary @"$T/anmelden" -o "$T/login.html" && grep -q 'sid=[a-f0-9]' "$T/login.html"; }
+nochmal anmelden; rm -f "$T/anmelden"
+SID=$(grep -o 'sid=[a-f0-9]*' "$T/login.html" 2>/dev/null | head -1 | cut -d= -f2)
+[ -n "$SID" ] || abbruch "Office-Login fehlgeschlagen"
 
 # 2) config.php aus den Umgebungsvariablen
 if [ -n "$DB_PASS" ]; then
@@ -35,49 +104,45 @@ fi
 
 # 3) Ordner Game anlegen (falls weg), WARTUNG an (niemand kommt ins Spiel, Spielende werden mit "Wartung" rausgebeten),
 #    dann alle Dateien hochladen
-werkzeuge/spiel_bauen.sh || { echo "spiel.js/bots.js/buendnis.js/baukunst.js/spiel.php/server.php lassen sich nicht zusammensetzen – nichts hochgeladen"; exit 1; }   # (bearbeitet wird in Game/spiel/, bots/, buendnis/, baukunst/, spielseite/, server/)
-ed "" -F text= -F file=Game -F "button=new folder" -o /dev/null
+werkzeuge/spiel_bauen.sh || abbruch "spiel.js/bots.js/buendnis.js/baukunst.js/spiel.php/server.php lassen sich nicht zusammensetzen"   # (bearbeitet wird in Game/spiel/, bots/, buendnis/, baukunst/, spielseite/, server/)
+nochmal ed_tun "" -F text= -F file=Game -F "button=new folder" || abbruch "Ordner Game nicht anlegbar"
 # Vorher (Spiel läuft noch): welche Dateien sind anders als auf dem Server? Nur die kommen gleich während der Wartung hoch –
-# so ist die Wartung (und die Pause des Weltrechners) kurz. PHP-Dateien lassen sich nicht vergleichen (sie laufen): immer hoch.
-# ALLES=1 ./hochladen.sh lädt wie früher alles hoch.
+# so ist die Wartung (und die Pause des Weltrechners) kurz. PHP-Dateien lassen sich so nicht vergleichen (sie laufen): immer hoch.
+# ALLES=1 ./hochladen.sh lädt wie früher alles hoch. (Nicht erreichbar = anders: dann kommt sie eben hoch.)
 AENDERN=""
 for f in $(cd Game && find . -type f | sed 's#^\./##' | sort); do
   [ "$f" = config.php ] && continue
-  case "$f" in weltrechner/herz*.php|weltrechner/log*.php|weltrechner/zustand*.php|weltrechner/sperre.php|weltrechner/crontab*.php|weltrechner/schummel*.php|weltrechner/vapid*.php) continue;; esac
+  nur_server "$f" && continue
   case "$f" in spiel/*|bots/*|buendnis/*|baukunst/*|spielseite/*|server/*) continue;; esac   # (die Teile von spiel.js, bots.js, buendnis.js, baukunst.js, spiel.php, server.php – auf den Server kommen nur die zusammengesetzten Dateien)
   case "$f" in *.php) AENDERN="$AENDERN $f"; continue;; esac
-  if [ -z "$ALLES" ] && [ "$(sha1sum < "Game/$f")" = "$(curl -sS "$U/$f" 2>/dev/null | sha1sum)" ]; then continue; fi
+  if [ -z "$ALLES" ] && { url_holen "$f" 2>/dev/null || url_holen "$f" 2>/dev/null; } && [ "$(sha1sum < "Game/$f")" = "$(sha1sum < "$T/url")" ]; then continue; fi   # (abgebrochen: gleich noch einmal)
   AENDERN="$AENDERN $f"
 done
 echo "Neu hochzuladen:$AENDERN"
-echo "Wartung seit $(date '+%d.%m.%Y %H:%M') (hochladen.sh)" > $T/wartung.txt
-ed /Game -F "file=@$T/wartung.txt" -F "button=upload" -o /dev/null -w "Wartung an: %{http_code}\n"
-sleep 10  # die laufenden Spiele merken es beim nächsten Puls (alle 2 s) und sichern noch
-for f in $AENDERN; do
-  [ "$f" = config.php ] && continue
-  case "$f" in weltrechner/herz*.php|weltrechner/log*.php|weltrechner/zustand*.php|weltrechner/sperre.php|weltrechner/crontab*.php|weltrechner/schummel*.php|weltrechner/vapid*.php) continue;; esac   # entstehen nur auf dem Server
-  dir=$(dirname "$f"); [ "$dir" = . ] && dir="" || { dir="/$dir"; ed /Game -F text= -F "file=${dir#/}" -F "button=new folder" -o /dev/null; }
-  code=$(ed "/Game$dir" -F "file=@Game/$f" -F "button=upload" -o /dev/null -w "%{http_code}" || echo 000); echo "$f $code"
-  case "$code" in 2*|3*) ;; *) echo "FEHLER beim Hochladen von $f ($code) – Wartung bleibt an"; exit 1;; esac   # (PHP-Dateien kann Schritt 5 nicht prüfen)
-done
-[ -f $T/config.php ] && ed /Game -F "file=@$T/config.php" -F "button=upload" -o /dev/null -w "config.php %{http_code}\n"
+echo "Wartung seit $(date '+%d.%m.%Y %H:%M') (hochladen.sh)" > "$T/wartung.txt"
+nochmal ed_tun /Game -F "file=@$T/wartung.txt" -F "button=upload" || abbruch "Wartung ließ sich nicht einschalten"
+WARTUNG=1; echo "Wartung an"
+sleep "${OW_WARTUNG_PAUSE:-10}"  # die laufenden Spiele merken es beim nächsten Puls (alle 2 s) und sichern noch
+N=0
+for f in $AENDERN; do hoch "$f" || abbruch "Datei $f fehlt (nicht vollständig hochgeladen)"; N=$((N + 1)); done
+if [ -f "$T/config.php" ]; then hoch config.php "$T/config.php" || abbruch "Datei config.php fehlt (nicht vollständig hochgeladen)"; N=$((N + 1)); fi
 
 # 4) Alles auf dem Server, was nicht (mehr) zum Spiel gehört, aus Game/ entfernen (alte Ordner api, js, inhalt, daten …)
-# (--form-string: ein Dateiname vom Server, der mit @ oder < beginnt, lädt nie eine lokale Datei hoch)
-weg() { local ordner=$1 name=$2; ed "$ordner" -F text= --form-string "file=$name" -F "button=delete" -o /dev/null; echo "entfernt: Game${ordner#/Game}/$name"; }
-for x in $(ls_ordner /Game); do
-  if [ -e "Game/$x" ] || [ "$x" = config.php ] || [ "$x" = wartung.txt ]; then continue; fi
-  if curl -sS -b $T/jar "$E?h=48&w=138&sid=$SID&path=$B/Game/$x" | grep -q "klassenarbeit_GR4/Game/$x/\.\.\""; then   # ist ein Ordner: erst leeren
-    for y in $(ls_ordner "/Game/$x"); do weg "/Game/$x" "$y"; done
-  fi
-  weg /Game "$x"
-done
+# (--form-string: ein Dateiname vom Server, der mit @ oder < beginnt, lädt nie eine lokale Datei hoch). Klappt das nicht: nur Warnung.
+weg() { local ordner=$1 name=$2; if nochmal ed_tun "$ordner" -F text= --form-string "file=$name" -F "button=delete"; then echo "entfernt: Game${ordner#/Game}/$name"; else echo "Warnung: Game${ordner#/Game}/$name nicht entfernt"; fi; }
+if nochmal ls_ordner /Game; then
+  for x in $(cat "$T/liste"); do
+    if [ -e "Game/$x" ] || [ "$x" = config.php ] || [ "$x" = wartung.txt ]; then continue; fi
+    if c -b "$T/jar" "$E?h=48&w=138&sid=$SID&path=$B/Game/$x" | grep -q "klassenarbeit_GR4/Game/$x/\.\.\""; then   # ist ein Ordner: erst leeren
+      nochmal ls_ordner "/Game/$x" && for y in $(cat "$T/liste"); do weg "/Game/$x" "$y"; done
+    fi
+    weg /Game "$x"
+  done
+else echo "Warnung: Ordnerliste nicht lesbar – alte Dateien bleiben diesmal liegen"; fi
 
-# 5) Prüfen: Dateien unverändert angekommen?
-for f in ladebildschirm.js spiel.js bots.js welt.js aufbau.js buendnis.js haendler.js baukunst.js speichern.js weltrechner/start.js weltrechner/push.js weltrechner/jsdom.js sw.js benachrichtigung.js app/manifest.webmanifest app/icon-512.png app/logo.svg ; do
-  case " $AENDERN " in *" $f "*) ;; *) continue;; esac   # (nur was eben hochkam)
-  [ "$(sha1sum < Game/$f)" = "$(curl -sS "$U/$f" | sha1sum)" ] && echo "geprüft: $f" || { echo "FEHLER: $f anders"; exit 1; }
-done
-# 6) Wartung aus – alle können wieder spielen
-ed /Game -F text= -F file=wartung.txt -F "button=delete" -o /dev/null && echo "Wartung aus"
-echo "Auf dem Server: $(ls_ordner /Game | tr '\n' ' ')"
+# 5) Wartung aus – erst jetzt (alles ist geprüft angekommen) – und nachsehen, dass wartung.txt wirklich weg ist
+wartung_weg() { ed_tun /Game -F text= -F file=wartung.txt -F "button=delete" && ls_ordner /Game && ! grep -qx wartung.txt "$T/liste"; }
+nochmal wartung_weg || abbruch "wartung.txt ließ sich nicht löschen (alle $N Dateien sind aber geprüft angekommen)"
+WARTUNG=0
+echo "Alle $N Dateien hochgeladen und geprüft · Wartung aus (wartung.txt ist weg)"
+echo "Auf dem Server: $(tr '\n' ' ' < "$T/liste")"

@@ -10,6 +10,8 @@
 // dem Weltrechner-Schlüssel). Der private Schlüssel steht nur auf dem Server (config.php oder weltrechner/vapid.php) – nie im Git.
 // Nicht nerven: höchstens 1 Benachrichtigung pro Minute und Spieler, gleiche Meldungen werden zusammengefasst, und nur,
 // wenn der Spieler gerade nicht online ist (im Spiel sieht er es ja selbst).
+// Dazu (6.10.): Schummel-Verdacht an die Admin-Konten (adminMelden, aus start.js – dort höchstens 1× pro Spieler und Stunde),
+// auch wenn der Admin gerade im Spiel ist. Welche Konten Admins sind, sagt der Server (push_abos → admins).
 'use strict';
 const crypto = require('crypto');
 
@@ -147,8 +149,9 @@ function nachrichtBauen(liste, jetzt) {
 function melder(holen, log) {
     const warte = new Map();       // uid → [{ art, …, zeit }]
     const zuletzt = new Map();     // uid → wann zuletzt gesendet
-    let abos = null, abosZeit = 0, vapid = null, aus = false, jwtCache = new Map(), laeuft = false;
-    const stat = { gesendet: 0, fehler: 0, weg: 0 };
+    let abos = null, abosZeit = 0, vapid = null, aus = false, jwtCache = new Map(), laeuft = false, admins = [];
+    const stat = { gesendet: 0, fehler: 0, weg: 0, admin: 0 };
+    const adminWarte = [];         // Nachrichten an die Admins ({ titel, text })
 
     async function server(aktion, daten) {
         const r = await holen('server.php', { method: 'POST', headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ aktion }, daten || {})) });
@@ -160,6 +163,7 @@ function melder(holen, log) {
         const a = await server('push_abos');
         abosZeit = Date.now();
         aus = !a.an;
+        admins = Array.isArray(a.admins) ? a.admins.map(Number).filter(x => x > 0) : [];
         if (aus) { abos = []; vapid = null; return; }
         if (!vapid || vapid.pub !== a.public) { vapid = { pub: a.public, key: privaterSchluessel(a.public, a.private), sub: a.sub }; jwtCache = new Map(); }
         abos = a.abos || [];
@@ -185,6 +189,25 @@ function melder(holen, log) {
         return 'fehler';
     }
 
+    // an alle Geräte einer Liste senden (abgelaufene Abos austragen)
+    async function sendenAlle(meine, daten) {
+        const weg = [];
+        for (const abo of meine.slice(0, 10)) {
+            let erg = 'fehler'; try { erg = await sendenAn(abo, daten); } catch (x) { log('Push-Fehler: ' + (x && x.message || x)); }
+            if (erg === 'ok') stat.gesendet++; else if (erg === 'weg') { weg.push(abo.id); stat.weg++; } else stat.fehler++;
+        }
+        if (weg.length) { abos = abos.filter(a => !weg.includes(a.id)); try { await server('push_weg', { ids: weg }); } catch (x) { log('Push: abgelaufene Abos nicht gelöscht (' + x.message + ')'); } }
+    }
+    // Nachricht an die Admin-Konten (auch wenn sie gerade spielen) – geht mit der nächsten Runde raus
+    function adminMelden(daten) { if (adminWarte.length < 20) adminWarte.push({ titel: String(daten.titel).slice(0, 80), text: String(daten.text).slice(0, 400), tag: 'open-water-admin' }); }
+    async function adminSenden() {
+        if (!adminWarte.length) return;
+        await abosHolen();
+        const liste = adminWarte.splice(0), meine = abos.filter(a => admins.includes(a.uid));
+        if (aus || !meine.length) { log('Push an die Admins nicht möglich (' + (aus ? 'Push aus' : 'kein Admin-Gerät eingetragen') + '): ' + liste.map(x => x.text).join(' | ').slice(0, 300)); return; }
+        for (const daten of liste) { await sendenAlle(meine, daten); stat.admin++; }
+    }
+
     // Jede Runde (alle 5 s aus start.js): neue Meldungen einsammeln und fällige senden
     async function runde(w) {
         if (laeuft) return; laeuft = true;
@@ -207,17 +230,13 @@ function melder(holen, log) {
                 const nichtGewollt = meine[0].aus || [], gewollt = frisch.filter(e => !nichtGewollt.includes(e.art));   // Einstellungen: Arten, die er ausgeschaltet hat
                 if (!gewollt.length) continue;
                 zuletzt.set(uid, jetzt);
-                const daten = nachrichtBauen(gewollt, jetzt), weg = [];
-                for (const abo of meine.slice(0, 10)) {
-                    let erg = 'fehler'; try { erg = await sendenAn(abo, daten); } catch (x) { log('Push-Fehler: ' + (x && x.message || x)); }
-                    if (erg === 'ok') stat.gesendet++; else if (erg === 'weg') { weg.push(abo.id); stat.weg++; } else stat.fehler++;
-                }
-                if (weg.length) { abos = abos.filter(a => !weg.includes(a.id)); try { await server('push_weg', { ids: weg }); } catch (x) { log('Push: abgelaufene Abos nicht gelöscht (' + x.message + ')'); } }
+                await sendenAlle(meine, nachrichtBauen(gewollt, jetzt));
             }
+            await adminSenden();
         } catch (e) { log('Push-Runde: ' + (e && e.message || e)); }
         finally { laeuft = false; }
     }
-    return { runde, stat };
+    return { runde, stat, adminMelden };
 }
 
 module.exports = { verschluesseln, vapidJwt, privaterSchluessel, nachrichtBauen, melder, BEOBACHTER };

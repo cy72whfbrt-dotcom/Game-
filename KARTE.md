@@ -6,7 +6,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 ## Index (Name → Datei:Zeile)
 
 - `abmelden` → Game/server/01-grundlagen-login.php:79
-- `abosHolen` → Game/weltrechner/push.js:158
+- `abosHolen` → Game/weltrechner/push.js:161
 - `academyLevel` → Game/spiel/08d-gebaeude-wirkung.js:3
 - `achCheck` → Game/spiel/05c-erfolge-rangliste.js:96
 - `achCheckSoon` → Game/spiel/05c-erfolge-rangliste.js:95
@@ -29,6 +29,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `addProps` → Game/baukunst/04-vielfalt-stile.js:514
 - `addXp` → Game/spiel/02a-shop-stufen.js:257
 - `adminBefehl` → Game/spiel/10d-welt-weltrechner.js:1153
+- `adminMelden` → Game/weltrechner/push.js:202
+- `adminSenden` → Game/weltrechner/push.js:203
 - `afterSplash` → Game/spiel/06d-schild-produktion.js:350
 - `ago` → Game/spiel/05c-erfolge-rangliste.js:170
 - `ago` → Game/spiel/05d-maersche-kampfbericht.js:130
@@ -36,7 +38,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `Aktion 'geschenk'` → Game/admin.php:65
 - `Aktion 'login'` → Game/index.php:107
 - `Aktion 'name'` → Game/server/06-speichern-push-konto.php:28
-- `Aktion 'nebel'` → Game/admin.php:111
+- `Aktion 'nebel'` → Game/admin.php:124
 - `Aktion 'neu'` → Game/index.php:20
 - `Aktion 'passwort'` → Game/server/06-speichern-push-konto.php:29
 - `Aktion 'puls'` → Game/server/06-speichern-push-konto.php:30
@@ -52,14 +54,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `Aktion 'wr_cron'` → Game/admin.php:104
 - `Aktion 'wr_entsperren'` → Game/admin.php:103
 - `Aktion 'wr_neustart'` → Game/admin.php:100
-- `Aktion 'wr_sicherung'` → Game/admin.php:105
+- `Aktion 'wr_sicherung'` → Game/admin.php:107
 - `aktueller_spieler` → Game/server/01-grundlagen-login.php:65
 - `ALGAE` → Game/baukunst/07-hafen-palast.js:21
 - `alike` → Game/spiel/03a-karte-hintergrund.js:458
 - `allowed` → Game/baukunst/05-umland.js:660
 - `alsBefehl` → Game/spiel/01a-grundlagen.js:13
 - `analyse` → Game/baukunst/04-vielfalt-stile.js:366
-- `andere_sitzungen_loeschen` → Game/server/05-datenbank-welt.php:249
+- `andere_sitzungen_loeschen` → Game/server/05-datenbank-welt.php:292
 - `anfKosten` → Game/spiel/08b-burg-aussehen.js:143
 - `anfZeile` → Game/spiel/08b-burg-aussehen.js:139
 - `angreiferZeilen` → Game/spiel/01a-grundlagen.js:169
@@ -69,8 +71,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `anleitungZeigen` → Game/spiel/06b-pass-anleitung.js:150
 - `anmelden` → Game/server/01-grundlagen-login.php:71
 - `antwort` → Game/speichern.js:136
-- `antwort` → Game/weltrechner/start.js:278
-- `antwortVerarbeiten` → Game/welt.js:455
+- `antwort` → Game/weltrechner/start.js:333
+- `antwortVerarbeiten` → Game/welt.js:459
 - `anyIn` → Game/spiel/03a-karte-hintergrund.js:433
 - `anzahl_teile` → Game/server/05-datenbank-welt.php:99
 - `anzeigeStufe` → Game/spiel/03a-karte-hintergrund.js:546
@@ -91,7 +93,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `archShape` → Game/baukunst/07-hafen-palast.js:439
 - `archShape` → Game/baukunst/08-himmelsfeste-bilder.js:81
 - `archWin` → Game/baukunst/06-turmhof-festung.js:24
-- `armee_sicht_setzen` → Game/server/05-datenbank-welt.php:267
+- `armee_sicht_setzen` → Game/server/05-datenbank-welt.php:310
 - `armeeSichtRunde` → Game/spiel/10d-welt-weltrechner.js:931
 - `armillary` → Game/baukunst/08-himmelsfeste-bilder.js:158
 - `armorDefenseFor` → Game/spiel/04-kampf.js:265
@@ -128,16 +130,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `attackFlatBonus` → Game/spiel/04-kampf.js:275
 - `attackParts` → Game/spiel/01e-nebel-kampfwerte-hud.js:119
 - `attackSpeedMultiplier` → Game/spiel/02b-maersche.js:14
-- `auffaelligSammeln` → Game/weltrechner/start.js:88
+- `auffaelligSammeln` → Game/weltrechner/start.js:136
 - `aufLand` → Game/spiel/01b-weltkarte.js:67
-- `aufraeumen` → Game/server/05-datenbank-welt.php:176
+- `aufraeumen` → Game/server/05-datenbank-welt.php:219
 - `ausbauDrueber` → Game/spiel/10b-inselfenster-knoepfe.js:6
 - `ausbauMerken` → Game/spiel/10b-inselfenster-knoepfe.js:5
 - `ausbauPruefen` → Game/spiel/10d-welt-weltrechner.js:380
 - `ausgangSichern` → Game/welt.js:83
 - `ausschalten` → Game/benachrichtigung.js:89
 - `autoCombineAll` → Game/spiel/02a-shop-stufen.js:107
-- `b64` → Game/weltrechner/push.js:16
+- `b64` → Game/weltrechner/push.js:18
 - `b64url` → Game/server/06-speichern-push-konto.php:74
 - `b64url_bytes` → Game/server/06-speichern-push-konto.php:104
 - `balGeo` → Game/baukunst/07-hafen-palast.js:455
@@ -218,15 +220,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bauStufe` → Game/aufbau.js:223
 - `beam` → Game/baukunst/03-wahrzeichen-feuer.js:12
 - `beam` → Game/baukunst/06-turmhof-festung.js:19
-- `befehl_ablegen` → Game/server/05-datenbank-welt.php:184
+- `befehl_ablegen` → Game/server/05-datenbank-welt.php:227
 - `befehl_ok` → Game/server/02-sicherheit-datenlecks.php:118
 - `befehlBezahlt` → Game/spiel/10d-welt-weltrechner.js:464
-- `befehle_abholen` → Game/server/05-datenbank-welt.php:197
-- `befehle_bezahlt_ok` → Game/server/05-datenbank-welt.php:193
-- `befehle_gerecht` → Game/server/05-datenbank-welt.php:209
-- `befehle_offen` → Game/server/05-datenbank-welt.php:187
-- `befehle_quittieren` → Game/server/05-datenbank-welt.php:188
-- `befehleGezaehlt` → Game/weltrechner/start.js:53
+- `befehle_abholen` → Game/server/05-datenbank-welt.php:240
+- `befehle_bezahlt_ok` → Game/server/05-datenbank-welt.php:236
+- `befehle_gerecht` → Game/server/05-datenbank-welt.php:252
+- `befehle_offen` → Game/server/05-datenbank-welt.php:230
+- `befehle_quittieren` → Game/server/05-datenbank-welt.php:231
+- `befehleGezaehlt` → Game/weltrechner/start.js:74
 - `befehlFertig` → Game/spiel/10d-welt-weltrechner.js:463
 - `befehlFrisch` → Game/welt.js:79
 - `BELL` → Game/baukunst/06-turmhof-festung.js:237
@@ -235,13 +237,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `berlinTeile` → Game/spiel/09f-saison.js:24
 - `berlinUm` → Game/spiel/09f-saison.js:25
 - `berlinZeit` → Game/spiel/03d-maersche-tagnacht.js:178
-- `besondere.createImageData` → Game/weltrechner/start.js:173
-- `besondere.createLinearGradient` → Game/weltrechner/start.js:171
-- `besondere.createPattern` → Game/weltrechner/start.js:172
-- `besondere.getImageData` → Game/weltrechner/start.js:174
-- `besondere.getTransform` → Game/weltrechner/start.js:175
-- `besondere.isPointInPath` → Game/weltrechner/start.js:176
-- `besondere.measureText` → Game/weltrechner/start.js:170
+- `besondere.createImageData` → Game/weltrechner/start.js:227
+- `besondere.createLinearGradient` → Game/weltrechner/start.js:225
+- `besondere.createPattern` → Game/weltrechner/start.js:226
+- `besondere.getImageData` → Game/weltrechner/start.js:228
+- `besondere.getTransform` → Game/weltrechner/start.js:229
+- `besondere.isPointInPath` → Game/weltrechner/start.js:230
+- `besondere.measureText` → Game/weltrechner/start.js:224
 - `best` → Game/bots/05-verteidigen-takt.js:159
 - `besterOrt` → Game/spiel/01c-basen-spielstand.js:159
 - `bestRank` → Game/spiel/05a-aussehen-profil.js:78
@@ -296,7 +298,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botBld` → Game/bots/04-stand-stadt.js:76
 - `botBountyReward` → Game/bots/06-aussehen-felder-barbaren.js:74
 - `botBurgWert` → Game/aufbau.js:434
-- `botById` → Game/welt.js:365
+- `botById` → Game/welt.js:368
 - `botCanCross` → Game/bots/01-spieler.js:116
 - `botCapitalMoveOk` → Game/bots/05-verteidigen-takt.js:141
 - `botCapitalNotice` → Game/bots/05-verteidigen-takt.js:176
@@ -776,9 +778,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `defGoldRate` → Game/spiel/04-kampf.js:287
 - `defOf` → Game/baukunst/02-buehne-grundbasis.js:388
 - `dekoPlaetze` → Game/spiel/03a-karte-hintergrund.js:54
-- `deltaEinen` → Game/welt.js:334
-- `deltaMerken` → Game/welt.js:358
-- `deltasSammeln` → Game/welt.js:331
+- `deltaEinen` → Game/welt.js:337
+- `deltaMerken` → Game/welt.js:361
+- `deltasSammeln` → Game/welt.js:334
 - `dismissTutorialHint` → Game/spiel/09a-funde-felder.js:102
 - `dockLuecke` → Game/spiel/01a-grundlagen.js:23
 - `dome` → Game/spiel/03b-gebaeude-3d.js:194
@@ -857,15 +859,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `einstellungenZeigen` → Game/spiel/10c-start-einstellungen.js:144
 - `empireSnapshot` → Game/spiel/06d-schild-produktion.js:234
 - `enclose` → Game/baukunst/04-vielfalt-stile.js:402
-- `ende` → Game/weltrechner/start.js:33
+- `ende` → Game/weltrechner/start.js:34
 - `endWander` → Game/spiel/07b-kriegsherr.js:52
 - `envTex` → Game/baukunst/02-buehne-grundbasis.js:63
 - `equipInventoryItem` → Game/spiel/02a-shop-stufen.js:181
 - `equipmentUpgradeCost` → Game/spiel/02a-shop-stufen.js:291
 - `equippedItemBonusPct` → Game/spiel/02a-shop-stufen.js:53
-- `ereignis_ablegen` → Game/server/05-datenbank-welt.php:217
-- `ereignisse_abholen` → Game/server/05-datenbank-welt.php:218
-- `ereignisse_verbucht` → Game/server/05-datenbank-welt.php:226
+- `ereignis_ablegen` → Game/server/05-datenbank-welt.php:260
+- `ereignisse_abholen` → Game/server/05-datenbank-welt.php:261
+- `ereignisse_verbucht` → Game/server/05-datenbank-welt.php:269
 - `ertrag` → Game/aufbau.js:215
 - `escapeHtml` → Game/spiel/05c-erfolge-rangliste.js:229
 - `evAnzeige` → Game/spiel/09c-events-drache.js:277
@@ -902,7 +904,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fachwerk` → Game/baukunst/06-turmhof-festung.js:48
 - `fade` → Game/spiel/10c-start-einstellungen.js:121
 - `fArt` → Game/spiel/09a-funde-felder.js:153
-- `fehler` → Game/weltrechner/start.js:108
+- `fehler` → Game/weltrechner/start.js:160
 - `fehlgeschlagen` → Game/speichern.js:141
 - `feld` → Game/spiel/08e-stadtbild-haeuser.js:338
 - `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:75
@@ -912,7 +914,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fertig` → Game/buendnis/01-daten-regeln.js:140
 - `fertig` → Game/speichern.js:153
 - `fest_lesen` → Game/server/05-datenbank-welt.php:9
-- `festeNummer` → Game/welt.js:378
+- `festeNummer` → Game/welt.js:381
 - `fieldArrive` → Game/spiel/09a-funde-felder.js:215
 - `fieldAt` → Game/spiel/09a-funde-felder.js:286
 - `fieldAtkPct` → Game/spiel/09d-armeen-wegmarken.js:91
@@ -1069,7 +1071,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gemsArmed` → Game/spiel/05b-truhe-skills.js:294
 - `gemsWirklich` → Game/spiel/05b-truhe-skills.js:285
 - `generateRegionShape` → Game/spiel/01b-weltkarte.js:151
-- `geprueftHolen` → Game/weltrechner/start.js:228
+- `geprueftHolen` → Game/weltrechner/start.js:283
 - `geraet_bekannt` → Game/server/02-sicherheit-datenlecks.php:45
 - `geraet_bekannt_merken` → Game/server/02-sicherheit-datenlecks.php:44
 - `gilt` → Game/baukunst/04-vielfalt-stile.js:237
@@ -1092,13 +1094,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `grantFreeCrate` → Game/spiel/06a-aufgaben.js:13
 - `grantLevelRewards` → Game/spiel/02a-shop-stufen.js:236
 - `GRAV` → Game/baukunst/07-hafen-palast.js:412
-- `groesse_nach` → Game/server/05-datenbank-welt.php:167
+- `groesse_nach` → Game/server/05-datenbank-welt.php:210
 - `groundGlow` → Game/baukunst/03-wahrzeichen-feuer.js:25
 - `grow` → Game/spiel/03a-karte-hintergrund.js:216
 - `grow` → Game/spiel/03a-karte-hintergrund.js:226
 - `gruppeBezahlt` → Game/spiel/10d-welt-weltrechner.js:991
 - `gruppeLaeuft` → Game/aufbau.js:132
-- `h` → Game/admin.php:140
+- `h` → Game/admin.php:161
 - `h` → Game/index.php:54
 - `haendler_ware_ok` → Game/server/03-nebel-maersche-seite.php:107
 - `haendlerAt` → Game/haendler.js:178
@@ -1232,7 +1234,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroWouldFire` → Game/spiel/08c-helden.js:71
 - `heroWutZurueck` → Game/spiel/08c-helden.js:90
 - `heroZweitOk` → Game/spiel/08c-helden.js:83
-- `herzSchreiben` → Game/weltrechner/start.js:45
+- `herzSchreiben` → Game/weltrechner/start.js:65
 - `hex` → Game/ladebildschirm.js:10
 - `hfl` → Game/spiel/10a-inselfenster-vorschau.js:346
 - `hhGrid` → Game/spiel/08c-helden.js:283
@@ -1252,7 +1254,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hipFaces` → Game/baukunst/04-vielfalt-stile.js:291
 - `hipRoof` → Game/baukunst/06-turmhof-festung.js:265
 - `hitsAny` → Game/spiel/03d-maersche-tagnacht.js:40
-- `holen` → Game/weltrechner/start.js:125
+- `holen` → Game/weltrechner/start.js:179
 - `homeAgain` → Game/bots/02-kampf-karte.js:73
 - `horn` → Game/spiel/10c-start-einstellungen.js:71
 - `hornsGeo` → Game/baukunst/04-vielfalt-stile.js:337
@@ -1315,7 +1317,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `itemRewardRow` → Game/spiel/06a-aufgaben.js:60
 - `itemScore` → Game/spiel/02a-shop-stufen.js:29
 - `json_antwort` → Game/server/03-nebel-maersche-seite.php:133
-- `jwtFuer` → Game/weltrechner/push.js:167
+- `jwtFuer` → Game/weltrechner/push.js:171
 - `kampf` → Game/aufbau.js:211
 - `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:193
 - `kampfAufraeumen` → Game/spiel/04-kampf.js:246
@@ -1335,6 +1337,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kiosk` → Game/baukunst/05-umland.js:423
 - `knopf` → Game/buendnis/04-fenster-karte-welt.js:78
 - `knoten` → Game/aufbau.js:324
+- `konten_gueltig` → Game/server/07-welt-puls.php:23
+- `konten_zurueck` → Game/server/05-datenbank-welt.php:185
 - `konto` → Game/spiel/10d-welt-weltrechner.js:125
 - `kontoProfil` → Game/spiel/10d-welt-weltrechner.js:238
 - `kostenHtml` → Game/aufbau.js:76
@@ -1352,6 +1356,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `lantern` → Game/baukunst/07-hafen-palast.js:172
 - `lastFightWith` → Game/spiel/05c-erfolge-rangliste.js:166
 - `lastHop` → Game/spiel/01b-weltkarte.js:307
+- `lastJeKern` → Game/weltrechner/start.js:60
 - `lathe` → Game/baukunst/04-vielfalt-stile.js:249
 - `lathe` → Game/baukunst/06-turmhof-festung.js:263
 - `lathe` → Game/baukunst/07-hafen-palast.js:438
@@ -1371,9 +1376,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `leer.setItem` → Game/speichern.js:54
 - `leerGear` → Game/spiel/05d-maersche-kampfbericht.js:348
 - `leerHeld` → Game/spiel/05d-maersche-kampfbericht.js:347
-- `leinwand` → Game/weltrechner/start.js:166
+- `leinwand` → Game/weltrechner/start.js:220
+- `leiter_sek` → Game/server/07-welt-puls.php:12
 - `leiter_setzen` → Game/server/05-datenbank-welt.php:24
-- `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:128
+- `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:134
 - `levelRewardCoins` → Game/spiel/02a-shop-stufen.js:223
 - `levelRewardGems` → Game/spiel/02a-shop-stufen.js:226
 - `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:280
@@ -1406,7 +1412,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `loadTitles` → Game/spiel/04-kampf.js:16
 - `loadWander` → Game/spiel/07b-kriegsherr.js:45
 - `localHour` → Game/ladebildschirm.js:18
-- `log` → Game/weltrechner/start.js:31
+- `log` → Game/weltrechner/start.js:32
 - `logBadge` → Game/spiel/01a-grundlagen.js:153
 - `logBalance` → Game/spiel/01a-grundlagen.js:154
 - `logChips` → Game/spiel/01a-grundlagen.js:178
@@ -1417,7 +1423,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `lookOldUnlocked` → Game/spiel/05a-aussehen-profil.js:79
 - `lookOwns` → Game/spiel/05a-aussehen-profil.js:89
 - `los` → Game/speichern.js:100
-- `los` → Game/weltrechner/start.js:185
+- `los` → Game/weltrechner/start.js:239
 - `lute` → Game/spiel/10c-start-einstellungen.js:33
 - `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:34
 - `mapBattleShake` → Game/spiel/07a-schlachten.js:304
@@ -1465,10 +1471,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `MDK` → Game/baukunst/08-himmelsfeste-bilder.js:16
 - `meinAbo` → Game/benachrichtigung.js:31
 - `meinProfil` → Game/welt.js:215
-- `melder` → Game/weltrechner/push.js:147
+- `melder` → Game/weltrechner/push.js:149
 - `memo` → Game/baukunst/04-vielfalt-stile.js:149
 - `mensch` → Game/bots/02-kampf-karte.js:41
-- `mensch` → Game/weltrechner/push.js:66
+- `mensch` → Game/weltrechner/push.js:68
 - `menschEintragen` → Game/welt.js:292
 - `menschenAktualisieren` → Game/welt.js:279
 - `merge` → Game/baukunst/04-vielfalt-stile.js:242
@@ -1483,7 +1489,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `midNotice` → Game/spiel/06c-thron-mitte.js:228
 - `mine` → Game/spiel/08c-helden.js:109
 - `mini` → Game/spiel/05a-aussehen-profil.js:117
-- `minuten` → Game/weltrechner/push.js:116
+- `minuten` → Game/weltrechner/push.js:118
 - `missing` → Game/spiel/03a-karte-hintergrund.js:463
 - `mitspieler_kuerzen` → Game/server/02-sicherheit-datenlecks.php:135
 - `mix` → Game/ladebildschirm.js:11
@@ -1523,7 +1529,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `muenzGutscheine` → Game/spiel/10d-welt-weltrechner.js:179
 - `mulberry32` → Game/spiel/01b-weltkarte.js:53
 - `Music` → Game/spiel/10c-start-einstellungen.js:8
-- `muster` → Game/weltrechner/start.js:87
+- `muster` → Game/weltrechner/start.js:135
 - `myArmies` → Game/spiel/09d-armeen-wegmarken.js:27
 - `MysqlLager->__construct` → Game/server/04-datenbank-spieler.php:13
 - `MysqlLager->abschied` → Game/server/04-datenbank-spieler.php:159
@@ -1559,8 +1565,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `MysqlLager->tx_anfang` → Game/server/04-datenbank-spieler.php:10
 - `MysqlLager->tx_ende` → Game/server/04-datenbank-spieler.php:11
 - `MysqlLager->zuletzt_gespeichert` → Game/server/04-datenbank-spieler.php:165
-- `nachrichtBauen` → Game/weltrechner/push.js:118
-- `name` → Game/weltrechner/push.js:67
+- `nachrichtBauen` → Game/weltrechner/push.js:120
+- `name` → Game/weltrechner/push.js:69
 - `name_anfrage` → Game/server/06-speichern-push-konto.php:176
 - `name_erlaubt` → Game/server/02-sicherheit-datenlecks.php:48
 - `names` → Game/bots/03-angreifen.js:85
@@ -1580,14 +1586,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nebelRunde` → Game/spiel/10d-welt-weltrechner.js:897
 - `nebelVomServer` → Game/spiel/01e-nebel-kampfwerte-hud.js:37
 - `nebelWeite` → Game/aufbau.js:221
-- `neueNummer` → Game/welt.js:381
+- `neueNummer` → Game/welt.js:384
 - `neulingBis` → Game/spiel/06d-schild-produktion.js:26
 - `neulingEnde` → Game/spiel/06d-schild-produktion.js:38
 - `neutralId` → Game/spiel/01a-grundlagen.js:14
 - `niceRound` → Game/spiel/02a-shop-stufen.js:215
 - `niceRoundW` → Game/spiel/01b-weltkarte.js:28
 - `nichtLos` → Game/spiel/10d-welt-weltrechner.js:95
-- `nichts` → Game/weltrechner/start.js:168
+- `nichts` → Game/weltrechner/start.js:222
 - `noise` → Game/spiel/10c-start-einstellungen.js:65
 - `noiseTile` → Game/spiel/03a-karte-hintergrund.js:8
 - `normal` → Game/spiel/05d-maersche-kampfbericht.js:354
@@ -1596,7 +1602,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `oculus` → Game/baukunst/07-hafen-palast.js:449
 - `oeffnen` → Game/spiel/05d-maersche-kampfbericht.js:485
 - `offen` → Game/spiel/10c-start-einstellungen.js:250
-- `offene_befehle` → Game/server/05-datenbank-welt.php:186
+- `offene_befehle` → Game/server/05-datenbank-welt.php:229
 - `okPt` → Game/baukunst/05-umland.js:714
 - `one` → Game/baukunst/04-vielfalt-stile.js:525
 - `onPointerEnd` → Game/spiel/03e-kamera-eingabe.js:316
@@ -1652,7 +1658,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ownershipDelta` → Game/spiel/03a-karte-hintergrund.js:211
 - `ownerWeak` → Game/bots/02-kampf-karte.js:269
 - `packen` → Game/speichern.js:132
-- `packen` → Game/welt.js:382
+- `packen` → Game/welt.js:385
 - `pagoda` → Game/baukunst/04-vielfalt-stile.js:410
 - `pagoda` → Game/baukunst/05-umland.js:222
 - `paintBackground` → Game/spiel/03a-karte-hintergrund.js:363
@@ -1745,48 +1751,50 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `positionIslandPopover` → Game/spiel/03e-kamera-eingabe.js:456
 - `post` → Game/baukunst/07-hafen-palast.js:457
 - `powerOf` → Game/spiel/05c-erfolge-rangliste.js:159
-- `privaterSchluessel` → Game/weltrechner/push.js:46
+- `privaterSchluessel` → Game/weltrechner/push.js:48
 - `prodGanz` → Game/spiel/06d-schild-produktion.js:153
 - `produceTicks` → Game/spiel/06d-schild-produktion.js:180
 - `productionTickMs` → Game/spiel/04-kampf.js:294
 - `prof` → Game/baukunst/04-vielfalt-stile.js:311
 - `profil_bereinigen` → Game/server/02-sicherheit-datenlecks.php:51
 - `profil_oeffentlich` → Game/server/02-sicherheit-datenlecks.php:160
-- `profil_setzen` → Game/server/05-datenbank-welt.php:269
+- `profil_setzen` → Game/server/05-datenbank-welt.php:312
 - `profilVon` → Game/spiel/10d-welt-weltrechner.js:138
 - `profilZuBot` → Game/welt.js:237
 - `profilZuBotRoh` → Game/welt.js:243
 - `projectConvex` → Game/spiel/03e-kamera-eingabe.js:81
 - `proStunde` → Game/spiel/01e-nebel-kampfwerte-hud.js:224
 - `pruefen` → Game/benachrichtigung.js:54
-- `pruefen` → Game/weltrechner/start.js:118
-- `puls` → Game/welt.js:384
-- `puls_wachhund` → Game/server/07-welt-puls.php:148
-- `puls_zaehlen` → Game/server/05-datenbank-welt.php:272
+- `pruefen` → Game/weltrechner/start.js:172
+- `puls` → Game/welt.js:387
+- `puls_wachhund` → Game/server/07-welt-puls.php:163
+- `puls_zaehlen` → Game/server/05-datenbank-welt.php:315
+- `pulsFrist` → Game/weltrechner/start.js:64
+- `pulsPruefen` → Game/weltrechner/start.js:103
 - `pump` → Game/baukunst/08-himmelsfeste-bilder.js:381
 - `punkt` → Game/buendnis/04-fenster-karte-welt.js:297
 - `punktOk` → Game/spiel/10d-welt-weltrechner.js:973
-- `push_abmelden` → Game/server/05-datenbank-welt.php:243
-- `push_alle` → Game/server/05-datenbank-welt.php:251
-- `push_alle_weg` → Game/server/05-datenbank-welt.php:256
+- `push_abmelden` → Game/server/05-datenbank-welt.php:286
+- `push_alle` → Game/server/05-datenbank-welt.php:294
+- `push_alle_weg` → Game/server/05-datenbank-welt.php:299
 - `push_anfrage` → Game/server/06-speichern-push-konto.php:118
-- `push_anzahl` → Game/server/05-datenbank-welt.php:250
-- `push_aus` → Game/server/05-datenbank-welt.php:245
-- `push_aus_setzen` → Game/server/05-datenbank-welt.php:246
+- `push_anzahl` → Game/server/05-datenbank-welt.php:293
+- `push_aus` → Game/server/05-datenbank-welt.php:288
+- `push_aus_setzen` → Game/server/05-datenbank-welt.php:289
 - `push_endpoint_ok` → Game/server/06-speichern-push-konto.php:110
-- `push_hat` → Game/server/05-datenbank-welt.php:244
+- `push_hat` → Game/server/05-datenbank-welt.php:287
 - `push_schluessel` → Game/server/06-speichern-push-konto.php:75
 - `push_schluessel_ok` → Game/server/06-speichern-push-konto.php:73
-- `push_sitzung` → Game/server/05-datenbank-welt.php:242
-- `push_speichern` → Game/server/05-datenbank-welt.php:232
-- `push_weg` → Game/server/05-datenbank-welt.php:257
-- `push_weg_sitzung` → Game/server/05-datenbank-welt.php:241
+- `push_sitzung` → Game/server/05-datenbank-welt.php:285
+- `push_speichern` → Game/server/05-datenbank-welt.php:275
+- `push_weg` → Game/server/05-datenbank-welt.php:300
+- `push_weg_sitzung` → Game/server/05-datenbank-welt.php:284
 - `pushSample` → Game/spiel/03e-kamera-eingabe.js:260
 - `put` → Game/baukunst/01-werkzeugkasten.js:157
 - `put` → Game/baukunst/04-vielfalt-stile.js:523
 - `pvpWins` → Game/spiel/05c-erfolge-rangliste.js:19
-- `pw_hash_von` → Game/server/05-datenbank-welt.php:247
-- `pw_setzen` → Game/server/05-datenbank-welt.php:248
+- `pw_hash_von` → Game/server/05-datenbank-welt.php:290
+- `pw_setzen` → Game/server/05-datenbank-welt.php:291
 - `pyr` → Game/baukunst/06-turmhof-festung.js:65
 - `pyramid` → Game/spiel/03b-gebaeude-3d.js:33
 - `questChain` → Game/spiel/06a-aufgaben.js:153
@@ -1930,14 +1938,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rulerOwner` → Game/spiel/01d-helden-mitspieler.js:164
 - `runBotTick` → Game/bots/05-verteidigen-takt.js:297
 - `rund` → Game/spiel/08f-stadtbild-bild.js:245
-- `runde` → Game/weltrechner/push.js:189
+- `runde` → Game/weltrechner/push.js:212
 - `rundturm` → Game/baukunst/02-buehne-grundbasis.js:204
 - `runeGeo` → Game/baukunst/04-vielfalt-stile.js:500
 - `runProductionTick` → Game/spiel/06d-schild-produktion.js:157
 - `S.beimSetzen` → Game/welt.js:313
 - `S.scoped` → Game/baukunst/02-buehne-grundbasis.js:101
 - `S.thumb` → Game/baukunst/02-buehne-grundbasis.js:107
-- `saison_anhalten` → Game/server/07-welt-puls.php:21
+- `saison_anhalten` → Game/server/07-welt-puls.php:36
 - `saisonAnfang` → Game/spiel/09f-saison.js:131
 - `saisonAnkuendigen` → Game/spiel/09f-saison.js:57
 - `saisonBaldText` → Game/spiel/09f-saison.js:56
@@ -2002,10 +2010,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `segDistW` → Game/spiel/01c-basen-spielstand.js:33
 - `seiteUmbauen` → Game/spiel/05d-maersche-kampfbericht.js:390
 - `senden` → Game/speichern.js:160
-- `sendenAn` → Game/weltrechner/push.js:175
+- `sendenAlle` → Game/weltrechner/push.js:193
+- `sendenAn` → Game/weltrechner/push.js:179
 - `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:516
 - `server` → Game/benachrichtigung.js:19
-- `server` → Game/weltrechner/push.js:153
+- `server` → Game/weltrechner/push.js:156
 - `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:177
 - `setArmyPlace` → Game/spiel/09d-armeen-wegmarken.js:280
 - `setBtnLabel` → Game/spiel/01a-grundlagen.js:111
@@ -2043,12 +2052,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `showTip` → Game/ladebildschirm.js:183
 - `showWelcome` → Game/spiel/06d-schild-produktion.js:307
 - `shrineMult` → Game/spiel/01e-nebel-kampfwerte-hud.js:211
-- `sicherung_anlegen` → Game/server/05-datenbank-welt.php:107
-- `sicherung_gueltig` → Game/server/07-welt-puls.php:11
-- `sicherung_zurueck` → Game/server/05-datenbank-welt.php:134
-- `sicherungen_liste` → Game/server/05-datenbank-welt.php:129
-- `sicht_laden` → Game/server/05-datenbank-welt.php:259
-- `sicht_setzen` → Game/server/05-datenbank-welt.php:268
+- `sicherung_anlegen` → Game/server/05-datenbank-welt.php:109
+- `sicherung_gueltig` → Game/server/07-welt-puls.php:15
+- `sicherung_zurueck` → Game/server/05-datenbank-welt.php:142
+- `sicherungen_liste` → Game/server/05-datenbank-welt.php:135
+- `sicht_laden` → Game/server/05-datenbank-welt.php:302
+- `sicht_setzen` → Game/server/05-datenbank-welt.php:311
 - `sitOf` → Game/bots/03-angreifen.js:157
 - `sitzung_hash` → Game/server/01-grundlagen-login.php:78
 - `size` → Game/bots/05-verteidigen-takt.js:262
@@ -2085,7 +2094,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `speedUpCost` → Game/spiel/02b-maersche.js:271
 - `speedUpMarch` → Game/spiel/02b-maersche.js:273
 - `speichern_anfrage` → Game/server/06-speichern-push-konto.php:6
-- `spieler_liste` → Game/server/05-datenbank-welt.php:281
+- `spieler_liste` → Game/server/05-datenbank-welt.php:324
 - `spielerTakt` → Game/aufbau.js:254
 - `spielraumFrei` → Game/spiel/10d-welt-weltrechner.js:189
 - `spielraumNehmen` → Game/spiel/10d-welt-weltrechner.js:171
@@ -2107,6 +2116,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `starPath` → Game/ladebildschirm.js:83
 - `starRefund` → Game/spiel/02a-shop-stufen.js:141
 - `start` → Game/spiel/10c-start-einstellungen.js:122
+- `start_text` → Game/admin.php:146
+- `startMerken` → Game/weltrechner/start.js:49
 - `startMultiAttack` → Game/spiel/09e-inselfenster.js:157
 - `startPinch` → Game/spiel/03e-kamera-eingabe.js:254
 - `statBump` → Game/spiel/05c-erfolge-rangliste.js:15
@@ -2165,7 +2176,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tierOf` → Game/baukunst/02-buehne-grundbasis.js:141
 - `tilesTex` → Game/baukunst/04-vielfalt-stile.js:154
 - `timeAgoLabel` → Game/spiel/05d-maersche-kampfbericht.js:14
-- `titel` → Game/weltrechner/push.js:68
+- `titel` → Game/weltrechner/push.js:70
 - `titelDef` → Game/spiel/05a-aussehen-profil.js:20
 - `titleCleanup` → Game/spiel/04-kampf.js:46
 - `titledCapitals` → Game/spiel/03c-wappen-thronplatz.js:163
@@ -2176,7 +2187,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `toggle` → Game/spiel/10c-start-einstellungen.js:130
 - `tollFor` → Game/spiel/01b-weltkarte.js:319
 - `tone` → Game/spiel/10c-start-einstellungen.js:58
-- `topf` → Game/welt.js:324
+- `topf` → Game/welt.js:327
 - `TOPI` → Game/baukunst/07-hafen-palast.js:414
 - `torusGeo` → Game/baukunst/04-vielfalt-stile.js:265
 - `toS` → Game/spiel/08f-stadtbild-bild.js:122
@@ -2211,7 +2222,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `trySpawnPickup` → Game/spiel/09a-funde-felder.js:13
 - `turm` → Game/spiel/01c-basen-spielstand.js:160
 - `u` → Game/ladebildschirm.js:57
-- `uebersicht` → Game/server/05-datenbank-welt.php:293
+- `uebersicht` → Game/server/05-datenbank-welt.php:336
 - `uebertragen` → Game/speichern.js:147
 - `uhrHtml` → Game/spiel/01a-grundlagen.js:138
 - `uhrText` → Game/spiel/01a-grundlagen.js:137
@@ -2234,7 +2245,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `UMRECHNEN.openWaterThrone` → Game/welt.js:96
 - `UMRECHNEN.openWaterTitles` → Game/welt.js:95
 - `UMRECHNEN.openWaterVerstaerkung` → Game/welt.js:128
-- `unb64` → Game/weltrechner/push.js:17
+- `unb64` → Game/weltrechner/push.js:19
 - `updateCamera` → Game/spiel/03e-kamera-eingabe.js:201
 - `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:216
 - `updateGoalsBadge` → Game/spiel/06a-aufgaben.js:226
@@ -2248,10 +2259,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `urnGeo` → Game/baukunst/07-hafen-palast.js:456
 - `v` → Game/spielseite/01-kopf-grundwerte.php:7
 - `val` → Game/bots/05-verteidigen-takt.js:117
-- `vapidJwt` → Game/weltrechner/push.js:52
+- `vapidJwt` → Game/weltrechner/push.js:54
 - `variant` → Game/baukunst/04-vielfalt-stile.js:188
+- `verdachtPruefen` → Game/weltrechner/start.js:125
 - `verlustChips` → Game/spiel/01a-grundlagen.js:182
-- `verschluesseln` → Game/weltrechner/push.js:22
+- `verschluesseln` → Game/weltrechner/push.js:24
 - `verstAnteile` → Game/buendnis/02-rally-geschenke.js:185
 - `verstBelegt` → Game/buendnis/01-daten-regeln.js:446
 - `verstBerichte` → Game/buendnis/01-daten-regeln.js:496
@@ -2279,22 +2291,22 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `vorhangZeigen` → Game/speichern.js:86
 - `vorlaeufigDazu` → Game/spiel/02b-maersche.js:256
 - `vorlaeufigDrueber` → Game/spiel/02b-maersche.js:260
-- `W.befehl` → Game/welt.js:526
-- `W.deltaBasis` → Game/welt.js:374
-- `W.deltaJetzt` → Game/welt.js:367
-- `W.nachricht` → Game/welt.js:377
-- `W.start` → Game/welt.js:535
+- `W.befehl` → Game/welt.js:530
+- `W.deltaBasis` → Game/welt.js:377
+- `W.deltaJetzt` → Game/welt.js:370
+- `W.nachricht` → Game/welt.js:380
+- `W.start` → Game/welt.js:539
 - `wacheAbarbeiten` → Game/spiel/10d-welt-weltrechner.js:438
 - `wacheBezahlen` → Game/spiel/10d-welt-weltrechner.js:367
 - `wacheDelta` → Game/spiel/10d-welt-weltrechner.js:197
 - `wacheNachricht` → Game/spiel/10d-welt-weltrechner.js:214
 - `wacheRunde` → Game/spiel/10d-welt-weltrechner.js:466
 - `wacheSehen` → Game/spiel/10d-welt-weltrechner.js:288
-- `wachhund_cron_da` → Game/weltrechner/wachhund.php:238
-- `wachhund_cron_einrichten` → Game/weltrechner/wachhund.php:239
-- `wachhund_entsperren` → Game/weltrechner/wachhund.php:213
-- `wachhund_neustart` → Game/weltrechner/wachhund.php:218
-- `wachhund_runde` → Game/weltrechner/wachhund.php:137
+- `wachhund_cron_da` → Game/weltrechner/wachhund.php:288
+- `wachhund_cron_einrichten` → Game/weltrechner/wachhund.php:289
+- `wachhund_entsperren` → Game/weltrechner/wachhund.php:263
+- `wachhund_neustart` → Game/weltrechner/wachhund.php:268
+- `wachhund_runde` → Game/weltrechner/wachhund.php:172
 - `wallDefensePct` → Game/spiel/01e-nebel-kampfwerte-hud.js:63
 - `wallTo` → Game/baukunst/04-vielfalt-stile.js:87
 - `wanderArrive` → Game/spiel/07b-kriegsherr.js:85
@@ -2334,12 +2346,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `WELT.wache.gutschrift` → Game/spiel/10d-welt-weltrechner.js:1221
 - `WELT.wache.hilfe` → Game/spiel/10d-welt-weltrechner.js:1222
 - `WELT.wache.kann` → Game/spiel/10d-welt-weltrechner.js:1220
-- `welt_antwort` → Game/server/07-welt-puls.php:155
-- `welt_antwort_text` → Game/server/07-welt-puls.php:152
+- `welt_antwort` → Game/server/07-welt-puls.php:170
+- `welt_antwort_text` → Game/server/07-welt-puls.php:167
 - `welt_entsperren` → Game/server/05-datenbank-welt.php:5
 - `welt_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:199
 - `welt_info` → Game/server/05-datenbank-welt.php:19
-- `welt_puls` → Game/server/07-welt-puls.php:27
+- `welt_puls` → Game/server/07-welt-puls.php:42
 - `welt_schreiben` → Game/server/05-datenbank-welt.php:30
 - `welt_seit` → Game/server/05-datenbank-welt.php:70
 - `welt_seit_flicken` → Game/server/05-datenbank-welt.php:80
@@ -2394,39 +2406,43 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `woSt` → Game/spiel/09c-events-drache.js:29
 - `woThemaAm` → Game/spiel/09c-events-drache.js:25
 - `woWin` → Game/spiel/09c-events-drache.js:16
-- `wr_alle_beenden` → Game/weltrechner/wachhund.php:77
-- `wr_alle_pids` → Game/weltrechner/wachhund.php:67
-- `wr_alter` → Game/weltrechner/wachhund.php:76
-- `wr_beenden` → Game/weltrechner/wachhund.php:125
-- `wr_crontab_setzen` → Game/weltrechner/wachhund.php:231
-- `wr_herz` → Game/weltrechner/wachhund.php:53
-- `wr_herz_alt` → Game/weltrechner/wachhund.php:55
-- `wr_laeuft` → Game/weltrechner/wachhund.php:60
-- `wr_lesen` → Game/weltrechner/wachhund.php:24
-- `wr_log` → Game/weltrechner/wachhund.php:36
-- `wr_log_ende` → Game/weltrechner/wachhund.php:45
-- `wr_node` → Game/weltrechner/wachhund.php:85
-- `wr_php` → Game/weltrechner/wachhund.php:226
-- `wr_ps_geht` → Game/weltrechner/wachhund.php:84
-- `wr_schreiben` → Game/weltrechner/wachhund.php:31
-- `wr_sicherung` → Game/weltrechner/wachhund.php:199
-- `wr_starten` → Game/weltrechner/wachhund.php:97
-- `wr_url` → Game/weltrechner/wachhund.php:91
-- `wr_zustand` → Game/weltrechner/wachhund.php:52
+- `wr_alle_beenden` → Game/weltrechner/wachhund.php:112
+- `wr_alle_pids` → Game/weltrechner/wachhund.php:102
+- `wr_alter` → Game/weltrechner/wachhund.php:111
+- `wr_anteil` → Game/weltrechner/wachhund.php:76
+- `wr_beenden` → Game/weltrechner/wachhund.php:160
+- `wr_cpu` → Game/weltrechner/wachhund.php:69
+- `wr_crontab_setzen` → Game/weltrechner/wachhund.php:281
+- `wr_geduldig` → Game/weltrechner/wachhund.php:87
+- `wr_herz` → Game/weltrechner/wachhund.php:58
+- `wr_herz_alt` → Game/weltrechner/wachhund.php:60
+- `wr_laeuft` → Game/weltrechner/wachhund.php:95
+- `wr_last` → Game/weltrechner/wachhund.php:62
+- `wr_lesen` → Game/weltrechner/wachhund.php:29
+- `wr_log` → Game/weltrechner/wachhund.php:41
+- `wr_log_ende` → Game/weltrechner/wachhund.php:50
+- `wr_node` → Game/weltrechner/wachhund.php:120
+- `wr_php` → Game/weltrechner/wachhund.php:276
+- `wr_ps_geht` → Game/weltrechner/wachhund.php:119
+- `wr_schreiben` → Game/weltrechner/wachhund.php:36
+- `wr_sicherung` → Game/weltrechner/wachhund.php:249
+- `wr_starten` → Game/weltrechner/wachhund.php:132
+- `wr_url` → Game/weltrechner/wachhund.php:126
+- `wr_zustand` → Game/weltrechner/wachhund.php:57
 - `wrap` → Game/baukunst/05-umland.js:677
 - `xBoards` → Game/baukunst/05-umland.js:206
 - `xpNeededForLevel` → Game/spiel/02a-shop-stufen.js:211
 - `yAt` → Game/baukunst/04-vielfalt-stile.js:274
 - `yesterdayKey` → Game/spiel/06a-aufgaben.js:9
-- `zahl` → Game/admin.php:143
-- `zahl` → Game/weltrechner/start.js:145
+- `zahl` → Game/admin.php:164
+- `zahl` → Game/weltrechner/start.js:199
 - `zahlen` → Game/aufbau.js:69
 - `zahlOderNull` → Game/spiel/10d-welt-weltrechner.js:139
 - `zahlOk` → Game/spiel/10d-welt-weltrechner.js:113
 - `zeige` → Game/speichern.js:65
 - `zeigen` → Game/benachrichtigung.js:44
 - `zeile` → Game/buendnis/01-daten-regeln.js:505
-- `zeitGrenze` → Game/weltrechner/start.js:116
+- `zeitGrenze` → Game/weltrechner/start.js:170
 - `zielPruefen` → Game/spiel/10d-welt-weltrechner.js:977
 - `zitadelle` → Game/baukunst/02-buehne-grundbasis.js:330
 - `zoomAt` → Game/spiel/03e-kamera-eingabe.js:151
@@ -3243,43 +3259,44 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `welt_seit` :70 — Was hat sich seit Version $seit geändert? (seit = 0: alles)
 - `welt_seit_flicken` :80 — Für die Spieler: wie welt_seit, aber große Teile nur als Änderungen („flicken“:…
 - `anzahl_teile` :99 — wie viele Teile hätte der Spielstand mit diesen neuen Schlüsseln? (Schutz gegen…
-- `sicherung_anlegen` :107 — behalten_bis (Unix-Zeit): so lange nicht wegräumen (Saison-Sicherung: 2 Wochen)
-- `letzte_sicherung_zeit` :128
-- `sicherungen_liste` :129
-- `sicherung_zurueck` :134 — Eine Sicherung zurückspielen (der Weltrechner muss dafür aus sein). Alle Teile …
-- `groesse_nach` :167 — Wie groß wäre der Spielstand eines Spielers mit diesen neuen Teilen? (Bytes)
-- `aufraeumen` :176 — Erledigtes (nach einer Weile), alte Befehle (niemand hat gerechnet) und nie abg…
-- `befehl_ablegen` :184 — Befehle: das Handy gibt jedem eine Nummer (cid) – kommt er wegen einer Wiederho…
-- `offene_befehle` :186
-- `befehle_offen` :187
-- `befehle_quittieren` :188 — genau diese Nummern (nicht „alles bis“: eine kleinere Nummer kann später einget…
-- `befehle_bezahlt_ok` :193 — der Weltrechner hat diese bezahlten Befehle angenommen (nur die werden nach dem…
-- `befehle_abholen` :197
-- `befehle_gerecht` :209 — gerecht: höchstens 40 je Spieler pro Abholen – einer, der hunderte schickt (die…
-- `ereignis_ablegen` :217 — Nachrichten: der Weltrechner gibt jeder eine Nummer (mid) – nach einer verloren…
-- `ereignisse_abholen` :218
-- `ereignisse_verbucht` :226
-- `push_speichern` :232 — Handy-Benachrichtigungen (Web-Push) ===== Ein Gerät gehört immer dem, der sich …
-- `push_weg_sitzung` :241
-- `push_sitzung` :242
-- `push_abmelden` :243
-- `push_hat` :244
-- `push_aus` :245
-- `push_aus_setzen` :246
-- `pw_hash_von` :247
-- `pw_setzen` :248
-- `andere_sitzungen_loeschen` :249
-- `push_anzahl` :250
-- `push_alle` :251 — nur für den Weltrechner
-- `push_alle_weg` :256
-- `push_weg` :257
-- `sicht_laden` :259 — Nebel (3B): Sicht eines Spielers – Bitfeld vom Weltrechner + seine eigenen Base…
-- `armee_sicht_setzen` :267
-- `sicht_setzen` :268
-- `profil_setzen` :269 — höchstens ein Profil je 8 s (ehrliche Handys: alle 10 s – sonst bis 150/Min. an…
-- `puls_zaehlen` :272 — Puls zählen (zugleich „online“ setzen) – gibt zurück, wie viele Pulse in dieser…
-- `spieler_liste` :281 — $alles: Weltrechner (sieht Münzen und Verwundete der anderen)
-- `uebersicht` :293 — Lesbare Übersicht in ow_spieler
+- `sicherung_anlegen` :109 — behalten_bis (Unix-Zeit): so lange nicht wegräumen (Saison-Sicherung: 2 Wochen)
+- `letzte_sicherung_zeit` :134
+- `sicherungen_liste` :135
+- `sicherung_zurueck` :142 — Eine Sicherung zurückspielen (der Weltrechner muss dafür aus sein). Alle Teile …
+- `konten_zurueck` :185 — Spielerkonten + private Spielstände aus einer Sicherung von $damals (in der Tra…
+- `groesse_nach` :210 — Wie groß wäre der Spielstand eines Spielers mit diesen neuen Teilen? (Bytes)
+- `aufraeumen` :219 — Erledigtes (nach einer Weile), alte Befehle (niemand hat gerechnet) und nie abg…
+- `befehl_ablegen` :227 — Befehle: das Handy gibt jedem eine Nummer (cid) – kommt er wegen einer Wiederho…
+- `offene_befehle` :229
+- `befehle_offen` :230
+- `befehle_quittieren` :231 — genau diese Nummern (nicht „alles bis“: eine kleinere Nummer kann später einget…
+- `befehle_bezahlt_ok` :236 — der Weltrechner hat diese bezahlten Befehle angenommen (nur die werden nach dem…
+- `befehle_abholen` :240
+- `befehle_gerecht` :252 — gerecht: höchstens 40 je Spieler pro Abholen – einer, der hunderte schickt (die…
+- `ereignis_ablegen` :260 — Nachrichten: der Weltrechner gibt jeder eine Nummer (mid) – nach einer verloren…
+- `ereignisse_abholen` :261
+- `ereignisse_verbucht` :269
+- `push_speichern` :275 — Handy-Benachrichtigungen (Web-Push) ===== Ein Gerät gehört immer dem, der sich …
+- `push_weg_sitzung` :284
+- `push_sitzung` :285
+- `push_abmelden` :286
+- `push_hat` :287
+- `push_aus` :288
+- `push_aus_setzen` :289
+- `pw_hash_von` :290
+- `pw_setzen` :291
+- `andere_sitzungen_loeschen` :292
+- `push_anzahl` :293
+- `push_alle` :294 — nur für den Weltrechner
+- `push_alle_weg` :299
+- `push_weg` :300
+- `sicht_laden` :302 — Nebel (3B): Sicht eines Spielers – Bitfeld vom Weltrechner + seine eigenen Base…
+- `armee_sicht_setzen` :310
+- `sicht_setzen` :311
+- `profil_setzen` :312 — höchstens ein Profil je 8 s (ehrliche Handys: alle 10 s – sonst bis 150/Min. an…
+- `puls_zaehlen` :315 — Puls zählen (zugleich „online“ setzen) – gibt zurück, wie viele Pulse in dieser…
+- `spieler_liste` :324 — $alles: Weltrechner (sieht Münzen und Verwundete der anderen)
+- `uebersicht` :336 — Lesbare Übersicht in ow_spieler
 
 ### Game/server/06-speichern-push-konto.php — Speichern, Handy-Benachrichtigungen, Passwort ändern, Spielername
 - `speichern_anfrage` :6 — Speichern (POST von speichern.js) ===== Inhalt: {"token": "...", "setzen": {sch…
@@ -3293,7 +3310,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `b64url_bytes` :104 — Länge in Byte, wenn $s sauberes base64url ist – sonst -1
 - `push_endpoint_ok` :110 — Nur https-Adressen der bekannten Push-Dienste (sonst könnte man den Weltrechner…
 - `push_anfrage` :118
-- Aktion `'push_abos'` :122
+- Aktion `'push_abos'` :122 — (admins: Schummel-Verdacht geht an diese Konten)
 - Aktion `'push_weg'` :123
 - Aktion `'push_info'` :127 — mit endpoint: ist dieses Gerät für mich eingetragen? (sonst trägt das Spiel es …
 - Aktion `'push_an'` :134
@@ -3303,12 +3320,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `name_anfrage` :176 — Spielername wählen (Willkommen-Fenster)
 
 ### Game/server/07-welt-puls.php — Puls der einen Welt (alle ~2 s von jedem Spieler)
-- `sicherung_gueltig` :11 — Eine Sicherung ist nur gültig, wenn sie ganz ist: Welt-Teile (Schlüssel + gülti…
-- `saison_anhalten` :21 — Welt-Saison nach dem Zurückspielen (Alexander 5.10.): war in der Sicherung der …
-- `welt_puls` :27
-- `puls_wachhund` :148
-- `welt_antwort_text` :152 — Antwort als JSON – kaputtes UTF-8 (z. B. in einem alten Namen) wird ersetzt sta…
-- `welt_antwort` :155 — Antwort gepackt, wenn der Browser das kann (Welt-Teile sind groß). $danach: läu…
+- `leiter_sek` :12 — Wie lange gilt die Leitung? Dauerte diese Anfrage lange (Server überlastet), ko…
+- `sicherung_gueltig` :15 — Eine Sicherung ist nur gültig, wenn sie ganz ist: Welt-Teile (Schlüssel + gülti…
+- `konten_gueltig` :23 — Konten-Teil einer Sicherung (6.10.): Spieler mit Nummer, Name und Passwort-Prüf…
+- `saison_anhalten` :36 — Welt-Saison nach dem Zurückspielen (Alexander 5.10.): war in der Sicherung der …
+- `welt_puls` :42
+- `puls_wachhund` :163
+- `welt_antwort_text` :167 — Antwort als JSON – kaputtes UTF-8 (z. B. in einem alten Namen) wird ersetzt sta…
+- `welt_antwort` :170 — Antwort gepackt, wenn der Browser das kann (Welt-Teile sind groß). $danach: läu…
 
 ## Game/spiel/ (Teile)
 
@@ -4747,10 +4766,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - Aktion `'wr_neustart'` :100 — Weltrechner
 - Aktion `'wr_entsperren'` :103
 - Aktion `'wr_cron'` :104
-- Aktion `'wr_sicherung'` :105
-- Aktion `'nebel'` :111
-- `h` :140
-- `zahl` :143
+- Aktion `'wr_sicherung'` :107 — Zurückspielen: „nur Welt“ wie bisher, oder „alles“ (6.10.: dazu Spielerkonten +…
+- Aktion `'nebel'` :124
+- `start_text` :146 — Dauer eines Starts (start.js startDauer, Millisekunden) als kurzer Text
+- `h` :161
+- `zahl` :164
 
 ### Game/aufbau.js — aufbau.js – Paket D „Aufbau“ (wie Rise of Kingdoms): Burg-Stufe, Rohstoffe, neu…
 - `rohLeer` :18
@@ -4961,89 +4981,101 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `menschenAktualisieren` :279
 - `menschEintragen` :292 — alle anderen echten Spieler, die schon Basen haben (oder jemals hatten), als Mi…
 - `S.beimSetzen` :313 — Thron: dein privater Teil (Thron-Punkte im Geldbeutel) wird abgespalten
-- `topf` :324
-- `deltasSammeln` :331 — (Weltrechner) was hat sich bei den anderen Menschen getan? → Nachrichten
-- `deltaEinen` :334
-- `deltaMerken` :358
-- `botById` :365
-- `W.deltaJetzt` :367 — (Weltrechner, neue Welt-Saison) alles, was ihm die Welt noch schuldet, jetzt al…
-- `W.deltaBasis` :374 — (nach dem Reset: Münzen 0 ist keine Nachricht „−Münzen“)
-- `W.nachricht` :377 — schl: ein fester Schlüssel (z. B. 'woche|<Woche>') → feste Nummer: zahlt der We…
-- `festeNummer` :378
-- `neueNummer` :381
-- `packen` :382
-- `puls` :384
-- `antwortVerarbeiten` :455
-- `W.befehl` :526 — Befehl an den Weltrechner (bin ich es selbst, führt spiel.js ihn direkt aus)
-- `W.start` :535
+- `topf` :327
+- `deltasSammeln` :334 — (Weltrechner) was hat sich bei den anderen Menschen getan? → Nachrichten
+- `deltaEinen` :337
+- `deltaMerken` :361
+- `botById` :368
+- `W.deltaJetzt` :370 — (Weltrechner, neue Welt-Saison) alles, was ihm die Welt noch schuldet, jetzt al…
+- `W.deltaBasis` :377 — (nach dem Reset: Münzen 0 ist keine Nachricht „−Münzen“)
+- `W.nachricht` :380 — schl: ein fester Schlüssel (z. B. 'woche|<Woche>') → feste Nummer: zahlt der We…
+- `festeNummer` :381
+- `neueNummer` :384
+- `packen` :385
+- `puls` :387
+- `antwortVerarbeiten` :459
+- `W.befehl` :530 — Befehl an den Weltrechner (bin ich es selbst, führt spiel.js ihn direkt aus)
+- `W.start` :539
 
 ## Game/weltrechner/
 
 ### Game/weltrechner/push.js — weltrechner/push.js – Handy-Benachrichtigungen (Web-Push) vom Weltrechner
-- `b64` :16
-- `unb64` :17
-- `verschluesseln` :22 — 1) Verschlüsseln (RFC 8291). test: { asPrivate, salt } nur für den Prüf-Test mi…
-- `privaterSchluessel` :46 — 2) VAPID (RFC 8292): JWT { aud: Herkunft des Push-Dienstes, exp, sub } mit ES256
-- `vapidJwt` :52
-- `mensch` :66
-- `name` :67
-- `titel` :68
-- `minuten` :116
-- `nachrichtBauen` :118 — Aus den gesammelten Meldungen eines Spielers EINE Benachrichtigung bauen (kurz,…
-- `melder` :147 — Der Melder: wird von start.js angelegt. holen = start.js-holen (mit Weltrechner…
-- `server` :153
-- `abosHolen` :158
-- `jwtFuer` :167
-- `sendenAn` :175 — an ein Gerät senden → 'ok' | 'weg' (Abo gibt es nicht mehr) | 'fehler'
-- `runde` :189 — Jede Runde (alle 5 s aus start.js): neue Meldungen einsammeln und fällige senden
+- `b64` :18
+- `unb64` :19
+- `verschluesseln` :24 — 1) Verschlüsseln (RFC 8291). test: { asPrivate, salt } nur für den Prüf-Test mi…
+- `privaterSchluessel` :48 — 2) VAPID (RFC 8292): JWT { aud: Herkunft des Push-Dienstes, exp, sub } mit ES256
+- `vapidJwt` :54
+- `mensch` :68
+- `name` :69
+- `titel` :70
+- `minuten` :118
+- `nachrichtBauen` :120 — Aus den gesammelten Meldungen eines Spielers EINE Benachrichtigung bauen (kurz,…
+- `melder` :149 — Der Melder: wird von start.js angelegt. holen = start.js-holen (mit Weltrechner…
+- `server` :156
+- `abosHolen` :161
+- `jwtFuer` :171
+- `sendenAn` :179 — an ein Gerät senden → 'ok' | 'weg' (Abo gibt es nicht mehr) | 'fehler'
+- `sendenAlle` :193 — an alle Geräte einer Liste senden (abgelaufene Abos austragen)
+- `adminMelden` :202 — Nachricht an die Admin-Konten (auch wenn sie gerade spielen) – geht mit der näc…
+- `adminSenden` :203
+- `runde` :212 — Jede Runde (alle 5 s aus start.js): neue Meldungen einsammeln und fällige senden
 
 ### Game/weltrechner/start.js — weltrechner/start.js – der Weltrechner auf dem Server
-- `log` :31
-- `ende` :33 — Ende mit Grund – der Code sagt dem Wachhund, was los war: 0 = geplant (Wartung,…
-- `herzSchreiben` :45
-- `befehleGezaehlt` :53 — Befehle zählt welt.js beim Lesen der Antwort (vorher hier ein zweites Mal die g…
-- `muster` :87
-- `auffaelligSammeln` :88
-- `fehler` :108
-- `zeitGrenze` :116 — Mit dem Server reden: immer mit Schlüssel, nie länger als 60 s warten (die Spie…
-- `pruefen` :118
-- `holen` :125
-- `zahl` :145 — Grenzen nur gegen KAPUTTE Zahlen (keine Zahl, unendlich, negativ, absurd) – nie…
-- `leinwand` :166 — Ein Leinwand-Ersatz: alles Zeichnen tut nichts (der Weltrechner hat keinen Bild…
-- `nichts` :168
-- `besondere.measureText` :170
-- `besondere.createLinearGradient` :171
-- `besondere.createPattern` :172
-- `besondere.createImageData` :173
-- `besondere.getImageData` :174
-- `besondere.getTransform` :175
-- `besondere.isPointInPath` :176
-- `los` :185 — Die Spielseite laden und ohne Bildschirm laufen lassen
-- `geprueftHolen` :228 — Vor jedem Puls: Zahlen prüfen. Kaputt → die Welt wird diesmal nicht geschrieben…
-- `antwort` :278
+- `log` :32
+- `ende` :34 — Ende mit Grund – der Code sagt dem Wachhund, was los war: 0 = geplant (Wartung,…
+- `startMerken` :49
+- `lastJeKern` :60
+- `pulsFrist` :64 — Wie lange darf der Puls fehlen? Normal 2 Min.; bei überlastetem Server 10 Min. …
+- `herzSchreiben` :65
+- `befehleGezaehlt` :74 — Befehle zählt welt.js beim Lesen der Antwort (vorher hier ein zweites Mal die g…
+- `pulsPruefen` :103 — Kommt der Puls noch beim Server an? (alle 5 s) Frist siehe pulsFrist – Code 7: …
+- `verdachtPruefen` :125
+- `muster` :135
+- `auffaelligSammeln` :136
+- `fehler` :160
+- `zeitGrenze` :170 — Mit dem Server reden: immer mit Schlüssel, nie länger als 60 s warten (die Spie…
+- `pruefen` :172
+- `holen` :179
+- `zahl` :199 — Grenzen nur gegen KAPUTTE Zahlen (keine Zahl, unendlich, negativ, absurd) – nie…
+- `leinwand` :220 — Ein Leinwand-Ersatz: alles Zeichnen tut nichts (der Weltrechner hat keinen Bild…
+- `nichts` :222
+- `besondere.measureText` :224
+- `besondere.createLinearGradient` :225
+- `besondere.createPattern` :226
+- `besondere.createImageData` :227
+- `besondere.getImageData` :228
+- `besondere.getTransform` :229
+- `besondere.isPointInPath` :230
+- `los` :239 — Die Spielseite laden und ohne Bildschirm laufen lassen
+- `geprueftHolen` :283 — Vor jedem Puls: Zahlen prüfen. Kaputt → die Welt wird diesmal nicht geschrieben…
+- `antwort` :333
 
 ### Game/weltrechner/wachhund.php — weltrechner/wachhund.php – passt auf den Weltrechner auf
-- `wr_lesen` :24
-- `wr_schreiben` :31
-- `wr_log` :36
-- `wr_log_ende` :45 — Die letzten Zeilen des Logs (für die Admin-Seite und den Alarm)
-- `wr_zustand` :52
-- `wr_herz` :53
-- `wr_herz_alt` :55 — Wie lange darf der Herzschlag fehlen? Beim Start (Welt einlesen) viel länger al…
-- `wr_laeuft` :60 — Läuft dieser Prozess noch – und ist es wirklich der Weltrechner (keine wiederve…
-- `wr_alle_pids` :67 — ALLE Weltrechner-Prozesse dieses Spiels (auch die, die noch keinen Herzschlag g…
-- `wr_alter` :76
-- `wr_alle_beenden` :77 — vor jedem Start: nie zwei Weltrechner gleichzeitig (sie würden sich die CPU tei…
-- `wr_ps_geht` :84
-- `wr_node` :85
-- `wr_url` :91
-- `wr_starten` :97
-- `wr_beenden` :125 — Gibt true zurück, wenn der Prozess sicher weg ist. Dann bekommt herz.php die En…
-- `wachhund_runde` :137 — Die eigentliche Runde. $quelle: 'cron' | 'spieler' | 'admin'
-- `wr_sicherung` :199 — Jede Stunde eine Sicherung der Welt (nur im Cronjob). Höchstens ein Versuch pro…
-- `wachhund_entsperren` :213 — Admin: Sperre aufheben (die Wartung beendet Alexander selbst, wenn alles wieder…
-- `wachhund_neustart` :218 — Admin: neu starten (jetzt gleich)
-- `wr_php` :226 — Cronjob „jede Minute wachhund.php“ einrichten (Admin-Knopf). Die bestehenden Cr…
-- `wr_crontab_setzen` :231 — Neue Cronjob-Liste setzen: direkt über die Eingabe von „crontab -“ (der Server …
-- `wachhund_cron_da` :238
-- `wachhund_cron_einrichten` :239
+- `wr_lesen` :29
+- `wr_schreiben` :36
+- `wr_log` :41
+- `wr_log_ende` :50 — Die letzten Zeilen des Logs (für die Admin-Seite und den Alarm)
+- `wr_zustand` :57
+- `wr_herz` :58
+- `wr_herz_alt` :60 — Wie lange darf der Herzschlag fehlen? Beim Start (Welt einlesen) viel länger al…
+- `wr_last` :62 — Server-Last je Kern (1-Minuten-Mittel; 0: unbekannt)
+- `wr_cpu` :69 — Verbrauchte Rechenzeit eines Prozesses in Sekunden (/proc/<pid>/stat: utime + s…
+- `wr_anteil` :76 — Anteil Rechenzeit seit der letzten Messung (0…1, null = noch keine brauchbare M…
+- `wr_geduldig` :87 — Noch warten statt beenden? Nur bei überlastetem Server, höchstens WR_HERZ_ALT_L…
+- `wr_laeuft` :95 — Läuft dieser Prozess noch – und ist es wirklich der Weltrechner (keine wiederve…
+- `wr_alle_pids` :102 — ALLE Weltrechner-Prozesse dieses Spiels (auch die, die noch keinen Herzschlag g…
+- `wr_alter` :111
+- `wr_alle_beenden` :112 — vor jedem Start: nie zwei Weltrechner gleichzeitig (sie würden sich die CPU tei…
+- `wr_ps_geht` :119
+- `wr_node` :120
+- `wr_url` :126
+- `wr_starten` :132
+- `wr_beenden` :160 — Gibt true zurück, wenn der Prozess sicher weg ist. Dann bekommt herz.php die En…
+- `wachhund_runde` :172 — Die eigentliche Runde. $quelle: 'cron' | 'spieler' | 'admin'
+- `wr_sicherung` :249 — Jede Stunde eine Sicherung der Welt (nur im Cronjob). Höchstens ein Versuch pro…
+- `wachhund_entsperren` :263 — Admin: Sperre aufheben (die Wartung beendet Alexander selbst, wenn alles wieder…
+- `wachhund_neustart` :268 — Admin: neu starten (jetzt gleich)
+- `wr_php` :276 — Cronjob „jede Minute wachhund.php“ einrichten (Admin-Knopf). Die bestehenden Cr…
+- `wr_crontab_setzen` :281 — Neue Cronjob-Liste setzen: direkt über die Eingabe von „crontab -“ (der Server …
+- `wachhund_cron_da` :288
+- `wachhund_cron_einrichten` :289
