@@ -104,10 +104,10 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   // Saison-Rahmen nur, solange die Welt ihn führt (saison.last.top): ein echter Spieler kann ihn sich nicht ins Profil schreiben; beim
   // nächsten Reset mit einem anderen Platz 1 verliert der alte ihn (angelegt → Standard) und der neue bekommt ihn
   const f = await p.evaluate(() => { const Y = BOT_DEFS.find(x => !x.mensch && loadBotState()[x.id]).id, by = loadBotState()[Y], alt = saison.last;
-    botById[Y].mensch = true; by.lookFrame = 'sz1'; const falsch = botLook(Y);
+    botById[Y].mensch = true; by.mensch = 1; by.lookFrame = 'sz1'; const falsch = botLook(Y);
     saison.last = { nr: 1, top: [['player', 9], [Y, 8]] }; look.frame = 'sz1'; const r1 = { ich: playerFrame(), ichT: playerTitle(), y: botLook(Y).frame };
     saison.last = { nr: 2, top: [[Y, 9], ['player', 8]] }; const r2 = { ich: playerFrame(), ichT: playerTitle(), hat2: lkHas('frame', 'sz2'), y: botLook(Y).frame, yT: botLook(Y).title };
-    botById[Y].mensch = false; saison.last = alt; return { falsch, r1, r2 }; });
+    botById[Y].mensch = false; delete by.mensch; saison.last = alt; return { falsch, r1, r2 }; });
   ok(f.falsch.frame === 'bronze' && f.falsch.title === 'Neuling', 'Saison-Rahmen nicht aus dem Profil (nur, wenn die Welt ihn führt)', f.falsch);
   ok(f.r1.ich === 'sz1' && f.r1.ichT === 'Saison-Champion' && f.r1.y === 'bronze', 'Reset 1: Platz 1 (du) trägt „Saison-Champion“', f.r1);
   ok(f.r2.ich === 'bronze' && f.r2.ichT === 'Neuling' && f.r2.hat2 && f.r2.y === 'sz1' && f.r2.yT === 'Saison-Champion', 'Reset 2, anderer Platz 1: du verlierst ihn (angelegt → Standard), der neue trägt ihn', f.r2);
