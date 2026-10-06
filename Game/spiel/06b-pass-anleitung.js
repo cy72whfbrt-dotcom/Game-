@@ -147,7 +147,7 @@ const ANLEITUNG = [
       puls: () => document.getElementById('fieldSheet').hidden ? '' : 'sammeln' },
     { t: 'Hol dir deine Belohnungen unter „Events“ (unten).', fertig: () => anleitungTat.abgeholt || (isPanelOpen(goalsPopup) && !eventsBereit()),   // (nichts abholbereit: dann reicht das Öffnen)
       tipp: () => isPanelOpen(goalsPopup) ? 'Tippe auf „Abholen“ – die Zahl an einem Reiter zeigt, wo noch etwas wartet.' : null, puls: () => isPanelOpen(goalsPopup) ? 'abholen' : 'events' },
-    { t: 'Die Knöpfe rechts auf der Karte: Fadenkreuz = zurück zur Hauptstadt · Fahne = Wegmarke setzen · Schwerter = Armee aufstellen · + und − = näher und weiter.', fertig: () => anleitungTat.knoepfe, puls: () => 'knoepfe', ok: true }
+    { t: 'Knöpfe rechts: Fadenkreuz = zur Hauptstadt · Fahne = Wegmarke · Schwerter = Armee aufstellen · + und − = näher, weiter. Würfel oben = Rohstoffe (Holz, Stein, Eisen).', fertig: () => anleitungTat.knoepfe, puls: () => 'knoepfe', ok: true }
 ];
 const ANLEITUNG_TAEGLICH = 2;                             // die tägliche Belohnung kommt beim allerersten Start erst nach Schritt 2
 const anleitungTat = {};
@@ -200,7 +200,7 @@ function anleitungStarten() { anleitungZeigen(); if (!anleitungUhr && anleitung.
 document.getElementById('anleitungWeg').addEventListener('click', () => { anleitungFrage = true; anleitungZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
 document.getElementById('anleitungNein').addEventListener('click', () => { anleitungFrage = false; anleitungZeigen(); });
 document.getElementById('anleitungJa').addEventListener('click', () => {
-    anleitungFrage = false; anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); anleitungZeigen();
+    anleitungFrage = false; anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); anleitungZeigen(); setTimeout(maybeShowDaily, 1500);   // (vor Schritt 3 übersprungen: die tägliche Belohnung kommt jetzt)
     flashHint('Anleitung übersprungen – unter Profil → Einstellungen kannst du sie noch mal starten.', 3500);
 });
 document.getElementById('anleitungOk').addEventListener('click', () => { anleitungTat.knoepfe = true; anleitungZeigen(); });

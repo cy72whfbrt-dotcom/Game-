@@ -506,9 +506,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Hauptstadt-Fenster: Satz „Hier stehen deine Truppen. Mit ihnen greifst du an und sammelst.“ (`#popupAnleitung`, solange die
   Anleitung läuft). In jedem Schritt pulsiert der nächste nötige Knopf (`body[data-anl-puls]`: Fadenkreuz, Angreifen,
   Aufwerten, Stadt/Stadt betreten/Aufwerten im Holzfäller, Sammeln, Events, Abholen). Neuer kurzer Schritt 7 erklärt die
-  Knöpfe ohne Text (Fadenkreuz = zur Hauptstadt, Fahne = Wegmarke, Schwerter = Armee aufstellen, +/− = Zoom; einen 3D-Würfel
-  gibt es nicht) mit Knopf „Verstanden“. „×“ fragt erst im Spiel „Wirklich überspringen?“ (Überspringen / Weiter lernen, kein
-  confirm()). Profil → Einstellungen → „Anleitung noch mal“ startet von vorn; die Belohnung (10 Edelsteine ins Abholfach)
+  Knöpfe ohne Text (Fadenkreuz = zur Hauptstadt, Fahne = Wegmarke, Schwerter = Armee aufstellen, +/− = Zoom und der Würfel
+  oben neben Münzen/Edelsteinen/Truppen = Rohstoffe; alle pulsieren) mit Knopf „Verstanden“ unter dem Text (Leiste kompakt:
+  Schritt, Text und „×“ in einer Zeile). „×“ fragt erst im Spiel „Wirklich überspringen?“ (Überspringen / Weiter lernen, kein
+  confirm()); nach „Überspringen“ kommt die tägliche Belohnung gleich (nicht erst beim nächsten Laden). Profil → Einstellungen → „Anleitung noch mal“ startet von vorn; die Belohnung (10 Edelsteine ins Abholfach)
   gibt es nur beim ersten Mal (`anleitung.belohnt`; alter Stand „6 von 6“ bleibt fertig). **Anleitungs-Stand im Browser?
   Nein:** `store` (01a) geht über `localStorage`, das auf der Spielseite speichern.js ersetzt – `openWaterAnleitung` liegt im
   Spielstand auf dem Server (wie alle `openWater…`-Werte; `sessionStorage` nur im Arbeitsspeicher, sw.js nur Push, Cookie nur
