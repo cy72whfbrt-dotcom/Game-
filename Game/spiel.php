@@ -1913,6 +1913,29 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .p5-kopfzeile{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
 .p5-kopfzeile .ptitle-tag{position:relative;margin:0;white-space:nowrap}
 .p5-kopfzeile .ptitle-tag:not(:empty)::before{content:"·";position:absolute;left:-10px;color:var(--tx-3)}   /* der Punkt steht in der Lücke: bricht der Titel um, schneidet der Rand ihn ab */
+/* Profil-Kopf wie bei einem Herrscher: Name (Stift: antippen zum Ändern), darunter Macht und Spieler-Nummer */
+.p5-name{display:flex;align-items:center;gap:4px;min-width:0;cursor:text}
+.p5-name .ptitle--input{flex:1}
+.p5-name .icon{flex:none;width:14px;height:14px;color:var(--tx-3)}
+.p5-kennung{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;margin:1px 0 3px;font:500 12px/1.3 var(--font-ui);color:var(--tx-2)}
+.p5-kennung b{color:var(--gold-100);font-variant-numeric:tabular-nums}
+.p5-kennung .icon{width:13px;height:13px;margin-right:4px;color:var(--gold-300);vertical-align:-2px}
+@media (max-height:500px) and (orientation:landscape){ .p5-kennung{display:none} }   /* (quer: der Kopf bleibt kompakt) */
+.p5-heimat{display:inline-flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.p5-heimat .btn{min-height:36px}
+/* Ausrüstung: leere Felder führen zur Ausrüstungskiste (Plus unten rechts) */
+#chestEquippedGrid .tile.empty{cursor:pointer}
+.tile.empty .p5-plus{position:absolute;right:4px;bottom:4px;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:var(--gold-300);color:#1a1408}
+.tile.empty .p5-plus .icon{width:12px;height:12px}
+#chestEquippedGrid .slot-r:not([data-r]){color:var(--gold-200)}
+.empty-state .btn{margin-top:6px}
+/* Fähigkeiten: große runde Knoten mit Stufe, Name darunter (Linien wie gehabt durch die Mitten) */
+#skillGrid.skillCross{width:min(100%,330px);aspect-ratio:auto;grid-template-rows:repeat(3,112px)}
+#skillGrid .skillNode{width:66px;height:66px;border-radius:50%}
+#skillGrid .skillNode .nIcon .icon{width:26px;height:26px}
+#skillGrid .skillNode .nName{position:absolute;top:calc(100% + 5px);left:50%;width:104px;transform:translateX(-50%);font:600 11px/1.2 var(--font-ui);hyphens:manual;color:var(--tx-2);text-align:center}
+#skillGrid .skillNode.selected .nName{color:var(--gold-100)}
+#skillGrid .skillNode[data-level="0"]{filter:saturate(.35)}
 .p5-naechste{margin:0 0 8px;padding:8px 12px;border:1px solid var(--line-1);border-radius:8px;font-size:13px;color:var(--tx-2)}
 .p5-zeile{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;margin:0 0 8px;padding:8px 12px;border:1px solid var(--line-2);border-radius:10px;
   background:rgba(255,255,255,.03);color:var(--tx-1);font:600 15px/1.2 var(--font-ui);text-align:left;cursor:pointer}
@@ -1955,8 +1978,9 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   <header class="phead phead--hero">
     <div id="pAvatarRing" class="avatar-ring"><span class="avatar"><svg class="icon"><use href="#i-profile"/></svg></span><span id="profileLevelBadge" class="lvl">1</span></div>
     <div class="phead-text">
-      <div class="overline p5-kopfzeile"><span>Profil · Rang <b id="profileRank">Bronze</b></span><span id="profileTitle" class="ptitle-tag"></span></div>
-      <input id="profileName" class="ptitle ptitle--input" type="text" maxlength="20" placeholder="Dein Name" autocomplete="off" spellcheck="false">
+      <div class="overline p5-kopfzeile"><span>Rang <b id="profileRank">Bronze</b></span><span id="profileTitle" class="ptitle-tag"></span></div>
+      <label class="p5-name"><input id="profileName" class="ptitle ptitle--input" type="text" maxlength="20" placeholder="Dein Name" autocomplete="off" spellcheck="false" aria-label="Dein Name (antippen zum Ändern)"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19l1-4L16 5l3 3L9 18zM14 7l3 3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg></label>
+      <div id="profileKennung" class="p5-kennung"></div>
       <div class="xp"><span class="xp-l">Stufe <b id="xpLevelNum">1</b></span><div class="xp-track"><i id="xpFill" class="xpFill"></i></div><span id="xpNums" class="xp-n">0 / 50 XP</span></div>
       <div id="profileBund"></div>
     </div>
@@ -1984,7 +2008,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-flag"/></svg>Basen</span><b class="stat-v" id="kBases">0</b></div>
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-troops"/></svg>Truppen / Std.</span><b class="stat-v is-good" id="kTroopsRate">0</b></div>
         <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-coin"/></svg>Münzen / Std.</span><b class="stat-v is-good" id="kCoinsRate">0</b></div>
-        <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-home"/></svg>Weltanteil</span><b class="stat-v" id="profileProgress">0%</b></div>
+        <div class="stat"><span class="stat-l"><svg class="icon"><use href="#i-rank"/></svg>Nächster Rang</span><b class="stat-v" id="profileNextRank">–</b></div>
       </div>
       <div class="sect"><h4>Übersicht</h4></div>
       <div id="profileStats" class="kv"></div>

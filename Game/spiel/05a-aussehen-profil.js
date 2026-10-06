@@ -149,22 +149,22 @@ function applyCrestAvatars() {                    // HUD + profile header show t
     for (const av of document.querySelectorAll('#hudPlayer .avatar, #pAvatarRing .avatar')) av.innerHTML = '<img alt="" src="' + crestDataUrl(64) + '">';
 }
 applyCrestAvatars();
+// Spielername überall derselbe (HUD, Profil, Rangliste, Einstellungen): fehlt er im Spielstand, der Name vom Konto –
+// ohne Konto (Vorschau) „Statthalter“; gespeichert wird erst, was der Spieler selbst einträgt
+if (!profileName.value.trim()) profileName.value = (window.__OW && !__OW.system && __OW.name) || 'Statthalter';
+function naechsterRang() { return RANK_TIERS.find(t => t.min > ownedIslands.size) || null; }   // → { min, name } oder null (höchster Rang)
 function renderProfile(live) {                  // live = the per-second refresh: numbers only, the editor and pickers stay put
     if (!live) renderCrestEditor();
     const home = islandById[playerIslandId];
-    const homeLandmass = landmasses.find(lm => lm.id === home.landmassId);
-    const homeLabel = homeLandmass
-        ? 'Insel ' + (homeLandmass.id + 1) + ' · Turm #' + (home.id + 1)
-        : 'Turm #' + (home.id + 1);
 
     setText(document.getElementById('profileLevelBadge'), playerLvl);      // (live: jede Sekunde aus liveTick – geschrieben wird nur, was sich ändert)
     setText(document.getElementById('profileRank'), currentRank());
+    const nr = window.__OW && !__OW.system && __OW.uid;                    // Kopf wie bei einem Herrscher: Macht und Spieler-Nummer
+    liveHtml(document.getElementById('profileKennung'), '<span>' + icon('attack') + 'Macht <b>' + fmtCompact(powerOf(whoProfile('player'))) + '</b></span>' + (nr ? '<span>Nr. <b>' + nr + '</b></span>' : ''));
     liveHtml(document.getElementById('profileBund'), profilBundHtml('player'));   // dein Bündnis (antippen: Bündnis-Fenster)
     if (!live) renderLook();
-    const worldPct = ownedIslands.size / islands.length * 100;
-    setText(document.getElementById('profileProgress'), worldPct > 0 && worldPct < 0.1
-        ? '< 0,1 %'
-        : worldPct.toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' %');
+    const nRang = naechsterRang();                        // statt Weltanteil (bei tausenden Basen immer „< 0,1 %“): wie weit bis zum nächsten Rang
+    setText(document.getElementById('profileNextRank'), nRang ? nRang.name + ' ab ' + fmtNum(nRang.min) + ' Basen' : 'Höchster Rang');
 
     // XP sits in the profile header, always visible.
     const xpNeeded = xpNeededForLevel(playerLvl);
@@ -175,20 +175,25 @@ function renderProfile(live) {                  // live = the per-second refresh
     liveHtml(document.getElementById('xpNext'), 'Belohnung für Stufe ' + nx + ': <b>+' + fmtCompact(nM) + '</b> ' + (nM === 1 ? 'Münze' : 'Münzen') + ', <b>+' + fmtCompact(nT) + '</b> ' + (nT === 1 ? 'Truppe' : 'Truppen') +
         (nG ? ', <b>+' + nG + '</b> ' + (nG === 1 ? 'Edelstein' : 'Edelsteine') : ''));
 
-    setText(document.getElementById('kBases'), fmtNum(ownedIslands.size) + ' / ' + fmtNum(islands.length));   // (Truppen, Münzen, Edelsteine stehen oben im HUD)
+    setText(document.getElementById('kBases'), fmtNum(ownedIslands.size));   // (Truppen, Münzen, Edelsteine stehen oben im HUD)
     const hp = hourProduction('player');                 // alle Basen zusammen (mit Tempeln und Boni), pro Stunde – genau das kommt an
     setText(document.getElementById('kTroopsRate'), '+' + fmtStunde(hp.troops));
     setText(document.getElementById('kCoinsRate'), '+' + fmtStunde(hp.coins));
 
-    const progressPct = Math.round(ownedIslands.size / islands.length * 100);
+    const vorher = RANK_TIERS.filter(t => t.min <= ownedIslands.size).pop().min;   // Ring ums Wappen: Weg zum nächsten Rang
     const avatarRing = document.getElementById('pAvatarRing');
-    if (avatarRing) avatarRing.style.setProperty('--progress', progressPct);
+    if (avatarRing) avatarRing.style.setProperty('--progress', nRang ? Math.round((ownedIslands.size - vorher) / (nRang.min - vorher) * 100) : 100);
 
     const activeCount = playerRelevantAttackCount() + playerRelevantSendCount() + pendingScouts.length + pendingRetreats.length;
     liveHtml(profileStats,
         '<div class="statRow"><span>' + icon('star') + 'Fähigkeitspunkte</span><b>' + fmtNum(skillPoints) + '</b></div>' +
         (activeCount > 0 ? '<div class="statRow"><span>' + icon('hourglass') + 'Unterwegs</span><b>' + fmtNum(activeCount) + '</b></div>' : '') +
-        '<div class="statRow"><span>' + icon('home') + 'Heimat</span><b>' + homeLabel + '</b></div>');
+        (home ? '<div class="statRow"><span>' + icon('home') + 'Hauptstadt</span><b class="p5-heimat">' + coordText(home.x, home.y) +
+            ' <button type="button" class="btn btn--ghost btn--sm" data-heimzeigen>Zeigen</button></b></div>' : ''));   // Koordinaten wie auf der Karte statt interner Nummern
     updateHudPlayer();
 }
+profileStats.addEventListener('click', e => {        // Hauptstadt „Zeigen“: Profil zu, Karte fährt hin
+    if (!e.target.closest('[data-heimzeigen]')) return;
+    profileCloseBtn.click(); recenterOnHome(true);
+});
 

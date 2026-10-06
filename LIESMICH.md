@@ -925,6 +925,17 @@ Befehle und Nachrichten verteilen, Spielerliste mit Profilen.
   mehr dazu; Profil schickt `frames`/`titles` statt `title` (welt.js, server/02). `openLookSheet('title')` öffnet „Rahmen“ bei den
   Saison-Rahmen. Tests `aussehen_rahmen_test` (neu), `saison_test` (Reset 1/2), `handy_stadt_test` („Wirklich?“ jetzt am Marsch-Skin),
   `server_test`, `tests/server/schummel_test.js` (erfundene Rahmen).
+- **6.10. – Profil aus Spieler-Sicht (Spieler-Durchsicht Bereich C, Branch `blick-c`, NICHT hochgeladen):** **Name überall gleich**
+  (05a): fehlt er im Spielstand, steht der Konto-Name (`__OW.name`) im Profil – damit auch im HUD, in der Rangliste und in den
+  Einstellungen (vorher „Du“ / „Dein Name“ / „–“); ohne Konto (Vorschau) „Statthalter“. Gespeichert wird nur, was der Spieler
+  selbst einträgt; Stift neben dem Namen zeigt „antippen zum Ändern“. **Kopf** (spielseite/07): „Rang Bronze · Titel“ in einer
+  Zeile, darunter Macht (wie Rangliste, `powerOf`) und mit Konto die Spieler-Nummer. **Reich:** „Basen 1“ statt „1 / 25.024“,
+  „Nächster Rang: Silber ab 5 Basen“ statt „Weltanteil < 0,1 %“ (der Ring ums Wappen zeigt den Weg dorthin), „Hauptstadt X … · Y …“
+  mit „Zeigen“ (Profil zu, Karte fährt hin) statt „Insel 281 · Turm #24465“. **Ausrüstung** (05b): solange nichts wirkt, keine
+  Reihe „0 %“; leere Felder mit Plus und „Kiste holen“ öffnen die Ausrüstungskiste im Shop, dazu Knopf unter „Noch keine
+  Ausrüstung“. **Fähigkeiten:** große runde Knoten mit Stufe „0/50“ und Namen darunter, ungelernte blasser. **Einstellungen**
+  (10c): ohne Konto „Benachrichtigungen gibt es nur nach der Anmeldung.“ statt ewig „Einen Moment …“, keine Zeile
+  „Spieler-Nummer –“. Offen (Wirtschaft): „Belohnung für Stufe 2: +1 Münze, +1 Truppe“. Test `profil_kopf_test` (neu).
 - **Befehle der Zuschauer** (in `spiel.js`, Helfer `alsBefehl`): Angreifen (mit gewähltem Held), Senden, Zurückrufen,
   Beschleunigen (Gems zahlt man selbst), Basis/Burg ausbauen (Münzen zahlt man selbst), Hauptstadt verlegen,
   Truppen-Geschenke (Stufe, Thron-Shop, Lazarett, Funde → `eigeneTruppenDazu`), Tore (Maut/zu), Titel vergeben als

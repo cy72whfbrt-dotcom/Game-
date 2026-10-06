@@ -146,7 +146,9 @@ function einstellungenZeigen() {
     for (const b of document.querySelectorAll('#setTon [data-ton]')) { const on = b.dataset.ton === Music.mode; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
     document.getElementById('setAkku').checked = akkuSparen;
     setText(document.getElementById('setName'), profileName.value || '–');
-    setText(document.getElementById('setNr'), String((window.__OW || {}).uid || '–'));
+    const nr = (window.__OW || {}).uid, nrEl = document.getElementById('setNr');
+    setText(nrEl, String(nr || '')); nrEl.parentElement.style.display = nr ? '' : 'none';   // ohne Konto (Vorschau) keine leere Zeile „–“
+    if (!window.__OW) setText(document.getElementById('pushText'), 'Benachrichtigungen gibt es nur nach der Anmeldung.');   // (benachrichtigung.js braucht den Server)
     setText(document.getElementById('setVersion'), spielVersion());
 }
 // Version: Zeit von spiel.js auf dem Server (window.__OW.version) – sonst aus der Skript-Adresse: spiel.js?v=<Zeit>
