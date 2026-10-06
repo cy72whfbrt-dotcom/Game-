@@ -8,11 +8,12 @@
 // F) Schalter WELT_FELSEN = false (Kopie der Vorschau): keine Berge, alle Wege wie vorher (Luftlinie über die Brücken)
 // G) Aussehen: Low-Poly-Gipfel (5 Flächen-Töne), 1–3 Stöcke je Region; Wüste/Stein: Felsen statt der alten runden Häufchen
 // H) Marsch-Zeitschild: die Zahl steht links neben der Sanduhr (textAlign 'left'; vorher 'center' von den Namensschildern →
-//    Zahl über der Sanduhr, „9̶1:43“)
+//    Zahl über der Sanduhr, „9̶1:43“); Restzeit passt zum Hinweis oben („ca. …“, Dauer aus dem Umweg)
 // Bilder (Handy + Desktop, 3 Zoomstufen, Marsch um einen Berg) in den Arbeitsordner.
 //   node tests/browser/welt_felsen_test.js <vorschau> [arbeitsordner]
 const { chromium, devices } = require('playwright');
 const fs = require('fs'), path = require('path');
+const fmtUhr = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };   // wie fmtClock (unter 1 Std.)
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 400) : ''));
 (async () => {
   const VS = path.resolve(process.argv[2]), OUT = path.resolve(process.argv[3] || '.');
@@ -107,15 +108,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       launchSend(aId, cId, null, 100); const m = pendingSends.find(x => !x.vorlaeufig);
       out.welt = m ? m.resolveAt - m.startedAt : null;
     } catch (e) { out.err = e.message; } finally { window.WELT = w0; }
-    out.ganz = travelDurationSeconds(A, C) * 1000;
-    // für das Bild: der Marsch bleibt eine Minute auf der Karte
-    const now = Date.now(); pendingSends = [{ fromId: aId, toId: cId, troops: 100, startedAt: now - 20000, resolveAt: now + 600000, senderBotId: null }];
+    out.ganz = travelDurationSeconds(A, C) * 1000; out.hinweis = hintEl.textContent;
+    // für das Bild: der echte Marsch (Dauer aus dem Umweg) – Hinweis oben und Zeitschild zeigen dieselbe Zeit (vorher fest 10 Min.: „ca. 0:41“ / „9:35“)
+    const now = Date.now(); pendingSends = [{ fromId: aId, toId: cId, troops: 100, startedAt: now, resolveAt: now + out.ganz, senderBotId: null }];
     revealAround((A.x + C.x) / 2, (A.y + C.y) / 2, 40000, false);
     return out;
   }, c.paar || { a: 0, c: 0 });
   ok(d.weg > d.luft * 1.01 && d.weg === d.zeichnung && d.punkte > 2, 'Marsch um den Berg: Weg länger als Luftlinie, die Linie auf der Karte ist genau dieser Weg', { luft: d.luft, weg: d.weg, zeichnung: d.zeichnung, punkte: d.punkte });
   ok(d.frei && d.t[0] > d.t[1] && d.tBot[0] > d.tBot[1] && d.tSp[0] > d.tSp[1], 'Marschzeit um den Berg länger als bei gleicher Luftlinie ohne Berg (du, Mitspieler, Späher)', { du: d.t, mitspieler: d.tBot, spaeher: d.tSp });
   ok(d.befehl === 'senden' && d.handy > 0 && d.welt > 0 && Math.abs(d.handy - d.welt) < 5 && Math.abs(d.welt - d.ganz) < 5, 'Handy (Zuschauer) und Weltrechner rechnen dieselbe Marschzeit', { handy: d.handy, welt: d.welt, err: d.err });
+  ok(d.hinweis.endsWith('ca. ' + fmtUhr(d.ganz / 1000)), 'Hinweis oben nennt die Marschzeit aus dem Umweg', { hinweis: d.hinweis, ganz: d.ganz });
   ok(d.weg <= d.luft * 1.6, 'auch dieser Umweg höchstens 1,6 × Luftlinie', d.weg / d.luft);
 
   // Bilder: Handy, drei Zoomstufen, Marsch um den Berg
@@ -124,15 +126,17 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await seite.waitForTimeout(3500); await seite.screenshot({ path: path.join(OUT, vor + 'felsen_' + name + '.png') });
   } };
   await bilder(p, '');
-  // ===== H) Marsch-Zeitschild: Zahl links neben der Sanduhr =====
+  // ===== H) Marsch-Zeitschild: Zahl links neben der Sanduhr, dieselbe Restzeit wie der Hinweis oben =====
   const h = await p.evaluate(() => new Promise(fertig => { const o = ctx.fillText, z = [];
     ctx.fillText = function (t, x, y) { if (/^\d+:\d\d/.test(t)) z.push({ t, a: ctx.textAlign }); return o.apply(this, arguments); };
     requestRender(); setTimeout(() => { ctx.fillText = o; fertig(z); }, 1500); }));
   ok(h.length > 0 && h.every(x => x.a === 'left'), 'Marsch-Zeitschild: Zahl links neben der Sanduhr (nicht darüber)', h.slice(0, 3));
+  { const sek = h.length ? h[h.length - 1].t.split(':').reduce((m, x) => m * 60 + +x, 0) : -1;
+    ok(sek > 0 && sek <= Math.ceil(d.ganz / 1000), 'Zeitschild: Restzeit höchstens die Marschzeit aus dem Hinweis (nicht mehr „ca. 0:41“ oben, „9:35“ am Schild)', { schild: h.length && h[h.length - 1].t, hinweis: d.hinweis }); }
   await p.context().close();
   { const p4 = await seite(VS, { viewport: { width: 1440, height: 900 } });   // Desktop: derselbe Marsch
     await p4.evaluate(({ a: aId, c: cId }) => { const A = islandById[aId], C = islandById[cId], now = Date.now();
-      pendingSends = [{ fromId: aId, toId: cId, troops: 100, startedAt: now - 20000, resolveAt: now + 600000, senderBotId: null }]; revealAround((A.x + C.x) / 2, (A.y + C.y) / 2, 40000, false); }, c.paar || { a: 0, c: 0 });
+      pendingSends = [{ fromId: aId, toId: cId, troops: 100, startedAt: now, resolveAt: now + travelDurationSeconds(A, C) * 1000, senderBotId: null }]; revealAround((A.x + C.x) / 2, (A.y + C.y) / 2, 40000, false); }, c.paar || { a: 0, c: 0 });
     await bilder(p4, 'd_'); await p4.context().close(); }
 
   // ===== F) Schalter aus =====

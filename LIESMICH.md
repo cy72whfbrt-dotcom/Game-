@@ -796,6 +796,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   sich kein Platz: kleinere Stufe); weit weg dunkle Silhouette statt beiger Hülle. Wüste/Stein: Low-Poly-Felsgruppen statt
   der runden Häufchen (`buildForest` dort nicht mehr gemalt). **Fehler behoben:** Marsch-Zeitschild zeigte „9̶1:43“ –
   `drawMarchChips` setzte `textAlign` nicht, es galt noch 'center' von den Armee-Schildern (09d), die Zahl lag über der Sanduhr.
+  „ca. 0:41“ oben vs. „9:35“ am Schild (Designer-Prüfung): kein Spielfehler – das Testbild setzte einen erfundenen 10-Min.-Marsch
+  ein; jetzt zeigt es den echten Marsch (Dauer aus dem Umweg), der Test prüft, dass Hinweis und Schild zusammenpassen.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
