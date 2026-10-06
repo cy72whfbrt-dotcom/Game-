@@ -497,8 +497,9 @@ if (window.WELT) {
     // einen Puls später im Konto stehen.
     const HB_V = 1, HB_WARTEN_MS = 120000, TAG = 864e5;
     // Burg neu (4.10.: 1–60 Tage, teurer): eine Woche lang gelten für die Burg auch noch die alten (kürzeren, billigeren) Werte –
-    // wer beim Hochladen gerade nach den alten Regeln baute, bekommt sonst einen falschen Alarm
-    const BURG_ALT_BIS = Date.UTC(2026, 9, 14);
+    // wer beim Hochladen gerade nach den alten Regeln baute, bekommt sonst einen falschen Alarm. Nach „Burg fair“ (09f saison.burgFair:
+    // alle Burgen höchstens Stufe 4, laufende Burg-Bauten abgebrochen) baut niemand mehr nach den alten Regeln – dann nicht mehr
+    const BURG_ALT_BIS = Date.UTC(2026, 9, 14), burgAlt = now => now < BURG_ALT_BIS && !(saison && saison.burgFair > 0);
     const burgZeitAlt = L => Math.min(7 * 86400, L <= 14 ? 60 * Math.pow(1.55, L - 1) : 60 * Math.pow(1.55, 13) * Math.pow(1.25, L - 14));
     function burgKostenAlt(L) { const b = 1000 * Math.pow(1.72, L - 1), n = AUF ? AUF.stadtKosten('keep', L) : {};
         const a = { c: niceRound(2000 * Math.pow(1.85, L - 1)), h: niceRound(b), s: L >= 2 ? niceRound(b * .8) : 0, e: L >= 5 ? niceRound(b * .4) : 0 };
@@ -630,7 +631,7 @@ if (window.WELT) {
         const [L, T] = hb.st[id], B = hb.st.keep[0];
         if (L + 1 > hbMax(id)) return 'nein';
         if (id !== 'keep' && AUF) { if (!L && AUF.BAU_AB_BURG[id] > B) return 'nein'; if (L + 1 > (B >= AUF.BURG_MAX ? hbMax(id) : Math.min(hbMax(id), B))) return 'nein'; }
-        const alt = id === 'keep' && now < BURG_ALT_BIS, zeit = alt ? Math.min(cityTimeRoh(id, L), burgZeitAlt(L)) : cityTimeRoh(id, L);   // (Übergang: eine Burg, die noch nach den alten Regeln gebaut wurde)
+        const alt = id === 'keep' && burgAlt(now), zeit = alt ? Math.min(cityTimeRoh(id, L), burgZeitAlt(L)) : cityTimeRoh(id, L);   // (Übergang: eine Burg, die noch nach den alten Regeln gebaut wurde)
         // Bauzeit zählt erst ab Baubeginn: nie vor dem letzten Profil, das dieses Gebäude ohne Bau zeigte (hb.ruhe), und nie vor dem Ende
         // des letzten Baus dieses Bauarbeiters (hb.bu – 1 bzw. 2 Bauarbeiter). Vorher zählte Leerlauf mit (10 Tage still = 10 Tage Bauzeit gratis).
         const pl = (hb.b2 ? 2 : 1), bu = hb.bu || (hb.bu = [0, 0]), i = pl > 1 && bu[1] < bu[0] ? 1 : 0, start = Math.max(T, nn((hb.ruhe || {})[id]), nn(bu[i]));
@@ -853,9 +854,23 @@ if (window.WELT) {
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
     // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – Rohstoff-Konten und die Töpfe des Ausgegebenen (Rohstoffe, Münzen,
     // Admin-Münzen) werden wie seine Bestände umgerechnet (aufgerundet: sein Handy rundet ab – nie ein Fehlalarm, nie eine Lücke).
-    WELT.saisonKonto = function (who, f) {
+    // Thron-Punkte (Alexander 6.10., jeder Reset): sein Handy behält höchstens SAISON_TP_MAX, der Rest kommt 10 : 1 als Edelsteine ins
+    // Abholfach (01a-grundlagen.js) – das Hauptbuch zählt sie als sicher geschickt (hb.gIn), aber nur so viele, wie er haben kann:
+    // was er nach dem letzten Reset behalten durfte (hb.tpB) + was der Weltrechner ihm seitdem gab (Thron, throneEarnedOf) + der
+    // Saison-Pass; mit Profil höchstens seine Punkte darin (+ was danach noch kam). B: einmalige Ausnahme (Alexander 6.10.) –
+    // Edelsteine genau SAISON_AUSNAHME_GEMS, Holz/Stein/Eisen 0, die Töpfe des Ausgegebenen leer (Abholfach hb.gIn bleibt).
+    function hbPassTp() { let n = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem); if (r.k === 'tp') n += r.n || 1; } return n; }
+    function hbThronReset(who, hb, p, now) {
+        const E = throneEarnedOf(who), pass = hbPassTp() * (Math.floor(Math.max(0, now - Math.max(PASS_EPOCH, nn(hb.tpT))) / PASS_LEN) + 1);
+        let hoch = (hb.tpE === undefined ? E : nn(hb.tpB) + Math.max(0, E - nn(hb.tpE))) + pass;
+        if (p && p.tp != null) hoch = Math.min(hoch, nn(p.tp) + Math.max(0, E - nn(p.earned)) + 500);
+        const g = Math.floor(Math.max(0, hoch - SAISON_TP_MAX) / SAISON_TP_JE_GEM); if (g > 0) hb.gIn = nn(hb.gIn) + g;
+        hb.tpB = Math.min(hoch, SAISON_TP_MAX); hb.tpE = E; hb.tpT = now;
+    }
+    WELT.saisonKonto = function (who, f, B) {
         const b = loadBotState()[who]; if (!b) return;
-        const m = wacheMem[who], hb = hbDa(who), d = wd(who);
+        const m = wacheMem[who], hb = hbDa(who), d = wd(who), x = WELT.menschen[who];
+        if (hb) try { hbThronReset(who, hb, (m && m.prof) || (x && x.profil) || null, Date.now()); } catch (e) { console.warn('Saison:', e); }
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
@@ -865,7 +880,12 @@ if (window.WELT) {
             if (hb) { for (const k of ROHK) { if (hb.rU) hb.rU[k] = Math.ceil(nn(hb.rU[k]) * f); hb.rA[k] = Math.floor(nn(hb.rA[k]) * f); } hb.cA = Math.floor(nn(hb.cA) * f); }
             if (d) d.gC = Math.floor(nn(d.gC) * f);
         }
-        const x = WELT.menschen[who]; if (x) { x.profil = null; x.profilNeu = false; }
+        if (B > 0) {                                   // einmalige Ausnahme (Alexander 6.10.): wie sein Handy beim Neuladen
+            if (hb) { hb.gU = SAISON_AUSNAHME_GEMS; hb.rU = { h: 0, s: 0, e: 0 }; hb.rA = { h: 0, s: 0, e: 0 }; hb.gA = 0; hb.cA = 0; }
+            if (d) d.gC = 0;
+            if (b.res) b.res = Object.assign(b.res, { h: 0, s: 0, e: 0 });
+        }
+        if (x) { x.profil = null; x.profilNeu = false; }
         saveBotState();
     };
 

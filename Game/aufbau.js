@@ -109,10 +109,8 @@ function stadtKosten(id, L) {                                  // alles für ein
     const m = STADT_MIX[id] || { h: 1, s: .7, e: .35 }, b = 300 * Math.pow(1.75, L);   // (× WIRTSCHAFT_KOSTEN wie die Münzen in cityCost)
     return { c: cityCost(id, L), h: niceRound(wirtK(b * m.h)), s: L >= 2 ? niceRound(wirtK(b * m.s)) : 0, e: L >= 6 ? niceRound(wirtK(b * m.e)) : 0 };
 }
-function stadtCap(who, id) {                                   // höchste Stufe, die die Burg gerade erlaubt
-    if (id === 'keep') return BURG_MAX;
-    const B = burgStufe(who); return B >= BURG_MAX ? cityMaxLevel(id) : Math.min(cityMaxLevel(id), B);
-}
+function stadtCapB(id, B) { return id === 'keep' ? BURG_MAX : B >= BURG_MAX ? cityMaxLevel(id) : Math.min(cityMaxLevel(id), B); }   // höchste Stufe bei Burg-Stufe B
+function stadtCap(who, id) { return stadtCapB(id, burgStufe(who)); }   // höchste Stufe, die die Burg gerade erlaubt
 // Marsch-Plätze: so viele Aktionen gleichzeitig (Angriff, Verstärkung, Sammeln, Lager/Boss, Armee). Ein Mehrfachangriff
 // (oder „Truppen sammeln“) zählt als EINE Aktion. Rückwege zählen nicht.
 const marschGrenze = who => 2 + Math.floor((burgStufe(who) - 1) / 6);   // Burg 1: 2 · 7: 3 · 13: 4 · 19: 5 · 25: 6
@@ -166,6 +164,22 @@ const FORSCHUNG = [
 ];
 const FO_BY = {}; for (const d of FORSCHUNG) FO_BY[d.id] = d;
 const foAkaFuer = (d, L) => d.aka + (L - 1) * (d.schritt || 2);   // Stufe L braucht diese Labor-Stufe
+// Burg fair (Alexander 6.10. A): beim ersten Saison-Reset danach EINMAL jede Burg über Stufe B auf B – für Mitspieler und echte
+// Spieler gleich (09f-saison.js saisonWelt, dein Spielstand: 01a-grundlagen.js → unten beim Laden). Die anderen Gebäude bis zur
+// Burg-Stufe, die Forschung bis zum Labor (und Vorgänger), Bauten und Forschung darüber abgebrochen – ohne Erstattung.
+// c = { levels, fo, builds, foRun } (auch das Hauptbuch des Weltrechners: nur levels + fo) → true, wenn sich etwas geändert hat
+function burgFair(c, B) {
+    if (!c || !c.levels || !(B >= 1)) return false;
+    const lv = c.levels, fo = c.fo || (c.fo = {}), vor = JSON.stringify([lv, fo, c.builds, c.foRun]);
+    lv.keep = Math.max(1, Math.min(B, (lv.keep | 0) || 1));
+    for (const id in lv) if (id !== 'keep' && (lv[id] || 0) > stadtCapB(id, lv.keep)) lv[id] = stadtCapB(id, lv.keep);
+    if (Array.isArray(c.builds)) c.builds = c.builds.filter(b => b && b.to <= (b.id === 'keep' ? B : stadtCapB(b.id, lv.keep)));
+    const aka = lv.academy || 0, darf = (d, L) => aka >= foAkaFuer(d, L) && !(d.vor && !((fo[d.vor] | 0) >= 1));
+    for (const d of FORSCHUNG) { let L = Math.min(d.max, fo[d.id] | 0); while (L > 0 && aka < foAkaFuer(d, L)) L--; if (L > 0) fo[d.id] = L; else delete fo[d.id]; }
+    for (const d of FORSCHUNG) if (fo[d.id] && !darf(d, 1)) delete fo[d.id];
+    if (c.foRun && !(FO_BY[c.foRun.id] && darf(FO_BY[c.foRun.id], c.foRun.to))) c.foRun = null;
+    return JSON.stringify([lv, fo, c.builds, c.foRun]) !== vor;
+}
 function foStufe(who, id) { const c = stadtVon(who), d = FO_BY[id]; if (!c || !d || !c.fo) return 0; return Math.max(0, Math.min(d.max, (c.fo[id] | 0) || 0)); }
 function foWert(who, id) { const d = FO_BY[id]; return d && d.pro ? foStufe(who, id) * d.pro : 0; }
 const foSumme = who => FORSCHUNG.reduce((a, d) => a + foStufe(who, d.id), 0);   // alle erforschten Stufen (Erfolge, Rangliste „Hauptstadt“)
@@ -479,7 +493,7 @@ AUF = {
     ROH_START, foZeitRoh, foAkaFuer,                           // (für das Hauptbuch 3B in spiel.js)
     ROH_DEF, BURG_MAX, BAU_AB_BURG, FORSCHUNG, MARKT_WERT,
     rohVon, rohDazu, rohSpeichern, basisRoh, rohBuchen, rohStunde, kannZahlen, zahlen, kostenHtml,
-    burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzStufe,
+    burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzStufe, burgFair,
     marschFrei, marschOk, marschVoll, gruppeLaeuft, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
     foStufe, foWert, foSumme, foGesamt, foKosten, foFertig, marktLimit, marktHtml, marktGebuehr, marktStufe: who => bauStufe(who, 'market'),
     kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, tempelPlus, botschaftTempo, botschaftGeschenk, botschaftStufe: who => bauStufe(who, 'embassy'),
@@ -487,4 +501,6 @@ AUF = {
     botStadtFix, botForschung, botMarkt, botBurgWert, botRohWunsch
 };
 for (const id in (loadBotState() || {})) try { botStadtFix(botState[id]); } catch (e) {}
+// Burg fair beim Saison-Reset: dein Spielstand wie die Welt (01a-grundlagen.js merkt es vor – bis es hier erledigt ist)
+{ const B = SYSTEM ? 0 : parseInt(store.get('openWaterBurgFair'), 10) || 0; if (B > 0) { burgFair(loadCity(), B); saisonBurgGeladen = B; saveCity(); store.remove('openWaterBurgFair'); } }
 hudRoh();

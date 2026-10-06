@@ -103,6 +103,36 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Bauherr: echte Spieler bekommen beim Weltrechner Punkte für Stadt-Gebäude', /evPunkte\('bau', who, 2 \+ L \+ 1\)/.test(schritt));
     pruefe('Welt-Profil schickt Bau- und Forschungs-Ende mit', /bauBis: bl\.map/.test(fs.readFileSync(path.join(G, 'welt.js'), 'utf8')));
 }
+// 6) Burg fair (Alexander 6.10. A): beim Reset Handy (aufbau.js burgFair) und Hauptbuch des Weltrechners (09f burgFairWer → hb.st/hb.fo)
+// gleich – das Handy meldet danach nie mehr als das Hauptbuch erlaubt (kein Fehlalarm); die alten Burg-Bauzeiten enden mit dem Reset
+{
+    const a = fs.readFileSync(path.join(G, 'aufbau.js'), 'utf8'), s9 = fs.readFileSync(path.join(G, 'spiel', '09f-saison.js'), 'utf8'), s10 = fs.readFileSync(path.join(G, 'spiel', '10d-welt-weltrechner.js'), 'utf8');
+    const stueck = (q, von, bis) => { const i = q.indexOf(von), j = q.indexOf(bis, i); if (i < 0 || j < 0) throw new Error('Stück fehlt: ' + von); return q.slice(i, j); };
+    const AUF = new Function('cityMaxLevel', 'BURG_MAX', stueck(a, 'function stadtCapB', 'function stadtCap(') + stueck(a, 'const FO_AESTE', 'function foStufe') + 'return { burgFair };')(id => id === 'forge' ? 5 : id === 'hospital' ? 40 : 25, 25);
+    const burgFairWer = new Function('AUF', stueck(s9, 'function burgFairWer', '\n}\n') + '\n}\nreturn burgFairWer;')(AUF);
+    const T = 1000, lv = { keep: 6, academy: 5, lumber: 6, wall: 3, market: 2 }, fo = { w_prod: 3, m_atk: 2, x_nebel: 1 };
+    const welt = { city: { levels: Object.assign({}, lv), fo: Object.assign({}, fo) }, hb: { st: { keep: [6, T], academy: [5, T], lumber: [6, T], wall: [3, T], market: [2, T], forge: [0, T] }, fo: Object.assign({}, fo) } };
+    const handy = { levels: Object.assign({}, lv), fo: Object.assign({}, fo), builds: [{ id: 'keep', to: 7 }], foRun: { id: 'x_nebel', to: 2 } };
+    burgFairWer(welt, 4); AUF.burgFair(handy, 4);
+    const st = welt.hb.st, ids = Object.keys(st);
+    pruefe('Burg fair: Hauptbuch Burg 6 → 4, Labor 5 → 4, Holzfäller 6 → 4, Mauer/Markt bleiben', st.keep[0] === 4 && st.academy[0] === 4 && st.lumber[0] === 4 && st.wall[0] === 3 && st.market[0] === 2 && st.keep[1] === T);
+    pruefe('Burg fair: Hauptbuch-Forschung bis Labor 4 (Ertrag 2, Angriff 2, Kundschaft weg)', JSON.stringify(welt.hb.fo) === '{"w_prod":2,"m_atk":2}' && JSON.stringify(welt.city.fo) === JSON.stringify(welt.hb.fo));
+    pruefe('Burg fair: Handy meldet nichts über dem Hauptbuch (kein Fehlalarm)', ids.every(id => (handy.levels[id] || 0) <= st[id][0]) && Object.keys(handy.fo).every(k => handy.fo[k] <= (welt.hb.fo[k] | 0)) && !handy.builds.length && !handy.foRun);
+    const alt = new Function('saison', stueck(s10, 'const BURG_ALT_BIS', '\n') + '\nreturn burgAlt;'), t = Date.UTC(2026, 9, 10);
+    pruefe('Burg fair: alte Burg-Bauzeiten gelten bis 14.10. – nach dem Reset mit Burg fair nicht mehr', alt({ nr: 1 })(t) && !alt({ nr: 2, burgFair: 2 })(t) && /const alt = id === 'keep' && burgAlt\(now\)/.test(s10));
+    // Thron-Punkte (jeder Reset): das Hauptbuch erlaubt die Edelsteine aus dem Abholfach – nie mehr, als er an Punkten haben kann
+    const thron = (E, pass) => new Function('throneEarnedOf', 'nn', 'PASS_LVLS', 'passRewardAt', 'PASS_EPOCH', 'PASS_LEN', 'SAISON_TP_MAX', 'SAISON_TP_JE_GEM',
+        stueck(s10, 'function hbPassTp', 'WELT.saisonKonto') + 'return hbThronReset;')(() => E, v => Number.isFinite(+v) ? +v : 0, 1, (L, prem) => prem && pass ? { k: 'tp', n: pass } : { k: 'gems', n: 1 }, Date.UTC(2026, 9, 1), 864e5 * 56, 20000, 10);
+    const hbT = { gIn: 0 }, jetzt = Date.UTC(2026, 9, 6);
+    thron(35000, 0)(null, hbT, { tp: 35000, earned: 35000 }, jetzt); const g1 = hbT.gIn;
+    thron(40000, 0)(null, hbT, { tp: 25000, earned: 40000 }, jetzt + 864e5); const g2 = hbT.gIn - g1;
+    const hbF = { gIn: 0 }; thron(30000, 0)(null, hbF, { tp: 1e9, earned: 30000 }, jetzt);
+    const hbP = { gIn: 0 }; thron(20000, 3000)(null, hbP, null, jetzt);   // (ohne Profil: Thron + Saison-Pass)
+    pruefe('Thron-Punkte: 35.000 → 1.500 Edelsteine erlaubt (Abholfach), danach 25.000 → 500; ein gefälschtes Profil bekommt nicht mehr, als er verdient hat',
+        g1 === 1500 && g2 === 500 && hbT.tpB === 20000 && hbF.gIn === 1000 && hbP.gIn === 300);
+    pruefe('Einmalige Ausnahme im Hauptbuch: Edelsteine 1.000, Holz/Stein/Eisen 0 (wie das Handy)', /if \(hb\) \{ hb\.gU = SAISON_AUSNAHME_GEMS; hb\.rU = \{ h: 0, s: 0, e: 0 \}/.test(s10) && /WELT\.saisonKonto\(id, f, B\)/.test(s9) && /if \(B\) saisonAusnahme\(\);/.test(s9));
+    pruefe('Burg fair: saisonWelt für alle Mitspieler und echten Spieler, nur beim ersten Reset (saison.burgFair)', /if \(B > 0 && AUF\) burgFairWer\(b, B\)/.test(s9) && /B = burgFair === nr \? BURG_FAIR : 0/.test(s9) && /wirtAb, burgFair, last/.test(s9));
+}
 
 console.log(fehler ? fehler + ' von ' + n + ' Tests FEHLGESCHLAGEN' : 'Alle ' + n + ' Spiel-Tests bestanden.');
 process.exit(fehler ? 1 : 0);

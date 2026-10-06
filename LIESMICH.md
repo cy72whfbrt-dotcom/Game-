@@ -778,7 +778,30 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
 - **6.10. – Thron-Shop wie Händler – Alexander 6.10. (11b, Frage 6 = B), NICHT hochgeladen:** Münzen/Truppen im Thron-Shop
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
-  `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+  `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.- **6.10. – Burg fair beim Reset – Alexander 6.10. A + einmalige Ausnahme + Thron-Punkte (11b, Branch `burg-fair`, NICHT hochgeladen):** Bis 4./5.10. galt die
+  alte kurze Burg-Bauzeit – Mitspieler haben Burg 13–14 / Forschung 57–58, mit den neuen Regeln geht höchstens Burg 3–4.
+  Darum setzt der **nächste Saison-Reset EINMALIG** (Merker `saison.burgFair` = die Saison, in der es passierte; danach nie
+  wieder) jede Burg über Stufe 4 auf 4 – Mitspieler und echte Spieler gleich (`BURG_FAIR` in 01a). Die anderen Gebäude fallen auf
+  das, was die Burg erlaubt (`stadtCapB`), die Forschung auf das, was das Labor erlaubt (`foAkaFuer`, Vorgänger), laufende Bauten
+  (Burg über 4, Gebäude über die Burg) und Forschung darüber werden abgebrochen. **Keine Erstattung** (Alexander hat nichts dazu
+  gesagt – Kosten der abgebrochenen Bauten/Forschung und der verlorenen Stufen sind weg). Gems, Helden, Ausrüstung, Rohstoffe
+  unverändert. Code: `aufbau.js burgFair(c, B)` (eine Rechnung für alle), `09f saisonWelt` → `burgFairWer` (Welt-Stadt + Hauptbuch
+  `hb.st`/`hb.fo` echter Spieler), Handy: Nachricht „saison“ `burg: 4` bzw. `saison.burgFair` → `01a` merkt `openWaterBurgFair` vor →
+  `aufbau.js` beim Laden (Zurückspielen einer Sicherung holt die alte Stadt zurück). Hauptbuch: die alten Burg-Bauzeiten
+  (`BURG_ALT_BIS`) enden mit dem Reset (`burgAlt`). Rangliste „Hauptstadt“ zeigt danach die neuen Werte. Hinweis nach dem
+  Neuladen und im Events-Fenster (Zeile „Einmalig“). Tests `saison_test`, `saison_anfang_test`, `welt_test`.
+  **Alexander 6.10.: einmalige Ausnahme** (wegen des Fehlers, damit es fair bleibt) im selben Schritt für alle: Edelsteine auf
+  **genau 1.000** (auch wer weniger hatte), Holz/Stein/Eisen **0**, Münzen 0 (wie immer); Helden/Ausrüstung bleiben; Preise der
+  Top 10 kommen zusätzlich. Mitspieler `09f saisonAusnahme` (vor den Preisen), Handy `01a` (Zurückspielen holt die alten
+  Edelsteine zurück), Hauptbuch `10d WELT.saisonKonto(id, f, B)`: `hb.gU` = 1.000, Rohstoff-Konten und Töpfe des Ausgegebenen 0
+  (Abholfach `hb.gIn` bleibt). Spätere Resets: alles bleibt wie im Saison-Plan.
+  **Thron-Punkte (Alexander 6.10., jeder Reset):** höchstens **20.000** gehen mit (`SAISON_TP_MAX`), der Rest wird **10 : 1** zu
+  Edelsteinen (abgerundet) – ins Abholfach „Thron-Punkte aus Saison N umgetauscht“ (Handy `01a`; Mitspieler `09f saisonWelt` über
+  `evPreis`, gleich abgeholt). Hauptbuch `hbThronReset`: zählt die Edelsteine als sicher geschickt (`hb.gIn`), höchstens so viele,
+  wie er haben kann (behaltene Punkte `hb.tpB` + vom Weltrechner seitdem verdiente + Saison-Pass, mit Profil `tp` – neu im Profil,
+  `profil_bereinigen`, nicht öffentlich – höchstens seine Punkte darin). Beim Ausnahme-Reset: erst 1.000, die umgetauschten
+  zusätzlich im Abholfach. Start-Truppen 5.000: anderer Branch (`wirtschaft-roh`).
+
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

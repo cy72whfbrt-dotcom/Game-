@@ -1,6 +1,7 @@
 // Welt-Saison, Feinheiten (Alexander 5.10.): Ankündigung nach echter Restzeit, „Neustart: vom Admin“ wenn angehalten, „Saison-Pass N“,
 // Tagesboss und Drache in den ersten 3 Tagen einer neuen Saison mit weniger Leben, Trostpreis wenn der Tagesboss entkommt (einmal),
-// nach dem Reset 48 Std. Anfängerschutz für alle echten Spieler – auch ohne Basis.
+// nach dem Reset 48 Std. Anfängerschutz für alle echten Spieler – auch ohne Basis. Burg fair (Alexander 6.10. A, aufbau.js burgFair): Burg 3
+// bleibt mit ihrem Bau auf 4, Burg 4 verliert den Bau auf 5, Forschung mit Vorgänger fällt mit ihm.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 (async () => {
@@ -34,7 +35,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     botAergerNote(X, 0, now); const aergerVor = (botAergerMem[X] || []).length;   // (Ärger der Mitspieler: gehört zur alten Karte)
     barbRec('player').b = 12; barbRec(X).b = 7; barbRec('player').n = 3; const lagerVor = barbState.camps.length;
     saisonWelt(now); const lager = { ich: barbRec('player').b, x: barbRec(X).b, heute: barbRec('player').n, vor: lagerVor, nach: barbState.camps.length, gespeichert: JSON.parse(localStorage.getItem('openWaterBarbWho')).player.b }; const aerger = [aergerVor, Object.keys(botAergerMem).length]; const schutzY = (loadBotState()[Y].neuBis - now) / 36e5, schutzIch = (+localStorage.getItem('openWaterSaisonSchutz') - now) / 36e5; botById[Y].mensch = false;
-    return { bald, halt: /Neustart\s*vom Admin/.test(halt.replace(/<[^>]+>/g, ' ')), haltDatum: /\d{1,2}:\d{2} Uhr/.test(halt), normal: !/vom Admin/.test(normal) && / Uhr</.test(normal),
+    // 7) Burg fair an einzelnen Städten
+    const bau = (id, to) => ({ id, to, startedAt: now, endsAt: now + 864e5 });
+    const c3 = { levels: { keep: 3, academy: 3, lumber: 3 }, fo: { w_prod: 2, m_atk: 1 }, builds: [bau('keep', 4)], foRun: { id: 'x_tempo', to: 2 } }, c3vor = JSON.stringify(c3), g3 = AUF.burgFair(c3, 4);
+    const c4 = { levels: { keep: 4, academy: 4 }, fo: {}, builds: [bau('keep', 5), bau('academy', 5)] }, g4 = AUF.burgFair(c4, 4);
+    const c25 = { levels: { keep: 25, academy: 25, hospital: 30 }, fo: { m_laz: 10, m_laz2: 3, x_tempo2: 1, w_schutz: 2 } }; AUF.burgFair(c25, 4);
+    const fair = { g3, gleich3: JSON.stringify(c3) === c3vor, g4, bau4: c4.builds.length, c25: c25.levels, fo25: c25.fo };
+    return { fair, bald, halt: /Neustart\s*vom Admin/.test(halt.replace(/<[^>]+>/g, ' ')), haltDatum: /\d{1,2}:\d{2} Uhr/.test(halt), normal: !/vom Admin/.test(normal) && / Uhr</.test(normal),
       lager, pass, passNr: passNo(Date.now()), anfang, spaeter, erste, trost: trost.map(x => [x.gems, x.sh, x.crate]), ib: ib.length - ib0, gx: gx1 - gx, gefallen, aerger, schutzY, schutzIch,
       nachricht: /neuBis:\s*\(loadBotState\(\)\[\w+\]\s*\|\|\s*\{\}\)\.neuBis\s*\|\|\s*\w+\s*\+\s*NEULING_MS/.test(saisonNeu.toString()) };
   });
@@ -50,5 +57,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.lager.ich === 0 && r.lager.x === 0 && r.lager.gespeichert === 0 && r.lager.heute === 3 && r.lager.vor > 0 && r.lager.nach === 0, 'Reset: Lager-Fortschritt für alle wieder ab Stufe 1, alte Lager weg (Zähler von heute bleiben)', r.lager);
   ok(r.aerger[0] === 1 && r.aerger[1] === 0, 'Reset: der Ärger der Mitspieler (Hauptstadt/Truppen nach Lage) ist vergessen', r.aerger);
   ok(r.nachricht, 'Nachricht „saison“ schickt den neuen Anfängerschutz mit');
+  const F = r.fair;
+  ok(!F.g3 && F.gleich3, 'Burg fair: Burg 3 mit Bau auf 4 und Forschung bleibt genau so', F);
+  ok(F.g4 && F.bau4 === 0, 'Burg fair: Burg 4 – Bau auf 5 (Burg und Labor) abgebrochen', F);
+  ok(F.c25.keep === 4 && F.c25.academy === 4 && F.c25.hospital === 4 && JSON.stringify(F.fo25) === '{"m_laz":1}', 'Burg fair: Burg 25 → 4, Krankenhaus 30 → 4, Krankenhaus-Forschung 10 → 1 (Labor 4), ab Labor 23 weg (auch die mit Vorgänger)', F);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
