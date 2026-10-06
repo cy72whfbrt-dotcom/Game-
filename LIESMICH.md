@@ -784,6 +784,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   darunter Knopf „Bündnis gründen“ (Preis rechts, nichts abgeschnitten). Gründen ist eine eigene Seite mit „Zurück“ und
   Wappen-Vorschau (`bundVorschau`), Farben in 2 gleichen Reihen, Zeichen in einer, Kürzel-Platzhalter normal. Nach
   Beitreten/Gründen → Übersicht. Preis unverändert. Dateien: buendnis/04, CSS-Block in spielseite/05. Test `handy_fenster_test`.
+  Nachtrag (Designer-Prüfung): zu wenig Münzen → „Gründen“ grau mit „Fehlt: 17 Münzen“ (wie die Gebäude) statt gold; zieht
+  jede Sekunde nach (`bundGruendenKnopf`).
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

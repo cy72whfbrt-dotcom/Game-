@@ -1,5 +1,5 @@
 // Fenster-Design (11b F, P5) auf dem Handy (390 × 844): Events mit 4 Reitern + Chips, roter Punkt → Abholen, Kampf mit
-// Reitern „Unterwegs | Berichte“ und antippbaren Karten, Bündnis ohne Bündnis (Startseite ohne Reiter, Gründen als eigene Seite mit Vorschau),
+// Reitern „Unterwegs | Berichte“ und antippbaren Karten, Bündnis ohne Bündnis (Startseite ohne Reiter, Gründen als eigene Seite mit Vorschau, zu wenig Münzen: „Fehlt: …“),
 // Profil-Kopf kompakt (keine HUD-Werte doppelt, Rangliste nur als Weg ins eigene Fenster), Einstellungen in Gruppen.
 // Aufruf: node tests/browser/handy_fenster_test.js <vorschau> [<bilder-ordner>]
 const { chromium, devices } = require('playwright');
@@ -64,6 +64,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const b2 = await ev(async () => { document.querySelector('#bundUnten [data-bact="gruendenAuf"]').click(); await new Promise(r => setTimeout(r, 1300));   // (Bündnis zeichnet jede Sekunde neu)
     document.querySelector('#bdFarben [data-farbe="2"]').click(); return { form: !!document.getElementById('bdName'), farbe: !!document.querySelector('#bundUnten #bdFarben [data-farbe="2"].on'), knopf: !!document.querySelector('#bundUnten [data-bact="gruenden"]') }; });
   ok(b2.form && b2.farbe && b2.knopf, 'Bündnis: Knopf öffnet das Gründen-Formular (Farbe wählbar, bleibt offen)', b2);
+  // zu wenig Münzen: Gründen grau mit „Fehlt: … Münzen“ (wie die Gebäude), genug: gold „Gründen“ – zieht jede Sekunde nach
+  const bm = await ev(async () => { const c0 = coins, los = () => document.querySelector('#bundUnten [data-bact="gruenden"]'), stand = () => ({ aus: los().disabled, text: los().querySelector('.lbl').textContent, bg: getComputedStyle(los()).backgroundImage });
+    coins = 0; await new Promise(r => setTimeout(r, 1300)); const leer = stand();
+    coins = BUND.KOSTEN; await new Promise(r => setTimeout(r, 1300)); const voll = stand(); coins = c0;
+    return { leer, voll, soll: 'Fehlt: ' + fmtCompact(BUND.KOSTEN) + ' Münzen' }; });
+  ok(bm.leer.aus && bm.leer.text === bm.soll && bm.leer.bg === 'none', 'Bündnis gründen: 0 Münzen → Knopf grau „Fehlt: … Münzen“ (nicht gold)', bm.leer);
+  ok(!bm.voll.aus && bm.voll.text === 'Gründen', 'Bündnis gründen: genug Münzen → „Gründen“ wieder an', bm.voll);
   const b3 = await ev(async () => { const n = document.getElementById('bdName'), t = document.getElementById('bdTag'); n.value = 'Seewölfe'; n.dispatchEvent(new Event('input', { bubbles: true }));
     t.value = 'sw'; t.dispatchEvent(new Event('input', { bubbles: true })); const v = document.getElementById('bdVorschau'), w = v.querySelector('.bd-wappen');
     const reihen = new Set([...document.querySelectorAll('#bdFarben button')].map(x => Math.round(x.getBoundingClientRect().top))).size, zr = new Set([...document.querySelectorAll('#bdZeichen button')].map(x => Math.round(x.getBoundingClientRect().top))).size;

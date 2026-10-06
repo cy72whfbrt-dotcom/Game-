@@ -24,7 +24,7 @@ function bundRender(neu) {
     setText(document.getElementById('bundTitle'), a ? '[' + a.tag + '] ' + a.name : 'Bündnis');
     liveHtml(document.getElementById('bundSub'), a ? a.mit.length + ' / ' + BUND.MAX + ' Mitglieder · ' + (a.anf === 'player' ? 'du führst' : 'Anführer ' + escapeHtml(bundName(a.anf))) : 'Gemeinsam stärker');
     const em = document.getElementById('bundEmblem'); if (em) { em.style.setProperty('--bf', a ? BUND.FARBEN[a.farbe] : ''); em.classList.toggle('bd-em', !!a); const u = em.querySelector('use'); if (u) u.setAttribute('href', '#i-' + (a ? BUND.ZEICHEN[a.zeichen] || 'bund' : 'bund')); }
-    if (neu || bundOben.dataset.fuer !== bundObenSchluessel()) bundObenZeichnen();
+    if (neu || bundOben.dataset.fuer !== bundObenSchluessel()) bundObenZeichnen(); else bundGruendenKnopf();   // (Münzen ändern sich: der Knopf zieht jede Sekunde nach)
     const ch0 = document.getElementById('bdChat'), unten = !ch0 || ch0.scrollHeight - ch0.scrollTop - ch0.clientHeight < 40, pos = ch0 ? ch0.scrollTop : 0;   // Chat: unten bleiben, wenn man unten war
     liveHtml(bundBody, !a ? (bundGruendenAuf ? '' : bundStartHtml()) : bundTab === 'info' ? bundInfoHtml(a) : bundTab === 'sig' ? bundChatHtml(a) : bundTab === 'rally' ? bundRallyHtml(a) : bundSuchenHtml(a));
     const ch = document.getElementById('bdChat'); if (ch) ch.scrollTop = unten ? ch.scrollHeight : pos;
@@ -151,8 +151,13 @@ function bundObenZeichnen() {
         feld('Farbe', '<div class="bd-farben" id="bdFarben">' + BUND.FARBEN.map((f, i) => '<button type="button" data-farbe="' + i + '" style="--bf:' + f + '"' + (i === 0 ? ' class="on"' : '') + ' aria-label="Farbe ' + (i + 1) + '"></button>').join('') + '</div>') +
         feld('Zeichen', '<div class="bd-zeichen" id="bdZeichen">' + BUND.ZEICHEN.map((z, i) => '<button type="button" data-zeichen="' + i + '"' + (i === 0 ? ' class="on"' : '') + '>' + icon(z) + '</button>').join('') + '</div>') +
         '<label class="set-zeile"><span>Offen für alle<small>sonst nur auf Anfrage</small></span><input type="checkbox" id="bdOffen" checked></label>' +
-        '<button type="button" class="btn btn--primary bd-gf-los" data-bact="gruenden">' + icon('flag') + '<span>Gründen</span><span class="cost">' + preis + '</span></button><p class="bd-fehler" id="bdFehler"></p></div>';
-    bundVorschau();
+        '<button type="button" class="btn btn--primary bd-gf-los" data-bact="gruenden">' + icon('flag') + '<span class="lbl">Gründen</span><span class="cost">' + preis + '</span></button><p class="bd-fehler" id="bdFehler"></p></div>';
+    bundVorschau(); bundGruendenKnopf();
+}
+function bundGruendenKnopf() {                                     // zu wenig Münzen: grau mit „Fehlt: … Münzen“ (wie die Gebäude) statt gold
+    const k = bundUnten.querySelector('.bd-gf-los'); if (!k) return;
+    const fehlt = Math.ceil(BUND.KOSTEN - coins);
+    k.disabled = fehlt > 0; setBtnLabel(k, fehlt > 0 ? 'Fehlt: ' + fmtCompact(fehlt) + ' Münzen' : 'Gründen');
 }
 function bundVorschau() {                                         // Gründen: so sieht das Bündnis aus (Wappen, Kürzel, Name)
     const box = document.getElementById('bdVorschau'); if (!box) return;
