@@ -298,11 +298,17 @@ function botMidPull(bot, target, ruler, now) {             // a fat Kopfgeld dra
 // A far base of someone else is left alone unless it is personal.   (lower = more wanted, 1 = nothing special)
 const botLmShareMem = {};
 
+function botLmShare(botId, lmId, now) {                    // → { v: Anteil eigener, f: Anteil fremder Basen auf der Insel } (15 s gemerkt)
+    const key = botId + ':' + lmId; let sh = botLmShareMem[key];
+    if (!sh || now - sh.at > 15000) { const on = islandsByLandmass[lmId] || [], own = botOwnedIslands[botId]; let mine = 0, fremd = 0;
+        for (const i of on) if (own.has(i.id)) mine++; else if (islandOwnerOf(i.id)) fremd++;
+        sh = botLmShareMem[key] = { v: on.length ? mine / on.length : 0, f: on.length ? fremd / on.length : 0, at: now }; }
+    return sh;
+}
+
 function botStrategic(bot, target) {
     const own = botOwnedIslands[bot.id]; if (!own || !own.size) return 1;
-    const key = bot.id + ':' + target.landmassId, now = Date.now(); let sh = botLmShareMem[key];
-    if (!sh || now - sh.at > 15000) { const on = islandsByLandmass[target.landmassId] || []; let mine = 0; for (const i of on) if (own.has(i.id)) mine++;
-        sh = botLmShareMem[key] = { v: on.length ? mine / on.length : 0, at: now }; }
+    const sh = botLmShare(bot.id, target.landmassId, Date.now());
     let m = sh.v >= .5 ? .35 : sh.v > 0 ? .6 : 1;                                           // inside our land / at our border
     const cap = islandById[botCapitalOf(bot.id)];
     if (cap) {
@@ -311,6 +317,20 @@ function botStrategic(bot, target) {
         if (Math.hypot(target.x - cap.x, target.y - cap.y) < ISLAND_RADIUS * 25) m *= .6;     // right next to home
     }
     return m;
+}
+
+// Wie viel eine Basis für einen großen Schlag hergeben kann (Alexander 6.10.: „die können selbst entscheiden, wie viel sie
+// schicken“) – kein fester Satz, sondern nach Lage, wie bei einem Menschen, der überall Truppen hat: greift sie gerade jemand
+// an, nichts; gab es dort eben Ärger (Angriff, verlorene Basis nebenan), wenig; Grenzland mit mehr fremden als eigenen
+// Basen, die Hälfte bleibt; die Hauptstadt hält als Helfer immer die Hälfte (ihr Rückhalt). Sonst fast alles.
+let botFreiCtx = null;
+function botFrei(botId, id, now) {                          // → Anteil der Truppen, der los darf (0 … .9)
+    if (!botFreiCtx || botFreiCtx.bot !== botId || botFreiCtx.now !== now) botFreiCtx = { bot: botId, now, thr: botThreatened(botId), aer: botAerger(botId, 30 * 60000, now), cap: botCapitalOf(botId) };
+    const c = botFreiCtx, isl = islandById[id]; if (c.thr.has(id)) return 0;
+    let f = .9;
+    if (c.aer.some(i => Math.hypot(i.x - isl.x, i.y - isl.y) < ISLAND_RADIUS * 25)) f = .3;
+    else { const sh = botLmShare(botId, isl.landmassId, now); if (sh.f > sh.v) f = .6; }
+    return id === c.cap ? Math.min(f, .5) : f;
 }
 
 // Everything that could get there: every base with a route (the capital too - nobody can attack it anyway) and the
@@ -326,7 +346,7 @@ function botPoolFor(bot, target) {
         const t = tollFor(r[r.length - 2], r[r.length - 1], n, bot.id, target.id); return !t.closed && (botCoins[bot.id] || 0) >= t.cost; };
     for (const id of own) {
         if (id === megaTempleId || thr.has(id)) continue;                                   // a base under attack keeps its troops
-        const isl = islandById[id], have = Math.floor((islandTroops[id] || 0) * .9);
+        const isl = islandById[id], have = Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, now));   // (nach Lage, nicht immer 90 %)
         if (have < BOT_MIN_GARRISON_TO_ATTACK || !reach(isl.landmassId, have)) continue;
         src.push({ id, have }); s += have;
     }

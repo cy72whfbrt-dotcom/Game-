@@ -31,10 +31,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 6) Reset: alle echten Spieler bekommen 48 Std. Anfängerschutz – auch einer ohne Basis
     const Y = BOT_DEFS.find(x => !x.mensch && x.id !== X && loadBotState()[x.id]).id, by = loadBotState()[Y];
     botById[Y].mensch = true; botOwnedIslands[Y].clear(); by.neuBis = 0; localStorage.removeItem('openWaterSaisonSchutz');
+    botAergerNote(X, 0, now); const aergerVor = (botAergerMem[X] || []).length;   // (Ärger der Mitspieler: gehört zur alten Karte)
     barbRec('player').b = 12; barbRec(X).b = 7; barbRec('player').n = 3; const lagerVor = barbState.camps.length;
-    saisonWelt(now); const lager = { ich: barbRec('player').b, x: barbRec(X).b, heute: barbRec('player').n, vor: lagerVor, nach: barbState.camps.length, gespeichert: JSON.parse(localStorage.getItem('openWaterBarbWho')).player.b }; const schutzY = (loadBotState()[Y].neuBis - now) / 36e5, schutzIch = (+localStorage.getItem('openWaterSaisonSchutz') - now) / 36e5; botById[Y].mensch = false;
+    saisonWelt(now); const lager = { ich: barbRec('player').b, x: barbRec(X).b, heute: barbRec('player').n, vor: lagerVor, nach: barbState.camps.length, gespeichert: JSON.parse(localStorage.getItem('openWaterBarbWho')).player.b }; const aerger = [aergerVor, Object.keys(botAergerMem).length]; const schutzY = (loadBotState()[Y].neuBis - now) / 36e5, schutzIch = (+localStorage.getItem('openWaterSaisonSchutz') - now) / 36e5; botById[Y].mensch = false;
     return { bald, halt: /Neustart\s*vom Admin/.test(halt.replace(/<[^>]+>/g, ' ')), haltDatum: /\d{1,2}:\d{2} Uhr/.test(halt), normal: !/vom Admin/.test(normal) && / Uhr</.test(normal),
-      lager, pass, passNr: passNo(Date.now()), anfang, spaeter, erste, trost: trost.map(x => [x.gems, x.sh, x.crate]), ib: ib.length - ib0, gx: gx1 - gx, gefallen, schutzY, schutzIch,
+      lager, pass, passNr: passNo(Date.now()), anfang, spaeter, erste, trost: trost.map(x => [x.gems, x.sh, x.crate]), ib: ib.length - ib0, gx: gx1 - gx, gefallen, aerger, schutzY, schutzIch,
       nachricht: /neuBis:\s*\(loadBotState\(\)\[\w+\]\s*\|\|\s*\{\}\)\.neuBis\s*\|\|\s*\w+\s*\+\s*NEULING_MS/.test(saisonNeu.toString()) };
   });
   console.log(JSON.stringify(r));
@@ -47,6 +48,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.gefallen === 0, 'Gefallener Boss: kein Trostpreis (er hat schon nach Rang bezahlt)', r.gefallen);
   ok(r.schutzY > 47.9 && r.schutzY <= 48 && r.schutzIch > 47.9 && r.schutzIch <= 48, 'Reset: 48 Std. Anfängerschutz für alle echten Spieler – auch ohne Basis', { ohneBasis: r.schutzY, du: r.schutzIch });
   ok(r.lager.ich === 0 && r.lager.x === 0 && r.lager.gespeichert === 0 && r.lager.heute === 3 && r.lager.vor > 0 && r.lager.nach === 0, 'Reset: Lager-Fortschritt für alle wieder ab Stufe 1, alte Lager weg (Zähler von heute bleiben)', r.lager);
+  ok(r.aerger[0] === 1 && r.aerger[1] === 0, 'Reset: der Ärger der Mitspieler (Hauptstadt/Truppen nach Lage) ist vergessen', r.aerger);
   ok(r.nachricht, 'Nachricht „saison“ schickt den neuen Anfängerschutz mit');
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

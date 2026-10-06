@@ -1138,6 +1138,20 @@ müssen ihn verstehen** und darauf reagieren (z. B. schwachen Gegner mit angreif
 **Nein:** Erklär-Fenster neue Saison · Gleichgewicht nach 1–2 Tagen prüfen · Extra-Sicherung · „Nochmal“-Knopf ·
 Sammler mit einem Tipp neu · Ankunftszeit als Uhrzeit.
 
+**Mitte: Mitspieler wie Menschen – Mitte erobern, Rest im Blick (Alexander 6.10.)** – *gebaut (Branch `mitte-bots`, nicht
+hochgeladen)*. Live waren nach Wochen kaum welche in der Mitte; beim Mitte-Angriff leerten sie ihre Basen fast ganz.
+(1) **Hauptstadt verlegen frei, nach vorne oder zurück** (`botCapitalPlan`, bots/05): ab 6 eigenen Türmen in der Nähe
+(vorher 10), nach vorne 1–3 Ringe (vorher genau 2–3) – nur wenn hinten Ruhe ist (in 30 Min. höchstens 1 Angriff/Verlust).
+**Ärger hinten** (≥ 3 Angriffe oder verlorene Basen in 20 Min. weiter weg, `botAerger`/`botAergerNote`): Hauptstadt
+zurück in die Nähe („hilfe“, schon 15 Min. nach dem letzten Verlegen), die Truppen ziehen mit, `botDefend` schickt von dort
+Hilfe; danach (45 Min. Pause + Ruhe) wieder nach vorne. Kostet wie bei dir `TELEPORT_GEMS`.
+(2) **Truppen nach Lage statt fester Prozente** (`botFrei`, bots/02): angegriffene Basis gibt nichts, Basis mit Ärger in
+der Nähe 30 %, Grenzland (mehr fremde als eigene Basen auf der Insel) 60 %, sonst 90 %; die Hauptstadt als Helfer höchstens
+50 %. Gilt beim Sammeln (`botRally`, jetzt mit Menge je Schritt), `botGather`, `botPoolFor`, Feld-Armeen (`botArmyRally`,
+`botArmyRethink`) und Thron-/Event-Angriffen (`botThink`). Verteidigung, Events, Barbaren und Sammler laufen wie vorher in
+jedem Zug weiter. Test: `mitspieler_mitte_test` (1 Ring vor, Ärger → zurück + Hilfe, bedrohte Basen bleiben besetzt).
+Ein Langzeit-/Simulationswerkzeug gibt es nicht – ob sie live in Wächter-/Thron-Ring ankommen, zeigt erst die Welt.
+
 **H. Ganz zum Schluss:** wenn alles fertig ist, **alles komplett testen** (`tests/komplett.sh` + Spieltester auf Handy
 und Desktop über alle Fenster) – erst danach Alexander wegen Hochladen fragen.
 

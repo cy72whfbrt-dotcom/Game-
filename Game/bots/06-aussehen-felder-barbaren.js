@@ -133,15 +133,15 @@ function botArmyRally(bot, target, need, srcList) {
         pt = { x, y, lm: lm.id }; break;
     }
     if (!pt) return false;
-    const helpers = []; let pool = 0;
+    const helpers = []; let pool = 0; const now = Date.now(), frei = id => Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, now));   // (nach Lage, nicht immer 90 %)
     const most = (BOT_STYLES[bot.style].gather || 8) * 4;                          // as many bases as the strike needs (the loop stops at enough) - the good ones call up more
-    for (const id of strong) { if (pool >= need * 1.3 || helpers.length >= most) break;
-        if (!botCanCross(bot.id, islandById[id].landmassId, pt.lm, Math.floor((islandTroops[id] || 0) * .9))) continue; helpers.push(id); pool += Math.floor((islandTroops[id] || 0) * .9); }
+    for (const id of strong) { if (pool >= need * 1.3 || helpers.length >= most) break; const n = frei(id);
+        if (n < BOT_MIN_GARRISON_TO_ATTACK || !botCanCross(bot.id, islandById[id].landmassId, pt.lm, n)) continue; helpers.push(id); pool += n; }
     if (pool < need * 1.1) return false;
     const hp = botPickHero(bot.id, null, null, need, true);
     const a = { id: 'b' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), who: bot.id, hero: hp[0], hero2: hp[1], x: pt.x, y: pt.y, lm: pt.lm, troops: 0, homeId: helpers[0], mv: null, t: target.id, until: Date.now() + (helpers.length > 6 ? 12 : 8) * 60000 };
     armies.push(a); let sent = 0;
-    for (const id of helpers) { const n = Math.floor((islandTroops[id] || 0) * .9); if (armySendFrom(a, id, n)) sent += n; }
+    for (const id of helpers) { const n = frei(id); if (armySendFrom(a, id, n)) sent += n; }
     if (!sent) { armies = armies.filter(x => x !== a); return false; }
     if (islandOwnerOf(target.id) === 'player') flashHint(bot.name + ' sammelt eine Armee vor deiner Basis ' + islandTitle(target) + '.', 4500);
     saveArmies(); requestRender(); return true;
@@ -161,7 +161,7 @@ function botArmyRethink(bot, a, atk, needS, now) {
         const helpers = pool.src.filter(sv => own.has(sv.id) && sv.id !== megaTempleId && !thr.has(sv.id) && botCanCross(bot.id, islandById[sv.id].landmassId, a.lm, sv.have)).slice(0, (st.gather || 8) * 4);
         const can = helpers.reduce((s2, sv) => s2 + sv.have, 0);
         if (can + others >= gap * 1.05 && can > 0) {
-            let sent = 0; for (const sv of helpers) { if (sent >= gap * 1.25 - others) break; const n = Math.floor((islandTroops[sv.id] || 0) * .9); if (armySendFrom(a, sv.id, n)) sent += n; }
+            let sent = 0; for (const sv of helpers) { if (sent >= gap * 1.25 - others) break; const n = Math.floor((islandTroops[sv.id] || 0) * botFrei(bot.id, sv.id, now)); if (armySendFrom(a, sv.id, n)) sent += n; }
             if (sent) { a.calls = (a.calls || 0) + 1; a.until = Math.max(a.until, now + 8 * 60000);
                 if (islandOwnerOf(a.t) === 'player') flashHint(bot.name + ' holt Verstärkung für die Armee vor ' + islandTitle(t0) + '.', 4000);
                 saveArmies(); return true; }

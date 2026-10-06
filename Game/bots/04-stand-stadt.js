@@ -301,15 +301,15 @@ function botConsiderUpgrade(bot) {
 // ==============================================================================================================
 function botRally(bot, target, atId, need, maxHelpers) {
     if (pendingSends.some(sd => sd.senderBotId === bot.id && !sd.back)) return false;
-    const at = islandById[atId], helpers = [];
+    const at = islandById[atId], helpers = [], now = Date.now();
     let pool = (islandTroops[atId] || 0) * .95;
-    const thr = botThreatened(bot.id), own = [...botOwnedIslands[bot.id]].filter(id => id !== atId && id !== megaTempleId && !thr.has(id) && (islandTroops[id] || 0) > BOT_MIN_GARRISON_TO_ATTACK)
-        .map(id => ({ id, isl: islandById[id] })).filter(h => h.isl.landmassId === at.landmassId || landmassesConnected(h.isl.landmassId, at.landmassId))
-        .sort((u, v) => (islandTroops[v.id] || 0) - (islandTroops[u.id] || 0));
+    const own = [...botOwnedIslands[bot.id]].filter(id => id !== atId && id !== megaTempleId)                       // jede Basis gibt nur, was sie nach Lage entbehren kann (botFrei)
+        .map(id => ({ id, isl: islandById[id], n: Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, now)) })).filter(h => h.n >= BOT_MIN_GARRISON_TO_ATTACK && (h.isl.landmassId === at.landmassId || landmassesConnected(h.isl.landmassId, at.landmassId)))
+        .sort((u, v) => v.n - u.n);
     const most = Math.max(maxHelpers ?? 8, BOT_STYLES[bot.style].gather || 8);
-    for (const h of own) { if (pool >= need * 1.3 || helpers.length >= most) break; helpers.push(h.id); pool += (islandTroops[h.id] || 0) * .95; }
+    for (const h of own) { if (pool >= need * 1.3 || helpers.length >= most) break; helpers.push(h); pool += h.n; }
     if (pool < need * 1.1 || !helpers.length) return false;
-    botActOf(bot.id).plan = { kind: 'send', t: atId, steps: helpers.map(id => ({ from: id })), until: Date.now() + 120000 };
+    botActOf(bot.id).plan = { kind: 'send', t: atId, steps: helpers.map(h => ({ from: h.id, n: h.n })), until: now + 120000 };
     botPlanStep(bot);
     loadBotState()[bot.id].rally = { t: target.id, at: atId, until: Date.now() + 6 * 60000 };
     return true;
@@ -336,7 +336,9 @@ function botGather(bot) {
         }
     }
     if (!plan) return false;
-    for (const id of plan.helpers.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0)).slice(0, 1)) launchSend(id, plan.sourceId, bot.id);
+    const id = plan.helpers.sort((a, c) => (islandTroops[c] || 0) - (islandTroops[a] || 0))[0], n = Math.floor((islandTroops[id] || 0) * botFrei(bot.id, id, Date.now()));
+    if (n < BOT_MIN_GARRISON_TO_ATTACK) return false;
+    launchSend(id, plan.sourceId, bot.id, n);                                                   // (nach Lage, nicht die ganze Basis)
     return true;
 }
 
