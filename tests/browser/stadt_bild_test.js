@@ -17,8 +17,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       closeAllPopups(); flashHint('', 1);
       const c = loadCity(); Object.assign(c.levels, { quarry: 0, lumber: 0, forge: 0, heroes: 0, embassy: 0, academy: 1, hospital: 2, keep: 12 }); c.builds = []; saveCity();
       // 1) Übergang: die Karte taucht ein (CSS-Zoom auf dem Karten-Bild), danach die Stadt; zurück genauso
-      openCity(); await warte(800);
-      const tauchAuf = canvas.getAnimations().length > 0; let n = 0; while ((cityBusy || cityView.hidden) && n++ < 60) await warte(100);
+      let zooms = [];                                                     // jeder CSS-Zoom der Karte (unter Last kann er zwischen zwei Blicken schon vorbei sein)
+      const echt = canvas.animate; canvas.animate = function (k, o) { zooms.push(k.map(x => x.transform).join(' → ')); return echt.call(this, k, o); };
+      openCity(); let n = 0; while ((cityBusy || cityView.hidden) && n++ < 60) await warte(100);
+      const tauchAuf = zooms.join() === 'scale(1) → scale(' + CITY_TAUCH + ')'; zooms = [];
       o.auf = { tauchAuf, stadt: !cityView.hidden, frei: !cityBusy, kartenZoomWeg: !canvas.getAnimations().length };
       await warte(400);
       // 2) Schilder an mehreren Kamera-Stellen: Mitte unter dem Gebäude, im Bild, keine Überlappung
@@ -46,7 +48,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         o.meer = { id: kueste.id, nass: A.nass, wasser, stadtLand: [[150, 150], [490, 490], [150, 490], [490, 150], [CC, CC]].every(([x, y]) => A.land(x, y)), fehler };
         playerIslandId = heim; cityPaintGround(); }
       // 4) zurück zur Karte
-      closeCity(); await warte(900); const tauchZu = canvas.getAnimations().length > 0; n = 0; while (cityBusy && n++ < 60) await warte(100);
+      closeCity(); n = 0; while (cityBusy && n++ < 60) await warte(100);
+      const tauchZu = zooms.join() === 'scale(' + CITY_TAUCH + ') → scale(1)'; delete canvas.animate;
       o.zu = { tauchZu, karte: cityView.hidden, frei: !cityBusy, kartenZoomWeg: !canvas.getAnimations().length };
       return o;
     }).catch(e => ({ fehler: e.message }));

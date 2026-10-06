@@ -9770,7 +9770,7 @@ function cityPaintGround() {
     const frei = (x, y) => !(x > 105 && x < 545 && y > 105 && y < 545) && !(x > 270 && x < 370 && y > 540 && y < 620) && !(x > 548 && x < 668 && y < 470) && !(x > 610 && x < 740 && y > 420 && y < 640) && aus.land(x, y);
     for (let i = 0, n = Math.round(900 * pal.wald); i < n; i++) {
         const x = -170 + R() * 980, y = -170 + R() * 980, zufall = R(), dicht = aus.wald(x, y) || x < 60 || y < 60;
-        if (!frei(x, y) || zufall > (dicht ? .85 : .1)) continue;
+        if (!frei(x, y) || zufall > (dicht ? .85 : .16)) continue;
         const [a, b] = cIso(x, y), pine = R() < pal.pines, r = 4.2 + R() * 2.4, hell = R() < .5;
         dinge.push({ d: x + y, f: pine ? (pal.palm ? () => cityPalmAt(g, a, b, r * 4.4, pal) : () => cityPineAt(g, a, b, r * 4.2, pal)) : () => cityTreeAt(g, a, b, r, pal, hell) });
     }
