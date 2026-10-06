@@ -40,7 +40,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 /* der Rohstoff-Knopf: rund, oben rechts (Tippfläche 44 px) */
 .hud > .res--roh{flex:none;width:var(--hud-h);height:var(--hud-h);padding:0;justify-content:center;border-radius:50%;
   background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.hud > .res--roh::before{content:"";position:absolute;inset:-6px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
+.hud > .res--roh::before{content:"";position:absolute;inset:-7px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
 /* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */

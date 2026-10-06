@@ -179,9 +179,11 @@
   .sheet-grab{display:none}
   .panel .sheet-grab + .phead{padding-top:10px}
   /* island popup = popover anchored next to the base (JS writes --ax/--ay/--py) */
-  .panel--island{left:var(--ax,50%);top:var(--ay,90px);right:auto;bottom:auto;width:360px;max-height:calc(100dvh - 100px);border-radius:var(--r-xs);z-index:var(--z-popover)}
+  .panel--island{left:var(--ax,50%);top:var(--ay,90px);right:auto;bottom:auto;width:360px;max-height:min(calc(100dvh - 100px),var(--amax,100dvh));border-radius:var(--r-xs);z-index:var(--z-popover)}
   .panel--island::after{content:"";position:absolute;left:-7px;top:var(--py,60px);width:12px;height:12px;transform:rotate(45deg);background:#12161d;border-left:1px solid var(--line-3);border-bottom:1px solid var(--line-3)}
-  .panel--island .pfoot .btn{padding:0 12px}   /* two grow buttons side by side: "Neu spähen" fits the 360px popover */
+  .panel--island .pfoot .btn{padding:0 12px}
+  #popupSub .xs-hide{display:none}   /* 360px-Karte: „Von Hauptstadt“ ganz, die Sanduhr sagt „Marsch“ */
+  body.in-stadt .city-head{padding-top:72px}   /* Bauarbeiter-Zeile unter dem HUD-Streifen (oben 14 + 48 hoch) */   /* two grow buttons side by side: "Neu spähen" fits the 360px popover */
   .panel--island.is-left::after{left:auto;right:-7px;border-left:0;border-bottom:0;border-right:1px solid var(--line-3);border-top:1px solid var(--line-3)}
   /* profile / battle log / goals / shop = right drawer under the nav */
   .panel--sheet{--sheet-max:calc(100dvh - 86px);top:72px;bottom:auto;right:14px;left:auto;width:404px;border-radius:var(--r-xs)}

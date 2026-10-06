@@ -193,7 +193,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 /* der Rohstoff-Knopf: rund, oben rechts (Tippfläche 44 px) */
 .hud > .res--roh{flex:none;width:var(--hud-h);height:var(--hud-h);padding:0;justify-content:center;border-radius:50%;
   background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.hud > .res--roh::before{content:"";position:absolute;inset:-6px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
+.hud > .res--roh::before{content:"";position:absolute;inset:-7px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
 /* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */
@@ -1316,9 +1316,11 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
   .sheet-grab{display:none}
   .panel .sheet-grab + .phead{padding-top:10px}
   /* island popup = popover anchored next to the base (JS writes --ax/--ay/--py) */
-  .panel--island{left:var(--ax,50%);top:var(--ay,90px);right:auto;bottom:auto;width:360px;max-height:calc(100dvh - 100px);border-radius:var(--r-xs);z-index:var(--z-popover)}
+  .panel--island{left:var(--ax,50%);top:var(--ay,90px);right:auto;bottom:auto;width:360px;max-height:min(calc(100dvh - 100px),var(--amax,100dvh));border-radius:var(--r-xs);z-index:var(--z-popover)}
   .panel--island::after{content:"";position:absolute;left:-7px;top:var(--py,60px);width:12px;height:12px;transform:rotate(45deg);background:#12161d;border-left:1px solid var(--line-3);border-bottom:1px solid var(--line-3)}
-  .panel--island .pfoot .btn{padding:0 12px}   /* two grow buttons side by side: "Neu spähen" fits the 360px popover */
+  .panel--island .pfoot .btn{padding:0 12px}
+  #popupSub .xs-hide{display:none}   /* 360px-Karte: „Von Hauptstadt“ ganz, die Sanduhr sagt „Marsch“ */
+  body.in-stadt .city-head{padding-top:72px}   /* Bauarbeiter-Zeile unter dem HUD-Streifen (oben 14 + 48 hoch) */   /* two grow buttons side by side: "Neu spähen" fits the 360px popover */
   .panel--island.is-left::after{left:auto;right:-7px;border-left:0;border-bottom:0;border-right:1px solid var(--line-3);border-top:1px solid var(--line-3)}
   /* profile / battle log / goals / shop = right drawer under the nav */
   .panel--sheet{--sheet-max:calc(100dvh - 86px);top:72px;bottom:auto;right:14px;left:auto;width:404px;border-radius:var(--r-xs)}
@@ -1709,7 +1711,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .anf.is-bad > i{visibility:hidden}   /* fehlt etwas: die rote Zahl reicht, der Knopf sagt „Fehlt: …“ */
 #citySheet .btn-x,.hh .btn-x{width:44px;height:44px}
 .city-tabs button,.city-sheet .seg button,.gate-ctl .seg button{min-height:44px}
-button.cb-slot{position:relative} button.cb-slot::before{content:"";position:absolute;inset:-6px 0}   /* Tippfläche 44 px, der Streifen bleibt schmal */
+button.cb-slot{position:relative} button.cb-slot::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px, der Streifen bleibt schmal */
 /* Heldenhalle: Reiter Helden | Paare, gesperrte Helden kleiner darunter */
 .hh-seiten{grid-template-columns:1fr 1fr;margin-top:12px}
 .hh-seiten button{min-height:44px;font-size:var(--fs-13)}
@@ -1889,9 +1891,9 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .p5-chip .badge{position:static}
 #combatLogList > .logRow{cursor:pointer}
 /* Profil: Kopf in 3 Zeilen (Rang + Titel, Name, Stufe) */
-.p5-kopfzeile{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
-.p5-kopfzeile .ptitle-tag{margin:0}
-.p5-kopfzeile .ptitle-tag::before{content:"· ";color:var(--tx-3)}
+.p5-kopfzeile{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 16px}
+.p5-kopfzeile .ptitle-tag{position:relative;margin:0;white-space:nowrap}
+.p5-kopfzeile .ptitle-tag:not(:empty)::before{content:"·";position:absolute;left:-10px;color:var(--tx-3)}   /* der Punkt steht in der Lücke: bricht der Titel um, schneidet der Rand ihn ab */
 .p5-naechste{margin:0 0 8px;padding:8px 12px;border:1px solid var(--line-1);border-radius:8px;font-size:13px;color:var(--tx-2)}
 .p5-zeile{display:flex;align-items:center;gap:12px;width:100%;min-height:48px;margin:0 0 8px;padding:8px 12px;border:1px solid var(--line-2);border-radius:10px;
   background:rgba(255,255,255,.03);color:var(--tx-1);font:600 15px/1.2 var(--font-ui);text-align:left;cursor:pointer}
@@ -1915,6 +1917,16 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 #bundUnten:not(:empty){margin-top:16px}
 .p5-gruenden{width:100%;min-height:44px;gap:8px}
 .p5-gruenden .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}
+/* Spieltest: Tippflächen mind. 44 px (sichtbar kleiner), nichts abgeschnitten */
+button.rp-bund{position:relative} button.rp-bund::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}
+.rp-bund.is-leer{font-size:var(--fs-11)} .rp-bund.is-leer > span{white-space:normal}   /* „Kein Bündnis – jetzt eins suchen“ ganz, notfalls in zwei Zeilen */
+.panel--island .seg button{position:relative;min-height:36px}
+.panel--island .seg button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}   /* (ab der Innenkante: 1 px Rand dazu) */
+.panel--island .hero-seg.chips-quer{padding-block:4px}   /* (die Liste schiebt quer: die Tippfläche braucht Platz im Rahmen) */
+.panel--island .pfoot .btn{min-height:var(--k-zweit)}
+.from-field{grid-template-columns:minmax(0,1fr);gap:4px}   /* Startbasis: Name, Truppen und Marschzeit ganz zu lesen */
+.mact button{position:relative} .logRow .mact button,.march-all .mact button{min-height:36px} .mact button::before{content:"";position:absolute;left:-1px;right:-1px;top:-5px;bottom:-5px}
+@media (pointer:coarse){ .mapctl button{width:44px;height:44px} .ap-kopf .from-sel{height:44px} }
 </style>
 
 <!-- ============ PROFILE ============ -->
@@ -1923,7 +1935,7 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
   <header class="phead phead--hero">
     <div id="pAvatarRing" class="avatar-ring"><span class="avatar"><svg class="icon"><use href="#i-profile"/></svg></span><span id="profileLevelBadge" class="lvl">1</span></div>
     <div class="phead-text">
-      <div class="overline p5-kopfzeile">Profil · Rang <b id="profileRank">Bronze</b><span id="profileTitle" class="ptitle-tag"></span></div>
+      <div class="overline p5-kopfzeile"><span>Profil · Rang <b id="profileRank">Bronze</b></span><span id="profileTitle" class="ptitle-tag"></span></div>
       <input id="profileName" class="ptitle ptitle--input" type="text" maxlength="20" placeholder="Dein Name" autocomplete="off" spellcheck="false">
       <div class="xp"><span class="xp-l">Stufe <b id="xpLevelNum">1</b></span><div class="xp-track"><i id="xpFill" class="xpFill"></i></div><span id="xpNums" class="xp-n">0 / 50 XP</span></div>
       <div id="profileBund"></div>

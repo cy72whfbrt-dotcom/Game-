@@ -295,7 +295,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .anf.is-bad > i{visibility:hidden}   /* fehlt etwas: die rote Zahl reicht, der Knopf sagt „Fehlt: …“ */
 #citySheet .btn-x,.hh .btn-x{width:44px;height:44px}
 .city-tabs button,.city-sheet .seg button,.gate-ctl .seg button{min-height:44px}
-button.cb-slot{position:relative} button.cb-slot::before{content:"";position:absolute;inset:-6px 0}   /* Tippfläche 44 px, der Streifen bleibt schmal */
+button.cb-slot{position:relative} button.cb-slot::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px, der Streifen bleibt schmal */
 /* Heldenhalle: Reiter Helden | Paare, gesperrte Helden kleiner darunter */
 .hh-seiten{grid-template-columns:1fr 1fr;margin-top:12px}
 .hh-seiten button{min-height:44px;font-size:var(--fs-13)}
