@@ -3,7 +3,7 @@
 // 6) FENSTER „Bündnis“ (Zuschauer)
 // ==============================================================================================================
 const bundPopup = document.getElementById('bundPopup'), bundBody = document.getElementById('bundLive'), bundOben = document.getElementById('bundOben'), bundUnten = document.getElementById('bundUnten');
-let bundGruendenAuf = false;   // ohne Bündnis: erst Suchen/Beitreten, das Gründen-Formular erst nach „Eigenes Bündnis gründen“
+let bundGruendenAuf = false;   // ohne Bündnis: Startseite (Beitreten), das Gründen-Formular erst nach „Eigenes Bündnis gründen“
 let bundTab = 'info', bundWahl = null, bundSicher = {}, bundTauschFuer = null;   // bundTauschFuer: Bewerber, für den der Anführer gerade jemanden zum Tauschen wählt        // bundWahl: offene Auswahl (Rally starten / mitmachen / Hilfe senden)
 function bundBefehl(op, d, hint) {
     if (!window.WELT || SYSTEM) return false;
@@ -11,20 +11,22 @@ function bundBefehl(op, d, hint) {
 }
 function bundIch() { return bundVon('player'); }
 function bundZeichenHtml(a, gross) { return '<span class="bd-wappen' + (gross ? ' bd-wappen--gross' : '') + '" style="--bf:' + BUND.FARBEN[a.farbe] + '">' + icon(BUND.ZEICHEN[a.zeichen] || 'flag') + '</span>'; }
-function bundOeffnen(tab) { if (tab) bundTab = tab; openPanel(bundPopup); bundRender(true); }
+function bundOeffnen(tab) { if (tab) bundTab = tab; bundGruendenAuf = false; bundPopup.classList.remove('bd-ohne'); openPanel(bundPopup); bundRender(true); }
 function bundSchliessen() { closePanel(bundPopup); bundWahl = null; }
 function bundSicherKnopf(key, text, sicherText) { return bundSicher[key] && Date.now() < bundSicher[key] ? sicherText : text; }
 function bundRender(neu) {
     if (!bundPopup || !isPanelOpen(bundPopup)) return;
     const a = bundIch();
+    if (!a) bundTab = 'suchen';                                     // ohne Bündnis keine Reiter, nur die Startseite (wie RoK/Lords Mobile)
+    else if (bundPopup.classList.contains('bd-ohne')) { bundTab = 'info'; bundGruendenAuf = false; bundPopup.querySelector('.pbody').scrollTop = 0; }   // eben beigetreten/gegründet → Übersicht
+    bundPopup.classList.toggle('bd-ohne', !a);
     for (const t of bundPopup.querySelectorAll('[data-btab]')) t.classList.toggle('active', t.dataset.btab === bundTab);
     setText(document.getElementById('bundTitle'), a ? '[' + a.tag + '] ' + a.name : 'Bündnis');
     liveHtml(document.getElementById('bundSub'), a ? a.mit.length + ' / ' + BUND.MAX + ' Mitglieder · ' + (a.anf === 'player' ? 'du führst' : 'Anführer ' + escapeHtml(bundName(a.anf))) : 'Gemeinsam stärker');
     const em = document.getElementById('bundEmblem'); if (em) { em.style.setProperty('--bf', a ? BUND.FARBEN[a.farbe] : ''); em.classList.toggle('bd-em', !!a); const u = em.querySelector('use'); if (u) u.setAttribute('href', '#i-' + (a ? BUND.ZEICHEN[a.zeichen] || 'bund' : 'bund')); }
     if (neu || bundOben.dataset.fuer !== bundObenSchluessel()) bundObenZeichnen();
     const ch0 = document.getElementById('bdChat'), unten = !ch0 || ch0.scrollHeight - ch0.scrollTop - ch0.clientHeight < 40, pos = ch0 ? ch0.scrollTop : 0;   // Chat: unten bleiben, wenn man unten war
-    liveHtml(bundBody, bundTab === 'info' ? (a ? bundInfoHtml(a) : bundOhneHtml()) : bundTab === 'sig' ? (a ? bundChatHtml(a) : bundOhneHtml())
-        : bundTab === 'rally' ? (a ? bundRallyHtml(a) : bundOhneHtml()) : bundSuchenHtml(a));
+    liveHtml(bundBody, !a ? (bundGruendenAuf ? '' : bundStartHtml()) : bundTab === 'info' ? bundInfoHtml(a) : bundTab === 'sig' ? bundChatHtml(a) : bundTab === 'rally' ? bundRallyHtml(a) : bundSuchenHtml(a));
     const ch = document.getElementById('bdChat'); if (ch) ch.scrollTop = unten ? ch.scrollHeight : pos;
 }
 function bundEinladungenHtml() {                                  // an mich: Annehmen / Ablehnen
@@ -34,7 +36,11 @@ function bundEinladungenHtml() {                                  // an mich: An
             (x.mit.length >= BUND.MAX ? '<span class="chip">voll</span>' : '<button type="button" class="btn btn--primary btn--sm" data-bact="einlJa" data-aid="' + x.id + '">Annehmen</button>') +
             '<button type="button" class="btn btn--ghost btn--sm" data-bact="einlNein" data-aid="' + x.id + '">Ablehnen</button></div>'; }).join('') + '</div>';
 }
-function bundOhneHtml() { return bundEinladungenHtml() + '<div class="notice">' + icon('info') + '<span>Du bist in keinem Bündnis. Unter „Suchen“ kannst du einem beitreten oder selbst eines gründen.</span><button type="button" class="btn btn--secondary btn--sm" data-bact="tab" data-t="suchen">Suchen</button></div>'; }
+function bundStartHtml() {                                         // ohne Bündnis: Einladungen, kurz wozu, dann alle Bündnisse zum Beitreten
+    const vor = [['troops', 'Rally', 'gemeinsam angreifen'], ['temple', 'Tempel-Bonus', 'bis +' + BUND.BONUS_MAX + ' % Ertrag'], ['shield', 'Hilfe', 'Verstärkung, Chat']];
+    return bundEinladungenHtml() + '<div class="bd-start"><div class="bd-start-kopf"><span class="bd-start-em">' + icon('bund') + '</span><div><b>Tritt einem Bündnis bei</b><small>Bis zu ' + BUND.MAX + ' Mitglieder kämpfen gemeinsam.</small></div></div>' +
+        '<div class="bd-vorteile">' + vor.map(v => '<div>' + icon(v[0]) + '<b>' + v[1] + '</b><small>' + v[2] + '</small></div>').join('') + '</div></div>' + bundListeHtml(null);
+}
 function bundInfoHtml(a) {
     const chef = a.anf === 'player', bon = bundBonus(a), heute = a.gesch && a.gesch.tag === bundTagHeute() ? (a.gesch.n || {}).player || 0 : 0, now = Date.now();
     const mit = a.mit.slice().sort((x, y) => (y === a.anf) - (x === a.anf) || staerke(y) - staerke(x));
@@ -114,10 +120,10 @@ function bundRallyHtml(a) {
         '<div class="bd-liste">' + (meine.length ? meine.map(r => bundRallyZeile(r, true)).join('') : '<div class="inbox-empty">Gerade läuft keine Rally.</div>') + '</div>' +
         (gegen.length ? '<div class="sect"><h4>Gegen euch</h4></div><div class="bd-liste">' + gegen.map(r => bundRallyZeile(r, false)).join('') + '</div>' : '');
 }
-function bundSuchenHtml(a) {
+function bundSuchenHtml(a) { return bundOhneListeHtml() + '<div class="notice">' + icon('info') + '<span>Du bist in [' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '. Um zu wechseln, verlasse erst dein Bündnis.</span></div>' + bundListeHtml(a); }
+function bundListeHtml(a) {                                       // alle Bündnisse nach Macht; ohne eigenes mit Beitreten/Anfragen
     const alle = Object.values(bund.b).map(x => ({ x, m: bundMacht(x) })).sort((p, q) => q.m - p.m), angefragt = id => (bund.b[id].anfragen || []).some(q => q.w === 'player');
-    return (a ? bundOhneListeHtml() + '<div class="notice">' + icon('info') + '<span>Du bist in [' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '. Um zu wechseln, verlasse erst dein Bündnis.</span></div>' : bundEinladungenHtml()) +
-        '<div class="sect"><h4>Alle Bündnisse</h4><span class="sect-aside">' + alle.length + '</span></div><div class="bd-liste">' + (alle.length ? alle.map(({ x, m }) =>
+    return '<div class="sect"><h4>Alle Bündnisse</h4><span class="sect-aside">' + alle.length + '</span></div><div class="bd-liste">' + (alle.length ? alle.map(({ x, m }) =>
             '<div class="bd-zeile">' + bundZeichenHtml(x) + '<span class="bd-name"><b>[' + escapeHtml(x.tag) + '] ' + escapeHtml(x.name) + '</b><small>' + x.mit.length + ' / ' + BUND.MAX + ' · Macht ' + fmtCompact(m) + ' · ' + (x.mit.length >= BUND.MAX ? 'voll – der Anführer kann tauschen' : x.offen ? 'offen' : 'auf Anfrage') + ' · Anführer ' + escapeHtml(bundName(x.anf)) + '</small></span>' +
             (a ? '' : angefragt(x.id) ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="anfrageWeg">Angefragt ✕</button>'
                 : '<button type="button" class="btn btn--primary btn--sm" data-bact="beitreten" data-aid="' + x.id + '">' + (x.offen && x.mit.length < BUND.MAX ? 'Beitreten' : 'Anfragen') + '</button>') + '</div>').join('')
@@ -131,18 +137,28 @@ function bundObenZeichnen() {
     bundUnten.innerHTML = '';
     if (bundWahl) { bundOben.innerHTML = bundWahlHtml(); bundWahlRechnen(); return; }
     bundOben.innerHTML = '';
-    if (bundTab === 'suchen' && !a && !bundGruendenAuf) {   // unter der Liste: erst ein Knopf
-        bundUnten.innerHTML = '<button type="button" class="btn btn--secondary btn--full p5-gruenden" data-bact="gruendenAuf" aria-label="Eigenes Bündnis gründen – kostet ' + fmtNum(BUND.KOSTEN) + ' Münzen">' + icon('flag') + '<span>Eigenes Bündnis gründen</span><span class="cost">' + icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + ' Münzen</span></button>';
+    if (a) return;
+    const preis = icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + ' Münzen';
+    if (!bundGruendenAuf) {                                       // unter der Liste: erst ein Knopf (Preis rechts, Text darf umbrechen)
+        bundUnten.innerHTML = '<button type="button" class="bd-gk p5-gruenden" data-bact="gruendenAuf" aria-label="Eigenes Bündnis gründen – kostet ' + fmtNum(BUND.KOSTEN) + ' Münzen"><span class="bd-gk-ic">' + icon('flag') + '</span>' +
+            '<span class="bd-gk-t"><b>Bündnis gründen</b><small>Name, Kürzel und Wappen wählen</small></span><span class="cost">' + preis + '</span></button>';
         return;
     }
-    if (bundTab === 'suchen' && !a) {
-        bundUnten.innerHTML = '<div class="bd-form"><div class="sect"><h4>Bündnis gründen</h4><span class="sect-aside">Preis: ' + icon('coin', 'icon--coin') + fmtNum(BUND.KOSTEN) + ' Münzen</span></div>' +
-            '<input id="bdName" maxlength="20" placeholder="Name (3–20 Buchstaben)" autocomplete="off"><input id="bdTag" maxlength="4" placeholder="Kürzel (2–4)" autocomplete="off" class="bd-tag">' +
-            '<div class="bd-farben" id="bdFarben">' + BUND.FARBEN.map((f, i) => '<button type="button" data-farbe="' + i + '" style="--bf:' + f + '"' + (i === 0 ? ' class="on"' : '') + ' aria-label="Farbe ' + (i + 1) + '"></button>').join('') + '</div>' +
-            '<div class="bd-zeichen" id="bdZeichen">' + BUND.ZEICHEN.map((z, i) => '<button type="button" data-zeichen="' + i + '"' + (i === 0 ? ' class="on"' : '') + '>' + icon(z) + '</button>').join('') + '</div>' +
-            '<label class="set-zeile"><span>Offen für alle<small>sonst nur auf Anfrage</small></span><input type="checkbox" id="bdOffen" checked></label>' +
-            '<button type="button" class="btn btn--primary" data-bact="gruenden">' + icon('flag') + '<span>Gründen</span></button><p class="bd-fehler" id="bdFehler"></p></div>';
-    }
+    const feld = (t, html) => '<div class="bd-feld"><span>' + t + '</span>' + html + '</div>';   // Gründen: eigene Seite mit Wappen-Vorschau
+    bundUnten.innerHTML = '<div class="bd-form bd-gf"><div class="bd-gf-kopf"><button type="button" class="btn btn--ghost btn--sm" data-bact="gruendenZu">' + icon('back') + '<span>Zurück</span></button><b>Bündnis gründen</b></div>' +
+        '<div class="bd-kopf bd-vorschau" id="bdVorschau"></div>' +
+        feld('Name', '<input id="bdName" maxlength="20" placeholder="3–20 Buchstaben" autocomplete="off">') + feld('Kürzel', '<input id="bdTag" maxlength="4" placeholder="2–4 Buchstaben" autocomplete="off" class="bd-tag">') +
+        feld('Farbe', '<div class="bd-farben" id="bdFarben">' + BUND.FARBEN.map((f, i) => '<button type="button" data-farbe="' + i + '" style="--bf:' + f + '"' + (i === 0 ? ' class="on"' : '') + ' aria-label="Farbe ' + (i + 1) + '"></button>').join('') + '</div>') +
+        feld('Zeichen', '<div class="bd-zeichen" id="bdZeichen">' + BUND.ZEICHEN.map((z, i) => '<button type="button" data-zeichen="' + i + '"' + (i === 0 ? ' class="on"' : '') + '>' + icon(z) + '</button>').join('') + '</div>') +
+        '<label class="set-zeile"><span>Offen für alle<small>sonst nur auf Anfrage</small></span><input type="checkbox" id="bdOffen" checked></label>' +
+        '<button type="button" class="btn btn--primary bd-gf-los" data-bact="gruenden">' + icon('flag') + '<span>Gründen</span><span class="cost">' + preis + '</span></button><p class="bd-fehler" id="bdFehler"></p></div>';
+    bundVorschau();
+}
+function bundVorschau() {                                         // Gründen: so sieht das Bündnis aus (Wappen, Kürzel, Name)
+    const box = document.getElementById('bdVorschau'); if (!box) return;
+    const n = document.getElementById('bdName').value.trim(), t = document.getElementById('bdTag').value.trim();
+    const farbe = +((bundUnten.querySelector('#bdFarben .on') || {}).dataset || {}).farbe || 0, zeichen = +((bundUnten.querySelector('#bdZeichen .on') || {}).dataset || {}).zeichen || 0;
+    box.innerHTML = bundZeichenHtml({ farbe, zeichen }, true) + '<div><b>[' + escapeHtml(t || '…') + '] ' + escapeHtml(n || 'Dein Bündnis') + '</b><small>So sehen dich die anderen auf der Karte und in der Liste.</small></div>';
 }
 // Auswahl: Rally starten (Ziel t) · bei einer Rally mitmachen (rid) · Hilfe senden (nach)
 function bundQuellen(ziel, frist, toreEgal) {                     // eigene Basen, die ziel erreichen (frist: rechtzeitig bis dahin; toreEgal: Rally beitreten)
@@ -207,7 +223,7 @@ if (bundPopup) {
     bundPopup.addEventListener('click', e => {
         const tab = e.target.closest('[data-btab]'); if (tab) { bundTab = tab.dataset.btab; bundWahl = null; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; if (bundTab === 'sig') { bundGesehen(); const c = document.getElementById('bdChat'); if (c) c.scrollTop = c.scrollHeight; } return; }
         const fb = e.target.closest('[data-farbe]'), zb = e.target.closest('[data-zeichen]');
-        if (fb || zb) { const box = (fb || zb).parentElement; for (const x of box.children) x.classList.toggle('on', x === (fb || zb)); return; }
+        if (fb || zb) { const box = (fb || zb).parentElement; for (const x of box.children) x.classList.toggle('on', x === (fb || zb)); bundVorschau(); return; }
         const mb = e.target.closest('[data-min]'), fr = e.target.closest('#bdAnteil [data-f]');
         if (mb && bundWahl) { bundWahl.min = +mb.dataset.min; bundRender(true); return; }
         const hb = e.target.closest('[data-rhero]'), hb2 = e.target.closest('[data-rhero2]');   // Held des Anführers (führt die ganze Rally)
@@ -217,8 +233,8 @@ if (bundPopup) {
         const b = e.target.closest('[data-bact]'); if (!b) return;
         const act = b.dataset.bact, w = b.dataset.w ? neutralId(b.dataset.w) : null, now = Date.now();
         const sicher = key => { if (bundSicher[key] && now < bundSicher[key]) { delete bundSicher[key]; return true; } bundSicher[key] = now + 3000; bundRender(); setTimeout(bundRender, 3100); return false; };
-        if (act === 'tab') { bundTab = b.dataset.t; bundRender(true); }
-        else if (act === 'gruendenAuf') { bundGruendenAuf = true; bundRender(true); const n = document.getElementById('bdName'); if (n) { n.scrollIntoView({ block: 'center' }); n.focus(); } }
+        if (act === 'gruendenAuf') { bundGruendenAuf = true; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; const n = document.getElementById('bdName'); if (n) n.focus({ preventScroll: true }); }
+        else if (act === 'gruendenZu') { bundGruendenAuf = false; bundRender(true); }
         else if (act === 'gruenden') {
             const name = document.getElementById('bdName').value.trim(), tag = document.getElementById('bdTag').value.trim().toUpperCase(), fehler = document.getElementById('bdFehler');
             const farbe = +((bundUnten.querySelector('#bdFarben .on') || {}).dataset || {}).farbe || 0, zeichen = +((bundUnten.querySelector('#bdZeichen .on') || {}).dataset || {}).zeichen || 0;
@@ -254,7 +270,7 @@ if (bundPopup) {
         else if (act === 'alleHelfen') { b.disabled = true; bundBefehl('helfen', { alle: true }, 'Allen geholfen!'); sfx('coin'); }
     });
     bundPopup.addEventListener('change', e => { if (e.target.id === 'bdVon' && bundWahl) { bundWahl.von = +e.target.value; bundWahlRechnen(); } });
-    bundPopup.addEventListener('input', e => { if (e.target.id === 'bdTag') { const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, ''); if (v !== e.target.value) e.target.value = v; } });
+    bundPopup.addEventListener('input', e => { if (e.target.id === 'bdTag') { const v = e.target.value.toUpperCase().replace(/[^A-Z]/g, ''); if (v !== e.target.value) e.target.value = v; } if (e.target.id === 'bdTag' || e.target.id === 'bdName') bundVorschau(); });
     setInterval(() => { if (!document.hidden && isPanelOpen(bundPopup)) try { bundRender(); } catch (e) { if (!bundRender.gewarnt) { bundRender.gewarnt = true; console.warn('Bündnis-Fenster:', e); } } }, 1000);
 }
 // Kleiner Punkt am Knopf: neue Signale oder Rallys seit dem letzten Blick

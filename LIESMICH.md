@@ -779,6 +779,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   (06c `throneAmount`) = Stunden-Produktion × `THRONE_STUNDEN` (= WIRTSCHAFT_KOSTEN ÷ WIRTSCHAFT_ERTRAG = 2), wie Händler
   (`hdPreis`) und Markt (`marktLimit`); Mindestwerte bleiben. Shop zeigt „in 2 Std.“. Hauptbuch (10d `muenzGutscheine`,
   `truppenPruefen` „thron“) rechnet je Kauf ebenso 2 Stunden (sonst Fehlalarm). Tests `thron_verst_test`, `welt_test`.
+- **6.10. – Bündnis ohne Bündnis wie RoK (Blick F, Punkte 26/27/29), NICHT hochgeladen:** ohne Bündnis keine Reiter mehr,
+  nur EINE Startseite (`bundStartHtml`: Einladungen, Vorteile Rally/Tempel-Bonus/Hilfe, alle Bündnisse mit Beitreten);
+  darunter Knopf „Bündnis gründen“ (Preis rechts, nichts abgeschnitten). Gründen ist eine eigene Seite mit „Zurück“ und
+  Wappen-Vorschau (`bundVorschau`), Farben in 2 gleichen Reihen, Zeichen in einer, Kürzel-Platzhalter normal. Nach
+  Beitreten/Gründen → Übersicht. Preis unverändert. Dateien: buendnis/04, CSS-Block in spielseite/05. Test `handy_fenster_test`.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

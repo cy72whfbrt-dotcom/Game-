@@ -1703,6 +1703,26 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #popupBund:empty{display:none} #popupBund{display:flex;flex-direction:column;gap:8px}
 .bd-insel{display:flex;flex-wrap:wrap;align-items:center;gap:6px} .bd-insel .btn .icon{width:14px;height:14px}
 .bd-insel-l{display:inline-flex;align-items:center;gap:5px;margin-right:2px;font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)} .bd-insel-l .icon{width:13px;height:13px}
+/* ===== Bündnis ohne Bündnis (blick-f): eine Startseite statt Reiter, Gründen als eigene Seite ===== */
+#bundPopup.bd-ohne #bundTabs{display:none} #bundLive:empty{display:none} #bundLive:empty + #bundUnten{margin-top:0}
+.bd-start{display:grid;gap:10px;padding:12px;border:1px solid rgba(214,170,90,.35);border-radius:var(--r-lg);background:radial-gradient(120% 90% at 0% 0%,rgba(214,170,90,.16),transparent 60%),rgba(0,0,0,.25)}
+.bd-start-kopf{display:flex;align-items:center;gap:12px} .bd-start-kopf b{display:block;font:600 var(--fs-15)/1.2 var(--font-display);color:var(--gold-100)}
+.bd-start-kopf small{display:block;margin-top:3px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.bd-start-em{width:42px;height:42px;flex:none;display:grid;place-items:center;border-radius:12px;border:1px solid var(--gold-300);background:linear-gradient(160deg,#3a2c14,#16120b);color:var(--gold-100);box-shadow:0 2px 8px rgba(0,0,0,.45)} .bd-start-em .icon{width:22px;height:22px}
+.bd-vorteile{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.bd-vorteile > div{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.25);text-align:center}
+.bd-vorteile .icon{width:20px;height:20px;color:var(--gold-300)} .bd-vorteile b{font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-1)} .bd-vorteile small{font:500 var(--fs-10)/1.3 var(--font-ui);color:var(--tx-3)}
+.bd-gk{display:flex;align-items:center;gap:10px;width:100%;min-height:56px;padding:8px 12px;border:1px solid var(--gold-300);border-radius:var(--r-lg);background:linear-gradient(90deg,rgba(214,170,90,.18),rgba(0,0,0,.25));color:var(--tx-1);text-align:left;cursor:pointer}
+.bd-gk:hover{background:linear-gradient(90deg,rgba(214,170,90,.28),rgba(0,0,0,.25))}
+.bd-gk-ic{width:34px;height:34px;flex:none;display:grid;place-items:center;border-radius:50%;background:var(--gold-300);color:#1a1204} .bd-gk-ic .icon{width:18px;height:18px}
+.bd-gk-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .bd-gk-t b{font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--gold-100)} .bd-gk-t small{font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
+.bd-gk .cost{flex:none;white-space:nowrap;font:600 var(--fs-12)/1 var(--font-ui);color:var(--tx-1)}
+.bd-gf-kopf{display:flex;align-items:center;gap:10px} .bd-gf-kopf b{font:600 var(--fs-15)/1.2 var(--font-display);color:var(--gold-100)}
+.bd-vorschau{padding:10px;border-radius:var(--r-sm);background:rgba(0,0,0,.25)} .bd-vorschau > div{min-width:0} .bd-vorschau b{overflow-wrap:anywhere}
+.bd-tag::placeholder{text-transform:none;letter-spacing:normal}
+#bdZeichen{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;justify-items:center} #bdZeichen button{width:100%;max-width:44px;height:auto;aspect-ratio:1}
+#bdFarben{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-items:center} #bdFarben button{width:34px;height:34px}
+.bd-gf-los{width:100%;min-height:48px;gap:8px} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}
 /* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
 /* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen und Wirkung zuerst, Schild-Kasten unten */
 .city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}

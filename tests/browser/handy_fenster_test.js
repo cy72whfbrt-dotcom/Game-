@@ -1,5 +1,5 @@
 // Fenster-Design (11b F, P5) auf dem Handy (390 × 844): Events mit 4 Reitern + Chips, roter Punkt → Abholen, Kampf mit
-// Reitern „Unterwegs | Berichte“ und antippbaren Karten, Bündnis ohne Bündnis (Suchen zuerst, Gründen danach),
+// Reitern „Unterwegs | Berichte“ und antippbaren Karten, Bündnis ohne Bündnis (Startseite ohne Reiter, Gründen als eigene Seite mit Vorschau),
 // Profil-Kopf kompakt (keine HUD-Werte doppelt, Rangliste nur als Weg ins eigene Fenster), Einstellungen in Gruppen.
 // Aufruf: node tests/browser/handy_fenster_test.js <vorschau> [<bilder-ordner>]
 const { chromium, devices } = require('playwright');
@@ -54,12 +54,26 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   // 3) Bündnis ohne Bündnis: Suchen zuerst, Gründen danach
   const b1 = await ev(() => { closeAllPopups(); if (bundIch()) return { imBund: true }; document.getElementById('bundBtn').click();
     const liste = [...document.querySelectorAll('#bundLive .sect h4')].find(h => /Alle Bündnisse/.test(h.textContent)), kn = document.querySelector('#bundUnten [data-bact="gruendenAuf"]');
-    return { tab: bundTab, liste: !!liste, knopf: !!kn, form: !!document.getElementById('bdName'), vorher: liste && kn ? !!(liste.compareDocumentPosition(kn) & Node.DOCUMENT_POSITION_FOLLOWING) : false, h: kn ? Math.round(kn.getBoundingClientRect().height) : 0 }; });
-  ok(!b1.imBund && b1.tab === 'suchen' && b1.liste && b1.knopf && !b1.form && b1.vorher && b1.h >= 44, 'Bündnis: ohne Bündnis erst die Liste, darunter „Eigenes Bündnis gründen“', b1);
+    const t = kn && kn.querySelector('.bd-gk-t b'), kr = kn && kn.getBoundingClientRect();
+    return { tab: bundTab, liste: !!liste, knopf: !!kn, form: !!document.getElementById('bdName'), vorher: liste && kn ? !!(liste.compareDocumentPosition(kn) & Node.DOCUMENT_POSITION_FOLLOWING) : false, h: kn ? Math.round(kr.height) : 0,
+      reiter: [...document.querySelectorAll('#bundPopup [data-btab]')].filter(x => x.offsetParent).length, start: !!document.querySelector('#bundLive .bd-start .bd-vorteile'),
+      ganz: !!(t && t.scrollWidth <= t.clientWidth + 1 && kr.right <= innerWidth && kr.left >= 0) }; });
+  ok(!b1.imBund && b1.tab === 'suchen' && b1.liste && b1.knopf && !b1.form && b1.vorher && b1.h >= 44, 'Bündnis: ohne Bündnis erst die Liste, darunter „Bündnis gründen“', b1);
+  ok(b1.reiter === 0 && b1.start && b1.ganz, 'Bündnis: ohne Bündnis keine Reiter, Startseite mit Vorteilen, Gründen-Knopf nicht abgeschnitten', b1);
   await p.waitForTimeout(300); await bild('n_buendnis');
   const b2 = await ev(async () => { document.querySelector('#bundUnten [data-bact="gruendenAuf"]').click(); await new Promise(r => setTimeout(r, 1300));   // (Bündnis zeichnet jede Sekunde neu)
     document.querySelector('#bdFarben [data-farbe="2"]').click(); return { form: !!document.getElementById('bdName'), farbe: !!document.querySelector('#bundUnten #bdFarben [data-farbe="2"].on'), knopf: !!document.querySelector('#bundUnten [data-bact="gruenden"]') }; });
   ok(b2.form && b2.farbe && b2.knopf, 'Bündnis: Knopf öffnet das Gründen-Formular (Farbe wählbar, bleibt offen)', b2);
+  const b3 = await ev(async () => { const n = document.getElementById('bdName'), t = document.getElementById('bdTag'); n.value = 'Seewölfe'; n.dispatchEvent(new Event('input', { bubbles: true }));
+    t.value = 'sw'; t.dispatchEvent(new Event('input', { bubbles: true })); const v = document.getElementById('bdVorschau'), w = v.querySelector('.bd-wappen');
+    const reihen = new Set([...document.querySelectorAll('#bdFarben button')].map(x => Math.round(x.getBoundingClientRect().top))).size, zr = new Set([...document.querySelectorAll('#bdZeichen button')].map(x => Math.round(x.getBoundingClientRect().top))).size;
+    const los = document.querySelector('#bundUnten [data-bact="gruenden"]'), lr = los.getBoundingClientRect();
+    const out = { vorschau: v.textContent, farbe: w && w.style.getPropertyValue('--bf') === BUND.FARBEN[2], reihen, zr, liste: !!document.querySelector('#bundLive .bd-zeile'), losDrin: lr.right <= innerWidth && lr.left >= 0,
+      platzhalter: getComputedStyle(t, '::placeholder').textTransform };
+    document.querySelector('#bundUnten [data-bact="gruendenZu"]').click(); out.zurueck = !document.getElementById('bdName') && !!document.querySelector('#bundUnten [data-bact="gruendenAuf"]'); return out; });
+  ok(/\[SW\] Seewölfe/.test(b3.vorschau) && b3.farbe && !b3.liste && b3.losDrin, 'Bündnis gründen: eigene Seite, Vorschau zeigt Kürzel, Name und Farbe', b3);
+  ok(b3.reihen === 2 && b3.zr === 1 && b3.platzhalter === 'none', 'Bündnis gründen: Farben in 2 gleichen Reihen, Zeichen in einer, Platzhalter normal', b3);
+  ok(b3.zurueck, 'Bündnis gründen: „Zurück“ führt zur Startseite', b3);
 
   // 4) Profil: Kopf kompakt, keine HUD-Werte doppelt, Rangliste nur als Weg, Einstellungen in Gruppen
   const p1 = await ev(() => { closeAllPopups(); document.getElementById('profileBtn').click(); const kopf = document.querySelector('#profilePopup .phead');
