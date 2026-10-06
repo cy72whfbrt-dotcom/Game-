@@ -34,7 +34,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ago` → Game/spiel/05d-maersche-kampfbericht.js:130
 - `Aktion 'befehle_da'` → Game/server/06-speichern-push-konto.php:26
 - `Aktion 'geschenk'` → Game/admin.php:65
-- `Aktion 'login'` → Game/index.php:107
+- `Aktion 'login'` → Game/index.php:142
 - `Aktion 'name'` → Game/server/06-speichern-push-konto.php:28
 - `Aktion 'nebel'` → Game/admin.php:111
 - `Aktion 'neu'` → Game/index.php:20
@@ -4851,7 +4851,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 ### Game/index.php — index.php – Startseite: Anmelden oder Registrieren. Danach geht es ins Spiel (s…
 - Aktion `'neu'` :20
 - `h` :54
-- Aktion `'login'` :107
+- Aktion `'login'` :142
 
 ### Game/ladebildschirm.js — Ladebildschirm: Meer mit Burg, echte Tageszeit, Tipps mit Bildern (läuft vor de…
 - `rng` :9

@@ -499,6 +499,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   zahlen die Maut neu verteilt und marschieren. Kann der Anführer selbst nicht zahlen, fällt die Rally wie bisher ganz aus
   (`bundRallyLos`, buendnis/02; wirft dabei etwas, geht die Rally nicht los und alle Truppen genau einmal heim). Test
   `rally_maut_test` (Fall 2, 2b, 6; der Test schaltet die Mitspieler-Runde ab – sonst trat Z zufällig dem Test-Bündnis bei).
+- **6.10. Startseite im Spiel-Stil (11b F, Design-Plan M):** `Game/index.php` statt hellem Pergament-Kasten mit Times jetzt
+  dunkel/Gold wie die Spielseite (Farben + Cinzel/Inter wie dort, gleiche Google-Schriften, keine neue Quelle), Wappen,
+  Reiter als Umschalter, Felder 48 px. Beim Registrieren stehen die Regeln schon unter den Feldern („3 bis 20 Zeichen“,
+  „Mindestens 10 Zeichen“) und werden beim Tippen grün/rot (nur Länge; der Rest bleibt Server-Prüfung). Auge-Knopf zeigt das
+  Passwort (`type="button"`, ohne Skript versteckt). App-Link als dunkler Knopf statt blauem Link. Login/Registrieren,
+  Nonce/CSP und Bremsen unverändert. Tests in `tests/server_test.php` („Startseite: …“).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
