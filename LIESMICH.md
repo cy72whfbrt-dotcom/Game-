@@ -1521,7 +1521,9 @@ drumherum (Wege etwas länger, Basen dahinter etwas geschützter). Kommt mit dem
 Nacht – vorher bauen und testen.
 
 ## 11c. FEHLER-MERKLISTE nach dem Hochladen 6.10. (Alexander: „nur merken“) – noch nicht bauen
-- (Einträge folgen)
+1. **Karte ganz rausgezoomt: Mitte/Thron nicht zu sehen** (Bild 6b43c9a7, Handy 18:20) – nur Gebiets-Raster + eigenes
+   Wappen oben links; Thron-Insel/Mitte sollte weit draußen als Orientierung sichtbar sein (z. B. Thron-Symbol/Krone in der Mitte).
+   Dazu: oben „N“ / unten „S“ stehen weit vom Raster weg, viel leere schwarze Fläche oben und unten.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
