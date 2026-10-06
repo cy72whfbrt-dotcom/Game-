@@ -1526,6 +1526,9 @@ Nacht – vorher bauen und testen.
    Dazu: oben „N“ / unten „S“ stehen weit vom Raster weg, viel leere schwarze Fläche oben und unten.
    Nachtrag (Bild 92e357f4, 18:22): Ohne Nebel („Der Nebel hat sich gelichtet“) klappt es – Mitte leuchtet. Fehlt also nur
    im Nebel-Zustand.
+2. **Spawn nach dem Reset nicht nur außen** (Bild 92e357f4): Nach dem Saison-Reset sollen ALLE Hauptstädte (Spieler +
+   Mitspieler) am Rand starten – auf der Karte liegen aber rote Basen auch weiter innen (mittlere Ringe, nahe der Mitte).
+   Prüfen: `saisonWelt` (09f) Startplätze / freie Rand-Türme, Mitspieler-Neustart, zu wenige Rand-Plätze → Ausweichen nach innen?
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
