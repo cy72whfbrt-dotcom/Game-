@@ -55,11 +55,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const sm = row && row.querySelector('summary'); if (sm) sm.click();
     const ks = document.querySelector('.kl-seite');
     out.A.seite = ks && !ks.hidden;
-    e.at = Date.now() - 3 * 60000; refreshBattleLog();                     // läuft das Alter in der offenen Seite mit?
+    const dn = Date.now; Date.now = () => dn() + 3 * 60000; refreshBattleLog(); Date.now = dn;   // 3 Min. später: läuft das Alter in der offenen Seite mit?
     const st = ks ? zeile(ks.querySelector('#klInhalt')) : '';
     out.A.seiteAlter = st.match(/vor \d+ (s|Min\.|Std\.)/g) || [];
     out.A.seiteStriche = ks ? [...ks.querySelectorAll('.logLine')].filter(l => l.lastElementChild && /^[–—-]$/.test(l.lastElementChild.textContent.trim())).length : -1;
-    if (ks) ks.querySelector('[data-klzu]').click(); e.at = now;
+    if (ks) ks.querySelector('[data-klzu]').click();
     // Kampf gleich danach (1 Truppe – verliert): dieselbe Verteidigung wie im Spähbericht
     try { resolveAttack({ sourceId: playerIslandId, targetId: w.T, rawTroops: 1, attackBonus: 0, atkTitle: 1, atkKraft: 1, startedAt: now - 1000, resolveAt: now, shieldLossReductionPct: 0, rewardGoldRate: 0 }); } catch (x) { out.A.kampfFehler = x.message; }
     const k = combatLog.find(x => x.type === 'attack' && x.targetId === w.T);
