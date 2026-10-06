@@ -1267,6 +1267,16 @@ function botNoteLoss(botId, islandId) { if (!botById[botId]) return; const l = b
 
 function botLosses(botId, ms, now) { return (botLossMem[botId] || []).filter(x => now - x.at < ms); }
 
+// Wie stark ein fremder Angriff aussieht (Alexander 5.10., 11b C): ein Mitspieler weiß so wenig wie du – vor dem Kampf nur
+// die Truppenzahl, ungefähr (±30 %, je Angriff fest: kein Flackern) und ohne Boni (Held, Fähigkeit, Titel, Forschung);
+// kämpft er schon, die echte Stärke (wie im Kampfbericht). Feld-Armeen: ihre Truppenzahl (steht auf der Karte), ohne Boni.
+function botSchaetzAngriff(a) {
+    if (a.fightEndsAt) return (a.rawTroops + (a.attackBonus || 0)) * (a.atkTitle || 1) * (a.atkKraft || 1);
+    const f = .7 + .6 * mulberry32(((a.startedAt || 0) % 2147483647) ^ ((a.targetId || 0) * 7919 + (a.sourceId || 0) * 104729))();
+    return Math.round((a.rawTroops || 0) * f);
+}
+function botSchaetzArmee(x) { return x.troops || 0; }
+
 function botDefend(bot) {
     const owned = botOwnedIslands[bot.id];
     if (!owned || owned.size === 0) return;
@@ -1277,9 +1287,9 @@ function botDefend(bot) {
         if (now - startedAt < (3000 + (startedAt % 9000)) / notice + (at - startedAt) * (late || 0) * wt / 100) return;   // not seen yet (Spurlos: a hero's column is seen later)
         const t = threats.get(id) || { id, str: 0, at: Infinity }; t.str += str; t.at = Math.min(t.at, at); threats.set(id, t);
     };
-    for (const a of pendingAttacks) if (a.attackerBotId !== bot.id) see(a.targetId, a.startedAt, a.resolveAt, (a.rawTroops + (a.attackBonus || 0)) * (a.atkTitle || 1) * (a.atkKraft || 1), a.hx ? a.hx.late : 0);   // (own later waves just move in)
+    for (const a of pendingAttacks) if (a.attackerBotId !== bot.id) see(a.targetId, a.startedAt, a.resolveAt, botSchaetzAngriff(a), a.hx ? a.hx.late : 0);   // (own later waves just move in)
     for (const a of armies) if (a.mv && a.mv.to.kind === 'base') { const w = armyWho(a);                 // a field army marching on the base is on the map too
-        if (w !== bot.id) see(a.mv.to.id, a.mv.startedAt, a.mv.resolveAt, a.troops * (1 + fieldAtkPct(w) / 100) * titleMult(w, 'attack') * (AUF ? AUF.kampf(w, 'a') : 1)); }
+        if (w !== bot.id) see(a.mv.to.id, a.mv.startedAt, a.mv.resolveAt, botSchaetzArmee(a)); }
     if (!threats.size) return;
     const tapped = () => { act.defNext = now + (botStyle(bot).tapMs || 5000) * (.7 + Math.random() * .6); };   // one defence order at a time (its own pace - it doesn't stop the armies)
     // 1) look at every threat: does it hold, can it be held with help that gets there in time, or is it lost?

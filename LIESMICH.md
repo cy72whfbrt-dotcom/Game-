@@ -609,6 +609,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Späher und Basis nur der neueste Eintrag und höchstens 10 „ausgespäht“ (`AUSGESPAEHT_LIMIT`, älteste dieser Art zuerst raus),
   damit echte Kampfberichte im 50er-Fenster bleiben (Test: 30 Späher + Angriffsbericht).
 
+- **5./6.10. Nacht – Mitspieler schätzen Angriffe (11b C, Alexander N1):** Mitspieler kannten beim Losmarsch die genaue
+  Stärke eines Angriffs (Held, Fähigkeit, Titel, Forschung) und schickten genau passende Hilfe oder räumten rechtzeitig. Jetzt
+  wissen sie so viel wie ein echter Spieler: vor dem Kampf nur die Truppenzahl, ungefähr (±30 %, je Angriff fest – kein
+  Flackern) und ohne Boni; Feld-Armeen mit ihrer Truppenzahl ohne Boni; sobald der Kampf läuft, die echte Stärke
+  (`botSchaetzAngriff`/`botSchaetzArmee`, bots/05 – genutzt von `botDefend` und der Bündnis-Hilfe `bundUnterAngriff`,
+  buendnis/01). Die Vorsicht (×1,1 halten, ×1,2 Hilfe) bleibt. Test `tests/browser/mitspieler_schaetzen_test.js`.
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 
@@ -929,7 +935,7 @@ schon richtig (dort geht der Hintergrund bis ganz unten).
    → **gebaut (nicht hochgeladen)**, Verlauf 5./6.10. Nacht.
 
 **C. Neue Regeln (Teil 2)**
-- Mitspieler sehen die Stärke eines Angriffs nur so ungenau wie echte Spieler.
+- Mitspieler sehen die Stärke eines Angriffs nur so ungenau wie echte Spieler. **→ gebaut (nicht hochgeladen), Verlauf 5./6.10. Nacht.**
 - Bündnis-Signal **„Rückzug!“**: Mitspieler kehren automatisch um, echte Spieler bekommen eine Nachricht und
   entscheiden selbst.
 - Thron-Punkte (alle 3 Min.): Halter weiter **30**, **jeder** mit Verstärkung im Thron **15**.
