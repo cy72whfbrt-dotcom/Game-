@@ -1602,6 +1602,14 @@ Nacht – vorher bauen und testen.
     (Haupt + Zweit, leer mit „?“), aber beides kompakt: leere Helden nur als ein Platz mit „?“ und einem Satz, KEINE 7 Strich-
     Zeilen. Gleiches Muster in beiden Berichten. Außerdem Spähbericht: Titel „Turm #19235“ + „X 134 · Y 48“ (Nummern statt
     Name), „Gold 254 / Holz 271 …“ – Zahlen nach neuer Wirtschaft klein (Rohstoffe vom Reset 0, ok?).
+16. **Ladebild + Login: „beides Dreck“** (Bilder 6c024843, e2491327, 18:46):
+    - Ladebild: flache Kinderbuch-Burg auf Insel, Sonne, Wolken als Kreise, Schiff – wirkt billig/clipart. Gewünscht:
+      hochwertiges Titelbild wie RoK/Million Lords/Lords Mobile (atmosphärisch, Tiefe, Licht, epische Szene), Logo groß,
+      Lade-Balken + Tipp ok.
+    - Login: dunkler Kasten mit Wappen, gelbe Eingabefelder (Browser-Autofill-Gelb!), viel leerer Raum oben/unten. Gewünscht:
+      Login über dem Titelbild (gleiche Szene wie Ladebild), Eingabefelder im Spielstil (dunkel, Goldrand, kein Autofill-Gelb –
+      `-webkit-autofill` überschreiben), großer Gold-Knopf, wie Spiel-Startbildschirme.
+    → Designer mit Online-Vorbildern (Start-/Login-Bildschirme RoK, Call of Dragons, Lords Mobile).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
