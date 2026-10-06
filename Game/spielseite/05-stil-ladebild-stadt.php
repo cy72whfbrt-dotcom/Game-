@@ -310,9 +310,4 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .odds-mehr > summary::-webkit-details-marker{display:none} .odds-mehr > summary .icon{width:16px;height:16px;color:var(--gold-300)} .odds-mehr[open] > summary{color:var(--gold-100)}
 .odds-mehr .odds{margin-top:0}
 .hchest-opts .btn{min-height:48px} .hchest-opts .cost b{font-size:var(--fs-15,15px)}
-/* Hinweise (Toast) nie über Kopf oder Fußzeile dieser Fenster */
-body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96px)}
-@media (max-width:899px),(max-height:500px){
-  body:has(#shopPopup.is-open) .toast.toast.toast,body:has(#citySheet:not([hidden])) .toast.toast.toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-bd) + 104px)}   /* (.toast dreifach: geht vor die allgemeine Fenster-Regel in 02) */
-}
     </style>
