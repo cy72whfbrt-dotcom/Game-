@@ -81,7 +81,7 @@ function showDailyModal() {
 function closeDailyModal() {
     if (dailyModal.hidden) return false;
     dailyModal.hidden = true;
-    if (isPanelOpen(goalsPopup)) { renderQuestPanel(); updateGoalsBadge(); }
+    if (isPanelOpen(goalsPopup)) { renderQuestPanel(); updateGoalsBadge(); if (goalsTab === 'reward') renderInbox(); }   // (der Satz oben nennt die tägliche Belohnung nur, solange sie wartet)
     return true;
 }
 document.getElementById('dailyModalBtn').addEventListener('click', () => {
@@ -242,7 +242,7 @@ function renderInbox() {
     liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
         return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
             '<button class="btn btn--primary btn--sm" type="button" data-inbox="' + x.id + '"><span>Abholen</span></button></div>'; }).join('') + (L.length > 1 ? '<button class="btn btn--secondary btn--sm inbox-all" type="button" data-inbox-all><span>Alle abholen · ' + L.length + '</span></button>' : '')
-        : '<div class="inbox-empty">Gerade nichts zum Abholen. Preise aus Wochen-Event, Invasion, Drache und Tagesboss, das Kopfgeld und das Gold aus deinen Kämpfen landen hier.</div>');
+        : '<div class="inbox-empty">' + (dailyClaimable() ? 'Deine tägliche Belohnung wartet gleich hier unten. Sonst gerade nichts zum Abholen – ' : 'Gerade nichts zum Abholen. ') + 'Preise aus Wochen-Event, Invasion, Drache und Tagesboss, das Kopfgeld und das Gold aus deinen Kämpfen landen hier.</div>');
 }
 goalsPopup.addEventListener('click', e => {
     const one = e.target.closest('[data-inbox]'), all = e.target.closest('[data-inbox-all]'); if (!one && !all) return;

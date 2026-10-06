@@ -16,12 +16,17 @@
     let info = null, beschaeftigt = false, zustand = '';
     const hinweis = (t, ms) => { if (typeof flashHint === 'function') flashHint(t, ms || 3500); };
 
+    const FRIST = 10000;                             // so lange warten wir auf den Server (Hoster unter Last), dann ein klarer Text statt „Einen Moment …“
     async function server(aktion, daten) {
-        const r = await fetch('server.php', { method: 'POST', credentials: 'same-origin', cache: 'no-store',
-            headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ aktion }, daten || {})) });
-        if (r.status === 429) return { ok: false, grund: 'Zu viele Versuche – bitte später nochmal.' };
-        if (!r.ok) throw new Error('HTTP ' + r.status);
-        return r.json();
+        const ab = new AbortController(), uhr = setTimeout(() => ab.abort(), FRIST);
+        try {
+            const r = await fetch('server.php', { method: 'POST', credentials: 'same-origin', cache: 'no-store', signal: ab.signal,
+                headers: { 'X-Open-Water': '1', 'Content-Type': 'application/json' }, body: JSON.stringify(Object.assign({ aktion }, daten || {})) });
+            if (r.status === 429) return { ok: false, grund: 'Zu viele Versuche – bitte später nochmal.' };
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return await r.json();
+        } catch (e) { e.server = true; throw e; }     // (keine Antwort / Fehler vom Server: „keineAntwort“ statt „aus“)
+        finally { clearTimeout(uhr); }
     }
     function bytes(s) {                              // base64url → Uint8Array (öffentlicher Schlüssel des Servers)
         const b = atob(s.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - s.length % 4) % 4));
@@ -37,6 +42,7 @@
         aus: ['Bekomme eine Nachricht aufs Handy, wenn deine Basen angegriffen werden – auch wenn das Spiel zu ist.', 'Benachrichtigungen erlauben'],
         an: ['✓ An – nur wenn du gerade nicht im Spiel bist (höchstens eine pro Minute). Welche Nachrichten du willst:', 'Ausschalten'],
         serverAus: ['Benachrichtigungen gibt es gerade nicht.', ''],
+        keineAntwort: ['Der Server antwortet gerade nicht – Benachrichtigungen kannst du später einschalten.', 'Nochmal versuchen'],
         iosApp: ['Auf dem iPhone geht das nur in der App: im Browser auf Teilen → „Zum Home-Bildschirm“ tippen, dann Open Water vom Home-Bildschirm öffnen und hier erlauben.', 'So geht’s'],
         kannNicht: ['Dieser Browser kann leider keine Benachrichtigungen.', ''],
         verboten: ['Benachrichtigungen sind für Open Water verboten. Erlauben kannst du sie in den Einstellungen deines Handys (bzw. Browsers) – danach hier nochmal tippen.', 'Nochmal versuchen']
@@ -69,7 +75,7 @@
                 return zeigen('an');
             }
             zeigen('aus');
-        } catch (e) { console.warn('Benachrichtigungen:', e); zeigen(ios && !app ? 'iosApp' : 'aus'); }
+        } catch (e) { console.warn('Benachrichtigungen:', e); zeigen(ios && !app ? 'iosApp' : e.server ? 'keineAntwort' : 'aus'); }
     }
 
     async function einschalten() {
@@ -96,6 +102,7 @@
     knopf.addEventListener('click', async () => {
         if (beschaeftigt) return;
         if (zustand === 'iosApp') { window.location.href = 'app/'; return; }
+        if (zustand === 'keineAntwort') { beschaeftigt = true; knopf.disabled = true; text.textContent = 'Einen Moment …'; await pruefen(); beschaeftigt = false; knopf.disabled = false; return; }
         beschaeftigt = true; knopf.disabled = true;
         const vorher = zustand;
         try { if (vorher === 'an') await ausschalten(); else await einschalten(); }
@@ -123,5 +130,6 @@
             new Promise(r => setTimeout(r, 2000))]).then(fertig, fertig);
     });
 
-    setTimeout(pruefen, 2500);   // nach dem Laden (das Spiel geht vor)
+    const frist = setTimeout(() => { if (!zustand) zeigen('keineAntwort'); }, 2500 + FRIST + 2000);   // hängt schon getRegistration o. Ä.: nie ewig „Einen Moment …“
+    setTimeout(() => pruefen().finally(() => clearTimeout(frist)), 2500);   // nach dem Laden (das Spiel geht vor)
 })();

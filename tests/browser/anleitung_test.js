@@ -1,6 +1,6 @@
 // Anleitung für neue Spieler (LIESMICH 11b D, 5./6.10.): tägliche Belohnung erst nach Schritt 2, Hauptstadt-Fenster erklärt sich,
 // der nächste nötige Knopf pulsiert, Schritt 6 zählt erst nach echtem Abholen, Schritt 7 erklärt die Knöpfe ohne Text (auch den Würfel = Rohstoffe, Verstanden),
-// Belohnung nur beim ersten Mal, „Anleitung noch mal“ in den Einstellungen, „×“ fragt erst im Spiel (kein confirm()), alter
+// Schritt 2 beginnt positiv, Schritt 1 springt bei einer neutralen Basis gleich weiter (6.10. Spieltest), Belohnung nur beim ersten Mal, „Anleitung noch mal“ in den Einstellungen, „×“ fragt erst im Spiel (kein confirm()), alter
 // Stand mit 6 Schritten bleibt fertig. Leiste kompakt: Schritt, Text und „×“ in einer Zeile. Handy (390×844) + Desktop. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
 const { chromium, devices } = require('playwright');
 const path = require('path');
@@ -27,7 +27,7 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
       o.start.zeile = { hoehe: Math.round(el('anleitung').getBoundingClientRect().height), eine: ['anleitungSchritt', 'anleitungWeg'].every(id => mitte(el(id)) > rT.top && mitte(el(id)) < rT.bottom) };   // Schritt · Text · × nebeneinander
       // 2) Hauptstadt antippen: der erklärende Satz im Fenster, weiter zu Schritt 2 – noch immer keine tägliche Belohnung
       openIslandPopup(islandById[playerIslandId]); await bis(() => anleitung.schritt === 1);
-      const sa = el('popupAnleitung'); o.haupt = { schritt: anleitung.schritt, satz: !sa.hidden && sa.getBoundingClientRect().height > 0 && /Hier stehen deine Truppen\. Mit ihnen greifst du an und sammelst\./.test(sa.textContent) };
+      const sa = el('popupAnleitung'); o.haupt = { schritt: anleitung.schritt, text: el('anleitungText').textContent, satz: !sa.hidden && sa.getBoundingClientRect().height > 0 && /Hier stehen deine Truppen\. Mit ihnen greifst du an und sammelst\./.test(sa.textContent) };
       closeAllPopups(); await warte(1300); o.haupt.daily = zu('dailyModal');
       // 3) neutrale Basis antippen: „Angreifen“ pulsiert; Angriff gestartet → Schritt 3, danach kommt die tägliche Belohnung
       const nb = islands.filter(i => anleitungNeutral(i.id) && islandSeen(i) && i.id !== playerIslandId).sort((x, y) => Math.hypot(x.x - islandById[playerIslandId].x, x.y - islandById[playerIslandId].y) - Math.hypot(y.x - islandById[playerIslandId].x, y.y - islandById[playerIslandId].y))[0];
@@ -70,6 +70,15 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
       el('anleitungWeg').click(); await warte(200); el('anleitungJa').click(); await warte(300);
       o.frage.ja = { fertig: anleitung.schritt >= ANLEITUNG.length, weg: zu('anleitung') }; o.frage.confirms = window.__confirms;
       o.frage.ja.taeglich = await bis(() => taeglich > 0, 4000); maybeShowDaily = md;
+      // 8) Schritt 1, aber der Spieler tippt schon eine fremde Basis: kein stehengebliebenes „Tippe auf deine Hauptstadt“
+      closeAllPopups(); nm.click(); await bis(() => anleitung.schritt === 0 && !zu('anleitung'));
+      const fremd = islands.find(i => islandOwnerOf(i.id) && islandOwnerOf(i.id) !== 'player' && !bossAt(i.id));
+      if (fremd) { openIslandPopup(fremd); await warte(1300); }
+      o.vorweg = { fremd: !!fremd, schritt: anleitung.schritt, text: el('anleitungText').textContent };
+      closeAllPopups(); await warte(300);
+      if (nb) { openIslandPopup(nb); await warte(100); attackBtn.click(); }   // gleich „Angriff vorbereiten“
+      o.vorweg.neutral = await bis(() => anleitung.schritt === 1); o.vorweg.neutralText = el('anleitungText').textContent; o.vorweg.ansicht = popupView;
+      closeAllPopups();
       return o;
     }).catch(e => ({ fehler: e.message }));
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
@@ -79,6 +88,7 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
     ok(r.start.zeile.eine && r.start.zeile.hoehe <= (art === 'Handy' ? 110 : 80), art + ': Leiste kompakt: Schritt, Text und „×“ in einer Zeile', r.start.zeile);
     ok(r.start.puls === 'heim' && r.start.heim, art + ': Schritt 1: das Fadenkreuz (zur Hauptstadt) pulsiert', r.start);
     ok(r.haupt.schritt === 1 && r.haupt.satz, art + ': Hauptstadt-Fenster erklärt sich („Hier stehen deine Truppen …“)', r.haupt);
+    ok(/^Gut!/.test(r.haupt.text) && !/keine neutrale/.test(r.haupt.text), art + ': Schritt 2 beginnt positiv (Hauptstadt noch offen: „Gut! …“, kein Fehler-Satz)', r.haupt.text);
     ok(r.angriff.neutral && r.angriff.puls === 'angriff' && r.angriff.knopf && r.angriff.satzWeg, art + ': Schritt 2: bei einer neutralen Basis pulsiert „Angreifen“', r.angriff);
     ok(r.angriff.schritt === 2 && r.angriff.daily, art + ': nach Schritt 2 kommt die tägliche Belohnung', r.angriff);
     ok(r.events.bereit > 0 && r.events.schritt === 5 && r.events.puls === 'abholen' && r.events.pulsKnopf > 0, art + ': Schritt 6: Events öffnen allein zählt nicht, „Abholen“ pulsiert', r.events);
@@ -92,6 +102,8 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
     ok(r.frage.nein.frageZu && r.frage.nein.laeuft && r.frage.nein.text, art + ': „Weiter lernen“ lässt die Anleitung weiterlaufen', r.frage.nein);
     ok(r.frage.ja.fertig && r.frage.ja.weg && r.frage.confirms === 0, art + ': „Überspringen“ beendet sie – ohne Browser-Fenster (confirm)', r.frage);
     ok(r.frage.ja.taeglich, art + ': nach „Überspringen“ wird die tägliche Belohnung angeboten (nicht erst beim nächsten Laden)', r.frage.ja);
+    ok(r.vorweg.fremd && r.vorweg.schritt === 0 && /nicht deine Hauptstadt/.test(r.vorweg.text), art + ': Schritt 1 + fremde Basis offen: Hinweis „Das ist nicht deine Hauptstadt …“ statt des alten Satzes', r.vorweg);
+    ok(r.vorweg.neutral && /Angreifen/.test(r.vorweg.neutralText), art + ': Schritt 1 + neutrale Basis (Angriff vorbereiten): springt zu Schritt 2 („Angreifen“)', r.vorweg);
     await bild('anleitung');
     await ctx.close();
   }
