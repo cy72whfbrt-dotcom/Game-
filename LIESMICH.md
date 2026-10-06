@@ -1596,6 +1596,12 @@ Nacht – vorher bauen und testen.
     (wie Zelte) verstreut; Fluss ok. Gewünscht: Landschaft wie Million Lords/RoK – Gelände mit Struktur (Gras, Sand,
     Wald, echte Bergketten mit Schatten), weniger wiederholte Kleinsymbole. Designer: Vorbilder online + neue Vorgabe;
     alle Biome prüfen (Wüste, Wiese, Schnee …). Auch die vielen gleichen Kleinsymbole klären (was sind sie?).
+15. **Spähbericht vs. Kampfbericht – Helden-Felder uneinheitlich** (Bilder d1f2f1ed, a0c1439a, 18:44): Im Kampfbericht stehen
+    beim Verteidiger leere Helden-Felder („?“ Kein Hauptheld / Kein Zweitheld + je 7 Zeilen „–“) und 4 leere Ausrüstungs-
+    Felder; im Spähbericht nur eine Zeile „Verteidigungs-Held: keiner“. Gewünscht: Spähbericht zeigt die Helden-Plätze genauso
+    (Haupt + Zweit, leer mit „?“), aber beides kompakt: leere Helden nur als ein Platz mit „?“ und einem Satz, KEINE 7 Strich-
+    Zeilen. Gleiches Muster in beiden Berichten. Außerdem Spähbericht: Titel „Turm #19235“ + „X 134 · Y 48“ (Nummern statt
+    Name), „Gold 254 / Holz 271 …“ – Zahlen nach neuer Wirtschaft klein (Rohstoffe vom Reset 0, ok?).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
