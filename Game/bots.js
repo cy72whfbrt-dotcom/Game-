@@ -973,7 +973,7 @@ function botBld(botId, id) { const b = loadBotState()[botId]; return b ? (b.city
 
 function botCityFinish(bot, now) {                        // a build is done when its time is up - online or not, like yours
     const c = loadBotState()[bot.id].city, done = c.builds.filter(x => now >= x.endsAt); if (!done.length) return;
-    for (const x of done) c.levels[x.id] = x.to; c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();
+    for (const x of done) { c.levels[x.id] = x.to; evPunkte('bau', bot.id, 2 + x.to); } c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();   // (Wochen-Event Bauherr: auch die Stadt)
 }
 
 const BOT_BUILD_PREF = {                                  // what each kind of player builds first (lower = sooner)
@@ -1003,7 +1003,7 @@ function botCityBuild(bot, now) {                         // one builder (two on
     if ((botCoins[bot.id] || 0) * (botStyle(bot).build || .5) < k.c) return;   // keeps half for troops and bases (a Schatzmeister less, a Bettler more)
     if (AUF && !AUF.kannZahlen(bot.id, k)) { if (Math.random() < .25) AUF.botMarkt(bot, k); return; }      // Rohstoffe fehlen: sammeln, Markt – später wieder
     if (AUF) AUF.zahlen(bot.id, k); else botCoins[bot.id] -= k.c;
-    c.builds.push({ id: best, to: lv + 1, startedAt: now, endsAt: now + cityTimeSec(best, lv) * 1000 }); saveBotState();
+    c.builds.push({ id: best, to: lv + 1, startedAt: now, endsAt: now + cityTimeSec(best, lv) * 1000 }); botStat(bot.id, 'bau');   // (Saison-Pass wie bei dir)
 }
 
 // ---- the bot's Krankenhaus ----
@@ -1633,7 +1633,9 @@ const BOT_GOAL_VAL = {
     cityMin: b => Math.min(...BOT_BUILDINGS.filter(k => !BOT_MIN_AUSNAHME.includes(k)).map(k => b.city.levels[k] || 0)),   // (the newer Lager doesn't count, like yours)
     baseTop: (b, st, id) => goalBaseTop(id), gates: (b, st, id) => goalGates(id), tolls: (b, st) => st.tolls, tollCoins: (b, st) => st.tollCoins,
     armyWins: (b, st) => st.armyWins, heroes: (b, st, id) => goalHeroes(id), heroStars: (b, st, id) => goalHeroStars(id), heroFires: (b, st) => st.heroFires,
-    healed: (b, st) => st.healed, shields: (b, st) => st.shields, teleports: (b, st) => st.teleports, barb: (b, st) => st.barb, dboss: (b, st) => st.dboss
+    healed: (b, st) => st.healed, shields: (b, st) => st.shields, teleports: (b, st) => st.teleports, barb: (b, st) => st.barb, dboss: (b, st) => st.dboss,
+    burg: (b, st, id) => AUF ? AUF.burgStufe(id) : b.city.levels.keep || 1, foStufen: (b, st, id) => AUF ? AUF.foSumme(id) : 0, drache: (b, st) => st.drache, inv: (b, st) => st.inv,
+    saisonTop: b => new Set([...(b.sTitel || []), ...(b.titles || [])].filter(saisonTitel)).size
 };
 function botGoalVal(botId, k) { const b = loadBotState()[botId], f = BOT_GOAL_VAL[k]; return b && f ? f(b, b.stats || {}, botId) || 0 : 0; }
 function botClaimGoals(bot) {

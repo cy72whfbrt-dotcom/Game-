@@ -66,12 +66,15 @@ function profil_bereinigen($text) {
     $sk = []; foreach (['troops', 'attack', 'defense', 'speed', 'attackGold', 'defenseGold'] as $k) $sk[$k] = (int)$plus($p['skills'][$k] ?? 0, $k === 'speed' ? 10 : 50);
     if (array_sum($sk) > $lvl + 20) { $f = ($lvl + 20) / array_sum($sk); foreach ($sk as $k => $v) $sk[$k] = (int)floor($v * $f); }   // 1 Skillpunkt pro Stufe
     $STADT = ['academy' => 25, 'forge' => 5, 'hospital' => 40, 'wall' => 25, 'heroes' => 25,
-              'keep' => 25, 'embassy' => 25, 'market' => 25];   // cityMaxLevel · Burg-Stufe (keep), Labor (academy), Krankenhaus (hospital), Botschaft, Markt
+              'keep' => 25, 'embassy' => 25, 'market' => 25, 'lumber' => 25, 'quarry' => 25, 'mine' => 25];   // cityMaxLevel · Burg-Stufe (keep), Labor (academy), Krankenhaus (hospital), Botschaft, Markt, Holzfäller, Steinbruch, Eisenmine
     $stadt = []; foreach ($STADT as $k => $mx) if (isset($p['city']['levels'][$k])) $stadt[$k] = (int)$plus($p['city']['levels'][$k], $mx);
+    $bau = []; $bauBis = []; $bl = is_array($p['city']['bau'] ?? null) ? array_slice(array_values($p['city']['bau']), 0, 2) : []; $bz = is_array($p['city']['bauBis'] ?? null) ? array_values($p['city']['bauBis']) : [];
+    foreach ($bl as $i => $x) if (is_string($x) && isset($STADT[$x])) { $bau[] = $x; $bauBis[] = $plus($bz[$i] ?? 0, 1e15); }   // was gerade gebaut wird + wann fertig (Push „Bau fertig“) – je Gebäude seine Zeit
     // Paket D: Forschung im Labor (feste Liste, Höchststufen wie FORSCHUNG in aufbau.js), Rohstoffe wie Münzen
     $FO = ['w_prod' => 10, 'w_sam' => 10, 'w_last' => 10, 'w_tempel' => 10, 'm_atk' => 10, 'm_def' => 10, 'm_laz' => 10, 'x_tempo' => 10, 'x_spaeh' => 10, 'x_nebel' => 5,
            'w_schutz' => 3, 'm_laz2' => 3, 'x_tempo2' => 3];   // (ab Labor 23, 5.10.)
     $fo = []; foreach ($FO as $k => $mx) if (isset($p['fo'][$k])) $fo[$k] = (int)$plus($p['fo'][$k], $mx);
+    $foLauf = isset($p['city']['foLauf']) && is_string($p['city']['foLauf']) && isset($FO[$p['city']['foLauf']]) ? $p['city']['foLauf'] : null;
     $res = []; foreach (['h', 's', 'e'] as $k) $res[$k] = $plus($p['res'][$k] ?? 0, 1e15);
     // 3B: Gems kommen mit ins Profil – nur der Weltrechner sieht sie (spieler_liste) und hält sie gegen sein Hauptbuch
     $jetztMs = time() * 1000;
@@ -82,8 +85,8 @@ function profil_bereinigen($text) {
         'lvl' => $lvl,
         'skills' => (object)$sk,
         'gear' => $gear,
-        'city' => ['levels' => (object)$stadt, 'bau' => array_values(array_filter(array_slice((array)($p['city']['bau'] ?? []), 0, 2), function ($x) use ($STADT) { return is_string($x) && isset($STADT[$x]); })),
-                   'b2' => !empty($p['city']['b2']), 'foLauf' => isset($p['city']['foLauf']) && is_string($p['city']['foLauf']) && isset($FO[$p['city']['foLauf']]) ? $p['city']['foLauf'] : null],   // (was gerade gebaut/geforscht wird – Bauzeit-Prüfung im Hauptbuch)
+        'city' => ['levels' => (object)$stadt, 'bau' => $bau, 'bauBis' => $bauBis,
+                   'b2' => !empty($p['city']['b2']), 'foLauf' => $foLauf, 'foBis' => $foLauf ? $plus($p['city']['foBis'] ?? 0, 1e15) : 0],   // (was gerade gebaut/geforscht wird – Bauzeit-Prüfung im Hauptbuch, Push „fertig“)
         'fo' => (object)$fo, 'res' => is_array($p['res'] ?? null) ? $res : null,   // (fehlt: null – nicht 0, sonst sähe es nach „alles ausgegeben“ aus)
         'wounded' => $plus($p['wounded'] ?? 0, 1e30),
         'hs' => $hs,
@@ -141,8 +144,9 @@ function mitspieler_kuerzen($b, $jetztMs) {
 // Fremde Spieler und Mitspieler (6.10., Alexander): ohne Spähen sieht man nur Name, Macht, Bündnis, Burg-Stufe (dazu Stufe,
 // Aussehen, Hauptstadt, Schild/Anfängerschutz, Eroberungen und Thron-Punkte für die Rangliste). Helden, Ausrüstung, Fähigkeiten,
 // Stadt, Forschung, Gems, Schild-Vorrat, Pass … nur im Spähbericht (kommt fertig vom Weltrechner). Die Macht rechnet der
-// Weltrechner (macht). Der eigene Eintrag (u<id>) bleibt ganz – nur NUR_WELTRECHNER fehlt wie bei allen.
-const FREMD_OEFFENTLICH = ['lvl', 'macht', 'tt', 'capital', 'shieldUntil', 'neuBis', 'mensch', 'v2', 'hbK', 'handy', 'city', 'stats',
+// Weltrechner (macht), ebenso die Summe aller Forschungs-Stufen (foP – Rangliste „Hauptstadt“ bei gleicher Burg-Stufe, ohne
+// zu verraten, was erforscht ist). Der eigene Eintrag (u<id>) bleibt ganz – nur NUR_WELTRECHNER fehlt wie bei allen.
+const FREMD_OEFFENTLICH = ['lvl', 'macht', 'foP', 'tt', 'capital', 'shieldUntil', 'neuBis', 'mensch', 'v2', 'hbK', 'handy', 'city', 'stats',
     'lookMig', 'ringMig', 'ring', 'rings', 'march', 'marchs', 'frames', 'titles', 'throneLook', 'lookFrame', 'lookTitle', 'achLook', 'bestRank'];
 const FREMD_STATS = ['caps', 'capSeed', 'tpEarned'];   // (Rangliste: Eroberungen, Thron-Punkte)
 function fremd_wert($f, $v) {                         // city: nur die Burg-Stufe · stats: nur die der Rangliste

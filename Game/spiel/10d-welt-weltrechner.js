@@ -641,6 +641,7 @@ if (window.WELT) {
         hb.st[id] = [L + 1, g ? now : Math.min(now, start + need)];   // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
         bu[i] = hb.st[id][1];                                          // (dieser Bauarbeiter ist ab da wieder frei)
         if (hb.hilfe) delete hb.hilfe[hk];
+        evPunkte('bau', who, 2 + L + 1);                               // Wochen-Event „Bauherr“: auch die Stadt (wie bei Mitspielern)
         return 'ok';
     }
     function hbFoSchritt(who, hb, m, d, now) {
@@ -976,7 +977,8 @@ if (window.WELT) {
             for (const bd of BOT_DEFS) { const b = bs[bd.id]; if (!b) continue; let n = 0; for (const id of botOwnedIslands[bd.id] || []) n += islandTroops[id] || 0;
                 const r = n < 1000 ? Math.round(n) : Number(n.toPrecision(3)); if (b.tt !== r && Math.abs((b.tt || 0) - r) > r * .01) b.tt = r;
                 let m = 0; try { m = powerOf(whoProfile(bd.id)); } catch (e) { m = 0; }      // Macht für Rangliste, Profil, Bündnis (die Handys kennen die Werte dafür nicht)
-                const mr = m < 1000 ? Math.round(m) : Number(m.toPrecision(3)); if (b.macht !== mr && !(Math.abs((b.macht || 0) - mr) <= mr * .01)) b.macht = mr; }   // (nur bei Änderung – sonst ein Flicken je Minute)
+                const mr = m < 1000 ? Math.round(m) : Number(m.toPrecision(3)); if (b.macht !== mr && !(Math.abs((b.macht || 0) - mr) <= mr * .01)) b.macht = mr;   // (nur bei Änderung – sonst ein Flicken je Minute)
+                const fp = AUF.foSumme(bd.id); if (b.foP !== fp) b.foP = fp; }   // Forschung zusammen (Rangliste „Hauptstadt“ – die Forschung selbst sehen andere erst im Spähbericht)
         }
     }
     // Ziel einer Armee/Ort einer neuen Armee: nur echte Orte (Basis, Feld, Armee, Punkt auf Land)
@@ -1236,7 +1238,7 @@ if (window.WELT) {
     };
 
     // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Krankenhaus, Splitter, Zahlen
-    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an)
+    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires', drache: 'drache', inv: 'inv' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;
         if (e.coins) coins = Math.max(0, coins + e.coins);

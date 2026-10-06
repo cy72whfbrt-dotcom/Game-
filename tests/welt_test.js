@@ -77,5 +77,26 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Welt-Saison: welt.js nimmt nur Profile der laufenden Saison', /\(\+s\.profil\.saison \|\| 1\) >= nr/.test(w) && /saison: parseInt\(d\.openWaterSaisonMein/.test(w));
 }
 
+// 5) Push „Bau fertig“ / „Forschung fertig“ (weltrechner/push.js): Zeiten aus dem Profil, je einmal, beim ersten Blick nur merken
+{
+    const { BEOBACHTER, nachrichtBauen } = require(path.join(G, 'weltrechner', 'push.js')), jetzt = Date.now();
+    const M = { u7: { online: false, profil: { city: { levels: { academy: 4, keep: 3 }, bau: ['academy', 'keep'], bauBis: [jetzt - 60000, jetzt + 3600000], foLauf: 'w_prod', foBis: jetzt - 1000 }, fo: { w_prod: 2 } } } };
+    const win = {}, defs = { academy: { name: 'Labor' }, keep: { name: 'Burg' } };
+    const lauf = () => JSON.parse(new Function('window', 'WELT', 'botById', 'cityDef', 'AUF', 'pendingAttacks', 'botIntelMem', 'botOwnedIslands', 'return ' + BEOBACHTER)(win, { menschen: M }, {}, id => defs[id], { FORSCHUNG: [{ id: 'w_prod', name: 'Ertrag' }] }, [], {}, {})).raus;
+    pruefe('Push Bau/Forschung: beim ersten Blick nur merken', lauf().length === 0);
+    M.u7.profil.city.bauBis[0] = jetzt - 30000; win.__pushMerker.ev = {};   // (nach einem Neustart wäre alles schon gemerkt – hier frisch)
+    const r = lauf(), bau = r.filter(e => e.art === 'bau'), fo = r.filter(e => e.art === 'forschung');
+    pruefe('Push Bau fertig: nur der fertige Bau (Labor 5), nicht die laufende Burg', bau.length === 1 && bau[0].name === 'Labor' && bau[0].stufe === 5 && bau[0].an === 'u7');
+    pruefe('Push Forschung fertig: Ertrag Stufe 3', fo.length === 1 && fo[0].name === 'Ertrag' && fo[0].stufe === 3);
+    pruefe('Push Bau/Forschung: kommt nur einmal', lauf().length === 0);
+    const n = nachrichtBauen(bau.concat(fo), jetzt);
+    pruefe('Push-Text Bau/Forschung', n.titel === 'Bau fertig' && /Fertig gebaut: Labor Stufe 5\./.test(n.text) && /Fertig erforscht: Ertrag Stufe 3/.test(n.text));
+    M.u7.profil.city.bauBis[0] = jetzt - 20 * 60000; win.__pushMerker.ev = {};
+    pruefe('Push Bau fertig: über 10 Min. alt → keine Meldung mehr', !lauf().some(e => e.art === 'bau'));
+    const s10 = fs.readFileSync(path.join(G, 'spiel', '10d-welt-weltrechner.js'), 'utf8'), schritt = s10.slice(s10.indexOf('function hbStadtSchritt'), s10.indexOf('function hbFoSchritt'));
+    pruefe('Bauherr: echte Spieler bekommen beim Weltrechner Punkte für Stadt-Gebäude', /evPunkte\('bau', who, 2 \+ L \+ 1\)/.test(schritt));
+    pruefe('Welt-Profil schickt Bau- und Forschungs-Ende mit', /bauBis: bl\.map/.test(fs.readFileSync(path.join(G, 'welt.js'), 'utf8')));
+}
+
 console.log(fehler ? fehler + ' von ' + n + ' Tests FEHLGESCHLAGEN' : 'Alle ' + n + ' Spiel-Tests bestanden.');
 process.exit(fehler ? 1 : 0);

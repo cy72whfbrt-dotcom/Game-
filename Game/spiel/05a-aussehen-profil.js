@@ -142,6 +142,7 @@ function renderProfile(live) {                  // live = the per-second refresh
 
     setText(document.getElementById('profileLevelBadge'), playerLvl);      // (live: jede Sekunde aus liveTick – geschrieben wird nur, was sich ändert)
     setText(document.getElementById('profileRank'), currentRank());
+    liveHtml(document.getElementById('profileBund'), profilBundHtml('player'));   // dein Bündnis (antippen: Bündnis-Fenster)
     if (!live) renderLook();
     const worldPct = ownedIslands.size / islands.length * 100;
     setText(document.getElementById('profileProgress'), worldPct > 0 && worldPct < 0.1

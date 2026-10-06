@@ -28,8 +28,11 @@ const GOAL_VAL = {
     temples: () => achStat('temples'), throne: () => achStat('throne'), throneMin: () => achStat('throneMin'), throneEarned: () => throneState.earned || 0, scouts: () => achStat('scouts'),
     cityMin: cityMinLevel, baseTop: () => goalBaseTop('player'), gates: () => goalGates('player'), tolls: () => achStat('tolls'), tollCoins: () => achStat('tollCoins'),
     armyWins: () => achStat('armyWins'), heroes: () => goalHeroes('player'), heroStars: () => goalHeroStars('player'), heroFires: () => achStat('heroFires'),
-    healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports'), barb: () => achStat('barb'), dboss: () => achStat('dboss')
+    healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports'), barb: () => achStat('barb'), dboss: () => achStat('dboss'),
+    burg: () => AUF ? AUF.burgStufe('player') : 1, foStufen: () => AUF ? AUF.foSumme('player') : 0, drache: () => achStat('drache'), inv: () => achStat('inv'),
+    saisonTop: () => (look.titles || []).filter(saisonTitel).length   // Hauptstadt (Burg, Labor), Drache, Invasion, Saison-Titel (die besten 10)
 };
+const foGesamtZiel = () => AUF ? AUF.foGesamt() : 95;   // „alles erforscht“ – wächst mit, wenn neue Forschungen dazukommen
 const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one kind share k
     { id: 'cap1',    name: 'Erste Eroberung',  icon: 'flag',    desc: 'Erobere deine erste Basis.',             goal: 1,    k: 'captures', gems: 20 },
     { id: 'cap10',   name: 'Landnahme',        icon: 'flag',    desc: 'Erobere 10 Basen.',                      goal: 10,   k: 'captures', gems: 50 },
@@ -37,7 +40,7 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'cap500',  name: 'Feldherr',         icon: 'flag',    desc: 'Erobere 500 Basen.',                     goal: 500,  k: 'captures', gems: 600 },
     { id: 'cap1000', name: 'Kriegsherr',       icon: 'flag',    desc: 'Erobere 1.000 Basen.',                   goal: 1000, k: 'captures', gems: 1500 },
     { id: 'emp50',   name: 'Weites Reich',     icon: 'home',    desc: 'Halte 50 Basen gleichzeitig.',           goal: 50,   k: 'empire', gems: 300 },
-    { id: 'emp150',  name: 'Großreich',        icon: 'home',    desc: 'Halte 150 Basen gleichzeitig.',          goal: 150,  k: 'empire', gems: 800 },
+    { id: 'emp150',  name: 'Großreich',        icon: 'home',    desc: 'Halte 100 Basen gleichzeitig.',          goal: 100,  k: 'empire', gems: 800 },   // (6.10.: vorher 150 – in einer Saison von 8 Wochen kaum zu schaffen)
     { id: 'def25',   name: 'Standhaft',        icon: 'shield',  desc: 'Wehre 25 Angriffe ab.',                  goal: 25,   k: 'defends', gems: 250 },
     { id: 'def100',  name: 'Unbezwingbar',     icon: 'shield',  desc: 'Wehre 100 Angriffe ab.',                 goal: 100,  k: 'defends', gems: 500 },
     { id: 'emma1',   name: 'Kräftemessen',     icon: 'attack',  desc: 'Erobere eine Basis eines anderen Spielers.', goal: 1,  k: 'pvp', gems: 100 },
@@ -80,6 +83,21 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'barb25',  name: 'Barbarenschreck',  icon: 'attack',  desc: 'Besiege 25 Barbaren-Lager.',             goal: 25,   k: 'barb', gems: 100 },
     { id: 'barb250', name: 'Lagerstürmer',     icon: 'attack',  desc: 'Besiege 250 Barbaren-Lager.',            goal: 250,  k: 'barb', gems: 500 },
     { id: 'dboss5',  name: 'Bossbrecher',      icon: 'crown',   desc: 'Kämpf bei 5 gefallenen Tagesbossen mit.', goal: 5,   k: 'dboss', gems: 300 },
+    // Hauptstadt (6.10.): die Burg wächst über viele Saisons (Burg 25 ≈ ein Jahr), das Labor genauso – die hohen sind Langzeit-Ziele
+    { id: 'burg5',   name: 'Burgvogt',         icon: 'castle',  desc: 'Bring deine Burg auf Stufe 5.',          goal: 5,    k: 'burg', gems: 150 },
+    { id: 'burg10',  name: 'Burgherr',         icon: 'castle',  desc: 'Bring deine Burg auf Stufe 10.',         goal: 10,   k: 'burg', gems: 400 },
+    { id: 'burg15',  name: 'Schlossherr',      icon: 'castle',  desc: 'Bring deine Burg auf Stufe 15.',         goal: 15,   k: 'burg', gems: 800 },
+    { id: 'burg20',  name: 'Landesfürst',      icon: 'castle',  desc: 'Bring deine Burg auf Stufe 20.',         goal: 20,   k: 'burg', gems: 1500 },
+    { id: 'burg25',  name: 'König der Meere',  icon: 'castle',  desc: 'Bring deine Burg auf Stufe 25 – die höchste.', goal: 25, k: 'burg', gems: 3000 },
+    { id: 'fo10',    name: 'Forscher',         icon: 'flask',   desc: 'Erforsche 10 Stufen im Labor.',          goal: 10,   k: 'foStufen', gems: 100 },
+    { id: 'fo50',    name: 'Gelehrter',        icon: 'flask',   desc: 'Erforsche 50 Stufen im Labor.',          goal: 50,   k: 'foStufen', gems: 400 },
+    { id: 'foall',   name: 'Meister des Wissens', icon: 'flask', desc: 'Erforsche alles im Labor.',             get goal() { return foGesamtZiel(); }, k: 'foStufen', gems: 2000 },
+    { id: 'drache1', name: 'Drachentöter',     icon: 'star',    desc: 'Kämpf mit, wenn der Drache besiegt wird.', goal: 1,  k: 'drache', gems: 250 },
+    { id: 'drache5', name: 'Drachenbezwinger', icon: 'star',    desc: 'Kämpf bei 5 besiegten Drachen mit.',     goal: 5,    k: 'drache', gems: 600 },
+    { id: 'inv1',    name: 'Grenzwacht',       icon: 'defense', desc: 'Hol dir einen Preis bei einer Barbaren-Invasion.', goal: 1, k: 'inv', gems: 100 },
+    { id: 'inv10',   name: 'Küstenwacht',      icon: 'defense', desc: 'Hol dir bei 10 Barbaren-Invasionen einen Preis.', goal: 10, k: 'inv', gems: 500 },
+    { id: 'saison1', name: 'Saison-Held',      icon: 'crown',   desc: 'Komm am Ende einer Welt-Saison unter die besten 10.', goal: 1, k: 'saisonTop', gems: 1000 },
+    { id: 'saison3', name: 'Legende',          icon: 'crown',   desc: 'Komm in 3 Welt-Saisons unter die besten 10.', goal: 3, k: 'saisonTop', gems: 2500 },
 ];
 for (const a of ACHIEVEMENTS) a.gems = Math.max(5, Math.round(a.gems / 25) * 5);   // (2.10.) 5× weniger Gems – zusammen vorher ~18.000, das gab Gold-Ausrüstung in Stunden
 const achVal = a => GOAL_VAL[a.k]();
@@ -184,7 +202,7 @@ function openRulerProfile(who) {
     document.getElementById('rulerName').textContent = pr.name;
     document.getElementById('rulerOver').textContent = (who === 'player' ? 'Dein Profil' : 'Profil') + ' · Rang ' + RANK_TIERS[rankIndexFor(pr.bases)].name;
     document.getElementById('rulerSub').innerHTML = '<span class="ptitle-tag" style="margin:0">' + escapeHtml(pr.title) + '</span>' + (who === 'player' ? '' : ' <span class="rp-online' + (pr.online ? ' on' : '') + '"><i></i>' + (pr.online ? 'online' : 'offline') + '</span>') +
-        (() => { const a = typeof bundVon === 'function' && bundVon(who); return '<span class="rp-bund">' + (a ? '[' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) : 'kein Bündnis') + '</span>'; })();   // sein Bündnis
+        '<div class="rp-bundzeile">' + profilBundHtml(who) + '</div>';   // sein Bündnis in eigener Zeile (antippen: Bündnis-Fenster)
     const rd = r => RARITY_DEFS[r];
     const gear = pr.items.map(it => { const d = EQUIPMENT_DEFS[it[0]], r = rd(it[1]);
         return '<span class="gslot"><span class="tile' + (r ? '' : ' empty') + '"' + (r ? ' data-r="' + r.key + '"' : '') + ' title="' + d.name + (r ? ' – ' + r.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
@@ -223,6 +241,22 @@ document.getElementById('rulerBody').addEventListener('click', e => {
     for (const id of own) { const isl = islandById[id], d = Math.hypot(isl.x - c.x, isl.y - c.y); if (d < bd) { bd = d; best = isl; } }
     if (best) { flyTo(best.x, best.y, { zoom: Math.max(mapState.zoom, 0.015) }); flashHint(whoProfile(who).name + ': ' + own.size + (own.size === 1 ? ' Basis' : ' Basen') + ' auf der Karte.', 2500); }
 });
+// Bündnis im Profil (eigenes und fremdes): Wappen + Name, antippen öffnet gleich das Bündnis-Fenster – das eigene Bündnis auf
+// „Info“, ein fremdes unter „Suchen“ (dort beitreten/anfragen), ohne Bündnis ebenso „Suchen“
+function profilBundHtml(who) {
+    const a = typeof bundVon === 'function' ? bundVon(who) : null;
+    if (!a) return who === 'player' ? '<button type="button" class="rp-bund is-leer" data-bund-zeigen="">' + icon('bund') + '<span>Kein Bündnis – jetzt eins suchen</span></button>' : '<span class="rp-bund is-leer"><span>kein Bündnis</span></span>';
+    return '<button type="button" class="rp-bund" data-bund-zeigen="' + escapeHtml(a.id) + '">' + bundZeichenHtml(a) + '<span>[' + escapeHtml(a.tag) + '] ' + escapeHtml(a.name) + '</span></button>';
+}
+function bundZeigen(id) {
+    if (typeof bundOeffnen !== 'function') return;
+    const mein = typeof bundIch === 'function' && bundIch(), a = id && bund && bund.b[id];
+    closeAllPopups(); bundOeffnen(a && mein && mein.id === a.id ? 'info' : 'suchen');
+    if (!a || (mein && mein.id === a.id)) return;
+    const z = [...bundPopup.querySelectorAll('.bd-zeile')].find(r => { const n = r.querySelector('.bd-name b'); return n && n.textContent === '[' + a.tag + '] ' + a.name; });
+    if (z) { z.scrollIntoView({ block: 'center' }); z.classList.add('is-ziel'); setTimeout(() => z.classList.remove('is-ziel'), 2500); }
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-bund-zeigen]'); if (b) { e.preventDefault(); bundZeigen(b.dataset.bundZeigen); } });
 // every name you see can be tapped: the ranking, the owner line of a base, the battle reports
 document.addEventListener('click', e => { const l = e.target.closest('[data-profile]'); if (!l) return; e.preventDefault(); e.stopPropagation(); openRulerProfile(l.dataset.profile); }, true);
 function whoLink(who, name) { return who ? '<button type="button" class="who-link" data-profile="' + who + '">' + escapeHtml(name) + '</button>' : escapeHtml(name); }
@@ -235,9 +269,14 @@ const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
 let rankTab = 'power';
 const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
     caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
+    burg: { t: 'Hauptstadt', sub: 'Burg-Stufe, dann Forschung', unit: 'Burg-Stufe' },
     titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
     week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };
 function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
+function foPunkte(who, bs) {                             // alle erforschten Stufen – von anderen nur die Summe (rechnet der Weltrechner, foP)
+    if (!AUF) return 0; if (who !== 'player' && fremdGeheim()) { const b = (bs || loadBotState())[who]; return b && Number.isFinite(b.foP) ? b.foP : 0; }
+    return AUF.foSumme(who);
+}
 function rankPeople() {                                  // everyone once: name, frame, look title, level, bases
     const bs = loadBotState(), out = [{ who: 'player', name: profileName.value || 'Du', frame: playerFrame(), title: playerTitle(), lvl: playerLvl, bases: ownedIslands.size }];
     for (const bd of BOT_DEFS) { const lk = botLook(bd.id); out.push({ who: bd.id, name: bd.name, frame: lk.frame, title: lk.title, lvl: (bs[bd.id] || {}).lvl || 1, bases: whoBases(bd.id) }); }
@@ -258,6 +297,8 @@ function renderRankings() {
     let list, medals = true, empty = '';
     if (rankTab === 'power') { for (const e of people) { const pr = whoProfile(e.who); e.val = pr ? powerOf(pr) : 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); }
     else if (rankTab === 'caps') { for (const e of people) { e.val = conquestsOf(e.who); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
+    else if (rankTab === 'burg') { for (const e of people) { e.val = AUF ? AUF.burgStufe(e.who) : 1; e.fo = foPunkte(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· Forschung ' + fmtNum(e.fo) + '</i>'; }
+        list = people.slice().sort((a, b) => b.val - a.val || b.fo - a.fo || b.lvl - a.lvl); }
     else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
         medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
         for (const e of people) { const x = by[e.who]; e.val = throneEarnedOf(e.who, bs);
@@ -267,7 +308,7 @@ function renderRankings() {
         empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
     } else { for (const e of people) { e.val = throneEarnedOf(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
         empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
-    if (rankTab !== 'titles') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl);
+    if (rankTab !== 'titles' && rankTab !== 'burg') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl);
     const lim = RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player');
     document.getElementById('rankTitle').textContent = tab.t;
     document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts

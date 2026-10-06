@@ -168,6 +168,8 @@ const FO_BY = {}; for (const d of FORSCHUNG) FO_BY[d.id] = d;
 const foAkaFuer = (d, L) => d.aka + (L - 1) * (d.schritt || 2);   // Stufe L braucht diese Labor-Stufe
 function foStufe(who, id) { const c = stadtVon(who), d = FO_BY[id]; if (!c || !d || !c.fo) return 0; return Math.max(0, Math.min(d.max, (c.fo[id] | 0) || 0)); }
 function foWert(who, id) { const d = FO_BY[id]; return d && d.pro ? foStufe(who, id) * d.pro : 0; }
+const foSumme = who => FORSCHUNG.reduce((a, d) => a + foStufe(who, d.id), 0);   // alle erforschten Stufen (Erfolge, Rangliste „Hauptstadt“)
+const foGesamt = () => FORSCHUNG.reduce((a, d) => a + d.max, 0);
 function foKosten(d, L) {                                      // Stufe L erforschen
     const k = Math.pow(1.6, d.aka - 1), g = Math.pow(1.8, L - 1);
     return { c: niceRound(wirtK(3000 * k * g)), h: niceRound(wirtK(1500 * k * g)), s: niceRound(wirtK(1200 * k * g)), e: niceRound(wirtK(600 * k * g * (d.ast === 'm' ? 1.6 : 1))) };   // (× WIRTSCHAFT_KOSTEN)
@@ -190,7 +192,7 @@ function foStart(who, id, now) {                               // → '' oder wa
     const c = stadtVon(who), L = foStufe(who, id) + 1, k = foKosten(d, L);
     if (!zahlen(who, k)) return 'Nicht genug Münzen oder Rohstoffe.';
     now = now || Date.now(); c.foRun = { id, to: L, startedAt: now, endsAt: now + foZeit(who, d, L) * 1000 };
-    if (who === 'player') { saveCity(); saveGame(); updateHud(); } else saveBotState();
+    if (who === 'player') { saveCity(); saveGame(); updateHud(); questProgress('forschung', 1); } else saveBotState();   // (Tagesaufgabe + Saison-Pass)
     return '';
 }
 function foFertig(who, sofort) {                               // läuft eine Forschung ab (oder sofort: mit Gems), wird sie gutgeschrieben
@@ -419,7 +421,7 @@ function botForschung(bot, now) {                              // fertig? sonst:
         const k = foKosten(d, foStufe(bot.id, id) + 1);
         if ((botCoins[bot.id] || 0) * spar < k.c) continue;     // (behält die Hälfte für Truppen und Basen, wie beim Bauen)
         if (!kannZahlen(bot.id, k)) { botMarkt(bot, k); continue; }
-        foStart(bot.id, id, now); return;
+        if (!foStart(bot.id, id, now)) botStat(bot.id, 'fo'); return;   // (Saison-Pass wie bei dir)
     }
 }
 function botMarkt(bot, k) {                                    // fehlt ein Rohstoff, kauft er ihn auf dem Markt – nur mit Münzen, die er übrig hat, im Tageslimit
@@ -479,7 +481,7 @@ AUF = {
     rohVon, rohDazu, rohSpeichern, basisRoh, rohBuchen, rohStunde, kannZahlen, zahlen, kostenHtml,
     burgStufe, burgZeitRoh, stadtKosten, stadtCap, burgSchutz, burgSchutzStufe,
     marschFrei, marschOk, marschVoll, gruppeLaeuft, frei: { an() { marschFreiPass++; }, aus() { marschFreiPass = Math.max(0, marschFreiPass - 1); } },
-    foStufe, foWert, foKosten, foFertig, marktLimit, marktHtml, marktGebuehr, marktStufe: who => bauStufe(who, 'market'),
+    foStufe, foWert, foSumme, foGesamt, foKosten, foFertig, marktLimit, marktHtml, marktGebuehr, marktStufe: who => bauStufe(who, 'market'),
     kampf, ertrag, sammelTempo, traglast, marschTempo, spaeherTempo, lazarettPlus, nebelWeite, tempelPlus, botschaftTempo, botschaftGeschenk, botschaftStufe: who => bauStufe(who, 'embassy'),
     spielerTakt, hud: hudRoh, renderKeep, effektText, extraHtml, spaeherMehr,
     botStadtFix, botForschung, botMarkt, botBurgWert, botRohWunsch
