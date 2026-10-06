@@ -385,7 +385,7 @@ function bannerModel(island) {
 const TIER = { A: { H: 34, av: 34, fn: 12.5, fs: 11.5, pad: 8, lv: 17, tw: 140, max: 14 },
                B: { H: 30, av: 28, fn: 11,   fs: 11,   pad: 7, lv: 16, tw: 120, max: 14 },
                K: { H: 26, av: 26, fn: 11,   fs: 12,   pad: 6, lv: 16, tw: 84,  max: 0 },
-               C: { H: 22, av: 22, fn: 11,   fs: 11,   pad: 4, lv: 15, tw: 54,  max: 0 },
+               C: { H: 22, av: 22, fn: 11,   fs: 11,   pad: 4, lv: 15, tw: 48,  max: 0 },
                N: { H: 22, av: 22, fn: 11,   fs: 11,   pad: 0, lv: 15, tw: 0,   max: 0 } };
 const PLATE = { player: { top: '#2b5d9b', bot: '#183a66', line: 'rgba(140,192,255,.7)',  hi: '#8cc0ff' },
                 bot:    { top: '#8e2b24', bot: '#5a1814', line: 'rgba(255,141,130,.62)', hi: '#ff8d82' },

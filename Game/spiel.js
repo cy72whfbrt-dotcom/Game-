@@ -3283,7 +3283,7 @@ function bannerModel(island) {
 const TIER = { A: { H: 34, av: 34, fn: 12.5, fs: 11.5, pad: 8, lv: 17, tw: 140, max: 14 },
                B: { H: 30, av: 28, fn: 11,   fs: 11,   pad: 7, lv: 16, tw: 120, max: 14 },
                K: { H: 26, av: 26, fn: 11,   fs: 12,   pad: 6, lv: 16, tw: 84,  max: 0 },
-               C: { H: 22, av: 22, fn: 11,   fs: 11,   pad: 4, lv: 15, tw: 54,  max: 0 },
+               C: { H: 22, av: 22, fn: 11,   fs: 11,   pad: 4, lv: 15, tw: 48,  max: 0 },
                N: { H: 22, av: 22, fn: 11,   fs: 11,   pad: 0, lv: 15, tw: 0,   max: 0 } };
 const PLATE = { player: { top: '#2b5d9b', bot: '#183a66', line: 'rgba(140,192,255,.7)',  hi: '#8cc0ff' },
                 bot:    { top: '#8e2b24', bot: '#5a1814', line: 'rgba(255,141,130,.62)', hi: '#ff8d82' },
@@ -3350,7 +3350,7 @@ function crestDataUrl(px, who) {                      // for the HTML avatars (y
 const FONT = (w, px) => w + ' ' + px + 'px Inter, system-ui, sans-serif';
 function plateGeo(g, T, m, withDef) {             // Maße einer Fahne: Textfeld so breit wie Name bzw. Truppenzeile (höchstens T.tw), Stufen-Chip so breit wie die Zahl
   const ar = T.av / 2, ls = T.lv; g.font = FONT(700, Math.max(11, ls * .66));
-  const lw = Math.max(ls, Math.ceil(g.measureText(String(m.level)).width) + 6), lx0 = ar + ar * .78 - ls / 2;   // Chip am Rand des Wappens, breitere Zahl wächst nach rechts
+  const lw = Math.max(ls, Math.ceil(g.measureText(String(m.level)).width) + 5), lx0 = ar + ar * .78 - ls / 2;   // Chip am Rand des Wappens, breitere Zahl wächst nach rechts
   const tx = Math.max(T.av + 3, lx0 + lw + 1);                                                                     // Text beginnt hinter dem Chip
   if (!T.tw) return { tw: 0, tx, lw, lx0, W: Math.max(T.av + ls / 2, lx0 + lw + 1) };
   const s = T.fs; g.font = FONT(600, s); let w = s * 1.25 + g.measureText(m.troops).width + (withDef ? s * 1.95 + g.measureText(m.def).width : 0);
