@@ -55,7 +55,8 @@ function kbBild(n, px) {                             // Bild n, so oft halbiert,
 }
 // Maße (Welt-Einheiten, Burg ≈ 1.000; Vorgabe Designer): Achse = wo im Bild die Gratlinie liegt (Bilder vorab gerade geschert)
 const KARTE_MASS = { boden: 7000, quer: 12500, hoch: 12500, knoten: 11000, tor: 12500, wald: [2600, 3400], abstand: .42 };
-const KETTE_GERADE = { quer: 16000, hoch: 9000 }, TOR_KNICK = .32;   // so weit vor/nach einem Tor läuft die Kette gerade · senkrechte Grenze: Knick um 0,32 Torbreite zu den Torenden
+const KETTE_GERADE = { quer: 16000, hoch: 12000 };   // so weit vor/nach einem Tor läuft die Kette gerade
+const TOR_SENK = { luecke: 2600, turm: 2300, weg: 4600 };   // senkrechte Grenze: halbe Pass-Lücke, Wachtürme ± so weit auf der Linie, Erdweg so lang
 const KETTE_REIHEN = { quer: [[-1500, .5, .85], [0, 0, 1], [1300, .25, .8]], hoch: [[-700, 0, 1], [700, .5, .9]] };   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe – ein breiter Gebirgszug
 const KETTE_ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_hoch2: .485, tor_zu: .553, tor_offen: .553, kette_knoten: .6 };
 const KARTE_BILD_ZOOM = 0.0025, BODEN_BILD_ZOOM = 0.006;   // darunter (ganz draußen): nur Farbflächen + Bänder (schont das Handy) · Boden-Kacheln erst ab hier (weiter draußen wäre es ein Punkte-Raster)
@@ -144,16 +145,14 @@ function karteObjekte() {
   // Ketten: Stücke entlang jeder Grenze, Lücke an jedem Tor (Brückenmitte) und an den Knoten
   const tore = bridges.map(br => ({ x: (br.x1 + br.x2) / 2, y: (br.y1 + br.y2) / 2, senk: Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1) }));
   for (const senk of [true, false]) for (const L of linien) {
-    const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .3]; });
+    const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .2]; });
     const hier = tore.filter(t => t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3).map(t => senk ? t.y : t.x);
-    for (const t of hier) sperren.push([t, senk ? 1500 : 3000]);   // (die Nachbarstücke laufen hinter die Torfelsen)
-    // Das Tor-Bild ist quer: seine Mauer muss in Richtung der Kette laufen. Waagrechte Grenze: die Kette läuft vor und nach dem Tor gerade
-    // auf das Tor zu. Senkrechte Grenze: kurzer Knick – die Kette kommt von oben auf das linke Ende des Tors (Gipfel), läuft quer durch das
-    // Tor und geht am rechten Ende (Gipfel) nach unten weiter. Weich zurück in den Schwung der Grenze, kein Versatz.
-    const knick = M.tor * TOR_KNICK;
+    for (const t of hier) sperren.push([t, senk ? TOR_SENK.luecke : 3000]);   // (waagrecht: die Nachbarstücke laufen hinter die Torfelsen)
+    // Vor und nach jedem Tor läuft die Kette gerade auf das Tor zu, weich zurück in den Schwung der Grenze – kein Versatz, kein Knick.
+    // Waagrechte Grenze: das Pass-Tor-Bild (Mauer in Kettenrichtung). Senkrechte Grenze: gerade Kette mit Pass-Lücke, Erdweg quer
+    // hindurch und je ein Wachturm oben und unten auf der Linie (03b drawTorBild) – das Quer-Tor-Bild stünde dort quer zur Kette.
     const linie = t => { let p = grenzLinie(senk, L, t); for (const g of hier) { const u = Math.abs(t - g) / KETTE_GERADE[senk ? 'hoch' : 'quer']; if (u < 1) {
-      const w = u < .4 ? 1 : 1 - (u - .4) / .6, s = w * w * (3 - 2 * w); p += (grenzLinie(senk, L, g) + (senk ? (t < g ? -knick : knick) : 0) - p) * s; } } return p; };
-    if (senk) for (const g of hier) for (const k of [-1, 1]) { const x = grenzLinie(true, L, g) + k * knick; neu(warm('kette_knoten', x, g), x, g, M.knoten * .62, .5, KETTE_ACHSE.kette_knoten, 0, 0, g - 1, k); }
+      const w = u < .4 ? 1 : 1 - (u - .4) / .6, s = w * w * (3 - 2 * w); p += (grenzLinie(senk, L, g) - p) * s; } } return p; };
     sperren.sort((a, b) => a[0] - b[0]);
     const len = senk ? M.hoch : M.quer, schritt = len * M.abstand;
     for (let i = 0; i + 1 < sperren.length; i++) {

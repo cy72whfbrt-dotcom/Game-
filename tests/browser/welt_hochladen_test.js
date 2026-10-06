@@ -100,7 +100,7 @@ function dateien(d, r = '') { return fs.readdirSync(path.join(d, r)).flatMap(x =
   const w1 = path.join(ARBEIT, 'server1'); fs.rmSync(w1, { recursive: true, force: true });
   fs.mkdirSync(path.join(w1, 'Game/api'), { recursive: true }); fs.writeFileSync(path.join(w1, 'Game/altes.txt'), 'alt'); fs.writeFileSync(path.join(w1, 'Game/api/x.php'), '<?php');
   fs.copyFileSync(path.join(kopie, 'Game/sw.js'), path.join(w1, 'Game/sw.js'));   // schon gleich: kommt nicht nochmal hoch
-  const e1 = editor(w1, { haengen: 80, kaputt: 'bots.js' }); await new Promise(f => e1.srv.listen(0, '127.0.0.1', f));
+  const e1 = editor(w1, { haengen: soll.length * 2 + 30, kaputt: 'bots.js' });   // (hängt erst nach der Vorab-Prüfung – die verschluckt ihre Fehlermeldungen; mehr Dateien, z. B. Karten-Bilder, schöben Nr. 80 dorthin) await new Promise(f => e1.srv.listen(0, '127.0.0.1', f));
   const t0 = Date.now(), r1 = await lauf(e1.srv.address().port, kopie); e1.zu(); fs.writeFileSync(path.join(ARBEIT, 'lauf1.log'), r1.aus);
   ok(r1.code === 0, 'Hochladen trotz gekappter Verbindungen fertig (Exit 0)', { code: r1.code, ende: r1.aus.slice(-1500) });
   ok(/Wartung aus \(wartung\.txt ist weg\)/.test(r1.aus) && !fs.existsSync(path.join(w1, 'Game/wartung.txt')), 'Wartung aus und wartung.txt wirklich weg');

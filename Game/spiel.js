@@ -2782,7 +2782,8 @@ function kbBild(n, px) {                             // Bild n, so oft halbiert,
 }
 // Maße (Welt-Einheiten, Burg ≈ 1.000; Vorgabe Designer): Achse = wo im Bild die Gratlinie liegt (Bilder vorab gerade geschert)
 const KARTE_MASS = { boden: 7000, quer: 12500, hoch: 12500, knoten: 11000, tor: 12500, wald: [2600, 3400], abstand: .42 };
-const KETTE_GERADE = { quer: 16000, hoch: 9000 }, TOR_KNICK = .32;   // so weit vor/nach einem Tor läuft die Kette gerade · senkrechte Grenze: Knick um 0,32 Torbreite zu den Torenden
+const KETTE_GERADE = { quer: 16000, hoch: 12000 };   // so weit vor/nach einem Tor läuft die Kette gerade
+const TOR_SENK = { luecke: 2600, turm: 2300, weg: 4600 };   // senkrechte Grenze: halbe Pass-Lücke, Wachtürme ± so weit auf der Linie, Erdweg so lang
 const KETTE_REIHEN = { quer: [[-1500, .5, .85], [0, 0, 1], [1300, .25, .8]], hoch: [[-700, 0, 1], [700, .5, .9]] };   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe – ein breiter Gebirgszug
 const KETTE_ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_hoch2: .485, tor_zu: .553, tor_offen: .553, kette_knoten: .6 };
 const KARTE_BILD_ZOOM = 0.0025, BODEN_BILD_ZOOM = 0.006;   // darunter (ganz draußen): nur Farbflächen + Bänder (schont das Handy) · Boden-Kacheln erst ab hier (weiter draußen wäre es ein Punkte-Raster)
@@ -2871,16 +2872,14 @@ function karteObjekte() {
   // Ketten: Stücke entlang jeder Grenze, Lücke an jedem Tor (Brückenmitte) und an den Knoten
   const tore = bridges.map(br => ({ x: (br.x1 + br.x2) / 2, y: (br.y1 + br.y2) / 2, senk: Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1) }));
   for (const senk of [true, false]) for (const L of linien) {
-    const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .3]; });
+    const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .2]; });
     const hier = tore.filter(t => t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3).map(t => senk ? t.y : t.x);
-    for (const t of hier) sperren.push([t, senk ? 1500 : 3000]);   // (die Nachbarstücke laufen hinter die Torfelsen)
-    // Das Tor-Bild ist quer: seine Mauer muss in Richtung der Kette laufen. Waagrechte Grenze: die Kette läuft vor und nach dem Tor gerade
-    // auf das Tor zu. Senkrechte Grenze: kurzer Knick – die Kette kommt von oben auf das linke Ende des Tors (Gipfel), läuft quer durch das
-    // Tor und geht am rechten Ende (Gipfel) nach unten weiter. Weich zurück in den Schwung der Grenze, kein Versatz.
-    const knick = M.tor * TOR_KNICK;
+    for (const t of hier) sperren.push([t, senk ? TOR_SENK.luecke : 3000]);   // (waagrecht: die Nachbarstücke laufen hinter die Torfelsen)
+    // Vor und nach jedem Tor läuft die Kette gerade auf das Tor zu, weich zurück in den Schwung der Grenze – kein Versatz, kein Knick.
+    // Waagrechte Grenze: das Pass-Tor-Bild (Mauer in Kettenrichtung). Senkrechte Grenze: gerade Kette mit Pass-Lücke, Erdweg quer
+    // hindurch und je ein Wachturm oben und unten auf der Linie (03b drawTorBild) – das Quer-Tor-Bild stünde dort quer zur Kette.
     const linie = t => { let p = grenzLinie(senk, L, t); for (const g of hier) { const u = Math.abs(t - g) / KETTE_GERADE[senk ? 'hoch' : 'quer']; if (u < 1) {
-      const w = u < .4 ? 1 : 1 - (u - .4) / .6, s = w * w * (3 - 2 * w); p += (grenzLinie(senk, L, g) + (senk ? (t < g ? -knick : knick) : 0) - p) * s; } } return p; };
-    if (senk) for (const g of hier) for (const k of [-1, 1]) { const x = grenzLinie(true, L, g) + k * knick; neu(warm('kette_knoten', x, g), x, g, M.knoten * .62, .5, KETTE_ACHSE.kette_knoten, 0, 0, g - 1, k); }
+      const w = u < .4 ? 1 : 1 - (u - .4) / .6, s = w * w * (3 - 2 * w); p += (grenzLinie(senk, L, g) - p) * s; } } return p; };
     sperren.sort((a, b) => a[0] - b[0]);
     const len = senk ? M.hoch : M.quer, schritt = len * M.abstand;
     for (let i = 0; i + 1 < sperren.length; i++) {
@@ -3586,23 +3585,31 @@ function buildingSprite(kind, ownerKey, home, sizePx, tier) {
   else if (kind === 'gate' || kind === 'gateShut') paintGateIso(g, ownerKey, detail, kind === 'gate'); else paintMegaTemple(g, ownerKey, detail);
   BUILDING_SPRITES.set(key, s = { c, bucket }); return s;
 }
-// Pass-Tor als Karten-Bild: steht genau auf der Grenzlinie (die Kette läuft dort gerade auf das Tor zu, 03a karteObjekte)
-// → { x, y, r: Abstand Mitte–Schild } oder null
+// Pass-Tor auf der Karte: steht genau auf der Grenzlinie (die Kette läuft dort gerade auf das Tor zu, 03a karteObjekte)
+// → { x, y, r: Abstand Mitte–Schild, senk: Grenze läuft senkrecht } oder null
 function torMitte(island) {
   if (island.type !== 'gate' || !karteBilder()) return null;
   if (island.torMitte) return island.torMitte;
-  const [[x1, y1], [x2, y2]] = island.ends, im = KB.img.tor_zu, S = HEX_SPACING;
+  const [[x1, y1], [x2, y2]] = island.ends, im = KB.img.tor_zu, S = HEX_SPACING, senk = Math.abs(x2 - x1) > Math.abs(y2 - y1);
   let x = (x1 + x2) / 2, y = (y1 + y2) / 2;
-  if (Math.abs(x2 - x1) > Math.abs(y2 - y1)) x = grenzLinie(true, Math.round(x / S - .5) + .5, y); else y = grenzLinie(false, Math.round(y / S - .5) + .5, x);
-  return (island.torMitte = { x, y, r: KARTE_MASS.tor * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });
+  if (senk) x = grenzLinie(true, Math.round(x / S - .5) + .5, y); else y = grenzLinie(false, Math.round(y / S - .5) + .5, x);
+  return (island.torMitte = { x, y, senk, r: senk ? TOR_SENK.turm * .8 : KARTE_MASS.tor * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });
 }
-function drawTorBild(island, open, z, dunkel) {                                // (Bildschirm) Pass-Tor offen/zu; dunkel: noch im Nebel
+// (Bildschirm) Pass-Tor offen/zu; dunkel: noch im Nebel. Waagrechte Grenze: das Pass-Tor-Bild (Mauer in Kettenrichtung).
+// Senkrechte Grenze: Erdweg quer durch die Lücke der Kette, je ein Wachturm (3D-Tor, offen/zu) oben und unten auf der Linie.
+function drawTorBild(island, open, z, dunkel) {
   const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z, mx = toSX(tm.x), my = toSY(tm.y);
   if (w < 16) { if (dunkel) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
     ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
-  const h = w * KB.img[n].height / KB.img[n].width;
-  if (mx + w < 0 || mx - w > viewW || my + h < 0 || my - h > viewH) return;
-  ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
+  if (mx + w < 0 || mx - w > viewW || my + w < 0 || my - w > viewH) return;
+  if (!tm.senk) { const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h); return; }
+  const lw = TOR_SENK.weg * z, bw = Math.max(2, 420 * z), wg = ctx.createLinearGradient(mx - lw / 2, 0, mx + lw / 2, 0);   // Erdweg, an den Enden weich
+  wg.addColorStop(0, 'rgba(168,128,84,0)'); wg.addColorStop(.3, 'rgba(168,128,84,.7)'); wg.addColorStop(.7, 'rgba(168,128,84,.7)'); wg.addColorStop(1, 'rgba(168,128,84,0)');
+  ctx.fillStyle = wg; rr(ctx, mx - lw / 2, my - bw / 2, lw, bw, bw / 2); ctx.fill();
+  const S = Math.max(16, 3000 * z), owner = dunkel ? 'neutral' : ownerKeyOf(island), sp = buildingSprite(open ? 'gate' : 'gateShut', owner, false, S, 0), k = S / sp.bucket, u = S / 64;
+  const bk = bkSprite(island, owner, open, z * 2);                             // (Wachtürme doppelt so groß wie ein Tor-Turm: neben der Kette sonst winzig)
+  for (const gy of [my - TOR_SENK.turm * z, my + TOR_SENK.turm * z])   // oben zuerst (steht weiter hinten)
+    if (!bkDraw(bk, mx, gy)) ctx.drawImage(sp.c, mx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
 }
 function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
   if (!karteBilder() || KARTE_MASS.tor * z < 16) return;

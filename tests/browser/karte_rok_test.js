@@ -2,7 +2,8 @@
 // A) alle Karten-Bilder geladen (Game/bilder/karte_*.webp), zusammen < 1,5 MB
 // B) Boden nach Ringen: außen grün → Mitte Sand (lm.boden, Masken), lm.bio bleibt für Rohstoffe/Felder (keine neue Spielregel)
 // C) Ketten auf jeder Grenze (auch am Kartenrand), Knoten an jeder Kreuzung, an jedem Tor eine Lücke für das Tor-Bild
-// D) Tor genau in der Kette: Lücke auf dem Torpunkt (≤ 2 % Torbreite), Mauer in Kettenrichtung (≤ 10°), Fuß bündig (≤ 2 px bei 0,03)
+// D) Tor genau in der Kette: Lücke auf dem Torpunkt (≤ 2 % Torbreite); waagrechte Grenze: Mauer in Kettenrichtung (≤ 10°), Fuß bündig
+//    (≤ 2 px bei 0,03); senkrechte Grenze (Lücke + Wachtürme, kein Quer-Tor): Kette über und unter dem Tor auf einer Linie (≤ 2 % Torbreite)
 // E) Märsche nur durch die Tore: jeder Weg zwischen zwei Gebieten kreuzt die Grenze nur an einem Tor (Logik unverändert)
 // F) Wald nicht auf Basen/Feldern, nicht an der Kette; weit draußen nur Farbflächen + Bänder (keine Bilder in der Kachel)
 // G) Weltrechner zeichnet nie → lädt keine Karten-Bilder (Laden erst beim ersten Zeichnen)
@@ -45,24 +46,27 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const tore = bridges.map(br => torMitte(islandById[br.gateId]));
     for (const senk of [true, false]) for (const L of linien) for (let t = -ende + 4000; t < ende - 4000; t += 8000) {
       const x = senk ? grenzLinie(true, L, t) : t, y = senk ? t : grenzLinie(false, L, t);
-      if (tore.some(g => Math.hypot(g.x - x, g.y - y) < KARTE_MASS.tor)) continue;
+      if (tore.some(g => Math.hypot(g.x - x, g.y - y) < KETTE_GERADE.hoch + 2000)) continue;   // (am Tor läuft die Kette absichtlich gerade)
       if (!K.liste.some(o => o.n.startsWith('kette') && x > o.bb.l && x < o.bb.r && y > o.bb.t && y < o.bb.b)) ohne.push([senk ? 'senk' : 'waag', L, Math.round(t)]); }
     const mess = bridges.map(br => { const isl = islandById[br.gateId], tm = torMitte(isl), senk = Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1);
       const L = senk ? Math.round(tm.x / S - .5) + .5 : Math.round(tm.y / S - .5) + .5, punkt = senk ? grenzLinie(true, L, tm.y) : grenzLinie(false, L, tm.x);
-      let paar;
-      if (senk) paar = K.liste.filter(o => o.n.startsWith('kette_knoten') && Math.abs(o.y - tm.y) < 2 && Math.abs(o.x - tm.x) < KARTE_MASS.tor).sort((u, v) => u.x - v.x);
-      else { const nb = K.liste.filter(o => o.n.startsWith('kette_quer') && Math.abs(o.x - tm.x) < 10000 && Math.abs(o.y - tm.y) < 600);
-        paar = [nb.filter(o => o.x < tm.x).sort((u, v) => v.x - u.x)[0], nb.filter(o => o.x > tm.x).sort((u, v) => u.x - v.x)[0]].filter(Boolean); }
+      const luecke = Math.abs((senk ? tm.x : tm.y) - punkt) / KARTE_MASS.tor * 100;
+      if (senk) { const nb = K.liste.filter(o => o.n.startsWith('kette_hoch') && Math.abs(o.y - tm.y) < 4800 && Math.abs(o.x - tm.x) < 3000), mitte = l => l.reduce((s, o) => s + o.x, 0) / Math.max(1, l.length);
+        const oben = nb.filter(o => o.y < tm.y), unten = nb.filter(o => o.y > tm.y);
+        const v = s => { const o = oben.filter(q => (q.x < tm.x) === s), u = unten.filter(q => (q.x < tm.x) === s); return o.length && u.length ? Math.abs(mitte(o) - mitte(u)) : 0; };   // je Reihe
+        return { id: isl.id, senk, luecke, versatz: oben.length && unten.length ? Math.max(v(true), v(false)) / KARTE_MASS.tor * 100 : 99 }; }
+      const nb = K.liste.filter(o => o.n.startsWith('kette_quer') && Math.abs(o.x - tm.x) < 10000 && Math.abs(o.y - tm.y) < 600);
+      const paar = [nb.filter(o => o.x < tm.x).sort((u, v) => v.x - u.x)[0], nb.filter(o => o.x > tm.x).sort((u, v) => u.x - v.x)[0]].filter(Boolean);
       const winkel = paar.length === 2 ? Math.abs(Math.atan2(paar[1].y - paar[0].y, paar[1].x - paar[0].x) * 180 / Math.PI) : 99;
-      return { id: isl.id, luecke: Math.abs((senk ? tm.x : tm.y) - punkt) / KARTE_MASS.tor * 100, winkel, fuss: Math.max(...paar.map(o => Math.abs(o.y - tm.y))) * .03 }; });
-    const schlecht = mess.filter(m => !(m.luecke <= 2 && m.winkel <= 10 && m.fuss <= 2));
+      return { id: isl.id, senk, luecke, winkel, fuss: Math.max(...paar.map(o => Math.abs(o.y - tm.y))) * .03 }; });
+    const schlecht = mess.filter(m => !(m.luecke <= 2 && (m.senk ? m.versatz <= 2 : m.winkel <= 10 && m.fuss <= 2)));
     const imTor = tore.filter(g => K.liste.some(o => o.n.startsWith('kette_quer') || o.n.startsWith('kette_hoch') ? Math.hypot(o.x - g.x, o.y - g.y) < 1400 : false)).length;
     return { quer: zaehl('kette_quer'), hoch: zaehl('kette_hoch'), knoten: zaehl('kette_knoten'), soll: linien.length * linien.length, ohne: ohne.length, ohneB: ohne.slice(0, 4),
              tore: mess.length, schlecht: schlecht.slice(0, 4), nSchlecht: schlecht.length, imTor };
   });
   ok(c.quer > 500 && c.hoch > 500 && c.knoten >= c.soll, 'Ketten (quer + hoch) und Knoten an jeder Kreuzung', c);
   ok(c.ohne === 0, 'jede Grenze (auch der Kartenrand) ist eine geschlossene Kette', c.ohneB);
-  ok(c.tore > 500 && c.nSchlecht === 0, 'Tor genau in der Kette: Lücke auf dem Torpunkt, Mauer in Kettenrichtung, Fuß bündig (' + c.tore + ' Tore)', c.schlecht);
+  ok(c.tore > 500 && c.nSchlecht === 0, 'Tor genau in der Kette: Lücke auf dem Torpunkt, Mauer in Kettenrichtung, Fuß bündig, kein Versatz (' + c.tore + ' Tore)', c.schlecht);
   ok(c.imTor === 0, 'kein Kettenstück steht mitten im Tor (Lücke frei)', c.imTor);
   // ===== E: Märsche nur durch die Tore =====
   const e = await p.evaluate(() => {
