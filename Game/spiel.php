@@ -1094,6 +1094,44 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .lb-gap{display:flex;align-items:center;gap:8px;margin-top:4px;font:600 9.5px/1 var(--font-ui);letter-spacing:.12em;text-transform:uppercase;color:var(--tx-3)}
 .lb-gap::before,.lb-gap::after{content:"";flex:1;height:1px;background:var(--line-1)}
 .lb-foot{flex-direction:column;align-items:stretch;gap:6px;padding:8px 10px 10px} .lb-foot .lb-row{min-height:50px}
+/* Basis- und Angriffsfenster (11b F, P3): Untertitel zweizeilig, eine Spähen-Kachel, ein Haupt-Knopf, feste Kopfzeile im Angriff */
+#popupSub.psub--zwei{flex-wrap:wrap;row-gap:4px;white-space:normal}
+#popupSub.psub--zwei > .psub-ort{flex:1 0 100%;min-width:0}
+#popupSub.psub--zwei > .psub-who{flex:1 1 0;min-width:0;white-space:normal;overflow:visible}
+#popupSub.psub--zwei > .sep:has(+ .chip--scouted){display:none}   /* „Gespäht“ steht in der zweiten Zeile: ohne Punkt davor */
+.spaeh-kachel{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 12px;text-align:left;cursor:pointer;
+  border:1px dashed var(--line-3);border-radius:var(--r-sm);background:rgba(0,0,0,.22);color:var(--tx-1);font:inherit}
+.spaeh-kachel > .icon{width:20px;height:20px;color:var(--gold-300)}
+.spaeh-kachel b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui)}
+.spaeh-kachel small{display:block;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--gold-200)}
+.spaeh-kachel-w{display:flex;align-items:center;gap:4px;font:600 var(--fs-15)/1 var(--font-ui);color:var(--tx-3)} .spaeh-kachel-w .icon{width:14px;height:14px} .spaeh-kachel-w .icon:not(:first-child){margin-left:8px}
+.spaeh-kachel:disabled{cursor:default;border-style:solid;border-color:var(--line-1)} .spaeh-kachel:disabled small{color:var(--tx-3)}
+@media (hover:hover){ .spaeh-kachel:not(:disabled):hover{border-color:var(--gold-300)} }
+.spaeh-kachel:not(:disabled):active{transform:translateY(1px)}
+#popupActions{display:flex;flex-wrap:wrap;gap:8px}
+#popupActions > .act{flex:1 1 0;min-width:0;min-height:44px;grid-template-columns:1fr;grid-template-rows:auto auto auto;justify-items:center;row-gap:4px;padding:8px 4px;text-align:center}
+#popupActions > .act > .act-ic{grid-row:auto;width:28px;height:28px}
+#popupActions > .act > .act-t{max-width:100%;font-size:var(--fs-12);letter-spacing:0;text-transform:none;white-space:normal;line-height:1.2}
+#popupActions > .act > .act-s{max-width:100%;justify-content:center}
+#popupActions > #sendBtn{order:1} #popupActions > #recallBtn{order:2} #popupActions > #multiAttackBtn{order:3} #popupActions > #teleportBtn{order:4} #popupActions > #titleBtn{order:5}
+#popupActions > .act.act--haupt{order:0;flex:1 0 100%;min-height:48px;grid-template-columns:30px minmax(0,1fr);grid-template-rows:auto auto;justify-items:start;column-gap:12px;padding:8px 16px;text-align:left;
+  color:var(--tx-inv);border-color:#f1d898;background:linear-gradient(180deg,#e9cb86,#b98a3e)}
+#popupActions > .act.act--haupt > .act-ic{grid-row:1 / span 2;background:rgba(0,0,0,.18);border-color:rgba(0,0,0,.25);color:#2a1a05}
+#popupActions > .act.act--haupt > .act-t{font-size:var(--fs-13);color:#2a1a05;white-space:nowrap}
+#popupActions > .act.act--haupt > .act-s{justify-content:flex-start;color:#4a3410}
+#popupActions > .act.act--haupt > .act-s.is-bad{color:#8a1c12}
+#popupActions > .act.act--haupt:disabled{background:var(--ink-3);border-color:var(--line-1)}
+#popupActions > .act.act--haupt:disabled > .act-t,#popupActions > .act.act--haupt:disabled > .act-s{color:var(--tx-4)}
+.ap-kopf{position:sticky;top:-14px;z-index:2;display:flex;flex-direction:column;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--line-1);background:#11151c;
+  box-shadow:-14px 0 0 #11151c,14px 0 0 #11151c,0 -14px 0 #11151c,-14px -14px 0 #11151c,14px -14px 0 #11151c}   /* (Schatten statt Rand: deckt den Innenabstand, ohne waagrecht zu scrollen) */
+.ap-kopf .force{padding:8px 10px} .ap-kopf .force b{font-size:var(--fs-15)} .ap-kopf .from-sel{height:40px}
+#popupStats .force--foe small[data-foe="sub"]{white-space:normal}
+.ap-truppen .troop-in{width:7.5em;max-width:40vw;height:32px;padding:0 4px;border:0;border-bottom:1px dashed var(--line-3);border-radius:0;background:transparent;font-size:var(--fs-15)}
+.ap-truppen .troop-in:focus{border-bottom-style:solid;box-shadow:none}
+.ap-truppen .field-top{align-items:center}
+.hero-seg.chips-quer{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;padding-bottom:2px}
+.hero-seg.chips-quer::-webkit-scrollbar{display:none}
+.hero-seg.chips-quer > button{flex:none;min-width:max-content;padding:0 12px}
 
 /* =====================================================================
    SLIDER  #attackTroopsSlider  (JS keeps --pct in sync)

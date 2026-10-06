@@ -207,7 +207,7 @@ const armyHeldMerk = {};                         // Zuschauer: die gewählten He
 function armyHeroes(a) { const m = armyHeldMerk[a.id]; return m && m.bis > Date.now() && ((a.hero || null) !== m.h1 || (a.hero2 || null) !== m.h2) ? m : { h1: a.hero || null, h2: a.hero2 || null }; }
 function armyHeroSeg(a) {                        // which heroes march with this army (one army or attack per hero) – Haupt- und Zweitheld
     const ah = armyHeroes(a), seg = heroSegHtml('data-ahero', ah.h1), seg2 = heroSeg2Html('data-ahero2', ah.h1, ah.h2);
-    return seg ? '<div class="seg hero-seg army-hero">' + seg + '</div>' + (seg2 ? '<div class="seg hero-seg hero-seg2 army-hero">' + seg2 + '</div>' : '') : '';
+    return seg ? '<div class="seg hero-seg army-hero chips-quer">' + seg + '</div>' + (seg2 ? '<div class="seg hero-seg hero-seg2 army-hero">' + seg2 + '</div>' : '') : '';
 }
 function armySetHeroes(a, h1, h2) {             // → true, wenn gesetzt: nur eigene Helden, die frei sind oder schon in dieser Armee stehen (Spieler und Weltrechner)
     const who = armyWho(a), frei = id => !id || (heroOwned(who, id) && (heroIn(a.hero, a.hero2, id) || !heroBusy(who, id)));

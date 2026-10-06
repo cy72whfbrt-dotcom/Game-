@@ -75,6 +75,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       for (const i of [A, B, C]) { ownedIslands.add(i.id); islandLevels[i.id] = islandLevels[i.id] || 1; }
       for (const id of ownedIslands) islandTroops[id] = 0;
       revealAround(T.x, T.y, 40000, false); scoutedIslands.add(T.id);
+      T.neutralTroops = Math.max(T.neutralTroops || 0, 1000);                // feste Stärke: ein leerer Turm (0 Truppen) ergäbe brauch = 1 und C bekäme 0 Truppen (Test flackerte)
       const brauch = effectiveTroops(T) + effectiveDefense(T);
       const wahl = () => { closeAllPopups(); openIslandPopup(T); attackBtn.click(); return previewSourceId; };
       const out = { T: T.id, A: A.id, B: B.id, C: C.id, brauch, weg: [weg(A), weg(B), weg(C)].map(Math.round) };

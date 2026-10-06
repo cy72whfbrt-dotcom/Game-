@@ -1,0 +1,78 @@
+// Basis- und Angriffsfenster übersichtlich (11b F, P3) – Handy (390×844) und Desktop:
+// eigene Basis: EIN Haupt-Knopf (Hauptstadt: Stadt betreten, sonst Aufwerten) vorn, Rest als Zweit-Knöpfe, Beschriftung ganz;
+// fremde Basis ungespäht: EINE Kachel „Stärke unbekannt“ (kein „Erst spähen“ doppelt), antippen schickt den Späher;
+// Untertitel nie abgeschnitten (Koordinaten in eigener Zeile); Handy: die Basis steht mittig über dem Fenster;
+// Angriff vorbereiten: Startbasis + Angriff gegen Abwehr bleiben beim Scrollen oben stehen, „Abwehr unbekannt“ nicht doppelt,
+// Helden in einer Zeile (quer wischen), Knopf „Angreifen“ fest unten.
+const { chromium, devices } = require('playwright');
+const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
+(async () => {
+  const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] }); const fe = [];
+  for (const [art, opt] of [['Handy', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }], ['Desktop', { viewport: { width: 1366, height: 768 } }]]) {
+    const ctx = await b.newContext(opt), p = await ctx.newPage(); p.on('pageerror', e => fe.push(e.message));
+    await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html', { timeout: 120000 });
+    await p.waitForFunction(() => typeof islands !== 'undefined' && islands.length && typeof playerIslandId !== 'undefined' && islandById[playerIslandId], null, { timeout: 90000, polling: 500 }).catch(() => {});
+    await p.waitForTimeout(3000);
+    const r = await p.evaluate(async () => {
+      const warte = ms => new Promise(f => setTimeout(f, ms)), ganz = e => !!e && e.scrollWidth <= e.clientWidth + 1;
+      for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
+      try { anleitung.schritt = ANLEITUNG.length; } catch (e) {}
+      closeAllPopups(); gems = 1e5; coins = 1e9;
+      const sichtbar = e => !!e && e.offsetParent !== null && getComputedStyle(e).display !== 'none';
+      const knoepfe = () => [...document.querySelectorAll('#popupActions > .act')].filter(sichtbar);
+      // 1) eigene Hauptstadt: Haupt-Knopf „Stadt betreten“ zuerst, Zweit-Knöpfe ganz lesbar
+      const home = islandById[playerIslandId]; openIslandPopup(home); await warte(500);
+      const k1 = knoepfe(), haupt1 = k1.filter(x => x.classList.contains('act--haupt'));
+      const eigen = { haupt: haupt1.map(x => x.id), erster: k1.slice().sort((a, c) => a.getBoundingClientRect().top - c.getBoundingClientRect().top || a.getBoundingClientRect().left - c.getBoundingClientRect().left)[0].id,
+        ganz: k1.map(x => [x.id, ganz(x.querySelector('.act-t')), ganz(x.querySelector('.act-s'))]).filter(z => !z[1] || !z[2]), sub: ganz(document.getElementById('popupSub')) };
+      // 2) zweite eigene Basis: Haupt-Knopf „Aufwerten“
+      const nah = l => l.sort((a, c) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(c.x - home.x, c.y - home.y))[0];
+      const zweite = nah(islands.filter(i => i.id !== playerIslandId && !islandOwnerOf(i.id) && i.type === 'tower'));
+      ownedIslands.add(zweite.id); islandTroops[zweite.id] = 500; openIslandPopup(zweite); await warte(400);
+      const basis = { haupt: knoepfe().filter(x => x.classList.contains('act--haupt')).map(x => x.id) };
+      ownedIslands.delete(zweite.id); delete islandTroops[zweite.id];
+      // 3) fremde Basis ungespäht: eine Kachel, Untertitel ganz, Basis mittig über dem Fenster (Handy)
+      const ziel = nah(islands.filter(i => islandOwnerOf(i.id) && islandOwnerOf(i.id) !== 'player' && i.type === 'tower' && canReach(home.landmassId, i.landmassId)));
+      scoutedIslands.delete(ziel.id); pendingScouts.splice(0, pendingScouts.length);
+      flyTo(home.x, home.y); await warte(400); openIslandPopup(ziel); await warte(900);
+      const st = document.getElementById('popupStats'), sub = document.getElementById('popupSub');
+      const pr = popup.getBoundingClientRect(), sx = ziel.x * mapState.zoom + mapState.offsetX, sy = ziel.y * mapState.zoom + mapState.offsetY;
+      const fremd = { kachel: st.querySelectorAll('[data-spaehen]').length, unk: st.querySelectorAll('.unk').length, doppelt: (st.textContent.match(/Stärke unbekannt/g) || []).length,
+        sub: ganz(sub), teile: [...sub.children].filter(x => sichtbar(x) && !x.classList.contains('sep')).map(x => ganz(x)).every(Boolean), ort: !!sub.querySelector('.psub-ort'),
+        mitte: uiLayout() !== 'phone' || (Math.abs(sx - innerWidth / 2) < 40 && sy > 60 && sy < pr.top - 40), sx: Math.round(sx), sy: Math.round(sy), oben: Math.round(pr.top) };
+      // 4) Kachel antippen = Späher losschicken
+      const vorher = window.__befehle ? window.__befehle.length : 0, sp0 = pendingScouts.length;
+      st.querySelector('[data-spaehen]').click(); await warte(300);
+      fremd.spaeher = pendingScouts.length > sp0 || (window.__befehle && window.__befehle.length > vorher) || !isPanelOpen(popup);
+      pendingScouts.splice(0, pendingScouts.length);
+      // 5) Angriff vorbereiten (ungespäht): feste Kopfzeile beim Scrollen, kein doppelter Hinweis, Helden einzeilig, Knopf unten
+      scoutedIslands.delete(ziel.id); openIslandPopup(ziel); await warte(400);
+      previewSourceId = playerIslandId; previewFraction = 1; popupView = 'preview'; previewShownAt = Date.now(); renderPopup(); await warte(700);   // (wie „Angreifen“ – ohne Schild/Tor-Umweg)
+      popup.style.maxHeight = '380px'; await warte(100);   // kleines Handy: der Mittelteil muss scrollen
+      const body = popup.querySelector('.pbody'), kopf = st.querySelector('.ap-kopf'); body.scrollTop = 1e6; await warte(200);
+      const br = body.getBoundingClientRect(), kr = kopf && kopf.getBoundingClientRect(), hs = st.querySelector('[data-preview="hero"]'), ab = document.getElementById('attackBtn').getBoundingClientRect();
+      const angriff = { kopf: !!kopf, versus: !!(kopf && kopf.querySelector('.versus') && kopf.querySelector('#attackFromSel')),
+        oben: !!kr && body.scrollTop > 20 && kr.top >= br.top - 16 && kr.top <= br.top + 2 && kr.bottom <= br.bottom, gescrollt: body.scrollTop,
+        hinweis: /Abwehr unbekannt/.test(st.textContent), foe: (st.querySelector('[data-foe="total"]') || {}).textContent,
+        helden: !hs || (hs.classList.contains('chips-quer') && getComputedStyle(hs).flexWrap === 'nowrap' && hs.getBoundingClientRect().height < 60),
+        knopf: ab.bottom <= innerHeight && ab.top >= br.bottom - 2, zahl: !!st.querySelector('.ap-truppen #attackTroopsLabel') && !!st.querySelector('[data-preview="quick"]') && !!document.getElementById('attackTroopsSlider') };
+      popup.style.maxHeight = ''; closeAllPopups();
+      return { eigen, basis, fremd, angriff };
+    }).catch(e => ({ fehler: e.message }));
+    ok(!r.fehler, art + ': Szenen laufen', r.fehler);
+    if (r.fehler) { await ctx.close(); continue; }
+    ok(r.eigen.haupt.join() === 'cityBtn' && r.eigen.erster === 'cityBtn', art + ': Hauptstadt – ein Haupt-Knopf „Stadt betreten“, ganz vorn', r.eigen);
+    ok(!r.eigen.ganz.length && r.eigen.sub, art + ': Hauptstadt – Zweit-Knöpfe und Untertitel ganz lesbar', r.eigen);
+    ok(r.basis.haupt.join() === 'upgradeBtn', art + ': andere eigene Basis – Haupt-Knopf „Aufwerten“', r.basis);
+    ok(r.fremd.kachel === 1 && r.fremd.unk === 0 && r.fremd.doppelt === 1, art + ': fremde Basis – eine Kachel „Stärke unbekannt“ statt 2× „Erst spähen“ + Kasten', r.fremd);
+    ok(r.fremd.sub && r.fremd.teile && r.fremd.ort, art + ': Untertitel nicht abgeschnitten (Koordinaten in eigener Zeile)', r.fremd);
+    ok(r.fremd.mitte, art + ': Basis mittig über dem Fenster', r.fremd);
+    ok(r.fremd.spaeher, art + ': Kachel antippen schickt den Späher', r.fremd);
+    ok(r.angriff.kopf && r.angriff.versus && r.angriff.oben, art + ': Angriff – Startbasis + Angriff/Abwehr bleiben beim Scrollen oben', r.angriff);
+    ok(!r.angriff.hinweis && r.angriff.foe === '?', art + ': „Abwehr unbekannt“ nicht doppelt (nur „?“ in der Kachel)', r.angriff);
+    ok(r.angriff.helden && r.angriff.zahl, art + ': Helden in einer Zeile, Truppen: Schieber + Prozent + Zahl', r.angriff);
+    ok(r.angriff.knopf, art + ': „Angreifen“ fest unten sichtbar', r.angriff);
+    await ctx.close();
+  }
+  console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
+})();
