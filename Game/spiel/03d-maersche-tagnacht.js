@@ -195,11 +195,10 @@ function tagLicht() {                               // → { n: Nacht 0…1, r: 
   TN.v = { n, r, licht: s((nach + .1) / .8), farbe: 'rgb(' + col.map(Math.round).join(',') + ')' }; TN.at = now;
   return TN.v;
 }
-function tnGlow(art) {                              // fertiges Leucht-Bild (warm: Fenster/Fackeln, lava: rot-orange)
+function tnGlow(art) {                              // fertiges Leucht-Bild (warm: Fenster, fackel: Fackeln)
   if (TN.glow[art]) return TN.glow[art];
   const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-  if (art === 'lava') { gr.addColorStop(0, 'rgba(255,170,60,.95)'); gr.addColorStop(.35, 'rgba(240,80,20,.55)'); gr.addColorStop(1, 'rgba(200,30,0,0)'); }
-  else if (art === 'fackel') { gr.addColorStop(0, 'rgba(255,245,200,1)'); gr.addColorStop(.25, 'rgba(255,190,90,.8)'); gr.addColorStop(1, 'rgba(255,140,40,0)'); }
+  if (art === 'fackel') { gr.addColorStop(0, 'rgba(255,245,200,1)'); gr.addColorStop(.25, 'rgba(255,190,90,.8)'); gr.addColorStop(1, 'rgba(255,140,40,0)'); }
   else { gr.addColorStop(0, 'rgba(255,214,140,.75)'); gr.addColorStop(.5, 'rgba(255,170,80,.28)'); gr.addColorStop(1, 'rgba(255,150,60,0)'); }
   g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return (TN.glow[art] = c);
 }
@@ -210,13 +209,7 @@ function drawNacht(vis, z, view) {                  // nach den Gebäuden, vor d
   if (L.licht > .03) {
     setScreen(ctx); ctx.globalCompositeOperation = 'lighter';
     let rest = akkuSparen ? 160 : 1400;                                           // höchstens so viele Lichter pro Bild
-    const lava = tnGlow('lava'), warm = tnGlow('warm'), fackel = tnGlow('fackel');
-    for (const lm of landmasses) {                                                // leuchtende Lava im Vulkan
-      if (lm.bio !== 'volcano' || lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b || !isExplored(lm.id)) continue;
-      if (!lm.lava) lm.deko;                                                      // (baut die Lava-Liste, falls die Region noch nie gemalt wurde)
-      for (const [x, y, r] of lm.lava || []) { if (rest-- <= 0) break; if (akkuSparen && r < 800 && z < .01) continue;
-        const R = Math.max(3, r * z * 2.2), sx = toSX(x), sy = toSY(y); if (sx < -R || sx > viewW + R || sy < -R || sy > viewH + R) continue;
-        ctx.globalAlpha = L.licht * .9; ctx.drawImage(lava, sx - R, sy - R, R * 2, R * 2); } }
+    const warm = tnGlow('warm'), fackel = tnGlow('fackel');                      // (Lava gibt es seit der Karte wie RoK nicht mehr)
     for (const isl of vis) {                                                      // Fenster und Fackeln an Basen, Burgen und Tempeln
       if (rest <= 0) break;
       const ow = islandOwnerOf(isl.id); if (!ow && isl.type === 'tower') continue;                     // leere Basen bleiben dunkel

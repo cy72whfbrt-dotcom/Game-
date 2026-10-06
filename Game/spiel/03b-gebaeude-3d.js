@@ -266,6 +266,15 @@ function drawBuilding(island, ownerKey, z) {                                   /
   const tier = island.type === 'tower' ? towerTier(baseLevelOf(island)) : 1;
   const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
   if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
+    if (karteBilder()) {                                                       // Karte wie RoK: das Pass-Tor (Bild) in der Lücke der Kette, offen/zu wie heute
+      const open = ownerKey !== 'neutral' && !gateSettings(island).closed, [[x1, y1], [x2, y2]] = island.ends, n = open ? 'tor_offen' : 'tor_zu';
+      const w = KARTE_MASS.tor * z, mx = toSX((x1 + x2) / 2), my = toSY((y1 + y2) / 2);
+      if (w < 16) { ctx.beginPath(); ctx.arc(mx, my, 4, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: goldener Punkt (zu: rot)
+        ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
+      const im = kbBild(n, w * dpr), h = w * im.height / im.width;
+      ctx.drawImage(im, mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
+      return;
+    }
     if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
     // the same 3D gate tower on BOTH banks where the bridge lands (open: portcullis up; shut or unowned: down)
     const S = Math.max(16, size * 1.25), open = ownerKey !== 'neutral' && !gateSettings(island).closed;

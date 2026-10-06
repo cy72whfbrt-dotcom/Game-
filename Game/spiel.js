@@ -281,7 +281,7 @@ const TERRITORY_VIEW_ZOOM = 0.018;
 const GRID_N = 17;         // square world: 17 × 17 regions (Paket C, vorher 15 × 15 – Messwerte in LIESMICH 23), the Thron-Insel in the middle, the 8 regions around it form the ring
 const HEX_SPACING = 56120; // distance between orthogonally adjacent cell centres (tightest packing with zero overlap)
 const GRID_HALF = (GRID_N - 1) / 2;
-const RIVER_HALF = 1500;   // one big square continent: its regions are split by narrow rivers (half width)
+const RIVER_HALF = 1500;   // one big square continent: its regions are split by mountain chains (half width; früher Flüsse) – nur durch die Tore
 const FRAME_HALF = (GRID_HALF + .5) * HEX_SPACING + 9000;   // the square map border (world units from the centre)
 // Bases are scattered freely across a landmass (rejection-sampled,
 // not a rigid grid) - only constraint is a minimum distance from
@@ -431,11 +431,21 @@ function riverOffset(vertical, line, t) {       // meander of the river line `li
     const k = line * 2.37 + (vertical ? 0 : 11.3);
     return 1400 * Math.sin(t / 6100 + k) + 700 * Math.sin(t / 2300 + k * 1.9) + 300 * Math.sin(t / 900 + k * 3.7);
 }
+// Grenzlinie `line` (zwischen den Zellen, ±(GRID_HALF + .5) = Kartenrand) an der Stelle t: senkrecht → x, waagrecht → y
+// (heute ein Gebirgszug – LIESMICH 11c Punkt 25; am Rand schlängelt sie sich stärker)
+function grenzLinie(vertical, line, t) { return line * HEX_SPACING + riverOffset(vertical, line, t) * (Math.abs(line) > GRID_HALF ? 1.6 : 1); }
+// Ring unter einem Weltpunkt (über die geschlängelten Grenzen; außerhalb der Karte GRID_HALF + 1)
+function ringAn(x, y) {
+    let q = Math.round(x / HEX_SPACING), r = Math.round(y / HEX_SPACING);
+    if (x > grenzLinie(true, q + .5, y)) q++; else if (x < grenzLinie(true, q - .5, y)) q--;
+    if (y > grenzLinie(false, r + .5, x)) r++; else if (y < grenzLinie(false, r - .5, x)) r--;
+    return Math.min(GRID_HALF + 1, Math.max(Math.abs(q), Math.abs(r)));
+}
 function generateRegionShape(q, r) {
     const S = HEX_SPACING, cx = q * S, cy = r * S, N = 120, out = [];
     const edge = (side, t) => {                  // world coordinate of one bank at position t along it
         const vertical = side === 0 || side === 2, line = side === 0 ? q + .5 : side === 2 ? q - .5 : side === 1 ? r + .5 : r - .5;
-        const outer = Math.abs(line) > GRID_HALF, base = line * S + riverOffset(vertical, line, t) * (outer ? 1.6 : 1);
+        const outer = Math.abs(line) > GRID_HALF, base = grenzLinie(vertical, line, t);
         const sign = side === 0 || side === 1 ? -1 : 1;             // right / bottom bank sits left / above the river line
         return base + sign * (outer ? 0 : RIVER_HALF);
     };
@@ -460,7 +470,10 @@ function generateRegionShape(q, r) {
 // Landscape: snow in the north, grassland in the middle band, desert in the south (the border steps a little per column);
 // the ring around the middle is stone, the regions right next to it stay green.
 // Paket C: dazu Eis ganz im Norden (oberste Reihe), zwei Vulkan-Gebiete nahe der Mitte (west und ost, je 5 Regionen)
-// und Sumpf in den Flussniederungen des grünen Mittelstreifens (außen, verstreut). Reine Optik – keine Spielwirkung.
+// und Sumpf in den Flussniederungen des grünen Mittelstreifens (außen, verstreut).
+// Seit der Karte wie RoK (LIESMICH 11c Punkt 25) nicht mehr zu sehen: gilt nur noch für Rohstoffe, Felder, Berge und das Stadtbild.
+// Die Karte malt den Boden nach Ringen (lm.boden): außen grün → Mitte Sand.
+const BODEN_RING = r => r <= 1 ? 'sand' : r <= 3 ? 'innen' : r <= 5 ? 'mitte' : 'aussen';
 const VULKANE = [[-4, 0], [4, 1]];
 function regionBiome(q, r) {
     const ring = Math.max(Math.abs(q), Math.abs(r)); if (ring <= 2) return 'green';
@@ -495,7 +508,7 @@ const landmasses = [];
         let shapeMaxR = 0;
         for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
         const corner = cell.d === 1 && Math.abs(cell.q) === 1 && Math.abs(cell.r) === 1;
-        landmasses.push({ id: lmId, q: cell.q, r: cell.r, ring: cell.d, x, y, radius, shape, shapeMaxR, isCenter: isC, tier, corner, bio: regionBiome(cell.q, cell.r) });
+        landmasses.push({ id: lmId, q: cell.q, r: cell.r, ring: cell.d, x, y, radius, shape, shapeMaxR, isCenter: isC, tier, corner, bio: regionBiome(cell.q, cell.r), boden: BODEN_RING(cell.d) });
         lmId++;
     }
 }
@@ -2667,25 +2680,13 @@ var viewW = innerWidth, viewH = innerHeight;           // CSS px; written ONLY b
 const setScreen = g => g.setTransform(dpr, 0, 0, dpr, 0, 0);
 const toSX = x => x * mapState.zoom + mapState.offsetX, toSY = y => y * mapState.zoom + mapState.offsetY;
 
-function noiseTile(size, seed, blobs, cols) {       // seamless soft-blob texture
-  const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'); const r = mulberry32(seed);
-  for (let i = 0; i < blobs; i++) { const px = r() * size, py = r() * size, rad = size * (.03 + r() * .12), col = cols[(r() * cols.length) | 0];
-    for (const [ox, oy] of [[0,0],[size,0],[-size,0],[0,size],[0,-size]]) {
-      const g = x.createRadialGradient(px + ox, py + oy, 0, px + ox, py + oy, rad); g.addColorStop(0, col); g.addColorStop(1, 'rgba(0,0,0,0)');
-      x.fillStyle = g; x.fillRect(px + ox - rad, py + oy - rad, rad * 2, rad * 2); } }
-  return c;
-}
-const SEA_PATTERN   = ctx.createPattern(noiseTile(512, 5, 220, ['rgba(0,10,20,.55)', 'rgba(90,150,190,.25)', 'rgba(0,20,40,.45)']), 'repeat');
-const GRASS_PATTERN = ctx.createPattern(noiseTile(512, 21, 260, ['rgba(28,58,20,.55)', 'rgba(120,176,80,.45)', 'rgba(40,80,28,.5)', 'rgba(150,190,90,.3)']), 'repeat');
-
-// World bounds (camera clamp + sea gradient)
+// World bounds (camera clamp)
 const WORLD = (() => { let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
   for (const lm of landmasses) { l = Math.min(l, lm.x - lm.shapeMaxR); r = Math.max(r, lm.x + lm.shapeMaxR); t = Math.min(t, lm.y - lm.shapeMaxR); b = Math.max(b, lm.y + lm.shapeMaxR); }
   l = Math.min(l, -FRAME_HALF); t = Math.min(t, -FRAME_HALF); r = Math.max(r, FRAME_HALF); b = Math.max(b, FRAME_HALF);   // the map border fits too
   return { l, t, r, b, w: r - l, h: b - t, cx: (l + r) / 2, cy: (t + b) / 2, radius: Math.hypot(r - l, b - t) / 2 }; })();
 
-const DEKO_ART = { ice: 1, volcano: 1, swamp: 1 };   // Landschaften mit eigenem Hintergrund (Paket C, buildDeko)
-// Landmass paths: smoothed coast (quadratic curves through edge midpoints), world units
+// Landmass paths: smoothed edge (quadratic curves through edge midpoints), world units – fürs Stadtbild (08e) und den Nebel
 for (const lm of landmasses) {
   const P = lm.shape, n = P.length, p = new Path2D();
   const mid = (a, b) => [(a.x + b.x) / 2, (a.y + b.y) / 2];
@@ -2694,99 +2695,183 @@ for (const lm of landmasses) {
   p.closePath();
   lm.path = p;
   lm.bbox = { l: lm.x - lm.shapeMaxR, t: lm.y - lm.shapeMaxR, r: lm.x + lm.shapeMaxR, b: lm.y + lm.shapeMaxR };
-  const g = ctx.createLinearGradient(lm.bbox.l, lm.bbox.t, lm.bbox.r, lm.bbox.b);   // world coords; used under setWorld
-  lm.stone = lm.tier === 'throne' || lm.tier === 'guardian';                    // the middle and the 4 Wächter regions: grey stone land
-  if (lm.tier === 'throne') { g.addColorStop(0, '#a3a39d'); g.addColorStop(.55, '#8c8c86'); g.addColorStop(1, '#76766f'); }
-  else if (lm.stone) { g.addColorStop(0, '#8e908c'); g.addColorStop(.55, '#797b77'); g.addColorStop(1, '#646662'); }
-  else if (lm.bio === 'snow') { g.addColorStop(0, '#eef2f5'); g.addColorStop(.55, '#dde4ea'); g.addColorStop(1, '#c6d0d9'); }
-  else if (lm.bio === 'sand') { g.addColorStop(0, '#e2c98f'); g.addColorStop(.55, '#d4b77a'); g.addColorStop(1, '#c2a266'); }
-  else if (lm.bio === 'ice') { g.addColorStop(0, '#e9f4fb'); g.addColorStop(.55, '#d2e5f1'); g.addColorStop(1, '#b4d0e4'); }
-  else if (lm.bio === 'volcano') { g.addColorStop(0, '#77695f'); g.addColorStop(.55, '#5f544d'); g.addColorStop(1, '#4a413c'); }
-  else if (lm.bio === 'swamp') { g.addColorStop(0, '#62794a'); g.addColorStop(.55, '#526a3e'); g.addColorStop(1, '#435a34'); }
-  else { g.addColorStop(0, '#62a44a'); g.addColorStop(.55, '#4d8a3b'); g.addColorStop(1, '#3d7231'); }
-  lm.fill = g;
-  let forest = null, deko = null;                                                // built the first time this region is drawn (faster start)
+  lm.stone = lm.tier === 'throne' || lm.tier === 'guardian';                    // the middle and the 4 Wächter regions (Berge aus 01f: grau, mehr Einzelfelsen)
+  let forest = null;                                                             // Bäume fürs Stadtbild (08e), erst bei Bedarf gebaut
   Object.defineProperty(lm, 'forest', { get: () => forest || (forest = buildForest(lm)), configurable: true });
-  if (DEKO_ART[lm.bio] && !lm.stone) Object.defineProperty(lm, 'deko', { get: () => deko || (deko = buildDeko(lm)), configurable: true });
 }
 
-// Paket C – Hintergrund der neuen Landschaften (einmal pro Region gebaut, wie die Wälder; liegt in den Karten-Kacheln):
-// Eis: Eisblöcke und Spalten · Vulkan: Felsbrocken, Lava-Tümpel (+ ein Krater) · Sumpf: Tümpel, Schilf und niedrige Bäume.
-// lm.lava = [[x, y, r], …] merkt sich die Lava für das Leuchten in der Nacht.
-function dekoPlaetze(lm, n, seed, frei) {          // freie Plätze auf der Region (nicht an Basen, nicht an der Küste)
-  const rnd = mulberry32(lm.id * 7919 + seed), bases = islandsByLandmass[lm.id] || [], out = [];
-  for (let i = 0; i < n * 8 && out.length < n; i++) {
-    const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * lm.shapeMaxR, x = lm.x + Math.cos(a) * d, y = lm.y + Math.sin(a) * d;
-    if (bases.some(b => Math.abs(b.x - x) < frei + b.radius && Math.abs(b.y - y) < frei + b.radius + 600 && Math.hypot(b.x - x, b.y - y) < b.radius + frei)) continue;
-    if (felsAuf(x, y, 900) || !aufLand(lm, x, y) || !aufLand(lm, x + 900, y) || !aufLand(lm, x - 900, y) || !aufLand(lm, x, y + 900) || !aufLand(lm, x, y - 900)) continue;
-    out.push([x, y, rnd]);
-  }
-  return out;
+// ===== Weltkarte wie RoK (LIESMICH 11c Punkt 25): kein Wasser – Boden nach Ringen (außen grün → Mitte Sand), Gebirgsketten auf
+// allen Gebietsgrenzen, Pass-Tore in den Lücken (03b), Gipfel-Knoten an den Ecken, Bergstöcke und Wälder – alles aus den
+// KI-Bildern Game/bilder/karte_*.webp. Geladen erst beim ersten Zeichnen (der Weltrechner zeichnet nie: lädt nie ein Bild).
+// Bis alle da sind (oder wenn eins fehlt) und weit draußen: Farbflächen, Gebirge als Bänder, die gezeichneten Berge aus 01f.
+const KB_DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
+  'kette_knoten', 'tor_zu', 'tor_offen', 'bergstock', 'fels1', 'fels2', 'wald1', 'wald2'];
+const KB = { img: {}, mip: {}, muster: {}, offen: -1, fertig: false };
+function karteBilder() {                             // true, sobald alle Bilder geladen sind (beim ersten Aufruf geht das Laden los)
+  if (KB.offen < 0) { KB.offen = KB_DATEIEN.length;
+    for (const n of KB_DATEIEN) { const im = new Image();
+      const ende = ok => { if (ok) KB.img[n] = im; if (--KB.offen) return; KB.fertig = KB_DATEIEN.every(k => KB.img[k]); if (KB.fertig) { BG.valid = false; requestRender(); } };
+      im.onload = () => ende(im.naturalWidth > 0); im.onerror = () => ende(false); im.src = 'bilder/karte_' + n + '.webp'; } }
+  return KB.fertig;
 }
-function buildDeko(lm) {
-  const P = () => new Path2D(), d = { a: P(), b: P(), c: P(), s: P() };       // a dunkel, b mittel, c hell, s Linien
-  const blob = (p, x, y, rx, ry, rnd, k) => {      // unregelmäßiger Fleck (Tümpel, Lava, Block)
-    const n = k || 9; for (let i = 0; i <= n; i++) { const t = i / n * Math.PI * 2, f = .78 + rnd() * .3, px = x + Math.cos(t) * rx * f, py = y + Math.sin(t) * ry * f; i ? p.lineTo(px, py) : p.moveTo(px, py); } p.closePath(); };
-  if (lm.bio === 'ice') {
-    for (const [x, y, rnd] of dekoPlaetze(lm, 140, 11, 700)) {
-      const n = 2 + (rnd() * 4 | 0);
-      for (let k = 0; k < n; k++) { const bx = x + (rnd() - .5) * 1000, by = y + (rnd() - .5) * 650, s = 170 + rnd() * 230;
-        blob(d.a, bx, by + s * .25, s, s * .55, rnd, 5); blob(d.b, bx - s * .1, by, s * .8, s * .45, rnd, 5); blob(d.c, bx - s * .3, by - s * .12, s * .3, s * .16, rnd, 4); }
-      if (rnd() < .45) { let sx = x + 500, sy = y - 300; d.s.moveTo(sx, sy);           // eine Spalte im Eis
-        for (let k = 0; k < 5; k++) { sx += 250 + rnd() * 250; sy += (rnd() - .5) * 400; d.s.lineTo(sx, sy); } }
-    }
-  } else if (lm.bio === 'volcano') {
-    lm.lava = [];
-    d.lava = P(); d.lavaS = P();
-    const bases = islandsByLandmass[lm.id] || [], frei = (x, y, m) => aufLand(lm, x, y) && !bases.some(b => Math.abs(b.x - x) < m && Math.abs(b.y - y) < m && Math.hypot(b.x - x, b.y - y) < m);
-    const krater = dekoPlaetze(lm, 1, 3, 1500)[0];                                  // der Krater (wo zwischen den Basen Platz ist)
-    if (krater) { const [x, y, rnd] = krater; blob(d.a, x, y + 150, 1500, 1000, rnd, 14); blob(d.b, x, y, 1050, 700, rnd, 12);
-      blob(d.lava, x, y - 60, 640, 400, rnd, 12); lm.lava.push([x, y - 60, 900]); }
-    { const rnd = mulberry32(lm.id * 31 + 5);                                       // Lava-Adern: glühende Risse zwischen den Basen
-      for (let k = 0; k < 26; k++) { let x = lm.x + (rnd() - .5) * lm.shapeMaxR * 1.6, y = lm.y + (rnd() - .5) * lm.shapeMaxR * 1.6, a = rnd() * Math.PI * 2, offen = false, st = 0;
-        for (let j = 0; j < 9; j++) { const nx = x + Math.cos(a) * 420, ny = y + Math.sin(a) * 420; a += (rnd() - .5) * 1.1;
-          if (frei(nx, ny, 1150) && frei(x, y, 1150)) { if (!offen) { d.lavaS.moveTo(x, y); offen = true; } d.lavaS.lineTo(nx, ny); if (++st % 3 === 0) lm.lava.push([nx, ny, 420]); } else offen = false;
-          x = nx; y = ny; } } }
-    for (const [x, y, rnd] of dekoPlaetze(lm, 150, 13, 650)) {
-      const n = 2 + (rnd() * 4 | 0);
-      for (let k = 0; k < n; k++) { const bx = x + (rnd() - .5) * 900, by = y + (rnd() - .5) * 600, s = 120 + rnd() * 190;
-        blob(d.a, bx, by + s * .2, s, s * .7, rnd, 6); blob(d.b, bx - s * .15, by - s * .05, s * .62, s * .42, rnd, 5); blob(d.c, bx - s * .35, by - s * .2, s * .22, s * .14, rnd, 4); }
-      if (rnd() < .3) { const lx = x + (rnd() - .5) * 600, ly = y + 300, s = 180 + rnd() * 220; blob(d.lava, lx, ly, s, s * .55, rnd, 9); lm.lava.push([lx, ly, s * 1.6]); }
-    }
-  } else if (lm.bio === 'swamp') {
-    for (const [x, y, rnd] of dekoPlaetze(lm, 150, 17, 650)) {
-      if (rnd() < .6) { const s = 380 + rnd() * 520; blob(d.c, x, y, s, s * .55, rnd, 10); }     // Tümpel (dunkles Wasser, unten c)
-      const n = 5 + (rnd() * 9 | 0);
-      for (let k = 0; k < n; k++) { const rx = x + (rnd() - .5) * 1200, ry = y + (rnd() - .5) * 760, h = 150 + rnd() * 170;   // Schilf: Halme
-        for (let j = -1; j <= 1; j++) { d.s.moveTo(rx + j * 22, ry); d.s.lineTo(rx + j * 36 + (rnd() - .5) * 30, ry - h * (j ? .8 : 1)); } }
-      if (rnd() < .5) for (let k = 0; k < 3; k++) { const tx = x + (rnd() - .5) * 900, ty = y + (rnd() - .5) * 500, r = 90 + rnd() * 90;   // niedrige Sumpfbäume
-        d.a.moveTo(tx + r, ty); d.a.arc(tx, ty, r, 0, Math.PI * 2); d.b.moveTo(tx - .12 * r + .7 * r, ty - .18 * r); d.b.arc(tx - .12 * r, ty - .18 * r, .7 * r, 0, Math.PI * 2); }
-    }
-  }
-  return d;
+function kbBild(n, px) {                             // Bild n, so oft halbiert, wie es noch ≥ px breit bleibt (verkleinert flimmert es sonst)
+  const m = KB.mip[n] || (KB.mip[n] = [KB.img[n]]);
+  let i = 0;
+  while (i < 6 && m[i].width >= 2 * px && m[i].width > 8) {
+    if (!m[i + 1]) { const c = document.createElement('canvas'); c.width = m[i].width >> 1; c.height = m[i].height >> 1;
+      const x = c.getContext('2d'); x.imageSmoothingQuality = 'high'; x.drawImage(m[i], 0, 0, c.width, c.height); m[i + 1] = c; }
+    i++; }
+  return m[i];
 }
-const DEKO_FARBE = {                                // a, b, c, Linien (Breite in Welt-Einheiten)
-  ice:     ['#87a9c3', '#c3dcee', 'rgba(255,255,255,.9)', 'rgba(90,130,165,.6)', 70],
-  volcano: ['#2f2926', '#433b36', 'rgba(150,140,130,.4)', null, 0],
-  swamp:   ['#2f4826', '#3f5d31', '#24423f', 'rgba(170,185,95,.9)', 40]
-};
-function paintDeko(g, lm, a) {                     // im Kachel-Bild (Welt-Koordinaten): a = Sichtbarkeit (wie die Wälder); die Lava immer
-  if (!(a > 0) && lm.bio !== 'volcano') return;
-  const d = lm.deko, f = DEKO_FARBE[lm.bio]; g.globalAlpha = a;
-  if (a > 0) {
-  if (lm.bio === 'swamp') { g.fillStyle = f[2]; g.fill(d.c); g.strokeStyle = 'rgba(140,190,170,.35)'; g.lineWidth = 60; g.stroke(d.c); }   // Wasser zuerst
-  g.fillStyle = f[0]; g.fill(d.a); g.fillStyle = f[1]; g.fill(d.b);
-  if (lm.bio !== 'swamp') { g.fillStyle = f[2]; g.fill(d.c); }
-  if (f[3]) { g.strokeStyle = f[3]; g.lineWidth = f[4]; g.lineCap = 'round'; g.stroke(d.s); g.lineCap = 'butt'; }
+// Maße (Welt-Einheiten, Burg ≈ 1.000; Vorgabe Designer): Achse = wo im Bild die Gratlinie liegt (Bilder vorab gerade geschert)
+const KARTE_MASS = { boden: 7000, quer: 11000, hoch: 11000, knoten: 9000, tor: 11000, wald: [2600, 3400], abstand: .55 };
+const KETTE_ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_hoch2: .485, tor_zu: .553, tor_offen: .553, kette_knoten: .6 };
+const KARTE_BILD_ZOOM = 0.0025;                      // darunter (ganz draußen): nur Farbflächen + Bänder (schont das Handy)
+const BODEN_ARTEN = ['aussen', 'mitte', 'innen', 'sand'], BODEN_BIS_RING = { mitte: 5, innen: 3, sand: 1 };
+const BODEN_FARBE = { aussen: [122, 154, 44], mitte: [163, 152, 56], innen: [190, 138, 76], sand: [207, 176, 131] };   // weit draußen (Mittel der Bilder, etwas ruhiger)
+
+// Boden-Masken: für jede innere Bodenart, wie stark sie an einer Stelle liegt (0…255, über die geschlängelten Grenzen,
+// an der Grenze weich auf ±1.500 überblendet – die Kette deckt die Naht). Einmal gebaut, 640 × 640 über die ganze Karte.
+let BM = null;
+function bodenMasken() {
+  if (BM) return BM;
+  const n = 640, R = FRAME_HALF + 20000, k = n / (2 * R), ring = new Uint8Array(n * n);
+  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) ring[j * n + i] = ringAn(-R + (i + .5) / k, -R + (j + .5) / k);
+  const weich = a => { const b = new Float32Array(n * n);                         // Kastenfilter ±1 px, zweimal, waagrecht und senkrecht
+    for (let pass = 0; pass < 2; pass++) {
+      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { let s = 0, c = 0; for (let d = -1; d <= 1; d++) { const x = i + d; if (x >= 0 && x < n) { s += a[j * n + x]; c++; } } b[j * n + i] = s / c; }
+      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { let s = 0, c = 0; for (let d = -1; d <= 1; d++) { const y = j + d; if (y >= 0 && y < n) { s += b[y * n + i]; c++; } } a[j * n + i] = s / c; } }
+    return a; };
+  BM = { n, R, k, w: {}, maske: {}, farbe: document.createElement('canvas') };
+  const fc = BM.farbe; fc.width = fc.height = n; const fd = fc.getContext('2d').createImageData(n, n), F = BODEN_FARBE;
+  for (let p = 0; p < n * n; p++) { fd.data[p * 4] = F.aussen[0]; fd.data[p * 4 + 1] = F.aussen[1]; fd.data[p * 4 + 2] = F.aussen[2]; fd.data[p * 4 + 3] = 255; }
+  for (const art of ['mitte', 'innen', 'sand']) {
+    const a = new Float32Array(n * n); for (let p = 0; p < n * n; p++) a[p] = ring[p] <= BODEN_BIS_RING[art] ? 1 : 0;
+    weich(a);
+    const w = BM.w[art] = new Uint8Array(n * n), c = BM.maske[art] = document.createElement('canvas'); c.width = c.height = n;
+    const md = c.getContext('2d').createImageData(n, n);
+    for (let p = 0; p < n * n; p++) { const v = w[p] = Math.round(a[p] * 255); md.data[p * 4 + 3] = v;
+      for (let q = 0; q < 3; q++) fd.data[p * 4 + q] += (F[art][q] - fd.data[p * 4 + q]) * a[p]; }
+    c.getContext('2d').putImageData(md, 0, 0);
   }
-  g.globalAlpha = 1;
-  if (d.lavaS) { g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = '#8f2a0c'; g.lineWidth = 150; g.stroke(d.lavaS); g.strokeStyle = '#f07a1c'; g.lineWidth = 60; g.stroke(d.lavaS); g.lineCap = 'butt'; }
-  if (d.lava) { g.fillStyle = '#d24812'; g.fill(d.lava); g.strokeStyle = 'rgba(40,16,8,.8)'; g.lineWidth = 50; g.stroke(d.lava); }
-  g.globalAlpha = 1;
+  fc.getContext('2d').putImageData(fd, 0, 0);
+  return BM;
+}
+function bodenAnteil(art, l, t, r, b) {              // [kleinster, größter] Anteil der Bodenart im Weltrechteck (0…255)
+  const M = bodenMasken(), w = M.w[art], cl = v => Math.max(0, Math.min(M.n - 1, v));
+  const i0 = cl(Math.floor((l + M.R) * M.k) - 1), i1 = cl(Math.ceil((r + M.R) * M.k) + 1), j0 = cl(Math.floor((t + M.R) * M.k) - 1), j1 = cl(Math.ceil((b + M.R) * M.k) + 1);
+  let lo = 255, hi = 0;
+  for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const v = w[j * M.n + i]; if (v < lo) lo = v; if (v > hi) hi = v; }
+  return [lo, hi];
+}
+function bodenMuster(art, z) {                       // Muster der Bodenkachel in passender Größe (Welt-verankert, setTransform im Weltmaß)
+  const c = kbBild('boden_' + art, KARTE_MASS.boden * z * dpr), key = art + c.width;
+  let p = KB.muster[key];
+  if (!p) { p = KB.muster[key] = ctx.createPattern(c, 'repeat'); p.setTransform(new DOMMatrix().scale(KARTE_MASS.boden / c.width)); }
+  return p;
+}
+// Boden in den Ausschnitt (Weltrechteck cl, ct, W, H) einer Kachel T; bild = Kacheln aus den Bildern, sonst die Farbfläche
+function paintBoden(g, T, cl, ct, W, H, clip, bild) {
+  const M = bodenMasken(), z = T.z, setW = x => x.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr);
+  setW(g);
+  if (!bild) { g.imageSmoothingEnabled = true; g.drawImage(M.farbe, -M.R, -M.R, 2 * M.R, 2 * M.R); return; }
+  const r = cl + W, b = ct + H, anteil = {};
+  let start = 0;                                     // die oberste Bodenart, die den Ausschnitt ganz bedeckt: darunter muss nichts gemalt werden
+  for (let i = 1; i < BODEN_ARTEN.length; i++) { const a = anteil[BODEN_ARTEN[i]] = bodenAnteil(BODEN_ARTEN[i], cl, ct, r, b); if (a[0] === 255) start = i; }
+  g.fillStyle = bodenMuster(BODEN_ARTEN[start], z); g.fillRect(cl, ct, W, H);
+  const x0 = clip ? clip.x : 0, y0 = clip ? clip.y : 0, w = clip ? clip.w : T.c.width, h = clip ? clip.h : T.c.height;
+  for (let i = start + 1; i < BODEN_ARTEN.length; i++) {
+    const art = BODEN_ARTEN[i]; if (anteil[art][1] === 0) continue;
+    const L = layer.getContext('2d');                // die Bodenart auf die Hilfsfläche, mit ihrer Maske ausgestanzt, dann darüber
+    L.setTransform(1, 0, 0, 1, 0, 0); L.clearRect(x0, y0, w, h);
+    setW(L); L.fillStyle = bodenMuster(art, z); L.fillRect(cl, ct, W, H);
+    L.globalCompositeOperation = 'destination-in'; L.imageSmoothingEnabled = true; L.drawImage(M.maske[art], -M.R, -M.R, 2 * M.R, 2 * M.R);
+    L.globalCompositeOperation = 'source-over';
+    g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(layer, x0, y0, w, h, x0, y0, w, h); setW(g);
+  }
 }
 
+// ===== Gelände-Bilder: Ketten, Knoten, Wald (die Bergstöcke malt 01f) – EINE Liste, nach Fuß-y sortiert (vorne verdeckt hinten), Raster zum Finden =====
+// Objekt: { n: Bild, x, y: Anker (Welt), w, h, ax, ay: Anker im Bild (0…1), sx/sy: Scherung (folgt dem Schwung der Grenze), fuss, bb }
+let KO = null;
+const KO_ZELLE = 20000;
+function karteObjekte() {
+  if (KO) return KO;
+  const liste = [], S = HEX_SPACING, M = KARTE_MASS, ende = (GRID_HALF + .5) * S, rnd = mulberry32(90917);
+  const neu = (n, x, y, w, ax, ay, sx, sy, fuss) => { const im = KB.img[n], h = w * im.height / im.width;
+    const xs = [], ys = []; for (const u of [-ax * w, (1 - ax) * w]) for (const v of [-ay * h, (1 - ay) * h]) { xs.push(x + u + (sx || 0) * v); ys.push(y + v + (sy || 0) * u); }
+    liste.push({ n, x, y, w, h, ax, ay, sx: sx || 0, sy: sy || 0, fuss, bb: { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) } }); };
+  const linien = []; for (let k = -GRID_HALF - 1; k <= GRID_HALF; k++) linien.push(k + .5);
+  // Gipfel-Knoten, wo Ketten zusammenstoßen (auch am Rand: dort laufen die Ketten in den Knoten)
+  const knoten = {};
+  for (const lv of linien) for (const lh of linien) { let x = lv * S, y = lh * S;
+    for (let it = 0; it < 4; it++) { x = grenzLinie(true, lv, y); y = grenzLinie(false, lh, x); }
+    knoten[lv + ',' + lh] = { x, y };
+    neu('kette_knoten', x, y, M.knoten * (.92 + rnd() * .16), .5, KETTE_ACHSE.kette_knoten, 0, 0, y); }
+  // Ketten: Stücke entlang jeder Grenze, Lücke an jedem Tor (Brückenmitte) und an den Knoten
+  const tore = bridges.map(br => ({ x: (br.x1 + br.x2) / 2, y: (br.y1 + br.y2) / 2, senk: Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1) }));
+  for (const senk of [true, false]) for (const L of linien) {
+    const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .3]; });
+    for (const t of tore) if (t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3) sperren.push([senk ? t.y : t.x, M.tor * .36]);
+    sperren.sort((a, b) => a[0] - b[0]);
+    const len = senk ? M.hoch : M.quer, schritt = len * M.abstand;
+    for (let i = 0; i + 1 < sperren.length; i++) {
+      const a = sperren[i][0] + sperren[i][1], b = sperren[i + 1][0] - sperren[i + 1][1]; if (b <= a || a > ende || b < -ende) continue;
+      const anz = Math.max(1, Math.round((b - a) / schritt));
+      for (let s = 0; s < anz; s++) {
+        const t = a + (s + .5) * (b - a) / anz, gr = len * (.92 + rnd() * .16), n = (senk ? 'kette_hoch' : 'kette_quer') + (rnd() < .5 ? 1 : 2);
+        const p = grenzLinie(senk, L, t), steig = Math.max(-.3, Math.min(.3, (grenzLinie(senk, L, t + gr / 2) - grenzLinie(senk, L, t - gr / 2)) / gr));
+        if (senk) neu(n, p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3);
+        else neu(n, t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p);
+      } } }
+  // Wälder: lockere Gruppen auf freier Wiese – nicht auf Basen, Feldern, Wegen (Bändern), Bergen, nicht an der Kette
+  for (const lm of landmasses) {
+    const r2 = mulberry32(lm.id * 7919 + 41), bases = islandsByLandmass[lm.id] || [], band = (felsenDaten && felsenDaten.baender[lm.id]) || [];
+    const felder = resFields.filter(f => f.landmassId === lm.id), wald = [], want = { aussen: 9, mitte: 6, innen: 3, sand: 0 }[lm.boden];
+    for (let i = 0; i < 400 && wald.length < want; i++) {
+      const x = lm.x + (r2() - .5) * S * .9, y = lm.y + (r2() - .5) * S * .9, w = M.wald[0] + r2() * (M.wald[1] - M.wald[0]);
+      if (Math.abs(x - grenzLinie(true, Math.round(x / S - .5) + .5, y)) < 3200 || Math.abs(y - grenzLinie(false, Math.round(y / S - .5) + .5, x)) < 3200) continue;
+      if (bases.some(b => Math.abs(b.x - x) < 2600 && Math.abs(b.y - y) < 2600 && Math.hypot(b.x - x, b.y - y) < b.radius + w * .5)) continue;
+      if (felder.some(f => Math.hypot(f.x - x, f.y - y) < f.radius + w * .5) || felsAuf(x, y, w * .6) || wald.some(o => Math.hypot(o[0] - x, o[1] - y) < 4000)) continue;
+      if (band.some(s => pointToSegmentDistance(x, y, s[0], s[1], s[2], s[3]) < w * .4)) continue;
+      wald.push([x, y]); neu(r2() < .55 ? 'wald1' : 'wald2', x, y, w, .5, .78, 0, 0, y); } }
+  liste.sort((a, b) => a.fuss - b.fuss);
+  const zellen = new Map();
+  liste.forEach((o, i) => { o.ord = i;
+    for (let cx = Math.floor(o.bb.l / KO_ZELLE); cx <= Math.floor(o.bb.r / KO_ZELLE); cx++) for (let cy = Math.floor(o.bb.t / KO_ZELLE); cy <= Math.floor(o.bb.b / KO_ZELLE); cy++) {
+      const k = cx + ',' + cy; (zellen.get(k) || zellen.set(k, []).get(k)).push(o); } });
+  return (KO = { liste, zellen });
+}
+function paintGelaende(g, T, v) {                    // die Gelände-Bilder im Weltrechteck v in die Kachel T (Reihenfolge der Liste)
+  const K = karteObjekte(), k = dpr * T.z, E = -T.l * k, F = -T.t * k, hier = new Set();
+  for (let cx = Math.floor(v.l / KO_ZELLE); cx <= Math.floor(v.r / KO_ZELLE); cx++) for (let cy = Math.floor(v.t / KO_ZELLE); cy <= Math.floor(v.b / KO_ZELLE); cy++)
+    for (const o of K.zellen.get(cx + ',' + cy) || []) if (o.bb.r > v.l && o.bb.l < v.r && o.bb.b > v.t && o.bb.t < v.b) hier.add(o);
+  for (const o of [...hier].sort((a, b) => a.ord - b.ord)) {
+    const px = o.w * k; if (px < 2) continue;
+    g.setTransform(k, k * o.sy, k * o.sx, k, k * o.x + E, k * o.y + F);
+    g.drawImage(kbBild(o.n, px), -o.ax * o.w, -o.ay * o.h, o.w, o.h);
+  }
+}
+// Weit draußen / ohne Bilder: Gebirge als Band entlang jeder Grenze (Weltmaß, nie dünner als ein paar Pixel)
+let gebirgsPfadMem = null;
+function gebirgsPfad() {
+  if (gebirgsPfadMem) return gebirgsPfadMem;
+  const p = new Path2D(), ende = (GRID_HALF + .5) * HEX_SPACING;
+  for (let k = -GRID_HALF - 1; k <= GRID_HALF; k++) for (const senk of [true, false]) { const L = k + .5;
+    for (let t = -ende - 4000, erst = true; t <= ende + 4000; t += 1500, erst = false) { const q = grenzLinie(senk, L, t);
+      if (erst) senk ? p.moveTo(q, t) : p.moveTo(t, q); else senk ? p.lineTo(q, t) : p.lineTo(t, q); } }
+  return (gebirgsPfadMem = p);
+}
+function paintBaender(g, zl) {                       // (Weltmaß gesetzt) dunkles Band, oben eine Lichtkante
+  const p = gebirgsPfad(), w = Math.max(2400, 3 / zl);
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  g.strokeStyle = '#2e2b24'; g.lineWidth = w * 1.25; g.stroke(p);
+  g.strokeStyle = '#5e5a4e'; g.lineWidth = w; g.stroke(p);
+  g.strokeStyle = 'rgba(156,151,132,.55)'; g.lineWidth = w * .35; g.stroke(p);
+  g.lineCap = 'butt';
+}
 
-function buildForest(lm) {
+function buildForest(lm) {                           // (Stadtbild: wo um die Stadt herum Bäume stehen)
   const rnd = mulberry32(lm.id * 991 + 7), bases = islandsByLandmass[lm.id] || [];
   const dark = new Path2D(), mid = new Path2D(), lit = new Path2D();
   const sb = { l: Math.min(...lm.shape.map(p => p.x)), r: Math.max(...lm.shape.map(p => p.x)), t: Math.min(...lm.shape.map(p => p.y)), b: Math.max(...lm.shape.map(p => p.y)) };
@@ -2937,12 +3022,12 @@ function drawTerritoriesInto(g, lay, z, originL, originT, pxW, pxH, clip) {   //
   }
 }
 
-// ---- cached background: sea + land + grass + forests + coast + bridges + territory ----
+// ---- cached background: ground + mountain chains + forests + territory ----
 // World-anchored tiles of TILE_PX CSS px, rendered at one exact zoom per "generation". Panning only renders the
 // tiles that scroll into view (a few per frame, time-boxed); a zoom gesture draws the current generation scaled
 // and starts a new one when the scale leaves 0.7-1.4. While tiles are missing, up to two older generations of a
-// similar zoom (scaled) fill the gaps, else the live sea plus a whole-world land overview (built at idle right after
-// boot), so nothing is ever rendered as one big blocking job and no flat sea shows through; each gap pixel is drawn
+// similar zoom (scaled) fill the gaps, else the ring colours plus a whole-world overview (built at idle right after
+// boot), so nothing is ever rendered as one big blocking job and no empty area shows through; each gap pixel is drawn
 // once. When the zoom settles off-scale, the crisp generation is built behind the complete scaled one and swapped
 // in only once it covers the view (no patchwork).
 // Canvas rasterisation is deferred until a tile is first drawn, so the per-frame budget counts device pixels, not ms,
@@ -2979,21 +3064,19 @@ function renderTile(gen, tx, ty) {
 }
 const WARM = document.createElement('canvas'); WARM.width = WARM.height = 1; const WARMG = WARM.getContext('2d');
 function bgWarm(T) { WARMG.clearRect(0, 0, 1, 1); WARMG.drawImage(T.c, 0, 0, 1, 1); T.drawn = true; }   // rasterise a tile now, not at its first blit
-function bgOverview() {                        // whole-world land for gaps (transparent sea, no territory), painted at idle in slices, once per dpr:
-  let O = BG.over;                             // c = land without grass / forests (far zoom), d = with them (mid / near zoom)
+function bgOverview() {                        // whole-world map for gaps (Farbflächen + Bänder, no territory), painted at idle in slices, once per dpr
+  let O = BG.over;
   if (O && O.dpr === dpr && O.done) return O;
   if (!O || O.dpr !== dpr) {
     const pad = .22, l = WORLD.l - WORLD.w * pad, t = WORLD.t - WORLD.h * pad, ww = WORLD.w * (1 + 2 * pad), wh = WORLD.h * (1 + 2 * pad);
-    const z = 2048 / (Math.max(ww, wh) * dpr), mk = () => { const c = document.createElement('canvas'); c.width = Math.ceil(ww * z * dpr); c.height = Math.ceil(wh * z * dpr); return c; };
-    const c = mk(), d = mk();
-    O = BG.over = { c, d, z, l, t, dpr, ref: 0.008, noSea: true, row: 0, rows: 10, queued: false, done: false };   // ref: coast / bridge widths as at zoom 0.008
+    const z = 2048 / (Math.max(ww, wh) * dpr), c = document.createElement('canvas'); c.width = Math.ceil(ww * z * dpr); c.height = Math.ceil(wh * z * dpr);
+    O = BG.over = { c, z, l, t, dpr, ref: 0.008, part: 'weit', row: 0, rows: 10, queued: false, done: false };   // ref: band widths as at zoom 0.008
   }
   if (!O.queued) { O.queued = true;
     (window.requestIdleCallback || (f => setTimeout(f, 200)))(() => { O.queued = false; if (BG.over !== O) return;
       const h = Math.ceil(O.c.height / O.rows), y = O.row * h, clip = { x: 0, y, w: O.c.width, h: Math.min(h, O.c.height - y) };
-      paintBackground({ ...O, g: O.c.getContext('2d'), part: 'base' }, clip, true);
-      paintBackground({ ...O, c: O.d, g: O.d.getContext('2d'), part: 'full' }, clip, true);
-      bgWarm(O); bgWarm({ c: O.d });                                             // rasterised slice by slice here, not at its first use
+      paintBackground({ ...O, g: O.c.getContext('2d') }, clip, true);
+      bgWarm(O);                                                                 // rasterised slice by slice here, not at its first use
       if (++O.row >= O.rows) O.done = true; else bgOverview(); }, { timeout: 600 }); }
   return null;
 }
@@ -3009,22 +3092,14 @@ function repaintBackgroundRect(r) {            // partial repaint of a WORLD rec
     if (x1 > x0 && y1 > y0) paintBackground(T, { x: x0, y: y0, w: x1 - x0, h: y1 - y0 });
   }
 }
-function paintSea(g, T, x, y, w, h) {          // depth gradient (lighter at the hub) + world-anchored texture. NOTHING hugs the coast.
-  const z = T.z, R = WORLD.radius * z, cx = (WORLD.cx - T.l) * z, cy = (WORLD.cy - T.t) * z;   // into the device rect x,y,w,h of g; world (T.l, T.t) at 0,0
-  const cl = T.l + x / dpr / z, ct = T.t + y / dpr / z, W = w / dpr / z, H = h / dpr / z;
-  g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const sg = g.createRadialGradient(cx, cy, 0, cx, cy, Math.max(1, R));
-  sg.addColorStop(0, '#16506f'); sg.addColorStop(.5, '#0f3a57'); sg.addColorStop(1, '#0a2438');
-  g.fillStyle = sg; g.fillRect(x / dpr, y / dpr, w / dpr, h / dpr);
-  let seaA = Math.min(1, Math.max(0, (z - 0.002) / 0.005));                     // texture fades in 0.002-0.007 (no pop between generations)
-  if (T.fast && seaA < 0.35) seaA = 0;                                           // gap filler: skip the faint texture (a costly fill)
-  if (seaA > 0) { g.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr); g.fillStyle = SEA_PATTERN;   // two passes at an incommensurate
-    SEA_PATTERN.setTransform(new DOMMatrix().scale(26000 / 512)); g.globalAlpha = (T.fast ? .52 : .42) * seaA; g.fillRect(cl, ct, W, H);   // scale + rotation →
-    if (!T.fast) { SEA_PATTERN.setTransform(new DOMMatrix().rotate(17).scale(26000 * 1.37 / 512)); g.globalAlpha = .3 * seaA; g.fillRect(cl, ct, W, H); }
-    g.globalAlpha = 1; }   // no repeat grid (the gap filler draws the cheaper first pass only)
+function paintGrund(g, T, x, y, w, h) {        // Lückenfüller: die Farbfläche der Ringe ins Geräte-Rechteck x,y,w,h von g (Welt (T.l, T.t) bei 0,0)
+  const M = bodenMasken(), z = T.z;
+  g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.beginPath(); g.rect(x, y, w, h); g.clip();
+  g.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr); g.imageSmoothingEnabled = true;
+  g.drawImage(M.farbe, -M.R, -M.R, 2 * M.R, 2 * M.R); g.restore();
 }
 function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; clip = device-px rect inside T.c, or null for everything
-  const z = T.z, w = T.c.width, h = T.c.height, zl = T.ref || z, ls = z / zl;   // zl: zoom whose line widths to use (overview)
+  const z = T.z, w = T.c.width, h = T.c.height, zl = T.ref || z;   // zl: zoom whose line widths to use (overview)
   const g = T.g;
   g.save();
   if (clip) { g.setTransform(1, 0, 0, 1, 0, 0); g.beginPath(); g.rect(clip.x, clip.y, clip.w, clip.h); g.clip(); }
@@ -3032,54 +3107,19 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
   const W = (clip ? clip.w : w) / dpr / z, H = (clip ? clip.h : h) / dpr / z;
   const view = { l: cl - ISLAND_RADIUS * 2, t: ct - ISLAND_RADIUS * 2, r: cl + W + ISLAND_RADIUS * 2, b: ct + H + ISLAND_RADIUS * 2 };
   const world = () => g.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr);
-  const screen = () => g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const sx = x => (x - T.l) * z, sy = y => (y - T.t) * z;
-  // 1 sea (the overview has none: the gap filler paints the live sea under it, see drawBackground)
-  if (!T.noSea) paintSea(g, T, clip ? clip.x : 0, clip ? clip.y : 0, clip ? clip.w : w, clip ? clip.h : h);
-  // 2 land: GREEN gradient, grass texture (fades in 0.006-0.018), forests (fade in 0.016-0.022), ONE thin coastline. No shadow, no beach.
-  // (overview: part 'base' = land without grass / forests, part 'full' = with grass + forests at full strength)
+  // 1 Boden nach Ringen – nah aus den Bildern, weit draußen (und solange sie laden) die Farbfläche
+  const bild = !T.part && z >= KARTE_BILD_ZOOM && karteBilder(), zd = T.part ? 0 : z;
+  paintBoden(g, T, cl, ct, W, H, clip, bild);
+  // 2 Bergstöcke (01f), dann Ketten, Knoten, Wald als Bilder – oder weit draußen die Gebirgs-Bänder
   world();
-  const zd = T.part ? (T.part === 'full' ? 1 : 0) : z;
-  const grassA = Math.min(1, Math.max(0, (zd - 0.006) / 0.012)) * 0.38, forestA = Math.min(1, Math.max(0, (zd - 0.016) / 0.006));
-  if (grassA > 0) GRASS_PATTERN.setTransform(new DOMMatrix().scale(9000 / 512));
   for (const lm of landmasses) {
     if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
-    g.fillStyle = lm.fill; g.fill(lm.path);
-    if (grassA > 0) { g.globalAlpha = grassA * (lm.stone ? .35 : lm.bio === 'snow' || lm.bio === 'ice' ? .12 : lm.bio === 'sand' ? .2 : lm.bio === 'volcano' ? .3 : lm.bio === 'swamp' ? .8 : 1); g.fillStyle = GRASS_PATTERN; g.fill(lm.path); g.globalAlpha = 1; }
-    if (lm.deko) paintDeko(g, lm, Math.max(forestA, Math.min(1, Math.max(0, (zd - 0.007) / 0.008))));                                        // Paket C: Eis, Vulkan, Sumpf (statt Wald)
-    else if (forestA > 0 && !(WELT_FELSEN && (lm.stone || lm.bio === 'sand'))) { g.globalAlpha = forestA;   // (Wüste/Stein: statt der runden Häufchen die Felsen aus 01f)
-      if (lm.bio === 'snow' && !lm.stone) { g.fillStyle = '#3f5a4c'; g.fill(lm.forest[0]); g.fillStyle = '#56735f'; g.fill(lm.forest[1]);   // snowy firs
-        g.fillStyle = 'rgba(250,252,255,.7)'; g.fill(lm.forest[2]); }
-      else if (lm.bio === 'sand' && !lm.stone) { g.fillStyle = '#9c7e4c'; g.fill(lm.forest[0]); g.fillStyle = '#b39360'; g.fill(lm.forest[1]);   // dunes and dry scrub
-        g.fillStyle = 'rgba(255,240,200,.35)'; g.fill(lm.forest[2]); }
-      else if (lm.stone) { g.fillStyle = '#56575a'; g.fill(lm.forest[0]); g.fillStyle = '#6a6b6e'; g.fill(lm.forest[1]);   // rocks instead of forest
-        g.fillStyle = 'rgba(215,215,210,.3)'; g.fill(lm.forest[2]); }
-      else { g.fillStyle = '#284d22'; g.fill(lm.forest[0]); g.fillStyle = '#35652c'; g.fill(lm.forest[1]);
-        g.fillStyle = 'rgba(128,176,90,.38)'; g.fill(lm.forest[2]); }
-      g.globalAlpha = 1; }
-    felsenMalen(g, lm, zd, zl);                                                    // Berge (01f, Lebendige Welt)
-    g.lineJoin = 'round'; g.lineWidth = 1.4 / zl; g.strokeStyle = lm.stone ? 'rgba(24,24,26,.92)' : 'rgba(14,30,12,.92)'; g.stroke(lm.path);
+    felsenMalen(g, lm, zd, zl);
   }
-  // 3 bridges: straight timber between the polygonPointAtAngle endpoints, extended 250 units along their own axis
-  const bw = Math.max(3, Math.min(28, 420 * zl)) * ls; screen();
-  for (const br of bridges) {
-    const dx = br.x2 - br.x1, dy = br.y2 - br.y1, len0 = Math.hypot(dx, dy) || 1, ux = dx / len0, uy = dy / len0, EXT = 250;
-    const ax = sx(br.x1 - ux * EXT), ay = sy(br.y1 - uy * EXT), bx = sx(br.x2 + ux * EXT), by = sy(br.y2 + uy * EXT);
-    if (Math.max(ax, bx) < -40 || Math.min(ax, bx) > w / dpr + 40 || Math.max(ay, by) < -40 || Math.min(ay, by) > h / dpr + 40) continue;
-    const len = Math.hypot(bx - ax, by - ay);
-    g.save(); g.translate(ax, ay); g.rotate(Math.atan2(by - ay, bx - ax));
-    g.fillStyle = '#35261a'; g.fillRect(0, -bw / 2 - ls, len, bw + 2 * ls);                             // timber casing, butt ends
-    const dg = g.createLinearGradient(0, -bw / 2, 0, bw / 2); dg.addColorStop(0, '#b08658'); dg.addColorStop(.5, '#94704a'); dg.addColorStop(1, '#77593a');
-    g.fillStyle = dg; g.fillRect(0, -bw / 2 + ls, len, bw - 2 * ls);                                    // deck
-    const step = 160 * z;
-    if (step >= 4 && bw >= 6) { g.strokeStyle = 'rgba(40,26,14,.5)'; g.lineWidth = 1; g.beginPath();
-      for (let s = step; s < len; s += step) { g.moveTo(s, -bw / 2 + 1); g.lineTo(s, bw / 2 - 1); } g.stroke(); }   // planks
-    if (bw >= 5) {                                                                                       // stone parapets with merlons on both sides
-      const pw = Math.max(1.5, bw * .16); g.fillStyle = '#8f8b84'; g.fillRect(0, -bw / 2 - pw * .4, len, pw); g.fillRect(0, bw / 2 - pw * .6, len, pw);
-      if (bw >= 9) { g.fillStyle = '#b3aea5'; const m = Math.max(2, pw * 1.1); for (let px = m * .5; px < len - m; px += m * 2) { g.fillRect(px, -bw / 2 - pw * .4 - m * .6, m, m * .6); g.fillRect(px, bw / 2 + pw * .4, m, m * .6); } } }
-    g.restore();
-  }
-  // 4 territory (cached geometry, see below)
+  const rand = KARTE_MASS.quer;                                                    // (Bilder ragen so weit über ihren Anker hinaus)
+  if (bild) paintGelaende(g, T, { l: cl - rand, t: ct - rand, r: cl + W + rand, b: ct + H + rand });
+  else { world(); paintBaender(g, zl); }
+  // 3 territory (cached geometry, see below)
   if (!noTerritory) drawTerritoriesInto(g, layer, z, T.l, T.t, w, h, clip);
   g.restore();
 }
@@ -3157,7 +3197,7 @@ function drawBackground() {   // per frame: blit the cached tiles; render the mi
     }
     ctx.imageSmoothingQuality = 'high'; };
   // gaps (only where the current generation has no tile yet, so nothing is drawn twice): older generations where they
-  // cover the hole, coarser first; otherwise the live sea + the overview's land (without / with grass and forests)
+  // cover the hole, coarser first; otherwise the ring colours + the overview
   if (miss.length) {
     const holes = new Set(miss.map(m => m.tx + ':' + m.ty)), kg = k, tdg = gen.td;
     const gx = tx => Math.round(tx * tdg * kg + ox), gy = ty => Math.round(ty * tdg * kg + oy);
@@ -3166,18 +3206,18 @@ function drawBackground() {   // per frame: blit the cached tiles; render the mi
         for (let x = Math.floor(tx * o.ws / gen.ws); x <= Math.floor((tx * o.ws + e) / gen.ws); x++) if (holes.has(x + ':' + y)) return true;
       return false; };
     const open = miss.filter(m => !covered(m.tx, m.ty)).map(m => { const x = gx(m.tx), y = gy(m.ty); return { m, x, y, w: gx(m.tx + 1) - x, h: gy(m.ty + 1) - y }; });
-    if (open.length > 48) {                                                        // many holes: sea + overview once for the whole view
-      const V = { z, l: -mapState.offsetX / z, t: -mapState.offsetY / z, fast: 1 }, W = canvas.width, Hh = canvas.height;
-      paintSea(ctx, V, 0, 0, W, Hh);
+    if (open.length > 48) {                                                        // many holes: ring colours + overview once for the whole view
+      const V = { z, l: -mapState.offsetX / z, t: -mapState.offsetY / z }, W = canvas.width, Hh = canvas.height;
+      paintGrund(ctx, V, 0, 0, W, Hh);
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingQuality = 'low';
-      if (O) { const OC = z >= 0.016 ? O.d : O.c, s = O.z * dpr, u0 = (V.l - O.l) * s, v0 = (V.t - O.t) * s, us = viewW / z * s, vs = viewH / z * s;
+      if (O) { const OC = O.c, s = O.z * dpr, u0 = (V.l - O.l) * s, v0 = (V.t - O.t) * s, us = viewW / z * s, vs = viewH / z * s;
         const cu0 = Math.max(0, u0), cv0 = Math.max(0, v0), cu1 = Math.min(O.c.width, u0 + us), cv1 = Math.min(O.c.height, v0 + vs);
         if (cu1 > cu0 && cv1 > cv0) ctx.drawImage(OC, cu0, cv0, cu1 - cu0, cv1 - cv0, (cu0 - u0) / us * W, (cv0 - v0) / vs * Hh, (cu1 - cu0) / us * W, (cv1 - cv0) / vs * Hh); }
-    } else if (open.length) {                                                      // the live sea (exactly as in the tiles) + the overview's land
-      const V = { z, l: -mapState.offsetX / z, t: -mapState.offsetY / z, fast: 1 };
-      for (const r of open) paintSea(ctx, V, r.x, r.y, r.w, r.h);
+    } else if (open.length) {                                                      // the ring colours + the overview (chains as bands)
+      const V = { z, l: -mapState.offsetX / z, t: -mapState.offsetY / z };
+      for (const r of open) paintGrund(ctx, V, r.x, r.y, r.w, r.h);
       ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingQuality = 'low';
-      const OC = O && (z >= 0.016 ? O.d : O.c);                                  // with grass + forests where the tiles have them (from 0.016)
+      const OC = O && O.c;
       if (O) for (const { m, x, y, w, h } of open) {
         const s = O.z * dpr, u0 = (m.tx * gen.ws - O.l) * s, v0 = (m.ty * gen.ws - O.t) * s, us = gen.ws * s;   // source rect in the overview
         const cu0 = Math.max(0, u0), cv0 = Math.max(0, v0), cu1 = Math.min(O.c.width, u0 + us), cv1 = Math.min(O.c.height, v0 + us);
@@ -3476,6 +3516,15 @@ function drawBuilding(island, ownerKey, z) {                                   /
   const tier = island.type === 'tower' ? towerTier(baseLevelOf(island)) : 1;
   const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
   if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
+    if (karteBilder()) {                                                       // Karte wie RoK: das Pass-Tor (Bild) in der Lücke der Kette, offen/zu wie heute
+      const open = ownerKey !== 'neutral' && !gateSettings(island).closed, [[x1, y1], [x2, y2]] = island.ends, n = open ? 'tor_offen' : 'tor_zu';
+      const w = KARTE_MASS.tor * z, mx = toSX((x1 + x2) / 2), my = toSY((y1 + y2) / 2);
+      if (w < 16) { ctx.beginPath(); ctx.arc(mx, my, 4, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: goldener Punkt (zu: rot)
+        ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
+      const im = kbBild(n, w * dpr), h = w * im.height / im.width;
+      ctx.drawImage(im, mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
+      return;
+    }
     if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
     // the same 3D gate tower on BOTH banks where the bridge lands (open: portcullis up; shut or unowned: down)
     const S = Math.max(16, size * 1.25), open = ownerKey !== 'neutral' && !gateSettings(island).closed;
@@ -4268,11 +4317,10 @@ function tagLicht() {                               // → { n: Nacht 0…1, r: 
   TN.v = { n, r, licht: s((nach + .1) / .8), farbe: 'rgb(' + col.map(Math.round).join(',') + ')' }; TN.at = now;
   return TN.v;
 }
-function tnGlow(art) {                              // fertiges Leucht-Bild (warm: Fenster/Fackeln, lava: rot-orange)
+function tnGlow(art) {                              // fertiges Leucht-Bild (warm: Fenster, fackel: Fackeln)
   if (TN.glow[art]) return TN.glow[art];
   const c = document.createElement('canvas'); c.width = c.height = 64; const g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
-  if (art === 'lava') { gr.addColorStop(0, 'rgba(255,170,60,.95)'); gr.addColorStop(.35, 'rgba(240,80,20,.55)'); gr.addColorStop(1, 'rgba(200,30,0,0)'); }
-  else if (art === 'fackel') { gr.addColorStop(0, 'rgba(255,245,200,1)'); gr.addColorStop(.25, 'rgba(255,190,90,.8)'); gr.addColorStop(1, 'rgba(255,140,40,0)'); }
+  if (art === 'fackel') { gr.addColorStop(0, 'rgba(255,245,200,1)'); gr.addColorStop(.25, 'rgba(255,190,90,.8)'); gr.addColorStop(1, 'rgba(255,140,40,0)'); }
   else { gr.addColorStop(0, 'rgba(255,214,140,.75)'); gr.addColorStop(.5, 'rgba(255,170,80,.28)'); gr.addColorStop(1, 'rgba(255,150,60,0)'); }
   g.fillStyle = gr; g.fillRect(0, 0, 64, 64); return (TN.glow[art] = c);
 }
@@ -4283,13 +4331,7 @@ function drawNacht(vis, z, view) {                  // nach den Gebäuden, vor d
   if (L.licht > .03) {
     setScreen(ctx); ctx.globalCompositeOperation = 'lighter';
     let rest = akkuSparen ? 160 : 1400;                                           // höchstens so viele Lichter pro Bild
-    const lava = tnGlow('lava'), warm = tnGlow('warm'), fackel = tnGlow('fackel');
-    for (const lm of landmasses) {                                                // leuchtende Lava im Vulkan
-      if (lm.bio !== 'volcano' || lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b || !isExplored(lm.id)) continue;
-      if (!lm.lava) lm.deko;                                                      // (baut die Lava-Liste, falls die Region noch nie gemalt wurde)
-      for (const [x, y, r] of lm.lava || []) { if (rest-- <= 0) break; if (akkuSparen && r < 800 && z < .01) continue;
-        const R = Math.max(3, r * z * 2.2), sx = toSX(x), sy = toSY(y); if (sx < -R || sx > viewW + R || sy < -R || sy > viewH + R) continue;
-        ctx.globalAlpha = L.licht * .9; ctx.drawImage(lava, sx - R, sy - R, R * 2, R * 2); } }
+    const warm = tnGlow('warm'), fackel = tnGlow('fackel');                      // (Lava gibt es seit der Karte wie RoK nicht mehr)
     for (const isl of vis) {                                                      // Fenster und Fackeln an Basen, Burgen und Tempeln
       if (rest <= 0) break;
       const ow = islandOwnerOf(isl.id); if (!ow && isl.type === 'tower') continue;                     // leere Basen bleiben dunkel
@@ -8072,12 +8114,11 @@ function fogMask(now) {                                 // canvas over the whole
     return fogMaskCv;
 }
 const nebelWeit = z => Math.max(0, Math.min(1, (0.009 - z) / 0.003));   // 0 = Wolken (nah), 1 = flache Fläche (weit/ganz draußen)
-const NEBEL_LAND_FARBE = { ice: '#dfe7ec', snow: '#b9c4cc', green: '#8fa66a', swamp: '#7c8a5c', volcano: '#9a5a44', sand: '#c9a86a' };
-let nebelLand = null;                                   // Umrisse aller Gebiete je Landschaft (einmal gebaut): schimmern weit draußen durch den Nebel
+let nebelLand = null;                                   // Umrisse aller Gebiete je Boden-Ring (einmal gebaut): schimmern weit draußen durch den Nebel
 function nebelLandPfade() {
     if (nebelLand) return nebelLand;
     nebelLand = {};
-    for (const lm of landmasses) { const P = nebelLand[lm.bio] || (nebelLand[lm.bio] = new Path2D());
+    for (const lm of landmasses) { const P = nebelLand[lm.boden] || (nebelLand[lm.boden] = new Path2D());
         P.moveTo(lm.shape[0].x, lm.shape[0].y); for (const q of lm.shape) P.lineTo(q.x, q.y); P.closePath(); }
     return nebelLand;
 }
@@ -8109,7 +8150,7 @@ function drawFog(view, now) {
     const weit = nebelWeit(z);
     if (weit > 0) {                                                                                  // weit draußen: ruhige dunkle Fläche, die Gebiete schimmern als Sand durch (wie eine Weltübersicht)
         g.globalAlpha = weit; g.fillStyle = '#1a2433'; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
-        g.globalAlpha = weit * .4; for (const [bio, P] of Object.entries(nebelLandPfade())) { g.fillStyle = NEBEL_LAND_FARBE[bio] || '#c9a86a'; g.fill(P); } g.globalAlpha = 1;
+        g.globalAlpha = weit * .4; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); } g.globalAlpha = 1;
     }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore();
     }
@@ -8187,7 +8228,7 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         if (mx < -80 || my < -80 || mx > viewW + 80 || my > viewH + 80) continue;
         const H = Math.max(24, Math.min(110, 2000 * z)), left = opens - Date.now();
         if (left <= 0) continue;
-        drawGatehouse(ctx, mx, my - H * .15, H, 0);
+        if (!karteBilder()) drawGatehouse(ctx, mx, my - H * .15, H, 0);   // (mit den Karten-Bildern steht dort schon das Pass-Tor, 03b)
         const label = fmtPassWait(left);
         ctx.font = '700 11px Inter, system-ui, sans-serif';
         const w = ctx.measureText(label).width + 30, cy = my - H * .15 + H * .42 + 13;

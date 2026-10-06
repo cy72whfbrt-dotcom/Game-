@@ -82,12 +82,11 @@ function fogMask(now) {                                 // canvas over the whole
     return fogMaskCv;
 }
 const nebelWeit = z => Math.max(0, Math.min(1, (0.009 - z) / 0.003));   // 0 = Wolken (nah), 1 = flache Fläche (weit/ganz draußen)
-const NEBEL_LAND_FARBE = { ice: '#dfe7ec', snow: '#b9c4cc', green: '#8fa66a', swamp: '#7c8a5c', volcano: '#9a5a44', sand: '#c9a86a' };
-let nebelLand = null;                                   // Umrisse aller Gebiete je Landschaft (einmal gebaut): schimmern weit draußen durch den Nebel
+let nebelLand = null;                                   // Umrisse aller Gebiete je Boden-Ring (einmal gebaut): schimmern weit draußen durch den Nebel
 function nebelLandPfade() {
     if (nebelLand) return nebelLand;
     nebelLand = {};
-    for (const lm of landmasses) { const P = nebelLand[lm.bio] || (nebelLand[lm.bio] = new Path2D());
+    for (const lm of landmasses) { const P = nebelLand[lm.boden] || (nebelLand[lm.boden] = new Path2D());
         P.moveTo(lm.shape[0].x, lm.shape[0].y); for (const q of lm.shape) P.lineTo(q.x, q.y); P.closePath(); }
     return nebelLand;
 }
@@ -119,7 +118,7 @@ function drawFog(view, now) {
     const weit = nebelWeit(z);
     if (weit > 0) {                                                                                  // weit draußen: ruhige dunkle Fläche, die Gebiete schimmern als Sand durch (wie eine Weltübersicht)
         g.globalAlpha = weit; g.fillStyle = '#1a2433'; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
-        g.globalAlpha = weit * .4; for (const [bio, P] of Object.entries(nebelLandPfade())) { g.fillStyle = NEBEL_LAND_FARBE[bio] || '#c9a86a'; g.fill(P); } g.globalAlpha = 1;
+        g.globalAlpha = weit * .4; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); } g.globalAlpha = 1;
     }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore();
     }
@@ -197,7 +196,7 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         if (mx < -80 || my < -80 || mx > viewW + 80 || my > viewH + 80) continue;
         const H = Math.max(24, Math.min(110, 2000 * z)), left = opens - Date.now();
         if (left <= 0) continue;
-        drawGatehouse(ctx, mx, my - H * .15, H, 0);
+        if (!karteBilder()) drawGatehouse(ctx, mx, my - H * .15, H, 0);   // (mit den Karten-Bildern steht dort schon das Pass-Tor, 03b)
         const label = fmtPassWait(left);
         ctx.font = '700 11px Inter, system-ui, sans-serif';
         const w = ctx.measureText(label).width + 30, cy = my - H * .15 + H * .42 + 13;
