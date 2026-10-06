@@ -316,9 +316,9 @@ function renderRankings() {
     document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts
     for (const b of document.querySelectorAll('#rankTabs [data-rtab]')) { const on = b.dataset.rtab === rankTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     liveHtml(document.getElementById('rankBody'),
-        (rankTab === 'week' ? '<p class="mail-intro lb-intro">Thron-Punkte gibt es fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart.</p>' : '') +
+        (rankTab === 'week' ? '<details class="lb-info"><summary>' + icon('info') + 'So gibt es Thron-Punkte</summary><p class="mail-intro">Fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart.</p></details>' : '') +   // (Erklärung zum Aufklappen: die Liste geht vor)
         (top.length ? top.map((e, i) => rankRowHtml(e, i + 1, medals)).join('') + (list.length > lim ? '<div class="lb-gap">Top ' + lim + ' von ' + fmtNum(list.length) + '</div>' : '')
-        : '<div class="empty-state">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<b>Noch leer</b>' + empty + '</div>'));
+        : '<div class="empty-state lb-leer">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<span><b>Noch leer</b>' + empty + '</span></div>'));   // (kompakt oben statt mitten im leeren Fenster)
     const foot = document.getElementById('rankFoot');
     const myPos = mi + 1;
     liveHtml(foot, myPos > 0 && myPos <= lim ? '' : rankRowHtml(people[0], myPos > 0 ? myPos : '–', false));   // outside the top: your row waits down here

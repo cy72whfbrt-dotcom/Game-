@@ -282,16 +282,18 @@ function heroSvg(id) {
 }
 var hhSeite = 'helden';                               // Reiter der Heldenhalle: Helden | Paare
 function hhGrid() {
-    const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q), zu = list.filter(h => !H[h.id].own);
-    const karte = h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
-        return '<button type="button" class="hh-card' + (s.own ? '' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
-            '<span class="hh-art">' + heroImg(h.id) + '</span>' + (heroCanDo('player', h.id) ? '<span class="hh-dot"></span>' : '') + (s.own ? '' : '<span class="hh-lk">Gesperrt</span>') +
-            '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; };
+    const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q);
+    const bereit = list.filter(h => !H[h.id].own && heroCanDo('player', h.id)), zu = list.filter(h => !H[h.id].own && !bereit.includes(h));   // genug Splitter: oben zum Freischalten
+    const karte = h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r], frei = !s.own && bereit.includes(h);
+        return '<button type="button" class="hh-card' + (s.own ? '' : frei ? ' is-ready' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
+            '<span class="hh-art">' + heroImg(h.id) + '</span>' + (heroCanDo('player', h.id) && !frei ? '<span class="hh-dot"></span>' : '') + (s.own || frei ? '' : '<span class="hh-lk">Gesperrt</span>') +
+            '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : frei ? '<span class="hh-frei" data-hh-frei="' + h.id + '">' + icon('plus') + 'Freischalten</span>'
+                : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; };
     return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="seg hh-seiten">' + [['helden', 'Helden'], ['paare', 'Paare']].map(([k, t]) => '<button type="button" data-hh-seite="' + k + '"' + (hhSeite === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
         (hhSeite === 'paare' ? hhPairs() :
-        '<div class="hh-count">' + (list.length - zu.length) + ' / ' + HEROES.length + ' freigeschaltet · Splitter gibt es von Bossen, für Aufgaben und als Heldenkisten im Shop</div>' +
-        '<div class="hh-cards">' + list.filter(h => H[h.id].own).map(karte).join('') + '</div>' +
+        '<div class="hh-count">' + (list.length - zu.length - bereit.length) + ' / ' + HEROES.length + ' freigeschaltet · Splitter gibt es von Bossen, für Aufgaben und als Heldenkisten im Shop</div>' +
+        '<div class="hh-cards">' + bereit.concat(list.filter(h => H[h.id].own)).map(karte).join('') + '</div>' +
         (zu.length ? '<div class="hh-zu-h">' + zu.length + ' gesperrt</div><div class="hh-cards hh-cards--zu">' + zu.map(karte).join('') + '</div>' : ''));   // gesperrte kleiner darunter
 }
 function hhPairs() {                                  // Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwerte
@@ -305,8 +307,9 @@ function hhPairs() {                                  // Paket E: die passenden 
 function hhHero(id) {
     const h = heroById(id), s = heroSt('player', id), rd = RARITY_DEFS[h.r], st = heroStats('player', id), full = Math.floor(s.q / 4), part = s.q % 4, busy = s.own && heroBusy('player', id);
     const need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], maxed = s.own && s.q >= HERO_MAXQ, free = heroFree(s);
-    const stars = s.own ? '<div class="hh-steps">' + ['¼', '½', '¾', icon('star')].map((t, k) => '<span' + (k < part ? ' class="on"' : '') + '>' + t + '</span>').join('') + '</div>' +
-            (maxed ? '<div class="hh-qinfo"><span>5 Sterne – ganz oben</span><b>' + s.sh + ' Splitter übrig</b></div>' + hhSwapHtml(id, s) : '<div class="hh-qinfo"><span>Nächstes Viertel · Stern ' + (full + 1) + '</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div>')
+    const stars = s.own ? (maxed ? '<div class="hh-qinfo"><span>5 Sterne – ganz oben</span><b>' + s.sh + ' Splitter übrig</b></div>' + hhSwapHtml(id, s)   // (ein Stern = 4 Viertel: erst wie weit der Stern ist, dann die Splitter fürs nächste Viertel)
+            : '<div class="hh-qinfo"><span>Stern ' + (full + 1) + '</span><b>' + part + ' von 4 Vierteln</b></div><div class="hh-steps">' + [0, 1, 2, 3].map(k => '<span' + (k < part ? ' class="on"' : '') + '></span>').join('') + '</div>' +
+              '<div class="hh-qinfo"><span>Nächstes Viertel</span><b>' + s.sh + ' / ' + need + ' Splitter</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div>')
         : '<div class="hh-qinfo"><span>Freischalten</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div><div class="hh-qinfo"><span>Startet danach mit 0 Sternen.</span></div>';
     const skills = h.sk.map((x, k) => { const lv = s.sk[k], max = heroSkillVal(h, k, 5);
         return '<div class="hh-sk' + (s.own ? '' : ' is-locked') + '"><span class="hh-hx' + (k ? '' : ' act') + '" style="--sc:' + h.color + '">' + x[0][0] + '</span><div class="hh-skt"><b>' + x[0] + '</b><small>' + (k ? 'Passiv' : 'Aktiv · bei voller Wut') + ' · Stufe ' + lv + '/5</small>' +
@@ -353,6 +356,8 @@ document.getElementById('heroHall').addEventListener('click', e => {
     if (e.target.closest('[data-hh-close]')) return closeHeroHall();
     const sei = e.target.closest('[data-hh-seite]'); if (sei) { hhSeite = sei.dataset.hhSeite; renderHeroHall(); el.scrollTop = 0; return; }
     if (e.target.closest('[data-hh-back]')) { hhCur = null; renderHeroHall(); el.scrollTop = 0; return; }
+    const fr = e.target.closest('[data-hh-frei]');            // „Freischalten“ auf der Karte: gleich freischalten (wie im Helden-Fenster)
+    if (fr) { const h = heroById(fr.dataset.hhFrei); if (h && heroDoUnlock('player', h.id)) { sfx('upgrade'); flashHint(h.name + ' ist freigeschaltet!', 2500); } return renderHeroHall(); }
     const c = e.target.closest('[data-hh]'); if (c) { hhCur = c.dataset.hh; renderHeroHall(); el.scrollTop = 0; return; }
     if (!hhCur) return; const h = heroById(hhCur), s = heroSt('player', hhCur);
     const sk = e.target.closest('[data-hh-sk]:not([disabled])');

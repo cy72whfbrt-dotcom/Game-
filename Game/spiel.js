@@ -5812,9 +5812,9 @@ function renderRankings() {
     document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts
     for (const b of document.querySelectorAll('#rankTabs [data-rtab]')) { const on = b.dataset.rtab === rankTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     liveHtml(document.getElementById('rankBody'),
-        (rankTab === 'week' ? '<p class="mail-intro lb-intro">Thron-Punkte gibt es fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart.</p>' : '') +
+        (rankTab === 'week' ? '<details class="lb-info"><summary>' + icon('info') + 'So gibt es Thron-Punkte</summary><p class="mail-intro">Fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart.</p></details>' : '') +   // (Erklärung zum Aufklappen: die Liste geht vor)
         (top.length ? top.map((e, i) => rankRowHtml(e, i + 1, medals)).join('') + (list.length > lim ? '<div class="lb-gap">Top ' + lim + ' von ' + fmtNum(list.length) + '</div>' : '')
-        : '<div class="empty-state">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<b>Noch leer</b>' + empty + '</div>'));
+        : '<div class="empty-state lb-leer">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<span><b>Noch leer</b>' + empty + '</span></div>'));   // (kompakt oben statt mitten im leeren Fenster)
     const foot = document.getElementById('rankFoot');
     const myPos = mi + 1;
     liveHtml(foot, myPos > 0 && myPos <= lim ? '' : rankRowHtml(people[0], myPos > 0 ? myPos : '–', false));   // outside the top: your row waits down here
@@ -6639,7 +6639,7 @@ function renderInbox() {
     liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
         return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
             '<button class="btn btn--primary btn--sm" type="button" data-inbox="' + x.id + '"><span>Abholen</span></button></div>'; }).join('') + (L.length > 1 ? '<button class="btn btn--secondary btn--sm inbox-all" type="button" data-inbox-all><span>Alle abholen · ' + L.length + '</span></button>' : '')
-        : '<div class="inbox-empty">' + (dailyClaimable() ? 'Deine tägliche Belohnung wartet gleich hier unten. Sonst gerade nichts zum Abholen – ' : 'Gerade nichts zum Abholen. ') + 'Preise aus Wochen-Event, Invasion, Drache und Tagesboss, das Kopfgeld und das Gold aus deinen Kämpfen landen hier.</div>');
+        : '<div class="inbox-empty">' + (dailyClaimable() ? 'Deine tägliche Belohnung wartet unten.' : 'Gerade nichts zum Abholen.') + '</div>');   // (eine Zeile – Preise und Beute landen hier von selbst)
 }
 goalsPopup.addEventListener('click', e => {
     const one = e.target.closest('[data-inbox]'), all = e.target.closest('[data-inbox-all]'); if (!one && !all) return;
@@ -6740,7 +6740,7 @@ function passRewardAt(L, prem) {                          // what level L gives 
 var passState = null, passArm = 0, passTimer = null;
 function passLoad() { if (!passState) { try { passState = JSON.parse(store.get('openWaterPass')); } catch (e) {} if (!passState || typeof passState !== 'object' || !passState.s) passState = { s: {} }; } return passState; }
 function passSave() { store.set('openWaterPass', JSON.stringify(passLoad())); }
-function passNo(t) { return Math.floor((t - PASS_EPOCH) / PASS_LEN) + 1; }             // Saison-Pass N, the same for everyone
+function passNo(t) { return Math.floor((t - PASS_EPOCH) / PASS_LEN) + 1; }             // Saison-Pass N, the same for everyone (die Nummer zeigt das Spiel nicht: neben „Welt-Saison 1“ verwirrte „Saison-Pass 10“)
 function passEndOf(n) { return PASS_EPOCH + n * PASS_LEN; }
 function passOf(n) { const ps = passLoad(); return ps.s[n] || (ps.s[n] = { xp: 0, prem: false, f: [], p: [] }); }
 function passLvl(x) { return x ? Math.min(PASS_LVLS, Math.floor((x.xp || 0) / PASS_STEP)) : 0; }
@@ -6812,12 +6812,12 @@ function renderPass() {
     passPrune(); const n = passNo(Date.now()), x = passOf(n), L = passLvl(x), xp = x.xp || 0, max = L >= PASS_LVLS, into = max ? PASS_STEP : xp - L * PASS_STEP, hp = hourProduction('player');
     const ready = passReady(n), old = passReady(n - 1), arm = Date.now() - passArm < 4000;
     let h = '<div class="pass-hero' + (x.prem ? ' is-prem' : '') + '"><div class="pass-top"><span class="pass-lvl"><small>Stufe</small><b>' + L + '</b></span>' +
-        '<span class="pass-ht"><b>Saison-Pass ' + n + '</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
+        '<span class="pass-ht"><b>Saison-Pass</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
         '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
         '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
     if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Königliche Kisten, Marsch-Skin „Saisonzug“ (Stufe 20) und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-buy>' + (arm ? '<span>Sicher?</span>' : '') + icon('gem') + '<span>' + fmtNum(PASS_PREMIUM) + '</span></button></div>';
-    if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Saison-Pass ' + (n - 1) + ': ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
+    if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Voriger Saison-Pass: ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
     if (ready.length > 1) h += '<button class="btn btn--primary pass-all" type="button" data-pass-all>' + icon('check') + '<span>Alle abholen · ' + ready.length + '</span></button>';
     h += '<div class="pass-track"><div class="pass-head"><span>Frei</span><span></span><span>' + (x.prem ? '' : icon('lock')) + 'Premium</span></div>';
@@ -9177,16 +9177,18 @@ function heroSvg(id) {
 }
 var hhSeite = 'helden';                               // Reiter der Heldenhalle: Helden | Paare
 function hhGrid() {
-    const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q), zu = list.filter(h => !H[h.id].own);
-    const karte = h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
-        return '<button type="button" class="hh-card' + (s.own ? '' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
-            '<span class="hh-art">' + heroImg(h.id) + '</span>' + (heroCanDo('player', h.id) ? '<span class="hh-dot"></span>' : '') + (s.own ? '' : '<span class="hh-lk">Gesperrt</span>') +
-            '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; };
+    const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q);
+    const bereit = list.filter(h => !H[h.id].own && heroCanDo('player', h.id)), zu = list.filter(h => !H[h.id].own && !bereit.includes(h));   // genug Splitter: oben zum Freischalten
+    const karte = h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r], frei = !s.own && bereit.includes(h);
+        return '<button type="button" class="hh-card' + (s.own ? '' : frei ? ' is-ready' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
+            '<span class="hh-art">' + heroImg(h.id) + '</span>' + (heroCanDo('player', h.id) && !frei ? '<span class="hh-dot"></span>' : '') + (s.own || frei ? '' : '<span class="hh-lk">Gesperrt</span>') +
+            '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : frei ? '<span class="hh-frei" data-hh-frei="' + h.id + '">' + icon('plus') + 'Freischalten</span>'
+                : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; };
     return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="seg hh-seiten">' + [['helden', 'Helden'], ['paare', 'Paare']].map(([k, t]) => '<button type="button" data-hh-seite="' + k + '"' + (hhSeite === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
         (hhSeite === 'paare' ? hhPairs() :
-        '<div class="hh-count">' + (list.length - zu.length) + ' / ' + HEROES.length + ' freigeschaltet · Splitter gibt es von Bossen, für Aufgaben und als Heldenkisten im Shop</div>' +
-        '<div class="hh-cards">' + list.filter(h => H[h.id].own).map(karte).join('') + '</div>' +
+        '<div class="hh-count">' + (list.length - zu.length - bereit.length) + ' / ' + HEROES.length + ' freigeschaltet · Splitter gibt es von Bossen, für Aufgaben und als Heldenkisten im Shop</div>' +
+        '<div class="hh-cards">' + bereit.concat(list.filter(h => H[h.id].own)).map(karte).join('') + '</div>' +
         (zu.length ? '<div class="hh-zu-h">' + zu.length + ' gesperrt</div><div class="hh-cards hh-cards--zu">' + zu.map(karte).join('') + '</div>' : ''));   // gesperrte kleiner darunter
 }
 function hhPairs() {                                  // Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwerte
@@ -9200,8 +9202,9 @@ function hhPairs() {                                  // Paket E: die passenden 
 function hhHero(id) {
     const h = heroById(id), s = heroSt('player', id), rd = RARITY_DEFS[h.r], st = heroStats('player', id), full = Math.floor(s.q / 4), part = s.q % 4, busy = s.own && heroBusy('player', id);
     const need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], maxed = s.own && s.q >= HERO_MAXQ, free = heroFree(s);
-    const stars = s.own ? '<div class="hh-steps">' + ['¼', '½', '¾', icon('star')].map((t, k) => '<span' + (k < part ? ' class="on"' : '') + '>' + t + '</span>').join('') + '</div>' +
-            (maxed ? '<div class="hh-qinfo"><span>5 Sterne – ganz oben</span><b>' + s.sh + ' Splitter übrig</b></div>' + hhSwapHtml(id, s) : '<div class="hh-qinfo"><span>Nächstes Viertel · Stern ' + (full + 1) + '</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div>')
+    const stars = s.own ? (maxed ? '<div class="hh-qinfo"><span>5 Sterne – ganz oben</span><b>' + s.sh + ' Splitter übrig</b></div>' + hhSwapHtml(id, s)   // (ein Stern = 4 Viertel: erst wie weit der Stern ist, dann die Splitter fürs nächste Viertel)
+            : '<div class="hh-qinfo"><span>Stern ' + (full + 1) + '</span><b>' + part + ' von 4 Vierteln</b></div><div class="hh-steps">' + [0, 1, 2, 3].map(k => '<span' + (k < part ? ' class="on"' : '') + '></span>').join('') + '</div>' +
+              '<div class="hh-qinfo"><span>Nächstes Viertel</span><b>' + s.sh + ' / ' + need + ' Splitter</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div>')
         : '<div class="hh-qinfo"><span>Freischalten</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div><div class="hh-qinfo"><span>Startet danach mit 0 Sternen.</span></div>';
     const skills = h.sk.map((x, k) => { const lv = s.sk[k], max = heroSkillVal(h, k, 5);
         return '<div class="hh-sk' + (s.own ? '' : ' is-locked') + '"><span class="hh-hx' + (k ? '' : ' act') + '" style="--sc:' + h.color + '">' + x[0][0] + '</span><div class="hh-skt"><b>' + x[0] + '</b><small>' + (k ? 'Passiv' : 'Aktiv · bei voller Wut') + ' · Stufe ' + lv + '/5</small>' +
@@ -9248,6 +9251,8 @@ document.getElementById('heroHall').addEventListener('click', e => {
     if (e.target.closest('[data-hh-close]')) return closeHeroHall();
     const sei = e.target.closest('[data-hh-seite]'); if (sei) { hhSeite = sei.dataset.hhSeite; renderHeroHall(); el.scrollTop = 0; return; }
     if (e.target.closest('[data-hh-back]')) { hhCur = null; renderHeroHall(); el.scrollTop = 0; return; }
+    const fr = e.target.closest('[data-hh-frei]');            // „Freischalten“ auf der Karte: gleich freischalten (wie im Helden-Fenster)
+    if (fr) { const h = heroById(fr.dataset.hhFrei); if (h && heroDoUnlock('player', h.id)) { sfx('upgrade'); flashHint(h.name + ' ist freigeschaltet!', 2500); } return renderHeroHall(); }
     const c = e.target.closest('[data-hh]'); if (c) { hhCur = c.dataset.hh; renderHeroHall(); el.scrollTop = 0; return; }
     if (!hhCur) return; const h = heroById(hhCur), s = heroSt('player', hhCur);
     const sk = e.target.closest('[data-hh-sk]:not([disabled])');
@@ -11360,8 +11365,11 @@ function evBossHtml() {                              // Reiter „Boss & Lager�
 function evOffen() { return isPanelOpen(goalsPopup) && EV_TABS.includes(goalsTab); }
 function renderEvents() {
     evRenderAt = Date.now();
-    liveHtml(document.getElementById('eventBody'), saisonKarte() + (evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evBossHtml()));   // (oben immer die Welt-Saison mit Countdown)
+    const sk = saisonKarte(), oben = sk && saisonOben(Date.now()), sz = sk ? '<div class="ev-saison">' + sk + '</div>' : '';
+    liveHtml(document.getElementById('eventBody'), (oben ? sz : '') + (evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evBossHtml()) + (!oben && evTab === 'tour' ? sz : ''));
 }
+// Welt-Saison: nur in den letzten 3 Tagen (oder angehalten) oben in jedem Reiter – sonst unten im Wochen-Event (der Inhalt des Reiters geht vor)
+function saisonOben(now) { return !!(saison && (saison.halt || saison.ende - now <= SAISON_BALD_MS)); }
 document.getElementById('eventBody').addEventListener('click', e => {
     const go = e.target.closest('[data-ev-go]'); if (!go) return; const k = go.dataset.evGo;
     let t = null, v = null;
