@@ -1671,6 +1671,9 @@ Nacht – vorher bauen und testen.
     Grenztor 14 im Knick, Tor-Messung senkrecht fehlerhaft (immer 0°). Server-Test klick_test (Tor antippen) noch nicht gelaufen.
 28. **Kleinigkeiten:** Invasionsleiste zeigt „0 P.“ – versteht kein Spieler; handy_tipp_test rot während Invasion (Leiste zeigt
     nur Invasion statt Wochen-Event-Chip).
+29. **Server-Test klick_test rot (auch ohne Kartenänderung, Stand ff506e7):** „Basis erobert“ – Angriff auf die nächste neutrale
+    Basis startet, nach 120 s gehört sie dem Spieler nicht. Echter Fehler oder Test-Zeitgrenze? → Sucher klären (Prüfer-Log
+    scratchpad/pr_srv/klick_lauf.log + klick_basis.log).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
