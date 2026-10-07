@@ -9243,8 +9243,8 @@ function cityShow() {
 }
 // Eintauchen wie bei RoK: die Kamera fliegt bis kurz vor die Hauptstadt (CITY_NAH × größter Zoom, die Basis noch klein),
 // die Karte taucht noch ein Stück weiter (nur ein CSS-Zoom des Karten-Bilds, höchstens CITY_TAUCH – sonst wird das flache
-// Basis-Symbol riesig und unscharf) und wird weich; schon bei ~40 % blendet die Stadt darüber und kommt von unten näher,
-// dünne Wolken am Rand decken die Kanten. Beim Verlassen umgekehrt: die Stadt fällt weg und blendet aus, die Karte kommt
+// Basis-Symbol riesig und unscharf) und wird weich; schon bei ~40 % blendet die Stadt darüber und setzt sich aus der Nähe,
+// dünne Wolken am Rand decken die Kanten. Beim Verlassen umgekehrt: die Stadt rückt näher und blendet aus, die Karte kommt
 // aus der Nähe zurück auf ihre Höhe.
 const CITY_TAUCH = 1.8, CITY_NAH = .4, CITY_TAUCH_MS = 700, CITY_BLENDE_AB = 280, CITY_BLENDE_MS = 320;
 function karteTauchen(von, bis, ms, isl) {
@@ -9271,8 +9271,8 @@ function openCity(dann) {                                                   // d
     setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, CITY_TAUCH_MS, home);   // 2) … dives on a little, getting soft …
         let offen = 2; const fertig = () => { if (--offen === 0) cityBusy = false; };   // frei erst, wenn die Wolken weg sind UND die Karte nicht mehr eintaucht
         cloudsRun(240, 0, .35, () => cloudsRun(300, .35, 0, fertig));      // (nur Wolken am Rand, nie ganz weiß – ab dem Tipp nach 1,1 s ganz weg)
-        setTimeout(() => { cityShow(); stadtBlende(0, 1); if (dann) dann();    // 3) … and the town fades in, coming up from below
-            if (cityCam) cityCam.anim = { from: .62, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
+        setTimeout(() => { cityShow(); stadtBlende(0, 1); if (dann) dann();    // 3) … and the town fades in, settling from close by
+            if (cityCam) cityCam.anim = { from: 1.18, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
         setTimeout(() => { if (tauch) tauch.cancel(); fertig(); }, CITY_TAUCH_MS); }, 560);
 }
 let cityPendingAnim = false;
@@ -9283,11 +9283,11 @@ function closeCity() {
     const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
     cityMapReturn = null;
     if (home) flyTo(home.x, home.y, { zoom: maxZoom * CITY_NAH, instant: true });   // unter der Stadt liegt die Karte schon über der Hauptstadt
-    if (cityCam) cityCam.anim = { from: 1, to: .62, t0: performance.now(), dur: 650 };   // the town falls away …
+    if (cityCam) cityCam.anim = { from: 1, to: 1.18, t0: performance.now(), dur: 650 };   // the town draws close as it fades …
     const auf = karteTauchen(CITY_TAUCH, 1, 650, home);                      // … the map comes back up from close by …
     cloudsRun(300, 0, .35, () => cloudsRun(500, .35, 0));
     let offen = 2; const fertig = () => { if (--offen === 0) cityBusy = false; };   // frei erst, wenn die Stadt weg ist UND die Karte zurückfliegt (unter Last kann das Ausblenden länger dauern)
-    setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); cityLagenFrei(); requestRender(); fertig(); }), 120);
+    setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); requestRender(); fertig(); }), 120);
     setTimeout(() => { if (auf) auf.cancel();
         flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });                // … and opens up again where it was
         fertig(); }, 650);
@@ -9402,20 +9402,14 @@ function cityNutz(id, lvl) {                       // die eigene Seite eines Geb
     if (!lvl) return null;
     return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], wall: ['Helden', 'defense'] }[id] || null;   // (Mauer: die Verteidigungs-Helden)
 }
-function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt (noch nicht gebaut: das Gebäude der Stufe 1, ausgegraut – jedes sein eigenes)
-    if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
-    const t = cityTierOf(lvl) || 1;
-    if (id === 'wall') return citySprite('gatehouse', t);
-    return citySprite(id, t, id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '');
-}
-function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben links im Fenster (nur neu gemalt, wenn sich die Stufe ändert)
-    const el = document.getElementById('cityBIcon'), s = cityBildSpr(id, lvl), zu = id !== 'keep' && !lvl, key = id + ':' + (id === 'keep' ? Math.floor((lvl || 1) / 5) : cityTierOf(lvl)) + ':' + s.c.width;
-    el.classList.toggle('is-zu', zu);
+function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben links im Fenster: sein Ausschnitt aus dem Stadtbild (noch nicht gebaut: ausgegraut)
+    const el = document.getElementById('cityBIcon'), im = cityBild(), o = cityOrt(id === 'keep' ? '_keep' : id), key = id + ':' + (im ? 'bild' : 'leer');
+    el.classList.toggle('is-zu', id !== 'keep' && !lvl);
     if (el.dataset.bild === key && el.firstChild && el.firstChild.tagName === 'CANVAS') return;
     el.dataset.bild = key; el._lh = undefined;
     const N = 192, cv = document.createElement('canvas'); cv.width = cv.height = N;
-    const g = cv.getContext('2d'), f = Math.min(N / s.c.width, N / s.c.height) * 1.08, w = s.c.width * f, h = s.c.height * f;
-    g.imageSmoothingQuality = 'high'; g.drawImage(s.c, (N - w) / 2, Math.min(N - h, (N - h) / 2 + N * .04), w, h);
+    if (im && o) { const a = Math.max(o.w, o.h), x = Math.max(0, Math.min(CITY_BILD_W - a, o.x - a / 2)), y = Math.max(0, Math.min(CITY_BILD_H - a, o.y - a / 2));
+        const g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, x, y, a, a, 0, 0, N, N); }
     el.replaceChildren(cv);
 }
 function anfZeile(ok, ic, txt, val, geh) {         // eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz – geh [Fenster, Knopf]: fehlt ein Gebäude, springt der Knopf dorthin
@@ -10107,513 +10101,53 @@ document.getElementById('citySpeedBtn').addEventListener('click', e => {
     if (!gemsWirklich('speed:' + id, cost, e.currentTarget)) return;
     gems -= cost; saveGame(); updateHud(); cityFinishBuild(true, id);
 });
-// ===== THE CITY, ISOMETRIC =====
-// Your capital like in the big mobile strategy games: a walled town seen from above at an angle, every building on
-// its own lot and growing with its level, the keep in the middle; outside the land of the world map around your capital
-// (woods where the map has forest, the coast where it has sea), people walking the streets. Drag to move, pinch or wheel to zoom, tap a building to open it.
-// World: 640 × 640 units (a tile is 10), the same isometric projection as the buildings on the map.
-const CW = 640, CC = 320;                                                   // world size and centre
-const CITY_WALL = { a: 150, b: 490 };                                       // the curtain wall (square, world units)
-// Die Stadt im Raster (Alexander 2.10.: „innen Base neu“): 12 Bauplätze rund um den Burgplatz (4 × 4, die Mitte ist die Burg),
-// Straßen dazwischen wie ein „#“, vorn das Tor mit der Hauptstraße. Draußen nur Landschaft (Alexander 6.10.: wie bei RoK
-// liegt die Stadt in der Weltkarte – keine Felder, Mühle oder Höfe): Wald, Küste und Meer wie auf der Karte, Berge, ein Fluss.
-const CITY_LOTS = {                                                          // building lots (ground centre, world units)
-    lumber: [206, 206], academy: [282, 206], heroes: [358, 206], quarry: [434, 206],
-    forge: [206, 282],
-    embassy: [206, 358],
-    hospital: [282, 434], market: [358, 434], mine: [434, 434],
-    wall: [320, 490]                                                         // Rohstoffe: in der Base (Alexander 4.10.)
+// ===== DIE STADT ALS BILD (Alexander 7.10.: „KI-Bilder statt Code“) =====
+// Die ganze Hauptstadt ist EIN gemaltes Bild (bilder/stadt_gross.webp, 1536 × 1024): Burg, Labor, Krankenhaus, Markt, Heldenhalle,
+// Botschaft, Schmiede, Holzfäller, Steinbruch, Eisenmine und die Mauer ringsum. Das Bild füllt den Bildschirm (Handy hoch: breiter
+// als der Bildschirm – wischen), Finger/Mausrad zoomen. Über jedem Gebäude ein Schild „Name / Stufe N“ (08f), Tippen öffnet es.
+const CITY_BILD_W = 1536, CITY_BILD_H = 1024;
+// Gebäude im Bild (Prozent): [Mitte x, Mitte y, Breite, Höhe, Schild y] – die Mitte trifft das Gebäude, das Schild sitzt darunter
+const CITY_ORTE = {
+    _keep:    [49, 21, 34, 36, 31],
+    academy:  [16, 18, 22, 24, 27],
+    forge:    [87, 24, 23, 21, 32],
+    hospital: [17, 45, 22, 23, 53],
+    wall:     [40, 43, 16, 14, 47],
+    heroes:   [70, 47, 17, 25, 57],
+    embassy:  [89, 50, 18, 25, 59],
+    market:   [43, 59, 22, 16, 66],
+    lumber:   [15, 73, 25, 18, 80],
+    quarry:   [40, 84, 29, 22, 86],
+    mine:     [85, 82, 23, 28, 86]
 };
-const CITY_DRAUSSEN = new Set();
-const CITY_KEEP_AT = [320, 320];
-const cIso = (x, y) => [(x - y) * .866, (x + y) * .5];                    // world → screen units (before zoom)
-let cityCam = null, cityPointers = new Map(), cityGesture = null, CITY_GROUND = null, CITY_WALLS = null, CITY_SPRITES = new Map();
-let CITY_BG_COL = '#4f8237';
-const CITY_BAKE = 2.5;                                                         // ground canvas pixels per screen unit
-const CITY_BOUNDS = { x0: -CW * .866 - 40, x1: CW * .866 + 40, y0: -130, y1: CW + 80 };   // screen units covered by the ground
-
-function cityTexture(seed, base, spots, n, size) {   // small tileable noise texture for grass / cobbles / fields
-    const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d'), r = mulberry32(seed);
-    g.fillStyle = base; g.fillRect(0, 0, size, size);
-    for (let i = 0; i < n; i++) { g.fillStyle = spots[Math.floor(r() * spots.length)]; const x = r() * size, y = r() * size, w = 1 + r() * 3;
-        for (const dx of [0, -size, size]) for (const dy of [0, -size, size]) g.fillRect(x + dx, y + dy, w, w * (.6 + r())); }
-    return c;
-}
-// a world-space polygon on the ground, drawn in screen units
-function cityGroundPoly(g, pts, fill, stroke, lw) {
-    g.beginPath(); pts.forEach((q, i) => { const [sx, sy] = cIso(q[0], q[1]); i ? g.lineTo(sx, sy) : g.moveTo(sx, sy); }); g.closePath();
-    if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); }
-}
-const cityRect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
-function cityStrip(g, pts, w, fill) {                                        // a street along world points: flat quads on the ground (iso-correct)
-    for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], L = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / L * w / 2, ny = (x1 - x0) / L * w / 2;
-        const ex = (x1 - x0) / L * w * .25, ey = (y1 - y0) / L * w * .25;    // a little overlap: no seams at the bends
-        cityGroundPoly(g, [[x0 + nx - ex, y0 + ny - ey], [x1 + nx + ex, y1 + ny + ey], [x1 - nx + ex, y1 - ny + ey], [x0 - nx - ex, y0 - ny - ey]], fill); }
-}
-// a small painter: iso kit on a scaled context, anchored at the ground point (ax, ay) of the canvas
-const CITY_INK = 'rgba(52,38,24,.42)';                                      // softer outlines than on the map: the town is seen up close
-function cityPainter(g, scale, ax, ay) { g.setTransform(scale, 0, 0, scale, ax, ay); g.lineJoin = 'round'; return isoKit(g, 0, CITY_INK); }
-function cityZiegel(K, a0, a1, b0, b1, n, col) {                            // Ziegel-Reihen: n Linien zwischen Traufe (a0→a1) und First (b0→b1)
-    const g = K.g; if (!g) return; g.save(); g.strokeStyle = col; g.lineWidth = .45;
-    for (let i = 1; i < n; i++) { const t = i / n; g.beginPath(); g.moveTo(a0[0] + (b0[0] - a0[0]) * t, a0[1] + (b0[1] - a0[1]) * t); g.lineTo(a1[0] + (b1[0] - a1[0]) * t, a1[1] + (b1[1] - a1[1]) * t); g.stroke(); }
-    g.restore();
-}
-function cityKante(K, p, q, col, w) { const g = K.g; if (!g) return; g.save(); g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); g.restore(); }
-function cityGable(K, x0, x1, y0, y1, z, h, col) {                           // pitched roof, ridge along x
-    const yc = (y0 + y1) / 2, n = Math.max(3, Math.round(h / 1.8));
-    K.poly([K.P(x0, y1, z), K.P(x1, y1, z), K.P(x1, yc, z + h), K.P(x0, yc, z + h)], shade(col, .95));
-    K.poly([K.P(x1, y0, z), K.P(x1, y1, z), K.P(x1, yc, z + h)], shade(col, .7));
-    K.poly([K.P(x0, y0, z), K.P(x1, y0, z), K.P(x1, yc, z + h), K.P(x0, yc, z + h)], shade(col, 1.15), .6);   // back slope peeks over the ridge line
-    K.poly([K.P(x0, y1, z), K.P(x1, y1, z), K.P(x1, yc, z + h), K.P(x0, yc, z + h)], shade(col, .95));
-    cityZiegel(K, K.P(x0, y1, z), K.P(x1, y1, z), K.P(x0, yc, z + h), K.P(x1, yc, z + h), n, shade(col, .74));
-    cityKante(K, K.P(x0, yc, z + h), K.P(x1, yc, z + h), shade(col, 1.35), .9); cityKante(K, K.P(x0, y1, z), K.P(x1, y1, z), shade(col, .5), 1);
-}
-function cityGableY(K, x0, x1, y0, y1, z, h, col) {                          // pitched roof, ridge along y
-    const xc = (x0 + x1) / 2, n = Math.max(3, Math.round(h / 1.8));
-    K.poly([K.P(x0, y0, z), K.P(xc, y0, z + h), K.P(xc, y1, z + h), K.P(x0, y1, z)], shade(col, 1.12), .6);
-    K.poly([K.P(x1, y0, z), K.P(x1, y1, z), K.P(xc, y1, z + h), K.P(xc, y0, z + h)], shade(col, .72));
-    K.poly([K.P(x0, y1, z), K.P(x1, y1, z), K.P(xc, y1, z + h)], shade(col, .92));
-    cityZiegel(K, K.P(x0, y0, z), K.P(x0, y1, z), K.P(xc, y0, z + h), K.P(xc, y1, z + h), n, shade(col, .85));
-    cityZiegel(K, K.P(x1, y0, z), K.P(x1, y1, z), K.P(xc, y0, z + h), K.P(xc, y1, z + h), n, shade(col, .55));
-    cityKante(K, K.P(xc, y0, z + h), K.P(xc, y1, z + h), shade(col, 1.35), .9);
-}
-function cityWindows(K, x0, x1, y, z, n, lit) {                              // a row of windows on the front (y) face
-    for (let i = 0; i < n; i++) { const x = x0 + (x1 - x0) * (i + .5) / n, [a, b] = K.P(x, y, z);
-        K.poly([[a - 1, b], [a + 1, b - .6], [a + 1, b - 3.6], [a - 1, b - 3]], lit ? '#f2c46a' : '#2b2520', .4); }
-}
-function cityWindowsR(K, x, y0, y1, z, n) {                                   // on the right (x) face
-    for (let i = 0; i < n; i++) { const y = y0 + (y1 - y0) * (i + .5) / n, [a, b] = K.P(x, y, z);
-        K.poly([[a - 1, b - .6], [a + 1, b], [a + 1, b - 3], [a - 1, b - 3.6]], '#2b2520', .4); }
-}
-function cityDoor(K, x, y, h) { const [a, b] = K.P(x, y, 0); K.poly([[a - 2, b + 1], [a + 2, b + 1 - 1.2], [a + 2, b - h], [a, b - h - 1.4], [a - 2, b - h + 1.2]], '#3a2616', .6); }
-function cityBanner(K, x, y, z, col) { const [a, b] = K.P(x, y, z); K.poly([[a - 1.6, b], [a + 1.6, b - .9], [a + 1.6, b + 7], [a, b + 9], [a - 1.6, b + 8]], col, .5); }
-function cityPlinth(K, r, h, col) { K.box(-r, r, -r, r, 0, h, col || '#a89f8c', .8); }
-
-// tiers: 0 = empty lot, 1 = lvl 1-4, 2 = 5-14, 3 = 15+
-const cityTierOf = lvl => !lvl ? 0 : lvl >= 15 ? 3 : lvl >= 5 ? 2 : 1;
-const CITY_PAINT = {
-    plot(K) {                                                                // fenced building site
-        K.poly([K.P(-20, -20, 0), K.P(20, -20, 0), K.P(20, 20, 0), K.P(-20, 20, 0)], '#9c8058', .6);
-        for (let i = -20; i <= 20; i += 5) { K.box(i - .6, i + .6, 19.4, 20.6, 0, 3.5, '#6b4a2c', .4); K.box(19.4, 20.6, i - .6, i + .6, 0, 3.5, '#6b4a2c', .4); }
-        K.box(-20, 20, 19.7, 20.3, 2.4, 3, '#7d5834', .3); K.box(19.7, 20.3, -20, 20, 2.4, 3, '#7d5834', .3);
-        for (let i = 0; i < 3; i++) K.box(-12, 2, -8 + i * 3.2, -5.6 + i * 3.2, 0, 2.4, i % 2 ? '#a0783f' : '#8a6634', .4);   // timber
-        for (const [x, y] of [[8, -8], [11, -3], [6, -2]]) K.box(x, x + 4, y, y + 4, 0, 3, '#9d9585', .4);                   // stones
-        K.box(12, 13, 10, 11, 0, 12, '#6b4a2c', .4); K.box(8, 17, 10.4, 10.9, 9, 14, '#e6d8b4', .4);                         // sign
-    },
-    keep(K, t) {                                                             // deine Burg: Ringmauer mit Ecktürmen, Halle, Bergfried, Torhaus – wächst mit der Burg-Stufe (0–4)
-        const st = STONE, roof = '#3a78c8', gold = '#e2b043', w = 28, z0 = 4, wh = z0 + 12 + t * 2, h = z0 + 28 + t * 5;
-        K.box(-36, 36, -36, 36, 0, 2.2, '#9d9585', .7); K.box(-33, 33, -33, 33, 2.2, z0, '#b8b0a0', .6);          // Sockel in zwei Stufen
-        const turm = (x, y, big) => { const r = big ? 7 : 6, th = wh + 8 + (big ? 3 : 0); K.cyl(x, y, r, z0, th, st, .8); K.cyl(x, y, r + .9, th, th + 2, shade(st, 1.06), .6);
-            K.cone(x, y, r + 1.6, th + 2, 11 + t * 1.5, t >= 3 && big ? gold : roof); const [a, b] = K.P(x, y, th + 15 + t * 1.5); K.flag(a, b, BAND.player, true); };
-        K.box(-w, w, -w, -w + 3, z0, wh, shade(st, .92), .7); K.box(-w, -w + 3, -w, w, z0, wh, shade(st, .92), .7);   // hinten: Mauern + Turm
-        turm(-w, -w, false);
-        K.box(-24, -13, -10, 16, z0, z0 + 14, '#ebe4d4', .8); cityGableY(K, -25, -12, -11, 17, z0 + 14, 9, roof); cityWindows(K, -22, -15, 16, z0 + 10, 2, true);   // die Halle links
-        if (t >= 1) { K.box(6, 21, -24, -13, z0, z0 + 12, '#ebe4d4', .7); cityGable(K, 5, 22, -25, -12, z0 + 12, 7, roof); cityWindows(K, 8, 19, -13, z0 + 9, 3, true); }   // die Kapelle rechts
-        const dw = 9 + Math.min(t, 2);                                                                                  // der Bergfried
-        K.box(-dw, dw, -dw + 2, dw + 2, z0, h, st, .9); K.merlons(-dw, dw, -dw + 2, dw + 2, h, st, 4);
-        cityWindows(K, -dw + 3, dw - 3, dw + 2, h - 7, 3, true); cityWindows(K, -dw + 3, dw - 3, dw + 2, h - 17, 3, false); cityWindowsR(K, dw, -dw + 5, dw - 1, h - 7, 3);
-        cityBanner(K, -dw + 3.5, dw + 2.2, h - 21, '#2b5d9b'); cityBanner(K, dw - 3.5, dw + 2.2, h - 21, '#2b5d9b');
-        if (t >= 2) { const h2 = h + 9 + t * 2; K.box(-6, 6, -4, 8, h, h2, st, .8); K.merlons(-6, 6, -4, 8, h2, st, 3); K.pyramid(0, 2, 7.6, h2 + 1.8, 13, t >= 4 ? gold : roof); }
-        else K.pyramid(0, 2, dw + 1.4, h + 1.8, 13, roof);
-        if (t >= 3) { K.cyl(dw, -dw + 2, 3.4, h - 6, h + 8, st, .6); K.cone(dw, -dw + 2, 4.4, h + 8, 8, gold); }
-        turm(w, -w, false); turm(-w, w, false);
-        K.box(w - 3, w, -w, w, z0, wh, st, .7); K.box(-w, w, w - 3, w, z0, wh, st, .7); K.merlons(-w, w, -w, w, wh, st, 8);   // vorn: Mauern, Torhaus, großer Eckturm
-        K.box(-8, 8, w - 6, w + 3, z0, wh + 7, shade(st, 1.03), .8); K.merlons(-8, 8, w - 6, w + 3, wh + 7, st, 3);
-        const [gx, gy] = K.P(0, w + 3, z0); K.poly([[gx - 5, gy + 2.9], [gx + 5, gy - 2.9], [gx + 5, gy - 12], [gx, gy - 16], [gx - 5, gy - 9]], '#241810', .7);
-        for (const dx of [-2.5, 0, 2.5]) { const [p1, p2] = K.P(dx, w + 3.05, z0 + .5), [q1, q2] = K.P(dx, w + 3.05, z0 + 10.5 - Math.abs(dx)); cityKante(K, [p1, p2], [q1, q2], 'rgba(120,110,95,.75)', .6); }   // Fallgatter
-        cityBanner(K, -5.5, w + 3.2, wh + 4, '#2b5d9b'); cityBanner(K, 5.5, w + 3.2, wh + 4, '#2b5d9b');
-        turm(w, w, true);
-    },
-    academy(K, t) {
-        cityPlinth(K, 21, 2);
-        K.box(-16, 14, -11, 11, 2, 15, '#efe7d4', .8); cityGable(K, -17, 15, -12, 12, 15, 9, '#2f4f86'); cityWindows(K, -14, 12, 11, 12, 5, false);
-        for (const x of [-12, -6, 0, 6, 12]) K.cyl(x, 14, 1.3, 2, 14, '#f3ecdc', .5, true);
-        K.box(-16, 14, 13, 15, 14, 15.5, '#f3ecdc', .5);
-        if (t >= 2) { K.cyl(10, -4, 6.5, 15, 25, '#e6dcc6', .7); K.dome(10, -4, 7, 25, 9, '#6f9bd8'); }
-        if (t >= 3) { K.box(-20, -12, -18, -8, 2, 22, '#e6dcc6', .7); K.pyramid(-16, -13, 5, 22, 8, '#2f4f86'); cityBanner(K, -14, 11.2, 14, '#2f4f86'); cityBanner(K, 12, 11.2, 14, '#2f4f86'); }
-    },
-    forge(K, t) {
-        cityPlinth(K, 21, 2, '#8e8676');
-        K.box(-15, 13, -10, 10, 2, 13, '#d9ccb2', .8); cityGable(K, -16, 14, -11, 11, 13, 8, '#3c3c44'); cityWindows(K, -12, 10, 10, 10, 3, true);
-        K.box(-12, -6, -8, -2, 2, 30, '#6b6456', .7);                                                                   // chimney
-        const [fx, fy] = K.P(4, 10, 2); K.poly([[fx - 3, fy + 1.7], [fx + 3, fy - 1.7], [fx + 3, fy - 7], [fx - 3, fy - 3.6]], '#ff8c2a', .6);   // furnace glow
-        K.box(14, 18, 12, 15, 2, 5, '#3a3a40', .5); K.box(15, 17, 12.8, 14.2, 5, 6, '#2c2c30', .4);                      // anvil
-        if (t >= 2) { K.box(2, 18, -18, -8, 2, 10, '#cfc2a8', .7); cityGable(K, 1, 19, -19, -7, 10, 6, '#4a4a52'); }
-        if (t >= 3) { K.box(10, 15, -2, 3, 2, 26, '#6b6456', .7); cityBanner(K, -10, 10.2, 12, '#4a4a52'); }
-    },
-    hospital(K, t) {
-        cityPlinth(K, 21, 2);
-        K.box(-15, 13, -10, 10, 2, 13, '#fbf7ee', .8); cityGable(K, -16, 14, -11, 11, 13, 8, '#b33a2e'); cityWindows(K, -12, 10, 10, 9, 4, false);
-        const [cx, cy] = K.P(-1, 10, 11); g2Cross(K.poly, cx, cy);
-        K.pyramid(14, 14, 5, 2, 8, '#e8e2d2');
-        if (t >= 2) { K.pyramid(-15, 15, 5, 2, 8, '#e8e2d2'); K.box(-18, -8, -19, -12, 2, 9, '#f3eee2', .7); cityGable(K, -19, -7, -20, -11, 9, 5, '#b33a2e'); }
-        if (t >= 3) { for (const [x, y] of [[4, 17], [9, 17]]) { const [a, b] = K.P(x, y, 2); K.poly([[a - 2, b], [a, b - 1], [a + 2, b], [a, b + 1]], '#6aa84f', .3); } cityBanner(K, 12, 10.2, 12, '#c0392b'); }
-    },
-    heroes(K, t) {
-        cityPlinth(K, 21, 2);
-        K.box(-17, 15, -12, 8, 2, 16, '#efe6d2', .8); cityGable(K, -18, 16, -13, 9, 16, 12, '#7a2e2a'); cityWindows(K, -14, 12, 8, 13, 5, true);
-        if (t >= 2) { K.box(-6, 4, -6, 2, 16, 30, '#e6dcc6', .7); K.pyramid(-1, -2, 6, 30, 10, '#7a2e2a'); }
-        const on = Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3);   // a lit statue for every third of the heroes
-        [0, 1, 2].forEach(i => { const x = -10 + i * 10; K.box(x - 2, x + 2, 13, 17, 2, 5, '#8a7f68', .5); K.cyl(x, 15, 1.4, 5, 10, i < on ? '#d9b454' : '#9a927f', .4); });
-        cityBanner(K, -15, 8.2, 14, '#7a2e2a'); cityBanner(K, 13, 8.2, 14, '#7a2e2a'); if (t >= 3) cityBanner(K, -1, 2.2, 26, '#e4c886');
-    },
-    gatehouse(K, t) {                                                       // the gate in the front wall = the Mauer building
-        if (!t) { K.box(-14, -8, -4, 4, 0, 14, '#8a6440', .6); K.box(8, 14, -4, 4, 0, 14, '#8a6440', .6); K.box(-14, 14, -4, 4, 14, 17, '#6b4a2c', .6);
-            const [a, b] = K.P(0, 4, 0); K.poly([[a - 7, b + 4], [a + 7, b - 4], [a + 7, b - 16], [a - 7, b - 8]], '#5a3d24', .6); return; }
-        const s = STONE, h = [0, 20, 25, 28][t], roof = t >= 3 ? '#d9a93f' : t >= 2 ? '#2f5e9a' : '#8a3a2a';
-        K.box(-12, 12, -6, 6, 0, h, s, .8); K.merlons(-12, 12, -6, 6, h, s, 4);
-        const [a, b] = K.P(0, 6, 0); K.poly([[a - 6, b + 3.5], [a + 6, b - 3.5], [a + 6, b - 13], [a, b - 17], [a - 6, b - 9.5]], '#1b140e', .7);      // archway
-        K.poly([[a - 5, b - 9], [a + 5, b - 14.5], [a + 5, b - 12], [a - 5, b - 6.5]], 'rgba(60,54,44,.8)', .4);                                   // portcullis bar
-        for (const x of [-15, 15]) { K.cyl(x, 0, 7, 0, h + 6, s, .8); K.cone(x, 0, 8.5, h + 6, 10 + t * 2, roof); const [fa, fb] = K.P(x, 0, h + 16 + t * 2); K.flag(fa, fb, BAND.player, true); }
-        if (t >= 2) { cityBanner(K, -6, 6.2, h - 3, '#2b5d9b'); cityBanner(K, 6, 6.2, h - 3, '#2b5d9b'); }
-    },
-    lumber(K, t) {                                                          // Holzfäller: Hütte, Stämme, Sägebock, Bäume drumherum
-        K.box(-16, 0, -14, -2, 0, 9, '#9a7448', .7); cityGable(K, -17, 1, -15, -1, 9, 6, '#3f6b33'); cityDoor(K, -8, -2, 6); cityWindows(K, -14, -10, -2, 7, 1, false);
-        for (let i = 0; i < 2 + t; i++) for (let j = 0; j < 3 - (i % 2); j++) K.box(2 + j * 4.2 + (i % 2) * 2.1, 5.6 + j * 4.2 + (i % 2) * 2.1, 2, 16, i * 3, i * 3 + 3, j % 2 ? '#a0783f' : '#8a6634', .4);   // Stammstapel
-        K.box(-12, -2, 6, 8, 0, 4, '#6b4a2c', .4); K.box(-11, -10, 6, 8, 4, 6, '#6b4a2c', .3); K.box(-4, -3, 6, 8, 4, 6, '#6b4a2c', .3);   // Sägebock
-        for (const [x, y, h] of [[17, -14, 18], [12, -18, 14], [-19, 12, 16], [19, 15, 13]].slice(0, 2 + t)) { K.cyl(x, y, 1.1, 0, h * .45, '#5a3d24', .4); K.cone(x, y, 5, h * .35, h * .8, '#2f6a2a'); }
-    },
-    quarry(K, t) {                                                          // Steinbruch: grauer Fels, Quader, ein Holzkran
-        K.pyramid(-6, -6, 13, 0, 14 + t * 4, '#8f8a80'); K.pyramid(4, -12, 8, 0, 9 + t * 2, '#a39e93');
-        for (const [x, y] of [[8, 6], [13, 9], [10, 13], [3, 12]].slice(0, 2 + t)) K.box(x - 2.4, x + 2.4, y - 2.4, y + 2.4, 0, 4.2, '#bdb6a8', .5);
-        K.box(13, 14.2, -4, -2.8, 0, 22, '#6b4a2c', .4); K.box(5, 14.2, -3.9, -2.9, 20, 21.2, '#6b4a2c', .4);   // Kran
-        const [a, b] = K.P(6, -3.4, 20); K.poly([[a - .3, b], [a + .3, b], [a + .3, b + 10], [a - .3, b + 10]], '#3a2616', .2);
-        if (t >= 2) { K.box(-18, -10, 8, 16, 0, 6, '#9a7448', .5); cityGable(K, -19, -9, 7, 17, 6, 4, '#7a6a52'); }
-    },
-    mine(K, t) {                                                            // Eisenmine: dunkler Berg mit Stollen, Schienen und Lore
-        K.pyramid(-4, -6, 16, 0, 20 + t * 4, '#6e6a63'); K.pyramid(8, -14, 9, 0, 12 + t * 2, '#7d786f');
-        const [a, b] = K.P(-4, 8, 0); K.poly([[a - 5, b], [a + 5, b - 2.8], [a + 5, b - 11], [a, b - 14], [a - 5, b - 9]], '#1d1a17', .5);   // Stollen
-        K.box(-10, 2, 8.5, 9.5, 0, 12, '#6b4a2c', .4);
-        K.box(-6, -2, 9, 22, 0, .6, '#5a5550', .2); K.box(-5.6, -2.4, 15, 19, .6, 4.4, '#7a4a2a', .5); K.box(-5.4, -2.6, 15.2, 18.8, 4.4, 5.6, '#3b3b40', .3);   // Schienen, Lore mit Erz
-        if (t >= 2) { K.box(10, 18, 6, 14, 0, 7, '#9a7448', .5); cityGable(K, 9, 19, 5, 15, 7, 4, '#4a4a52'); cityWindows(K, 11, 17, 14, 5, 2, true); }
-    },
-    embassy(K, t) {                                                         // Botschaft: helles Haus mit Säulen und vielen Fahnen (das Bündnis)
-        cityPlinth(K, 21, 2, '#b8b0a0');
-        K.box(-15, 13, -10, 10, 2, 14, '#f1ead8', .8); cityGable(K, -16, 14, -11, 11, 14, 8, '#2e6b5a'); cityWindows(K, -12, 10, 10, 11, 4, false);
-        for (const x of [-10, -4, 2, 8]) K.cyl(x, 13, 1.2, 2, 13, '#f6f0e2', .5, true);
-        K.box(-15, 13, 12, 14, 13, 14.5, '#f6f0e2', .5);
-        const cols = ['#2e6b5a', '#c0392b', '#d9a93f', '#2f5e9a', '#7a2e8a'];
-        for (let i = 0; i < Math.min(5, 2 + t); i++) { const [a, b] = K.P(-16 + i * 7, 17, 2); K.poly([[a - .4, b], [a + .4, b - .3], [a + .4, b - 16], [a - .4, b - 15.7]], '#6b4a2c', .3); K.poly([[a + .4, b - 16], [a + 6, b - 17], [a + 6, b - 12], [a + .4, b - 11]], cols[i], .3); }
-        if (t >= 2) { K.cyl(10, -4, 5.5, 14, 22, '#e9e1cc', .7); K.dome(10, -4, 6, 22, 7, '#3f8a73'); }
-    },
-    market(K, t) {                                                          // Markt: Stände unter bunten Dächern, Säcke, Fässer, ein Kontor
-        K.poly([K.P(-21, -21, 0), K.P(21, -21, 0), K.P(21, 21, 0), K.P(-21, 21, 0)], '#c2b08c', .5);
-        K.box(-18, -2, -18, -4, 0, 11, '#e2d3b0', .7); cityGable(K, -19, -1, -19, -3, 11, 6, '#b5651d'); cityWindows(K, -15, -5, -4, 8, 2, false);
-        const st = [[8, -10, '#c0392b'], [12, 6, '#2f6fa8'], [-6, 10, '#d9a93f'], [-14, 4, '#6aa84f']].slice(0, 2 + Math.min(2, t));
-        for (const [x, y, col] of st) { for (const [dx, dy] of [[-4, -3], [4, -3], [-4, 3], [4, 3]]) K.box(x + dx - .4, x + dx + .4, y + dy - .4, y + dy + .4, 0, 7, '#6b4a2c', .3);
-            K.box(x - 4, x + 4, y - 3, y + 3, 0, 3, '#8a6440', .4); K.box(x - 2, x, y - 1, y + 1, 3, 4.5, '#e8c547', .3); cityGable(K, x - 5, x + 5, y - 4, y + 4, 7, 3, col); }
-        for (const [x, y] of [[16, 16], [18, 12], [-16, 16]]) K.cyl(x, y, 1.8, 0, 4, '#8a6440', .4);
-        if (t >= 3) { K.box(-2, 4, 14, 19, 0, 4, '#9c7e4c', .4); cityBanner(K, -10, -3.8, 9, '#b5651d'); }
-    },
-};
-function g2Cross(poly, x, y) { poly([[x - 1.2, y - 4], [x + 1.2, y - 4], [x + 1.2, y - 1.2], [x + 4, y - 1.2], [x + 4, y + 1.2], [x + 1.2, y + 1.2], [x + 1.2, y + 4], [x - 1.2, y + 4], [x - 1.2, y + 1.2], [x - 4, y + 1.2], [x - 4, y - 1.2], [x - 1.2, y - 1.2]], '#c0392b', .4); }
-
-// sprite cache: every building at its tier, painted once at a fixed resolution
-const CITY_SPR_SCALE = 5;
-function citySprite(kind, tier, extraKey) {
-    const key = kind + ':' + tier + ':' + (extraKey || '');
-    let s = CITY_SPRITES.get(key); if (s) return s;
-    const art = kind === 'ghost' ? extraKey : kind, w = 64, up = art === 'keep' ? 90 : 52, down = art === 'keep' ? 42 : 26;   // screen-unit box around the ground anchor
-    const c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
-    const g = c.getContext('2d'), K = cityPainter(g, CITY_SPR_SCALE, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE);
-    if (kind === 'ghost') cityGhost(g, K, extraKey, c, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE); else (CITY_PAINT[kind] || CITY_PAINT.plot)(K, tier);
-    s = { c, w, up, down }; CITY_SPRITES.set(key, s); return s;
+const cityOrt = id => { const o = CITY_ORTE[id]; return o && { x: o[0] / 100 * CITY_BILD_W, y: o[1] / 100 * CITY_BILD_H, w: o[2] / 100 * CITY_BILD_W, h: o[3] / 100 * CITY_BILD_H, sy: o[4] / 100 * CITY_BILD_H }; };
+let cityCam = null, cityPointers = new Map(), cityGesture = null;
+const CITY_BILD = { img: null, laedt: false };
+function cityBild() {                                                        // das Stadtbild – lädt beim ersten Mal
+    if (!CITY_BILD.laedt) { CITY_BILD.laedt = true; const im = new Image();
+        im.onload = () => { if (!im.naturalWidth) return; CITY_BILD.img = im; cityFrame.drawn = 0; if (cityOpenId && !document.getElementById('citySheet').hidden) renderCitySheet(); };
+        im.src = 'bilder/stadt_gross.webp'; }
+    return CITY_BILD.img;
 }
 
-// ein leerer Bauplatz: Grundmauern, ein paar Balken und Steine, darüber das Gebäude ganz blass – wie ein Plan, was hier entsteht
-function cityGhost(g, K, id, c, ax, ay) {
-    if (!CITY_DRAUSSEN.has(id)) for (const [x0, x1, y0, y1] of [[-19, 19, -19, -16.5], [-19, -16.5, -16.5, 19], [16.5, 19, -16.5, 19], [-16.5, 16.5, 16.5, 19]]) K.box(x0, x1, y0, y1, 0, 2.2, '#bdb29c', .4);
-    const o = document.createElement('canvas'); o.width = c.width; o.height = c.height;
-    const og = o.getContext('2d'); (CITY_PAINT[id] || CITY_PAINT.plot)(cityPainter(og, CITY_SPR_SCALE, ax, ay), 1);
-    og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-atop'; og.fillStyle = 'rgba(236,228,210,.6)'; og.fillRect(0, 0, o.width, o.height);
-    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = .5; g.drawImage(o, 0, 0); g.restore();
-    g.setTransform(CITY_SPR_SCALE, 0, 0, CITY_SPR_SCALE, ax, ay);
-    K.box(9, 18, 13, 15.5, 0, 1.6, '#a0783f', .35); K.box(10, 17, 13.2, 15.3, 1.6, 3.1, '#8a6634', .35);   // Balken
-    K.box(-18, -13, 12, 17, 0, 3, '#a59d8c', .35); K.box(-17, -14, 12.6, 15.6, 3, 5, '#b8b0a0', .35);   // Steine
-}
-// ---- Landschaft je nach Gegend der Hauptstadt (Grün, Sand, Schnee, Sumpf, Vulkan) – die Stadt selbst ist immer gepflegt ----
-const CITY_PAL = {
-    green:   { land: '#5e9142', spots: ['#6a9d4b', '#54853a', '#74a853', '#4c7a34'], grass: '#6ba64b', gspots: ['#78b156', '#5f9842', '#83ba60', '#679f47'],
-               leaf: ['#2c6328', '#3b7a33', '#5a9a42'], pine: ['#1f4a26', '#2b5e31', '#3d7742'], rock: '#8e8a82', peak: '#f2f5f7', bank: '#b9a77a', pines: .4, wald: 1,
-               field: ['#e0bf52', '#c9a23c', '#a9bb4c', '#d6c96a'], water: ['#2a6694', '#3f8cc0', '#9fd2ee'], bg: '#5e9142' },
-    sand:    { palm: true, mesa: true, land: '#d2b97e', spots: ['#dcc58f', '#c7ad70', '#bfa864', '#b3a85e'], grass: '#86a84f', gspots: ['#92b35a', '#7a9c46', '#9cbb62', '#80a24b'],
-               leaf: ['#3f6a26', '#548a32', '#74a344'], pine: ['#3f5a26', '#52702f', '#6b8a3c'], rock: '#c2905e', peak: null, bank: '#e6d39c', pines: .55, wald: .6,
-               field: ['#d9b04a', '#c99c3a', '#b9ad5a', '#e0c56a'], water: ['#24708f', '#3a95b4', '#a6dcea'], bg: '#cdb378' },
-    snow:    { land: '#e4eaef', spots: ['#eef2f5', '#d6dee5', '#f7f9fb', '#cfd9e1'], grass: '#dfe7ec', gspots: ['#e9eef2', '#d3dce3', '#f3f6f8', '#cbd5dd'],
-               leaf: ['#3a5a4a', '#4c6e5d', '#6a8a7a'], pine: ['#284638', '#365a4a', '#4c7262'], rock: '#7e8792', peak: '#ffffff', bank: '#cdd7df', pines: .9, wald: 1, schnee: true,
-               field: ['#e9eef1', '#dbe3e8', '#f2f5f7', '#d3dce2'], water: ['#4f7fa3', '#6f9ebf', '#d2e8f4'], bg: '#e4eaef' },
-    swamp:   { land: '#577146', spots: ['#62804f', '#4c6640', '#6b8a55', '#465d3a'], grass: '#6c9150', gspots: ['#78a05a', '#628848', '#82aa62', '#6a8f4d'],
-               leaf: ['#2c4a28', '#3c6034', '#55803f'], pine: ['#223d26', '#2f5132', '#406a42'], rock: '#727065', peak: null, bank: '#7c7a52', pines: .25, wald: 1.1,
-               field: ['#9cab52', '#8a9a46', '#b0b862', '#7f9244'], water: ['#3a5a4c', '#4f7462', '#9fc0ae'], bg: '#577146' },
-    volcano: { land: '#625953', spots: ['#6d635c', '#574f4a', '#776b62', '#4e4743'], grass: '#6e8e4a', gspots: ['#799a54', '#638443', '#84a35e', '#6a8a48'],
-               leaf: ['#33462a', '#445c34', '#5e7a46'], pine: ['#2a3a26', '#384e32', '#4c6644'], rock: '#4f4743', peak: '#e0662e', bank: '#7a6a5e', pines: .5, wald: .5,
-               field: ['#a58f5c', '#93804e', '#b29d66', '#8a7848'], water: ['#2c5a78', '#3f7898', '#8fbcd4'], bg: '#625953' }
-};
-function cityBioVon(lm) { return lm.bio === 'ice' ? 'snow' : CITY_PAL[lm.bio] ? lm.bio : 'green'; }
-function cityBio() { const lm = landmasses[(islandById[playerIslandId] || {}).landmassId]; return lm ? cityBioVon(lm) : 'green'; }
-// Bäume, Büsche, Felsen: in Bildschirm-Einheiten um den Fußpunkt (a, b) gemalt – im Boden-Bild und als Deko-Bild gleich
-function cityTreeAt(g, a, b, r, pal, v) {             // ein Laubbaum: Krone aus Kugeln, oben links im Licht
-    g.fillStyle = 'rgba(20,30,10,.26)'; g.beginPath(); g.ellipse(a + r * .55, b + r * .08, r * 1.2, r * .46, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#5a3d24'; g.fillRect(a - r * .13, b - r * 1.05, r * .26, r * 1.05);
-    const L = pal.leaf, f = v ? .9 : 1;
-    for (const [dx, dy, rr, ci] of [[0, -1.5, 1, 0], [-.48, -1.72, .74, 1], [.45, -1.78, .7, 0], [.02, -2.22, .66, 1], [-.32, -2.2, .4, 2], [.1, -2.5, .3, 2], [-.6, -1.75, .3, 2]]) {
-        g.fillStyle = L[ci]; g.beginPath(); g.arc(a + dx * r, b + dy * r * f, rr * r, 0, Math.PI * 2); g.fill(); }
-    g.strokeStyle = 'rgba(15,35,12,.3)'; g.lineWidth = Math.max(.35, r * .07); g.beginPath(); g.arc(a, b - 1.5 * r * f, r, Math.PI * .08, Math.PI * .92); g.stroke();
-    if (pal.schnee) { g.fillStyle = 'rgba(255,255,255,.85)'; for (const [dx, dy, rr] of [[-.3, -2.55, .42], [.25, -2.45, .3]]) { g.beginPath(); g.ellipse(a + dx * r, b + dy * r, rr * r, rr * r * .45, 0, 0, Math.PI * 2); g.fill(); } }
-}
-function cityPineAt(g, a, b, h, pal) {                // eine Tanne: drei Kegel übereinander, links hell, rechts dunkel
-    g.fillStyle = 'rgba(20,30,10,.24)'; g.beginPath(); g.ellipse(a + h * .2, b + h * .03, h * .3, h * .11, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#4a3220'; g.fillRect(a - h * .035, b - h * .2, h * .07, h * .2);
-    const P = pal.pine;
-    for (let i = 0; i < 3; i++) { const y0 = b - h * (.14 + i * .23), w = h * (.3 - i * .075), top = y0 - h * (.44 - i * .06);
-        g.fillStyle = P[1]; g.beginPath(); g.moveTo(a - w, y0); g.lineTo(a, top); g.lineTo(a + w, y0); g.quadraticCurveTo(a, y0 + h * .06, a - w, y0); g.fill();
-        g.fillStyle = P[0]; g.beginPath(); g.moveTo(a, top); g.lineTo(a + w, y0); g.quadraticCurveTo(a + w * .5, y0 + h * .04, a + w * .05, y0 + h * .05); g.closePath(); g.fill();
-        g.fillStyle = P[2]; g.beginPath(); g.moveTo(a, top); g.lineTo(a - w * .6, y0 - h * .015); g.lineTo(a - w * .2, y0 - h * .03); g.closePath(); g.fill();
-        if (pal.schnee) { g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.moveTo(a, top); g.lineTo(a - w * .45, top + h * .2); g.lineTo(a + w * .3, top + h * .17); g.closePath(); g.fill(); } }
-}
-function cityPalmAt(g, a, b, h, pal) {                 // eine Palme: gebogener Stamm, sechs Wedel
-    g.fillStyle = 'rgba(20,30,10,.22)'; g.beginPath(); g.ellipse(a + h * .3, b + h * .02, h * .3, h * .1, 0, 0, Math.PI * 2); g.fill();
-    const tx = a + h * .16, ty = b - h; g.strokeStyle = '#8a6a44'; g.lineWidth = h * .07; g.lineCap = 'round'; g.beginPath(); g.moveTo(a, b); g.quadraticCurveTo(a + h * .02, b - h * .6, tx, ty); g.stroke();
-    g.strokeStyle = '#6b5032'; g.lineWidth = h * .015; for (let i = 1; i < 6; i++) { const t = i / 6, x = a + (tx - a) * t * t, y = b + (ty - b) * t; g.beginPath(); g.moveTo(x - h * .035, y); g.lineTo(x + h * .035, y - h * .01); g.stroke(); }
-    for (let i = 0; i < 6; i++) { const an = -Math.PI / 2 + (i - 2.5) * .62, L = h * (.42 + (i % 2) * .08), ex = tx + Math.cos(an) * L, ey = ty + Math.sin(an) * L * .55 + L * .32;
-        g.fillStyle = pal.leaf[i % 2 ? 1 : 2]; g.beginPath(); g.moveTo(tx, ty); g.quadraticCurveTo(tx + Math.cos(an) * L * .5 - Math.sin(an) * h * .08, ty + Math.sin(an) * L * .5 - h * .12, ex, ey);
-        g.quadraticCurveTo(tx + Math.cos(an) * L * .5 + Math.sin(an) * h * .05, ty + Math.sin(an) * L * .5 - h * .02, tx, ty); g.fill(); }
-    g.fillStyle = '#6b4a2c'; g.beginPath(); g.arc(tx, ty + h * .02, h * .045, 0, 7); g.fill();
-}
-function cityBushAt(g, a, b, r, pal) {
-    g.fillStyle = 'rgba(20,30,10,.22)'; g.beginPath(); g.ellipse(a + r * .4, b + r * .05, r * 1.2, r * .45, 0, 0, Math.PI * 2); g.fill();
-    for (const [dx, dy, rr, ci] of [[0, -.55, .8, 0], [-.55, -.45, .55, 1], [.5, -.5, .55, 0], [-.15, -.95, .5, 1], [-.35, -.95, .25, 2]]) { g.fillStyle = pal.leaf[ci]; g.beginPath(); g.arc(a + dx * r, b + dy * r, rr * r, 0, Math.PI * 2); g.fill(); }
-    if (pal.schnee) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.ellipse(a - r * .1, b - r * 1.2, r * .5, r * .2, 0, 0, Math.PI * 2); g.fill(); }
-}
-function cityRockAt(g, a, b, r, col) {                 // ein Felsbrocken: links hell, rechts dunkel
-    g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(a + r * .3, b + r * .1, r * 1.1, r * .4, 0, 0, Math.PI * 2); g.fill();
-    const pts = [[-1, 0], [-.85, -.6], [-.3, -1], [.35, -.85], [.95, -.35], [1, 0]];
-    g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(a + x * r, b + y * r) : g.moveTo(a + x * r, b + y * r)); g.closePath(); g.fillStyle = shade(col, .8); g.fill();
-    g.beginPath(); g.moveTo(a - r, b); g.lineTo(a - .85 * r, b - .6 * r); g.lineTo(a - .3 * r, b - r); g.lineTo(a + .05 * r, b - .5 * r); g.lineTo(a - .1 * r, b); g.closePath(); g.fillStyle = shade(col, 1.12); g.fill();
-    g.strokeStyle = 'rgba(40,34,28,.4)'; g.lineWidth = Math.max(.3, r * .06); g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(a + x * r, b + y * r) : g.moveTo(a + x * r, b + y * r)); g.stroke();
-}
-// ein Berg: Grundriss aus 7 Ecken, Spitze etwas versetzt, jede Seite nach dem Licht (oben links) schattiert, oben Schnee
-function cityMountain(g, K, cx, cy, r, h, pal, R) {
-    const n = 7, base = [], ax = cx + (R() - .5) * r * .35, ay = cy + (R() - .5) * r * .35;
-    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + R() * .45, rr = r * (.78 + R() * .35); base.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); }
-    const top = pal.mesa ? base.map(p => [ax + (p[0] - ax) * .45, ay + (p[1] - ay) * .45]) : null;
-    const A = K.P(ax, ay, h), faces = base.map((p, i) => [p, base[(i + 1) % n], i]).sort((f, q) => (f[0][0] + f[0][1] + f[1][0] + f[1][1]) - (q[0][0] + q[0][1] + q[1][0] + q[1][1]));
-    for (const [p, q, i] of faces) {
-        if (top) { const t1 = K.P(top[i][0], top[i][1], h), t2 = K.P(top[(i + 1) % n][0], top[(i + 1) % n][1], h), P1 = K.P(p[0], p[1], 0), P2 = K.P(q[0], q[1], 0);
-            const mx = (p[0] + q[0]) / 2 - ax, my = (p[1] + q[1]) / 2 - ay, L = Math.hypot(mx, my) || 1, lit = -(mx + my) / L / Math.SQRT2;
-            K.poly([P1, P2, t2, t1], shade(pal.rock, .74 + lit * .3), .35);
-            for (const f of [.33, .66]) cityKante(K, [P1[0] + (t1[0] - P1[0]) * f, P1[1] + (t1[1] - P1[1]) * f], [P2[0] + (t2[0] - P2[0]) * f, P2[1] + (t2[1] - P2[1]) * f], 'rgba(90,50,20,.25)', .8);
-            continue; }
-        const mx = (p[0] + q[0]) / 2 - ax, my = (p[1] + q[1]) / 2 - ay, L = Math.hypot(mx, my) || 1, lit = -(mx + my) / L / Math.SQRT2;   // +1 = zur Sonne
-        const P1 = K.P(p[0], p[1], 0), P2 = K.P(q[0], q[1], 0), col = shade(pal.rock, .74 + lit * .3);
-        K.poly([P1, P2, A], col, .35);
-        const M = [(P1[0] + P2[0]) / 2 + (R() - .5) * r * .3, (P1[1] + P2[1]) / 2];                                   // ein Grat in der Mitte der Seite
-        g.strokeStyle = 'rgba(255,255,255,' + (lit > 0 ? .1 : .04) + ')'; g.lineWidth = .7; g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(M[0], M[1]); g.stroke();
-        const low = (u, t) => [u[0] + (A[0] - u[0]) * t, u[1] + (A[1] - u[1]) * t];
-        if (!pal.schnee) K.poly([P1, P2, low(P2, .3), low(P1, .3)], shade(pal.land, .78 + lit * .22), .2);   // grüner Fuß
-        if (pal.peak) K.poly([low(P1, .68), low(P2, .68), A], shade(pal.peak, .86 + lit * .14), .25);   // Schnee (Vulkan: Glut)
-    }
-    if (top) K.poly(top.map(p => K.P(p[0], p[1], h)), shade(pal.rock, 1.1), .35);
-}
-function cityPaintGround() {
-    const B = CITY_BAKE, c = document.createElement('canvas'), bio = cityBio(), pal = CITY_PAL[bio], R = mulberry32(4242);
-    c.width = Math.ceil((CITY_BOUNDS.x1 - CITY_BOUNDS.x0) * B); c.height = Math.ceil((CITY_BOUNDS.y1 - CITY_BOUNDS.y0) * B);
-    const g = c.getContext('2d'); g.setTransform(B, 0, 0, B, -CITY_BOUNDS.x0 * B, -CITY_BOUNDS.y0 * B); g.lineJoin = 'round';
-    const pat = (seed, base, spots, n) => g.createPattern(cityTexture(seed, base, spots, n, 128), 'repeat');
-    CITY_BG_COL = pal.bg;
-    const land = pat(25, pal.land, pal.spots, 900), grass = pat(21, pal.grass, pal.gspots, 800);
-    const cob = pat(23, pal.schnee ? '#c4c0b8' : '#b8a88a', ['#c7b798', '#a39374', '#d1c3a4', '#948466'], 900);
-    const pave = pat(27, '#cfc4ab', ['#dad0b9', '#c1b59b', '#c8bca2', '#e0d7c2'], 600), dirt = pat(24, pal.schnee ? '#b8ad9a' : '#a68a5f', ['#b0946a', '#957a52', '#b89c72'], 600);
-    const K = isoKit(g, 0, 'rgba(40,32,24,.35)');
-    // 1) das Land überall, dazu große weiche Flecken (sonst sieht es aus wie ein Teppich)
-    g.fillStyle = land; g.fillRect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0);
-    for (let i = 0; i < 60; i++) { const [a, b] = cIso(-160 + R() * 960, -160 + R() * 960), r = 25 + R() * 70, hell = R() < .5;
-        const gr = g.createRadialGradient(a, b, 0, a, b, r * 1.6); gr.addColorStop(0, hell ? 'rgba(255,248,200,.12)' : 'rgba(10,30,0,.13)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-        g.fillStyle = gr; g.beginPath(); g.ellipse(a, b, r * 1.6, r, 0, 0, Math.PI * 2); g.fill(); }
-    // Dünen (Sand) bzw. sanfte Wellen im Gras, Büschel und Blüten
-    for (let i = 0; i < (bio === 'sand' ? 90 : 40); i++) { const [a, b] = cIso(-160 + R() * 960, -160 + R() * 960), w = 30 + R() * 60;
-        g.strokeStyle = R() < .5 ? 'rgba(255,245,210,' + (bio === 'sand' ? .28 : .1) + ')' : 'rgba(60,40,10,' + (bio === 'sand' ? .16 : .07) + ')'; g.lineWidth = 2 + R() * 3;
-        g.beginPath(); g.moveTo(a - w, b); g.quadraticCurveTo(a, b - w * (.15 + R() * .2), a + w, b + (R() - .5) * 8); g.stroke(); }
-    for (let i = 0; i < 1400; i++) { const [a, b] = cIso(-160 + R() * 960, -160 + R() * 960), r2 = R();
-        g.fillStyle = r2 < .45 ? shade(pal.spots[0], 1.12) : r2 < .9 ? shade(pal.spots[1], .82) : ['#f2e6a0', '#e8a0c0', '#ffffff', '#d0a0ff'][Math.floor(R() * 4)]; g.fillRect(a, b, r2 < .9 ? 1.6 + R() * 2 : 1, r2 < .9 ? .7 : 1); }
-    // 2) der Fluss rechts an der Stadt vorbei (Ufer, tiefes Wasser, helle Mitte, Glitzern)
-    const fluss = [[604, -190], [574, 30], [566, 170], [590, 320], [642, 452], [706, 566], [800, 700]].map(p => cIso(p[0], p[1]));
-    const zug = (w, col) => { g.beginPath(); fluss.forEach((p, i) => { if (!i) g.moveTo(p[0], p[1]); else if (i < fluss.length - 1) g.quadraticCurveTo(p[0], p[1], (p[0] + fluss[i + 1][0]) / 2, (p[1] + fluss[i + 1][1]) / 2); else g.lineTo(p[0], p[1]); });
-        g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.stroke(); };
-    zug(54, shade(pal.land, .82)); zug(46, pal.bank); zug(38, pal.water[0]); zug(28, pal.water[1]); zug(10, 'rgba(255,255,255,.12)');
-    for (let i = 0; i < 70; i++) { const k = Math.floor(R() * (fluss.length - 1)), t = R(), a = fluss[k][0] + (fluss[k + 1][0] - fluss[k][0]) * t + (R() - .5) * 22, b = fluss[k][1] + (fluss[k + 1][1] - fluss[k][1]) * t + (R() - .5) * 10;
-        g.fillStyle = 'rgba(255,255,255,' + (.25 + R() * .35) + ')'; g.fillRect(a, b, 2 + R() * 5, .7); }
-    // 3) die Weltkarte rund um die Hauptstadt: andere Regionen in ihrer Farbe, Meer mit Strand, wo die Karte Wasser hat
-    const aus = cityAussen();
-    for (const lm of aus.fremd) { g.save(); g.clip(aus.pfad(lm)); const fp = CITY_PAL[cityBioVon(lm)];
-        g.fillStyle = pat(25, fp.land, fp.spots, 900); g.fillRect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0); g.restore(); }
-    if (aus.nass) {
-        const meer = new Path2D(); meer.rect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0);
-        for (const lm of aus.lms) meer.addPath(aus.pfad(lm));
-        g.save(); g.clip(meer, 'evenodd');
-        g.fillStyle = pat(26, pal.water[0], [shade(pal.water[0], .9), shade(pal.water[0], 1.1), pal.water[1]], 700); g.fillRect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0);
-        g.lineJoin = 'round';
-        for (const [w, col] of [[26, pal.water[1]], [12, shade(pal.water[1], 1.2)], [6, pal.bank]]) for (const lm of aus.lms) { g.strokeStyle = col; g.lineWidth = w; g.stroke(aus.pfad(lm)); }
-        for (let i = 0; i < 160; i++) { const x = -170 + R() * 980, y = -170 + R() * 980; if (aus.land(x, y)) continue; const [a, b] = cIso(x, y);   // Wellen
-            g.fillStyle = 'rgba(255,255,255,' + (.18 + R() * .25) + ')'; g.fillRect(a, b, 3 + R() * 6, .8); }
-        g.restore();
-        cityGroundPoly(g, cityRect(105, 105, 545, 545), land);                // die Stadt steht immer auf festem Land
-    }
-    // 4) vor dem Tor ein kurzes Pflaster
-    cityStrip(g, [[320, 492], [320, 516]], 17, 'rgba(92,78,56,.85)'); cityStrip(g, [[320, 492], [320, 514]], 13.5, cob);
-    // 5) Berge hinten, Bäume (dicht, wo die Karte Wald hat), Felsen – nur auf Land, in Tiefen-Reihenfolge gemalt
-    const dinge = [];
-    for (const [x, y, r, h] of [[110, 6, 62, 92], [232, -34, 58, 80], [36, 92, 54, 72], [-36, 178, 50, 62], [334, -62, 52, 70], [-96, 292, 46, 54], [432, -104, 50, 62], [-130, 410, 40, 44]])
-        for (const [dx, dy, k] of [[0, 0, 1], [-r * .55, r * .25, .62], [r * .4, -r * .45, .7]]) { const mh = h * k * (.85 + R() * .3); if (aus.land(x + dx, y + dy)) dinge.push({ d: x + dx + y + dy, f: () => cityMountain(g, K, x + dx, y + dy, r * k, mh, pal, R) }); }
-    for (const [x, y, r, h] of [[166, 24, 30, 34], [60, 160, 26, 26], [-60, 262, 24, 24], [300, 10, 26, 28]]) if (aus.land(x, y)) dinge.push({ d: x + y, f: () => cityMountain(g, K, x, y, r, h, pal, R) });   // Hügel davor
-    const frei = (x, y) => !(x > 105 && x < 545 && y > 105 && y < 545) && !(x > 270 && x < 370 && y > 540 && y < 620) && !(x > 548 && x < 668 && y < 470) && !(x > 610 && x < 740 && y > 420 && y < 640) && aus.land(x, y);
-    for (let i = 0, n = Math.round(900 * pal.wald); i < n; i++) {
-        const x = -170 + R() * 980, y = -170 + R() * 980, zufall = R(), dicht = aus.wald(x, y) || x < 60 || y < 60;
-        if (!frei(x, y) || zufall > (dicht ? .85 : .16)) continue;
-        const [a, b] = cIso(x, y), pine = R() < pal.pines, r = 4.2 + R() * 2.4, hell = R() < .5;
-        dinge.push({ d: x + y, f: pine ? (pal.palm ? () => cityPalmAt(g, a, b, r * 4.4, pal) : () => cityPineAt(g, a, b, r * 4.2, pal)) : () => cityTreeAt(g, a, b, r, pal, hell) });
-    }
-    for (const [x, y, r] of [[490, 640, 24], [620, 600, 20], [590, 540, 18], [400, 740, 22]]) if (frei(x, y)) {   // vorn: ein paar Felsgruppen mit Palmen/Bäumen als Rand-Kulisse
-        dinge.push({ d: x + y, f: () => cityMountain(g, K, x, y, r, r * .9, pal, R) });
-        for (let i = 0; i < 4; i++) { const rx = x + (R() - .5) * r * 3.4, ry = y + (R() - .5) * r * 3.4, rr = 2.5 + R() * 3; if (!frei(rx, ry)) continue; const [a, b] = cIso(rx, ry); dinge.push({ d: rx + ry, f: () => cityRockAt(g, a, b, rr, pal.rock) }); }
-        for (let i = 0; i < 3; i++) { const tx = x + r * (1 + R()) * (i - 1), ty = y + r * (.6 + R() * .8), r2 = 4.4 + R() * 2; if (!frei(tx, ty)) continue; const [a, b] = cIso(tx, ty), hell = R() < .5;
-            dinge.push({ d: tx + ty, f: R() < pal.pines ? (pal.palm ? () => cityPalmAt(g, a, b, r2 * 4.4, pal) : () => cityPineAt(g, a, b, r2 * 4.2, pal)) : () => cityTreeAt(g, a, b, r2, pal, hell) }); } }
-    for (let i = 0; i < 50; i++) { const x = -60 + R() * 420, y = -100 + R() * 300, rr = 2 + R() * 3.5; if (x + y > 300 || !frei(x, y)) continue; const [a, b] = cIso(x, y); dinge.push({ d: x + y, f: () => cityRockAt(g, a, b, rr, pal.rock) }); }
-    dinge.sort((p, q) => p.d - q.d).forEach(t => t.f());
-    // 6) in der Mauer: gepflegter Rasen, Straßen wie ein „#“ mit Randsteinen, der Burgplatz, gepflasterte Bauplätze
-    cityGroundPoly(g, cityRect(CITY_WALL.a, CITY_WALL.a, CITY_WALL.b, CITY_WALL.b), grass);
-    for (let i = 0; i < 260; i++) { const [a, b] = cIso(158 + R() * 324, 158 + R() * 324); g.fillStyle = R() < .5 ? 'rgba(255,255,220,.16)' : 'rgba(20,50,10,.14)'; g.fillRect(a, b, 1.6 + R() * 2.4, .7); }   // Grasbüschel
-    const strassen = [[[244, 178], [244, 462]], [[396, 178], [396, 462]], [[178, 244], [462, 244]], [[178, 396], [462, 396]], [[320, 172], [320, 262]], [[172, 320], [262, 320]], [[378, 320], [468, 320]], [[320, 378], [320, 494]]];
-    for (const p of strassen) cityStrip(g, p, 17, 'rgba(92,78,56,.85)');
-    const kreis = (r, n) => { const pts = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; pts.push([CC + Math.cos(a) * r, CC + Math.sin(a) * r]); } return pts; };
-    cityGroundPoly(g, kreis(66, 44), 'rgba(92,78,56,.85)');
-    for (const p of strassen) cityStrip(g, p, 13.5, cob);
-    cityGroundPoly(g, kreis(64, 44), cob); cityGroundPoly(g, kreis(59, 44), pave); cityGroundPoly(g, kreis(53, 44), cob);   // der runde Burgplatz mit einem Ring heller Platten
-    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, [p1, p2] = cIso(CC + Math.cos(a) * 59, CC + Math.sin(a) * 59), [q1, q2] = cIso(CC + Math.cos(a) * 53, CC + Math.sin(a) * 53);
-        g.strokeStyle = 'rgba(92,78,56,.45)'; g.lineWidth = .5; g.beginPath(); g.moveTo(p1, p2); g.lineTo(q1, q2); g.stroke(); }
-    const rasen = pat(28, shade(pal.grass, 1.06), pal.gspots.map(x => shade(x, 1.05)), 700);
-    for (const k of Object.keys(CITY_LOTS)) { if (k === 'wall' || CITY_DRAUSSEN.has(k)) continue; const [x, y] = CITY_LOTS[k];   // jeder Bauplatz: gepflegter Rasen mit Randsteinen
-        cityGroundPoly(g, cityRect(x - 25.5, y - 25.5, x + 25.5, y + 25.5), 'rgba(120,108,86,.9)'); cityGroundPoly(g, cityRect(x - 24, y - 24, x + 24, y + 24), rasen);
-        for (let i = 0; i < 30; i++) { const [a2, b2] = cIso(x - 22 + R() * 44, y - 22 + R() * 44); g.fillStyle = R() < .5 ? 'rgba(255,255,220,.18)' : 'rgba(20,50,10,.12)'; g.fillRect(a2, b2, 1.4 + R() * 2, .6); } }
-    // Blumenbeete im Rasenstreifen an der Mauer
-    const farben = pal.schnee ? ['#c0392b', '#ffffff'] : ['#e74c3c', '#f1c40f', '#ecf0f1', '#9b59b6', '#e67e22'];
-    for (const [x, y, w, d] of [[186, 158, 40, 8], [262, 158, 40, 8], [338, 158, 40, 8], [414, 158, 40, 8], [158, 186, 8, 40], [158, 262, 8, 40], [158, 338, 8, 40], [158, 414, 8, 40]]) {
-        cityGroundPoly(g, cityRect(x, y, x + w, y + d), '#6b4a2c'); for (let i = 0; i < w * d / 9; i++) { const [a, b] = cIso(x + 1 + R() * (w - 2), y + 1 + R() * (d - 2)); g.fillStyle = farben[Math.floor(R() * farben.length)]; g.beginPath(); g.arc(a, b, .9, 0, 7); g.fill(); } }
-    // 7) der Rand läuft weich in die Grundfarbe aus (kein hartes Rechteck, wenn die Stadt beim Öffnen von weit unten kommt)
-    const bx0 = CITY_BOUNDS.x0, bx1 = CITY_BOUNDS.x1, by0 = CITY_BOUNDS.y0, by1 = CITY_BOUNDS.y1, RB = 90, rgb = [1, 3, 5].map(i => parseInt(pal.bg.slice(i, i + 2), 16)).join(',');
-    for (const [x0, y0, x1, y1, rx, ry, rw, rh] of [[bx0, 0, bx0 + RB, 0, bx0, by0, RB, by1 - by0], [bx1, 0, bx1 - RB, 0, bx1 - RB, by0, RB, by1 - by0],
-        [0, by0, 0, by0 + RB, bx0, by0, bx1 - bx0, RB], [0, by1, 0, by1 - RB, bx0, by1 - RB, bx1 - bx0, RB]]) {
-        const lg = g.createLinearGradient(x0, y0, x1, y1); lg.addColorStop(0, 'rgba(' + rgb + ',1)'); lg.addColorStop(1, 'rgba(' + rgb + ',0)');
-        g.fillStyle = lg; g.fillRect(rx, ry, rw, rh); }
-    CITY_GROUND_BIO = cityGrundKey();
-    return CITY_GROUND = c;
-}
-let CITY_GROUND_BIO = '';
-const cityGrundKey = () => cityBio() + ':' + playerIslandId;                 // neu malen, wenn die Hauptstadt umzieht
-// Die Weltkarte um die Hauptstadt, ins Stadtbild gelegt: die Basis (Halbmesser ISLAND_RADIUS·1,3) füllt die Mauer (170 Einheiten
-// von der Mitte). Ein Stadt-Punkt (x, y) liegt auf der Karte bei Basis + ((x−y)·S, (x+y)·S) – „oben“ ist auf beiden oben.
-// So ist das Bild einer Karten-Form im Stadtbild einfach gestaucht: sx = (wx − hx)·0,866/S, sy = 320 + (wy − hy)·0,5/S.
-function cityAussen() {
-    const h = islandById[playerIslandId], S = ISLAND_RADIUS * 1.3 / 170;
-    if (!h) return { lms: [], fremd: [], nass: false, land: () => true, wald: () => false, pfad: null };
-    const welt = (x, y) => [h.x + (x - y) * S, h.y + (x + y - 2 * CC) * S], weit = 1000 * S;
-    const lms = landmasses.filter(lm => Math.abs(lm.x - h.x) < lm.shapeMaxR + weit && Math.abs(lm.y - h.y) < lm.shapeMaxR + weit);
-    const stadt = (x, y) => x > 105 && x < 545 && y > 105 && y < 545;
-    const lmAt = (x, y) => { const [wx, wy] = welt(x, y); return lms.find(lm => aufLand(lm, wx, wy)) || null; };
-    const M = new DOMMatrix([.866 / S, 0, 0, .5 / S, -h.x * .866 / S, cIso(CC, CC)[1] - h.y * .5 / S]), pfade = new Map();
-    const pfad = lm => { let p = pfade.get(lm); if (!p) { p = new Path2D(); p.addPath(lm.path, M); pfade.set(lm, p); } return p; };
-    const probe = document.createElement('canvas').getContext('2d'), heim = landmasses[h.landmassId];
-    let nass = false; for (let x = -170; x <= 810 && !nass; x += 70) for (let y = -170; y <= 810; y += 70) if (!stadt(x, y) && !lmAt(x, y)) { nass = true; break; }
-    return { lms, nass, pfad, fremd: lms.filter(lm => lm !== heim && cityBioVon(lm) !== cityBio()),
-        land: (x, y) => stadt(x, y) || !!lmAt(x, y),
-        wald: (x, y) => { const lm = lmAt(x, y); if (!lm || lm.stone) return false; const [wx, wy] = welt(x, y); return probe.isPointInPath(lm.forest[0], wx, wy); } };
-}
-// ---- Deko (eigene kleine Bilder, in Tiefen-Reihenfolge mit den Häusern): Brunnen, Bäume an der Mauer, Laternen, Statuen ----
-let CITY_DECO = null;
-function cityDeco() {
-    const bio = cityBio(); if (CITY_DECO && CITY_DECO.bio === bio) return CITY_DECO.list;
-    const pal = CITY_PAL[bio], R = mulberry32(99), out = [];
-    out.push({ at: [CC, 372], kind: 'fountain' }, { at: [266, 266], kind: 'tree', col: 'a' }, { at: [374, 266], kind: 'tree', col: 'b' }, { at: [266, 374], kind: 'statue' }, { at: [374, 374], kind: 'statue' });
-    for (const y of [418, 450, 482]) out.push({ at: [310, y], kind: 'lamp' }, { at: [330, y], kind: 'lamp' });
-    const strip = (fest, quer) => { for (let v = 182; v <= 460; v += 20) { if (Math.abs(v - 244) < 13 || Math.abs(v - 396) < 13 || Math.abs(v - 320) < (fest > 400 && !quer ? 24 : 13)) continue;
-        const kind = R() < pal.pines ? 'pine' : R() < .3 ? 'bush' : 'tree', o = (R() - .5) * 4; out.push({ at: quer ? [fest + o, v] : [v, fest + o], kind, col: R() < .5 ? 'a' : 'b' }); } };
-    strip(165, true); strip(165, false); strip(475, true); strip(475, false);
-    CITY_DECO = { bio, list: out }; return out;
-}
-function cityStaticSprite(kind, col) {
-    const bio = cityBio(), key = 's:' + kind + (col || '') + ':' + bio; let s = CITY_SPRITES.get(key); if (s) return s;
-    const pal = CITY_PAL[bio], w = 30, up = 50, down = 12, c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
-    const g = c.getContext('2d'), K = cityPainter(g, CITY_SPR_SCALE, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE);
-    if (kind === 'fountain') { K.cyl(0, 0, 10, 0, 3, '#c9c1ae', .6); K.cyl(0, 0, 8.6, 3, 3.3, pal.schnee ? '#cfe6f2' : '#4d9ad0', .3); K.cyl(0, 0, 1.8, 3, 10, '#d8d1c1', .5); K.cyl(0, 0, 4, 10, 11.2, '#c9c1ae', .5); K.cyl(0, 0, 1, 11.2, 14, '#d8d1c1', .4); }
-    else if (kind === 'tree') cityTreeAt(g, 0, 0, 5.4, pal, col === 'b');
-    else if (kind === 'pine') (pal.palm ? cityPalmAt : cityPineAt)(g, 0, 0, 22, pal);
-    else if (kind === 'bush') cityBushAt(g, 0, 0, 4.2, pal);
-    else if (kind === 'lamp') { K.box(-.5, .5, -.5, .5, 0, 12, '#3a3530', .3); K.box(-1.4, 1.4, -1.4, 1.4, 12, 14.6, '#f2d27a', .4); K.pyramid(0, 0, 1.8, 14.6, 2.2, '#3a3530'); }
-    else if (kind === 'statue') { K.box(-4, 4, -4, 4, 0, 5, '#bdb3a0', .6); K.box(-3, 3, -3, 3, 5, 6, '#a89f8c', .5); K.cyl(0, 0, 1.6, 6, 13, '#9a8a5a', .5); K.dome(0, 0, 1.3, 13, 2.4, '#b39a5a');
-        const [a, b] = K.P(0, 0, 11); K.poly([[a + 1, b], [a + 5, b - 6], [a + 5.6, b - 5.5], [a + 1.8, b + .5]], '#8a7a4a', .3); }
-    s = { c, w, up, down }; CITY_SPRITES.set(key, s); return s;
-}
-
-// ---- the curtain wall: its look follows the Mauer level (palisade → stone → high stone with blue, gold at 20+) ----
-function cityPaintWalls(lvl) {
-    const t = !lvl ? 0 : lvl >= 20 ? 3 : lvl >= 10 ? 2 : 1, key = 'walls' + t;
-    if (CITY_WALLS && CITY_WALLS.key === key) return CITY_WALLS;
-    const S = CITY_SPR_SCALE * .6, WB = { x0: -322, x1: 322, y0: 56, y1: 522 }, mk = () => { const c = document.createElement('canvas'); c.width = Math.ceil((WB.x1 - WB.x0) * S); c.height = Math.ceil((WB.y1 - WB.y0) * S);
-        const g = c.getContext('2d'); g.setTransform(S, 0, 0, S, -WB.x0 * S, -WB.y0 * S); g.lineJoin = 'round'; return { c, g }; };
-    const back = mk(), front = mk(), A = CITY_WALL.a, Bw = CITY_WALL.b;
-    const hgt = [9, 13, 17, 19][t], th = hgt + 7, col = t ? STONE : '#8a6440', roof = t >= 3 ? '#d9a93f' : t >= 2 ? '#2f5e9a' : '#8a3a2a';
-    const seg = (K, x0, y0, x1, y1) => {                                    // a straight run of wall (along x or y)
-        if (!t) { const n = Math.round(Math.hypot(x1 - x0, y1 - y0) / 3.3); for (let i = 0; i <= n; i++) { const x = x0 + (x1 - x0) * i / n, y = y0 + (y1 - y0) * i / n, hh = hgt + 1 + (i % 3 === 1 ? 1.4 : 0);   // Palisade: dicke Stämme mit Spitzen
-            K.cyl(x, y, 1.85, 0, hh, i % 2 ? '#a07650' : '#8f6a44', .3, true); K.cone(x, y, 1.9, hh, 3, '#6b4a2c'); } return; }
-        const along = x0 === x1 ? 'y' : 'x', a0 = Math.min(along === 'x' ? x0 : y0, along === 'x' ? x1 : y1), a1 = Math.max(along === 'x' ? x0 : y0, along === 'x' ? x1 : y1);
-        if (along === 'x') { K.box(a0, a1, y0 - 3, y0 + 3, 0, hgt, col, .7); K.merlons(a0, a1, y0 - 3, y0 + 3, hgt, col, Math.round((a1 - a0) / 7)); }
-        else { K.box(x0 - 3, x0 + 3, a0, a1, 0, hgt, col, .7); K.merlons(x0 - 3, x0 + 3, a0, a1, hgt, col, Math.round((a1 - a0) / 7)); }
-    };
-    const tower = (K, x, y, big) => { if (!t) { K.box(x - 4.5, x + 4.5, y - 4.5, y + 4.5, 0, hgt + 7, '#9a7046', .5); K.box(x - 6.5, x + 6.5, y - 6.5, y + 6.5, hgt + 7, hgt + 10, '#7a5232', .5);   // Holzturm mit Plattform
-            K.pyramid(x, y, 7.2, hgt + 10, 8, '#8a3a2a'); const [a, b] = K.P(x, y, hgt + 19); K.flag(a, b, BAND.player, true); return; }
-        const r = big ? 8 : 6.5; K.cyl(x, y, r, 0, th + (big ? 4 : 0), col, .8); K.cone(x, y, r + 1.5, th + (big ? 4 : 0), 9 + t * 2, roof);
-        if (t >= 2) { const [a, b] = K.P(x, y, th + 12 + t * 2); K.flag(a, b, BAND.player, true); } };
-    { const K = isoKit(back.g, 0, CITY_INK);                                          // back: the top corner, the two far runs and the side corners
-        seg(K, A, A, Bw, A); seg(K, A, A, A, Bw); tower(K, A, A, true); tower(K, CC, A); tower(K, A, CC); tower(K, Bw, A, true); tower(K, A, Bw, true); }
-    { const K = isoKit(front.g, 0, CITY_INK);                                         // front: the two near runs (with the gap for the gatehouse) and the bottom corner
-        seg(K, Bw, A, Bw, Bw); seg(K, A, Bw, CC - 16, Bw); seg(K, CC + 16, Bw, Bw, Bw); tower(K, Bw, CC); tower(K, Bw, Bw, true); }
-    return CITY_WALLS = { key, back: back.c, front: front.c, S, B: WB };
-}
-
-// ---- people: villagers on the streets ----
-const CITY_PATHS = [
-    [[CC, 520], [CC, 494], [CC, 380]], [[244, 244], [396, 244], [396, 396], [244, 396], [244, 244]],
-    [[244, 178], [244, 462]], [[396, 462], [396, 178]], [[178, 244], [462, 244]], [[462, 396], [178, 396]], [[CC, 172], [CC, 260]], [[172, CC], [260, CC]]
-];
-let cityFolk = null;
-function cityMakeFolk() {
-    const rnd = mulberry32(7), cols = ['#8e3a2c', '#2f5e9a', '#6d8a4a', '#8a6440', '#c9a54e', '#5d4a7a', '#e9dfc8'];
-    cityFolk = [];
-    for (let i = 0; i < 40; i++) { const p = CITY_PATHS[i % CITY_PATHS.length];
-        cityFolk.push({ p, t: rnd(), v: (.012 + rnd() * .018) * (rnd() < .5 ? -1 : 1), col: cols[Math.floor(rnd() * cols.length)], hat: rnd() < .4, cart: i % 11 === 5 }); }
-}
-function cityPathPoint(p, t) {                                              // a point along a polyline, t in 0..1
-    let total = 0; const seg = []; for (let i = 1; i < p.length; i++) { const l = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); seg.push(l); total += l; }
-    let d = ((t % 1) + 1) % 1 * total;
-    for (let i = 0; i < seg.length; i++) { if (d <= seg[i]) { const q = d / seg[i]; return [p[i][0] + (p[i + 1][0] - p[i][0]) * q, p[i][1] + (p[i + 1][1] - p[i][1]) * q]; } d -= seg[i]; }
-    return p[p.length - 1];
-}
-
-// ---- camera ----
-const CITY_VIEW = { x0: -420, x1: 420, y0: 0, y1: 650 };                    // what the camera may show (the town, the land around it)
-function cityFitZoom(W, H) { return Math.min(W / (CITY_VIEW.x1 - CITY_VIEW.x0), H / (CITY_VIEW.y1 - CITY_VIEW.y0)); }
-function cityStartZoom(W, H) {                                                 // Desktop: etwas weiter weg · Handy: alle Bauplätze samt Steinbruch und Mauer im Bild (500 breit)
-    return Math.max(cityFitZoom(W, H), W >= 900 && H >= 501 ? Math.min(2.2, W / 420) * .85 : Math.min(2.2, W / 500)); }
+// ---- Kamera: Bild-Punkte; das Bild deckt immer den ganzen Bildschirm ----
+const cityZMin = (W, H) => Math.max(W / CITY_BILD_W, H / CITY_BILD_H);
+function cityStartZoom(W, H) { return cityZMin(W, H); }
 function cityClampCam(W, H) {
-    const c = cityCam, zMin = Math.min(cityStartZoom(W, H), Math.max(cityFitZoom(W, H) * .95, W / (CITY_BOUNDS.x1 - CITY_BOUNDS.x0 - 60), H / (CITY_BOUNDS.y1 - CITY_BOUNDS.y0 + 60))), zMax = 3;   // (nie weiter als das gemalte Land – außer bis zum Start-Blick; oben/unten läuft es weich in die Grundfarbe aus)
-    c.z = Math.max(zMin, Math.min(zMax, c.z));
-    const hw = W / 2 / c.z, hh = H / 2 / c.z, V = CITY_VIEW;                  // keep the town in view (centred when it is smaller than the screen)
-    c.x = V.x1 - V.x0 <= 2 * hw ? (V.x0 + V.x1) / 2 : Math.max(V.x0 + hw, Math.min(V.x1 - hw, c.x));
-    c.y = V.y1 - V.y0 <= 2 * hh ? (V.y0 + V.y1) / 2 : Math.max(V.y0 + hh, Math.min(V.y1 - hh, c.y));
+    const c = cityCam, zMin = cityZMin(W, H);
+    c.z = Math.max(zMin, Math.min(Math.max(1.6, zMin * 2.5), c.z));
+    const hw = W / 2 / c.z, hh = H / 2 / c.z;
+    c.x = Math.max(hw, Math.min(CITY_BILD_W - hw, c.x)); c.y = Math.max(hh, Math.min(CITY_BILD_H - hh, c.y));
+}
+function cityFocus(id, now) {                                               // die Kamera gleitet (oder springt) zum Gebäude
+    const o = cityOrt(id); if (!o || !cityCam) return;
+    cityCam.tx = o.x; cityCam.ty = o.y;
+    if (now) { cityCam.x = cityCam.tx; cityCam.y = cityCam.ty; cityCam.tx = cityCam.ty = undefined; }
 }
 
+// ---- wischen, mit zwei Fingern oder dem Mausrad zoomen, tippen ----
 cityCanvas.addEventListener('pointerdown', e => {
-    if (e.isPrimary) { cityPointers.clear(); cityGesture = null; }             // a new first finger: whatever was left over from before is gone
+    if (e.isPrimary) { cityPointers.clear(); cityGesture = null; }             // ein neuer erster Finger: Reste von vorher sind weg
     try { cityCanvas.setPointerCapture(e.pointerId); } catch (err) {}
     cityPointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (cityCam) cityCam.tx = cityCam.ty = undefined;
     if (cityPointers.size === 1) cityDrag = { x: e.clientX, y: e.clientY, cx: cityCam && cityCam.x, cy: cityCam && cityCam.y, moved: false };
@@ -10635,231 +10169,90 @@ cityCanvas.addEventListener('pointerup', cityPointerEnd);
 cityCanvas.addEventListener('pointercancel', cityPointerEnd);
 cityCanvas.addEventListener('wheel', e => { if (!cityCam) return; e.preventDefault(); cityCam.z *= Math.exp(-e.deltaY * .0015); }, { passive: false });
 cityCanvas.addEventListener('click', e => {
-    if (cityDrag && cityDrag.moved) return;       // that was a swipe, not a tap
+    if (cityDrag && cityDrag.moved) return;       // das war Wischen, kein Tippen
     const r = cityCanvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     const hits = cityHitRects.filter(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
-    const hit = hits.sort((a, b) => Math.hypot(a.cx - x, a.cy - y) - Math.hypot(b.cx - x, b.cy - y))[0];   // the building closest to the finger
+    const hit = hits.sort((a, b) => Math.hypot(a.cx - x, a.cy - y) - Math.hypot(b.cx - x, b.cy - y))[0];   // Schild oder Gebäude am nächsten am Finger
     if (hit && hit.id !== cityRingId) { cityFocus(hit.id); cityRingAuf(hit.id); }   // erst die runden Knöpfe am Gebäude (wie in Rise of Kingdoms)
     else { cityRingZu(); cityOpenId = null; document.getElementById('citySheet').hidden = true; }
+    cityFrame.drawn = 0;
 });
-
-function cityLotOf(id) { return id === '_keep' ? CITY_KEEP_AT : CITY_LOTS[id]; }
-function cityFocus(id, now) {                                             // glide (or jump) the camera to a building
-    const at = cityLotOf(id); if (!at || !cityCam) return;
-    const [x, y] = cIso(at[0], at[1]); cityCam.tx = x; cityCam.ty = y - 14;
-    if (now) { cityCam.x = cityCam.tx; cityCam.y = cityCam.ty; cityCam.tx = cityCam.ty = undefined; }
+// ---- ein Schild wie in den großen Aufbau-Spielen: dunkel mit Goldrand, „Name“ und darunter „Stufe N“ ----
+let cityNamen = [];                                                          // die Schilder dieses Bilds (Bildschirm-Punkte)
+function cityStand(c, id) {                                                  // was das Schild eines Gebäudes zeigt
+    const bid = cityBauId(id), lvl = bid === 'keep' ? c.levels.keep || 1 : c.levels[bid] || 0, bau = cityBuildOf(c, bid);
+    const ab = !lvl && AUF ? AUF.BAU_AB_BURG[bid] || 0 : 0, zu = !!AUF && ab > AUF.burgStufe('player');
+    let zeile = bau ? fmtClock((bau.endsAt - Date.now()) / 1000) : zu ? 'ab Burg ' + ab : lvl ? 'Stufe ' + lvl : 'Bauen';
+    if (bid === 'hospital' && lvl && !bau && c.wounded) zeile += ' · ' + fmtCompact(c.wounded) + ' verw.';
+    const pfeil = !bau && !zu && !cityBlocker(bid) && (AUF ? AUF.kannZahlen('player', AUF.stadtKosten(bid, lvl)) : coins >= cityCost(bid, lvl));   // aufwertbar: grüner Pfeil
+    return { name: bid === 'keep' ? 'Burg' : cityDef(bid).name, lvl, bau, zeile, zu, pfeil };
 }
-// ---- fertige Bild-Lagen für die Stadt (siehe cityFrame): unten = Boden + hintere Mauer + Schatten, oben = vordere Mauer, licht = Licht + Rand ----
-const CITY_LAGEN = { letzt: '', letztZ: 0, key: '', lichtKey: '', unten: null, oben: null, licht: null };
-function cityLage(name, W, H, dpr2, paint) {
-    const c = CITY_LAGEN[name] || (CITY_LAGEN[name] = document.createElement('canvas')), w = Math.round(W * dpr2), h = Math.round(H * dpr2);
-    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
-    const g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = 'high'; paint(g);
+const CITY_HAMMER = new Path2D('M-7-9h11l2 2v4h-15z M-2-3h3v13h-3z');           // Hammer (Kopf + Stiel) um den Mittelpunkt
+function citySchild(g, s, x, y, an, now) {                                   // → {x, y, w, h}; x/y = Mitte des Schilds
+    g.font = '700 13px Cinzel, Georgia, serif'; const wn = g.measureText(s.name).width;
+    g.font = '600 11px Inter, system-ui, sans-serif'; const wz = g.measureText(s.zeile).width + (s.zu || s.bau ? 15 : 0);
+    const h = 36, w = Math.ceil(Math.max(wn, wz) + 22 + (s.pfeil ? 18 : 0)), x0 = Math.round(x - w / 2), y0 = Math.round(y - h / 2);
+    const rund = (a, b, ww, hh, r) => { g.beginPath(); g.roundRect ? g.roundRect(a, b, ww, hh, r) : g.rect(a, b, ww, hh); };
+    g.save(); g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 6; g.shadowOffsetY = 2;
+    const bg = g.createLinearGradient(0, y0, 0, y0 + h); bg.addColorStop(0, 'rgba(44,34,24,.94)'); bg.addColorStop(1, 'rgba(16,12,8,.94)');
+    g.fillStyle = bg; rund(x0, y0, w, h, 6); g.fill(); g.restore();
+    g.strokeStyle = an ? '#ffe7a6' : '#c9a24a'; g.lineWidth = an ? 2 : 1.5; rund(x0 + .5, y0 + .5, w - 1, h - 1, 6); g.stroke();
+    g.strokeStyle = 'rgba(255,220,150,.18)'; g.lineWidth = 1; rund(x0 + 3, y0 + 3, w - 6, h - 6, 4); g.stroke();
+    const mx = x0 + (w - (s.pfeil ? 18 : 0)) / 2;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '700 13px Cinzel, Georgia, serif'; g.fillStyle = s.zu ? '#cfc3a8' : '#f6ead0'; g.fillText(s.name, mx, y0 + 12.5);
+    g.font = '600 11px Inter, system-ui, sans-serif'; g.fillStyle = s.bau ? '#ffd98a' : s.zu ? '#b4a88f' : !s.lvl ? '#9fe08a' : '#e4d6b4';
+    const tx = mx + (s.zu || s.bau ? 7.5 : 0); g.fillText(s.zeile, tx, y0 + 26);
+    if (s.zu || s.bau) drawGlyph(g, s.zu ? 'lock' : 'hourglass', tx - wz / 2 + 1, y0 + 26, 12, s.zu ? '#b4a88f' : '#ffd98a');
+    if (s.pfeil) { const ax = x0 + w - 15, ay = y0 + h / 2;                   // grüner Pfeil nach oben: kann jetzt aufgewertet werden
+        g.beginPath(); g.moveTo(ax, ay - 10); g.lineTo(ax + 8, ay - 1); g.lineTo(ax + 3.5, ay - 1); g.lineTo(ax + 3.5, ay + 9); g.lineTo(ax - 3.5, ay + 9); g.lineTo(ax - 3.5, ay - 1); g.lineTo(ax - 8, ay - 1); g.closePath();
+        const gg = g.createLinearGradient(0, ay - 10, 0, ay + 9); gg.addColorStop(0, '#9bf06a'); gg.addColorStop(1, '#2f9a2a');
+        g.fillStyle = gg; g.fill(); g.strokeStyle = '#163d12'; g.lineWidth = 1.2; g.stroke(); }
+    if (s.bau) { const hx = x, hy = y0 - 22 - Math.abs(Math.sin(now / 260)) * 3;  // wird gebaut: Hammer im Goldkreis, Spitze zeigt aufs Schild
+        g.beginPath(); g.moveTo(hx - 6, hy + 12); g.lineTo(hx, hy + 20); g.lineTo(hx + 6, hy + 12); g.closePath(); g.fillStyle = '#c9a24a'; g.fill();
+        const kg = g.createLinearGradient(0, hy - 15, 0, hy + 15); kg.addColorStop(0, '#ffe08a'); kg.addColorStop(1, '#a87418');
+        g.fillStyle = kg; g.beginPath(); g.arc(hx, hy, 15, 0, 7); g.fill(); g.strokeStyle = '#fff1c4'; g.lineWidth = 1.5; g.stroke();
+        g.fillStyle = '#2a2016'; g.beginPath(); g.arc(hx, hy, 11.5, 0, 7); g.fill();
+        g.save(); g.translate(hx, hy); g.rotate(-Math.PI / 5 + Math.sin(now / 260) * .25); g.scale(.85, .85); g.fillStyle = '#e9e4da'; g.fill(CITY_HAMMER); g.restore(); }
+    return { x: x0, y: y0 - (s.bau ? 38 : 0), w, h: h + (s.bau ? 38 : 0) };
 }
-function cityLagenFrei() {                                                   // the town is closed: give the memory back
-    for (const n of ['unten', 'oben', 'licht']) if (CITY_LAGEN[n]) { CITY_LAGEN[n].width = CITY_LAGEN[n].height = 0; CITY_LAGEN[n] = null; }
-    CITY_LAGEN.key = CITY_LAGEN.lichtKey = CITY_LAGEN.letzt = ''; CITY_LAGEN.letztZ = 0;
-}
-function cityUnten(g, W, H, Z, ox, oy, walls, list, toS) {                   // background, ground, back walls and the soft shadows of all houses
-    const wb = CITY_BOUNDS;
-    g.fillStyle = CITY_BG_COL; g.fillRect(0, 0, W, H);
-    g.drawImage(CITY_GROUND || cityPaintGround(), wb.x0 * Z + ox, wb.y0 * Z + oy, (wb.x1 - wb.x0) * Z, (wb.y1 - wb.y0) * Z);
-    const mb = walls.B; g.drawImage(walls.back, mb.x0 * Z + ox, mb.y0 * Z + oy, (mb.x1 - mb.x0) * Z, (mb.y1 - mb.y0) * Z);
-    for (const it of list) { const [sx, sy] = toS(it.x, it.y), r = (it.keep ? 46 : it.deco ? 14 : it.ghost ? 18 : 28) * Z, shx = sx + r * .35, shy = sy + r * .12;   // soft shadow falling to the lower right (sun top left)
-        const sg = g.createRadialGradient(shx, shy, r * .1, shx, shy, r * 1.1); sg.addColorStop(0, 'rgba(20,30,10,.32)'); sg.addColorStop(1, 'rgba(20,30,10,0)');
-        g.fillStyle = sg; g.beginPath(); g.ellipse(shx, shy, r * 1.1, r * .55, 0, 0, Math.PI * 2); g.fill(); }
-}
-function cityOben(g, Z, ox, oy, walls) { const mb = walls.B; g.drawImage(walls.front, mb.x0 * Z + ox, mb.y0 * Z + oy, (mb.x1 - mb.x0) * Z, (mb.y1 - mb.y0) * Z); }
-// a house picture: painted large once (CITY_SPR_SCALE), shrunk to the current zoom once more and kept - then every
-// frame is a 1:1 copy instead of shrinking the big picture again (the same look, a fraction of the work)
-const CITY_SPR_FERTIG = new WeakMap();
-function citySprDraw(g, s, dx, dy, k, dpr2, zStill) {
-    if (!zStill) { g.drawImage(s.c, dx, dy, s.c.width * k, s.c.height * k); return; }
-    const f = k * dpr2; let m = CITY_SPR_FERTIG.get(s);
-    if (!m || m.f !== f) { const c = m ? m.c : document.createElement('canvas'); c.width = Math.ceil(s.c.width * f); c.height = Math.ceil(s.c.height * f);
-        const cg = c.getContext('2d'); cg.imageSmoothingQuality = 'high'; cg.setTransform(f, 0, 0, f, 0, 0); cg.drawImage(s.c, 0, 0); m = { f, c }; CITY_SPR_FERTIG.set(s, m); }
-    g.drawImage(m.c, dx, dy, m.c.width / dpr2, m.c.height / dpr2);
-}
-// Namensschilder: wo sie in diesem Bild liegen (Bildschirm-Punkte). Ein Schild kommt nur hin, wenn es ganz im Bild ist
-// (2 Punkte Rand) und kein schon gesetztes überdeckt (2 Punkte Luft).
-let cityNamen = [];
-function cityNamePlatz(id, x, y, w, h, W, H) {
-    if (x < 2 || x + w > W - 2 || y < 2 || y + h > H - 2) return false;
-    if (cityNamen.some(n => x < n.x + n.w + 2 && n.x < x + w + 2 && y < n.y + n.h + 2 && n.y < y + h + 2)) return false;
-    cityNamen.push({ id, x, y, w, h }); return true;
-}
-// ---- one frame ----
+// ---- ein Bild ----
 function cityFrame(now) {
     if (cityView.hidden) return;
-    // Handy schonen: steht alles still (kein Finger, keine Kamerafahrt, keine Wolken), reichen 30 Bilder pro Sekunde – die
-    // Leute gehen langsam, man sieht keinen Unterschied. Ganz in den Wolken (alles weiß) wird die Stadt gar nicht gezeichnet.
-    const bewegt = !!(cityDrag || cityGesture || cloudAnim || !cityCam || cityCam.anim || cityCam.tx !== undefined);
-    if ((!bewegt && now - (cityFrame.drawn || 0) < 30) || (cloudCover >= .95 && CITY_GROUND)) { cityRaf = requestAnimationFrame(cityFrame); return; }   // (beim allerersten Mal wird unter den Wolken schon gemalt)
+    // Handy schonen: steht alles still, reichen 4 Bilder pro Sekunde (die Uhr auf den Schildern); läuft ein Bau, hüpft der Hammer
+    const c = loadCity(), bewegt = !!(cityDrag || cityGesture || cloudAnim || !cityCam || cityCam.anim || cityCam.tx !== undefined);
+    if (!bewegt && now - (cityFrame.drawn || 0) < (c.builds.length ? 30 : 250)) { cityRaf = requestAnimationFrame(cityFrame); return; }
     cityFrame.drawn = now;
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
-    if (!cityCam) { const [kx, ky] = cIso(CC, CC), desk = W >= 900 && H >= 501, z = cityStartZoom(W, H);   // (Handy: alle Baufelder und das Mauer-Tor samt Schild im Bild)
-        cityCam = { x: kx, y: ky + 6 - (desk ? 40 / z : 0), z };                                                // (Desktop: etwas weiter weg und 40 px tiefer – die ganze Mauer-Raute unter der Leiste oben)
-        if (cityPendingAnim) { cityCam.anim = { from: .62, t0: now, dur: 1100 }; cityPendingAnim = false; } }
+    if (!cityCam) { cityCam = { x: cityOrt('_keep').x, y: CITY_BILD_H / 2, z: cityStartZoom(W, H) };   // Start: die Burg in der Mitte
+        if (cityPendingAnim) { cityCam.anim = { from: 1.18, t0: now, dur: 1100 }; cityPendingAnim = false; } }
     let animZ = 1;
     if (cityCam.anim) { const a = cityCam.anim, q = Math.min(1, (now - a.t0) / a.dur), e = 1 - Math.pow(1 - q, 3), to = a.to ?? 1;
         animZ = a.from + (to - a.from) * e; if (q >= 1 && to === 1) cityCam.anim = null; }
-    const sheetH = cityOpenId && !document.getElementById('citySheet').hidden ? Math.min(380, H * .46) : 0;
-    if (cityCam.tx !== undefined && !cityDrag) { const f = Math.min(1, .16); cityCam.x += (cityCam.tx - cityCam.x) * f; cityCam.y += (cityCam.ty - cityCam.y) * f;
-        if (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3) cityCam.tx = cityCam.ty = undefined; }
-    cityClampCam(W, H - sheetH * .6);
-    const g = cityCtx, c = loadCity(), Z = cityCam.z * animZ;
-    if (!CITY_GROUND || CITY_GROUND_BIO !== cityGrundKey()) cityPaintGround();   // (neu, wenn die Hauptstadt in eine andere Gegend zieht)
-    const ox = W / 2 - cityCam.x * Z, oy = (H - sheetH * .6) / 2 - cityCam.y * Z;
-    const toS = (x, y, z) => { const [sx, sy] = cIso(x, y); return [sx * Z + ox, (sy - (z || 0)) * Z + oy]; };
-    // ground and walls (back half), then buildings and people in depth order, then the front walls
-    const wlvl = c.levels.wall || 0, walls = cityPaintWalls(wlvl);
-    const items = [];
-    const lvlKeep = c.levels.keep || 1;                                                // Paket D: die Burg wächst mit der Burg-Stufe (alle 5 Stufen ein Stück)
-    items.push({ id: '_keep', x: CITY_KEEP_AT[0], y: CITY_KEEP_AT[1], spr: citySprite('keep', Math.min(4, Math.floor(lvlKeep / 5))), name: 'Burg', lvl: lvlKeep, keep: true });
-    for (const b of CITY_BUILDINGS) { const at = CITY_LOTS[b.id]; if (!at) continue;
-        const lvl = c.levels[b.id] || 0, tier = cityTierOf(lvl);
-        if (b.id === 'wall') { items.push({ id: 'wall', x: at[0], y: at[1], spr: citySprite('gatehouse', tier), name: b.name, lvl, b, gate: true }); continue; }
-        items.push({ id: b.id, x: at[0], y: at[1], spr: tier ? citySprite(b.id, tier, b.id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '') : citySprite('ghost', 0, b.id), name: b.name, lvl, b, ghost: !tier }); }
-    for (const s of cityDeco()) items.push({ x: s.at[0], y: s.at[1], spr: cityStaticSprite(s.kind, s.col), deco: s.kind });
-    const hour = new Date().getHours() + new Date().getMinutes() / 60;             // evening and night: torches, lit windows
-    const night = hour >= 20 || hour < 5.5 ? 1 : hour >= 18 ? (hour - 18) / 2 : hour < 7 ? (7 - hour) / 1.5 : 0;
-    if (c.levels.hospital) for (let i = 0; i < 2; i++) { const [hx, hy] = CITY_LOTS.hospital, a = now / 5200 + i * Math.PI;   // healers going round the tents
-        items.push({ x: hx + Math.cos(a) * 22, y: hy + 10 + Math.sin(a) * 12, healer: true }); }
-    { const [gx, gy] = CITY_LOTS.wall; for (const dx of [-14, 14]) items.push({ x: gx + dx * .55, y: gy + 12, soldier: true, guard: true }); }   // guards at the gate
-    if (!cityFolk) cityMakeFolk();
-    const dt = Math.min(.1, (now - (cityFrame.last || now)) / 1000); cityFrame.last = now;
-    for (const f of cityFolk) { f.t += f.v * dt * (f.cart ? .5 : 1); const [x, y] = cityPathPoint(f.p, f.t); items.push({ x, y, folk: f }); }
-    items.sort((p, q) => (p.x + p.y) - (q.x + q.y));
-    // Boden, hintere Mauer und die weichen Schatten der Häuser ändern sich nur mit der Kamera. Steht sie still, liegen sie
-    // fertig in einem Bild (CITY_LAGEN, wird einmal gemalt) – das spart pro Bild das teure Verkleinern der großen Boden- und
-    // Mauerbilder und ~20 Farbverläufe. Bewegt sich die Kamera, wird wie bisher direkt gezeichnet (genau gleich).
-    const LG = CITY_LAGEN, lkey = [W, H, dpr2, Z, ox, oy, walls.key, CITY_GROUND_BIO].join(','), still = lkey === LG.letzt, zStill = Z === LG.letztZ;
-    LG.letzt = lkey; LG.letztZ = Z;
-    const mitSchatten = items.filter(it => it.spr && (!it.deco || ['fountain', 'statue'].includes(it.deco)));   // (Bäume, Büsche, Laternen haben ihren eigenen Schatten)
-    if (still) {
-        if (LG.key !== lkey) { cityLage('unten', W, H, dpr2, gg => cityUnten(gg, W, H, Z, ox, oy, walls, mitSchatten, toS)); cityLage('oben', W, H, dpr2, gg => cityOben(gg, Z, ox, oy, walls)); LG.key = lkey; }
-        g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(LG.unten, 0, 0);
+    if (cityCam.tx !== undefined && !cityDrag) { cityCam.x += (cityCam.tx - cityCam.x) * .16; cityCam.y += (cityCam.ty - cityCam.y) * .16; }
+    const vor = [cityCam.x, cityCam.y]; cityClampCam(W, H);
+    if (cityCam.tx !== undefined && (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3 || Math.hypot(vor[0] - cityCam.x, vor[1] - cityCam.y) > .01)) cityCam.tx = cityCam.ty = undefined;   // angekommen (oder am Bildrand: weiter geht es nicht)
+    const g = cityCtx, Z = cityCam.z * animZ, ox = W / 2 - cityCam.x * Z, oy = H / 2 - cityCam.y * Z, im = cityBild();
+    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = 'high';
+    g.fillStyle = '#1d2716'; g.fillRect(0, 0, W, H);
+    if (im) g.drawImage(im, ox, oy, CITY_BILD_W * Z, CITY_BILD_H * Z);
+    cityHitRects = []; cityNamen = [];
+    const schilder = [];
+    for (const id of Object.keys(CITY_ORTE)) {
+        const o = cityOrt(id), s = cityStand(c, id), sx = ox + o.x * Z, sy = oy + o.y * Z, rw = o.w * Z / 2, rh = o.h * Z / 2;
+        if (!s.lvl && im) { const r = Math.max(rw, rh), vg = g.createRadialGradient(sx, sy, r * .2, sx, sy, r);   // noch nicht gebaut: dunkel verschleiert
+            vg.addColorStop(0, 'rgba(24,26,30,.5)'); vg.addColorStop(.7, 'rgba(24,26,30,.38)'); vg.addColorStop(1, 'rgba(24,26,30,0)');
+            g.save(); g.translate(sx, sy); g.scale(rw / r, rh / r); g.translate(-sx, -sy); g.fillStyle = vg; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); g.restore(); }
+        cityHitRects.push({ id, x: sx - rw, y: sy - rh, w: rw * 2, h: rh * 2, cx: sx, cy: sy });
+        schilder.push({ id, s, x: sx, y: oy + o.sy * Z });
     }
-    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = zStill ? 'high' : 'low';   // (nur während des kurzen Hinein-/Herauszoomens unter den Wolken: einfacher verkleinern)
-    if (!still) cityUnten(g, W, H, Z, ox, oy, walls, mitSchatten, toS);
-    g.imageSmoothingQuality = 'high';
-    cityHitRects = [];
-    const plates = [];
-    for (const it of items) {
-        const [sx, sy] = toS(it.x, it.y);
-        if (it.guard) continue;                                              // (the gate guards stand in front of the wall: drawn after it)
-        if (it.folk || it.soldier || it.healer) {                            // a person: body, head, a little bob
-            const k = Math.max(.7, Z * .55), bob = it.guard ? 0 : Math.abs(Math.sin(now / 150 + it.x)) * k * .6;
-            if (it.healer) { g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
-                g.fillStyle = '#f3efe6'; g.fillRect(sx - 1 * k, sy - 3.8 * k - bob, 2 * k, 3.4 * k); g.fillStyle = '#c0392b'; g.fillRect(sx - .3 * k, sy - 3.4 * k - bob, .6 * k, 1.6 * k);
-                g.fillStyle = '#e8c9a0'; g.beginPath(); g.arc(sx, sy - 4.6 * k - bob, .85 * k, 0, 7); g.fill(); g.fillStyle = '#f3efe6'; g.fillRect(sx - 1 * k, sy - 5.5 * k - bob, 2 * k, .6 * k); continue; }
-            g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
-            if (it.folk && it.folk.cart) { g.fillStyle = '#7a5a36'; g.fillRect(sx - 3 * k, sy - 3.4 * k, 6 * k, 2.6 * k); g.fillStyle = '#3a2616'; g.beginPath(); g.arc(sx - 2 * k, sy - .6 * k, .9 * k, 0, 7); g.arc(sx + 2 * k, sy - .6 * k, .9 * k, 0, 7); g.fill(); continue; }
-            g.fillStyle = it.soldier ? '#8a8f99' : it.folk.col; g.fillRect(sx - .9 * k, sy - 3.6 * k - bob, 1.8 * k, 3 * k);
-            g.fillStyle = '#e8c9a0'; g.beginPath(); g.arc(sx, sy - 4.4 * k - bob, .85 * k, 0, 7); g.fill();
-            if (it.soldier) { g.strokeStyle = '#5a4a3a'; g.lineWidth = .35 * k; g.beginPath(); g.moveTo(sx + 1.2 * k, sy - bob); g.lineTo(sx + 1.2 * k, sy - 7 * k - bob); g.stroke(); }
-            else if (it.folk.hat) { g.fillStyle = '#5a3d24'; g.fillRect(sx - 1.1 * k, sy - 5.3 * k - bob, 2.2 * k, .6 * k); }
-            continue;
-        }
-        const s = it.spr, k = Z / CITY_SPR_SCALE, dx = sx - s.w * Z, dy = sy - s.up * Z;
-        if (it.id && (cityOpenId === it.id || cityRingId === it.id)) {      // selected: a golden ring on the ground
-            g.save(); g.strokeStyle = 'rgba(255,220,140,.95)'; g.lineWidth = 2; g.setLineDash([6, 4]); g.lineDashOffset = -now / 40;
-            g.beginPath(); const r = (it.keep ? 40 : 26) * Z; g.ellipse(sx, sy, r * .866 * 1.4, r * .5 * 1.4, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
-        citySprDraw(g, s, dx, dy, k, dpr2, zStill);                         // (the soft shadow underneath is part of cityUnten)
-        if (it.id === 'forge' && it.lvl) for (let i = 0; i < 5; i++) {       // chimney smoke
-            const t = ((now / 1800) + i / 5) % 1, [cx2, cy2] = toS(it.x - 9, it.y - 5, 31);
-            g.fillStyle = 'rgba(120,120,120,' + (.5 * (1 - t)) + ')'; g.beginPath(); g.arc(cx2 + t * 8 * Z, cy2 - t * 26 * Z, (1.5 + t * 4) * Z, 0, 7); g.fill(); }
-        if (it.id === 'forge' && it.lvl) { const [ax, ay] = toS(it.x + 16, it.y + 13, 6);            // sparks off the anvil
-            for (let i = 0; i < 7; i++) { const t = ((now / 700) + i / 7) % 1, an = -Math.PI / 2 + (i - 3) * .35; if (t > .8) continue;
-                g.fillStyle = 'rgba(255,' + Math.round(200 - t * 120) + ',60,' + (1 - t) + ')'; g.fillRect(ax + Math.cos(an) * t * 12 * Z, ay + Math.sin(an) * t * 10 * Z + t * t * 8 * Z, Math.max(1, Z * .6), Math.max(1, Z * .6)); } }
-        if (it.deco === 'fountain') { const [fx, fy] = toS(it.x, it.y, 10); g.strokeStyle = 'rgba(190,230,250,.8)'; g.lineWidth = Math.max(1, Z * .5);
-            for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + now / 2000, r = 6 * Z; g.beginPath(); g.moveTo(fx, fy); g.quadraticCurveTo(fx + Math.cos(a) * r * .6, fy - 3 * Z, fx + Math.cos(a) * r, fy + Math.sin(a) * r * .5 + 7 * Z); g.stroke(); } }
-        if (!it.id) continue;
-        const building = !!cityBuildOf(c, it.id === '_keep' ? 'keep' : it.id);
-        if (building) {                                                      // scaffolding + a bouncing hammer
-            g.save(); g.strokeStyle = '#8a6a44'; g.lineWidth = Math.max(1.2, Z * .7);
-            for (const [px, py] of [[-18, 18], [18, 18], [18, -18], [-18, -18]]) { const [a, b] = toS(it.x + px, it.y + py), [, b2] = toS(it.x + px, it.y + py, 24); g.beginPath(); g.moveTo(a, b); g.lineTo(a, b2); g.stroke(); }
-            for (const zz of [8, 16, 24]) { g.beginPath(); [[-18, 18], [18, 18], [18, -18]].forEach((q, i) => { const [a, b] = toS(it.x + q[0], it.y + q[1], zz); i ? g.lineTo(a, b) : g.moveTo(a, b); }); g.stroke(); }
-            g.restore();
-            const [hx, hy] = toS(it.x, it.y, 34); drawGlyph(g, 'upgrade', hx, hy - Math.abs(Math.sin(now / 180)) * 8, Math.max(16, 9 * Z), '#ffd98a');
-            liveAnimation = true;
-        }
-        const hw = (it.keep ? 40 : 30) * Z, top = sy - (it.keep ? 70 : 38) * Z;
-        cityHitRects.push({ id: it.id, x: sx - hw, y: top, w: hw * 2, h: sy + 14 * Z - top, cx: sx, cy: sy - (it.keep ? 30 : 16) * Z, depth: it.x + it.y });
-        if (it.id === cityRingId) { const el = document.getElementById('cityRing'), tf = 'translate(' + Math.round(sx) + 'px,' + Math.round(sy + (it.keep ? 4 : 0) * Z) + 'px)';   // die runden Knöpfe folgen dem Gebäude
+    if (im) for (const p of schilder) {                                      // die Schilder zuletzt, über allem
+        const an = cityOpenId === p.id || cityRingId === p.id, q = citySchild(g, p.s, p.x, p.y, an, now);
+        if (q.x + q.w > 0 && q.x < W && q.y + q.h > 0 && q.y < H) cityNamen.push({ id: p.id, ...q });
+        cityHitRects.push({ id: p.id, ...q, cx: p.x, cy: p.y });
+        if (p.id === cityRingId) { const el = document.getElementById('cityRing'), tf = 'translate(' + Math.round(p.x) + 'px,' + Math.round(p.y) + 'px)';   // die runden Knöpfe folgen dem Schild
             if (el.style.transform !== tf) el.style.transform = tf; if (el.style.visibility) el.style.visibility = ''; }
-        plates.push({ it, sx, sy, building, ghost: it.ghost });
-    }
-    if (still) { g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(LG.oben, 0, 0); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); } else { g.imageSmoothingQuality = zStill ? 'high' : 'low'; cityOben(g, Z, ox, oy, walls); g.imageSmoothingQuality = 'high'; }
-    // the gatehouse sits in the front wall: drawn over it
-    const gate = items.find(i => i.gate);
-    if (gate) { const [sx, sy] = toS(gate.x, gate.y), s = gate.spr, k = Z / CITY_SPR_SCALE; citySprDraw(g, s, sx - s.w * Z, sy - s.up * Z, k, dpr2, zStill); }
-    for (const it of items) if (it.guard) {                                  // two guards with spears at the gate
-        const [sx, sy] = toS(it.x, it.y), k = Math.max(.7, Z * .55);
-        g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
-        g.fillStyle = '#6f7682'; g.fillRect(sx - 1 * k, sy - 3.8 * k, 2 * k, 3.2 * k); g.fillStyle = '#2b5d9b'; g.fillRect(sx - 1 * k, sy - 2.6 * k, 2 * k, 1 * k);
-        g.fillStyle = '#e8c9a0'; g.beginPath(); g.arc(sx, sy - 4.6 * k, .85 * k, 0, 7); g.fill(); g.fillStyle = '#8a8f99'; g.beginPath(); g.arc(sx, sy - 4.9 * k, .9 * k, Math.PI, 0); g.fill();
-        g.strokeStyle = '#5a4a3a'; g.lineWidth = .35 * k; g.beginPath(); g.moveTo(sx + 1.3 * k, sy); g.lineTo(sx + 1.3 * k, sy - 8 * k); g.stroke();
-        g.fillStyle = '#c9c1ae'; g.beginPath(); g.moveTo(sx + 1.3 * k, sy - 9.2 * k); g.lineTo(sx + 1.8 * k, sy - 8 * k); g.lineTo(sx + .8 * k, sy - 8 * k); g.closePath(); g.fill(); }
-    // birds now and then
-    const bt = (now / 22000) % 1; if (bt < .45) { const x0 = W * (bt / .45) * 1.2 - W * .1, y0 = H * .22; g.strokeStyle = 'rgba(30,30,30,.55)'; g.lineWidth = 1;
-        for (const [dx, dy] of [[0, 0], [-10, 6], [-18, -4], [-26, 10]]) { const f = Math.sin(now / 120 + dx) * 2; g.beginPath(); g.moveTo(x0 + dx - 4, y0 + dy - f); g.lineTo(x0 + dx, y0 + dy + 1); g.lineTo(x0 + dx + 4, y0 + dy - f); g.stroke(); } }
-    if (night > 0) {                                                        // dusk and night: darker, torches glow at the gate, the keep, the square and along the main street
-        g.fillStyle = 'rgba(12,20,48,' + (.5 * night) + ')'; g.fillRect(0, 0, W, H);
-        g.save(); g.globalCompositeOperation = 'lighter';
-        const torches = [[CC - 12, CITY_WALL.b + 2, 14], [CC + 12, CITY_WALL.b + 2, 14], [CC - 30, CC + 30, 20], [CC + 30, CC + 30, 20], [CC, 371, 12]];
-        for (const y of [418, 450, 482]) torches.push([310, y, 13.5], [330, y, 13.5]);                       // die Laternen an der Hauptstraße
-        for (const [x, y] of [[244, 244], [396, 244], [244, 396], [396, 396]]) torches.push([x, y, 6]);
-        for (const [x, y, z] of torches) { const [tx, ty] = toS(x, y, z), fl = .85 + .15 * Math.sin(now / 90 + x * 3.1) * Math.sin(now / 130 + y), r = 16 * Z * fl;
-            const tg = g.createRadialGradient(tx, ty, 0, tx, ty, r); tg.addColorStop(0, 'rgba(255,190,90,' + (.55 * night) + ')'); tg.addColorStop(1, 'rgba(255,140,40,0)');
-            g.fillStyle = tg; g.beginPath(); g.arc(tx, ty, r, 0, 7); g.fill();
-            g.fillStyle = 'rgba(255,230,160,' + (.9 * night) + ')'; g.beginPath(); g.arc(tx, ty - Z * .6, Math.max(1, Z * .7), 0, 7); g.fill(); }
-        g.restore();
-    }
-    // warm afternoon light from the top left, a soft vignette around the edges
-    if (night < 1) { const nq = Math.round(night * 50) / 50, lk = [W, H, dpr2, nq].join(',');   // (both lie ready in one picture: two full-screen gradients cost more than one picture)
-      if (CITY_LAGEN.lichtKey !== lk) { cityLage('licht', W, H, dpr2, gg => {
-          const lg = gg.createLinearGradient(0, 0, W, H); lg.addColorStop(0, 'rgba(255,214,150,' + (.13 * (1 - nq)) + ')'); lg.addColorStop(.55, 'rgba(255,214,150,0)'); lg.addColorStop(1, 'rgba(40,60,90,.12)');
-          gg.fillStyle = lg; gg.fillRect(0, 0, W, H);
-          const vg = gg.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.hypot(W, H) * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(10,16,8,.38)');
-          gg.fillStyle = vg; gg.fillRect(0, 0, W, H); }); CITY_LAGEN.lichtKey = lk; }
-      g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(CITY_LAGEN.licht, 0, 0); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); }
-    // name plates last: jedes Schild klebt unter seinem Gebäude (nie an den Bildrand geschoben); ragt es aus dem Bild oder
-    // läge es auf einem anderen, bleibt es weg – die Burg zuerst, dann was gerade gebaut wird, gebaute Häuser, leere Plätze
-    const rund = (x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
-    const rang = q => q.it.keep ? 0 : q.building ? 1 : q.it.gate ? 2 : q.ghost ? 4 : 3;
-    plates.sort((p, q) => rang(p) - rang(q) || q.sy - p.sy);
-    cityNamen = [];
-    for (const { it, sx, sy, building, ghost } of plates) {
-        if (ghost && !building && Z >= .7) {                                 // leerer Platz: ein schwebendes Zeichen – „+“ = hier bauen, Schloss = braucht eine höhere Burg
-            const zu = !!(AUF && AUF.BAU_AB_BURG[it.id] > AUF.burgStufe('player')), r = Math.max(9, Math.min(14, 5.5 * Z));
-            const [bx, by0] = toS(it.x, it.y, 34), by = by0 + Math.sin(now / 430 + it.x) * 1.8;
-            g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(bx + 1.5, by + r + 2, r * .8, r * .3, 0, 0, 7); g.fill();
-            const bg = g.createLinearGradient(0, by - r, 0, by + r); bg.addColorStop(0, zu ? '#5d5a55' : '#ffe08a'); bg.addColorStop(1, zu ? '#2e2c29' : '#c98f22');
-            g.fillStyle = bg; g.strokeStyle = zu ? 'rgba(200,190,170,.7)' : '#fff1c4'; g.lineWidth = 1.5; g.beginPath(); g.arc(bx, by, r, 0, 7); g.fill(); g.stroke();
-            drawGlyph(g, zu ? 'lock' : 'plus', bx, by, r * 1.25, zu ? '#e6dccb' : '#4a2c08');
-        }
-        if (Z < .7 && !building) {                                           // weit weg: nur die Stufe (ab .7: Handy-Start-Blick mit Schildern)
-            if (!it.lvl) continue; const r2 = 7.5, [bx, by] = [sx, sy + 4 * Z + r2];
-            if (!cityNamePlatz(it.id, bx - r2, by - r2, r2 * 2, r2 * 2, W, H)) continue; g.font = '800 10px Inter, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-            g.fillStyle = it.keep ? '#c98f22' : '#2f6fb8'; g.strokeStyle = 'rgba(255,236,190,.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(bx, by, r2, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillText(String(it.lvl), bx, by + .5); continue; }
-        const wnd = it.id === 'hospital' ? c.wounded : 0, name = it.name + (wnd ? ' · ' + fmtCompact(wnd) + ' verw.' : ''), lv = it.lvl ? String(it.lvl) : '';
-        const fs = Math.max(9.5, Math.min(12.5, 4.6 * Z)), h2 = fs + 7; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
-        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = sx - W2 / 2, py = sy + (it.keep ? 12 : it.gate ? 2 : 7) * Z;
-        if (!cityNamePlatz(it.id, x0, py, W2, building ? h2 * 2 + 3 : h2, W, H)) continue;
-        g.fillStyle = ghost ? 'rgba(18,16,12,.58)' : 'rgba(18,16,12,.84)'; g.strokeStyle = building ? '#ffd98a' : ghost ? 'rgba(228,200,134,.35)' : 'rgba(228,200,134,.7)'; g.lineWidth = 1;
-        rund(x0, py, W2, h2, h2 / 2); g.fill(); g.stroke();
-        g.textAlign = 'center'; g.textBaseline = 'middle';
-        if (lv) { const lg2 = g.createLinearGradient(0, py, 0, py + h2); lg2.addColorStop(0, it.keep ? '#e7b84a' : '#4f8ad0'); lg2.addColorStop(1, it.keep ? '#9a6a16' : '#2a5794');   // die Stufe als Abzeichen
-            g.fillStyle = lg2; g.strokeStyle = 'rgba(255,236,190,.85)'; rund(x0, py, lw, h2, h2 / 2); g.fill(); g.stroke();
-            g.fillStyle = '#fff'; g.fillText(lv, x0 + lw / 2, py + h2 / 2 + .5); }
-        g.fillStyle = ghost ? '#d6cab0' : '#f6ead0'; g.fillText(name, lv ? x0 + lw + (W2 - lw) / 2 - 2 : x0 + W2 / 2, py + h2 / 2 + .5);
-        const fs8 = h2 - 7;
-        if (building) { const b2 = cityBuildOf(c, it.id === '_keep' ? 'keep' : it.id), tl = fmtClock((b2.endsAt - Date.now()) / 1000); g.font = '700 ' + (fs8 - 1) + 'px Inter, system-ui, sans-serif';
-            const w2 = g.measureText(tl).width + 26, yy = py + h2 + 3; g.fillStyle = 'rgba(20,6,5,.92)'; g.strokeStyle = 'rgba(255,110,80,.9)';
-            g.beginPath(); g.roundRect ? g.roundRect(sx - w2 / 2, yy, w2, fs + 6, 4) : g.rect(sx - w2 / 2, yy, w2, fs + 6); g.fill(); g.stroke();
-            drawGlyph(g, 'hourglass', sx - w2 / 2 + 10, yy + (fs + 6) / 2, fs - 1, '#ffb3a0'); g.fillStyle = '#ffe2d8'; g.fillText(tl, sx + 6, yy + (fs + 6) / 2 + .5); }
     }
     cityRaf = requestAnimationFrame(cityFrame);
 }

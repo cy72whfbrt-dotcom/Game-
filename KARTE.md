@@ -62,8 +62,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `alter` → Game/spiel/05d-maersche-kampfbericht.js:573
 - `analyse` → Game/baukunst/04-vielfalt-stile.js:366
 - `andere_sitzungen_loeschen` → Game/server/05-datenbank-welt.php:292
-- `anfKosten` → Game/spiel/08b-burg-aussehen.js:95
-- `anfZeile` → Game/spiel/08b-burg-aussehen.js:90
+- `anfKosten` → Game/spiel/08b-burg-aussehen.js:89
+- `anfZeile` → Game/spiel/08b-burg-aussehen.js:84
 - `angreiferZeilen` → Game/spiel/01a-grundlagen.js:191
 - `angriffQuellen` → Game/spiel/10b-inselfenster-knoepfe.js:122
 - `angriffReicht` → Game/spiel/10b-inselfenster-knoepfe.js:127
@@ -646,99 +646,49 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `chip` → Game/spiel/05b-truhe-skills.js:9
 - `chipN` → Game/spiel/01a-grundlagen.js:199
 - `choose` → Game/baukunst/05-umland.js:682
-- `cIso` → Game/spiel/08e-stadtbild-haeuser.js:21
-- `CITY_PAINT.academy` → Game/spiel/08e-stadtbild-haeuser.js:119
-- `CITY_PAINT.embassy` → Game/spiel/08e-stadtbild-haeuser.js:182
-- `CITY_PAINT.forge` → Game/spiel/08e-stadtbild-haeuser.js:127
-- `CITY_PAINT.gatehouse` → Game/spiel/08e-stadtbild-haeuser.js:152
-- `CITY_PAINT.heroes` → Game/spiel/08e-stadtbild-haeuser.js:144
-- `CITY_PAINT.hospital` → Game/spiel/08e-stadtbild-haeuser.js:136
-- `CITY_PAINT.keep` → Game/spiel/08e-stadtbild-haeuser.js:95
-- `CITY_PAINT.lumber` → Game/spiel/08e-stadtbild-haeuser.js:162
-- `CITY_PAINT.market` → Game/spiel/08e-stadtbild-haeuser.js:191
-- `CITY_PAINT.mine` → Game/spiel/08e-stadtbild-haeuser.js:175
-- `CITY_PAINT.plot` → Game/spiel/08e-stadtbild-haeuser.js:87
-- `CITY_PAINT.quarry` → Game/spiel/08e-stadtbild-haeuser.js:168
-- `cityAnfHtml` → Game/spiel/08b-burg-aussehen.js:101
-- `cityAussen` → Game/spiel/08e-stadtbild-haeuser.js:408
-- `cityBanner` → Game/spiel/08e-stadtbild-haeuser.js:81
+- `cityAnfHtml` → Game/spiel/08b-burg-aussehen.js:95
 - `cityBauId` → Game/spiel/08a-stadt-bauen.js:260
-- `cityBildSetzen` → Game/spiel/08b-burg-aussehen.js:80
-- `cityBildSpr` → Game/spiel/08b-burg-aussehen.js:74
-- `cityBio` → Game/spiel/08e-stadtbild-haeuser.js:245
-- `cityBioVon` → Game/spiel/08e-stadtbild-haeuser.js:244
+- `cityBild` → Game/spiel/08e-stadtbild-haeuser.js:24
+- `cityBildSetzen` → Game/spiel/08b-burg-aussehen.js:74
 - `cityBlocker` → Game/spiel/08a-stadt-bauen.js:98
 - `cityBuildOf` → Game/spiel/08a-stadt-bauen.js:74
 - `cityBuildsFix` → Game/spiel/08a-stadt-bauen.js:65
-- `cityBurgFehlt` → Game/spiel/08b-burg-aussehen.js:109
-- `cityBushAt` → Game/spiel/08e-stadtbild-haeuser.js:275
+- `cityBurgFehlt` → Game/spiel/08b-burg-aussehen.js:103
 - `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:247
 - `cityClampBuild` → Game/spiel/08a-stadt-bauen.js:89
-- `cityClampCam` → Game/spiel/08f-stadtbild-bild.js:26
+- `cityClampCam` → Game/spiel/08e-stadtbild-haeuser.js:34
 - `cityCost` → Game/spiel/08a-stadt-bauen.js:78
-- `cityDeco` → Game/spiel/08e-stadtbild-haeuser.js:425
 - `cityDef` → Game/spiel/08a-stadt-bauen.js:77
-- `cityDoor` → Game/spiel/08e-stadtbild-haeuser.js:80
 - `cityEffectRoh` → Game/spiel/08d-gebaeude-wirkung.js:18
 - `cityEffectText` → Game/spiel/08d-gebaeude-wirkung.js:17
 - `cityExtraHtml` → Game/spiel/08d-gebaeude-wirkung.js:40
 - `cityFehlt` → Game/spiel/08b-burg-aussehen.js:5
 - `cityFinishBuild` → Game/spiel/08a-stadt-bauen.js:122
-- `cityFitZoom` → Game/spiel/08f-stadtbild-bild.js:23
-- `cityFocus` → Game/spiel/08f-stadtbild-bild.js:66
-- `cityFrame` → Game/spiel/08f-stadtbild-bild.js:111
-- `cityGable` → Game/spiel/08e-stadtbild-haeuser.js:54
-- `cityGableY` → Game/spiel/08e-stadtbild-haeuser.js:63
-- `cityGhost` → Game/spiel/08e-stadtbild-haeuser.js:216
-- `cityGroundPoly` → Game/spiel/08e-stadtbild-haeuser.js:35
-- `cityGrundKey` → Game/spiel/08e-stadtbild-haeuser.js:404
-- `cityKante` → Game/spiel/08e-stadtbild-haeuser.js:53
-- `cityLage` → Game/spiel/08f-stadtbild-bild.js:73
-- `cityLagenFrei` → Game/spiel/08f-stadtbild-bild.js:78
+- `cityFocus` → Game/spiel/08e-stadtbild-haeuser.js:40
+- `cityFrame` → Game/spiel/08f-stadtbild-bild.js:42
 - `cityLevelSafe` → Game/spiel/01e-nebel-kampfwerte-hud.js:202
-- `cityLotOf` → Game/spiel/08f-stadtbild-bild.js:65
-- `cityMakeFolk` → Game/spiel/08f-stadtbild-bild.js:8
 - `cityMaxLevel` → Game/spiel/08a-stadt-bauen.js:51
 - `cityMinLevel` → Game/spiel/05c-erfolge-rangliste.js:18
-- `cityMountain` → Game/spiel/08e-stadtbild-haeuser.js:288
-- `cityNamePlatz` → Game/spiel/08f-stadtbild-bild.js:105
 - `cityNutz` → Game/spiel/08b-burg-aussehen.js:68
-- `cityOben` → Game/spiel/08f-stadtbild-bild.js:91
-- `cityPainter` → Game/spiel/08e-stadtbild-haeuser.js:47
-- `cityPaintGround` → Game/spiel/08e-stadtbild-haeuser.js:310
-- `cityPaintWalls` → Game/spiel/08e-stadtbild-haeuser.js:450
-- `cityPalmAt` → Game/spiel/08e-stadtbild-haeuser.js:266
-- `cityPathPoint` → Game/spiel/08f-stadtbild-bild.js:14
-- `cityPineAt` → Game/spiel/08e-stadtbild-haeuser.js:256
-- `cityPlinth` → Game/spiel/08e-stadtbild-haeuser.js:82
-- `cityPointerEnd` → Game/spiel/08f-stadtbild-bild.js:50
-- `cityRect` → Game/spiel/08e-stadtbild-haeuser.js:39
-- `cityRingAuf` → Game/spiel/08b-burg-aussehen.js:163
-- `cityRingZu` → Game/spiel/08b-burg-aussehen.js:175
-- `cityRockAt` → Game/spiel/08e-stadtbild-haeuser.js:280
-- `citySeite` → Game/spiel/08b-burg-aussehen.js:119
+- `cityOrt` → Game/spiel/08e-stadtbild-haeuser.js:21
+- `cityPointerEnd` → Game/spiel/08e-stadtbild-haeuser.js:63
+- `cityRingAuf` → Game/spiel/08b-burg-aussehen.js:157
+- `cityRingZu` → Game/spiel/08b-burg-aussehen.js:169
+- `citySchild` → Game/spiel/08f-stadtbild-bild.js:13
+- `citySeite` → Game/spiel/08b-burg-aussehen.js:113
 - `cityShow` → Game/spiel/08a-stadt-bauen.js:177
 - `citySlots` → Game/spiel/08a-stadt-bauen.js:73
 - `citySpeedCost` → Game/spiel/08a-stadt-bauen.js:118
-- `citySprDraw` → Game/spiel/08f-stadtbild-bild.js:95
-- `citySprite` → Game/spiel/08e-stadtbild-haeuser.js:205
+- `cityStand` → Game/spiel/08f-stadtbild-bild.js:4
 - `cityStartBuild` → Game/spiel/08a-stadt-bauen.js:108
-- `cityStartZoom` → Game/spiel/08f-stadtbild-bild.js:24
-- `cityStaticSprite` → Game/spiel/08e-stadtbild-haeuser.js:435
-- `cityStrip` → Game/spiel/08e-stadtbild-haeuser.js:40
-- `cityStufeHtml` → Game/spiel/08b-burg-aussehen.js:118
-- `cityTexture` → Game/spiel/08e-stadtbild-haeuser.js:27
+- `cityStartZoom` → Game/spiel/08e-stadtbild-haeuser.js:33
+- `cityStufeHtml` → Game/spiel/08b-burg-aussehen.js:112
 - `cityTick` → Game/spiel/08a-stadt-bauen.js:132
-- `cityTierOf` → Game/spiel/08e-stadtbild-haeuser.js:85
 - `cityTimeRoh` → Game/spiel/08a-stadt-bauen.js:82
 - `cityTimeSec` → Game/spiel/08a-stadt-bauen.js:86
-- `cityTreeAt` → Game/spiel/08e-stadtbild-haeuser.js:247
-- `cityUnten` → Game/spiel/08f-stadtbild-bild.js:82
 - `cityVergleich` → Game/spiel/08d-gebaeude-wirkung.js:27
-- `cityVglHtml` → Game/spiel/08b-burg-aussehen.js:113
-- `cityWindows` → Game/spiel/08e-stadtbild-haeuser.js:72
-- `cityWindowsR` → Game/spiel/08e-stadtbild-haeuser.js:76
-- `cityZiegel` → Game/spiel/08e-stadtbild-haeuser.js:48
+- `cityVglHtml` → Game/spiel/08b-burg-aussehen.js:107
+- `cityZMin` → Game/spiel/08e-stadtbild-haeuser.js:32
 - `claimAch` → Game/spiel/05c-erfolge-rangliste.js:142
 - `claimChain` → Game/spiel/06a-aufgaben.js:187
 - `claimDaily` → Game/spiel/06a-aufgaben.js:49
@@ -766,7 +716,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:343
 - `closeHeroHall` → Game/spiel/08c-helden.js:396
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:111
-- `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:325
+- `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:121
 - `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:56
 - `closeMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:309
 - `closePanel` → Game/spiel/09e-inselfenster.js:35
@@ -1111,7 +1061,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `frameIslandInView` → Game/spiel/03e-kamera-eingabe.js:479
 - `free` → Game/spiel/01c-basen-spielstand.js:46
 - `freezeCamera` → Game/spiel/03e-kamera-eingabe.js:250
-- `frei` → Game/spiel/08e-stadtbild-haeuser.js:361
 - `freierStartplatz` → Game/spiel/01c-basen-spielstand.js:160
 - `freiText` → Game/aufbau.js:297
 - `fremd_kuerzen` → Game/server/02-sicherheit-datenlecks.php:155
@@ -1157,7 +1106,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `G.sph` → Game/baukunst/05-umland.js:72
 - `G.torus` → Game/baukunst/05-umland.js:78
 - `G.wrect` → Game/baukunst/05-umland.js:80
-- `g2Cross` → Game/spiel/08e-stadtbild-haeuser.js:201
 - `gableFaces` → Game/baukunst/04-vielfalt-stile.js:292
 - `gableRoof` → Game/baukunst/06-turmhof-festung.js:32
 - `gableTimber` → Game/baukunst/06-turmhof-festung.js:59
@@ -1476,7 +1424,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kontoProfil` → Game/spiel/10d-welt-weltrechner.js:248
 - `kostenHtml` → Game/aufbau.js:76
 - `kraft` → Game/buendnis/03-mitspieler.js:410
-- `kreis` → Game/spiel/08e-stadtbild-haeuser.js:380
 - `kreuz` → Game/spiel/01f-felsen.js:68
 - `kWert` → Game/spiel/10d-welt-weltrechner.js:541
 - `label` → Game/spiel/03d-maersche-tagnacht.js:104
@@ -1520,7 +1467,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:134
 - `levelRewardCoins` → Game/spiel/02a-shop-stufen.js:226
 - `levelRewardGems` → Game/spiel/02a-shop-stufen.js:229
-- `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:289
+- `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:85
 - `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:223
 - `levelUpItem` → Game/spiel/02a-shop-stufen.js:171
 - `LILY` → Game/baukunst/08-himmelsfeste-bilder.js:20
@@ -1538,7 +1485,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `lkHas` → Game/spiel/08b-burg-aussehen.js:19
 - `lkPrice` → Game/spiel/08b-burg-aussehen.js:13
 - `lkUse` → Game/spiel/08b-burg-aussehen.js:20
-- `lmAt` → Game/spiel/08e-stadtbild-haeuser.js:414
 - `loadBotState` → Game/bots/04-stand-stadt.js:12
 - `loadCity` → Game/spiel/08a-stadt-bauen.js:53
 - `loadCrest` → Game/spiel/03c-wappen-thronplatz.js:7
@@ -1848,7 +1794,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `passScroll` → Game/spiel/06b-pass-anleitung.js:105
 - `passwort_anfrage` → Game/server/06-speichern-push-konto.php:159
 - `passXp` → Game/spiel/06b-pass-anleitung.js:26
-- `pat` → Game/spiel/08e-stadtbild-haeuser.js:314
 - `patchAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:368
 - `patchSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:348
 - `pathSoFar` → Game/spiel/02b-maersche.js:215
@@ -1858,7 +1803,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `payToll` → Game/spiel/01b-weltkarte.js:291
 - `pct` → Game/ladebildschirm.js:329
 - `pentRoof` → Game/baukunst/06-turmhof-festung.js:42
-- `pfad` → Game/spiel/08e-stadtbild-haeuser.js:416
 - `pick` → Game/baukunst/05-umland.js:688
 - `pickIslandAtScreen` → Game/spiel/03e-kamera-eingabe.js:364
 - `pickRandomRarity` → Game/spiel/02a-shop-stufen.js:63
@@ -1954,7 +1898,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questProgress` → Game/spiel/06a-aufgaben.js:154
 - `questStadtGeht` → Game/spiel/06a-aufgaben.js:114
 - `queueHover` → Game/spiel/03e-kamera-eingabe.js:362
-- `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:294
+- `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:90
 - `rahmenDef` → Game/spiel/05a-aussehen-profil.js:18
 - `rahmenHat` → Game/spiel/05a-aussehen-profil.js:22
 - `rahmenPlatzText` → Game/spiel/05a-aussehen-profil.js:19
@@ -1969,7 +1913,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rallySchild` → Game/buendnis/02-rally-geschenke.js:137
 - `rallyVerluste` → Game/buendnis/02-rally-geschenke.js:140
 - `rallyWerte` → Game/buendnis/02-rally-geschenke.js:121
-- `rang` → Game/spiel/08f-stadtbild-bild.js:250
 - `rangLeer` → Game/spiel/09c-events-drache.js:433
 - `rankIndexFor` → Game/spiel/05a-aussehen-profil.js:41
 - `rankPeople` → Game/spiel/05c-erfolge-rangliste.js:280
@@ -1998,7 +1941,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:232
 - `renderChestEquipment` → Game/spiel/05b-truhe-skills.js:46
 - `renderChestItemPopup` → Game/spiel/05b-truhe-skills.js:189
-- `renderCitySheet` → Game/spiel/08b-burg-aussehen.js:130
+- `renderCitySheet` → Game/spiel/08b-burg-aussehen.js:124
 - `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:261
 - `renderCombatLog` → Game/spiel/05d-maersche-kampfbericht.js:146
 - `renderCrestCard` → Game/spiel/05a-aussehen-profil.js:71
@@ -2011,7 +1954,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderInbox` → Game/spiel/06a-aufgaben.js:239
 - `renderKeep` → Game/aufbau.js:304
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:4
-- `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:304
+- `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:100
 - `renderLook` → Game/spiel/05a-aussehen-profil.js:56
 - `renderLookSheet` → Game/spiel/08b-burg-aussehen.js:32
 - `renderLookTop` → Game/spiel/08b-burg-aussehen.js:26
@@ -2082,7 +2025,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `roofMat` → Game/baukunst/04-vielfalt-stile.js:226
 - `roofUV` → Game/baukunst/06-turmhof-festung.js:30
 - `routeFor` → Game/spiel/01b-weltkarte.js:219
-- `row` → Game/spiel/08f-stadtbild-bild.js:312
+- `row` → Game/spiel/08f-stadtbild-bild.js:108
 - `row` → Game/spiel/09b-lager-tagesboss.js:348
 - `row` → Game/spiel/09c-events-drache.js:370
 - `row` → Game/spiel/09c-events-drache.js:390
@@ -2090,7 +2033,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rueckzuegeZuClient` → Game/welt.js:204
 - `rulerOwner` → Game/spiel/01d-helden-mitspieler.js:162
 - `runBotTick` → Game/bots/05-verteidigen-takt.js:325
-- `rund` → Game/spiel/08f-stadtbild-bild.js:249
+- `rund` → Game/spiel/08f-stadtbild-bild.js:17
 - `runde` → Game/weltrechner/push.js:224
 - `rundturm` → Game/baukunst/02-buehne-grundbasis.js:204
 - `runeGeo` → Game/baukunst/04-vielfalt-stile.js:500
@@ -2166,7 +2109,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sectorGeo` → Game/baukunst/08-himmelsfeste-bilder.js:48
 - `see` → Game/bots/05-verteidigen-takt.js:39
 - `seed` → Game/spiel/01c-basen-spielstand.js:58
-- `seg` → Game/spiel/08e-stadtbild-haeuser.js:457
 - `segDistW` → Game/spiel/01c-basen-spielstand.js:33
 - `seiteUmbauen` → Game/spiel/05d-maersche-kampfbericht.js:405
 - `senden` → Game/speichern.js:160
@@ -2277,7 +2219,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spots` → Game/baukunst/03-wahrzeichen-feuer.js:316
 - `SPRAY` → Game/baukunst/07-hafen-palast.js:419
 - `squarePlate` → Game/baukunst/02-buehne-grundbasis.js:155
-- `stadt` → Game/spiel/08e-stadtbild-haeuser.js:413
 - `stadtBlende` → Game/spiel/08a-stadt-bauen.js:198
 - `stadtCap` → Game/aufbau.js:117
 - `stadtCapB` → Game/aufbau.js:116
@@ -2310,7 +2251,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `stop` → Game/spiel/10c-start-einstellungen.js:129
 - `stopFlight` → Game/spiel/03e-kamera-eingabe.js:139
 - `Strip` → Game/baukunst/05-umland.js:151
-- `strip` → Game/spiel/08e-stadtbild-haeuser.js:430
 - `Strip.prototype.line` → Game/baukunst/05-umland.js:153
 - `Strip.prototype.mesh` → Game/baukunst/05-umland.js:161
 - `Strip.prototype.tri` → Game/baukunst/05-umland.js:152
@@ -2372,7 +2312,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `TOPI` → Game/baukunst/07-hafen-palast.js:414
 - `torMitte` → Game/spiel/03b-gebaeude-3d.js:266
 - `torusGeo` → Game/baukunst/04-vielfalt-stile.js:265
-- `toS` → Game/spiel/08f-stadtbild-bild.js:133
 - `toSX` → Game/spiel/03a-karte-hintergrund.js:6
 - `totalCoinProductionPerTick` → Game/spiel/01e-nebel-kampfwerte-hud.js:216
 - `totalTroopProductionPerTick` → Game/spiel/01e-nebel-kampfwerte-hud.js:206
@@ -2384,7 +2323,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tower` → Game/baukunst/08-himmelsfeste-bilder.js:118
 - `tower` → Game/spiel/03b-gebaeude-3d.js:102
 - `tower` → Game/spiel/03b-gebaeude-3d.js:216
-- `tower` → Game/spiel/08e-stadtbild-haeuser.js:464
 - `towerTier` → Game/spiel/03b-gebaeude-3d.js:61
 - `tpl` → Game/baukunst/05-umland.js:60
 - `trace` → Game/spiel/03c-wappen-thronplatz.js:472
@@ -2526,7 +2464,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `welcomeNachziehen` → Game/spiel/06d-schild-produktion.js:354
 - `welcomeRows` → Game/spiel/06d-schild-produktion.js:314
 - `welleHeim` → Game/spiel/04-kampf.js:229
-- `welt` → Game/spiel/08e-stadtbild-haeuser.js:411
 - `WELT.BEFEHLE.angriff` → Game/spiel/10d-welt-weltrechner.js:1045
 - `WELT.BEFEHLE.armee` → Game/spiel/10d-welt-weltrechner.js:1164
 - `WELT.BEFEHLE.ausbau` → Game/spiel/10d-welt-weltrechner.js:1108
@@ -2655,7 +2592,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zinnen` → Game/ladebildschirm.js:49
 - `zitadelle` → Game/baukunst/02-buehne-grundbasis.js:330
 - `zoomAt` → Game/spiel/03e-kamera-eingabe.js:153
-- `zug` → Game/spiel/08e-stadtbild-haeuser.js:333
 - `zuOft` → Game/spiel/10d-welt-weltrechner.js:142
 
 ## Game/baukunst/ (Teile)
@@ -4467,18 +4403,17 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openLookSheet` :52 — tab 'title': Titel = Rahmen (Alexander 6.10.) – Reiter „Rahmen“, zu den Saison-…
 - `closeLookSheet` :56
 - `cityNutz` :68 — die eigene Seite eines Gebäudes (Forschen, Heilen …) → [Name, Zeichen] oder null
-- `cityBildSpr` :74 — dasselbe Bild wie in der Stadt (noch nicht gebaut: das Gebäude der Stufe 1, aus…
-- `cityBildSetzen` :80 — das Gebäude-Bild oben links im Fenster (nur neu gemalt, wenn sich die Stufe änd…
-- `anfZeile` :90 — eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz – geh [F…
-- `anfKosten` :95 — Münzen und Rohstoffe: hast / brauchst
-- `cityAnfHtml` :101 — Voraussetzungen für die nächste Stufe (Burg, Bauarbeiter, Münzen, Rohstoffe)
-- `cityBurgFehlt` :109 — reicht die Burg-Stufe nicht: der Knopf sagt es („Burg Stufe 5 nötig“) statt nur…
-- `cityVglHtml` :113 — Jetzt / Nächste Stufe (wie die Gebäude-Fenster in Rise of Kingdoms) – je Wert e…
-- `cityStufeHtml` :118
-- `citySeite` :119 — Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
-- `renderCitySheet` :130 — (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
-- `cityRingAuf` :163 — ---- die runden Knöpfe am angetippten Gebäude ----
-- `cityRingZu` :175
+- `cityBildSetzen` :74 — das Gebäude-Bild oben links im Fenster: sein Ausschnitt aus dem Stadtbild (noch…
+- `anfZeile` :84 — eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz – geh [F…
+- `anfKosten` :89 — Münzen und Rohstoffe: hast / brauchst
+- `cityAnfHtml` :95 — Voraussetzungen für die nächste Stufe (Burg, Bauarbeiter, Münzen, Rohstoffe)
+- `cityBurgFehlt` :103 — reicht die Burg-Stufe nicht: der Knopf sagt es („Burg Stufe 5 nötig“) statt nur…
+- `cityVglHtml` :107 — Jetzt / Nächste Stufe (wie die Gebäude-Fenster in Rise of Kingdoms) – je Wert e…
+- `cityStufeHtml` :112
+- `citySeite` :113 — Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
+- `renderCitySheet` :124 — (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
+- `cityRingAuf` :157 — ---- die runden Knöpfe am angetippten Gebäude ----
+- `cityRingZu` :169
 
 ### Game/spiel/08c-helden.js — Helden: Splitter, Freischalten, Sterne, Skillpunkte, Helden-Fenster
 - `heroFresh` :4
@@ -4576,88 +4511,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `stadtKopf` :127 — Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
 - `teleportCapital` :142
 
-### Game/spiel/08e-stadtbild-haeuser.js — Stadtansicht (isometrisch): Häuser und Gebäude zeichnen
-- `cIso` :21 — world → screen units (before zoom)
-- `cityTexture` :27 — small tileable noise texture for grass / cobbles / fields
-- `cityGroundPoly` :35 — a world-space polygon on the ground, drawn in screen units
-- `cityRect` :39
-- `cityStrip` :40 — a street along world points: flat quads on the ground (iso-correct)
-- `cityPainter` :47
-- `cityZiegel` :48 — Ziegel-Reihen: n Linien zwischen Traufe (a0→a1) und First (b0→b1)
-- `cityKante` :53
-- `cityGable` :54 — pitched roof, ridge along x
-- `cityGableY` :63 — pitched roof, ridge along y
-- `cityWindows` :72 — a row of windows on the front (y) face
-- `cityWindowsR` :76 — on the right (x) face
-- `cityDoor` :80
-- `cityBanner` :81
-- `cityPlinth` :82
-- `cityTierOf` :85 — tiers: 0 = empty lot, 1 = lvl 1-4, 2 = 5-14, 3 = 15+
-- `CITY_PAINT.plot` :87 — fenced building site
-- `CITY_PAINT.keep` :95 — deine Burg: Ringmauer mit Ecktürmen, Halle, Bergfried, Torhaus – wächst mit der…
-- `CITY_PAINT.academy` :119
-- `CITY_PAINT.forge` :127
-- `CITY_PAINT.hospital` :136
-- `CITY_PAINT.heroes` :144
-- `CITY_PAINT.gatehouse` :152 — the gate in the front wall = the Mauer building
-- `CITY_PAINT.lumber` :162 — Holzfäller: Hütte, Stämme, Sägebock, Bäume drumherum
-- `CITY_PAINT.quarry` :168 — Steinbruch: grauer Fels, Quader, ein Holzkran
-- `CITY_PAINT.mine` :175 — Eisenmine: dunkler Berg mit Stollen, Schienen und Lore
-- `CITY_PAINT.embassy` :182 — Botschaft: helles Haus mit Säulen und vielen Fahnen (das Bündnis)
-- `CITY_PAINT.market` :191 — Markt: Stände unter bunten Dächern, Säcke, Fässer, ein Kontor
-- `g2Cross` :201
-- `citySprite` :205
-- `cityGhost` :216 — ein leerer Bauplatz: Grundmauern, ein paar Balken und Steine, darüber das Gebäu…
-- `cityBioVon` :244
-- `cityBio` :245
-- `cityTreeAt` :247 — Bäume, Büsche, Felsen: in Bildschirm-Einheiten um den Fußpunkt (a, b) gemalt – …
-- `cityPineAt` :256 — eine Tanne: drei Kegel übereinander, links hell, rechts dunkel
-- `cityPalmAt` :266 — eine Palme: gebogener Stamm, sechs Wedel
-- `cityBushAt` :275
-- `cityRockAt` :280 — ein Felsbrocken: links hell, rechts dunkel
-- `cityMountain` :288 — ein Berg: Grundriss aus 7 Ecken, Spitze etwas versetzt, jede Seite nach dem Lic…
-- `cityPaintGround` :310
-- `pat` :314
-- `zug` :333
-- `frei` :361
-- `kreis` :380
-- `cityGrundKey` :404 — neu malen, wenn die Hauptstadt umzieht
-- `cityAussen` :408 — Die Weltkarte um die Hauptstadt, ins Stadtbild gelegt: die Basis (Halbmesser IS…
-- `welt` :411
-- `stadt` :413
-- `lmAt` :414
-- `pfad` :416
-- `cityDeco` :425
-- `strip` :430
-- `cityStaticSprite` :435
-- `cityPaintWalls` :450 — ---- the curtain wall: its look follows the Mauer level (palisade → stone → hig…
-- `seg` :457 — a straight run of wall (along x or y)
-- `tower` :464 — Holzturm mit Plattform
+### Game/spiel/08e-stadtbild-haeuser.js — Stadtansicht als KI-Bild: Gebäude-Orte, Kamera, Wischen/Zoomen, Tippen
+- `cityOrt` :21
+- `cityBild` :24 — das Stadtbild – lädt beim ersten Mal
+- `cityZMin` :32 — ---- Kamera: Bild-Punkte; das Bild deckt immer den ganzen Bildschirm ----
+- `cityStartZoom` :33
+- `cityClampCam` :34
+- `cityFocus` :40 — die Kamera gleitet (oder springt) zum Gebäude
+- `cityPointerEnd` :63
 
-### Game/spiel/08f-stadtbild-bild.js — Stadtansicht: Leute, Kamera, Bild; Stufenaufstieg-Fenster
-- `cityMakeFolk` :8
-- `cityPathPoint` :14 — a point along a polyline, t in 0..1
-- `cityFitZoom` :23
-- `cityStartZoom` :24 — Desktop: etwas weiter weg · Handy: alle Bauplätze samt Steinbruch und Mauer im …
-- `cityClampCam` :26
-- `cityPointerEnd` :50
-- `cityLotOf` :65
-- `cityFocus` :66 — glide (or jump) the camera to a building
-- `cityLage` :73
-- `cityLagenFrei` :78 — the town is closed: give the memory back
-- `cityUnten` :82 — background, ground, back walls and the soft shadows of all houses
-- `cityOben` :91
-- `citySprDraw` :95
-- `cityNamePlatz` :105
-- `cityFrame` :111 — ---- one frame ----
-- `toS` :133
-- `rund` :249 — name plates last: jedes Schild klebt unter seinem Gebäude (nie an den Bildrand …
-- `rang` :250
-- `levelRewardText` :289
-- `queueLevelUpModal` :294
-- `renderLevelUpModal` :304
-- `row` :312
-- `closeLevelUpModal` :325
+### Game/spiel/08f-stadtbild-bild.js — Stadtansicht: Bild zeichnen, Schilder (Name/Stufe, Hammer, Pfeil); Stufenaufsti…
+- `cityStand` :4 — was das Schild eines Gebäudes zeigt
+- `citySchild` :13 — → {x, y, w, h}; x/y = Mitte des Schilds
+- `rund` :17
+- `cityFrame` :42 — ---- ein Bild ----
+- `levelRewardText` :85
+- `queueLevelUpModal` :90
+- `renderLevelUpModal` :100
+- `row` :108
+- `closeLevelUpModal` :121
 
 ### Game/spiel/09a-funde-felder.js — Funde auf der Karte und Ressourcenfelder
 - `pickupAmount` :6
