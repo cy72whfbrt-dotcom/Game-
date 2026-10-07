@@ -1705,6 +1705,9 @@ Nacht – vorher bauen und testen.
     - Pass viel länger, auch Truppen u. a. als Belohnung. Aufgaben: viel mehr.
     - Karte: Tipp auf freies Feld → Menü (Teleportieren, Markierung, Truppen dorthin verlegen).
     - Event-Bilder gefallen Alexander („schon geil“).
+    - ENTSCHIEDEN 7.10. 16:30 (Zahlen: scratchpad/eventzahlen.md): Tagesboss nur Schadens-Klassen (Platz-Preise weg);
+      Drache nur Leiste, keine Extra-Preise für die Besten; Teleport frei wo Platz + Pass offen, neue Spieler 1× gratis;
+      Lager-Stufen-Belohnung jeden Tag neu.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
