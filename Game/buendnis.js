@@ -1180,13 +1180,11 @@ function bundMitspielerRally(now) {
     // a) mitmachen: wer einen Weg hat, schickt einen guten Teil einer großen Basis (zu spät am Sammelpunkt → folgt direkt zum Ziel)
     for (const r of bund.r) {
         const a = bund.b[r.aid]; if (!a || now > r.los - 4000) continue;
-        const at = islandById[r.at];
         for (const w of a.mit) {
             const bot = botById[w], key = r.id + ':' + w; if (!bot || bot.mensch || w === r.by || bundMem.rallyGemacht.has(key) || r.j.some(j => j.w === w) || !bundBotBereit(bot, now) || botFreeSlots(bot) <= 0) continue;
             const zielOw = islandOwnerOf(r.t); if (zielOw && (bundVerbuendet(w, zielOw) || zielOw === w)) continue;
             const thr = botThreatened(w), lage = bundRallyLage(w, a, now); let best = null;   // (nach Lage: wer hinten Ärger hat, schickt weniger)
             for (const sid of botOwnedIslands[w]) { if (thr.has(sid) || sid === megaTempleId || sid === r.at) continue; const n = Math.floor((islandTroops[sid] || 0) * (botStyle(bot).commit || .7) * .8 * lage); if (n < wirtK(1000)) continue;
-                const src = islandById[sid];                                // (Tore egal beim Beitreten)
                 if (!best || n > best.n) best = { id: sid, n }; }
             bundMem.rallyGemacht.add(key);
             // (Rally eines echten Spielers: die Mitspieler sagen im Chat, ob sie kommen – vorher kam einfach keiner, ohne ein Wort)
@@ -1369,7 +1367,7 @@ function bundChatText(x, du) {                                    // was eine Ze
 }
 function bundChatZeilen(a) { const c = bundChat[a.id]; return c && Array.isArray(c.l) ? c.l : []; }
 function bundChatHtml(a) {
-    const l = bundChatZeilen(a).slice(-50), now = Date.now();
+    const l = bundChatZeilen(a).slice(-50);
     const knopf = k => '<button type="button" class="btn btn--secondary btn--sm" data-bact="chat" data-k="' + k + '">' + escapeHtml(BUND_CHAT[k].t) + '</button>';
     return '<div class="bd-chat" id="bdChat">' + (l.length ? l.map(x => { const mir = x.w === 'player', sys = BUND_CHAT[x.k] && BUND_CHAT[x.k].g === 's', ort = x.z !== null && x.z !== undefined && islandById[x.z];
             return '<div class="bd-cz' + (mir ? ' is-me' : '') + (sys ? ' is-sys' : '') + (x.k === 'hilfe' || x.k === 's_gegen' || x.k === 'rueckzug' ? ' is-hilfe' : '') + '"><b>' + (mir ? 'Du' : escapeHtml(bundName(x.w))) + (BUND_CHAT[x.k] && 'fa'.includes(BUND_CHAT[x.k].g) ? ':' : '') + '</b> <span>' + escapeHtml(bundChatText(x, mir)) + '</span>' +

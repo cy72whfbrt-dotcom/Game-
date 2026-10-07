@@ -1,4 +1,4 @@
-// Teil 08b-burg-aussehen.js: Burg (Ausbau, Skin, Friedensschild) und Fenster Aussehen
+// Teil 08b-burg-aussehen.js: Burg (Ausbau, Friedensschild) und Fenster Aussehen
 // ===== DEINE BURG (tap the castle in the city): upgrade it, switch on a Friedensschild =====
 function shieldStock() { let v; try { v = JSON.parse(store.get('openWaterShieldStock')); } catch (e) {} return Object.assign({ 2: 0, 8: 0, 24: 0 }, v || {}); }
 function renderKeepSheet() { AUF.renderKeep(); const f = cityFehlt('keep'); if (f) setBtnLabel(document.getElementById('cityUpgradeBtn'), f); }   // die Burg-Stufe (aufbau.js)

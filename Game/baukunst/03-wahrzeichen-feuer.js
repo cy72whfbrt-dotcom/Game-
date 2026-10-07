@@ -59,7 +59,7 @@
       for (const [x, z] of pos) column(g, x, base, z, hc, .26, M.marble(), M.cap());
       // entablature + roof by rarity: bronze · silver · gold stepped pyramid
       K.box(g, ww + .2, .55, ww + .2, M.cap(), 0, base + hc, 0);
-      const band = K.box(g, ww + .26, .16, ww + .26, M[sz.roof](), 0, base + hc + .2, 0);
+      K.box(g, ww + .26, .16, ww + .26, M[sz.roof](), 0, base + hc + .2, 0);
       const rb = base + hc + .55; let apex;
       if (sz.roof === 'gold') { for (let i = 0; i < 3; i++) K.box(g, ww - i * 1.3, .45, ww - i * 1.3, i % 2 ? M.cap() : M.gold(), 0, rb + i * .45, 0); K.pyramid(g, ww - 3.6, ww - 3.6, 1.6, M.gold(), 0, rb + 1.35, 0); apex = rb + 2.95; }
       else { K.pyramid(g, ww + .5, ww + .5, sz.roof === 'silver' ? 2.4 : 2.0, M[sz.roof](), 0, rb, 0); apex = rb + (sz.roof === 'silver' ? 2.4 : 2.0); }
@@ -180,7 +180,7 @@
         if (i < 2) { const nw = TER[i + 1][0], mid = (w + nw) / 4; for (const [x, z, ry] of [[0, mid, 0], [0, -mid, 0], [mid, 0, Math.PI / 2], [-mid, 0, Math.PI / 2]]) K.water(g, { rect: [w * .42, .7], x, y: y + h + .02, z, ry });
           for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2 + Math.PI / 4, d = w / 2 * .92 * Math.SQRT1_2 * 1.02; K.waterfall(g, Math.cos(a) * d, y + h + .02, Math.sin(a) * d, 1.3, h + .05, { ry: -a + Math.PI / 2 }); } }
         // grand stairs on all four sides
-        for (let s = 0; s < 4; s++) { const a = s * Math.PI / 2; const st = K.stairs(g, 3.2 - i * .3, 5, h / 5, .4, M.cap(), Math.sin(a) * (w / 2 + 2), y, Math.cos(a) * (w / 2 + 2), { ry: a }); }
+        for (let s = 0; s < 4; s++) { const a = s * Math.PI / 2; K.stairs(g, 3.2 - i * .3, 5, h / 5, .4, M.cap(), Math.sin(a) * (w / 2 + 2), y, Math.cos(a) * (w / 2 + 2), { ry: a }); }
         y += h; });
       // drum colonnade, gold dome, lantern
       const rc = 4.2, hc = 4.8;
@@ -231,7 +231,7 @@
       else { const bm = grade === 'thron' ? M.marble() : M.field(); const sh = new T.Shape(), hl = BL / 2;
         sh.moveTo(-hl, -1.2); sh.lineTo(-hl, deckY); sh.quadraticCurveTo(0, deckY + .7, hl, deckY); sh.lineTo(hl, -1.2); sh.lineTo(hl - 1.1, -1.2); sh.quadraticCurveTo(0, deckY - .2, -hl + 1.1, -1.2); sh.closePath();
         const geo = new T.ExtrudeGeometry(sh, { depth: 3.2, bevelEnabled: false }); geo.translate(0, 0, -1.6); geo.rotateY(Math.PI / 2); K.worldUV(geo, .3); K.put(g, geo, bm);
-        for (const s of [-1, 1]) { const par = K.box(g, .3, .55, BL, grade === 'thron' ? M.marble() : M.field(), s * 1.45, deckY + .2, 0); if (grade === 'thron') K.box(g, .36, .1, BL, M.gold(), s * 1.45, deckY + .75, 0); }
+        for (const s of [-1, 1]) { K.box(g, .3, .55, BL, grade === 'thron' ? M.marble() : M.field(), s * 1.45, deckY + .2, 0); if (grade === 'thron') K.box(g, .36, .1, BL, M.gold(), s * 1.45, deckY + .75, 0); }
         if (grade === 'thron') for (const z of [-RIV, 0, RIV]) for (const s of [-1, 1]) K.lantern(g, s * 1.45, deckY + .75, z, { h: 1.1 }); }
       // lit path when the gate is open and owned
       if (open && !v.houseOnly) { const path = new T.Mesh(new T.PlaneGeometry(1.1, BL + 6), new T.MeshBasicMaterial({ color: 0xffc977, transparent: true, opacity: .35, blending: T.AdditiveBlending, depthWrite: false, map: OW.TEX.soft() }));

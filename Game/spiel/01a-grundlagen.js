@@ -180,7 +180,6 @@ function liveUhren(root) {                          // → true, wenn eine Uhr g
 function statTile(label, iconName, valueHtml, cls) {
   return '<div class="stat"><span class="stat-l">' + icon(iconName) + label + '</span><b class="stat-v' + (cls ? ' ' + cls : '') + '">' + valueHtml + '</b></div>';
 }
-const UNK = '<span class="unk">' + icon('scout') + 'Erst spähen</span>';
 const logBadge = (kind, text) => '<span class="lbadge lbadge--' + kind + '">' + text + '</span>';
 function logBalance(atk, def, atkLabel, defLabel, youDefend) {          // who was stronger, as a bar (like the attack preview) - your side is always green
     const a = Math.max(0, atk || 0), d = Math.max(0, def || 0), pct = a + d > 0 ? Math.round(a / (a + d) * 100) : 50;

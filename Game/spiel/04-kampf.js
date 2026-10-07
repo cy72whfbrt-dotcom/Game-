@@ -22,7 +22,7 @@ function loadTitles() {
 }
 function saveTitles() { titleVer++; store.set('openWaterTitles', JSON.stringify(titleState)); requestRender(); }
 // The ring round someone's bases - only a title from the middle while it holds (good = gold, penalty = red,
-// the ruler himself blood-red and gold); Ring-Skins gibt es nicht mehr (Alexander 7.10.). owner → ring style { k, name, c0, c1, n, spin, pulse, dash }
+// the ruler himself blood-red and gold); Ring-Skins gibt es nicht mehr (Alexander 7.10.). owner → ring style { k, c0, c1, n, spin, pulse, dash }
 const RING_TITLE = { ruler: { k: 'ruler', c0: 'rgba(235,60,50,.95)', c1: 'rgba(255,208,90,.7)', n: 24, spin: 1, pulse: 1, dash: 'rgba(255,214,110,.9)' },
                      good:  { k: 'good',  c0: 'rgba(255,208,90,.95)', c1: 'rgba(255,208,90,.5)', n: 24, pulse: 1 },
                      bad:   { k: 'bad',   c0: 'rgba(225,48,48,.95)', c1: 'rgba(150,20,30,.6)', n: 16, pulse: 1 } };

@@ -22,19 +22,19 @@
     // nur die geänderten Felder (z. B. bei einem Mitspieler nur sein Zähler, nicht sein ganzer Datensatz).
     function flickenBauen(alt, neu) {
         if (!istObjekt(alt) || !istObjekt(neu)) return null;
-        const s = {}, w = [], d = {}; let n = 0;
+        const s = {}, w = [], d = {};
         for (const k in neu) {
             const b = neu[k];
-            if (!(k in alt)) { s[k] = b; n++; continue; }
+            if (!(k in alt)) { s[k] = b; continue; }
             const a = alt[k]; if (a === b) continue;
             if (istObjekt(a) && istObjekt(b)) {
                 const ss = {}, ww = []; let m = 0;
                 for (const kk in b) if (!(kk in a) || J(a[kk]) !== J(b[kk])) { ss[kk] = b[kk]; m++; }
                 for (const kk in a) if (!(kk in b)) { ww.push(kk); m++; }
-                if (m) { d[k] = ww.length ? { s: ss, w: ww } : { s: ss }; n++; }
-            } else if (J(a) !== J(b)) { s[k] = b; n++; }
+                if (m) d[k] = ww.length ? { s: ss, w: ww } : { s: ss };
+            } else if (J(a) !== J(b)) s[k] = b;
         }
-        for (const k in alt) if (!(k in neu)) { w.push(k); n++; }
+        for (const k in alt) if (!(k in neu)) w.push(k);
         const f = {}; if (Object.keys(s).length) f.s = s; if (w.length) f.w = w; if (Object.keys(d).length) f.d = d;
         return f;
     }

@@ -18,7 +18,6 @@ for (const lm of landmasses) {
   p.closePath();
   lm.path = p;
   lm.bbox = { l: lm.x - lm.shapeMaxR, t: lm.y - lm.shapeMaxR, r: lm.x + lm.shapeMaxR, b: lm.y + lm.shapeMaxR };
-  lm.stone = lm.tier === 'throne' || lm.tier === 'guardian';                    // the middle and the 4 Wächter regions (Berge aus 01f: grau, mehr Einzelfelsen)
   let forest = null;                                                             // Bäume fürs Stadtbild (08e), erst bei Bedarf gebaut
   Object.defineProperty(lm, 'forest', { get: () => forest || (forest = buildForest(lm)), configurable: true });
 }
@@ -248,7 +247,6 @@ function buildForest(lm) {                           // (Stadtbild: wo um die St
     const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * lm.shapeMaxR;
     const fx = lm.x + Math.cos(a) * d, fy = lm.y + Math.sin(a) * d, cnt = 3 + (rnd() * 5 | 0), spread = 380 + rnd() * 420;
     if (bases.some(b => Math.abs(b.x - fx) < 1600 && Math.abs(b.y - fy) < 1900 && (Math.hypot(b.x - fx, b.y - fy) < b.radius + 550 || (fy > b.y && fy < b.y + 1900)))) continue;   // cheap test first
-    if (felsAuf(fx, fy, 400 + spread)) continue;                                  // kein Wald an den Bergen (01f)
     const deep = fx > sb.l + 9000 && fx < sb.r - 9000 && fy > sb.t + 9000 && fy < sb.b - 9000;   // far from every bank: no coast test needed
     if (!deep && (!pointInPolygon(fx, fy, lm.shape) || edgeDist(fx, fy) < 700)) continue;
     const trees = [];
@@ -472,21 +470,16 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
   if (clip) { g.setTransform(1, 0, 0, 1, 0, 0); g.beginPath(); g.rect(clip.x, clip.y, clip.w, clip.h); g.clip(); }
   const cl = clip ? T.l + clip.x / dpr / z : T.l, ct = clip ? T.t + clip.y / dpr / z : T.t;
   const W = (clip ? clip.w : w) / dpr / z, H = (clip ? clip.h : h) / dpr / z;
-  const view = { l: cl - ISLAND_RADIUS * 2, t: ct - ISLAND_RADIUS * 2, r: cl + W + ISLAND_RADIUS * 2, b: ct + H + ISLAND_RADIUS * 2 };
   const world = () => g.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr);
   // ganz weit: die Übersicht (wie die Karten-Testdatei) – fertiges Bild, nur ausgeschnitten
   if ((T.part || z < KARTE_BILD_ZOOM) && karteBilder()) { world(); g.imageSmoothingEnabled = true; g.drawImage(karteUebersicht(), -FRAME_HALF, -FRAME_HALF, 2 * FRAME_HALF, 2 * FRAME_HALF);
     if (!noTerritory) drawTerritoriesInto(g, layer, z, T.l, T.t, w, h, clip);
     g.restore(); return; }
   // 1 Boden nach Ringen – nah aus den Bildern, weit draußen (und solange sie laden) die Farbfläche
-  const bild = !T.part && z >= KARTE_BILD_ZOOM && karteBilder(), zd = T.part ? 0 : z;
+  const bild = !T.part && z >= KARTE_BILD_ZOOM && karteBilder();
   paintBoden(g, T, cl, ct, W, H, clip, bild && z >= BODEN_BILD_ZOOM);
-  // 2 Bergstöcke (01f), dann Ketten, Knoten, Wald als Bilder – oder weit draußen die Gebirgs-Bänder
+  // 2 Ketten, Knoten, Wald als Bilder – oder weit draußen die Gebirgs-Bänder
   world();
-  if (!T.part && z >= KARTE_BILD_ZOOM) for (const lm of landmasses) {         // (ganz draußen keine Bergstöcke: sonst eine Tapete aus Flecken)
-    if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
-    felsenMalen(g, lm, zd, zl);
-  }
   const rand = KARTE_MASS.quer;                                                     // (Bilder ragen so weit über ihren Anker hinaus)
   if (bild) paintGelaende(g, T, { l: cl - rand, t: ct - rand, r: cl + W + rand, b: ct + H + rand });
   else { world(); paintBaender(g, zl); }

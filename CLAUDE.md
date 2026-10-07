@@ -12,21 +12,23 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   `werkzeuge/spiel_bauen.sh pruefen` meldet einen Fehler, wenn eine Datei nicht zu ihren Teilen passt.
   Jeder Teil beginnt mit EINER Kopfzeile `// Teil <name>: …` (kommt nicht in die zusammengesetzte Datei).
   (Eine Datei im Spiel, weil der Code beim Laden Funktionen aufruft, die weiter hinten stehen.)
-- Teile von spiel.js (41): 01a grundlagen · 01b weltkarte · 01c basen-spielstand · 01d helden-mitspieler ·
-  01e nebel-kampfwerte-hud · 02a shop-stufen · 02b maersche · 02c spaeher-ankunft (resolveAttack) · 03a karte-hintergrund ·
-  03b gebaeude-3d · 03c wappen-thronplatz · 03d maersche-tagnacht · 03e kamera-eingabe · 04 kampf (Ankunft, kampfDazu) ·
-  05a aussehen-profil · 05b truhe-skills · 05c erfolge-rangliste · 05d maersche-kampfbericht · 06a aufgaben ·
-  06b pass-anleitung · 06c thron-mitte · 06d schild-produktion · 06e nebel-zeichnen · 07a schlachten · 07b kriegsherr ·
-  08a stadt-bauen · 08b burg-aussehen · 08c helden · 08d gebaeude-wirkung · 08e stadtbild-haeuser · 08f stadtbild-bild ·
-  09a funde-felder · 09b lager-tagesboss · 09c events-drache · 09d armeen-wegmarken · 09e inselfenster · 09f saison ·
-  10a inselfenster-vorschau · 10b inselfenster-knoepfe · 10c start-einstellungen ·
+- Teile von spiel.js (43): 01a grundlagen · 01a2 karte-zonen (Kartendaten, erzeugt von werkzeuge/kartentest) · 01b weltkarte ·
+  01c basen-spielstand · 01d helden-mitspieler · 01e nebel-kampfwerte-hud · 02a shop-stufen · 02b maersche ·
+  02c spaeher-ankunft (resolveAttack) · 03a karte-hintergrund · 03b gebaeude-3d (Basen als KI-Bild, 3D nur Ersatz) ·
+  03c wappen-thronplatz · 03d maersche-tagnacht · 03e kamera-eingabe · 04 kampf (Ankunft, kampfDazu) ·
+  05a aussehen-profil · 05b truhe-skills · 05c erfolge-rangliste · 05d maersche-kampfbericht · 05e belohnung (Kacheln, Kisten) ·
+  06a aufgaben · 06b pass-anleitung · 06c thron-mitte · 06d schild-produktion · 06e nebel-zeichnen · 07a schlachten ·
+  07b kriegsherr · 08a stadt-bauen · 08b burg-aussehen · 08c helden · 08d gebaeude-wirkung · 08e stadtbild-haeuser ·
+  08f stadtbild-bild · 09a funde-felder · 09b lager-tagesboss · 09c events-drache · 09d armeen-wegmarken · 09e inselfenster ·
+  09f saison · 10a inselfenster-vorschau · 10b inselfenster-knoepfe · 10c start-einstellungen ·
   10d welt-weltrechner (Weltrechner-Befehle, Hauptbuch/Schummel-Schutz).
   bots.js (Mitspieler), Teile in bots/ (6): 01 spieler · 02 kampf-karte · 03 angreifen · 04 stand-stadt · 05 verteidigen-takt · 06 aussehen-felder-barbaren.
   buendnis.js (Bündnis, Rally, Chat, Verstärkung), Teile in buendnis/ (4): 01 daten-regeln (bundOp) · 02 rally-geschenke · 03 mitspieler · 04 fenster-karte-welt.
-  baukunst.js (Basen in 3D), Teile in baukunst/ (8): 01 werkzeugkasten · 02 buehne-grundbasis · 03 wahrzeichen-feuer ·
+  baukunst.js (3D-Modelle, nur noch Ersatz bis die KI-Bilder geladen sind), Teile in baukunst/ (8): 01 werkzeugkasten · 02 buehne-grundbasis · 03 wahrzeichen-feuer ·
   04 vielfalt-stile · 05 umland · 06 turmhof-festung · 07 hafen-palast · 08 himmelsfeste-bilder.
-  spiel.php (Spielseite), Teile in spielseite/ (8, *.php): 01 kopf-grundwerte · 02 stil-hud-fenster · 03 stil-bausteine ·
-  04 stil-shop-handy · 05 stil-ladebild-stadt · 06 symbole-karte · 07 fenster · 08 dialoge-stadt-skripte.
+  spiel.php (Spielseite), Teile in spielseite/ (11, *.php): 01 kopf-grundwerte · 02 stil-hud-fenster · 03 stil-bausteine ·
+  04 stil-shop-handy · 05 stil-ladebild-stadt · 05y stil-kisten · 05z stil-ki-bilder (Oberfläche aus KI-Bildern) ·
+  06 symbole-karte · 07 fenster · 07x stil-helden · 08 dialoge-stadt-skripte.
   server.php, Teile in server/ (7, *.php): 01 grundlagen-login · 02 sicherheit-datenlecks · 03 nebel-maersche-seite ·
   04 datenbank-spieler · 05 datenbank-welt (MysqlLager) · 06 speichern-push-konto · 07 welt-puls.
   Auch die PHP-Teile beginnen mit „// Teil …“ (fällt beim Zusammensetzen weg). Neue Ziele: Tabelle ZIELE in spiel_bauen.sh.

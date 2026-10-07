@@ -161,10 +161,10 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   <div class="pbody">
     <div id="tabInfo" class="profileTabPanel active" role="tabpanel">
       <div id="xpNext" class="xp-next p5-naechste"></div>
-      <!-- Aussehen: nur hier (Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe) -->
-      <button id="crestCard" class="crest-card" type="button" aria-label="Aussehen: Wappen, Rahmen, Skins, Ringe">
+      <!-- Aussehen: nur hier (Wappen, Rahmen, Titel) -->
+      <button id="crestCard" class="crest-card" type="button" aria-label="Aussehen: Wappen, Rahmen">
         <canvas id="crestSmall" width="112" height="112"></canvas>
-        <span id="lookNow" class="crest-card-t"><b>Aussehen</b><small>Wappen, Rahmen, Skins, Ringe</small></span>
+        <span id="lookNow" class="crest-card-t"><b>Aussehen</b><small>Wappen · Rahmen</small></span>
         <span class="crest-card-go">Ändern<svg class="icon"><use href="#i-upgrade"/></svg></span>
       </button>
       <!-- Rangliste: eigenes Fenster, hier nur der Weg dorthin -->

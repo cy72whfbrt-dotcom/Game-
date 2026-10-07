@@ -398,11 +398,9 @@ function drawRings(visible, z, now) {
         ctx.moveTo(x + Math.cos(a) * r * 1.44, y + Math.sin(a) * r * 1.44); ctx.lineTo(x + Math.cos(a) * r * 1.52, y + Math.sin(a) * r * 1.52); }
         ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke(); }
     }
-    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base: a title from the middle or a bought Ring-Skin (see ringStatusByOwner)
+    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base with a title from the middle (see ringStatusByOwner)
       const o = islandOwnerOf(isl.id), st = o ? rankOf.get(o) : null;
-      if (st && st.k === 'skin') {                                                  // a bought Ring-Skin: one plain thin ring - quiet, so the title rings stand out
-        const R1 = Math.max(r * 1.35, 21); ring(x, y, R1, 3.6, 'rgba(10,8,4,.45)'); ring(x, y, R1, 1.8, st.c0);
-      } else if (st) {                                                                // a title from the middle: bold double ring with notches + a badge (crown, or skull for a penalty)
+      if (st) {                                                                       // bold double ring with notches + a badge (crown, or skull for a penalty)
         const R1 = Math.max(r * 1.35, 21), R2 = R1 + Math.max(r * .28, 5), W = 3.4;
         ring(x, y, R1, W + 2.5, 'rgba(10,8,4,.55)'); ring(x, y, R1, W, st.c0);          // dark underlay so the ring reads on grass and territory
         ring(x, y, R2, 3, 'rgba(10,8,4,.35)'); ring(x, y, R2, 1.4, st.c1);
@@ -462,7 +460,7 @@ function marchPath(source, target) {             // source → over every pass o
   MARSCH_WEG_MERK.set(key, { t: Date.now(), p: path });
   return path;
 }
-function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (their Marsch-Skin); yours by default
+function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (its flag); yours by default
   if (!source || !target) return;
   if (!startedAt) startedAt = resolveAt - MIN_ATTACK_SECONDS * 1000;
   const total = resolveAt - startedAt, progress = total > 0 ? Math.min(1, Math.max(0, (now - startedAt) / total)) : 1;

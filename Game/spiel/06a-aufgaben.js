@@ -271,7 +271,7 @@ function inboxClaim(id, aus) {                      // into your coffers - retur
     inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
 }
 function renderInbox() {
-    const L = inboxList(), now = Date.now(), el = document.getElementById('inboxList'); if (!el) return;
+    const L = inboxList(), el = document.getElementById('inboxList'); if (!el) return;
     setText(document.getElementById('inboxAside'), L.length ? L.length + ' bereit' : '');
     liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
         return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b>' + beuteRaster(inboxBeute(x), 'bk-mini') + '<small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +

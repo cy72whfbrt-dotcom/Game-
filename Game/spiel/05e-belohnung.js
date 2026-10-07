@@ -95,5 +95,4 @@ function beuteFensterFertig() {                     // Endbild: Kiste offen, all
     f.classList.remove('is-wackeln'); f.classList.add('is-auf', 'is-fertig');
 }
 function beuteFensterZu() { const f = document.getElementById('beuteFenster'); if (!f || f.hidden) return false; beuteFensterTimer.forEach(clearTimeout); beuteFensterTimer = []; f.hidden = true; return true; }
-function beuteFensterOffen() { const f = document.getElementById('beuteFenster'); return !!f && !f.hidden; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && beuteFensterZu()) e.stopPropagation(); }, true);
