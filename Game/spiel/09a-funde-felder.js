@@ -164,35 +164,12 @@ const fieldCapFor = (kind, rm) => kind === 'gem' ? Math.round(FIELD_KINDS.gem.ba
     : Math.max(1, Math.round(FIELD_KINDS[kind].base * Math.sqrt(rm) * WIRTSCHAFT_ERTRAG * (FIELD_KINDS[kind].roh ? ROH_FAKTOR : MUENZ_FAKTOR)));
 const fieldDauerSec = rm => 3600 * (1 + 3 * Math.log(Math.max(1, rm)) / Math.log(300));
 const FIELD_REGEN_MS = 60 * 60000;
-const resFields = (() => {
-    const out = [], r = mulberry32(7771);
-    for (const lm of landmasses) {
-        if (lm.tier !== 'outer' || lm.ring < 2) continue;
-        const want = lm.ring >= 5 ? 3 : 2, near = islandsByLandmass[lm.id] || [];
-        for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
-            const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!aufLand(lm, x, y) || grenzAbstand(x, y) < KETTE_FREI) continue;                // (nicht ins Gebirge an der Grenze)
-            if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
-            const kind = r() < .78 ? 'gold' : 'gem';
-            out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: fieldCapFor(kind, ringMult(lm)), dauer: fieldDauerSec(ringMult(lm)) }); k++;
-        }
-    }
-    // Paket D: Rohstoff-Felder dazu (eigener Zufall – die Gold- und Gem-Felder bleiben genau, wo sie waren). Je Region 2 (außen 3),
-    // was dort häufig ist, je nach Landschaft: Wiese Holz, Wüste Stein, Schnee Eisen
-    const r2 = mulberry32(9917), arten = { green: ['holz', 'holz', 'stein', 'eisen'], sand: ['stein', 'stein', 'holz', 'eisen'], snow: ['eisen', 'eisen', 'stein', 'holz'] };
-    for (const lm of landmasses) {
-        if (lm.tier !== 'outer') continue;
-        const want = lm.ring >= 6 ? 3 : 2, near = islandsByLandmass[lm.id] || [], ar = arten[lm.bio] || arten.green;
-        for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
-            const x = lm.x + (r2() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r2() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!aufLand(lm, x, y) || grenzAbstand(x, y) < KETTE_FREI) continue;
-            if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
-            const kind = ar[Math.floor(r2() * ar.length)];
-            out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: fieldCapFor(kind, ringMult(lm)), dauer: fieldDauerSec(ringMult(lm)) }); k++;
-        }
-    }
-    return out;
-})();
+// Felder wie in der Karten-Testdatei (KARTE_ZONEN.felder): überall außer der Mitte, nie im Gebirge oder an Pässen, Stufe steigt nach innen.
+// Ertrag nach der Stärke der Zone (ringMult; die Wächter-Zone wie die stärkste äußere – vorher gab es dort keine Felder)
+const FELD_ART = { holz: 'holz', stein: 'stein', eisen: 'eisen', gold: 'gold', edelstein: 'gem' };
+const feldMult = lm => lm.tier === 'guardian' ? RING_MULT[2] : ringMult(lm);
+const resFields = KARTE_ZONEN.felder.map((o, i) => { const lm = landmasses[o.gebiet], kind = FELD_ART[o.art];
+    return { id: 'f' + i, x: o.x, y: o.y, landmassId: o.gebiet, radius: ISLAND_RADIUS * .6, kind, stufe: o.stufe, cap: fieldCapFor(kind, feldMult(lm)), dauer: fieldDauerSec(feldMult(lm)) }; });
 const fieldById = {}; for (const f of resFields) fieldById[f.id] = f;
 let fieldState = (() => { try { return JSON.parse(store.get('openWaterFields')) || {}; } catch (e) { return {}; } })();
 let fieldMarches = (() => { try { return JSON.parse(store.get('openWaterFieldMarches')) || []; } catch (e) { return []; } })();
@@ -207,6 +184,7 @@ function fieldHurt(who, n, hx) { return who === 'player' ? hospitalTake(n, hx ? 
 function fieldTravelSec(from, f, who) { return travelDurationSeconds(from, f, who === 'player' ? undefined : who); }
 function fieldSend(who, homeId, fieldId, troops, hero, hero2) {          // troops leave a base for a field (gathering, or attacking whoever sits there) - a hero (and a Zweitheld) may lead them
     const home = islandById[homeId], f = fieldById[fieldId]; if (!home || !f || troops <= 0) return false;
+    if (!canReach(home.landmassId, f.landmassId, who)) { if (who === 'player') flashHint('Kein Weg zum Feld – ' + (wegGrund(home.landmassId, f.landmassId, 'player') || 'ein fremdes Tor liegt dazwischen.'), 4000); return false; }   // (nur über offene, eigene Pässe)
     if (!marschPlatz(who)) return false;                                                      // Marsch-Plätze (Paket D)
     if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2);
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
@@ -300,8 +278,13 @@ function drawResFields(now, wallNow) {
     for (const f of resFields) {
         const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(f.x, f.y)) continue;
         const st = fieldState[f.id], left = st ? Math.min(st.left, f.cap) : f.cap, empty = left <= 0;
+        const bn = 'feld_' + (f.kind === 'gem' ? 'edelstein' : f.kind), bild = KB.fertig && KB.img[bn];
+        if (bild) {                                                          // Karte wie RoK: das KI-Bild (fest in der Welt, nie winzig), die Stufe daneben
+            const w = Math.max(FELD_BREITE * z, 34), h = w * bild.height / bild.width;
+            ctx.globalAlpha = empty ? .55 : 1; ctx.drawImage(kbBild(bn, w * dpr), x - w / 2, y - h * .62, w, h); ctx.globalAlpha = 1;
+            stufenZahl(x + w * .32, y - h * .5, f.stufe, false); }
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
-        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
+        if (!bild) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();   // (solange die Bilder laden: gezeichnet)
         if (f.kind === 'gold') {                                             // a rocky mine mouth with a heap of gold
             ctx.fillStyle = '#7d6b55'; ctx.beginPath(); ctx.moveTo(-13, 4); ctx.quadraticCurveTo(-10, -12, 0, -13); ctx.quadraticCurveTo(10, -12, 13, 4); ctx.closePath(); ctx.fill();
             ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1; ctx.stroke();
@@ -321,7 +304,7 @@ function drawResFields(now, wallNow) {
             ctx.fillStyle = '#6f675a'; ctx.beginPath(); ctx.ellipse(0, 2, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
             if (!empty) for (const [dx, h, w] of [[-5, 12, 3], [0, 17, 4], [5, 11, 3], [9, 7, 2.4]]) { ctx.fillStyle = '#7fd0ff'; ctx.beginPath(); ctx.moveTo(dx - w, 2); ctx.lineTo(dx, 2 - h); ctx.lineTo(dx + w, 2); ctx.closePath(); ctx.fill();
                 ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.moveTo(dx - w * .3, 1); ctx.lineTo(dx, 2 - h); ctx.lineTo(dx + w * .15, 1); ctx.closePath(); ctx.fill(); }
-        }
+        } }
         if (st && st.occ) {                                                   // the gatherers' tent and how full their packs are
             const o = st.occ, col = o.who === 'player' ? '#3f86d8' : (botById[o.who] || {}).color || '#c9423a', q = Math.min(1, o.got / Math.max(1e-9, fieldCapOf(f, o)));
             ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-18, 6); ctx.lineTo(-12, -5); ctx.lineTo(-6, 6); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#2a241b'; ctx.stroke();

@@ -16,7 +16,7 @@ function attackSpeedMultiplier() {
 }
 function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (AUF ? AUF.spaeherTempo(botId || 'player') : 1); }   // (+ Forschung Späher)   // a scout's walk, Späherturm included - the same for everyone
 function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (über die Brücken, um die Berge – 01f)
-    const pts = source.landmassId === target.landmassId ? felsenWeg(source, target) : marchPath(source, target);
+    const pts = marchPath(source, target);
     let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
     return distance;
 }
@@ -105,14 +105,15 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     if (!attackerBotId && target.id === playerIslandId) return false;
     { const ow = islandOwnerOf(target.id); if (bundFreund(attackerBotId || 'player', ow)) { if (!attackerBotId) flashHint((botById[ow] || {}).name + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.', 3500); return false; } }   // Bündnis: gesperrt
     if (!attackerBotId && !islandSeen(target)) { flashHint('Dieses Ziel liegt im Nebel – schick zuerst einen Späher.', 3000); return false; }   // nichts im Nebel angreifen
+    if (target.type === 'gate' && passOpensAt(bridgeOfGate(target)) > Date.now()) { if (!attackerBotId) flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(target)) - Date.now()) + '.', 4000); return false; }   // (Pass mit Countdown: nicht angreifbar)
     if (target.type === 'megaTemple' && Date.now() < thronOffenAb()) { if (!attackerBotId) flashHint('Der Thron zählt erst ab Tag ' + KARTE_ZONEN.thron.tag + ' – noch ' + fmtPassWait(thronOffenAb() - Date.now()) + '.', 4000); return false; }   // (für alle: Spieler, Mitspieler, Rally, Weltrechner)
     if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
     if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
     // (Hauptstädte kann man angreifen – Alexander 4.10. –, aber nie erobern: siehe resolveAttack / capitalHolds)
     const grp = naechsteGruppe;
-    if (!attackerBotId && !canReach(source.landmassId, target.landmassId, 'player')) {   // (wie beim Weltrechner)
-        flashHint('Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.', 5000); return false; }
+    if (!canReach(source.landmassId, target.landmassId, attackerBotId || 'player')) {   // (für alle gleich: Spieler, Mitspieler, Rally, Weltrechner – nur über offene, eigene Pässe)
+        if (!attackerBotId) flashHint('Kein Weg nach ' + islandTitle(target) + ' – ' + (wegGrund(source.landmassId, target.landmassId, 'player') || 'ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.'), 5000); return false; }
     if (!marschPlatz(attackerBotId || 'player', grp, sourceId)) return false;   // alle Marsch-Plätze belegt (Burg-Stufe)
     if (!attackerBotId && !rechnet()) {                           // Zuschauer: der Weltrechner schickt die Truppen los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops, target.id)) return false;
@@ -174,8 +175,8 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     const rawTroops = amount > 0 ? Math.min(Math.round(amount), available) : available;
     if (!source || !target || rawTroops <= 0) return;
     const grp = naechsteGruppe;
-    if (!senderBotId && !canReach(source.landmassId, target.landmassId, 'player')) {   // (wie beim Weltrechner: ein fremdes Tor dazwischen – vorher schickte das Handy los, der Weltrechner lehnte still ab)
-        flashHint('Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return; }
+    if (!canReach(source.landmassId, target.landmassId, senderBotId || 'player')) {   // (für alle gleich – vorher schickte das Handy los, der Weltrechner lehnte still ab)
+        if (!senderBotId) flashHint('Kein Weg nach ' + islandTitle(target) + ' – ' + (wegGrund(source.landmassId, target.landmassId, 'player') || 'ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.'), 5000); return; }
     if (!marschPlatz(senderBotId || 'player', grp)) return;          // Marsch-Plätze (Paket D)
     if (!senderBotId && !rechnet()) {                             // Zuschauer: der Weltrechner schickt sie los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return;

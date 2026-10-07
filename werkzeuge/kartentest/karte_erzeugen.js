@@ -213,17 +213,18 @@ const FELD_ARTEN = ['holz', 'holz', 'holz', 'stein', 'stein', 'stein', 'eisen', 
 const felder = streuen(560, 52000, g => zoneVon(g) < MITTE, z => ({ art: FELD_ARTEN[Math.floor(streu() * FELD_ARTEN.length)], stufe: 2 * z - 1 + (streu() < .5 ? 0 : 1) }));
 const barbaren = streuen(110, 70000, g => zoneVon(g) < MITTE, z => ({ stufe: Math.min(25, 1 + (z - 1) * 6 + Math.floor(streu() * (z === 4 ? 7 : 6))) }));
 
-// Ausgabe: die Karte als Teil des Spiels (eine Quelle für Spiel und Kartentest), Felder/Barbaren nur für den Kartentest
-const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, tempel, startplaetze, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
+// Ausgabe: die Karte als Teil des Spiels (eine Quelle für Spiel und Kartentest), Barbaren-Lager nur für den Kartentest (im Spiel entstehen sie laufend)
+const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, tempel, startplaetze, felder, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
 const SPIEL = path.join(__dirname, '../../Game/spiel/01a2-karte-zonen.js');
 fs.writeFileSync(SPIEL, '// Teil 01a2-karte-zonen.js: Weltkarte wie das RoK-Königreich – Daten (erzeugt von werkzeuge/kartentest/karte_erzeugen.js, nicht von Hand ändern)\n' +
   '// gebiete: { id, zone 1–4 (5 = Mitte), name, boden, kern: Mittelpunkt, rand: Grenzen-Ids (−id−1 = rückwärts) – der Umriss ist der Ring daraus }\n' +
   '// grenzen: { id, a, b (−1 = Kartenrand), punkte } · paesse: { id, a, b, grenze, x, y, senk (Grenze läuft senkrecht), stufe 1–5 }\n' +
   '// tempel: { gebiet, x, y, art tempel|waechtertempel } – je Zone-4-Gebiet einer · startplaetze: { x, y, gebiet } – je Zone-1-Gebiet gleich viele\n' +
+  '// felder: { x, y, gebiet, art holz|stein|eisen|gold|edelstein, stufe } – Rohstoff-Felder, Stufe steigt nach innen\n' +
   '// oeffnen: Stufe → Tag, an dem die Pässe aufgehen (von außen nach innen); thron.tag: ab dann zählt der Thron\n' +
   'const KARTE_ZONEN = ' + JSON.stringify(daten) + ';\n');
-fs.writeFileSync(path.join(__dirname, 'karte_dinge.js'), '// Kartentest: Felder und Barbaren-Lager (erzeugt von karte_erzeugen.js) – im Spiel kommen sie später\n' +
-  'Object.assign(KARTE_ZONEN, ' + JSON.stringify({ felder, barbaren }) + ');\n');
+fs.writeFileSync(path.join(__dirname, 'karte_dinge.js'), '// Kartentest: Barbaren-Lager (erzeugt von karte_erzeugen.js) – im Spiel entstehen sie laufend (09b), mit derselben Stufe je Zone\n' +
+  'Object.assign(KARTE_ZONEN, ' + JSON.stringify({ barbaren }) + ');\n');
 console.log('Gebiete', gebiete.length, '· Grenzen', grenzen.length, '(Rand', grenzen.filter(g => g.b === -1).length + ') · Pässe', paesse.length,
   [1, 2, 3, 4, 5].map(st => 'Stufe ' + st + ': ' + paesse.filter(p => p.stufe === st).length).join(', '),
   '· Start', startplaetze.length, 'Felder', felder.length, 'Barbaren', barbaren.length, '· ohne Pass:', gebiete.filter(g => !paesse.some(p => p.a === g.id || p.b === g.id)).map(g => g.id).join(' ') || '-');

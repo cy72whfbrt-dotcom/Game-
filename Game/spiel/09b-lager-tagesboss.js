@@ -20,7 +20,8 @@ const barbLeft = who => Math.max(0, barbTagMax() - barbRec(who).n - barbOut(who)
 const barbOpenFor = (who, L) => L <= barbRec(who).b + 1;
 const barbPt = o => ({ id: 'barb' + (o.id || o.tid || 'b'), x: o.x, y: o.y, landmassId: o.lm, radius: ISLAND_RADIUS * .6 });
 const barbFa = who => (1 + fieldAtkPct(who) / 100) * titleMult(who, 'attack') * (AUF ? AUF.kampf(who, 'a') : 1);
-const BARB_LMS = landmasses.filter(l => l.tier === 'outer');
+const BARB_LMS = landmasses.filter(l => l.zone <= 4);   // Zone 1–4 (die Mitte nicht)
+const barbStufeZone = (z, r) => Math.min(BARB_MAX_L, 1 + (z - 1) * 6 + Math.floor(r() * (z === 4 ? 7 : 6)));   // Stufe nach der Zone (wie die Karten-Testdatei): 1–6 außen … 19–25 in Zone 4
 function barbSpot(lm, r, edge) {                    // a free place on the land: clear of bases, fields, other camps and the boss (edge: room to the shore)
     const e = ISLAND_RADIUS * (edge || 1);
     for (let t = 0; t < 30; t++) {
@@ -33,15 +34,14 @@ function barbSpot(lm, r, edge) {                    // a free place on the land:
     }
     return null;
 }
-function barbSpawn() {                              // a third near you, 40 % near someone else (at a level that fits them), the rest anywhere
+function barbSpawn() {                              // a third near you, 40 % near someone else, the rest anywhere – die Stufe kommt aus der Zone des Lagers
     const r = Math.random(), who = r < .3 ? 'player' : r < .7 ? BOT_DEFS[Math.floor(Math.random() * BOT_DEFS.length)].id : null, own = who && (who === 'player' ? ownedIslands : botOwnedIslands[who]);
-    let lm = null, L = Math.min(BARB_MAX_L, 1 + Math.floor(BARB_MAX_L * Math.pow(Math.random(), 1.7)));   // anywhere: many small camps, few big ones
+    let lm = null;
     if (own && own.size) { const ids = [...own], b = islandById[ids[Math.floor(Math.random() * ids.length)]];
-        if (b) { const rs = (reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => l === b.landmassId || landmassesConnected(b.landmassId, l)); lm = landmasses[rs[Math.floor(Math.random() * rs.length)]]; }
-        L = Math.max(1, Math.min(BARB_MAX_L, barbRec(who).b + 1 - Math.floor(Math.pow(Math.random(), 2) * 5))); }
-    if (!lm || lm.tier !== 'outer') lm = BARB_LMS[Math.floor(Math.random() * BARB_LMS.length)];
+        if (b) { const rs = (reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => l === b.landmassId || landmassesConnected(b.landmassId, l)); lm = landmasses[rs[Math.floor(Math.random() * rs.length)]]; } }
+    if (!lm || lm.zone > 4) lm = BARB_LMS[Math.floor(Math.random() * BARB_LMS.length)];
     const p = barbSpot(lm, Math.random); if (!p) return false;
-    const t = barbTroopsOf(L); barbState.camps.push({ id: 'c' + (barbState.n++), x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, L, t, max: t, until: Date.now() + (3 + Math.random() * 3) * 36e5 }); return true;   // moves on after 3-6 h
+    const L = barbStufeZone(lm.zone, Math.random), t = barbTroopsOf(L); barbState.camps.push({ id: 'c' + (barbState.n++), x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, L, t, max: t, until: Date.now() + (3 + Math.random() * 3) * 36e5 }); return true;   // moves on after 3-6 h
 }
 function dbossEnsure() {                            // today's boss: the kind turns every day, the place is the same for everyone today
     const d = todayKey(); if (dayBoss && dayBoss.d === d) return dayBoss;
@@ -275,6 +275,10 @@ function drawBarb(now, wallNow) {
     if (z >= .004) for (const c of barbState.camps) {
         const x = c.x * z + mapState.offsetX, y = c.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(c.x, c.y)) continue;
         const open = c.L <= best + 1, rd = RARITY_DEFS[barbTier(c.L)];
+        if (KB.fertig && KB.img.barbaren) {                                 // Karte wie RoK: das KI-Bild (fest in der Welt, nie winzig), die Stufe daneben
+            const im = KB.img.barbaren, w = Math.max(BARB_BREITE * z, 38), h = w * im.height / im.width;
+            ctx.globalAlpha = open ? 1 : .6; ctx.drawImage(kbBild('barbaren', w * dpr), x - w / 2, y - h * .62, w, h); ctx.globalAlpha = 1;
+            stufenZahl(x + w * .32, y - h * .5, c.L, true, open ? rd.color : '#6b6660'); continue; }
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k); if (!open) ctx.globalAlpha = .6;
         ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 5, 15, 5, 0, 0, 7); ctx.fill();
         for (const [dx, s, col] of [[-6, 1, '#8a5a33'], [6, .8, '#a0412e']]) {        // two hide tents

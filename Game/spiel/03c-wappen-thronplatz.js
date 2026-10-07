@@ -436,18 +436,24 @@ function drawRings(visible, z, now) {
 const MARCH_STYLE = { attack: ['#ff8d82', [7, 6], 'attack'], incoming: ['#ff8d82', [7, 6], 'bot'], send: ['#8cc0ff', [7, 6], 'send'],
                       scout: ['#e4c886', [3, 6], 'scout'], retreat: ['#f2a066', [5, 5], 'recall'], enemyScout: ['#ff9f7a', [3, 6], 'scout'] };
 let marchTokens = [], liveAnimation = false;
-function marchPath(source, target) {             // source → over every bridge on the route → target
-  const path = [{ x: source.x, y: source.y }];
-  if (source.landmassId !== target.landmassId) {
-    const route = routeFor(source.landmassId, target.landmassId, islandOwnerOf(source.id) || 'player') || [source.landmassId, target.landmassId];
-    for (let i = 0; i < route.length - 1; i++) {
-      const br = bridgeBetween(route[i], route[i + 1]); if (!br) continue;
-      const sA = br.a === route[i];
-      path.push(sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 });
-    }
+const MARSCH_WEG_MERK = new Map();
+function marchPath(source, target) {             // source → over every pass on the route → target: nie durchs Gebirge (in jedem Gebiet gebietWeg, 01b)
+  const payer = islandOwnerOf(source.id) || 'player', key = source.id + '>' + target.id + '|' + payer + '|' + ownVer + '|' + offenePaesse() + '|' + source.x + ',' + source.y + '|' + target.x + ',' + target.y;
+  const m = MARSCH_WEG_MERK.get(key); if (m && Date.now() - m.t < 2000) return m.p;
+  const sL = source.landmassId ?? gebietAn(source.x, source.y), tL = target.landmassId ?? gebietAn(target.x, target.y);
+  const route = sL === undefined || tL === undefined || sL === tL ? [sL] : routeFor(sL, tL, payer) || routeFor(sL, tL, payer, true) || [sL];
+  const path = [{ x: source.x, y: source.y }]; let lm = sL;
+  const bis = (p, l) => { const w = l === undefined ? [path[path.length - 1], p] : gebietWeg(path[path.length - 1], p, l); for (let k = 1; k < w.length; k++) path.push(w[k]); };
+  for (let i = 0; i < route.length - 1; i++) {
+    const br = bridgeBetween(route[i], route[i + 1]); if (!br) continue;
+    const sA = br.a === route[i];
+    bis(sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, lm);
+    path.push({ x: br.pass.x, y: br.pass.y }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 }); lm = route[i + 1];   // (durch den Pass)
   }
-  path.push({ x: target.x, y: target.y });
-  return felsenPfad(path);                       // um die Berge herum (01f; Schalter aus: unverändert)
+  bis({ x: target.x, y: target.y }, lm);
+  if (MARSCH_WEG_MERK.size > 3000) MARSCH_WEG_MERK.clear();
+  MARSCH_WEG_MERK.set(key, { t: Date.now(), p: path });
+  return path;
 }
 function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (their Marsch-Skin); yours by default
   if (!source || !target) return;

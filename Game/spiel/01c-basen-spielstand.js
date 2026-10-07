@@ -38,7 +38,7 @@ for (const lm of landmasses) {
     // Keep clear: the temple, every gate on this region's banks with its road to the bridge, and the start places.
     const templeClear = !hasTemple ? 0 : HEILIGTUM_BREITE[isMega ? 'megaTemple' : 'guardian'] * .55;
     const myGates = gateSpots.filter(gsp => gsp.lm === lm.id || (gsp.br.a === lm.id || gsp.br.b === lm.id));
-    const mySlots = startSlots.filter(sl => sl.lm === lm.id);
+    const mySlots = startSlots.filter(sl => sl.lm === lm.id), myFelder = KARTE_ZONEN.felder.filter(f => f.gebiet === lm.id);
     const d = BASE_SPACING, inset = d * .45, grid = new Map(), mine = [];
     // Im Gebiet: weit genug vom Gebirge und vom Kartenrand. (Die Saat liegt sicher im Gebiet, jeder neue Punkt nur bis 1,25 · d daneben –
     // über das Gebirge (2 · KETTE_FREI breit) kommt so keiner ins Nachbargebiet.)
@@ -49,6 +49,7 @@ for (const lm of landmasses) {
         if (templeClear && Math.hypot(x - lm.x, y - lm.y) < templeClear) return false;
         for (const gsp of myGates) if (Math.hypot(x - gsp.x, y - gsp.y) < d * 1.1 || segDistW(x, y, gsp.x, gsp.y, gsp.ex, gsp.ey) < d * .7) return false;
         for (const sl of mySlots) if (Math.hypot(x - sl.x, y - sl.y) < d * 1.1) return false;
+        for (const f of myFelder) if (Math.hypot(x - f.x, y - f.y) < d * .9) return false;                 // (die Felder aus KARTE_ZONEN stehen frei)
         return inside(x, y);
     };
     const add = p => { mine.push(p); const k = Math.floor(p.x / d) + ',' + Math.floor(p.y / d); (grid.get(k) || grid.set(k, []).get(k)).push(p); };

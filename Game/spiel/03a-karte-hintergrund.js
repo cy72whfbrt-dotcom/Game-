@@ -29,7 +29,15 @@ for (const lm of landmasses) {
 // zeichnet nie: lädt nie ein Bild). Bis alle da sind (oder wenn eins fehlt) und weit draußen: Farbflächen, Gebirge als Bänder.
 // Die Bilder liegen fest in der Welt: bei jedem Zoom dieselben Stücke in derselben Weltgröße (Alexander 7.10.).
 const KB_DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
-  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'thron', 'tempel', 'waechtertempel'];
+  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'thron', 'tempel', 'waechtertempel',
+  'feld_holz', 'feld_stein', 'feld_eisen', 'feld_gold', 'feld_edelstein', 'barbaren'];
+const FELD_BREITE = 9000, BARB_BREITE = 10500;      // Felder und Barbaren-Lager als Bild (Welt-Breite, wie die Karten-Testdatei)
+function stufenZahl(x, y, n, barb, rand) {           // (Bildschirm) die Stufe als kleine Zahl an Feld oder Lager
+  const t = String(n); ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const b = Math.max(16, ctx.measureText(t).width + 8);
+  ctx.fillStyle = barb ? 'rgba(120,24,18,.92)' : 'rgba(16,14,10,.85)'; ctx.beginPath(); ctx.roundRect(x - b / 2, y - 8, b, 16, 8); ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = rand || (barb ? '#f0a080' : '#d9b46a'); ctx.stroke(); ctx.fillStyle = '#fff3d6'; ctx.fillText(t, x, y + .5);
+}
 const KB = { img: {}, mip: {}, muster: {}, offen: -1, fertig: false };
 function karteBilder() {                             // true, sobald alle Bilder geladen sind (beim ersten Aufruf geht das Laden los)
   if (KB.offen < 0) { KB.offen = KB_DATEIEN.length;

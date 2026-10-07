@@ -150,6 +150,45 @@ const bridges = KARTE_ZONEN.paesse.map(p => {
     const [A, B] = pointInPolygon(e1[0], e1[1], landmasses[p.a].shape) ? [e1, e2] : [e2, e1];
     return { a: p.a, b: p.b, x1: A[0], y1: A[1], x2: B[0], y2: B[1], pass: p };
 });
+// Wege in einem Gebiet: nie durchs Gebirge. Gerade Strecke, wenn sie überall WEG_FREI vom Gebirge bleibt; sonst über ein grobes
+// Wegnetz des Gebiets (Gitterpunkte, die frei liegen; einmal je Gebiet gebaut, kürzester Weg, danach gestrafft).
+const WEG_FREI = 6000, WEG_NETZ = 26000;
+function wegFrei(a, b) {                         // bleibt die Strecke a → b überall WEG_FREI vom Gebirge (und auf der Karte)?
+    const L = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(L / 4000));
+    for (let i = 0; i <= n; i++) { const x = a.x + (b.x - a.x) * i / n, y = a.y + (b.y - a.y) * i / n;
+        if (Math.abs(x) > FRAME_HALF || Math.abs(y) > FRAME_HALF || grenzAbstand(x, y) < WEG_FREI) return false; }
+    return true;
+}
+const wegNetze = {};
+function wegNetz(lmId) {                         // → [{ x, y, nb: [Index] }] frei liegende Gitterpunkte des Gebiets, verbunden, wo der Weg frei ist
+    if (wegNetze[lmId]) return wegNetze[lmId];
+    const lm = landmasses[lmId], k = [];
+    for (let x = Math.floor((lm.x - lm.shapeMaxR) / WEG_NETZ) * WEG_NETZ; x <= lm.x + lm.shapeMaxR; x += WEG_NETZ)
+        for (let y = Math.floor((lm.y - lm.shapeMaxR) / WEG_NETZ) * WEG_NETZ; y <= lm.y + lm.shapeMaxR; y += WEG_NETZ)
+            if (grenzAbstand(x, y) >= WEG_FREI * 2 && Math.abs(x) < FRAME_HALF && Math.abs(y) < FRAME_HALF && pointInPolygon(x, y, lm.shape)) k.push({ x, y, nb: [] });
+    for (let i = 0; i < k.length; i++) for (let j = i + 1; j < k.length; j++)
+        if (Math.hypot(k[i].x - k[j].x, k[i].y - k[j].y) <= WEG_NETZ * 1.5 && wegFrei(k[i], k[j])) { k[i].nb.push(j); k[j].nb.push(i); }
+    return (wegNetze[lmId] = k);
+}
+function gebietWeg(a, b, lmId) {                 // a → b im Gebiet lmId: [a, …, b]
+    if (wegFrei(a, b)) return [a, b];
+    const K = wegNetz(lmId), nah = p => K.map((q, i) => [i, Math.hypot(q.x - p.x, q.y - p.y)]).filter(([i, d]) => d < WEG_NETZ * 3 && wegFrei(p, K[i])).sort((u, v) => u[1] - v[1]).slice(0, 4);
+    const von = nah(a), zu = new Map(nah(b));
+    if (!von.length || !zu.size) return [a, b];
+    const dist = new Map(von.map(([i, d]) => [i, d])), prev = new Map(), offen = von.map(([i]) => i), fertig = new Set(); let ende = -1, best = Infinity;
+    while (offen.length) {
+        offen.sort((u, v) => dist.get(u) - dist.get(v)); const c = offen.shift(); if (fertig.has(c)) continue; fertig.add(c);
+        if (dist.get(c) >= best) break;
+        if (zu.has(c) && dist.get(c) + zu.get(c) < best) { best = dist.get(c) + zu.get(c); ende = c; }
+        for (const n of K[c].nb) { const d = dist.get(c) + Math.hypot(K[n].x - K[c].x, K[n].y - K[c].y); if (!dist.has(n) || d < dist.get(n)) { dist.set(n, d); prev.set(n, c); offen.push(n); } }
+    }
+    if (ende < 0) return [a, b];
+    const roh = [b]; for (let c = ende; c !== undefined; c = prev.get(c)) roh.unshift({ x: K[c].x, y: K[c].y }); roh.unshift(a);
+    const out = [a];                                     // straffen: vom letzten Punkt so weit wie frei sichtbar
+    for (let i = 0; i < roh.length - 1;) { let j = roh.length - 1; while (j > i + 1 && !wegFrei(roh[i], roh[j])) j--; out.push(roh[j]); i = j; }
+    return out;
+}
+function bridgeOfGate(gate) { return bridges.find(br => br.gateId === gate.id) || null; }
 function bridgeBetween(a, b) {
     return bridges.find(br => (br.a === a && br.b === b) || (br.a === b && br.b === a)) || null;
 }
@@ -173,26 +212,50 @@ function landmassesConnected(a, b) {
 }
 // Long marches: troops may cross any number of regions as long as every gate on the way belongs to them;
 // only the last crossing (into the target's region) may be someone else's gate (toll / shut as usual).
-// → the chain of landmass ids from a to b, or null. BFS over the regions, cheap enough per call.
-function routeFor(a, b, payer) {
+// → the chain of landmass ids from a to b, or null. Kürzester Weg (Dijkstra über die 29 Gebiete, Länge über die Pässe),
+// je Lage (Besitz, offene Pässe) kurz zwischengespeichert. alle: jeden Pass nehmen (nur die Lage der Linie, wenn kein Weg geht).
+const WEG_MERK = new Map();
+const offenePaesse = () => { const t = Date.now(); let n = 0; for (const br of bridges) if (t >= passOpensAt(br)) n++; return n; };
+function routeFor(a, b, payer, alle) {
     if (a === b) return [a];
-    if (landmassesConnected(a, b)) return [a, b];
-    const prev = { [a]: -1 }, queue = [a];
-    while (queue.length) {
-        const cur = queue.shift();
-        for (const nb of reachableLandmassIds[cur] || []) {
-            if (nb === cur || prev[nb] !== undefined || !landmassesConnected(cur, nb)) continue;
-            const gate = gateOnRoute(cur, nb), free = !gate || islandOwnerOf(gate.id) === payer || bundFreund(islandOwnerOf(gate.id), payer);   // (Tore des eigenen Bündnisses sind frei)
-            if (nb === b) { const out = [b]; for (let x = cur; x !== -1; x = prev[x]) out.unshift(x); return out; }
-            if (!free) continue;                    // a foreign gate ends the march there
-            prev[nb] = cur; queue.push(nb);
+    const key = a + '>' + b + '|' + payer + '|' + (alle ? 1 : 0) + '|' + ownVer + '|' + offenePaesse(), m = WEG_MERK.get(key), jetzt = Date.now();
+    if (m && jetzt - m.t < 2000) return m.r;
+    const dist = { [a]: 0 }, prev = { [a]: -1 }, wo = { [a]: { x: landmasses[a].x, y: landmasses[a].y } }, offen = [a], fertig = new Set();
+    let r = null;
+    while (offen.length) {
+        offen.sort((u, v) => dist[u] - dist[v]); const cur = offen.shift(); if (fertig.has(cur)) continue; fertig.add(cur);
+        if (cur === b) { r = []; for (let x = b; x !== -1; x = prev[x]) r.unshift(x); break; }
+        for (const br of bridges) {
+            if (br.a !== cur && br.b !== cur) continue;
+            const nb = br.a === cur ? br.b : br.a; if (fertig.has(nb)) continue;
+            if (!alle) {
+                if (!landmassesConnected(cur, nb)) continue;
+                const gate = gateOnRoute(cur, nb), free = !gate || islandOwnerOf(gate.id) === payer || bundFreund(islandOwnerOf(gate.id), payer);   // (Tore des eigenen Bündnisses sind frei)
+                if (!free && (nb !== b || landmasses[b].zone === 5)) continue;    // a foreign gate ends the march there (in die Mitte nur über einen eigenen Pass)
+            }
+            const e1 = br.a === cur ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, e2 = br.a === cur ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 };
+            const d = dist[cur] + Math.hypot(e1.x - wo[cur].x, e1.y - wo[cur].y) + Math.hypot(e2.x - e1.x, e2.y - e1.y);
+            if (dist[nb] === undefined || d < dist[nb]) { dist[nb] = d; prev[nb] = cur; wo[nb] = e2; offen.push(nb); }
         }
+    }
+    if (WEG_MERK.size > 3000) WEG_MERK.clear();
+    WEG_MERK.set(key, { t: jetzt, r });
+    return r;
+}
+// Warum kommt man von a nicht nach b? → Text für den Hinweis (Pass noch zu / Pass gesperrt) oder null
+function wegGrund(a, b, payer) {
+    const r = routeFor(a, b, payer, true); if (!r) return 'Kein Weg dorthin.';
+    for (let i = 0; i + 1 < r.length; i++) {
+        const br = bridgeBetween(r[i], r[i + 1]), auf = passOpensAt(br) - Date.now();
+        if (auf > 0) return 'Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(auf) + '.';
+        const gate = gateOnRoute(r[i], r[i + 1]), ow = gate && islandOwnerOf(gate.id);
+        if (gate && (i + 2 < r.length || landmasses[b].zone === 5) && ow !== payer && !bundFreund(ow, payer)) return 'Pass gesperrt – ' + (ow ? 'das Tor gehört ' + ((botById[ow] || {}).name || 'jemand anderem') : 'das Tor ist unbesetzt') + '. Erobere zuerst das Tor.';
     }
     return null;
 }
 function canReach(a, b, payer) { return !!routeFor(a, b, payer || 'player'); }
 // Kommt ein Späher von a nach b? Ein geschlossenes fremdes Tor lässt ihn nicht durch (offene Tore schon).
-// false nur, wenn genau ein geschlossenes Tor den Weg versperrt – sonst wie bisher.
+// Ein noch nicht offener Pass ebenso (Zonen wie RoK).
 function spaeherWeg(a, b, who) {
     if (a === b) return true;
     const suche = streng => { const seen = new Set([a]), q = [a];
@@ -201,7 +264,7 @@ function spaeherWeg(a, b, who) {
                 if (streng) { const g = gateOnRoute(cur, nb); if (g && islandOwnerOf(g.id) !== who && !bundFreund(islandOwnerOf(g.id), who) && gateSettings(g).closed) continue; }
                 if (nb === b) return true; seen.add(nb); q.push(nb); } }
         return false; };
-    return suche(true) || !suche(false);
+    return suche(true);                         // (ein Pass mit Countdown lässt auch Späher nicht durch)
 }
 function lastHop(a, b, payer) { const r = routeFor(a, b, payer); return r && r.length > 1 ? [r[r.length - 2], r[r.length - 1]] : [a, b]; }
 function gateOnRoute(fromLm, toLm) {            // the gate base guarding the bridge between two regions (or null)
