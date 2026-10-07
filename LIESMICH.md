@@ -1719,6 +1719,12 @@ Nacht – vorher bauen und testen.
     - ENTSCHIEDEN 7.10. 16:30 (Zahlen: scratchpad/eventzahlen.md): Tagesboss nur Schadens-Klassen (Platz-Preise weg);
       Drache nur Leiste, keine Extra-Preise für die Besten; Teleport frei wo Platz + Pass offen, neue Spieler 1× gratis;
       Lager-Stufen-Belohnung jeden Tag neu.
+    - GEBAUT 7.10. (Events-Teil, nicht hochgeladen): Wochen-Preise bis Platz 1000; Invasion/Drache/Lager als Leiste (Balken mit
+      Kisten, leuchtet = Abholen, Haken = abgeholt), jede Stufe sofort im Abholfach (Schlüssel je Stufe, nie doppelt); Drache-Treffer
+      zählt ab 10 % aller Truppen; Tagesboss: Belohnung je Angriff nach Schadens-Klasse (Zähler ×n) + „Boss fällt“ für alle, keine
+      Platz-Preise und kein „entkommen“-Preis mehr; Lager-Reiter neu (Stufe 1–25 je Tag). „N Std. Münzen/Truppen“ rechnet der
+      Weltrechner beim Auszahlen; echte Spieler: Münzen/Truppen als Gutschrift im Schummel-Schutz. Lebensbalken-Zahl nicht mehr
+      abgeschnitten. Test: `event_leiste_test`.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
