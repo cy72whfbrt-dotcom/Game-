@@ -9760,7 +9760,8 @@ function loadHeroes() {
 function saveHeroes() { store.set('openWaterHeroes2', JSON.stringify(heroState)); }
 function heroById(id) { return HEROES.find(h => h.id === id) || null; }
 function heroSt(who, id) { if (!heroById(id)) return null; if (who === 'player') return loadHeroes()[id]; const b = loadBotState()[who]; return b && b.hs ? b.hs[id] : null; }
-function heroOwned(who, id) { const s = heroSt(who, id); return !!(s && s.own); }
+function heroOwned(who, id) { const s = heroSt(who, id); return !!(s && s.own) && heroHalle(who); }
+function heroHalle(who) { try { return heroLead(who).hall > 0; } catch (e) { return false; } }   // Helden erst mit gebauter Heldenhalle (Splitter sammeln geht vorher)
 function heroSave(who) { if (who === 'player') saveHeroes(); else saveBotState(); }
 const heroPoints = s => Math.floor(s.q / 2);                                       // 1 point per half star: 10 at five stars
 const heroFree = s => Math.max(0, heroPoints(s) - s.sk.reduce((a, v) => a + v, 0));
@@ -9789,7 +9790,7 @@ const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + '
 function heroGefOf(hx, n) { return hx ? Math.min(hx.gef || 0, Math.max(0, n)) : 0; }   // Gefolge: never more than the troops the hero leads (no 1-troop marches with a big following)
 const HX0 = { atk: 0, loss: 0, def: 0, hosp: 0, gold: 0, flee: 0, ret: 0, late: 0, spd: 0, toll: 0, fdef: 0, gSpd: 0, carry: 0, gef: 0 };
 function heroFx(who, id, ctx, fired, s, mul) {      // → the hero's numbers for this fight or march, with a line for the report per value that counts (mul: der Zweitheld zählt halb)
-    const h = heroById(id); s = s || heroSt(who, id); if (!h || !s || !s.own) return null;
+    const h = heroById(id); s = s || heroSt(who, id); if (!h || !s || !s.own || !heroHalle(who)) return null;
     const st0 = heroStats(who, id, s), m = mul || 1, st = m === 1 ? st0 : { atk: Math.round(st0.atk * m), def: Math.round(st0.def * m), spd: Math.round(st0.spd * m), gef: Math.round(st0.gef * m) };
     const fx = Object.assign({ id, q: s.q, fired: !!fired, lines: [] }, HX0);
     if (ctx.fight) { fx.atk += st.atk; fx.loss += st.def; fx.gef = st.gef;
@@ -9821,9 +9822,9 @@ function heroDuo(who, fx, id2, ctx) {               // + der Zweitheld: Werte un
     return fx;
 }
 function heroZweitOk(who, id, id2) { return id && id2 && id2 !== id && heroOwned(who, id2) && !heroBusy(who, id2) ? id2 : null; }   // der Zweitheld: nur mit Hauptheld, eigener, freier Held
-function heroPeek(who, id, src, target, raw, id2) { const s = heroSt(who, id); if (!s || !s.own) return null; const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, heroWouldFire(s), s), id2, ctx); }
+function heroPeek(who, id, src, target, raw, id2) { const s = heroSt(who, id); if (!s || !heroOwned(who, id)) return null; const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, heroWouldFire(s), s), id2, ctx); }
 function heroLaunch(who, id, src, target, raw, id2) {   // the hero marches off: a full rage fires the active skill in this fight
-    const s = heroSt(who, id); if (!s || !s.own) return null;
+    const s = heroSt(who, id); if (!s || !heroOwned(who, id)) return null;
     const fired = heroWouldFire(s); if (fired) { s.rage = 0; heroSave(who); goalBump(who, 'heroFires'); }
     const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, fired, s), id2, ctx);
 }
@@ -9835,7 +9836,7 @@ function heroRageUp(who, id) { const h = heroById(id), s = heroSt(who, id); if (
     s.rage = Math.min(100, (s.rage || 0) + HERO_RAGE * (1 + fast / 100)); heroSave(who); }
 function heroFought(who, hx) { if (!hx || !hx.id) return; heroRageUp(who, hx.id); for (const e of hx.extra || []) heroRageUp(who, e.id); }   // every fight a hero leads fills his rage
 function heroFieldFx(who, id, ctx, id2) {           // a fight out in the open: fires (and refills) the rage right away (nur beim Haupthelden)
-    const s = id && heroSt(who, id); if (!s || !s.own) return null;
+    const s = id && heroSt(who, id); if (!s || !heroOwned(who, id)) return null;
     const fired = heroWouldFire(s); if (fired) { s.rage = 0; goalBump(who, 'heroFires'); }
     const c = Object.assign({ fight: 1, field: 1, vsArmy: 1 }, ctx, { fdefending: !!ctx.defending, gatherDef: !!(ctx.res && ctx.defending) });
     const fx = heroDuo(who, heroFx(who, id, c, fired, s), id2 && heroOwned(who, id2) ? id2 : null, c);
@@ -9869,15 +9870,15 @@ function heroGrantShards(who, n, id, minR) {        // n shards for one hero (a 
     let h = id && heroById(id); if (!h) { const w = pool.map(x => 5 - x.r), tot = w.reduce((a, v) => a + v, 0); let r = Math.random() * tot; h = pool[pool.length - 1]; for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r < 0) { h = pool[i]; break; } } }
     const s = heroSt(who, h.id); s.sh += n; heroSave(who); return h;
 }
-function heroDoUnlock(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || s.own || s.sh < HERO_UNLOCK[h.r]) return false; s.sh -= HERO_UNLOCK[h.r]; s.own = true; s.q = 0; heroSave(who); return true; }
-function heroDoStep(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own || s.q >= HERO_MAXQ) return false; const c = heroStepCost(h, s.q); if (s.sh < c) return false; s.sh -= c; s.q++; heroSave(who); return true; }
+function heroDoUnlock(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || s.own || s.sh < HERO_UNLOCK[h.r] || !heroHalle(who)) return false; s.sh -= HERO_UNLOCK[h.r]; s.own = true; s.q = 0; heroSave(who); return true; }
+function heroDoStep(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !heroOwned(who, id) || s.q >= HERO_MAXQ) return false; const c = heroStepCost(h, s.q); if (s.sh < c) return false; s.sh -= c; s.q++; heroSave(who); return true; }
 function heroDoSwap(who, from, to, n) {              // übrige Splitter eines Helden mit 5 Sternen → Splitter für einen anderen (1:1, nicht für einen mit 5 Sternen)
     const a = heroSt(who, from), b = heroSt(who, to); n = Math.floor(n);
     if (!a || !b || from === to || !a.own || a.q < HERO_MAXQ || (b.own && b.q >= HERO_MAXQ) || !(n > 0) || n > a.sh) return false;
     a.sh -= n; b.sh += n; heroSave(who); return true;
 }
-function heroDoSkill(who, id, k) { const s = heroSt(who, id); if (!s || !s.own || !heroFree(s) || s.sk[k] >= 5) return false; s.sk[k]++; heroSave(who); return true; }
-function heroCanDo(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s) return false; return s.own ? heroFree(s) > 0 || (s.q < HERO_MAXQ && s.sh >= heroStepCost(h, s.q)) : s.sh >= HERO_UNLOCK[h.r]; }
+function heroDoSkill(who, id, k) { const s = heroSt(who, id); if (!s || !heroOwned(who, id) || !heroFree(s) || s.sk[k] >= 5) return false; s.sk[k]++; heroSave(who); return true; }
+function heroCanDo(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !heroHalle(who)) return false; return s.own ? heroFree(s) > 0 || (s.q < HERO_MAXQ && s.sh >= heroStepCost(h, s.q)) : s.sh >= HERO_UNLOCK[h.r]; }
 // ---- Verteidigungs-Helden (Mauer, 6.10.): in der Mauer eingetragen verteidigen sie JEDE eigene Basis – Hauptheld ab Mauer 1,
 // Zweitheld ab Mauer 5 (zu 50 %). Gleiche Rechnung wie beim Angriff (Angriff, Verluste, Krankenhaus, Gold, Gefolge – ohne Wut).
 // Wer gerade unterwegs ist (Angriff, Armee, Feld, Rally), verteidigt nicht; zurück → verteidigt wieder.
@@ -10007,7 +10008,11 @@ function hhPartnerBlk(id) {                           // sein Paar: Partner, Bon
     return '<div class="hh-blk"><h3>Paar · ' + pp.pair.name + '</h3><div class="hh-pair ki-karte' + (own && heroOwned('player', id) ? ' is-on ki-karte--an' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + pp.id + '" class="' + (own ? '' : 'is-locked') + '">' + heroImg(pp.id) + '</button></span>' +
         '<span class="hh-pair-t"><b>mit ' + o.name + '</b><small>' + o.title + (own ? '' : ' · gesperrt') + ' · zusammen +' + HERO_PAIR_BONUS + ' %</small><em>' + pp.pair.story + '</em></span></div></div>';
 }
-function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (liveHtml(el, hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
+function hhOhneHalle() {                            // noch keine Heldenhalle: nur der Hinweis (Splitter sammeln geht schon)
+    return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
+        '<p class="hh-hint hh-ohne-halle">Baue die Heldenhalle in deiner Stadt – erst dann kannst du Helden freischalten, aufwerten und mitschicken. Splitter aus Heldenkisten, Bossen und Aufgaben sammelst du schon jetzt.</p>';
+}
+function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (liveHtml(el, !heroHalle('player') ? hhOhneHalle() : hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
 function heroHallLive() {                            // (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu zeichnen
     const el = document.getElementById('heroHall'); if (el.hidden) return;
     const sig = JSON.stringify(loadHeroes()) + '|' + hhCur + '|' + playerLvl + '|' + cityLevelSafe('heroes') + '|' + HEROES.map(h => heroBusy('player', h.id) ? 1 : 0).join('');
@@ -10094,7 +10099,7 @@ function cityVergleich(id, L) {                    // Gebäude-Fenster „Jetzt 
 function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
     if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
-        return (lvl ? '' : '<small class="keep-note">Deine Helden kannst du schon jetzt nutzen – die Halle gibt allen Helden Gefolge-Bonus.</small>') + '<button type="button" class="btn btn--' + (lvl ? 'primary' : 'secondary') + ' btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
+        return (lvl ? '' : '<small class="keep-note">Baue die Heldenhalle – erst dann kannst du Helden freischalten, aufwerten und mitschicken.</small>') + '<button type="button" class="btn btn--' + (lvl ? 'primary' : 'secondary') + ' btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
     if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
     if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest

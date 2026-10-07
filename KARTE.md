@@ -732,7 +732,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:231
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:74
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:345
-- `closeHeroHall` → Game/spiel/08c-helden.js:277
+- `closeHeroHall` → Game/spiel/08c-helden.js:282
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:112
 - `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:118
 - `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:56
@@ -1280,73 +1280,75 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heiligtumBild` → Game/spiel/03b-gebaeude-3d.js:307
 - `heldOk` → Game/spiel/10d-welt-weltrechner.js:1052
 - `herkunft_ok` → Game/server/03-nebel-maersche-seite.php:126
-- `heroBaseCtx` → Game/spiel/08c-helden.js:65
-- `heroBusy` → Game/spiel/08c-helden.js:108
+- `heroBaseCtx` → Game/spiel/08c-helden.js:66
+- `heroBusy` → Game/spiel/08c-helden.js:109
 - `heroById` → Game/spiel/08c-helden.js:21
-- `heroCanDo` → Game/spiel/08c-helden.js:140
+- `heroCanDo` → Game/spiel/08c-helden.js:141
 - `heroChestKauf` → Game/spiel/06d-schild-produktion.js:147
 - `heroChestOpen` → Game/spiel/06d-schild-produktion.js:143
 - `heroChestPool` → Game/spiel/06d-schild-produktion.js:117
-- `heroChipHtml` → Game/spiel/08c-helden.js:314
+- `heroChipHtml` → Game/spiel/08c-helden.js:319
 - `heroConvert` → Game/spiel/08c-helden.js:5
 - `heroDefCut` → Game/spiel/01e-nebel-kampfwerte-hud.js:139
 - `heroDefPart` → Game/spiel/01e-nebel-kampfwerte-hud.js:149
-- `heroDoSkill` → Game/spiel/08c-helden.js:139
-- `heroDoStep` → Game/spiel/08c-helden.js:133
-- `heroDoSwap` → Game/spiel/08c-helden.js:134
-- `heroDoUnlock` → Game/spiel/08c-helden.js:132
-- `heroDuo` → Game/spiel/08c-helden.js:72
-- `heroFieldFx` → Game/spiel/08c-helden.js:97
+- `heroDoSkill` → Game/spiel/08c-helden.js:140
+- `heroDoStep` → Game/spiel/08c-helden.js:134
+- `heroDoSwap` → Game/spiel/08c-helden.js:135
+- `heroDoUnlock` → Game/spiel/08c-helden.js:133
+- `heroDuo` → Game/spiel/08c-helden.js:73
+- `heroFieldFx` → Game/spiel/08c-helden.js:98
 - `heroFix` → Game/spiel/08c-helden.js:12
-- `heroFought` → Game/spiel/08c-helden.js:96
-- `heroFree` → Game/spiel/08c-helden.js:26
+- `heroFought` → Game/spiel/08c-helden.js:97
+- `heroFree` → Game/spiel/08c-helden.js:27
 - `heroFresh` → Game/spiel/08c-helden.js:4
-- `heroFx` → Game/spiel/08c-helden.js:51
-- `heroGatherFx` → Game/spiel/08c-helden.js:105
-- `heroGefOf` → Game/spiel/08c-helden.js:49
-- `heroGrantShards` → Game/spiel/08c-helden.js:127
-- `heroHallLive` → Game/spiel/08c-helden.js:271
-- `heroImg` → Game/spiel/08c-helden.js:202
-- `heroIn` → Game/spiel/08c-helden.js:107
-- `heroLaunch` → Game/spiel/08c-helden.js:85
-- `heroLead` → Game/spiel/08c-helden.js:32
-- `heroLetzte` → Game/spiel/08c-helden.js:192
-- `heroLetzteMerken` → Game/spiel/08c-helden.js:188
-- `heroMarchFx` → Game/spiel/08c-helden.js:104
-- `heroNum` → Game/spiel/08c-helden.js:30
-- `heroOnField` → Game/spiel/08c-helden.js:106
+- `heroFx` → Game/spiel/08c-helden.js:52
+- `heroGatherFx` → Game/spiel/08c-helden.js:106
+- `heroGefOf` → Game/spiel/08c-helden.js:50
+- `heroGrantShards` → Game/spiel/08c-helden.js:128
+- `heroHalle` → Game/spiel/08c-helden.js:24
+- `heroHallLive` → Game/spiel/08c-helden.js:276
+- `heroImg` → Game/spiel/08c-helden.js:203
+- `heroIn` → Game/spiel/08c-helden.js:108
+- `heroLaunch` → Game/spiel/08c-helden.js:86
+- `heroLead` → Game/spiel/08c-helden.js:33
+- `heroLetzte` → Game/spiel/08c-helden.js:193
+- `heroLetzteMerken` → Game/spiel/08c-helden.js:189
+- `heroMarchFx` → Game/spiel/08c-helden.js:105
+- `heroNum` → Game/spiel/08c-helden.js:31
+- `heroOnField` → Game/spiel/08c-helden.js:107
 - `heroOwned` → Game/spiel/08c-helden.js:23
 - `heroPairOf` → Game/spiel/01d-helden-mitspieler.js:64
 - `heroPartner` → Game/spiel/01d-helden-mitspieler.js:65
-- `heroPeek` → Game/spiel/08c-helden.js:84
-- `heroPic` → Game/spiel/08c-helden.js:201
-- `heroPickBest` → Game/spiel/08c-helden.js:116
-- `heroPickPair` → Game/spiel/08c-helden.js:125
-- `heroPoints` → Game/spiel/08c-helden.js:25
-- `heroPower` → Game/spiel/08c-helden.js:39
-- `heroRageUp` → Game/spiel/08c-helden.js:93
+- `heroPeek` → Game/spiel/08c-helden.js:85
+- `heroPic` → Game/spiel/08c-helden.js:202
+- `heroPickBest` → Game/spiel/08c-helden.js:117
+- `heroPickPair` → Game/spiel/08c-helden.js:126
+- `heroPoints` → Game/spiel/08c-helden.js:26
+- `heroPower` → Game/spiel/08c-helden.js:40
+- `heroRageUp` → Game/spiel/08c-helden.js:94
 - `heroReportOf` → Game/spiel/01e-nebel-kampfwerte-hud.js:107
-- `heroSave` → Game/spiel/08c-helden.js:24
-- `heroSeg2Html` → Game/spiel/08c-helden.js:307
-- `heroSegHtml` → Game/spiel/08c-helden.js:302
-- `heroSkillVal` → Game/spiel/08c-helden.js:31
+- `heroSave` → Game/spiel/08c-helden.js:25
+- `heroSeg2Html` → Game/spiel/08c-helden.js:312
+- `heroSegHtml` → Game/spiel/08c-helden.js:307
+- `heroSkillVal` → Game/spiel/08c-helden.js:32
 - `heroSt` → Game/spiel/08c-helden.js:22
-- `heroStarNum` → Game/spiel/08c-helden.js:28
-- `heroStarTxt` → Game/spiel/08c-helden.js:29
-- `heroStats` → Game/spiel/08c-helden.js:33
-- `heroStepCost` → Game/spiel/08c-helden.js:27
-- `heroTag` → Game/spiel/08c-helden.js:184
-- `heroWouldFire` → Game/spiel/08c-helden.js:71
-- `heroWutZurueck` → Game/spiel/08c-helden.js:90
-- `heroZweitOk` → Game/spiel/08c-helden.js:83
+- `heroStarNum` → Game/spiel/08c-helden.js:29
+- `heroStarTxt` → Game/spiel/08c-helden.js:30
+- `heroStats` → Game/spiel/08c-helden.js:34
+- `heroStepCost` → Game/spiel/08c-helden.js:28
+- `heroTag` → Game/spiel/08c-helden.js:185
+- `heroWouldFire` → Game/spiel/08c-helden.js:72
+- `heroWutZurueck` → Game/spiel/08c-helden.js:91
+- `heroZweitOk` → Game/spiel/08c-helden.js:84
 - `herzSchreiben` → Game/weltrechner/start.js:65
 - `hfl` → Game/spiel/10a-inselfenster-vorschau.js:393
-- `hhGrid` → Game/spiel/08c-helden.js:204
-- `hhHero` → Game/spiel/08c-helden.js:227
-- `hhPairs` → Game/spiel/08c-helden.js:219
-- `hhPartnerBlk` → Game/spiel/08c-helden.js:265
-- `hhStars` → Game/spiel/08c-helden.js:199
-- `hhSwapHtml` → Game/spiel/08c-helden.js:260
+- `hhGrid` → Game/spiel/08c-helden.js:205
+- `hhHero` → Game/spiel/08c-helden.js:228
+- `hhOhneHalle` → Game/spiel/08c-helden.js:271
+- `hhPairs` → Game/spiel/08c-helden.js:220
+- `hhPartnerBlk` → Game/spiel/08c-helden.js:266
+- `hhStars` → Game/spiel/08c-helden.js:200
+- `hhSwapHtml` → Game/spiel/08c-helden.js:261
 - `hideAllButtons` → Game/spiel/09e-inselfenster.js:121
 - `hilfeAnwenden` → Game/buendnis/01-daten-regeln.js:404
 - `hilfeDauer` → Game/buendnis/01-daten-regeln.js:368
@@ -1440,7 +1442,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kampfTeile` → Game/buendnis/02-rally-geschenke.js:184
 - `kannZahlen` → Game/aufbau.js:68
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:160
-- `karte` → Game/spiel/08c-helden.js:207
+- `karte` → Game/spiel/08c-helden.js:208
 - `karteBilder` → Game/spiel/03a-karte-hintergrund.js:42
 - `karteObjekte` → Game/spiel/03a-karte-hintergrund.js:148
 - `karteTauchen` → Game/spiel/08a-stadt-bauen.js:202
@@ -1619,7 +1621,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `midAnzeige` → Game/spiel/06c-thron-mitte.js:232
 - `midFight` → Game/spiel/06c-thron-mitte.js:177
 - `midNotice` → Game/spiel/06c-thron-mitte.js:236
-- `mine` → Game/spiel/08c-helden.js:109
+- `mine` → Game/spiel/08c-helden.js:110
 - `mini` → Game/spiel/05a-aussehen-profil.js:80
 - `minuten` → Game/weltrechner/push.js:124
 - `missing` → Game/spiel/03a-karte-hintergrund.js:538
@@ -1755,7 +1757,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openCrate` → Game/spiel/02a-shop-stufen.js:82
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:326
 - `openGoals` → Game/spiel/06a-aufgaben.js:348
-- `openHeroHall` → Game/spiel/08c-helden.js:276
+- `openHeroHall` → Game/spiel/08c-helden.js:281
 - `openIslandPopup` → Game/spiel/09e-inselfenster.js:103
 - `openLookSheet` → Game/spiel/08b-burg-aussehen.js:52
 - `openMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:300
@@ -2015,7 +2017,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderEvents` → Game/spiel/09c-events-drache.js:579
 - `renderGoalsSub` → Game/spiel/06a-aufgaben.js:346
 - `renderHeroChests` → Game/spiel/06d-schild-produktion.js:118
-- `renderHeroHall` → Game/spiel/08c-helden.js:270
+- `renderHeroHall` → Game/spiel/08c-helden.js:275
 - `renderInbox` → Game/spiel/06a-aufgaben.js:271
 - `renderKeep` → Game/aufbau.js:309
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:4
@@ -2484,16 +2486,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verstVorKampf` → Game/buendnis/01-daten-regeln.js:489
 - `verstWert` → Game/buendnis/01-daten-regeln.js:499
 - `verstZeilen` → Game/spiel/01a-grundlagen.js:187
-- `vhBest` → Game/spiel/08c-helden.js:178
+- `vhBest` → Game/spiel/08c-helden.js:179
 - `vhChip` → Game/spiel/08d-gebaeude-wirkung.js:67
-- `vhFx` → Game/spiel/08c-helden.js:160
+- `vhFx` → Game/spiel/08c-helden.js:161
 - `vhHtml` → Game/spiel/08d-gebaeude-wirkung.js:72
-- `vhMauer` → Game/spiel/08c-helden.js:149
-- `vhName` → Game/spiel/08c-helden.js:169
-- `vhPlus` → Game/spiel/08c-helden.js:168
-- `vhRechnen` → Game/spiel/08c-helden.js:150
-- `vhSetzen` → Game/spiel/08c-helden.js:170
-- `vhSoll` → Game/spiel/08c-helden.js:145
+- `vhMauer` → Game/spiel/08c-helden.js:150
+- `vhName` → Game/spiel/08c-helden.js:170
+- `vhPlus` → Game/spiel/08c-helden.js:169
+- `vhRechnen` → Game/spiel/08c-helden.js:151
+- `vhSetzen` → Game/spiel/08c-helden.js:171
+- `vhSoll` → Game/spiel/08c-helden.js:146
 - `vhWaehlen` → Game/spiel/08d-gebaeude-wirkung.js:91
 - `villageTower` → Game/baukunst/05-umland.js:233
 - `VINE` → Game/baukunst/08-himmelsfeste-bilder.js:19
@@ -2583,7 +2585,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltZuClient` → Game/welt.js:143
 - `werIst` → Game/aufbau.js:122
 - `werIstWer` → Game/spiel/10d-welt-weltrechner.js:1067
-- `wert` → Game/spiel/08c-helden.js:240
+- `wert` → Game/spiel/08c-helden.js:241
 - `wert` → Game/spiel/08d-gebaeude-wirkung.js:84
 - `who` → Game/spiel/04-kampf.js:59
 - `whoBases` → Game/spiel/05c-erfolge-rangliste.js:161
@@ -4558,71 +4560,73 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroById` :21
 - `heroSt` :22
 - `heroOwned` :23
-- `heroSave` :24
-- `heroPoints` :25 — 1 point per half star: 10 at five stars
-- `heroFree` :26
-- `heroStepCost` :27
-- `heroStarNum` :28 — 2½
-- `heroStarTxt` :29
-- `heroNum` :30 — 2,4
-- `heroSkillVal` :31
-- `heroLead` :32
-- `heroStats` :33 — Angriff, Verteidigung (fewer losses), Tempo in % and the Gefolge: grow with rar…
-- `heroPower` :39
-- `heroGefOf` :49
-- `heroFx` :51 — → the hero's numbers for this fight or march, with a line for the report per va…
-- `heroBaseCtx` :65 — what kind of attack this is, for the skills that need one
-- `heroWouldFire` :71
-- `heroDuo` :72 — + der Zweitheld: Werte und passive Fähigkeiten zu 50 % (keine Wut), ein passend…
-- `heroZweitOk` :83
-- `heroPeek` :84
-- `heroLaunch` :85 — the hero marches off: a full rage fires the active skill in this fight
-- `heroWutZurueck` :90 — der Held hat nicht gekämpft (zurückgerufen, abgeprallt, 2. Welle ohne Helden): …
-- `heroRageUp` :93
-- `heroFought` :96
-- `heroFieldFx` :97 — a fight out in the open: fires (and refills) the rage right away (nur beim Haup…
-- `heroMarchFx` :104
-- `heroGatherFx` :105
-- `heroOnField` :106
-- `heroIn` :107
-- `heroBusy` :108 — one attack, army or field march per hero at a time (Haupt- oder Zweitheld)
-- `mine` :109
-- `heroPickBest` :116 — the free hero that does the most in this attack (the others use it, and so can …
-- `heroPickPair` :125
-- `heroGrantShards` :127 — shards, stars and points: the same steps for you and for everyone else
-- `heroDoUnlock` :132
-- `heroDoStep` :133
-- `heroDoSwap` :134 — übrige Splitter eines Helden mit 5 Sternen → Splitter für einen anderen (1:1, n…
-- `heroDoSkill` :139
-- `heroCanDo` :140
-- `vhSoll` :145 — [Haupt-, Zweitheld] wie eingetragen (dein Eintrag steht in der Stadt)
-- `vhMauer` :149
-- `vhRechnen` :150
-- `vhFx` :160
-- `vhPlus` :168
-- `vhName` :169
-- `vhSetzen` :170 — eintragen (prüft: eigener Held, Mauer-Stufe) → true, wenn es gilt
-- `vhBest` :178 — der beste eigene Held fürs Verteidigen (Mitspieler): Angriff + weniger Verluste…
-- `heroTag` :184
-- `heroLetzteMerken` :188 — nach dem Losschicken: Haupt- und Zweitheld vorn in die Liste
-- `heroLetzte` :192 — → [Haupt-, Zweitheld]: die ersten freien aus der Liste (der gerade Losgeschickt…
-- `hhStars` :199
-- `heroPic` :201 — ---- Heldenbilder (KI-Bilder, werkzeuge/helden_bilder_schneiden.py): Figur bild…
-- `heroImg` :202
-- `hhGrid` :204
-- `karte` :207
-- `hhPairs` :219 — Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwe…
-- `hhHero` :227
-- `wert` :240
-- `hhSwapHtml` :260 — übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
-- `hhPartnerBlk` :265 — sein Paar: Partner, Bonus, gemeinsame Geschichte
-- `renderHeroHall` :270
-- `heroHallLive` :271 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
-- `openHeroHall` :276
-- `closeHeroHall` :277
-- `heroSegHtml` :302 — the hero choice for an attack, an army or a field march: the ones you have, wit…
-- `heroSeg2Html` :307 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
-- `heroChipHtml` :314 — profile + report: a hero with rarity and stars
+- `heroHalle` :24
+- `heroSave` :25
+- `heroPoints` :26 — 1 point per half star: 10 at five stars
+- `heroFree` :27
+- `heroStepCost` :28
+- `heroStarNum` :29 — 2½
+- `heroStarTxt` :30
+- `heroNum` :31 — 2,4
+- `heroSkillVal` :32
+- `heroLead` :33
+- `heroStats` :34 — Angriff, Verteidigung (fewer losses), Tempo in % and the Gefolge: grow with rar…
+- `heroPower` :40
+- `heroGefOf` :50
+- `heroFx` :52 — → the hero's numbers for this fight or march, with a line for the report per va…
+- `heroBaseCtx` :66 — what kind of attack this is, for the skills that need one
+- `heroWouldFire` :72
+- `heroDuo` :73 — + der Zweitheld: Werte und passive Fähigkeiten zu 50 % (keine Wut), ein passend…
+- `heroZweitOk` :84
+- `heroPeek` :85
+- `heroLaunch` :86 — the hero marches off: a full rage fires the active skill in this fight
+- `heroWutZurueck` :91 — der Held hat nicht gekämpft (zurückgerufen, abgeprallt, 2. Welle ohne Helden): …
+- `heroRageUp` :94
+- `heroFought` :97
+- `heroFieldFx` :98 — a fight out in the open: fires (and refills) the rage right away (nur beim Haup…
+- `heroMarchFx` :105
+- `heroGatherFx` :106
+- `heroOnField` :107
+- `heroIn` :108
+- `heroBusy` :109 — one attack, army or field march per hero at a time (Haupt- oder Zweitheld)
+- `mine` :110
+- `heroPickBest` :117 — the free hero that does the most in this attack (the others use it, and so can …
+- `heroPickPair` :126
+- `heroGrantShards` :128 — shards, stars and points: the same steps for you and for everyone else
+- `heroDoUnlock` :133
+- `heroDoStep` :134
+- `heroDoSwap` :135 — übrige Splitter eines Helden mit 5 Sternen → Splitter für einen anderen (1:1, n…
+- `heroDoSkill` :140
+- `heroCanDo` :141
+- `vhSoll` :146 — [Haupt-, Zweitheld] wie eingetragen (dein Eintrag steht in der Stadt)
+- `vhMauer` :150
+- `vhRechnen` :151
+- `vhFx` :161
+- `vhPlus` :169
+- `vhName` :170
+- `vhSetzen` :171 — eintragen (prüft: eigener Held, Mauer-Stufe) → true, wenn es gilt
+- `vhBest` :179 — der beste eigene Held fürs Verteidigen (Mitspieler): Angriff + weniger Verluste…
+- `heroTag` :185
+- `heroLetzteMerken` :189 — nach dem Losschicken: Haupt- und Zweitheld vorn in die Liste
+- `heroLetzte` :193 — → [Haupt-, Zweitheld]: die ersten freien aus der Liste (der gerade Losgeschickt…
+- `hhStars` :200
+- `heroPic` :202 — ---- Heldenbilder (KI-Bilder, werkzeuge/helden_bilder_schneiden.py): Figur bild…
+- `heroImg` :203
+- `hhGrid` :205
+- `karte` :208
+- `hhPairs` :220 — Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwe…
+- `hhHero` :228
+- `wert` :241
+- `hhSwapHtml` :261 — übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
+- `hhPartnerBlk` :266 — sein Paar: Partner, Bonus, gemeinsame Geschichte
+- `hhOhneHalle` :271 — noch keine Heldenhalle: nur der Hinweis (Splitter sammeln geht schon)
+- `renderHeroHall` :275
+- `heroHallLive` :276 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
+- `openHeroHall` :281
+- `closeHeroHall` :282
+- `heroSegHtml` :307 — the hero choice for an attack, an army or a field march: the ones you have, wit…
+- `heroSeg2Html` :312 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
+- `heroChipHtml` :319 — profile + report: a hero with rarity and stars
 
 ### Game/spiel/08d-gebaeude-wirkung.js — Wirkung der Gebäude (Labor, Schmiede, Lazarett), Stadt-Leiste, Hauptstadt verle…
 - `academyLevel` :3 — ---- building effects ----
