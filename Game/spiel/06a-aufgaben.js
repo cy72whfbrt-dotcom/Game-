@@ -246,7 +246,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' }, lager: { ic: 'attack', t: 'Barbaren-Lager' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler)
@@ -286,9 +286,10 @@ function updateGoalsBadge(nAch) {
     if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
     const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxList().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
     set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
-    const jetzt = evJetzt(); for (const k of ['inv', 'drache']) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), jetzt === k);   // „!“ am Ereignis, das gerade läuft
+    const jetzt = evJetzt(), hol = ['tour', 'inv', 'drache', 'boss', 'lager'].filter(k => jetzt === k || evHolBereit(k));
+    for (const k of EV_TABS) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), hol.includes(k));   // „!“ am Ereignis, das gerade läuft oder eine Belohnung zum Abholen hat
     const g = k => goalsPopup.querySelector('[data-ggbadge="' + k + '"]');   // die 4 Reiter: Summe ihrer Unterreiter
-    set(g('aufgaben'), nd + nAch); set(g('abholen'), nr); set(g('pass'), np); setShown(g('ereignisse'), jetzt === 'inv' || jetzt === 'drache');
+    set(g('aufgaben'), nd + nAch); set(g('abholen'), nr); set(g('pass'), np); setShown(g('ereignisse'), hol.length > 0);
 }
 function renderQuestPanel() {
     const q = loadQuests();
@@ -327,8 +328,8 @@ function renderQuestPanel() {
     document.getElementById('questList').innerHTML = html;
 }
 // ---- Events: one sheet, 4 Reiter - Aufgaben: Täglich (tasks + week chain), Erfolge · Abholen: Belohnung (Abholfach + 7-day login chest) ·
-// Pass · Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager (renderEvents); Unterreiter als Chips ----
-const EV_TABS = ['tour', 'inv', 'drache', 'boss'];
+// Pass · Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss, Barbaren-Lager (renderEvents); Unterreiter als Chips ----
+const EV_TABS = ['tour', 'inv', 'drache', 'boss', 'lager'];
 const GOALS_GRP = { aufgaben: ['daily', 'ach'], abholen: ['reward'], pass: ['pass'], ereignisse: EV_TABS }, goalsGrpLetzt = {};
 const goalsGrpVon = t => Object.keys(GOALS_GRP).find(k => GOALS_GRP[k].includes(t));
 function showGoalsTab(t) {

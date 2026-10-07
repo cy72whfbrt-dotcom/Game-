@@ -1953,7 +1953,7 @@ function botDrache(bot) {                                 // ein paar Schläge �
     const due = Math.min(DR_HITS, Math.ceil(DR_HITS * (Date.now() - D.start) / (D.end - D.start)) + 1);
     if ((D.hits[bot.id] || 0) >= due || barbOut(bot.id, 'd')) return false;
     const base = botBarbBase(bot); if (base === null) return false;
-    const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < wirtK(1000)) return false;
+    const have = islandTroops[base] || 0, n = Math.min(have, Math.max(Math.floor(have * (.15 + Math.random() * .2)), Math.ceil(evTruppenAlle(bot.id) * DR_ANTEIL * 1.05))); if (n < wirtK(1000)) return false;   // (mind. 10 % aller Truppen – sonst zählt der Treffer nicht, wie bei dir)
     return barbSend(bot.id, base, 'd', null, n, heroPickBest(bot.id, null, null, n));
 }
 function botDayBoss(bot) {                                // the daily boss: a few strikes a day with a share of their biggest free base

@@ -6,15 +6,33 @@ const barbTroopsOf = L => niceRound(wirtK(2000 * Math.pow(2, L - 1)));          
 const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 * MUENZ_FAKTOR + wirtM(500 * L * L));   // coins for a win (+ Angriff: Gold per warrior) – Münzen × MUENZ_FAKTOR
 const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
 const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
-const DBOSS_PRIZE = [{ gems: 300, crate: 3, sh: 30 }, { gems: 200, crate: 3, sh: 20 }, { gems: 150, crate: 3, sh: 15 }, { gems: 80, crate: 2, sh: 10 }, { gems: 30, crate: -1, sh: 5 }];   // 1 · 2 · 3 · 4-10 · everyone else who hit it
-const dbossPrizeOf = i => DBOSS_PRIZE[i < 3 ? i : i < 10 ? 3 : 4];
+// Tagesboss (Merkliste 33): JE Angriff die Belohnung seiner Schadens-Klasse (zweimal dieselbe = zweimal), fällt er: alle, die trafen, noch etwas
+const DBOSS_KLASSEN = [{ bis: 1e3, mh: 1, t: '1 – 1.000' }, { bis: 1e4, mh: 2, t: '1.000 – 10.000' }, { bis: 1e5, mh: 3, sh: 1, t: '10.000 – 100.000' },
+    { bis: 1e6, gems: 5, sh: 1, th: 1, crate: 0, t: '100.000 – 1 Mio.' }, { bis: Infinity, gems: 10, sh: 2, th: 2, crate: 1, t: 'über 1 Mio.' }], DBOSS_FALL = { gems: 20, sh: 5 };
+const dbossKlasse = dmg => DBOSS_KLASSEN.findIndex(k => dmg <= k.bis);
+function dbossKlasseZahlen(b, who, dmg) {           // (nur wer rechnet) ein Angriff: Zähler je Klasse, Belohnung ins Abholfach – Schlüssel je Angriff
+    const i = dbossKlasse(dmg), kl = (b.kl || (b.kl = {}))[who] || (b.kl[who] = DBOSS_KLASSEN.map(() => 0)), n = kl.reduce((a, x) => a + x, 0);
+    kl[i]++; evPreis(who, 'boss', b.name + ' · Klasse ' + (i + 1), DBOSS_KLASSEN[i], b.d + '|' + n); return i;
+}
+// Barbaren-Lager (Merkliste 33): jede Stufe 1–25 bringt einmal am Tag eine Belohnung (jeden Tag neu)
+function lagerPreis(L) {
+    const gross = { 5: { gems: 10, crate: 0 }, 10: { gems: 20, crate: 1, sh: 5 }, 15: { gems: 30, crate: 2, sh: 10 }, 20: { gems: 50, crate: 2, sh: 15 }, 25: { gems: 100, crate: 3, sh: 30 } }[L];
+    if (gross) return gross; if (L < 5) return { mh: 1 };
+    const [m, t] = L < 10 ? [2, 1] : L < 15 ? [3, 2] : L < 20 ? [4, 3] : [6, 4], p = (L - 1) % 5 % 2 ? { th: t } : { mh: m };   // abwechselnd Münzen / Truppen
+    if (L > 20) p.sh = 2; return p;
+}
+const LAGER_LEISTE = Array.from({ length: BARB_MAX_L }, (_, i) => Object.assign({ ab: i + 1 }, lagerPreis(i + 1)));
+function lagerStufeZahlen(who, L) {                 // (nur wer rechnet) Lager Stufe L besiegt: heute zum ersten Mal → Belohnung
+    const r = barbRec(who), bit = 1 << (L - 1); if (L < 1 || L > BARB_MAX_L || (r.s & bit)) return false;
+    r.s = (r.s || 0) | bit; evPreis(who, 'lager', 'Barbaren-Lager Stufe ' + L, LAGER_LEISTE[L - 1], r.d + '|' + L); return true;
+}
 const barbLoad = (k, d) => { try { return JSON.parse(store.get(k)) || d; } catch (e) { return d; } };
 let barbState = barbLoad('openWaterBarb', { camps: [], n: 0, next: 0 }), barbMarches = barbLoad('openWaterBarbMarches', []), barbWho = barbLoad('openWaterBarbWho', {}), dayBoss = barbLoad('openWaterDayBoss', null), barbSaveAt = 0;
 function saveBarb(now) { if (now && now - barbSaveAt < 5000) return; barbSaveAt = now || Date.now();
     store.set('openWaterBarb', JSON.stringify(barbState)); store.set('openWaterBarbMarches', JSON.stringify(barbMarches)); store.set('openWaterBarbWho', JSON.stringify(barbWho)); store.set('openWaterDayBoss', JSON.stringify(dayBoss)); }
 window.addEventListener('pagehide', () => saveBarb()); document.addEventListener('visibilitychange', () => { if (document.hidden) saveBarb(); });
 const barbCampById = id => barbState.camps.find(c => c.id === id);
-function barbRec(who) { const r = barbWho[who] || (barbWho[who] = { b: 0, d: '', n: 0, h: 0 }), d = todayKey(); if (r.d !== d) { r.d = d; r.n = 0; r.h = 0; } return r; }   // b: best level beaten · n: camp wins today · h: boss hits today
+function barbRec(who) { const r = barbWho[who] || (barbWho[who] = { b: 0, d: '', n: 0, h: 0, s: 0 }), d = todayKey(); if (r.d !== d) { r.d = d; r.n = 0; r.h = 0; r.s = 0; } return r; }   // b: best level beaten · n: camp wins today · h: boss hits today · s: Lager-Stufen heute (Bits, Belohnung)
 const barbOut = (who, k) => barbMarches.filter(m => m.who === who && !m.back && m.k === (k || 'c')).length;
 const barbLeft = who => Math.max(0, barbTagMax() - barbRec(who).n - barbOut(who));
 const barbOpenFor = (who, L) => L <= barbRec(who).b + 1;
@@ -45,7 +63,6 @@ function barbSpawn() {                              // a third near you, 40 % ne
 }
 function dbossEnsure() {                            // today's boss: the kind turns every day, the place is the same for everyone today
     const d = todayKey(); if (dayBoss && dayBoss.d === d) return dayBoss;
-    if (dayBoss && dayBoss.hp > 0 && rechnet()) dbossEntkommen(dayBoss);                  // gestern nicht gefallen: alle, die getroffen haben, bekommen etwas Kleines
     const now = new Date(), n = Math.round(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime() / 864e5), K = DBOSS_KINDS[n % DBOSS_KINDS.length], r = mulberry32(n * 7919 + 13);
     const lms = BARB_LMS.filter(l => l.ring <= 3); let p = null, lm = null;
     for (let t = 0; t < 20 && !p; t++) { lm = lms[Math.floor(r() * lms.length)]; p = barbSpot(lm, r, 3.5); }
@@ -60,12 +77,6 @@ function dbossEnsure() {                            // today's boss: the kind tu
 // 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Start-Truppen 5.000
 // (Alexander 6.10.) → 100.000 Leben (sonst fiele er am ersten Tag mit einem Angriff)
 const DBOSS_MIN_ANFANG = 8 * DBOSS_HITS * PLAYER_START_TROOPS * .25;
-function dbossEntkommen(b) {                        // (nur wer rechnet) der Boss ist nicht gefallen: wie beim Drachen alle, die getroffen haben, etwas Kleines –
-    const rk = dbossRanks(b); if (!rk.length) return;   //   fester Schlüssel je Tag (derselbe wie der Preis beim Fallen: nie beides, nie doppelt)
-    for (const [who] of rk) evPreis(who, 'boss', b.name + ' entkommen', DR_PREISE[2], b.d);
-    if (b.dmg.player) flashHint(b.name + ' ist entkommen – alle, die getroffen haben, bekommen eine kleine Belohnung unter Events.', 6000);
-    saveBotState();
-}
 const DBOSS_GONE = 5 * 60000;                          // a fallen boss leaves the map 5 min after it fell
 let dbossOffen = '';                                // (Tagesboss: einmal am Tag seinen Platz aufdecken – er ist für alle angekündigt, wie Drache und Kriegsherr)
 function dbossOnMap(now) { const b = dayBoss, da = b && b.d === todayKey() && (b.hp > 0 || (now || Date.now()) - (b.fell || 0) < DBOSS_GONE) ? b : null;
@@ -105,7 +116,7 @@ function barbSend(who, homeId, k, tid, troops, hero, hero2) {  // troops leave a
     barbMarches.push({ who, homeId, k, tid: k === 'b' || k === 'd' ? null : tid, d: k === 'b' ? t.d : k === 'd' ? t.start : null, L: t.L, name: t.name, x: Math.round(t.x), y: Math.round(t.y), lm: t.lm, troops, hero: hero || null, hero2, startedAt: now,
         resolveAt: now + travelDurationSeconds(home, barbPt(t), who === 'player' ? undefined : who) / (1 + (mx ? mx.spd : 0) / 100) * 1000, back: false });
     if (k === 'b') barbRec(who).h++;
-    if (k === 'd') { dr.hits[who] = (dr.hits[who] || 0) + 1; evDirty = true; }
+    if (k === 'd') { dr.hits[who] = (dr.hits[who] || 0) + 1; evDirty = true; barbMarches[barbMarches.length - 1].voll = troops >= DR_ANTEIL * (evTruppenAlle(who) + troops); }   // (Drache: zählt als Treffer mit mind. 10 % aller Truppen)
     if (k !== 'c') goalBump(who, 'q' + k);                                                     // Tagesaufgaben + Saison-Pass: Angriff auf Tagesboss (qb), Drache (qd), Barbaren-Armee (qi)
     saveBarb(); if (who === 'player') { sfx('send'); updateHud(); saveGame(); } requestRender(); return true;
 }
@@ -137,7 +148,7 @@ function barbArrive(m, now) {
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), before = c.t, fb = barbFight(who, m.troops, hx, c.t), wounded = fieldHurt(who, fb.loss, hx), best0 = rec.b;   // the leader: a full rage fires now, every fight fills it
     let gold = 0, item = null, sh = null, shN = 1 + Math.floor(c.L / 5), kGold = 0;
     if (fb.won) {
-        barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb'); goalBump(who, 'lager');   // (lager: nur Lager – barb zählt auch Invasions-Armeen)
+        barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb'); goalBump(who, 'lager'); lagerStufeZahlen(who, c.L);   // (lager: nur Lager – barb zählt auch Invasions-Armeen)
         kGold = Math.round(fb.kill * killGoldRate(who, hx)); gold = payGold(who, barbLootOf(c.L) + kGold);
         if (Math.random() < .1 + c.L * .015) item = isP ? (inboxAdd({ src: 'fight', crate: Math.floor(c.L / 8) }), { box: Math.floor(c.L / 8) }) : (barbCrate(who, Math.floor(c.L / 8)), { box: Math.floor(c.L / 8) });   // (für den Bericht)   // yours wait in the Abholfach
         if (Math.random() < .15 + c.L * .01) sh = isP ? (inboxAdd({ src: 'fight', sh: shN }), { name: '' }) : heroGrantShards(who, shN);
@@ -161,7 +172,7 @@ function dbossHit(m, now) {                         // every attack takes life o
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack') * (AUF ? AUF.kampf(who, 'a') : 1);
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
-    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
+    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; const kl = dbossKlasse(dmg); dbossKlasseZahlen(b, who, dmg); evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
     const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     barbHome(m, m.troops - loss, now);
     if (isP) {
@@ -169,29 +180,25 @@ function dbossHit(m, now) {                         // every attack takes life o
         addCombatLogEntry({ type: 'dboss', name: b.name, dmg, loss, wounded, gold, left: Math.max(0, b.hp), max: b.max, hp0, troops: m.troops, gef, atk: Math.round((m.troops + gef) * fa), capped: dmg >= Math.round(b.max * DBOSS_CAP),
             total: b.dmg.player, rank: rk.findIndex(e => e[0] === 'player') + 1, of: rk.length, hits: barbRec('player').h, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) });
         spawnBattleFx({ x: b.x, y: b.y }, true, 'Treffer', '−' + fmtCompact(dmg) + ' Leben');
-        flashHint('Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden, +' + fmtCompact(gold) + ' Münzen.', 3500); updateHud(); saveGame();
+        flashHint('Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden (Klasse ' + (kl + 1) + '), +' + fmtCompact(gold) + ' Münzen – Belohnung unter Events.', 3500); updateHud(); saveGame();
     } else if (window.WELT && botById[who] && botById[who].mensch) {    // ein echter Spieler (Weltrechner): derselbe Bericht als Nachricht
         const rk = dbossRanks(b), gef = heroGefOf(h, m.troops);
         evBericht(who, { type: 'dboss', name: b.name, dmg, loss, wounded, gold, left: Math.max(0, b.hp), max: b.max, hp0, troops: m.troops, gef, atk: Math.round((m.troops + gef) * fa), capped: dmg >= Math.round(b.max * DBOSS_CAP),
             total: b.dmg[who], rank: rk.findIndex(e => e[0] === who) + 1, of: rk.length, hits: barbRec(who).h, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) },
-            'Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden, +' + fmtCompact(gold) + ' Münzen.');
+            'Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden (Klasse ' + (kl + 1) + '), +' + fmtCompact(gold) + ' Münzen – Belohnung unter Events.');
     }
     if (b.hp <= 0) { b.hp = 0; b.fell = now; dbossPayout(b); }
     if (isP || barbView && barbView.kind !== 'camp') barbSheetRefresh();
 }
-function dbossPayout(b) {                           // the boss falls: everyone who hit it gets a prize by damage (top 3 extra)
-    const rk = dbossRanks(b); let bs = null;
-    rk.forEach(([who], i) => { const p = dbossPrizeOf(i); goalBump(who, 'dboss');
-        if (who === 'player') { inboxAdd({ src: 'boss', title: b.name + ' · Platz ' + (i + 1), gems: p.gems, crate: p.crate >= 0 ? p.crate : -1, sh: p.sh });   // the prize is sent to the Abholfach
-            addCombatLogEntry({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg.player || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' });
-            flashHint(b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Events → Belohnung.', 5000); }
-        else if (botById[who] && botById[who].mensch) {   // ein echter Spieler: der ganze Preis als Nachricht (auch die Kiste), dazu ein Bericht
-            evPreis(who, 'boss', b.name + ' · Platz ' + (i + 1), p, b.d);
-            evBericht(who, { type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg[who] || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' }, b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Events → Belohnung.'); }
-        else if (botById[who]) { bs = bs || loadBotState(); if (bs[who]) bs[who].gems += p.gems; if (p.crate >= 0) barbCrate(who, p.crate); heroGrantShards(who, p.sh); } });
-    if (bs) saveBotState();
+function dbossPayout(b) {                           // the boss falls: everyone who hit it gets the same prize (keine Platz-Preise mehr – Merkliste 33)
+    const rk = dbossRanks(b), p = DBOSS_FALL, beute = { gems: p.gems, crate: '', sh: p.sh + ' Helden-Splitter' };
+    rk.forEach(([who], i) => { goalBump(who, 'dboss'); evPreis(who, 'boss', b.name + ' gefallen', p, b.d + '|fall');
+        const e = Object.assign({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg[who] || 0 }, beute), t = b.name + ' ist gefallen! Deine Belohnung liegt unter Events → Belohnung.';
+        if (who === 'player') { addCombatLogEntry(e); flashHint(t, 5000); }
+        else if (botById[who] && botById[who].mensch) evBericht(who, e, t); });
+    saveBotState();
     spawnBattleFx({ x: b.x, y: b.y }, true, b.name + ' gefallen', rk.length + ' Kämpfer belohnt');
-    if (!b.dmg.player) flashHint(b.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden nach Schaden belohnt.', 5000);
+    if (!b.dmg.player) flashHint(b.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden belohnt.', 5000);
     saveBarb();
 }
 function barbTick() {
@@ -352,7 +359,7 @@ function barbSheetHtml() {
         '<div class="field-lines"><span>' + (dead ? 'Neuer Boss in' : 'Verschwindet in') + '</span>' + mid + '<span>Deine Angriffe</span><b>' + rec.h + ' / ' + dbossHitsMax() + ' heute</b>' +
         '<span>Dein Schaden</span><b>' + (mine >= 0 ? fmtCompact(rk[mine][1]) + ' · Platz ' + (mine + 1) : '–') + (barbOut('player', 'b') ? ' <small>· Angriff unterwegs</small>' : '') + '</b></div>' +
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '<div class="notice">' + icon('info') + '<span>Noch hat niemand angegriffen.</span></div>');
-    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Edelsteine, Kisten und Splitter – Platz 1 bis 3 extra. Entkommt er, bekommen alle, die getroffen haben, etwas Kleines.</div>';
+    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden und die Belohnung seiner Schadens-Klasse (Events → Boss), ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, bekommen alle, die getroffen haben, noch etwas dazu.</div>';
     if (v.kind === 'boss') {
         const src = barbSource(b, 1, true);
         return bossHtml + (dead ? '' : rec.h >= dbossHitsMax() ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Heute keine Angriffe mehr – morgen wieder.</span></div>' :
