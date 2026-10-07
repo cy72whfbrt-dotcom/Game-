@@ -88,7 +88,7 @@ const upgradeCostLabel = document.getElementById('upgradeCostLabel');
 // they are disabled, and what is visible without scouting (fog of
 // war) are exactly the old rules.
 // Koordinaten like in the big strategy games: X and Y from 0 to 1200 across the world, the Mega-Tempel at X 600 · Y 600
-function coordText(x, y) { const k = (GRID_HALF + .5) * HEX_SPACING, f = 1200 / (2 * k); return 'X ' + Math.round((x + k) * f) + ' · Y ' + Math.round((y + k) * f); }
+function coordText(x, y) { const k = FRAME_HALF, f = 1200 / (2 * k); return 'X ' + Math.round((x + k) * f) + ' · Y ' + Math.round((y + k) * f); }
 function renderPopup() {
     const island = islandById[popupIslandId];
     if (!island) return;
@@ -216,7 +216,7 @@ function inselMittig(island) {
 }
 
 // Angriff kompakt: Startbasis mit Truppen in der Auswahl, die Marschzeit EINMAL (im Knopf), Held + Zweitheld als zwei Chips
-let previewHeldAuf = 0;                                 // aufgeklappte Helden-Auswahl: 0 zu, 1 Held, 2 Zweitheld
+let previewHeldAuf = 0, previewHeldVor = -1;          // aufgeklappte Helden-Auswahl: 0 zu, 1 Held, 2 Zweitheld · previewHeldVor: Vorschau (previewShownAt), für die die zuletzt geschickten Helden schon gesetzt sind
 function apQuelleText(id, island, scouted) {            // „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
     return escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) + (scouted && angriffReicht(id, island) ? ' · reicht' : '');
 }
@@ -239,6 +239,8 @@ function renderAttackPreview(island, scouted) {
     const key = island.id + ':' + previewSourceId + ':' + scouted + ':' + atkPct;
     // Maut/Tor hinten in der Überzeile, keine Unterzeile (Startbasis + Marschzeit stehen EINMAL in der Auswahl darunter)
     popupOverline.innerHTML = 'Angriff vorbereiten<span id="previewToll"></span>'; popupSub.innerHTML = '';
+    if (previewHeldVor !== previewShownAt) { previewHeldVor = previewShownAt;   // Merkliste 18: frisch geöffnet ohne freien Helden → die zuletzt geschickten
+        if (!previewHero || !heroOwned('player', previewHero) || heroBusy('player', previewHero)) [previewHero, previewHero2] = heroLetzte(); }
     if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
         popupStats.dataset.preview = key; previewHeldAuf = 0;
         const quellen = angriffQuellen(island).slice(0, 40); if (!quellen.includes(previewSourceId)) quellen.unshift(previewSourceId);   // (die gewählte steht immer drin)

@@ -16,6 +16,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const vorher = { A: { c: botCoins[A.id], ...AUF.rohVon(A.id) }, B: { c: botCoins[B.id], ...AUF.rohVon(B.id) } };
     window.__t = { A: A.id, B: B.id, vorher: JSON.parse(JSON.stringify(vorher)) };
     const r = { id: 'rt1', by: A.id, at: ca, t: ziel, n0: 3e6, j: [{ w: B.id, f: cb, n: 1e6, da: true }], aid: bundVon(A.id).id };
+    for (const br of bridges) { clearIslandOwner(br.gateId); botOwnedIslands[A.id].add(br.gateId); }   // (Weg frei: Märsche nur über eigene Pässe – alle Tore dem Anführer)
     bund.r.push(r); islandTroops[ca] = Math.max(0, (islandTroops[ca] || 0));
     bundRallyLos(r);
     const a = pendingAttacks.find(x => x.rally && x.rally.id === 'rt1'); if (!a) return { fehler: 'keine Rally' };

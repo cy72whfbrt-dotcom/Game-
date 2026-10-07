@@ -24,16 +24,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       document.querySelector('#shopPopup [data-sinfo="kiste"]').click(); await warte(100);   // Chancen liegen hinter „i“
       const rar = document.querySelector('#shopPopup .chip--rar'), box = rar && rar.parentElement.getBoundingClientRect(), rr = rar && rar.getBoundingClientRect();
       o.rar = rar ? { drin: rr.right <= box.right + 1 && rr.right <= innerWidth, ganz: ganz(rar), oben: parseFloat(getComputedStyle(rar).paddingTop) >= 3, hoch: rr.height >= rar.scrollHeight - 1 } : null;
-      // 2) Marsch-Skin für 1.500 Gems: erster Tipp fragt, Doppel-Tipp zählt nicht, zweiter Tipp nach >450 ms kauft (Rahmen gibt es nicht mehr zu kaufen)
-      closeAllPopups(); openLookSheet('march'); await warte(300);
-      const btn = document.querySelector('[data-lk="march:glut"]'), g0 = gems;
-      const echt = Date.now; let T = echt.call(Date); Date.now = () => T;   // eigene Uhr: unter Last zählt nicht, wie lange der Browser braucht
-      btn.click(); const frage = btn.textContent; T += 50; btn.click();
-      const nachDoppel = { gems: gems === g0, gehoert: lkHas('march', 'glut') };
-      T += 600; document.querySelector('[data-lk="march:glut"]').click(); Date.now = echt;
-      o.lk = { frage: /Wirklich\?/.test(frage) && /1\.500/.test(frage), nachDoppel, gekauft: lkHas('march', 'glut') && g0 - gems === 1500 };
-      const g1 = gems; lkBuy('march', 'purpur'); o.lkKlein = lkHas('march', 'purpur') && g1 - gems === 400;   // unter 500: sofort
-      document.getElementById('lookSheet').hidden = true;
       // 3) Helden: Zurücksetzen fragt (200 Gems), Splitter tauschen
       const H = loadHeroes(), [a, z] = HEROES.slice(0, 2).map(h => h.id);
       Object.assign(H[a], { own: true, q: HERO_MAXQ, sh: 30, sk: [2, 0, 0, 0] }); Object.assign(H[z], { own: false, q: 0, sh: 1 }); saveHeroes();
@@ -77,8 +67,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     if (r.fehler) { await ctx.close(); continue; }
     ok(r.roh.auf && r.roh.zuNachFenster, art + ': Rohstoff-Liste geht beim Öffnen eines Fensters zu', r.roh);
     ok(r.rar && r.rar.drin && r.rar.oben && r.rar.hoch, art + ': Kisten-Zeile „Legendär + Mythisch …“ ragt nicht heraus (Innenabstand oben/unten)', r.rar);
-    ok(r.lk.frage && r.lk.nachDoppel.gems && !r.lk.nachDoppel.gehoert && r.lk.gekauft, art + ': Marsch-Skin 1.500 Gems erst nach „Wirklich?“ (Doppel-Tipp zählt nicht)', r.lk);
-    ok(r.lkKlein, art + ': Marsch-Skin 400 Gems ohne Nachfrage');
     ok(r.reset.frage && r.reset.rsNicht && r.reset.zurueck, art + ': Helden-Zurücksetzen erst nach „Wirklich?“', r.reset);
     ok(r.swap.vorherNein && r.swap.a === 0 && r.swap.dazu && r.swap.gems && r.swap.zielOhneMax, art + ': übrige Splitter 1:1 umgetauscht (nur vom 5-Sterne-Helden, keine Gems)', r.swap);
     ok(r.marsch.frage && r.marsch.mNicht && r.marsch.neu && r.marsch.mBezahlt && r.marsch.mKlein, art + ': Späher beschleunigen 600 Gems erst nach „Wirklich?“ (bleibt beim Neuzeichnen), 100 Gems sofort', r.marsch);

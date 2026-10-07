@@ -24,7 +24,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       try { return orig.apply(this, arguments); } finally { window.WELT = w0; botById[A.id].mensch = botById[E.id].mensch = false; }
     };
     const r = { id: 'rm1', by: A.id, at: botCapitalOf(A.id), t: ziel, n0: 3e6, j: [{ w: E.id, f: botCapitalOf(E.id), n: 1e6, da: true }], aid: bundVon(A.id).id };
+    const tore = bridges.map(br => [br.gateId, islandOwnerOf(br.gateId)]);
+    for (const [g] of tore) { clearIslandOwner(g); botOwnedIslands[A.id].add(g); }   // (Weg frei: Märsche nur über eigene Pässe – alle Tore dem Anführer, nur für den Start)
     bund.r.push(r); bundRallyLos(r);
+    for (const [g, w] of tore) { clearIslandOwner(g); if (w) (w === 'player' ? ownedIslands : botOwnedIslands[w]).add(g); }   // (danach zurück: sonst bringen die Tore Alex Gold)
     const a = pendingAttacks.find(x => x.rally && x.rally.id === 'rm1'); if (!a) return { fehler: 'keine Rally' };
     a.resolveAt = Date.now() + 300;
     const m = x => botMults(x).attackPct, s = x => titleMult(x, 'attack') * AUF.kampf(x, 'a');

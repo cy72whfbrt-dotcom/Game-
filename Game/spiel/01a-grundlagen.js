@@ -129,6 +129,11 @@ function fmtCompact(n) {
   for (const [v, u] of [[1e24, 'Quadr.'], [1e21, 'Trd.'], [1e18, 'Trill.'], [1e15, 'Brd.']])   // beyond "Bio.": Billiarde, Trillion, Trilliarde … (unit chosen on the rounded value)
     if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
 }
+function fmtHud(n) {                      // HUD-Reihe (6 Kapseln auf 390 px): kurz – 950 · 5,4K · 12,6K · 126K · 1,2M · 100Mrd · 10Bio
+  const a = Math.abs(n), k = (v, u) => (v < 100 ? NF.format(Math.floor(v * 10) / 10) : NF.format(Math.floor(v))) + u;
+  if (a < 1e3) return fmtExact(n);
+  for (const [v, u] of [[1e15, 'Brd'], [1e12, 'Bio'], [1e9, 'Mrd'], [1e6, 'M'], [1e3, 'K']]) if (a >= v) return a >= v * 1e4 ? fmtCompact(n) : k(n / v, u);
+}
 const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
 function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl') || btn; if (l.textContent !== text) l.textContent = text; }   // (nur bei einer Änderung: offene Fenster ziehen jede Sekunde nach)
 function fmtDHMS(sec) {                           // every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front are left out)
@@ -224,7 +229,22 @@ function glyph(name) {                     // parse the sprite symbol once
     o: p.hasAttribute('opacity') ? +p.getAttribute('opacity') : 1
   }));
 }
-function drawGlyph(g, name, cx, cy, size, color) {
+// Karten-Symbole als KI-Bild (Alexander 7.10., dieselben wie in den Fenstern, 05z): gibt es ein Bild, malt drawGlyph es statt der Linien
+// (Wappen-Zeichen bleiben Linien: vektor = true). Lädt beim ersten Mal, dann neu zeichnen.
+const GLYPH_BILD = { coin: 'res_muenzen', gem: 'res_edelstein', troops: 'res_truppen', wood: 'res_holz', stone: 'res_stein', iron: 'res_eisen',
+  scout: 'sym_spaeher', attack: 'sym_schwert', hourglass: 'sym_zeit', lock: 'sym_schloss', star: 'sym_stern', losses: 'sym_verluste',
+  defense: 'sym_turm', tower: 'sym_turm', flag: 'k_fahne', crown: 'k_krone', castle: 'sym_burg', shield: 'sym_friedensschild', weapon: 'sym_waffe', recall: 'sym_rueckzug',
+  beute: 'k_beute', rund: 'rund', drache: 'karte_drache',
+  send: 'sym_senden', temple: 'sym_tempelbonus', market: 'sym_markt', sell: 'sym_handeln' };   // (nur Bild: Fund-Beutel, runder Knopf-Grund)
+const GLYPH_IMG = {};
+function glyphBild(name) {
+  const n = GLYPH_BILD[name]; if (!n || typeof Image === 'undefined') return null;
+  let im = GLYPH_IMG[n]; if (!im) { im = GLYPH_IMG[n] = new Image(); im.onload = () => requestRender(); im.src = 'bilder/ui_' + n + '.webp'; }
+  return im.complete && im.naturalWidth ? im : null;
+}
+function drawGlyph(g, name, cx, cy, size, color, vektor) {
+  const im = !vektor && glyphBild(name);
+  if (im) { const k = size * 1.2 / Math.max(im.naturalWidth, im.naturalHeight), w = im.naturalWidth * k, h = im.naturalHeight * k; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); return; }
   const L = glyph(name); if (!L) return;
   const k = size / 24;
   g.save(); g.translate(cx - size / 2, cy - size / 2); g.scale(k, k);

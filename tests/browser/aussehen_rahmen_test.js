@@ -51,14 +51,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       o.sprung = { tab: lkTab, sichtbar: tt.top >= tb.bottom - 1 && tt.top < innerHeight * 0.75, aktiv: (document.querySelector('#lkTabs .active') || {}).dataset.lkTab };
       // 6) Mitspieler kaufen keine Rahmen, der Thron-Shop hat keinen
       const X = BOT_DEFS.find(x => !x.mensch && loadBotState()[x.id]).id, bx = loadBotState()[X], fr0 = JSON.stringify(bx.frames || []), ti0 = JSON.stringify(bx.titles || []);
-      bx.gems = 1e7; for (let i = 0; i < 20; i++) botLookShop({ id: X }, bx);
-      o.bots = { frames: JSON.stringify(bx.frames || []) === fr0, titles: JSON.stringify(bx.titles || []) === ti0, look: botLook(X), thron: THRONE_OFFERS.map(x => x.id).filter(id => id === 'look') };
+      bx.gems = 1e7; bx.tp = 1e7; for (let i = 0; i < 20; i++) botThroneShop(X);
+      o.bots = { frames: JSON.stringify(bx.frames || []) === fr0, titles: JSON.stringify(bx.titles || []) === ti0, look: botLook(X), thron: THRONE_OFFERS.map(x => x.id).filter(id => id === 'look' || id.startsWith('ring_')) };
       look.frames = ['gold']; look.titles = ['conq']; look.frame = 'conq'; saveLook();
       return o;
     }).catch(e => ({ fehler: e.message }));
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
-    ok(r.reiter.namen.join(' · ') === 'Wappen · Rahmen · Basis · Marsch' && r.reiter.aktiv.trim() === 'Rahmen' && r.reiter.eineZeile && r.reiter.ganz, art + ': Reiter Wappen · Rahmen · Basis · Marsch (kein „Titel“ mehr), in einer Zeile', r.reiter);
+    ok(r.reiter.namen.join(' · ') === 'Wappen · Rahmen' && r.reiter.aktiv.trim() === 'Rahmen' && r.reiter.eineZeile && r.reiter.ganz, art + ': nur noch Reiter Wappen · Rahmen (Basis und Marsch raus, Alexander 7.10.), in einer Zeile', r.reiter);
     ok(r.neu.dein.join() === 'frame:bronze' && r.neu.hs.join(' · ') === 'Saison-Rahmen · Aus der Mitte' && r.neu.sz.join(' · ') === 'Platz 1 · Platz 2–3 · Platz 4–5 · Platz 6–10' && !r.neu.preis && r.neu.seitlich,
       art + ': neu: nur „Neuling“, darunter die 4 Saison-Rahmen (Platz statt Preis) und „Aus der Mitte“', r.neu);
     ok(r.neu.kauf.gems && !r.neu.kauf.sz1 && !r.neu.kauf.gold && r.neu.kauf.traegt === 'Neuling', art + ': Rahmen nicht zu kaufen (Tippen und lkBuy kosten nichts, geben nichts)', r.neu.kauf);
