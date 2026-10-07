@@ -47,9 +47,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const los = (q, z) => { AUF.frei.an(); try { return !!launchAttack(q, z, Y.id, 1000); } finally { AUF.frei.aus(); } };   // (Marsch-Plätze aus den Schritten davor zählen nicht)
     const brM = bridges.find(q => q.pass.stufe === 5), torM = islandById[brM.gateId], w4 = turmIn(brM.a === 0 ? brM.b : brM.a, 1);
     geben(Y.id, w4.id, 1e6); const vor = los(w4.id, megaTempleId);
+    const M = islandById[megaTempleId], armee = { id: 'thronTest', x: w4.x, y: w4.y, lm: w4.landmassId, troops: 1000, homeId: w4.id, mv: null, who: Y.id };
+    const armeeVor = armyMove(armee, { kind: 'base', id: megaTempleId, x: M.x, y: M.y, lm: M.landmassId });   // Armee: auch erst ab Tag 7
     localStorage.setItem('openWaterWorldStart', String(Date.now() - 6 * TAG - 60000));
     for (const q of bridges.filter(q => q.pass.stufe === 5)) clearIslandOwner(q.gateId);
-    o.thron = { vor, unbesetzt: los(w4.id, megaTempleId), grund: wegGrund(w4.landmassId, 0, Y.id) };
+    o.thron = { vor, armeeVor, unbesetzt: los(w4.id, megaTempleId), grund: wegGrund(w4.landmassId, 0, Y.id) };
     clearIslandOwner(torM.id); ownedIslands.add(torM.id); o.thron.fremd = los(w4.id, megaTempleId);
     geben(Y.id, torM.id, 1); o.thron.eigen = los(w4.id, megaTempleId);
     // 6) Felder und Barbaren-Lager
@@ -66,7 +68,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.bogen && r.bogen.frei && r.bogen.punkte > 2, 'im gebogenen Gebiet: um das Gebirge herum, nicht hindurch', r.bogen);
   ok(!r.sperre.weg && /Pass gesperrt/.test(r.sperre.grund) && !r.sperre.angriff && r.sperre.erobert, 'unbesetzter Pass auf dem Weg sperrt (Grund „Pass gesperrt“), erobert ist der Weg frei', r.sperre);
   ok(!r.countdown.angriff && !r.countdown.durch && !r.countdown.popup && /öffnet in/.test(r.countdown.hinweis), 'Pass mit Countdown: nicht angreifbar, nicht zu durchqueren, Tippen zeigt nur „öffnet in …“', r.countdown);
-  ok(!r.thron.vor && !r.thron.unbesetzt && /Pass gesperrt/.test(r.thron.grund) && !r.thron.fremd && r.thron.eigen, 'Thron: vor Tag 7 gesperrt; ab Tag 7 nur über einen eigenen offenen Pass zur Mitte', r.thron);
+  ok(!r.thron.vor && r.thron.armeeVor === 'thron' && !r.thron.unbesetzt && /Pass gesperrt/.test(r.thron.grund) && !r.thron.fremd && r.thron.eigen, 'Thron: vor Tag 7 gesperrt; ab Tag 7 nur über einen eigenen offenen Pass zur Mitte', r.thron);
   ok(r.felder.n >= 400 && Object.keys(r.felder.art).sort().join() === 'eisen,gem,gold,holz,stein' && r.felder.art.gem < r.felder.art.holz && !r.felder.imGebirge && !r.felder.mitte && !r.felder.basisDrauf
     && r.felder.stufen.every((v, i, a) => !i || v > a[i - 1]), 'Felder wie die Karten-Testdatei: 5 Arten (Edelstein selten), Stufe steigt nach innen, nie im Gebirge, keine Basis darauf', r.felder);
   ok(r.lager.n > 100 && !r.lager.falsch && !r.lager.gebirge && r.lager.zonen === '1,2,3,4', 'Barbaren-Lager: Stufe nach der Zone (1–6 … 19–25), nie im Gebirge, in Zone 1–4', r.lager);

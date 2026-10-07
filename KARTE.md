@@ -85,16 +85,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `anyIn` → Game/spiel/03a-karte-hintergrund.js:508
 - `anzahl_teile` → Game/server/05-datenbank-welt.php:99
 - `anzeigeStufe` → Game/spiel/03a-karte-hintergrund.js:621
-- `apHeldChip` → Game/spiel/10a-inselfenster-vorschau.js:223
+- `apHeldChip` → Game/spiel/10a-inselfenster-vorschau.js:229
 - `api.clear` → Game/speichern.js:39
 - `api.getItem` → Game/speichern.js:36
 - `api.key` → Game/speichern.js:40
 - `api.removeItem` → Game/speichern.js:38
 - `api.setItem` → Game/speichern.js:37
 - `apply` → Game/baukunst/04-vielfalt-stile.js:575
-- `applyCrestAvatars` → Game/spiel/05a-aussehen-profil.js:94
+- `applyCrestAvatars` → Game/spiel/05a-aussehen-profil.js:95
 - `applySkin` → Game/baukunst/04-vielfalt-stile.js:41
-- `apQuelleText` → Game/spiel/10a-inselfenster-vorschau.js:220
+- `apQuelleText` → Game/spiel/10a-inselfenster-vorschau.js:226
 - `APRON` → Game/baukunst/07-hafen-palast.js:18
 - `arc` → Game/baukunst/07-hafen-palast.js:54
 - `arch` → Game/baukunst/06-turmhof-festung.js:22
@@ -109,31 +109,31 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `armillary` → Game/baukunst/08-himmelsfeste-bilder.js:158
 - `armorDefenseFor` → Game/spiel/04-kampf.js:262
 - `armorDefensePct` → Game/spiel/04-kampf.js:263
-- `armyArrive` → Game/spiel/09d-armeen-wegmarken.js:123
-- `armyAt` → Game/spiel/09d-armeen-wegmarken.js:159
+- `armyArrive` → Game/spiel/09d-armeen-wegmarken.js:125
+- `armyAt` → Game/spiel/09d-armeen-wegmarken.js:161
 - `armyBotWatch` → Game/bots/06-aussehen-felder-barbaren.js:230
 - `armyById` → Game/spiel/09d-armeen-wegmarken.js:11
-- `armyClash` → Game/spiel/09d-armeen-wegmarken.js:101
+- `armyClash` → Game/spiel/09d-armeen-wegmarken.js:103
 - `armyCol` → Game/spiel/09d-armeen-wegmarken.js:25
 - `armyCreate` → Game/spiel/09d-armeen-wegmarken.js:40
 - `armyFeldZiel` → Game/bots/06-aussehen-felder-barbaren.js:229
 - `armyHalt` → Game/spiel/09d-armeen-wegmarken.js:22
-- `armyHandleTap` → Game/spiel/09d-armeen-wegmarken.js:283
-- `armyHeroes` → Game/spiel/09d-armeen-wegmarken.js:207
-- `armyHeroSeg` → Game/spiel/09d-armeen-wegmarken.js:208
+- `armyHandleTap` → Game/spiel/09d-armeen-wegmarken.js:285
+- `armyHeroes` → Game/spiel/09d-armeen-wegmarken.js:209
+- `armyHeroSeg` → Game/spiel/09d-armeen-wegmarken.js:210
 - `armyHome` → Game/spiel/09d-armeen-wegmarken.js:28
 - `armyMove` → Game/spiel/09d-armeen-wegmarken.js:62
 - `armyName` → Game/spiel/09d-armeen-wegmarken.js:26
-- `armyOrder` → Game/spiel/09d-armeen-wegmarken.js:76
+- `armyOrder` → Game/spiel/09d-armeen-wegmarken.js:77
 - `armyOwnSet` → Game/spiel/09d-armeen-wegmarken.js:24
 - `armyPos` → Game/spiel/09d-armeen-wegmarken.js:13
 - `armyPosXY` → Game/spiel/09d-armeen-wegmarken.js:61
 - `armyRaidArrive` → Game/bots/06-aussehen-felder-barbaren.js:251
 - `armySendFrom` → Game/spiel/09d-armeen-wegmarken.js:33
-- `armySetHeroes` → Game/spiel/09d-armeen-wegmarken.js:212
+- `armySetHeroes` → Game/spiel/09d-armeen-wegmarken.js:214
 - `armySources` → Game/spiel/09d-armeen-wegmarken.js:29
 - `armyTargetAt` → Game/spiel/09d-armeen-wegmarken.js:54
-- `armyTick` → Game/spiel/09d-armeen-wegmarken.js:144
+- `armyTick` → Game/spiel/09d-armeen-wegmarken.js:146
 - `armyWho` → Game/spiel/09d-armeen-wegmarken.js:23
 - `attached` → Game/baukunst/04-vielfalt-stile.js:563
 - `attackBonusPct` → Game/spiel/04-kampf.js:271
@@ -165,7 +165,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `band` → Game/baukunst/08-himmelsfeste-bilder.js:159
 - `banner` → Game/baukunst/06-turmhof-festung.js:275
 - `banner` → Game/baukunst/07-hafen-palast.js:477
-- `bannerModel` → Game/spiel/03b-gebaeude-3d.js:471
+- `bannerModel` → Game/spiel/03b-gebaeude-3d.js:485
 - `bannerSprite` → Game/spiel/03c-wappen-thronplatz.js:126
 - `barbAlong` → Game/spiel/09b-lager-tagesboss.js:230
 - `barbArrive` → Game/spiel/09b-lager-tagesboss.js:137
@@ -210,7 +210,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `basis_pfad` → Game/server/01-grundlagen-login.php:28
 - `basisBild` → Game/spiel/03b-gebaeude-3d.js:318
 - `basisBildNr` → Game/spiel/03b-gebaeude-3d.js:317
-- `basisGroesse` → Game/spiel/03b-gebaeude-3d.js:378
+- `basisGroesse` → Game/spiel/03b-gebaeude-3d.js:392
 - `basisKreis` → Game/spiel/03b-gebaeude-3d.js:324
 - `basisRoh` → Game/aufbau.js:53
 - `Batch` → Game/baukunst/05-umland.js:93
@@ -292,14 +292,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bgShow` → Game/spiel/03a-karte-hintergrund.js:406
 - `bgWarm` → Game/spiel/03a-karte-hintergrund.js:433
 - `bild30` → Game/ladebildschirm.js:289
-- `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:309
+- `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:315
 - `bis` → Game/spiel/03c-wappen-thronplatz.js:452
 - `bitHat` → Game/spiel/10d-welt-weltrechner.js:941
 - `bitsZu` → Game/spiel/10d-welt-weltrechner.js:940
-- `bk3d` → Game/spiel/03b-gebaeude-3d.js:444
-- `bkDraw` → Game/spiel/03b-gebaeude-3d.js:469
-- `bkModel` → Game/spiel/03b-gebaeude-3d.js:446
-- `bkSprite` → Game/spiel/03b-gebaeude-3d.js:462
+- `bk3d` → Game/spiel/03b-gebaeude-3d.js:458
+- `bkDraw` → Game/spiel/03b-gebaeude-3d.js:483
+- `bkModel` → Game/spiel/03b-gebaeude-3d.js:460
+- `bkSprite` → Game/spiel/03b-gebaeude-3d.js:476
 - `blit` → Game/spiel/03a-karte-hintergrund.js:561
 - `blob` → Game/spiel/01f-felsen.js:208
 - `block` → Game/spiel/05d-maersche-kampfbericht.js:453
@@ -727,16 +727,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `clock` → Game/spiel/05d-maersche-kampfbericht.js:50
 - `clock` → Game/spiel/06c-thron-mitte.js:109
 - `closeAllPopups` → Game/spiel/09e-inselfenster.js:75
-- `closeArmySheet` → Game/spiel/09d-armeen-wegmarken.js:205
+- `closeArmySheet` → Game/spiel/09d-armeen-wegmarken.js:207
 - `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:377
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:231
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:74
-- `closeFieldSheet` → Game/spiel/09a-funde-felder.js:345
-- `closeHeroHall` → Game/spiel/08c-helden.js:277
+- `closeFieldSheet` → Game/spiel/09a-funde-felder.js:358
+- `closeHeroHall` → Game/spiel/08c-helden.js:282
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:112
 - `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:118
 - `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:56
-- `closeMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:309
+- `closeMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:311
 - `closePanel` → Game/spiel/09e-inselfenster.js:35
 - `closeTopmostPanel` → Game/spiel/09e-inselfenster.js:50
 - `closeWelcome` → Game/spiel/06d-schild-produktion.js:409
@@ -757,7 +757,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `confirmRecall` → Game/spiel/10b-inselfenster-knoepfe.js:79
 - `conquestsOf` → Game/spiel/05c-erfolge-rangliste.js:275
 - `convexHull` → Game/spiel/03e-kamera-eingabe.js:41
-- `coordText` → Game/spiel/10a-inselfenster-vorschau.js:91
+- `coordText` → Game/spiel/10a-inselfenster-vorschau.js:97
 - `CORE` → Game/baukunst/08-himmelsfeste-bilder.js:24
 - `cornersOk` → Game/baukunst/04-vielfalt-stile.js:379
 - `count` → Game/spiel/03a-karte-hintergrund.js:609
@@ -772,7 +772,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `CRYJ` → Game/baukunst/08-himmelsfeste-bilder.js:22
 - `CRYW` → Game/baukunst/08-himmelsfeste-bilder.js:23
 - `csp_nonce` → Game/server/02-sicherheit-datenlecks.php:13
-- `currentRank` → Game/spiel/05a-aussehen-profil.js:64
+- `currentRank` → Game/spiel/05a-aussehen-profil.js:65
 - `cyl` → Game/spiel/03b-gebaeude-3d.js:187
 - `cyl` → Game/spiel/03b-gebaeude-3d.js:20
 - `cylGeo` → Game/baukunst/04-vielfalt-stile.js:263
@@ -813,17 +813,17 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `domeRibs` → Game/baukunst/07-hafen-palast.js:469
 - `drAktiv` → Game/spiel/09c-events-drache.js:228
 - `drAuszahlen` → Game/spiel/09c-events-drache.js:254
-- `drawArmies` → Game/spiel/09d-armeen-wegmarken.js:161
-- `drawArmyCamps` → Game/spiel/09d-armeen-wegmarken.js:172
+- `drawArmies` → Game/spiel/09d-armeen-wegmarken.js:163
+- `drawArmyCamps` → Game/spiel/09d-armeen-wegmarken.js:174
 - `drawBackground` → Game/spiel/03a-karte-hintergrund.js:498
 - `drawBarb` → Game/spiel/09b-lager-tagesboss.js:265
 - `drawBaseAuras` → Game/spiel/03c-wappen-thronplatz.js:300
 - `drawBaseSparks` → Game/spiel/03c-wappen-thronplatz.js:322
 - `drawBasisBild` → Game/spiel/03b-gebaeude-3d.js:328
-- `drawBasisSchilder` → Game/spiel/03b-gebaeude-3d.js:371
+- `drawBasisSchilder` → Game/spiel/03b-gebaeude-3d.js:385
 - `drawBattleFx` → Game/spiel/07a-schlachten.js:398
-- `drawBrand` → Game/spiel/03b-gebaeude-3d.js:422
-- `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:379
+- `drawBrand` → Game/spiel/03b-gebaeude-3d.js:436
+- `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:393
 - `drawCrest` → Game/spiel/03c-wappen-thronplatz.js:19
 - `drawCrown` → Game/spiel/07b-kriegsherr.js:182
 - `drawDragonName` → Game/spiel/09c-events-drache.js:340
@@ -840,12 +840,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawMarchColumn` → Game/spiel/03d-maersche-tagnacht.js:13
 - `drawMarchLine` → Game/spiel/03c-wappen-thronplatz.js:464
 - `drawMarchTokens` → Game/spiel/03d-maersche-tagnacht.js:30
-- `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:326
+- `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:328
 - `drawn` → Game/spiel/03a-karte-hintergrund.js:532
 - `drawNacht` → Game/spiel/03d-maersche-tagnacht.js:193
 - `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:206
 - `drawPickups` → Game/spiel/09a-funde-felder.js:62
-- `drawResFields` → Game/spiel/09a-funde-felder.js:273
+- `drawResFields` → Game/spiel/09a-funde-felder.js:277
 - `drawRings` → Game/spiel/03c-wappen-thronplatz.js:384
 - `drawRulerCrowns` → Game/spiel/07b-kriegsherr.js:192
 - `drawTerritoriesInto` → Game/spiel/03a-karte-hintergrund.js:361
@@ -965,9 +965,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feldBericht` → Game/spiel/09a-funde-felder.js:251
 - `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:249
 - `feldMult` → Game/spiel/09a-funde-felder.js:171
-- `feldRingAuf` → Game/spiel/09d-armeen-wegmarken.js:343
-- `feldRingFrame` → Game/spiel/09d-armeen-wegmarken.js:353
-- `feldRingZu` → Game/spiel/09d-armeen-wegmarken.js:352
+- `feldRingAuf` → Game/spiel/09d-armeen-wegmarken.js:345
+- `feldRingFrame` → Game/spiel/09d-armeen-wegmarken.js:355
+- `feldRingZu` → Game/spiel/09d-armeen-wegmarken.js:354
 - `felsAbstand` → Game/spiel/01f-felsen.js:73
 - `felsAbstandStrecke` → Game/spiel/01f-felsen.js:79
 - `felsAuf` → Game/spiel/01f-felsen.js:121
@@ -998,12 +998,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fest_lesen` → Game/server/05-datenbank-welt.php:9
 - `festeNummer` → Game/welt.js:380
 - `fieldArrive` → Game/spiel/09a-funde-felder.js:201
-- `fieldAt` → Game/spiel/09a-funde-felder.js:272
-- `fieldAtkPct` → Game/spiel/09d-armeen-wegmarken.js:91
-- `fieldBattle` → Game/spiel/09d-armeen-wegmarken.js:93
+- `fieldAt` → Game/spiel/09a-funde-felder.js:276
+- `fieldAtkPct` → Game/spiel/09d-armeen-wegmarken.js:93
+- `fieldBattle` → Game/spiel/09d-armeen-wegmarken.js:95
 - `fieldCapFor` → Game/spiel/09a-funde-felder.js:164
 - `fieldCapOf` → Game/spiel/09a-funde-felder.js:183
 - `fieldDauerSec` → Game/spiel/09a-funde-felder.js:166
+- `fieldFortschritt` → Game/spiel/09a-funde-felder.js:350
 - `fieldGoHome` → Game/spiel/09a-funde-felder.js:195
 - `fieldGold` → Game/spiel/04-kampf.js:287
 - `fieldHeroDet` → Game/spiel/05d-maersche-kampfbericht.js:159
@@ -1012,11 +1013,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fieldInfo` → Game/spiel/09a-funde-felder.js:180
 - `fieldLoadCap` → Game/spiel/09a-funde-felder.js:182
 - `fieldMarches` → Game/spiel/09a-funde-felder.js:176
+- `fieldRateOf` → Game/spiel/09a-funde-felder.js:258
 - `fieldSend` → Game/spiel/09a-funde-felder.js:186
-- `fieldShield` → Game/spiel/09d-armeen-wegmarken.js:92
-- `fieldSource` → Game/spiel/09a-funde-felder.js:324
+- `fieldShield` → Game/spiel/09d-armeen-wegmarken.js:94
+- `fieldSource` → Game/spiel/09a-funde-felder.js:328
 - `fieldState` → Game/spiel/09a-funde-felder.js:175
-- `fieldTick` → Game/spiel/09a-funde-felder.js:257
+- `fieldTick` → Game/spiel/09a-funde-felder.js:261
 - `fieldTravelSec` → Game/spiel/09a-funde-felder.js:185
 - `fieldWhoName` → Game/spiel/09a-funde-felder.js:181
 - `fightDurationMs` → Game/spiel/03e-kamera-eingabe.js:546
@@ -1144,7 +1146,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gableFaces` → Game/baukunst/04-vielfalt-stile.js:292
 - `gableRoof` → Game/baukunst/06-turmhof-festung.js:32
 - `gableTimber` → Game/baukunst/06-turmhof-festung.js:59
-- `gateControlsHtml` → Game/spiel/10a-inselfenster-vorschau.js:36
+- `gateControlsHtml` → Game/spiel/10a-inselfenster-vorschau.js:42
 - `gateOnRoute` → Game/spiel/01b-weltkarte.js:270
 - `gateSettings` → Game/spiel/01b-weltkarte.js:278
 - `geben` → Game/spiel/06c-thron-mitte.js:179
@@ -1184,7 +1186,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `goalHeroStars` → Game/spiel/05c-erfolge-rangliste.js:25
 - `goalsGrpVon` → Game/spiel/06a-aufgaben.js:334
 - `goldPerKillRate` → Game/spiel/04-kampf.js:277
-- `gone` → Game/spiel/09d-armeen-wegmarken.js:125
+- `gone` → Game/spiel/09d-armeen-wegmarken.js:127
 - `grantFreeCrate` → Game/spiel/06a-aufgaben.js:13
 - `grantLevelRewards` → Game/spiel/02a-shop-stufen.js:242
 - `grat` → Game/ladebildschirm.js:10
@@ -1274,79 +1276,81 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hdState` → Game/haendler.js:34
 - `hdTakt` → Game/haendler.js:54
 - `hdWerName` → Game/haendler.js:41
-- `head` → Game/spiel/09d-armeen-wegmarken.js:220
+- `head` → Game/spiel/09d-armeen-wegmarken.js:222
 - `heatAt` → Game/bots/02-kampf-karte.js:268
 - `HEDGE` → Game/baukunst/07-hafen-palast.js:413
 - `heiligtumBild` → Game/spiel/03b-gebaeude-3d.js:307
 - `heldOk` → Game/spiel/10d-welt-weltrechner.js:1052
 - `herkunft_ok` → Game/server/03-nebel-maersche-seite.php:126
-- `heroBaseCtx` → Game/spiel/08c-helden.js:65
-- `heroBusy` → Game/spiel/08c-helden.js:108
+- `heroBaseCtx` → Game/spiel/08c-helden.js:66
+- `heroBusy` → Game/spiel/08c-helden.js:109
 - `heroById` → Game/spiel/08c-helden.js:21
-- `heroCanDo` → Game/spiel/08c-helden.js:140
+- `heroCanDo` → Game/spiel/08c-helden.js:141
 - `heroChestKauf` → Game/spiel/06d-schild-produktion.js:147
 - `heroChestOpen` → Game/spiel/06d-schild-produktion.js:143
 - `heroChestPool` → Game/spiel/06d-schild-produktion.js:117
-- `heroChipHtml` → Game/spiel/08c-helden.js:314
+- `heroChipHtml` → Game/spiel/08c-helden.js:319
 - `heroConvert` → Game/spiel/08c-helden.js:5
 - `heroDefCut` → Game/spiel/01e-nebel-kampfwerte-hud.js:139
 - `heroDefPart` → Game/spiel/01e-nebel-kampfwerte-hud.js:149
-- `heroDoSkill` → Game/spiel/08c-helden.js:139
-- `heroDoStep` → Game/spiel/08c-helden.js:133
-- `heroDoSwap` → Game/spiel/08c-helden.js:134
-- `heroDoUnlock` → Game/spiel/08c-helden.js:132
-- `heroDuo` → Game/spiel/08c-helden.js:72
-- `heroFieldFx` → Game/spiel/08c-helden.js:97
+- `heroDoSkill` → Game/spiel/08c-helden.js:140
+- `heroDoStep` → Game/spiel/08c-helden.js:134
+- `heroDoSwap` → Game/spiel/08c-helden.js:135
+- `heroDoUnlock` → Game/spiel/08c-helden.js:133
+- `heroDuo` → Game/spiel/08c-helden.js:73
+- `heroFieldFx` → Game/spiel/08c-helden.js:98
 - `heroFix` → Game/spiel/08c-helden.js:12
-- `heroFought` → Game/spiel/08c-helden.js:96
-- `heroFree` → Game/spiel/08c-helden.js:26
+- `heroFought` → Game/spiel/08c-helden.js:97
+- `heroFree` → Game/spiel/08c-helden.js:27
 - `heroFresh` → Game/spiel/08c-helden.js:4
-- `heroFx` → Game/spiel/08c-helden.js:51
-- `heroGatherFx` → Game/spiel/08c-helden.js:105
-- `heroGefOf` → Game/spiel/08c-helden.js:49
-- `heroGrantShards` → Game/spiel/08c-helden.js:127
-- `heroHallLive` → Game/spiel/08c-helden.js:271
-- `heroImg` → Game/spiel/08c-helden.js:202
-- `heroIn` → Game/spiel/08c-helden.js:107
-- `heroLaunch` → Game/spiel/08c-helden.js:85
-- `heroLead` → Game/spiel/08c-helden.js:32
-- `heroLetzte` → Game/spiel/08c-helden.js:192
-- `heroLetzteMerken` → Game/spiel/08c-helden.js:188
-- `heroMarchFx` → Game/spiel/08c-helden.js:104
-- `heroNum` → Game/spiel/08c-helden.js:30
-- `heroOnField` → Game/spiel/08c-helden.js:106
+- `heroFx` → Game/spiel/08c-helden.js:52
+- `heroGatherFx` → Game/spiel/08c-helden.js:106
+- `heroGefOf` → Game/spiel/08c-helden.js:50
+- `heroGrantShards` → Game/spiel/08c-helden.js:128
+- `heroHalle` → Game/spiel/08c-helden.js:24
+- `heroHallLive` → Game/spiel/08c-helden.js:276
+- `heroImg` → Game/spiel/08c-helden.js:203
+- `heroIn` → Game/spiel/08c-helden.js:108
+- `heroLaunch` → Game/spiel/08c-helden.js:86
+- `heroLead` → Game/spiel/08c-helden.js:33
+- `heroLetzte` → Game/spiel/08c-helden.js:193
+- `heroLetzteMerken` → Game/spiel/08c-helden.js:189
+- `heroMarchFx` → Game/spiel/08c-helden.js:105
+- `heroNum` → Game/spiel/08c-helden.js:31
+- `heroOnField` → Game/spiel/08c-helden.js:107
 - `heroOwned` → Game/spiel/08c-helden.js:23
 - `heroPairOf` → Game/spiel/01d-helden-mitspieler.js:64
 - `heroPartner` → Game/spiel/01d-helden-mitspieler.js:65
-- `heroPeek` → Game/spiel/08c-helden.js:84
-- `heroPic` → Game/spiel/08c-helden.js:201
-- `heroPickBest` → Game/spiel/08c-helden.js:116
-- `heroPickPair` → Game/spiel/08c-helden.js:125
-- `heroPoints` → Game/spiel/08c-helden.js:25
-- `heroPower` → Game/spiel/08c-helden.js:39
-- `heroRageUp` → Game/spiel/08c-helden.js:93
+- `heroPeek` → Game/spiel/08c-helden.js:85
+- `heroPic` → Game/spiel/08c-helden.js:202
+- `heroPickBest` → Game/spiel/08c-helden.js:117
+- `heroPickPair` → Game/spiel/08c-helden.js:126
+- `heroPoints` → Game/spiel/08c-helden.js:26
+- `heroPower` → Game/spiel/08c-helden.js:40
+- `heroRageUp` → Game/spiel/08c-helden.js:94
 - `heroReportOf` → Game/spiel/01e-nebel-kampfwerte-hud.js:107
-- `heroSave` → Game/spiel/08c-helden.js:24
-- `heroSeg2Html` → Game/spiel/08c-helden.js:307
-- `heroSegHtml` → Game/spiel/08c-helden.js:302
-- `heroSkillVal` → Game/spiel/08c-helden.js:31
+- `heroSave` → Game/spiel/08c-helden.js:25
+- `heroSeg2Html` → Game/spiel/08c-helden.js:312
+- `heroSegHtml` → Game/spiel/08c-helden.js:307
+- `heroSkillVal` → Game/spiel/08c-helden.js:32
 - `heroSt` → Game/spiel/08c-helden.js:22
-- `heroStarNum` → Game/spiel/08c-helden.js:28
-- `heroStarTxt` → Game/spiel/08c-helden.js:29
-- `heroStats` → Game/spiel/08c-helden.js:33
-- `heroStepCost` → Game/spiel/08c-helden.js:27
-- `heroTag` → Game/spiel/08c-helden.js:184
-- `heroWouldFire` → Game/spiel/08c-helden.js:71
-- `heroWutZurueck` → Game/spiel/08c-helden.js:90
-- `heroZweitOk` → Game/spiel/08c-helden.js:83
+- `heroStarNum` → Game/spiel/08c-helden.js:29
+- `heroStarTxt` → Game/spiel/08c-helden.js:30
+- `heroStats` → Game/spiel/08c-helden.js:34
+- `heroStepCost` → Game/spiel/08c-helden.js:28
+- `heroTag` → Game/spiel/08c-helden.js:185
+- `heroWouldFire` → Game/spiel/08c-helden.js:72
+- `heroWutZurueck` → Game/spiel/08c-helden.js:91
+- `heroZweitOk` → Game/spiel/08c-helden.js:84
 - `herzSchreiben` → Game/weltrechner/start.js:65
-- `hfl` → Game/spiel/10a-inselfenster-vorschau.js:393
-- `hhGrid` → Game/spiel/08c-helden.js:204
-- `hhHero` → Game/spiel/08c-helden.js:227
-- `hhPairs` → Game/spiel/08c-helden.js:219
-- `hhPartnerBlk` → Game/spiel/08c-helden.js:265
-- `hhStars` → Game/spiel/08c-helden.js:199
-- `hhSwapHtml` → Game/spiel/08c-helden.js:260
+- `hfl` → Game/spiel/10a-inselfenster-vorschau.js:399
+- `hhGrid` → Game/spiel/08c-helden.js:205
+- `hhHero` → Game/spiel/08c-helden.js:228
+- `hhOhneHalle` → Game/spiel/08c-helden.js:271
+- `hhPairs` → Game/spiel/08c-helden.js:220
+- `hhPartnerBlk` → Game/spiel/08c-helden.js:266
+- `hhStars` → Game/spiel/08c-helden.js:200
+- `hhSwapHtml` → Game/spiel/08c-helden.js:261
 - `hideAllButtons` → Game/spiel/09e-inselfenster.js:121
 - `hilfeAnwenden` → Game/buendnis/01-daten-regeln.js:404
 - `hilfeDauer` → Game/buendnis/01-daten-regeln.js:368
@@ -1385,7 +1389,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `inboxSave` → Game/spiel/06a-aufgaben.js:246
 - `infoKlapp` → Game/spiel/09c-events-drache.js:447
 - `init` → Game/spiel/10c-start-einstellungen.js:20
-- `inselMittig` → Game/spiel/10a-inselfenster-vorschau.js:211
+- `inselMittig` → Game/spiel/10a-inselfenster-vorschau.js:217
 - `inselOk` → Game/spiel/10d-welt-weltrechner.js:125
 - `inselOrtAnwenden` → Game/spiel/08d-gebaeude-wirkung.js:166
 - `inselOrtLaden` → Game/spiel/08d-gebaeude-wirkung.js:165
@@ -1440,7 +1444,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kampfTeile` → Game/buendnis/02-rally-geschenke.js:184
 - `kannZahlen` → Game/aufbau.js:68
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:160
-- `karte` → Game/spiel/08c-helden.js:207
+- `karte` → Game/spiel/08c-helden.js:208
 - `karteBilder` → Game/spiel/03a-karte-hintergrund.js:42
 - `karteObjekte` → Game/spiel/03a-karte-hintergrund.js:148
 - `karteTauchen` → Game/spiel/08a-stadt-bauen.js:202
@@ -1567,8 +1571,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `marchPath` → Game/spiel/03c-wappen-thronplatz.js:446
 - `marchPointAt` → Game/spiel/03c-wappen-thronplatz.js:483
 - `marchTapAt` → Game/spiel/03d-maersche-tagnacht.js:79
-- `markerAt` → Game/spiel/09d-armeen-wegmarken.js:299
-- `markers` → Game/spiel/09d-armeen-wegmarken.js:296
+- `markerAt` → Game/spiel/09d-armeen-wegmarken.js:301
+- `markers` → Game/spiel/09d-armeen-wegmarken.js:298
 - `marktGebuehr` → Game/aufbau.js:253
 - `marktHeute` → Game/aufbau.js:259
 - `marktHtml` → Game/aufbau.js:384
@@ -1619,8 +1623,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `midAnzeige` → Game/spiel/06c-thron-mitte.js:232
 - `midFight` → Game/spiel/06c-thron-mitte.js:177
 - `midNotice` → Game/spiel/06c-thron-mitte.js:236
-- `mine` → Game/spiel/08c-helden.js:109
-- `mini` → Game/spiel/05a-aussehen-profil.js:80
+- `mine` → Game/spiel/08c-helden.js:110
+- `mini` → Game/spiel/05a-aussehen-profil.js:81
 - `minuten` → Game/weltrechner/push.js:124
 - `missing` → Game/spiel/03a-karte-hintergrund.js:538
 - `mitspieler_kuerzen` → Game/server/02-sicherheit-datenlecks.php:136
@@ -1697,7 +1701,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `MysqlLager->tx_ende` → Game/server/04-datenbank-spieler.php:11
 - `MysqlLager->zuletzt_gespeichert` → Game/server/04-datenbank-spieler.php:165
 - `nachrichtBauen` → Game/weltrechner/push.js:126
-- `naechsterRang` → Game/spiel/05a-aussehen-profil.js:101
+- `naechsterRang` → Game/spiel/05a-aussehen-profil.js:102
 - `name` → Game/weltrechner/push.js:69
 - `name_anfrage` → Game/server/06-speichern-push-konto.php:176
 - `name_erlaubt` → Game/server/02-sicherheit-datenlecks.php:48
@@ -1748,23 +1752,24 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `one` → Game/baukunst/04-vielfalt-stile.js:525
 - `onPointerEnd` → Game/spiel/03e-kamera-eingabe.js:319
 - `onViewportResize` → Game/spiel/03e-kamera-eingabe.js:409
-- `openArmySheet` → Game/spiel/09d-armeen-wegmarken.js:204
+- `openArmySheet` → Game/spiel/09d-armeen-wegmarken.js:206
 - `openBarbSheet` → Game/spiel/09b-lager-tagesboss.js:376
 - `openChestItemPopup` → Game/spiel/05b-truhe-skills.js:182
 - `openCity` → Game/spiel/08a-stadt-bauen.js:214
 - `openCrate` → Game/spiel/02a-shop-stufen.js:82
-- `openFieldSheet` → Game/spiel/09a-funde-felder.js:326
+- `openFieldSheet` → Game/spiel/09a-funde-felder.js:330
 - `openGoals` → Game/spiel/06a-aufgaben.js:348
-- `openHeroHall` → Game/spiel/08c-helden.js:276
+- `openHeroHall` → Game/spiel/08c-helden.js:281
 - `openIslandPopup` → Game/spiel/09e-inselfenster.js:103
 - `openLookSheet` → Game/spiel/08b-burg-aussehen.js:52
-- `openMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:300
+- `openMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:302
 - `openPanel` → Game/spiel/09e-inselfenster.js:34
 - `openRankings` → Game/spiel/05c-erfolge-rangliste.js:327
 - `openRucksack` → Game/spiel/06d-schild-produktion.js:101
 - `openRulerProfile` → Game/spiel/05c-erfolge-rangliste.js:196
 - `openShop` → Game/spiel/06d-schild-produktion.js:186
 - `opts` → Game/spiel/04-kampf.js:62
+- `ortName` → Game/spiel/10a-inselfenster-vorschau.js:36
 - `out` → Game/spiel/10c-start-einstellungen.js:32
 - `overHole` → Game/spiel/03a-karte-hintergrund.js:575
 - `overlap` → Game/spiel/03c-wappen-thronplatz.js:143
@@ -1819,7 +1824,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `palm` → Game/baukunst/05-umland.js:598
 - `panBy` → Game/spiel/03e-kamera-eingabe.js:432
 - `parapet` → Game/baukunst/07-hafen-palast.js:202
-- `parseTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:298
+- `parseTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:304
 - `partLines` → Game/spiel/05d-maersche-kampfbericht.js:161
 - `partsFor` → Game/bots/02-kampf-karte.js:43
 - `passBump` → Game/spiel/06b-pass-anleitung.js:31
@@ -1847,8 +1852,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `passTruppen` → Game/spiel/06b-pass-anleitung.js:18
 - `passwort_anfrage` → Game/server/06-speichern-push-konto.php:159
 - `passXp` → Game/spiel/06b-pass-anleitung.js:32
-- `patchAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:370
-- `patchSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:350
+- `patchAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:376
+- `patchSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:356
 - `pathSoFar` → Game/spiel/02b-maersche.js:215
 - `PAVE` → Game/baukunst/07-hafen-palast.js:17
 - `PAVE` → Game/baukunst/07-hafen-palast.js:411
@@ -1964,6 +1969,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questStat` → Game/spiel/06a-aufgaben.js:121
 - `queueHover` → Game/spiel/03e-kamera-eingabe.js:362
 - `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:95
+- `rahmenAufKarte` → Game/spiel/03b-gebaeude-3d.js:361
 - `rahmenDef` → Game/spiel/05a-aussehen-profil.js:18
 - `rahmenHat` → Game/spiel/05a-aussehen-profil.js:22
 - `rahmenPlatzText` → Game/spiel/05a-aussehen-profil.js:19
@@ -2003,20 +2009,20 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `render` → Game/baukunst/08-himmelsfeste-bilder.js:375
 - `renderAchievements` → Game/spiel/05c-erfolge-rangliste.js:124
 - `renderActiveMarches` → Game/spiel/05d-maersche-kampfbericht.js:47
-- `renderArmySheet` → Game/spiel/09d-armeen-wegmarken.js:217
-- `renderAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:232
+- `renderArmySheet` → Game/spiel/09d-armeen-wegmarken.js:219
+- `renderAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:238
 - `renderChestEquipment` → Game/spiel/05b-truhe-skills.js:46
 - `renderChestItemPopup` → Game/spiel/05b-truhe-skills.js:189
 - `renderCitySheet` → Game/spiel/08b-burg-aussehen.js:124
 - `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:272
 - `renderCombatLog` → Game/spiel/05d-maersche-kampfbericht.js:146
-- `renderCrestCard` → Game/spiel/05a-aussehen-profil.js:71
-- `renderCrestEditor` → Game/spiel/05a-aussehen-profil.js:76
+- `renderCrestCard` → Game/spiel/05a-aussehen-profil.js:72
+- `renderCrestEditor` → Game/spiel/05a-aussehen-profil.js:77
 - `renderEquipGrid` → Game/spiel/05b-truhe-skills.js:7
 - `renderEvents` → Game/spiel/09c-events-drache.js:579
 - `renderGoalsSub` → Game/spiel/06a-aufgaben.js:346
 - `renderHeroChests` → Game/spiel/06d-schild-produktion.js:118
-- `renderHeroHall` → Game/spiel/08c-helden.js:270
+- `renderHeroHall` → Game/spiel/08c-helden.js:275
 - `renderInbox` → Game/spiel/06a-aufgaben.js:271
 - `renderKeep` → Game/aufbau.js:309
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:4
@@ -2026,13 +2032,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderLookTop` → Game/spiel/08b-burg-aussehen.js:26
 - `renderMidBar` → Game/spiel/06c-thron-mitte.js:212
 - `renderPass` → Game/spiel/06b-pass-anleitung.js:86
-- `renderPopup` → Game/spiel/10a-inselfenster-vorschau.js:92
-- `renderProfile` → Game/spiel/05a-aussehen-profil.js:102
+- `renderPopup` → Game/spiel/10a-inselfenster-vorschau.js:98
+- `renderProfile` → Game/spiel/05a-aussehen-profil.js:103
 - `renderQuestPanel` → Game/spiel/06a-aufgaben.js:294
 - `renderRankings` → Game/spiel/05c-erfolge-rangliste.js:293
 - `renderRecallPreview` → Game/spiel/10b-inselfenster-knoepfe.js:56
 - `renderRucksack` → Game/spiel/06d-schild-produktion.js:84
-- `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:319
+- `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:325
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:58
 - `renderShop` → Game/spiel/06d-schild-produktion.js:170
 - `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:305
@@ -2060,8 +2066,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ring` → Game/baukunst/04-vielfalt-stile.js:266
 - `ring` → Game/spiel/03c-wappen-thronplatz.js:373
 - `ringBadge` → Game/spiel/03c-wappen-thronplatz.js:377
+- `ringBild` → Game/spiel/03b-gebaeude-3d.js:356
 - `ringMult` → Game/spiel/01b-weltkarte.js:25
-- `ringNotice` → Game/spiel/10a-inselfenster-vorschau.js:52
+- `ringNotice` → Game/spiel/10a-inselfenster-vorschau.js:58
 - `ringStatusByOwner` → Game/spiel/04-kampf.js:29
 - `ringTruppen` → Game/spiel/01b-weltkarte.js:23
 - `rkFach` → Game/spiel/06d-schild-produktion.js:81
@@ -2152,7 +2159,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveHeroes` → Game/spiel/08c-helden.js:20
 - `saveLeave` → Game/spiel/06d-schild-produktion.js:320
 - `saveLook` → Game/spiel/05a-aussehen-profil.js:53
-- `saveMarkers` → Game/spiel/09d-armeen-wegmarken.js:298
+- `saveMarkers` → Game/spiel/09d-armeen-wegmarken.js:300
 - `saveProgression` → Game/spiel/02a-shop-stufen.js:275
 - `saveProgressionNow` → Game/spiel/02a-shop-stufen.js:281
 - `saveQuests` → Game/spiel/06a-aufgaben.js:173
@@ -2162,7 +2169,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `schedule` → Game/baukunst/08-himmelsfeste-bilder.js:392
 - `schedule` → Game/spiel/10c-start-einstellungen.js:108
 - `schild` → Game/spiel/03c-wappen-thronplatz.js:153
-- `schildBild` → Game/spiel/03b-gebaeude-3d.js:354
+- `schildBild` → Game/spiel/03b-gebaeude-3d.js:366
 - `schildDaten` → Game/spiel/03b-gebaeude-3d.js:349
 - `schildRect` → Game/spiel/03b-gebaeude-3d.js:345
 - `schluesselTausch` → Game/welt.js:90
@@ -2174,7 +2181,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `scoutNote` → Game/bots/03-angreifen.js:106
 - `scoutNotesFlush` → Game/bots/03-angreifen.js:111
 - `scoutSecs` → Game/spiel/02b-maersche.js:17
-- `screenToWorld` → Game/spiel/09d-armeen-wegmarken.js:375
+- `screenToWorld` → Game/spiel/09d-armeen-wegmarken.js:377
 - `sectorGeo` → Game/baukunst/08-himmelsfeste-bilder.js:48
 - `see` → Game/bots/05-verteidigen-takt.js:39
 - `seed` → Game/spiel/01c-basen-spielstand.js:58
@@ -2188,15 +2195,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `server` → Game/benachrichtigung.js:20
 - `server` → Game/weltrechner/push.js:168
 - `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:165
-- `setArmyPlace` → Game/spiel/09d-armeen-wegmarken.js:280
+- `setArmyPlace` → Game/spiel/09d-armeen-wegmarken.js:282
 - `setBtnLabel` → Game/spiel/01a-grundlagen.js:142
 - `setGateSettings` → Game/spiel/01b-weltkarte.js:279
-- `setMarkerMode` → Game/spiel/09d-armeen-wegmarken.js:310
+- `setMarkerMode` → Game/spiel/09d-armeen-wegmarken.js:312
 - `setMode` → Game/spiel/10c-start-einstellungen.js:139
 - `setScreen` → Game/spiel/03a-karte-hintergrund.js:5
 - `setShown` → Game/spiel/01e-nebel-kampfwerte-hud.js:232
 - `setText` → Game/spiel/01e-nebel-kampfwerte-hud.js:231
-- `setTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:308
+- `setTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:314
 - `setW` → Game/spiel/03a-karte-hintergrund.js:362
 - `setze_cookie` → Game/server/01-grundlagen-login.php:37
 - `setzen` → Game/spiel/01a-grundlagen.js:29
@@ -2238,12 +2245,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `skillBonusText` → Game/spiel/04-kampf.js:294
 - `skript` → Game/server/03-nebel-maersche-seite.php:145
 - `slab` → Game/baukunst/06-turmhof-festung.js:15
-- `sliderToTroops` → Game/spiel/10a-inselfenster-vorschau.js:296
+- `sliderToTroops` → Game/spiel/10a-inselfenster-vorschau.js:302
 - `slot` → Game/spiel/03d-maersche-tagnacht.js:109
 - `smokeTexture` → Game/baukunst/03-wahrzeichen-feuer.js:307
 - `sofort` → Game/speichern.js:168
 - `soot` → Game/baukunst/03-wahrzeichen-feuer.js:330
-- `sourceTroops` → Game/spiel/10a-inselfenster-vorschau.js:233
+- `sourceTroops` → Game/spiel/10a-inselfenster-vorschau.js:239
 - `spaeh` → Game/spiel/05d-maersche-kampfbericht.js:488
 - `spaehAbgelaufen` → Game/spiel/02c-spaeher-ankunft.js:106
 - `spaehAlterText` → Game/spiel/02c-spaeher-ankunft.js:119
@@ -2314,7 +2321,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `stepGable` → Game/baukunst/07-hafen-palast.js:65
 - `stepOf` → Game/baukunst/02-buehne-grundbasis.js:142
 - `stern` → Game/spiel/02c-spaeher-ankunft.js:127
-- `stoesst` → Game/spiel/03b-gebaeude-3d.js:375
+- `stoesst` → Game/spiel/03b-gebaeude-3d.js:389
 - `stoneLantern` → Game/baukunst/04-vielfalt-stile.js:497
 - `stoneWarte` → Game/baukunst/05-umland.js:356
 - `stop` → Game/ladebildschirm.js:290
@@ -2345,7 +2352,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tempelPlus` → Game/aufbau.js:242
 - `temple` → Game/spiel/03b-gebaeude-3d.js:224
 - `templeBaseMult` → Game/spiel/01b-weltkarte.js:48
-- `templeBonusLine` → Game/spiel/10a-inselfenster-vorschau.js:69
+- `templeBonusLine` → Game/spiel/10a-inselfenster-vorschau.js:75
 - `templeHoldMultiplier` → Game/spiel/01c-basen-spielstand.js:269
 - `tent` → Game/baukunst/02-buehne-grundbasis.js:176
 - `terr` → Game/baukunst/02-buehne-grundbasis.js:337
@@ -2358,7 +2365,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `throneGive` → Game/spiel/06c-thron-mitte.js:38
 - `throneHelfer` → Game/spiel/06c-thron-mitte.js:20
 - `throneIncome` → Game/spiel/06c-thron-mitte.js:22
-- `throneNotice` → Game/spiel/10a-inselfenster-vorschau.js:62
+- `throneNotice` → Game/spiel/10a-inselfenster-vorschau.js:68
 - `throneShooters` → Game/spiel/06c-thron-mitte.js:23
 - `throneState` → Game/spiel/06c-thron-mitte.js:13
 - `throneTick` → Game/spiel/06c-thron-mitte.js:95
@@ -2401,7 +2408,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tpGratis` → Game/spiel/08d-gebaeude-wirkung.js:193
 - `tpl` → Game/baukunst/05-umland.js:60
 - `tpMarschDa` → Game/spiel/08d-gebaeude-wirkung.js:188
-- `tpPreisHtml` → Game/spiel/09d-armeen-wegmarken.js:351
+- `tpPreisHtml` → Game/spiel/09d-armeen-wegmarken.js:353
 - `tpPruefen` → Game/spiel/08d-gebaeude-wirkung.js:197
 - `tpVerlegen` → Game/spiel/08d-gebaeude-wirkung.js:214
 - `trace` → Game/spiel/03c-wappen-thronplatz.js:474
@@ -2410,8 +2417,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `triPrism` → Game/baukunst/04-vielfalt-stile.js:564
 - `troopProductionMultiplier` → Game/spiel/04-kampf.js:256
 - `troopsPerTick` → Game/spiel/01b-weltkarte.js:106
-- `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:297
-- `trunc` → Game/spiel/03b-gebaeude-3d.js:504
+- `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:303
+- `trunc` → Game/spiel/03b-gebaeude-3d.js:518
 - `truppenBekannt` → Game/spiel/01e-nebel-kampfwerte-hud.js:38
 - `truppenGeben` → Game/spiel/10d-welt-weltrechner.js:469
 - `truppenMitRest` → Game/spiel/06d-schild-produktion.js:235
@@ -2487,16 +2494,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verstVorKampf` → Game/buendnis/01-daten-regeln.js:489
 - `verstWert` → Game/buendnis/01-daten-regeln.js:499
 - `verstZeilen` → Game/spiel/01a-grundlagen.js:191
-- `vhBest` → Game/spiel/08c-helden.js:178
+- `vhBest` → Game/spiel/08c-helden.js:179
 - `vhChip` → Game/spiel/08d-gebaeude-wirkung.js:67
-- `vhFx` → Game/spiel/08c-helden.js:160
+- `vhFx` → Game/spiel/08c-helden.js:161
 - `vhHtml` → Game/spiel/08d-gebaeude-wirkung.js:72
-- `vhMauer` → Game/spiel/08c-helden.js:149
-- `vhName` → Game/spiel/08c-helden.js:169
-- `vhPlus` → Game/spiel/08c-helden.js:168
-- `vhRechnen` → Game/spiel/08c-helden.js:150
-- `vhSetzen` → Game/spiel/08c-helden.js:170
-- `vhSoll` → Game/spiel/08c-helden.js:145
+- `vhMauer` → Game/spiel/08c-helden.js:150
+- `vhName` → Game/spiel/08c-helden.js:170
+- `vhPlus` → Game/spiel/08c-helden.js:169
+- `vhRechnen` → Game/spiel/08c-helden.js:151
+- `vhSetzen` → Game/spiel/08c-helden.js:171
+- `vhSoll` → Game/spiel/08c-helden.js:146
 - `vhWaehlen` → Game/spiel/08d-gebaeude-wirkung.js:91
 - `villageTower` → Game/baukunst/05-umland.js:233
 - `VINE` → Game/baukunst/08-himmelsfeste-bilder.js:19
@@ -2586,7 +2593,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltZuClient` → Game/welt.js:143
 - `werIst` → Game/aufbau.js:122
 - `werIstWer` → Game/spiel/10d-welt-weltrechner.js:1067
-- `wert` → Game/spiel/08c-helden.js:240
+- `wert` → Game/spiel/08c-helden.js:241
 - `wert` → Game/spiel/08d-gebaeude-wirkung.js:84
 - `who` → Game/spiel/04-kampf.js:59
 - `whoBases` → Game/spiel/05c-erfolge-rangliste.js:161
@@ -3953,18 +3960,20 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawBasisBild` :328 — (Bildschirm) → true, wenn das Bild gezeichnet ist
 - `schildRect` :345 — (Bildschirm) wo das Schild einer Basis steht
 - `schildDaten` :349 — → { art, wer, stufe, truppen }
-- `schildBild` :354 — das fertige Schild, W px breit (Leinwand × dpr)
-- `drawBasisSchilder` :371 — nach allen Basen: die Schilde liegen obenauf
-- `stoesst` :375
-- `basisGroesse` :378 — Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erke…
-- `drawBuilding` :379 — screen space (setScreen active)
-- `drawBrand` :422 — Flammen auf den Dächern und Rauch, der aufsteigt
-- `bk3d` :444
-- `bkModel` :446 — → [cache id, model config]
-- `bkSprite` :462 — → { s: sprite, W: width in px } or null
-- `bkDraw` :469
-- `bannerModel` :471
-- `trunc` :504
+- `ringBild` :356 — geladenes Bild oder null (lädt beim ersten Mal)
+- `rahmenAufKarte` :361 — angelegter Rahmen des Besitzers (je 2 s gemerkt – jedes Bild fragt danach)
+- `schildBild` :366 — das fertige Schild, W px breit (Leinwand × dpr)
+- `drawBasisSchilder` :385 — nach allen Basen: die Schilde liegen obenauf
+- `stoesst` :389
+- `basisGroesse` :392 — Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erke…
+- `drawBuilding` :393 — screen space (setScreen active)
+- `drawBrand` :436 — Flammen auf den Dächern und Rauch, der aufsteigt
+- `bk3d` :458
+- `bkModel` :460 — → [cache id, model config]
+- `bkSprite` :476 — → { s: sprite, W: width in px } or null
+- `bkDraw` :483
+- `bannerModel` :485
+- `trunc` :518
 
 ### Game/spiel/03c-wappen-thronplatz.js — Wappen und der Thronplatz in der Mitte
 - `loadCrest` :7
@@ -4124,13 +4133,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `playerFrame` :54
 - `playerTitle` :55
 - `renderLook` :56 — the profile header and its "Aussehen" line; choosing happens in the Aussehen sh…
-- `currentRank` :64
-- `renderCrestCard` :71
-- `renderCrestEditor` :76
-- `mini` :80
-- `applyCrestAvatars` :94 — HUD + profile header show the crest instead of the plain helmet
-- `naechsterRang` :101
-- `renderProfile` :102 — live = the per-second refresh: numbers only, the editor and pickers stay put
+- `currentRank` :65
+- `renderCrestCard` :72
+- `renderCrestEditor` :77
+- `mini` :81
+- `applyCrestAvatars` :95 — HUD + profile header show the crest instead of the plain helmet
+- `naechsterRang` :102
+- `renderProfile` :103 — live = the per-second refresh: numbers only, the editor and pickers stay put
 
 ### Game/spiel/05b-truhe-skills.js — Truhe und Ausrüstung im Profil, Skills
 - `renderEquipGrid` :7 — The old coin-upgraded weapon/armor/shield/boots cards were removed - the gem-cr…
@@ -4561,71 +4570,73 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroById` :21
 - `heroSt` :22
 - `heroOwned` :23
-- `heroSave` :24
-- `heroPoints` :25 — 1 point per half star: 10 at five stars
-- `heroFree` :26
-- `heroStepCost` :27
-- `heroStarNum` :28 — 2½
-- `heroStarTxt` :29
-- `heroNum` :30 — 2,4
-- `heroSkillVal` :31
-- `heroLead` :32
-- `heroStats` :33 — Angriff, Verteidigung (fewer losses), Tempo in % and the Gefolge: grow with rar…
-- `heroPower` :39
-- `heroGefOf` :49
-- `heroFx` :51 — → the hero's numbers for this fight or march, with a line for the report per va…
-- `heroBaseCtx` :65 — what kind of attack this is, for the skills that need one
-- `heroWouldFire` :71
-- `heroDuo` :72 — + der Zweitheld: Werte und passive Fähigkeiten zu 50 % (keine Wut), ein passend…
-- `heroZweitOk` :83
-- `heroPeek` :84
-- `heroLaunch` :85 — the hero marches off: a full rage fires the active skill in this fight
-- `heroWutZurueck` :90 — der Held hat nicht gekämpft (zurückgerufen, abgeprallt, 2. Welle ohne Helden): …
-- `heroRageUp` :93
-- `heroFought` :96
-- `heroFieldFx` :97 — a fight out in the open: fires (and refills) the rage right away (nur beim Haup…
-- `heroMarchFx` :104
-- `heroGatherFx` :105
-- `heroOnField` :106
-- `heroIn` :107
-- `heroBusy` :108 — one attack, army or field march per hero at a time (Haupt- oder Zweitheld)
-- `mine` :109
-- `heroPickBest` :116 — the free hero that does the most in this attack (the others use it, and so can …
-- `heroPickPair` :125
-- `heroGrantShards` :127 — shards, stars and points: the same steps for you and for everyone else
-- `heroDoUnlock` :132
-- `heroDoStep` :133
-- `heroDoSwap` :134 — übrige Splitter eines Helden mit 5 Sternen → Splitter für einen anderen (1:1, n…
-- `heroDoSkill` :139
-- `heroCanDo` :140
-- `vhSoll` :145 — [Haupt-, Zweitheld] wie eingetragen (dein Eintrag steht in der Stadt)
-- `vhMauer` :149
-- `vhRechnen` :150
-- `vhFx` :160
-- `vhPlus` :168
-- `vhName` :169
-- `vhSetzen` :170 — eintragen (prüft: eigener Held, Mauer-Stufe) → true, wenn es gilt
-- `vhBest` :178 — der beste eigene Held fürs Verteidigen (Mitspieler): Angriff + weniger Verluste…
-- `heroTag` :184
-- `heroLetzteMerken` :188 — nach dem Losschicken: Haupt- und Zweitheld vorn in die Liste
-- `heroLetzte` :192 — → [Haupt-, Zweitheld]: die ersten freien aus der Liste (der gerade Losgeschickt…
-- `hhStars` :199
-- `heroPic` :201 — ---- Heldenbilder (KI-Bilder, werkzeuge/helden_bilder_schneiden.py): Figur bild…
-- `heroImg` :202
-- `hhGrid` :204
-- `karte` :207
-- `hhPairs` :219 — Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwe…
-- `hhHero` :227
-- `wert` :240
-- `hhSwapHtml` :260 — übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
-- `hhPartnerBlk` :265 — sein Paar: Partner, Bonus, gemeinsame Geschichte
-- `renderHeroHall` :270
-- `heroHallLive` :271 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
-- `openHeroHall` :276
-- `closeHeroHall` :277
-- `heroSegHtml` :302 — the hero choice for an attack, an army or a field march: the ones you have, wit…
-- `heroSeg2Html` :307 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
-- `heroChipHtml` :314 — profile + report: a hero with rarity and stars
+- `heroHalle` :24
+- `heroSave` :25
+- `heroPoints` :26 — 1 point per half star: 10 at five stars
+- `heroFree` :27
+- `heroStepCost` :28
+- `heroStarNum` :29 — 2½
+- `heroStarTxt` :30
+- `heroNum` :31 — 2,4
+- `heroSkillVal` :32
+- `heroLead` :33
+- `heroStats` :34 — Angriff, Verteidigung (fewer losses), Tempo in % and the Gefolge: grow with rar…
+- `heroPower` :40
+- `heroGefOf` :50
+- `heroFx` :52 — → the hero's numbers for this fight or march, with a line for the report per va…
+- `heroBaseCtx` :66 — what kind of attack this is, for the skills that need one
+- `heroWouldFire` :72
+- `heroDuo` :73 — + der Zweitheld: Werte und passive Fähigkeiten zu 50 % (keine Wut), ein passend…
+- `heroZweitOk` :84
+- `heroPeek` :85
+- `heroLaunch` :86 — the hero marches off: a full rage fires the active skill in this fight
+- `heroWutZurueck` :91 — der Held hat nicht gekämpft (zurückgerufen, abgeprallt, 2. Welle ohne Helden): …
+- `heroRageUp` :94
+- `heroFought` :97
+- `heroFieldFx` :98 — a fight out in the open: fires (and refills) the rage right away (nur beim Haup…
+- `heroMarchFx` :105
+- `heroGatherFx` :106
+- `heroOnField` :107
+- `heroIn` :108
+- `heroBusy` :109 — one attack, army or field march per hero at a time (Haupt- oder Zweitheld)
+- `mine` :110
+- `heroPickBest` :117 — the free hero that does the most in this attack (the others use it, and so can …
+- `heroPickPair` :126
+- `heroGrantShards` :128 — shards, stars and points: the same steps for you and for everyone else
+- `heroDoUnlock` :133
+- `heroDoStep` :134
+- `heroDoSwap` :135 — übrige Splitter eines Helden mit 5 Sternen → Splitter für einen anderen (1:1, n…
+- `heroDoSkill` :140
+- `heroCanDo` :141
+- `vhSoll` :146 — [Haupt-, Zweitheld] wie eingetragen (dein Eintrag steht in der Stadt)
+- `vhMauer` :150
+- `vhRechnen` :151
+- `vhFx` :161
+- `vhPlus` :169
+- `vhName` :170
+- `vhSetzen` :171 — eintragen (prüft: eigener Held, Mauer-Stufe) → true, wenn es gilt
+- `vhBest` :179 — der beste eigene Held fürs Verteidigen (Mitspieler): Angriff + weniger Verluste…
+- `heroTag` :185
+- `heroLetzteMerken` :189 — nach dem Losschicken: Haupt- und Zweitheld vorn in die Liste
+- `heroLetzte` :193 — → [Haupt-, Zweitheld]: die ersten freien aus der Liste (der gerade Losgeschickt…
+- `hhStars` :200
+- `heroPic` :202 — ---- Heldenbilder (KI-Bilder, werkzeuge/helden_bilder_schneiden.py): Figur bild…
+- `heroImg` :203
+- `hhGrid` :205
+- `karte` :208
+- `hhPairs` :220 — Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwe…
+- `hhHero` :228
+- `wert` :241
+- `hhSwapHtml` :261 — übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
+- `hhPartnerBlk` :266 — sein Paar: Partner, Bonus, gemeinsame Geschichte
+- `hhOhneHalle` :271 — noch keine Heldenhalle: nur der Hinweis (Splitter sammeln geht schon)
+- `renderHeroHall` :275
+- `heroHallLive` :276 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
+- `openHeroHall` :281
+- `closeHeroHall` :282
+- `heroSegHtml` :307 — the hero choice for an attack, an army or a field march: the ones you have, wit…
+- `heroSeg2Html` :312 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
+- `heroChipHtml` :319 — profile + report: a hero with rarity and stars
 
 ### Game/spiel/08d-gebaeude-wirkung.js — Wirkung der Gebäude (Labor, Schmiede, Lazarett), Stadt-Leiste, Hauptstadt verle…
 - `academyLevel` :3 — ---- building effects ----
@@ -4705,12 +4716,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fieldGoHome` :195 — the gatherers pack up and walk home with what they have
 - `fieldArrive` :201
 - `feldBericht` :251 — aus Sicht des Angreifers (istA) oder des Sammlers: Du, Gegner, Verluste, Verwun…
-- `fieldTick` :257
-- `fieldAt` :272 — drawing: the mine or the vein, the gatherers' tent in their colour with a progr…
-- `drawResFields` :273
-- `fieldSource` :324
-- `openFieldSheet` :326
-- `closeFieldSheet` :345
+- `fieldRateOf` :258 — Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Samm…
+- `fieldTick` :261
+- `fieldAt` :276 — drawing: the mine or the vein, the gatherers' tent in their colour with a progr…
+- `drawResFields` :277
+- `fieldSource` :328
+- `openFieldSheet` :330
+- `fieldFortschritt` :350 — wer sammelt: Restzeit bis voll beladen (oder Feld leer), Balken gesammelt/Tragl…
+- `closeFieldSheet` :358
 
 ### Game/spiel/09b-lager-tagesboss.js — Barbaren-Lager und Tagesboss
 - `barbTroopsOf` :5 — 7.10. (rokzahlen): 500 at 1, 1.400 at 4, 12.000 at 10, 2,3 Mio. at 25 – Stufe 1…
@@ -4886,38 +4899,38 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `armyTargetAt` :54 — what a tap on the map means as an order
 - `armyPosXY` :61
 - `armyMove` :62 — sets the army walking → '' or why it can't
-- `armyOrder` :76
-- `fieldAtkPct` :91
-- `fieldShield` :92
-- `fieldBattle` :93 — every fight out in the open (armies, raids, fields): no walls - (troops + Gefol…
-- `armyClash` :101 — army against army out in the open
-- `armyArrive` :123
-- `gone` :125
-- `armyTick` :144
-- `armyAt` :159 — drawing: a camp is a little block of soldiers under your banner; a marching arm…
-- `drawArmies` :161
-- `drawArmyCamps` :172 — after the nameplates: an army out there must never hide under one
-- `openArmySheet` :204 — the army sheet: set one up (pick the bases), or give an existing one its orders
-- `closeArmySheet` :205
-- `armyHeroes` :207
-- `armyHeroSeg` :208 — which heroes march with this army (one army or attack per hero) – Haupt- und Zw…
-- `armySetHeroes` :212 — → true, wenn gesetzt: nur eigene Helden, die frei sind oder schon in dieser Arm…
-- `renderArmySheet` :217
-- `head` :220
-- `setArmyPlace` :280
-- `armyHandleTap` :283 — → true when the tap belonged to the armies
-- `markers` :296
-- `saveMarkers` :298
-- `markerAt` :299
-- `openMarkerSheet` :300
-- `closeMarkerSheet` :309
-- `setMarkerMode` :310
-- `drawMarkers` :326 — a pin with a flag and the text beside it
-- `feldRingAuf` :343 — → true, wenn dort freies Land ist
-- `tpPreisHtml` :351
-- `feldRingZu` :352
-- `feldRingFrame` :353 — (jedes Bild) die Knöpfe folgen der Stelle, dort eine Nadel
-- `screenToWorld` :375
+- `armyOrder` :77
+- `fieldAtkPct` :93
+- `fieldShield` :94
+- `fieldBattle` :95 — every fight out in the open (armies, raids, fields): no walls - (troops + Gefol…
+- `armyClash` :103 — army against army out in the open
+- `armyArrive` :125
+- `gone` :127
+- `armyTick` :146
+- `armyAt` :161 — drawing: a camp is a little block of soldiers under your banner; a marching arm…
+- `drawArmies` :163
+- `drawArmyCamps` :174 — after the nameplates: an army out there must never hide under one
+- `openArmySheet` :206 — the army sheet: set one up (pick the bases), or give an existing one its orders
+- `closeArmySheet` :207
+- `armyHeroes` :209
+- `armyHeroSeg` :210 — which heroes march with this army (one army or attack per hero) – Haupt- und Zw…
+- `armySetHeroes` :214 — → true, wenn gesetzt: nur eigene Helden, die frei sind oder schon in dieser Arm…
+- `renderArmySheet` :219
+- `head` :222
+- `setArmyPlace` :282
+- `armyHandleTap` :285 — → true when the tap belonged to the armies
+- `markers` :298
+- `saveMarkers` :300
+- `markerAt` :301
+- `openMarkerSheet` :302
+- `closeMarkerSheet` :311
+- `setMarkerMode` :312
+- `drawMarkers` :328 — a pin with a flag and the text beside it
+- `feldRingAuf` :345 — → true, wenn dort freies Land ist
+- `tpPreisHtml` :353
+- `feldRingZu` :354
+- `feldRingFrame` :355 — (jedes Bild) die Knöpfe folgen der Stelle, dort eine Nadel
+- `screenToWorld` :377
 
 ### Game/spiel/09e-inselfenster.js — Fenster öffnen und schließen, Insel-Fenster, Mehrfach-Angriff
 - `isUiElement` :28 — the keyboard handler uses this: map shortcuts only fire while focus is on the p…
@@ -4961,26 +4974,27 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 
 ### Game/spiel/10a-inselfenster-vorschau.js — Fenster-Start, Insel-Fenster: Inhalt, Angriffs- und Sende-Vorschau, Truppen-Reg…
 - `islandTitle` :25 — Renders whichever screen (menu or the upgrade preview) is currently active - ne…
-- `gateControlsHtml` :36
-- `ringNotice` :52 — whose ring is it: a title from the middle or a bought Ring-Skin
-- `throneNotice` :62 — your own throne or Wächter-Tempel: points and fire at a glance
-- `templeBonusLine` :69
-- `coordText` :91 — Presentation rewrite (design-spec §4.5). Which buttons show, when they are disa…
-- `renderPopup` :92
-- `inselMittig` :211 — Handy: die Basis immer mittig in den freien Teil der Karte über dem Fenster (un…
-- `apQuelleText` :220 — „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
-- `apHeldChip` :223 — ein Chip: Bild, Name, darunter klein Sterne/Hinweis
-- `renderAttackPreview` :232 — Attack preview. Built ONCE per (target, source, scouted, bonus); later calls (t…
-- `sourceTroops` :233
-- `sliderToTroops` :296
-- `troopsToSlider` :297
-- `parseTroopInput` :298
-- `setTroopInput` :308
-- `bindTroopInput` :309
-- `renderSendPreview` :319 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
-- `patchSendPreview` :350
-- `patchAttackPreview` :370 — Writes the live numbers of the attack preview (own force, enemy force when scou…
-- `hfl` :393
+- `ortName` :36 — Name für Spieler statt „Turm #N“: „Deine Basis“ / „Basis von …“ / „Neutrale Bas…
+- `gateControlsHtml` :42
+- `ringNotice` :58 — whose ring is it: a title from the middle or a bought Ring-Skin
+- `throneNotice` :68 — your own throne or Wächter-Tempel: points and fire at a glance
+- `templeBonusLine` :75
+- `coordText` :97 — Presentation rewrite (design-spec §4.5). Which buttons show, when they are disa…
+- `renderPopup` :98
+- `inselMittig` :217 — Handy: die Basis immer mittig in den freien Teil der Karte über dem Fenster (un…
+- `apQuelleText` :226 — „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
+- `apHeldChip` :229 — ein Chip: Bild, Name, darunter klein Sterne/Hinweis
+- `renderAttackPreview` :238 — Attack preview. Built ONCE per (target, source, scouted, bonus); later calls (t…
+- `sourceTroops` :239
+- `sliderToTroops` :302
+- `troopsToSlider` :303
+- `parseTroopInput` :304
+- `setTroopInput` :314
+- `bindTroopInput` :315
+- `renderSendPreview` :325 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
+- `patchSendPreview` :356
+- `patchAttackPreview` :376 — Writes the live numbers of the attack preview (own force, enemy force when scou…
+- `hfl` :399
 
 ### Game/spiel/10b-inselfenster-knoepfe.js — Insel-Fenster: Ausbau merken, Zurückrufen, Nebel antippen, Tippen auf die Karte
 - `ausbauMerken` :5

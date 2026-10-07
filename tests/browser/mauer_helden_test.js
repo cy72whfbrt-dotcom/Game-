@@ -22,6 +22,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   await p.goto(url, { timeout: 120000 }); await p.waitForTimeout(9000);
   await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId] && typeof verst !== 'undefined', null, { timeout: 60000, polling: 500 }).catch(() => {});
+  await p.evaluate(() => { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); for (const s of Object.values(loadBotState())) if (s && s.city) s.city.levels.heroes = Math.max(1, s.city.levels.heroes || 0); });   // Helden erst mit Heldenhalle (Merkliste 21)
   await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } });
   const a = await p.evaluate(() => {
     const out = {}, lange = Date.now() + 1e9; for (const d of BOT_DEFS) botNextAt[d.id] = lange;

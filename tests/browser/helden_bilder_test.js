@@ -13,6 +13,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); p.on('pageerror', e => fe.push(e.message));
   await p.goto(url, { timeout: 120000 }); await p.waitForTimeout(9000);
   await p.waitForFunction(() => typeof HEROES !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
+  await p.evaluate(() => { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); for (const s of Object.values(loadBotState())) if (s && s.city) s.city.levels.heroes = Math.max(1, s.city.levels.heroes || 0); });   // Helden erst mit Heldenhalle (Merkliste 21)
   await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } });
   const foto = async n => { if (bilder) await p.screenshot({ path: path.join(bilder, n + '.png') }); };
   const warte = ms => p.waitForTimeout(ms);

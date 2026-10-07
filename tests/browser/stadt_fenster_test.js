@@ -63,6 +63,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       cityPage = 'bau'; sh.hidden = true; cityOpenId = null; flashHint('', 1);
       // 3) Helden: Reiter, gesperrte Helden kleiner darunter, Paare auf eigenem Reiter
       const Hs = loadHeroes(), ohne = HEROES.filter(h => !Hs[h.id].own); ohne.forEach((h, i) => { Hs[h.id].sh = i ? 0 : Math.max(Hs[h.id].sh, HERO_UNLOCK[h.r]); });   // (Test-Welt: fast unbegrenzt Splitter – sonst wäre jeder „Freischalten“ statt gesperrt)
+      { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); }   // Helden erst mit Heldenhalle (Merkliste 21)
       openHeroHall(); await warte(200);
       const hh = document.getElementById('heroHall'), seiten = [...hh.querySelectorAll('[data-hh-seite]')];
       o.helden = { reiter: seiten.map(x => x.textContent).join('|'), h44: seiten.every(x => x.getBoundingClientRect().height >= 44),

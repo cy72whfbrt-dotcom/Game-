@@ -97,6 +97,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 5) Held: „Aufwerten“ fest unten, darunter schaut nichts hervor
     const held = await ev(async () => {
       const warte = ms => new Promise(f => setTimeout(f, ms)), R = e => e.getBoundingClientRect();
+      { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); }   // Helden erst mit Heldenhalle (Merkliste 21)
       document.getElementById('citySheet').hidden = true; cityOpenId = null; openHeroHall(); await warte(600);
       const k = document.querySelector('#heroHall [data-hh], #heroHall .hh-card, #heroHall button[data-hero]'); if (k) k.click(); await warte(600);
       const hh = document.getElementById('heroHall'), act = hh.querySelector('.hh-actions');
