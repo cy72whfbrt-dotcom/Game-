@@ -13,7 +13,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const ctx = await b.newContext({ ...devices['iPhone 13'] }), p = await ctx.newPage(); const fe = [];
   p.on('pageerror', e => fe.push(e.message));
   await p.goto('file://' + path.resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
-  await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof botLearn === 'function' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
+  await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof botLearn === 'function' && islands.length && islandById[playerIslandId] && BOT_DEFS.filter(d => !d.mensch && botOwnedIslands[d.id] && botOwnedIslands[d.id].size).length >= 2, null, { timeout: 60000, polling: 500 }).catch(() => {});
   const ev = (f, a) => p.evaluate(f, a);
   await ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } });
 
@@ -23,9 +23,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     window.WELT = new Proxy({ leiter: true, menschen: {}, nachricht(id, n) { nachrichten.push(n); } }, { get: (o, k) => k in o ? o[k] : () => {} });
     window.spaeherWeg = () => true;                                                  // (kein Tor im Weg)
     const hints = []; window.flashHint = t => hints.push(t);
-    const mitTurm = BOT_DEFS.filter(d => !d.mensch && [...botOwnedIslands[d.id]].some(id => islandById[id].type === 'tower' && !bossAt(id) && !isCapital(id)));
-    const X = mitTurm[0], Y = mitTurm.find(d => d.id !== X.id);
-    const yt = [...botOwnedIslands[Y.id]].find(id => islandById[id].type === 'tower' && !bossAt(id) && !isCapital(id));
+    const mit = BOT_DEFS.filter(d => !d.mensch && botOwnedIslands[d.id] && botOwnedIslands[d.id].size), X = mit[0], Y = mit[1];
+    let yt = [...botOwnedIslands[Y.id]].find(id => islandById[id].type === 'tower' && !bossAt(id));
+    if (yt === undefined) { yt = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id)).id; botOwnedIslands[Y.id].add(yt); }   // (frische Welt: Y bekommt einen Turm)
     const bs = loadBotState(); bs[X.id].neuBis = 0; bs[X.id].shieldUntil = 0; bs[Y.id].shieldUntil = 0; bs[Y.id].neuBis = Date.now() + 10 * 3600000; saveBotState();
     for (const id of botOwnedIslands[Y.id]) islandTroops[id] = 100;                 // weit unter 100.000 Truppen
     const lm = islandById[yt].landmassId, out = { Y: Y.id };
@@ -42,11 +42,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.bNeu === 0 && /Anfängerschutz – noch/.test(r.bHint) && /100\.000 Truppen/.test(r.bHint), 'B) Du kannst einen Neuling nicht ausspähen – Hinweis mit Restzeit', r);
   ok(r.bAngriff && /Anfängerschutz – noch/.test(r.bText), 'B) Angreifen gesperrt, Hinweis „Anfängerschutz – noch …“', r.bText);
 
-  await p.waitForTimeout(1200);                                                      // (Truppen werden höchstens einmal pro Sekunde neu gezählt)
+  await ev(Y => { islandTroops[[...botOwnedIslands[Y]].find(id => islandById[id].type === 'tower' && !bossAt(id))] = 100000; }, r.Y);
+  await p.waitForTimeout(1500);                                                      // (Truppen werden höchstens einmal pro Sekunde neu gezählt)
   const c = await ev(Y => {
-    const yt = [...botOwnedIslands[Y]].find(id => islandById[id].type === 'tower' && !bossAt(id) && !isCapital(id));
+    const yt = [...botOwnedIslands[Y]].find(id => islandById[id].type === 'tower' && !bossAt(id));
     const X = BOT_DEFS.find(d => !d.mensch && d.id !== Y);
-    islandTroops[yt] = 100000;
     const aktiv = neulingAktiv(Y), neuBis = loadBotState()[Y].neuBis;
     return { aktiv, neuBis, learn: botLearn(X.id, yt, Date.now() + 5000, islandById[yt].landmassId), angriff: baseShieldedFor(yt, 'player') };
   }, r.Y);
@@ -61,19 +61,20 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return vor;
   });
   ok(d.aktiv && d.schild && /Anfängerschutz – noch/.test(d.text) && /bis 100\.000 Truppen/.test(d.text), 'D) Dein Anfängerschutz steht, Anzeige „… (oder bis 100.000 Truppen)“', d);
-  await p.waitForTimeout(1200);
-  const d2 = await ev(() => { islandTroops[playerIslandId] = 100000; return { aktiv: neulingAktiv('player'), gespeichert: store.get('openWaterNeulingBis') }; });
+  await ev(() => { islandTroops[playerIslandId] = 100000; });
+  await p.waitForTimeout(1500);
+  const d2 = await ev(() => ({ aktiv: neulingAktiv('player'), gespeichert: store.get('openWaterNeulingBis') }));
   ok(!d2.aktiv && d2.gespeichert === '0', 'D) Mit 100.000 Truppen ist dein Anfängerschutz vorbei', d2);
 
   // E) Weltrechner nachgebaut (vor dem Laden): ein echter Spieler schickt einen Späher zu einem Neuling → abgelehnt
-  const p2 = await ctx.newPage(); p2.on('pageerror', x => fe.push(x.message));
+  await p.close(); const p2 = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); p2.on('pageerror', x => fe.push(x.message));
   await p2.addInitScript(() => {
     window.__nachr = [];
     const W = { leiter: true, ich: 'u0', menschen: {}, beiNachricht: [], ereignisseRaus: [], sichtRaus: {}, armeeSichtRaus: {}, sichtV: -1,
       nachricht(an, x) { window.__nachr.push(x); }, bericht() {}, befehl() {}, profilZuBot(q, x) { return x; } };
     window.WELT = new Proxy(W, { get: (o, k) => k in o ? o[k] : () => [] });
   });
-  await p2.goto('file://' + path.resolve(process.argv[2]) + '/index.html'); await p2.waitForTimeout(9000);
+  await p2.goto('file://' + path.resolve(process.argv[2]) + '/index.html', { timeout: 90000 }); await p2.waitForTimeout(9000);
   await p2.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && islands.length && window.WELT && WELT.BEFEHLE, null, { timeout: 60000, polling: 500 }).catch(() => {});
   const e = await p2.evaluate(() => {
     const bots = BOT_DEFS.filter(x => !x.mensch && [...(botOwnedIslands[x.id] || [])].some(id => !bossAt(id)));
