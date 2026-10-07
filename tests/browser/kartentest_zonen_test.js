@@ -33,6 +33,13 @@ const K = path.resolve(__dirname, '../../werkzeuge/kartentest'), arbeit = proces
   const nb = {}; for (const p of D.paesse) { (nb[p.a] = nb[p.a] || []).push(p.b); (nb[p.b] = nb[p.b] || []).push(p.a); }
   const da = new Set([D.gebiete.find(g => g.zone === 1).id]), st = [...da]; while (st.length) for (const n of nb[st.pop()] || []) if (!da.has(n)) { da.add(n); st.push(n); }
   ok(da.size === D.gebiete.length && D.gebiete.every(g => nb[g.id]), 'jedes Gebiet hat einen Pass und ist von Zone 1 aus erreichbar', da.size);
+  const drin = (x, y, poly) => { let c = false; for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) c = !c; } return c; };
+  const z4 = D.gebiete.filter(g => g.zone === 4), T = D.tempel.map(t => ({ ...t, im: drin(t.x, t.y, D.gebiete[t.gebiet].umriss),
+    rand: Math.round(Math.min(...D.grenzen.filter(g => g.a === t.gebiet || g.b === t.gebiet).flatMap(g => g.punkte).map(q => Math.hypot(q[0] - t.x, q[1] - t.y)))),
+    pass: Math.round(Math.min(...D.paesse.map(p => Math.hypot(p.x - t.x, p.y - t.y)))) }));
+  ok(T.length === z4.length && z4.every(g => T.some(t => t.gebiet === g.id)) && T.every(t => t.im && t.rand > 40000 && t.pass > 40000) && T.some(t => t.art === 'tempel') && T.some(t => t.art === 'waechtertempel'),
+    'Tempel: je Zone-4-Gebiet einer, mitten im Gebiet (weit weg von Grenzen und Pässen), beide Arten', T.map(t => [t.gebiet, t.art, t.rand, t.pass]));
   // 2) Seite im Browser: Handy + Desktop, alle Stufen
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
   const pruefen = async (datei, name) => {

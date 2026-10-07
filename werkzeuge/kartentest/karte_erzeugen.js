@@ -166,10 +166,27 @@ for (let id = 0; id < GEBIETE; id++) {
 }
 gebiete[0].mitte = [0, 0];
 
-const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
+// 6) Tempel: in jedem Zone-4-Gebiet einer, an der Stelle am weitesten weg von allen Grenzen (Raster-Abstand), nicht nah an Pässen;
+//    abwechselnd Tempel im Felskessel und Wächter-Tempel (Bilder karte_tempel / karte_waechtertempel)
+const abst = new Int16Array(N * N).fill(-1), schlange = [];
+for (let p = 0; p < N * N; p++) { const i = p % N, j = (p - i) / N;
+  if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => an(i + a, j + b) !== L[p])) { abst[p] = 0; schlange.push(p); } }
+for (let k = 0; k < schlange.length; k++) { const p = schlange[k], i = p % N, j = (p - i) / N;
+  for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = i + a, y = j + b, q = y * N + x; if (an(x, y) === L[p] && abst[q] < 0) { abst[q] = abst[p] + 1; schlange.push(q); } } }
+const tempel = [];
+for (const g of gebiete.filter(g => g.zone === 4)) {
+  let best = null;
+  for (let p = 0; p < N * N; p++) if (L[p] === g.id) { const i = p % N, j = (p - i) / N, x = ((i + .5) / N * 2 - 1) * H, y = ((j + .5) / N * 2 - 1) * H;
+    const wert = abst[p] * ZELLE - Math.max(0, 60000 - Math.min(...paesse.map(q => Math.hypot(q.x - x, q.y - y)))) * 2;
+    if (!best || wert > best.wert) best = { wert, x, y }; }
+  tempel.push({ gebiet: g.id, x: Math.round(best.x), y: Math.round(best.y), art: tempel.length % 2 ? 'waechtertempel' : 'tempel' });
+}
+
+const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, tempel, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
 const kopf = '// Datenmodell der Zonen-Karte (erzeugt von karte_erzeugen.js – nicht von Hand ändern)\n' +
   '// gebiete: { id, zone 1–4 (5 = Mitte), name, boden, mitte, rand: Grenzen-Ids (−id−1 = rückwärts), umriss: Punkte }\n' +
   '// grenzen: { id, a, b (−1 = Kartenrand), punkte } · paesse: { id, a, b, grenze, x, y, senk (Grenze läuft senkrecht), stufe 1–5 }\n' +
+  '// tempel: { gebiet, x, y, art tempel|waechtertempel } – je Zone-4-Gebiet einer\n' +
   '// oeffnen: Stufe → Tag, an dem die Pässe aufgehen (von außen nach innen); thron.tag: ab dann zählt der Thron\n';
 fs.writeFileSync(path.join(__dirname, 'karte_daten.js'), kopf + 'const KARTE_ZONEN = ' + JSON.stringify(daten) + ';\n');
 console.log('Gebiete', gebiete.length, '· Grenzen', grenzen.length, '(Rand', grenzen.filter(g => g.b === -1).length + ') · Pässe', paesse.length,
