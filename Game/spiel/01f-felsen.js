@@ -8,7 +8,8 @@
 // Weg um die Berge: kürzester Weg über die Hüllen-Ecken (Sichtbarkeits-Graph, Dijkstra), Ecken als Bogen abgerundet und in Punkte
 // zerlegt → marchPath/marchPointAt/pathSoFar laufen darauf; die Marschdauer ist die Länge dieses Wegs (marschStrecke).
 // Schalter WELT_FELSEN = false: keine Berge, alle Märsche wie vorher (Luftlinie über die Brücken).
-const WELT_FELSEN = true;
+// Seit den Zonen wie RoK (LIESMICH 11c Punkt 30, Alexander 7.10.: „keine Deko-Felsen“) aus: das Gebirge steht an den Grenzen.
+const WELT_FELSEN = false;
 const FELS_ABSTAND = { basis: 1400, gross: 3000, band: 900, bruecke: 2000, kueste: 700, feld: 1200, berg: 2200 };   // frei um die Hülle (Welt-Einheiten)
 const FELS_RAND = 500, FELS_ECKE = 300, FELS_BOGEN = 700, FELS_UMWEG_MAX = 1.6;   // Hülle um die Gipfel · Wegpunkte davor · Bogen-Radius
 const FELS_OHNE = { volcano: 1, swamp: 1 };          // Vulkan und Sumpf haben schon ihre Krater/Tümpel: keine Berge
@@ -115,10 +116,7 @@ function felsKreuzt(f, ax, ay, bx, by) {             // geht die Strecke a→b d
     return pointInPolygon((ax + bx) / 2, (ay + by) / 2, P) || pointInPolygon(ax, ay, P) || pointInPolygon(bx, by, P);
 }
 const felsLaenge = w => { let s = 0; for (let i = 1; i < w.length; i++) s += Math.hypot(w[i].x - w[i - 1].x, w[i].y - w[i - 1].y); return s; };
-const felsLmAn = (() => { const m = {}; let fertig = false; return (x, y) => {   // Region unter einem Punkt (Raster der Regionen; Berge liegen innen)
-    if (!fertig) { for (const lm of landmasses) m[lm.q + ',' + lm.r] = lm.id; fertig = true; }
-    return m[Math.round(x / HEX_SPACING) + ',' + Math.round(y / HEX_SPACING)]; }; })();
-function felsenBei(x, y) { felsenListe(); const id = felsLmAn(x, y); return felsenDaten && id !== undefined ? felsenDaten.proLm[id] || [] : []; }
+function felsenBei(x, y) { felsenListe(); const id = gebietAn(x, y); return felsenDaten && id !== undefined ? felsenDaten.proLm[id] || [] : []; }
 // Liegt (x, y) auf einem Bergstock (mit Rand)? Für Lager, Tagesboss und Wälder, die ihren Platz selbst suchen.
 function felsAuf(x, y, rand) { if (!WELT_FELSEN) return false; for (const f of felsenBei(x, y)) if (felsAbstand(f.poly, x, y) < (rand || 0)) return true; return false; }
 function felsWegUm(a, b, fs) {                       // kürzester Weg a → b um die Hüllen fs (Ecken-Graph, Dijkstra) → Ecken-Punkte, oder null

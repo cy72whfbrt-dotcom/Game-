@@ -145,10 +145,10 @@ function claimAch(a) {
 }
 document.getElementById('achList').addEventListener('click', e => {
     if (e.target.closest('[data-ach-all]')) { const l = achClaimable(), n = l.reduce((s, a) => s + claimAch(a), 0); if (!n) return;
-        saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für ' + l.length + ' Erfolge.', 2500); renderAchievements(); achCheck(); return; }
+        saveProgression(); updateHud(); sfx('gem'); beuteFenster('Erfolge', [{ a: 'gems', n }], { unter: l.length + ' Erfolge abgeholt' }); renderAchievements(); achCheck(); return; }
     const b = e.target.closest('[data-ach]'); if (!b || b.disabled) return;
     const a = ACHIEVEMENTS.find(q => q.id === b.dataset.ach), n = claimAch(a); if (!n) return;
-    saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für „' + a.name + '“.', 2500);
+    saveProgression(); updateHud(); sfx('gem'); beuteFenster('Erfolg', [{ a: 'gems', n }], { unter: a.name });
     renderAchievements(); achCheck();
 });
 document.getElementById('achList').addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ach-done')) achOpenDone = e.target.open; }, true);
@@ -217,7 +217,7 @@ function openRulerProfile(who) {
     document.getElementById('rulerBody').innerHTML =
         '<div class="rp-stats"><div class="rp-stat"><small>Macht</small><b>' + fmtCompact(powerOf(pr)) + '</b></div><div class="rp-stat"><small>Basen</small><b>' + fmtNum(pr.bases) + '</b></div>' +
         '<div class="rp-stat"><small>Stufe</small><b>' + pr.lvl + '</b></div><div class="rp-stat"><small>Tempel</small><b>' + (rulerOwner() === who ? 'Herrscher' : pr.temple ? escapeHtml(pr.temple.name) : '–') + '</b></div></div>' +
-        (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now()) + '</span></div>' : '') +
+        (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (neulingVon(who) >= ownerShieldUntil(who) ? 'Anfängerschutz – noch ' + fmtHours(neulingVon(who) - Date.now()) + ' (oder bis 100.000 Truppen)' : (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now())) + '</span></div>' : '') +
         (verdeckt ? '' : passChip(who)) + (last ? '<div class="rp-last">' + last + '</div>' : '') +
         (verdeckt ? verdecktHtml :
         '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +

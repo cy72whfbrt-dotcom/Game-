@@ -31,7 +31,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       return [...d.querySelectorAll('[data-mk-menge]')].map(b => +b.dataset.mkMenge).concat([AUF.marktLimit('player')]); })();
     // Gegner auf der Karte: neutral × 1/1800, die Thron-Tore nie unter 150.000 + 50.000
     const tore = islands.filter(i => i.type === 'gate' && i.gateKind === 'throne'), mega = islands.find(i => i.type === 'megaTemple');
-    const rand = islands.filter(i => i.type === 'tower' && !i.startSlot && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring === 8);
+    const rand = islands.filter(i => i.type === 'tower' && !i.startSlot && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].zone === 1);   // (Zone 1 = außen)
     o.schutzRoh = [AUF.burgSchutzRoh('player', 1), AUF.burgSchutz('player', 1)];
     o.thronTor = [tore.length > 0, tore.every(t => t.neutralTroops >= 150000 && t.neutralDefense >= 50000)];
     o.mega = [mega.neutralTroops, mega.neutralDefense];

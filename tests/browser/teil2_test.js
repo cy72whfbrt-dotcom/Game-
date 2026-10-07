@@ -14,7 +14,7 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
   await zu(); const out = {};
   // Stadt: jedes Gebäude
   wo = 'stadt'; await ev(() => document.getElementById('cityNavBtn').click()); await p.waitForTimeout(1500);
-  const lots = await ev(() => Object.keys(CITY_LOTS)); out.stadt = [];
+  const lots = await ev(() => Object.keys(CITY_ORTE)); out.stadt = [];
   for (const id of lots) { wo = 'stadt/' + id; const r = await ev(id => { try { cityOpenId = id; renderCitySheet(); document.getElementById('citySheet').hidden = false; const t = document.getElementById('citySheet').innerText; return t.split('\n').filter(Boolean).slice(0, 2).join(' / ').slice(0, 60); } catch (e) { return 'FEHLER ' + e.message; } }, id); out.stadt.push(id + ': ' + r); await pruef(wo); }
   await p.screenshot({ path: path.join(OUT, 'y_stadt_sheet.png') });
   // Helden-Halle

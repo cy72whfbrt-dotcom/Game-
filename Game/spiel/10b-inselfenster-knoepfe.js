@@ -162,7 +162,7 @@ attackBtn.addEventListener('click', () => {
         const troopsToSend = Math.max(1, Math.min(picked || available, available));
 
         nextAttackHero = previewHero; nextAttackHero2 = previewHero2;
-        launchAttack(sourceId, targetId, null, troopsToSend);
+        if (launchAttack(sourceId, targetId, null, troopsToSend)) heroLetzteMerken(previewHero, previewHero2);
         nextAttackHero = null; nextAttackHero2 = null;
         previewSourceId = null;
         closeIslandPopup();

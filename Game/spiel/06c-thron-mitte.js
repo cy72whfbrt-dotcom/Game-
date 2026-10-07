@@ -8,10 +8,8 @@ const THRONE_OFFERS = [
     { id: 'coins',  name: 'Münzen',              icon: 'coin',   cost: 150 },
     { id: 'troops', name: 'Truppen',             icon: 'troops', cost: 200 },
     { id: 'crate',  name: 'Ausrüstungskiste',    icon: 'shop',   cost: 60 },
-    { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 },
-    ...RING_SKINS.filter(r => r.tp).map(r => ({ id: 'ring_' + r.id, name: 'Ring „' + r.name + '“', icon: 'crown', cost: r.tp, once: true, ring: r.id }))
+    { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 }
 ];
-const throneOwned = (who, o) => !!o.ring && ringSkinsOf(who).includes(o.ring);   // (Thronhüter + Thron-Rahmen gibt es nicht mehr – Rahmen nicht zu kaufen, Alexander 6.10.)
 var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || { pts: 0 };
 (() => { const now = Date.now(), ts = throneState;               // no points or volleys pile up while the game was closed
     if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS;
@@ -37,24 +35,23 @@ function hourProduction(who) {                       // what an empire makes in 
 const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG;
 function throneAmount(who, id) { const hp = hourProduction(who);
     return id === 'coins' ? Math.max(wirtM(5000), Math.round(hp.coins * THRONE_STUNDEN)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
-function throneGive(who, id) {                        // hands one offer over; returns what it was, for the hint
-    const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
-    if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; return '+' + fmtCompact(n) + ' Münzen'; }
-    if (id === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
+function throneGive(who, id, aus) {                   // hands one offer over; returns what it was, for the hint (aus: Belohnungs-Kacheln dazu, 05e)
+    aus = aus || []; const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
+    if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; aus.push({ a: 'coins', n }); return '+' + fmtCompact(n) + ' Münzen'; }
+    if (id === 'gems') { if (b) b.gems += n; else gems += n; aus.push({ a: 'gems', n }); return '+' + n + ' Edelsteine'; }
     if (id === 'troops') { const to = b ? botCapitalOf(who) : rewardBaseId(); if (to === null || to === undefined) return '';
-        if (b) islandTroops[to] = (islandTroops[to] || 0) + n; else eigeneTruppenDazu(to, n, 'thron'); return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
+        if (b) islandTroops[to] = (islandTroops[to] || 0) + n; else eigeneTruppenDazu(to, n, 'thron'); aus.push({ a: 'tr', n }); return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
     if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
         if (b) { b.spare[slot][r]++; return ''; }
-        addInventoryItem(slot, r, 1); sfx('crate'); questProgress('crate', 1); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
-    if (id.startsWith('ring_')) { const r = ringSkinDef(id.slice(5)); if (!r) return ''; ringGive(who, r.id); return 'Ring „' + r.name + '“ – schon angelegt'; }
+        addInventoryItem(slot, r, 1); aus.push({ a: 'item', slot, r }); sfx('crate'); questProgress('crate', 1); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
     return '';
 }
 function throneBuy(id) {
     const o = THRONE_OFFERS.find(x => x.id === id); if (!o) return;
-    if (o.once && throneOwned('player', o)) return;
     if ((throneState.pts || 0) < o.cost) { flashHint('Zu wenig Thron-Punkte – das kostet ' + fmtNum(o.cost) + '.', 3000); return; }
-    throneState.pts -= o.cost; const what = throneGive('player', id); saveThrone(); updateHud(); saveGame(); saveProgression();
-    flashHint('Gekauft: ' + what + '.', 3500); sfx('coin'); renderShop();
+    const aus = []; throneState.pts -= o.cost; const what = throneGive('player', id, aus); saveThrone(); updateHud(); saveGame(); saveProgression();
+    if (aus.length) beuteFenster(o.name, aus, { kiste: id === 'crate' ? 'aus' : id === 'royal' ? 'royal' : null, unter: 'Thron-Shop' }); else flashHint('Gekauft: ' + what + '.', 3500);
+    sfx('coin'); renderShop();
 }
 var throneShots = [];                                  // volleys flying across the map (screen-space drawing below)
 function throneAward(silent, at) {                    // at: when this award happened (the time you were away is caught up afterwards)
@@ -150,21 +147,16 @@ function renderThroneShop() {
             '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
             (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Edelsteine · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
         '</div><p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, wer dort Verstärkung stehen hat ' + THRONE_PTS_VERST + ', jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
-            '<p class="mail-intro">Thron-Rahmen, Titel und Ringe für Thron-Punkte gibt es unter Profil → Aussehen, die Thron-Punkte-Rangliste unter Profil → Rangliste.</p></div>' +
+            '<p class="mail-intro">Die Thron-Punkte-Rangliste steht unter Profil → Rangliste.</p></div>' +
         '<div class="waren waren--2">' +
-        THRONE_OFFERS.filter(o => !o.once).map(o => { const n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet; Waren als Karten wie die Kisten
+        THRONE_OFFERS.map(o => { const n = throneAmount('player', o.id);   // Waren als Karten wie die Kisten
             const sub = o.id === 'coins' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ertrag' : o.id === 'troops' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ausbildung'
                 : o.id === 'gems' ? 'für Kisten und Helden' : o.id === 'crate' ? '1 Teil · Grau bis Episch' : o.id === 'royal' ? 'mindestens Lila' : 'gibt es nur hier';
             const k = o.id === 'crate' ? 'aus' : o.id === 'royal' ? 'royal' : null;
-            const bild = k ? kisteBild(k, 't') : o.id === 'coins' ? muenzBild() : icon(o.icon, 'ico-' + o.icon);
-            return '<div class="ware ware--klein" data-r="' + (k ? KISTE_R[k] : 'navy') + '">' + (o.id === 'royal' ? '<span class="band">Mind. Lila</span>' : '') + '<span class="ware-bild' + (k || o.id === 'coins' ? '' : ' ware-bild--ic') + '">' + bild + '</span>' +
+            const bild = k ? kisteBild(k) : '<img class="kiste-bild" src="bilder/' + (BEUTE_ART[o.id === 'troops' ? 'tr' : o.id] || BEUTE_ART.gems).b + '.webp" alt="" draggable="false">';   // KI-Bilder (05e)
+            return '<div class="ware ware--klein" data-r="' + (k ? KISTE_R[k] : 'navy') + '">' + (o.id === 'royal' ? '<span class="band">Mind. Lila</span>' : '') + '<span class="ware-bild">' + bild + '</span>' +
                 '<span class="ware-txt"><b class="ware-name">' + o.name + '</b><small>' + sub + '</small></span>' +
                 '<button type="button" class="ware-preis thron" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button></div>'; }).join('') + '</div>');
-}
-function muenzBild() {                                // Münzstapel für die Thron-Karte „Münzen“
-    const m = (x, y) => '<ellipse cx="' + x + '" cy="' + (y + 4) + '" rx="22" ry="8" fill="#8a5d14"/><rect x="' + (x - 22) + '" y="' + y + '" width="44" height="4" fill="#a8761c"/><ellipse cx="' + x + '" cy="' + y + '" rx="22" ry="8" fill="url(#mbz)" stroke="#5a3b06" stroke-width="1"/><ellipse cx="' + x + '" cy="' + y + '" rx="13" ry="4.5" fill="none" stroke="#a8761c" stroke-width="1.5"/>';
-    return '<svg viewBox="0 0 120 100" aria-hidden="true"><defs><linearGradient id="mbz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0b8"/><stop offset="1" stop-color="#e2a93a"/></linearGradient></defs>' +
-        '<ellipse cx="60" cy="91" rx="44" ry="6" fill="#000" opacity=".5"/>' + m(42, 76) + m(42, 66) + m(42, 56) + m(78, 78) + m(78, 68) + m(60, 46) + m(60, 36) + kisteStern(98, 20, 6, .95) + kisteStern(20, 30, 3.5, .7) + '</svg>';
 }
 const shopInfoAuf = new Set();                      // Shop: offene Erklärungen hinter „i“ (Thron baut sie bei jedem Takt neu – darum gemerkt)
 let shopTab = 'gems';

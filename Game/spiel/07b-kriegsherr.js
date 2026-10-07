@@ -20,10 +20,7 @@ function defeatBoss(boss) {
     saveProgression(); saveGame(); updateHud();
     endWander(null);
     document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.';
-    const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[WANDER_CRATE];
-    list.innerHTML = '<li style="border-color:' + rd.color + '66">' + icon('shop') + '<span>Kiste</span><b style="color:' + rd.color + '">mind. ' + rd.label + '</b></li>' +
-        '<li>' + icon('gem', 'ico-gem') + '<span>Edelsteine</span><b>+' + rewardGems + '</b></li><li>' + icon('star') + '<span>Helden-Splitter</span><b>+' + shN + '</b></li>';
-    [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
+    beuteLis([{ a: 'kiste', k: kisteVonR(WANDER_CRATE), r: WANDER_CRATE, min: true }, { a: 'gems', n: rewardGems }, { a: 'sh', n: shN }], document.getElementById('rewardModalRewards'));   // Kacheln wie RoK (05e)
     bossRewardPending = true;
     setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 9800);   // after the fight on the map
 }
