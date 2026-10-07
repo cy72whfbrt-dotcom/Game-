@@ -10,13 +10,13 @@ let toreOffen = true;
 
 // ===== Bilder (wie 03a: halbierte Fassungen, damit verkleinert nichts flimmert) =====
 const DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
-  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'wald1', 'wald2'];
+  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'wald1', 'wald2', 'thron'];   // (thron: aus dem KI-Blatt ausgeschnitten, liegt hier im Ordner)
 const KB = { img: {}, mip: {}, muster: {}, fertig: false };
 let offen = DATEIEN.length;
 for (const n of DATEIEN) { const im = new Image();
-  im.onload = () => { KB.img[n] = im; if (!--offen) { KB.fertig = true; objekteBauen(); zeichnen(); } };
+  im.onload = () => { KB.img[n] = im; if (!--offen) { KB.fertig = true; objekteBauen(); UEB = null; zeichnen(); } };
   im.onerror = () => { --offen; };
-  im.src = (typeof KARTE_BILDER !== 'undefined' ? KARTE_BILDER[n] : KARTE_BILD_PFAD + 'karte_' + n + '.webp'); }
+  im.src = typeof KARTE_BILDER !== 'undefined' ? KARTE_BILDER[n] : n === 'thron' ? 'karte_thron.webp' : KARTE_BILD_PFAD + 'karte_' + n + '.webp'; }
 function kbBild(n, px) {
   const m = KB.mip[n] || (KB.mip[n] = [KB.img[n]]);
   let i = 0;
@@ -36,7 +36,10 @@ const ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_ho
 const SCHER = .4;                                     // Stücke folgen schrägen Grenzen nur bis zu dieser Scherung (stärker wirkt der Fels zerrissen)
 const ZOOM = { nah: 0.05, mittel: 0.012, weit: 0.004, max: 0.16 };
 const BILD_ZOOM = 0.0025;                             // darunter: Übersicht (ein Bild der ganzen Karte)
-const ZONEN_FARBE = { 1: [[95, 154, 69], [63, 116, 52]], 2: [[47, 95, 126], [36, 80, 108]], 3: [[91, 58, 134], [91, 58, 134]] };   // ganz weit (Vorgabe Designer): hell/dunkel abwechselnd
+const ZONEN_FARBE = { 1: [[104, 150, 70], [74, 118, 56]], 2: [[58, 102, 150], [44, 84, 130]], 3: [[100, 66, 160], [100, 66, 160]] };   // Tönung ganz weit: hell/dunkel abwechselnd
+const ZONEN_TOENUNG = { 1: .35, 2: .62, 3: .6 };       // so stark liegt die Zonenfarbe ganz weit über dem Boden
+const BODEN_DAZU = { 2: ['innen', .35, 'rgba(34,44,22,.30)'] };   // Zone 2: auf das gelbgrüne Gras etwas karge Erde, dunkler (deutlich anders als Zone 1 und der Sand der Mitte)
+const THRON = { breit: 70000, ax: .5, ay: .56, minPx: 64 };   // Thron-Tempel in der Mitte (Welt-Breite; ganz weit nie kleiner als minPx)
 const PASS_FARBE = { gruen: '#5cbf62', blau: '#4f9ef2', lila: '#a970f2' };
 const WEG = { lang: 13000, breit: 2400 };              // Weg durchs Tor: so weit in beide Gebiete, so breit
 const skala = z => 1 + .5 * Math.max(0, Math.min(1, (0.03 - z) / 0.018));   // mittlerer Zoom: Ketten, Knoten, Tore bis 1,5×
@@ -113,15 +116,18 @@ function objekteBauen() {
   KO = { liste, zellen };
 }
 
-// ===== Übersicht: einmal die ganze Karte als Bild (Zonenfarben + Boden, Gebirgsbänder) =====
+// ===== Übersicht: einmal die ganze Karte als Bild (Boden je Zone, weich in Zonenfarbe getönt, Gebirge aus den Bildern) =====
 let UEB = null;
 function uebersicht() {
   if (UEB) return UEB;
   const n = 3072, k = n / (2 * H), c = document.createElement('canvas'); c.width = c.height = n;
-  const g = c.getContext('2d'); g.setTransform(k, 0, 0, k, H * k, H * k);
-  for (const geb of KD.gebiete) { g.fillStyle = `rgb(${geb.farbe.join(',')})`; g.fill(geb.pfad); }
-  baender(g, 1 / k);
-  g.strokeStyle = '#a970f2'; g.lineWidth = 2.5 / k; g.stroke(KD.gebiete[0].pfad);
+  const g = c.getContext('2d'), v = { l: -H, t: -H, r: H, b: H }; g.setTransform(k, 0, 0, k, H * k, H * k);
+  for (const geb of KD.gebiete) {
+    if (!KB.fertig) { g.fillStyle = `rgb(${geb.farbe.join(',')})`; g.fill(geb.pfad); continue; }
+    g.save(); g.clip(geb.pfad); gebietBoden(g, geb, k / dpr, v); g.fillStyle = `rgba(${geb.farbe.join(',')},${ZONEN_TOENUNG[geb.zone]})`; g.fillRect(-H, -H, 2 * H, 2 * H); g.restore(); }
+  if (KB.fertig) { g.lineJoin = 'round'; g.strokeStyle = 'rgba(58,52,40,.8)'; g.lineWidth = 6000 * GROSS; g.stroke(kettenPfad); gelaende(g, k, H * k, H * k, 2.4, v); }
+  else baender(g, 1 / k);
+  g.setTransform(k, 0, 0, k, H * k, H * k); g.strokeStyle = 'rgba(190,150,240,.8)'; g.lineWidth = 2 / k; g.stroke(KD.gebiete[0].pfad);
   return (UEB = c);
 }
 function baender(g, px, unten) {                     // (Weltmaß gesetzt) Gebirge als dunkles Band mit Lichtkante; px = Welt pro Pixel; unten: unter den Bildern (schmal, ohne dunklen Rand)
@@ -134,11 +140,18 @@ function baender(g, px, unten) {                     // (Weltmaß gesetzt) Gebir
 
 // ===== Boden je Zone (Kachel + gedrehte größere Lagen, wie 03a) =====
 const BODEN_LAGEN = [[0, 1, 1], [37, 1.618, .42], [-61, 2.414, .3]];
+const BODEN_GROESSE = { sand: 2.2 };                 // Sand mit Steinplatten größer gekachelt (sonst weit nur eine flache Fläche)
 function bodenMuster(art, z, lage) {
-  const c = kbBild('boden_' + art, MASS.boden * z * dpr), key = art + c.width + ':' + lage, [dr, gr] = BODEN_LAGEN[lage];
+  const b = MASS.boden * (BODEN_GROESSE[art] || 1), c = kbBild('boden_' + art, b * z * dpr), key = art + c.width + ':' + lage, [dr, gr] = BODEN_LAGEN[lage];
   let p = KB.muster[key];
-  if (!p) { p = KB.muster[key] = ctx.createPattern(c, 'repeat'); p.setTransform(new DOMMatrix().rotate(dr).scale(MASS.boden * gr / c.width)); }
+  if (!p) { p = KB.muster[key] = ctx.createPattern(c, 'repeat'); p.setTransform(new DOMMatrix().rotate(dr).scale(b * gr / c.width)); }
   return p;
+}
+function gebietBoden(g, geb, z, v) {                 // (Weltmaß, auf das Gebiet geschnitten) Boden der Zone
+  bodenFuellen(g, geb.boden, z, v);
+  const d = BODEN_DAZU[geb.zone]; if (!d) return;
+  g.save(); g.globalAlpha = d[1]; g.fillStyle = bodenMuster(d[0], z, 1); g.fillRect(v.l, v.t, v.r - v.l, v.b - v.t);
+  g.globalAlpha = 1; g.fillStyle = d[2]; g.fillRect(v.l, v.t, v.r - v.l, v.b - v.t); g.restore();
 }
 function bodenFuellen(g, art, z, v) {
   const n = art === 'innen' || art === 'sand' ? 3 : 2;
@@ -157,19 +170,19 @@ function zeichnen() {
   } else {
     weltSetzen(ctx); ctx.save(); ctx.beginPath(); ctx.rect(-H, -H, 2 * H, 2 * H); ctx.clip();
     for (const g of KD.gebiete) { if (g.bb.r < v.l || g.bb.l > v.r || g.bb.b < v.t || g.bb.t > v.b) continue;
-      ctx.save(); ctx.clip(g.pfad); bodenFuellen(ctx, g.boden, z, v);
-      if (g.zone === 2) { ctx.fillStyle = 'rgba(40,80,120,.10)'; ctx.fillRect(v.l, v.t, v.r - v.l, v.b - v.t); }   // Zone 2 etwas kühler (auch nah erkennbar)
+      ctx.save(); ctx.clip(g.pfad); gebietBoden(ctx, g, z, v);
       const t = Math.max(0, Math.min(1, (0.0035 - z) / (0.0035 - BILD_ZOOM))) * .55;   // weiter draußen: Zonenfarbe kommt dazu (gleitet in die Übersicht)
       if (t > 0) { ctx.fillStyle = `rgba(${g.farbe.join(',')},${t})`; ctx.fillRect(v.l, v.t, v.r - v.l, v.b - v.t); }
       ctx.restore();
       ctx.lineWidth = 5000; ctx.strokeStyle = bodenMuster(g.boden, z, 0); ctx.stroke(g.pfad); }   // Boden ein Stück unter die Kette ziehen: keine Naht zwischen den Gebieten
     wege(v); ctx.restore();
     if (z < 0.006) baender(ctx, 1 / z, true);         // weit: unter den Bildern ein Band, damit die Kette geschlossen wirkt
-    gelaende(v);
+    gelaende(ctx, dpr * z, dpr * (W / 2 - cam.x * z), dpr * (HT / 2 - cam.y * z), skala(z), v);
   }
   thron();
   if (z < BILD_ZOOM) { namen(); passPunkte(); }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  document.getElementById('info').classList.toggle('kurz', z >= BILD_ZOOM);   // die Legende nur ganz weit (nah bleibt die Karte frei)
   document.getElementById('stufe').textContent = stufe() + ' · Zoom ' + z.toFixed(4) + ' · ' + KD.gebiete.length + ' Gebiete · ' + KD.paesse.length + ' Pässe';
 }
 function wege(v) {                                    // Weg durchs Quer-Tor: quer zur Grenze in beide Gebiete (das Tor für Nord-Süd-Ketten hat ihn im Bild)
@@ -179,25 +192,23 @@ function wege(v) {                                    // Weg durchs Quer-Tor: qu
     ctx.globalAlpha = .85; ctx.lineWidth = WEG.breit; ctx.stroke(); ctx.globalAlpha = 1; }
   ctx.lineCap = 'butt';
 }
-function gelaende(v) {
-  const k0 = dpr * cam.z, E = dpr * (W / 2 - cam.x * cam.z), F = dpr * (HT / 2 - cam.y * cam.z), sk = skala(cam.z), hier = new Set();
+function gelaende(g, k0, E, F, sk, v) {              // Gelände-Bilder im Weltrechteck v: Gerät = k0 · Welt + (E, F); sk: Vergrößerung der Ketten/Tore
+  const hier = new Set();
   const drin = o => { const s = o.gross ? sk : 1; return o.x + (o.bb.r - o.x) * s > v.l && o.x + (o.bb.l - o.x) * s < v.r && o.y + (o.bb.b - o.y) * s > v.t && o.y + (o.bb.t - o.y) * s < v.b; };
   for (let cx = Math.floor(v.l / ZELLE) - 1; cx <= Math.floor(v.r / ZELLE); cx++) for (let cy = Math.floor(v.t / ZELLE) - 1; cy <= Math.floor(v.b / ZELLE); cy++)
     for (const o of KO.zellen.get(cx + ',' + cy) || []) if (drin(o)) hier.add(o);
   for (const o of [...hier].sort((a, b) => a.ord - b.ord)) {
     const k = o.gross ? k0 * sk : k0, px = o.w * k; if (px < 2) continue;
     let n = o.n; if (o.tor) n = o.tor.senk ? (toreOffen ? 'tor_senk_offen' : 'tor_senk_zu') : (toreOffen ? 'tor_offen' : 'tor_zu');
-    ctx.setTransform(k * o.f, k * o.sy * o.f, k * o.sx, k, k0 * o.x + E, k0 * o.y + F);
-    ctx.drawImage(kbBild(n, px), -o.ax * o.w, -o.ay * o.h, o.w, o.h);
+    g.setTransform(k * o.f, k * o.sy * o.f, k * o.sx, k, k0 * o.x + E, k0 * o.y + F);
+    g.drawImage(kbBild(n, px), -o.ax * o.w, -o.ay * o.h, o.w, o.h);
   }
-  weltSetzen(ctx);
 }
-function thron() {                                    // Platzhalter, bis das KI-Bild des Throns da ist
-  const t = KD.thron, x = sx(t.x), y = sy(t.y), r = Math.max(7, 9000 * cam.z);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = '#e7c35a'; ctx.fill(); ctx.lineWidth = Math.max(2, r * .15); ctx.strokeStyle = '#4a2f10'; ctx.stroke();
-  ctx.font = `700 ${Math.round(Math.max(12, Math.min(28, r * .5)))}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(30,20,8,.85)'; ctx.strokeText('Thron', x, y + r + 4); ctx.fillStyle = '#fff2c8'; ctx.fillText('Thron', x, y + r + 4);
+function thron() {                                    // Thron-Tempel (KI-Bild) auf dem Sand der Mitte; ganz weit nie kleiner als THRON.minPx
+  const t = KD.thron, im = KB.img.thron; if (!im) return;
+  const w = Math.max(THRON.breit * cam.z, THRON.minPx), h = w * im.height / im.width, x = sx(t.x), y = sy(t.y);
+  if (x + w < 0 || x - w > W || y + h < 0 || y - h > HT) return;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.drawImage(kbBild('thron', w * dpr), x - w * THRON.ax, y - h * THRON.ay, w, h);
 }
 function passPunkte() {                               // Übersicht: Pässe als Punkte in Zonenfarbe (zu: blass)
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -242,7 +253,7 @@ const los = e => { finger.delete(e.pointerId); griff = null; };
 cv.addEventListener('pointerup', los); cv.addEventListener('pointercancel', los);
 cv.addEventListener('wheel', e => { e.preventDefault(); zoomUm(e.clientX, e.clientY, cam.z * Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015))); }, { passive: false });
 document.querySelectorAll('#leiste [data-zoom]').forEach(b => b.addEventListener('click', () => zoomStufe(b.dataset.zoom)));
-document.getElementById('tore').addEventListener('click', e => { toreOffen = !toreOffen; e.target.textContent = toreOffen ? 'Tore zu' : 'Tore auf'; neu(); });
+document.getElementById('tore').addEventListener('click', e => { toreOffen = !toreOffen; UEB = null; e.target.textContent = toreOffen ? 'Tore zu' : 'Tore auf'; neu(); });
 function groesse() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; HT = innerHeight; cv.width = Math.round(W * dpr); cv.height = Math.round(HT * dpr); begrenzen(); neu(); }
 addEventListener('resize', groesse);
 groesse(); zoomStufe('ganz');
