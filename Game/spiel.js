@@ -1747,7 +1747,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     // (Hauptstädte kann man angreifen – Alexander 4.10. –, aber nie erobern: siehe resolveAttack / capitalHolds)
     const grp = naechsteGruppe;
     if (!canReach(source.landmassId, target.landmassId, attackerBotId || 'player')) {   // (für alle gleich: Spieler, Mitspieler, Rally, Weltrechner – nur über offene, eigene Pässe)
-        if (!attackerBotId) flashHint('Kein Weg nach ' + islandTitle(target) + ' – ' + (wegGrund(source.landmassId, target.landmassId, 'player') || 'ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.'), 5000); return false; }
+        if (!attackerBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.', 5000); return false; }   // (eine Meldung: der genaue Grund, sonst „Kein Weg …“)
     if (!marschPlatz(attackerBotId || 'player', grp, sourceId)) return false;   // alle Marsch-Plätze belegt (Burg-Stufe)
     if (!attackerBotId && !rechnet()) {                           // Zuschauer: der Weltrechner schickt die Truppen los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops, target.id)) return false;
@@ -1810,7 +1810,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     if (!source || !target || rawTroops <= 0) return;
     const grp = naechsteGruppe;
     if (!canReach(source.landmassId, target.landmassId, senderBotId || 'player')) {   // (für alle gleich – vorher schickte das Handy los, der Weltrechner lehnte still ab)
-        if (!senderBotId) flashHint('Kein Weg nach ' + islandTitle(target) + ' – ' + (wegGrund(source.landmassId, target.landmassId, 'player') || 'ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.'), 5000); return; }
+        if (!senderBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return; }
     if (!marschPlatz(senderBotId || 'player', grp)) return;          // Marsch-Plätze (Paket D)
     if (!senderBotId && !rechnet()) {                             // Zuschauer: der Weltrechner schickt sie los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return;
@@ -5675,14 +5675,15 @@ function resetSkills() {
     flashHint('Fähigkeiten zurückgesetzt: ' + fmtNum(spent) + ' Fähigkeitspunkte sind wieder frei.', 3500);
 }
 // Gems-Käufe ab 500 (und Helden-Zurücksetzen): erst „Wirklich? N Gems“, erst der zweite Tipp (nach >450 ms, binnen 4 s) zahlt – wie resetSkills
+// bisZu: ohne Uhr offen, bis der Aufrufer gemsArmAus() ruft (Teleport-Ring: daneben tippen)
 const GEMS_WIRKLICH = 500;
 let gemsArm = null;
-function gemsWirklich(key, cost, btn, immer) {      // → true: jetzt zahlen
+function gemsWirklich(key, cost, btn, immer, bisZu) {      // → true: jetzt zahlen
     if (!immer && cost < GEMS_WIRKLICH) return true;
     const now = Date.now();
-    if (gemsArm && gemsArm.key === key && now - gemsArm.at < 4000) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
+    if (gemsArm && gemsArm.key === key && (gemsArm.bisZu ? gemsArm.btn === btn && btn.isConnected : now - gemsArm.at < 4000)) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
     gemsArmAus(); const t = btn && (btn.querySelector('.lbl') || btn.querySelector('small') || btn);
-    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, timer: setTimeout(gemsArmAus, 4000) };
+    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, bisZu: !!bisZu, timer: bisZu ? 0 : setTimeout(gemsArmAus, 4000) };
     if (t) { btn.classList.add('is-armed'); t.innerHTML = 'Wirklich? ' + icon('gem') + fmtNum(cost); }
     return false;
 }
@@ -9988,6 +9989,7 @@ function tpPruefen(who, x, y) {                  // → null (geht) oder der Gru
     const lmId = gebietAn(x, y), lm = landmasses[lmId];
     if (!lm || Math.abs(x) > FRAME_HALF - 8000 || Math.abs(y) > FRAME_HALF - 8000) return 'Dort ist kein Land.';
     if (lm.tier === 'throne') return 'In die Thron-Mitte kann die Hauptstadt nicht ziehen.';
+    if (Math.hypot(c.x - x, c.y - y) < TP_ABSTAND) return 'Deine Hauptstadt steht schon hier.';   // (kein Umzug an dieselbe Stelle – Teleporter/Edelsteine wären weg)
     if (grenzAbstand(x, y) < KETTE_FREI + BASE_SPACING * .45) return 'Zu nah am Gebirge – such dir einen Platz weiter drinnen.';
     for (const i of islandsByLandmass[lmId] || []) { if (i.id === cap) continue;
         const frei = i.bildR ? i.bildR / .35 * .55 : i.type === 'gate' ? BASE_SPACING * 1.1 : TP_ABSTAND;
@@ -10417,7 +10419,7 @@ function fieldHurt(who, n, hx) { return who === 'player' ? hospitalTake(n, hx ? 
 function fieldTravelSec(from, f, who) { return travelDurationSeconds(from, f, who === 'player' ? undefined : who); }
 function fieldSend(who, homeId, fieldId, troops, hero, hero2) {          // troops leave a base for a field (gathering, or attacking whoever sits there) - a hero (and a Zweitheld) may lead them
     const home = islandById[homeId], f = fieldById[fieldId]; if (!home || !f || troops <= 0) return false;
-    if (!canReach(home.landmassId, f.landmassId, who)) { if (who === 'player') flashHint('Kein Weg zum Feld – ' + (wegGrund(home.landmassId, f.landmassId, 'player') || 'ein fremdes Tor liegt dazwischen.'), 4000); return false; }   // (nur über offene, eigene Pässe)
+    if (!canReach(home.landmassId, f.landmassId, who)) { if (who === 'player') flashHint(wegGrund(home.landmassId, f.landmassId, 'player') || 'Kein Weg zum Feld – ein fremdes Tor liegt dazwischen.', 4000); return false; }   // (nur über offene, eigene Pässe)
     if (!marschPlatz(who)) return false;                                                      // Marsch-Plätze (Paket D)
     if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2);
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
@@ -11974,7 +11976,7 @@ document.getElementById('feldRing').addEventListener('click', e => {
     if (was === 'tp') {
         const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return; }
         const k = teleImRucksack() ? 0 : TP_GEMS; if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine – oder 1 Teleporter aus dem Rucksack.', 3000); return; }
-        if (!gemsWirklich('teleport', k, b, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren? ' + tpPreisHtml(); return; }   // (immer bestätigen – ab 500 „Wirklich?“)
+        if (!gemsWirklich('teleport', k, b, true, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren?<br>' + tpPreisHtml(); return; }   // (immer bestätigen, offen bis daneben getippt wird – feldRingZu)
         if (teleportOrt(x, y)) feldRingZu(); return;
     }
     feldRingZu();

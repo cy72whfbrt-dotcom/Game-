@@ -286,14 +286,15 @@ function resetSkills() {
     flashHint('Fähigkeiten zurückgesetzt: ' + fmtNum(spent) + ' Fähigkeitspunkte sind wieder frei.', 3500);
 }
 // Gems-Käufe ab 500 (und Helden-Zurücksetzen): erst „Wirklich? N Gems“, erst der zweite Tipp (nach >450 ms, binnen 4 s) zahlt – wie resetSkills
+// bisZu: ohne Uhr offen, bis der Aufrufer gemsArmAus() ruft (Teleport-Ring: daneben tippen)
 const GEMS_WIRKLICH = 500;
 let gemsArm = null;
-function gemsWirklich(key, cost, btn, immer) {      // → true: jetzt zahlen
+function gemsWirklich(key, cost, btn, immer, bisZu) {      // → true: jetzt zahlen
     if (!immer && cost < GEMS_WIRKLICH) return true;
     const now = Date.now();
-    if (gemsArm && gemsArm.key === key && now - gemsArm.at < 4000) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
+    if (gemsArm && gemsArm.key === key && (gemsArm.bisZu ? gemsArm.btn === btn && btn.isConnected : now - gemsArm.at < 4000)) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
     gemsArmAus(); const t = btn && (btn.querySelector('.lbl') || btn.querySelector('small') || btn);
-    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, timer: setTimeout(gemsArmAus, 4000) };
+    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, bisZu: !!bisZu, timer: bisZu ? 0 : setTimeout(gemsArmAus, 4000) };
     if (t) { btn.classList.add('is-armed'); t.innerHTML = 'Wirklich? ' + icon('gem') + fmtNum(cost); }
     return false;
 }

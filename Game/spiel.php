@@ -460,6 +460,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
 .anleitung-ok{grid-column:1/-1;justify-self:end}
 body.has-sheet .anleitung{display:none}
+body:has(#feldRing:not([hidden])) .anleitung{display:none}   /* (Feld-Menü auf der Karte offen: Anleitung kurz weg) */
 /* Anleitung: der nächste nötige Knopf pulsiert (06b anleitungZeigen setzt body[data-anl-puls]) */
 @keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
 body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapControls button,#hudRoh),
@@ -1251,6 +1252,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .ware-txt{display:grid;gap:2px;min-width:0;margin-top:2px;flex:1 0 auto;align-content:start}   /* (Name in 2 Zeilen: die Preis-Leisten bleiben auf einer Höhe) */
 .ware-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font:600 15px/1.15 var(--font-display);color:var(--tx-1);text-shadow:0 1px 2px #000;overflow:hidden;hyphens:manual}   /* Cinzel ist breit: lieber 2 Zeilen („Ausrüstungs-|kiste“) als „…“ */
 .ware-txt small{display:block;font:500 12px/1.3 var(--font-ui);color:var(--tx-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ware-txt small.ware-lang{white-space:normal;text-overflow:clip}   /* (Teleporter: Satz in 2–3 Zeilen statt „Hauptstadt an ei…“) */
 .ware-preis{display:flex;align-items:center;justify-content:center;gap:6px;height:44px;margin:8px -10px 0;padding:0 6px;border:0;border-top:1px solid #f6e7bf;cursor:pointer;
   font:800 17px/1 var(--font-ui);color:#1d1406;background:linear-gradient(180deg,#f0dfb0 0%,#d4ad66 45%,#a27832 100%);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
 .ware-preis .icon{width:16px;height:16px;color:var(--res-gem);filter:drop-shadow(0 0 1px rgba(0,0,0,.7))}
@@ -2139,7 +2141,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .feld-ring .cr-btn{border:0;border-radius:50%;background:var(--ui-rund) center/100% 100% no-repeat;box-shadow:0 4px 12px rgba(0,0,0,.5)}
 .feld-ring .cr-btn.is-armed{background-image:var(--ui-rund-an)}
 .feld-ring .fr-ic{width:34px;height:34px;background:var(--b) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
-.feld-ring .cr-btn small{font-size:11px}
+.feld-ring .cr-btn small{font-size:11px;text-align:center}   /* „Hierher teleportieren?“ über dem Preis: 2 Zeilen, schmal */
 .feld-ring .cr-btn small .icon{width:12px;height:12px;vertical-align:-2px}
     </style>
 </head>
@@ -2718,7 +2720,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       </div>
       <div class="sect"><h4>Teleporter</h4><span class="sect-aside">kommt in den Rucksack</span></div>
       <div class="waren waren--3">
-        <div class="ware ware--klein" data-r="lila"><span class="ware-bild"><img class="kiste-bild" src="bilder/ui_sym_verlegen.webp" alt="" draggable="false"></span><span class="ware-txt"><b class="ware-name">Teleporter</b><small>Hauptstadt an eine freie Stelle</small></span>
+        <div class="ware ware--klein" data-r="lila"><span class="ware-bild"><img class="kiste-bild" src="bilder/ui_sym_verlegen.webp" alt="" draggable="false"></span><span class="ware-txt"><b class="ware-name">Teleporter</b><small class="ware-lang">Hauptstadt an eine freie Stelle</small></span>
           <button type="button" class="ware-preis" data-tele-kauf aria-label="Teleporter kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>500</b></button></div>
       </div>
       <button type="button" class="ware-link" data-zum-rucksack><svg class="icon"><use href="#i-crate"/></svg><span id="shopRucksackN">Rucksack ›</span></button>

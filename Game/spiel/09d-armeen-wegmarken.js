@@ -365,7 +365,7 @@ document.getElementById('feldRing').addEventListener('click', e => {
     if (was === 'tp') {
         const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return; }
         const k = teleImRucksack() ? 0 : TP_GEMS; if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine – oder 1 Teleporter aus dem Rucksack.', 3000); return; }
-        if (!gemsWirklich('teleport', k, b, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren? ' + tpPreisHtml(); return; }   // (immer bestätigen – ab 500 „Wirklich?“)
+        if (!gemsWirklich('teleport', k, b, true, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren?<br>' + tpPreisHtml(); return; }   // (immer bestätigen, offen bis daneben getippt wird – feldRingZu)
         if (teleportOrt(x, y)) feldRingZu(); return;
     }
     feldRingZu();

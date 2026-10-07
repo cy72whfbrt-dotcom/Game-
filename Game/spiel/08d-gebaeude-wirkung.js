@@ -200,6 +200,7 @@ function tpPruefen(who, x, y) {                  // → null (geht) oder der Gru
     const lmId = gebietAn(x, y), lm = landmasses[lmId];
     if (!lm || Math.abs(x) > FRAME_HALF - 8000 || Math.abs(y) > FRAME_HALF - 8000) return 'Dort ist kein Land.';
     if (lm.tier === 'throne') return 'In die Thron-Mitte kann die Hauptstadt nicht ziehen.';
+    if (Math.hypot(c.x - x, c.y - y) < TP_ABSTAND) return 'Deine Hauptstadt steht schon hier.';   // (kein Umzug an dieselbe Stelle – Teleporter/Edelsteine wären weg)
     if (grenzAbstand(x, y) < KETTE_FREI + BASE_SPACING * .45) return 'Zu nah am Gebirge – such dir einen Platz weiter drinnen.';
     for (const i of islandsByLandmass[lmId] || []) { if (i.id === cap) continue;
         const frei = i.bildR ? i.bildR / .35 * .55 : i.type === 'gate' ? BASE_SPACING * 1.1 : TP_ABSTAND;

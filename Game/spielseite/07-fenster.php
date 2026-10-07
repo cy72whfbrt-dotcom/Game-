@@ -429,7 +429,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       </div>
       <div class="sect"><h4>Teleporter</h4><span class="sect-aside">kommt in den Rucksack</span></div>
       <div class="waren waren--3">
-        <div class="ware ware--klein" data-r="lila"><span class="ware-bild"><img class="kiste-bild" src="bilder/ui_sym_verlegen.webp" alt="" draggable="false"></span><span class="ware-txt"><b class="ware-name">Teleporter</b><small>Hauptstadt an eine freie Stelle</small></span>
+        <div class="ware ware--klein" data-r="lila"><span class="ware-bild"><img class="kiste-bild" src="bilder/ui_sym_verlegen.webp" alt="" draggable="false"></span><span class="ware-txt"><b class="ware-name">Teleporter</b><small class="ware-lang">Hauptstadt an eine freie Stelle</small></span>
           <button type="button" class="ware-preis" data-tele-kauf aria-label="Teleporter kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>500</b></button></div>
       </div>
       <button type="button" class="ware-link" data-zum-rucksack><svg class="icon"><use href="#i-crate"/></svg><span id="shopRucksackN">Rucksack ›</span></button>

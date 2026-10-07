@@ -185,7 +185,7 @@ function fieldHurt(who, n, hx) { return who === 'player' ? hospitalTake(n, hx ? 
 function fieldTravelSec(from, f, who) { return travelDurationSeconds(from, f, who === 'player' ? undefined : who); }
 function fieldSend(who, homeId, fieldId, troops, hero, hero2) {          // troops leave a base for a field (gathering, or attacking whoever sits there) - a hero (and a Zweitheld) may lead them
     const home = islandById[homeId], f = fieldById[fieldId]; if (!home || !f || troops <= 0) return false;
-    if (!canReach(home.landmassId, f.landmassId, who)) { if (who === 'player') flashHint('Kein Weg zum Feld – ' + (wegGrund(home.landmassId, f.landmassId, 'player') || 'ein fremdes Tor liegt dazwischen.'), 4000); return false; }   // (nur über offene, eigene Pässe)
+    if (!canReach(home.landmassId, f.landmassId, who)) { if (who === 'player') flashHint(wegGrund(home.landmassId, f.landmassId, 'player') || 'Kein Weg zum Feld – ein fremdes Tor liegt dazwischen.', 4000); return false; }   // (nur über offene, eigene Pässe)
     if (!marschPlatz(who)) return false;                                                      // Marsch-Plätze (Paket D)
     if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2);
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);

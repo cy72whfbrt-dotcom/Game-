@@ -305,6 +305,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
 .anleitung-ok{grid-column:1/-1;justify-self:end}
 body.has-sheet .anleitung{display:none}
+body:has(#feldRing:not([hidden])) .anleitung{display:none}   /* (Feld-Menü auf der Karte offen: Anleitung kurz weg) */
 /* Anleitung: der nächste nötige Knopf pulsiert (06b anleitungZeigen setzt body[data-anl-puls]) */
 @keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
 body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapControls button,#hudRoh),

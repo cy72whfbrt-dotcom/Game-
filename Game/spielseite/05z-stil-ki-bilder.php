@@ -217,6 +217,6 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .feld-ring .cr-btn{border:0;border-radius:50%;background:var(--ui-rund) center/100% 100% no-repeat;box-shadow:0 4px 12px rgba(0,0,0,.5)}
 .feld-ring .cr-btn.is-armed{background-image:var(--ui-rund-an)}
 .feld-ring .fr-ic{width:34px;height:34px;background:var(--b) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
-.feld-ring .cr-btn small{font-size:11px}
+.feld-ring .cr-btn small{font-size:11px;text-align:center}   /* „Hierher teleportieren?“ über dem Preis: 2 Zeilen, schmal */
 .feld-ring .cr-btn small .icon{width:12px;height:12px;vertical-align:-2px}
     </style>

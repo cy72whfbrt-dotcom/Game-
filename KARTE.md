@@ -1133,9 +1133,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `geldVon` → Game/aufbau.js:67
 - `gem` → Game/baukunst/08-himmelsfeste-bilder.js:70
 - `gemGeo` → Game/baukunst/08-himmelsfeste-bilder.js:67
-- `gemsArmAus` → Game/spiel/05b-truhe-skills.js:301
-- `gemsArmed` → Game/spiel/05b-truhe-skills.js:300
-- `gemsWirklich` → Game/spiel/05b-truhe-skills.js:291
+- `gemsArmAus` → Game/spiel/05b-truhe-skills.js:302
+- `gemsArmed` → Game/spiel/05b-truhe-skills.js:301
+- `gemsWirklich` → Game/spiel/05b-truhe-skills.js:292
 - `geprueftHolen` → Game/weltrechner/start.js:283
 - `geraet_bekannt` → Game/server/02-sicherheit-datenlecks.php:45
 - `geraet_bekannt_merken` → Game/server/02-sicherheit-datenlecks.php:44
@@ -2018,7 +2018,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:324
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:58
 - `renderShop` → Game/spiel/06d-schild-produktion.js:170
-- `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:305
+- `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:306
 - `renderThroneShop` → Game/spiel/06c-thron-mitte.js:137
 - `renderTile` → Game/spiel/03a-karte-hintergrund.js:421
 - `renderTitleModal` → Game/spiel/04-kampf.js:57
@@ -2204,7 +2204,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `showChestFlash` → Game/spiel/05b-truhe-skills.js:156
 - `showDailyModal` → Game/spiel/06a-aufgaben.js:62
 - `showGoalsTab` → Game/spiel/06a-aufgaben.js:337
-- `showProfileTab` → Game/spiel/05b-truhe-skills.js:369
+- `showProfileTab` → Game/spiel/05b-truhe-skills.js:370
 - `showShopTab` → Game/spiel/06c-thron-mitte.js:163
 - `showWelcome` → Game/spiel/06d-schild-produktion.js:388
 - `shrineMult` → Game/spiel/01e-nebel-kampfwerte-hud.js:215
@@ -2324,7 +2324,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `teil` → Game/spiel/10c-start-einstellungen.js:269
 - `teleImRucksack` → Game/spiel/06d-schild-produktion.js:80
 - `teleportCapital` → Game/spiel/08d-gebaeude-wirkung.js:142
-- `teleportOrt` → Game/spiel/08d-gebaeude-wirkung.js:219
+- `teleportOrt` → Game/spiel/08d-gebaeude-wirkung.js:220
 - `teleVorrat` → Game/spiel/06d-schild-produktion.js:79
 - `tempelPlus` → Game/aufbau.js:242
 - `temple` → Game/spiel/03b-gebaeude-3d.js:224
@@ -2387,7 +2387,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tpMarschDa` → Game/spiel/08d-gebaeude-wirkung.js:188
 - `tpPreisHtml` → Game/spiel/09d-armeen-wegmarken.js:353
 - `tpPruefen` → Game/spiel/08d-gebaeude-wirkung.js:197
-- `tpVerlegen` → Game/spiel/08d-gebaeude-wirkung.js:214
+- `tpVerlegen` → Game/spiel/08d-gebaeude-wirkung.js:215
 - `trace` → Game/spiel/03c-wappen-thronplatz.js:473
 - `traglast` → Game/aufbau.js:237
 - `travelDurationSeconds` → Game/spiel/02b-maersche.js:23
@@ -4103,11 +4103,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fmt1` :196
 - `bonusText` :198
 - `resetSkills` :278
-- `gemsWirklich` :291 — → true: jetzt zahlen
-- `gemsArmed` :300
-- `gemsArmAus` :301
-- `renderSkillGrid` :305
-- `showProfileTab` :369
+- `gemsWirklich` :292 — → true: jetzt zahlen
+- `gemsArmed` :301
+- `gemsArmAus` :302
+- `renderSkillGrid` :306
+- `showProfileTab` :370
 
 ### Game/spiel/05c-erfolge-rangliste.js — Erfolge, Profil antippen, Rangliste
 - `playerStats` :3 — ERFOLGE: badges for what you've done, each with gems to collect (only gems - th…
@@ -4618,8 +4618,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tpMarschDa` :188 — hängt ein Marsch an der Hauptstadt (hin, weg, Angriff darauf)?
 - `tpGratis` :193 — neue Spieler (Anfängerschutz): einmal gratis
 - `tpPruefen` :197 — → null (geht) oder der Grund für den Spieler
-- `tpVerlegen` :214 — (geprüft, bezahlt) die Hauptstadt steht jetzt bei x, y
-- `teleportOrt` :219 — (Spieler) Tipp auf „Teleportieren“, schon bestätigt → true: unterwegs bzw. erle…
+- `tpVerlegen` :215 — (geprüft, bezahlt) die Hauptstadt steht jetzt bei x, y
+- `teleportOrt` :220 — (Spieler) Tipp auf „Teleportieren“, schon bestätigt → true: unterwegs bzw. erle…
 
 ### Game/spiel/08e-stadtbild-haeuser.js — Stadtansicht als KI-Bild: Gebäude-Orte, Kamera, Wischen/Zoomen, Tippen
 - `cityOrt` :21

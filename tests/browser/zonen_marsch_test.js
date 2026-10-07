@@ -42,6 +42,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     clearIslandOwner(torZ.id); geben(Y.id, vorZ.id, 1e5);
     let hinweis = ''; const fh = flashHint; flashHint = t => { hinweis = String(t); }; closeAllPopups(); openIslandPopup(torZ); flashHint = fh;
     o.countdown = { angriff: !!launchAttack(vorZ.id, torZ.id, Y.id, 1000), durch: landmassesConnected(brZ.a, brZ.b), popup: popupIslandId === torZ.id && isPanelOpen(popup), hinweis };
+    // Spieler greift hinter den Pass an: EINE Meldung („Der Pass ist noch verschlossen …“), kein „Kein Weg nach … – Der Pass …“
+    const hinter = turmIn(landmasses[brZ.a].zone === 1 ? brZ.b : brZ.a), sehen = islandSeen; clearIslandOwner(vorZ.id); ownedIslands.add(vorZ.id); islandTroops[vorZ.id] = 1000;
+    let h2 = ''; flashHint = t => { h2 = String(t); }; islandSeen = () => true;
+    try { o.countdown.spieler = { angriff: !!launchAttack(vorZ.id, hinter.id, null, 500), hinweis: h2 }; } finally { flashHint = fh; islandSeen = sehen; clearIslandOwner(vorZ.id); }
     // 5) Thron: Tag 7 und ein eigener offener Pass zur Mitte
     localStorage.setItem('openWaterWorldStart', String(Date.now() - 5 * TAG));            // Tag 6: alle Pässe offen, der Thron noch zu
     const los = (q, z) => { AUF.frei.an(); try { return !!launchAttack(q, z, Y.id, 1000); } finally { AUF.frei.aus(); } };   // (Marsch-Plätze aus den Schritten davor zählen nicht)
@@ -68,6 +72,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.bogen && r.bogen.frei && r.bogen.punkte > 2, 'im gebogenen Gebiet: um das Gebirge herum, nicht hindurch', r.bogen);
   ok(!r.sperre.weg && /Pass gesperrt/.test(r.sperre.grund) && !r.sperre.angriff && r.sperre.erobert, 'unbesetzter Pass auf dem Weg sperrt (Grund „Pass gesperrt“), erobert ist der Weg frei', r.sperre);
   ok(!r.countdown.angriff && !r.countdown.durch && !r.countdown.popup && /öffnet in/.test(r.countdown.hinweis), 'Pass mit Countdown: nicht angreifbar, nicht zu durchqueren, Tippen zeigt nur „öffnet in …“', r.countdown);
+  ok(!r.countdown.spieler.angriff && /^Der Pass ist noch verschlossen – er öffnet in/.test(r.countdown.spieler.hinweis), 'Spieler-Angriff hinter den Pass: eine klare Meldung „Der Pass ist noch verschlossen …“ (nicht „Kein Weg nach … – Der …“)', r.countdown.spieler);
   ok(!r.thron.vor && r.thron.armeeVor === 'thron' && !r.thron.unbesetzt && /Pass gesperrt/.test(r.thron.grund) && !r.thron.fremd && r.thron.eigen, 'Thron: vor Tag 7 gesperrt; ab Tag 7 nur über einen eigenen offenen Pass zur Mitte', r.thron);
   ok(r.felder.n >= 400 && Object.keys(r.felder.art).sort().join() === 'eisen,gem,gold,holz,stein' && r.felder.art.gem < r.felder.art.holz && !r.felder.imGebirge && !r.felder.mitte && !r.felder.basisDrauf
     && r.felder.stufen.every((v, i, a) => !i || v > a[i - 1]), 'Felder wie die Karten-Testdatei: 5 Arten (Edelstein selten), Stufe steigt nach innen, nie im Gebirge, keine Basis darauf', r.felder);

@@ -45,6 +45,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.keinEinschalten = !document.getElementById('shieldUse') && !/Einschalten/.test(document.querySelector('[data-spane="shield"]').innerText);
     document.querySelector('[data-shield="2"]').click(); o.schild = shieldStock()[2] === 1 && gems === 1920;
     const tk = document.querySelector('[data-tele-kauf]'); o.preis = tk.innerText.replace(/\D/g, '');
+    const tt = tk.closest('.ware').querySelector('.ware-txt small'); o.text = { ganz: tt.scrollWidth <= tt.clientWidth + 1, w: tt.clientWidth, sw: tt.scrollWidth };   // (Handy: nicht „Hauptstadt an ei…“)
     tk.click(); o.erst = gems === 1920 && teleVorrat() === 0 && /Wirklich/.test(tk.innerText);
     await warte(600); tk.click(); o.dann = gems === 1420 && teleVorrat() === 1;
     renderShop(); o.link = document.getElementById('shopRucksackN').textContent;
@@ -52,6 +53,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(s.keinEinschalten && s.schild, 'Shop → Schilde: nur kaufen (kein „Einschalten“), der Schild liegt im Rucksack', s);
   ok(s.preis === '500' && s.erst && s.dann, 'Teleporter: 500 Edelsteine, erst „Wirklich?“, dann gekauft (in den Rucksack)', s);
+  ok(s.text.ganz, 'Shop-Kachel Teleporter: Beschreibung ganz lesbar (nicht abgeschnitten)', s.text);
   ok(/1 Schild · 1 Teleporter/.test(s.link), 'Shop zeigt, was im Rucksack liegt', s.link);
   await p.evaluate(() => document.querySelector('#shopPopup .pbody').scrollTo(0, 1e5)); await p.waitForTimeout(300); await bild('shop_schilde');
   // C) Rucksack: Schild dazu
@@ -89,7 +91,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       if (gebietAn(x, y) === lm.id && !tpPruefen('player', x, y)) frei.push([x, y]);
     window.__frei = frei.filter(q => Math.hypot(q[0] - cap.x, q[1] - cap.y) > 12000); o.frei = __frei.length; return o;
   });
-  const tippe = i => p.evaluate(i => { const z = __frei[i]; revealAround(z[0], z[1], REVEAL_BASE, true); mapState.zoom = Math.max(mapState.zoom, .02); mapState.offsetX = viewW / 2 - z[0] * mapState.zoom; mapState.offsetY = viewH / 2 - z[1] * mapState.zoom; requestRender();
+  const tippe = i => p.evaluate(i => { const z = __frei.filter(q => !tpPruefen('player', q[0], q[1]))[i];   // (nicht neben der schon verlegten Hauptstadt: „steht schon hier“)
+    revealAround(z[0], z[1], REVEAL_BASE, true); mapState.zoom = Math.max(mapState.zoom, .02); mapState.offsetX = viewW / 2 - z[0] * mapState.zoom; mapState.offsetY = viewH / 2 - z[1] * mapState.zoom; requestRender();
     feldRingZu(); handleTap(viewW / 2, viewH / 2); const k = document.querySelector('#feldRing [data-fring="tp"]'); return k ? k.textContent.trim() : ''; }, i);
   const bestaetigen = () => p.evaluate(async () => { const warte = ms => new Promise(f => setTimeout(f, ms)), tp = () => document.querySelector('#feldRing [data-fring="tp"]');
     const g0 = gems, n0 = teleVorrat(); window.__befehle.length = 0; tp().click(); const frage = tp().textContent; await warte(600); tp().click(); await warte(100);

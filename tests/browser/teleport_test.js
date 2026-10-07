@@ -48,6 +48,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     localStorage.setItem('openWaterWorldStart', String(Date.now() - 10 * TAG));
     pendingAttacks.push({ sourceId: nachbar.id, targetId: cap.id, rawTroops: 10, startedAt: Date.now(), resolveAt: Date.now() + 6e5, attackerBotId: BOT_DEFS[0].id });
     o.marsch = tpPruefen('player', __ziel[0], __ziel[1]); pendingAttacks.length = 0;
+    o.selbst = tpPruefen('player', cap.x, cap.y); o.daneben = tpPruefen('player', cap.x + 1500, cap.y);   // (dieselbe Stelle: kein Umzug für Teleporter/Edelsteine)
     return o;
   });
   ok(a.frei >= 5, 'im eigenen Gebiet gibt es freie Stellen für die Hauptstadt', a.frei);
@@ -56,6 +57,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(/Thron/.test(a.thron || '') || /Pass|Gebirge|Basis/.test(a.thron || ''), 'nicht in die Thron-Mitte', a.thron);
   ok(a.z2offen && /Pass/.test(a.z2zu || ''), 'Zone 2: Pass-Zeit vorbei → geht (Tor unbesetzt), Countdown läuft → „kein offener Pass“', a);
   ok(/Märsche/.test(a.marsch || ''), 'Angriff auf die Hauptstadt läuft → kein Teleport', a.marsch);
+  ok(/schon hier/.test(a.selbst || '') && /schon hier/.test(a.daneben || ''), 'auf die eigene Stelle (oder 1500 daneben) → „Deine Hauptstadt steht schon hier.“', a);
   // B) Menü auf dem Handy
   const tippe = async () => p.evaluate(() => { const z = __ziel; mapState.zoom = Math.max(mapState.zoom, .02); mapState.offsetX = viewW / 2 - z[0] * mapState.zoom; mapState.offsetY = viewH / 2 - z[1] * mapState.zoom; requestRender();
     handleTap(viewW / 2, viewH / 2); return { auf: !document.getElementById('feldRing').hidden, knoepfe: [...document.querySelectorAll('#feldRing [data-fring]')].map(k => k.textContent.trim()) }; });
@@ -63,9 +65,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const m = await tippe(); await p.waitForTimeout(600);
   ok(m.auf && m.knoepfe.length === 3 && /Teleportieren/.test(m.knoepfe[0]) && /500/.test(m.knoepfe[0]) && /Markierung/.test(m.knoepfe[1]) && /Truppen/.test(m.knoepfe[2]), 'Tipp auf freies Feld: Menü mit Teleportieren (500), Markierung, Truppen hierher', m);
   if (bilder) await p.screenshot({ path: path.join(bilder, 'teleport_menue.png') });
+  const an = await p.evaluate(() => { const el = document.getElementById('anleitung'), h = el.hidden; el.hidden = false; const r = getComputedStyle(el).display; el.hidden = h; return r; });
+  ok(an === 'none', 'Feld-Menü offen: Anfänger-Anleitung ausgeblendet', an);
   const t1 = await p.evaluate(() => { const vor = [islandById[playerIslandId].x, islandById[playerIslandId].y], g0 = gems; document.querySelector('#feldRing [data-fring="tp"]').click();
     return { gleich: islandById[playerIslandId].x === vor[0], text: document.querySelector('#feldRing [data-fring="tp"]').textContent, gems: g0 - gems }; });
   ok(t1.gleich && /Hierher teleportieren\?/.test(t1.text) && t1.gems === 0, 'erster Tipp: nur „Hierher teleportieren?“ – noch nichts passiert', t1);
+  const t1b = await p.evaluate(() => { gemsArm.at = Date.now() - 6000; return { an: gemsArmed('teleport'), ohneUhr: !gemsArm.timer }; });   // (6 s später)
+  ok(t1b.an && t1b.ohneUhr, 'Bestätigung bleibt offen, bis daneben getippt wird (nicht nach 4 s weg)', t1b);
   if (bilder) await p.screenshot({ path: path.join(bilder, 'teleport_bestaetigen.png') });
   await p.waitForTimeout(600);
   const t2 = await p.evaluate(() => { const id = playerIslandId, tr = islandTroops[id], g0 = gems; const tp = document.querySelector('#feldRing [data-fring="tp"]'); if (!gemsArmed('teleport')) tp.click(); gemsArm.at = Date.now() - 1000; document.querySelector('#feldRing [data-fring="tp"]').click(); const c = islandById[playerIslandId];   // (unter Last ist die Bestätigung nach 4 s wieder aus: neu bestätigen, zweiter Tipp 1 s danach)
@@ -94,12 +100,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     M.mensch = true; s.mensch = true; WELT.menschen[M.id] = {}; s.neuBis = Date.now() + 36e5; s.tpGratis = 0; const nt = neulingTruppen; neulingTruppen = () => 0;   // (Anfängerschutz: wenige Truppen)
     WELT.BEFEHLE.teleport(M.id, { x: ziel[0], y: ziel[1], gratis: true }); o.gratis = Math.hypot(c.x - ziel[0], c.y - ziel[1]) < 2 && s.tpGratis === 1;
     const x1 = c.x; WELT.BEFEHLE.teleport(M.id, { x: ziel[0] + 2500, y: ziel[1], gratis: true }); o.zweimal = c.x === x1;
-    WELT.BEFEHLE.teleport(M.id, { x: 1e12, y: 0 }); o.kaputt = c.x === x1; neulingTruppen = nt;
+    WELT.BEFEHLE.teleport(M.id, { x: 1e12, y: 0 }); o.kaputt = c.x === x1;
+    s.tpGratis = 0; WELT.BEFEHLE.teleport(M.id, { x: c.x + 1000, y: c.y, gratis: true }); o.selbst = c.x === x1 && s.tpGratis === 0; neulingTruppen = nt;   // (eigene Stelle: abgelehnt, Gratis bleibt)
     o.welt = JSON.parse(localStorage.getItem('openWaterInselOrt') || '{}')[cap] !== undefined;
     inselOrt = {}; inselOrtAnwenden(); o.zurueck = c.x === c.ort0[0] && islandById[playerIslandId].x === islandById[playerIslandId].ort0[0];
     return o;
   });
-  ok(!d.fehlt && d.mitspieler && d.gratis && d.zweimal && d.kaputt && d.welt, 'Weltrechner: nur echte Spieler, Gratis einmal, kaputte Stelle abgelehnt, steht im Welt-Teil', d);
+  ok(!d.fehlt && d.mitspieler && d.gratis && d.zweimal && d.kaputt && d.selbst && d.welt, 'Weltrechner: nur echte Spieler, Gratis einmal, kaputte und eigene Stelle abgelehnt, steht im Welt-Teil', d);
   ok(d.zurueck, 'ohne Eintrag (neue Saison): jede Basis wieder an ihrem Platz', d);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

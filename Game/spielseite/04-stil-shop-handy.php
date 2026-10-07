@@ -55,6 +55,7 @@
 .ware-txt{display:grid;gap:2px;min-width:0;margin-top:2px;flex:1 0 auto;align-content:start}   /* (Name in 2 Zeilen: die Preis-Leisten bleiben auf einer Höhe) */
 .ware-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font:600 15px/1.15 var(--font-display);color:var(--tx-1);text-shadow:0 1px 2px #000;overflow:hidden;hyphens:manual}   /* Cinzel ist breit: lieber 2 Zeilen („Ausrüstungs-|kiste“) als „…“ */
 .ware-txt small{display:block;font:500 12px/1.3 var(--font-ui);color:var(--tx-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ware-txt small.ware-lang{white-space:normal;text-overflow:clip}   /* (Teleporter: Satz in 2–3 Zeilen statt „Hauptstadt an ei…“) */
 .ware-preis{display:flex;align-items:center;justify-content:center;gap:6px;height:44px;margin:8px -10px 0;padding:0 6px;border:0;border-top:1px solid #f6e7bf;cursor:pointer;
   font:800 17px/1 var(--font-ui);color:#1d1406;background:linear-gradient(180deg,#f0dfb0 0%,#d4ad66 45%,#a27832 100%);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
 .ware-preis .icon{width:16px;height:16px;color:var(--res-gem);filter:drop-shadow(0 0 1px rgba(0,0,0,.7))}
