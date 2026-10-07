@@ -118,6 +118,8 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Push Bau/Forschung: kommt nur einmal', lauf().length === 0);
     const n = nachrichtBauen(bau.concat(fo), jetzt);
     pruefe('Push-Text Bau/Forschung', n.titel === 'Bau fertig' && /Fertig gebaut: Labor Stufe 5\./.test(n.text) && /Fertig erforscht: Ertrag Stufe 3/.test(n.text));
+    const sm = nachrichtBauen([{ art: 'sammler', menge: 4000, was: 'holz' }, { art: 'sammler', menge: 500, was: 'gold' }, { art: 'sammler', menge: 1000, was: 'holz' }, { art: 'sammler', menge: 3, was: 'gem' }, { art: 'sammler', menge: 200, was: 'eisen' }], jetzt).text;
+    pruefe('Push Sammler: je Art richtig benannt (Holz ist keine Münze)', sm === 'Deine Sammler sind zurück: +500 Münzen, +3 Edelsteine, +5.000 Holz, +200 Eisen.');
     M.u7.profil.city.bauBis[0] = jetzt - 20 * 60000; win.__pushMerker.ev = {};
     pruefe('Push Bau fertig: über 10 Min. alt → keine Meldung mehr', !lauf().some(e => e.art === 'bau'));
     const s10 = fs.readFileSync(path.join(G, 'spiel', '10d-welt-weltrechner.js'), 'utf8'), schritt = s10.slice(s10.indexOf('function hbStadtSchritt'), s10.indexOf('function hbFoSchritt'));

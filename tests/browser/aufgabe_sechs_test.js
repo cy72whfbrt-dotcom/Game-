@@ -12,7 +12,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } anleitung.schritt = ANLEITUNG.length; });
   // 1) neue Listen: 6, Stufen 0 0 1 1 2 2, keine doppelt, Tempel/Thron nie leicht, Bündnis nur mit Bündnis, Invasion/Drache nur an ihrem Tag
   const w = await ev(() => {
-    const o = { n: new Set(), stufen: new Set(), doppelt: 0, leichtTT: 0, bund: 0, inv: 0, dr: 0, arten: new Set(), gemsTag: questGemsTag(), neu: Object.keys(QUEST_DEFS).length };
+    const o = { n: new Set(), stufen: new Set(), doppelt: 0, leichtTT: 0, bund: 0, inv: 0, dr: 0, arten: new Set(), gemsTag: questGemsTag(), neu: Object.keys(QUEST_DEFS).length, moeglich: Object.keys(QUEST_DEFS).filter(questGeht).length };
     const invHeute = questEvHeute('inv'), drHeute = questEvHeute('dr'), bundDa = questBundGeht();
     for (let i = 0; i < 80; i++) { questState = null; store.set('openWaterQuests', ''); const q = loadQuests();
       o.n.add(q.list.length); o.stufen.add(q.list.map(t => t.st).join('')); if (new Set(q.list.map(t => t.type)).size !== q.list.length) o.doppelt++;
@@ -20,9 +20,19 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         if (['bundHilfe', 'verstaerkung', 'rally'].includes(t.type)) o.bund++; if (t.type === 'invArmee') o.inv++; if (t.type === 'drache') o.dr++; } }
     return { ...o, n: [...o.n], stufen: [...o.stufen], arten: o.arten.size, invHeute, drHeute, bundDa }; });
   ok(w.n.join() === '6' && w.stufen.join() === '001122' && !w.doppelt, '6 Aufgaben: 2 leicht, 2 mittel, 2 schwer, keine doppelt', w);
-  ok(w.neu === 23 && w.arten >= 15 && !w.leichtTT, '23 Arten (9 + 14 neue) werden gewürfelt, Tempel/Thron nie leicht', w);
+  ok(w.neu === 23 && w.arten === w.moeglich && !w.leichtTT, '23 Arten (9 + 14 neue): alle, die heute gehen, werden gewürfelt, Tempel/Thron nie leicht', w);
   ok((w.bundDa || !w.bund) && (w.invHeute || !w.inv) && (w.drHeute || !w.dr), 'nur was heute geht: Bündnis, Invasion, Drache', w);
   ok(w.gemsTag === 42, 'Edelsteine am Tag: 2 × (3 + 5 + 8) + 10 = 42', w.gemsTag);
+  // 1b) Tempel (Zone 4, Pässe ab Tag 4) und Thron (ab Tag 7) nur, wenn sie heute angreifbar werden
+  const tt = await ev(() => {
+    const s0 = store.get('openWaterWorldStart'), tag = d => { store.set('openWaterWorldStart', String(Date.now() - (d - 1) * 86400000)); WEG_MERK.clear(); };
+    const wuerfeln = () => { let n = 0; for (let i = 0; i < 60; i++) { questState = null; store.set('openWaterQuests', ''); if (loadQuests().list.some(t => t.type === 'tempel' || t.type === 'thron')) n++; } return n; };
+    tag(1); const t1 = { tempel: questGeht('tempel'), thron: questGeht('thron'), gewuerfelt: wuerfeln() };
+    tag(4); const t4 = { tempel: questGeht('tempel'), thron: questGeht('thron') };
+    tag(7); const t7 = { tempel: questGeht('tempel'), thron: questGeht('thron'), gewuerfelt: wuerfeln() };
+    store.set('openWaterWorldStart', s0); WEG_MERK.clear(); questState = null; store.set('openWaterQuests', ''); return { t1, t4, t7 }; });
+  ok(!tt.t1.tempel && !tt.t1.thron && !tt.t1.gewuerfelt, 'Tag 1: kein Tempel (Zone 4 zu), kein Thron (erst Tag 7)', tt);
+  ok(tt.t4.tempel && !tt.t4.thron && tt.t7.tempel && tt.t7.thron && tt.t7.gewuerfelt > 0, 'Tag 4: Tempel, Tag 7: Tempel + Thron', tt);
   // 2) Zähler → Aufgaben (auch was der Weltrechner meldet)
   const z = await ev(() => {
     const q = loadQuests(), arten = ['barbLager', 'tagesboss', 'drache', 'invArmee', 'bundHilfe', 'verstaerkung', 'rally', 'tempel', 'thron', 'heilen', 'schmiede', 'zusammen', 'sammeln', 'markt'];
