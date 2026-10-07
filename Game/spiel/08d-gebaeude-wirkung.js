@@ -115,7 +115,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
         const base = rewardBaseId(); if (base !== null) eigeneTruppenDazu(base, w, 'heil');
         saveGame(); updateHud(); flashHint(fmtNum(w) + ' Truppen geheilt – sie sind in deiner Hauptstadt.', 3000); renderCitySheet(); }
 });
-document.getElementById('cityBtn').addEventListener('click', openCity);
+document.getElementById('cityBtn').addEventListener('click', () => openCity());   // nicht openCity direkt: sonst käme das Klick-Ereignis als „dann“ an
 document.getElementById('cityNavBtn').addEventListener('click', () => { if (!cityView.hidden) { closeAllPopups(); closeCity(); } else openCity(); });   // in der Stadt: zurück zur Karte (wie in Rise of Kingdoms)
 // Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) und die untere Knopf-Leiste – überall gleich (Alexander 4.10.)
 function stadtLeiste(an) {

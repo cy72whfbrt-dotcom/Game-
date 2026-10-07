@@ -212,6 +212,7 @@ function stadtBlende(von, bis, dann) {                                       // 
     a.onfinish = () => { a.cancel(); if (dann) dann(); };
 }
 function openCity(dann) {                                                   // dann: läuft, sobald die Stadt da ist (z. B. die Burg öffnen) – nicht nach fester Zeit
+    if (typeof dann !== 'function') dann = null;
     if (!cityView.hidden && !cityBusy) { if (dann) dann(); return; }
     if (cityBusy || !cityView.hidden) return;
     closeAllPopups();

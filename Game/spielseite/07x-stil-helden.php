@@ -22,7 +22,9 @@
 .hh-foot .hh-qstars i{width:12px;height:12px}
 .hh-dot{left:8px;top:8px;z-index:1}
 .hh-lk{right:7px;top:7px;z-index:1}
-.hh-frei{max-width:100%;padding:5px 7px;gap:3px;font-size:9.5px;letter-spacing:0}   /* „Freischalten“ passt ganz in die schmale Karte */
+.hh-frei{box-sizing:border-box;max-width:100%;flex-wrap:wrap;justify-content:center;row-gap:2px;padding:5px 8px;gap:3px;font-size:9.5px;letter-spacing:0}   /* „Freischalten“ + Kosten passen ganz in die schmale Karte */
+.hh-frei .icon{display:none}   /* (das Plus bräche in eine eigene Zeile) */
+.hh-frei em{flex-basis:100%;font:700 9px/1 var(--font-ui);font-style:normal;text-transform:none;opacity:.8}
 .hh-head [data-hh-back] > .icon{background-image:url(bilder/ui_zurueck.webp)}   /* Zurück statt Schließen-Bild (05z gibt jedem .btn-x das X) */
 .hh-cards--zu{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px}
 .hh-cards--zu .hh-card{aspect-ratio:3/4;border-image:var(--ki-kachel) 24 fill / 7px stretch}

@@ -111,11 +111,15 @@ if (store.get('openWaterAchLook') === null) {                            // (the
 const goalsPopup = document.getElementById('goalsPopup'); var goalsTab = 'daily', achReadyN = 0;   // Ziele: the daily tasks and the Erfolge in one sheet
 let achKnown = null, achTimer = null;
 function achCheckSoon() { clearTimeout(achTimer); achTimer = setTimeout(achCheck, 400); }
+function achFensterOffen() {                                                 // Handy: ein offenes Fenster füllt den Schirm – der Erfolgs-Hinweis kommt erst danach (nicht über Heldenkarten/Gebäudekopf)
+    if (uiLayout() === 'desktop') return false;
+    return !document.getElementById('heroHall').hidden || !document.getElementById('citySheet').hidden || document.body.classList.contains('has-panel');
+}
 function achCheck() {                                                        // newly reached ones are announced once
     if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
     const ready = achClaimable();
     if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Edelsteine unter „Events“ ab.', 4500); sfx('crown'); }
+    if (!achFensterOffen()) for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg: ' + a.name + ' – ' + a.gems + ' Edelsteine unter „Events“', 4500); sfx('crown'); }
     updateGoalsBadge(ready.length);
     if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
 }
