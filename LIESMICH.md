@@ -3559,3 +3559,11 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   erste Teil fängt danach mit `<?php` an). `spiel_bauen.sh` hat dafür eine Tabelle ZIELE (Ordner ↔ Datei) und prüft
   `.js` mit `node --check`, `.php` mit `php -l`. Ergebnis Byte für Byte gleich; die Pfade der fertigen Dateien bleiben
   (index.php, admin.php, wachhund.php, Tests binden weiter `Game/server.php` ein). `hochladen.sh` überspringt die Ordner.
+
+## 81. Aufräumen: alter Code raus (Alexander 7.10.: „Alter Code raus, Dateien sortieren“)
+- **Teil `01f-felsen.js` ganz raus** (Bergstöcke in den Gebieten, seit den Zonen wie RoK aus: `WELT_FELSEN = false`) mit
+  `bilder/fels_1/2.webp`; die Aufrufe (`felsAuf` bei Wald/Lagern, `felsenMalen`) fallen weg – Verhalten gleich.
+- Ring-Skin-Reste (Ring auf der Karte, Hinweis im Insel-Fenster), Wasserschloss-Sockel der Hauptstadt (baukunst, `capStyle`),
+  „Skins, Ringe“ im Aussehen-Knopf, alter Rohstoff-HUD-Stil (`.res--roh`, `.roh-drop/-row/-mini/-hint`) und weitere
+  unbenutzte CSS-Klassen, `UNK`, `beuteFensterOffen`, unbenutzte Variablen, `bilder/karte_wald1/2.webp`.
+- `CLAUDE.md`: Teileliste auf dem echten Stand (spiel.js 43 Teile, spielseite 11).
