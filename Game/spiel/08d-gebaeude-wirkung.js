@@ -156,8 +156,8 @@ function teleportCapital(toId) {
 }
 // Teleportieren (Alexander 7.10., Merkliste 33): die Hauptstadt an eine freie Stelle der Karte – die Basis selbst zieht um (Truppen,
 // Stufe, Stadt bleiben). Platz wie für eine Basis (nicht im Gebirge, nicht auf Toren, Feldern, Lagern, Tempeln, nicht in der Thron-Mitte),
-// nur in Gebiete, die von der Hauptstadt über offene Pässe erreichbar sind (TELEPORT_NUR_OFFEN). Immer 500 Edelsteine, neue Spieler
-// (Anfängerschutz) einmal gratis, keine Abklingzeit; nicht, solange ein Marsch an der Hauptstadt hängt. Der Weltrechner entscheidet
+// nur in Gebiete, die von der Hauptstadt über offene Pässe erreichbar sind (TELEPORT_NUR_OFFEN). Kostet 1 Teleporter aus dem Rucksack (im Shop
+// 500 Edelsteine), sonst 500 Edelsteine; neue Spieler (Anfängerschutz) haben 1 Teleporter gratis, keine Abklingzeit; nicht, solange ein Marsch an der Hauptstadt hängt. Der Weltrechner entscheidet
 // (Befehl teleport), verlegte Basen stehen im Welt-Teil openWaterInselOrt { id: [x, y, Gebiet] } – Mitspieler teleportieren nicht.
 const TP_GEMS = 500, TELEPORT_NUR_OFFEN = true, TP_ABSTAND = BASE_SPACING * .5;
 let inselOrt = {};
@@ -218,9 +218,9 @@ function tpVerlegen(who, x, y) {                 // (geprüft, bezahlt) die Haup
 }
 function teleportOrt(x, y) {                     // (Spieler) Tipp auf „Teleportieren“, schon bestätigt → true: unterwegs bzw. erledigt
     const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return false; }
-    const gratis = tpGratis('player'), k = gratis ? 0 : TP_GEMS;
+    const gratis = tpGratis('player'), tele = !gratis && teleVorrat() > 0, k = gratis || tele ? 0 : TP_GEMS;   // zuerst der Gratis-Teleporter, dann gekaufte, sonst Edelsteine
     if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine.', 3000); return false; }
-    gems -= k; if (gratis) store.set('openWaterTpGratis', '1');
+    gems -= k; if (gratis) store.set('openWaterTpGratis', '1'); if (tele) store.set('openWaterTeleporter', String(teleVorrat() - 1));   // (gekaufter Teleporter: der Weltrechner bucht die 500 beim Kauf ausgegebenen Gems – wie beim Bezahlen hier)
     statBump('teleports'); saveGame(); saveProgression(); updateHud();
     if (alsBefehl('teleport', { x: Math.round(x), y: Math.round(y), gratis })) { flashHint('Die Hauptstadt zieht um …', 3000); return true; }   // (Zuschauer: der Weltrechner verlegt sie)
     tpVerlegen('player', x, y);

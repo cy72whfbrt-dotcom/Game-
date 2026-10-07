@@ -37,7 +37,6 @@
 .empty-state.ev-leer{padding:22px 16px;gap:8px;border:1px dashed var(--line-2);border-radius:10px;background:rgba(255,255,255,.02)}
 .empty-state.ev-leer > .icon{width:40px;height:40px;color:var(--gold-300)} .empty-state.ev-leer > span{max-width:34ch}
 .empty-state.ev-leer > b{font-size:var(--fs-15)} .empty-state.ev-leer .btn{margin-top:8px;max-width:100%}
-#shieldUse > .lb-leer{grid-column:1/-1}
 /* Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen – erreicht leuchtet („Abholen“), abgeholt = offene Kiste + Haken */
 .evl{contain:inline-size;width:100%;overflow-x:auto;overscroll-behavior-x:contain;margin:2px -2px 6px;padding:4px 2px 2px;scrollbar-width:thin}
 .evl-bahn{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(52px,1fr));min-width:calc(var(--n) * 52px)}
@@ -396,7 +395,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   </div>
 </section>
 
-<!-- ============ SHOP (Dock): Kisten · Schilde · Thron · Händler (nur wenn einer da ist) · Markt – alles Kaufen/Tauschen nur hier ============ -->
+<!-- ============ SHOP (Dock): Kisten · Schilde + Teleporter (nur kaufen – benutzt wird im Rucksack) · Thron · Händler (nur wenn einer da ist) · Markt – alles Kaufen/Tauschen nur hier ============ -->
 <section id="shopPopup" class="panel panel--sheet" role="dialog" aria-labelledby="shopTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
@@ -418,7 +417,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <div class="mail-pane" data-spane="markt" hidden><div id="shopMarkt" class="ev-body"></div></div>
     <div class="mail-pane" data-spane="shield" hidden>
       <div id="shieldState" class="notice"></div>
-      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Vorrat<button type="button" class="shop-i" data-sinfo="schild" aria-expanded="false" aria-label="Erklärung"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
+      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Rucksack<button type="button" class="shop-i" data-sinfo="schild" aria-expanded="false" aria-label="Erklärung"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
       <p class="mail-intro shop-info" data-sinfo-box="schild" hidden>Friedensschild: niemand kann deine Türme angreifen, solange er steht – Tore, Tempel und der Thron bleiben angreifbar. Greifst du selbst an, fällt der Schild sofort.</p>
       <div class="waren waren--3">
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>2 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>2 Stunden</small></span>
@@ -428,8 +427,12 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>24 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>24 Stunden</small></span>
           <button type="button" class="ware-preis" data-shield="24" aria-label="Schild 24 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>700</b></button></div>
       </div>
-      <div class="sect"><h4>Einschalten</h4><span class="sect-aside">aus dem Vorrat</span></div>
-      <div id="shieldUse" class="shield-opts"></div>
+      <div class="sect"><h4>Teleporter</h4><span class="sect-aside">kommt in den Rucksack</span></div>
+      <div class="waren waren--3">
+        <div class="ware ware--klein" data-r="lila"><span class="ware-bild"><img class="kiste-bild" src="bilder/ui_sym_verlegen.webp" alt="" draggable="false"></span><span class="ware-txt"><b class="ware-name">Teleporter</b><small>Hauptstadt an eine freie Stelle</small></span>
+          <button type="button" class="ware-preis" data-tele-kauf aria-label="Teleporter kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>500</b></button></div>
+      </div>
+      <button type="button" class="ware-link" data-zum-rucksack><svg class="icon"><use href="#i-crate"/></svg><span id="shopRucksackN">Rucksack ›</span></button>
     </div>
     <div class="mail-pane" data-spane="gems">
       <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte das KI-Bild der Kiste, Preis-Knöpfe unten über die ganze Breite (ein Tipp = kaufen; unter 500 Edelsteinen „1ד und „10ד) -->
@@ -447,6 +450,20 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <div id="shopCrateResult" class="loot" style="display:none"></div>
       <div id="shopHeroResult" class="hchest-res" hidden></div>
     </div>
+  </div>
+</section>
+
+<!-- ============ RUCKSACK (Dock): was du hast – Schilde (einsetzen), Teleporter (benutzen), Splitter je Held (nur Anzeige) ============ -->
+<section id="rucksackPopup" class="panel panel--sheet" role="dialog" aria-labelledby="rucksackTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-crate"/></svg></div>
+    <div class="phead-text"><div class="overline">Deine Gegenstände</div><h3 id="rucksackTitle" class="ptitle">Rucksack</h3></div>
+    <button id="rucksackCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="pbody">
+    <div id="rkSchildStand" class="notice"></div>
+    <div id="rkInhalt" class="rk-inhalt"></div>
   </div>
 </section>
 

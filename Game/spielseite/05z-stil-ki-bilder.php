@@ -61,7 +61,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 .nav-btn .nav-l{font-size:10px;color:var(--gold-100);text-shadow:0 1px 2px #000,0 0 4px #000}
 @media (max-width:899px) and (min-height:501px){   /* Handy (Alexander 7.10.): Leiste niedriger, mit Abstand zum Rand – beide Endstücke ganz zu sehen –, Knöpfe enger und kleiner (Tippfläche ≥ 44 px) */
   :root{--dock-h:56px}
-  .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);bottom:var(--safe-bd);height:var(--dock-h);padding:0 30px;background:none;align-items:center;grid-template-columns:repeat(5,minmax(44px,60px));justify-content:center;column-gap:4px;
+  .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);bottom:var(--safe-bd);height:var(--dock-h);padding:0 24px;background:none;align-items:center;grid-template-columns:repeat(6,minmax(44px,56px));justify-content:center;column-gap:2px;
     border-image-width:7px 22px 5px 22px}
   /* Ring und Symbol als Hintergrund des Knopfs (nicht des SVG – Safari setzt ein SVG-Hintergrundbild nicht mittig); das SVG bleibt als Platzhalter */
   .nav{align-items:stretch}
@@ -69,6 +69,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
   .nav-btn.active,.nav-btn:hover{background:var(--ki-bild,none) center 13px/var(--ki-gr) no-repeat,var(--ui-rund-an) center 7px/32px 32px no-repeat}
   .nav-btn > .icon,.nav-btn.active > .icon,.nav-btn:hover > .icon{width:32px;height:32px;background:none}
   #bundBtn,#goalsBtn{--ki-gr:22px auto}   /* breite Symbole: nach der Breite */
+  .nav-btn .nav-l{font-size:9px;letter-spacing:0}   /* 6 Knöpfe: „Rucksack“ passt in seine Spalte */
   body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:var(--safe-bd);z-index:var(--z-dock);background:#07090c;pointer-events:none}   /* die Home-Leiste des iPhones: dunkler Grund UNTER der Leiste */
 }
 @media (min-width:900px) and (min-height:501px){   /* Desktop: dieselbe schlanke Leiste (nur unten mittig statt am Rand) */
@@ -78,7 +79,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 }
 #cityNavBtn{--ki-bild:url(bilder/ui_dock_burg.webp)} body.in-stadt #cityNavBtn{--ki-bild:url(bilder/ui_fahne.webp)}
 #bundBtn{--ki-bild:url(bilder/ui_dock_bund.webp)} #battleLogBtn{--ki-bild:url(bilder/ui_dock_kampf.webp)}
-#goalsBtn{--ki-bild:url(bilder/ui_dock_events.webp)} #shopBtn{--ki-bild:url(bilder/ui_dock_shop.webp)} #profileBtn{--ki-bild:url(bilder/ui_dock_krone.webp)}
+#goalsBtn{--ki-bild:url(bilder/ui_dock_events.webp)} #rucksackBtn{--ki-bild:url(bilder/ui_k_beute.webp)} #shopBtn{--ki-bild:url(bilder/ui_dock_shop.webp)} #profileBtn{--ki-bild:url(bilder/ui_dock_krone.webp)}
 
 /* ---------------- Karten-Knöpfe ---------------- */
 .mapctl{gap:6px;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}

@@ -27,6 +27,14 @@
 .kl-rss .bk-raster{--bk:46px;justify-content:flex-start;margin:4px 0 2px} .kl-rss.bk-an > .kl-rss-zeilen{display:none}
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}
 
+/* Rucksack (Dock): je Gegenstand eine Listen-Karte mit Kachel, Name und Knopf; Splitter als Kacheln mit Heldennamen */
+#rucksackPopup .pbody{display:grid;gap:10px;align-content:start}
+.rk-inhalt{display:grid;gap:8px} .rk-liste{display:grid;gap:6px}
+.rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
+.rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}
+.rk-knopf{flex:none;min-width:96px;min-height:44px}
+.rk-splitter{--bk:56px;justify-content:flex-start;gap:8px} .rk-splitter .bk-mit{padding:0;border:0;background:none;cursor:pointer;min-height:44px}
+
 /* ---- Belohnungs-Fenster: Kiste wackelt, geht auf, Strahlen drehen, Kacheln kommen nacheinander ---- */
 .bf{position:fixed;inset:0;z-index:calc(var(--z-modal) + 2);display:flex;align-items:center;justify-content:center;padding:16px;
   background:radial-gradient(ellipse at 50% 42%,rgba(52,36,8,.6),rgba(3,4,8,.86));animation:fade-in var(--dur-3) var(--ease-out)}

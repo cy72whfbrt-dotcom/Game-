@@ -342,12 +342,13 @@ function drawMarkers() {                                                     // 
 let feldRing = null;                                                        // { x, y, lm } die angetippte Stelle (Welt)
 function feldRingAuf(sx, sy) {                                              // → true, wenn dort freies Land ist
     const w = screenToWorld(sx, sy), lm = landmassAtWorld(w.x, w.y); if (!lm) return false;
-    const k = tpGratis('player') ? 0 : TP_GEMS, el = document.getElementById('feldRing');
-    const kn = [['tp', 'ui_sym_verlegen', 'Teleportieren', k ? icon('gem') + fmtNum(k) : 'Gratis'], ['mark', 'ui_k_nadel', 'Markierung', ''], ['arm', 'ui_armee', 'Truppen hierher', '']];
+    const el = document.getElementById('feldRing');
+    const kn = [['tp', 'ui_sym_verlegen', 'Teleportieren', tpPreisHtml()], ['mark', 'ui_k_nadel', 'Markierung', ''], ['arm', 'ui_armee', 'Truppen hierher', '']];
     feldRing = { x: w.x, y: w.y, lm: lm.id };
     el.innerHTML = kn.map(([p, b, t, z], i) => '<button type="button" class="cr-btn" data-fring="' + p + '" style="--x:' + (i - 1) * 84 + 'px;--y:' + (i === 1 ? -92 : -58) + 'px;--d:' + i * 40 + 'ms"><span class="fr-ic" style="--b:url(bilder/' + b + '.webp)"></span><small>' + t + (z ? ' ' + z : '') + '</small></button>').join('');
     el.hidden = false; feldRingFrame(); requestRender(); return true;
 }
+function tpPreisHtml() { return teleImRucksack() ? '1 Teleporter' : icon('gem') + fmtNum(TP_GEMS); }   // ein Teleporter im Rucksack (auch der gratis) geht vor Edelsteinen
 function feldRingZu() { if (!feldRing) return; feldRing = null; document.getElementById('feldRing').hidden = true; if (gemsArmed('teleport')) gemsArmAus(); requestRender(); }
 function feldRingFrame() {                                                  // (jedes Bild) die Knöpfe folgen der Stelle, dort eine Nadel
     if (!feldRing) return;
@@ -361,8 +362,8 @@ document.getElementById('feldRing').addEventListener('click', e => {
     const { x, y, lm } = feldRing, was = b.dataset.fring;
     if (was === 'tp') {
         const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return; }
-        const k = tpGratis('player') ? 0 : TP_GEMS; if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine.', 3000); return; }
-        if (!gemsWirklich('teleport', k, b, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren? ' + (k ? icon('gem') + fmtNum(k) : 'Gratis'); return; }   // (immer bestätigen – ab 500 „Wirklich?“)
+        const k = teleImRucksack() ? 0 : TP_GEMS; if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine – oder 1 Teleporter aus dem Rucksack.', 3000); return; }
+        if (!gemsWirklich('teleport', k, b, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren? ' + tpPreisHtml(); return; }   // (immer bestätigen – ab 500 „Wirklich?“)
         if (teleportOrt(x, y)) feldRingZu(); return;
     }
     feldRingZu();

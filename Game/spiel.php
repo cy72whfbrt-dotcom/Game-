@@ -227,10 +227,10 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
    NAVIGATION  #cornerButtons  (phone = bottom dock)
    ===================================================================== */
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-bd));
-  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
+  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(6,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
-/* Leiste: 5 runde Knöpfe mit festen Plätzen (Karte/Stadt · Bündnis · Kampf · Events · Shop); das Profil öffnet das Spielerbild im HUD */
+/* Leiste: 6 runde Knöpfe mit festen Plätzen (Karte/Stadt · Bündnis · Kampf · Events · Rucksack · Shop); das Profil öffnet das Spielerbild im HUD */
 .nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;color:var(--tx-2);transition:color var(--dur-1)}
 .nav-btn > .icon{width:var(--k-rund);height:var(--k-rund);padding:13px;border-radius:50%;border:1px solid var(--line-2);color:var(--gold-200);
   background:radial-gradient(circle at 50% 30%,#232833,#0e1116);box-shadow:var(--sh-1);transition:border-color var(--dur-1),box-shadow var(--dur-1)}
@@ -1297,7 +1297,6 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .thron-zeile > .icon{width:16px;height:16px;flex:none;color:#f2c75c} .thron-zeile > span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .thron-zeile b{color:var(--tx-1);font-variant-numeric:tabular-nums}
 .thron-zeile .tz-i{margin-left:4px;color:var(--gold-300)} .thron-zeile.on{border-color:var(--line-3)}
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
 .odds .chip--rar{height:auto;min-height:20px;padding:4px 6px;line-height:1.3}   /* zweizeilig (Handy): Innenabstand oben/unten, nicht am Rand */
 .hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)} .hchest-h{font:600 var(--fs-13)/1.2 var(--font-display);color:var(--gold-100)}
@@ -1903,6 +1902,14 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 .kl-rss .bk-raster{--bk:46px;justify-content:flex-start;margin:4px 0 2px} .kl-rss.bk-an > .kl-rss-zeilen{display:none}
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}
 
+/* Rucksack (Dock): je Gegenstand eine Listen-Karte mit Kachel, Name und Knopf; Splitter als Kacheln mit Heldennamen */
+#rucksackPopup .pbody{display:grid;gap:10px;align-content:start}
+.rk-inhalt{display:grid;gap:8px} .rk-liste{display:grid;gap:6px}
+.rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
+.rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}
+.rk-knopf{flex:none;min-width:96px;min-height:44px}
+.rk-splitter{--bk:56px;justify-content:flex-start;gap:8px} .rk-splitter .bk-mit{padding:0;border:0;background:none;cursor:pointer;min-height:44px}
+
 /* ---- Belohnungs-Fenster: Kiste wackelt, geht auf, Strahlen drehen, Kacheln kommen nacheinander ---- */
 .bf{position:fixed;inset:0;z-index:calc(var(--z-modal) + 2);display:flex;align-items:center;justify-content:center;padding:16px;
   background:radial-gradient(ellipse at 50% 42%,rgba(52,36,8,.6),rgba(3,4,8,.86));animation:fade-in var(--dur-3) var(--ease-out)}
@@ -2005,7 +2012,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 .nav-btn .nav-l{font-size:10px;color:var(--gold-100);text-shadow:0 1px 2px #000,0 0 4px #000}
 @media (max-width:899px) and (min-height:501px){   /* Handy (Alexander 7.10.): Leiste niedriger, mit Abstand zum Rand – beide Endstücke ganz zu sehen –, Knöpfe enger und kleiner (Tippfläche ≥ 44 px) */
   :root{--dock-h:56px}
-  .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);bottom:var(--safe-bd);height:var(--dock-h);padding:0 30px;background:none;align-items:center;grid-template-columns:repeat(5,minmax(44px,60px));justify-content:center;column-gap:4px;
+  .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);bottom:var(--safe-bd);height:var(--dock-h);padding:0 24px;background:none;align-items:center;grid-template-columns:repeat(6,minmax(44px,56px));justify-content:center;column-gap:2px;
     border-image-width:7px 22px 5px 22px}
   /* Ring und Symbol als Hintergrund des Knopfs (nicht des SVG – Safari setzt ein SVG-Hintergrundbild nicht mittig); das SVG bleibt als Platzhalter */
   .nav{align-items:stretch}
@@ -2013,6 +2020,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
   .nav-btn.active,.nav-btn:hover{background:var(--ki-bild,none) center 13px/var(--ki-gr) no-repeat,var(--ui-rund-an) center 7px/32px 32px no-repeat}
   .nav-btn > .icon,.nav-btn.active > .icon,.nav-btn:hover > .icon{width:32px;height:32px;background:none}
   #bundBtn,#goalsBtn{--ki-gr:22px auto}   /* breite Symbole: nach der Breite */
+  .nav-btn .nav-l{font-size:9px;letter-spacing:0}   /* 6 Knöpfe: „Rucksack“ passt in seine Spalte */
   body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:var(--safe-bd);z-index:var(--z-dock);background:#07090c;pointer-events:none}   /* die Home-Leiste des iPhones: dunkler Grund UNTER der Leiste */
 }
 @media (min-width:900px) and (min-height:501px){   /* Desktop: dieselbe schlanke Leiste (nur unten mittig statt am Rand) */
@@ -2022,7 +2030,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 }
 #cityNavBtn{--ki-bild:url(bilder/ui_dock_burg.webp)} body.in-stadt #cityNavBtn{--ki-bild:url(bilder/ui_fahne.webp)}
 #bundBtn{--ki-bild:url(bilder/ui_dock_bund.webp)} #battleLogBtn{--ki-bild:url(bilder/ui_dock_kampf.webp)}
-#goalsBtn{--ki-bild:url(bilder/ui_dock_events.webp)} #shopBtn{--ki-bild:url(bilder/ui_dock_shop.webp)} #profileBtn{--ki-bild:url(bilder/ui_dock_krone.webp)}
+#goalsBtn{--ki-bild:url(bilder/ui_dock_events.webp)} #rucksackBtn{--ki-bild:url(bilder/ui_k_beute.webp)} #shopBtn{--ki-bild:url(bilder/ui_dock_shop.webp)} #profileBtn{--ki-bild:url(bilder/ui_dock_krone.webp)}
 
 /* ---------------- Karten-Knöpfe ---------------- */
 .mapctl{gap:6px;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
@@ -2251,14 +2259,15 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 
 <div id="midBar" class="midbar" hidden></div>
 
-<!-- Navigation (die EINE Ordnung, Abschnitt 26): Karte/Stadt · Bündnis · Kampf · Events · Shop – runde Knöpfe; das Profil über das Spielerbild.
+<!-- Navigation (die EINE Ordnung, Abschnitt 26): Karte/Stadt · Bündnis · Kampf · Events · Rucksack · Shop – runde Knöpfe; das Profil über das Spielerbild.
      phone = bottom dock, landscape phone = left rail, desktop = unten Mitte -->
 <nav id="cornerButtons" class="nav" aria-label="Hauptmenü">
   <button id="cityNavBtn" class="nav-btn" type="button" title="Stadt: Burg, Gebäude, Forschung, Helden, Rohstoffe"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="bundBtn" class="nav-btn" type="button" title="Bündnis"><svg class="icon"><use href="#i-bund"/></svg><span class="nav-l">Bündnis</span><span id="bundBadge" class="badge" style="display:none">0</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Kampf: Märsche und Berichte"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
   <button id="goalsBtn" class="nav-btn" type="button" title="Events: Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Boss"><svg class="icon"><use href="#i-event"/></svg><span class="nav-l">Events</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
-  <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
+  <button id="rucksackBtn" class="nav-btn" type="button" title="Rucksack: Schilde, Teleporter, Splitter"><svg class="icon"><use href="#i-crate"/></svg><span class="nav-l">Rucksack</span></button>
+  <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Teleporter, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
   <button id="profileBtn" class="nav-btn" type="button" title="Profil: Spieler, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
 </nav>
 
@@ -2341,7 +2350,6 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .empty-state.ev-leer{padding:22px 16px;gap:8px;border:1px dashed var(--line-2);border-radius:10px;background:rgba(255,255,255,.02)}
 .empty-state.ev-leer > .icon{width:40px;height:40px;color:var(--gold-300)} .empty-state.ev-leer > span{max-width:34ch}
 .empty-state.ev-leer > b{font-size:var(--fs-15)} .empty-state.ev-leer .btn{margin-top:8px;max-width:100%}
-#shieldUse > .lb-leer{grid-column:1/-1}
 /* Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen – erreicht leuchtet („Abholen“), abgeholt = offene Kiste + Haken */
 .evl{contain:inline-size;width:100%;overflow-x:auto;overscroll-behavior-x:contain;margin:2px -2px 6px;padding:4px 2px 2px;scrollbar-width:thin}
 .evl-bahn{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(52px,1fr));min-width:calc(var(--n) * 52px)}
@@ -2700,7 +2708,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   </div>
 </section>
 
-<!-- ============ SHOP (Dock): Kisten · Schilde · Thron · Händler (nur wenn einer da ist) · Markt – alles Kaufen/Tauschen nur hier ============ -->
+<!-- ============ SHOP (Dock): Kisten · Schilde + Teleporter (nur kaufen – benutzt wird im Rucksack) · Thron · Händler (nur wenn einer da ist) · Markt – alles Kaufen/Tauschen nur hier ============ -->
 <section id="shopPopup" class="panel panel--sheet" role="dialog" aria-labelledby="shopTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
@@ -2722,7 +2730,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <div class="mail-pane" data-spane="markt" hidden><div id="shopMarkt" class="ev-body"></div></div>
     <div class="mail-pane" data-spane="shield" hidden>
       <div id="shieldState" class="notice"></div>
-      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Vorrat<button type="button" class="shop-i" data-sinfo="schild" aria-expanded="false" aria-label="Erklärung"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
+      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Rucksack<button type="button" class="shop-i" data-sinfo="schild" aria-expanded="false" aria-label="Erklärung"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
       <p class="mail-intro shop-info" data-sinfo-box="schild" hidden>Friedensschild: niemand kann deine Türme angreifen, solange er steht – Tore, Tempel und der Thron bleiben angreifbar. Greifst du selbst an, fällt der Schild sofort.</p>
       <div class="waren waren--3">
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>2 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>2 Stunden</small></span>
@@ -2732,8 +2740,12 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>24 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>24 Stunden</small></span>
           <button type="button" class="ware-preis" data-shield="24" aria-label="Schild 24 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>700</b></button></div>
       </div>
-      <div class="sect"><h4>Einschalten</h4><span class="sect-aside">aus dem Vorrat</span></div>
-      <div id="shieldUse" class="shield-opts"></div>
+      <div class="sect"><h4>Teleporter</h4><span class="sect-aside">kommt in den Rucksack</span></div>
+      <div class="waren waren--3">
+        <div class="ware ware--klein" data-r="lila"><span class="ware-bild"><img class="kiste-bild" src="bilder/ui_sym_verlegen.webp" alt="" draggable="false"></span><span class="ware-txt"><b class="ware-name">Teleporter</b><small>Hauptstadt an eine freie Stelle</small></span>
+          <button type="button" class="ware-preis" data-tele-kauf aria-label="Teleporter kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>500</b></button></div>
+      </div>
+      <button type="button" class="ware-link" data-zum-rucksack><svg class="icon"><use href="#i-crate"/></svg><span id="shopRucksackN">Rucksack ›</span></button>
     </div>
     <div class="mail-pane" data-spane="gems">
       <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte das KI-Bild der Kiste, Preis-Knöpfe unten über die ganze Breite (ein Tipp = kaufen; unter 500 Edelsteinen „1ד und „10ד) -->
@@ -2751,6 +2763,20 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <div id="shopCrateResult" class="loot" style="display:none"></div>
       <div id="shopHeroResult" class="hchest-res" hidden></div>
     </div>
+  </div>
+</section>
+
+<!-- ============ RUCKSACK (Dock): was du hast – Schilde (einsetzen), Teleporter (benutzen), Splitter je Held (nur Anzeige) ============ -->
+<section id="rucksackPopup" class="panel panel--sheet" role="dialog" aria-labelledby="rucksackTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-crate"/></svg></div>
+    <div class="phead-text"><div class="overline">Deine Gegenstände</div><h3 id="rucksackTitle" class="ptitle">Rucksack</h3></div>
+    <button id="rucksackCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="pbody">
+    <div id="rkSchildStand" class="notice"></div>
+    <div id="rkInhalt" class="rk-inhalt"></div>
   </div>
 </section>
 

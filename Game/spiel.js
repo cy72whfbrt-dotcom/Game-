@@ -6976,7 +6976,7 @@ var BEUTE_ART = {
     gems: { b: 'beute_edelsteine', t: 'Edelsteine' }, coins: { b: 'beute_muenzen', t: 'Münzen', r: 1 }, holz: { b: 'beute_holz', t: 'Holz', r: 1 },
     stein: { b: 'beute_stein', t: 'Stein', r: 1 }, eisen: { b: 'beute_eisen', t: 'Eisen', r: 1 }, tr: { b: 'beute_truppen', t: 'Truppen', r: 2 },
     sh: { b: 'beute_splitter', t: 'Helden-Splitter', r: 3 }, tp: { b: 'beute_thron', t: 'Thron-Punkte', r: 4 }, schild: { b: 'beute_schild', t: 'Friedensschild', r: 2 },
-    punkte: { b: 'beute_punkte', t: 'Fähigkeitspunkte', r: 2 }, rahmen: { b: 'ui_sym_krone', t: 'Rahmen', r: 4 }, item: { t: 'Ausrüstung', r: 0 }, kiste: { t: 'Kiste', r: 0 }
+    punkte: { b: 'beute_punkte', t: 'Fähigkeitspunkte', r: 2 }, tele: { b: 'ui_sym_verlegen', t: 'Teleporter', r: 3 }, rahmen: { b: 'ui_sym_krone', t: 'Rahmen', r: 4 }, item: { t: 'Ausrüstung', r: 0 }, kiste: { t: 'Kiste', r: 0 }
 };
 var BEUTE_SLOT = { weapon: 'beute_waffe', armor: 'beute_ruestung', shield: 'beute_rundschild', boots: 'beute_stiefel' };
 var KISTE_BILD = { aus: 'kiste_ausruestung', held: 'kiste_held', gross: 'kiste_gross', episch: 'kiste_episch', royal: 'kiste_royal' };
@@ -7973,23 +7973,65 @@ function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spi
     if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return neulingBlockText(ow);
     return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
-function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock(), now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
+function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
     liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
-    liveHtml(document.getElementById('shieldUse'), !(st[2] || st[8] || st[24]) ? '<div class="empty-state lb-leer">' + icon('shield') + '<span><b>Kein Schild im Vorrat</b>Oben kaufen – dann hier einschalten, wann du willst.</span></div>' : [2, 8, 24].map(h => '<button type="button" class="btn btn--' + (st[h] ? 'primary' : 'secondary') + '" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '><span>' + h + ' Std.</span><span class="cost">' + st[h] + '× im Vorrat</span></button>').join('')); }   // (leer: ein Satz statt drei grauer „0×“-Kästen)
-shopPopup.addEventListener('click', e => {                 // Shop → Schilde: kaufen (in den Vorrat) und einschalten – beides nur hier
-    const su = e.target.closest('[data-shield-use]');
-    if (su) { const h = +su.dataset.shieldUse, stock = shieldStock(); if (!stock[h]) return;
-        if (Math.max(Date.now(), shieldUntil()) + h * 3600000 > Date.now() + 8 * 86400000) { flashHint('Mehr als 8 Tage Friedensschild am Stück gehen nicht – erst, wenn er kürzer ist.', 3500); return; }   // (die Welt zählt höchstens 8 Tage)
-        stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
-        store.set('openWaterShield', String(Math.max(serverJetzt(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;   // (Server-Uhr: die Welt rechnet mit ihr – eine falsch gestellte Handy-Uhr kürzt sonst den Schild)
-        flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderShop(); requestRender(); return; }
+    const st = shieldStock(), ns = st[2] + st[8] + st[24], nt = teleImRucksack(), kauf = shopPopup.querySelector('[data-tele-kauf] b');
+    if (kauf) setText(kauf, fmtNum(TP_GEMS));
+    setText(document.getElementById('shopRucksackN'), 'Im Rucksack: ' + ns + (ns === 1 ? ' Schild' : ' Schilde') + ' · ' + nt + ' Teleporter ›'); }
+shopPopup.addEventListener('click', e => {                 // Shop → Schilde/Teleporter: nur kaufen (in den Rucksack) – eingesetzt wird im Rucksack
+    if (e.target.closest('[data-zum-rucksack]')) { openRucksack(); return; }
+    const tk = e.target.closest('[data-tele-kauf]');
+    if (tk) { if (gems < TP_GEMS) { flashHint('Zu wenig Edelsteine – ein Teleporter kostet ' + fmtNum(TP_GEMS) + '.', 3000); return; }
+        if (!gemsWirklich('tele', TP_GEMS, tk)) return;
+        gems -= TP_GEMS; store.set('openWaterTeleporter', String(teleVorrat() + 1));   // (der Weltrechner zieht die Gems beim Benutzen aus dem Ausgegebenen – Befehl teleport)
+        updateHud(); saveGame(); renderShop(); flashHint('Teleporter liegt im Rucksack – dort „Benutzen“ oder auf ein freies Feld der Karte tippen.', 3500); return; }
     const bt = e.target.closest('[data-shield]'); if (!bt) return;
     const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
     if (gems < cost) { flashHint('Zu wenig Edelsteine – der Schild kostet ' + cost + '.', 3000); return; }
     if (!gemsWirklich('schild:' + h, cost, bt)) return;
     gems -= cost; const stock = shieldStock(); stock[h]++; store.set('openWaterShieldStock', JSON.stringify(stock));
     updateHud(); saveGame(); renderShop();
-    flashHint('Schild (' + h + ' Std.) liegt im Vorrat – unten einschalten, wann du willst.', 3500); });
+    flashHint('Schild (' + h + ' Std.) liegt im Rucksack – dort einsetzen, wann du willst.', 3500); });
+// ===== RUCKSACK (Dock): Schilde einsetzen (die Zeit kommt zum laufenden Schild dazu), Teleporter benutzen (→ Karte), Splitter je Held (nur Anzeige) =====
+const rucksackPopup = document.getElementById('rucksackPopup');
+function teleVorrat() { return Math.max(0, parseInt(store.get('openWaterTeleporter'), 10) || 0); }   // gekaufte Teleporter
+function teleImRucksack() { return teleVorrat() + (tpGratis('player') ? 1 : 0); }                 // + der Gratis-Teleporter neuer Spieler (Anfängerschutz)
+function rkFach(b, name, txt, knopf) {               // eine Zeile: Kachel · Name + Text · Knopf
+    return '<div class="rk-fach ki-karte">' + beuteKachel(b) + '<span class="rk-txt"><b>' + name + '</b><small>' + txt + '</small></span>' + knopf + '</div>';
+}
+function renderRucksack() {
+    if (!isPanelOpen(rucksackPopup)) return;
+    const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis(), st = shieldStock(), nt = teleImRucksack(), gratis = tpGratis('player');
+    liveHtml(document.getElementById('rkSchildStand'), icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
+    const kaufen = was => '<button type="button" class="btn btn--secondary rk-knopf" data-rk-kauf="' + was + '"><span>Kaufen</span></button>';
+    let h = '<div class="sect"><h4>Friedensschilde</h4><span class="sect-aside">Zeit kommt dazu</span></div><div class="rk-liste">' +
+        [2, 8, 24].map(n => rkFach({ a: 'schild', n }, 'Friedensschild ' + n + ' Std.', st[n] + '× im Rucksack',
+            st[n] ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-schild="' + n + '"><span>Einsetzen</span></button>' : kaufen('schild'))).join('') + '</div>';
+    h += '<div class="sect"><h4>Teleporter</h4><span class="sect-aside">Hauptstadt umziehen</span></div><div class="rk-liste">' +
+        rkFach({ a: 'tele', n: nt }, 'Teleporter', nt + '× im Rucksack' + (gratis ? ' (1 gratis für neue Spieler)' : ''),
+            nt ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-tele><span>Benutzen</span></button>' : kaufen('tele')) + '</div>';
+    const helden = HEROES.map(x => [x, heroSt('player', x.id)]).filter(([, s]) => s && s.sh > 0);
+    h += '<div class="sect"><h4>Helden-Splitter</h4><span class="sect-aside">Tipp → Held</span></div>' + (helden.length
+        ? '<div class="bk-raster rk-splitter">' + helden.map(([x, s]) => '<button type="button" class="bk-mit" data-rk-held="' + x.id + '" aria-label="' + escapeHtml(x.name) + ' öffnen">' + beuteKachel({ a: 'sh', n: s.sh, held: x.id }) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>'
+        : '<div class="empty-state lb-leer">' + icon('star') + '<span><b>Keine Splitter</b>Splitter gibt es aus Heldenkisten, Aufgaben und Events.</span></div>');
+    liveHtml(document.getElementById('rkInhalt'), h);
+}
+function openRucksack() { closeAllPopups(); openPanel(rucksackPopup); renderRucksack(); }
+document.getElementById('rucksackBtn').addEventListener('click', () => { if (isPanelOpen(rucksackPopup)) closePanel(rucksackPopup); else openRucksack(); });
+document.getElementById('rucksackCloseBtn').addEventListener('click', () => closePanel(rucksackPopup));
+rucksackPopup.addEventListener('click', e => {
+    const su = e.target.closest('[data-rk-schild]');
+    if (su) { const h = +su.dataset.rkSchild, stock = shieldStock(); if (!stock[h]) return;
+        if (Math.max(Date.now(), shieldUntil()) + h * 3600000 > Date.now() + 8 * 86400000) { flashHint('Mehr als 8 Tage Friedensschild am Stück gehen nicht – erst, wenn er kürzer ist.', 3500); return; }   // (die Welt zählt höchstens 8 Tage)
+        stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
+        store.set('openWaterShield', String(Math.max(serverJetzt(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;   // dazu zum laufenden Schild (Server-Uhr: die Welt rechnet mit ihr – eine falsch gestellte Handy-Uhr kürzt sonst den Schild)
+        flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderRucksack(); requestRender(); return; }
+    if (e.target.closest('[data-rk-tele]')) { if (!teleImRucksack()) return;
+        closeAllPopups(); if (!cityView.hidden) closeCity(); recenterOnHome(true);
+        flashHint('Tippe auf eine freie Stelle der Karte, dann „Teleportieren“ – das kostet 1 Teleporter.', 5000); return; }
+    const k = e.target.closest('[data-rk-kauf]'); if (k) { openShop('shield'); return; }
+    const hd = e.target.closest('[data-rk-held]'); if (hd) { closePanel(rucksackPopup); openHeroHall(hd.dataset.rkHeld); }
+});
 function heroChestPool(minR) { return HEROES.filter(h => { const s = heroSt('player', h.id); return s && !(s.own && s.q >= HERO_MAXQ) && h.r >= minR; }); }
 function renderHeroChests() {                       // the odds per rarity follow your heroes: maxed ones drop out
     const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0);
@@ -10168,8 +10210,8 @@ function teleportCapital(toId) {
 }
 // Teleportieren (Alexander 7.10., Merkliste 33): die Hauptstadt an eine freie Stelle der Karte – die Basis selbst zieht um (Truppen,
 // Stufe, Stadt bleiben). Platz wie für eine Basis (nicht im Gebirge, nicht auf Toren, Feldern, Lagern, Tempeln, nicht in der Thron-Mitte),
-// nur in Gebiete, die von der Hauptstadt über offene Pässe erreichbar sind (TELEPORT_NUR_OFFEN). Immer 500 Edelsteine, neue Spieler
-// (Anfängerschutz) einmal gratis, keine Abklingzeit; nicht, solange ein Marsch an der Hauptstadt hängt. Der Weltrechner entscheidet
+// nur in Gebiete, die von der Hauptstadt über offene Pässe erreichbar sind (TELEPORT_NUR_OFFEN). Kostet 1 Teleporter aus dem Rucksack (im Shop
+// 500 Edelsteine), sonst 500 Edelsteine; neue Spieler (Anfängerschutz) haben 1 Teleporter gratis, keine Abklingzeit; nicht, solange ein Marsch an der Hauptstadt hängt. Der Weltrechner entscheidet
 // (Befehl teleport), verlegte Basen stehen im Welt-Teil openWaterInselOrt { id: [x, y, Gebiet] } – Mitspieler teleportieren nicht.
 const TP_GEMS = 500, TELEPORT_NUR_OFFEN = true, TP_ABSTAND = BASE_SPACING * .5;
 let inselOrt = {};
@@ -10230,9 +10272,9 @@ function tpVerlegen(who, x, y) {                 // (geprüft, bezahlt) die Haup
 }
 function teleportOrt(x, y) {                     // (Spieler) Tipp auf „Teleportieren“, schon bestätigt → true: unterwegs bzw. erledigt
     const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return false; }
-    const gratis = tpGratis('player'), k = gratis ? 0 : TP_GEMS;
+    const gratis = tpGratis('player'), tele = !gratis && teleVorrat() > 0, k = gratis || tele ? 0 : TP_GEMS;   // zuerst der Gratis-Teleporter, dann gekaufte, sonst Edelsteine
     if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine.', 3000); return false; }
-    gems -= k; if (gratis) store.set('openWaterTpGratis', '1');
+    gems -= k; if (gratis) store.set('openWaterTpGratis', '1'); if (tele) store.set('openWaterTeleporter', String(teleVorrat() - 1));   // (gekaufter Teleporter: der Weltrechner bucht die 500 beim Kauf ausgegebenen Gems – wie beim Bezahlen hier)
     statBump('teleports'); saveGame(); saveProgression(); updateHud();
     if (alsBefehl('teleport', { x: Math.round(x), y: Math.round(y), gratis })) { flashHint('Die Hauptstadt zieht um …', 3000); return true; }   // (Zuschauer: der Weltrechner verlegt sie)
     tpVerlegen('player', x, y);
@@ -12162,12 +12204,13 @@ function drawMarkers() {                                                     // 
 let feldRing = null;                                                        // { x, y, lm } die angetippte Stelle (Welt)
 function feldRingAuf(sx, sy) {                                              // → true, wenn dort freies Land ist
     const w = screenToWorld(sx, sy), lm = landmassAtWorld(w.x, w.y); if (!lm) return false;
-    const k = tpGratis('player') ? 0 : TP_GEMS, el = document.getElementById('feldRing');
-    const kn = [['tp', 'ui_sym_verlegen', 'Teleportieren', k ? icon('gem') + fmtNum(k) : 'Gratis'], ['mark', 'ui_k_nadel', 'Markierung', ''], ['arm', 'ui_armee', 'Truppen hierher', '']];
+    const el = document.getElementById('feldRing');
+    const kn = [['tp', 'ui_sym_verlegen', 'Teleportieren', tpPreisHtml()], ['mark', 'ui_k_nadel', 'Markierung', ''], ['arm', 'ui_armee', 'Truppen hierher', '']];
     feldRing = { x: w.x, y: w.y, lm: lm.id };
     el.innerHTML = kn.map(([p, b, t, z], i) => '<button type="button" class="cr-btn" data-fring="' + p + '" style="--x:' + (i - 1) * 84 + 'px;--y:' + (i === 1 ? -92 : -58) + 'px;--d:' + i * 40 + 'ms"><span class="fr-ic" style="--b:url(bilder/' + b + '.webp)"></span><small>' + t + (z ? ' ' + z : '') + '</small></button>').join('');
     el.hidden = false; feldRingFrame(); requestRender(); return true;
 }
+function tpPreisHtml() { return teleImRucksack() ? '1 Teleporter' : icon('gem') + fmtNum(TP_GEMS); }   // ein Teleporter im Rucksack (auch der gratis) geht vor Edelsteinen
 function feldRingZu() { if (!feldRing) return; feldRing = null; document.getElementById('feldRing').hidden = true; if (gemsArmed('teleport')) gemsArmAus(); requestRender(); }
 function feldRingFrame() {                                                  // (jedes Bild) die Knöpfe folgen der Stelle, dort eine Nadel
     if (!feldRing) return;
@@ -12181,8 +12224,8 @@ document.getElementById('feldRing').addEventListener('click', e => {
     const { x, y, lm } = feldRing, was = b.dataset.fring;
     if (was === 'tp') {
         const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return; }
-        const k = tpGratis('player') ? 0 : TP_GEMS; if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine.', 3000); return; }
-        if (!gemsWirklich('teleport', k, b, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren? ' + (k ? icon('gem') + fmtNum(k) : 'Gratis'); return; }   // (immer bestätigen – ab 500 „Wirklich?“)
+        const k = teleImRucksack() ? 0 : TP_GEMS; if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine – oder 1 Teleporter aus dem Rucksack.', 3000); return; }
+        if (!gemsWirklich('teleport', k, b, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren? ' + tpPreisHtml(); return; }   // (immer bestätigen – ab 500 „Wirklich?“)
         if (teleportOrt(x, y)) feldRingZu(); return;
     }
     feldRingZu();
@@ -12226,9 +12269,9 @@ let previewShownAt = 0; // guards against a stray click landing on the
 // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
 function isUiElement(target) {
   return !!(target && target.closest && target.closest(
-    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
+    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#rucksackPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
 }
-const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
+const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', rucksackPopup: 'rucksackBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
 function isPanelOpen(el) { return el.classList.contains('is-open'); }
 function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); syncPanelState(); }
 function closePanel(el) { el.classList.remove('is-open'); syncPanelState(); }
@@ -12262,7 +12305,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn'],['rucksackPopup','rucksackCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -12285,6 +12328,7 @@ function closeAllPopups() {
     clearInterval(battleLogRefreshTimer);
     closePanel(document.getElementById('goalsPopup'));
     closePanel(shopPopup);
+    closePanel(document.getElementById('rucksackPopup'));
     closePanel(document.getElementById('rulerPopup'));
     closePanel(document.getElementById('rankPopup'));
     if (!document.getElementById('lookSheet').hidden) closeLookSheet();
@@ -13700,6 +13744,7 @@ function liveTick() {
         if (tab === 'skills') { const sig = skillPoints + JSON.stringify(skills); if (sig !== liveSkillSig) { liveSkillSig = sig; renderSkillGrid(); } }
     });
     if (isPanelOpen(shopPopup)) teil(renderShop);                                                         // Shop: Gems, Schild-Restzeit, Thron-Punkte
+    teil(renderRucksack);                                                                                   // Rucksack: Schild-Restzeit, Vorrat, Splitter
     if (isPanelOpen(goalsPopup) && goalsTab === 'reward') teil(renderInbox);                              // Events → Belohnung
     if (isPanelOpen(rankPopup) && liveZuletzt - liveRangAt >= 5000) { liveRangAt = liveZuletzt; teil(renderRankings); }   // Rangliste: alle 5 s reicht
     teil(heroHallLive);                                                                                     // Helden

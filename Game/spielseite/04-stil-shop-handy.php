@@ -88,7 +88,6 @@
 .thron-zeile > .icon{width:16px;height:16px;flex:none;color:#f2c75c} .thron-zeile > span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .thron-zeile b{color:var(--tx-1);font-variant-numeric:tabular-nums}
 .thron-zeile .tz-i{margin-left:4px;color:var(--gold-300)} .thron-zeile.on{border-color:var(--line-3)}
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
 .odds .chip--rar{height:auto;min-height:20px;padding:4px 6px;line-height:1.3}   /* zweizeilig (Handy): Innenabstand oben/unten, nicht am Rand */
 .hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)} .hchest-h{font:600 var(--fs-13)/1.2 var(--font-display);color:var(--gold-100)}

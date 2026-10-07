@@ -55,23 +55,65 @@ function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spi
     if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return neulingBlockText(ow);
     return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
-function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock(), now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
+function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
     liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
-    liveHtml(document.getElementById('shieldUse'), !(st[2] || st[8] || st[24]) ? '<div class="empty-state lb-leer">' + icon('shield') + '<span><b>Kein Schild im Vorrat</b>Oben kaufen – dann hier einschalten, wann du willst.</span></div>' : [2, 8, 24].map(h => '<button type="button" class="btn btn--' + (st[h] ? 'primary' : 'secondary') + '" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '><span>' + h + ' Std.</span><span class="cost">' + st[h] + '× im Vorrat</span></button>').join('')); }   // (leer: ein Satz statt drei grauer „0×“-Kästen)
-shopPopup.addEventListener('click', e => {                 // Shop → Schilde: kaufen (in den Vorrat) und einschalten – beides nur hier
-    const su = e.target.closest('[data-shield-use]');
-    if (su) { const h = +su.dataset.shieldUse, stock = shieldStock(); if (!stock[h]) return;
-        if (Math.max(Date.now(), shieldUntil()) + h * 3600000 > Date.now() + 8 * 86400000) { flashHint('Mehr als 8 Tage Friedensschild am Stück gehen nicht – erst, wenn er kürzer ist.', 3500); return; }   // (die Welt zählt höchstens 8 Tage)
-        stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
-        store.set('openWaterShield', String(Math.max(serverJetzt(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;   // (Server-Uhr: die Welt rechnet mit ihr – eine falsch gestellte Handy-Uhr kürzt sonst den Schild)
-        flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderShop(); requestRender(); return; }
+    const st = shieldStock(), ns = st[2] + st[8] + st[24], nt = teleImRucksack(), kauf = shopPopup.querySelector('[data-tele-kauf] b');
+    if (kauf) setText(kauf, fmtNum(TP_GEMS));
+    setText(document.getElementById('shopRucksackN'), 'Im Rucksack: ' + ns + (ns === 1 ? ' Schild' : ' Schilde') + ' · ' + nt + ' Teleporter ›'); }
+shopPopup.addEventListener('click', e => {                 // Shop → Schilde/Teleporter: nur kaufen (in den Rucksack) – eingesetzt wird im Rucksack
+    if (e.target.closest('[data-zum-rucksack]')) { openRucksack(); return; }
+    const tk = e.target.closest('[data-tele-kauf]');
+    if (tk) { if (gems < TP_GEMS) { flashHint('Zu wenig Edelsteine – ein Teleporter kostet ' + fmtNum(TP_GEMS) + '.', 3000); return; }
+        if (!gemsWirklich('tele', TP_GEMS, tk)) return;
+        gems -= TP_GEMS; store.set('openWaterTeleporter', String(teleVorrat() + 1));   // (der Weltrechner zieht die Gems beim Benutzen aus dem Ausgegebenen – Befehl teleport)
+        updateHud(); saveGame(); renderShop(); flashHint('Teleporter liegt im Rucksack – dort „Benutzen“ oder auf ein freies Feld der Karte tippen.', 3500); return; }
     const bt = e.target.closest('[data-shield]'); if (!bt) return;
     const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
     if (gems < cost) { flashHint('Zu wenig Edelsteine – der Schild kostet ' + cost + '.', 3000); return; }
     if (!gemsWirklich('schild:' + h, cost, bt)) return;
     gems -= cost; const stock = shieldStock(); stock[h]++; store.set('openWaterShieldStock', JSON.stringify(stock));
     updateHud(); saveGame(); renderShop();
-    flashHint('Schild (' + h + ' Std.) liegt im Vorrat – unten einschalten, wann du willst.', 3500); });
+    flashHint('Schild (' + h + ' Std.) liegt im Rucksack – dort einsetzen, wann du willst.', 3500); });
+// ===== RUCKSACK (Dock): Schilde einsetzen (die Zeit kommt zum laufenden Schild dazu), Teleporter benutzen (→ Karte), Splitter je Held (nur Anzeige) =====
+const rucksackPopup = document.getElementById('rucksackPopup');
+function teleVorrat() { return Math.max(0, parseInt(store.get('openWaterTeleporter'), 10) || 0); }   // gekaufte Teleporter
+function teleImRucksack() { return teleVorrat() + (tpGratis('player') ? 1 : 0); }                 // + der Gratis-Teleporter neuer Spieler (Anfängerschutz)
+function rkFach(b, name, txt, knopf) {               // eine Zeile: Kachel · Name + Text · Knopf
+    return '<div class="rk-fach ki-karte">' + beuteKachel(b) + '<span class="rk-txt"><b>' + name + '</b><small>' + txt + '</small></span>' + knopf + '</div>';
+}
+function renderRucksack() {
+    if (!isPanelOpen(rucksackPopup)) return;
+    const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis(), st = shieldStock(), nt = teleImRucksack(), gratis = tpGratis('player');
+    liveHtml(document.getElementById('rkSchildStand'), icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
+    const kaufen = was => '<button type="button" class="btn btn--secondary rk-knopf" data-rk-kauf="' + was + '"><span>Kaufen</span></button>';
+    let h = '<div class="sect"><h4>Friedensschilde</h4><span class="sect-aside">Zeit kommt dazu</span></div><div class="rk-liste">' +
+        [2, 8, 24].map(n => rkFach({ a: 'schild', n }, 'Friedensschild ' + n + ' Std.', st[n] + '× im Rucksack',
+            st[n] ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-schild="' + n + '"><span>Einsetzen</span></button>' : kaufen('schild'))).join('') + '</div>';
+    h += '<div class="sect"><h4>Teleporter</h4><span class="sect-aside">Hauptstadt umziehen</span></div><div class="rk-liste">' +
+        rkFach({ a: 'tele', n: nt }, 'Teleporter', nt + '× im Rucksack' + (gratis ? ' (1 gratis für neue Spieler)' : ''),
+            nt ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-tele><span>Benutzen</span></button>' : kaufen('tele')) + '</div>';
+    const helden = HEROES.map(x => [x, heroSt('player', x.id)]).filter(([, s]) => s && s.sh > 0);
+    h += '<div class="sect"><h4>Helden-Splitter</h4><span class="sect-aside">Tipp → Held</span></div>' + (helden.length
+        ? '<div class="bk-raster rk-splitter">' + helden.map(([x, s]) => '<button type="button" class="bk-mit" data-rk-held="' + x.id + '" aria-label="' + escapeHtml(x.name) + ' öffnen">' + beuteKachel({ a: 'sh', n: s.sh, held: x.id }) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>'
+        : '<div class="empty-state lb-leer">' + icon('star') + '<span><b>Keine Splitter</b>Splitter gibt es aus Heldenkisten, Aufgaben und Events.</span></div>');
+    liveHtml(document.getElementById('rkInhalt'), h);
+}
+function openRucksack() { closeAllPopups(); openPanel(rucksackPopup); renderRucksack(); }
+document.getElementById('rucksackBtn').addEventListener('click', () => { if (isPanelOpen(rucksackPopup)) closePanel(rucksackPopup); else openRucksack(); });
+document.getElementById('rucksackCloseBtn').addEventListener('click', () => closePanel(rucksackPopup));
+rucksackPopup.addEventListener('click', e => {
+    const su = e.target.closest('[data-rk-schild]');
+    if (su) { const h = +su.dataset.rkSchild, stock = shieldStock(); if (!stock[h]) return;
+        if (Math.max(Date.now(), shieldUntil()) + h * 3600000 > Date.now() + 8 * 86400000) { flashHint('Mehr als 8 Tage Friedensschild am Stück gehen nicht – erst, wenn er kürzer ist.', 3500); return; }   // (die Welt zählt höchstens 8 Tage)
+        stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
+        store.set('openWaterShield', String(Math.max(serverJetzt(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;   // dazu zum laufenden Schild (Server-Uhr: die Welt rechnet mit ihr – eine falsch gestellte Handy-Uhr kürzt sonst den Schild)
+        flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderRucksack(); requestRender(); return; }
+    if (e.target.closest('[data-rk-tele]')) { if (!teleImRucksack()) return;
+        closeAllPopups(); if (!cityView.hidden) closeCity(); recenterOnHome(true);
+        flashHint('Tippe auf eine freie Stelle der Karte, dann „Teleportieren“ – das kostet 1 Teleporter.', 5000); return; }
+    const k = e.target.closest('[data-rk-kauf]'); if (k) { openShop('shield'); return; }
+    const hd = e.target.closest('[data-rk-held]'); if (hd) { closePanel(rucksackPopup); openHeroHall(hd.dataset.rkHeld); }
+});
 function heroChestPool(minR) { return HEROES.filter(h => { const s = heroSt('player', h.id); return s && !(s.own && s.q >= HERO_MAXQ) && h.r >= minR; }); }
 function renderHeroChests() {                       // the odds per rarity follow your heroes: maxed ones drop out
     const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0);

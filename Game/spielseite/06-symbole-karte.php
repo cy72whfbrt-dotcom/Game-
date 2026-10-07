@@ -92,14 +92,15 @@
 
 <div id="midBar" class="midbar" hidden></div>
 
-<!-- Navigation (die EINE Ordnung, Abschnitt 26): Karte/Stadt · Bündnis · Kampf · Events · Shop – runde Knöpfe; das Profil über das Spielerbild.
+<!-- Navigation (die EINE Ordnung, Abschnitt 26): Karte/Stadt · Bündnis · Kampf · Events · Rucksack · Shop – runde Knöpfe; das Profil über das Spielerbild.
      phone = bottom dock, landscape phone = left rail, desktop = unten Mitte -->
 <nav id="cornerButtons" class="nav" aria-label="Hauptmenü">
   <button id="cityNavBtn" class="nav-btn" type="button" title="Stadt: Burg, Gebäude, Forschung, Helden, Rohstoffe"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="bundBtn" class="nav-btn" type="button" title="Bündnis"><svg class="icon"><use href="#i-bund"/></svg><span class="nav-l">Bündnis</span><span id="bundBadge" class="badge" style="display:none">0</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Kampf: Märsche und Berichte"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
   <button id="goalsBtn" class="nav-btn" type="button" title="Events: Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Boss"><svg class="icon"><use href="#i-event"/></svg><span class="nav-l">Events</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
-  <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
+  <button id="rucksackBtn" class="nav-btn" type="button" title="Rucksack: Schilde, Teleporter, Splitter"><svg class="icon"><use href="#i-crate"/></svg><span class="nav-l">Rucksack</span></button>
+  <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Teleporter, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
   <button id="profileBtn" class="nav-btn" type="button" title="Profil: Spieler, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
 </nav>
 
