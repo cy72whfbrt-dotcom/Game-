@@ -1688,6 +1688,9 @@ Nacht – vorher bauen und testen.
     Neustart der Welt: kommt fest, aber erst AM ENDE, wenn die Merkliste abgearbeitet ist (mit Münz-Fehler + Burg-Zahlen).
     Vorgehen: zuerst eine eigene KARTEN-TESTDATEI nur mit der Karte (nichts sonst), dann ins Spiel einbauen.
     Stand: Karten-Optik (KI-Bilder, Ketten, Tore) ist lokal gemergt (5ea92cb), noch NICHT gepusht/hochgeladen.
+31. **Namensschild-Skins (Alexander 7.10.: „später Skins machen, sieht geil aus“):** Das Schild unter jeder Basis
+    (Wappen, Turm-Stufe, Truppen; fremde „?“ bis gespäht) später in mehreren Skins als KI-Bilder anbieten
+    (Ersatz für die entfernten Basis-/Marsch-Skins).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
