@@ -116,9 +116,10 @@ function drawFog(view, now) {
     const p2 = g.createPattern(FOG_TEX, 'repeat'); p2.setTransform(new DOMMatrix().rotate(23).scale(Math.max(26000, 0.9 / z) / 256));   // never finer than ~1 px of noise
     g.globalAlpha = .55 * Math.max(0, Math.min(1, (z - 0.004) / 0.006)); g.fillStyle = p2; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5); g.globalAlpha = 1;
     const weit = nebelWeit(z);
-    if (weit > 0) {                                                                                  // weit draußen: ruhige dunkle Fläche, die Gebiete schimmern als Sand durch (wie eine Weltübersicht)
+    if (weit > 0) {                                                                                  // weit draußen: ruhige dunkle Fläche, die Gebiete in Ringfarben mit den Gebirgen (wie eine Weltübersicht)
         g.globalAlpha = weit; g.fillStyle = '#1a2433'; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
-        g.globalAlpha = weit * .4; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); } g.globalAlpha = 1;
+        g.globalAlpha = weit * .75; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); }   // Ringfarben + Gebirgs-Bänder als Übersicht (wie RoK)
+        g.globalAlpha = weit * .85; paintBaender(g, z * FS); g.globalAlpha = 1;
     }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore();
     }

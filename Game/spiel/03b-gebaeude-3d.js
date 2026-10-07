@@ -262,29 +262,24 @@ function buildingSprite(kind, ownerKey, home, sizePx, tier) {
 }
 // Pass-Tor auf der Karte: steht genau auf der Grenzlinie (die Kette läuft dort gerade auf das Tor zu, 03a karteObjekte)
 // → { x, y, r: Abstand Mitte–Schild, senk: Grenze läuft senkrecht } oder null
+const TOR_PUNKT_ZOOM = 0.0015;                                                  // noch weiter draußen keine Tor-Punkte (Handy: über 500 Punkte wären nur Rauschen)
 function torMitte(island) {
   if (island.type !== 'gate' || !karteBilder()) return null;
   if (island.torMitte) return island.torMitte;
   const [[x1, y1], [x2, y2]] = island.ends, im = KB.img.tor_zu, S = HEX_SPACING, senk = Math.abs(x2 - x1) > Math.abs(y2 - y1);
   let x = (x1 + x2) / 2, y = (y1 + y2) / 2;
   if (senk) x = grenzLinie(true, Math.round(x / S - .5) + .5, y); else y = grenzLinie(false, Math.round(y / S - .5) + .5, x);
-  return (island.torMitte = { x, y, senk, r: senk ? TOR_SENK.turm * .8 : KARTE_MASS.tor * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });
+  return (island.torMitte = { x, y, senk, r: senk ? 900 : KARTE_MASS.tor * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });   // (senkrecht: Schild neben dem Weg)
 }
 // (Bildschirm) Pass-Tor offen/zu; dunkel: noch im Nebel. Waagrechte Grenze: das Pass-Tor-Bild (Mauer in Kettenrichtung).
-// Senkrechte Grenze: Erdweg quer durch die Lücke der Kette, je ein Wachturm (3D-Tor, offen/zu) oben und unten auf der Linie.
+// Senkrechte Grenze: Erdweg + Türme liegen schon in der Kachel (03a karteObjekte) – hier nur der Punkt von weit draußen.
 function drawTorBild(island, open, z, dunkel) {
-  const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z, mx = toSX(tm.x), my = toSY(tm.y);
-  if (w < 16) { if (dunkel) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
+  const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z * karteSkala(z), mx = toSX(tm.x), my = toSY(tm.y);
+  if (w < 16) { if (dunkel || z < TOR_PUNKT_ZOOM) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
     ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
   if (mx + w < 0 || mx - w > viewW || my + w < 0 || my - w > viewH) return;
-  if (!tm.senk) { const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h); return; }
-  const lw = TOR_SENK.weg * z, bw = Math.max(2, 420 * z), wg = ctx.createLinearGradient(mx - lw / 2, 0, mx + lw / 2, 0);   // Erdweg, an den Enden weich
-  wg.addColorStop(0, 'rgba(168,128,84,0)'); wg.addColorStop(.3, 'rgba(168,128,84,.7)'); wg.addColorStop(.7, 'rgba(168,128,84,.7)'); wg.addColorStop(1, 'rgba(168,128,84,0)');
-  ctx.fillStyle = wg; rr(ctx, mx - lw / 2, my - bw / 2, lw, bw, bw / 2); ctx.fill();
-  const S = Math.max(16, 3000 * z), owner = dunkel ? 'neutral' : ownerKeyOf(island), sp = buildingSprite(open ? 'gate' : 'gateShut', owner, false, S, 0), k = S / sp.bucket, u = S / 64;
-  const bk = bkSprite(island, owner, open, z * 2);                             // (Wachtürme doppelt so groß wie ein Tor-Turm: neben der Kette sonst winzig)
-  for (const gy of [my - TOR_SENK.turm * z, my + TOR_SENK.turm * z])   // oben zuerst (steht weiter hinten)
-    if (!bkDraw(bk, mx, gy)) ctx.drawImage(sp.c, mx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
+  if (tm.senk) return;
+  const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
 }
 function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
   if (!karteBilder() || KARTE_MASS.tor * z < 16) return;

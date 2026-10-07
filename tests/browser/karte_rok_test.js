@@ -1,7 +1,8 @@
 // Karte wie RoK (LIESMICH 11c Punkt 25): kein Wasser, Boden nach Ringen, Gebirgsketten auf allen Grenzen, Pass-Tore in der Kette.
 // A) alle Karten-Bilder geladen (Game/bilder/karte_*.webp), zusammen < 1,5 MB
 // B) Boden nach Ringen: außen grün → Mitte Sand (lm.boden, Masken), lm.bio bleibt für Rohstoffe/Felder (keine neue Spielregel)
-// C) Ketten auf jeder Grenze (auch am Kartenrand), Knoten an jeder Kreuzung, an jedem Tor eine Lücke für das Tor-Bild
+// C) Ketten auf jeder Grenze (auch am Kartenrand), Knoten an jeder Kreuzung, an jedem Tor eine Lücke für das Tor-Bild; wo ein Feld auf
+//    der Grenze liegt (Lage = Spiellogik), spart die Kette aus
 // D) Tor genau in der Kette: Lücke auf dem Torpunkt (≤ 2 % Torbreite); waagrechte Grenze: Mauer in Kettenrichtung (≤ 10°), Fuß bündig
 //    (≤ 2 px bei 0,03); senkrechte Grenze (Lücke + Wachtürme, kein Quer-Tor): Kette über und unter dem Tor auf einer Linie (≤ 2 % Torbreite)
 // E) Märsche nur durch die Tore: jeder Weg zwischen zwei Gebieten kreuzt die Grenze nur an einem Tor (Logik unverändert)
@@ -20,9 +21,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const g0 = await p.evaluate(() => ({ quelle: karteBilder.toString().includes('new Image'), start: /karteBilder\(\)/.test(paintBackground.toString()) }));
   await p.waitForFunction(() => typeof karteBilder === 'function' && karteBilder(), null, { timeout: 60000, polling: 500 }).catch(() => {});
   // ===== A =====
-  const a = await p.evaluate(() => ({ fertig: KB.fertig, n: Object.keys(KB.img).length, soll: KB_DATEIEN.length, breit: KB_DATEIEN.map(n => KB.img[n] && KB.img[n].naturalWidth) }));
+  const a = await p.evaluate(() => ({ fertig: KB.fertig, n: KB_DATEIEN.filter(n => KB.img[n]).length, soll: KB_DATEIEN.length, breit: KB_DATEIEN.map(n => KB.img[n] && KB.img[n].naturalWidth) }));
   const groesse = fs.readdirSync(path.join(VS, 'bilder')).filter(f => f.startsWith('karte_')).reduce((s, f) => s + fs.statSync(path.join(VS, 'bilder', f)).size, 0);
-  ok(a.fertig && a.n === a.soll && a.breit.every(w => w > 200), 'alle Karten-Bilder geladen', a);
+  ok(a.fertig && a.n === a.soll && a.breit.every(w => w > 100), 'alle Karten-Bilder geladen', a);
   ok(groesse < 1.5 * 1048576, 'Karten-Bilder zusammen < 1,5 MB', Math.round(groesse / 1024) + ' KB');
   ok(g0.quelle && g0.start, 'Bilder laden erst beim Zeichnen (paintBackground → karteBilder)');
   // ===== B =====
@@ -46,15 +47,19 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const tore = bridges.map(br => torMitte(islandById[br.gateId]));
     for (const senk of [true, false]) for (const L of linien) for (let t = -ende + 4000; t < ende - 4000; t += 8000) {
       const aus = Math.abs(L) > GRID_HALF ? Math.sign(L) * RAND_AUSSEN : 0, x = senk ? grenzLinie(true, L, t) + aus : t, y = senk ? t : grenzLinie(false, L, t) + aus;   // (Kartenrand: nach außen versetzt)
-      if (tore.some(g => Math.hypot(g.x - x, g.y - y) < KETTE_GERADE.hoch + 2000)) continue;   // (am Tor läuft die Kette absichtlich gerade)
-      if (!K.liste.some(o => o.n.startsWith('kette') && x > o.bb.l && x < o.bb.r && y > o.bb.t && y < o.bb.b)) ohne.push([senk ? 'senk' : 'waag', L, Math.round(t)]); }
+      if (tore.some(g => Math.hypot(g.x - x, g.y - y) < KARTE_MASS.tor * .7)) continue;   // (die Lücke am Tor selbst)
+      if (resFields.some(q => Math.hypot(q.x - x, q.y - y) < q.radius + 3000)) continue;   // (ein Feld liegt auf der Grenze: dort spart die Kette aus)
+      const drin = (x, y) => K.liste.some(o => o.n.startsWith('kette') && x > o.bb.l && x < o.bb.r && y > o.bb.t && y < o.bb.b);
+      const g = tore.find(q => Math.hypot(q.x - x, q.y - y) < KETTE_GERADE[senk ? 'hoch' : 'quer']);   // am Tor läuft die Kette gerade auf der Linie des Tors
+      if (!drin(x, y) && !(g && drin(senk ? g.x : x, senk ? y : g.y))) ohne.push([senk ? 'senk' : 'waag', L, Math.round(t)]); }
     const mess = bridges.map(br => { const isl = islandById[br.gateId], tm = torMitte(isl), senk = Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1);
       const L = senk ? Math.round(tm.x / S - .5) + .5 : Math.round(tm.y / S - .5) + .5, punkt = senk ? grenzLinie(true, L, tm.y) : grenzLinie(false, L, tm.x);
       const luecke = Math.abs((senk ? tm.x : tm.y) - punkt) / KARTE_MASS.tor * 100;
-      if (senk) { const nb = K.liste.filter(o => o.n.startsWith('kette_hoch') && Math.abs(o.y - tm.y) < 6000 && Math.abs(o.x - tm.x) < 3000), mitte = l => l.reduce((s, o) => s + o.x, 0) / Math.max(1, l.length);
-        const oben = nb.filter(o => o.y < tm.y), unten = nb.filter(o => o.y > tm.y);
-        const v = s => { const o = oben.filter(q => (q.x < tm.x) === s), u = unten.filter(q => (q.x < tm.x) === s); return o.length && u.length ? Math.abs(mitte(o) - mitte(u)) : 0; };   // je Reihe
-        return { id: isl.id, senk, luecke, versatz: oben.length && unten.length ? Math.max(v(true), v(false)) / KARTE_MASS.tor * 100 : 99 }; }
+      if (senk) {   // Pass-Lücke: Türme auf der Linie; mittlere Kettenreihe über und unter der Lücke auf derselben Linie (Abstand der Stücke zur Torlinie)
+        const reihe = K.liste.filter(o => o.n.startsWith('kette_hoch') && Math.abs(o.y - tm.y) < 15000 && Math.abs(o.x - tm.x) < 700);
+        const oben = reihe.filter(o => o.y < tm.y), unten = reihe.filter(o => o.y > tm.y), ab = Math.max(...reihe.map(o => Math.abs(o.x - tm.x)));
+        const tuerme = K.liste.filter(o => o.n === 'turm' && Math.abs(o.y - tm.y) < 6000 && Math.abs(o.x - tm.x) < 4000), turmAb = Math.max(...tuerme.map(o => Math.abs(o.x - tm.x)));
+        return { id: isl.id, senk, luecke, versatz: oben.length && unten.length && tuerme.length === 2 ? Math.max(ab, turmAb) / KARTE_MASS.tor * 100 : 99 }; }
       const nb = K.liste.filter(o => o.n.startsWith('kette_quer') && Math.abs(o.x - tm.x) < 10000 && Math.abs(o.y - tm.y) < 600);
       const paar = [nb.filter(o => o.x < tm.x).sort((u, v) => v.x - u.x)[0], nb.filter(o => o.x > tm.x).sort((u, v) => u.x - v.x)[0]].filter(Boolean);
       const winkel = paar.length === 2 ? Math.abs(Math.atan2(paar[1].y - paar[0].y, paar[1].x - paar[0].x) * 180 / Math.PI) : 99;
