@@ -11930,6 +11930,7 @@ function armyMove(a, t) {                                                    // 
     const who = armyWho(a), now = Date.now(); armyHalt(a, now);
     if (t.kind === 'base' && islandOwnerOf(t.id) === who) t.kind = 'home';
     if (t.kind === 'base' && isCapital(t.id)) return 'capital';
+    if (t.kind === 'base' && t.id === megaTempleId && now < thronOffenAb()) return 'thron';   // der Thron erst ab Tag 7 – auch für Armeen
     if (t.kind === 'base' && baseShieldedFor(t.id, who)) return 'shield';
     if (t.kind === 'army') { const b = armyById(t.id); if (b && armyWho(b) !== who && ownerShielded(armyWho(b))) return 'shield'; }
     if (bundFreund(who, t.kind === 'base' ? islandOwnerOf(t.id) : t.kind === 'army' && armyById(t.id) ? armyWho(armyById(t.id)) : null)) return 'bund';   // Bündnis-Mitglieder greifen sich nicht an
@@ -11946,6 +11947,7 @@ function armyOrder(a, t) {
     const why = !rechnet() ? (WELT.befehl('armee', { op: 'ziehen', id: a.id, ziel: t }), '') : armyMove(a, t);
     if (why === 'shield') flashHint(shieldBlockText(t.kind === 'army' ? armyWho(armyById(t.id)) : islandOwnerOf(t.id)), 4000);
     if (why === 'capital') flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(t.id)] || {}).name + ' – eine Hauptstadt greifst du von einer Basis aus an (Angreifen), nicht mit einer Armee.', 4000);
+    if (why === 'thron') flashHint('Der Thron zählt erst ab Tag ' + KARTE_ZONEN.thron.tag + ' – noch ' + fmtPassWait(thronOffenAb() - Date.now()) + '.', 3500);
     if (why === 'route') flashHint(noRouteHint(a.lm, t.lm), 3500);
     if (why === 'bund') flashHint('Das gehört einem Bündnis-Mitglied – Mitglieder greifen sich nicht an.', 3500);
     if (why) return false;
