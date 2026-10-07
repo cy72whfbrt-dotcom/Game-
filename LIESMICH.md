@@ -1659,6 +1659,9 @@ Nacht – vorher bauen und testen.
     nutzen“). → Gebäude sinnlos. Alle Gebäude prüfen: was geht ohne das Gebäude? FRAGE an Alexander beim Abarbeiten:
     Helden erst mit Heldenhalle (Stufe 1) nutzbar? (Empfehlung ja, wie RoK.) Außerdem Zahlen: Heldenhalle kostet 280 Münzen /
     300 Holz bei 180 Mio. Münzen (vgl. Punkt 9: Kosten zu klein); „Fehlt: 259 Holz“ ok.
+    ✅ (7.10.) Helden erst mit Heldenhalle Stufe 1 (`heroHalle` in 08c, für dich und Mitspieler, auch im Weltrechner): ohne Halle
+    zeigt das Helden-Fenster „Baue die Heldenhalle“, kein Freischalten/Aufwerten/Fähigkeiten, kein Held im Marsch; Splitter
+    (Heldenkiste) sammeln geht. Test `heldenhalle_test`. Dazu: Armeen dürfen den Thron auch erst ab Tag 7 angreifen (09d).
 22. **Stadt-Ansicht: außerhalb der Mauer nur die echte Außenkarte** (Bild 189a3a74, 18:35; schon früher gesagt): Jetzt
     stehen außerhalb der Mauer selbst gezeichnete Berge, Wälder, Fluss, Felsen. Gewünscht wie RoK: um die Mauer herum
     nur ein kleines Stück der echten Weltkarte (gleiches Gelände/Biom wie auf der Karte an dieser Stelle), sonst nichts
