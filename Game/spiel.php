@@ -2102,6 +2102,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 /* Unter-Reiter und Wahl-Knöpfe: Schildchen, aktiv gold */
 :is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border-radius:0!important;box-shadow:none;
   border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
+#goalsTabs.p5-chips{gap:4px;padding-left:8px;padding-right:8px} #goalsTabs .p5-chip{padding:0 8px;gap:4px}   /* 5 Ereignis-Chips (mit Lager) passen auch ins schmale Desktop-Fenster */
 :is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
 :is(.seg:not(.hero-seg) > button):disabled{border-image:url(bilder/ui_k_grau.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
 .ki-balken{border-style:solid;border-width:0;border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch}
@@ -2119,6 +2120,12 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .daily-day{border-radius:0!important;border-image:url(bilder/ui_platz.webp) 30 fill / 8px stretch!important}
 :is(.pill,.ware-link){border-radius:0!important;background:none;border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
 .ware-preis{border-radius:0!important;border-image:url(bilder/ui_k_dunkel.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
+/* Preise überall gleich (Alexander 7.10.): helle Schrift, wenn es reicht – rot, wenn nicht (nie grau); eine Größe; volle Zahl mit Punkt */
+.ware-preis,.ware-preis.thron{color:#fbeec9;font:800 15px/1 var(--font-ui);text-shadow:0 1px 2px #000;background:none}
+.ware-preis.zu-teuer,.ware-preis:disabled{color:#ff8d82}
+.ware-preis .icon{width:15px;height:15px}
+.ware-preise > .ware-preis{flex-wrap:wrap;align-content:center;row-gap:2px;font-size:15px}   /* 1× / 10×: das Mal klein darüber, der Preis gleich groß wie überall */
+.ware-preise > .ware-preis .ware-x,.ware-preis[data-x]::before{flex:1 0 100%;text-align:center;margin:0;font:700 10px/1 var(--font-ui);opacity:.8}
 .ware .band{border-style:solid;border-width:0;background:none;border-image:url(bilder/ui_band_gold.webp) 30 70 30 70 fill / 6px 16px 6px 16px stretch;padding:0 16px}
 
 /* ---------------- Symbole je Ort (dritte Lieferung): Basis-Knöpfe, Bauarbeiter, Fähigkeiten, Labor, Rangliste, Bündnis, Einstellungen ---------------- */

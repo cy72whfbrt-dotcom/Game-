@@ -27,7 +27,7 @@ function renderLookTop() {                            // what you wear now + wha
     const el = document.getElementById('lkTop'); if (!el || document.getElementById('lookSheet').hidden) return;
     liveHtml(el, '<span class="frame-ring lk-me" data-frame="' + playerFrame() + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
         '<span class="lk-me-t"><b>' + escapeHtml(profileName.value || 'Du') + '</b><small>' + escapeHtml(playerTitle()) + '</small></span>' +
-        '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtCompact(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>');
+        '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtHud(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>');
 }
 function renderLookSheet(live) {                     // live = jede Sekunde aus liveTick: der Wappen-Editor bleibt, wie er ist
     const sh = document.getElementById('lookSheet'); if (!sh || sh.hidden) return;

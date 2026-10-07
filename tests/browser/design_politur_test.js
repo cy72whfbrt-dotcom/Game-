@@ -71,7 +71,7 @@ srv.listen(0, '127.0.0.1', async () => {
     ok(r.tour.titel && !/Wochen-Event/.test(r.tour.titel), art + ': Wochen-Banner zeigt nur das Thema', r.tour.titel);
     ok(!/\d,\d Punkte pro/.test(r.tour.text) && !/– · \d/.test(r.tour.text) && (/Krieger-Woche/.test(r.tour.titel) ? /18 Punkte je 10 besiegte Krieger/.test(r.tour.text) : true), art + ': Punkte als ganze Zahlen, kein „– ·“', r.tour.text.slice(0, 300));
     ok(r.tour.leer, art + ': Top 10 leer → Symbol + Satz', r.tour.leer);
-    ok(r.chips.length === 4 && r.chips.every(c => c[1]), art + ': Ereignis-Chips ganz im Bild', r.chips);
+    ok(r.chips.length === 5 && r.chips.every(c => c[1]), art + ': Ereignis-Chips ganz im Bild', r.chips);
     ok(r.kampf.leer && r.kampf.gold && r.kampf.zu, art + ': Kampf leer – Symbol, Gold-Knopf „Ziel auf der Karte wählen“ schließt das Fenster', r.kampf);
     ok(r.bund.ov === 'none' && r.bund.titel === 'Bündnis' && r.bund.leer, art + ': Bündnis ohne Bündnis – Kopf nicht doppelt, leere Liste mit Symbol', r.bund);
     ok(r.shop.namen.length >= 4 && r.shop.namen.every(n => n[1]), art + ': Kistennamen ganz zu sehen', r.shop.namen);

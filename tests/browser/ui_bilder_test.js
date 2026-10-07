@@ -113,8 +113,18 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(!ring.length, 'Stadt: runde Knöpfe am Gebäude immer ganz zu sehen (nie unter der Leiste)', ring);
   await ev(() => { closeAllPopups(); closeCity(); });
   // 5a) Shop und Bündnis: Fotos (gleiche Grundform)
-  await ev(async () => { closeAllPopups(); document.getElementById('shopBtn').click(); await new Promise(f => setTimeout(f, 800)); });
+  const preise = await ev(async () => {   // Preise: reicht es → hell, sonst rot; nie grau; „10× 1.500“ passt in den Knopf
+    const warte = ms => new Promise(f => setTimeout(f, ms)), farbe = b => getComputedStyle(b).color, o = {};
+    closeAllPopups(); gems = 100000; updateHud(); document.getElementById('shopBtn').click(); await warte(800);
+    const alle = () => [...document.querySelectorAll('#shopPopup .ware-preis:not(.thron)')].filter(b => b.getBoundingClientRect().width);
+    o.reich = alle().map(farbe); o.passt = alle().every(b => b.scrollWidth <= b.clientWidth + 1 && b.scrollHeight <= b.clientHeight + 1);
+    o.kopf = document.getElementById('shopGemCount').textContent;
+    gems = 0; renderShop(); await warte(200); o.arm = alle().map(farbe);
+    gems = 100000; renderShop(); return o; });
+  ok(preise.reich.length && preise.reich.every(c => c === 'rgb(251, 238, 201)') && preise.arm.every(c => c === 'rgb(255, 141, 130)') && preise.passt && preise.kopf === '100K',
+    'Shop: Preise hell, wenn es reicht, rot, wenn nicht; „10×“ passt; Kopf im Kurzformat (100K)', preise);
   await bild('shop');
+  for (const t of ['shield', 'throne', 'markt']) { await ev(t => showShopTab(t), t); await p.waitForTimeout(600); await bild('shop_' + t); }
   await ev(async () => { closeAllPopups(); document.getElementById('bundBtn').click(); await new Promise(f => setTimeout(f, 800)); });
   await bild('buendnis');
   await ev(() => closeAllPopups());
