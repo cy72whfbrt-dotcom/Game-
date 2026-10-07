@@ -1,6 +1,5 @@
-// Bergstöcke in den Gebieten (Teil 01f-felsen.js) sind seit den Zonen wie RoK aus (Alexander 7.10.: „keine Deko-Felsen“ – das Gebirge
-// steht an den Grenzen): WELT_FELSEN = false, keine Bergstöcke, kein „auf dem Fels“; Märsche innerhalb eines Gebiets auf der Luftlinie,
-// in ein Nachbargebiet über den Pass (4 Punkte: Basis – Pass-Ende – Pass-Ende – Ziel); Lager suchen ihren Platz ohne Bergstöcke.
+// Keine Bergstöcke in den Gebieten (Alexander 7.10.: „keine Deko-Felsen“ – das Gebirge steht an den Grenzen; der alte Teil 01f ist raus):
+// Märsche innerhalb eines Gebiets auf der Luftlinie, in ein Nachbargebiet über den Pass (Basis – Pass-Ende – Pass – Pass-Ende – Ziel).
 //   node tests/browser/welt_felsen_test.js <vorschau>
 const { chromium, devices } = require('playwright');
 const path = require('path');
@@ -16,10 +15,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const br = bridges.find(q => q.a === A.landmassId || q.b === A.landmassId), anderes = br.a === A.landmassId ? br.b : br.a;
     const fern = (islandsByLandmass[anderes] || []).find(i => i.type === 'tower'), mp = marchPath(A, fern);
     const luft = Math.hypot(A.x - C.x, A.y - C.y);
-    return { schalter: WELT_FELSEN, berge: felsenListe().length, aufFels: felsAuf(A.x, A.y, 1e9), gerade: Math.abs(marschStrecke(A, C) - luft) < 1e-6, pfad: marchPath(A, C).length,
+    return { alt: [typeof WELT_FELSEN, typeof felsenListe, typeof felsAuf].filter(t => t !== 'undefined'), gerade: Math.abs(marschStrecke(A, C) - luft) < 1e-6, pfad: marchPath(A, C).length,
       passPfad: mp.length, ueberPass: [{ x: br.x1, y: br.y1 }, br.pass, { x: br.x2, y: br.y2 }].every(q => mp.some(m => Math.hypot(m.x - q.x, m.y - q.y) < 1)) };
   });
-  ok(f.schalter === false && f.berge === 0 && !f.aufFels, 'keine Bergstöcke in den Gebieten (WELT_FELSEN = false, Gebirge nur an den Grenzen)', f);
+  ok(!f.alt.length, 'keine Bergstöcke in den Gebieten (alter Felsen-Code ganz raus, Gebirge nur an den Grenzen)', f);
   ok(f.gerade && f.pfad === 2, 'Marsch im eigenen Gebiet: Luftlinie', f);
   ok(f.passPfad >= 5 && f.ueberPass, 'Marsch ins Nachbargebiet: durch den Pass (Basis – Passanfang – Pass – Passende – Ziel)', f);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
