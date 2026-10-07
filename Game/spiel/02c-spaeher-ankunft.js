@@ -22,7 +22,7 @@ function launchScout(targetId, explore, at) {
     const sourceId = nearestOwnedIslandTo(target);
     const home = islandById[sourceId];
     if (!home) return;
-    if (!spaeherWeg(home.landmassId, target.landmassId, 'player')) { flashHint('Ein geschlossenes Tor versperrt den Weg – dein Späher kommt nicht durch.', 3500); return; }
+    if (!spaeherWeg(home.landmassId, target.landmassId, 'player')) { const g = wegGrund(home.landmassId, target.landmassId, 'player'); flashHint(g && /öffnet/.test(g) ? g : 'Ein geschlossenes Tor versperrt den Weg – dein Späher kommt nicht durch.', 3500); return; }
     sfx('scout');
 
     const durationSec = scoutSecs(home, target);   // the Späherturm makes scouts faster

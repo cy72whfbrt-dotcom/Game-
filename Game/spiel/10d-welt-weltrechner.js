@@ -524,7 +524,7 @@ if (window.WELT) {
         if (hbPassTopf) return hbPassTopf; const t = { g: 0, k: 0, kg: 0, sh: 0, schild: 0 };
         for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem), n = r.n || 1;
             if (r.k === 'gems') t.g += n; else if (r.k === 'crate') t.k += n; else if (r.k === 'royal') { t.k += n; t.kg += 27 * n; }
-            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; else if (r.k === 'frame' || r.k === 'march') t.g += PASS_OWNED_GEMS; }
+            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; else if (r.k === 'frame') t.g += PASS_OWNED_GEMS; }
         return hbPassTopf = t;
     }
     // Helden: „Splitter-Wert“ = unverbrauchte Splitter + was Freischalten und Sterne gekostet haben
@@ -938,7 +938,7 @@ if (window.WELT) {
     }
     function nebelRunde(who, hb, now) {
         const z = nbZ(who, hb), I = nbIndex(), own = botOwnedIslands[who], weit = REVEAL_BASE * (AUF ? AUF.nebelWeite(who) : 1);
-        if (own) for (const id of own) if (!z.gesehen.has(id)) { z.gesehen.add(id); const i = islandById[id]; if (i && nbAufdecken(z, i.x, i.y, weit)) z.dirty = true; }
+        if (own) for (const id of own) if (!z.gesehen.has(id)) { z.gesehen.add(id); const i = islandById[id]; if (i && nbAufdecken(z, i.x, i.y, sichtVon(i, weit))) z.dirty = true; }
         if (hb.sp && hb.sp.length) hb.sp = hb.sp.filter(sc => {    // Erkundungs-Späher: unterwegs eine Gasse, am Ziel die Umgebung
             const h = islandById[sc[0]]; if (!h) return false;
             const L = Math.hypot(sc[1] - h.x, sc[2] - h.y) || 1, prog = Math.max(0, Math.min(1, (now - sc[3]) / Math.max(1, sc[4] - sc[3])));

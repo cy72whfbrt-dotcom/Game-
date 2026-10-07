@@ -2,7 +2,7 @@
 // Nebel des Krieges: only explored islands are visible. Owning a base explores its island and
 // every island bridged to it; a scout sent into the fog explores the island it reaches.
 // The fog lifts in small sections (FOG_CELL squares): around every own base, and wherever a scout goes.
-const FOG_CELL = 4000, REVEAL_BASE = 7000, REVEAL_SCOUT = 8000;
+const FOG_CELL = 4000 * KARTE_MASSSTAB, REVEAL_BASE = 7000 * KARTE_MASSSTAB, REVEAL_SCOUT = 8000 * KARTE_MASSSTAB;
 var fogCells = null, fogLmCount = {}, cellLm = null, fogFx = [], fogMaskDirty = true, fogPrompt = null;
 function fogKey(cx, cy) { return cx + ',' + cy; }
 function fogLandCells() {                        // key → landmass id for every cell that touches land
@@ -54,7 +54,8 @@ function revealAround(x, y, r, fade) {
     if (changed) { fogMaskDirty = true; store.set('openWaterFogCells', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
     return changed;
 }
-function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, REVEAL_BASE, false); } }
+const sichtVon = (i, weit) => Math.max(weit, i.startSicht || 0);   // ein Startplatz sieht bis zum Gebirge seines Gebiets
+function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, sichtVon(i, REVEAL_BASE), false); } }
 function effectiveTroops(island) {
     const boss = bossAt(island.id); if (boss) return boss.troops;
     const owner = islandOwnerOf(island.id);

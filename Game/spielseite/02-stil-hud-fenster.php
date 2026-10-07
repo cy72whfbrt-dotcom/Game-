@@ -229,8 +229,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .pc-ic .icon{width:16px;height:16px;color:var(--gold-200)} .pc-ic .ico-coin{color:var(--res-coin)} .pc-ic .ico-gem{color:var(--res-gem)} .pc-ic .ico-tp{color:#f2c75c} .pc-ic .ico-shard{color:#d6a6ff} .pc-ic .ico-royal{color:#ffb04a}
 .pc-ic.is-look{width:32px;height:32px;border:0;background:none}
 .pc-frame{display:block;width:30px;height:30px;border-radius:50%;padding:3px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))} .pc-frame img{display:block;width:100%;height:100%;border-radius:50%}
-.pc-flag{position:relative;width:30px;height:22px;display:block} .pc-flag::before{content:"";position:absolute;left:3px;top:1px;width:2px;height:21px;background:#d9d2c0;border-radius:1px}
-.pc-flag::after{content:"";position:absolute;left:5px;top:2px;width:20px;height:12px;background:var(--c);clip-path:polygon(0 0,100% 0,78% 50%,100% 100%,0 100%);box-shadow:0 0 8px var(--t)}
 .pc-t{min-width:0;display:flex;flex-direction:column;gap:2px} .pc-t b{font:700 var(--fs-13)/1.1 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pc-t small{font:500 10px/1.15 var(--font-ui);color:var(--tx-3);overflow:hidden;text-overflow:ellipsis}
 .pc-ok{position:absolute;top:4px;right:5px;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pc-ok .icon{width:10px;height:10px}

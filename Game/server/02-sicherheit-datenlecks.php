@@ -80,7 +80,6 @@ function profil_bereinigen($text) {
     $jetztMs = time() * 1000;
     $lk = is_array($p['look'] ?? null) ? $p['look'] : [];
     $cr = is_array($p['crest'] ?? null) ? $p['crest'] : null;
-    $bs = is_array($p['baustil'] ?? null) ? $p['baustil'] : null;
     return json_encode([
         'lvl' => $lvl,
         'skills' => (object)$sk,
@@ -91,15 +90,13 @@ function profil_bereinigen($text) {
         'wounded' => $plus($p['wounded'] ?? 0, 1e30),
         'hs' => $hs,
         'shieldUntil' => min($plus($p['shieldUntil'] ?? 0, 1e15), $jetztMs + 8 * 86400000), 'neuBis' => min($plus($p['neuBis'] ?? 0, 1e15), $jetztMs + 48 * 3600000),   // längster Schild 8 Tage, Anfängerschutz 48 h
-        'look' => ['ring' => $id($lk['ring'] ?? null), 'rings' => $liste($lk['rings'] ?? []), 'march' => $id($lk['march'] ?? null), 'marchs' => $liste($lk['marchs'] ?? []),
-                   'frame' => $id($lk['frame'] ?? null), 'frames' => $liste($lk['frames'] ?? []), 'titles' => $liste($lk['titles'] ?? []), 'throne' => !empty($lk['throne'])],   // (Rahmen: angelegt + die er hat – Weltrechner hbRahmen)
+        'look' => ['frame' => $id($lk['frame'] ?? null), 'frames' => $liste($lk['frames'] ?? []), 'titles' => $liste($lk['titles'] ?? []), 'throne' => !empty($lk['throne'])],   // (Rahmen: angelegt + die er hat – Weltrechner hbRahmen)
         'stats' => $karte($p['stats'] ?? [], function ($x) use ($plus) { return $plus($x, 1e15); }, 80),
         'saison' => (int)max(1, $plus($p['saison'] ?? 1, 1e6)),   // Welt-Saison seines Spielstands (ein älteres Profil zählt beim Weltrechner nicht)
         'earned' => $plus($p['earned'] ?? 0, 1e12), 'coins' => $plus($p['coins'] ?? 0, 1e15), 'gems' => isset($p['gems']) ? $plus($p['gems'], 1e13) : null,
         'stW' => isset($p['stW']) ? $plus($p['stW'], 1e9) : null,   // Gems in allen Sternen (Hauptbuch: Rückgabe beim Verkaufen)
         'tp' => isset($p['tp']) ? $plus($p['tp'], 1e12) : null,   // Thron-Punkte im Geldbeutel (Hauptbuch: Kappe beim Saison-Reset – nur der Weltrechner)
         'crest' => $cr ? array_map(function ($k) use ($cr, $zahl) { return (int)$zahl($cr[$k] ?? 0, 99); }, ['shape' => 'shape', 'div' => 'div', 'c1' => 'c1', 'c2' => 'c2', 'sym' => 'sym', 'ink' => 'ink']) : null,
-        'baustil' => $bs ? ['style' => $id($bs['style'] ?? null) ?: 'klassisch', 'cap' => ($bs['cap'] ?? '') === 'wasser' ? 'wasser' : 'huegel'] : null,
     ], JSON_UNESCAPED_UNICODE);
 }
 // Einen Flicken auf einen Welt-Teil anwenden (Objekte, nicht Arrays – leere {} bleiben {}):
@@ -148,7 +145,7 @@ function mitspieler_kuerzen($b, $jetztMs) {
 // Weltrechner (macht), ebenso die Summe aller Forschungs-Stufen (foP – Rangliste „Hauptstadt“ bei gleicher Burg-Stufe, ohne
 // zu verraten, was erforscht ist). Der eigene Eintrag (u<id>) bleibt ganz – nur NUR_WELTRECHNER fehlt wie bei allen.
 const FREMD_OEFFENTLICH = ['lvl', 'macht', 'foP', 'tt', 'capital', 'shieldUntil', 'neuBis', 'mensch', 'v2', 'hbK', 'handy', 'city', 'stats',
-    'lookMig', 'ringMig', 'ring', 'rings', 'march', 'marchs', 'frames', 'titles', 'throneLook', 'lookFrame', 'achLook', 'bestRank'];
+    'lookMig', 'frames', 'titles', 'throneLook', 'lookFrame', 'achLook', 'bestRank'];
 const FREMD_STATS = ['caps', 'capSeed', 'tpEarned'];   // (Rangliste: Eroberungen, Thron-Punkte)
 function fremd_wert($f, $v) {                         // city: nur die Burg-Stufe · stats: nur die der Rangliste
     if ($f === 'city') return (object)['levels' => (object)(is_object($v) && isset($v->levels->keep) ? ['keep' => $v->levels->keep] : [])];
@@ -165,7 +162,7 @@ function fremd_kuerzen($b) {
 function profil_oeffentlich($p) {
     if (!is_object($p)) return null;
     $r = new stdClass();
-    foreach (['lvl', 'look', 'crest', 'baustil', 'shieldUntil', 'neuBis', 'earned'] as $f) if (isset($p->{$f})) $r->{$f} = $p->{$f};
+    foreach (['lvl', 'look', 'crest', 'shieldUntil', 'neuBis', 'earned'] as $f) if (isset($p->{$f})) $r->{$f} = $p->{$f};
     if (isset($p->city->levels->keep)) $r->city = (object)['levels' => (object)['keep' => $p->city->levels->keep]];
     if (isset($p->stats->captures)) $r->stats = (object)['captures' => $p->stats->captures];
     return $r;

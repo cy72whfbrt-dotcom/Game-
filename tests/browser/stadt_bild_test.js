@@ -47,10 +47,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       o.schilder.push(await pruef('weit', () => { cityCam.z = .3; }));
       o.schilder.push(await pruef('nah', () => { cityCam.z = 2.4; cityCam.x = 150; cityCam.y = 300; }));
       cityCam.z = 1; cityFocus('_keep', true);
-      // 3) draußen: keine gebauten Dinge, die Stadt auf Land, Meer wo die Karte Wasser hat
+      // 3) draußen: keine gebauten Dinge, die Stadt auf Land, Meer wo die Karte Wasser hat (nur Basen; Zonen wie RoK: keine am Rand ihres Gebiets)
       const deko = cityDeco().map(d => d.kind);
       o.draussen = { gebaut: deko.filter(k => ['mill', 'house', 'well', 'hay', 'cart'].includes(k)), landMitte: cityAussen().land(CC, CC) };
-      const heim = playerIslandId, kueste = islands.find(i => { const lm = landmasses[i.landmassId]; return [0, 1, 2, 3, 4, 5, 6, 7].some(a => !aufLand(lm, i.x + Math.cos(a * Math.PI / 4) * 1500, i.y + Math.sin(a * Math.PI / 4) * 1500)); });
+      const heim = playerIslandId, kueste = islands.find(i => { const lm = landmasses[i.landmassId]; return i.type === 'tower' && [0, 1, 2, 3, 4, 5, 6, 7].some(a => !aufLand(lm, i.x + Math.cos(a * Math.PI / 4) * 1500, i.y + Math.sin(a * Math.PI / 4) * 1500)); });
       if (kueste) { playerIslandId = kueste.id; const A = cityAussen(); let wasser = 0;
         for (let x = -170; x <= 810; x += 40) for (let y = -170; y <= 810; y += 40) if (!A.land(x, y)) wasser++;
         let fehler = ''; try { cityPaintGround(); } catch (e) { fehler = e.message; }

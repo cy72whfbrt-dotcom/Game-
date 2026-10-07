@@ -104,8 +104,6 @@
   <div id="lkTabs" class="tabs lk-tabs" role="tablist">
     <button class="tab" type="button" role="tab" data-lk-tab="crest"><svg class="icon"><use href="#i-flag"/></svg><span>Wappen</span></button>
     <button class="tab" type="button" role="tab" data-lk-tab="frame"><svg class="icon"><use href="#i-star"/></svg><span>Rahmen</span></button>
-    <button class="tab" type="button" role="tab" data-lk-tab="base"><svg class="icon"><use href="#i-castle"/></svg><span>Basis</span></button>
-    <button class="tab" type="button" role="tab" data-lk-tab="march"><svg class="icon"><use href="#i-troops"/></svg><span>Marsch</span></button>
   </div>
   <div id="crestPage" class="lk-pane" hidden>
     <div class="crest-ed">

@@ -7,7 +7,7 @@ var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle drei Aufga
     ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15]];
 function passRewardAt(L, prem) {                          // what level L gives in each row (Münzen: n Stunden Ertrag – 6.10. 4/12 statt 1/3, „10 Münzen“ sah kaputt aus)
     if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 4 } : { k: 'gems', n: 15 };
-    return L === 20 ? { k: 'march', id: 'saison' } : L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
+    return L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
         L % 6 === 0 ? { k: 'tp', n: 150 } : L % 3 === 0 ? { k: 'shield', n: 8 } : L % 2 === 0 ? { k: 'coins', n: 12 } : { k: 'gems', n: 40 };
 }
 var passState = null, passArm = 0, passTimer = null;
@@ -38,11 +38,11 @@ function passGive(who, r) {                               // one reward to anyon
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
             if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
-    if (r.k === 'frame' || r.k === 'march') { const d = lkDef(r.k, r.id), key = r.k + 's', has = ((b ? b[key] : look[key]) || []).includes(r.id);
+    if (r.k === 'frame') { const d = lkDef(r.k, r.id), has = ((b ? b.frames : look.frames) || []).includes(r.id);
         if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; return '+' + PASS_OWNED_GEMS + ' Edelsteine („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
-        if (b) { b[key] = [...(b[key] || []), r.id]; if (r.k === 'march') b.march = r.id; }
-        else { look[key] = [...new Set([...(look[key] || []), r.id])]; look[r.k] = r.id; saveLook(); renderLook(); }
-        return (r.k === 'frame' ? 'Rahmen' : 'Marsch-Skin') + ' „' + d.name + '“ – schon angelegt'; }
+        if (b) b.frames = [...(b.frames || []), r.id];
+        else { look.frames = [...new Set([...(look.frames || []), r.id])]; look.frame = r.id; saveLook(); renderLook(); }
+        return 'Rahmen „' + d.name + '“ – schon angelegt'; }
     return '';
 }
 function passClaim(list) {                                // [[season, level, premium], …] → hand out, one hint
@@ -70,8 +70,7 @@ function passCellHtml(r, hp, got) {                            // icon + amount 
     if (k === 'crate') return row(icon('shop'), n + '×', n === 1 ? 'Kiste' : 'Kisten');
     if (k === 'royal') return row(icon('shop', 'ico-royal'), '1×', 'Königliche Kiste');
     const d = lkDef(k, r.id), own = !got && lkHas(k, r.id);
-    if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Rahmen', 'is-look');
-    return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Marsch-Skin', 'is-look');
+    return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Rahmen', 'is-look');
 }
 function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
     return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
@@ -88,7 +87,7 @@ function renderPass() {
         '<span class="pass-ht"><b>Saison-Pass</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
         '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
         '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
-    if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Königliche Kisten, Marsch-Skin „Saisonzug“ (Stufe 20) und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
+    if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Königliche Kisten und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-buy>' + (arm ? '<span>Sicher?</span>' : '') + icon('gem') + '<span>' + fmtNum(PASS_PREMIUM) + '</span></button></div>';
     if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Voriger Saison-Pass: ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
