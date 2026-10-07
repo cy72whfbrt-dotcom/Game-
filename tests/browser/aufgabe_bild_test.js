@@ -81,6 +81,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const D = await laden({ viewport: { width: 1440, height: 900 } });
   const a = await D.p.evaluate(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms));
+    { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); }   // Helden erst mit Heldenhalle (Merkliste 21)
     const hs = loadHeroes(); HEROES.forEach((h, i) => { if (hs[h.id]) hs[h.id].own = i < 3; });
     const home = islandById[playerIslandId], ziel = islands.filter(i => !ownedIslands.has(i.id) && i.type === 'tower').sort((x, y) => Math.hypot(x.x - home.x, x.y - home.y) - Math.hypot(y.x - home.x, y.y - home.y))[0];
     openIslandPopup(ziel); await warte(300); previewSourceId = playerIslandId; previewFraction = 1; previewHero = HEROES[0].id; previewHero2 = null; popupView = 'preview'; renderPopup(); await warte(500);
