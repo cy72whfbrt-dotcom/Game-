@@ -81,7 +81,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 8) Stadt: 2. Bauarbeiter ≥ 44 px, das Stadtbild füllt den Bildschirm, jedes Gebäude erreichbar
     const st = await ev(async () => { cityCam = null; openCity(); const t0 = Date.now(); while (Date.now() - t0 < 15000 && (cityBusy || cityView.hidden || !cityCam || cityCam.anim)) await new Promise(f => setTimeout(f, 100));
       await new Promise(f => setTimeout(f, 300)); const W = innerWidth, c = cityCam, raus = [];
-      const ox = W / 2 - c.x * c.z, oy = innerHeight / 2 - c.y * c.z; if (ox > .5 || oy > .5 || ox + CITY_BILD_W * c.z < W - .5 || oy + CITY_BILD_H * c.z < innerHeight - .5) raus.push('Bildrand');   // das Stadtbild deckt den Bildschirm
+      const ox = W / 2 - c.x * c.z, oy = innerHeight / 2 - c.y * c.z; const rand = W < 900 && innerHeight > 500 ? 75 : 0; if (ox > .5 || oy > rand + .5 || ox + CITY_BILD_W * c.z < W - .5 || oy + CITY_BILD_H * c.z < innerHeight - rand - .5) raus.push('Bildrand');   // das Stadtbild deckt den Bildschirm (Handy hochkant: zwischen HUD und Leiste)
       const schilder = cityNamen.map(n => n.id), fehlen = [];
       for (const id of Object.keys(CITY_ORTE)) { cityFocus(id, true); cityFrame.drawn = 0; await new Promise(f => setTimeout(f, 120)); if (!cityNamen.some(n => n.id === id)) fehlen.push(id); }   // jedes Gebäude per Wischen mit Schild
       cityFocus('_keep', true); return { z: Math.round(c.z * 100) / 100, raus, schilder, fehlen, bau: __t44('[data-cb-buy]') }; });

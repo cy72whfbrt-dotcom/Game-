@@ -22,14 +22,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const ids = ['hudPlayer', 'coinCount', 'gemCount', 'troopCount', 'hudRoh', 'cityNavBtn', 'bundBtn', 'battleLogBtn', 'goalsBtn', 'shopBtn', 'zoomInBtn', 'zoomOutBtn', 'homeBtn', 'markerBtn', 'armyBtn'];
     const raus = [...document.querySelectorAll('.hud-werte .res, #hudRoh, .nav-btn:not(#profileBtn), .mapctl button')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.left < -1 || r.right > innerWidth + 1); }).map(e => e.id || e.className);
     const zahlen = ['coinCount', 'gemCount', 'troopCount'].map(id => { const e = document.getElementById(id); return e.scrollWidth <= e.clientWidth + 1; });
-    return { ids: ids.filter(i => !document.getElementById(i)), raus, zahlen,
+    const nav = document.getElementById('cornerButtons').getBoundingClientRect();
+    const schild = [...document.querySelectorAll('.nav-btn:not(#profileBtn) .nav-l')].every(l => l.getBoundingClientRect().bottom <= nav.bottom - 8);
+    return { ids: ids.filter(i => !document.getElementById(i)), raus, zahlen, schild,
       ring: /ui_ring/.test(bg('.hud-me .avatar-ring', '::after')), kapsel: /ui_kapsel/.test(bg('.hud-werte > .res')), kasten: /ui_kasten/.test(bg('#hudRoh')),
       dock: /ui_dock/.test(bg('#cornerButtons')), rund: /ui_rund/.test(bg('#bundBtn > .icon')) && /ui_dock_bund/.test(bg('#bundBtn > .icon')),
       zoom: /ui_zoom_rein/.test(bg('#zoomInBtn .icon')) && /ui_rund/.test(bg('#zoomInBtn')) };
   });
   ok(!karte.ids.length, 'Knöpfe/IDs bleiben', karte.ids);
   ok(karte.ring && karte.kapsel && karte.kasten, 'HUD: Wappen-Ring, Kapseln, Holzkasten als Bild', karte);
-  ok(karte.dock && karte.rund, 'Leiste unten: Bild-Leiste, runde Bild-Knöpfe mit Symbol', karte);
+  ok(karte.dock && karte.rund && karte.schild, 'Leiste unten: Bild-Leiste, runde Bild-Knöpfe mit Symbol, Beschriftung über dem Leisten-Rand', karte);
   ok(karte.zoom, 'Karten-Knöpfe: runde Bild-Knöpfe mit Lupe/Kompass/Fahne', karte);
   ok(!karte.raus.length && karte.zahlen.every(Boolean), 'Handy 390 px: nichts ragt heraus, Zahlen ganz lesbar', karte);
   await bild('karte');
@@ -39,11 +41,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     document.getElementById('hudPlayer').click(); await warte(800);
     const pan = document.getElementById('profilePopup'), c = getComputedStyle(pan, '::before'), tab = document.querySelector('#profileTabs .tab.active');
     const x = pan.querySelector('.btn-x .icon');
-    return { offen: pan.classList.contains('is-open'), rahmen: /ui_rahmen/.test(c.borderImageSource), reiter: tab && /ui_reiter_an/.test(getComputedStyle(tab).borderImageSource),
+    const ganz = [...document.querySelectorAll('#profileTabs .tab span')].every(t => t.scrollWidth <= t.clientWidth + 1);
+    return { ganz, offen: pan.classList.contains('is-open'), rahmen: /ui_rahmen/.test(c.borderImageSource), reiter: tab && /ui_reiter_an/.test(getComputedStyle(tab).borderImageSource),
       zu: x && /ui_zu/.test(getComputedStyle(x).backgroundImage),
       knopf: [...pan.querySelectorAll('.btn--primary,.btn--secondary')].some(k => /ui_k_/.test(getComputedStyle(k).borderImageSource)) };
   });
-  ok(fenster.offen && fenster.rahmen && fenster.reiter && fenster.zu, 'Fenster: Bild-Rahmen, Reiter, rotes X', fenster);
+  ok(fenster.offen && fenster.rahmen && fenster.reiter && fenster.zu && fenster.ganz, 'Fenster: Bild-Rahmen, Reiter (Text ganz), rotes X', fenster);
   await bild('fenster');
   // 3) Belohnungs-Kacheln (Ausrüstung: je Seltenheit ein Teil)
   const kachel = await ev(async () => {
@@ -82,6 +85,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await ev(() => { document.getElementById('levelUpModal').hidden = true; });
   await ev(() => closeAllPopups());
   await p.waitForTimeout(1500);
+  // 6) Stadt (Handy): weiter weg als ganz nah – mehr als ein Drittel der Bildbreite zu sehen
+  const stadt = await ev(async () => { openCity(); await new Promise(f => setTimeout(f, 1500)); return { breite: Math.round(innerWidth / cityCam.z), bild: CITY_BILD_W }; });
+  ok(stadt.breite > stadt.bild * 0.34, 'Stadt: beim Öffnen mehr von der Stadt zu sehen', stadt);
+  await bild('stadt');
+  await ev(() => { closeAllPopups(); closeCity(); });
   ok(!fehlt.length, 'alle ui-Bilder geladen', fehlt);
   ok(!fe.length, 'keine Skriptfehler', fe.slice(0, 3));
   await b.close();
