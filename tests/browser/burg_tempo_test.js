@@ -25,7 +25,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.schild = [SHIELD_PRICES[2], SHIELD_PRICES[8], SHIELD_PRICES[24]];
     o.thron = [throneAmount('player', 'coins') >= 20000, throneAmount('player', 'troops') >= 2000];
     o.gear = [itemPct({ rarity: 0, level: 1 }), salvagePoints({ rarity: 0, level: 1 })];
-    o.boss = [dbossKlasse(4, 1e4), dbossKlasse(6, 1e4), dbossKlasse(100, 1e4), dbossKlasse(500, 1e4), dbossKlasse(1e6, 1e8)];
+    o.boss = [dbossKlasse(4, 1e4), dbossKlasse(6, 1e4), dbossKlasse(100, 1e4), dbossKlasse(200, 1e4), dbossKlasse(500, 1e4)];
     o.truppen = [troopsPerTick(1) * 3600, troopsPerTick(10) * 3600];
     o.texte = [SKILL_DEFS.attackGold.name, SKILL_DEFS.defenseGold.name, HERO_FX_TXT.gold(5)];
     o.muenzTxt = /Münzen/.test(beuteText({ loot: 1000 }));
