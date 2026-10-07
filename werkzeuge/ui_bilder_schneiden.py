@@ -87,7 +87,11 @@ for blatt, (verfahren, d, auswahl) in BLAETTER.items():
             stueck = roh[y0:y1, x0:x1]
         else:
             x0, y0, x1, y1 = teil(sauber[:, :, 3], d, ort)
-            stueck = sauber[y0:y1, x0:x1]
+            stueck = sauber[y0:y1, x0:x1].copy()
+            lab, n = ndimage.label(stueck[:, :, 3] > 8)   # Splitter vom Nachbarteil weg (unter 2 % der Fläche)
+            groesse = ndimage.sum(np.ones(lab.shape), lab, range(1, n + 1))
+            for i, g in enumerate(groesse, 1):
+                if g < groesse.max() * 0.02: stueck[lab == i, 3] = 0
         stueck = Image.fromarray(stueck)
         stueck = stueck.crop(stueck.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox())
         h = round(stueck.height * breite / stueck.width)
