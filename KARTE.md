@@ -163,7 +163,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `band` → Game/baukunst/08-himmelsfeste-bilder.js:159
 - `banner` → Game/baukunst/06-turmhof-festung.js:275
 - `banner` → Game/baukunst/07-hafen-palast.js:477
-- `bannerModel` → Game/spiel/03b-gebaeude-3d.js:471
+- `bannerModel` → Game/spiel/03b-gebaeude-3d.js:467
 - `bannerSprite` → Game/spiel/03c-wappen-thronplatz.js:126
 - `barbAlong` → Game/spiel/09b-lager-tagesboss.js:221
 - `barbArrive` → Game/spiel/09b-lager-tagesboss.js:124
@@ -206,9 +206,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `baseShieldedFor` → Game/spiel/06d-schild-produktion.js:41
 - `basesTxt` → Game/spiel/05c-erfolge-rangliste.js:295
 - `basis_pfad` → Game/server/01-grundlagen-login.php:28
-- `basisBild` → Game/spiel/03b-gebaeude-3d.js:319
-- `basisBildNr` → Game/spiel/03b-gebaeude-3d.js:318
-- `basisGroesse` → Game/spiel/03b-gebaeude-3d.js:378
+- `basisBild` → Game/spiel/03b-gebaeude-3d.js:318
+- `basisBildNr` → Game/spiel/03b-gebaeude-3d.js:317
+- `basisGroesse` → Game/spiel/03b-gebaeude-3d.js:374
 - `basisRoh` → Game/aufbau.js:53
 - `Batch` → Game/baukunst/05-umland.js:93
 - `Batch` → Game/baukunst/06-turmhof-festung.js:240
@@ -281,10 +281,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bis` → Game/spiel/03c-wappen-thronplatz.js:450
 - `bitHat` → Game/spiel/10d-welt-weltrechner.js:918
 - `bitsZu` → Game/spiel/10d-welt-weltrechner.js:917
-- `bk3d` → Game/spiel/03b-gebaeude-3d.js:444
-- `bkDraw` → Game/spiel/03b-gebaeude-3d.js:469
-- `bkModel` → Game/spiel/03b-gebaeude-3d.js:446
-- `bkSprite` → Game/spiel/03b-gebaeude-3d.js:462
+- `bk3d` → Game/spiel/03b-gebaeude-3d.js:440
+- `bkDraw` → Game/spiel/03b-gebaeude-3d.js:465
+- `bkModel` → Game/spiel/03b-gebaeude-3d.js:442
+- `bkSprite` → Game/spiel/03b-gebaeude-3d.js:458
 - `blit` → Game/spiel/03a-karte-hintergrund.js:561
 - `blob` → Game/spiel/01f-felsen.js:208
 - `block` → Game/spiel/05d-maersche-kampfbericht.js:452
@@ -800,11 +800,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawBarb` → Game/spiel/09b-lager-tagesboss.js:256
 - `drawBaseAuras` → Game/spiel/03c-wappen-thronplatz.js:300
 - `drawBaseSparks` → Game/spiel/03c-wappen-thronplatz.js:322
-- `drawBasisBild` → Game/spiel/03b-gebaeude-3d.js:325
-- `drawBasisSchilder` → Game/spiel/03b-gebaeude-3d.js:371
+- `drawBasisBild` → Game/spiel/03b-gebaeude-3d.js:324
+- `drawBasisSchilder` → Game/spiel/03b-gebaeude-3d.js:367
 - `drawBattleFx` → Game/spiel/07a-schlachten.js:398
-- `drawBrand` → Game/spiel/03b-gebaeude-3d.js:422
-- `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:379
+- `drawBrand` → Game/spiel/03b-gebaeude-3d.js:418
+- `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:375
 - `drawCrest` → Game/spiel/03c-wappen-thronplatz.js:19
 - `drawCrown` → Game/spiel/07b-kriegsherr.js:185
 - `drawDragonName` → Game/spiel/09c-events-drache.js:322
@@ -2093,9 +2093,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `schedule` → Game/baukunst/08-himmelsfeste-bilder.js:392
 - `schedule` → Game/spiel/10c-start-einstellungen.js:108
 - `schild` → Game/spiel/03c-wappen-thronplatz.js:153
-- `schildBild` → Game/spiel/03b-gebaeude-3d.js:354
-- `schildDaten` → Game/spiel/03b-gebaeude-3d.js:349
-- `schildRect` → Game/spiel/03b-gebaeude-3d.js:345
+- `schildBild` → Game/spiel/03b-gebaeude-3d.js:350
+- `schildDaten` → Game/spiel/03b-gebaeude-3d.js:345
+- `schildRect` → Game/spiel/03b-gebaeude-3d.js:341
 - `schluesselTausch` → Game/welt.js:90
 - `schnellerDrueber` → Game/spiel/02b-maersche.js:261
 - `schnellerMerken` → Game/spiel/02b-maersche.js:260
@@ -2244,7 +2244,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `stepGable` → Game/baukunst/07-hafen-palast.js:65
 - `stepOf` → Game/baukunst/02-buehne-grundbasis.js:142
 - `stern` → Game/spiel/02c-spaeher-ankunft.js:126
-- `stoesst` → Game/spiel/03b-gebaeude-3d.js:375
+- `stoesst` → Game/spiel/03b-gebaeude-3d.js:371
 - `stoneLantern` → Game/baukunst/04-vielfalt-stile.js:497
 - `stoneWarte` → Game/baukunst/05-umland.js:356
 - `stop` → Game/ladebildschirm.js:290
@@ -2332,7 +2332,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `troopProductionMultiplier` → Game/spiel/04-kampf.js:256
 - `troopsPerTick` → Game/spiel/01b-weltkarte.js:106
 - `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:295
-- `trunc` → Game/spiel/03b-gebaeude-3d.js:504
+- `trunc` → Game/spiel/03b-gebaeude-3d.js:500
 - `truppenBekannt` → Game/spiel/01e-nebel-kampfwerte-hud.js:38
 - `truppenGeben` → Game/spiel/10d-welt-weltrechner.js:446
 - `truppenMitRest` → Game/spiel/06d-schild-produktion.js:185
@@ -3857,23 +3857,23 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawUebersichtZeichen` :285 — Ganz weit (wie die Karten-Testdatei): Pass-Punkte in der Farbe ihrer Stufe (noc…
 - `drawToreImNebel` :298 — die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel…
 - `heiligtumBild` :307 — (Bildschirm) Thron bzw. Wächter-Tempel an seinem Weltpunkt
-- `basisBildNr` :318
-- `basisBild` :319 — das Bild nr (1–15), lädt beim ersten Mal alle 15
-- `drawBasisBild` :325 — (Bildschirm) → true, wenn das Bild gezeichnet ist
-- `schildRect` :345 — (Bildschirm) wo das Schild einer Basis steht
-- `schildDaten` :349 — → { art, wer, stufe, truppen }
-- `schildBild` :354 — das fertige Schild, W px breit (Leinwand × dpr)
-- `drawBasisSchilder` :371 — nach allen Basen: die Schilde liegen obenauf
-- `stoesst` :375
-- `basisGroesse` :378 — Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erke…
-- `drawBuilding` :379 — screen space (setScreen active)
-- `drawBrand` :422 — Flammen auf den Dächern und Rauch, der aufsteigt
-- `bk3d` :444
-- `bkModel` :446 — → [cache id, model config]
-- `bkSprite` :462 — → { s: sprite, W: width in px } or null
-- `bkDraw` :469
-- `bannerModel` :471
-- `trunc` :504
+- `basisBildNr` :317
+- `basisBild` :318 — das Bild nr (1–15), lädt beim ersten Mal alle 15
+- `drawBasisBild` :324 — (Bildschirm) → true, wenn das Bild gezeichnet ist
+- `schildRect` :341 — (Bildschirm) wo das Schild einer Basis steht
+- `schildDaten` :345 — → { art, wer, stufe, truppen }
+- `schildBild` :350 — das fertige Schild, W px breit (Leinwand × dpr)
+- `drawBasisSchilder` :367 — nach allen Basen: die Schilde liegen obenauf
+- `stoesst` :371
+- `basisGroesse` :374 — Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erke…
+- `drawBuilding` :375 — screen space (setScreen active)
+- `drawBrand` :418 — Flammen auf den Dächern und Rauch, der aufsteigt
+- `bk3d` :440
+- `bkModel` :442 — → [cache id, model config]
+- `bkSprite` :458 — → { s: sprite, W: width in px } or null
+- `bkDraw` :465
+- `bannerModel` :467
+- `trunc` :500
 
 ### Game/spiel/03c-wappen-thronplatz.js — Wappen und der Thronplatz in der Mitte
 - `loadCrest` :7
