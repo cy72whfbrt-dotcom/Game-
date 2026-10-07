@@ -10,6 +10,7 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
   const v = await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
+    for (const s of Object.values(loadBotState())) if (s && s.city) s.city.levels.heroes = Math.max(1, s.city.levels.heroes || 0);   // Helden erst mit Heldenhalle (Merkliste 21)
     const bots = BOT_DEFS.filter(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]);
     const E = bots.find(x => Object.keys(loadBotState()[x.id].hs || {}).filter(id => heroOwned(x.id, id) && !heroBusy(x.id, id)).length >= 2);
     if (!E) return { fehler: 'kein Mitspieler mit 2 freien Helden' };

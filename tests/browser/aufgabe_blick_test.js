@@ -72,6 +72,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(g.macht.every(v => Number.isFinite(v) && v >= 0), 'Macht in der Rangliste aus echten Werten (keine NaN)', g.macht.slice(0, 6));
   // I) Heldenhalle
   const h = await ev(async () => {
+    { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); }   // Helden erst mit Heldenhalle (Merkliste 21)
     const warte = ms => new Promise(f => setTimeout(f, ms)), H = loadHeroes(), z = HEROES.find(x => !H[x.id].own && x.r === 1);
     H[z.id].sh = HERO_UNLOCK[z.r]; const zu1 = HEROES.find(x => !H[x.id].own && x.id !== z.id); if (zu1) H[zu1.id].sh = 0; saveHeroes();   /* (einer bleibt gesperrt) */ openHeroHall(); await warte(200);
     const karte = document.querySelector('#heroHall .hh-cards:not(.hh-cards--zu) [data-hh="' + z.id + '"]');
