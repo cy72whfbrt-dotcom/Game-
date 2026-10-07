@@ -129,6 +129,10 @@ function fmtCompact(n) {
   for (const [v, u] of [[1e24, 'Quadr.'], [1e21, 'Trd.'], [1e18, 'Trill.'], [1e15, 'Brd.']])   // beyond "Bio.": Billiarde, Trillion, Trilliarde … (unit chosen on the rounded value)
     if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
 }
+function fmtHud(n) {                      // HUD-Reihe (6 Kapseln auf 390 px): höchstens 5 Zeichen – 950 · 5,4K · 12,6K · 126K · 1,2M · 126M · 1,2Mrd
+  const a = Math.abs(n), k = (v, u) => (v < 100 ? NF.format(Math.floor(v * 10) / 10) : NF.format(Math.floor(v))) + u;
+  return a < 1e3 ? fmtExact(n) : a < 1e6 ? k(n / 1e3, 'K') : a < 1e9 ? k(n / 1e6, 'M') : k(n / 1e9, 'Mrd');
+}
 const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
 function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl') || btn; if (l.textContent !== text) l.textContent = text; }   // (nur bei einer Änderung: offene Fenster ziehen jede Sekunde nach)
 function fmtDHMS(sec) {                           // every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front are left out)
@@ -1271,12 +1275,12 @@ function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.text
 function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
 function updateHud() {
     const troops = totalTroops();
-    setText(coinCountEl, fmtCompact(Math.floor(coins)));
+    setText(coinCountEl, fmtHud(Math.floor(coins)));
     const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Edelsteine', tt = fmtNum(troops) + ' Truppen';
     if (coinCountEl.parentNode.title !== tc) coinCountEl.parentNode.title = tc;
-    setText(gemCountEl, fmtCompact(Math.floor(gems)));
+    setText(gemCountEl, fmtHud(Math.floor(gems)));
     if (gemCountEl.parentNode.title !== tg) gemCountEl.parentNode.title = tg;
-    setText(troopCountEl, fmtCompact(troops));
+    setText(troopCountEl, fmtHud(troops));
     if (troopCountEl.parentNode.title !== tt) troopCountEl.parentNode.title = tt;
     if (AUF) AUF.hud();                                                       // Holz, Stein, Eisen (aufbau.js)
     requestRender();   // HUD changes coincide with state changes -> the map may need a redraw
@@ -3610,9 +3614,8 @@ function heiligtumBild(island, z) {                                            /
   ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
 }
 // Basen als KI-Bild (Alexander 7.10.): Stufe 1–100 gleichmäßig auf 15 Bilder, ALLE gleich groß (keine Größe nach Stufe); die Hauptstadt
-// über ihre Kartenstufe (burgKarte). Weit: darunter ein Ring in der Besitzer-Farbe (eigene blau, Bündnis grün, fremde rot), ab mittel das
-// Namensschild (basisSchild); ganz weit Punkte wie bisher.
-const BASIS_BREITE = 5500, BASIS_MIN_PX = 22, BASIS_RING = { player: '#3f86d8', bund: '#3fae6a', bot: '#c9423a' };
+// über ihre Kartenstufe (burgKarte). Darunter auf jeder Zoomstufe das Namensschild (drawBasisSchilder, weit nur kleiner); ganz weit Punkte wie bisher.
+const BASIS_BREITE = 5500, BASIS_MIN_PX = 22;
 const BASIS_BILD = { img: [], offen: -1 };
 const basisBildNr = L => Math.max(1, Math.min(15, Math.ceil(Math.max(1, L) * 15 / 100)));
 function basisBild(nr) {                                                       // das Bild nr (1–15), lädt beim ersten Mal alle 15
@@ -3626,24 +3629,21 @@ function drawBasisBild(island, ownerKey, z) {                                  /
   const im = basisBild(basisBildNr(baseLevelOf(island))); if (!im) return false;
   const h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return true;
-  const ow = islandOwnerOf(island.id), farbe = ownerKey === 'player' ? BASIS_RING.player : ow && bundFreund(ow, 'player') ? BASIS_RING.bund : ow ? BASIS_RING.bot : null;
-  if (farbe && z < SCHILD_ZOOM) { ctx.beginPath(); ctx.ellipse(x, y + h * .12, w * .5, w * .2, 0, 0, Math.PI * 2); ctx.fillStyle = farbe + '55'; ctx.fill();
-    ctx.lineWidth = Math.max(2, w * .03); ctx.strokeStyle = farbe; ctx.stroke(); }
   ctx.drawImage(im, x - w / 2, y - h * .72, w, h);
   if ((island.id === playerIslandId || isCapital(island.id)) && brennt(island.id)) drawBrand(x, y - h * .3, w / 64);   // eine geplünderte Hauptstadt brennt
   return true;
 }
 // Namensschild unter jeder Basis (Alexander 7.10., wie im alten Spiel): 70 % so breit wie das Basis-Bild, mittig direkt darunter
-// (Unterkante Basis = Oberkante Schild). Erst ab nahem Zoom (Schrift mind. 10 px), weiter draußen der Ring. Im runden Feld das Wappen
+// (Unterkante Basis = Oberkante Schild). Auf jeder Zoomstufe mit Basis-Bild (Alexander 7.10.: nichts springt), weit nur die Stufe. Im runden Feld das Wappen
 // des Besitzers (frei: keins), im Balken Stufe und Truppen – eigene und Bündnis die echte Zahl (sofern das Handy sie hat), fremde und
 // freie „?“ bis gespäht (wie die Fahnen, bannerModel). Text und Strich in der Besitzer-Farbe. Stößt ein Schild an ein anderes oder passt
 // die Zahl nicht: nur die Stufe. Ein Schild wird je Größe (8-px-Stufen) einmal gemalt und gemerkt.
-const SCHILD_ANTEIL = .7, SCHILD_MIN = 96, SCHILD_ZOOM = SCHILD_MIN / (SCHILD_ANTEIL * BASIS_BREITE);
+const SCHILD_ANTEIL = .7, SCHILD_MIN = 48, SCHILD_ZAHL = 96, SCHILD_ZOOM = BASIS_MIN_PX / BASIS_BREITE;   // (Truppen-Zahl erst ab 96 px Breite)
 const SCHILD_FARBE = { player: '#8cc0ff', ally: '#86e09a', bot: '#ff8d82', neutral: '#eadfc4' };
 const SCHILD_MERK = new Map();
 function schildRect(island, z) {                                               // (Bildschirm) wo das Schild einer Basis steht
   const w = BASIS_BREITE * z, im = basisBild(basisBildNr(baseLevelOf(island))), h = im ? w * im.height / im.width : w;
-  const W = Math.floor(SCHILD_ANTEIL * w / 8) * 8, H = W * 159 / 512; return { x: toSX(island.x) - W / 2, y: toSY(island.y) + h * .17, w: W, h: H };   // (das Bild hat unten einen leeren Rand)
+  const W = Math.max(SCHILD_MIN, Math.floor(SCHILD_ANTEIL * w / 8) * 8), H = W * 159 / 512; return { x: toSX(island.x) - W / 2, y: toSY(island.y) + h * .17, w: W, h: H };   // (das Bild hat unten einen leeren Rand)
 }
 function schildDaten(island) {                                                 // → { art, wer, stufe, truppen }
   const m = bannerModel(island), wer = islandOwnerOf(island.id);
@@ -3672,7 +3672,7 @@ function drawBasisSchilder(vis, z) {                                          //
   setScreen(ctx);
   const rs = vis.filter(i => i.type === 'tower').map(i => [i, schildRect(i, z)]).filter(([, r]) => r.x + r.w >= 0 && r.x <= viewW && r.y + r.h >= 0 && r.y <= viewH);
   const stoesst = r => rs.some(([, q]) => q !== r && overlap(r, q) > 0);
-  for (const [isl, r] of rs) ctx.drawImage(schildBild(schildDaten(isl), r.w, !stoesst(r)), Math.round(r.x * dpr) / dpr, Math.round(r.y * dpr) / dpr, r.w, r.h);
+  for (const [isl, r] of rs) ctx.drawImage(schildBild(schildDaten(isl), r.w, r.w >= SCHILD_ZAHL && !stoesst(r)), Math.round(r.x * dpr) / dpr, Math.round(r.y * dpr) / dpr, r.w, r.h);
 }
 const basisGroesse = z => 1 + Math.max(0, Math.min(1, (0.04 - z) / 0.03));   // Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erkennbar), nah wie gehabt
 function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)

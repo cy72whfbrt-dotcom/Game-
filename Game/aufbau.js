@@ -278,21 +278,26 @@ function spielerTakt() { try { foFertig('player'); } catch (e) {} }
 // ---------------------------------------------------------------------------------------------------------------
 // 8) ANZEIGE: HUD, Burg-Fenster, Gebäude (Labor, Markt, Botschaft)
 // ---------------------------------------------------------------------------------------------------------------
-let rohOffen = false;
+let rohOffen = false, rohWahl = 'h', rohZu = 0;
 function hudRoh() {
     if (SYSTEM) return;
     const el = document.getElementById('hudRoh'); if (!el) return;
-    for (const x of ROH) { const s = el.querySelector('[data-r="' + x + '"]'); if (s) setText(s, fmtCompact(Math.floor(roh[x]))); }
+    for (const x of ROH) { const s = el.querySelector('[data-r="' + x + '"]'); if (s) setText(s, fmtHud(Math.floor(roh[x]))); }
     const t = ROH.map(x => ROH_DEF[x].name + ' ' + fmtNum(Math.floor(roh[x]))).join(' · '); if (el.title !== t) el.title = t;
     if (rohOffen) rohDropMalen();
 }
-function rohDropMalen() {
-    const d = document.getElementById('rohDrop'); if (!d) return;
-    const ps = rohStunde('player');
-    liveHtml(d, ROH.map(x => '<div class="roh-row">' + icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + '</span><b>' + fmtNum(Math.floor(roh[x])) + '</b><small>+' + rohStd(ps[x]) + '/Std.</small></div>').join('') +
-        '<small class="roh-hint">Holzfäller, Steinbruch und Eisenmine in deiner Stadt machen Rohstoffe (je nach Landschaft der Hauptstadt). Mehr durch Sammeln auf Holz-, Stein- und Eisen-Feldern der Karte. Gebraucht für Burg, Gebäude und Forschung. Die Burg schützt ' + schutzText(burgSchutzRoh('player')) + ' von jedem Rohstoff und ' + schutzText(burgSchutz('player')) + ' Münzen vor Angreifern.</small>');
+function rohDropMalen() {                                      // die Blase unter der angetippten Rohstoff-Kapsel: Bestand und Ertrag/Std.
+    const d = document.getElementById('rohDrop'), k = document.querySelector('#hudRoh [data-roh="' + rohWahl + '"]'); if (!d || !k) return;
+    const x = rohWahl, ps = rohStunde('player'), r = k.getBoundingClientRect();
+    liveHtml(d, icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + ' <b>' + fmtNum(Math.floor(roh[x])) + '</b></span><small>+' + rohStd(ps[x]) + '/Std. · Burg schützt ' + schutzText(burgSchutzRoh('player')) + '</small>');
+    d.style.left = Math.max(8, Math.min(innerWidth - d.offsetWidth - 8, r.left + r.width / 2 - d.offsetWidth / 2)) + 'px'; d.style.top = (r.bottom + 6) + 'px';
 }
-function rohUmschalten(an) { rohOffen = an === undefined ? !rohOffen : an; const d = document.getElementById('rohDrop'); if (!d) return; d.hidden = !rohOffen; document.getElementById('hudRoh').classList.toggle('on', rohOffen); if (rohOffen) rohDropMalen(); }
+function rohUmschalten(an, x) {                                // x: welche Kapsel (gleiche nochmal = zu); zu nach 3 s von selbst
+    if (x) { if (an === undefined) an = !(rohOffen && rohWahl === x); rohWahl = x; }
+    rohOffen = an === undefined ? !rohOffen : an; const d = document.getElementById('rohDrop'); if (!d) return;
+    d.hidden = !rohOffen; document.getElementById('hudRoh').classList.toggle('on', rohOffen); clearTimeout(rohZu);
+    if (rohOffen) { rohDropMalen(); rohZu = setTimeout(() => rohUmschalten(false), 3000); }
+}
 
 function freiText(B) {                                         // was die Burg-Stufe B freischaltet
     const out = ['Gebäude bis Stufe ' + (B >= BURG_MAX ? 'zum Höchstwert' : B)];
@@ -404,7 +409,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
     const mk = e.target.closest('[data-mk]:not([disabled])'); if (mk) { const [art, x] = mk.dataset.mk.split(':'), why = marktTausch('player', art, x, marktMenge); if (why) flashHint(why, 3000); else sfx('coin'); renderShop(); }
 }); }
 if (!SYSTEM) {
-    document.getElementById('hudRoh').addEventListener('click', () => rohUmschalten());
+    document.getElementById('hudRoh').addEventListener('click', e => { const b = e.target.closest('[data-roh]'); rohUmschalten(undefined, b ? b.dataset.roh : rohWahl); });
     document.getElementById('rohDrop').addEventListener('click', () => rohUmschalten(false));
 }
 
