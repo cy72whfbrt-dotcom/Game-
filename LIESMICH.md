@@ -1681,6 +1681,13 @@ Nacht – vorher bauen und testen.
 29. **Server-Test klick_test rot (auch ohne Kartenänderung, Stand ff506e7):** „Basis erobert“ – Angriff auf die nächste neutrale
     Basis startet, nach 120 s gehört sie dem Spieler nicht. Echter Fehler oder Test-Zeitgrenze? → Sucher klären (Prüfer-Log
     scratchpad/pr_srv/klick_lauf.log + klick_basis.log).
+30. **Karte: Zonen wie RoK (Alexander 7.10. früh) – ENTSCHIEDEN:** Aufbau wie RoK-Königreich (Vorlage
+    scratchpad/vorbilder/13_rok_zonen_vorlage.png): Zone 1 außen (~8 große Gebiete, grün, Start), Zone 2 (~4 Gebiete, blau),
+    Zone 3 = Mitte (lila, Thron). Statt 17×17-Raster mit 544 Toren nur wenige Pässe (~2 pro Gebiet, ca. 20–25).
+    Pässe öffnen (A): Zone 1 untereinander ab Tag 1, Zone 1→2 nach 3 Tagen, Zone 2→3 nach 5 Tagen, Mitte nach 7 Tagen.
+    Neustart der Welt: kommt fest, aber erst AM ENDE, wenn die Merkliste abgearbeitet ist (mit Münz-Fehler + Burg-Zahlen).
+    Vorgehen: zuerst eine eigene KARTEN-TESTDATEI nur mit der Karte (nichts sonst), dann ins Spiel einbauen.
+    Stand: Karten-Optik (KI-Bilder, Ketten, Tore) ist lokal gemergt (5ea92cb), noch NICHT gepusht/hochgeladen.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
