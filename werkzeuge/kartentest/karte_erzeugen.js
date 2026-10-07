@@ -146,7 +146,7 @@ for (let id = 0; id < 13; id++) {
   }
   let sx = 0, sy = 0, n = 0; for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (L[j * N + i] === id) { sx += i; sy += j; n++; }
   const z = zoneVon(id);
-  gebiete.push({ id, zone: z, name: z === 3 ? 'Mitte' : 'Zone ' + z + ' · ' + (z === 2 ? id : id - 4), boden: ['', 'aussen', 'mitte', 'innen'][z],
+  gebiete.push({ id, zone: z, name: z === 3 ? 'Mitte' : 'Zone ' + z + ' · ' + (z === 2 ? id : id - 4), boden: ['', 'aussen', 'mitte', 'sand'][z],
     mitte: [Math.round(((sx / n + .5) / N * 2 - 1) * H), Math.round(((sy / n + .5) / N * 2 - 1) * H)], rand, umriss: ring.slice(0, -1) });
 }
 gebiete[0].mitte = [0, 0];

@@ -36,9 +36,9 @@ const ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_ho
 const SCHER = .4;                                     // Stücke folgen schrägen Grenzen nur bis zu dieser Scherung (stärker wirkt der Fels zerrissen)
 const ZOOM = { nah: 0.05, mittel: 0.012, weit: 0.004, max: 0.16 };
 const BILD_ZOOM = 0.0025;                             // darunter: Übersicht (ein Bild der ganzen Karte)
-const BODEN_FARBE = { aussen: [114, 140, 44], mitte: [140, 142, 60], innen: [186, 138, 80] };
-const ZONEN_FARBE = { 1: [[70, 140, 40], [40, 96, 30]], 2: [[46, 104, 140], [32, 78, 112]], 3: [[118, 62, 140], [118, 62, 140]] };
-const PASS_FARBE = { gruen: '#5fc23a', blau: '#3a9ad8', lila: '#b05ad0' };
+const ZONEN_FARBE = { 1: [[95, 154, 69], [63, 116, 52]], 2: [[47, 95, 126], [36, 80, 108]], 3: [[91, 58, 134], [91, 58, 134]] };   // ganz weit (Vorgabe Designer): hell/dunkel abwechselnd
+const PASS_FARBE = { gruen: '#5cbf62', blau: '#4f9ef2', lila: '#a970f2' };
+const WEG = { lang: 13000, breit: 2400 };              // Weg durchs Tor: so weit in beide Gebiete, so breit
 const skala = z => 1 + .5 * Math.max(0, Math.min(1, (0.03 - z) / 0.018));   // mittlerer Zoom: Ketten, Knoten, Tore bis 1,5×
 function zufall(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -69,14 +69,14 @@ function objekteBauen() {
   // Tore: genau auf der Grenze (dort läuft sie gerade); waagrecht das Quer-Tor, senkrecht das Tor für Nord-Süd-Ketten
   for (const p of KD.paesse) {
     if (p.senk) { const im = KB.img.tor_senk_zu, hs = TOR_SENK.hoch, ws = hs * im.width / im.height;
-      neu('tor_senk_zu', p.x, p.y, ws, TOR_SENK.achse, TOR_SENK.weg, 0, 0, p.y + hs * .3, 1, false, { tor: p }); }
+      neu('tor_senk_zu', p.x, p.y, ws, TOR_SENK.achse, TOR_SENK.weg, 0, 0, p.y + hs * .45, 1, true, { tor: p }); }
     else neu('tor_zu', p.x, p.y, MASS.tor, .5, ACHSE.tor_zu, 0, 0, p.y + MASS.tor * .3, 1, true, { tor: p });   // (vor den Kettenstücken daneben: seine Felsen decken deren Enden)
   }
   // Ketten: Stücke entlang jeder Grenze, Lücke an Knoten und Toren
   for (const g of innen) {
     const pts = g.punkte, s = laengen(pts), len = s[s.length - 1], sperren = [[0, MASS.knoten * .2], [len, MASS.knoten * .2]];
     for (const p of KD.paesse) if (p.grenze === g.id) { let bd = 0, be = Infinity; pts.forEach((q, i) => { const e = Math.hypot(q[0] - p.x, q[1] - p.y); if (e < be) { be = e; bd = s[i]; } });
-      sperren.push([bd, p.senk ? TOR_SENK.hoch * .3 : MASS.tor * .45]); }
+      sperren.push([bd, p.senk ? TOR_SENK.hoch * .42 : MASS.tor * .45]); }
     sperren.sort((a, b) => a[0] - b[0]);
     const schritt = MASS.quer * MASS.abstand;
     for (let i = 0; i + 1 < sperren.length; i++) {
@@ -119,10 +119,9 @@ function uebersicht() {
   if (UEB) return UEB;
   const n = 3072, k = n / (2 * H), c = document.createElement('canvas'); c.width = c.height = n;
   const g = c.getContext('2d'); g.setTransform(k, 0, 0, k, H * k, H * k);
-  for (const geb of KD.gebiete) { const b = BODEN_FARBE[geb.boden], z = geb.farbe, m = .62;
-    g.fillStyle = `rgb(${b.map((v, i) => Math.round(v * (1 - m) + z[i] * m)).join(',')})`; g.fill(geb.pfad); }
-  g.fillStyle = 'rgba(214,180,120,.55)'; g.beginPath(); g.arc(KD.thron.x, KD.thron.y, 40000, 0, Math.PI * 2); g.fill();
+  for (const geb of KD.gebiete) { g.fillStyle = `rgb(${geb.farbe.join(',')})`; g.fill(geb.pfad); }
   baender(g, 1 / k);
+  g.strokeStyle = '#a970f2'; g.lineWidth = 2.5 / k; g.stroke(KD.gebiete[0].pfad);
   return (UEB = c);
 }
 function baender(g, px, unten) {                     // (Weltmaß gesetzt) Gebirge als dunkles Band mit Lichtkante; px = Welt pro Pixel; unten: unter den Bildern (schmal, ohne dunklen Rand)
@@ -150,36 +149,35 @@ function bodenFuellen(g, art, z, v) {
 // ===== Zeichnen =====
 const weltSetzen = g => g.setTransform(dpr * cam.z, 0, 0, dpr * cam.z, dpr * (W / 2 - cam.x * cam.z), dpr * (HT / 2 - cam.y * cam.z));
 const sx = x => (x - cam.x) * cam.z + W / 2, sy = y => (y - cam.y) * cam.z + HT / 2;
-let lage = null;                                      // Hilfsfläche für den weichen Sand-Platz
 function zeichnen() {
   const z = cam.z, v = { l: cam.x - W / 2 / z, r: cam.x + W / 2 / z, t: cam.y - HT / 2 / z, b: cam.y + HT / 2 / z };
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#1c2416'; ctx.fillRect(0, 0, cv.width, cv.height);
   if (z < BILD_ZOOM || !KB.fertig) {
     weltSetzen(ctx); ctx.imageSmoothingEnabled = true; ctx.drawImage(uebersicht(), -H, -H, 2 * H, 2 * H);
   } else {
-    weltSetzen(ctx);
+    weltSetzen(ctx); ctx.save(); ctx.beginPath(); ctx.rect(-H, -H, 2 * H, 2 * H); ctx.clip();
     for (const g of KD.gebiete) { if (g.bb.r < v.l || g.bb.l > v.r || g.bb.b < v.t || g.bb.t > v.b) continue;
       ctx.save(); ctx.clip(g.pfad); bodenFuellen(ctx, g.boden, z, v);
+      if (g.zone === 2) { ctx.fillStyle = 'rgba(40,80,120,.10)'; ctx.fillRect(v.l, v.t, v.r - v.l, v.b - v.t); }   // Zone 2 etwas kühler (auch nah erkennbar)
       const t = Math.max(0, Math.min(1, (0.0035 - z) / (0.0035 - BILD_ZOOM))) * .55;   // weiter draußen: Zonenfarbe kommt dazu (gleitet in die Übersicht)
       if (t > 0) { ctx.fillStyle = `rgba(${g.farbe.join(',')},${t})`; ctx.fillRect(v.l, v.t, v.r - v.l, v.b - v.t); }
-      ctx.restore(); }
-    sandPlatz(v);
+      ctx.restore();
+      ctx.lineWidth = 5000; ctx.strokeStyle = bodenMuster(g.boden, z, 0); ctx.stroke(g.pfad); }   // Boden ein Stück unter die Kette ziehen: keine Naht zwischen den Gebieten
+    wege(v); ctx.restore();
     if (z < 0.006) baender(ctx, 1 / z, true);         // weit: unter den Bildern ein Band, damit die Kette geschlossen wirkt
     gelaende(v);
   }
   thron();
-  if (z < BILD_ZOOM) passPunkte();
+  if (z < BILD_ZOOM) { namen(); passPunkte(); }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  document.getElementById('info').textContent = stufe() + ' · Zoom ' + z.toFixed(4) + ' · ' + KD.gebiete.length + ' Gebiete · ' + KD.paesse.length + ' Pässe';
+  document.getElementById('stufe').textContent = stufe() + ' · Zoom ' + z.toFixed(4) + ' · ' + KD.gebiete.length + ' Gebiete · ' + KD.paesse.length + ' Pässe';
 }
-function sandPlatz(v) {                               // Sand um den Thron, weich auslaufend
-  const R = 52000, t = KD.thron; if (t.x + R < v.l || t.x - R > v.r || t.y + R < v.t || t.y - R > v.b) return;
-  if (!lage || lage.width !== cv.width || lage.height !== cv.height) { lage = document.createElement('canvas'); lage.width = cv.width; lage.height = cv.height; }
-  const L = lage.getContext('2d'); L.setTransform(1, 0, 0, 1, 0, 0); L.clearRect(0, 0, lage.width, lage.height);
-  weltSetzen(L); bodenFuellen(L, 'sand', cam.z, { l: t.x - R, t: t.y - R, r: t.x + R, b: t.y + R });
-  const gr = L.createRadialGradient(t.x, t.y, R * .45, t.x, t.y, R); gr.addColorStop(0, 'rgba(0,0,0,1)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-  L.globalCompositeOperation = 'destination-in'; L.fillStyle = gr; L.fillRect(t.x - R, t.y - R, 2 * R, 2 * R); L.globalCompositeOperation = 'source-over';
-  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(lage, 0, 0); weltSetzen(ctx);
+function wege(v) {                                    // Weg durchs Quer-Tor: quer zur Grenze in beide Gebiete (das Tor für Nord-Süd-Ketten hat ihn im Bild)
+  for (const p of KD.paesse) { if (p.senk) continue;
+    const dx = 0, dy = WEG.lang; if (p.x + dx < v.l || p.x - dx > v.r || p.y + dy < v.t || p.y - dy > v.b) continue;
+    ctx.beginPath(); ctx.moveTo(p.x - dx, p.y - dy); ctx.lineTo(p.x + dx, p.y + dy); ctx.lineCap = 'round'; ctx.strokeStyle = bodenMuster('innen', cam.z, 0);
+    ctx.globalAlpha = .85; ctx.lineWidth = WEG.breit; ctx.stroke(); ctx.globalAlpha = 1; }
+  ctx.lineCap = 'butt';
 }
 function gelaende(v) {
   const k0 = dpr * cam.z, E = dpr * (W / 2 - cam.x * cam.z), F = dpr * (HT / 2 - cam.y * cam.z), sk = skala(cam.z), hier = new Set();
@@ -190,9 +188,6 @@ function gelaende(v) {
     const k = o.gross ? k0 * sk : k0, px = o.w * k; if (px < 2) continue;
     let n = o.n; if (o.tor) n = o.tor.senk ? (toreOffen ? 'tor_senk_offen' : 'tor_senk_zu') : (toreOffen ? 'tor_offen' : 'tor_zu');
     ctx.setTransform(k * o.f, k * o.sy * o.f, k * o.sx, k, k0 * o.x + E, k0 * o.y + F);
-    if (o.tor && o.tor.senk && cam.z < 0.006) {       // weiter draußen nur die Kette mit Mauer, ohne die Weg-Stummel (wie 03b)
-      const im = kbBild(n, px * .4), a = TOR_SENK.achse - .2;
-      ctx.drawImage(im, a * im.width, 0, .4 * im.width, im.height, -.2 * o.w, -o.ay * o.h, .4 * o.w, o.h); continue; }
     ctx.drawImage(kbBild(n, px), -o.ax * o.w, -o.ay * o.h, o.w, o.h);
   }
   weltSetzen(ctx);
@@ -204,20 +199,27 @@ function thron() {                                    // Platzhalter, bis das KI
   ctx.font = `700 ${Math.round(Math.max(12, Math.min(28, r * .5)))}px system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(30,20,8,.85)'; ctx.strokeText('Thron', x, y + r + 4); ctx.fillStyle = '#fff2c8'; ctx.fillText('Thron', x, y + r + 4);
 }
-function passPunkte() {                               // Übersicht: Pässe als Punkte in Zonenfarbe (offen hell, zu mit rotem Rand)
+function passPunkte() {                               // Übersicht: Pässe als Punkte in Zonenfarbe (zu: blass)
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const r = cam.z < BILD_ZOOM ? 6 : 5;
+  const r = W < 600 ? 7 : 6;
   for (const p of KD.paesse) { const x = sx(p.x), y = sy(p.y); if (x < -10 || y < -10 || x > W + 10 || y > HT + 10) continue;
-    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[p.art]; ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = toreOffen ? '#10140c' : '#d24c40'; ctx.stroke(); }
+    ctx.globalAlpha = toreOffen ? 1 : .45; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[p.art]; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#0c0f14'; ctx.stroke(); }
+  ctx.globalAlpha = 1;
+}
+function namen() {                                    // Übersicht: Namen der Gebiete
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = `700 ${W < 600 ? 11 : 15}px Georgia, serif`; ctx.lineJoin = 'round';
+  for (const g of KD.gebiete) { if (!g.zone || g.zone === 3) continue; const x = sx(g.mitte[0]), y = sy(g.mitte[1]);
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(g.name, x, y); ctx.fillStyle = '#e4c886'; ctx.fillText(g.name, x, y); }
 }
 
 // ===== Kamera: Ziehen, Zoomen (Finger, Maus, Knöpfe) =====
-const minZoom = () => Math.min(W, HT) / (2 * H * 1.05);
+const minZoom = () => Math.min(W, HT - 160) / (2 * H * 1.05);   // ganz weit: oben und unten Platz für Legende und Knöpfe
 function begrenzen() {
   cam.z = Math.max(minZoom(), Math.min(ZOOM.max, cam.z));
-  const mx = Math.max(0, H - W / 2 / cam.z), my = Math.max(0, H - HT / 2 / cam.z);
-  cam.x = Math.max(-mx, Math.min(mx, cam.x)); cam.y = Math.max(-my, Math.min(my, cam.y));
+  const mx = H - W / 2 / cam.z, my = H - HT / 2 / cam.z;   // (größer als die Karte: Mitte bleibt in der Mitte)
+  cam.x = mx < 0 ? 0 : Math.max(-mx, Math.min(mx, cam.x)); cam.y = my < 0 ? 0 : Math.max(-my, Math.min(my, cam.y));
 }
 let geplant = false;
 function neu() { if (geplant) return; geplant = true; requestAnimationFrame(() => { geplant = false; zeichnen(); }); }
@@ -244,4 +246,4 @@ document.getElementById('tore').addEventListener('click', e => { toreOffen = !to
 function groesse() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; HT = innerHeight; cv.width = Math.round(W * dpr); cv.height = Math.round(HT * dpr); begrenzen(); neu(); }
 addEventListener('resize', groesse);
 groesse(); zoomStufe('ganz');
-window.KT = { cam, zoomStufe, zeichnen, bereit: () => KB.fertig && !!KO, daten: KD };
+window.KT = { cam, zoomStufe, zeichnen, bereit: () => KB.fertig && !!KO, daten: KD, get objekte() { return KO; } };
