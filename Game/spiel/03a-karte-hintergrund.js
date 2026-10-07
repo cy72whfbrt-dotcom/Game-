@@ -176,8 +176,8 @@ function karteObjekte() {
         let gr = len * gs * (.92 + rnd() * .16);
         // ein Feld (Rohstoff) liegt nah an der Grenze (Lage = Spiellogik): dort das Stück weglassen bzw. kleiner, damit nichts im Berg liegt
         const im = KB.img[n], bw = senk ? gr * im.width / im.height : gr, bh = senk ? gr : gr * im.height / im.width;   // sichtbarer Fels ≈ mittlere 70 % der Breite, über dem Fuß
-        const deckt = k => nahFelder.some(q => { const m = q.radius + 400; return Math.abs(q.x - x) < bw * .35 * k + m && q.y > y - bh * (senk ? .5 : .62) * k - m && q.y < y + bh * (senk ? .5 : .3) * k + m; });
-        if (deckt(1)) { if (!deckt(.6)) gr *= .6; else continue; }               // (Fels deckte das Feld: kleiner, sonst ganz weglassen)
+        const deckt = k => nahFelder.some(q => { const m = q.radius + 600; return Math.abs(q.x - x) < bw * .35 * k + m && q.y > y - bh * (senk ? .5 : .62) * k - m && q.y < y + bh * (senk ? .5 : .3) * k + m; });
+        if (deckt(1)) continue;                                                   // (Fels deckte das Feld: das Stück weglassen – das Feld steht dann frei am Rand der Kette)
         const steig = Math.max(-.5, Math.min(.5, (linie(t + gr / 2) - linie(t - gr / 2)) / gr)), amTor = senk && hier.some(g => Math.abs(g - t) < len);   // (am Pass nicht vergrößern: die Lücke bleibt frei)
         if (senk) neu(warm(n, p, t), p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3, f, !amTor);
         else neu(warm(n, t, p), t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p, f);

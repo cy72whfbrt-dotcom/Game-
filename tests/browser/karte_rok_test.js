@@ -49,7 +49,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     for (const senk of [true, false]) for (const L of linien) for (let t = -ende + 4000; t < ende - 4000; t += 8000) {
       const aus = Math.abs(L) > GRID_HALF ? Math.sign(L) * RAND_AUSSEN : 0, x = senk ? grenzLinie(true, L, t) + aus : t, y = senk ? t : grenzLinie(false, L, t) + aus;   // (Kartenrand: nach außen versetzt)
       if (tore.some(g => Math.hypot(g.x - x, g.y - y) < KARTE_MASS.tor * .7)) continue;   // (die Lücke am Tor selbst)
-      if (resFields.some(q => Math.hypot(q.x - x, q.y - y) < q.radius + 3000)) continue;   // (ein Feld liegt auf der Grenze: dort spart die Kette aus)
+      if (resFields.some(q => Math.hypot(q.x - x, q.y - y) < q.radius + 7000)) continue;   // (ein Feld liegt auf der Grenze: dort spart die Kette aus)
       const drin = (x, y) => K.liste.some(o => o.n.startsWith('kette') && x > o.bb.l && x < o.bb.r && y > o.bb.t && y < o.bb.b);
       const g = tore.find(q => Math.hypot(q.x - x, q.y - y) < KETTE_GERADE[senk ? 'hoch' : 'quer']);   // am Tor läuft die Kette gerade auf der Linie des Tors
       if (!drin(x, y) && !(g && drin(senk ? g.x : x, senk ? y : g.y))) ohne.push([senk ? 'senk' : 'waag', L, Math.round(t)]); }
@@ -65,7 +65,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const paar = [nb.filter(o => o.x < tm.x).sort((u, v) => v.x - u.x)[0], nb.filter(o => o.x > tm.x).sort((u, v) => u.x - v.x)[0]].filter(Boolean);
       const winkel = paar.length === 2 ? Math.abs(Math.atan2(paar[1].y - paar[0].y, paar[1].x - paar[0].x) * 180 / Math.PI) : 99;
       return { id: isl.id, senk, luecke, winkel, fuss: Math.max(...paar.map(o => Math.abs(o.y - tm.y))) * .03 }; });
-    const feldNah = m => { const g = torMitte(islandById[m.id]); return resFields.some(q => Math.hypot(q.x - g.x, q.y - g.y) < 16000); };   // (ein Feld neben dem Tor: das Nachbarstück ist absichtlich ausgespart)
+    const feldNah = m => { const g = torMitte(islandById[m.id]); return resFields.some(q => Math.hypot(q.x - g.x, q.y - g.y) < 20000); };   // (ein Feld neben dem Tor: das Nachbarstück ist absichtlich ausgespart)
     const ausgespart = mess.filter(m => (m.senk ? m.versatz : m.winkel) === 99 && feldNah(m)).length;
     const schlecht = mess.filter(m => !(m.luecke <= 2 && (m.senk ? m.versatz <= 2 : m.winkel <= 10 && m.fuss <= 2)) && !((m.senk ? m.versatz : m.winkel) === 99 && feldNah(m)));
     const imTor = tore.filter(g => K.liste.some(o => o.n.startsWith('kette_quer') || o.n.startsWith('kette_hoch') ? Math.hypot(o.x - g.x, o.y - g.y) < 1400 : false)).length;
@@ -74,7 +74,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(c.quer > 500 && c.hoch > 500 && c.knoten >= c.soll * .97, 'Ketten (quer + hoch) und Knoten an jeder Kreuzung (außer wo ein Feld an der Kreuzung liegt)', c);
   ok(c.ohne === 0, 'jede Grenze (auch der Kartenrand) ist eine geschlossene Kette', c.ohneB);
-  ok(c.tore > 500 && c.nSchlecht === 0 && c.ausgespart < 40, 'Tor genau in der Kette: Lücke auf dem Torpunkt, Mauer in Kettenrichtung, Fuß bündig, kein Versatz (' + c.tore + ' Tore, ' + c.ausgespart + ' mit Feld daneben)', c.schlecht);
+  ok(c.tore > 500 && c.nSchlecht === 0 && c.ausgespart < 100, 'Tor genau in der Kette: Lücke auf dem Torpunkt, Mauer in Kettenrichtung, Fuß bündig, kein Versatz (' + c.tore + ' Tore, ' + c.ausgespart + ' mit Feld daneben)', c.schlecht);
   ok(c.imTor === 0, 'kein Kettenstück steht mitten im Tor (Lücke frei)', c.imTor);
   // ===== E: Märsche nur durch die Tore =====
   const e = await p.evaluate(() => {

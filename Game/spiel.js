@@ -2908,8 +2908,8 @@ function karteObjekte() {
         let gr = len * gs * (.92 + rnd() * .16);
         // ein Feld (Rohstoff) liegt nah an der Grenze (Lage = Spiellogik): dort das Stück weglassen bzw. kleiner, damit nichts im Berg liegt
         const im = KB.img[n], bw = senk ? gr * im.width / im.height : gr, bh = senk ? gr : gr * im.height / im.width;   // sichtbarer Fels ≈ mittlere 70 % der Breite, über dem Fuß
-        const deckt = k => nahFelder.some(q => { const m = q.radius + 400; return Math.abs(q.x - x) < bw * .35 * k + m && q.y > y - bh * (senk ? .5 : .62) * k - m && q.y < y + bh * (senk ? .5 : .3) * k + m; });
-        if (deckt(1)) { if (!deckt(.6)) gr *= .6; else continue; }               // (Fels deckte das Feld: kleiner, sonst ganz weglassen)
+        const deckt = k => nahFelder.some(q => { const m = q.radius + 600; return Math.abs(q.x - x) < bw * .35 * k + m && q.y > y - bh * (senk ? .5 : .62) * k - m && q.y < y + bh * (senk ? .5 : .3) * k + m; });
+        if (deckt(1)) continue;                                                   // (Fels deckte das Feld: das Stück weglassen – das Feld steht dann frei am Rand der Kette)
         const steig = Math.max(-.5, Math.min(.5, (linie(t + gr / 2) - linie(t - gr / 2)) / gr)), amTor = senk && hier.some(g => Math.abs(g - t) < len);   // (am Pass nicht vergrößern: die Lücke bleibt frei)
         if (senk) neu(warm(n, p, t), p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3, f, !amTor);
         else neu(warm(n, t, p), t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p, f);
@@ -8254,6 +8254,16 @@ function nebelLandPfade() {
         P.moveTo(lm.shape[0].x, lm.shape[0].y); for (const q of lm.shape) P.lineTo(q.x, q.y); P.closePath(); }
     return nebelLand;
 }
+let nebelWeltCv = null;                                 // die Weltübersicht unter dem Nebel (dunkel, Ringfarben, Gebirgs-Bänder) – EINMAL gemalt, danach nur verschoben/skaliert
+function nebelWelt() {
+    if (nebelWeltCv) return nebelWeltCv;
+    const R = FRAME_HALF + 20000, n = 1536, k = n / (2 * R), c = document.createElement('canvas'); c.width = c.height = n;
+    const g = c.getContext('2d'); g.fillStyle = '#1a2433'; g.fillRect(0, 0, n, n);
+    g.setTransform(k, 0, 0, k, R * k, R * k);
+    g.globalAlpha = .75; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); }
+    g.globalAlpha = 1; paintBaender(g, k / 1.4, true);
+    c.R = R; return (nebelWeltCv = c);
+}
 function drawFog(view, now) {
     const z = mapState.zoom;
     fogFx = fogFx.filter(f => now - f.t < 1500 + f.d / 5);
@@ -8273,17 +8283,18 @@ function drawFog(view, now) {
     g.setTransform(FS * z, 0, 0, FS * z, FS * mapState.offsetX, FS * mapState.offsetY);          // world units
     g.save(); g.beginPath(); g.rect(-FRAME_HALF, -FRAME_HALF, 2 * FRAME_HALF, 2 * FRAME_HALF); g.clip();   // only inside the map border
     g.drawImage(mask, o * FOG_CELL, o * FOG_CELL, n * FOG_CELL, n * FOG_CELL); g.restore();
+    const weit = nebelWeit(z);
+    if (weit < 1) {                                                                                  // Wolken (ganz draußen deckt die Übersicht sie ohnehin: nicht malen)
     g.globalCompositeOperation = 'source-in';                                                        // clouds only where the mask is
     const p1 = g.createPattern(FOG_TEX2, 'repeat'); p1.setTransform(new DOMMatrix().rotate(-13).scale(170000 / 256));
     g.fillStyle = p1; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
     g.globalCompositeOperation = 'source-atop';                                                      // a finer, brighter layer on top
     const p2 = g.createPattern(FOG_TEX, 'repeat'); p2.setTransform(new DOMMatrix().rotate(23).scale(Math.max(26000, 0.9 / z) / 256));   // never finer than ~1 px of noise
     g.globalAlpha = .55 * Math.max(0, Math.min(1, (z - 0.004) / 0.006)); g.fillStyle = p2; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5); g.globalAlpha = 1;
-    const weit = nebelWeit(z);
-    if (weit > 0) {                                                                                  // weit draußen: ruhige dunkle Fläche, die Gebiete in Ringfarben mit den Gebirgen (wie eine Weltübersicht)
-        g.globalAlpha = weit; g.fillStyle = '#1a2433'; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
-        g.globalAlpha = weit * .75; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); }   // Ringfarben + Gebirgs-Bänder als Übersicht (wie RoK)
-        g.globalAlpha = weit; paintBaender(g, z * FS, true); g.globalAlpha = 1;
+    }
+    if (weit > 0) {                                                                                  // weit draußen: ruhige Weltübersicht (Ringfarben + Gebirgs-Bänder, wie RoK) – fertiges Bild, nur verschoben
+        const N = nebelWelt(); g.globalCompositeOperation = 'source-atop'; g.globalAlpha = weit;
+        g.drawImage(N, -N.R, -N.R, 2 * N.R, 2 * N.R); g.globalAlpha = 1;
     }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore();
     }

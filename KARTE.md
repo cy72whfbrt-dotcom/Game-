@@ -99,7 +99,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `APRON` → Game/baukunst/07-hafen-palast.js:18
 - `arc` → Game/baukunst/07-hafen-palast.js:54
 - `arch` → Game/baukunst/06-turmhof-festung.js:22
-- `arch` → Game/spiel/06e-nebel-zeichnen.js:176
+- `arch` → Game/spiel/06e-nebel-zeichnen.js:187
 - `archGeo` → Game/baukunst/07-hafen-palast.js:440
 - `archGeo` → Game/baukunst/08-himmelsfeste-bilder.js:82
 - `archShape` → Game/baukunst/07-hafen-palast.js:439
@@ -860,11 +860,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawCrown` → Game/spiel/07b-kriegsherr.js:185
 - `drawDragonName` → Game/spiel/09c-events-drache.js:322
 - `drawEvents` → Game/spiel/09c-events-drache.js:293
-- `drawFog` → Game/spiel/06e-nebel-zeichnen.js:93
-- `drawGatehouse` → Game/spiel/06e-nebel-zeichnen.js:158
+- `drawFog` → Game/spiel/06e-nebel-zeichnen.js:103
+- `drawGatehouse` → Game/spiel/06e-nebel-zeichnen.js:169
 - `drawGlyph` → Game/spiel/01a-grundlagen.js:227
 - `drawHaendler` → Game/haendler.js:152
-- `drawHeimWappen` → Game/spiel/06e-nebel-zeichnen.js:218
+- `drawHeimWappen` → Game/spiel/06e-nebel-zeichnen.js:229
 - `drawMap` → Game/spiel/03d-maersche-tagnacht.js:226
 - `drawMapBattles` → Game/spiel/07a-schlachten.js:103
 - `drawMarchButtons` → Game/spiel/03d-maersche-tagnacht.js:71
@@ -875,7 +875,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:326
 - `drawn` → Game/spiel/03a-karte-hintergrund.js:528
 - `drawNacht` → Game/spiel/03d-maersche-tagnacht.js:205
-- `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:190
+- `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:201
 - `drawPickups` → Game/spiel/09a-funde-felder.js:62
 - `drawResFields` → Game/spiel/09a-funde-felder.js:294
 - `drawRings` → Game/spiel/03c-wappen-thronplatz.js:380
@@ -1626,7 +1626,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `merke` → Game/speichern.js:29
 - `merlonGeo` → Game/baukunst/04-vielfalt-stile.js:348
 - `merlons` → Game/spiel/03b-gebaeude-3d.js:46
-- `merlons` → Game/spiel/06e-nebel-zeichnen.js:163
+- `merlons` → Game/spiel/06e-nebel-zeichnen.js:174
 - `mid` → Game/spiel/03a-karte-hintergrund.js:17
 - `midAnzeige` → Game/spiel/06c-thron-mitte.js:240
 - `midFight` → Game/spiel/06c-thron-mitte.js:185
@@ -1733,6 +1733,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nebelVomServer` → Game/spiel/01e-nebel-kampfwerte-hud.js:37
 - `nebelWeit` → Game/spiel/06e-nebel-zeichnen.js:84
 - `nebelWeite` → Game/aufbau.js:241
+- `nebelWelt` → Game/spiel/06e-nebel-zeichnen.js:94
 - `neu` → Game/ladebildschirm.js:233
 - `neueNummer` → Game/welt.js:384
 - `neulingBis` → Game/spiel/06d-schild-produktion.js:26
@@ -4373,12 +4374,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fogMask` :54 — canvas over the whole frame: alpha = fog
 - `nebelWeit` :84 — 0 = Wolken (nah), 1 = flache Fläche (weit/ganz draußen)
 - `nebelLandPfade` :86
-- `drawFog` :93
-- `drawGatehouse` :158 — front view like the towers: two turrets, a wall, an arch with a portcullis
-- `merlons` :163
-- `arch` :176
-- `drawPasses` :190 — a gatehouse on every gated bridge; closed ones carry a countdown
-- `drawHeimWappen` :218 — ganz draußen (die Basis selbst ist nur noch ein Punkt): das eigene Wappen an de…
+- `nebelWelt` :94
+- `drawFog` :103
+- `drawGatehouse` :169 — front view like the towers: two turrets, a wall, an arch with a portcullis
+- `merlons` :174
+- `arch` :187
+- `drawPasses` :201 — a gatehouse on every gated bridge; closed ones carry a countdown
+- `drawHeimWappen` :229 — ganz draußen (die Basis selbst ist nur noch ein Punkt): das eigene Wappen an de…
 
 ### Game/spiel/07a-schlachten.js — Schlachten auf der Karte (auch Zuschauer-Anzeige) und Kampf-Effekte
 - `mbT` :8
