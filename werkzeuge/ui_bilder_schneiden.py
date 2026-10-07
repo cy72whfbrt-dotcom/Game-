@@ -1,5 +1,5 @@
 # Schneidet die Oberflächen-Teile aus den KI-Bild-Blättern (Alexander/ChatGPT) und speichert sie als Game/bilder/ui_*.webp.
-#   python3 -I werkzeuge/ui_bilder_schneiden.py <ordner mit blatt*.png> [<zielordner>, Standard Game/bilder]
+#   python3 -I werkzeuge/ui_bilder_schneiden.py <ordner mit blatt*.png>[,<weiterer ordner>…] [<zielordner>, Standard Game/bilder] [<nur dieses blatt>]
 # Säubern: Lichtschein (Glow) weg – schwache Deckkraft raus, bei blatt07 (deckender Schein) zählt nur, was im dunklen Umriss liegt;
 # Randpixel bekommen die Farbe des Inneren (keine roten/gelben Säume). Reihenfolge der Teile: Zeile für Zeile (wie finden).
 import os, sys
@@ -7,7 +7,8 @@ import numpy as np
 from PIL import Image
 from scipy import ndimage
 
-QUELLE = sys.argv[1]
+QUELLEN = sys.argv[1].split(',')
+NUR = sys.argv[3] if len(sys.argv) > 3 else None
 ZIEL = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(__file__), '..', 'Game', 'bilder')
 
 # Blatt: (Verfahren, Ausdehnung beim Finden, [(Name, Breite in px, Punkt im Teil (x, y) oder fester Kasten (x0, y0, x1, y1))])
@@ -41,6 +42,9 @@ BLAETTER = {
                                          ('sym_aufstieg', 80, (990, 750)), ('sym_zeit', 80, (1340, 750))]),
     'blatt12_13_sieg_karte': ('schwelle', 2, [('strahlen', 200, (220, 230), 'roh'), ('band_gold', 400, (770, 150)),
                                               ('lorbeer', 200, (1320, 260)), ('niederlage', 200, (270, 740)), ('wappen', 160, (690, 700))]),
+    # zweite Lieferung (ki_rest_eingang): Rohstoff-Symbole für die HUD-Reihe
+    'blatt_03': ('schwelle', 6, [('res_muenzen', 64, (157, 157)), ('res_edelstein', 64, (472, 157)), ('res_holz', 64, (768, 157)),
+                                 ('res_stein', 64, (1083, 157)), ('res_eisen', 64, (1378, 157)), ('res_truppen', 64, (157, 571))]),
 }
 
 
@@ -76,7 +80,10 @@ def teil(a, d, punkt):   # Kasten des Teils, das am Punkt liegt (oder ihm am nä
 
 summe = 0
 for blatt, (verfahren, d, auswahl) in BLAETTER.items():
-    roh = np.array(Image.open(os.path.join(QUELLE, blatt + '.png')).convert('RGBA'))
+    if NUR and blatt != NUR: continue
+    datei = next((os.path.join(q, blatt + '.png') for q in QUELLEN if os.path.exists(os.path.join(q, blatt + '.png'))), None)
+    if not datei: print('fehlt:', blatt); continue
+    roh = np.array(Image.open(datei).convert('RGBA'))
     sauber = saeubern(roh, verfahren)
     for name, breite, ort, *art in auswahl:
         if len(ort) == 4:

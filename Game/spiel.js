@@ -129,6 +129,10 @@ function fmtCompact(n) {
   for (const [v, u] of [[1e24, 'Quadr.'], [1e21, 'Trd.'], [1e18, 'Trill.'], [1e15, 'Brd.']])   // beyond "Bio.": Billiarde, Trillion, Trilliarde … (unit chosen on the rounded value)
     if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
 }
+function fmtHud(n) {                      // HUD-Reihe (6 Kapseln auf 390 px): höchstens 5 Zeichen – 950 · 5,4K · 12,6K · 126K · 1,2M · 126M · 1,2Mrd
+  const a = Math.abs(n), k = (v, u) => (v < 100 ? NF.format(Math.floor(v * 10) / 10) : NF.format(Math.floor(v))) + u;
+  return a < 1e3 ? fmtExact(n) : a < 1e6 ? k(n / 1e3, 'K') : a < 1e9 ? k(n / 1e6, 'M') : k(n / 1e9, 'Mrd');
+}
 const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
 function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl') || btn; if (l.textContent !== text) l.textContent = text; }   // (nur bei einer Änderung: offene Fenster ziehen jede Sekunde nach)
 function fmtDHMS(sec) {                           // every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front are left out)
@@ -1271,12 +1275,12 @@ function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.text
 function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
 function updateHud() {
     const troops = totalTroops();
-    setText(coinCountEl, fmtCompact(Math.floor(coins)));
+    setText(coinCountEl, fmtHud(Math.floor(coins)));
     const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Edelsteine', tt = fmtNum(troops) + ' Truppen';
     if (coinCountEl.parentNode.title !== tc) coinCountEl.parentNode.title = tc;
-    setText(gemCountEl, fmtCompact(Math.floor(gems)));
+    setText(gemCountEl, fmtHud(Math.floor(gems)));
     if (gemCountEl.parentNode.title !== tg) gemCountEl.parentNode.title = tg;
-    setText(troopCountEl, fmtCompact(troops));
+    setText(troopCountEl, fmtHud(troops));
     if (troopCountEl.parentNode.title !== tt) troopCountEl.parentNode.title = tt;
     if (AUF) AUF.hud();                                                       // Holz, Stein, Eisen (aufbau.js)
     requestRender();   // HUD changes coincide with state changes -> the map may need a redraw

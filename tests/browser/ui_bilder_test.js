@@ -25,12 +25,17 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const nav = document.getElementById('cornerButtons').getBoundingClientRect();
     const schild = [...document.querySelectorAll('.nav-btn:not(#profileBtn) .nav-l')].every(l => l.getBoundingClientRect().bottom <= nav.bottom - 8);
     return { ids: ids.filter(i => !document.getElementById(i)), raus, zahlen, schild,
-      ring: /ui_ring/.test(bg('.hud-me .avatar-ring', '::after')), kapsel: /ui_kapsel/.test(bg('.hud-werte > .res')), kasten: /ui_kasten/.test(bg('#hudRoh')),
+      ring: /ui_ring/.test(bg('.hud-me .avatar-ring', '::after')), kapsel: /ui_kapsel/.test(bg('.hud-werte > .res')), reihe: (() => { const k = [...document.querySelectorAll('.hud-werte .res')].map(e => e.getBoundingClientRect()); return k.length === 6 && k.every(r => Math.abs(r.top - k[0].top) < 2 && r.right <= innerWidth); })(),
+      kapselRoh: /ui_kapsel/.test(bg('#hudRoh [data-roh="h"]')) && /ui_res_holz/.test(bg('#hudRoh [data-roh="h"] .icon')),
       dock: /ui_dock/.test(bg('#cornerButtons')), rund: /ui_rund/.test(bg('#bundBtn > .icon')) && /ui_dock_bund/.test(bg('#bundBtn > .icon')),
       zoom: /ui_zoom_rein/.test(bg('#zoomInBtn .icon')) && /ui_rund/.test(bg('#zoomInBtn')) };
   });
   ok(!karte.ids.length, 'Knöpfe/IDs bleiben', karte.ids);
-  ok(karte.ring && karte.kapsel && karte.kasten, 'HUD: Wappen-Ring, Kapseln, Holzkasten als Bild', karte);
+  ok(karte.ring && karte.kapsel && karte.reihe && karte.kapselRoh, 'HUD: Wappen-Ring, EINE Reihe aus 6 Kapseln (Münzen … Eisen) mit Bild-Symbolen', karte);
+  const blase = await ev(async () => { document.querySelector('#hudRoh [data-roh="s"]').click(); await new Promise(f => setTimeout(f, 200));
+    const d = document.getElementById('rohDrop'), r = d.getBoundingClientRect(), o = { auf: !d.hidden, text: d.textContent, drin: r.left >= 0 && r.right <= innerWidth, klein: r.height < 90 };
+    await new Promise(f => setTimeout(f, 3300)); o.zu = d.hidden; return o; });
+  ok(blase.auf && /Stein/.test(blase.text) && /\/Std\./.test(blase.text) && blase.drin && blase.klein && blase.zu, 'Rohstoff antippen: kleine Blase mit Ertrag/Std., geht von selbst zu', blase);
   ok(karte.dock && karte.rund && karte.schild, 'Leiste unten: Bild-Leiste, runde Bild-Knöpfe mit Symbol, Beschriftung über dem Leisten-Rand', karte);
   ok(karte.zoom, 'Karten-Knöpfe: runde Bild-Knöpfe mit Lupe/Kompass/Fahne', karte);
   ok(!karte.raus.length && karte.zahlen.every(Boolean), 'Handy 390 px: nichts ragt heraus, Zahlen ganz lesbar', karte);
@@ -90,6 +95,21 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(stadt.breite > stadt.bild * 0.34, 'Stadt: beim Öffnen mehr von der Stadt zu sehen', stadt);
   await bild('stadt');
   await ev(() => { closeAllPopups(); closeCity(); });
+  // 5a) Shop und Bündnis: Fotos (gleiche Grundform)
+  await ev(async () => { closeAllPopups(); document.getElementById('shopBtn').click(); await new Promise(f => setTimeout(f, 800)); });
+  await bild('shop');
+  await ev(async () => { closeAllPopups(); document.getElementById('bundBtn').click(); await new Promise(f => setTimeout(f, 800)); });
+  await bild('buendnis');
+  await ev(() => closeAllPopups());
+  // 5b) Angriff vorbereiten: Grundform (Wahl-Knöpfe, Listen-Karten)
+  const angr = await ev(async () => { const w = ms => new Promise(f => setTimeout(f, ms)), h = islandById[playerIslandId];
+    const nb = islands.filter(i => !islandOwnerOf(i.id) && !bossAt(i.id) && i.type !== 'megaTemple').sort((x, y) => Math.hypot(x.x - h.x, x.y - h.y) - Math.hypot(y.x - h.x, y.y - h.y))[0];
+    islandTroops[playerIslandId] = Math.max(1000, islandTroops[playerIslandId] || 0); openIslandPopup(nb); attackBtn.click(); await w(600);
+    const k = document.querySelector('#islandPopup .seg:not(.hero-seg) > button');
+    return { wahl: !!k && /ui_k_/.test(getComputedStyle(k).borderImageSource) }; });
+  ok(angr.wahl, 'Angriff vorbereiten: Wahl-Knöpfe aus der Grundform', angr);
+  await bild('angriff');
+  await ev(() => closeAllPopups());
   ok(!fehlt.length, 'alle ui-Bilder geladen', fehlt);
   ok(!fe.length, 'keine Skriptfehler', fe.slice(0, 3));
   await b.close();

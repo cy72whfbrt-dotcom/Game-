@@ -1976,15 +1976,19 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 .hud-me .avatar-ring::after{content:"";position:absolute;inset:-6px;background:url(bilder/ui_ring.webp) center/100% 100% no-repeat;pointer-events:none}
 .hud-me .lvl{border:0;background:url(bilder/ui_stufe.webp) center/100% 100% no-repeat;box-shadow:none;min-width:19px;height:23px;right:-9px;bottom:-9px;padding:0 3px 3px;
   text-shadow:0 1px 2px #000}
-.hud-werte{background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;gap:2px;padding:0}
-.hud-werte > .res{height:26px;padding:0 6px 0 34px;justify-content:flex-start;border-style:solid;border-width:0;
-  border-image:url(bilder/ui_kapsel.webp) 20 30 20 90 fill / 7px 10px 7px 30px stretch}
-.hud-werte > .res > .icon{position:absolute;left:4px;top:50%;width:18px;height:18px;margin-top:-9px;filter:drop-shadow(0 1px 1px #000)}
-.hud-werte > .res b{color:var(--tx-1);text-shadow:0 1px 2px #000}
-.hud > .res--roh{border:0;border-radius:0;background:url(bilder/ui_kasten.webp) center/100% 100% no-repeat;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-.hud > .res--roh > .icon{width:18px;height:18px}
-@media (min-width:900px) and (min-height:501px){ .hud > .res--roh{width:auto;padding:0 10px;border-style:solid;border-width:0;background:none;
-  border-image:url(bilder/ui_kasten.webp) 26 fill / 9px stretch} }
+/* EINE Reihe: Münzen · Edelsteine · Truppen · Holz · Stein · Eisen – kleine Kapseln (Symbol links, Zahl rechts, fmtHud höchstens 5 Zeichen) */
+.hud-werte{background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;gap:2px;padding:0;height:24px;margin-top:6px}
+.hud-werte .res-roh{display:contents}
+.hud-werte .res{position:relative;flex:1 1 0;min-width:0;height:24px;padding:0 3px 0 20px;gap:0;justify-content:center;border-style:solid;border-width:0;
+  border-image:url(bilder/ui_kapsel.webp) 20 30 20 90 fill / 6px 6px 6px 21px stretch}
+.hud-werte .res > .icon{position:absolute;left:1px;top:50%;width:19px;height:19px;margin-top:-10px}
+.hud-werte .res b{font:600 11px/1 var(--font-ui);letter-spacing:-.02em;color:var(--tx-1);text-shadow:0 1px 2px #000}
+.hud-werte button.res::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
+#hudRoh.on [data-roh]{filter:brightness(1.1)}
+.roh-blase{position:fixed;z-index:var(--z-toast);display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;max-width:240px;padding:6px 10px;
+  font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1);border-style:solid;border-width:0;border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch}
+.roh-blase .icon{width:16px;height:16px} .roh-blase small{flex:1 1 100%;color:var(--gold-200);font-size:var(--fs-11)}
+@media (min-width:900px) and (min-height:501px){ .hud-werte{flex:0 1 640px} .hud-werte .res{padding-left:24px} .hud-werte .res b{font-size:13px} }
 /* Event-Streifen: rotes Band statt lila Verlauf */
 .mb-chip.is-tour{background:none;border-color:transparent;border-style:solid;border-width:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;
   padding:0 18px 0 16px;border-image:url(bilder/ui_band_rot.webp) 22 70 22 70 fill / 7px 22px 7px 22px stretch;color:#fff3e6}
@@ -2039,9 +2043,9 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 @container tabs (max-width:420px){ .tab{font-size:9.5px;letter-spacing:0;padding:0 1px} }   /* Handy: „Einstellungen“ passt ganz in den Reiter */
 .sect::after{height:8px;background:url(bilder/ui_linie.webp) left center/auto 100% no-repeat;background-size:100% 100%}
 /* ---------------- Symbole überall (HTML; die Karte zeichnet weiter aus den SVG-Pfaden, 01a glyph) ---------------- */
-:where(svg.icon:has(> use[href="#i-castle"]),svg.icon:has(> use[href="#i-star"]),svg.icon:has(> use[href="#i-crown"]),svg.icon:has(> use[href="#i-rank"]),svg.icon:has(> use[href="#i-gear"]),svg.icon:has(> use[href="#i-goal"]),svg.icon:has(> use[href="#i-lock"]),svg.icon:has(> use[href="#i-check"]),svg.icon:has(> use[href="#i-attack"]),svg.icon:has(> use[href="#i-scout"]),svg.icon:has(> use[href="#i-recall"]),svg.icon:has(> use[href="#i-multiattack"]),svg.icon:has(> use[href="#i-tower"]),svg.icon:has(> use[href="#i-defense"]),svg.icon:has(> use[href="#i-losses"]),svg.icon:has(> use[href="#i-upgrade"]),svg.icon:has(> use[href="#i-hourglass"]),svg.icon:has(> use[href="#i-battlelog"]),svg.icon:has(> use[href="#i-bund"]),svg.icon:has(> use[href="#i-event"]),svg.icon:has(> use[href="#i-shop"]),svg.icon:has(> use[href="#i-flag"]),svg.icon:has(> use[href="#i-back"])) > use{display:none}
-:where(svg.icon:has(> use[href="#i-castle"]),svg.icon:has(> use[href="#i-star"]),svg.icon:has(> use[href="#i-crown"]),svg.icon:has(> use[href="#i-rank"]),svg.icon:has(> use[href="#i-gear"]),svg.icon:has(> use[href="#i-goal"]),svg.icon:has(> use[href="#i-lock"]),svg.icon:has(> use[href="#i-check"]),svg.icon:has(> use[href="#i-attack"]),svg.icon:has(> use[href="#i-scout"]),svg.icon:has(> use[href="#i-recall"]),svg.icon:has(> use[href="#i-multiattack"]),svg.icon:has(> use[href="#i-tower"]),svg.icon:has(> use[href="#i-defense"]),svg.icon:has(> use[href="#i-losses"]),svg.icon:has(> use[href="#i-upgrade"]),svg.icon:has(> use[href="#i-hourglass"]),svg.icon:has(> use[href="#i-battlelog"]),svg.icon:has(> use[href="#i-bund"]),svg.icon:has(> use[href="#i-event"]),svg.icon:has(> use[href="#i-shop"]),svg.icon:has(> use[href="#i-flag"]),svg.icon:has(> use[href="#i-back"])){background:var(--ki-sym) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
-svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg.icon:has(> use[href="#i-star"]){--ki-sym:url(bilder/ui_sym_stern.webp)} svg.icon:has(> use[href="#i-crown"]){--ki-sym:url(bilder/ui_sym_krone.webp)} svg.icon:has(> use[href="#i-rank"]){--ki-sym:url(bilder/ui_sym_pokal.webp)} svg.icon:has(> use[href="#i-gear"]){--ki-sym:url(bilder/ui_sym_zahnrad.webp)} svg.icon:has(> use[href="#i-goal"]){--ki-sym:url(bilder/ui_sym_ziel.webp)} svg.icon:has(> use[href="#i-lock"]){--ki-sym:url(bilder/ui_sym_schloss.webp)} svg.icon:has(> use[href="#i-check"]){--ki-sym:url(bilder/ui_sym_haken.webp)} svg.icon:has(> use[href="#i-attack"]){--ki-sym:url(bilder/ui_sym_schwert.webp)} svg.icon:has(> use[href="#i-scout"]){--ki-sym:url(bilder/ui_sym_spaeher.webp)} svg.icon:has(> use[href="#i-recall"]){--ki-sym:url(bilder/ui_sym_rueckzug.webp)} svg.icon:has(> use[href="#i-multiattack"]){--ki-sym:url(bilder/ui_sym_pfeile.webp)} svg.icon:has(> use[href="#i-tower"]){--ki-sym:url(bilder/ui_sym_turm.webp)} svg.icon:has(> use[href="#i-defense"]){--ki-sym:url(bilder/ui_sym_turm.webp)} svg.icon:has(> use[href="#i-losses"]){--ki-sym:url(bilder/ui_sym_verluste.webp)} svg.icon:has(> use[href="#i-upgrade"]){--ki-sym:url(bilder/ui_sym_aufstieg.webp)} svg.icon:has(> use[href="#i-hourglass"]){--ki-sym:url(bilder/ui_sym_zeit.webp)} svg.icon:has(> use[href="#i-battlelog"]){--ki-sym:url(bilder/ui_sym_rolle.webp)} svg.icon:has(> use[href="#i-bund"]){--ki-sym:url(bilder/ui_dock_bund.webp)} svg.icon:has(> use[href="#i-event"]){--ki-sym:url(bilder/ui_dock_events.webp)} svg.icon:has(> use[href="#i-shop"]){--ki-sym:url(bilder/ui_dock_shop.webp)} svg.icon:has(> use[href="#i-flag"]){--ki-sym:url(bilder/ui_fahne.webp)} svg.icon:has(> use[href="#i-back"]){--ki-sym:url(bilder/ui_zurueck.webp)}
+:where(svg.icon:has(> use[href="#i-castle"]),svg.icon:has(> use[href="#i-star"]),svg.icon:has(> use[href="#i-crown"]),svg.icon:has(> use[href="#i-rank"]),svg.icon:has(> use[href="#i-gear"]),svg.icon:has(> use[href="#i-goal"]),svg.icon:has(> use[href="#i-lock"]),svg.icon:has(> use[href="#i-check"]),svg.icon:has(> use[href="#i-attack"]),svg.icon:has(> use[href="#i-scout"]),svg.icon:has(> use[href="#i-recall"]),svg.icon:has(> use[href="#i-multiattack"]),svg.icon:has(> use[href="#i-tower"]),svg.icon:has(> use[href="#i-defense"]),svg.icon:has(> use[href="#i-losses"]),svg.icon:has(> use[href="#i-upgrade"]),svg.icon:has(> use[href="#i-hourglass"]),svg.icon:has(> use[href="#i-battlelog"]),svg.icon:has(> use[href="#i-bund"]),svg.icon:has(> use[href="#i-event"]),svg.icon:has(> use[href="#i-shop"]),svg.icon:has(> use[href="#i-flag"]),svg.icon:has(> use[href="#i-back"]),svg.icon:has(> use[href="#i-coin"]),svg.icon:has(> use[href="#i-gem"]),svg.icon:has(> use[href="#i-troops"]),svg.icon:has(> use[href="#i-wood"]),svg.icon:has(> use[href="#i-stone"]),svg.icon:has(> use[href="#i-iron"])) > use{display:none}
+:where(svg.icon:has(> use[href="#i-castle"]),svg.icon:has(> use[href="#i-star"]),svg.icon:has(> use[href="#i-crown"]),svg.icon:has(> use[href="#i-rank"]),svg.icon:has(> use[href="#i-gear"]),svg.icon:has(> use[href="#i-goal"]),svg.icon:has(> use[href="#i-lock"]),svg.icon:has(> use[href="#i-check"]),svg.icon:has(> use[href="#i-attack"]),svg.icon:has(> use[href="#i-scout"]),svg.icon:has(> use[href="#i-recall"]),svg.icon:has(> use[href="#i-multiattack"]),svg.icon:has(> use[href="#i-tower"]),svg.icon:has(> use[href="#i-defense"]),svg.icon:has(> use[href="#i-losses"]),svg.icon:has(> use[href="#i-upgrade"]),svg.icon:has(> use[href="#i-hourglass"]),svg.icon:has(> use[href="#i-battlelog"]),svg.icon:has(> use[href="#i-bund"]),svg.icon:has(> use[href="#i-event"]),svg.icon:has(> use[href="#i-shop"]),svg.icon:has(> use[href="#i-flag"]),svg.icon:has(> use[href="#i-back"]),svg.icon:has(> use[href="#i-coin"]),svg.icon:has(> use[href="#i-gem"]),svg.icon:has(> use[href="#i-troops"]),svg.icon:has(> use[href="#i-wood"]),svg.icon:has(> use[href="#i-stone"]),svg.icon:has(> use[href="#i-iron"])){background:var(--ki-sym) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
+svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg.icon:has(> use[href="#i-star"]){--ki-sym:url(bilder/ui_sym_stern.webp)} svg.icon:has(> use[href="#i-crown"]){--ki-sym:url(bilder/ui_sym_krone.webp)} svg.icon:has(> use[href="#i-rank"]){--ki-sym:url(bilder/ui_sym_pokal.webp)} svg.icon:has(> use[href="#i-gear"]){--ki-sym:url(bilder/ui_sym_zahnrad.webp)} svg.icon:has(> use[href="#i-goal"]){--ki-sym:url(bilder/ui_sym_ziel.webp)} svg.icon:has(> use[href="#i-lock"]){--ki-sym:url(bilder/ui_sym_schloss.webp)} svg.icon:has(> use[href="#i-check"]){--ki-sym:url(bilder/ui_sym_haken.webp)} svg.icon:has(> use[href="#i-attack"]){--ki-sym:url(bilder/ui_sym_schwert.webp)} svg.icon:has(> use[href="#i-scout"]){--ki-sym:url(bilder/ui_sym_spaeher.webp)} svg.icon:has(> use[href="#i-recall"]){--ki-sym:url(bilder/ui_sym_rueckzug.webp)} svg.icon:has(> use[href="#i-multiattack"]){--ki-sym:url(bilder/ui_sym_pfeile.webp)} svg.icon:has(> use[href="#i-tower"]){--ki-sym:url(bilder/ui_sym_turm.webp)} svg.icon:has(> use[href="#i-defense"]){--ki-sym:url(bilder/ui_sym_turm.webp)} svg.icon:has(> use[href="#i-losses"]){--ki-sym:url(bilder/ui_sym_verluste.webp)} svg.icon:has(> use[href="#i-upgrade"]){--ki-sym:url(bilder/ui_sym_aufstieg.webp)} svg.icon:has(> use[href="#i-hourglass"]){--ki-sym:url(bilder/ui_sym_zeit.webp)} svg.icon:has(> use[href="#i-battlelog"]){--ki-sym:url(bilder/ui_sym_rolle.webp)} svg.icon:has(> use[href="#i-bund"]){--ki-sym:url(bilder/ui_dock_bund.webp)} svg.icon:has(> use[href="#i-event"]){--ki-sym:url(bilder/ui_dock_events.webp)} svg.icon:has(> use[href="#i-shop"]){--ki-sym:url(bilder/ui_dock_shop.webp)} svg.icon:has(> use[href="#i-flag"]){--ki-sym:url(bilder/ui_fahne.webp)} svg.icon:has(> use[href="#i-back"]){--ki-sym:url(bilder/ui_zurueck.webp)} svg.icon:has(> use[href="#i-coin"]){--ki-sym:url(bilder/ui_res_muenzen.webp)} svg.icon:has(> use[href="#i-gem"]){--ki-sym:url(bilder/ui_res_edelstein.webp)} svg.icon:has(> use[href="#i-troops"]){--ki-sym:url(bilder/ui_res_truppen.webp)} svg.icon:has(> use[href="#i-wood"]){--ki-sym:url(bilder/ui_res_holz.webp)} svg.icon:has(> use[href="#i-stone"]){--ki-sym:url(bilder/ui_res_stein.webp)} svg.icon:has(> use[href="#i-iron"]){--ki-sym:url(bilder/ui_res_eisen.webp)}
 
 /* ---------------- Belohnungs-Kacheln je Seltenheit, leerer Platz ---------------- */
 .tile[data-r],.item-icon[data-r]{border-color:transparent;box-shadow:none;background:var(--ki-kachel) center/100% 100% no-repeat}
@@ -2068,16 +2072,31 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 /* ---------------- Listen-Karten in allen Fenstern (Shop, Events, Bündnis, Kampf, Berichte, Pass, Rangliste, Einstellungen, Gebäude) ---------------- */
 :is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.chain,.tour-prize,.pass-cell,.pass-how-l,.ach-sum,.pass-hero,
   .pass-prem,.pass-old,.daily-row,.title-row,.forge-row,.fo-row,.fo-detail,.bd-zeile,.bd-form,.anf,.gate-ctl,.city-vgl,.shop-info,.skin-card,.crest-card,.statChip,.notice,
-  .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in){border:0;border-style:solid;border-radius:0;background:none;box-shadow:none;
-  border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch}
-:is(.ki-karte--an,.ach.is-ready,.quest.is-done:not(.is-claimed),.pass-cell.is-ready,.inbox-row.is-gold,.barb-rank li.me,.logRow.is-new){border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch}
+  .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in,.from-sel,.ap-kopf,.ap-hchip,.inbox-empty,.empty-state,.lb-row,.rank-row){border-style:solid!important;border-radius:0!important;box-shadow:none;
+  border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch!important}   /* (!important: Grundform gilt immer – auch gegen ältere „border:“-Kurzregeln mit #id) */
+:is(.ki-karte--an,.ach.is-ready,.quest.is-done:not(.is-claimed),.pass-cell.is-ready,.inbox-row.is-gold,.barb-rank li.me,.logRow.is-new,.ap-hchip.on,.bd-gk,.daily-day.is-today){border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch!important}
 .set-zeile{padding:0 10px;margin-bottom:4px} .set-zeile:last-child{border-bottom:0}
 /* Unter-Reiter und Wahl-Knöpfe: Schildchen, aktiv gold */
-:is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border:0;border-style:solid;border-radius:0;background:none;box-shadow:none;
-  border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch}
-:is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
-:is(.seg:not(.hero-seg) > button):disabled{border-image:url(bilder/ui_k_grau.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch}
+:is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border-style:solid!important;border-radius:0!important;box-shadow:none;
+  border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
+:is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
+:is(.seg:not(.hero-seg) > button):disabled{border-image:url(bilder/ui_k_grau.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
 .ki-balken{border-style:solid;border-width:0;border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch}
+/* Wappen-Feld im Fenster-Kopf (.emblem): Item-Platz statt gezeichnetem Kasten; Stufe als Schildchen */
+.emblem{border:0;border-radius:0;box-shadow:none;background:url(bilder/ui_platz.webp) center/100% 100% no-repeat}
+:is(.emblem,.rp-crest,#pAvatarRing) .lvl{border:0;background:url(bilder/ui_stufe.webp) center/100% 100% no-repeat;box-shadow:none;height:22px;padding-bottom:3px;text-shadow:0 1px 2px #000}
+.ap-spaehen{border-style:solid!important;border-radius:0;background:none;border-image:url(bilder/ui_k_dunkel.webp) 30 40 30 40 fill / 8px 10px 8px 10px stretch!important}
+/* Schieberegler: Spur im Balken-Rahmen, Knopf als Edelstein-Knopf */
+.slider::-webkit-slider-runnable-track{height:12px;border:0;border-radius:0;border-style:solid;border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch}
+.slider::-webkit-slider-thumb{width:26px;height:26px;margin-top:-7px;border:0;border-radius:50%;background:url(bilder/ui_edelstein.webp) center/100% 100% no-repeat;box-shadow:none}
+.slider::-moz-range-track{height:12px;border-radius:0;background:url(bilder/ui_balken.webp) center/100% 100% no-repeat}
+.slider::-moz-range-thumb{width:26px;height:26px;border:0;background:url(bilder/ui_edelstein.webp) center/100% 100% no-repeat}
+/* Shop-Angebote, tägliche Belohnung, Bündnis-Start: Rahmen der Listen-Karte um den eigenen (farbigen) Grund */
+:is(.ware,.daily,.bd-start){border-style:solid!important;border-radius:0!important;border-image:url(bilder/ui_karte.webp) 24 / 8px stretch!important}
+.daily-day{border-style:solid!important;border-radius:0!important;border-image:url(bilder/ui_platz.webp) 30 fill / 8px stretch!important}
+:is(.pill,.ware-link){border-style:solid!important;border-radius:0!important;background:none;border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
+.ware-preis{border-style:solid!important;border-radius:0!important;border-image:url(bilder/ui_k_dunkel.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
+.ware .band{border-style:solid;border-width:0;background:none;border-image:url(bilder/ui_band_gold.webp) 30 70 30 70 fill / 6px 16px 6px 16px stretch;padding:0 16px}
     </style>
 </head>
 <body>
@@ -2155,7 +2174,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 <canvas id="mapCanvas" aria-label="Weltkarte"></canvas>
 <div id="mapVignette" aria-hidden="true"></div>
 
-<!-- HUD: Spielerbild (antippen = Profil) + eine Werte-Zeile + runder Rohstoff-Knopf; Desktop = ein Rahmen mit Namensschild -->
+<!-- HUD: Spielerbild (antippen = Profil) + EINE Reihe Werte (Münzen, Edelsteine, Truppen, Holz, Stein, Eisen); Rohstoff antippen = Ertrag/Std. als Blase -->
 <div id="hud" class="hud">
   <button id="hudPlayer" class="hud-me" type="button" title="Profil öffnen">
     <span class="avatar-ring avatar-ring--sm"><span class="avatar"><svg class="icon"><use href="#i-profile"/></svg></span><span id="hudLevel" class="lvl">1</span></span>
@@ -2165,10 +2184,10 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
     <div class="res res--coin" title="Münzen"><svg class="icon"><use href="#i-coin"/></svg><b id="coinCount">0</b></div>
     <div class="res res--gem" title="Edelsteine"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
     <div class="res res--troop" title="Truppen"><svg class="icon"><use href="#i-troops"/></svg><b id="troopCount">0</b></div>
+    <span id="hudRoh" class="res-roh" role="group" aria-label="Rohstoffe"><button class="res res--h" type="button" data-roh="h" title="Holz"><svg class="icon"><use href="#i-wood"/></svg><b data-r="h">0</b></button><button class="res res--s" type="button" data-roh="s" title="Stein"><svg class="icon"><use href="#i-stone"/></svg><b data-r="s">0</b></button><button class="res res--e" type="button" data-roh="e" title="Eisen"><svg class="icon"><use href="#i-iron"/></svg><b data-r="e">0</b></button></span>
   </div>
-  <button id="hudRoh" class="res res--roh" type="button" title="Rohstoffe" aria-label="Rohstoffe"><svg class="icon"><use href="#i-crate"/></svg><span class="roh-mini"><span class="roh-v roh-h"><svg class="icon"><use href="#i-wood"/></svg><b data-r="h">0</b></span><span class="roh-v roh-s"><svg class="icon"><use href="#i-stone"/></svg><b data-r="s">0</b></span><span class="roh-v roh-e"><svg class="icon"><use href="#i-iron"/></svg><b data-r="e">0</b></span></span></button>
 </div>
-<div id="rohDrop" class="roh-drop" hidden></div>
+<div id="rohDrop" class="roh-blase" role="status" hidden></div>
 
 <div id="midBar" class="midbar" hidden></div>
 
