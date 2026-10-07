@@ -289,7 +289,7 @@ function hudRoh() {
 function rohDropMalen() {                                      // die Blase unter der angetippten Rohstoff-Kapsel: Bestand und Ertrag/Std.
     const d = document.getElementById('rohDrop'), k = document.querySelector('#hudRoh [data-roh="' + rohWahl + '"]'); if (!d || !k) return;
     const x = rohWahl, ps = rohStunde('player'), r = k.getBoundingClientRect();
-    liveHtml(d, icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + ' <b>' + fmtNum(Math.floor(roh[x])) + '</b></span><small>+' + rohStd(ps[x]) + '/Std. · Burg schützt ' + schutzText(burgSchutzRoh('player')) + '</small>');
+    liveHtml(d, icon(ROH_DEF[x].icon, 'roh-' + x) + '<span>' + ROH_DEF[x].name + ' <b>' + fmtNum(Math.floor(roh[x])) + '</b></span><small>+' + rohStd(ps[x]) + '/Std. · Burg schützt ' + schutzText(burgSchutzRoh('player')) + ' je Rohstoff und ' + schutzText(burgSchutz('player')) + ' Münzen vor Angreifern</small>');
     d.style.left = Math.max(8, Math.min(innerWidth - d.offsetWidth - 8, r.left + r.width / 2 - d.offsetWidth / 2)) + 'px'; d.style.top = (r.bottom + 6) + 'px';
 }
 function rohUmschalten(an, x) {                                // x: welche Kapsel (gleiche nochmal = zu); zu nach 3 s von selbst

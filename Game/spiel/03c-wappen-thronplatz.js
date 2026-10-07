@@ -31,7 +31,7 @@ function drawCrest(g, x, y, s, c) {
     g.restore();
     const sym = CREST_SYMBOLS[c.sym], ink = CREST_INK[c.ink];
     if (sym === 'crown') { const cw = s * .42; g.save(); g.translate(x, y + cw * .3); g.fillStyle = ink; g.beginPath(); g.moveTo(-cw / 2, 0); g.lineTo(-cw / 2, -cw * .34); g.lineTo(-cw / 4, -cw * .16); g.lineTo(0, -cw * .62); g.lineTo(cw / 4, -cw * .16); g.lineTo(cw / 2, -cw * .34); g.lineTo(cw / 2, 0); g.closePath(); g.fill(); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.55)'; g.stroke(); g.restore(); }
-    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink);
+    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink, true);   // (Wappen-Zeichen: Linien)
     crestPath(g, x, y, s, shape); g.lineWidth = Math.max(1, s * .05); g.strokeStyle = '#d8b56c'; g.stroke();
     crestPath(g, x, y, s * 1.04, shape); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.7)'; g.stroke();
 }

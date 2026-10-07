@@ -24,7 +24,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       window.__t44 = sel => [...document.querySelectorAll(sel)].filter(x => x.offsetParent).map(x => window.__tipp(x)).filter(Boolean); });
     const gross = L => L.length > 0 && L.every(t => t.w >= 42 && t.h >= 42);   // (±21 px um die Mitte = 44 px Fläche)
     // 1) Karte: Rohstoffe, Kartenknöpfe; Anleitung-×
-    const k = await ev(() => { const a = document.getElementById('anleitung'); a.hidden = false; const o = { roh: __t44('#hudRoh'), ctl: __t44('.mapctl button'), x: __t44('#anleitungWeg') }; a.hidden = true; return o; });
+    const k = await ev(() => { const a = document.getElementById('anleitung'); a.hidden = false; const o = { roh: __t44('#hudRoh [data-roh]'), ctl: __t44('.mapctl button'), x: __t44('#anleitungWeg') }; a.hidden = true; return o; });
     ok(gross(k.roh) && gross(k.ctl) && gross(k.x), art + ': Rohstoffe, Kartenknöpfe und Anleitung-× mit Tippfläche ≥ 44 px', k);
     // 2) Angriff aus der Hauptstadt mit „Alle“: Hinweis; „Spähen“ und Prozent-Chips ≥ 44 px
     const a = await ev(async () => { const w = ms => new Promise(f => setTimeout(f, ms)), h = islandById[playerIslandId];

@@ -1,5 +1,5 @@
 // Basen als KI-Bild (Alexander 7.10.): Stufe 1–100 gleichmäßig auf 15 Bilder (Bild = ceil(Stufe·15/100)), ALLE gleich groß,
-// darunter der Ring in der Besitzer-Farbe; ganz weit weiter Punkte (kein Bild).
+// darunter auf jeder Zoomstufe das Namensschild (kein Ring, nichts springt beim Zoomen); ganz weit weiter Punkte (kein Bild).
 //   node tests/browser/basen_bild_test.js <vorschau>
 const { chromium, devices } = require('playwright');
 const path = require('path');
@@ -23,7 +23,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       fremd.x = h.x + 3000; fremd.y = h.y; const d = drawBasisBild(isl, ownerKeyOf(isl), z); isl.neutralLevel = alt; islandLevels[isl.id] = altL; return d; };
     const fx = fremd.x, fy = fremd.y;
     o.gezeichnet = [zeig(fremd, 1), zeig(fremd, 100)];
-    ringe = []; o.heim = drawBasisBild(h, 'player', 0.006); o.ringHeim = ringe.slice();   // (weit: der Ring, ab mittel das Schild)
+    ringe = []; o.heim = drawBasisBild(h, 'player', 0.006); o.ringHeim = ringe.slice();   // (kein Ring mehr – das Schild auf jeder Stufe)
     o.weit = drawBasisBild(h, 'player', 0.002);
     fremd.x = fx; fremd.y = fy; ctx.drawImage = dr; ctx.stroke = st;
     o.breiten = breiten;
@@ -46,10 +46,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(JSON.stringify(r.nr) === JSON.stringify([1, 1, 2, 2, 3, 8, 14, 15, 15]) && r.geladen === 15, 'Stufe 1–100 → Bild 1–15 (ceil(Stufe·15/100)), alle 15 Bilder geladen', r);
   ok(r.gezeichnet.every(Boolean) && r.breiten.length >= 2 && r.breiten[0][1] === r.breiten[1][1] && r.breiten[0][0] === '01' && r.breiten[1][0] === '15', 'alle Basen gleich groß (Stufe 1 und 100 gleich breit), anderes Bild', r.breiten);
-  ok(r.heim && r.ringHeim.includes('#3f86d8'), 'eigene Basis weit: blauer Ring darunter', r.ringHeim);
+  ok(r.heim && !r.ringHeim.length, 'eigene Basis weit: Bild ohne Ring (das Schild bleibt)', r.ringHeim);
   ok(r.weit === false, 'ganz weit: kein Bild (Punkte wie bisher)', r.weit);
   ok(JSON.stringify(r.schild) === JSON.stringify([['player', '1.234', true], ['bot', '?', true], ['bot', '800', true], ['ally', '700', true], ['neutral', '?', false]]),
     'Namensschild: eigene und Bündnis echte Truppen, fremde „?“ bis gespäht, frei ohne Wappen', r.schild);
-  ok(r.nah.schilde === 1 && r.nah.ringe === 0 && r.nah.breit && r.nah.mittig && r.nah.unter && r.mittelSchild === 0, 'Schild nah statt des Rings: höchstens 70 % der Basis-Breite, mittig darunter; mittel kein Schild (Ring)', [r.nah, r.mittelSchild]);
+  ok(r.nah.schilde === 1 && r.nah.ringe === 0 && r.nah.breit && r.nah.mittig && r.nah.unter && r.mittelSchild === 1, 'Schild nah: höchstens 70 % der Basis-Breite, mittig darunter; mittel auch das Schild (kein Ring)', [r.nah, r.mittelSchild]);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

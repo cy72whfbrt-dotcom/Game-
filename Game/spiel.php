@@ -1900,7 +1900,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
   --ui-rund:url(bilder/ui_rund.webp); --ui-rund-an:url(bilder/ui_rund_an.webp);
 }
 /* Symbol-Bild statt SVG-Zeichnung: das <svg class="icon"> bleibt (Größe, Platz), nur seine Linien verschwinden */
-.ki-sym > use,.nav-btn > .icon > use,.mapctl button > .icon > use,.btn-x > .icon > use{display:none}
+.ki-sym > use,.nav-btn > .icon > use,.mapctl button > .icon > use,.btn-x > .icon:has(> use[href="#i-close"]) > use{display:none}
 
 /* ---------------- HUD oben ---------------- */
 .hud-me .avatar-ring{overflow:visible}
@@ -1910,7 +1910,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 /* EINE Reihe: Münzen · Edelsteine · Truppen · Holz · Stein · Eisen – kleine Kapseln (Symbol links, Zahl rechts, fmtHud höchstens 5 Zeichen) */
 .hud-werte{background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;gap:2px;padding:0;height:24px;margin-top:6px}
 .hud-werte .res-roh{display:contents}
-.hud-werte .res{position:relative;flex:1 1 0;min-width:0;height:24px;padding:0 3px 0 20px;gap:0;justify-content:center;border-style:solid;border-width:0;
+.hud-werte .res{position:relative;flex:1 1 auto;min-width:0;height:24px;padding:0 3px 0 20px;gap:0;justify-content:center;border-style:solid;border-width:0;
   border-image:url(bilder/ui_kapsel.webp) 20 30 20 90 fill / 6px 6px 6px 21px stretch}
 .hud-werte .res > .icon{position:absolute;left:1px;top:50%;width:19px;height:19px;margin-top:-10px}
 .hud-werte .res b{font:600 11px/1 var(--font-ui);letter-spacing:-.02em;color:var(--tx-1);text-shadow:0 1px 2px #000}
@@ -1929,7 +1929,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 /* ---------------- Leiste unten (Dock) ---------------- */
 .nav{background:#07090c;border-top:0;border-style:solid;border-width:0;border-image:url(bilder/ui_dock.webp) 30 60 30 60 fill / 9px 30px 6px 30px stretch}
 .nav::before{display:none}
-.nav-btn > .icon{border:0;padding:0;box-shadow:none;background:var(--ki-bild,none) center/60% auto no-repeat,var(--ui-rund) center/100% 100% no-repeat;transition:none}
+.nav-btn > .icon{border:0;border-radius:50%;padding:0;box-shadow:none;background:var(--ki-bild,none) center/60% auto no-repeat,var(--ui-rund) center/100% 100% no-repeat;transition:none}
 .nav-btn.active > .icon,.nav-btn:hover > .icon{border:0;box-shadow:none;background:var(--ki-bild,none) center/62% auto no-repeat,var(--ui-rund-an) center/100% 100% no-repeat}
 .nav{padding-bottom:max(2px,calc(var(--safe-bd) - 18px))}   /* Knöpfe tiefer in die Leiste (der Home-Balken-Rand bleibt frei genug) */
 .nav-btn{gap:1px;justify-content:flex-end;padding-bottom:6px} .nav-btn > .icon{width:42px;height:42px}
@@ -1950,11 +1950,12 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 /* ---------------- Knöpfe (Schrift bleibt Code) ---------------- */
 .btn--primary,.btn--secondary,.btn--danger,.btn:disabled{border-style:solid;border-color:transparent;box-shadow:none;background:none;border-width:0;
   border-image:var(--k-bild) 30 40 30 40 fill / 11px 14px 11px 14px stretch}
+.btn--primary:not(.btn--sm):not(.btn--chip),.btn--secondary:not(.btn--sm):not(.btn--chip),.btn--danger:not(.btn--sm):not(.btn--chip){padding-left:18px;padding-right:18px}   /* Schrift nicht auf den Spitzen links/rechts */
 .btn--primary{--k-bild:url(bilder/ui_k_gold.webp);color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
 .btn--primary:active{--k-bild:url(bilder/ui_k_gold_an.webp)}
 .btn--secondary{--k-bild:url(bilder/ui_k_dunkel.webp)}
 .btn--danger{--k-bild:url(bilder/ui_k_rot.webp)}
-.btn:disabled{--k-bild:url(bilder/ui_k_grau.webp);color:#d8d4cc;text-shadow:0 1px 1px #000}
+.btn:disabled{--k-bild:url(bilder/ui_k_grau.webp);color:var(--tx-1);text-shadow:0 1px 2px #000}
 .btn--chip.btn--secondary,.btn--chip.btn--primary{border-image:var(--k-bild) 30 40 30 40 fill / 9px 12px 9px 12px stretch}
 .chip:not(.chip--rar):not(.chip--scouted){border:0;background:none;border-style:solid;border-image:url(bilder/ui_k_chip.webp) 26 fill / 10px stretch}
 
@@ -1962,12 +1963,14 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 .panel::before,.hh::before{border:16px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch}
 .ki-fenster,.marker-sheet{border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);border-radius:0}
 .marker-sheet{padding:16px}
+/* gleicher Innenabstand links und rechts: der Inhalt bleibt innerhalb des Rahmens (16 px Rand + 4 px Luft) */
+.panel > :is(.phead,.pbody,.pfoot,.p5-chips){padding-left:20px;padding-right:20px} .hh{padding-left:20px;padding-right:20px}
 #citySheet{border-style:solid;border-width:1px 1px 0;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;border-radius:0}
 .phead::after{width:160px;height:10px;background:url(bilder/ui_linie.webp) center/100% 100% no-repeat}
 .btn-x{border:0}
-.btn-x > .icon{width:32px;height:32px;background:url(bilder/ui_zu.webp) center/contain no-repeat}
+.btn-x > .icon:has(> use[href="#i-close"]){width:32px;height:32px;background:url(bilder/ui_zu.webp) center/contain no-repeat}   /* (nur „Schließen“ – andere runde Knöpfe wie „Info“ behalten ihr Zeichen) */
 .btn-x:hover{border:0;filter:brightness(1.12)}
-.tabs{background:none;border-bottom:0;gap:3px;padding:4px 4px 0}
+.tabs{background:none;border-bottom:0;gap:3px;padding:4px 16px 0}
 .tab,.tab + .tab{box-shadow:none;border-style:solid;border-width:0;border-image:url(bilder/ui_reiter.webp) 30 40 14 40 fill / 10px 6px 5px 6px stretch}
 .tab.active{background:none;border-image:url(bilder/ui_reiter_an.webp) 30 40 14 40 fill / 10px 6px 5px 6px stretch}
 .tab.active::after,.tab.active::before{display:none}
@@ -2003,12 +2006,12 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 /* ---------------- Listen-Karten in allen Fenstern (Shop, Events, Bündnis, Kampf, Berichte, Pass, Rangliste, Einstellungen, Gebäude) ---------------- */
 :is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.chain,.tour-prize,.pass-cell,.pass-how-l,.ach-sum,.pass-hero,
   .pass-prem,.pass-old,.daily-row,.title-row,.forge-row,.fo-row,.fo-detail,.bd-zeile,.bd-form,.anf,.gate-ctl,.city-vgl,.shop-info,.skin-card,.crest-card,.statChip,.notice,
-  .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in,.from-sel,.ap-kopf,.ap-hchip,.inbox-empty,.empty-state,.lb-row,.rank-row){border-style:solid!important;border-radius:0!important;box-shadow:none;
+  .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in,.from-sel,.ap-kopf,.ap-hchip,.inbox-empty,.empty-state,.lb-row,.rank-row){border-radius:0!important;box-shadow:none;
   border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch!important}   /* (!important: Grundform gilt immer – auch gegen ältere „border:“-Kurzregeln mit #id) */
 :is(.ki-karte--an,.ach.is-ready,.quest.is-done:not(.is-claimed),.pass-cell.is-ready,.inbox-row.is-gold,.barb-rank li.me,.logRow.is-new,.ap-hchip.on,.bd-gk,.daily-day.is-today){border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch!important}
 .set-zeile{padding:0 10px;margin-bottom:4px} .set-zeile:last-child{border-bottom:0}
 /* Unter-Reiter und Wahl-Knöpfe: Schildchen, aktiv gold */
-:is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border-style:solid!important;border-radius:0!important;box-shadow:none;
+:is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border-radius:0!important;box-shadow:none;
   border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
 :is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
 :is(.seg:not(.hero-seg) > button):disabled{border-image:url(bilder/ui_k_grau.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
@@ -2016,17 +2019,17 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 /* Wappen-Feld im Fenster-Kopf (.emblem): Item-Platz statt gezeichnetem Kasten; Stufe als Schildchen */
 .emblem{border:0;border-radius:0;box-shadow:none;background:url(bilder/ui_platz.webp) center/100% 100% no-repeat}
 :is(.emblem,.rp-crest,#pAvatarRing) .lvl{border:0;background:url(bilder/ui_stufe.webp) center/100% 100% no-repeat;box-shadow:none;height:22px;padding-bottom:3px;text-shadow:0 1px 2px #000}
-.ap-spaehen{border-style:solid!important;border-radius:0;background:none;border-image:url(bilder/ui_k_dunkel.webp) 30 40 30 40 fill / 8px 10px 8px 10px stretch!important}
+.ap-spaehen{border-radius:0;background:none;border-image:url(bilder/ui_k_dunkel.webp) 30 40 30 40 fill / 8px 10px 8px 10px stretch!important}
 /* Schieberegler: Spur im Balken-Rahmen, Knopf als Edelstein-Knopf */
 .slider::-webkit-slider-runnable-track{height:12px;border:0;border-radius:0;border-style:solid;border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch}
 .slider::-webkit-slider-thumb{width:26px;height:26px;margin-top:-7px;border:0;border-radius:50%;background:url(bilder/ui_edelstein.webp) center/100% 100% no-repeat;box-shadow:none}
 .slider::-moz-range-track{height:12px;border-radius:0;background:url(bilder/ui_balken.webp) center/100% 100% no-repeat}
 .slider::-moz-range-thumb{width:26px;height:26px;border:0;background:url(bilder/ui_edelstein.webp) center/100% 100% no-repeat}
 /* Shop-Angebote, tägliche Belohnung, Bündnis-Start: Rahmen der Listen-Karte um den eigenen (farbigen) Grund */
-:is(.ware,.daily,.bd-start){border-style:solid!important;border-radius:0!important;border-image:url(bilder/ui_karte.webp) 24 / 8px stretch!important}
-.daily-day{border-style:solid!important;border-radius:0!important;border-image:url(bilder/ui_platz.webp) 30 fill / 8px stretch!important}
-:is(.pill,.ware-link){border-style:solid!important;border-radius:0!important;background:none;border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
-.ware-preis{border-style:solid!important;border-radius:0!important;border-image:url(bilder/ui_k_dunkel.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
+:is(.ware,.daily,.bd-start){border-radius:0!important;border-image:url(bilder/ui_karte.webp) 24 / 8px stretch!important}
+.daily-day{border-radius:0!important;border-image:url(bilder/ui_platz.webp) 30 fill / 8px stretch!important}
+:is(.pill,.ware-link){border-radius:0!important;background:none;border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
+.ware-preis{border-radius:0!important;border-image:url(bilder/ui_k_dunkel.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
 .ware .band{border-style:solid;border-width:0;background:none;border-image:url(bilder/ui_band_gold.webp) 30 70 30 70 fill / 6px 16px 6px 16px stretch;padding:0 16px}
     </style>
 </head>

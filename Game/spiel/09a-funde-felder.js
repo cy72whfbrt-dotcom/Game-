@@ -74,10 +74,11 @@ function drawPickups(now) {          // screen space (setScreen active)
         glow.addColorStop(0, p.kind === 'gem' ? 'rgba(127,211,255,.45)' : 'rgba(236,208,138,.45)');
         glow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, r * 2.1, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#15120c'; ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke();
-        drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : 'coin', cx, cy, r * 1.3,
+        const rund = glyphBild('rund');                                       // runder Knopf aus den KI-Bildern, darin Beutel/Edelstein/Truppen
+        if (rund) ctx.drawImage(rund, cx - r * 1.2, cy - r * 1.2, r * 2.4, r * 2.4);
+        else { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = '#15120c'; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke(); }
+        drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : glyphBild('beute') ? 'beute' : 'coin', cx, cy, r * 1.3,
             p.kind === 'gem' ? '#8fd8ff' : p.kind === 'troops' ? '#efe8d6' : '#e8c46e');
         const t = '+' + fmtCompact(p.amount); ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';   // Beschriftung: was es gibt
         const w = ctx.measureText(t).width + 12; ctx.fillStyle = 'rgba(14,14,20,.85)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - w / 2, cy + r + 2, w, 15, 7) : ctx.rect(cx - w / 2, cy + r + 2, w, 15); ctx.fill();

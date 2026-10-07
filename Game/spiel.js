@@ -129,9 +129,10 @@ function fmtCompact(n) {
   for (const [v, u] of [[1e24, 'Quadr.'], [1e21, 'Trd.'], [1e18, 'Trill.'], [1e15, 'Brd.']])   // beyond "Bio.": Billiarde, Trillion, Trilliarde … (unit chosen on the rounded value)
     if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
 }
-function fmtHud(n) {                      // HUD-Reihe (6 Kapseln auf 390 px): höchstens 5 Zeichen – 950 · 5,4K · 12,6K · 126K · 1,2M · 126M · 1,2Mrd
+function fmtHud(n) {                      // HUD-Reihe (6 Kapseln auf 390 px): kurz – 950 · 5,4K · 12,6K · 126K · 1,2M · 100Mrd · 10Bio
   const a = Math.abs(n), k = (v, u) => (v < 100 ? NF.format(Math.floor(v * 10) / 10) : NF.format(Math.floor(v))) + u;
-  return a < 1e3 ? fmtExact(n) : a < 1e6 ? k(n / 1e3, 'K') : a < 1e9 ? k(n / 1e6, 'M') : k(n / 1e9, 'Mrd');
+  if (a < 1e3) return fmtExact(n);
+  for (const [v, u] of [[1e15, 'Brd'], [1e12, 'Bio'], [1e9, 'Mrd'], [1e6, 'M'], [1e3, 'K']]) if (a >= v) return a >= v * 1e4 ? fmtCompact(n) : k(n / v, u);
 }
 const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
 function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl') || btn; if (l.textContent !== text) l.textContent = text; }   // (nur bei einer Änderung: offene Fenster ziehen jede Sekunde nach)
@@ -228,7 +229,21 @@ function glyph(name) {                     // parse the sprite symbol once
     o: p.hasAttribute('opacity') ? +p.getAttribute('opacity') : 1
   }));
 }
-function drawGlyph(g, name, cx, cy, size, color) {
+// Karten-Symbole als KI-Bild (Alexander 7.10., dieselben wie in den Fenstern, 05z): gibt es ein Bild, malt drawGlyph es statt der Linien
+// (Wappen-Zeichen bleiben Linien: vektor = true). Lädt beim ersten Mal, dann neu zeichnen.
+const GLYPH_BILD = { coin: 'res_muenzen', gem: 'res_edelstein', troops: 'res_truppen', wood: 'res_holz', stone: 'res_stein', iron: 'res_eisen',
+  scout: 'sym_spaeher', attack: 'sym_schwert', hourglass: 'sym_zeit', lock: 'sym_schloss', star: 'sym_stern', losses: 'sym_verluste',
+  defense: 'sym_turm', tower: 'sym_turm', flag: 'k_fahne', crown: 'k_krone', castle: 'sym_burg', shield: 'sym_friedensschild', weapon: 'sym_waffe', recall: 'sym_rueckzug',
+  beute: 'k_beute', rund: 'rund' };   // (nur Bild: Fund-Beutel, runder Knopf-Grund)
+const GLYPH_IMG = {};
+function glyphBild(name) {
+  const n = GLYPH_BILD[name]; if (!n || typeof Image === 'undefined') return null;
+  let im = GLYPH_IMG[n]; if (!im) { im = GLYPH_IMG[n] = new Image(); im.onload = () => requestRender(); im.src = 'bilder/ui_' + n + '.webp'; }
+  return im.complete && im.naturalWidth ? im : null;
+}
+function drawGlyph(g, name, cx, cy, size, color, vektor) {
+  const im = !vektor && glyphBild(name);
+  if (im) { const k = size * 1.2 / Math.max(im.naturalWidth, im.naturalHeight), w = im.naturalWidth * k, h = im.naturalHeight * k; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); return; }
   const L = glyph(name); if (!L) return;
   const k = size / 24;
   g.save(); g.translate(cx - size / 2, cy - size / 2); g.scale(k, k);
@@ -3833,7 +3848,7 @@ function drawCrest(g, x, y, s, c) {
     g.restore();
     const sym = CREST_SYMBOLS[c.sym], ink = CREST_INK[c.ink];
     if (sym === 'crown') { const cw = s * .42; g.save(); g.translate(x, y + cw * .3); g.fillStyle = ink; g.beginPath(); g.moveTo(-cw / 2, 0); g.lineTo(-cw / 2, -cw * .34); g.lineTo(-cw / 4, -cw * .16); g.lineTo(0, -cw * .62); g.lineTo(cw / 4, -cw * .16); g.lineTo(cw / 2, -cw * .34); g.lineTo(cw / 2, 0); g.closePath(); g.fill(); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.55)'; g.stroke(); g.restore(); }
-    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink);
+    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink, true);   // (Wappen-Zeichen: Linien)
     crestPath(g, x, y, s, shape); g.lineWidth = Math.max(1, s * .05); g.strokeStyle = '#d8b56c'; g.stroke();
     crestPath(g, x, y, s * 1.04, shape); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.7)'; g.stroke();
 }
@@ -10382,10 +10397,11 @@ function drawPickups(now) {          // screen space (setScreen active)
         glow.addColorStop(0, p.kind === 'gem' ? 'rgba(127,211,255,.45)' : 'rgba(236,208,138,.45)');
         glow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, r * 2.1, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#15120c'; ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke();
-        drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : 'coin', cx, cy, r * 1.3,
+        const rund = glyphBild('rund');                                       // runder Knopf aus den KI-Bildern, darin Beutel/Edelstein/Truppen
+        if (rund) ctx.drawImage(rund, cx - r * 1.2, cy - r * 1.2, r * 2.4, r * 2.4);
+        else { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = '#15120c'; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke(); }
+        drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : glyphBild('beute') ? 'beute' : 'coin', cx, cy, r * 1.3,
             p.kind === 'gem' ? '#8fd8ff' : p.kind === 'troops' ? '#efe8d6' : '#e8c46e');
         const t = '+' + fmtCompact(p.amount); ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';   // Beschriftung: was es gibt
         const w = ctx.measureText(t).width + 12; ctx.fillStyle = 'rgba(14,14,20,.85)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - w / 2, cy + r + 2, w, 15, 7) : ctx.rect(cx - w / 2, cy + r + 2, w, 15); ctx.fill();

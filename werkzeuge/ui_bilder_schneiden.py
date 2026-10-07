@@ -41,10 +41,16 @@ BLAETTER = {
                                          ('sym_pfeile', 80, (1340, 290)), ('sym_turm', 80, (230, 730)), ('sym_verluste', 80, (640, 750)),
                                          ('sym_aufstieg', 80, (990, 750)), ('sym_zeit', 80, (1340, 750))]),
     'blatt12_13_sieg_karte': ('schwelle', 2, [('strahlen', 200, (220, 230), 'roh'), ('band_gold', 400, (770, 150)),
-                                              ('lorbeer', 200, (1320, 260)), ('niederlage', 200, (270, 740)), ('wappen', 160, (690, 700))]),
+                                              ('lorbeer', 200, (1320, 260)), ('niederlage', 200, (270, 740)), ('wappen', 160, (690, 700)),
+                                              ('k_nadel', 64, (1000, 600)), ('k_beute', 80, (1300, 600)), ('k_kampf', 96, (960, 850)),
+                                              ('k_fahne', 64, (1210, 840)), ('k_krone', 64, (1420, 850))]),
     # zweite Lieferung (ki_rest_eingang): Rohstoff-Symbole für die HUD-Reihe
-    'blatt_03': ('schwelle', 6, [('res_muenzen', 64, (157, 157)), ('res_edelstein', 64, (472, 157)), ('res_holz', 64, (768, 157)),
-                                 ('res_stein', 64, (1083, 157)), ('res_eisen', 64, (1378, 157)), ('res_truppen', 64, (157, 571))]),
+    'blatt_03': ('schwelle', 1, [('res_muenzen', 64, (157, 157)), ('res_edelstein', 64, (472, 157)), ('res_holz', 64, (768, 157)),
+                                 ('res_stein', 64, (1083, 157)), ('res_eisen', 64, (1378, 157)), ('res_truppen', 64, (157, 571)),
+                                 ('res_splitter', 64, (487, 500)), ('res_thronpunkte', 64, (781, 500)), ('sym_friedensschild', 64, (1088, 491)),
+                                 ('sym_waffe', 64, (1380, 494)), ('sym_ruestung', 64, (133, 832)), ('sym_schild', 64, (396, 830)),
+                                 ('sym_stiefel', 64, (635, 832)), ('res_punkte', 64, (907, 829)), ('sym_beschleuniger', 64, (1168, 824)),
+                                 ('res_xp', 64, (1407, 844))]),
 }
 
 
@@ -95,10 +101,10 @@ for blatt, (verfahren, d, auswahl) in BLAETTER.items():
         else:
             x0, y0, x1, y1 = teil(sauber[:, :, 3], d, ort)
             stueck = sauber[y0:y1, x0:x1].copy()
-            lab, n = ndimage.label(stueck[:, :, 3] > 8)   # Splitter vom Nachbarteil weg (unter 2 % der Fläche)
+            lab, n = ndimage.label(stueck[:, :, 3] > 100)   # Splitter vom Nachbarteil weg (unter 5 % der Fläche)
             groesse = ndimage.sum(np.ones(lab.shape), lab, range(1, n + 1))
             for i, g in enumerate(groesse, 1):
-                if g < groesse.max() * 0.02: stueck[lab == i, 3] = 0
+                if g < groesse.max() * 0.05: stueck[ndimage.binary_dilation(lab == i, iterations=3), 3] = 0
         stueck = Image.fromarray(stueck)
         stueck = stueck.crop(stueck.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox())
         h = round(stueck.height * breite / stueck.width)
