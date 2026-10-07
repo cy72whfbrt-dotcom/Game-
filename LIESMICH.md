@@ -3567,3 +3567,8 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   „Skins, Ringe“ im Aussehen-Knopf, alter Rohstoff-HUD-Stil (`.res--roh`, `.roh-drop/-row/-mini/-hint`) und weitere
   unbenutzte CSS-Klassen, `UNK`, `beuteFensterOffen`, unbenutzte Variablen, `bilder/karte_wald1/2.webp`.
 - `CLAUDE.md`: Teileliste auf dem echten Stand (spiel.js 43 Teile, spielseite 11).
+
+- **Karte mittlerer Zoom (7.10.):** Basen auch bei mittlerem Zoom sichtbar (mit Besitzer mind. 22 px, freie in echter Größe);
+  Schilde liegen nie übereinander (verdeckte fallen weg); freie Basen mit Wimpel statt leerem Kreis; Wappen an der Hauptstadt
+  hält Funde fern und ist antippbar; Pass-Punkt bei mittlerem Zoom wieder gezeichnet. (03b/03c/06e)
+- **Tagesaufgaben (7.10.):** Tempel-Aufgabe erst, wenn Zone 4 offen ist; Thron-Aufgabe erst ab Tag 7. Push-Text angepasst.
