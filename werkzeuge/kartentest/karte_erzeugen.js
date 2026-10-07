@@ -103,12 +103,12 @@ const grenzen = linien.map((l, id) => {
 //    stufe = Zone, in die der Pass führt (1: Zone 1 untereinander … 5: in die Mitte) – danach öffnen sie gestaffelt.
 const paare = new Map();                                // "a,b" → Grenzen
 for (const g of grenzen) if (g.b !== -1) { const k = g.a + ',' + g.b; (paare.get(k) || paare.set(k, []).get(k)).push(g); }
-const RAND_FREI = 90000;                              // Pässe nie am Kartenrand
+const RAND_FREI = 60000;                              // Pässe nie am Kartenrand
 const TOR_GERADE = 20000, TOR_WEICH = 34000, TOR_ABSTAND = 70000;
 const paesse = [];
 function passSetzen(a, b, stufe) {
   const gs = paare.get(Math.min(a, b) + ',' + Math.max(a, b)); if (!gs) return false;
-  let best = null;
+  let best = null; const lang = Math.max(...gs.map(g => laengen(g.punkte).pop()));
   for (const g of gs) {
     const s = laengen(g.punkte), len = s[s.length - 1], rand = TOR_GERADE + TOR_WEICH + 15000;
     for (let d = rand; d <= len - rand; d += 3000) {
@@ -116,13 +116,14 @@ function passSetzen(a, b, stufe) {
       const senk = Math.abs(p1[1] - p0[1]) > Math.abs(p1[0] - p0[0]);
       let abw = 0; for (let e = -TOR_GERADE - TOR_WEICH; e <= TOR_GERADE + TOR_WEICH; e += 3000) { const q = punktBei(g.punkte, s, d + e); abw += Math.abs(senk ? q[0] - p[0] : q[1] - p[1]); }
       if (paesse.some(o => Math.hypot(o.x - p[0], o.y - p[1]) < TOR_ABSTAND) || Math.max(Math.abs(p[0]), Math.abs(p[1])) > H - RAND_FREI) continue;
-      const wert = abw + Math.abs(d - len / 2) * .6;
+      const wert = Math.abs(d - len / 2) + (lang - len) * .5 + abw * .05;   // mittig im Grenzstück zwischen seinen zwei Knoten (das längste Stück des Paars), gerade Stellen nur knapp bevorzugt
       if (!best || wert < best.wert) best = { wert, g, d, x: p[0], y: p[1], senk };
     } }
   if (!best) return false;
   // Grenze am Pass gerade ziehen: ±TOR_GERADE genau waagrecht/senkrecht, weich zurück in den Schwung
   const g = best.g, s = laengen(g.punkte);
-  g.punkte = g.punkte.map((q, i) => { const u = Math.abs(s[i] - best.d); if (u >= TOR_GERADE + TOR_WEICH) return q;
+  g.punkte = g.punkte.map((q, i) => { if (Math.abs(s[i] - best.d) > 2 * (TOR_GERADE + TOR_WEICH)) return q;   // (Abstand längs der Tor-Richtung: so bleibt das gerade Stück wirklich ±TOR_GERADE lang)
+    const u = best.senk ? Math.abs(q[1] - best.y) : Math.abs(q[0] - best.x); if (u >= TOR_GERADE + TOR_WEICH) return q;
     const w = u <= TOR_GERADE ? 1 : 1 - (u - TOR_GERADE) / TOR_WEICH, k = w * w * (3 - 2 * w);
     return best.senk ? [q[0] + (best.x - q[0]) * k, q[1]] : [q[0], q[1] + (best.y - q[1]) * k]; });
   paesse.push({ id: paesse.length, a: g.a, b: g.b, grenze: g.id, x: Math.round(best.x), y: Math.round(best.y), senk: best.senk, stufe });

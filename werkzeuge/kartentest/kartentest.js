@@ -231,24 +231,26 @@ function namen() {                                    // Übersicht: Namen der G
 const minZoom = () => Math.min(W, HT - 160) / (2 * H * 1.05);   // ganz weit: oben und unten Platz für Legende und Knöpfe
 function begrenzen() {
   cam.z = Math.max(minZoom(), Math.min(ZOOM.max, cam.z));
-  const mx = H - W / 2 / cam.z, my = H - HT / 2 / cam.z;   // (größer als die Karte: Mitte bleibt in der Mitte)
-  cam.x = mx < 0 ? 0 : Math.max(-mx, Math.min(mx, cam.x)); cam.y = my < 0 ? 0 : Math.max(-my, Math.min(my, cam.y));
+  cam.x = Math.max(-H, Math.min(H, cam.x)); cam.y = Math.max(-H, Math.min(H, cam.y));   // bei jedem Zoom bis in jede Ecke: der Kartenrand kommt höchstens bis zur Bildschirmmitte
 }
 let geplant = false;
 function neu() { if (geplant) return; geplant = true; requestAnimationFrame(() => { geplant = false; zeichnen(); }); }
 function zoomUm(px, py, z) { const wx = (px - W / 2) / cam.z + cam.x, wy = (py - HT / 2) / cam.z + cam.y;
   cam.z = z; begrenzen(); cam.x = wx - (px - W / 2) / cam.z; cam.y = wy - (py - HT / 2) / cam.z; begrenzen(); neu(); }
 function stufe() { const z = cam.z; return z < BILD_ZOOM ? 'ganz weit' : z < 0.007 ? 'weit' : z < 0.025 ? 'mittel' : 'nah'; }
-function zoomStufe(s, x, y) { if (x !== undefined) { cam.x = x; cam.y = y; } cam.z = s === 'ganz' ? minZoom() : ZOOM[s]; begrenzen(); neu();
+function zoomStufe(s, x, y) { if (x !== undefined) { cam.x = x; cam.y = y; } else if (s === 'ganz') cam.x = cam.y = 0;   // (ganz weit: die ganze Karte in der Mitte)
+  cam.z = s === 'ganz' ? minZoom() : ZOOM[s]; begrenzen(); neu();
   document.querySelectorAll('#leiste [data-zoom]').forEach(b => b.classList.toggle('an', b.dataset.zoom === s)); }
 const finger = new Map(); let griff = null;
-cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); finger.set(e.pointerId, { x: e.clientX, y: e.clientY }); griff = null; });
+const zweiGriff = () => { const [a, b] = [...finger.values()], mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;   // Zwei Finger: der Weltpunkt zwischen ihnen bleibt unter ihnen
+  return { d: Math.hypot(a.x - b.x, a.y - b.y), z: cam.z, wx: (mx - W / 2) / cam.z + cam.x, wy: (my - HT / 2) / cam.z + cam.y }; };
+cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); finger.set(e.pointerId, { x: e.clientX, y: e.clientY }); griff = finger.size === 2 ? zweiGriff() : null; });
 cv.addEventListener('pointermove', e => {
   if (!finger.has(e.pointerId)) return;
   const alt = [...finger.values()]; finger.set(e.pointerId, { x: e.clientX, y: e.clientY }); const jetzt = [...finger.values()];
   if (jetzt.length === 1) { cam.x -= (jetzt[0].x - alt[0].x) / cam.z; cam.y -= (jetzt[0].y - alt[0].y) / cam.z; begrenzen(); neu(); return; }
   const [a, b] = jetzt, d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-  if (!griff) griff = { d, z: cam.z, wx: (mx - W / 2) / cam.z + cam.x, wy: (my - HT / 2) / cam.z + cam.y };
+  if (!griff) griff = zweiGriff();
   cam.z = griff.z * d / Math.max(10, griff.d); begrenzen(); cam.x = griff.wx - (mx - W / 2) / cam.z; cam.y = griff.wy - (my - HT / 2) / cam.z; begrenzen(); neu();
 });
 const los = e => { finger.delete(e.pointerId); griff = null; };

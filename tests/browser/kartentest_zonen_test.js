@@ -15,11 +15,17 @@ const K = path.resolve(__dirname, '../../werkzeuge/kartentest'), arbeit = proces
   ok(geschlossen, 'jedes Gebiet ist ein Ring aus seinen Grenzen');
   const abst = (p, g) => g.punkte.reduce((m, q, i) => i ? Math.min(m, segAbst(p, g.punkte[i - 1], q)) : m, Infinity);
   function segAbst(p, a, b) { const dx = b[0] - a[0], dy = b[1] - a[1], t = Math.max(0, Math.min(1, ((p.x - a[0]) * dx + (p.y - a[1]) * dy) / ((dx * dx + dy * dy) || 1))); return Math.hypot(p.x - a[0] - t * dx, p.y - a[1] - t * dy); }
-  const auf = D.paesse.map(p => { const g = D.grenzen[p.grenze]; const gerade = g.punkte.filter(q => Math.hypot(q[0] - p.x, q[1] - p.y) < 14000).every(q => Math.abs(p.senk ? q[0] - p.x : q[1] - p.y) < 30);
+  const auf = D.paesse.map(p => { const g = D.grenzen[p.grenze], s = [0]; for (let i = 1; i < g.punkte.length; i++) s.push(s[i - 1] + Math.hypot(g.punkte[i][0] - g.punkte[i - 1][0], g.punkte[i][1] - g.punkte[i - 1][1]));
+    const i0 = g.punkte.reduce((m, q, i) => Math.hypot(q[0] - p.x, q[1] - p.y) < Math.hypot(g.punkte[m][0] - p.x, g.punkte[m][1] - p.y) ? i : m, 0);
+    const gerade = g.punkte.filter((q, i) => Math.abs(s[i] - s[i0]) < 15000).every(q => Math.abs(p.senk ? q[0] - p.x : q[1] - p.y) < 30);   // (entlang der Grenze ±15.000: so breit ist das Tor)
     return { id: p.id, ab: Math.round(abst(p, g)), gerade, paar: g.a === p.a && g.b === p.b }; });
   const jeGebiet = 2 * D.paesse.length / D.gebiete.length;
   ok(jeGebiet >= 2 && jeGebiet <= 3.5, 'Pässe: im Mittel 2–3,5 je Gebiet', { paesse: D.paesse.length, jeGebiet: jeGebiet.toFixed(2) });
   ok(auf.every(a => a.ab < 50 && a.paar), 'jeder Pass liegt genau auf der Grenze seiner zwei Gebiete', auf.filter(a => a.ab >= 50 || !a.paar));
+  const lage = D.paesse.map(p => { const g = D.grenzen[p.grenze].punkte; let s = 0, bei = 0, bd = Infinity;
+    for (let i = 1; i < g.length; i++) { s += Math.hypot(g[i][0] - g[i - 1][0], g[i][1] - g[i - 1][1]); const d = Math.hypot(g[i][0] - p.x, g[i][1] - p.y); if (d < bd) { bd = d; bei = s; } }
+    return bei / s; });
+  ok(lage.every(t => t > .35 && t < .65), 'jeder Pass sitzt mittig in seinem Grenzstück (zwischen den zwei Knoten)', lage.map(t => t.toFixed(2)).filter(t => t <= .35 || t >= .65));
   ok(auf.every(a => a.gerade), 'an jedem Pass läuft die Grenze gerade (waagrecht/senkrecht wie das Tor-Bild)', auf.filter(a => !a.gerade));
   const zoneVon = id => D.gebiete[id].zone;
   ok(D.paesse.every(p => p.stufe === Math.max(zoneVon(p.a), zoneVon(p.b)) && Math.abs(zoneVon(p.a) - zoneVon(p.b)) <= 1 && D.oeffnen[p.stufe] === p.stufe),
@@ -58,6 +64,21 @@ const K = path.resolve(__dirname, '../../werkzeuge/kartentest'), arbeit = proces
         for (let n = 0; n < 6; n++) { await finger('touchStart', 20); for (let d = 25; d <= 180; d += 15) await finger('touchMove', d); await finger('touchEnd', 0); }
         const z = await p.evaluate(() => ({ z: KT.cam.z, seite: visualViewport.scale }));
         ok(z.z >= 0.05 && z.seite === 1, name + ' Handy: zwei Finger zoomen die Karte bis „Nah“, die Seite bleibt (iPhone)', z);
+        const welt = (x, y) => p.evaluate(([x, y]) => [(x - innerWidth / 2) / KT.cam.z + KT.cam.x, (y - innerHeight / 2) / KT.cam.z + KT.cam.y], [x, y]);
+        await p.evaluate(() => KT.zoomStufe('mittel', 0, 0)); const vor = await welt(100, 300);   // Zwei Finger zoomen um den Punkt zwischen den Fingern
+        const zwei = (typ, d) => cdp.send('Input.dispatchTouchEvent', { type: typ, touchPoints: typ === 'touchEnd' ? [] : [{ x: 100 - d, y: 300, id: 1 }, { x: 100 + d, y: 300, id: 2 }] });
+        await zwei('touchStart', 20); for (let d = 25; d <= 60; d += 5) await zwei('touchMove', d); await zwei('touchEnd', 0);
+        const nach = await welt(100, 300), zm = await p.evaluate(() => KT.cam.z);
+        ok(zm > 0.02 && Math.hypot(nach[0] - vor[0], nach[1] - vor[1]) * zm < 3, name + ' Handy: Zoom um den Punkt zwischen den Fingern', { zoom: zm, versatzPx: Math.round(Math.hypot(nach[0] - vor[0], nach[1] - vor[1]) * zm) });
+        const ecken = [];                               // auf „Nah“ in jede Ecke schieben: die Ecke ist zu sehen
+        for (const [ex, ey] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+          await p.evaluate(([ex, ey]) => { const H = KT.daten.welt.halb; KT.zoomStufe('nah', ex * (H - 3000), ey * (H - 3000)); }, [ex, ey]);
+          const eins = (typ, x, y) => cdp.send('Input.dispatchTouchEvent', { type: typ, touchPoints: typ === 'touchEnd' ? [] : [{ x, y, id: 1 }] });
+          await eins('touchStart', 195, 422); for (let k = 1; k <= 10; k++) await eins('touchMove', 195 - ex * k * 15, 422 - ey * k * 15); await eins('touchEnd');
+          ecken.push(await p.evaluate(([ex, ey]) => { const H = KT.daten.welt.halb, x = (ex * H - KT.cam.x) * KT.cam.z + innerWidth / 2, y = (ey * H - KT.cam.y) * KT.cam.z + innerHeight / 2;
+            return x >= 0 && x <= innerWidth && y >= 0 && y <= innerHeight && /^nah/.test(document.getElementById('stufe').textContent); }, [ex, ey]));
+        }
+        ok(ecken.every(Boolean), name + ' Handy: auf „Nah“ bis in alle 4 Ecken schieben, die Ecke ist zu sehen', ecken);
         if (/einzeln/.test(datei)) {                    // (nur hier: Bilder als data-URL, das Bild der Zeichenfläche ist lesbar)
           const bunt = await p.evaluate(() => ['ganz', 'weit', 'mittel', 'nah'].map(s => { const P = KT.daten.paesse[3]; KT.zoomStufe(s, P.x, P.y); KT.zeichnen();
             const c = document.getElementById('karte'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, farben = new Set();
