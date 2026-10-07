@@ -99,7 +99,7 @@ if (SYSTEM && store.get('openWaterKarte') !== KARTE_KENNUNG) store.set('openWate
 // The map was rebuilt (Thron-Insel + Wächter-Inseln): old base ids no longer match, so every
 // map-bound part of an old save is cleared once. Coins, gems, gear, skills and level stay,
 // and the player's whole army moves to the new home base.
-const WORLD_VERSION = '8';   // 8: Karte mit Zonen wie RoK (7: 17 × 17, Paket C) – welt.js setzt dieselbe Zahl (WELT_VERSION)
+const WORLD_VERSION = '9';   // 9: Felder, Pässe und Startplätze wie der Kartentest (8: Zonen wie RoK, 7: 17 × 17, Paket C) – welt.js setzt dieselbe Zahl (WELT_VERSION)
 if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
     let carry = 0;
     try {
@@ -108,10 +108,15 @@ if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
         for (const a of JSON.parse(store.get('openWaterPendingAttacks')) || []) if (!a.attackerBotId) carry += a.rawTroops || 0;
         for (const a of JSON.parse(store.get('openWaterPendingSends')) || []) if (!a.senderBotId) carry += a.troops || a.rawTroops || 0;
         for (const a of JSON.parse(store.get('openWaterPendingRetreats')) || []) carry += a.troops || 0;
+        for (const a of (JSON.parse(store.get('openWaterArmies')) || {}).armies || []) if (a.who === 'player' || !a.who) carry += a.troops || 0;   // (Armeen im Feld und Sammler: ihre Truppen kommen mit)
+        for (const a of JSON.parse(store.get('openWaterFieldMarches')) || []) if (a.who === 'player') carry += a.troops || 0;
+        for (const st of Object.values(JSON.parse(store.get('openWaterFields')) || {})) if (st && st.occ && st.occ.who === 'player') carry += st.occ.troops || 0;
     } catch (e) {}
     ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
      'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-     'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterShieldStock', 'openWaterWander', 'openWaterWanderNext'].forEach(k => store.remove(k));
+     'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterShieldStock', 'openWaterWander', 'openWaterWanderNext',
+     'openWaterArmies', 'openWaterFields', 'openWaterFieldMarches', 'openWaterBarb', 'openWaterBarbMarches', 'openWaterBarbWho', 'openWaterEvents', 'openWaterDayBoss',
+     'openWaterBrand', 'openWaterHauptVor', 'openWaterVerstaerkung', 'openWaterMarkers', 'openWaterKarte'].forEach(k => store.remove(k));
     if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
     store.set('openWaterWorldVersion', WORLD_VERSION);
 }

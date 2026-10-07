@@ -276,7 +276,7 @@ function drawBarb(now, wallNow) {
         const x = c.x * z + mapState.offsetX, y = c.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(c.x, c.y)) continue;
         const open = c.L <= best + 1, rd = RARITY_DEFS[barbTier(c.L)];
         if (KB.fertig && KB.img.barbaren) {                                 // Karte wie RoK: das KI-Bild (fest in der Welt, nie winzig), die Stufe daneben
-            const im = KB.img.barbaren, w = Math.max(BARB_BREITE * z, 38), h = w * im.height / im.width;
+            const im = KB.img.barbaren, w = Math.max(BARB_BREITE * z, 22), h = w * im.height / im.width;
             ctx.globalAlpha = open ? 1 : .6; ctx.drawImage(kbBild('barbaren', w * dpr), x - w / 2, y - h * .62, w, h); ctx.globalAlpha = 1;
             stufenZahl(x + w * .32, y - h * .5, c.L, true, open ? rd.color : '#6b6660'); continue; }
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k); if (!open) ctx.globalAlpha = .6;

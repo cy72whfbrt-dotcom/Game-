@@ -21,21 +21,18 @@ function loadTitles() {
     return titleState;
 }
 function saveTitles() { titleVer++; store.set('openWaterTitles', JSON.stringify(titleState)); requestRender(); }
-// The ring round someone's bases - nothing by level any more: a title from the middle while it holds (good = gold, penalty = red,
-// the ruler himself blood-red and gold), otherwise a bought Ring-Skin. The title ring wins. owner → ring style { k, name, c0, c1, n, spin, pulse, dash }
+// The ring round someone's bases - only a title from the middle while it holds (good = gold, penalty = red,
+// the ruler himself blood-red and gold); Ring-Skins gibt es nicht mehr (Alexander 7.10.). owner → ring style { k, name, c0, c1, n, spin, pulse, dash }
 const RING_TITLE = { ruler: { k: 'ruler', c0: 'rgba(235,60,50,.95)', c1: 'rgba(255,208,90,.7)', n: 24, spin: 1, pulse: 1, dash: 'rgba(255,214,110,.9)' },
                      good:  { k: 'good',  c0: 'rgba(255,208,90,.95)', c1: 'rgba(255,208,90,.5)', n: 24, pulse: 1 },
                      bad:   { k: 'bad',   c0: 'rgba(225,48,48,.95)', c1: 'rgba(150,20,30,.6)', n: 16, pulse: 1 } };
-var ringVer = 0;                                  // bumped whenever anyone buys or puts on a Ring-Skin
 function ringStatusByOwner() {
     const t = loadTitles(), ruler = rulerOwner() || null;          // (loadTitles first: a new ruler wipes the titles)
-    if (ringMemo && ringMemo.ver === titleVer && ringMemo.rv === ringVer && ringMemo.ruler === ruler) return ringMemo.map;
-    const map = new Map(), bs = loadBotState();
-    const ps = ringSkinOf('player'); if (ps) map.set('player', ps);
-    for (const id in bs) { const sk = ringSkinOf(id); if (sk) map.set(id, sk); }
+    if (ringMemo && ringMemo.ver === titleVer && ringMemo.ruler === ruler) return ringMemo.map;
+    const map = new Map();
     for (const x of TITLES) if (t.by[x.key]) map.set(t.by[x.key], x.good ? RING_TITLE.good : RING_TITLE.bad);
     if (ruler) map.set(ruler, RING_TITLE.ruler);
-    ringMemo = { ver: titleVer, rv: ringVer, ruler, map }; return map;
+    ringMemo = { ver: titleVer, ruler, map }; return map;
 }
 function titleMult(who, kind) {
     const t = loadTitles(); let m = 1;

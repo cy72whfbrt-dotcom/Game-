@@ -1,25 +1,14 @@
-// Teil 03d-maersche-tagnacht.js: Märsche auf der Karte (Spur, Fahne, Skins) und Tag und Nacht
-// Marsch-Skins on the map: a trail behind the column and a small flag with the owner's crest (one cached bitmap per owner + skin)
+// Teil 03d-maersche-tagnacht.js: Märsche auf der Karte (Fahne) und Tag und Nacht
+// Märsche on the map: a small flag with the owner's crest (one cached bitmap per owner)
 var marchFlagCache = new Map();
-function marchFlag(g, x, y, sk, who) {                   // (x, y) = the token's centre; the pole stands on its upper right
-  const cr = crestFor(who), key = (who || '') + '|' + sk.id + '|' + crestKeyOf(cr); let c = marchFlagCache.get(key);
+function marchFlag(g, x, y, who) {                   // (x, y) = the token's centre; the pole stands on its upper right
+  const cr = crestFor(who), key = (who || '') + '|' + crestKeyOf(cr); let c = marchFlagCache.get(key);
   if (!c) { c = document.createElement('canvas'); c.width = 72; c.height = 84; const q = c.getContext('2d'); q.scale(3, 3);
     q.strokeStyle = '#2a241b'; q.lineWidth = 1.4; q.beginPath(); q.moveTo(2, 27); q.lineTo(2, 1.5); q.stroke();
-    q.fillStyle = sk.flag; q.beginPath(); q.moveTo(2.5, 2); q.lineTo(20, 2); q.lineTo(17, 8.5); q.lineTo(20, 15); q.lineTo(2.5, 15); q.closePath(); q.fill();
+    q.fillStyle = '#e9dfc6'; q.beginPath(); q.moveTo(2.5, 2); q.lineTo(20, 2); q.lineTo(17, 8.5); q.lineTo(20, 15); q.lineTo(2.5, 15); q.closePath(); q.fill();
     q.lineWidth = .8; q.strokeStyle = 'rgba(10,8,4,.7)'; q.stroke(); drawCrest(q, 10, 8.6, 10, cr);
     if (marchFlagCache.size > 200) marchFlagCache.clear(); marchFlagCache.set(key, c); }
   g.drawImage(c, x + 3, y - 26, 24, 28);
-}
-function marchTrail(g, at, d0, sk, t, k) {               // at(d) → point on the path; d0 = where the trail starts (behind the token)
-  if (!sk || !sk.trail) return; g.save(); g.fillStyle = sk.trail; g.strokeStyle = sk.trail; g.lineWidth = 1.1 * k;
-  for (let i = 0; i < 10; i++) { const ph = (t / 45) % 7, d = d0 - (i * 7 + ph) * k; if (d < 0) break;
-    const p = at(d), q = at(d + 2), dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1, w = Math.sin(i * 2.3 + t / 260) * 2.2 * k;
-    const x = p.x - dy / l * w, y = p.y + dx / l * w, f = 1 - (i + ph / 7) / 10; g.globalAlpha = Math.max(0, f) * (sk.fx === 'smoke' ? .45 : .85);
-    if (sk.fx === 'spark') { const r = (1 + f * 1.6) * k; g.beginPath(); g.moveTo(x - r, y); g.lineTo(x + r, y); g.moveTo(x, y - r); g.lineTo(x, y + r); g.stroke(); }
-    else if (sk.fx === 'leaf') { g.beginPath(); g.ellipse(x, y, 1.9 * k, 1 * k, i + t / 400, 0, Math.PI * 2); g.fill(); }
-    else if (sk.fx === 'ember') { const r = (.7 + f) * k; g.fillRect(x - r, y - r - (1 - f) * 3 * k, r * 2, r * 2); }
-    else { g.beginPath(); g.arc(x, y, (sk.fx === 'smoke' ? 1.6 + (1 - f) * 2.6 : .9 + f * 1.1) * k, 0, Math.PI * 2); g.fill(); } }
-  g.restore();
 }
 function drawMarchColumn(m, t) {                  // a short column of soldiers (pairs) trailing the token along its path
   const k = Math.max(1, Math.min(2, mapState.zoom / 0.02)), n = 8, gap = 8.5 * k;
@@ -53,12 +42,11 @@ function drawMarchTokens() {                      // drawn BEFORE the nameplates
     const p = marchPointAt(m, d); m.x = p.x; m.y = p.y; m.d = d;
   }
   const cols = mapState.zoom >= 0.006, t = performance.now();
-  for (const m of marchTokens) if (m.sk && m.sk.trail) { const k = Math.max(1, Math.min(2, mapState.zoom / 0.02)); marchTrail(ctx, d => marchPointAt(m, d), m.d - (cols && m.glyph !== 'scout' ? 38 * k : 9), m.sk, t, k); }   // the skin's trail behind the column
   for (const m of marchTokens) if (cols && m.glyph !== 'scout') drawMarchColumn(m, t);
   for (const m of marchTokens) {
     ctx.beginPath(); ctx.arc(m.x, m.y, 7.5, 0, Math.PI * 2); ctx.fillStyle = '#141820'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = m.col; ctx.stroke();
     drawGlyph(ctx, m.glyph, m.x, m.y, 10, m.col);
-    if (m.sk && cols) marchFlag(ctx, m.x, m.y, m.sk, m.who);                  // the flag with the owner's crest
+    if (m.fahne && cols) marchFlag(ctx, m.x, m.y, m.who);                  // the flag with the owner's crest
   }
 }
 const CHIP_SLOTS = [0, -20, 20, -40, 40, -60, 60].flatMap(dy => [[1, dy], [-1, dy]])          // beside the cluster, then above / below;

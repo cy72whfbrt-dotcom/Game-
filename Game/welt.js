@@ -10,7 +10,7 @@
     'use strict';
     const OW = window.__OW || {}, S = window.__owSpeicher;
     const ICH = 'u' + OW.uid;
-    const WELT_VERSION = '8';                // wie WORLD_VERSION in spiel.js (8: Zonen wie RoK, 7: Karte 17 × 17)
+    const WELT_VERSION = '9';                // wie WORLD_VERSION in spiel.js (9: Felder/Pässe wie der Kartentest, 8: Zonen wie RoK, 7: Karte 17 × 17)
     const SYSTEM = !!OW.system;              // der Weltrechner auf dem Server (weltrechner/start.js): hat keine eigenen Basen
     const P = s => { try { return s == null ? null : JSON.parse(s); } catch (e) { return null; } };
     const J = v => JSON.stringify(v);
@@ -224,10 +224,10 @@
             hs: P(d.openWaterHeroes2) || {}, shieldUntil: parseFloat(d.openWaterShield) || 0,
             fo: city.fo || {}, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
-            look: { ring: look.ring || null, rings: look.rings || [], march: look.march || null, marchs: look.marchs || [], frame: look.frame || null, frames: look.frames || [], titles: look.titles || [], throne: !!(look.bought && look.bought.throne) },   // (Rahmen: angelegt + was er schon hat)
+            look: { frame: look.frame || null, frames: look.frames || [], titles: look.titles || [], throne: !!(look.bought && look.bought.throne) },   // (Rahmen: angelegt + was er schon hat)
             saison: parseInt(d.openWaterSaisonMein, 10) || 1,   // Welt-Saison dieses Spielstands (ein Profil von vor dem Reset zählt nicht)
             stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, tp: thr.pts || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
-            crest: P(d.openWaterCrest), baustil: P(d.openWaterBaustil)   // (tp: Thron-Punkte im Geldbeutel – nur für die Kappe beim Saison-Reset, 10d hbThronReset)
+            crest: P(d.openWaterCrest)   // (tp: Thron-Punkte im Geldbeutel – nur für die Kappe beim Saison-Reset, 10d hbThronReset)
         };
     }
     // Mitspieler-Datensatz für einen echten Spieler: Kampfwerte aus seinem Profil, Welt-Felder (Hauptstadt, Groll …) bleiben.
@@ -243,7 +243,7 @@
     function profilZuBotRoh(p, alt) {
         const b = Object.assign({ lvl: 1, xp: 0, sp: 0, gems: 0, salvage: 0, tp: 0, pts: 0 }, alt || {});
         p = p || {};
-        b.mensch = 1; b.v2 = 1; b.lookMig = 1; b.ringMig = 1;
+        b.mensch = 1; b.v2 = 1; b.lookMig = 1;
         b.lvl = p.lvl || b.lvl || 1;
         b.skills = Object.assign({ troops: 0, attack: 0, defense: 0, speed: 0, attackGold: 0, defenseGold: 0 }, p.skills || {});
         b.equip = { weapon: 0, armor: 0, shield: 0, boots: 0 };
@@ -260,7 +260,6 @@
         b.shields = { 2: 0, 8: 0, 24: 0 }; b.shieldUntil = alt && alt.schildAlt && Math.abs(ps - alt.schildAlt) < 60000 ? 0 : ps;   // nur genau der gefallene Schild bleibt aus – ein neu eingeschalteter gilt (auch kürzer)
         b.neuBis = Math.max(0, Math.min(+p.neuBis || 0, jetzt + 48 * 3600000, alt && alt.neuBis !== undefined ? +alt.neuBis || 0 : Infinity));
         const lk = p.look || {};
-        b.ring = lk.ring || null; b.rings = lk.rings || []; b.march = lk.march || null; b.marchs = lk.marchs || [];
         b.frames = Array.isArray(lk.frames) ? lk.frames.slice(0, 60) : lk.frame ? [lk.frame] : []; b.titles = Array.isArray(lk.titles) ? lk.titles.slice(0, 60) : lk.title ? [lk.title] : []; b.throneLook = lk.throne ? 1 : 0;   // (altes Profil ohne Listen: der angelegte wie bisher; beim Weltrechner gegen das Hauptbuch geklemmt: hbRahmen)
         b.lookFrame = lk.frame || null;
         const st = p.stats || {};

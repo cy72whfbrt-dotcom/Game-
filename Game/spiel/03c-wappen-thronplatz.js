@@ -472,7 +472,7 @@ function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOver
   // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
   const own = type !== 'incoming' && type !== 'enemyScout'; if (who === undefined) who = own ? 'player' : null;
   marchTokens.push({ pts, seg, tot, progress, r: (source.radius || 0) * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
-                    who, sk: who && glyphName !== 'scout' ? marchSkinOf(who) : null });
+                    who, fahne: !!who && glyphName !== 'scout' });
 }
 function marchPointAt(m, d) {                   // screen point at path distance d
   for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;

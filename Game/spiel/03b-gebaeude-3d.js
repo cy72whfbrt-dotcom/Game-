@@ -60,9 +60,9 @@ const ROOF = { neutral: '#8a5a3c', player: '#3f86d8', bot: '#c9423a' };
 
 function towerTier(level) { return level >= 80 ? 4 : level >= 50 ? 3 : level >= 25 ? 2 : level >= 10 ? 1 : 0; }
 
-function paintTowerTier(g, ownerKey, detail, home, tier, skin) {
+function paintTowerTier(g, ownerKey, detail, home, tier) {
   const K = isoKit(g, ISO_OY), own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;
-  const stone = skin && skin.stone ? skin.stone[1] : STONE, roof = skin && skin.roof ? skin.roof[1] : (home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral);
+  const stone = STONE, roof = home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral;
   g.lineJoin = 'round';
   if (tier === 0) {                                          // Lager: palisade, a wooden hall and a tent
     K.shadow(24, 13);
@@ -249,14 +249,14 @@ function paintMegaTemple(g, ownerKey, detail) {           // Haupttempel in real
 // Sprite cache: key = kind|owner|home|half-octave size bucket|dpr. Sprite box covers x −31…31, y −48…24
 const BUILDING_SPRITES = new Map();
 function buildingSprite(kind, ownerKey, home, sizePx, tier) {
-  const bucket = Math.pow(2, Math.round(Math.log2(sizePx) * 2) / 2), skin = home && ownerKey === 'player' ? activeSkin() : null;
-  const key = kind + '|' + ownerKey + '|' + (home ? 1 : 0) + '|' + bucket + '|' + dpr + '|' + (tier || 0) + '|' + (skin ? skin.id : '');
+  const bucket = Math.pow(2, Math.round(Math.log2(sizePx) * 2) / 2);
+  const key = kind + '|' + ownerKey + '|' + (home ? 1 : 0) + '|' + bucket + '|' + dpr + '|' + (tier || 0);
   let s = BUILDING_SPRITES.get(key); if (s) return s;
   const u = bucket / 64, c = document.createElement('canvas');
   c.width = Math.ceil(62 * u * dpr) + 2; c.height = Math.ceil(72 * u * dpr) + 2;
   const g = c.getContext('2d'); g.setTransform(u * dpr, 0, 0, u * dpr, 31 * u * dpr + 1, 48 * u * dpr + 1); g.lineJoin = 'round';
   const detail = bucket >= 28;
-  if (kind === 'tower') paintTowerTier(g, ownerKey, detail, home, tier ?? 1, skin); else if (kind === 'temple') paintTemple(g, ownerKey, detail); else if (kind === 'guardian') paintGuardianTemple(g, ownerKey, detail);
+  if (kind === 'tower') paintTowerTier(g, ownerKey, detail, home, tier ?? 1); else if (kind === 'temple') paintTemple(g, ownerKey, detail); else if (kind === 'guardian') paintGuardianTemple(g, ownerKey, detail);
   else if (kind === 'gate' || kind === 'gateShut') paintGateIso(g, ownerKey, detail, kind === 'gate'); else paintMegaTemple(g, ownerKey, detail);
   BUILDING_SPRITES.set(key, s = { c, bucket }); return s;
 }
@@ -396,16 +396,12 @@ function drawBrand(x, y, u) {                                                  /
 
 // ===== BAUKUNST: the bases in 3D (baukunst.js), each model rendered once into a sprite (OW.game, lazy + cached) =====
 // Until a sprite is ready, and without three.js or WebGL (offline), the drawn sprites above stay. Owner colour only on roofs
-// and flags, every owner builds in their own style with their coat of arms on the flags; the level shows in the material.
-const BAUSTILE = { klassisch: 'Klassisch', nordisch: 'Nordisch', suedlich: 'Südländisch', morgenland: 'Morgenland', fernost: 'Fernost' };
+// and flags, the style comes from the region (Baustil-Wahl gibt es nicht mehr, Alexander 7.10.), the coat of arms on the flags; the level shows in the material.
+const BAUSTILE = ['klassisch', 'nordisch', 'suedlich', 'morgenland', 'fernost'];
 const BK_K = ISLAND_RADIUS * .12, BK_SCALE = { mega: 2.2, tempel: 1.6, waechter: 1.6 }, BK_ELEM = ['nebel', 'gezeiten', 'fels', 'sonne'], BK_GRADE = { throne: 'thron', guardian: 'waechter' };
-function loadBaustil() { let v; try { v = JSON.parse(store.get('openWaterBaustil')); } catch (e) {} v = Object.assign({ style: 'klassisch', cap: 'huegel' }, v || {}); if (!BAUSTILE[v.style]) v.style = 'klassisch'; if (v.cap !== 'wasser') v.cap = 'huegel'; if (!Array.isArray(v.own)) v.own = [...new Set(['klassisch', v.style])]; return v; }   // own: the Basis-Skins you have (the style picked before stays yours)
-let baustilMem = null;                                                          // [raw, value]: the map asks for every base in every frame - parse only when it changed
-function baustilOf(owner) { if (owner !== 'player') return owner ? botBaustil(owner) : null; const raw = store.get('openWaterBaustil'); if (!baustilMem || baustilMem[0] !== raw) baustilMem = [raw, loadBaustil()]; return baustilMem[1]; }   // (read only: the sheet changes loadBaustil()'s own copy)
-function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => { BK_PREVIEW.forEach(f => f()); requestRender(); }; return G; }
-const BK_PREVIEW = new Set();                                                  // open previews that wait for a sprite
+function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => requestRender(); return G; }
 let bkGuards = null;
-function bkModel(island, ownerKey, open, style) {                                // → [cache id, model config]; style: try another one (keep sheet)
+function bkModel(island, ownerKey, open) {                                       // → [cache id, model config]
   if (island.type === 'gate') { const gr = BK_GRADE[island.gateKind] || 'grenz'; return ['t|' + ownerKey + '|' + gr + '|' + (open ? 1 : 0), { model: 'tor', owner: ownerKey, variant: { grade: gr, open, houseOnly: true } }]; }
   if (island.type === 'megaTemple') return ['m|' + ownerKey, { model: 'mega', owner: ownerKey }];
   const o = islandOwnerOf(island.id);
@@ -414,11 +410,11 @@ function bkModel(island, ownerKey, open, style) {                               
   if (island.type === 'temple') { const held = templeHoldSince[island.id] ? Date.now() - templeHoldSince[island.id] : -1, sz = !o ? 'klein' : held >= TEMPLE_HOLD_STREAK_MS ? 'gross' : 'mittel';   // the longer it is held, the bigger
     return ['p|' + ownerKey + '|' + sz, { model: 'tempel', owner: ownerKey, variant: { size: sz, bonus: 'gems' } }]; }
   const lv = baseLevelOf(island), step = lv >= 100 ? 100 : Math.max(1, Math.floor(lv / 10) * 10 + (lv % 10 >= 5 ? 5 : 0));   // a new design every 10 levels, small additions at every 5
-  const home = island.id === playerIslandId, cap = home || isCapital(island.id), b0 = baustilOf(o) || { style: Object.keys(BAUSTILE)[island.landmassId % 5], cap: 'huegel' }, bs = style ? { style, cap: b0.cap } : b0;   // free land: the style of its region
+  const home = island.id === playerIslandId, cap = home || isCapital(island.id), bs = { style: BAUSTILE[island.landmassId % 5], cap: 'huegel' };   // the style of its region
   const seed = o === 'player' ? 7 : o ? (parseInt(String(o).replace(/\D/g, ''), 10) || 7) * 13 + 5 : 1 + island.id % 4, cr = o ? crestFor(o) : null;
-  const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null, skin = home ? (activeSkin() || {}).id || '' : '';
-  return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : '') + '|' + skin,
-          { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest, skin }];
+  const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null;
+  return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : ''),
+          { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest }];
 }
 const BK_LAST = new Map();                                                       // island → id of the 3D sprite drawn last
 function bkSprite(island, ownerKey, open, z) {                                   // → { s: sprite, W: width in px } or null
@@ -427,14 +423,6 @@ function bkSprite(island, ownerKey, open, z) {                                  
   let s = G.get(id, c, need <= 140 ? 128 : need <= 300 ? 256 : 512);
   if (s) BK_LAST.set(island.id, id); else { const o = BK_LAST.get(island.id); s = o && G.peek(o) || null; }   // new look (upgrade, +5 step) still rendering: the old 3D sprite stays, not the big drawn one
   return s ? { s, W: 2 * s.v * k } : null;                                     // W from the sprite's own frame: an old sprite keeps its size
-}
-function bkPreviews() {                                                          // the keep sheet's style cards: your capital in each style
-  const cvs = [...document.querySelectorAll('[data-bk-prev]')]; if (!cvs.length) { BK_PREVIEW.delete(bkPreviews); return; }
-  const G = bk3d(), isl = islandById[playerIslandId]; let waiting = false;
-  for (const cv of cvs) { const g = cv.getContext('2d'), [id, c] = bkModel(isl, 'player', false, cv.dataset.bkPrev), s = G && G.get(id, c, 256); g.clearRect(0, 0, cv.width, cv.height);
-    if (s) { const w = s.px * .6; g.drawImage(s.c, (s.px - w) / 2, Math.max(0, s.px * s.ay - w * .82), w, w, (cv.width - cv.height) / 2, 0, cv.height, cv.height); }   // cut out the building
-    else { waiting = !!G; g.save(); g.setTransform(1.6, 0, 0, 1.6, cv.width / 2, cv.height * .72); paintTowerTier(g, 'player', true, true, towerTier(islandLevels[playerIslandId] || 1), activeSkin()); g.restore(); } }
-  if (waiting) BK_PREVIEW.add(bkPreviews); else BK_PREVIEW.delete(bkPreviews);
 }
 function bkDraw(b, x, y) { if (!b) return false; ctx.drawImage(b.s.c, x - b.W / 2, y - b.W * b.s.ay, b.W, b.W); return true; }   // (x, y) = the ground centre
 

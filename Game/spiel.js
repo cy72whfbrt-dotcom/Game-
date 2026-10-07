@@ -695,7 +695,7 @@ if (SYSTEM && store.get('openWaterKarte') !== KARTE_KENNUNG) store.set('openWate
 // The map was rebuilt (Thron-Insel + Wächter-Inseln): old base ids no longer match, so every
 // map-bound part of an old save is cleared once. Coins, gems, gear, skills and level stay,
 // and the player's whole army moves to the new home base.
-const WORLD_VERSION = '8';   // 8: Karte mit Zonen wie RoK (7: 17 × 17, Paket C) – welt.js setzt dieselbe Zahl (WELT_VERSION)
+const WORLD_VERSION = '9';   // 9: Felder, Pässe und Startplätze wie der Kartentest (8: Zonen wie RoK, 7: 17 × 17, Paket C) – welt.js setzt dieselbe Zahl (WELT_VERSION)
 if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
     let carry = 0;
     try {
@@ -704,10 +704,15 @@ if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
         for (const a of JSON.parse(store.get('openWaterPendingAttacks')) || []) if (!a.attackerBotId) carry += a.rawTroops || 0;
         for (const a of JSON.parse(store.get('openWaterPendingSends')) || []) if (!a.senderBotId) carry += a.troops || a.rawTroops || 0;
         for (const a of JSON.parse(store.get('openWaterPendingRetreats')) || []) carry += a.troops || 0;
+        for (const a of (JSON.parse(store.get('openWaterArmies')) || {}).armies || []) if (a.who === 'player' || !a.who) carry += a.troops || 0;   // (Armeen im Feld und Sammler: ihre Truppen kommen mit)
+        for (const a of JSON.parse(store.get('openWaterFieldMarches')) || []) if (a.who === 'player') carry += a.troops || 0;
+        for (const st of Object.values(JSON.parse(store.get('openWaterFields')) || {})) if (st && st.occ && st.occ.who === 'player') carry += st.occ.troops || 0;
     } catch (e) {}
     ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
      'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-     'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterShieldStock', 'openWaterWander', 'openWaterWanderNext'].forEach(k => store.remove(k));
+     'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterShieldStock', 'openWaterWander', 'openWaterWanderNext',
+     'openWaterArmies', 'openWaterFields', 'openWaterFieldMarches', 'openWaterBarb', 'openWaterBarbMarches', 'openWaterBarbWho', 'openWaterEvents', 'openWaterDayBoss',
+     'openWaterBrand', 'openWaterHauptVor', 'openWaterVerstaerkung', 'openWaterMarkers', 'openWaterKarte'].forEach(k => store.remove(k));
     if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
     store.set('openWaterWorldVersion', WORLD_VERSION);
 }
@@ -2704,7 +2709,7 @@ for (const lm of landmasses) {
 const KB_DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
   'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'thron', 'tempel', 'waechtertempel',
   'feld_holz', 'feld_stein', 'feld_eisen', 'feld_gold', 'feld_edelstein', 'barbaren'];
-const FELD_BREITE = 9000, BARB_BREITE = 10500;      // Felder und Barbaren-Lager als Bild (Welt-Breite, wie die Karten-Testdatei)
+const FELD_BREITE = 9000, BARB_BREITE = 5500;       // Felder und Barbaren-Lager als Bild (Welt-Breite; Lager so breit wie die Basen, BASIS_BREITE)
 function stufenZahl(x, y, n, barb, rand) {           // (Bildschirm) die Stufe als kleine Zahl an Feld oder Lager
   const t = String(n); ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   const b = Math.max(16, ctx.measureText(t).width + 8);
@@ -3354,9 +3359,9 @@ const ROOF = { neutral: '#8a5a3c', player: '#3f86d8', bot: '#c9423a' };
 
 function towerTier(level) { return level >= 80 ? 4 : level >= 50 ? 3 : level >= 25 ? 2 : level >= 10 ? 1 : 0; }
 
-function paintTowerTier(g, ownerKey, detail, home, tier, skin) {
+function paintTowerTier(g, ownerKey, detail, home, tier) {
   const K = isoKit(g, ISO_OY), own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;
-  const stone = skin && skin.stone ? skin.stone[1] : STONE, roof = skin && skin.roof ? skin.roof[1] : (home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral);
+  const stone = STONE, roof = home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral;
   g.lineJoin = 'round';
   if (tier === 0) {                                          // Lager: palisade, a wooden hall and a tent
     K.shadow(24, 13);
@@ -3543,14 +3548,14 @@ function paintMegaTemple(g, ownerKey, detail) {           // Haupttempel in real
 // Sprite cache: key = kind|owner|home|half-octave size bucket|dpr. Sprite box covers x −31…31, y −48…24
 const BUILDING_SPRITES = new Map();
 function buildingSprite(kind, ownerKey, home, sizePx, tier) {
-  const bucket = Math.pow(2, Math.round(Math.log2(sizePx) * 2) / 2), skin = home && ownerKey === 'player' ? activeSkin() : null;
-  const key = kind + '|' + ownerKey + '|' + (home ? 1 : 0) + '|' + bucket + '|' + dpr + '|' + (tier || 0) + '|' + (skin ? skin.id : '');
+  const bucket = Math.pow(2, Math.round(Math.log2(sizePx) * 2) / 2);
+  const key = kind + '|' + ownerKey + '|' + (home ? 1 : 0) + '|' + bucket + '|' + dpr + '|' + (tier || 0);
   let s = BUILDING_SPRITES.get(key); if (s) return s;
   const u = bucket / 64, c = document.createElement('canvas');
   c.width = Math.ceil(62 * u * dpr) + 2; c.height = Math.ceil(72 * u * dpr) + 2;
   const g = c.getContext('2d'); g.setTransform(u * dpr, 0, 0, u * dpr, 31 * u * dpr + 1, 48 * u * dpr + 1); g.lineJoin = 'round';
   const detail = bucket >= 28;
-  if (kind === 'tower') paintTowerTier(g, ownerKey, detail, home, tier ?? 1, skin); else if (kind === 'temple') paintTemple(g, ownerKey, detail); else if (kind === 'guardian') paintGuardianTemple(g, ownerKey, detail);
+  if (kind === 'tower') paintTowerTier(g, ownerKey, detail, home, tier ?? 1); else if (kind === 'temple') paintTemple(g, ownerKey, detail); else if (kind === 'guardian') paintGuardianTemple(g, ownerKey, detail);
   else if (kind === 'gate' || kind === 'gateShut') paintGateIso(g, ownerKey, detail, kind === 'gate'); else paintMegaTemple(g, ownerKey, detail);
   BUILDING_SPRITES.set(key, s = { c, bucket }); return s;
 }
@@ -3690,16 +3695,12 @@ function drawBrand(x, y, u) {                                                  /
 
 // ===== BAUKUNST: the bases in 3D (baukunst.js), each model rendered once into a sprite (OW.game, lazy + cached) =====
 // Until a sprite is ready, and without three.js or WebGL (offline), the drawn sprites above stay. Owner colour only on roofs
-// and flags, every owner builds in their own style with their coat of arms on the flags; the level shows in the material.
-const BAUSTILE = { klassisch: 'Klassisch', nordisch: 'Nordisch', suedlich: 'Südländisch', morgenland: 'Morgenland', fernost: 'Fernost' };
+// and flags, the style comes from the region (Baustil-Wahl gibt es nicht mehr, Alexander 7.10.), the coat of arms on the flags; the level shows in the material.
+const BAUSTILE = ['klassisch', 'nordisch', 'suedlich', 'morgenland', 'fernost'];
 const BK_K = ISLAND_RADIUS * .12, BK_SCALE = { mega: 2.2, tempel: 1.6, waechter: 1.6 }, BK_ELEM = ['nebel', 'gezeiten', 'fels', 'sonne'], BK_GRADE = { throne: 'thron', guardian: 'waechter' };
-function loadBaustil() { let v; try { v = JSON.parse(store.get('openWaterBaustil')); } catch (e) {} v = Object.assign({ style: 'klassisch', cap: 'huegel' }, v || {}); if (!BAUSTILE[v.style]) v.style = 'klassisch'; if (v.cap !== 'wasser') v.cap = 'huegel'; if (!Array.isArray(v.own)) v.own = [...new Set(['klassisch', v.style])]; return v; }   // own: the Basis-Skins you have (the style picked before stays yours)
-let baustilMem = null;                                                          // [raw, value]: the map asks for every base in every frame - parse only when it changed
-function baustilOf(owner) { if (owner !== 'player') return owner ? botBaustil(owner) : null; const raw = store.get('openWaterBaustil'); if (!baustilMem || baustilMem[0] !== raw) baustilMem = [raw, loadBaustil()]; return baustilMem[1]; }   // (read only: the sheet changes loadBaustil()'s own copy)
-function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => { BK_PREVIEW.forEach(f => f()); requestRender(); }; return G; }
-const BK_PREVIEW = new Set();                                                  // open previews that wait for a sprite
+function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => requestRender(); return G; }
 let bkGuards = null;
-function bkModel(island, ownerKey, open, style) {                                // → [cache id, model config]; style: try another one (keep sheet)
+function bkModel(island, ownerKey, open) {                                       // → [cache id, model config]
   if (island.type === 'gate') { const gr = BK_GRADE[island.gateKind] || 'grenz'; return ['t|' + ownerKey + '|' + gr + '|' + (open ? 1 : 0), { model: 'tor', owner: ownerKey, variant: { grade: gr, open, houseOnly: true } }]; }
   if (island.type === 'megaTemple') return ['m|' + ownerKey, { model: 'mega', owner: ownerKey }];
   const o = islandOwnerOf(island.id);
@@ -3708,11 +3709,11 @@ function bkModel(island, ownerKey, open, style) {                               
   if (island.type === 'temple') { const held = templeHoldSince[island.id] ? Date.now() - templeHoldSince[island.id] : -1, sz = !o ? 'klein' : held >= TEMPLE_HOLD_STREAK_MS ? 'gross' : 'mittel';   // the longer it is held, the bigger
     return ['p|' + ownerKey + '|' + sz, { model: 'tempel', owner: ownerKey, variant: { size: sz, bonus: 'gems' } }]; }
   const lv = baseLevelOf(island), step = lv >= 100 ? 100 : Math.max(1, Math.floor(lv / 10) * 10 + (lv % 10 >= 5 ? 5 : 0));   // a new design every 10 levels, small additions at every 5
-  const home = island.id === playerIslandId, cap = home || isCapital(island.id), b0 = baustilOf(o) || { style: Object.keys(BAUSTILE)[island.landmassId % 5], cap: 'huegel' }, bs = style ? { style, cap: b0.cap } : b0;   // free land: the style of its region
+  const home = island.id === playerIslandId, cap = home || isCapital(island.id), bs = { style: BAUSTILE[island.landmassId % 5], cap: 'huegel' };   // the style of its region
   const seed = o === 'player' ? 7 : o ? (parseInt(String(o).replace(/\D/g, ''), 10) || 7) * 13 + 5 : 1 + island.id % 4, cr = o ? crestFor(o) : null;
-  const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null, skin = home ? (activeSkin() || {}).id || '' : '';
-  return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : '') + '|' + skin,
-          { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest, skin }];
+  const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null;
+  return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : ''),
+          { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest }];
 }
 const BK_LAST = new Map();                                                       // island → id of the 3D sprite drawn last
 function bkSprite(island, ownerKey, open, z) {                                   // → { s: sprite, W: width in px } or null
@@ -3721,14 +3722,6 @@ function bkSprite(island, ownerKey, open, z) {                                  
   let s = G.get(id, c, need <= 140 ? 128 : need <= 300 ? 256 : 512);
   if (s) BK_LAST.set(island.id, id); else { const o = BK_LAST.get(island.id); s = o && G.peek(o) || null; }   // new look (upgrade, +5 step) still rendering: the old 3D sprite stays, not the big drawn one
   return s ? { s, W: 2 * s.v * k } : null;                                     // W from the sprite's own frame: an old sprite keeps its size
-}
-function bkPreviews() {                                                          // the keep sheet's style cards: your capital in each style
-  const cvs = [...document.querySelectorAll('[data-bk-prev]')]; if (!cvs.length) { BK_PREVIEW.delete(bkPreviews); return; }
-  const G = bk3d(), isl = islandById[playerIslandId]; let waiting = false;
-  for (const cv of cvs) { const g = cv.getContext('2d'), [id, c] = bkModel(isl, 'player', false, cv.dataset.bkPrev), s = G && G.get(id, c, 256); g.clearRect(0, 0, cv.width, cv.height);
-    if (s) { const w = s.px * .6; g.drawImage(s.c, (s.px - w) / 2, Math.max(0, s.px * s.ay - w * .82), w, w, (cv.width - cv.height) / 2, 0, cv.height, cv.height); }   // cut out the building
-    else { waiting = !!G; g.save(); g.setTransform(1.6, 0, 0, 1.6, cv.width / 2, cv.height * .72); paintTowerTier(g, 'player', true, true, towerTier(islandLevels[playerIslandId] || 1), activeSkin()); g.restore(); } }
-  if (waiting) BK_PREVIEW.add(bkPreviews); else BK_PREVIEW.delete(bkPreviews);
 }
 function bkDraw(b, x, y) { if (!b) return false; ctx.drawImage(b.s.c, x - b.W / 2, y - b.W * b.s.ay, b.W, b.W); return true; }   // (x, y) = the ground centre
 
@@ -4239,34 +4232,23 @@ function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOver
   // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
   const own = type !== 'incoming' && type !== 'enemyScout'; if (who === undefined) who = own ? 'player' : null;
   marchTokens.push({ pts, seg, tot, progress, r: (source.radius || 0) * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
-                    who, sk: who && glyphName !== 'scout' ? marchSkinOf(who) : null });
+                    who, fahne: !!who && glyphName !== 'scout' });
 }
 function marchPointAt(m, d) {                   // screen point at path distance d
   for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;
     return { x: m.pts[i].x + (m.pts[i + 1].x - m.pts[i].x) * t, y: m.pts[i].y + (m.pts[i + 1].y - m.pts[i].y) * t }; } d -= m.seg[i]; }
   return m.pts[0];
 }
-// Marsch-Skins on the map: a trail behind the column and a small flag with the owner's crest (one cached bitmap per owner + skin)
+// Märsche on the map: a small flag with the owner's crest (one cached bitmap per owner)
 var marchFlagCache = new Map();
-function marchFlag(g, x, y, sk, who) {                   // (x, y) = the token's centre; the pole stands on its upper right
-  const cr = crestFor(who), key = (who || '') + '|' + sk.id + '|' + crestKeyOf(cr); let c = marchFlagCache.get(key);
+function marchFlag(g, x, y, who) {                   // (x, y) = the token's centre; the pole stands on its upper right
+  const cr = crestFor(who), key = (who || '') + '|' + crestKeyOf(cr); let c = marchFlagCache.get(key);
   if (!c) { c = document.createElement('canvas'); c.width = 72; c.height = 84; const q = c.getContext('2d'); q.scale(3, 3);
     q.strokeStyle = '#2a241b'; q.lineWidth = 1.4; q.beginPath(); q.moveTo(2, 27); q.lineTo(2, 1.5); q.stroke();
-    q.fillStyle = sk.flag; q.beginPath(); q.moveTo(2.5, 2); q.lineTo(20, 2); q.lineTo(17, 8.5); q.lineTo(20, 15); q.lineTo(2.5, 15); q.closePath(); q.fill();
+    q.fillStyle = '#e9dfc6'; q.beginPath(); q.moveTo(2.5, 2); q.lineTo(20, 2); q.lineTo(17, 8.5); q.lineTo(20, 15); q.lineTo(2.5, 15); q.closePath(); q.fill();
     q.lineWidth = .8; q.strokeStyle = 'rgba(10,8,4,.7)'; q.stroke(); drawCrest(q, 10, 8.6, 10, cr);
     if (marchFlagCache.size > 200) marchFlagCache.clear(); marchFlagCache.set(key, c); }
   g.drawImage(c, x + 3, y - 26, 24, 28);
-}
-function marchTrail(g, at, d0, sk, t, k) {               // at(d) → point on the path; d0 = where the trail starts (behind the token)
-  if (!sk || !sk.trail) return; g.save(); g.fillStyle = sk.trail; g.strokeStyle = sk.trail; g.lineWidth = 1.1 * k;
-  for (let i = 0; i < 10; i++) { const ph = (t / 45) % 7, d = d0 - (i * 7 + ph) * k; if (d < 0) break;
-    const p = at(d), q = at(d + 2), dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1, w = Math.sin(i * 2.3 + t / 260) * 2.2 * k;
-    const x = p.x - dy / l * w, y = p.y + dx / l * w, f = 1 - (i + ph / 7) / 10; g.globalAlpha = Math.max(0, f) * (sk.fx === 'smoke' ? .45 : .85);
-    if (sk.fx === 'spark') { const r = (1 + f * 1.6) * k; g.beginPath(); g.moveTo(x - r, y); g.lineTo(x + r, y); g.moveTo(x, y - r); g.lineTo(x, y + r); g.stroke(); }
-    else if (sk.fx === 'leaf') { g.beginPath(); g.ellipse(x, y, 1.9 * k, 1 * k, i + t / 400, 0, Math.PI * 2); g.fill(); }
-    else if (sk.fx === 'ember') { const r = (.7 + f) * k; g.fillRect(x - r, y - r - (1 - f) * 3 * k, r * 2, r * 2); }
-    else { g.beginPath(); g.arc(x, y, (sk.fx === 'smoke' ? 1.6 + (1 - f) * 2.6 : .9 + f * 1.1) * k, 0, Math.PI * 2); g.fill(); } }
-  g.restore();
 }
 function drawMarchColumn(m, t) {                  // a short column of soldiers (pairs) trailing the token along its path
   const k = Math.max(1, Math.min(2, mapState.zoom / 0.02)), n = 8, gap = 8.5 * k;
@@ -4300,12 +4282,11 @@ function drawMarchTokens() {                      // drawn BEFORE the nameplates
     const p = marchPointAt(m, d); m.x = p.x; m.y = p.y; m.d = d;
   }
   const cols = mapState.zoom >= 0.006, t = performance.now();
-  for (const m of marchTokens) if (m.sk && m.sk.trail) { const k = Math.max(1, Math.min(2, mapState.zoom / 0.02)); marchTrail(ctx, d => marchPointAt(m, d), m.d - (cols && m.glyph !== 'scout' ? 38 * k : 9), m.sk, t, k); }   // the skin's trail behind the column
   for (const m of marchTokens) if (cols && m.glyph !== 'scout') drawMarchColumn(m, t);
   for (const m of marchTokens) {
     ctx.beginPath(); ctx.arc(m.x, m.y, 7.5, 0, Math.PI * 2); ctx.fillStyle = '#141820'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = m.col; ctx.stroke();
     drawGlyph(ctx, m.glyph, m.x, m.y, 10, m.col);
-    if (m.sk && cols) marchFlag(ctx, m.x, m.y, m.sk, m.who);                  // the flag with the owner's crest
+    if (m.fahne && cols) marchFlag(ctx, m.x, m.y, m.who);                  // the flag with the owner's crest
   }
 }
 const CHIP_SLOTS = [0, -20, 20, -40, 40, -60, 60].flatMap(dy => [[1, dy], [-1, dy]])          // beside the cluster, then above / below;
@@ -5103,21 +5084,18 @@ function loadTitles() {
     return titleState;
 }
 function saveTitles() { titleVer++; store.set('openWaterTitles', JSON.stringify(titleState)); requestRender(); }
-// The ring round someone's bases - nothing by level any more: a title from the middle while it holds (good = gold, penalty = red,
-// the ruler himself blood-red and gold), otherwise a bought Ring-Skin. The title ring wins. owner → ring style { k, name, c0, c1, n, spin, pulse, dash }
+// The ring round someone's bases - only a title from the middle while it holds (good = gold, penalty = red,
+// the ruler himself blood-red and gold); Ring-Skins gibt es nicht mehr (Alexander 7.10.). owner → ring style { k, name, c0, c1, n, spin, pulse, dash }
 const RING_TITLE = { ruler: { k: 'ruler', c0: 'rgba(235,60,50,.95)', c1: 'rgba(255,208,90,.7)', n: 24, spin: 1, pulse: 1, dash: 'rgba(255,214,110,.9)' },
                      good:  { k: 'good',  c0: 'rgba(255,208,90,.95)', c1: 'rgba(255,208,90,.5)', n: 24, pulse: 1 },
                      bad:   { k: 'bad',   c0: 'rgba(225,48,48,.95)', c1: 'rgba(150,20,30,.6)', n: 16, pulse: 1 } };
-var ringVer = 0;                                  // bumped whenever anyone buys or puts on a Ring-Skin
 function ringStatusByOwner() {
     const t = loadTitles(), ruler = rulerOwner() || null;          // (loadTitles first: a new ruler wipes the titles)
-    if (ringMemo && ringMemo.ver === titleVer && ringMemo.rv === ringVer && ringMemo.ruler === ruler) return ringMemo.map;
-    const map = new Map(), bs = loadBotState();
-    const ps = ringSkinOf('player'); if (ps) map.set('player', ps);
-    for (const id in bs) { const sk = ringSkinOf(id); if (sk) map.set(id, sk); }
+    if (ringMemo && ringMemo.ver === titleVer && ringMemo.ruler === ruler) return ringMemo.map;
+    const map = new Map();
     for (const x of TITLES) if (t.by[x.key]) map.set(t.by[x.key], x.good ? RING_TITLE.good : RING_TITLE.bad);
     if (ruler) map.set(ruler, RING_TITLE.ruler);
-    ringMemo = { ver: titleVer, rv: ringVer, ruler, map }; return map;
+    ringMemo = { ver: titleVer, ruler, map }; return map;
 }
 function titleMult(who, kind) {
     const t = loadTitles(); let m = 1;
@@ -5493,60 +5471,7 @@ function saisonTitel(id) { const m = /^s(\d{1,4})p(\d{1,2})$/.exec(String(id || 
     return { id: m[0], name: pl === 1 ? 'Champion Saison ' + n : 'Saison ' + n + ' · Platz ' + pl, saison: n, platz: pl }; }
 const saisonRahmenFuer = pl => RAHMEN.find(r => r.platz && pl >= r.platz[0] && pl <= r.platz[1]) || null;
 function saisonTitelGeben(id) { if (!saisonTitel(id)) return; look.titles = [...new Set([...(look.titles || []), id])]; const r = saisonRahmenFuer(saisonTitel(id).platz); if (r) look.frame = r.id; saveLook(); try { renderLook(); } catch (e) {} }   // (der Saison-Rahmen gleich angelegt)
-// Marsch-Skins: how your columns look on the map - flag colour (with your crest on it) and a trail behind them
-const MARCH_SKINS = [
-    { id: 'standard', name: 'Standard', gems: 0, flag: '#e9dfc6' },
-    { id: 'purpur', name: 'Purpur', gems: 400, flag: '#9a2f55' },
-    { id: 'meer', name: 'Meeresgischt', gems: 800, flag: '#2f7fb8', trail: '#c8f2ff', fx: 'foam' },
-    { id: 'wald', name: 'Waldläufer', gems: 800, flag: '#3f7a3a', trail: '#a6dc6a', fx: 'leaf' },
-    { id: 'glut', name: 'Glutmarsch', gems: 1500, flag: '#b8441c', trail: '#ffa23a', fx: 'ember' },
-    { id: 'gold', name: 'Goldzug', tp: 2000, flag: '#d8a93a', trail: '#ffe38a', fx: 'spark' },
-    { id: 'schatten', name: 'Schattenzug', tp: 3500, flag: '#3a2a55', trail: '#b98cf0', fx: 'smoke' },
-    { id: 'saison', name: 'Saisonzug', buy: 'pass', flag: '#1f8a8a', trail: '#8ff5e6', fx: 'spark' }   // only from the Saison-Pass (premium, level 20)
-];
-// Basis-Skins: the Baustil of all your bases (baukunst.js) - Klassisch is free, the style you chose before stays yours
-const BAUSTIL_PRICE = { klassisch: { gems: 0 }, nordisch: { gems: 400 }, suedlich: { gems: 400 }, morgenland: { gems: 700 }, fernost: { tp: 1500 } };
 let look = (() => { try { return JSON.parse(store.get('openWaterLook')) || {}; } catch (e) { return {}; } })();
-// Ring-Skins: a ring round all your bases, only to buy - with Gems (Händler) or Thron-Punkte (Thron-Shop). A title from the middle goes over it.
-const RING_SKINS = [
-    { id: 'bronze', name: 'Bronze', gems: 300, c0: '#d6965f', c1: 'rgba(214,150,96,.45)' },
-    { id: 'silver', name: 'Silber', gems: 600, c0: '#dee6f0', c1: 'rgba(222,230,240,.45)' },
-    { id: 'jade', name: 'Jade', gems: 1000, c0: '#4fd39a', c1: 'rgba(150,240,200,.5)', n: 12 },
-    { id: 'midnight', name: 'Mitternacht', gems: 1500, c0: '#7d86ff', c1: 'rgba(200,180,255,.55)', n: 16 },
-    { id: 'star', name: 'Sternenlicht', tp: 2500, c0: '#eaf4ff', c1: 'rgba(130,185,255,.7)', n: 20, spin: 1 },
-    { id: 'ember', name: 'Glut', tp: 4000, c0: '#ff8a3a', c1: 'rgba(255,200,90,.6)', n: 20, pulse: 1 }
-];
-for (const r of RING_SKINS) r.k = 'skin';
-const ringSkinDef = id => RING_SKINS.find(r => r.id === id) || null;
-function ringSkinsOf(who) { if (who === 'player') return look.rings || []; const b = loadBotState()[who]; return (b && b.rings) || []; }
-function ringSkinOf(who) { const id = who === 'player' ? look.ring : (loadBotState()[who] || {}).ring; return id && ringSkinsOf(who).includes(id) ? ringSkinDef(id) : null; }
-function ringGive(who, id) {                     // someone gets a Ring-Skin and puts it on
-    if (who === 'player') { look.rings = [...new Set([...(look.rings || []), id])]; look.ring = id; store.set('openWaterLook', JSON.stringify(look)); }
-    else { const b = loadBotState()[who]; if (!b) return; b.rings = [...new Set([...(b.rings || []), id])]; b.ring = id; saveBotState(); }
-    ringVer++; requestRender();
-}
-if (!look.ringMig) { let L = 0; for (const id of ownedIslands) L = Math.max(L, islandLevels[id] || 1);   // rings no longer come with the level: what you wore stays yours as a skin
-    look.rings = [...new Set([...(look.rings || []), ...(L >= 10 ? ['bronze'] : []), ...(L >= 25 ? ['silver'] : [])])]; look.ringMig = 1; store.set('openWaterLook', JSON.stringify(look)); }
-function ringCardsHtml(list, pick) {             // pick: choose / buy (the Aussehen sheet), else buy only
-    const own = ringSkinsOf('player'), cur = ringSkinOf('player');
-    return '<div class="ring-grid">' + (pick ? '<button type="button" class="ring-card' + (cur ? '' : ' on') + '" data-ring=""><i class="ring-prev is-none"></i><b>Kein Ring</b><small>' + (cur ? 'Anlegen' : icon('check') + 'Angelegt') + '</small></button>' : '') +
-        list.map(r => { const has = own.includes(r.id), on = cur && cur.id === r.id;
-            return '<button type="button" class="ring-card' + (on ? ' on' : '') + (has ? '' : ' is-shop') + '" data-ring="' + r.id + '"><i class="ring-prev" style="--c:' + r.c0 + ';--c2:' + r.c1 + '"></i><b>' + r.name + '</b><small>' +
-                (on ? icon('check') + 'Angelegt' : has ? (pick ? 'Anlegen' : 'Gehört dir') : lkPrice(r)) + '</small></button>'; }).join('') + '</div>';
-}
-document.addEventListener('click', e => {
-    const b = e.target.closest('[data-ring]'); if (!b) return;
-    const id = b.dataset.ring, r = ringSkinDef(id), inShop = !!b.closest('#shopPopup');
-    if (!id) { look.ring = ''; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); }
-    else if (ringSkinsOf('player').includes(id)) { if (inShop) return; look.ring = id; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); flashHint('Ring „' + r.name + '“ angelegt' + (titleOf('player') || rulerOwner() === 'player' ? ' – solange du einen Titel trägst, siehst du den Titel-Ring.' : '.'), 3000); }
-    else if (r.tp) { throneBuy('ring_' + id); if (!ringSkinsOf('player').includes(id)) return; }
-    else { if (gems < r.gems) { flashHint('Zu wenig Edelsteine – Ring „' + r.name + '“ kostet ' + fmtNum(r.gems) + '.', 2500); return; }
-        if (!gemsWirklich('ring:' + id, r.gems, b)) return;
-        gems -= r.gems; ringGive('player', id); updateHud(); saveGame(); sfx('coin'); flashHint('Ring „' + r.name + '“ gekauft und angelegt.', 2500); }
-    if (isPanelOpen(shopPopup)) renderShop();
-    if (cityOpenId === '_keep') renderKeepSheet();
-    renderLookSheet();
-});
 function rankIndexFor(bases) { let r = 0; RANK_TIERS.forEach((t, i) => { if (bases >= t.min) r = i; }); return r; }
 function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
 function lookOldUnlocked(x) {                       // the old rule (rank / Erfolg) - only to carry an old save over
@@ -5562,13 +5487,12 @@ function lookMigrate() {                            // once: everything unlocked
 function saveLook() { store.set('openWaterLook', JSON.stringify(look)); }
 function playerFrame() { return rahmenVon('player', look.frame).frame; }
 function playerTitle() { return rahmenVon('player', look.frame).title; }
-function marchSkinOf(who) { const id = who === 'player' ? look.march : who ? (loadBotState()[who] || {}).march : ''; return MARCH_SKINS.find(m => m.id === id) || MARCH_SKINS[0]; }
 function renderLook() {                             // the profile header and its "Aussehen" line; choosing happens in the Aussehen sheet
     const fr = playerFrame();
     document.getElementById('pAvatarRing').dataset.frame = fr;
     document.getElementById('profileTitle').textContent = playerTitle();
     const cur = document.getElementById('lookNow');     // die eine Aussehen-Karte im Profil (Wappen + was du trägst)
-    if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen · ' + BAUSTILE[loadBaustil().style] + ' · Marsch ' + marchSkinOf('player').name + '</small>';
+    if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen</small>';
     renderLookSheet();
 }
 function currentRank() {
@@ -7306,7 +7230,7 @@ var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle drei Aufga
     ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15]];
 function passRewardAt(L, prem) {                          // what level L gives in each row (Münzen: n Stunden Ertrag – 6.10. 4/12 statt 1/3, „10 Münzen“ sah kaputt aus)
     if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 4 } : { k: 'gems', n: 15 };
-    return L === 20 ? { k: 'march', id: 'saison' } : L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
+    return L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
         L % 6 === 0 ? { k: 'tp', n: 150 } : L % 3 === 0 ? { k: 'shield', n: 8 } : L % 2 === 0 ? { k: 'coins', n: 12 } : { k: 'gems', n: 40 };
 }
 var passState = null, passArm = 0, passTimer = null;
@@ -7337,11 +7261,11 @@ function passGive(who, r) {                               // one reward to anyon
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
             if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
-    if (r.k === 'frame' || r.k === 'march') { const d = lkDef(r.k, r.id), key = r.k + 's', has = ((b ? b[key] : look[key]) || []).includes(r.id);
+    if (r.k === 'frame') { const d = lkDef(r.k, r.id), has = ((b ? b.frames : look.frames) || []).includes(r.id);
         if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; return '+' + PASS_OWNED_GEMS + ' Edelsteine („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
-        if (b) { b[key] = [...(b[key] || []), r.id]; if (r.k === 'march') b.march = r.id; }
-        else { look[key] = [...new Set([...(look[key] || []), r.id])]; look[r.k] = r.id; saveLook(); renderLook(); }
-        return (r.k === 'frame' ? 'Rahmen' : 'Marsch-Skin') + ' „' + d.name + '“ – schon angelegt'; }
+        if (b) b.frames = [...(b.frames || []), r.id];
+        else { look.frames = [...new Set([...(look.frames || []), r.id])]; look.frame = r.id; saveLook(); renderLook(); }
+        return 'Rahmen „' + d.name + '“ – schon angelegt'; }
     return '';
 }
 function passClaim(list) {                                // [[season, level, premium], …] → hand out, one hint
@@ -7369,8 +7293,7 @@ function passCellHtml(r, hp, got) {                            // icon + amount 
     if (k === 'crate') return row(icon('shop'), n + '×', n === 1 ? 'Kiste' : 'Kisten');
     if (k === 'royal') return row(icon('shop', 'ico-royal'), '1×', 'Königliche Kiste');
     const d = lkDef(k, r.id), own = !got && lkHas(k, r.id);
-    if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Rahmen', 'is-look');
-    return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Marsch-Skin', 'is-look');
+    return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Rahmen', 'is-look');
 }
 function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
     return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
@@ -7387,7 +7310,7 @@ function renderPass() {
         '<span class="pass-ht"><b>Saison-Pass</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
         '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
         '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
-    if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Königliche Kisten, Marsch-Skin „Saisonzug“ (Stufe 20) und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
+    if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Königliche Kisten und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-buy>' + (arm ? '<span>Sicher?</span>' : '') + icon('gem') + '<span>' + fmtNum(PASS_PREMIUM) + '</span></button></div>';
     if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Voriger Saison-Pass: ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
@@ -7532,10 +7455,8 @@ const THRONE_OFFERS = [
     { id: 'coins',  name: 'Münzen',              icon: 'coin',   cost: 150 },
     { id: 'troops', name: 'Truppen',             icon: 'troops', cost: 200 },
     { id: 'crate',  name: 'Ausrüstungskiste',    icon: 'shop',   cost: 60 },
-    { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 },
-    ...RING_SKINS.filter(r => r.tp).map(r => ({ id: 'ring_' + r.id, name: 'Ring „' + r.name + '“', icon: 'crown', cost: r.tp, once: true, ring: r.id }))
+    { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 }
 ];
-const throneOwned = (who, o) => !!o.ring && ringSkinsOf(who).includes(o.ring);   // (Thronhüter + Thron-Rahmen gibt es nicht mehr – Rahmen nicht zu kaufen, Alexander 6.10.)
 var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || { pts: 0 };
 (() => { const now = Date.now(), ts = throneState;               // no points or volleys pile up while the game was closed
     if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS;
@@ -7570,12 +7491,10 @@ function throneGive(who, id) {                        // hands one offer over; r
     if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
         if (b) { b.spare[slot][r]++; return ''; }
         addInventoryItem(slot, r, 1); sfx('crate'); questProgress('crate', 1); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
-    if (id.startsWith('ring_')) { const r = ringSkinDef(id.slice(5)); if (!r) return ''; ringGive(who, r.id); return 'Ring „' + r.name + '“ – schon angelegt'; }
     return '';
 }
 function throneBuy(id) {
     const o = THRONE_OFFERS.find(x => x.id === id); if (!o) return;
-    if (o.once && throneOwned('player', o)) return;
     if ((throneState.pts || 0) < o.cost) { flashHint('Zu wenig Thron-Punkte – das kostet ' + fmtNum(o.cost) + '.', 3000); return; }
     throneState.pts -= o.cost; const what = throneGive('player', id); saveThrone(); updateHud(); saveGame(); saveProgression();
     flashHint('Gekauft: ' + what + '.', 3500); sfx('coin'); renderShop();
@@ -7674,9 +7593,9 @@ function renderThroneShop() {
             '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
             (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Edelsteine · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
         '</div><p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, wer dort Verstärkung stehen hat ' + THRONE_PTS_VERST + ', jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
-            '<p class="mail-intro">Thron-Rahmen, Titel und Ringe für Thron-Punkte gibt es unter Profil → Aussehen, die Thron-Punkte-Rangliste unter Profil → Rangliste.</p></div>' +
+            '<p class="mail-intro">Die Thron-Punkte-Rangliste steht unter Profil → Rangliste.</p></div>' +
         '<div class="waren waren--2">' +
-        THRONE_OFFERS.filter(o => !o.once).map(o => { const n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet; Waren als Karten wie die Kisten
+        THRONE_OFFERS.map(o => { const n = throneAmount('player', o.id);   // Waren als Karten wie die Kisten
             const sub = o.id === 'coins' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ertrag' : o.id === 'troops' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ausbildung'
                 : o.id === 'gems' ? 'für Kisten und Helden' : o.id === 'crate' ? '1 Teil · Grau bis Episch' : o.id === 'royal' ? 'mindestens Lila' : 'gibt es nur hier';
             const k = o.id === 'crate' ? 'aus' : o.id === 'royal' ? 'royal' : null;
@@ -9364,16 +9283,7 @@ function renderCitySheetTimer() {
 // Rohstoff-Liste oben (aufbau.js): ein Tipp woanders hin (z. B. ein Fenster öffnen) schließt sie – sie bleibt nicht über dem Fenster stehen
 document.addEventListener('click', e => { const d = document.getElementById('rohDrop');
     if (d && !d.hidden && typeof rohUmschalten === 'function' && !e.target.closest('#hudRoh, #rohDrop')) rohUmschalten(false); }, true);
-// ===== DEINE BURG (tap the castle in the city): upgrade it, pick a skin, switch on a Friedensschild =====
-var SKIN_DEFS = {
-    standard: { id: 'standard', name: 'Standard', cost: 0, stone: null, roof: null },
-    winter:   { id: 'winter',   name: 'Winterburg',     cost: 200, stone: ['#f6f9fd', '#cfd9e5', '#8797ab'], roof: ['#ffffff', '#c8dbef', '#6f86a3'] },
-    wald:     { id: 'wald',     name: 'Waldfestung',    cost: 200, stone: ['#d9dcc3', '#a4aa86', '#63694b'], roof: ['#86b86f', '#3f7a3a', '#1f3d1c'] },
-    schatten: { id: 'schatten', name: 'Schattenfeste',  cost: 300, stone: ['#8a8698', '#5d5868', '#2e2b36'], roof: ['#a585cf', '#5b2c6f', '#2a1033'] },
-    gold:     { id: 'gold',     name: 'Goldene Feste',  cost: 500, stone: ['#f6e7c1', '#d6ba7f', '#8e6d35'], roof: ['#fff1b8', '#e2b54a', '#7a5414'] }
-};
-function loadSkins() { let v; try { v = JSON.parse(store.get('openWaterSkins')); } catch (e) {} return Object.assign({ own: ['standard'], active: 'standard' }, v || {}); }
-function activeSkin() { const v = loadSkins(), d = SKIN_DEFS[v.active]; return d && d.stone ? d : null; }
+// ===== DEINE BURG (tap the castle in the city): upgrade it, switch on a Friedensschild =====
 function shieldStock() { let v; try { v = JSON.parse(store.get('openWaterShieldStock')); } catch (e) {} return Object.assign({ 2: 0, 8: 0, 24: 0 }, v || {}); }
 function renderKeepSheet() { AUF.renderKeep(); const f = cityFehlt('keep'); if (f) setBtnLabel(document.getElementById('cityUpgradeBtn'), f); }   // die Burg-Stufe (aufbau.js)
 function cityFehlt(id) {                           // fehlt nur etwas zum Bezahlen: der Knopf sagt, was („Fehlt: 2.000 Holz“, mehreres: „Fehlt: Holz, Stein, Eisen“)
@@ -9382,59 +9292,26 @@ function cityFehlt(id) {                           // fehlt nur etwas zum Bezahl
     const f = (k.c > coins ? [[k.c - coins, 'Münzen']] : []).concat(['h', 's', 'e'].filter(x => k[x] > (r[x] || 0)).map(x => [k[x] - (r[x] || 0), AUF.ROH_DEF[x].name]));
     return f.length > 1 ? 'Fehlt: ' + f.map(x => x[1]).join(', ') : f.length ? 'Fehlt: ' + fmtCompact(Math.ceil(f[0][0])) + ' ' + f[0][1] : '';
 }
-// ===== AUSSEHEN: every look in one place - Wappen, Rahmen (= Titel), Basis-Skin (+ Ring), Marsch-Skin. Basis und Marsch zu kaufen (Gems oder Thron-Punkte), Rahmen nicht (05a RAHMEN) =====
+// ===== AUSSEHEN: Wappen und Rahmen (= Titel, 05a RAHMEN) – nichts zu kaufen (Basis- und Marsch-Skins gibt es nicht mehr, Alexander 7.10.) =====
 var lkTab = 'frame';
-function lkPrice(d) { if (d.platz) return '<span class="lk-cost">' + icon('crown') + rahmenPlatzText(d) + '</span>'; if (d.buy === 'pass') return '<span class="lk-cost">' + icon('crown') + 'Saison-Pass</span>'; return d.tp ? '<span class="lk-cost' + ((throneState.pts || 0) < d.tp ? ' is-bad' : '') + '">' + icon('crown') + fmtNum(d.tp) + '</span>' : '<span class="lk-cost' + (gems < d.gems ? ' is-bad' : '') + '">' + icon('gem') + fmtNum(d.gems) + '</span>'; }
+function lkPrice(d) { return d.platz || d.buy === 'pass' ? '<span class="lk-cost">' + icon('crown') + (d.platz ? rahmenPlatzText(d) : 'Saison-Pass') + '</span>' : ''; }   // woher ein Rahmen kommt
 function lkCard(kind, d, prev, has, on, label) {     // one look: preview, name, and Angelegt / Anlegen / price
     return '<button type="button" class="skin-card lk-card' + (on ? ' on' : '') + (has ? '' : ' is-shop') + '" data-lk="' + kind + ':' + d.id + '">' + prev + (label === false ? '' : '<b>' + (label || d.name) + '</b>') +
         '<small>' + (on ? icon('check') + 'Angelegt' : has ? 'Anlegen' : lkPrice(d)) + '</small></button>';
 }
-function lkDef(kind, id) {
-    if (kind === 'frame') return rahmenDef(id); if (kind === 'march') return MARCH_SKINS.find(m => m.id === id);
-    if (kind === 'style') return BAUSTILE[id] ? Object.assign({ id, name: BAUSTILE[id] }, BAUSTIL_PRICE[id]) : null;
-    if (kind === 'color') { const d = SKIN_DEFS[id]; return d ? { id, name: d.name, gems: d.cost } : null; } return null;
-}
-function lkHas(kind, id) { const d = lkDef(kind, id); if (!d) return false;
-    if (kind === 'frame') return rahmenHat('player', d); if (kind === 'march') return d.gems === 0 || (look.marchs || []).includes(id);
-    if (kind === 'style') return loadBaustil().own.includes(id); return loadSkins().own.includes(id); }
-function lkUse(kind, id) {                            // put on something you own
-    if (kind === 'frame' || kind === 'march') { look[kind] = id; saveLook(); }
-    else if (kind === 'style') { const v = loadBaustil(); v.style = id; store.set('openWaterBaustil', JSON.stringify(v)); }
-    else if (kind === 'color') { const sk = loadSkins(); sk.active = id; store.set('openWaterSkins', JSON.stringify(sk)); BUILDING_SPRITES.clear(); }
-    renderLook(); if (cityOpenId === '_keep') renderKeepSheet(); requestRender();
-}
-function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; bought = put on at once (Rahmen: nur anlegen)
+function lkDef(kind, id) { return kind === 'frame' ? rahmenDef(id) : null; }
+function lkHas(kind, id) { const d = lkDef(kind, id); return !!d && rahmenHat('player', d); }
+function lkUse(kind, id) { look.frame = id; saveLook(); renderLook(); requestRender(); }   // anlegen, was du hast
+function lkBuy(kind, id) {                            // Rahmen gibt es nicht zu kaufen (Alexander 6.10.): nur der Hinweis, woher
     const d = lkDef(kind, id); if (!d) return;
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
-    if (kind === 'frame') { flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500); return; }   // Rahmen nicht zu kaufen (Alexander 6.10.)
-    if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.', 3000); return; }
-    const cost = d.tp || d.gems || 0;
-    if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Edelsteine') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
-    if (!d.tp && !gemsWirklich('lk:' + kind + ':' + id, cost, btn)) return;
-    if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;
-    if (kind === 'march') { look.marchs = [...new Set([...(look.marchs || []), id])]; saveLook(); }
-    else if (kind === 'style') { const v = loadBaustil(); v.own = [...new Set([...v.own, id])]; store.set('openWaterBaustil', JSON.stringify(v)); }
-    else { const sk = loadSkins(); sk.own = [...new Set([...sk.own, id])]; store.set('openWaterSkins', JSON.stringify(sk)); }
-    lkUse(kind, id);
-    updateHud(); saveGame(); sfx('coin'); flashHint('„' + d.name + '“ gekauft und angelegt.', 2500);
+    flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : d.buy === 'pass' ? 'gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500);
 }
 function renderLookTop() {                            // what you wear now + what you can pay with
     const el = document.getElementById('lkTop'); if (!el || document.getElementById('lookSheet').hidden) return;
     liveHtml(el, '<span class="frame-ring lk-me" data-frame="' + playerFrame() + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
         '<span class="lk-me-t"><b>' + escapeHtml(profileName.value || 'Du') + '</b><small>' + escapeHtml(playerTitle()) + '</small></span>' +
         '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtCompact(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>');
-}
-function lkMarchPrev() {                              // the march cards: a little column with your flag and the trail
-    for (const cv of document.querySelectorAll('[data-march-prev]')) { const g = cv.getContext('2d'), sk = MARCH_SKINS.find(m => m.id === cv.dataset.marchPrev), K = cv.width / 110, W = 110, y = 38;   // drawn on a 110 x 55 grid
-        g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.setTransform(K, 0, 0, K, 0, 0);
-        const tip = W - 22, at = d => ({ x: tip - 60 + d, y });
-        g.strokeStyle = 'rgba(228,200,134,.4)'; g.lineWidth = 1.5; g.setLineDash([5, 5]); g.beginPath(); g.moveTo(4, y); g.lineTo(W - 4, y); g.stroke(); g.setLineDash([]);
-        marchTrail(g, at, 60, sk, 900, 1);
-        for (let i = 0; i < 4; i++) { const x = tip - 13 - Math.floor(i / 2) * 8.5, yy = y + (i % 2 ? 3.4 : -3.4);
-            g.fillStyle = '#1a1d24'; g.fillRect(x - 1.7, yy - 3.4, 3.4, 6); g.fillStyle = '#ff8d82'; g.fillRect(x + .8, yy - 2.8, 1.8, 3.6);
-            g.fillStyle = '#aab2bc'; g.beginPath(); g.arc(x, yy - 4.7, 1.6, 0, Math.PI * 2); g.fill(); }
-        g.beginPath(); g.arc(tip, y, 7.5, 0, Math.PI * 2); g.fillStyle = '#141820'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#ff8d82'; g.stroke(); drawGlyph(g, 'attack', tip, y, 10, '#ff8d82');
-        marchFlag(g, tip, y, sk, 'player'); }
 }
 function renderLookSheet(live) {                     // live = jede Sekunde aus liveTick: der Wappen-Editor bleibt, wie er ist
     const sh = document.getElementById('lookSheet'); if (!sh || sh.hidden) return;
@@ -9453,22 +9330,7 @@ function renderLookSheet(live) {                     // live = jede Sekunde aus 
             '<div class="keep-h">Aus der Mitte</div><div class="lk-mid' + (rl ? ' is-ruler' : mt ? (mt.good ? ' is-good' : ' is-bad') : '') + '">' + ring(rl ? 'king' : mt ? (mt.good ? 'mgut' : 'mstraf') : 'bronze') + '<span><b>' + (rl ? 'Herrscher der Meere' : mt ? mt.name : 'Gerade keiner') + '</b><small>' +
                 (rl ? 'Solange du den Mega-Tempel hältst · geht vor' : mt ? mt.desc + ' · geht vor, bis zum nächsten Herrscher' : 'Den Rahmen aus der Mitte vergibt der Herrscher – er kommt und geht.') + '</small></span></div>' +
             '<small class="keep-note">Titel und Rahmen sind eins: so sehen dich alle in Profil und Rangliste. Rahmen gibt es nicht zu kaufen – Saison-Rahmen bekommen die besten 10 am Saison-Ende (bis zum nächsten), dazu die aus der Mitte.</small>'; }
-    else if (lkTab === 'base') { const bs = loadBaustil(), sk = loadSkins();
-        h = '<div class="keep-h">Baustil</div><div class="skin-grid lk-grid">' + Object.keys(BAUSTILE).map(k => lkCard('style', lkDef('style', k), '<canvas data-bk-prev="' + k + '" width="120" height="132"></canvas>', lkHas('style', k), bs.style === k)).join('') + '</div>' +
-            '<small class="keep-note">Gilt für alle deine Basen. Die Stufe zeigt der Stein, dich zeigen Dach und Fahne mit deinem Wappen.</small>' +
-            '<div class="keep-h">Hauptstadt</div><div class="keep-shields lk-cap">' + [['huegel', 'Auf Sockel'], ['wasser', 'Wasserschloss']].map(([k, n]) => '<button type="button" class="btn btn--' + (bs.cap === k ? 'primary' : 'secondary') + ' btn--sm" data-lk-cap="' + k + '">' + n + '</button>').join('') + '</div>' +
-            '<div class="keep-h">Farbe der Hauptstadt</div><div class="skin-grid lk-grid">' + Object.keys(SKIN_DEFS).map(k => lkCard('color', lkDef('color', k), '<canvas data-skin-prev="' + k + '" width="120" height="132"></canvas>', sk.own.includes(k), sk.active === k)).join('') + '</div>' +
-            '<div class="keep-h">Ring um deine Basen</div>' + ringCardsHtml(RING_SKINS, true) +
-            '<div class="ring-legend"><span><i style="--c:#ffd05a"></i>Gold · guter Titel</span><span><i style="--c:#e13030"></i>Rot · Straf-Titel</span><span><i class="blood" style="--c:#eb3c32"></i>Blutrot-Gold · Herrscher</span></div>' +
-            '<small class="keep-note">Ein Titel aus der Mitte geht vor, solange er gilt.' + ({ ruler: ' Du trägst gerade Blutrot-Gold.', good: ' Du trägst gerade Gold.', bad: ' Du trägst gerade Rot.' }[(ringStatusByOwner().get('player') || {}).k] || '') + '</small>'; }
-    else if (lkTab === 'march') { const cur = marchSkinOf('player').id;
-        h = '<div class="skin-grid lk-grid lk-grid--m">' + MARCH_SKINS.map(m => lkCard('march', m, '<canvas data-march-prev="' + m.id + '" width="308" height="154"></canvas>', lkHas('march', m.id), m.id === cur)).join('') + '</div>' +
-            '<small class="keep-note">So ziehen deine Truppen über die Karte: die Fahne mit deinem Wappen vorneweg, dahinter die Spur.</small>'; }
     if (!liveHtml(el, h) && live) return;                // live und nichts geändert: die Vorschau-Bilder bleiben stehen
-    if (lkTab === 'base') { bkPreviews(); const tier = towerTier(islandLevels[playerIslandId] || 1);
-        for (const cv of el.querySelectorAll('[data-skin-prev]')) { const g = cv.getContext('2d'), d = SKIN_DEFS[cv.dataset.skinPrev];
-            g.setTransform(1.75, 0, 0, 1.75, 60, 90); g.lineJoin = 'round'; paintTowerTier(g, 'player', true, true, tier, d.stone ? d : null); } }
-    if (lkTab === 'march') lkMarchPrev();
     sh.scrollTop = top;
 }
 function openLookSheet(tab) {                         // tab 'title': Titel = Rahmen (Alexander 6.10.) – Reiter „Rahmen“, zu den Saison-Rahmen rollen
@@ -9479,9 +9341,8 @@ function closeLookSheet() { document.getElementById('lookSheet').hidden = true; 
 document.getElementById('lookSheet').addEventListener('click', e => {
     if (e.target.closest('[data-lk-close]')) return closeLookSheet();
     const t = e.target.closest('[data-lk-tab]'); if (t) { lkTab = t.dataset.lkTab; renderLookSheet(); return; }
-    const cp = e.target.closest('[data-lk-cap]'); if (cp) { const v = loadBaustil(); v.cap = cp.dataset.lkCap; store.set('openWaterBaustil', JSON.stringify(v)); renderLookSheet(); requestRender(); return; }
     const c = e.target.closest('[data-lk]'); if (!c) return; const [kind, id] = c.dataset.lk.split(':');
-    lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id, c);
+    lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id);
 });
 setTimeout(lookMigrate, 0);                             // after the whole script: the old rank / Erfolg looks become owned
 // ===== Aussehen wie in den großen Aufbau-Spielen (Rise of Kingdoms, Alexander 4.10.): Gebäude antippen → runde Knöpfe
@@ -11635,7 +11496,7 @@ function drawBarb(now, wallNow) {
         const x = c.x * z + mapState.offsetX, y = c.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(c.x, c.y)) continue;
         const open = c.L <= best + 1, rd = RARITY_DEFS[barbTier(c.L)];
         if (KB.fertig && KB.img.barbaren) {                                 // Karte wie RoK: das KI-Bild (fest in der Welt, nie winzig), die Stufe daneben
-            const im = KB.img.barbaren, w = Math.max(BARB_BREITE * z, 38), h = w * im.height / im.width;
+            const im = KB.img.barbaren, w = Math.max(BARB_BREITE * z, 22), h = w * im.height / im.width;
             ctx.globalAlpha = open ? 1 : .6; ctx.drawImage(kbBild('barbaren', w * dpr), x - w / 2, y - h * .62, w, h); ctx.globalAlpha = 1;
             stufenZahl(x + w * .32, y - h * .5, c.L, true, open ? rd.color : '#6b6660'); continue; }
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k); if (!open) ctx.globalAlpha = .6;
@@ -14657,7 +14518,7 @@ if (window.WELT) {
         if (hbPassTopf) return hbPassTopf; const t = { g: 0, k: 0, kg: 0, sh: 0, schild: 0 };
         for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem), n = r.n || 1;
             if (r.k === 'gems') t.g += n; else if (r.k === 'crate') t.k += n; else if (r.k === 'royal') { t.k += n; t.kg += 27 * n; }
-            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; else if (r.k === 'frame' || r.k === 'march') t.g += PASS_OWNED_GEMS; }
+            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; else if (r.k === 'frame') t.g += PASS_OWNED_GEMS; }
         return hbPassTopf = t;
     }
     // Helden: „Splitter-Wert“ = unverbrauchte Splitter + was Freischalten und Sterne gekostet haben
