@@ -28,7 +28,7 @@ function barbSpot(lm, r, edge) {                    // a free place on the land:
         if (!aufLand(lm, x, y) || [[e, 0], [-e, 0], [0, e], [0, -e]].some(([dx, dy]) => !aufLand(lm, x + dx, y + dy)) || (islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 3)) continue;
         if (resFields.some(f => f.landmassId === lm.id && Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 2.2) || barbState.camps.some(c => Math.hypot(c.x - x, c.y - y) < ISLAND_RADIUS * 3)) continue;
         if (dayBoss && Math.hypot(dayBoss.x - x, dayBoss.y - y) < ISLAND_RADIUS * 5) continue;
-        if (felsAuf(x, y, 1200)) continue;                                        // nicht auf einen Berg (01f)
+        if (felsAuf(x, y, 1200) || grenzAbstand(x, y) < 4000) continue;          // nicht auf einen Berg (01f) und nicht ins Grenzgebirge
         return { x, y };
     }
     return null;

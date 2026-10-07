@@ -165,6 +165,11 @@ function riverOffset(vertical, line, t) {       // meander of the river line `li
 // Grenzlinie `line` (zwischen den Zellen, ±(GRID_HALF + .5) = Kartenrand) an der Stelle t: senkrecht → x, waagrecht → y
 // (heute ein Gebirgszug – LIESMICH 11c Punkt 25; am Rand schlängelt sie sich stärker)
 function grenzLinie(vertical, line, t) { return line * HEX_SPACING + riverOffset(vertical, line, t) * (Math.abs(line) > GRID_HALF ? 1.6 : 1); }
+// Abstand eines Weltpunkts zur nächsten Grenzlinie (dort steht das Gebirge)
+function grenzAbstand(x, y) {
+    const q = Math.round(x / HEX_SPACING - .5) + .5, r = Math.round(y / HEX_SPACING - .5) + .5;
+    return Math.min(Math.abs(x - grenzLinie(true, q, y)), Math.abs(y - grenzLinie(false, r, x)));
+}
 // Ring unter einem Weltpunkt (über die geschlängelten Grenzen; außerhalb der Karte GRID_HALF + 1)
 function ringAn(x, y) {
     let q = Math.round(x / HEX_SPACING), r = Math.round(y / HEX_SPACING);

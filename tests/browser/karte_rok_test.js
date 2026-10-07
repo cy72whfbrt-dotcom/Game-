@@ -8,6 +8,7 @@
 // E) Märsche nur durch die Tore: jeder Weg zwischen zwei Gebieten kreuzt die Grenze nur an einem Tor (Logik unverändert)
 // F) Wald nicht auf Basen/Feldern, nicht an der Kette; weit draußen nur Farbflächen + Bänder (keine Bilder in der Kachel)
 // G) Weltrechner zeichnet nie → lädt keine Karten-Bilder (Laden erst beim ersten Zeichnen)
+// H) Barbaren-Lager entstehen nicht im Grenzgebirge (barbSpot)
 //   node tests/browser/karte_rok_test.js <vorschau>
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
@@ -64,14 +65,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const paar = [nb.filter(o => o.x < tm.x).sort((u, v) => v.x - u.x)[0], nb.filter(o => o.x > tm.x).sort((u, v) => u.x - v.x)[0]].filter(Boolean);
       const winkel = paar.length === 2 ? Math.abs(Math.atan2(paar[1].y - paar[0].y, paar[1].x - paar[0].x) * 180 / Math.PI) : 99;
       return { id: isl.id, senk, luecke, winkel, fuss: Math.max(...paar.map(o => Math.abs(o.y - tm.y))) * .03 }; });
-    const schlecht = mess.filter(m => !(m.luecke <= 2 && (m.senk ? m.versatz <= 2 : m.winkel <= 10 && m.fuss <= 2)));
+    const feldNah = m => { const g = torMitte(islandById[m.id]); return resFields.some(q => Math.hypot(q.x - g.x, q.y - g.y) < 16000); };   // (ein Feld neben dem Tor: das Nachbarstück ist absichtlich ausgespart)
+    const ausgespart = mess.filter(m => (m.senk ? m.versatz : m.winkel) === 99 && feldNah(m)).length;
+    const schlecht = mess.filter(m => !(m.luecke <= 2 && (m.senk ? m.versatz <= 2 : m.winkel <= 10 && m.fuss <= 2)) && !((m.senk ? m.versatz : m.winkel) === 99 && feldNah(m)));
     const imTor = tore.filter(g => K.liste.some(o => o.n.startsWith('kette_quer') || o.n.startsWith('kette_hoch') ? Math.hypot(o.x - g.x, o.y - g.y) < 1400 : false)).length;
     return { quer: zaehl('kette_quer'), hoch: zaehl('kette_hoch'), knoten: zaehl('kette_knoten'), soll: linien.length * linien.length, ohne: ohne.length, ohneB: ohne.slice(0, 4),
-             tore: mess.length, schlecht: schlecht.slice(0, 4), nSchlecht: schlecht.length, imTor };
+             tore: mess.length, ausgespart, schlecht: schlecht.slice(0, 4), nSchlecht: schlecht.length, imTor };
   });
   ok(c.quer > 500 && c.hoch > 500 && c.knoten >= c.soll, 'Ketten (quer + hoch) und Knoten an jeder Kreuzung', c);
   ok(c.ohne === 0, 'jede Grenze (auch der Kartenrand) ist eine geschlossene Kette', c.ohneB);
-  ok(c.tore > 500 && c.nSchlecht === 0, 'Tor genau in der Kette: Lücke auf dem Torpunkt, Mauer in Kettenrichtung, Fuß bündig, kein Versatz (' + c.tore + ' Tore)', c.schlecht);
+  ok(c.tore > 500 && c.nSchlecht === 0 && c.ausgespart < 40, 'Tor genau in der Kette: Lücke auf dem Torpunkt, Mauer in Kettenrichtung, Fuß bündig, kein Versatz (' + c.tore + ' Tore, ' + c.ausgespart + ' mit Feld daneben)', c.schlecht);
   ok(c.imTor === 0, 'kein Kettenstück steht mitten im Tor (Lücke frei)', c.imTor);
   // ===== E: Märsche nur durch die Tore =====
   const e = await p.evaluate(() => {
@@ -99,5 +102,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(f.wald > 500 && f.nZ === 0, 'Wald-Gruppen auf freier Wiese (nicht auf Basen/Feldern)', f);
   ok(f.weitBilder <= 1, 'weit draußen: nur Farbfläche + Bänder, keine Gelände-Bilder in der Kachel', f.weitBilder);
+  // ===== H: Barbaren-Lager entstehen nie im Grenzgebirge (Platzwahl barbSpot, wie schon bei den Bergstöcken) =====
+  const h = await p.evaluate(() => { const r = mulberry32(4711); let n = 0, nah = 0;
+    for (let i = 0; i < 600; i++) { const s = barbSpot(BARB_LMS[i % BARB_LMS.length], r); if (!s) continue; n++; if (grenzAbstand(s.x, s.y) < 4000) nah++; }
+    return { n, nah }; });
+  ok(h.n > 300 && h.nah === 0, 'Barbaren-Lager: neue Plätze nie näher als 4.000 an einer Grenze (Gebirge)', h);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

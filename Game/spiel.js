@@ -434,6 +434,11 @@ function riverOffset(vertical, line, t) {       // meander of the river line `li
 // Grenzlinie `line` (zwischen den Zellen, ±(GRID_HALF + .5) = Kartenrand) an der Stelle t: senkrecht → x, waagrecht → y
 // (heute ein Gebirgszug – LIESMICH 11c Punkt 25; am Rand schlängelt sie sich stärker)
 function grenzLinie(vertical, line, t) { return line * HEX_SPACING + riverOffset(vertical, line, t) * (Math.abs(line) > GRID_HALF ? 1.6 : 1); }
+// Abstand eines Weltpunkts zur nächsten Grenzlinie (dort steht das Gebirge)
+function grenzAbstand(x, y) {
+    const q = Math.round(x / HEX_SPACING - .5) + .5, r = Math.round(y / HEX_SPACING - .5) + .5;
+    return Math.min(Math.abs(x - grenzLinie(true, q, y)), Math.abs(y - grenzLinie(false, r, x)));
+}
 // Ring unter einem Weltpunkt (über die geschlängelten Grenzen; außerhalb der Karte GRID_HALF + 1)
 function ringAn(x, y) {
     let q = Math.round(x / HEX_SPACING), r = Math.round(y / HEX_SPACING);
@@ -2835,15 +2840,17 @@ function bodenAnteil(art, l, t, r, b) {              // [kleinster, größter] A
   for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) { const v = w[j * M.n + i]; if (v < lo) lo = v; if (v > hi) hi = v; }
   return [lo, hi];
 }
-function bodenMuster(art, z, dreh) {                 // Muster der Bodenkachel in passender Größe (Welt-verankert, setTransform im Weltmaß); dreh: gedreht + größer
-  const c = kbBild('boden_' + art, KARTE_MASS.boden * z * dpr), key = art + c.width + (dreh ? 'd' : '');
+const BODEN_LAGEN = [[0, 1, 1], [37, 1.618, .42], [-61, 2.414, .3]];   // je Lage: Drehung, Größe, Deckkraft (mehrere schiefe Lagen: kein Raster, keine Naht)
+function bodenMuster(art, z, lage) {                 // Muster der Bodenkachel in passender Größe (Welt-verankert, setTransform im Weltmaß); lage: Index in BODEN_LAGEN
+  const c = kbBild('boden_' + art, KARTE_MASS.boden * z * dpr), key = art + c.width + ':' + (lage || 0), [dr, gr] = BODEN_LAGEN[lage || 0];
   let p = KB.muster[key];
-  if (!p) { p = KB.muster[key] = ctx.createPattern(c, 'repeat'); p.setTransform(dreh ? new DOMMatrix().rotate(37).scale(KARTE_MASS.boden * 1.618 / c.width) : new DOMMatrix().scale(KARTE_MASS.boden / c.width)); }
+  if (!p) { p = KB.muster[key] = ctx.createPattern(c, 'repeat'); p.setTransform(new DOMMatrix().rotate(dr).scale(KARTE_MASS.boden * gr / c.width)); }
   return p;
 }
-function bodenFuellen(x, art, z, l, t, w, h) {      // Kachel + darüber dieselbe Kachel gedreht und größer, halb durchsichtig: kein sichtbares Raster, keine Naht
-  x.fillStyle = bodenMuster(art, z); x.fillRect(l, t, w, h);
-  x.globalAlpha = .42; x.fillStyle = bodenMuster(art, z, true); x.fillRect(l, t, w, h); x.globalAlpha = 1;
+function bodenFuellen(x, art, z, l, t, w, h) {      // Kachel + darüber dieselbe Kachel gedreht und größer, durchscheinend (karger Boden mit Steinplatten: noch eine Lage)
+  const n = art === 'innen' || art === 'sand' ? 3 : 2;
+  for (let i = 0; i < n; i++) { x.globalAlpha = BODEN_LAGEN[i][2]; x.fillStyle = bodenMuster(art, z, i); x.fillRect(l, t, w, h); }
+  x.globalAlpha = 1;
 }
 // Boden in den Ausschnitt (Weltrechteck cl, ct, W, H) einer Kachel T; bild = Kacheln aus den Bildern, sonst die Farbfläche
 function paintBoden(g, T, cl, ct, W, H, clip, bild) {
@@ -2907,8 +2914,9 @@ function karteObjekte() {
         const p = linie(t) + ab + (Math.abs(L) > GRID_HALF ? Math.sign(L) * RAND_AUSSEN : 0), x = senk ? p : t, y = senk ? t : p;
         let gr = len * gs * (.92 + rnd() * .16);
         // ein Feld (Rohstoff) liegt nah an der Grenze (Lage = Spiellogik): dort das Stück weglassen bzw. kleiner, damit nichts im Berg liegt
-        const fd = nahFelder.reduce((m, q) => Math.min(m, Math.hypot(q.x - x, q.y - y) - q.radius), Infinity);
-        if (fd < 1800 && ab) continue; if (fd < 4500) gr *= fd < 1800 ? .45 : .7;
+        const im = KB.img[n], bw = senk ? gr * im.width / im.height : gr, bh = senk ? gr : gr * im.height / im.width;   // sichtbarer Fels ≈ mittlere 70 % der Breite, über dem Fuß
+        const deckt = k => nahFelder.some(q => { const m = q.radius + 400; return Math.abs(q.x - x) < bw * .35 * k + m && q.y > y - bh * (senk ? .5 : .62) * k - m && q.y < y + bh * (senk ? .5 : .3) * k + m; });
+        if (deckt(1)) { if (!deckt(.6)) gr *= .6; else continue; }               // (Fels deckte das Feld: kleiner, sonst ganz weglassen)
         const steig = Math.max(-.5, Math.min(.5, (linie(t + gr / 2) - linie(t - gr / 2)) / gr)), amTor = senk && hier.some(g => Math.abs(g - t) < len);   // (am Pass nicht vergrößern: die Lücke bleibt frei)
         if (senk) neu(warm(n, p, t), p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3, f, !amTor);
         else neu(warm(n, t, p), t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p, f);
@@ -2918,7 +2926,7 @@ function karteObjekte() {
   for (const t of tore) { if (!t.senk) continue;
     const L = Math.round(t.x / S - .5) + .5, x = grenzLinie(true, L, t.y), y = t.y, tb = TOR_SENK.turmB;
     const th = tb * KB.img.turm.height / KB.img.turm.width;                      // (Turmhöhe ≈ 0,6 × Gipfel daneben)
-    neu('weg', x, y, TOR_SENK.weg, .5, .5, 0, 0, y - TOR_SENK.luecke - th, 1, false);
+    neu('weg', x, y, TOR_SENK.weg, .5, .5, 0, 0, -1e9, 1, false);                  // (ganz unten: der Fels liegt darüber, sichtbar nur in der Lücke und auf der Wiese)
     neu('turm', x, y - TOR_SENK.luecke, tb, .5, .96, 0, 0, y - TOR_SENK.luecke, 1, false);
     neu('turm', x, y + TOR_SENK.luecke + th * .9, tb, .5, .96, 0, 0, y + TOR_SENK.luecke + th * .9, -1, false); }
   // Wald am Fuß der Ketten (wie RoK: dichte Nadelwälder an den Pässen und Bergen) – nicht auf Basen, Feldern, Toren, Knoten
@@ -11385,7 +11393,7 @@ function barbSpot(lm, r, edge) {                    // a free place on the land:
         if (!aufLand(lm, x, y) || [[e, 0], [-e, 0], [0, e], [0, -e]].some(([dx, dy]) => !aufLand(lm, x + dx, y + dy)) || (islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 3)) continue;
         if (resFields.some(f => f.landmassId === lm.id && Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 2.2) || barbState.camps.some(c => Math.hypot(c.x - x, c.y - y) < ISLAND_RADIUS * 3)) continue;
         if (dayBoss && Math.hypot(dayBoss.x - x, dayBoss.y - y) < ISLAND_RADIUS * 5) continue;
-        if (felsAuf(x, y, 1200)) continue;                                        // nicht auf einen Berg (01f)
+        if (felsAuf(x, y, 1200) || grenzAbstand(x, y) < 4000) continue;          // nicht auf einen Berg (01f) und nicht ins Grenzgebirge
         return { x, y };
     }
     return null;
