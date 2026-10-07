@@ -311,7 +311,8 @@ function heiligtumBild(island, z) {                                            /
   ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
 }
 // Basen als KI-Bild (Alexander 7.10.): Stufe 1–100 gleichmäßig auf 15 Bilder, ALLE gleich groß (keine Größe nach Stufe); die Hauptstadt
-// über ihre Kartenstufe (burgKarte). Darunter ein Ring in der Besitzer-Farbe (eigene blau, Bündnis grün, fremde rot); ganz weit Punkte wie bisher.
+// über ihre Kartenstufe (burgKarte). Weit: darunter ein Ring in der Besitzer-Farbe (eigene blau, Bündnis grün, fremde rot), ab mittel das
+// Namensschild (basisSchild); ganz weit Punkte wie bisher.
 const BASIS_BREITE = 5500, BASIS_MIN_PX = 22, BASIS_RING = { player: '#3f86d8', bund: '#3fae6a', bot: '#c9423a' };
 const BASIS_BILD = { img: [], offen: -1 };
 const basisBildNr = L => Math.max(1, Math.min(15, Math.ceil(Math.max(1, L) * 15 / 100)));
@@ -327,11 +328,50 @@ function drawBasisBild(island, ownerKey, z) {                                  /
   const h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return true;
   const ow = islandOwnerOf(island.id), farbe = ownerKey === 'player' ? BASIS_RING.player : ow && bundFreund(ow, 'player') ? BASIS_RING.bund : ow ? BASIS_RING.bot : null;
-  if (farbe) { ctx.beginPath(); ctx.ellipse(x, y + h * .12, w * .5, w * .2, 0, 0, Math.PI * 2); ctx.fillStyle = farbe + '55'; ctx.fill();
+  if (farbe && z < SCHILD_ZOOM) { ctx.beginPath(); ctx.ellipse(x, y + h * .12, w * .5, w * .2, 0, 0, Math.PI * 2); ctx.fillStyle = farbe + '55'; ctx.fill();
     ctx.lineWidth = Math.max(2, w * .03); ctx.strokeStyle = farbe; ctx.stroke(); }
   ctx.drawImage(im, x - w / 2, y - h * .72, w, h);
   if ((island.id === playerIslandId || isCapital(island.id)) && brennt(island.id)) drawBrand(x, y - h * .3, w / 64);   // eine geplünderte Hauptstadt brennt
   return true;
+}
+// Namensschild unter jeder Basis (Alexander 7.10., wie im alten Spiel): ab Zoom mittel, für alle gleich groß (Bildschirm-Pixel). Im runden
+// Feld das Wappen des Besitzers (frei: keins), im Balken Stufe und Truppen – eigene und Bündnis die echte Zahl (sofern das Handy sie hat),
+// fremde und freie „?“ bis gespäht (wie die Fahnen, bannerModel). Text und Strich in der Besitzer-Farbe. Ein Schild wird einmal gemalt
+// und gemerkt, bis sich Stufe, Truppen, Wappen oder Besitzer ändern.
+const SCHILD_ZOOM = 0.008, SCHILD_W = 140, SCHILD_FARBE = { player: '#8cc0ff', ally: '#86e09a', bot: '#ff8d82', neutral: '#eadfc4' };
+const SCHILD_MERK = new Map();
+function schildRect(island, z) {                                               // (Bildschirm) wo das Schild einer Basis steht
+  const w = BASIS_BREITE * z, im = basisBild(basisBildNr(baseLevelOf(island))), h = im ? w * im.height / im.width : w;
+  const H = SCHILD_W * 159 / 512; return { x: toSX(island.x) - SCHILD_W / 2, y: toSY(island.y) + h * .14, w: SCHILD_W, h: H };
+}
+function schildDaten(island) {                                                 // → { art, wer, stufe, truppen }
+  const m = bannerModel(island), wer = islandOwnerOf(island.id);
+  const truppen = m.kind === 'ally' && islandTroops[island.id] !== undefined ? fmtCompact(islandTroops[island.id]) : m.troops;
+  return { art: m.kind === 'player' || m.kind === 'ally' || m.kind === 'bot' ? m.kind : 'neutral', wer, stufe: anzeigeStufe(island.id), truppen };
+}
+function schildBild(d) {                                                       // das fertige Schild (Leinwand in Bildschirm-Pixeln × dpr)
+  const cr = d.wer ? crestFor(d.wer) : null, key = d.art + '|' + d.stufe + '|' + d.truppen + '|' + (cr ? crestKeyOf(cr) : '') + '|' + dpr;
+  let c = SCHILD_MERK.get(key); if (c) return c;
+  const W = SCHILD_W, H = W * 159 / 512, k = W / 512, farbe = SCHILD_FARBE[d.art];
+  c = document.createElement('canvas'); c.width = Math.ceil(W * dpr); c.height = Math.ceil(H * dpr);
+  const g = c.getContext('2d'); g.scale(dpr, dpr); g.drawImage(KB.img.schild, 0, 0, W, H);
+  if (cr) drawCrest(g, 82 * k, 79 * k, 76 * k, cr);                           // im runden Feld
+  const x0 = 168 * k, x1 = 462 * k, ym = 79 * k;                              // der Balken innen
+  const st = 'Stufe ' + d.stufe; let fs = 11, a, t;                            // passt beides nicht: kleinere Schrift (nie überlappend)
+  g.textBaseline = 'middle';
+  for (;; fs--) { g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif'; a = g.measureText(st).width; t = g.measureText(d.truppen).width; if (a + t + fs + 8 <= x1 - x0 || fs <= 8) break; }
+  g.textAlign = 'left'; g.fillStyle = farbe; g.fillText(st, x0, ym + .5);
+  g.textAlign = 'right'; g.fillStyle = '#f3e6c4'; g.fillText(d.truppen, x1, ym + .5);
+  drawGlyph(g, 'troops', x1 - t - fs * .55 - 2, ym, fs - 1, '#d9c9a0');
+  g.strokeStyle = farbe; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x0, 106 * k); g.lineTo(x1, 106 * k); g.stroke();   // der Besitzer auf einen Blick
+  if (SCHILD_MERK.size > 400) SCHILD_MERK.clear(); SCHILD_MERK.set(key, c); return c;
+}
+function drawBasisSchilder(vis, z) {                                          // nach allen Basen: die Schilde liegen obenauf
+  if (z < SCHILD_ZOOM || !KB.img.schild) return;
+  setScreen(ctx);
+  for (const isl of vis) { if (isl.type !== 'tower' || BASIS_BREITE * z < BASIS_MIN_PX) continue;
+    const r = schildRect(isl, z); if (r.x + r.w < 0 || r.x > viewW || r.y + r.h < 0 || r.y > viewH) continue;
+    ctx.drawImage(schildBild(schildDaten(isl)), Math.round(r.x * dpr) / dpr, Math.round(r.y * dpr) / dpr, r.w, r.h); }
 }
 const basisGroesse = z => 1 + Math.max(0, Math.min(1, (0.04 - z) / 0.03));   // Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erkennbar), nah wie gehabt
 function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)

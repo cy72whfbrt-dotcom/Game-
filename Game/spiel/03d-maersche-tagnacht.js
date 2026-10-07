@@ -248,6 +248,7 @@ function drawMap() {
   drawBarb(now, wallNow); drawEvents(now, wallNow);                                                                                               // Barbaren-Lager, the Tagesboss and the columns on their way
   drawArmies(now, wallNow);                                                                                             // your armies out in the open
   for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
+  drawBasisSchilder(vis, z);                                                                                           // Namensschilder der Basen (ab mittel)
   drawThroneFx(z, now);
   drawBaseSparks(vis, z, now);
   drawWander(now);                                                                                                     // the Kriegsherr and his host

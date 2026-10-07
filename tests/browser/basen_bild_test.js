@@ -23,14 +23,31 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       fremd.x = h.x + 3000; fremd.y = h.y; const d = drawBasisBild(isl, ownerKeyOf(isl), z); isl.neutralLevel = alt; islandLevels[isl.id] = altL; return d; };
     const fx = fremd.x, fy = fremd.y;
     o.gezeichnet = [zeig(fremd, 1), zeig(fremd, 100)];
-    ringe = []; o.heim = drawBasisBild(h, 'player', z); o.ringHeim = ringe.slice();
+    ringe = []; o.heim = drawBasisBild(h, 'player', 0.006); o.ringHeim = ringe.slice();   // (weit: der Ring, ab mittel das Schild)
     o.weit = drawBasisBild(h, 'player', 0.002);
     fremd.x = fx; fremd.y = fy; ctx.drawImage = dr; ctx.stroke = st;
-    o.breiten = breiten; return o;
+    o.breiten = breiten;
+    // Namensschild: eigene und Bündnis echte Truppenzahl, fremde „?“ bis gespäht, frei ohne Wappen; ab mittel, ersetzt den Ring
+    const bots = BOT_DEFS.filter(d => !d.mensch), F = bots[0].id, A = bots[1].id, frei = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && i.id !== h.id).slice(0, 4);
+    const geben = (w, i, n) => { clearIslandOwner(i.id); botOwnedIslands[w].add(i.id); islandTroops[i.id] = n; };
+    geben(F, frei[0], 900); geben(F, frei[1], 800); scoutedIslands.add(frei[1].id); geben(A, frei[2], 700);
+    const bv = bundVerbuendet; bundVerbuendet = (x, y) => (x === 'player' && y === A) || (y === 'player' && x === A) || bv(x, y);   // (A im eigenen Bündnis)
+    islandTroops[h.id] = 1234;
+    o.schild = [h, frei[0], frei[1], frei[2], frei[3]].map(i => { const d = schildDaten(i); return [d.art, d.truppen, !!d.wer]; });
+    bundVerbuendet = bv;
+    let schilde = 0, ringe2 = 0; ctx.drawImage = function (im) { if (im instanceof HTMLCanvasElement && im.width >= SCHILD_W) schilde++; };
+    ctx.stroke = function () { ringe2++; };
+    drawBasisSchilder([h], 0.012); drawBasisBild(h, 'player', 0.012); o.mittel = { schilde, ringe: ringe2 };
+    schilde = 0; drawBasisSchilder([h], 0.006); o.weitSchild = schilde;
+    ctx.drawImage = dr; ctx.stroke = st;
+    return o;
   });
   ok(JSON.stringify(r.nr) === JSON.stringify([1, 1, 2, 2, 3, 8, 14, 15, 15]) && r.geladen === 15, 'Stufe 1–100 → Bild 1–15 (ceil(Stufe·15/100)), alle 15 Bilder geladen', r);
-  ok(r.gezeichnet.every(Boolean) && r.breiten.length >= 3 && new Set(r.breiten.map(x => x[1])).size === 1 && r.breiten[0][0] === '01' && r.breiten[1][0] === '15', 'alle Basen gleich groß (Stufe 1 und 100 gleich breit), anderes Bild', r.breiten);
-  ok(r.heim && r.ringHeim.includes('#3f86d8'), 'eigene Basis: blauer Ring darunter', r.ringHeim);
+  ok(r.gezeichnet.every(Boolean) && r.breiten.length >= 2 && r.breiten[0][1] === r.breiten[1][1] && r.breiten[0][0] === '01' && r.breiten[1][0] === '15', 'alle Basen gleich groß (Stufe 1 und 100 gleich breit), anderes Bild', r.breiten);
+  ok(r.heim && r.ringHeim.includes('#3f86d8'), 'eigene Basis weit: blauer Ring darunter', r.ringHeim);
   ok(r.weit === false, 'ganz weit: kein Bild (Punkte wie bisher)', r.weit);
+  ok(JSON.stringify(r.schild) === JSON.stringify([['player', '1.234', true], ['bot', '?', true], ['bot', '800', true], ['ally', '700', true], ['neutral', '?', false]]),
+    'Namensschild: eigene und Bündnis echte Truppen, fremde „?“ bis gespäht, frei ohne Wappen', r.schild);
+  ok(r.mittel.schilde === 1 && r.mittel.ringe === 0 && r.weitSchild === 0, 'Schild ab mittel statt des Rings, weit kein Schild', [r.mittel, r.weitSchild]);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

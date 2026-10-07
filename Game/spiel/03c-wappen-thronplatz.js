@@ -150,9 +150,13 @@ function senkSchildX(tm, w, z) { const k = TOR_SENK.hoch * .13 * z, x = toSX(tm.
 function layoutBanners(visible, z, selectedId) {  // places every nameplate (sets bannerHitRects) → items for paintBanners()
   bannerHitRects = [];
   const towers = towerRects = visible.map(isl => { const s = 2 * isl.radius * z; return { id: isl.id, x: toSX(isl.x) - s / 2, y: toSY(isl.y) - s * 0.65, w: s, h: s }; });
+  const schild = isl => isl.type === 'tower' && z >= SCHILD_ZOOM && !!KB.img.schild;   // Basen tragen ihr Namensschild – Fahne nur noch beim Antippen
+  const schilde = visible.filter(schild).map(isl => Object.assign({ id: isl.id }, schildRect(isl, z)));
+  bannerHitRects.push(...schilde);                                                // (Schild antippen öffnet die Basis, Funde und Märsche weichen aus)
   if (z < TERRITORY_VIEW_ZOOM) return [];
+  for (const q of schilde) towers.push({ id: -1, x: q.x, y: q.y, w: q.w, h: q.h });
   const base = tierFor(z);
-  let items = visible.map(isl => {
+  let items = visible.filter(isl => !schild(isl) || isl.id === selectedId).map(isl => {
     const m = bannerModel(isl);
     let p = m.p; if (isl.id === selectedId) p = 5;
     let tier = base;
