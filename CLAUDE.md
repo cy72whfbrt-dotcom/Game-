@@ -96,7 +96,8 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   **KI-BILDER STATT CODE (Alexander 7.10.):** Überall, wo Grafik mit einem Bild gehen kann, ein KI-Bild nehmen (Alexander
   erzeugt sie mit ChatGPT; Claude/Designer schreibt die Prompts mit festem Stil-Satz + Dateinamen). Spart Code, sieht besser
   aus. Gezeichnet (Canvas) wird nur noch, was sich dauernd ändert (Zahlen, Balken, Linien). Jeder Design-Auftrag prüft zuerst:
-  „Geht das als Bild?“
+  „Geht das als Bild?“ Sieht etwas schlecht aus (Claude, Designer, Prüfer oder Alexander), wird SOFORT im laufenden
+  Durchlauf ein KI-Bild-Prompt dafür geschrieben und Alexander gegeben – nicht erst am Ende, nicht mit Code nachbessern.
   **Niemand wartet still:** jeder Agent schreibt beim Start und mindestens alle 5 Min. eine Zeile in
   `<scratchpad>/firma/<kurzname>.txt` (`<Uhrzeit UTC> | <Schritt> | <was läuft>`, am Ende `… | fertig | <Ergebnis>`);
   den Kurznamen gibt Claude im Auftrag mit. Älter als 10 Min. = „hängt“.
