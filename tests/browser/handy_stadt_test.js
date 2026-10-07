@@ -25,6 +25,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const rar = document.querySelector('#shopPopup .chip--rar'), box = rar && rar.parentElement.getBoundingClientRect(), rr = rar && rar.getBoundingClientRect();
       o.rar = rar ? { drin: rr.right <= box.right + 1 && rr.right <= innerWidth, ganz: ganz(rar), oben: parseFloat(getComputedStyle(rar).paddingTop) >= 3, hoch: rr.height >= rar.scrollHeight - 1 } : null;
       // 3) Helden: Zurücksetzen fragt (200 Gems), Splitter tauschen
+      { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); }   // Helden erst mit Heldenhalle (Merkliste 21)
       const H = loadHeroes(), [a, z] = HEROES.slice(0, 2).map(h => h.id);
       Object.assign(H[a], { own: true, q: HERO_MAXQ, sh: 30, sk: [2, 0, 0, 0] }); Object.assign(H[z], { own: false, q: 0, sh: 1 }); saveHeroes();
       const vorher = heroDoSwap('player', z, a, 1);
