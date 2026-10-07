@@ -1659,6 +1659,18 @@ Nacht – vorher bauen und testen.
     (außen grün → Mitte karg/Sand), Schnee/Wüste/Vulkan weg. Bergstöcke in Gebieten bleiben (neues Aussehen) + Felskessel
     um Tempel. Grafik als KI-Bilder (Alexander erzeugt mit ChatGPT), Code setzt nur zusammen. Plan + Bilderliste + Prompts:
     scratchpad/karte_rok_plan.md, Vorbilder vorbilder/12_rokkarte_*.jpg. Burgen bleiben Code.
+26. **Zahlen aus der Nacht-Recherche (später, Alexander: „kümmern wir uns später“):** (a) Burg-Kosten ab Stufe 10 viel zu
+    hoch: Burg 24→25 = 5,6 Mrd. Holz (+4,5 Mrd. Stein, 2,8 Mrd. Eisen, 6,3 Mrd. Gold), RoK ≈ 82 Mio. – unsere Formel ×2 je
+    Stufe ab 10, RoK ×1,5; (b) Burg 1→2 dauert 1 Tag, RoK: erste 5 Stufen ≈ 1,5 h – Neuling sieht keinen Fortschritt;
+    (c) Produktion Spätspiel 1,36 Mio./h vs. RoK 20.800 – Zahlen aufgebläht; (d) Friedensschild 3–4× billiger als RoK
+    (8 h 120 Gems / 24 h 300 vs. 500 / 1.000) – gegen Edelstein-Einkommen prüfen. Quelle: scratchpad/nacht/stadt/ZAHLEN.md.
+27. **Karte neu (Branch worktree-agent-a0275fc948c8df0f5, Commit 45e2463, ~80 %, nicht gemergt) – offen:** senkrechte Pässe
+    (graue Platzhalter-Türme + Naht quer über die Kette → Türme aus Torbild ausschneiden bzw. KI-Bild „Tor in Nord-Süd-Kette“),
+    Ketten bei mittlerem Zoom zu schmal (senkrecht fehlt 2. Reihe), ganz weit ~550 Tor-Punkte → weg, Nebel ganz weit nur
+    dunkles Gitter, Lager/Felder teils auf der Kette (nur Darstellung aussparen), Kachelnaht boden_innen, Karte etwas dunkel,
+    Grenztor 14 im Knick, Tor-Messung senkrecht fehlerhaft (immer 0°). Server-Test klick_test (Tor antippen) noch nicht gelaufen.
+28. **Kleinigkeiten:** Invasionsleiste zeigt „0 P.“ – versteht kein Spieler; handy_tipp_test rot während Invasion (Leiste zeigt
+    nur Invasion statt Wochen-Event-Chip).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
