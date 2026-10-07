@@ -56,11 +56,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const mess = bridges.map(br => { const isl = islandById[br.gateId], tm = torMitte(isl), senk = Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1);
       const L = senk ? Math.round(tm.x / S - .5) + .5 : Math.round(tm.y / S - .5) + .5, punkt = senk ? grenzLinie(true, L, tm.y) : grenzLinie(false, L, tm.x);
       const luecke = Math.abs((senk ? tm.x : tm.y) - punkt) / KARTE_MASS.tor * 100;
-      if (senk) {   // Pass-Lücke: Türme auf der Linie; mittlere Kettenreihe über und unter der Lücke auf derselben Linie (Abstand der Stücke zur Torlinie)
+      if (senk) {   // Tor-Bild für Nord-Süd-Ketten; mittlere Kettenreihe über und unter der Lücke auf derselben Linie (Abstand der Stücke zur Torlinie)
         const reihe = K.liste.filter(o => o.n.startsWith('kette_hoch') && Math.abs(o.y - tm.y) < 15000 && Math.abs(o.x - tm.x) < 700);
         const oben = reihe.filter(o => o.y < tm.y), unten = reihe.filter(o => o.y > tm.y), ab = Math.max(...reihe.map(o => Math.abs(o.x - tm.x)));
-        const tuerme = K.liste.filter(o => o.n === 'turm' && Math.abs(o.y - tm.y) < 6000 && Math.abs(o.x - tm.x) < 4000), turmAb = Math.max(...tuerme.map(o => Math.abs(o.x - tm.x)));
-        return { id: isl.id, senk, luecke, versatz: oben.length && unten.length && tuerme.length === 2 ? Math.max(ab, turmAb) / KARTE_MASS.tor * 100 : 99 }; }
+        const bild = KB.img.tor_senk_zu && TOR_SENK.achse > 0;   // (Tor-Bild für Nord-Süd-Ketten: Achse und Weg werden genau auf den Torpunkt gesetzt, 03b drawTorBild)
+        return { id: isl.id, senk, luecke, versatz: oben.length && unten.length && bild ? ab / KARTE_MASS.tor * 100 : 99 }; }
       const nb = K.liste.filter(o => o.n.startsWith('kette_quer') && Math.abs(o.x - tm.x) < 10000 && Math.abs(o.y - tm.y) < 600);
       const paar = [nb.filter(o => o.x < tm.x).sort((u, v) => v.x - u.x)[0], nb.filter(o => o.x > tm.x).sort((u, v) => u.x - v.x)[0]].filter(Boolean);
       const winkel = paar.length === 2 ? Math.abs(Math.atan2(paar[1].y - paar[0].y, paar[1].x - paar[0].x) * 180 / Math.PI) : 99;
