@@ -2064,7 +2064,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         WELT.befehl('angriff', { src: sourceId, ziel: targetId, n: rawTroops, held: vHeld, held2: vHeld2, grp: grp || undefined });
         islandTroops[sourceId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('a', { sourceId, targetId, rawTroops, startedAt: t0, resolveAt: t0 + Math.max(3, travelDurationSeconds(source, target)) * 1000, attackerBotId: null, hero: vHeld, hero2: vHeld2, grp: grp || undefined }); }
-        updateHud(); flashHint('Angriff unterwegs zu ' + islandTitle(target) + '.');
+        updateHud(); flashHint('Angriff unterwegs zu ' + ortName(target) + '.');
         dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); sfx('attack');
         return true;
     }
@@ -2101,7 +2101,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     updateHud();
     saveGame();
     saveProgression();
-    if (!attackerBotId) flashHint('Angriff unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
+    if (!attackerBotId) flashHint('Angriff unterwegs zu ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
     if (!attackerBotId) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(attackerBotId);
     if (!attackerBotId) { questProgress('attack', 1); sfx('attack'); }
     else if (islandOwnerOf(target.id) === 'player') sfx('warn');      // someone marches on one of your bases
@@ -2126,7 +2126,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
         WELT.befehl('senden', { von: fromId, nach: toId, n: rawTroops, grp: grp || undefined });
         islandTroops[fromId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('s', { fromId, toId, troops: rawTroops, startedAt: t0, resolveAt: t0 + travelDurationSeconds(source, target) * 1000, senderBotId: null, grp: grp || undefined }); } questProgress('send', 1); sfx('send'); updateHud();
-        flashHint('Truppen unterwegs zu ' + islandTitle(target) + '.'); return;
+        flashHint('Truppen unterwegs zu ' + ortName(target) + '.'); return;
     }
     const hop = lastHop(source.landmassId, target.landmassId, senderBotId || 'player');
     if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return;
@@ -2148,7 +2148,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     saveGame();
     saveProgression();
     if (!senderBotId) {
-        flashHint('Truppen unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
+        flashHint('Truppen unterwegs zu ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
         renderActiveMarches();
     }
 }
@@ -2362,7 +2362,7 @@ function launchScout(targetId, explore, at) {
     questProgress('scout', 1);
     saveGame();
     saveProgression();
-    flashHint((explore ? 'Späher erkundet das Gebiet · ca. ' : 'Späher unterwegs zu ' + islandTitle(target) + ' · ca. ') + fmtClock(durationSec));
+    flashHint((explore ? 'Späher erkundet das Gebiet · ca. ' : 'Späher unterwegs zu ' + ortName(target) + ' · ca. ') + fmtClock(durationSec));
     renderActiveMarches();
 }
 
@@ -3678,13 +3678,27 @@ function schildDaten(island) {                                                 /
   const truppen = m.kind === 'ally' && islandTroops[island.id] !== undefined ? fmtCompact(islandTroops[island.id]) : m.troops;
   return { art: m.kind === 'player' || m.kind === 'ally' || m.kind === 'bot' ? m.kind : 'neutral', wer, stufe: anzeigeStufe(island.id), truppen };
 }
+// Rahmen als Ring ums Wappen (Merkliste 7): Saison- und Mitte-Rahmen als KI-Bild wie im Profil (Neuling trägt jeder: kein Ring)
+const RAHMEN_RING = { sz1: 'champion', sz2: 'grossadmiral', sz4: 'admiral', sz6: 'kapitaen', mgut: 'mitte' }, RING_BILD = {}, RING_WER = new Map();
+function ringBild(fr) {                                                        // geladenes Bild oder null (lädt beim ersten Mal)
+  const n = RAHMEN_RING[fr]; if (!n) return null;
+  if (!RING_BILD[fr]) { const im = RING_BILD[fr] = new Image(); im.onload = () => { SCHILD_MERK.clear(); requestRender(); }; im.src = 'bilder/ui_rahmen_' + n + '.webp'; }
+  return RING_BILD[fr].complete && RING_BILD[fr].naturalWidth ? RING_BILD[fr] : null;
+}
+function rahmenAufKarte(who) {                                                 // angelegter Rahmen des Besitzers (je 2 s gemerkt – jedes Bild fragt danach)
+  const now = Date.now(), m = RING_WER.get(who); if (m && now - m.t < 2000) return m.fr;
+  let fr = null; try { fr = who === 'player' ? playerFrame() : botLook(who).frame; } catch (e) {}
+  RING_WER.set(who, { fr, t: now }); return fr;
+}
 function schildBild(d, W, mitZahl) {                                           // das fertige Schild, W px breit (Leinwand × dpr)
-  const cr = d.wer ? crestFor(d.wer) : null, key = d.art + '|' + d.stufe + '|' + (mitZahl ? d.truppen : '') + '|' + (cr ? crestKeyOf(cr) : '') + '|' + W + '|' + dpr;
+  const cr = d.wer ? crestFor(d.wer) : null, ring = d.wer ? ringBild(rahmenAufKarte(d.wer)) : null;
+  const key = d.art + '|' + d.stufe + '|' + (mitZahl ? d.truppen : '') + '|' + (cr ? crestKeyOf(cr) : '') + '|' + (ring ? ring.src : '') + '|' + W + '|' + dpr;
   let c = SCHILD_MERK.get(key); if (c) return c;
   const H = W * 159 / 512, k = W / 512, farbe = SCHILD_FARBE[d.art];
   c = document.createElement('canvas'); c.width = Math.ceil(W * dpr); c.height = Math.ceil(H * dpr);
   const g = c.getContext('2d'); g.scale(dpr, dpr); g.drawImage(KB.img.schild, 0, 0, W, H);
   if (cr) drawCrest(g, 82 * k, 79 * k, 76 * k, cr);                           // im runden Feld
+  if (ring) g.drawImage(ring, 12 * k, 9 * k, 140 * k, 140 * k);                 // der Rahmen ums Wappen
   const x0 = 168 * k, x1 = 462 * k, ym = 79 * k, fs = Math.max(8, Math.min(14, Math.round(W * .1)));   // (klein: die Schrift passt in den Balken)   // der Balken innen
   g.textBaseline = 'middle'; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
   const lang = 'Stufe ' + d.stufe, t = mitZahl ? g.measureText(d.truppen).width + fs + 6 : 0;   // erst „Stufe 12“, wird es eng nur „12“
@@ -3804,11 +3818,11 @@ function bannerModel(island) {
   const tag = owner && typeof bundTagVon === 'function' ? bundTagVon(owner) : '';   // Bündnis-Kürzel: eigenes Chip vor dem Namen
   if (owner === 'player') {                                                       // eigene Basen: Name nur an der Hauptstadt (Farbe + Wappen reichen), dafür ohne Vorrang
     const cap = island.id === playerIslandId;
-    return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : cap ? 'castle' : 'crest:player:' + crestKey(),
+    return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : 'crest:player:' + crestKey(),
              name: cap ? 'Hauptstadt' : '', tag: '', cap, troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: cap || isTemple ? 4 : 3.5 };
   }
   if (owner) { const cap = botCapitalOf(owner) === island.id;
-    return { kind: bundFreund('player', owner) ? 'ally' : 'bot', glyph: isTemple ? 'temple' : cap ? 'castle' : 'crest:' + owner, name: botById[owner].name, tag, cap,
+    return { kind: bundFreund('player', owner) ? 'ally' : 'bot', glyph: isTemple ? 'temple' : 'crest:' + owner, name: botById[owner].name, tag, cap,
              troops: scouted ? fmtCompact(islandTroops[island.id] || 0) : '?', def: null, level, temple: isTemple, p: cap || isTemple ? 3.2 : 3 }; }
   if (island.type === 'gate') return { kind: 'neutral', glyph: 'lock', name: island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor',
            troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null, level, temple: false, p: 2.5 };
@@ -5568,6 +5582,7 @@ function playerTitle() { return rahmenVon('player', look.frame).title; }
 function renderLook() {                             // the profile header and its "Aussehen" line; choosing happens in the Aussehen sheet
     const fr = playerFrame();
     document.getElementById('pAvatarRing').dataset.frame = fr;
+    const hr = document.querySelector('#hudPlayer .avatar-ring'); if (hr) hr.dataset.frame = fr;   // HUD-Wappen: derselbe Ring
     document.getElementById('profileTitle').textContent = playerTitle();
     const cur = document.getElementById('lookNow');     // die eine Aussehen-Karte im Profil (Wappen + was du trägst)
     if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen</small>';
@@ -10749,14 +10764,18 @@ function fieldArrive(m, now) {
             gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx) };
     }
 }
+// Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Sammel-Rausch (+50 %) · Gebäude · Forschung Sammeln
+function fieldRateOf(f, o, gx) {
+    return f.cap / f.dauer * (1 + (gx ? gx.gSpd : 0) / 100) * (evThemaAktiv('sam') ? 1.5 : 1) * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1);
+}
 function fieldTick() {
     if (!rechnet()) return;
-    const now = Date.now(), dt = 1, sr = evThemaAktiv('sam') ? 1.5 : 1;   // Sammel-Rausch: 50 % schneller
+    const now = Date.now(), dt = 1;
     const due = fieldMarches.filter(m => m.resolveAt <= now);
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
     for (const f of resFields) {
         const st = fieldState[f.id]; if (!st || !st.occ) continue; if (st.left > f.cap) st.left = f.cap;
-        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100) * sr * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1), st.left, cap - o.got);   // (+ Forschung Sammeln)   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
+        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(fieldRateOf(f, o, gx) * dt, st.left, cap - o.got);
         o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
         if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
     }
@@ -10826,7 +10845,7 @@ function openFieldSheet(f) {
     liveHtml(document.getElementById('fieldSheet'),                   // (live: liveTick – neu geschrieben nur bei einer Änderung, die Uhren zählen von selbst)
         '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + uhrHtml(st.regenAt, 'clock') + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
-        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
+        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' + fieldFortschritt(f, st, K) +
         '<span>Tragen</span><b>' + (K.load >= 1 ? (K.load * (AUF ? AUF.traglast('player') : 1)).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' ' + K.what + ' pro Truppe' : '1 Edelstein pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
         (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
          src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
@@ -10836,6 +10855,15 @@ function openFieldSheet(f) {
          (heroSeg2Html('data-fhero2', fieldHero, fieldHero2) ? '<div class="seg hero-seg hero-seg2">' + heroSeg2Html('data-fhero2', fieldHero, fieldHero2) + '</div>' : '') +
          '<button class="btn btn--primary btn--sm" type="button" data-fsend>' + icon(o ? 'attack' : 'send') + '<span>' + (o ? 'Angreifen und übernehmen' : 'Sammeln') + ' · ' + fmtCompact(send) + ' von ' + islandTitle(islandById[src]) + '</span></button>'));
     document.getElementById('fieldSheet').hidden = false;
+}
+// wer sammelt: Restzeit bis voll beladen (oder Feld leer), Balken gesammelt/Traglast, Tempo pro Stunde
+function fieldFortschritt(f, st, K) {
+    const o = st.occ; if (!o) return '';
+    const gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), rate = fieldRateOf(f, o, gx), rest = Math.max(0, Math.min(cap - o.got, st.left)), q = Math.min(1, o.got / Math.max(1e-9, cap));
+    const proStd = rate * 3600, menge = v => K.load >= 1 ? fmtNum(Math.floor(v)) : v.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+    return '<span>Tempo</span><b>' + menge(proStd) + ' ' + K.what + ' / Std.</b>' +
+        '<span>' + (cap - o.got <= st.left ? 'Voll in' : 'Feld leer in') + '</span><b>' + (rate > 0 ? uhrHtml(Date.now() + rest / rate * 1000) : '–') + '</b>' +
+        '<span class="field-fort"><span class="ach-bar"><i style="width:' + Math.round(q * 100) + '%"></i></span><small>' + fmtNum(Math.floor(o.got)) + ' / ' + fmtNum(Math.floor(cap)) + ' ' + K.what + '</small></span>';
 }
 function closeFieldSheet() { document.getElementById('fieldSheet').hidden = true; fieldSheetId = null; }
 document.getElementById('fieldSheet').addEventListener('click', e => {
@@ -11849,8 +11877,8 @@ document.getElementById('eventBody').addEventListener('click', e => {
 // der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da → [Dringlichkeit, html] (0 = am dringendsten)
 function evChips(now) {
     const out = [], ip = evPlanVon('inv'), I = invAktiv(now), D = drAktiv(now), dp = evPlanVon('dr');
-    if (I) { const n = I.armies.filter(a => islandOwnerOf(a.tid) === 'player').length;
-        out.push([n ? 0 : 2, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : '<b>' + fmtNum(Math.floor(I.pts.player || 0)) + ' P.</b>') + '</button>']); }
+    if (I) { const n = I.armies.filter(a => islandOwnerOf(a.tid) === 'player').length, p = Math.floor(I.pts.player || 0);   // 0 Punkte: nichts zeigen
+        out.push([n ? 0 : 2, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : p > 0 ? '<b>' + fmtNum(p) + (p === 1 ? ' Punkt' : ' Punkte') + '</b>' : '') + '</button>']); }
     else if (ip.start > now && ip.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Barbaren-Invasion in</span><i data-ev-bis="' + ip.start + '"></i></button>']);
     if (D) out.push([2, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Drache</span><b>' + Math.ceil(D.hp / D.max * 100) + ' %</b><i data-ev-bis="' + D.end + '"></i></button>']);
     else if (dp.start > now && dp.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Der Drache kommt in</span><i data-ev-bis="' + dp.start + '"></i></button>']);
@@ -12725,6 +12753,12 @@ function islandTitle(island) {
     for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === island.id) return 'Hauptstadt von ' + bot.name;
     return 'Turm #' + (island.id + 1);
 }
+// Name für Spieler statt „Turm #N“: „Deine Basis“ / „Basis von …“ / „Neutrale Basis“ (+ Ort, wenn nicht ohneOrt)
+function ortName(island, ohneOrt) {
+    const t = islandTitle(island); if (!/^Turm #/.test(t)) return t;
+    const ow = islandOwnerOf(island.id), n = ow === 'player' ? 'Deine Basis' : ow ? 'Basis von ' + ((botById[ow] || {}).name || 'Unbekannt') : 'Neutrale Basis';
+    return ohneOrt ? n : n + ' · ' + coordText(island.x, island.y);
+}
 
 function gateControlsHtml(gate) {
     const cfg = gateSettings(gate);
@@ -12800,7 +12834,7 @@ function renderPopup() {
     if (owner && !isBoss) { popupEmblem.dataset.profile = owner; popupEmblem.setAttribute('role', 'button'); popupEmblem.title = 'Profil ansehen'; }   // das Viereck antippen → Profil (mit Bündnis)
     else { delete popupEmblem.dataset.profile; popupEmblem.removeAttribute('role'); popupEmblem.removeAttribute('title'); }
     popupLevel.textContent = anzeigeStufe(island.id);
-    popupTitle.textContent = islandTitle(island);
+    popupTitle.textContent = ortName(island, true);
     popupActions.hidden = true;
     document.getElementById('cityBtn').style.display = 'none';
     document.getElementById('teleportBtn').style.display = 'none';

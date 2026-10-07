@@ -56,6 +56,7 @@ function playerTitle() { return rahmenVon('player', look.frame).title; }
 function renderLook() {                             // the profile header and its "Aussehen" line; choosing happens in the Aussehen sheet
     const fr = playerFrame();
     document.getElementById('pAvatarRing').dataset.frame = fr;
+    const hr = document.querySelector('#hudPlayer .avatar-ring'); if (hr) hr.dataset.frame = fr;   // HUD-Wappen: derselbe Ring
     document.getElementById('profileTitle').textContent = playerTitle();
     const cur = document.getElementById('lookNow');     // die eine Aussehen-Karte im Profil (Wappen + was du trägst)
     if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen</small>';

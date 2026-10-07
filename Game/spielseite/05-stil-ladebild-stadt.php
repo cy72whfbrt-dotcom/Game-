@@ -70,7 +70,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cb-buy.is-armed{border-style:solid;border-color:var(--gold-300);background:color-mix(in srgb,var(--gold-300) 22%,rgba(10,10,14,.8))}
 .city-sheet{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;padding:14px 14px calc(var(--safe-b) + 14px);
   background:var(--noise),var(--panel-bg);border:1px solid var(--line-2);border-bottom:0;border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:var(--sh-3);
-  display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out);max-height:calc(100% - 90px);overflow-y:auto;overscroll-behavior:contain}
+  display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out);max-height:calc(100% - 90px);overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain}
+.city-sheet > *{min-width:0;max-width:100%}   /* nur senkrecht scrollen: nichts darf breiter sein als das Fenster */
 .city-sheet[hidden]{display:none}
 .city-sheet-head{display:flex;align-items:center;gap:12px}
 .city-bicon{width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-3);
