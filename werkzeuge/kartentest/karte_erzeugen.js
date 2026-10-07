@@ -104,7 +104,8 @@ const grenzen = linien.map((l, id) => {
 const paare = new Map();                                // "a,b" → Grenzen
 for (const g of grenzen) if (g.b !== -1) { const k = g.a + ',' + g.b; (paare.get(k) || paare.set(k, []).get(k)).push(g); }
 const RAND_FREI = 60000;                              // Pässe nie am Kartenrand
-const TOR_GERADE = 20000, TOR_WEICH = 34000, TOR_ABSTAND = 50000;
+const TOR_GERADE = 28000, TOR_WEICH = 34000,   // (gerade ±TOR_GERADE längs der alten Linie – gerade gezogen bleibt davon gut ±20.000)
+      TOR_ABSTAND = 50000;
 const paesse = [];
 function passSetzen(a, b, stufe) {
   const gs = paare.get(Math.min(a, b) + ',' + Math.max(a, b)); if (!gs) return false;
@@ -122,8 +123,7 @@ function passSetzen(a, b, stufe) {
   if (!best) return false;
   // Grenze am Pass gerade ziehen: ±TOR_GERADE genau waagrecht/senkrecht, weich zurück in den Schwung
   const g = best.g, s = laengen(g.punkte);
-  g.punkte = g.punkte.map((q, i) => { if (Math.abs(s[i] - best.d) > 2 * (TOR_GERADE + TOR_WEICH) || i === 0 || i === g.punkte.length - 1) return q;   // (die Knoten an den Enden bleiben: dort stoßen andere Grenzen an)   // (Abstand längs der Tor-Richtung: so bleibt das gerade Stück wirklich ±TOR_GERADE lang)
-    const u = best.senk ? Math.abs(q[1] - best.y) : Math.abs(q[0] - best.x); if (u >= TOR_GERADE + TOR_WEICH) return q;
+  g.punkte = g.punkte.map((q, i) => { const u = Math.abs(s[i] - best.d); if (u >= TOR_GERADE + TOR_WEICH || i === 0 || i === g.punkte.length - 1) return q;   // (die Knoten an den Enden bleiben: dort stoßen andere Grenzen an)
     const w = u <= TOR_GERADE ? 1 : 1 - (u - TOR_GERADE) / TOR_WEICH, k = w * w * (3 - 2 * w);
     return best.senk ? [q[0] + (best.x - q[0]) * k, q[1]] : [q[0], q[1] + (best.y - q[1]) * k]; });
   paesse.push({ id: paesse.length, a: g.a, b: g.b, grenze: g.id, x: Math.round(best.x), y: Math.round(best.y), senk: best.senk, stufe });
@@ -148,7 +148,7 @@ for (let g = 0; g < GEBIETE; g++) for (const n of nachbarn(g).sort((x, y) => Mat
 // 5) Gebiete als Ringe aus ihren Grenzen
 const rund = p => [Math.round(p[0]), Math.round(p[1])];
 for (const g of grenzen) g.punkte = g.punkte.map(rund);
-const gebiete = [];
+const gebiete = [], umrisse = [];                     // (umrisse: nur hier zum Nachschlagen, im Spiel baut 01b sie aus den Grenzen)
 for (let id = 0; id < GEBIETE; id++) {
   const teile = grenzen.filter(g => g.a === id || g.b === id).map(g => ({ id: g.id, pts: g.punkte }));
   const ring = [], rand = [], gleich = (p, q) => Math.abs(p[0] - q[0]) < 2 && Math.abs(p[1] - q[1]) < 2;
@@ -161,6 +161,7 @@ for (let id = 0; id < GEBIETE; id++) {
   }
   const z = zoneVon(id);
   gebiete.push({ id, zone: z, name: z === MITTE ? 'Mitte' : String(z), boden: ['', 'aussen', 'mitte', 'sand', 'mitte', 'innen'][z], rand });
+  umrisse[id] = ring;
 }
 
 // 6) Tempel: in jedem Zone-4-Gebiet einer, an der Stelle am weitesten weg von allen Grenzen (Raster-Abstand), nicht nah an Pässen;
@@ -191,7 +192,8 @@ const streu = (() => { let x = 20251007; return () => (x = (x * 48271) % 2147483
 const grenzPunkte = new Map(), GZ = 20000;
 for (const g of grenzen) if (g.b !== -1) for (const q of g.punkte) { const k = Math.floor(q[0] / GZ) + ',' + Math.floor(q[1] / GZ); (grenzPunkte.get(k) || grenzPunkte.set(k, []).get(k)).push(q); }
 const grenzAbst = (x, y) => { let m = Infinity; for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) for (const q of grenzPunkte.get((Math.floor(x / GZ) + i) + ',' + (Math.floor(y / GZ) + j)) || []) m = Math.min(m, Math.hypot(q[0] - x, q[1] - y)); return m; };
-const gebietBei = (x, y) => L[Math.min(N - 1, Math.floor((y + H) / ZELLE)) * N + Math.min(N - 1, Math.floor((x + H) / ZELLE))];
+const imUmriss = (x, y, P) => { let c = false; for (let i = 0, j = P.length - 1; i < P.length; j = i++) if ((P[i][1] > y) !== (P[j][1] > y) && x < (P[j][0] - P[i][0]) * (y - P[i][1]) / (P[j][1] - P[i][1]) + P[i][0]) c = !c; return c; };
+const gebietBei = (x, y) => umrisse.findIndex(P => imUmriss(x, y, P));   // (das geglättete Gebiet, nicht das Raster)
 const alle = [];                                      // alles Gestreute: [x, y, Mindestabstand zu anderen]
 const frei = (x, y, eigen, liste) => Math.max(Math.abs(x), Math.abs(y)) < H - 45000 && grenzAbst(x, y) > 26000
   && !paesse.some(p => Math.hypot(p.x - x, p.y - y) < 45000) && !tempel.some(t => Math.hypot(t.x - x, t.y - y) < 50000)
