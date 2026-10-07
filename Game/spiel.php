@@ -366,7 +366,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 /* Pass-Leiste (7.10.): waagrecht wischen, je Stufe eine Spalte (oben Premium, Mitte Stufe, unten Frei), Belohnungs-Kacheln wie überall */
 .pl{--plz:86px;position:relative;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;padding:2px 2px 10px;scrollbar-width:thin}
 .pl-namen{position:sticky;left:0;z-index:3;flex:none;width:20px;display:grid;grid-template-rows:var(--plz) 30px var(--plz);gap:6px;background:linear-gradient(90deg,#11141b 75%,transparent)}
-.pl-namen span{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;gap:4px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
+.pl-namen span{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:flex-end;padding-bottom:4px;gap:4px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
 .pl-namen span.is-p{color:#8ff5e6} .pl-namen .icon{width:11px;height:11px;transform:rotate(90deg)}
 .pl-spalte{position:relative;flex:none;width:70px;display:grid;grid-template-rows:var(--plz) 30px var(--plz);gap:6px}
 .pl-spalte::before{content:"";position:absolute;left:-4px;right:0;top:calc(var(--plz) + 19px);height:4px;background:rgba(255,255,255,.08);z-index:0}
@@ -543,6 +543,7 @@ body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96
 .overline{font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .overline b{color:var(--gold-200);font-weight:600}
 .ptitle{display:block;margin:3px 0 2px;font:600 var(--fs-17)/1.15 var(--font-display);letter-spacing:var(--track-display);color:var(--gold-100);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptitle:not(.ptitle--input){white-space:normal;overflow-wrap:break-word}   /* langer Titel („Hauptstadt von Yusuf_T“) bricht in die 2. Zeile statt „…“ */
 .ptitle--input{width:100%;min-width:0;padding:1px 4px;margin-left:-4px;background:transparent;border:1px solid transparent;border-radius:var(--r-xs);outline:none}
 .ptitle--input:hover{border-color:var(--line-1)}
 .ptitle--input:focus{border-color:var(--line-3);background:rgba(0,0,0,.25);box-shadow:none}
@@ -855,7 +856,7 @@ body.has-panel .mapctl{display:none}
 .logRow .li{width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r-xs);background:rgba(255,255,255,.03);border:1px solid var(--line-1)}
 .logRow .li .icon{width:16px;height:16px;color:var(--lc)}
 .logRow .lt{min-width:0}
-.logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);overflow-wrap:break-word}   /* Abzeichen + Ort: lieber 2 Zeilen als „Hauptstadt von Yusu…“ */
 .logRow .lt small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:normal;overflow:hidden;overflow-wrap:anywhere}
 .logRow .lt small.logOrt{display:flex;align-items:center;gap:8px;-webkit-line-clamp:unset;font-variant-numeric:tabular-nums}
 .logRow .lt small.logOrt .btn{min-height:22px;padding:0 8px;font-size:10px}
@@ -1058,6 +1059,13 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .kl-seite .logCompare{grid-template-columns:minmax(0,1fr)!important;gap:4px}
 .kl-seite .logVsDivider{display:flex;align-items:center;gap:8px}
 .kl-seite .logVsDivider::before,.kl-seite .logVsDivider::after{content:"";flex:1;height:1px;background:var(--line-1)}
+/* Desktop: Kampfdetails als Fenster wie die anderen (Rahmen ui_rahmen, oben unter dem HUD wie die Seitenfenster, endet im Bild) – der Inhalt rollt im Fenster */
+@media (min-width:760px){
+  .kl-seite{background:rgba(5,6,8,.62);padding:0;overflow:hidden}
+  .kl-seite > .kl-fenster{position:absolute;top:72px;left:50%;transform:translateX(-50%);width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 86px);display:flex;flex-direction:column;
+    padding:14px 18px 16px;border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);box-shadow:0 18px 50px #000c}
+  .kl-seite > .kl-fenster > #klInhalt{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
+}
 .kl-leer{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:8px;border:1.5px dashed var(--line-2);color:var(--tx-3);font:600 18px var(--font-display)}
 .kl-keinheld b{color:var(--tx-2)}
 .kl-rss{border-top:1px solid var(--line-1);margin-top:8px;padding-top:6px}
@@ -1995,7 +2003,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 .roh-blase{position:fixed;z-index:var(--z-toast);display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;max-width:240px;padding:6px 10px;
   font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1);border-style:solid;border-width:0;border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch}
 .roh-blase .icon{width:16px;height:16px} .roh-blase small{flex:1 1 100%;color:var(--gold-200);font-size:var(--fs-11)}
-@media (min-width:900px) and (min-height:501px){ .hud-werte{flex:0 1 640px} .hud-werte .res{padding-left:24px} .hud-werte .res b{font-size:13px} }
+@media (min-width:900px) and (min-height:501px){ .hud-werte{flex:0 1 640px} .hud-werte .res{flex:0 0 84px;min-width:84px;padding-left:24px} .hud-werte .res b{font-size:13px;min-width:0;text-align:center} }   /* Desktop: gleich breite Kapseln (fmtHud ≤ 5 Zeichen), jede Zahl mittig (vorher 6,2em-Feld: Münzen links, Holz mittig) */
 /* Event-Streifen: rotes Band statt lila Verlauf */
 .mb-chip.is-tour{background:none;border-color:transparent;border-style:solid;border-width:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;
   padding:0 18px 0 16px;border-image:url(bilder/ui_band_rot.webp) 22 70 22 70 fill / 7px 22px 7px 22px stretch;color:#fff3e6}
@@ -2057,6 +2065,11 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 /* der Rahmen ist der eigene Rand jedes Fensters (nicht ein darübergelegtes ::before): immer sichtbar, egal welcher Reiter und wie geöffnet; der Inhalt liegt nie darunter */
 .panel{border:solid transparent;border-width:12px 12px 8px;border-image:url(bilder/ui_rahmen.webp) 44 / 12px 12px 8px stretch;background-clip:border-box}
 .panel::before{content:none} .panel .sheet-grab{display:none}   /* kein grauer Griff – der Rahmen ist überall gleich */
+/* Fenster-Inhalt rollt weiter: unten läuft er weich aus (Hinweis „da kommt noch mehr“) statt hart am Rahmen abgeschnitten – am Ende keine Blende */
+@property --pb-blende{syntax:"<length>";inherits:false;initial-value:0px}
+.panel > .pbody{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - var(--pb-blende)),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - var(--pb-blende)),transparent)}
+@keyframes pb-blende{0%,94%{--pb-blende:30px} 100%{--pb-blende:0px}}
+@supports (animation-timeline:scroll()){ .panel > .pbody{animation:pb-blende linear both;animation-timeline:scroll(self)} }
 .hh::before{border:16px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch}
 .ki-fenster,.marker-sheet{border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);border-radius:0}
 .marker-sheet{padding:16px}

@@ -32,10 +32,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return { spalten: sp.length, kacheln: pl ? pl.querySelectorAll('.pl-zelle .bk').length : 0, breit: pl ? pl.scrollWidth > pl.clientWidth * 5 : false, links: pl ? Math.round(pl.scrollLeft) : -1,
       bereit: document.querySelectorAll('#passPane .pl-zelle.is-ready').length, zu: document.querySelectorAll('#passPane .pl-zelle.is-p.is-closed').length,
       seite: document.documentElement.scrollWidth <= window.innerWidth + 1, oben: sp[0] ? sp[0].firstElementChild.classList.contains('is-p') : false,
-      namen: pl ? getComputedStyle(pl.querySelector('.pl-namen')).position : '' }; });
+      namen: pl ? getComputedStyle(pl.querySelector('.pl-namen')).position : '',
+      frei: (() => { const sp = pl && pl.querySelector('.pl-namen span:last-child'), t = sp && [...sp.childNodes].find(n => n.nodeType === 3); if (!t) return null; const r = document.createRange(); r.selectNodeContents(t);
+        return Math.round(r.getBoundingClientRect().top - sp.getBoundingClientRect().top); })() }; });
   ok(l.spalten === 100 && l.kacheln >= 200 && l.breit, 'Leiste: 100 Spalten mit Belohnungs-Kacheln, waagrecht zum Wischen', l);
   ok(l.links > 0 && l.bereit === 12 && l.zu === 100 && l.oben && l.namen === 'sticky', 'Leiste: steht bei der nächsten Stufe, 12 bereit, Premium oben (gesperrt), Namen bleiben links', l);
   ok(l.seite, 'keine waagrechte Seiten-Verschiebung', l.seite);
+  ok(l.frei !== null && l.frei <= 12, 'Leiste: „Frei“ steht oben in der Reihe – schon lesbar, wenn das Fenster die Reihe unten anschneidet (vorher „EI“)', l.frei);
   if (process.argv[3]) { await ev(() => { const pb = goalsPopup.querySelector('.pbody'), pl = document.querySelector('#passPane .pl'); pb.scrollTop += pl.getBoundingClientRect().top - pb.getBoundingClientRect().top - 120; });
     await p.waitForTimeout(300); await p.screenshot({ path: require('path').join(process.argv[3], 'pass_leiste.png') }); }
   // 3) Abholen: Truppen (Stufe 2) in die Hauptstadt, Münzen (Stufe 1)
