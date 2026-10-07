@@ -175,7 +175,7 @@ function resolveScout(scout) {
     if (ow && !vomWr && typeof verst !== 'undefined') eintrag.verst = verst.l.reduce((s, v) => s + (v.t === target.id ? v.n : 0), 0);   // Verstärkung (Botschaft): eigene Zeile im Bericht
     if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = Date.now();   // (wartet: der Bericht vom Weltrechner kommt gleich – sonst nach 10 Min. „kein Bericht“)
     addCombatLogEntry(eintrag); spaehWerteMem = null;
-    flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
+    flashHint(ortName(target, true) + ' gespäht – Bericht unter „Kampf“.', 3000);   // (Name wie im Fenster; die Zahlen stehen im Bericht, nicht im Hinweis)
 }
 
 function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee || 0 : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away (gemeinsam: rallyFlucht, jeder mit seinem)

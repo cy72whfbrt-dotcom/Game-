@@ -348,7 +348,7 @@ function renderCombatLog() {
     }).join('');
     [...combatLogListEl.children].forEach((row, i) => { const e = combatLog[i]; if (!e) return; row.dataset.key = combatLogKey(e);
         const isl = islandById[e.targetId ?? e.toId], lt = row.querySelector(':scope > .lt'); if (!isl || !lt) return;   // wo war das? Koordinaten + „Zeigen“ auf der Karte
-        lt.insertAdjacentHTML('beforeend', '<small class="logOrt">' + coordText(isl.x, isl.y) + ' <button type="button" class="btn btn--ghost btn--sm" data-logzeigen="' + isl.id + '">Zeigen</button>' + (typeof bundTeilenKnopf === 'function' ? bundTeilenKnopf(e) : '') + '</small>'); });   // (+ im Bündnis teilen)
+        lt.insertAdjacentHTML('beforeend', '<small class="logOrt">' + coordText(isl.x, isl.y) + ' <button type="button" class="btn btn--secondary btn--sm" data-logzeigen="' + isl.id + '">Zeigen</button>' + (typeof bundTeilenKnopf === 'function' ? bundTeilenKnopf(e) : '') + '</small>'); });   // (+ im Bündnis teilen)
     try { kampflogUmbauen(); } catch (err) { console.warn('Kampfbericht', err); }   // neuer Aufbau: ein Fenster je Spieler
 }
 

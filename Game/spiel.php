@@ -461,7 +461,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 @media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important} }
 .anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
 .anleitung-ok{grid-column:1/-1;justify-self:end}
-body.has-sheet .anleitung{display:none}
+body.has-sheet .anleitung:not(.is-events){display:none}   /* (Schritt 6 „Abholen“ bleibt im Events-Fenster sichtbar: 06b) */
 body:has(#feldRing:not([hidden])) .anleitung{display:none}   /* (Feld-Menü auf der Karte offen: Anleitung kurz weg) */
 /* Anleitung: der nächste nötige Knopf pulsiert (06b anleitungZeigen setzt body[data-anl-puls]) */
 @keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
@@ -1710,6 +1710,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .forge-row b{display:block;font:700 var(--fs-13)/1.2 var(--font-ui)}
 .forge-row small{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--gold-200);letter-spacing:.08em}
 .forge-row em{font:600 var(--fs-11)/1 var(--font-ui);font-style:normal;color:var(--tx-3)}
+.heal-row{flex-wrap:wrap} .heal-row > span{min-width:max-content} .heal-row small{white-space:nowrap} .heal-row .btn{margin-left:auto;max-width:100%}   /* Handy: „1.000 / 1.422“ in einer Zeile, der Knopf darf darunter */
 .forge-row.is-empty{color:var(--tx-3);font:500 var(--fs-12)/1.3 var(--font-ui)}
 .tile .stars{position:absolute;left:4px;right:24px;bottom:3px;display:flex;justify-content:flex-start;gap:0;color:#ffd76a;overflow:hidden}
 .tile .stars .icon{width:9px;height:9px;filter:drop-shadow(0 0 1px #000)}
@@ -1807,7 +1808,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .bd-tag::placeholder{text-transform:none;letter-spacing:normal}
 #bdZeichen{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;justify-items:center} #bdZeichen button{width:100%;max-width:44px;height:auto;aspect-ratio:1}
 #bdFarben{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-items:center} #bdFarben button{width:34px;height:34px}
-.bd-gf-los{width:100%;min-height:48px;gap:8px} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}
+.bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
 /* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
 /* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen und Wirkung zuerst, Schild-Kasten unten */
 .city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}

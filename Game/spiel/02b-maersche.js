@@ -72,7 +72,7 @@ function addCombatLogEntry(entry) {
         for (let i = combatLog.length - 1; i >= 0; i--) if (gleich(combatLog[i])) combatLog.splice(i, 1);
     }
     entry.names = {};                                // names as they were then (a boss may camp there later)
-    for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = islandTitle(islandById[entry[k]]);
+    for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = entry.type === 'scout' && k === 'targetId' ? ortName(islandById[entry[k]], true) : islandTitle(islandById[entry[k]]);   // (Spähbericht: „Neutrale Basis“ wie im Fenster)
     let pos = 0; while (pos < combatLog.length && (combatLog[pos].at || 0) > entry.at) pos++;   // neueste zuerst, auch wenn Berichte spät ankommen
     combatLog.splice(pos, 0, entry);
     if (entry.type === 'ausgespaeht') {               // zu viele Späher-Meldungen: die ältesten dieser Art raus

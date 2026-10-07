@@ -428,7 +428,7 @@ let pendingSendFromId = null;
 
 const hintEl = document.getElementById('hint');
 const defaultHint = hintEl.textContent;
-let hintResetTimer = null;
+let hintResetTimer = null; var hintAm = 0;            // hintAm: wann der letzte Hinweis kam
 var splashQueue, splashFinished;   // no initialisers: afterSplash() already runs earlier in the script (hoisting)
 function afterSplash(fn) { if (splashFinished || SYSTEM) { if (!SYSTEM) fn(); return; }   // (Weltrechner: kein Ladebildschirm – Hinweise braucht er nicht)
      else (splashQueue || (splashQueue = [])).push(fn); }
@@ -439,9 +439,10 @@ function hintFrei() {                           // Desktop: liegt der Hinweis ü
     const r = hintEl.getBoundingClientRect();
     if ([...document.querySelectorAll('.panel.is-open')].some(p => { const q = p.getBoundingClientRect(); return q.width > 0 && r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top; })) hintEl.classList.add('toast--oben');
 }
+function hintFrisch() { return !!hintEl.textContent && hintEl.textContent !== defaultHint && Date.now() - hintAm < 2500; }   // ein Hinweis steht erst kurz: nichts drüberschreiben
 function flashHint(text, ms, lang) {                // lang: langer Hinweis – ganz lesbar (kein „…“), am Handy nicht über einem offenen Fenster
     clearTimeout(hintResetTimer);
     hintEl.classList.toggle('toast--lang', !!lang);
-    hintEl.textContent = text; hintFrei();
+    hintEl.textContent = text; hintFrei(); hintAm = Date.now();
     if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; hintEl.classList.remove('toast--lang'); }, ms);
 }

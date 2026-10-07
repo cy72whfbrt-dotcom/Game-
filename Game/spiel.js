@@ -1706,7 +1706,7 @@ function addCombatLogEntry(entry) {
         for (let i = combatLog.length - 1; i >= 0; i--) if (gleich(combatLog[i])) combatLog.splice(i, 1);
     }
     entry.names = {};                                // names as they were then (a boss may camp there later)
-    for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = islandTitle(islandById[entry[k]]);
+    for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = entry.type === 'scout' && k === 'targetId' ? ortName(islandById[entry[k]], true) : islandTitle(islandById[entry[k]]);   // (Spähbericht: „Neutrale Basis“ wie im Fenster)
     let pos = 0; while (pos < combatLog.length && (combatLog[pos].at || 0) > entry.at) pos++;   // neueste zuerst, auch wenn Berichte spät ankommen
     combatLog.splice(pos, 0, entry);
     if (entry.type === 'ausgespaeht') {               // zu viele Späher-Meldungen: die ältesten dieser Art raus
@@ -2185,7 +2185,7 @@ function resolveScout(scout) {
     if (ow && !vomWr && typeof verst !== 'undefined') eintrag.verst = verst.l.reduce((s, v) => s + (v.t === target.id ? v.n : 0), 0);   // Verstärkung (Botschaft): eigene Zeile im Bericht
     if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = Date.now();   // (wartet: der Bericht vom Weltrechner kommt gleich – sonst nach 10 Min. „kein Bericht“)
     addCombatLogEntry(eintrag); spaehWerteMem = null;
-    flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
+    flashHint(ortName(target, true) + ' gespäht – Bericht unter „Kampf“.', 3000);   // (Name wie im Fenster; die Zahlen stehen im Bericht, nicht im Hinweis)
 }
 
 function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee || 0 : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away (gemeinsam: rallyFlucht, jeder mit seinem)
@@ -5895,7 +5895,7 @@ function achCheck() {                                                        // 
     if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
     const ready = achClaimable();
     if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-    if (!achFensterOffen()) for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg: ' + a.name + ' – ' + a.gems + ' Edelsteine unter „Events“', 4500); sfx('crown'); }
+    if (!achFensterOffen() && !hintFrisch()) for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg: ' + a.name + ' – ' + a.gems + ' Edelsteine unter „Events“', 4500); sfx('crown'); }   // (frischer Hinweis wie „Truppen geheilt“: der Erfolg kommt eine Runde später)
     updateGoalsBadge(ready.length);
     if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
 }
@@ -6473,7 +6473,7 @@ function renderCombatLog() {
     }).join('');
     [...combatLogListEl.children].forEach((row, i) => { const e = combatLog[i]; if (!e) return; row.dataset.key = combatLogKey(e);
         const isl = islandById[e.targetId ?? e.toId], lt = row.querySelector(':scope > .lt'); if (!isl || !lt) return;   // wo war das? Koordinaten + „Zeigen“ auf der Karte
-        lt.insertAdjacentHTML('beforeend', '<small class="logOrt">' + coordText(isl.x, isl.y) + ' <button type="button" class="btn btn--ghost btn--sm" data-logzeigen="' + isl.id + '">Zeigen</button>' + (typeof bundTeilenKnopf === 'function' ? bundTeilenKnopf(e) : '') + '</small>'); });   // (+ im Bündnis teilen)
+        lt.insertAdjacentHTML('beforeend', '<small class="logOrt">' + coordText(isl.x, isl.y) + ' <button type="button" class="btn btn--secondary btn--sm" data-logzeigen="' + isl.id + '">Zeigen</button>' + (typeof bundTeilenKnopf === 'function' ? bundTeilenKnopf(e) : '') + '</small>'); });   // (+ im Bündnis teilen)
     try { kampflogUmbauen(); } catch (err) { console.warn('Kampfbericht', err); }   // neuer Aufbau: ein Fenster je Spieler
 }
 
@@ -7376,9 +7376,15 @@ function anleitungZeigen() {
     setText(document.getElementById('anleitungText'), anleitungFrage ? 'Anleitung wirklich überspringen? Unter Profil → Einstellungen kannst du sie jederzeit noch mal starten.' : txt || s.t);
     el.classList.toggle('is-frage', anleitungFrage); el.classList.toggle('is-ok', !anleitungFrage && !!s.ok);
     document.getElementById('anleitungFrage').hidden = !anleitungFrage; document.getElementById('anleitungOk').hidden = anleitungFrage || !s.ok; document.getElementById('anleitungWeg').hidden = anleitungFrage;
+    el.classList.toggle('is-events', anleitung.schritt === 5 && isPanelOpen(goalsPopup));   // Schritt 6 gilt im Events-Fenster: dort sichtbar bleiben (sonst blendet ein großes Fenster sie aus)
     const fenster = [...document.querySelectorAll('.panel.is-open, .marker-sheet:not([hidden]), #heroHall:not([hidden])')].map(f => f.getBoundingClientRect()).filter(r => r.height > 0).sort((x, y) => x.top - y.top)[0];
-    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
-    el.style.visibility = fenster && fenster.top < 150 ? 'hidden' : '';                  // kein Platz über dem Fenster: lieber gar nicht als auf den Knöpfen
+    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : ''; el.style.right = '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
+    const oben = Math.max(0, document.getElementById('hud').getBoundingClientRect().bottom), ctl = document.getElementById('mapControls').getBoundingClientRect();
+    let sicht = !fenster || fenster.top - 10 - el.offsetHeight >= oben;
+    if (!sicht && fenster.left - el.getBoundingClientRect().left >= 330) {                // Desktop: Fenster rechts – links daneben unten, vor den Kartenknöpfen
+        el.style.bottom = ''; el.style.right = Math.round(innerWidth - Math.min(fenster.left, ctl.width ? ctl.left : fenster.left) + 10) + 'px'; sicht = true;
+    }
+    el.style.visibility = sicht ? '' : 'hidden';                                          // kein Platz über oder neben dem Fenster: lieber gar nicht als auf den Knöpfen
 }
 function anleitungStarten() { anleitungZeigen(); if (!anleitungUhr && anleitung.schritt < ANLEITUNG.length) anleitungUhr = setInterval(anleitungZeigen, 1000); }
 document.getElementById('anleitungWeg').addEventListener('click', () => { anleitungFrage = true; anleitungZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
@@ -8074,7 +8080,7 @@ let pendingSendFromId = null;
 
 const hintEl = document.getElementById('hint');
 const defaultHint = hintEl.textContent;
-let hintResetTimer = null;
+let hintResetTimer = null; var hintAm = 0;            // hintAm: wann der letzte Hinweis kam
 var splashQueue, splashFinished;   // no initialisers: afterSplash() already runs earlier in the script (hoisting)
 function afterSplash(fn) { if (splashFinished || SYSTEM) { if (!SYSTEM) fn(); return; }   // (Weltrechner: kein Ladebildschirm – Hinweise braucht er nicht)
      else (splashQueue || (splashQueue = [])).push(fn); }
@@ -8085,10 +8091,11 @@ function hintFrei() {                           // Desktop: liegt der Hinweis ü
     const r = hintEl.getBoundingClientRect();
     if ([...document.querySelectorAll('.panel.is-open')].some(p => { const q = p.getBoundingClientRect(); return q.width > 0 && r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top; })) hintEl.classList.add('toast--oben');
 }
+function hintFrisch() { return !!hintEl.textContent && hintEl.textContent !== defaultHint && Date.now() - hintAm < 2500; }   // ein Hinweis steht erst kurz: nichts drüberschreiben
 function flashHint(text, ms, lang) {                // lang: langer Hinweis – ganz lesbar (kein „…“), am Handy nicht über einem offenen Fenster
     clearTimeout(hintResetTimer);
     hintEl.classList.toggle('toast--lang', !!lang);
-    hintEl.textContent = text; hintFrei();
+    hintEl.textContent = text; hintFrei(); hintAm = Date.now();
     if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; hintEl.classList.remove('toast--lang'); }, ms);
 }
 // ===== FOG + PASSES (drawing) =====
@@ -9857,8 +9864,8 @@ function cityExtraHtml(id, lvl) {
     }
     if (id === 'hospital' && lvl) {
         const w = loadCity().wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
-        return '<div class="forge-list"><div class="forge-row">' + icon('plus') + '<span><b>Verwundete</b><small>' + fmtNum(w) + ' / ' + fmtCompact(hospitalCapacity()) + '</small></span>' +
-            (w > 0 ? '<button type="button" class="btn btn--primary btn--sm" data-heal' + (coins < cost ? ' disabled' : '') + '>Heilen · ' + fmtCompact(cost) + ' Münzen</button>' : '<em>leer</em>') + '</div></div>';
+        return '<div class="forge-list"><div class="forge-row heal-row">' + icon('plus') + '<span><b>Verwundete</b><small>' + fmtNum(w) + ' / ' + fmtCompact(hospitalCapacity()) + '</small></span>' +
+            (w > 0 ? '<button type="button" class="btn btn--primary btn--sm" data-heal' + (coins < cost ? ' disabled>Fehlt: ' + fmtCompact(Math.ceil(cost - coins)) : '>Heilen · ' + fmtCompact(cost)) + ' Münzen</button>' : '<em>leer</em>') + '</div></div>';   // (zu wenig: wie viel fehlt – wie beim Bauen)
     }
     return '';
 }
@@ -10591,7 +10598,7 @@ function openFieldSheet(f) {
         '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' + fieldFortschritt(f, st, K) +
         '<span>Tragen</span><b>' + (K.load >= 1 ? (K.load * (AUF ? AUF.traglast('player') : 1)).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' ' + K.what + ' pro Truppe' : '1 Edelstein pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
         (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
-         src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
+         src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher – wähle ein Feld näher an deinen Basen.</span></div>' :
          o && ownerShielded(o.who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + fieldWhoName(o.who) + ' steht unter einem Friedensschild (noch ' + uhrHtml(ownerShieldUntil(o.who)) + ') – die Sammler dort kann niemand angreifen.</span></div>' :
          '<div class="seg" data-fshare>' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === fieldShare ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div>' +
          (heroSegHtml('data-fhero', fieldHero) ? '<div class="seg hero-seg">' + heroSegHtml('data-fhero', fieldHero) + '</div>' : '') +
@@ -10970,7 +10977,7 @@ function barbSheetHtml() {
             '<span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b></div>' +
             (!open ? '<div class="notice">' + icon('lock') + '<span>Erst ein Lager der Stufe ' + (c.L - 1) + ' besiegen – dann ist Stufe ' + c.L + ' dran.</span></div>' :
              left <= 0 ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Für heute genug: ' + barbTagMax() + ' / ' + barbTagMax() + ' heute. Neue Lager in ' + mid + '.</span></div>' :
-             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
+             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher – wähle ein Lager näher an deinen Basen.</span></div>' :
              barbAttackHtml(islandTroops[src] || 0, need, src, 'Angreifen'));
     }
     const K = dbossKind(b), rk = dbossRanks(b), mine = rk.findIndex(e => e[0] === 'player'), dead = b.hp <= 0;

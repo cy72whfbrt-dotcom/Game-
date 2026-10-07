@@ -6,7 +6,8 @@ const bundPopup = document.getElementById('bundPopup'), bundBody = document.getE
 let bundGruendenAuf = false;   // ohne Bündnis: Startseite (Beitreten), das Gründen-Formular erst nach „Eigenes Bündnis gründen“
 let bundTab = 'info', bundWahl = null, bundSicher = {}, bundTauschFuer = null;   // bundTauschFuer: Bewerber, für den der Anführer gerade jemanden zum Tauschen wählt        // bundWahl: offene Auswahl (Rally starten / mitmachen / Hilfe senden)
 function bundBefehl(op, d, hint) {
-    if (!window.WELT || SYSTEM) return false;
+    if (SYSTEM) return false;
+    if (!window.WELT) { flashHint('Keine Verbindung zur Welt – bitte gleich noch einmal.', 3500); return false; }   // (sonst täte der Knopf still nichts)
     WELT.befehl('bund', Object.assign({ op }, d || {})); if (hint) flashHint(hint, 2500); return true;
 }
 function bundIch() { return bundVon('player'); }

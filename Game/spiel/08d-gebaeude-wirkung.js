@@ -57,8 +57,8 @@ function cityExtraHtml(id, lvl) {
     }
     if (id === 'hospital' && lvl) {
         const w = loadCity().wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
-        return '<div class="forge-list"><div class="forge-row">' + icon('plus') + '<span><b>Verwundete</b><small>' + fmtNum(w) + ' / ' + fmtCompact(hospitalCapacity()) + '</small></span>' +
-            (w > 0 ? '<button type="button" class="btn btn--primary btn--sm" data-heal' + (coins < cost ? ' disabled' : '') + '>Heilen · ' + fmtCompact(cost) + ' Münzen</button>' : '<em>leer</em>') + '</div></div>';
+        return '<div class="forge-list"><div class="forge-row heal-row">' + icon('plus') + '<span><b>Verwundete</b><small>' + fmtNum(w) + ' / ' + fmtCompact(hospitalCapacity()) + '</small></span>' +
+            (w > 0 ? '<button type="button" class="btn btn--primary btn--sm" data-heal' + (coins < cost ? ' disabled>Fehlt: ' + fmtCompact(Math.ceil(cost - coins)) : '>Heilen · ' + fmtCompact(cost)) + ' Münzen</button>' : '<em>leer</em>') + '</div></div>';   // (zu wenig: wie viel fehlt – wie beim Bauen)
     }
     return '';
 }

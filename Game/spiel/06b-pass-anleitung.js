@@ -202,9 +202,15 @@ function anleitungZeigen() {
     setText(document.getElementById('anleitungText'), anleitungFrage ? 'Anleitung wirklich überspringen? Unter Profil → Einstellungen kannst du sie jederzeit noch mal starten.' : txt || s.t);
     el.classList.toggle('is-frage', anleitungFrage); el.classList.toggle('is-ok', !anleitungFrage && !!s.ok);
     document.getElementById('anleitungFrage').hidden = !anleitungFrage; document.getElementById('anleitungOk').hidden = anleitungFrage || !s.ok; document.getElementById('anleitungWeg').hidden = anleitungFrage;
+    el.classList.toggle('is-events', anleitung.schritt === 5 && isPanelOpen(goalsPopup));   // Schritt 6 gilt im Events-Fenster: dort sichtbar bleiben (sonst blendet ein großes Fenster sie aus)
     const fenster = [...document.querySelectorAll('.panel.is-open, .marker-sheet:not([hidden]), #heroHall:not([hidden])')].map(f => f.getBoundingClientRect()).filter(r => r.height > 0).sort((x, y) => x.top - y.top)[0];
-    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
-    el.style.visibility = fenster && fenster.top < 150 ? 'hidden' : '';                  // kein Platz über dem Fenster: lieber gar nicht als auf den Knöpfen
+    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : ''; el.style.right = '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
+    const oben = Math.max(0, document.getElementById('hud').getBoundingClientRect().bottom), ctl = document.getElementById('mapControls').getBoundingClientRect();
+    let sicht = !fenster || fenster.top - 10 - el.offsetHeight >= oben;
+    if (!sicht && fenster.left - el.getBoundingClientRect().left >= 330) {                // Desktop: Fenster rechts – links daneben unten, vor den Kartenknöpfen
+        el.style.bottom = ''; el.style.right = Math.round(innerWidth - Math.min(fenster.left, ctl.width ? ctl.left : fenster.left) + 10) + 'px'; sicht = true;
+    }
+    el.style.visibility = sicht ? '' : 'hidden';                                          // kein Platz über oder neben dem Fenster: lieber gar nicht als auf den Knöpfen
 }
 function anleitungStarten() { anleitungZeigen(); if (!anleitungUhr && anleitung.schritt < ANLEITUNG.length) anleitungUhr = setInterval(anleitungZeigen, 1000); }
 document.getElementById('anleitungWeg').addEventListener('click', () => { anleitungFrage = true; anleitungZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
