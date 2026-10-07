@@ -408,11 +408,11 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <div id="shieldUse" class="shield-opts"></div>
     </div>
     <div class="mail-pane" data-spane="gems">
-      <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte gezeichnete Truhe in der Farbe der Seltenheit, Preis-Knopf unten über die ganze Breite (ein Tipp = kaufen) -->
+      <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte das KI-Bild der Kiste, Preis-Knöpfe unten über die ganze Breite (ein Tipp = kaufen; unter 500 Edelsteinen „1ד und „10ד) -->
       <div class="waren">
         <div id="heroChestOpts" class="waren-teil"></div>
         <div class="ware" data-r="grau"><span class="ware-bild" data-kiste-art="aus"></span><span class="ware-txt"><b class="ware-name">Ausrüstungs&shy;kiste</b><small>1 Teil · Grau bis Episch</small></span>
-          <button id="shopOpenCrateBtn" class="ware-preis" type="button" aria-label="Ausrüstungskiste kaufen"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></button></div>
+          <span class="ware-preise"><button id="shopOpenCrateBtn" class="ware-preis" type="button" data-x="1×" aria-label="Ausrüstungskiste kaufen"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></button><button type="button" class="ware-preis" data-mehr="aus" aria-label="10 Kisten öffnen" disabled><span class="ware-x">10×</span><svg class="icon"><use href="#i-gem"/></svg><b>1.500</b></button></span></div>
         <div class="ware-mehr"><button id="shopToEquipBtn" class="ware-link" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Inventar ›</span></button>
           <button type="button" class="ware-link" data-sinfo="kiste" aria-expanded="false"><svg class="icon"><use href="#i-info"/></svg><span>Chancen</span></button></div>
       </div>

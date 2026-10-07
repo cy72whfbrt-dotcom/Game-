@@ -67,34 +67,21 @@ function renderHeroChests() {                       // the odds per rarity follo
         return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + (tot ? Math.round(w / tot * 100) : 0) + ' %</span>'; }).join(''));
     liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.slice().reverse().map(c => { const k = HCHEST_ART[c.id] || 'held';   // die wertvollste groß zuerst
         return '<div class="ware' + (c.id === 'hcE' ? ' ware--gross glanz' : '') + '" data-r="' + KISTE_R[k] + '">' + (HCHEST_BAND[c.id] ? '<span class="band">' + HCHEST_BAND[c.id] + '</span>' : '') +
-            '<span class="ware-bild">' + kisteBild(k, 'k') + '</span><span class="ware-txt"><b class="ware-name">' + c.name + '</b><small>' + c.txt + '</small></span>' +
-            '<button type="button" class="ware-preis" data-hchest="' + c.id + '" aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '>' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></button></div>'; }).join(''));
+            '<span class="ware-bild">' + kisteBild(k) + '</span><span class="ware-txt"><b class="ware-name">' + c.name + '</b><small>' + c.txt + '</small></span>' +
+            (c.gems < GEMS_WIRKLICH ? '<span class="ware-preise">' : '') + '<button type="button" class="ware-preis" data-hchest="' + c.id + '"' + (c.gems < GEMS_WIRKLICH ? ' data-x="1×"' : '') + ' aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '>' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></button>' +
+            (c.gems < GEMS_WIRKLICH ? kistenMehrKnopf(c.id, c.gems) + '</span>' : '') + '</div>'; }).join(''));
 }
-// Gezeichnete Truhe für die Shop-Karten (SVG): Deckel, Kasten, Bänder, Schloss, Glanz, Sterne – das Leuchten macht die Karte
-const KISTE_ART = {                                  // Kasten oben/unten, Bänder hell/dunkel, Zeichen auf dem Schloss
-    aus: { k: ['#8a5a2e', '#3e2410'], b: ['#e3e7ec', '#6b7078'] }, held: { k: ['#8a5a2e', '#3e2410'], b: ['#a9d4ff', '#2c62b0'], z: 'krone' },
-    gross: { k: ['#9a6428', '#432410'], b: ['#f6e7bf', '#a27832'], z: 'stern' }, episch: { k: ['#7c4cc4', '#1e1033'], b: ['#f6e7bf', '#a27832'], z: 'stein' },
-    royal: { k: ['#2f5490', '#0d1a33'], b: ['#f6e7bf', '#a27832'], z: 'krone' } };
 const KISTE_R = { aus: 'grau', held: 'blau', gross: 'gold', episch: 'lila', royal: 'lila' };
 const HCHEST_ART = { hc1: 'held', hc3: 'gross', hcE: 'episch' }, HCHEST_BAND = { hcE: 'Bester Wert', hc1: 'Beliebt' };   // (Bänder nur Optik)
-function kisteStern(x, y, r, o) { const q = r * .28, p = r * .72;   // 4-Zack-Stern (Glanz)
-    return '<path d="M' + x + ' ' + (y - r) + 'l' + q + ' ' + p + ' ' + p + ' ' + q + ' ' + -p + ' ' + q + ' ' + -q + ' ' + p + ' ' + -q + ' ' + -p + ' ' + -p + ' ' + -q + 'z" fill="#fff" opacity="' + o + '"/>'; }
-function kisteBild(k, ort) {                         // ort: eigene Verlaufs-Namen je Reiter (gleich bei jedem Neuzeichnen – liveHtml tauscht nichts)
-    const a = KISTE_ART[k] || KISTE_ART.aus, n = 'kb' + (ort || 'k') + k;
-    const z = a.z === 'stein' ? '<path d="M60 42l6.5 7.5-6.5 8.5-6.5-8.5z" fill="#c99bff" stroke="#fff" stroke-width=".8"/><circle cx="58" cy="47" r="1.3" fill="#fff"/>'
-        : a.z === 'krone' ? '<path d="M53 55v-8l3.5 3 3.5-5 3.5 5 3.5-3v8z" fill="#2a1a05"/>' : a.z === 'stern' ? '<path d="M60 42l2.3 4.7 5.2.7-3.8 3.6.9 5.1-4.6-2.4-4.6 2.4.9-5.1-3.8-3.6 5.2-.7z" fill="#2a1a05"/>'
-        : '<path d="M60 45a3 3 0 0 1 1.6 5.5l1.1 4.5h-5.4l1.1-4.5A3 3 0 0 1 60 45z" fill="#1c1205"/>';
-    return '<svg viewBox="0 0 120 100" aria-hidden="true"><defs>' +
-        '<linearGradient id="' + n + 'k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a.k[0] + '"/><stop offset="1" stop-color="' + a.k[1] + '"/></linearGradient>' +
-        '<linearGradient id="' + n + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a.b[0] + '"/><stop offset="1" stop-color="' + a.b[1] + '"/></linearGradient></defs>' +
-        '<ellipse cx="60" cy="91" rx="44" ry="6" fill="#000" opacity=".5"/>' +
-        '<rect x="14" y="46" width="92" height="42" rx="4" fill="url(#' + n + 'k)" stroke="#0b0805" stroke-width="2"/>' +
-        '<path d="M14 48V34Q14 14 60 14Q106 14 106 34V48Z" fill="url(#' + n + 'k)" stroke="#0b0805" stroke-width="2"/>' +
-        '<path d="M14 62h92M14 75h92" stroke="#000" stroke-opacity=".22" stroke-width="1.2"/><path d="M20 34Q22 21 56 19" stroke="#fff" stroke-opacity=".3" stroke-width="4" fill="none" stroke-linecap="round"/>' +
-        '<g fill="url(#' + n + 'b)" stroke="#2a1a05" stroke-width="1"><path d="M30 17.5h8v70.5h-8zM82 17.5h8v70.5h-8z"/><rect x="12.5" y="43" width="95" height="7" rx="2"/><rect x="51" y="39" width="18" height="20" rx="3"/></g>' +
-        z + kisteStern(101, 14, 6, .95) + kisteStern(16, 24, 3.5, .7) + kisteStern(110, 40, 2.5, .6) + '</svg>';
+function kisteBild(k) { return '<img class="kiste-bild" src="bilder/' + (KISTE_BILD[k] || KISTE_BILD.aus) + '_zu.webp" alt="" draggable="false">'; }   // KI-Bild der Kiste (zu)
+// Mehrere auf einmal öffnen (wie RoK „10×“): höchstens 10, sonst so viele, wie die Edelsteine reichen – nur bei Kisten unter 500 (die großen bleiben einzeln: Bündnis-Geschenk je Kiste)
+const KISTE_MEHR = 10;
+const kistenMehrN = preis => Math.max(0, Math.min(KISTE_MEHR, Math.floor(gems / preis)));
+function kistenMehrKnopf(id, preis) {               // „10×“ (oder „N×“ mit dem Rest) neben dem Einzel-Knopf
+    const n = kistenMehrN(preis), m = n >= 2 ? n : KISTE_MEHR;
+    return '<button type="button" class="ware-preis" data-mehr="' + id + '" aria-label="' + m + ' Kisten öffnen"' + (n < 2 ? ' disabled' : '') + '><span class="ware-x">' + m + '×</span>' + icon('gem') + '<b>' + fmtNum(m * preis) + '</b></button>';
 }
-for (const el of document.querySelectorAll('[data-kiste-art]')) el.innerHTML = kisteBild(el.dataset.kisteArt, 'k');
+for (const el of document.querySelectorAll('[data-kiste-art]')) el.innerHTML = kisteBild(el.dataset.kisteArt);
 shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sinfo]'); if (!b) return;   // „i“: Erklärung/Chancen auf und zu
     const k = b.dataset.sinfo, auf = !shopInfoAuf.has(k); if (auf) shopInfoAuf.add(k); else shopInfoAuf.delete(k);
     b.setAttribute('aria-expanded', auf ? 'true' : 'false'); b.classList.toggle('on', auf);
@@ -103,17 +90,27 @@ function heroChestOpen(who, c) {                    // the same chest for you an
     if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
     const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;
 }
-shopPopup.addEventListener('click', e => { const karte = e.target.closest('#heroChestOpts .ware'), bt = e.target.closest('[data-hchest]') || (karte && karte.querySelector('[data-hchest]')); if (!bt || bt.disabled) return;   // die ganze Karte ist der Knopf (Spieltest: Tipp aufs Bild lief ins Leere)
-    const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (!c) return;
-    if (gems < c.gems) { flashHint('Zu wenig Edelsteine – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
+function heroChestKauf(c, n, bt) {                   // n Heldenkisten auf einmal (Edelsteine genau n-mal) – dieselbe Kiste wie bisher, nur öfter
+    if (gems < c.gems * n) { flashHint('Zu wenig Edelsteine – ' + (n > 1 ? n + '× ' : 'die ') + c.name + ' kostet ' + fmtNum(c.gems * n) + '.', 3000); return; }
     if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
-    if (!gemsWirklich('kiste:' + c.id, c.gems, bt)) return;
-    gems -= c.gems; const got = heroChestOpen('player', c); questProgress('crate', 1); updateHud(); saveGame(); renderShop();   // (zählt für „Öffne … Kisten“)
+    if (!gemsWirklich((n > 1 ? 'mehr:' : 'kiste:') + c.id, c.gems * n, bt)) return;
+    const got = []; let anz = 0;
+    for (; anz < n && gems >= c.gems && heroChestPool(c.minR).length; anz++) { gems -= c.gems; got.push(...heroChestOpen('player', c)); questProgress('crate', 1); }   // (zählt für „Öffne … Kisten“)
+    updateHud(); saveGame(); renderShop();
+    const k = HCHEST_ART[c.id] || 'held', beute = got.map(h => ({ a: 'sh', n: c.sh, held: h.id }));
     const res = document.getElementById('shopHeroResult');
-    res.innerHTML = '<b class="hchest-h">' + c.name + '</b>' + got.map(h => { const s = heroSt('player', h.id), need = s.own ? (s.q >= HERO_MAXQ ? 0 : heroStepCost(h, s.q)) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
-        return '<div class="hchest-row" style="--rc:' + rd.color + '">' + heroImg(h.id, 'hchest-pic') + '<span><b>' + h.name + '</b><small style="color:' + rd.color + '">' + rd.label + '</small></span><i>+' + c.sh + ' Splitter' + (need ? ' · ' + (s.sh >= need ? (s.own ? 'Aufwerten bereit' : 'Freischalten bereit') : s.sh + ' / ' + need) : '') + '</i></div>'; }).join('') +
+    res.innerHTML = '<b class="hchest-h">' + (anz > 1 ? anz + '× ' : '') + c.name + '</b>' + [...new Set(got)].map(h => { const s = heroSt('player', h.id), need = s.own ? (s.q >= HERO_MAXQ ? 0 : heroStepCost(h, s.q)) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
+        return '<div class="hchest-row" style="--rc:' + rd.color + '">' + heroImg(h.id, 'hchest-pic') + '<span><b>' + h.name + '</b><small style="color:' + rd.color + '">' + rd.label + '</small></span><i>+' + c.sh * got.filter(x => x === h).length + ' Splitter' + (need ? ' · ' + (s.sh >= need ? (s.own ? 'Aufwerten bereit' : 'Freischalten bereit') : s.sh + ' / ' + need) : '') + '</i></div>'; }).join('') +
         '<button type="button" class="btn btn--primary btn--sm" data-hchest-hall>Zu den Helden</button>';
-    res.hidden = false; res.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+    res.hidden = false; res.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    beuteFenster(c.name, beute, { kiste: k, n: anz, unter: anz > 1 ? anz + ' Kisten geöffnet' : '' });
+}
+shopPopup.addEventListener('click', e => { if (e.target.closest('[data-mehr]')) return;   // (10×: eigener Knopf unten)
+    const karte = e.target.closest('#heroChestOpts .ware'), bt = e.target.closest('[data-hchest]') || (karte && karte.querySelector('[data-hchest]')); if (!bt || bt.disabled) return;   // die ganze Karte ist der Knopf (Spieltest: Tipp aufs Bild lief ins Leere)
+    const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (c) heroChestKauf(c, 1, bt); });
+shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-mehr]'); if (!bt || bt.disabled) return;
+    if (bt.dataset.mehr === 'aus') { ausKistenKauf(kistenMehrN(CRATE_GEM_COST), bt); return; }
+    const c = HERO_CHESTS.find(x => x.id === bt.dataset.mehr); if (c && c.gems < GEMS_WIRKLICH) heroChestKauf(c, kistenMehrN(c.gems), bt); });
 shopPopup.addEventListener('click', e => { if (e.target.closest('[data-hchest-hall]')) { closeAllPopups(); openHeroHall(); } });
 function renderShop() {
     const hdTab = document.querySelector('#shopTabs [data-stab="hd"]'), hdHier = typeof hdDa === 'function' && !!hdDa();   // der Reiter „Händler“ nur, wenn einer da ist
@@ -127,6 +124,7 @@ function renderShop() {
     setText(shopGemCount, fmtCompact(Math.floor(gems)));
     shopGemCount.title = fmtNum(Math.floor(gems)) + ' Edelsteine';
     shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
+    const mehr = document.querySelector('#shopPopup [data-mehr="aus"]'); if (mehr && !gemsArmed('mehr:aus')) mehr.outerHTML = kistenMehrKnopf('aus', CRATE_GEM_COST);
 }
 function openShop(tab) {                              // der EINE Shop (Dock); tab: gems | shield | throne | hd | markt
     closeAllPopups();
@@ -137,10 +135,11 @@ shopBtn.addEventListener('click', () => { if (isPanelOpen(shopPopup)) shopCloseB
 shopCloseBtn.addEventListener('click', () => {
     closePanel(shopPopup);
 });
-shopOpenCrateBtn.addEventListener('click', () => {
-    const item = openCrate();
+function ausKistenKauf(n, bt) {                     // n Ausrüstungskisten (openCrate n-mal: Edelsteine und Teile genau wie n einzelne Käufe)
+    if (n > 1 && !gemsWirklich('mehr:aus', CRATE_GEM_COST * n, bt)) return;
+    const items = []; for (let i = 0; i < n; i++) { const it = openCrate(); if (!it) break; items.push(it); }
     renderShop();
-    if (!item) {
+    if (!items.length) {
         shopCrateResult.style.display = 'block';
         delete shopCrateResult.dataset.r;
         shopCrateResult.innerHTML = '<div class="tile empty">' + icon('gem') + '</div>' +
@@ -148,16 +147,15 @@ shopOpenCrateBtn.addEventListener('click', () => {
         shopCrateResult.scrollIntoView({ block: 'nearest' });
         return;
     }
-    const rd = RARITY_DEFS[item.rarity];
-    const slotDef = EQUIPMENT_DEFS[item.slot];
+    const beute = items.map(it => ({ a: 'item', slot: it.slot, r: it.rarity })), best = items.reduce((a, b) => b.rarity > a.rarity ? b : a), rd = RARITY_DEFS[best.rarity];
     shopCrateResult.style.display = 'block';
     shopCrateResult.dataset.r = rd.key;
-    shopCrateResult.innerHTML =
-        '<div class="tile" data-r="' + rd.key + '">' + icon(slotDef.icon) + '<span class="lvl">' + item.level + '</span></div>' +
-        '<div><span class="overline rar-text" data-r="' + rd.key + '">' + rd.label + '</span><b>' + slotDef.name + '</b>' +
-        '<small>Stufe ' + item.level + ' · im Inventar</small></div>';
+    shopCrateResult.innerHTML = beuteRaster(beute, 'bk-klein') + '<div><span class="overline rar-text" data-r="' + rd.key + '">' + (items.length > 1 ? items.length + ' Kisten · bestes: ' : '') + rd.label + '</span><b>' +
+        (items.length > 1 ? items.length + ' Teile' : EQUIPMENT_DEFS[best.slot].name) + '</b><small>Stufe 1 · im Inventar</small></div>';
     shopCrateResult.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-});
+    beuteFenster('Ausrüstungskiste', beute, { kiste: 'aus', n: items.length, unter: items.length > 1 ? items.length + ' Kisten geöffnet' : '' });
+}
+shopOpenCrateBtn.addEventListener('click', () => ausKistenKauf(1, shopOpenCrateBtn));
 shopToEquipBtn.addEventListener('click', () => {
     closePanel(shopPopup);
     renderProfile();
