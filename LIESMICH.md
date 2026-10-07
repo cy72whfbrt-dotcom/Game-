@@ -1695,6 +1695,16 @@ Nacht – vorher bauen und testen.
     Thron-Punkte (man hat 5.000); Barbaren-Lager Stufe 4 nur „9 Krieger“; Schild Stufe 1 „+0,2 %“, Verkauf 1 Punkt;
     Späh-Bericht über fremden Spieler zeigt MEINE Helden; Späh-Bericht sagt „Gold“ statt „Münzen“; Späh-Bericht
     „Burg schützt 5.556“, Burg-Fenster Stufe 1 sagt 10.000.
+33. **Events neu (Alexander 7.10. 16:00) – Zahlen-Vorschlag folgt, dann bauen:**
+    - Wochen-Event: bleibt Rangliste, Preise nach Platz 1 · 2–5 · 6–10 · 11–20 · 21–100 · 101–1000 (danach nichts),
+      gilt für echte Spieler und Mitspieler.
+    - Invasion + Drache: Belohnungs-LEISTE (Punkte-Linie mit Kisten, sofort abholen, sobald erreicht).
+    - Tagesboss: Schadens-Klassen (z. B. 1–1.000 / 1.000–10.000 / …), je Angriff die Belohnung der erreichten Klasse,
+      im Event-Fenster zum Abholen; gleiche Klasse zweimal = zweimal Belohnung (z. B. 2× Kiste, 2× 1.000 Münzen).
+    - Barbaren-Lager: Belohnung pro geschaffter Lager-Stufe im Event-Fenster (grün = abholen).
+    - Pass viel länger, auch Truppen u. a. als Belohnung. Aufgaben: viel mehr.
+    - Karte: Tipp auf freies Feld → Menü (Teleportieren, Markierung, Truppen dorthin verlegen).
+    - Event-Bilder gefallen Alexander („schon geil“).
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
