@@ -1762,8 +1762,9 @@ Nacht – vorher bauen und testen.
       (Wert + 6) × 0,15 % (grau 1 ≈ 1 %), Zerlegen 5 + Wert Punkte (grau 1 = 6). Tagesboss-Klassen als Anteil vom Boss-Leben
       (bis 0,05 % / 0,5 % / 1 % / 2,5 % / darüber). Truppen aus Basen 15 je Std. auf Stufe 1 (vorher 5, alle gleich – auch
       Mitspieler). Spähbericht: Holz/Stein/Eisen gegen den Rohstoff-Schutz (vorher fälschlich der Münzen-Schutz). „Gold“ →
-      „Münzen“ in Fähigkeiten, Berichten, Helden-Texten („Goldmine“ und die Seltenheit „Gold“ bleiben). Hauptbuch: bis 17.10.
-      zählt für Gebäude auch die alte, kürzere Bauzeit und für Schilde der alte Preis (kein falscher Alarm). Test: `burg_tempo_test`.
+      „Münzen“ in Fähigkeiten, Berichten, Helden-Texten („Goldmine“ und die Seltenheit „Gold“ bleiben). Keine Übergangsfrist
+      im Hauptbuch (die Welt wird vor dem Hochladen neu gestartet). Start-Rohstoffe und Basis-Ertrag (× 1,15 je Stufe bis 100) bleiben.
+      Test: `burg_tempo_test`.
 34. **Teleport-Animation (Alexander 7.10.: „wäre geil, merken“):** beim Teleportieren eine Animation (Basis verschwindet
     mit Lichtsäule/Staub, taucht am Ziel auf). Später.
 
