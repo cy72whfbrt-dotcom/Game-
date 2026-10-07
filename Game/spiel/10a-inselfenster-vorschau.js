@@ -32,6 +32,12 @@ function islandTitle(island) {
     for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === island.id) return 'Hauptstadt von ' + bot.name;
     return 'Turm #' + (island.id + 1);
 }
+// Name für Spieler statt „Turm #N“: „Deine Basis“ / „Basis von …“ / „Neutrale Basis“ (+ Ort, wenn nicht ohneOrt)
+function ortName(island, ohneOrt) {
+    const t = islandTitle(island); if (!/^Turm #/.test(t)) return t;
+    const ow = islandOwnerOf(island.id), n = ow === 'player' ? 'Deine Basis' : ow ? 'Basis von ' + ((botById[ow] || {}).name || 'Unbekannt') : 'Neutrale Basis';
+    return ohneOrt ? n : n + ' · ' + coordText(island.x, island.y);
+}
 
 function gateControlsHtml(gate) {
     const cfg = gateSettings(gate);
@@ -107,7 +113,7 @@ function renderPopup() {
     if (owner && !isBoss) { popupEmblem.dataset.profile = owner; popupEmblem.setAttribute('role', 'button'); popupEmblem.title = 'Profil ansehen'; }   // das Viereck antippen → Profil (mit Bündnis)
     else { delete popupEmblem.dataset.profile; popupEmblem.removeAttribute('role'); popupEmblem.removeAttribute('title'); }
     popupLevel.textContent = anzeigeStufe(island.id);
-    popupTitle.textContent = islandTitle(island);
+    popupTitle.textContent = ortName(island, true);
     popupActions.hidden = true;
     document.getElementById('cityBtn').style.display = 'none';
     document.getElementById('teleportBtn').style.display = 'none';

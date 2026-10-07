@@ -254,14 +254,18 @@ function fieldArrive(m, now) {
             gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx) };
     }
 }
+// Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Sammel-Rausch (+50 %) · Gebäude · Forschung Sammeln
+function fieldRateOf(f, o, gx) {
+    return f.cap / f.dauer * (1 + (gx ? gx.gSpd : 0) / 100) * (evThemaAktiv('sam') ? 1.5 : 1) * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1);
+}
 function fieldTick() {
     if (!rechnet()) return;
-    const now = Date.now(), dt = 1, sr = evThemaAktiv('sam') ? 1.5 : 1;   // Sammel-Rausch: 50 % schneller
+    const now = Date.now(), dt = 1;
     const due = fieldMarches.filter(m => m.resolveAt <= now);
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
     for (const f of resFields) {
         const st = fieldState[f.id]; if (!st || !st.occ) continue; if (st.left > f.cap) st.left = f.cap;
-        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100) * sr * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1), st.left, cap - o.got);   // (+ Forschung Sammeln)   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
+        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(fieldRateOf(f, o, gx) * dt, st.left, cap - o.got);
         o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
         if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
     }
@@ -331,7 +335,7 @@ function openFieldSheet(f) {
     liveHtml(document.getElementById('fieldSheet'),                   // (live: liveTick – neu geschrieben nur bei einer Änderung, die Uhren zählen von selbst)
         '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + uhrHtml(st.regenAt, 'clock') + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
-        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
+        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' + fieldFortschritt(f, st, K) +
         '<span>Tragen</span><b>' + (K.load >= 1 ? (K.load * (AUF ? AUF.traglast('player') : 1)).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' ' + K.what + ' pro Truppe' : '1 Edelstein pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
         (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
          src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
@@ -341,6 +345,15 @@ function openFieldSheet(f) {
          (heroSeg2Html('data-fhero2', fieldHero, fieldHero2) ? '<div class="seg hero-seg hero-seg2">' + heroSeg2Html('data-fhero2', fieldHero, fieldHero2) + '</div>' : '') +
          '<button class="btn btn--primary btn--sm" type="button" data-fsend>' + icon(o ? 'attack' : 'send') + '<span>' + (o ? 'Angreifen und übernehmen' : 'Sammeln') + ' · ' + fmtCompact(send) + ' von ' + islandTitle(islandById[src]) + '</span></button>'));
     document.getElementById('fieldSheet').hidden = false;
+}
+// wer sammelt: Restzeit bis voll beladen (oder Feld leer), Balken gesammelt/Traglast, Tempo pro Stunde
+function fieldFortschritt(f, st, K) {
+    const o = st.occ; if (!o) return '';
+    const gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), rate = fieldRateOf(f, o, gx), rest = Math.max(0, Math.min(cap - o.got, st.left)), q = Math.min(1, o.got / Math.max(1e-9, cap));
+    const proStd = rate * 3600, menge = v => K.load >= 1 ? fmtNum(Math.floor(v)) : v.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+    return '<span>Tempo</span><b>' + menge(proStd) + ' ' + K.what + ' / Std.</b>' +
+        '<span>' + (cap - o.got <= st.left ? 'Voll in' : 'Feld leer in') + '</span><b>' + (rate > 0 ? uhrHtml(Date.now() + rest / rate * 1000) : '–') + '</b>' +
+        '<span class="field-fort"><span class="ach-bar"><i style="width:' + Math.round(q * 100) + '%"></i></span><small>' + fmtNum(Math.floor(o.got)) + ' / ' + fmtNum(Math.floor(cap)) + ' ' + K.what + '</small></span>';
 }
 function closeFieldSheet() { document.getElementById('fieldSheet').hidden = true; fieldSheetId = null; }
 document.getElementById('fieldSheet').addEventListener('click', e => {

@@ -79,6 +79,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(w.breit && !w.text && w.n >= 5, 'Reiter ' + t + ': passt aufs Handy, keine kaputten Werte', w);
     if (bilder) await p.screenshot({ path: path.join(bilder, 'event_' + t + '.png') });
   }
+  // Invasions-Chip (Merkliste 28): nie „P.“, bei 0 Punkten keine Zahl, sonst „… Punkte“
+  const chip = await p.evaluate(() => { const now = Date.now(), I = evState.inv = { start: now - 1000, end: now + 3e6, welle: 1, n: 0, armies: [], pts: {}, wehr: {}, paid: false };
+    const t = () => (evChips(Date.now()).find(c => /ev-inv/.test(c[1])) || [0, ''])[1].replace(/<[^>]+>/g, ' ');
+    const null_ = t(); I.pts.player = 1234; return [null_, t()]; });
+  ok(!/P\./.test(chip.join()) && !/\d/.test(chip[0].replace(/Welle \d\/\d/, '')) && /1\.234 Punkte/.test(chip[1]), 'Invasions-Leiste: keine „0 P.“, sonst „1.234 Punkte“', chip);
   ok(!fe.length, 'keine Fehler auf der Seite', fe.slice(0, 3));
   await b.close();
 })();
