@@ -144,16 +144,19 @@ function karteObjekte() {
     liste.push({ n, x, y, w, h, ax, ay, sx, sy, f, fuss, gross, bb: { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) } }); };
   const warm = (n, x, y) => ringAn(x, y) <= BODEN_BIS_RING.innen ? n + '~warm' : n;
   const linien = []; for (let k = -GRID_HALF - 1; k <= GRID_HALF; k++) linien.push(k + .5);
+  const nahFelder = resFields.filter(q => { const S2 = HEX_SPACING / 2, dx = Math.abs(((q.x % S) + S) % S - S2), dy = Math.abs(((q.y % S) + S) % S - S2); return dx < 9000 || dy < 9000; });   // Felder nah an einer Grenzlinie
   // Gipfel-Knoten, wo Ketten zusammenstoßen (auch am Rand: dort laufen die Ketten in den Knoten)
   const knoten = {};
   for (const lv of linien) for (const lh of linien) { let x = lv * S, y = lh * S;
     for (let it = 0; it < 4; it++) { x = grenzLinie(true, lv, y); y = grenzLinie(false, lh, x); }
     if (Math.abs(lv) > GRID_HALF) x += Math.sign(lv) * RAND_AUSSEN; if (Math.abs(lh) > GRID_HALF) y += Math.sign(lh) * RAND_AUSSEN;   // (Kartenrand: nach außen)
     knoten[lv + ',' + lh] = { x, y };
-    neu(warm('kette_knoten', x, y), x, y, M.knoten * (.92 + rnd() * .16), .5, KETTE_ACHSE.kette_knoten, 0, 0, y, rnd() < .5 ? -1 : 1); }
+    let kg = M.knoten * (.92 + rnd() * .16); const f = rnd() < .5 ? -1 : 1;
+    const fd = nahFelder.reduce((m, q) => Math.min(m, Math.hypot(q.x - x, q.y - y) - q.radius), Infinity);   // ein Feld an der Kreuzung (Lage = Spiellogik): Gipfel kleiner bzw. weg
+    if (fd < kg * .22 + 400) continue; if (fd < kg * .45 + 400) kg *= .55;
+    neu(warm('kette_knoten', x, y), x, y, kg, .5, KETTE_ACHSE.kette_knoten, 0, 0, y, f); }
   // Ketten: Stücke entlang jeder Grenze, Lücke an jedem Tor (Brückenmitte) und an den Knoten
   const tore = bridges.map(br => ({ x: (br.x1 + br.x2) / 2, y: (br.y1 + br.y2) / 2, senk: Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1) }));
-  const nahFelder = resFields.filter(q => { const S2 = HEX_SPACING / 2, dx = Math.abs(((q.x % S) + S) % S - S2), dy = Math.abs(((q.y % S) + S) % S - S2); return dx < 9000 || dy < 9000; });   // Felder nah an einer Grenzlinie
   for (const senk of [true, false]) for (const L of linien) {
     const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .2]; });
     const hier = tore.filter(t => t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3).map(t => senk ? t.y : t.x);
@@ -226,11 +229,11 @@ function gebirgsPfad() {
       if (erst) senk ? p.moveTo(q, t) : p.moveTo(t, q); else senk ? p.lineTo(q, t) : p.lineTo(t, q); } }
   return (gebirgsPfadMem = p);
 }
-function paintBaender(g, zl) {                       // (Weltmaß gesetzt) dunkles Band, oben eine Lichtkante
+function paintBaender(g, zl, nebel) {                // (Weltmaß gesetzt) dunkles Band, oben eine Lichtkante; nebel: kräftiger grau-braun (unter dem Nebel nie bläulich)
   const p = gebirgsPfad(), w = Math.max(2400, 3 / zl);
   g.lineJoin = 'round'; g.lineCap = 'round';
   g.strokeStyle = '#2e2b24'; g.lineWidth = w * 1.25; g.stroke(p);
-  g.strokeStyle = '#5e5a4e'; g.lineWidth = w; g.stroke(p);
+  g.strokeStyle = nebel ? '#6a6456' : '#5e5a4e'; g.lineWidth = w; g.stroke(p);
   g.strokeStyle = 'rgba(156,151,132,.55)'; g.lineWidth = w * .35; g.stroke(p);
   g.lineCap = 'butt';
 }
@@ -360,7 +363,7 @@ function drawTerritoriesInto(g, lay, z, originL, originT, pxW, pxH, clip) {   //
   const cx0 = clip ? clip.x : 0, cy0 = clip ? clip.y : 0, cx1 = clip ? clip.x + clip.w : pxW, cy1 = clip ? clip.y + clip.h : pxH;
   const view = { l: originL + cx0 / dpr / z, t: originT + cy0 / dpr / z, r: originL + cx1 / dpr / z, b: originT + cy1 / dpr / z };
   const pad = 12 / z, H = hatchPatterns(), LL = lay.getContext('2d');
-  for (const grp of ['enemy', 'player']) {
+  for (const grp of z < TOR_PUNKT_ZOOM ? ['player'] : ['enemy', 'player']) {   // (ganz draußen nur das eigene Gebiet: fremde Basen wären eine Tapete aus roten Punkten)
     const chunks = [...TERR[grp].values()].filter(c => c.bbox.r > view.l - pad && c.bbox.l < view.r + pad && c.bbox.b > view.t - pad && c.bbox.t < view.b + pad);
     if (!chunks.length) continue;
     let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
@@ -476,7 +479,7 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
   paintBoden(g, T, cl, ct, W, H, clip, bild && z >= BODEN_BILD_ZOOM);
   // 2 Bergstöcke (01f), dann Ketten, Knoten, Wald als Bilder – oder weit draußen die Gebirgs-Bänder
   world();
-  for (const lm of landmasses) {
+  if (!T.part && z >= KARTE_BILD_ZOOM) for (const lm of landmasses) {         // (ganz draußen keine Bergstöcke: sonst eine Tapete aus Flecken)
     if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
     felsenMalen(g, lm, zd, zl);
   }

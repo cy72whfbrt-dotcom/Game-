@@ -119,7 +119,7 @@ function drawFog(view, now) {
     if (weit > 0) {                                                                                  // weit draußen: ruhige dunkle Fläche, die Gebiete in Ringfarben mit den Gebirgen (wie eine Weltübersicht)
         g.globalAlpha = weit; g.fillStyle = '#1a2433'; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
         g.globalAlpha = weit * .75; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); }   // Ringfarben + Gebirgs-Bänder als Übersicht (wie RoK)
-        g.globalAlpha = weit * .85; paintBaender(g, z * FS); g.globalAlpha = 1;
+        g.globalAlpha = weit; paintBaender(g, z * FS, true); g.globalAlpha = 1;
     }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore();
     }
@@ -200,14 +200,19 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         if (mx < -80 || my < -80 || mx > viewW + 80 || my > viewH + 80) continue;
         const H = Math.max(24, Math.min(110, 2000 * z)), left = opens - Date.now();
         if (left <= 0) continue;
-        if (!karteBilder()) drawGatehouse(ctx, mx, my - H * .15, H, 0);   // (mit den Karten-Bildern steht dort schon das Pass-Tor, 03b)
+        const tm = torMitte(islandById[br.gateId]);
+        if (!tm) drawGatehouse(ctx, mx, my - H * .15, H, 0);   // (mit den Karten-Bildern steht dort schon das Pass-Tor, 03b)
         const label = fmtPassWait(left);
         ctx.font = '700 11px Inter, system-ui, sans-serif';
-        const w = ctx.measureText(label).width + 30, cy = my - H * .15 + H * .42 + 13;
+        const w = ctx.measureText(label).width + 30;
+        // Karten-Bilder: der Countdown nie über dem Schild mit der Stufe – waagrecht über dem Tor-Bild, senkrecht über dem Schild neben dem Weg
+        const px = !tm ? mx : tm.senk ? senkSchildX(tm, w, z) + w / 2 : toSX(tm.x);
+        const cy = !tm ? my - H * .15 + H * .42 + 13 : tm.senk ? toSY(tm.y + TOR_SENK.hoch * .05) - 13
+            : toSY(tm.y) - KARTE_MASS.tor * KB.img.tor_zu.height / KB.img.tor_zu.width * KETTE_ACHSE.tor_zu * karteSkala(z) * z - 4;
         ctx.fillStyle = 'rgba(14,12,10,.9)'; ctx.strokeStyle = 'rgba(228,200,134,.75)'; ctx.lineWidth = 1.2;
-        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx - w / 2, cy - 10, w, 20, 10) : ctx.rect(mx - w / 2, cy - 10, w, 20); ctx.fill(); ctx.stroke();
-        drawGlyph(ctx, 'lock', mx - w / 2 + 12, cy, 12, '#f0d69a');
-        ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, mx - w / 2 + 22, cy + .5);
+        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - w / 2, cy - 10, w, 20, 10) : ctx.rect(px - w / 2, cy - 10, w, 20); ctx.fill(); ctx.stroke();
+        drawGlyph(ctx, 'lock', px - w / 2 + 12, cy, 12, '#f0d69a');
+        ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, px - w / 2 + 22, cy + .5);
     }
 }
 function drawHeimWappen(z) {                           // ganz draußen (die Basis selbst ist nur noch ein Punkt): das eigene Wappen an der Hauptstadt, über allem

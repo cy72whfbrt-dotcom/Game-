@@ -278,8 +278,10 @@ function drawTorBild(island, open, z, dunkel) {
   if (w < 16) { if (dunkel || z < TOR_PUNKT_ZOOM) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
     ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
   if (mx + w < 0 || mx - w > viewW || my + w < 0 || my - w > viewH) return;
-  if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z * karteSkala(z), ws = hs * KB.img[ns].width / KB.img[ns].height;
-    ctx.drawImage(kbBild(ns, ws * dpr), mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
+  if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z, ws = hs * KB.img[ns].width / KB.img[ns].height, im = kbBild(ns, ws * dpr);   // (nicht vergrößert: Felsen so groß wie die Kette daneben)
+    if (z >= 0.006) { ctx.drawImage(im, mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
+    const a = TOR_SENK.achse - .2, b = TOR_SENK.achse + .2;                    // weiter draußen nur die Kette mit Mauer, ohne die Weg-Stummel
+    ctx.drawImage(im, a * im.width, 0, (b - a) * im.width, im.height, mx - ws * .2, my - hs * TOR_SENK.weg, ws * .4, hs); return; }
   const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
 }
 function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
@@ -308,6 +310,7 @@ function drawBuilding(island, ownerKey, z) {                                   /
     for (const [gx, gy] of spots) if (!bkDraw(bk, gx, gy)) ctx.drawImage(sp.c, gx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
     return;
   }
+  if (kind === 'tower' && ownerKey !== 'player' && z < TOR_PUNKT_ZOOM && karteBilder()) return;   // ganz draußen: keine Punkt-Tapete fremder und freier Basen (wie RoK nur Zonen, Tempel, eigenes Gebiet)
   if (kind === 'tower' && ownerKey === 'neutral' && size < 30 && karteBilder()) {   // Karte wie RoK: freie Basen von weitem nur ein leiser Fleck, keine Symbol-Tapete (Alexander)
     ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, size * .07), 0, Math.PI * 2); ctx.fillStyle = 'rgba(40,30,18,.3)'; ctx.fill(); return; }
   if (size < 6) {                                                              // LOD: dot / diamond

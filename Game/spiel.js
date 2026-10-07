@@ -2876,16 +2876,19 @@ function karteObjekte() {
     liste.push({ n, x, y, w, h, ax, ay, sx, sy, f, fuss, gross, bb: { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) } }); };
   const warm = (n, x, y) => ringAn(x, y) <= BODEN_BIS_RING.innen ? n + '~warm' : n;
   const linien = []; for (let k = -GRID_HALF - 1; k <= GRID_HALF; k++) linien.push(k + .5);
+  const nahFelder = resFields.filter(q => { const S2 = HEX_SPACING / 2, dx = Math.abs(((q.x % S) + S) % S - S2), dy = Math.abs(((q.y % S) + S) % S - S2); return dx < 9000 || dy < 9000; });   // Felder nah an einer Grenzlinie
   // Gipfel-Knoten, wo Ketten zusammenstoßen (auch am Rand: dort laufen die Ketten in den Knoten)
   const knoten = {};
   for (const lv of linien) for (const lh of linien) { let x = lv * S, y = lh * S;
     for (let it = 0; it < 4; it++) { x = grenzLinie(true, lv, y); y = grenzLinie(false, lh, x); }
     if (Math.abs(lv) > GRID_HALF) x += Math.sign(lv) * RAND_AUSSEN; if (Math.abs(lh) > GRID_HALF) y += Math.sign(lh) * RAND_AUSSEN;   // (Kartenrand: nach außen)
     knoten[lv + ',' + lh] = { x, y };
-    neu(warm('kette_knoten', x, y), x, y, M.knoten * (.92 + rnd() * .16), .5, KETTE_ACHSE.kette_knoten, 0, 0, y, rnd() < .5 ? -1 : 1); }
+    let kg = M.knoten * (.92 + rnd() * .16); const f = rnd() < .5 ? -1 : 1;
+    const fd = nahFelder.reduce((m, q) => Math.min(m, Math.hypot(q.x - x, q.y - y) - q.radius), Infinity);   // ein Feld an der Kreuzung (Lage = Spiellogik): Gipfel kleiner bzw. weg
+    if (fd < kg * .22 + 400) continue; if (fd < kg * .45 + 400) kg *= .55;
+    neu(warm('kette_knoten', x, y), x, y, kg, .5, KETTE_ACHSE.kette_knoten, 0, 0, y, f); }
   // Ketten: Stücke entlang jeder Grenze, Lücke an jedem Tor (Brückenmitte) und an den Knoten
   const tore = bridges.map(br => ({ x: (br.x1 + br.x2) / 2, y: (br.y1 + br.y2) / 2, senk: Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1) }));
-  const nahFelder = resFields.filter(q => { const S2 = HEX_SPACING / 2, dx = Math.abs(((q.x % S) + S) % S - S2), dy = Math.abs(((q.y % S) + S) % S - S2); return dx < 9000 || dy < 9000; });   // Felder nah an einer Grenzlinie
   for (const senk of [true, false]) for (const L of linien) {
     const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .2]; });
     const hier = tore.filter(t => t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3).map(t => senk ? t.y : t.x);
@@ -2958,11 +2961,11 @@ function gebirgsPfad() {
       if (erst) senk ? p.moveTo(q, t) : p.moveTo(t, q); else senk ? p.lineTo(q, t) : p.lineTo(t, q); } }
   return (gebirgsPfadMem = p);
 }
-function paintBaender(g, zl) {                       // (Weltmaß gesetzt) dunkles Band, oben eine Lichtkante
+function paintBaender(g, zl, nebel) {                // (Weltmaß gesetzt) dunkles Band, oben eine Lichtkante; nebel: kräftiger grau-braun (unter dem Nebel nie bläulich)
   const p = gebirgsPfad(), w = Math.max(2400, 3 / zl);
   g.lineJoin = 'round'; g.lineCap = 'round';
   g.strokeStyle = '#2e2b24'; g.lineWidth = w * 1.25; g.stroke(p);
-  g.strokeStyle = '#5e5a4e'; g.lineWidth = w; g.stroke(p);
+  g.strokeStyle = nebel ? '#6a6456' : '#5e5a4e'; g.lineWidth = w; g.stroke(p);
   g.strokeStyle = 'rgba(156,151,132,.55)'; g.lineWidth = w * .35; g.stroke(p);
   g.lineCap = 'butt';
 }
@@ -3092,7 +3095,7 @@ function drawTerritoriesInto(g, lay, z, originL, originT, pxW, pxH, clip) {   //
   const cx0 = clip ? clip.x : 0, cy0 = clip ? clip.y : 0, cx1 = clip ? clip.x + clip.w : pxW, cy1 = clip ? clip.y + clip.h : pxH;
   const view = { l: originL + cx0 / dpr / z, t: originT + cy0 / dpr / z, r: originL + cx1 / dpr / z, b: originT + cy1 / dpr / z };
   const pad = 12 / z, H = hatchPatterns(), LL = lay.getContext('2d');
-  for (const grp of ['enemy', 'player']) {
+  for (const grp of z < TOR_PUNKT_ZOOM ? ['player'] : ['enemy', 'player']) {   // (ganz draußen nur das eigene Gebiet: fremde Basen wären eine Tapete aus roten Punkten)
     const chunks = [...TERR[grp].values()].filter(c => c.bbox.r > view.l - pad && c.bbox.l < view.r + pad && c.bbox.b > view.t - pad && c.bbox.t < view.b + pad);
     if (!chunks.length) continue;
     let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
@@ -3208,7 +3211,7 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
   paintBoden(g, T, cl, ct, W, H, clip, bild && z >= BODEN_BILD_ZOOM);
   // 2 Bergstöcke (01f), dann Ketten, Knoten, Wald als Bilder – oder weit draußen die Gebirgs-Bänder
   world();
-  for (const lm of landmasses) {
+  if (!T.part && z >= KARTE_BILD_ZOOM) for (const lm of landmasses) {         // (ganz draußen keine Bergstöcke: sonst eine Tapete aus Flecken)
     if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
     felsenMalen(g, lm, zd, zl);
   }
@@ -3624,8 +3627,10 @@ function drawTorBild(island, open, z, dunkel) {
   if (w < 16) { if (dunkel || z < TOR_PUNKT_ZOOM) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
     ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
   if (mx + w < 0 || mx - w > viewW || my + w < 0 || my - w > viewH) return;
-  if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z * karteSkala(z), ws = hs * KB.img[ns].width / KB.img[ns].height;
-    ctx.drawImage(kbBild(ns, ws * dpr), mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
+  if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z, ws = hs * KB.img[ns].width / KB.img[ns].height, im = kbBild(ns, ws * dpr);   // (nicht vergrößert: Felsen so groß wie die Kette daneben)
+    if (z >= 0.006) { ctx.drawImage(im, mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
+    const a = TOR_SENK.achse - .2, b = TOR_SENK.achse + .2;                    // weiter draußen nur die Kette mit Mauer, ohne die Weg-Stummel
+    ctx.drawImage(im, a * im.width, 0, (b - a) * im.width, im.height, mx - ws * .2, my - hs * TOR_SENK.weg, ws * .4, hs); return; }
   const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
 }
 function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
@@ -3654,6 +3659,7 @@ function drawBuilding(island, ownerKey, z) {                                   /
     for (const [gx, gy] of spots) if (!bkDraw(bk, gx, gy)) ctx.drawImage(sp.c, gx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
     return;
   }
+  if (kind === 'tower' && ownerKey !== 'player' && z < TOR_PUNKT_ZOOM && karteBilder()) return;   // ganz draußen: keine Punkt-Tapete fremder und freier Basen (wie RoK nur Zonen, Tempel, eigenes Gebiet)
   if (kind === 'tower' && ownerKey === 'neutral' && size < 30 && karteBilder()) {   // Karte wie RoK: freie Basen von weitem nur ein leiser Fleck, keine Symbol-Tapete (Alexander)
     ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, size * .07), 0, Math.PI * 2); ctx.fillStyle = 'rgba(40,30,18,.3)'; ctx.fill(); return; }
   if (size < 6) {                                                              // LOD: dot / diamond
@@ -8277,7 +8283,7 @@ function drawFog(view, now) {
     if (weit > 0) {                                                                                  // weit draußen: ruhige dunkle Fläche, die Gebiete in Ringfarben mit den Gebirgen (wie eine Weltübersicht)
         g.globalAlpha = weit; g.fillStyle = '#1a2433'; g.fillRect(view.l - 1e5, view.t - 1e5, view.r - view.l + 2e5, view.b - view.t + 2e5);
         g.globalAlpha = weit * .75; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); }   // Ringfarben + Gebirgs-Bänder als Übersicht (wie RoK)
-        g.globalAlpha = weit * .85; paintBaender(g, z * FS); g.globalAlpha = 1;
+        g.globalAlpha = weit; paintBaender(g, z * FS, true); g.globalAlpha = 1;
     }
     ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(fogComp, 0, 0, Math.round(viewW * dpr), Math.round(viewH * dpr)); ctx.restore();
     }
@@ -8358,14 +8364,19 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         if (mx < -80 || my < -80 || mx > viewW + 80 || my > viewH + 80) continue;
         const H = Math.max(24, Math.min(110, 2000 * z)), left = opens - Date.now();
         if (left <= 0) continue;
-        if (!karteBilder()) drawGatehouse(ctx, mx, my - H * .15, H, 0);   // (mit den Karten-Bildern steht dort schon das Pass-Tor, 03b)
+        const tm = torMitte(islandById[br.gateId]);
+        if (!tm) drawGatehouse(ctx, mx, my - H * .15, H, 0);   // (mit den Karten-Bildern steht dort schon das Pass-Tor, 03b)
         const label = fmtPassWait(left);
         ctx.font = '700 11px Inter, system-ui, sans-serif';
-        const w = ctx.measureText(label).width + 30, cy = my - H * .15 + H * .42 + 13;
+        const w = ctx.measureText(label).width + 30;
+        // Karten-Bilder: der Countdown nie über dem Schild mit der Stufe – waagrecht über dem Tor-Bild, senkrecht über dem Schild neben dem Weg
+        const px = !tm ? mx : tm.senk ? senkSchildX(tm, w, z) + w / 2 : toSX(tm.x);
+        const cy = !tm ? my - H * .15 + H * .42 + 13 : tm.senk ? toSY(tm.y + TOR_SENK.hoch * .05) - 13
+            : toSY(tm.y) - KARTE_MASS.tor * KB.img.tor_zu.height / KB.img.tor_zu.width * KETTE_ACHSE.tor_zu * karteSkala(z) * z - 4;
         ctx.fillStyle = 'rgba(14,12,10,.9)'; ctx.strokeStyle = 'rgba(228,200,134,.75)'; ctx.lineWidth = 1.2;
-        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(mx - w / 2, cy - 10, w, 20, 10) : ctx.rect(mx - w / 2, cy - 10, w, 20); ctx.fill(); ctx.stroke();
-        drawGlyph(ctx, 'lock', mx - w / 2 + 12, cy, 12, '#f0d69a');
-        ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, mx - w / 2 + 22, cy + .5);
+        ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - w / 2, cy - 10, w, 20, 10) : ctx.rect(px - w / 2, cy - 10, w, 20); ctx.fill(); ctx.stroke();
+        drawGlyph(ctx, 'lock', px - w / 2 + 12, cy, 12, '#f0d69a');
+        ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, px - w / 2 + 22, cy + .5);
     }
 }
 function drawHeimWappen(z) {                           // ganz draußen (die Basis selbst ist nur noch ein Punkt): das eigene Wappen an der Hauptstadt, über allem
