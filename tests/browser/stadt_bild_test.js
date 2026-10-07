@@ -1,7 +1,7 @@
-// Stadtansicht (Alexander 6.10.) – Handy + Desktop: Namensschilder kleben an ihrem Gebäude (nach Verschieben/Zoomen, nie an den
-// Bildrand geschoben, keine Überlappung, die Burg hat Vorrang); draußen nur Landschaft der Weltkarte (keine Mühle/Höfe/Felder,
-// Meer + Strand, wo die Karte Wasser hat, die Stadt immer auf Land); Übergang Karte → Stadt taucht mit der Karte ein und zurück,
-// die Stadt blendet darüber (kein riesiges Basis-Symbol, keine harte Bodenkante), Schilder nur ganz im Bild.
+// Stadtansicht als KI-Bild (Alexander 7.10.) – Handy + Desktop: das Stadtbild (bilder/stadt_gross.webp) deckt immer den ganzen
+// Bildschirm (wischen/zoomen bleibt im Bild), jedes Gebäude hat sein Schild „Name / Stufe N“ genau über seiner Stelle (keine
+// Überlappung), jedes ist per Wischen erreichbar; Bau läuft = Hammer + Uhr, ungebaut = „Bauen“ bzw. „ab Burg N“ mit Schloss,
+// Tippen aufs Gebäude öffnet die runden Knöpfe. Übergang Karte → Stadt taucht mit der Karte ein und zurück, die Stadt blendet darüber.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -27,35 +27,34 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       window.cityShow = zeigen;
       const tauchAuf = zooms.join() === 'scale(1) → scale(' + CITY_TAUCH + ')'; zooms = [];
       o.auf = { tauchAuf, stadt: !cityView.hidden, frei: !cityBusy, kartenZoomWeg: !canvas.getAnimations().length, ueber, tauchKlein: CITY_TAUCH <= 2, nichtGanzNah: zoomDa > 0 && zoomDa < maxZoom * .6 };   // Kamera nur bis kurz vor die Basis (kein riesiges Symbol)
-      // der Boden läuft am Rand weich in die Grundfarbe aus (keine harte Bildkante, wenn die Stadt von weit unten kommt)
-      const gb = CITY_GROUND.getContext('2d'), gw = CITY_GROUND.width, gh = CITY_GROUND.height, bg = [1, 3, 5].map(i => parseInt(CITY_BG_COL.slice(i, i + 2), 16));
-      const px = (x, y) => [...gb.getImageData(x, y, 1, 1).data].slice(0, 3);
-      o.rand = [[2, gh / 2], [gw - 3, gh / 2], [gw / 2, 2], [gw / 2, gh - 3]].map(([x, y]) => Math.max(...px(Math.round(x), Math.round(y)).map((v, i) => Math.abs(v - bg[i]))));
+      // das Stadtbild ist geladen (1536 × 1024)
+      { const t0 = Date.now(); while (!CITY_BILD.img && Date.now() - t0 < 10000) await warte(100); }
+      o.bild = CITY_BILD.img ? CITY_BILD.img.naturalWidth + 'x' + CITY_BILD.img.naturalHeight : 'fehlt';
       await warte(400);
-      // 2) Schilder an mehreren Kamera-Stellen: Mitte unter dem Gebäude, im Bild, keine Überlappung
-      const pruef = async (name, f) => { f(); cityCam.tx = cityCam.ty = undefined; await warte(350);
-        const W = innerWidth, H = innerHeight, mitte = Object.fromEntries(cityHitRects.map(h => [h.id, h.cx]));
+      // 2) Schilder an mehreren Kamera-Stellen: über dem Gebäude, keine Überlappung, das Bild deckt immer den ganzen Bildschirm
+      const pruef = async (name, f) => { f(); cityCam.tx = cityCam.ty = undefined; cityFrame.drawn = 0; await warte(350);
+        const W = innerWidth, H = innerHeight, c = cityCam, mitte = Object.fromEntries(Object.keys(CITY_ORTE).map(id => [id, W / 2 + (cityOrt(id).x - c.x) * c.z]));
         const kleben = cityNamen.every(s => mitte[s.id] !== undefined && Math.abs(s.x + s.w / 2 - mitte[s.id]) < 1.5);
-        const imBild = cityNamen.every(s => s.x >= 0 && s.x + s.w <= W && s.y >= 0 && s.y + s.h <= H);   // ganz im Bild, nichts halb am Rand
         const deckt = cityNamen.some((s, i) => cityNamen.some((t, j) => j > i && s.x < t.x + t.w && t.x < s.x + s.w && s.y < t.y + t.h && t.y < s.y + s.h));
-        const burg = cityHitRects.find(h => h.id === '_keep'), burgDa = !burg || burg.cx < 80 || burg.cx > W - 80 || cityNamen.some(s => s.id === '_keep');   // (ganz am Rand fehlt das Burg-Schild: Schilder nur ganz im Bild)
-        return { name, n: cityNamen.length, kleben, imBild, deckt, burgDa, mauer: cityNamen.some(s => s.id === 'wall') }; };
+        const ox = W / 2 - c.x * c.z, oy = H / 2 - c.y * c.z, voll = ox <= .5 && oy <= .5 && ox + CITY_BILD_W * c.z >= W - .5 && oy + CITY_BILD_H * c.z >= H - .5;
+        return { name, n: cityNamen.length, kleben, deckt, voll, burg: cityNamen.some(s => s.id === '_keep') }; };
       o.schilder = [];
       o.schilder.push(await pruef('start', () => {}));
-      o.schilder.push(await pruef('links', () => { cityCam.x -= 260; cityCam.y += 60; }));
-      o.schilder.push(await pruef('rechts', () => { cityCam.x += 520; }));
-      o.schilder.push(await pruef('weit', () => { cityCam.z = .3; }));
-      o.schilder.push(await pruef('nah', () => { cityCam.z = 2.4; cityCam.x = 150; cityCam.y = 300; }));
-      cityCam.z = 1; cityFocus('_keep', true);
-      // 3) draußen: keine gebauten Dinge, die Stadt auf Land, Meer wo die Karte Wasser hat (nur Basen; Zonen wie RoK: keine am Rand ihres Gebiets)
-      const deko = cityDeco().map(d => d.kind);
-      o.draussen = { gebaut: deko.filter(k => ['mill', 'house', 'well', 'hay', 'cart'].includes(k)), landMitte: cityAussen().land(CC, CC) };
-      const heim = playerIslandId, kueste = islands.find(i => { const lm = landmasses[i.landmassId]; return i.type === 'tower' && [0, 1, 2, 3, 4, 5, 6, 7].some(a => !aufLand(lm, i.x + Math.cos(a * Math.PI / 4) * 1500, i.y + Math.sin(a * Math.PI / 4) * 1500)); });
-      if (kueste) { playerIslandId = kueste.id; const A = cityAussen(); let wasser = 0;
-        for (let x = -170; x <= 810; x += 40) for (let y = -170; y <= 810; y += 40) if (!A.land(x, y)) wasser++;
-        let fehler = ''; try { cityPaintGround(); } catch (e) { fehler = e.message; }
-        o.meer = { id: kueste.id, nass: A.nass, wasser, stadtLand: [[150, 150], [490, 490], [150, 490], [490, 150], [CC, CC]].every(([x, y]) => A.land(x, y)), fehler };
-        playerIslandId = heim; cityPaintGround(); }
+      o.schilder.push(await pruef('links', () => { cityCam.x -= 400; cityCam.y += 60; }));
+      o.schilder.push(await pruef('rechts', () => { cityCam.x += 900; }));
+      o.schilder.push(await pruef('weit', () => { cityCam.z = .1; }));
+      o.schilder.push(await pruef('nah', () => { cityCam.z = 3; cityCam.x = 150; cityCam.y = 300; }));
+      // 3) jedes Gebäude per Wischen erreichbar: Kamera hin → sein Schild ganz im Bild; Tippen öffnet die runden Knöpfe
+      o.erreichbar = []; o.tippen = [];
+      for (const id of Object.keys(CITY_ORTE)) { cityCam.z = cityStartZoom(innerWidth, innerHeight); cityFocus(id, true); cityFrame.drawn = 0; await warte(120);
+        const s = cityNamen.find(q => q.id === id); if (!s || s.x < 0 || s.y < 0 || s.x + s.w > innerWidth || s.y + s.h > innerHeight) o.erreichbar.push(id);
+        const h = cityHitRects.find(q => q.id === id); cityRingZu(); cityCanvas.dispatchEvent(new MouseEvent('click', { clientX: h.cx, clientY: h.cy, bubbles: true }));
+        if (cityRingId !== id) o.tippen.push(id + '→' + cityRingId); cityRingZu(); }
+      // 4) was die Schilder sagen: Stufe, Bau (Hammer + Uhr), ungebaut „Bauen“, zu kleine Burg „ab Burg 5“
+      { const C = loadCity(); C.builds = [{ id: 'hospital', to: 3, startedAt: Date.now(), endsAt: Date.now() + 90000 }];
+        const st = id => cityStand(C, id); o.stand = { academy: st('academy').zeile, bau: st('hospital').bau ? st('hospital').zeile : 'kein Bau', leer: st('quarry').zeile };
+        C.levels.keep = 1; o.stand.zu = st('embassy').zu + ':' + st('embassy').zeile; C.levels.keep = 12; C.builds = []; saveCity(); }
+      cityCam.z = cityStartZoom(innerWidth, innerHeight); cityFocus('_keep', true);
       // 4) zurück zur Karte
       closeCity(); n = 0; while (cityBusy && n++ < 60) await warte(100);
       const tauchZu = zooms.join() === 'scale(' + CITY_TAUCH + ') → scale(1)'; delete canvas.animate;
@@ -65,11 +64,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
     ok(r.auf.tauchAuf && r.auf.stadt && r.auf.frei && r.auf.kartenZoomWeg && r.auf.ueber && r.auf.tauchKlein && r.auf.nichtGanzNah, art + ': Karte → Stadt: die Kamera bleibt vor der Basis, die Karte taucht ein (höchstens 2×), die Stadt blendet darüber', r.auf);
-    ok(r.rand.every(d => d <= 3), art + ': Boden läuft am Rand weich in die Grundfarbe aus', r.rand);
-    ok(r.schilder[0].mauer, art + ': Startbild zeigt das Mauer-Tor mit ganzem Schild (nicht halb am Rand)', r.schilder[0]);
-    for (const s of r.schilder) ok(s.n > 0 && s.kleben && s.imBild && !s.deckt && s.burgDa, art + ': Schilder kleben am Gebäude, im Bild, ohne Überlappung (' + s.name + ')', s);
-    ok(!r.draussen.gebaut.length && r.draussen.landMitte, art + ': draußen keine Mühle/Höfe/Karren, die Stadt steht auf Land', r.draussen);
-    ok(!r.meer || (r.meer.nass && r.meer.wasser > 0 && r.meer.stadtLand && !r.meer.fehler), art + ': Hauptstadt an der Küste: Meer der Karte um die Stadt, Stadt auf Land', r.meer);
+    ok(r.bild === '1536x1024', art + ': Stadtbild geladen (1536 × 1024)', r.bild);
+    ok(r.schilder[0].burg && r.schilder[0].n >= 3, art + ': Startbild zeigt die Burg mit Schild', r.schilder[0]);
+    for (const s of r.schilder) ok(s.n > 0 && s.kleben && !s.deckt && s.voll, art + ': Schilder über ihrem Gebäude, ohne Überlappung, Bild deckt den Bildschirm (' + s.name + ')', s);
+    ok(!r.erreichbar.length && !r.tippen.length, art + ': jedes Gebäude per Wischen erreichbar, Tippen öffnet seine Knöpfe', r);
+    ok(r.stand.academy === 'Stufe 1' && /^\d+:\d\d$/.test(r.stand.bau) && r.stand.leer === 'Bauen' && r.stand.zu === 'true:ab Burg 5', art + ': Schilder: Stufe, Bau mit Uhr, „Bauen“, „ab Burg 5“', r.stand);
     ok(r.zu.tauchZu && r.zu.karte && r.zu.frei && r.zu.kartenZoomWeg, art + ': Stadt → Karte: die Karte kommt aus der Nähe zurück', r.zu);
     if (bilder) await p.screenshot({ path: path.join(bilder, (art === 'Handy' ? 'm' : 'd') + '_karte.png') });
     await ctx.close();
