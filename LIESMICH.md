@@ -1659,16 +1659,23 @@ Nacht – vorher bauen und testen.
     (außen grün → Mitte karg/Sand), Schnee/Wüste/Vulkan weg. Bergstöcke in Gebieten bleiben (neues Aussehen) + Felskessel
     um Tempel. Grafik als KI-Bilder (Alexander erzeugt mit ChatGPT), Code setzt nur zusammen. Plan + Bilderliste + Prompts:
     scratchpad/karte_rok_plan.md, Vorbilder vorbilder/12_rokkarte_*.jpg. Burgen bleiben Code.
+    ✅ **Umgesetzt** (Branch worktree-agent-a0275fc948c8df0f5, Teile 01b/03a/03b/03c/03d/03e/06e/01f): Bilder `Game/bilder/karte_*.webp`
+    (≈ 1 MB; Boden nahtlos gemacht, Ketten/Tore gerade geschert, Splitter weg), geladen erst beim ersten Zeichnen (Weltrechner: nie).
+    Boden nach Ringen (`lm.boden`: 6–8 grün, 4–5 gelbgrün, 2–3 karg, 0–1 Sand; weich überblendet, `bodenMasken`); `lm.bio` bleibt nur
+    für Rohstoffe/Felder/Berge/Stadtbild (keine neue Spielregel). Ketten (`karteObjekte`): auf jeder Grenzlinie (`grenzLinie`, auch
+    Kartenrand) 2–3 Reihen überlappender Stücke, Knoten an jeder Kreuzung. Tore (`torMitte`/`drawTorBild`): offen/zu wie heute, genau
+    auf der Grenzlinie; die Kette läuft vor/nach dem Tor gerade darauf zu, an senkrechten Grenzen kurzer Knick mit zwei Gipfeln (es
+    gibt nur das Quer-Tor-Bild); Tore im Nebel werden mitgezeichnet. Wald 17/18 locker auf freier Wiese. Weit draußen (< 0,0025):
+    Farbflächen, Gebirgs-Bänder, Tore als Punkte (gold offen, rot zu), Mitte immer sichtbar; freie Basen von weitem nur ein leiser Fleck.
+    Logik (Gebiete, Tore, Maut, Pass-Zeiten, Marschwege) unverändert – Test `karte_rok_test` misst u. a. jedes Tor und prüft, dass
+    Märsche die Kette nur am Tor kreuzen. Bergstöcke als Bild (fels_1/2) vom zweiten Programmierer (01f) eingemischt.
 26. **Zahlen aus der Nacht-Recherche (später, Alexander: „kümmern wir uns später“):** (a) Burg-Kosten ab Stufe 10 viel zu
     hoch: Burg 24→25 = 5,6 Mrd. Holz (+4,5 Mrd. Stein, 2,8 Mrd. Eisen, 6,3 Mrd. Gold), RoK ≈ 82 Mio. – unsere Formel ×2 je
     Stufe ab 10, RoK ×1,5; (b) Burg 1→2 dauert 1 Tag, RoK: erste 5 Stufen ≈ 1,5 h – Neuling sieht keinen Fortschritt;
     (c) Produktion Spätspiel 1,36 Mio./h vs. RoK 20.800 – Zahlen aufgebläht; (d) Friedensschild 3–4× billiger als RoK
     (8 h 120 Gems / 24 h 300 vs. 500 / 1.000) – gegen Edelstein-Einkommen prüfen. Quelle: scratchpad/nacht/stadt/ZAHLEN.md.
-27. **Karte neu (Branch worktree-agent-a0275fc948c8df0f5, Commit 45e2463, ~80 %, nicht gemergt) – offen:** senkrechte Pässe
-    (graue Platzhalter-Türme + Naht quer über die Kette → Türme aus Torbild ausschneiden bzw. KI-Bild „Tor in Nord-Süd-Kette“),
-    Ketten bei mittlerem Zoom zu schmal (senkrecht fehlt 2. Reihe), ganz weit ~550 Tor-Punkte → weg, Nebel ganz weit nur
-    dunkles Gitter, Lager/Felder teils auf der Kette (nur Darstellung aussparen), Kachelnaht boden_innen, Karte etwas dunkel,
-    Grenztor 14 im Knick, Tor-Messung senkrecht fehlerhaft (immer 0°). Server-Test klick_test (Tor antippen) noch nicht gelaufen.
+27. **Karte umgesetzt (Merge worktree-agent-a0275fc948c8df0f5, Commit 7a8b478) – offen:** Ecken ganz weit leicht dunkel,
+    senkrechte Ketten bei „weit“ etwas schmaler, Leistung ganz weit = alte Karte (67 ms).
 28. **Kleinigkeiten:** Invasionsleiste zeigt „0 P.“ – versteht kein Spieler; handy_tipp_test rot während Invasion (Leiste zeigt
     nur Invasion statt Wochen-Event-Chip).
 29. **Server-Test klick_test rot (auch ohne Kartenänderung, Stand ff506e7):** „Basis erobert“ – Angriff auf die nächste neutrale

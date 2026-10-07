@@ -260,12 +260,45 @@ function buildingSprite(kind, ownerKey, home, sizePx, tier) {
   else if (kind === 'gate' || kind === 'gateShut') paintGateIso(g, ownerKey, detail, kind === 'gate'); else paintMegaTemple(g, ownerKey, detail);
   BUILDING_SPRITES.set(key, s = { c, bucket }); return s;
 }
+// Pass-Tor auf der Karte: steht genau auf der Grenzlinie (die Kette läuft dort gerade auf das Tor zu, 03a karteObjekte)
+// → { x, y, r: Abstand Mitte–Schild, senk: Grenze läuft senkrecht } oder null
+const TOR_PUNKT_ZOOM = 0.0015;                                                  // noch weiter draußen keine Tor-Punkte (Handy: über 500 Punkte wären nur Rauschen)
+function torMitte(island) {
+  if (island.type !== 'gate' || !karteBilder()) return null;
+  if (island.torMitte) return island.torMitte;
+  const [[x1, y1], [x2, y2]] = island.ends, im = KB.img.tor_zu, S = HEX_SPACING, senk = Math.abs(x2 - x1) > Math.abs(y2 - y1);
+  let x = (x1 + x2) / 2, y = (y1 + y2) / 2;
+  if (senk) x = grenzLinie(true, Math.round(x / S - .5) + .5, y); else y = grenzLinie(false, Math.round(y / S - .5) + .5, x);
+  return (island.torMitte = { x, y, senk, r: senk ? TOR_SENK.hoch * .07 : KARTE_MASS.tor * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });   // (senkrecht: Schild knapp unter dem Weg)
+}
+// (Bildschirm) Pass-Tor offen/zu; dunkel: noch im Nebel. Waagrechte Grenze: das Pass-Tor-Bild (Mauer in Kettenrichtung).
+// Senkrechte Grenze: das Tor-Bild für Nord-Süd-Ketten, Weg genau auf dem Torpunkt, Kettenachse auf der Grenzlinie.
+function drawTorBild(island, open, z, dunkel) {
+  const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z * karteSkala(z), mx = toSX(tm.x), my = toSY(tm.y);
+  if (w < 16) { if (dunkel || z < TOR_PUNKT_ZOOM) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
+    ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
+  if (mx + w < 0 || mx - w > viewW || my + w < 0 || my - w > viewH) return;
+  if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z, ws = hs * KB.img[ns].width / KB.img[ns].height, im = kbBild(ns, ws * dpr);   // (nicht vergrößert: Felsen so groß wie die Kette daneben)
+    if (z >= 0.006) { ctx.drawImage(im, mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
+    const a = TOR_SENK.achse - .2, b = TOR_SENK.achse + .2;                    // weiter draußen nur die Kette mit Mauer, ohne die Weg-Stummel
+    ctx.drawImage(im, a * im.width, 0, (b - a) * im.width, im.height, mx - ws * .2, my - hs * TOR_SENK.weg, ws * .4, hs); return; }
+  const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
+}
+function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
+  if (!karteBilder() || KARTE_MASS.tor * z < 16) return;
+  setScreen(ctx);
+  const m = KARTE_MASS.tor;
+  for (const br of bridges) { const isl = islandById[br.gateId]; if (!isl || islandSeen(isl)) continue;
+    const tm = torMitte(isl); if (tm.x < view.l - m || tm.x > view.r + m || tm.y < view.t - m || tm.y > view.b + m) continue;
+    drawTorBild(isl, false, z, true); }
+}
 function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)
   const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
   const home = island.id === playerIslandId, cap = home || isCapital(island.id);
   const tier = island.type === 'tower' ? towerTier(baseLevelOf(island)) : 1;
   const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
   if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
+    if (torMitte(island)) { drawTorBild(island, ownerKey !== 'neutral' && !gateSettings(island).closed, z); return; }   // Karte wie RoK: das Pass-Tor (Bild) in der Kette, offen/zu wie heute
     if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
     // the same 3D gate tower on BOTH banks where the bridge lands (open: portcullis up; shut or unowned: down)
     const S = Math.max(16, size * 1.25), open = ownerKey !== 'neutral' && !gateSettings(island).closed;
@@ -277,6 +310,9 @@ function drawBuilding(island, ownerKey, z) {                                   /
     for (const [gx, gy] of spots) if (!bkDraw(bk, gx, gy)) ctx.drawImage(sp.c, gx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
     return;
   }
+  if (kind === 'tower' && ownerKey !== 'player' && z < TOR_PUNKT_ZOOM && karteBilder()) return;   // ganz draußen: keine Punkt-Tapete fremder und freier Basen (wie RoK nur Zonen, Tempel, eigenes Gebiet)
+  if (kind === 'tower' && ownerKey === 'neutral' && size < 30 && karteBilder()) {   // Karte wie RoK: freie Basen von weitem nur ein leiser Fleck, keine Symbol-Tapete (Alexander)
+    ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, size * .07), 0, Math.PI * 2); ctx.fillStyle = 'rgba(40,30,18,.3)'; ctx.fill(); return; }
   if (size < 6) {                                                              // LOD: dot / diamond
     ctx.fillStyle = kind !== 'tower' ? '#d9b566' : ownerKey === 'neutral' ? 'rgba(205,212,224,.55)' : (ownerKey === 'player' ? '#8cc0ff' : '#ff8d82');
     const r = kind !== 'tower' ? 3.5 : ownerKey === 'neutral' ? 1.4 : 2.5;

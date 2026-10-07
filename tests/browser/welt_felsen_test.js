@@ -6,7 +6,9 @@
 // D) Marsch um einen Berg: länger als Luftlinie (Strecke, Angriff, Mitspieler, Späher), marchPath = gezeichnete Linie
 // E) Handy (Zuschauer, vorläufiger Marsch) und Weltrechner (WELT nachgebaut, leiter) rechnen dieselbe Marschzeit
 // F) Schalter WELT_FELSEN = false (Kopie der Vorschau): keine Berge, alle Wege wie vorher (Luftlinie über die Brücken)
-// G) Aussehen: Low-Poly-Gipfel (5 Flächen-Töne), 1–3 Stöcke je Region; Wüste/Stein: Felsen statt der alten runden Häufchen
+// G) Aussehen: Low-Poly-Gipfel (5 Flächen-Töne, Ersatz solange die Bilder laden), 1–3 Stöcke je Region; Karte wie RoK: keine runden
+//    Wald-Häufchen mehr in der Kachel (Wald nur noch als Bild, 03a karteObjekte – lm.forest braucht nur noch das Stadtbild)
+// G2) Bergstöcke als KI-Bilder (fels_1/2.webp): Fuß deckt die Hülle, fest aus der Saat, drawImage in der Kachel, Weltrechner lädt nichts
 // H) Marsch-Zeitschild: die Zahl steht links neben der Sanduhr (textAlign 'left'; vorher 'center' von den Namensschildern →
 //    Zahl über der Sanduhr, „9̶1:43“); Restzeit passt zum Hinweis oben („ca. …“, Dauer aus dem Umweg)
 // Bilder (Handy + Desktop, 3 Zoomstufen, Marsch um einen Berg) in den Arbeitsordner.
@@ -84,7 +86,27 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(gg.max <= 3 && gg.ohne <= gg.gross * .15, '1–3 Bergstöcke je Region (große Regionen fast alle mit Bergen)', gg);
   ok(gg.toene, 'Low-Poly: 5 verschiedene Flächen-Töne je Landschaft (hell, licht, mittel, dunkel, tief)');
-  ok(gg.felsW && gg.wald[0] === 0 && gg.wald[1] === 0 && gg.gruen > 0, 'Wüste/Stein: Felsen statt der runden Häufchen (Wiese: Wald bleibt)', gg);
+  ok(gg.wald[0] === 0 && gg.wald[1] === 0 && gg.gruen === 0, 'Karte wie RoK: keine runden Wald-Häufchen mehr in der Kachel (Wald als Bild)', gg);
+
+  // ===== G2) Bergstöcke als KI-Bilder (bilder/fels_1/2.webp): geladen, Fuß deckt die Hülle, fest aus der Saat, Weltrechner lädt nichts =====
+  await p.waitForFunction(() => felsBilder.fertig === FELS_BILDER.length, null, { timeout: 20000 }).catch(() => {});
+  const bi = await p.evaluate(() => {
+    const L = felsenListe(), schlecht = [];
+    for (const f of L) { const st = felsStuecke(f), l = Math.min(...st.map(s => s.x - s.w / 2)), r = Math.max(...st.map(s => s.x + s.w / 2));
+      if (st.length < 1 || st.length > 3 || l > f.bb.l + 300 || r < f.bb.r - 300 || Math.max(...st.map(s => s.y)) < f.bb.b - 1) schlecht.push(f.id); }
+    const gleich = JSON.stringify(L.map(felsStuecke)) === JSON.stringify(L.map(felsStuecke));
+    const lm = landmasses[L[0].lm], c = document.createElement('canvas'), g = c.getContext('2d'), o = g.drawImage; let n = 0;
+    c.width = c.height = 256; g.drawImage = function () { n++; return o.apply(this, arguments); };
+    paintBackground({ c, g, z: .03, l: L[0].x - 4000, t: L[0].y - 4000, noSea: true }, null, true);
+    const w0 = window.WELT, vorher = felsBilder.img; window.WELT = { leiter: true }; felsBilder.img = null; felsBilderLaden();
+    const rechnerLaedt = felsBilder.img !== null; felsBilder.img = vorher; window.WELT = w0;
+    const groesse = FELS_BILDER.map((s, i) => felsBilder.img[i].naturalWidth);
+    return { fertig: felsBilder.fertig, schlecht: schlecht.slice(0, 5), nSchlecht: schlecht.length, gleich, bilder: n, stuecke: lm.felsBild.stuecke.length, rechnerLaedt, groesse };
+  });
+  ok(bi.fertig === 2 && bi.groesse.every(w => w > 300), 'Bergstock-Bilder geladen (fels_1/2.webp)', bi.groesse);
+  ok(bi.nSchlecht === 0 && bi.gleich, 'je Bergstock 1–3 Bild-Stücke, Fuß deckt die Hülle (Breite + unten), fest aus der Saat', bi.schlecht);
+  ok(bi.bilder >= bi.stuecke && bi.stuecke > 0, 'Kachel malt die Bergstöcke als Bild (drawImage statt Facetten)', { drawImage: bi.bilder, stuecke: bi.stuecke });
+  ok(!bi.rechnerLaedt, 'Weltrechner (WELT.leiter) lädt keine Bilder');
 
   // ===== D) Marsch um einen Berg + E) Handy = Weltrechner =====
   const d = await p.evaluate(({ a: aId, c: cId }) => {

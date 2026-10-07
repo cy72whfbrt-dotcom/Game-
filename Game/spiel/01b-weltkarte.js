@@ -12,7 +12,7 @@
 const GRID_N = 17;         // square world: 17 × 17 regions (Paket C, vorher 15 × 15 – Messwerte in LIESMICH 23), the Thron-Insel in the middle, the 8 regions around it form the ring
 const HEX_SPACING = 56120; // distance between orthogonally adjacent cell centres (tightest packing with zero overlap)
 const GRID_HALF = (GRID_N - 1) / 2;
-const RIVER_HALF = 1500;   // one big square continent: its regions are split by narrow rivers (half width)
+const RIVER_HALF = 1500;   // one big square continent: its regions are split by mountain chains (half width; früher Flüsse) – nur durch die Tore
 const FRAME_HALF = (GRID_HALF + .5) * HEX_SPACING + 9000;   // the square map border (world units from the centre)
 // Bases are scattered freely across a landmass (rejection-sampled,
 // not a rigid grid) - only constraint is a minimum distance from
@@ -162,11 +162,26 @@ function riverOffset(vertical, line, t) {       // meander of the river line `li
     const k = line * 2.37 + (vertical ? 0 : 11.3);
     return 1400 * Math.sin(t / 6100 + k) + 700 * Math.sin(t / 2300 + k * 1.9) + 300 * Math.sin(t / 900 + k * 3.7);
 }
+// Grenzlinie `line` (zwischen den Zellen, ±(GRID_HALF + .5) = Kartenrand) an der Stelle t: senkrecht → x, waagrecht → y
+// (heute ein Gebirgszug – LIESMICH 11c Punkt 25; am Rand schlängelt sie sich stärker)
+function grenzLinie(vertical, line, t) { return line * HEX_SPACING + riverOffset(vertical, line, t) * (Math.abs(line) > GRID_HALF ? 1.6 : 1); }
+// Abstand eines Weltpunkts zur nächsten Grenzlinie (dort steht das Gebirge)
+function grenzAbstand(x, y) {
+    const q = Math.round(x / HEX_SPACING - .5) + .5, r = Math.round(y / HEX_SPACING - .5) + .5;
+    return Math.min(Math.abs(x - grenzLinie(true, q, y)), Math.abs(y - grenzLinie(false, r, x)));
+}
+// Ring unter einem Weltpunkt (über die geschlängelten Grenzen; außerhalb der Karte GRID_HALF + 1)
+function ringAn(x, y) {
+    let q = Math.round(x / HEX_SPACING), r = Math.round(y / HEX_SPACING);
+    if (x > grenzLinie(true, q + .5, y)) q++; else if (x < grenzLinie(true, q - .5, y)) q--;
+    if (y > grenzLinie(false, r + .5, x)) r++; else if (y < grenzLinie(false, r - .5, x)) r--;
+    return Math.min(GRID_HALF + 1, Math.max(Math.abs(q), Math.abs(r)));
+}
 function generateRegionShape(q, r) {
     const S = HEX_SPACING, cx = q * S, cy = r * S, N = 120, out = [];
     const edge = (side, t) => {                  // world coordinate of one bank at position t along it
         const vertical = side === 0 || side === 2, line = side === 0 ? q + .5 : side === 2 ? q - .5 : side === 1 ? r + .5 : r - .5;
-        const outer = Math.abs(line) > GRID_HALF, base = line * S + riverOffset(vertical, line, t) * (outer ? 1.6 : 1);
+        const outer = Math.abs(line) > GRID_HALF, base = grenzLinie(vertical, line, t);
         const sign = side === 0 || side === 1 ? -1 : 1;             // right / bottom bank sits left / above the river line
         return base + sign * (outer ? 0 : RIVER_HALF);
     };
@@ -191,7 +206,10 @@ function generateRegionShape(q, r) {
 // Landscape: snow in the north, grassland in the middle band, desert in the south (the border steps a little per column);
 // the ring around the middle is stone, the regions right next to it stay green.
 // Paket C: dazu Eis ganz im Norden (oberste Reihe), zwei Vulkan-Gebiete nahe der Mitte (west und ost, je 5 Regionen)
-// und Sumpf in den Flussniederungen des grünen Mittelstreifens (außen, verstreut). Reine Optik – keine Spielwirkung.
+// und Sumpf in den Flussniederungen des grünen Mittelstreifens (außen, verstreut).
+// Seit der Karte wie RoK (LIESMICH 11c Punkt 25) nicht mehr zu sehen: gilt nur noch für Rohstoffe, Felder, Berge und das Stadtbild.
+// Die Karte malt den Boden nach Ringen (lm.boden): außen grün → Mitte Sand.
+const BODEN_RING = r => r <= 1 ? 'sand' : r <= 3 ? 'innen' : r <= 5 ? 'mitte' : 'aussen';
 const VULKANE = [[-4, 0], [4, 1]];
 function regionBiome(q, r) {
     const ring = Math.max(Math.abs(q), Math.abs(r)); if (ring <= 2) return 'green';
@@ -226,7 +244,7 @@ const landmasses = [];
         let shapeMaxR = 0;
         for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
         const corner = cell.d === 1 && Math.abs(cell.q) === 1 && Math.abs(cell.r) === 1;
-        landmasses.push({ id: lmId, q: cell.q, r: cell.r, ring: cell.d, x, y, radius, shape, shapeMaxR, isCenter: isC, tier, corner, bio: regionBiome(cell.q, cell.r) });
+        landmasses.push({ id: lmId, q: cell.q, r: cell.r, ring: cell.d, x, y, radius, shape, shapeMaxR, isCenter: isC, tier, corner, bio: regionBiome(cell.q, cell.r), boden: BODEN_RING(cell.d) });
         lmId++;
     }
 }
