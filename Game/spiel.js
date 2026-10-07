@@ -3641,6 +3641,10 @@ function basisBild(nr) {                                                       /
       im.src = 'bilder/basis_' + String(i).padStart(2, '0') + '.webp'; } }
   return BASIS_BILD.img[nr] || null;
 }
+function basisKreis(isl, z) {                                                 // Basis als Bild: Mitte (dy über dem Fußpunkt) und Halbmesser für Ringe/Kuppel – sonst null
+  const w = BASIS_BREITE * z, im = isl.type === 'tower' && w >= BASIS_MIN_PX && basisBild(basisBildNr(baseLevelOf(isl)));
+  return im ? { dy: w * im.height / im.width * .22, r: w * .42 } : null;
+}
 function drawBasisBild(island, ownerKey, z) {                                  // (Bildschirm) → true, wenn das Bild gezeichnet ist
   const w = BASIS_BREITE * z; if (w < BASIS_MIN_PX) return false;
   const im = basisBild(basisBildNr(baseLevelOf(island))); if (!im) return false;
@@ -3655,7 +3659,7 @@ function drawBasisBild(island, ownerKey, z) {                                  /
 // des Besitzers (frei: keins), im Balken Stufe und Truppen – eigene und Bündnis die echte Zahl (sofern das Handy sie hat), fremde und
 // freie „?“ bis gespäht (wie die Fahnen, bannerModel). Text und Strich in der Besitzer-Farbe. Stößt ein Schild an ein anderes oder passt
 // die Zahl nicht: nur die Stufe. Ein Schild wird je Größe (8-px-Stufen) einmal gemalt und gemerkt.
-const SCHILD_ANTEIL = .7, SCHILD_MIN = 72, SCHILD_ZAHL = 96, SCHILD_ZOOM = BASIS_MIN_PX / BASIS_BREITE;   // (Truppen-Zahl erst ab 96 px Breite)
+const SCHILD_ANTEIL = .7, SCHILD_MIN = 90, SCHILD_ZAHL = 96, SCHILD_ZOOM = BASIS_MIN_PX / BASIS_BREITE;   // (Truppen-Zahl erst ab 96 px Breite)
 const SCHILD_FARBE = { player: '#8cc0ff', ally: '#86e09a', bot: '#ff8d82', neutral: '#eadfc4' };
 const SCHILD_MERK = new Map();
 function schildRect(island, z) {                                               // (Bildschirm) wo das Schild einer Basis steht
@@ -3674,14 +3678,14 @@ function schildBild(d, W, mitZahl) {                                           /
   c = document.createElement('canvas'); c.width = Math.ceil(W * dpr); c.height = Math.ceil(H * dpr);
   const g = c.getContext('2d'); g.scale(dpr, dpr); g.drawImage(KB.img.schild, 0, 0, W, H);
   if (cr) drawCrest(g, 82 * k, 79 * k, 76 * k, cr);                           // im runden Feld
-  const x0 = 168 * k, x1 = 462 * k, ym = 79 * k, fs = Math.max(10, Math.min(14, Math.round(W * .1)));   // der Balken innen
+  const x0 = 168 * k, x1 = 462 * k, ym = 79 * k, fs = Math.max(8, Math.min(14, Math.round(W * .1)));   // (klein: die Schrift passt in den Balken)   // der Balken innen
   g.textBaseline = 'middle'; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
   const lang = 'Stufe ' + d.stufe, t = mitZahl ? g.measureText(d.truppen).width + fs + 6 : 0;   // erst „Stufe 12“, wird es eng nur „12“
   const st = g.measureText(lang).width + t <= x1 - x0 ? lang : String(d.stufe), zahl = mitZahl && g.measureText(st).width + t <= x1 - x0;
   g.textAlign = zahl ? 'left' : 'center'; g.fillStyle = farbe; g.fillText(st, zahl ? x0 : (x0 + x1) / 2, ym + .5);
   if (zahl) { g.textAlign = 'right'; g.fillStyle = '#f3e6c4'; g.fillText(d.truppen, x1, ym + .5);
     drawGlyph(g, 'troops', x1 - g.measureText(d.truppen).width - fs * .55 - 2, ym, fs - 1, '#d9c9a0'); }
-  g.strokeStyle = farbe; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x0, 106 * k); g.lineTo(x1, 106 * k); g.stroke();   // der Besitzer auf einen Blick
+  if (W >= SCHILD_ZAHL) { g.strokeStyle = farbe; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x0, 106 * k); g.lineTo(x1, 106 * k); g.stroke(); }   // der Besitzer auf einen Blick (klein: nur die Schriftfarbe)
   if (SCHILD_MERK.size > 400) SCHILD_MERK.clear(); SCHILD_MERK.set(key, c); return c;
 }
 function drawBasisSchilder(vis, z) {                                          // nach allen Basen: die Schilde liegen obenauf
@@ -3957,7 +3961,7 @@ function bannerSprite(tierKey, m) {
   return s;
 }
 const DOWN = { A: 'B', B: 'K', K: 'C', C: 'C', N: 'N' };
-function tierFor(z) { return z >= 0.06 ? 'A' : z >= 0.026 ? 'B' : 'C'; }
+function tierFor(z) { const q = z / maxZoom; return q >= .75 ? 'A' : q >= .45 ? 'B' : 'C'; }   // (im Verhältnis zum größten Zoom – der hängt von der Bildschirmbreite ab)
 let bannerHitRects = [];
 function overlap(a, b) { return Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); }
 
@@ -3972,7 +3976,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const schild = isl => isl.type === 'tower' && z >= SCHILD_ZOOM && !!KB.img.schild;   // Basen tragen ihr Namensschild – Fahne nur noch beim Antippen
   const schilde = visible.filter(schild).map(isl => Object.assign({ id: isl.id }, schildRect(isl, z)));
   bannerHitRects.push(...schilde);                                                // (Schild antippen öffnet die Basis, Funde und Märsche weichen aus)
-  if (z < TERRITORY_VIEW_ZOOM) return [];
+  if (z < Math.min(TERRITORY_VIEW_ZOOM, maxZoom * .25)) return [];
   for (const q of schilde) towers.push({ id: -1, x: q.x, y: q.y, w: q.w, h: q.h });
   const base = tierFor(z);
   let items = visible.filter(isl => !schild(isl) || isl.id === selectedId).map(isl => {
@@ -4147,8 +4151,8 @@ function drawBaseSparks(vis, z, now) {            // over the towers
     const t = titled.get(isl.id), x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25);
     if (x < -r * 5 || x > viewW + r * 5 || y < -r * 6 || y > viewH + r * 5) continue;
     const shOw = islandOwnerOf(isl.id);
-    if (shOwn.has(shOw) && shieldCovers(isl)) { const r = isl.radius * z;                                               // Friedensschild: a pale dome over every base of its owner
-      const R = Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id);
+    if (shOwn.has(shOw) && shieldCovers(isl)) { const bk = basisKreis(isl, z), r = isl.radius * z;                     // Friedensschild: a pale dome over every base of its owner
+      const R = bk ? bk.r * 1.15 : Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id), y = bk ? toSY(isl.y) - bk.dy + R * .2 : toSY(isl.y);   // (Bild: die Kuppel mittig darüber)
       const gd = ctx.createRadialGradient(x, y - R * .2, R * .3, x, y - R * .2, R);
       gd.addColorStop(0, 'rgba(210,235,255,.12)'); gd.addColorStop(.7, 'rgba(190,225,255,' + (.28 * ph).toFixed(2) + ')'); gd.addColorStop(1, 'rgba(230,245,255,' + (.6 * ph).toFixed(2) + ')');
       ctx.fillStyle = gd; ctx.beginPath(); ctx.arc(x, y - R * .2, R, 0, Math.PI * 2); ctx.fill();
@@ -4205,7 +4209,9 @@ function drawRings(visible, z, now) {
   const pulse = .5 + .5 * Math.sin(now / 280);
   const attackTarget = pendingAttackTargetId !== null ? islandById[pendingAttackTargetId] : null;
   for (const isl of visible) {
-    const x = toSX(isl.x), y = toSY(isl.y), r = isl.radius * z, S = Math.max(r * 1.28 + 3, 12);
+    let x = toSX(isl.x), y = toSY(isl.y), r = isl.radius * z;
+    const bk = basisKreis(isl, z); if (bk) { y -= bk.dy; r = bk.r; }   // Basis als Bild: Ringe mittig um das Bild (Bildmitte, nicht Fußpunkt), passend groß
+    const S = Math.max(r * 1.28 + 3, 12);
     const isOwned = ownedIslands.has(isl.id);
     const isTemple = isl.type === 'temple' || isl.type === 'megaTemple';
     if (isTemple && z >= 0.006) {
@@ -4551,9 +4557,9 @@ function drawMap() {
   drawBarb(now, wallNow); drawEvents(now, wallNow);                                                                                               // Barbaren-Lager, the Tagesboss and the columns on their way
   drawArmies(now, wallNow);                                                                                             // your armies out in the open
   for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
-  drawBasisSchilder(vis, z);                                                                                           // Namensschilder der Basen (ab mittel)
   drawThroneFx(z, now);
   drawBaseSparks(vis, z, now);
+  drawBasisSchilder(vis, z);                                                                                           // Namensschilder der Basen: über Kuppel und Funken (immer lesbar)
   drawWander(now);                                                                                                     // the Kriegsherr and his host
   drawNacht(vis, z, viewPad);                                                                                          // Paket C: Abendrot, Nacht, Lichter
   if (typeof drawHaendler === 'function') drawHaendler();                                                              // Paket C: der Karren des wandernden Händlers (haendler.js)
@@ -4600,7 +4606,7 @@ const clampZoom = z => Math.min(maxZoom, Math.max(minZoom, z));
 
 function updateZoomBounds() {    // call at boot (after WORLD exists) and on every resize
   minZoom = Math.max(0.0002, Math.min(viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));   // die ganze Karte (die Zonen-Karte ist groß: auch auf dem Handy), nie kleiner (sonst rechnet die Kamera-Grenze ins Leere)
-  maxZoom = CAM.MAX_ZOOM;
+  maxZoom = Math.min(CAM.MAX_ZOOM, viewW / 3 / BASIS_BREITE);   // ganz nah: eine Basis füllt höchstens ein Drittel der Breite (Alexander 7.10.: sonst riesig und unscharf)
   mapState.zoom = clampZoom(mapState.zoom); mapState.targetZoom = clampZoom(mapState.targetZoom);
 }
 // Camera clamp (v2): the view centre is kept in a region R(z), and the clamp is the nearest point of R - history-free,
@@ -7511,7 +7517,7 @@ afterSplash(() => setTimeout(maybeShowDaily, 500));
 // nach Lage), puls (der nächste nötige Knopf pulsiert: body[data-anl-puls], Stil in 02), stadt (gilt in der Stadt), ok (Knopf „Verstanden“).
 const anleitungNeutral = id => !islandOwnerOf(id) && !bossAt(id) && islandById[id].type !== 'megaTemple';
 const ANLEITUNG = [
-    { t: 'Tippe auf deine Hauptstadt – die blaue Basis mit der Krone (das Fadenkreuz rechts bringt dich hin).', fertig: () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden
+    { t: 'Tippe auf deine Hauptstadt – die blaue Basis mit der Krone (der Kompass rechts bringt dich hin).', fertig: () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden
         || anleitungTat.attack || (anleitungInsel() && anleitungNeutral(popupIslandId)),   // schon bei einer neutralen Basis (oder angegriffen): gleich weiter zu Schritt 2
       tipp: () => anleitungInsel() && popupIslandId !== playerIslandId ? 'Das ist nicht deine Hauptstadt. Schließe das Fenster (×) und tippe die blaue Basis mit der Krone an.' : null, puls: () => 'heim' },
     { t: 'Greif eine neutrale Basis in deiner Nähe an: tippe eine Basis mit dem Schild „Neutral“ an.', fertig: () => anleitungTat.attack,
@@ -7531,7 +7537,7 @@ const ANLEITUNG = [
       puls: () => document.getElementById('fieldSheet').hidden ? '' : 'sammeln' },
     { t: 'Hol dir deine Belohnungen unter „Events“ (unten).', fertig: () => anleitungTat.abgeholt || (isPanelOpen(goalsPopup) && !eventsBereit()),   // (nichts abholbereit: dann reicht das Öffnen)
       tipp: () => isPanelOpen(goalsPopup) ? 'Tippe auf „Abholen“ – die Zahl an einem Reiter zeigt, wo noch etwas wartet.' : null, puls: () => isPanelOpen(goalsPopup) ? 'abholen' : 'events' },
-    { t: 'Knöpfe rechts: Fadenkreuz = zur Hauptstadt · Fahne = Wegmarke · Schwerter = Armee aufstellen · + und − = näher, weiter. Würfel oben = Rohstoffe (Holz, Stein, Eisen).', fertig: () => anleitungTat.knoepfe, puls: () => 'knoepfe', ok: true }
+    { t: 'Knöpfe rechts: Kompass = zur Hauptstadt · Fahne = Wegmarke · Schild = Armee aufstellen · Lupen = näher, weiter. Oben Holz, Stein, Eisen antippen = Ertrag pro Stunde.', fertig: () => anleitungTat.knoepfe, puls: () => 'knoepfe', ok: true }
 ];
 const anleitungTat = {};
 const anleitungAlleAusHaupt = () => popupView === 'preview' && previewSourceId === playerIslandId && (islandTroops[playerIslandId] || 0) > 0 && (previewAttackTroops || 0) >= (islandTroops[playerIslandId] || 0);   // nur ein Hinweis, keine Regel

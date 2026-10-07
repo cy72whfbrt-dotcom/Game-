@@ -20,7 +20,7 @@ const clampZoom = z => Math.min(maxZoom, Math.max(minZoom, z));
 
 function updateZoomBounds() {    // call at boot (after WORLD exists) and on every resize
   minZoom = Math.max(0.0002, Math.min(viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));   // die ganze Karte (die Zonen-Karte ist groß: auch auf dem Handy), nie kleiner (sonst rechnet die Kamera-Grenze ins Leere)
-  maxZoom = CAM.MAX_ZOOM;
+  maxZoom = Math.min(CAM.MAX_ZOOM, viewW / 3 / BASIS_BREITE);   // ganz nah: eine Basis füllt höchstens ein Drittel der Breite (Alexander 7.10.: sonst riesig und unscharf)
   mapState.zoom = clampZoom(mapState.zoom); mapState.targetZoom = clampZoom(mapState.targetZoom);
 }
 // Camera clamp (v2): the view centre is kept in a region R(z), and the clamp is the nearest point of R - history-free,

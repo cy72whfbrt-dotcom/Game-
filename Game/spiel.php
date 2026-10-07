@@ -1968,6 +1968,8 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 :root{
   --ui-rund:url(bilder/ui_rund.webp); --ui-rund-an:url(bilder/ui_rund_an.webp);
 }
+/* Ladebild: der dunkle Grund hinter dem Titel läuft rundum weich aus (closest-side: nie eine harte Kante am Kastenrand) */
+.splash-top::before{inset:-70px -60px;background:radial-gradient(closest-side at 50% 55%,rgba(6,10,28,.72),rgba(6,10,28,.35) 60%,transparent)}
 /* solange das Ladebild steht: HUD, Leiste und Kartenknöpfe gar nicht zeichnen – sonst lädt der Browser ihre Bilder vor dem Titelbild */
 body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBar){display:none}
 /* Symbol-Bild statt SVG-Zeichnung: das <svg class="icon"> bleibt (Größe, Platz), nur seine Linien verschwinden */
@@ -2008,7 +2010,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 .nav-btn .nav-l{font-size:10px;color:var(--gold-100);text-shadow:0 1px 2px #000,0 0 4px #000}
 @media (max-width:899px) and (min-height:501px){   /* Handy (Alexander 7.10.): Leiste niedriger, mit Abstand zum Rand – beide Endstücke ganz zu sehen –, Knöpfe enger und kleiner (Tippfläche ≥ 44 px) */
   :root{--dock-h:56px}
-  .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);padding:0 30px calc(var(--safe-bd) * .5);background:none;align-items:center;grid-template-columns:repeat(5,minmax(44px,60px));justify-content:center;column-gap:4px;
+  .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);bottom:var(--safe-bd);height:var(--dock-h);padding:0 30px;background:none;align-items:center;grid-template-columns:repeat(5,minmax(44px,60px));justify-content:center;column-gap:4px;
     border-image-width:7px 22px 5px 22px}
   /* Ring und Symbol als Hintergrund des Knopfs (nicht des SVG – Safari setzt ein SVG-Hintergrundbild nicht mittig); das SVG bleibt als Platzhalter */
   .nav{align-items:stretch}
@@ -2016,6 +2018,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
   .nav-btn.active,.nav-btn:hover{background:var(--ki-bild,none) center 13px/var(--ki-gr) no-repeat,var(--ui-rund-an) center 7px/32px 32px no-repeat}
   .nav-btn > .icon,.nav-btn.active > .icon,.nav-btn:hover > .icon{width:32px;height:32px;background:none}
   #bundBtn,#goalsBtn{--ki-gr:22px auto}   /* breite Symbole: nach der Breite */
+  body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:var(--safe-bd);z-index:var(--z-dock);background:#07090c;pointer-events:none}   /* die Home-Leiste des iPhones: dunkler Grund UNTER der Leiste */
 }
 @media (min-width:900px) and (min-height:501px){   /* Desktop: dieselbe schlanke Leiste (nur unten mittig statt am Rand) */
   .nav{padding:2px 30px 0;gap:4px;border:0;border-radius:0;box-shadow:none;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-image-width:7px 22px 5px 22px}

@@ -138,7 +138,7 @@ function bannerSprite(tierKey, m) {
   return s;
 }
 const DOWN = { A: 'B', B: 'K', K: 'C', C: 'C', N: 'N' };
-function tierFor(z) { return z >= 0.06 ? 'A' : z >= 0.026 ? 'B' : 'C'; }
+function tierFor(z) { const q = z / maxZoom; return q >= .75 ? 'A' : q >= .45 ? 'B' : 'C'; }   // (im Verhältnis zum größten Zoom – der hängt von der Bildschirmbreite ab)
 let bannerHitRects = [];
 function overlap(a, b) { return Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); }
 
@@ -153,7 +153,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const schild = isl => isl.type === 'tower' && z >= SCHILD_ZOOM && !!KB.img.schild;   // Basen tragen ihr Namensschild – Fahne nur noch beim Antippen
   const schilde = visible.filter(schild).map(isl => Object.assign({ id: isl.id }, schildRect(isl, z)));
   bannerHitRects.push(...schilde);                                                // (Schild antippen öffnet die Basis, Funde und Märsche weichen aus)
-  if (z < TERRITORY_VIEW_ZOOM) return [];
+  if (z < Math.min(TERRITORY_VIEW_ZOOM, maxZoom * .25)) return [];
   for (const q of schilde) towers.push({ id: -1, x: q.x, y: q.y, w: q.w, h: q.h });
   const base = tierFor(z);
   let items = visible.filter(isl => !schild(isl) || isl.id === selectedId).map(isl => {
@@ -328,8 +328,8 @@ function drawBaseSparks(vis, z, now) {            // over the towers
     const t = titled.get(isl.id), x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25);
     if (x < -r * 5 || x > viewW + r * 5 || y < -r * 6 || y > viewH + r * 5) continue;
     const shOw = islandOwnerOf(isl.id);
-    if (shOwn.has(shOw) && shieldCovers(isl)) { const r = isl.radius * z;                                               // Friedensschild: a pale dome over every base of its owner
-      const R = Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id);
+    if (shOwn.has(shOw) && shieldCovers(isl)) { const bk = basisKreis(isl, z), r = isl.radius * z;                     // Friedensschild: a pale dome over every base of its owner
+      const R = bk ? bk.r * 1.15 : Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id), y = bk ? toSY(isl.y) - bk.dy + R * .2 : toSY(isl.y);   // (Bild: die Kuppel mittig darüber)
       const gd = ctx.createRadialGradient(x, y - R * .2, R * .3, x, y - R * .2, R);
       gd.addColorStop(0, 'rgba(210,235,255,.12)'); gd.addColorStop(.7, 'rgba(190,225,255,' + (.28 * ph).toFixed(2) + ')'); gd.addColorStop(1, 'rgba(230,245,255,' + (.6 * ph).toFixed(2) + ')');
       ctx.fillStyle = gd; ctx.beginPath(); ctx.arc(x, y - R * .2, R, 0, Math.PI * 2); ctx.fill();
@@ -386,7 +386,9 @@ function drawRings(visible, z, now) {
   const pulse = .5 + .5 * Math.sin(now / 280);
   const attackTarget = pendingAttackTargetId !== null ? islandById[pendingAttackTargetId] : null;
   for (const isl of visible) {
-    const x = toSX(isl.x), y = toSY(isl.y), r = isl.radius * z, S = Math.max(r * 1.28 + 3, 12);
+    let x = toSX(isl.x), y = toSY(isl.y), r = isl.radius * z;
+    const bk = basisKreis(isl, z); if (bk) { y -= bk.dy; r = bk.r; }   // Basis als Bild: Ringe mittig um das Bild (Bildmitte, nicht Fußpunkt), passend groß
+    const S = Math.max(r * 1.28 + 3, 12);
     const isOwned = ownedIslands.has(isl.id);
     const isTemple = isl.type === 'temple' || isl.type === 'megaTemple';
     if (isTemple && z >= 0.006) {
