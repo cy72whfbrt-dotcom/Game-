@@ -7877,7 +7877,8 @@ function neulingTruppen(who) {                    // Gesamttruppen (whoTroops), 
     truppenMem[who] = { v, at: now }; return v;
 }
 function neulingBis() {
-    if (!window.WELT) return 0; const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
+    if (!window.WELT && store.get('openWaterNeulingBis') === null) store.set('openWaterNeulingBis', String(Date.now() + NEULING_MS));   // Vorschau ohne Server: derselbe Schutz ab dem ersten Start (Alexander 7.10.; Tests schalten ihn mit '0' ab)
+    const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
     if (neulingTruppen('player') >= NEULING_TRUPPEN) { store.set('openWaterNeulingBis', '0'); afterSplash(() => flashHint('Dein Anfängerschutz ist vorbei – du hast 100.000 Truppen.', 5000)); return 0; }
     return t;
 }
@@ -10245,7 +10246,12 @@ function cityFrame(now) {
         const an = cityOpenId === p.id || cityRingId === p.id, q = citySchild(g, p.s, p.x, p.y, an, now);
         if (q.x + q.w > 0 && q.x < W && q.y + q.h > 0 && q.y < H) cityNamen.push({ id: p.id, ...q });
         cityHitRects.push({ id: p.id, ...q, cx: p.x, cy: p.y });
-        if (p.id === cityRingId) { const el = document.getElementById('cityRing'), tf = 'translate(' + Math.round(p.x) + 'px,' + Math.round(p.y) + 'px)';   // die runden Knöpfe folgen dem Schild
+        if (p.id === cityRingId) { const el = document.getElementById('cityRing'), nav = document.getElementById('cornerButtons'), unten = (nav ? nav.getBoundingClientRect().top : H) - 8,
+                oben = (document.querySelector('.city-head') || { getBoundingClientRect: () => ({ bottom: 90 }) }).getBoundingClientRect().bottom + 8;
+            let rx = Math.max(110, Math.min(W - 110, p.x)), ry = p.y;                            // die runden Knöpfe folgen dem Schild – ganz im Bild zwischen Kopf und Leiste:
+            if (ry + 62 + 29 + 24 > unten) ry = Math.min(p.y - 50, unten - 62 - 29 - 24);       // reicht der Bogen unter die Leiste, steht er über dem Schild
+            ry = Math.max(oben + 29 - 62 + 40, ry);
+            const tf = 'translate(' + Math.round(rx) + 'px,' + Math.round(ry) + 'px)';
             if (el.style.transform !== tf) el.style.transform = tf; if (el.style.visibility) el.style.visibility = ''; }
     }
     cityRaf = requestAnimationFrame(cityFrame);

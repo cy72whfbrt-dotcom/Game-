@@ -5,6 +5,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
+  await p.evaluate(() => store.set('openWaterNeulingBis', '0'));   // (Anfängerschutz aus: hier wird die eigene Basis angegriffen)
   const v = await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
     const bots = BOT_DEFS.filter(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).slice(0, 2);
     for (const x of bots) if (bundVon(x.id)) bundOp(x.id, { op: 'verlassen' });

@@ -19,6 +19,8 @@
 :root{
   --ui-rund:url(bilder/ui_rund.webp); --ui-rund-an:url(bilder/ui_rund_an.webp);
 }
+/* solange das Ladebild steht: HUD, Leiste und Kartenknöpfe gar nicht zeichnen – sonst lädt der Browser ihre Bilder vor dem Titelbild */
+body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBar){display:none}
 /* Symbol-Bild statt SVG-Zeichnung: das <svg class="icon"> bleibt (Größe, Platz), nur seine Linien verschwinden */
 .ki-sym > use,.nav-btn > .icon > use,.mapctl button > .icon > use,.btn-x > .icon:has(> use[href="#i-close"]) > use{display:none}
 
@@ -57,9 +59,14 @@
 .nav-btn .nav-l{font-size:10px;color:var(--gold-100);text-shadow:0 1px 2px #000,0 0 4px #000}
 @media (max-width:899px) and (min-height:501px){   /* Handy (Alexander 7.10.): Leiste niedriger, mit Abstand zum Rand – beide Endstücke ganz zu sehen –, Knöpfe enger und kleiner (Tippfläche ≥ 44 px) */
   :root{--dock-h:56px}
-  .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);padding:0 30px var(--safe-bd);background:none;grid-template-columns:repeat(5,minmax(44px,60px));justify-content:center;column-gap:4px;
+  .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);padding:0 30px calc(var(--safe-bd) * .5);background:none;align-items:center;grid-template-columns:repeat(5,minmax(44px,60px));justify-content:center;column-gap:4px;
     border-image-width:7px 22px 5px 22px}
-  .nav-btn{justify-content:flex-start;padding-top:5px} .nav-btn > .icon{width:34px;height:34px}
+  /* Ring und Symbol als Hintergrund des Knopfs (nicht des SVG – Safari setzt ein SVG-Hintergrundbild nicht mittig); das SVG bleibt als Platzhalter */
+  .nav{align-items:stretch}
+  .nav-btn{--ki-gr:auto 20px;justify-content:flex-start;padding:7px 0 5px;background:var(--ki-bild,none) center 13px/var(--ki-gr) no-repeat,var(--ui-rund) center 7px/32px 32px no-repeat}   /* zwischen oberem und unterem Leistenrand */
+  .nav-btn.active,.nav-btn:hover{background:var(--ki-bild,none) center 13px/var(--ki-gr) no-repeat,var(--ui-rund-an) center 7px/32px 32px no-repeat}
+  .nav-btn > .icon,.nav-btn.active > .icon,.nav-btn:hover > .icon{width:32px;height:32px;background:none}
+  #bundBtn,#goalsBtn{--ki-gr:22px auto}   /* breite Symbole: nach der Breite */
 }
 @media (min-width:900px) and (min-height:501px){   /* Desktop: dieselbe schlanke Leiste (nur unten mittig statt am Rand) */
   .nav{padding:2px 30px 0;gap:4px;border:0;border-radius:0;box-shadow:none;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-image-width:7px 22px 5px 22px}
@@ -92,17 +99,20 @@
 .chip:not(.chip--rar):not(.chip--scouted){border:0;background:none;border-style:solid;border-image:url(bilder/ui_k_chip.webp) 26 fill / 10px stretch}
 
 /* ---------------- Grundform Fenster: Rahmen, Kopfzeile, Schließen, Reiter, Trennlinie ---------------- */
-.panel::before,.hh::before{border:16px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch}
+/* der Rahmen ist der eigene Rand jedes Fensters (nicht ein darübergelegtes ::before): immer sichtbar, egal welcher Reiter und wie geöffnet; der Inhalt liegt nie darunter */
+.panel{border:14px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 14px stretch;background-clip:border-box}
+.panel::before{content:none}
+.hh::before{border:16px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch}
 .ki-fenster,.marker-sheet{border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);border-radius:0}
 .marker-sheet{padding:16px}
 /* gleicher Innenabstand links und rechts: der Inhalt bleibt innerhalb des Rahmens (16 px Rand + 4 px Luft) */
-.panel > :is(.phead,.pbody,.pfoot,.p5-chips){padding-left:20px;padding-right:20px} .hh{padding-left:20px;padding-right:20px}
+.panel > :is(.phead,.pbody,.pfoot,.p5-chips){padding-left:8px;padding-right:8px} .hh{padding-left:20px;padding-right:20px}
 #citySheet{border-style:solid;border-width:1px 1px 0;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;border-radius:0}
 .phead::after{width:160px;height:10px;background:url(bilder/ui_linie.webp) center/100% 100% no-repeat}
 .btn-x{border:0}
 .btn-x > .icon:has(> use[href="#i-close"]){width:32px;height:32px;background:url(bilder/ui_zu.webp) center/contain no-repeat}   /* (nur „Schließen“ – andere runde Knöpfe wie „Info“ behalten ihr Zeichen) */
 .btn-x:hover{border:0;filter:brightness(1.12)}
-.tabs{background:none;border-bottom:0;gap:3px;padding:4px 16px 0}
+.tabs{background:none;border-bottom:0;gap:3px;padding:4px 4px 0}
 .tab,.tab + .tab{box-shadow:none;border-style:solid;border-width:0;border-image:url(bilder/ui_reiter.webp) 30 40 14 40 fill / 10px 6px 5px 6px stretch}
 .tab.active{background:none;border-image:url(bilder/ui_reiter_an.webp) 30 40 14 40 fill / 10px 6px 5px 6px stretch}
 .tab.active::after,.tab.active::before{display:none}
@@ -138,7 +148,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 /* ---------------- Listen-Karten in allen Fenstern (Shop, Events, Bündnis, Kampf, Berichte, Pass, Rangliste, Einstellungen, Gebäude) ---------------- */
 :is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.chain,.tour-prize,.pass-cell,.pass-how-l,.ach-sum,.pass-hero,
   .pass-prem,.pass-old,.daily-row,.title-row,.forge-row,.fo-row,.fo-detail,.bd-zeile,.bd-form,.anf,.gate-ctl,.city-vgl,.shop-info,.skin-card,.crest-card,.statChip,.notice,
-  .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in,.from-sel,.ap-kopf,.ap-hchip,.inbox-empty,.empty-state,.lb-row,.rank-row){border-radius:0!important;box-shadow:none;
+  .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in,.from-sel,.ap-kopf,.ap-hchip,.inbox-empty,.empty-state,.lb-row,.rank-row,.p5-zeile,.lk-mid,.lk-card){border-radius:0!important;box-shadow:none;
   border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch!important}   /* (!important: Grundform gilt immer – auch gegen ältere „border:“-Kurzregeln mit #id) */
 :is(.ki-karte--an,.ach.is-ready,.quest.is-done:not(.is-claimed),.pass-cell.is-ready,.inbox-row.is-gold,.barb-rank li.me,.logRow.is-new,.ap-hchip.on,.bd-gk,.daily-day.is-today){border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch!important}
 .set-zeile{padding:0 10px;margin-bottom:4px} .set-zeile:last-child{border-bottom:0}

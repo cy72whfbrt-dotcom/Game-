@@ -30,7 +30,8 @@ function neulingTruppen(who) {                    // Gesamttruppen (whoTroops), 
     truppenMem[who] = { v, at: now }; return v;
 }
 function neulingBis() {
-    if (!window.WELT) return 0; const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
+    if (!window.WELT && store.get('openWaterNeulingBis') === null) store.set('openWaterNeulingBis', String(Date.now() + NEULING_MS));   // Vorschau ohne Server: derselbe Schutz ab dem ersten Start (Alexander 7.10.; Tests schalten ihn mit '0' ab)
+    const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
     if (neulingTruppen('player') >= NEULING_TRUPPEN) { store.set('openWaterNeulingBis', '0'); afterSplash(() => flashHint('Dein Anfängerschutz ist vorbei – du hast 100.000 Truppen.', 5000)); return 0; }
     return t;
 }

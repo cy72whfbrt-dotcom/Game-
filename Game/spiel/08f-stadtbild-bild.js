@@ -73,7 +73,12 @@ function cityFrame(now) {
         const an = cityOpenId === p.id || cityRingId === p.id, q = citySchild(g, p.s, p.x, p.y, an, now);
         if (q.x + q.w > 0 && q.x < W && q.y + q.h > 0 && q.y < H) cityNamen.push({ id: p.id, ...q });
         cityHitRects.push({ id: p.id, ...q, cx: p.x, cy: p.y });
-        if (p.id === cityRingId) { const el = document.getElementById('cityRing'), tf = 'translate(' + Math.round(p.x) + 'px,' + Math.round(p.y) + 'px)';   // die runden Knöpfe folgen dem Schild
+        if (p.id === cityRingId) { const el = document.getElementById('cityRing'), nav = document.getElementById('cornerButtons'), unten = (nav ? nav.getBoundingClientRect().top : H) - 8,
+                oben = (document.querySelector('.city-head') || { getBoundingClientRect: () => ({ bottom: 90 }) }).getBoundingClientRect().bottom + 8;
+            let rx = Math.max(110, Math.min(W - 110, p.x)), ry = p.y;                            // die runden Knöpfe folgen dem Schild – ganz im Bild zwischen Kopf und Leiste:
+            if (ry + 62 + 29 + 24 > unten) ry = Math.min(p.y - 50, unten - 62 - 29 - 24);       // reicht der Bogen unter die Leiste, steht er über dem Schild
+            ry = Math.max(oben + 29 - 62 + 40, ry);
+            const tf = 'translate(' + Math.round(rx) + 'px,' + Math.round(ry) + 'px)';
             if (el.style.transform !== tf) el.style.transform = tf; if (el.style.visibility) el.style.visibility = ''; }
     }
     cityRaf = requestAnimationFrame(cityFrame);

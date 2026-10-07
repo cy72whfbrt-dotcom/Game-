@@ -23,11 +23,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const raus = [...document.querySelectorAll('.hud-werte .res, #hudRoh, .nav-btn:not(#profileBtn), .mapctl button')].filter(e => { const r = e.getBoundingClientRect(); return r.width && (r.left < -1 || r.right > innerWidth + 1); }).map(e => e.id || e.className);
     const zahlen = ['coinCount', 'gemCount', 'troopCount'].map(id => { const e = document.getElementById(id); return e.scrollWidth <= e.clientWidth + 1; });
     const nav = document.getElementById('cornerButtons').getBoundingClientRect();
-    const schild = [...document.querySelectorAll('.nav-btn:not(#profileBtn) .nav-l')].every(l => l.getBoundingClientRect().bottom <= nav.bottom - 4);
+    const schild = [...document.querySelectorAll('.nav-btn:not(#profileBtn) .nav-l')].every(l => l.getBoundingClientRect().bottom <= nav.bottom - 2);
     return { ids: ids.filter(i => !document.getElementById(i)), raus, zahlen, schild,
       ring: /ui_ring/.test(bg('.hud-me .avatar-ring', '::after')), kapsel: /ui_kapsel/.test(bg('.hud-werte > .res')), reihe: (() => { const k = [...document.querySelectorAll('.hud-werte .res')].map(e => e.getBoundingClientRect()); return k.length === 6 && k.every(r => Math.abs(r.top - k[0].top) < 2 && r.right <= innerWidth); })(),
       kapselRoh: /ui_kapsel/.test(bg('#hudRoh [data-roh="h"]')) && /ui_res_holz/.test(bg('#hudRoh [data-roh="h"] .icon')),
-      dock: /ui_dock/.test(bg('#cornerButtons')), rund: /ui_rund/.test(bg('#bundBtn > .icon')) && /ui_dock_bund/.test(bg('#bundBtn > .icon')),
+      dock: /ui_dock/.test(bg('#cornerButtons')), rund: /ui_rund/.test(bg('#bundBtn') + bg('#bundBtn > .icon')) && /ui_dock_bund/.test(bg('#bundBtn') + bg('#bundBtn > .icon')),
       zoom: /ui_zoom_rein/.test(bg('#zoomInBtn .icon')) && /ui_rund/.test(bg('#zoomInBtn')) };
   });
   ok(!karte.ids.length, 'Knöpfe/IDs bleiben', karte.ids);
@@ -44,7 +44,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const fenster = await ev(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms));
     document.getElementById('hudPlayer').click(); await warte(800);
-    const pan = document.getElementById('profilePopup'), c = getComputedStyle(pan, '::before'), tab = document.querySelector('#profileTabs .tab.active');
+    const pan = document.getElementById('profilePopup'), c = getComputedStyle(pan), tab = document.querySelector('#profileTabs .tab.active');
     const x = pan.querySelector('.btn-x .icon');
     const ganz = [...document.querySelectorAll('#profileTabs .tab span')].every(t => t.scrollWidth <= t.clientWidth + 1);
     return { ganz, offen: pan.classList.contains('is-open'), rahmen: /ui_rahmen/.test(c.borderImageSource), reiter: tab && /ui_reiter_an/.test(getComputedStyle(tab).borderImageSource),
@@ -62,15 +62,24 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return { n: k.length, bild: k.length > 0 && k.every(t => /ui_kachel_/.test(getComputedStyle(t).backgroundImage)) };
   });
   ok(kachel.n >= 6 && kachel.bild, 'Kacheln: Seltenheit als Bild', kachel);
+  const knopf = await ev(async () => {   // Verkaufen: gesperrt grau, nach Auswahl einer Kachel der rote Knopf
+    const b = document.getElementById('chestSelectSellBtn'), vor = { aus: b.disabled, bild: getComputedStyle(b).borderImageSource };
+    const t = document.querySelector('#chestInventoryGrid .tile[data-r]:not(.empty) .selectDot') || document.querySelector('#chestInventoryGrid .tile[data-r]:not(.empty)');
+    const r = t.getBoundingClientRect(); document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2).click(); await new Promise(f => setTimeout(f, 300));
+    const o = { vor, an: !b.disabled, bild: getComputedStyle(b).borderImageSource };
+    document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2).click(); await new Promise(f => setTimeout(f, 300)); closeAllPopups(); return o;   // (Auswahl wieder weg)
+  });
+  ok(knopf.vor.aus && /ui_k_grau/.test(knopf.vor.bild) && (!knopf.an || /ui_k_rot/.test(knopf.bild)), 'Verkaufen: gesperrt grau, frei rot', knopf);
   await bild('kacheln');
   // 4) Events → Aufgaben (Listen-Karten, Symbole) und Anleitung (Hinweisbox)
   const ziele = await ev(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms));
     closeAllPopups(); openGoals(); await warte(800);
     const s = document.querySelector('#goalsPopup svg.icon:has(> use[href="#i-star"]), #goalsPopup svg.icon:has(> use[href="#i-goal"])');
-    return { offen: isPanelOpen(goalsPopup), sym: !s || /ui_sym_/.test(getComputedStyle(s).backgroundImage) };
+    const pan = document.getElementById('goalsPopup');
+    return { rahmen: /ui_rahmen/.test(getComputedStyle(pan).borderImageSource), offen: isPanelOpen(goalsPopup), sym: !s || /ui_sym_/.test(getComputedStyle(s).backgroundImage) };
   });
-  ok(ziele.offen && ziele.sym, 'Events: Symbole als Bild', ziele);
+  ok(ziele.offen && ziele.sym && ziele.rahmen, 'Events: Symbole als Bild, derselbe Bild-Rahmen', ziele);
   await bild('aufgaben');
   const anl = await ev(async () => {
     closeAllPopups(); anleitung.schritt = 0; anleitungFrage = false; anleitungZeigen(); await new Promise(f => setTimeout(f, 400));
@@ -94,6 +103,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const stadt = await ev(async () => { openCity(); await new Promise(f => setTimeout(f, 1500)); return { breite: Math.round(innerWidth / cityCam.z), bild: CITY_BILD_W }; });
   ok(stadt.breite > 0, 'Stadt: öffnet (Bild deckt den Bildschirm, stadt_bild_test)', stadt);
   await bild('stadt');
+  const ring = await ev(async () => {   // Gebäude unten antippen: die runden Knöpfe ganz zwischen Kopf und Leiste
+    const out = [];
+    for (const id of Object.keys(CITY_ORTE)) { cityFocus(id, true); cityRingAuf(id); await new Promise(f => setTimeout(f, 400));
+      const nav = document.getElementById('cornerButtons').getBoundingClientRect().top;
+      for (const b of document.querySelectorAll('#cityRing .cr-btn')) { const r = b.getBoundingClientRect(), l = b.querySelector('small').getBoundingClientRect();
+        if (r.left < 0 || r.right > innerWidth || r.top < 60 || Math.max(r.bottom, l.bottom) > nav) out.push(id + ':' + Math.round(r.top) + '/' + Math.round(Math.max(r.bottom, l.bottom)) + '>' + Math.round(nav)); } }
+    cityRingZu(); return out; });
+  ok(!ring.length, 'Stadt: runde Knöpfe am Gebäude immer ganz zu sehen (nie unter der Leiste)', ring);
   await ev(() => { closeAllPopups(); closeCity(); });
   // 5a) Shop und Bündnis: Fotos (gleiche Grundform)
   await ev(async () => { closeAllPopups(); document.getElementById('shopBtn').click(); await new Promise(f => setTimeout(f, 800)); });

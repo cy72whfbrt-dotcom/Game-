@@ -30,7 +30,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `adminBefehl` → Game/spiel/10d-welt-weltrechner.js:1203
 - `adminMelden` → Game/weltrechner/push.js:214
 - `adminSenden` → Game/weltrechner/push.js:215
-- `afterSplash` → Game/spiel/06d-schild-produktion.js:390
+- `afterSplash` → Game/spiel/06d-schild-produktion.js:391
 - `ago` → Game/spiel/05c-erfolge-rangliste.js:188
 - `ago` → Game/spiel/05d-maersche-kampfbericht.js:153
 - `Aktion 'befehle_da'` → Game/server/06-speichern-push-konto.php:26
@@ -150,7 +150,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ausbauPruefen` → Game/spiel/10d-welt-weltrechner.js:390
 - `ausgangSichern` → Game/welt.js:83
 - `ausgespaeht` → Game/bots/03-angreifen.js:90
-- `ausKistenKauf` → Game/spiel/06d-schild-produktion.js:148
+- `ausKistenKauf` → Game/spiel/06d-schild-produktion.js:149
 - `ausschalten` → Game/benachrichtigung.js:95
 - `autoCombineAll` → Game/spiel/02a-shop-stufen.js:107
 - `b64` → Game/weltrechner/push.js:18
@@ -204,7 +204,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `barrel` → Game/baukunst/07-hafen-palast.js:169
 - `baseDefenseForLevel` → Game/spiel/01b-weltkarte.js:94
 - `baseLevelOf` → Game/spiel/03a-karte-hintergrund.js:622
-- `baseShieldedFor` → Game/spiel/06d-schild-produktion.js:51
+- `baseShieldedFor` → Game/spiel/06d-schild-produktion.js:52
 - `basesTxt` → Game/spiel/05c-erfolge-rangliste.js:295
 - `basis_pfad` → Game/server/01-grundlagen-login.php:28
 - `basisBild` → Game/spiel/03b-gebaeude-3d.js:318
@@ -395,7 +395,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botMood` → Game/bots/03-angreifen.js:17
 - `botMoodAdd` → Game/bots/03-angreifen.js:19
 - `botMults` → Game/bots/04-stand-stadt.js:183
-- `botNeulingBis` → Game/spiel/06d-schild-produktion.js:37
+- `botNeulingBis` → Game/spiel/06d-schild-produktion.js:38
 - `botNeulingWeg` → Game/bots/06-aussehen-felder-barbaren.js:64
 - `botNoteFail` → Game/bots/02-kampf-karte.js:282
 - `botNoteLoss` → Game/bots/05-verteidigen-takt.js:10
@@ -730,12 +730,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:345
 - `closeHeroHall` → Game/spiel/08c-helden.js:277
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:111
-- `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:113
+- `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:118
 - `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:56
 - `closeMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:309
 - `closePanel` → Game/spiel/09e-inselfenster.js:35
 - `closeTopmostPanel` → Game/spiel/09e-inselfenster.js:50
-- `closeWelcome` → Game/spiel/06d-schild-produktion.js:367
+- `closeWelcome` → Game/spiel/06d-schild-produktion.js:368
 - `CLOUD_PUFFS` → Game/spiel/08a-stadt-bauen.js:148
 - `cloudsRun` → Game/spiel/08a-stadt-bauen.js:154
 - `cluster` → Game/baukunst/08-himmelsfeste-bilder.js:75
@@ -885,7 +885,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `eigeneTruppenDazu` → Game/spiel/01a-grundlagen.js:25
 - `einschalten` → Game/benachrichtigung.js:81
 - `einstellungenZeigen` → Game/spiel/10c-start-einstellungen.js:144
-- `empireSnapshot` → Game/spiel/06d-schild-produktion.js:273
+- `empireSnapshot` → Game/spiel/06d-schild-produktion.js:274
 - `enclose` → Game/baukunst/04-vielfalt-stile.js:402
 - `ende` → Game/weltrechner/start.js:34
 - `endWander` → Game/spiel/07b-kriegsherr.js:49
@@ -1015,7 +1015,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `flag` → Game/spiel/03b-gebaeude-3d.js:50
 - `flameTexture` → Game/baukunst/03-wahrzeichen-feuer.js:299
 - `flankAngle` → Game/baukunst/04-vielfalt-stile.js:71
-- `flashHint` → Game/spiel/06d-schild-produktion.js:393
+- `flashHint` → Game/spiel/06d-schild-produktion.js:394
 - `flicken_anwenden` → Game/server/02-sicherheit-datenlecks.php:104
 - `flicken_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:182
 - `flickenAnwenden` → Game/welt.js:41
@@ -1032,14 +1032,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fmt` → Game/spiel/05d-maersche-kampfbericht.js:358
 - `fmt1` → Game/spiel/05b-truhe-skills.js:196
 - `fmt1` → Game/spiel/05d-maersche-kampfbericht.js:154
-- `fmtAway` → Game/spiel/06d-schild-produktion.js:320
+- `fmtAway` → Game/spiel/06d-schild-produktion.js:321
 - `fmtClock` → Game/spiel/01a-grundlagen.js:144
 - `fmtCompact` → Game/spiel/01a-grundlagen.js:124
 - `fmtD` → Game/spiel/05d-maersche-kampfbericht.js:156
 - `fmtDHMS` → Game/spiel/01a-grundlagen.js:139
 - `fmtDuration` → Game/spiel/08a-stadt-bauen.js:93
 - `fmtExact` → Game/spiel/01a-grundlagen.js:122
-- `fmtHours` → Game/spiel/06d-schild-produktion.js:56
+- `fmtHours` → Game/spiel/06d-schild-produktion.js:57
 - `fmtHud` → Game/spiel/01a-grundlagen.js:132
 - `fmtM` → Game/spiel/05d-maersche-kampfbericht.js:155
 - `fmtNum` → Game/spiel/01a-grundlagen.js:123
@@ -1266,9 +1266,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroBusy` → Game/spiel/08c-helden.js:108
 - `heroById` → Game/spiel/08c-helden.js:21
 - `heroCanDo` → Game/spiel/08c-helden.js:140
-- `heroChestKauf` → Game/spiel/06d-schild-produktion.js:103
-- `heroChestOpen` → Game/spiel/06d-schild-produktion.js:99
-- `heroChestPool` → Game/spiel/06d-schild-produktion.js:73
+- `heroChestKauf` → Game/spiel/06d-schild-produktion.js:104
+- `heroChestOpen` → Game/spiel/06d-schild-produktion.js:100
+- `heroChestPool` → Game/spiel/06d-schild-produktion.js:74
 - `heroChipHtml` → Game/spiel/08c-helden.js:314
 - `heroConvert` → Game/spiel/08c-helden.js:5
 - `heroDefCut` → Game/spiel/01e-nebel-kampfwerte-hud.js:139
@@ -1434,9 +1434,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `killPay` → Game/bots/02-kampf-karte.js:71
 - `kind` → Game/baukunst/05-umland.js:690
 - `kiosk` → Game/baukunst/05-umland.js:423
-- `kisteBild` → Game/spiel/06d-schild-produktion.js:86
-- `kistenMehrKnopf` → Game/spiel/06d-schild-produktion.js:90
-- `kistenMehrN` → Game/spiel/06d-schild-produktion.js:89
+- `kisteBild` → Game/spiel/06d-schild-produktion.js:87
+- `kistenMehrKnopf` → Game/spiel/06d-schild-produktion.js:91
+- `kistenMehrN` → Game/spiel/06d-schild-produktion.js:90
 - `kisteVonR` → Game/spiel/05e-belohnung.js:14
 - `klippe` → Game/ladebildschirm.js:51
 - `knopf` → Game/buendnis/04-fenster-karte-welt.js:91
@@ -1474,7 +1474,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `layoutBanners` → Game/spiel/03c-wappen-thronplatz.js:150
 - `lazarettPlus` → Game/aufbau.js:240
 - `leafGeo` → Game/baukunst/04-vielfalt-stile.js:495
-- `leaveAtBoot` → Game/spiel/06d-schild-produktion.js:279
+- `leaveAtBoot` → Game/spiel/06d-schild-produktion.js:280
 - `leer.clear` → Game/speichern.js:56
 - `leer.getItem` → Game/speichern.js:53
 - `leer.key` → Game/speichern.js:57
@@ -1490,7 +1490,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:134
 - `levelRewardCoins` → Game/spiel/02a-shop-stufen.js:226
 - `levelRewardGems` → Game/spiel/02a-shop-stufen.js:229
-- `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:85
+- `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:90
 - `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:223
 - `levelUpItem` → Game/spiel/02a-shop-stufen.js:171
 - `LILY` → Game/baukunst/08-himmelsfeste-bilder.js:20
@@ -1700,12 +1700,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `neu` → Game/ladebildschirm.js:233
 - `neu` → Game/spiel/03a-karte-hintergrund.js:151
 - `neueNummer` → Game/welt.js:383
-- `neulingAktiv` → Game/spiel/06d-schild-produktion.js:45
+- `neulingAktiv` → Game/spiel/06d-schild-produktion.js:46
 - `neulingBis` → Game/spiel/06d-schild-produktion.js:32
-- `neulingBlockText` → Game/spiel/06d-schild-produktion.js:46
-- `neulingEnde` → Game/spiel/06d-schild-produktion.js:48
+- `neulingBlockText` → Game/spiel/06d-schild-produktion.js:47
+- `neulingEnde` → Game/spiel/06d-schild-produktion.js:49
 - `neulingTruppen` → Game/spiel/06d-schild-produktion.js:27
-- `neulingVon` → Game/spiel/06d-schild-produktion.js:44
+- `neulingVon` → Game/spiel/06d-schild-produktion.js:45
 - `neutralId` → Game/spiel/01a-grundlagen.js:19
 - `niceRound` → Game/spiel/02a-shop-stufen.js:218
 - `niceRoundW` → Game/spiel/01b-weltkarte.js:26
@@ -1738,7 +1738,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openPanel` → Game/spiel/09e-inselfenster.js:34
 - `openRankings` → Game/spiel/05c-erfolge-rangliste.js:327
 - `openRulerProfile` → Game/spiel/05c-erfolge-rangliste.js:196
-- `openShop` → Game/spiel/06d-schild-produktion.js:139
+- `openShop` → Game/spiel/06d-schild-produktion.js:140
 - `opts` → Game/spiel/04-kampf.js:62
 - `out` → Game/spiel/10c-start-einstellungen.js:32
 - `overHole` → Game/spiel/03a-karte-hintergrund.js:575
@@ -1770,7 +1770,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `own` → Game/baukunst/04-vielfalt-stile.js:150
 - `ownerKeyOf` → Game/spiel/03d-maersche-tagnacht.js:141
 - `ownerKeys` → Game/baukunst/02-buehne-grundbasis.js:92
-- `ownerShielded` → Game/spiel/06d-schild-produktion.js:49
+- `ownerShielded` → Game/spiel/06d-schild-produktion.js:50
 - `ownerShieldUntil` → Game/spiel/06d-schild-produktion.js:11
 - `ownershipDelta` → Game/spiel/03a-karte-hintergrund.js:326
 - `ownerWeak` → Game/bots/02-kampf-karte.js:271
@@ -1873,8 +1873,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `post` → Game/baukunst/07-hafen-palast.js:457
 - `powerOf` → Game/spiel/05c-erfolge-rangliste.js:177
 - `privaterSchluessel` → Game/weltrechner/push.js:48
-- `prodGanz` → Game/spiel/06d-schild-produktion.js:192
-- `produceTicks` → Game/spiel/06d-schild-produktion.js:219
+- `prodGanz` → Game/spiel/06d-schild-produktion.js:193
+- `produceTicks` → Game/spiel/06d-schild-produktion.js:220
 - `productionTickMs` → Game/spiel/04-kampf.js:291
 - `prof` → Game/baukunst/04-vielfalt-stile.js:311
 - `profil_bereinigen` → Game/server/02-sicherheit-datenlecks.php:51
@@ -1924,7 +1924,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questProgress` → Game/spiel/06a-aufgaben.js:145
 - `questStadtGeht` → Game/spiel/06a-aufgaben.js:105
 - `queueHover` → Game/spiel/03e-kamera-eingabe.js:362
-- `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:90
+- `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:95
 - `rahmenDef` → Game/spiel/05a-aussehen-profil.js:18
 - `rahmenHat` → Game/spiel/05a-aussehen-profil.js:22
 - `rahmenPlatzText` → Game/spiel/05a-aussehen-profil.js:19
@@ -1975,12 +1975,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderEquipGrid` → Game/spiel/05b-truhe-skills.js:7
 - `renderEvents` → Game/spiel/09c-events-drache.js:502
 - `renderGoalsSub` → Game/spiel/06a-aufgaben.js:301
-- `renderHeroChests` → Game/spiel/06d-schild-produktion.js:74
+- `renderHeroChests` → Game/spiel/06d-schild-produktion.js:75
 - `renderHeroHall` → Game/spiel/08c-helden.js:270
 - `renderInbox` → Game/spiel/06a-aufgaben.js:232
 - `renderKeep` → Game/aufbau.js:309
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:4
-- `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:100
+- `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:105
 - `renderLook` → Game/spiel/05a-aussehen-profil.js:56
 - `renderLookSheet` → Game/spiel/08b-burg-aussehen.js:32
 - `renderLookTop` → Game/spiel/08b-burg-aussehen.js:26
@@ -1992,8 +1992,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderRankings` → Game/spiel/05c-erfolge-rangliste.js:293
 - `renderRecallPreview` → Game/spiel/10b-inselfenster-knoepfe.js:56
 - `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:319
-- `renderShieldState` → Game/spiel/06d-schild-produktion.js:57
-- `renderShop` → Game/spiel/06d-schild-produktion.js:125
+- `renderShieldState` → Game/spiel/06d-schild-produktion.js:58
+- `renderShop` → Game/spiel/06d-schild-produktion.js:126
 - `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:305
 - `renderThroneShop` → Game/spiel/06c-thron-mitte.js:137
 - `renderTile` → Game/spiel/03a-karte-hintergrund.js:423
@@ -2062,7 +2062,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `runde` → Game/weltrechner/push.js:224
 - `rundturm` → Game/baukunst/02-buehne-grundbasis.js:204
 - `runeGeo` → Game/baukunst/04-vielfalt-stile.js:500
-- `runProductionTick` → Game/spiel/06d-schild-produktion.js:196
+- `runProductionTick` → Game/spiel/06d-schild-produktion.js:197
 - `S.beimSetzen` → Game/welt.js:312
 - `S.scoped` → Game/baukunst/02-buehne-grundbasis.js:101
 - `S.thumb` → Game/baukunst/02-buehne-grundbasis.js:107
@@ -2106,7 +2106,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveGame` → Game/spiel/01e-nebel-kampfwerte-hud.js:174
 - `saveGameNow` → Game/spiel/01e-nebel-kampfwerte-hud.js:177
 - `saveHeroes` → Game/spiel/08c-helden.js:20
-- `saveLeave` → Game/spiel/06d-schild-produktion.js:278
+- `saveLeave` → Game/spiel/06d-schild-produktion.js:279
 - `saveLook` → Game/spiel/05a-aussehen-profil.js:53
 - `saveMarkers` → Game/spiel/09d-armeen-wegmarken.js:298
 - `saveProgression` → Game/spiel/02a-shop-stufen.js:272
@@ -2163,9 +2163,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `shadow` → Game/spiel/03b-gebaeude-3d.js:55
 - `shapeXZ` → Game/baukunst/07-hafen-palast.js:50
 - `sheep` → Game/baukunst/05-umland.js:177
-- `shieldBlockText` → Game/spiel/06d-schild-produktion.js:53
-- `shieldCovers` → Game/spiel/06d-schild-produktion.js:50
-- `shieldedOwners` → Game/spiel/06d-schild-produktion.js:52
+- `shieldBlockText` → Game/spiel/06d-schild-produktion.js:54
+- `shieldCovers` → Game/spiel/06d-schild-produktion.js:51
+- `shieldedOwners` → Game/spiel/06d-schild-produktion.js:53
 - `shieldLossReductionPct` → Game/spiel/04-kampf.js:266
 - `shieldStock` → Game/spiel/08b-burg-aussehen.js:3
 - `shieldUntil` → Game/spiel/06d-schild-produktion.js:5
@@ -2178,7 +2178,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `showGoalsTab` → Game/spiel/06a-aufgaben.js:290
 - `showProfileTab` → Game/spiel/05b-truhe-skills.js:369
 - `showShopTab` → Game/spiel/06c-thron-mitte.js:163
-- `showWelcome` → Game/spiel/06d-schild-produktion.js:346
+- `showWelcome` → Game/spiel/06d-schild-produktion.js:347
 - `shrineMult` → Game/spiel/01e-nebel-kampfwerte-hud.js:215
 - `sicherung_anlegen` → Game/server/05-datenbank-welt.php:109
 - `sicherung_gueltig` → Game/server/07-welt-puls.php:15
@@ -2240,7 +2240,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spielraumTeile` → Game/spiel/10d-welt-weltrechner.js:171
 - `spielseite_vorbereiten` → Game/server/03-nebel-maersche-seite.php:159
 - `spielVersion` → Game/spiel/10c-start-einstellungen.js:156
-- `splashDone` → Game/spiel/06d-schild-produktion.js:392
+- `splashDone` → Game/spiel/06d-schild-produktion.js:393
 - `spots` → Game/baukunst/03-wahrzeichen-feuer.js:316
 - `SPRAY` → Game/baukunst/07-hafen-palast.js:419
 - `squarePlate` → Game/baukunst/02-buehne-grundbasis.js:155
@@ -2360,7 +2360,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `trunc` → Game/spiel/03b-gebaeude-3d.js:500
 - `truppenBekannt` → Game/spiel/01e-nebel-kampfwerte-hud.js:38
 - `truppenGeben` → Game/spiel/10d-welt-weltrechner.js:446
-- `truppenMitRest` → Game/spiel/06d-schild-produktion.js:193
+- `truppenMitRest` → Game/spiel/06d-schild-produktion.js:194
 - `truppenPruefen` → Game/spiel/10d-welt-weltrechner.js:407
 - `truppenVon` → Game/spiel/10d-welt-weltrechner.js:1030
 - `trW` → Game/spiel/03c-wappen-thronplatz.js:88
@@ -2485,9 +2485,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weich` → Game/spiel/03a-karte-hintergrund.js:79
 - `weich` → Game/spiel/08a-stadt-bauen.js:194
 - `weight` → Game/bots/04-stand-stadt.js:277
-- `welcomeListHtml` → Game/spiel/06d-schild-produktion.js:359
-- `welcomeNachziehen` → Game/spiel/06d-schild-produktion.js:362
-- `welcomeRows` → Game/spiel/06d-schild-produktion.js:322
+- `welcomeListHtml` → Game/spiel/06d-schild-produktion.js:360
+- `welcomeNachziehen` → Game/spiel/06d-schild-produktion.js:363
+- `welcomeRows` → Game/spiel/06d-schild-produktion.js:323
 - `welleHeim` → Game/spiel/04-kampf.js:229
 - `WELT.BEFEHLE.angriff` → Game/spiel/10d-welt-weltrechner.js:1046
 - `WELT.BEFEHLE.armee` → Game/spiel/10d-welt-weltrechner.js:1165
@@ -2522,7 +2522,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `welt_seit` → Game/server/05-datenbank-welt.php:70
 - `welt_seit_flicken` → Game/server/05-datenbank-welt.php:80
 - `welt_sperren` → Game/server/05-datenbank-welt.php:4
-- `weltNachholen` → Game/spiel/06d-schild-produktion.js:281
+- `weltNachholen` → Game/spiel/06d-schild-produktion.js:282
 - `weltNameSetzen` → Game/spiel/04-kampf.js:352
 - `weltrechner_schluessel` → Game/server/01-grundlagen-login.php:54
 - `weltrechner_seite` → Game/server/03-nebel-maersche-seite.php:209
@@ -4311,45 +4311,45 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `staerke` :21 — Macht wie in der Rangliste, höchstens einmal pro Minute neu gerechnet
 - `neulingTruppen` :27 — Gesamttruppen (whoTroops), höchstens einmal pro Sekunde neu gezählt
 - `neulingBis` :32
-- `botNeulingBis` :37
-- `neulingVon` :44
-- `neulingAktiv` :45
-- `neulingBlockText` :46
-- `neulingEnde` :48
-- `ownerShielded` :49
-- `shieldCovers` :50
-- `baseShieldedFor` :51
-- `shieldedOwners` :52
-- `shieldBlockText` :53
-- `fmtHours` :56
-- `renderShieldState` :57 — (die Restzeit zählt live)
-- `heroChestPool` :73
-- `renderHeroChests` :74 — the odds per rarity follow your heroes: maxed ones drop out
-- `kisteBild` :86
-- `kistenMehrN` :89
-- `kistenMehrKnopf` :90 — „10×“ (oder „N×“ mit dem Rest) neben dem Einzel-Knopf
-- `heroChestOpen` :99 — the same chest for you and the others: n draws of c.sh shards
-- `heroChestKauf` :103 — n Heldenkisten auf einmal (Edelsteine genau n-mal) – dieselbe Kiste wie bisher,…
-- `renderShop` :125
-- `openShop` :139 — der EINE Shop (Dock); tab: gems | shield | throne | hd | markt
-- `ausKistenKauf` :148 — n Ausrüstungskisten (openCrate n-mal: Edelsteine und Teile genau wie n einzelne…
-- `prodGanz` :192 — (94 × 1/3600 × 3600 ist 93,999… – Rechenfehler der Kommazahlen kosten nie eine …
-- `truppenMitRest` :193 — n Truppen (auch ein Bruchteil) zur Basis id – der Rest wartet im carry auf den …
-- `runProductionTick` :196
-- `produceTicks` :219 — everyone's bases produce for `ticks` of your production ticks
-- `empireSnapshot` :273
-- `saveLeave` :278
-- `leaveAtBoot` :279
-- `weltNachholen` :281 — (Weltrechner) die Zeit, in der niemand die Welt gerechnet hat
-- `fmtAway` :320
-- `welcomeRows` :322
-- `showWelcome` :346
-- `welcomeListHtml` :359
-- `welcomeNachziehen` :362
-- `closeWelcome` :367
-- `afterSplash` :390
-- `splashDone` :392
-- `flashHint` :393 — lang: langer Hinweis – ganz lesbar (kein „…“), am Handy nicht über einem offene…
+- `botNeulingBis` :38
+- `neulingVon` :45
+- `neulingAktiv` :46
+- `neulingBlockText` :47
+- `neulingEnde` :49
+- `ownerShielded` :50
+- `shieldCovers` :51
+- `baseShieldedFor` :52
+- `shieldedOwners` :53
+- `shieldBlockText` :54
+- `fmtHours` :57
+- `renderShieldState` :58 — (die Restzeit zählt live)
+- `heroChestPool` :74
+- `renderHeroChests` :75 — the odds per rarity follow your heroes: maxed ones drop out
+- `kisteBild` :87
+- `kistenMehrN` :90
+- `kistenMehrKnopf` :91 — „10×“ (oder „N×“ mit dem Rest) neben dem Einzel-Knopf
+- `heroChestOpen` :100 — the same chest for you and the others: n draws of c.sh shards
+- `heroChestKauf` :104 — n Heldenkisten auf einmal (Edelsteine genau n-mal) – dieselbe Kiste wie bisher,…
+- `renderShop` :126
+- `openShop` :140 — der EINE Shop (Dock); tab: gems | shield | throne | hd | markt
+- `ausKistenKauf` :149 — n Ausrüstungskisten (openCrate n-mal: Edelsteine und Teile genau wie n einzelne…
+- `prodGanz` :193 — (94 × 1/3600 × 3600 ist 93,999… – Rechenfehler der Kommazahlen kosten nie eine …
+- `truppenMitRest` :194 — n Truppen (auch ein Bruchteil) zur Basis id – der Rest wartet im carry auf den …
+- `runProductionTick` :197
+- `produceTicks` :220 — everyone's bases produce for `ticks` of your production ticks
+- `empireSnapshot` :274
+- `saveLeave` :279
+- `leaveAtBoot` :280
+- `weltNachholen` :282 — (Weltrechner) die Zeit, in der niemand die Welt gerechnet hat
+- `fmtAway` :321
+- `welcomeRows` :323
+- `showWelcome` :347
+- `welcomeListHtml` :360
+- `welcomeNachziehen` :363
+- `closeWelcome` :368
+- `afterSplash` :391
+- `splashDone` :393
+- `flashHint` :394 — lang: langer Hinweis – ganz lesbar (kein „…“), am Handy nicht über einem offene…
 
 ### Game/spiel/06e-nebel-zeichnen.js — Nebel und Pässe zeichnen
 - `drawWorldFrame` :3 — FOG + PASSES (drawing)
@@ -4579,10 +4579,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `citySchild` :13 — → {x, y, w, h}; x/y = Mitte des Schilds
 - `rund` :17
 - `cityFrame` :42 — ---- ein Bild ----
-- `levelRewardText` :85
-- `queueLevelUpModal` :90
-- `renderLevelUpModal` :100
-- `closeLevelUpModal` :113
+- `levelRewardText` :90
+- `queueLevelUpModal` :95
+- `renderLevelUpModal` :105
+- `closeLevelUpModal` :118
 
 ### Game/spiel/09a-funde-felder.js — Funde auf der Karte und Ressourcenfelder
 - `pickupAmount` :6
