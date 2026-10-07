@@ -44,7 +44,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 .roh-blase{position:fixed;z-index:var(--z-toast);display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;max-width:240px;padding:6px 10px;
   font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1);border-style:solid;border-width:0;border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch}
 .roh-blase .icon{width:16px;height:16px} .roh-blase small{flex:1 1 100%;color:var(--gold-200);font-size:var(--fs-11)}
-@media (min-width:900px) and (min-height:501px){ .hud-werte{flex:0 1 640px} .hud-werte .res{padding-left:24px} .hud-werte .res b{font-size:13px} }
+@media (min-width:900px) and (min-height:501px){ .hud-werte{flex:0 1 640px} .hud-werte .res{flex:0 0 84px;min-width:84px;padding-left:24px} .hud-werte .res b{font-size:13px;min-width:0;text-align:center} }   /* Desktop: gleich breite Kapseln (fmtHud ≤ 5 Zeichen), jede Zahl mittig (vorher 6,2em-Feld: Münzen links, Holz mittig) */
 /* Event-Streifen: rotes Band statt lila Verlauf */
 .mb-chip.is-tour{background:none;border-color:transparent;border-style:solid;border-width:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;
   padding:0 18px 0 16px;border-image:url(bilder/ui_band_rot.webp) 22 70 22 70 fill / 7px 22px 7px 22px stretch;color:#fff3e6}
@@ -106,6 +106,11 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 /* der Rahmen ist der eigene Rand jedes Fensters (nicht ein darübergelegtes ::before): immer sichtbar, egal welcher Reiter und wie geöffnet; der Inhalt liegt nie darunter */
 .panel{border:solid transparent;border-width:12px 12px 8px;border-image:url(bilder/ui_rahmen.webp) 44 / 12px 12px 8px stretch;background-clip:border-box}
 .panel::before{content:none} .panel .sheet-grab{display:none}   /* kein grauer Griff – der Rahmen ist überall gleich */
+/* Fenster-Inhalt rollt weiter: unten läuft er weich aus (Hinweis „da kommt noch mehr“) statt hart am Rahmen abgeschnitten – am Ende keine Blende */
+@property --pb-blende{syntax:"<length>";inherits:false;initial-value:0px}
+.panel > .pbody{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - var(--pb-blende)),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - var(--pb-blende)),transparent)}
+@keyframes pb-blende{0%,94%{--pb-blende:30px} 100%{--pb-blende:0px}}
+@supports (animation-timeline:scroll()){ .panel > .pbody{animation:pb-blende linear both;animation-timeline:scroll(self)} }
 .hh::before{border:16px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch}
 .ki-fenster,.marker-sheet{border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);border-radius:0}
 .marker-sheet{padding:16px}

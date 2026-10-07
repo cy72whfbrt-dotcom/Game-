@@ -6506,11 +6506,10 @@ const kampflogUmbauen = (function () {
         const helden = hs.querySelectorAll('.logHero');
         if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)'));
         if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', 'Zweitheld · Werte und passive Fähigkeiten zu 50 %'));
-        hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselben 7 Zeilen
+        hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselbe Reihenfolge, leere Zeilen („Fähigkeit –“) fallen weg
             const L = [...h.querySelectorAll(':scope > .logLine')].map(l => { const r = [textOf(l), l.lastElementChild.textContent.trim()]; l.remove(); return r; });
             const fest = ['Angriff', 'Verteidigung', 'Gefolge', 'Tempo'], rest = L.filter(l => !fest.includes(l[0]));
-            while (rest.length < 3) rest.push(['Fähigkeit', '–']);
-            h.insertAdjacentHTML('beforeend', [...fest.map(n => L.find(l => l[0] === n) || [n, '–']), ...rest.slice(0, 3)].map(([a, b]) => zl(a, b, b === '–' ? ' kl-null' : ' buff')).join(''));
+            h.insertAdjacentHTML('beforeend', [...fest.map(n => L.find(l => l[0] === n) || [n, '–']), ...rest.slice(0, 3)].filter(([, b]) => b && b !== '–').map(([a, b]) => zl(a, b, ' buff')).join(''));
         });
         box.querySelectorAll(':scope > .kl-rss').forEach(x => x.remove());
         const ROH = [['g', 'Münzen', 'coins'], ['h', 'Holz', 'holz'], ['s', 'Stein', 'stein'], ['e', 'Eisen', 'eisen']], kacheln = beuteRaster(ROH.map(([k, , a]) => ({ a, n: Math.abs(roh[k] || 0), minus: roh[k] < 0 })));   // Beute/Verlust als Kacheln (05e), die Zeilen bleiben für Vorleser
@@ -6646,20 +6645,14 @@ const kampflogUmbauen = (function () {
     const seite = el('<div class="kl-seite" hidden><div class="kl-fenster"><div class="kl-kopf"><div class="emblem emblem--gold">' + ic('battlelog') + '</div><div class="kl-txt"><div class="overline" id="klArt">Kampfdetails</div><h3 id="klTitel">Bericht</h3></div>' +
         '<button class="btn-x" type="button" aria-label="Zurück" data-klzu>' + ic('close') + '</button></div>' +
         '<div style="max-width:560px;margin:0 auto"><button type="button" class="btn btn--ghost btn--sm kl-zurueck" data-klzu>' + ic('back') + 'Zurück zum Kampflog</button></div><div class="logList" id="klInhalt"></div></div></div>');
-    document.body.appendChild(seite);
-    const breit = window.matchMedia('(min-width: 760px)'), fenster = seite.firstChild;
-    function fensterArt() {
-        seite.style.background = breit.matches ? 'rgba(5,6,8,.62)' : '';
-        fenster.style.cssText = breit.matches ? 'max-width:600px;margin:28px auto;padding:14px 16px 20px;background:var(--ink-1);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:0 18px 50px #000c' : '';
-    }
-    breit.addEventListener('change', fensterArt); fensterArt();
+    document.body.appendChild(seite);   // (Desktop: Fenster unter dem HUD, Inhalt rollt darin – 03 .kl-fenster)
     function oeffnen(row, art) {
         const k = row.cloneNode(true), d = k.querySelector('details'); if (d) d.open = true;
         const inh = seite.querySelector('#klInhalt'); inh.innerHTML = ''; inh.appendChild(k);
         const b = row.querySelector('.lt b'), t = b ? b.cloneNode(true) : null; if (t && t.querySelector('.lbadge')) t.querySelector('.lbadge').remove();
         seite.querySelector('#klTitel').textContent = t ? t.textContent.trim() : 'Bericht';
         seite.querySelector('#klArt').textContent = art || 'Kampfdetails';
-        seite.hidden = false; seite.scrollTop = 0;
+        seite.hidden = false; seite.scrollTop = 0; inh.scrollTop = 0;
     }
     seite.addEventListener('click', ev => { if (ev.target === seite || ev.target.closest('[data-klzu]')) { ev.preventDefault(); seite.hidden = true; } else if (ev.target.closest('.who-link, [data-profile]')) seite.hidden = true; });   // (Name antippen: das Profil soll nicht unsichtbar dahinter aufgehen)
     combatLogListEl.addEventListener('click', ev => { const s = ev.target.closest('summary'); if (!s || !combatLogListEl.contains(s)) return;

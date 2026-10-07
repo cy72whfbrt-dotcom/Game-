@@ -257,7 +257,7 @@
 .logRow .li{width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r-xs);background:rgba(255,255,255,.03);border:1px solid var(--line-1)}
 .logRow .li .icon{width:16px;height:16px;color:var(--lc)}
 .logRow .lt{min-width:0}
-.logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);overflow-wrap:break-word}   /* Abzeichen + Ort: lieber 2 Zeilen als „Hauptstadt von Yusu…“ */
 .logRow .lt small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:normal;overflow:hidden;overflow-wrap:anywhere}
 .logRow .lt small.logOrt{display:flex;align-items:center;gap:8px;-webkit-line-clamp:unset;font-variant-numeric:tabular-nums}
 .logRow .lt small.logOrt .btn{min-height:22px;padding:0 8px;font-size:10px}
@@ -458,6 +458,13 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .kl-seite .logCompare{grid-template-columns:minmax(0,1fr)!important;gap:4px}
 .kl-seite .logVsDivider{display:flex;align-items:center;gap:8px}
 .kl-seite .logVsDivider::before,.kl-seite .logVsDivider::after{content:"";flex:1;height:1px;background:var(--line-1)}
+/* Desktop: Kampfdetails als Fenster wie die anderen (Rahmen ui_rahmen, oben unter dem HUD wie die Seitenfenster, endet im Bild) – der Inhalt rollt im Fenster */
+@media (min-width:760px){
+  .kl-seite{background:rgba(5,6,8,.62);padding:0;overflow:hidden}
+  .kl-seite > .kl-fenster{position:absolute;top:72px;left:50%;transform:translateX(-50%);width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 86px);display:flex;flex-direction:column;
+    padding:14px 18px 16px;border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);box-shadow:0 18px 50px #000c}
+  .kl-seite > .kl-fenster > #klInhalt{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
+}
 .kl-leer{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:8px;border:1.5px dashed var(--line-2);color:var(--tx-3);font:600 18px var(--font-display)}
 .kl-keinheld b{color:var(--tx-2)}
 .kl-rss{border-top:1px solid var(--line-1);margin-top:8px;padding-top:6px}
