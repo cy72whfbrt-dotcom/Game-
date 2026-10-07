@@ -21,7 +21,7 @@ const lokalId = id => (window.WELT && id === WELT.ich) ? 'player' : id;
 // Bündnisse (buendnis.js, wird nach spiel.js geladen): sind a und b im selben Bündnis? – Mitglieder greifen sich nicht an
 function bundFreund(a, b) { return typeof bundVerbuendet === 'function' && bundVerbuendet(a, b); }
 // Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Krankenhaus, Funde, Admin): beim Zuschauer macht es der Weltrechner.
-// q = woher (stufe/thron/heil/fund/geschenk) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
+// q = woher (stufe/thron/heil/fund/geschenk/pass/aufgabe) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
 function eigeneTruppenDazu(base, n, q, mehr) { if (base === null || base === undefined || !(n > 0)) return; islandTroops[base] = (islandTroops[base] || 0) + n; alsBefehl('truppen', Object.assign({ n, q }, mehr || {})); }
 // iPhone Home-Bildschirm-App: iOS macht die Seite um die Statusleiste zu kurz (unten bleibt ein schwarzer Streifen).
 // Die Lücke wird gemessen, und die Leiste unten rutscht genau so weit runter (CSS-Wert --dock-off).
@@ -1770,6 +1770,7 @@ function autoCombineAll() {
         }
     }
     if (totalCombines > 0) {
+        questProgress('zusammen', totalCombines);
         saveGame();
         saveProgression();
         updateHud();
@@ -1815,7 +1816,7 @@ function levelUpItem(itemId) {
     if (upgradePoints < cost) return false;
     upgradePoints -= cost;
     item.level += 1;
-    saveProgression();
+    saveProgression(); questProgress('schmiede', 1);
     return true;
 }
 function equipInventoryItem(itemId) {
@@ -6046,7 +6047,7 @@ function warStat(k, n, foe) {
     const keys = Object.keys(warDays).sort(); while (keys.length > 8) delete warDays[keys.shift()];
     store.set('openWaterWarDays', JSON.stringify(warDays));
 }
-function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); passBump(k, n); }
+function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); passBump(k, n); questStat(k, n); }
 function goalBump(who, k, n) { if (!who) return; if (who === 'player') { try { statBump(k, n); } catch (e) {} } else if (botById[who]) botStat(who, k, n); }   // a counter for the Erfolge - yours or anyone else's
 const achStat = k => playerStats[k] || 0;
 const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.filter(b => !['embassy', 'market'].includes(b.id)).map(b => c.levels[b.id] || 0)); };   // (the newer Lager doesn't count: nothing earned is lost)
@@ -7151,7 +7152,8 @@ document.getElementById('dailyModalBtn').addEventListener('click', () => {
 });
 dailyModal.addEventListener('click', e => { if (e.target === dailyModal) closeDailyModal(); });
 
-// ---- daily quests: 3 random tasks per day, gems each, bonus crate for all 3 ----
+// ---- daily quests: 6 random tasks per day (7.10.: vorher 3) – 2 leicht, 2 mittel, 2 schwer; je Edelsteine + Münzen, Bonus bei 3 (Truppen) und bei allen 6 (Kiste) ----
+// steps: Ziel je Stufe (0 = auf dieser Stufe nicht), geht: nur würfeln, was heute geht
 var QUEST_DEFS = {
     capture: { icon: 'flag',        text: n => 'Erobere ' + n + ' Basen',             steps: [3, 5, 8] },
     attack:  { icon: 'attack',      text: n => 'Starte ' + n + ' Angriffe',            steps: [5, 10, 15] },
@@ -7161,8 +7163,29 @@ var QUEST_DEFS = {
     send:    { icon: 'send',        text: n => 'Schicke ' + n + '-mal Truppen',        steps: [2, 4, 6] },
     crate:   { icon: 'shop',        text: n => 'Öffne ' + n + (n === 1 ? ' Kiste' : ' Kisten'), steps: [1, 2, 3] },   // (jede Kiste: Shop, Helden-Kiste, Abholfach, Pass, Thron-Shop, Belohnungen)
     bau:     { icon: 'castle',      text: n => n === 1 ? 'Starte einen Bau in der Stadt' : 'Starte ' + n + ' Bauten in der Stadt', steps: [1, 1, 2], geht: () => questStadtGeht('bau') },
-    forschung: { icon: 'flask',     text: () => 'Starte eine Forschung im Labor', steps: [1, 1, 1], geht: () => questStadtGeht('forschung') }
+    forschung: { icon: 'flask',     text: () => 'Starte eine Forschung im Labor', steps: [1, 1, 1], geht: () => questStadtGeht('forschung') },
+    barbLager: { icon: 'attack',    text: n => n === 1 ? 'Besiege ein Barbaren-Lager' : 'Besiege ' + n + ' Barbaren-Lager', steps: [2, 5, 10] },
+    tagesboss: { icon: 'star',      text: n => n === 1 ? 'Greife den Tagesboss an' : 'Greife den Tagesboss ' + n + '-mal an', steps: [1, 3, 5] },
+    sammeln: { icon: 'wood',        text: n => n === 1 ? 'Schicke Sammler auf ein Feld' : 'Schicke ' + n + '-mal Sammler auf Felder', steps: [1, 3, 5] },
+    bundHilfe: { icon: 'bund',      text: n => n === 1 ? 'Hilf einmal im Bündnis (Bau-Hilfe)' : 'Hilf ' + n + '-mal im Bündnis (Bau-Hilfe)', steps: [1, 3, 5], geht: () => questBundGeht() },
+    verstaerkung: { icon: 'send',   text: n => n === 1 ? 'Schicke Verstärkung an ein Bündnis-Mitglied' : 'Schicke ' + n + '-mal Verstärkung an Bündnis-Mitglieder', steps: [1, 1, 2], geht: () => questBundGeht() },
+    rally: { icon: 'multiattack',   text: () => 'Mach bei einer Rally mit', steps: [1, 1, 1], geht: () => questBundGeht() },
+    schmiede: { icon: 'weapon',     text: n => n === 1 ? 'Verbessere einen Gegenstand' : 'Verbessere ' + n + '-mal Gegenstände', steps: [1, 2, 3] },   // (Stufe oder Stern)
+    zusammen: { icon: 'combine',    text: n => n === 1 ? 'Lege 3 Gegenstände zusammen' : 'Lege ' + n + '-mal 3 Gegenstände zusammen', steps: [1, 1, 2] },
+    heilen: { icon: 'plus',         text: () => 'Heile Verwundete im Krankenhaus', steps: [1, 1, 1], geht: () => questStadtStufe('hospital') > 0 },
+    markt: { icon: 'market',        text: n => n === 1 ? 'Tausche auf dem Markt' : 'Tausche ' + n + '-mal auf dem Markt', steps: [1, 1, 2], geht: () => questStadtStufe('market') > 0 },
+    tempel: { icon: 'temple',       text: () => 'Erobere einen Tempel', steps: [0, 1, 1] },
+    thron: { icon: 'crown',         text: n => 'Halte den Thron ' + n + ' Minuten', steps: [0, 5, 15] },
+    invArmee: { icon: 'defense',    text: n => n === 1 ? 'Greife eine Barbaren-Armee an (Invasion)' : 'Greife ' + n + ' Barbaren-Armeen an (Invasion)', steps: [1, 2, 3], geht: () => questEvHeute('inv') },
+    drache: { icon: 'event',        text: n => n === 1 ? 'Greife den Drachen an' : 'Greife den Drachen ' + n + '-mal an', steps: [1, 3, 5], geht: () => questEvHeute('dr') }
 };
+// Zähler (statBump, auch vom Weltrechner) → Aufgabe; eine Zahl: so viel zählt jedes Mal (Heilen: einmal, egal wie viele)
+var QUEST_STAT = { lager: 'barbLager', qb: 'tagesboss', qd: 'drache', qi: 'invArmee', qHilfe: 'bundHilfe', qVerst: 'verstaerkung', qRally: 'rally', temples: 'tempel', throneMin: 'thron', healed: ['heilen', 1] };
+function questStat(k, n) { const q = QUEST_STAT[k]; if (q) questProgress(Array.isArray(q) ? q[0] : q, Array.isArray(q) ? q[1] : n || 1); }
+const questStadtStufe = id => { try { return loadCity().levels[id] || 0; } catch (e) { return 0; } };
+function questBundGeht() { try { const a = bundIch(); return !!a && a.mit.length > 1; } catch (e) { return false; } }   // (nur mit Bündnis und mindestens einem Mitglied)
+function questEvHeute(k) { try { const p = evPlanVon(k), nacht = new Date().setHours(24, 0, 0, 0); return !!p && p.start < nacht && p.end > Date.now(); } catch (e) { return false; } }   // Invasion/Drache: nur an ihrem Tag
+const questBereit = () => !!AUF && typeof bundIch === 'function';   // (beim Skript-Start sind aufbau.js und buendnis.js noch nicht da)
 // Bau/Forschung nur als Aufgabe, wenn es heute noch geht (Bauarbeiter bzw. Labor vor Mitternacht frei, etwas zu bauen/erforschen da)
 function questStadtGeht(art) {
     try {
@@ -7174,33 +7197,40 @@ function questStadtGeht(art) {
             return !cityBuildOf(c, id) && (id === 'keep' ? L < AUF.BURG_MAX : L < AUF.stadtCap('player', id) && !(!L && AUF.BAU_AB_BURG[id] > B)); });
     } catch (e) { return true; }
 }
-var QUEST_GEMS = [5, 10, 15];
-var QUEST_BONUS = { crates: 1, gems: 10 };
+var QUEST_TIER = [0, 0, 1, 1, 2, 2];                  // 6 am Tag: 2 leicht, 2 mittel, 2 schwer
+var QUEST_GEMS = [3, 5, 8], QUEST_COIN_H = [1, 2, 3];  // je Stufe: Edelsteine + so viele Stunden Münzen
+var QUEST_BONUS3 = { n: 3, tr: 2 };                    // Bonus bei 3 erledigt: 2 Stunden Truppen
+var QUEST_BONUS = { crates: 1, gems: 10 };             // Bonus bei allen 6 (+ Helden-Splitter)
+const questGemsTag = () => QUEST_TIER.reduce((a, st) => a + QUEST_GEMS[st], 0) + QUEST_BONUS.gems;   // Edelsteine am Tag (Hauptbuch: 42)
 var questState = null;
+const questGeht = k => { const d = QUEST_DEFS[k]; try { return !d.geht || !!d.geht(); } catch (e) { return false; } };
+function questNeu(type, st) { return { type, st, target: QUEST_DEFS[type].steps[st], progress: 0, gems: QUEST_GEMS[st], h: QUEST_COIN_H[st], claimed: false }; }
+function questAuffuellen(q) {                          // bis 6: je Platz eine Art, die heute geht und auf dieser Stufe vorkommt (Zufall, keine doppelt)
+    const frei = Object.keys(QUEST_DEFS).filter(k => questGeht(k) && !q.list.some(x => x.type === k)).sort(() => Math.random() - 0.5);
+    for (let i = q.list.length; i < QUEST_TIER.length; i++) { const st = QUEST_TIER[i], j = frei.findIndex(k => QUEST_DEFS[k].steps[st] > 0); if (j < 0) break; q.list.push(questNeu(frei.splice(j, 1)[0], st)); }
+}
 function loadQuests() {
     const today = todayKey();
     if (!questState) { try { questState = JSON.parse(store.get('openWaterQuests')) || null; } catch (e) { questState = null; } }
     if (!questState || questState.date !== today || !Array.isArray(questState.list)) {
-        const types = Object.keys(QUEST_DEFS).filter(t => !QUEST_DEFS[t].geht || QUEST_DEFS[t].geht()).sort(() => Math.random() - 0.5).slice(0, 3);
-        questState = { date: today, bonusClaimed: false, geprueft: AUF ? 1 : 0, list: types.map((type, i) => {
-            const tier = i;                                  // one easy, one medium, one hard
-            return { type, target: QUEST_DEFS[type].steps[tier], progress: 0, gems: QUEST_GEMS[tier], claimed: false };
-        }) };
-        saveQuests();
+        questState = { date: today, bonusClaimed: false, bonus3: false, geprueft: questBereit() ? 1 : 0, frueh: questBereit() ? 0 : 1, list: [] };
+        questAuffuellen(questState); saveQuests();
     }
-    // Liste beim Skript-Start gewürfelt (aufbau.js noch nicht da, geht() sagte ja): einmal nachprüfen, sonst Tagesbonus unmöglich
-    if (AUF && !questState.geprueft) {
+    // Liste beim Skript-Start gewürfelt (aufbau.js/buendnis.js noch nicht da): einmal nachprüfen – ganz neu, solange nichts getan ist
+    // (sonst kämen Bündnis-Aufgaben nie), sonst nur, was heute nicht geht, tauschen (Stufe bleibt) – sonst ist der Tagesbonus unmöglich
+    if (questBereit() && !questState.geprueft) {
         questState.geprueft = 1;
+        if (questState.frueh && questState.list.every(t => !t.claimed && !t.progress)) { questState.list = []; questAuffuellen(questState); }
         questState.list.forEach((t, i) => {
-            const def = QUEST_DEFS[t.type];
-            if (!def || t.claimed || t.progress > 0 || !def.geht || def.geht()) return;   // (Fortschritt bleibt)
-            const frei = Object.keys(QUEST_DEFS).filter(k => !questState.list.some(x => x.type === k) && (!QUEST_DEFS[k].geht || QUEST_DEFS[k].geht()));
+            if (t.claimed || t.progress > 0 || (QUEST_DEFS[t.type] && questGeht(t.type))) return;   // (Fortschritt bleibt)
+            const st = t.st !== undefined ? t.st : i, frei = Object.keys(QUEST_DEFS).filter(k => !questState.list.some(x => x.type === k) && questGeht(k) && QUEST_DEFS[k].steps[st] > 0);
             if (!frei.length) return;
             const neu = frei[Math.floor(Math.random() * frei.length)];
-            t.type = neu; t.target = QUEST_DEFS[neu].steps[i];             // (Index = Stufe: leicht, mittel, schwer)
+            t.type = neu; t.target = QUEST_DEFS[neu].steps[st];
         });
         saveQuests();
     }
+    if (questState.list.length < QUEST_TIER.length) { questAuffuellen(questState); saveQuests(); }   // (eine Liste von vorher mit 3 Aufgaben: bis 6 auffüllen)
     return questState;
 }
 function saveQuests() { store.set('openWaterQuests', JSON.stringify(questState)); }
@@ -7222,9 +7252,19 @@ function claimQuest(i) {
     const q = loadQuests(), t = q.list[i];
     if (!t || t.claimed || t.progress < t.target) return;
     t.claimed = true; passBump('quest'); anleitungAbgeholt();
-    gems += t.gems;
+    const c = t.h > 0 ? passMuenzen(hourProduction('player'), t.h) : 0; gems += t.gems; coins += c;   // (Münzen: so viel, wie dein Reich in t.h Stunden macht – der Weltrechner kennt den Topf)
     saveQuests(); saveGame(); updateHud();
-    beuteFenster('Aufgabe erledigt', [{ a: 'gems', n: t.gems }], { unter: QUEST_DEFS[t.type].text(t.target) });
+    beuteFenster('Aufgabe erledigt', [{ a: 'gems', n: t.gems }, { a: 'coins', n: c }], { unter: QUEST_DEFS[t.type].text(t.target) });
+    renderQuestPanel(); updateGoalsBadge();
+}
+const questFertigN = q => q.list.filter(t => t.claimed).length;
+const questBonus3Bereit = q => !q.bonus3 && questFertigN(q) >= QUEST_BONUS3.n;
+function claimQuestBonus3() {                          // 3 Aufgaben abgeholt: Truppen in die Hauptstadt (der Weltrechner prüft: einmal am Tag)
+    const q = loadQuests(), b = rewardBaseId(); if (!questBonus3Bereit(q)) return;
+    if (b === null) { flashHint('Truppen brauchen eine eigene Basis – erst dann abholbar.', 3000); return; }
+    const n = passTruppen(hourProduction('player'), QUEST_BONUS3.tr); q.bonus3 = true; eigeneTruppenDazu(b, n, 'aufgabe'); anleitungAbgeholt();
+    saveQuests(); saveGame(); updateHud(); sfx('coin');
+    beuteFenster('Bonus: 3 erledigt', [{ a: 'tr', n }], { unter: fmtCompact(n) + ' Truppen in ' + islandTitle(islandById[b]) });
     renderQuestPanel(); updateGoalsBadge();
 }
 // ---- the week chain: every day with ALL tasks done is a link; 7 in a row = the big chest ----
@@ -7254,12 +7294,12 @@ function claimQuestBonus() {
     for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
     gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY); if (!shH) gems += HERO_SHARDS_DAY * 20;   // (alle Helden voll)
     saveQuests(); saveGame(); saveProgression(); updateHud();
-    beuteFenster('Bonus: alle erledigt', [...items.map(itemBeute), { a: 'gems', n: QUEST_BONUS.gems + (shH ? 0 : HERO_SHARDS_DAY * 20) }, shH && { a: 'sh', n: HERO_SHARDS_DAY, held: shH.id }], { kiste: 'aus' });
+    beuteFenster('Bonus: alle ' + q.list.length + ' erledigt', [...items.map(itemBeute), { a: 'gems', n: QUEST_BONUS.gems + (shH ? 0 : HERO_SHARDS_DAY * 20) }, shH && { a: 'sh', n: HERO_SHARDS_DAY, held: shH.id }], { kiste: 'aus' });
     renderQuestPanel(); updateGoalsBadge();
 }
 function dailyGoalCount() {                                      // Events → Täglich: tasks, the bonus and the week chain
     const q = loadQuests();
-    return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
+    return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (questBonus3Bereit(q) ? 1 : 0) + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
 }
 // ---- Abholfach: prizes and spoils are sent here and collected by hand (Wochen-Event, Invasion, Drache, Tagesboss, Kriegsherr, Kopfgeld, Kampfbeute) ----
 var inboxState = null;
@@ -7329,18 +7369,23 @@ function renderQuestPanel() {
         '<span class="chain-chest' + (full ? ' on' : '') + '">' + icon('shop') + '</span></div>' +
         '<div class="daily-row"><div class="daily-txt"><b>' + (full ? 'Große Kiste bereit!' : k + ' von 7 Tagen') + '</b><small>' + (full ? CHAIN_REWARD.crates + ' Kisten (mind. episch) + ' + CHAIN_REWARD.gems + ' Edelsteine' : 'Schaffe jeden Tag alle Aufgaben – ein verpasster Tag bricht die Kette.') + '</small></div>' +
         (full ? '<button class="btn btn--primary btn--sm" type="button" data-chain>' + icon('shop') + '<span>Abholen</span></button>' : '') + '</div>'; }
+    const hp = hourProduction('player');
     let html = q.list.map((t, i) => {
         const def = QUEST_DEFS[t.type], done = t.progress >= t.target;
         return '<div class="quest' + (t.claimed ? ' is-claimed' : done ? ' is-done' : '') + '">' + icon(def.icon) +
             '<div class="quest-main"><b>' + def.text(t.target) + '</b><div class="quest-bar"><i style="--p:' + Math.round(t.progress / t.target * 100) + '%"></i><span>' + t.progress + ' / ' + t.target + '</span></div></div>' +
-            '<div class="quest-side"><span class="quest-rew">' + beuteKachel({ a: 'gems', n: t.gems }) + '</span>' +
+            '<div class="quest-side"><span class="quest-rew">' + beuteKachel({ a: 'gems', n: t.gems }) + (t.h > 0 ? beuteKachel({ a: 'coins', n: passMuenzen(hp, t.h) }) : '') + '</span>' +
             (t.claimed ? '<span class="quest-ok">Abgeholt</span>' : done ? '<button class="btn btn--primary btn--sm" type="button" data-quest="' + i + '"><span>Abholen</span></button>' : '') +
             '</div></div>';
     }).join('');
-    const allClaimed = q.list.every(t => t.claimed), doneCount = q.list.filter(t => t.claimed).length;
+    const allClaimed = q.list.every(t => t.claimed), doneCount = questFertigN(q), alle = q.list.length, n3 = QUEST_BONUS3.n, b3 = questBonus3Bereit(q);
+    html += '<div class="quest' + (q.bonus3 ? ' is-claimed' : b3 ? ' is-done' : '') + '">' + icon('troops') +
+        '<div class="quest-main"><b>Bonus: ' + n3 + ' erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(Math.min(n3, doneCount) / n3 * 100) + '%"></i><span>' + Math.min(n3, doneCount) + ' / ' + n3 + '</span></div></div>' +
+        '<div class="quest-side"><span class="quest-rew is-gold">' + beuteKachel({ a: 'tr', n: passTruppen(hp, QUEST_BONUS3.tr) }) + '</span>' +
+        (q.bonus3 ? '<span class="quest-ok">Abgeholt</span>' : b3 ? '<button class="btn btn--primary btn--sm" type="button" data-bonus3><span>Abholen</span></button>' : '') + '</div></div>';
     html += '<div class="quest' + (q.bonusClaimed ? ' is-claimed' : allClaimed ? ' is-done' : '') + '">' + icon('star') +
-        '<div class="quest-main"><b>Bonus: alle erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(doneCount / 3 * 100) + '%"></i><span>' + doneCount + ' / 3</span></div></div>' +
-        '<div class="quest-side"><span class="quest-rew is-gold">' + beuteKachel({ a: 'kiste', k: 'aus', n: QUEST_BONUS.crates }) + beuteKachel({ a: 'gems', n: QUEST_BONUS.gems }) + '</span>' +
+        '<div class="quest-main"><b>Bonus: alle ' + alle + ' erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(doneCount / alle * 100) + '%"></i><span>' + doneCount + ' / ' + alle + '</span></div></div>' +
+        '<div class="quest-side"><span class="quest-rew is-gold">' + beuteKachel({ a: 'kiste', k: 'aus', n: QUEST_BONUS.crates }) + beuteKachel({ a: 'gems', n: QUEST_BONUS.gems }) + beuteKachel({ a: 'sh', n: HERO_SHARDS_DAY }) + '</span>' +
         (q.bonusClaimed ? '<span class="quest-ok">Abgeholt</span>' : allClaimed ? '<button class="btn btn--primary btn--sm" type="button" data-bonus><span>Abholen</span></button>' : '') + '</div></div>';
     document.getElementById('questList').innerHTML = html;
 }
@@ -7361,7 +7406,7 @@ function showGoalsTab(t) {
     goalsPopup.querySelector('.pbody').scrollTop = 0; if (t === 'pass') requestAnimationFrame(passScroll); updateGoalsBadge();
 }
 function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.claimed).length, na = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
-    liveHtml(document.getElementById('goalsSub'), '<span class="pill">' + icon('flag') + '<b>' + nd + ' / 3</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'); }
+    liveHtml(document.getElementById('goalsSub'), '<span class="pill">' + icon('flag') + '<b>' + nd + ' / ' + q.list.length + '</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'); }
 function openGoals(tab) {
     closeAllPopups(); if (barbView) closeBarbSheet(); renderGoalsSub();
     const nd = dailyGoalCount(), na = achClaimable().length;
@@ -7376,6 +7421,7 @@ goalsPopup.addEventListener('click', e => {
     const b = e.target.closest('button'); if (b && b.hasAttribute('data-daily')) return showDailyModal();   // Belohnung: the quick-claim window does the rest
     if (!b || !e.target.closest('[data-gpane="daily"]')) return;
     if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
+    else if (b.hasAttribute('data-bonus3')) claimQuestBonus3();
     else if (b.hasAttribute('data-bonus')) claimQuestBonus();
     else if (b.hasAttribute('data-chain')) claimChain();
     renderGoalsSub();
@@ -7385,18 +7431,24 @@ setInterval(() => {                 // day rollover while the game stays open
     updateGoalsBadge();
 }, 60000);
 updateGoalsBadge();
-// ===== SAISON-PASS: 28 days on one calendar for everyone, 40 levels of 300 points, a free row and a premium row (Gems, never money). Points come from what you do anyway =====
-var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 40, PASS_STEP = 300, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 150;   // (Skin schon da: 150 Gems – vorher 1000, dann brachte der Premium-Pass mehr Gems zurück, als er kostet)
-var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2, bau: 15, forschung: 15 };   // what each deed is worth (bau/forschung: in der Stadt gestartet)
-var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
-var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle drei Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
-    ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15]];
-function passRewardAt(L, prem) {                          // what level L gives in each row (Münzen: n Stunden Ertrag – 6.10. 4/12 statt 1/3, „10 Münzen“ sah kaputt aus)
-    if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 4 } : { k: 'gems', n: 15 };
-    return L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
-        L % 6 === 0 ? { k: 'tp', n: 150 } : L % 3 === 0 ? { k: 'shield', n: 8 } : L % 2 === 0 ? { k: 'coins', n: 12 } : { k: 'gems', n: 40 };
+// ===== SAISON-PASS: 28 days on one calendar for everyone, 100 levels of 150 points (7.10., vorher 40 × 300), a free row and a premium row (Gems, never money) – jede Stufe gibt in beiden Reihen etwas. Points come from what you do anyway =====
+var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 100, PASS_STEP = 150, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 150;   // (Skin schon da: 150 Gems – vorher 1000, dann brachte der Premium-Pass mehr Gems zurück, als er kostet)
+var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2, bau: 15, forschung: 15,
+    lager: 5, qb: 10, qd: 10, invPkt: 1 };   // what each deed is worth (bau/forschung: in der Stadt gestartet · lager: Lager besiegt · qb/qd: Angriff auf Tagesboss/Drache · invPkt: Invasions-Punkte)
+var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15, lager: 5, qb: 10, qd: 10, invPkt: 1 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
+var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle sechs Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
+    ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15],
+    ['attack', 'Barbaren-Lager besiegt', 5], ['star', 'Angriff auf den Tagesboss', 10], ['star', 'Angriff auf den Drachen', 10], ['defense', 'Invasions-Punkt', 1]];
+function passRewardAt(L, prem) {                          // what level L gives in each row – eine Liste (coins/tr: n Stunden Ertrag); die erste passende Regel gilt
+    const g = (k, n) => ({ k, n }), viertel = L % 25 === 0;
+    if (!prem) return viertel ? [g('gems', 50), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 20)] : L % 4 === 0 ? [g('shards', 3)] :
+        L % 3 === 0 ? [g('crate', 1)] : L % 2 === 0 ? [g('tr', 2)] : [g('coins', 3)];
+    return L === PASS_LVLS ? [{ k: 'frame', id: 'saison' }] : viertel ? [g('gems', 150), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 30)] :
+        L % 4 === 0 ? [g('shards', 8)] : L % 6 === 0 ? [g('tp', 150)] : L % 3 === 0 ? [g('shield', 8)] : L % 2 === 0 ? [g('tr', 6)] : [g('coins', 12), g('gems', 10)];
 }
-var passState = null, passArm = 0, passTimer = null;
+const passMuenzen = (hp, n) => Math.max(wirtM(5000), Math.round(hp.coins)) * n;     // n Stunden Münzen (mindestens 5.000 je Stunde – wie beim Weltrechner)
+const passTruppen = (hp, n) => Math.max(wirtK(1000), Math.round(hp.troops)) * n;    // n Stunden Truppen (mindestens 1.000 je Stunde)
+var passState = null, passTimer = null;
 function passLoad() { if (!passState) { try { passState = JSON.parse(store.get('openWaterPass')); } catch (e) {} if (!passState || typeof passState !== 'object' || !passState.s) passState = { s: {} }; } return passState; }
 function passSave() { store.set('openWaterPass', JSON.stringify(passLoad())); }
 function passNo(t) { return Math.floor((t - PASS_EPOCH) / PASS_LEN) + 1; }             // Saison-Pass N, the same for everyone (die Nummer zeigt das Spiel nicht: neben „Welt-Saison 1“ verwirrte „Saison-Pass 10“)
@@ -7414,9 +7466,11 @@ function passXp(v) {
     if (L1 > L0) { flashHint('Saison-Pass: Stufe ' + L1 + ' erreicht – hol dir die Belohnung unter „Events“.', 3500); updateGoalsBadge(); }
     if (isPanelOpen(goalsPopup) && goalsTab === 'pass') passRenderSoon();
 }
-function passGive(who, r, aus) {                          // one reward to anyone (you or the others) - returns the text for the hint (aus: Belohnungs-Kacheln dazu)
+function passGive(who, r, aus, schl) {                    // one reward to anyone (you or the others) - returns the text for the hint (aus: Belohnungs-Kacheln dazu, schl: { s, l, p } für Truppen – der Weltrechner prüft)
     aus = aus || []; const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
-    if (r.k === 'coins') { const c = Math.max(wirtM(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; aus.push({ a: 'coins', n: c }); return '+' + fmtCompact(c) + ' Münzen'; }
+    if (r.k === 'coins') { const c = passMuenzen(hourProduction(who), n); if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; aus.push({ a: 'coins', n: c }); return '+' + fmtCompact(c) + ' Münzen'; }
+    if (r.k === 'tr') { const t = passTruppen(hourProduction(who), n), base = b ? botCapitalOf(who) : rewardBaseId(); if (base === null || base === undefined) return '';
+        if (b) islandTroops[base] = (islandTroops[base] || 0) + t; else eigeneTruppenDazu(base, t, 'pass', schl || {}); aus.push({ a: 'tr', n: t }); return '+' + fmtCompact(t) + ' Truppen'; }
     if (r.k === 'gems') { if (b) b.gems += n; else gems += n; aus.push({ a: 'gems', n }); return '+' + n + ' Edelsteine'; }
     if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } aus.push({ a: 'tp', n }); return '+' + n + ' Thron-Punkte'; }
     if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) { aus.push({ a: 'sh', n, held: h.id }); return '+' + n + ' Splitter ' + h.name; } if (b) b.gems += n * 20; else gems += n * 20; aus.push({ a: 'gems', n: n * 20 }); return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
@@ -7432,33 +7486,34 @@ function passGive(who, r, aus) {                          // one reward to anyon
     return '';
 }
 function passClaim(list) {                                // [[season, level, premium], …] → hand out, one hint
-    const got = [], aus = []; let kiste = null;
+    const got = [], aus = []; let kiste = null, ohneBasis = false;
     for (const [n, l, pr] of list) { const x = passLoad().s[n]; if (!x || !passOpen(n) || l > passLvl(x) || (pr && !x.prem)) continue; const arr = pr ? x.p : x.f; if (arr.includes(l)) continue;
-        arr.push(l); const r = passRewardAt(l, pr); if (r.k === 'royal' || (r.k === 'crate' && !kiste)) kiste = r.k === 'royal' ? 'royal' : 'aus'; got.push(passGive('player', r, aus) || 'Belohnung'); }
-    if (!got.length) return; passSave(); saveGame(); saveProgression(); updateHud(); sfx('crate'); anleitungAbgeholt();
+        const rs = passRewardAt(l, pr); if (rs.some(r => r.k === 'tr') && rewardBaseId() === null) { ohneBasis = true; continue; }   // Truppen brauchen eine Basis – die Stufe wartet
+        arr.push(l); for (const r of rs) { if (r.k === 'royal' || (r.k === 'crate' && !kiste)) kiste = r.k === 'royal' ? 'royal' : 'aus'; got.push(passGive('player', r, aus, { s: n, l, p: pr ? 1 : 0 }) || 'Belohnung'); } }
+    if (!got.length) { if (ohneBasis) flashHint('Truppen brauchen eine eigene Basis – erst dann abholbar.', 3000); return; }
+    passSave(); saveGame(); saveProgression(); updateHud(); sfx('crate'); anleitungAbgeholt();
     if (aus.length) beuteFenster('Saison-Pass', aus, { kiste, unter: got.length > 1 ? got.length + ' Belohnungen abgeholt' : '' });
     else flashHint(got.join(' · '), 4000);
     renderPass(); updateGoalsBadge();
 }
-function passBuy() {
+function passBuy(btn) {
     const x = passOf(passNo(Date.now())); if (x.prem) return;
     if (gems < PASS_PREMIUM) { flashHint('Zu wenig Edelsteine – Premium kostet ' + fmtNum(PASS_PREMIUM) + '.', 2500); return; }
-    if (Date.now() - passArm > 4000) { passArm = Date.now(); renderPass(); return; }            // tap twice: 1000 Gems are a lot
-    gems -= PASS_PREMIUM; x.prem = true; passArm = 0; passSave(); saveGame(); updateHud(); sfx('coin');
+    if (!gemsWirklich('pass', PASS_PREMIUM, btn)) return;                                    // „Wirklich?“ – 1000 Gems sind viel
+    gems -= PASS_PREMIUM; x.prem = true; passSave(); saveGame(); updateHud(); sfx('coin');
     flashHint('Premium freigeschaltet – die zweite Reihe gehört dir, auch für erreichte Stufen.', 3500); renderPass(); updateGoalsBadge();
 }
-function passCellHtml(r, hp, got) {                            // icon + amount of one reward
-    const k = r.k, n = r.n || 1, row = (ic, b, s, cls) => '<span class="pc-ic' + (cls ? ' ' + cls : '') + '">' + ic + '</span><span class="pc-t"><b>' + b + '</b><small>' + s + '</small></span>';
-    const kachel = b => beuteKachel(Object.assign(b, { ohneZahl: 1 }));   // Belohnungs-Kachel (05e) – die Menge steht daneben
-    if (k === 'coins') return row(kachel({ a: 'coins' }), fmtCompact(Math.max(wirtM(5000), Math.round(hp.coins)) * n), 'Münzen', 'is-bk');
-    if (k === 'gems') return row(kachel({ a: 'gems', n }), '+' + n, 'Edelsteine', 'is-bk');
-    if (k === 'tp') return row(kachel({ a: 'tp' }), '+' + n, 'Thron-Punkte', 'is-bk');
-    if (k === 'shards') return row(kachel({ a: 'sh' }), '+' + n, 'Helden-Splitter', 'is-bk');
-    if (k === 'shield') return row(kachel({ a: 'schild', n }), n + ' h', 'Friedensschild', 'is-bk');
-    if (k === 'crate') return row(kachel({ a: 'kiste', k: 'aus' }), n + '×', n === 1 ? 'Kiste' : 'Kisten', 'is-bk');
-    if (k === 'royal') return row(kachel({ a: 'kiste', k: 'royal', r: 3 }), '1×', 'Königliche Kiste', 'is-bk');
-    const d = lkDef(k, r.id), own = !got && lkHas(k, r.id);
-    return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Rahmen', 'is-look');
+function passKachel(r, hp, got) {                         // eine Belohnung als Kachel (05e) mit Menge – Münzen/Truppen: was dein Reich in n Stunden macht
+    const k = r.k, n = r.n || 1;
+    if (k === 'coins') return beuteKachel({ a: 'coins', n: passMuenzen(hp, n) });
+    if (k === 'tr') return beuteKachel({ a: 'tr', n: passTruppen(hp, n) });
+    if (k === 'gems' || k === 'tp') return beuteKachel({ a: k, n });
+    if (k === 'shards') return beuteKachel({ a: 'sh', n });
+    if (k === 'shield') return beuteKachel({ a: 'schild', n });
+    if (k === 'crate') return beuteKachel({ a: 'kiste', k: 'aus', n });
+    if (k === 'royal') return beuteKachel({ a: 'kiste', k: 'royal', r: 3, n, min: 1 });
+    const own = !got && lkHas(k, r.id);                   // Rahmen: schon da → Edelsteine
+    return own ? beuteKachel({ a: 'gems', n: PASS_OWNED_GEMS }) : '<span class="pl-rahmen" title="' + escapeHtml(lkDef(k, r.id).name) + '"><span class="frame-ring" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span></span>';
 }
 function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
     return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
@@ -7470,31 +7525,35 @@ function passLeftTick() {                                 // the countdowns, onc
 function renderPass() {
     const el = document.getElementById('passPane'); if (!el || goalsTab !== 'pass') return;
     passPrune(); const n = passNo(Date.now()), x = passOf(n), L = passLvl(x), xp = x.xp || 0, max = L >= PASS_LVLS, into = max ? PASS_STEP : xp - L * PASS_STEP, hp = hourProduction('player');
-    const ready = passReady(n), old = passReady(n - 1), arm = Date.now() - passArm < 4000;
+    const ready = passReady(n), old = passReady(n - 1); if (gemsArmed('pass')) gemsArmAus();   // (neu gezeichnet: „Wirklich?“ von vorn)
     let h = '<div class="pass-hero' + (x.prem ? ' is-prem' : '') + '"><div class="pass-top"><span class="pass-lvl"><small>Stufe</small><b>' + L + '</b></span>' +
         '<span class="pass-ht"><b>Saison-Pass</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
         '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
         '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
-    if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Königliche Kisten und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
-        '<button class="btn btn--primary btn--sm" type="button" data-pass-buy>' + (arm ? '<span>Sicher?</span>' : '') + icon('gem') + '<span>' + fmtNum(PASS_PREMIUM) + '</span></button></div>';
-    if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Voriger Saison-Pass: ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
+    let unten = '';                                       // unter der Leiste: Premium kaufen, voriger Pass
+    if (!x.prem) unten += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Truppen, Königliche Kisten und Rahmen „' + escapeHtml(lkDef('frame', 'saison').name) + '“ (Stufe ' + PASS_LVLS + ') – auch für erreichte Stufen.</small></span>' +
+        '<button class="btn btn--primary btn--sm" type="button" data-pass-buy><span class="lbl">' + icon('gem') + fmtNum(PASS_PREMIUM) + '</span></button></div>';
+    if (old.length) unten += '<div class="pass-old">' + icon('hourglass') + '<span><b>Voriger Saison-Pass: ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
     if (ready.length > 1) h += '<button class="btn btn--primary pass-all" type="button" data-pass-all>' + icon('check') + '<span>Alle abholen · ' + ready.length + '</span></button>';
-    h += '<div class="pass-track"><div class="pass-head"><span>Frei</span><span></span><span>' + (x.prem ? '' : icon('lock')) + 'Premium</span></div>';
-    for (let l = 1; l <= PASS_LVLS; l++) { const cell = pr => { const got = (pr ? x.p : x.f).includes(l), ok = l <= L && (!pr || x.prem), r = passRewardAt(l, pr);
-            return '<button type="button" class="pass-cell' + (pr ? ' is-p' : '') + (r.id ? ' is-special' : '') + (got ? ' is-got' : ok ? ' is-ready' : ' is-lock') + (pr && !x.prem ? ' is-closed' : '') + '"' + (ok && !got ? ' data-pass-l="' + l + '" data-pass-p="' + pr + '"' : '') + '>' +
-                passCellHtml(r, hp, got) + (got ? '<span class="pc-ok">' + icon('check') + '</span>' : pr && !x.prem ? '<span class="pc-ok is-lock">' + icon('lock') + '</span>' : '') + '</button>'; };
-        h += '<div class="pass-row' + (l <= L ? ' is-on' : '') + (l === L + 1 ? ' is-next' : '') + '" data-pass-row="' + l + '">' + cell(0) + '<span class="pass-node">' + l + '</span>' + cell(1) + '</div>'; }
-    h += '</div><details class="ach-done pass-how"><summary><span>So sammelst du Punkte</span><em>' + PASS_STEP + ' je Stufe</em>' + icon('upgrade') + '</summary><div class="pass-how-l">' +
+    // die Leiste (wie RoK): eine lange waagrechte Reihe, je Stufe eine Spalte – oben Premium, in der Mitte die Stufe, unten Frei; links bleiben die Namen stehen
+    h += '<div class="pl"><div class="pl-namen"><span class="is-p">' + (x.prem ? icon('crown') : icon('lock')) + 'Premium</span><span></span><span>Frei</span></div>';
+    for (let l = 1; l <= PASS_LVLS; l++) { const zelle = pr => { const got = (pr ? x.p : x.f).includes(l), ok = l <= L && (!pr || x.prem), rs = passRewardAt(l, pr);
+            return '<button type="button" class="pl-zelle' + (pr ? ' is-p' : '') + (rs.length > 1 ? ' is-zwei' : '') + (got ? ' is-got' : ok ? ' is-ready' : ' is-lock') + (pr && !x.prem ? ' is-closed' : '') + '"' +
+                (ok && !got ? ' data-pass-l="' + l + '" data-pass-p="' + pr + '"' : '') + '>' + rs.map(r => passKachel(r, hp, got)).join('') +
+                (got ? '<span class="pl-ok">' + icon('check') + '</span>' : pr && !x.prem ? '<span class="pl-ok is-lock">' + icon('lock') + '</span>' : '') + '</button>'; };
+        h += '<div class="pl-spalte' + (l <= L ? ' is-on' : '') + (l === L + 1 ? ' is-next' : '') + (l % 25 === 0 ? ' is-viertel' : '') + '" data-pass-row="' + l + '">' + zelle(1) + '<span class="pl-knoten">' + l + '</span>' + zelle(0) + '</div>'; }
+    h += '</div>' + unten + '<details class="ach-done pass-how"><summary><span>So sammelst du Punkte</span><em>' + PASS_STEP + ' je Stufe</em>' + icon('upgrade') + '</summary><div class="pass-how-l">' +
         PASS_HOW.map(([ic, t, v]) => '<div>' + icon(ic) + '<span>' + t + '</span><b>' + (typeof v === 'string' ? v : '+' + v) + '</b></div>').join('') + '</div></details>';
-    const pb = goalsPopup.querySelector('.pbody'), top = pb.scrollTop, how = el.querySelector('.pass-how'), wasOpen = !!(how && how.open); el.innerHTML = h; pb.scrollTop = top;
+    const pb = goalsPopup.querySelector('.pbody'), top = pb.scrollTop, alt = el.querySelector('.pl'), links = alt ? alt.scrollLeft : -1, how = el.querySelector('.pass-how'), wasOpen = !!(how && how.open);
+    el.innerHTML = h; pb.scrollTop = top; if (links >= 0) el.querySelector('.pl').scrollLeft = links;
     if (wasOpen) el.querySelector('.pass-how').open = true; passLeftTick();
 }
-function passScroll() { const L = passLvl(passOf(passNo(Date.now()))), pb = goalsPopup.querySelector('.pbody'), r = goalsPopup.querySelector('[data-pass-row="' + Math.max(1, L) + '"]');   // the level you're on in view
-    if (r && L > 3) pb.scrollTop = Math.max(0, pb.scrollTop + r.getBoundingClientRect().top - pb.getBoundingClientRect().top - pb.clientHeight / 2); }
+function passScroll() { const L = passLvl(passOf(passNo(Date.now()))), pl = goalsPopup.querySelector('.pl'), r = pl && pl.querySelector('[data-pass-row="' + Math.min(PASS_LVLS, L + 1) + '"]');   // die nächste Stufe in die Mitte der Leiste
+    if (r) pl.scrollLeft = Math.max(0, r.offsetLeft - pl.clientWidth / 2 + r.offsetWidth / 2); }
 document.getElementById('passPane').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.hasAttribute('data-pass-buy')) passBuy();
+    if (b.hasAttribute('data-pass-buy')) passBuy(b);
     else if (b.hasAttribute('data-pass-all')) passClaim(passReady(passNo(Date.now())));
     else if (b.hasAttribute('data-pass-old')) passClaim(passReady(passNo(Date.now()) - 1));
     else if (b.dataset.passL) passClaim([[passNo(Date.now()), +b.dataset.passL, +b.dataset.passP]]);
@@ -10044,7 +10103,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
     if (st) { const item = inventory[st.dataset.star]; if (!item) return;
         const s0 = item.stars || 0, cost = starGemCost(s0);
         if (s0 >= Math.min(STAR_MAX, forgeLevel()) || gems < cost) return;
-        gems -= cost; item.stars = s0 + 1; saveGame(); saveProgression(); updateHud();
+        gems -= cost; item.stars = s0 + 1; saveGame(); saveProgression(); updateHud(); questProgress('schmiede', 1);
         flashHint(EQUIPMENT_DEFS[item.slot].name + ' hat jetzt ' + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (+' + item.stars * STAR_PCT + ' % Wirkung).', 2500); renderCitySheet(); }
     else if (hl) { const c = loadCity(), w = c.wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
         if (!w || coins < cost) return;
@@ -10657,7 +10716,7 @@ document.getElementById('fieldSheet').addEventListener('click', e => {
     const fh2 = e.target.closest('[data-fhero2]:not([disabled])'); if (fh2) { fieldHero2 = fh2.dataset.fhero2 || null; return openFieldSheet(f); }
     if (e.target.closest('[data-frecall]')) { const st = fieldInfo(f); if (st.occ && st.occ.who === 'player') { if (alsBefehl('feldHeim', { feld: f.id })) { flashHint('Deine Sammler kehren um.', 2500); return; } fieldGoHome(f, st, Date.now()); saveFields(); flashHint('Deine Sammler kehren mit der Beute heim.', 2500); } return closeFieldSheet(); }
     if (e.target.closest('[data-fsend]')) { const src = fieldSource(f); if (src === null) return; const n = Math.floor((islandTroops[src] || 0) * fieldShare);
-        if (n < 1 || !marschPlatz('player')) return; if (alsBefehl('feld', { home: src, feld: f.id, n, held: fieldHero, held2: fieldHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else if (!fieldSend('player', src, f.id, n, fieldHero, fieldHero2)) return; heroLetzteMerken(fieldHero, fieldHero2); fieldHero = null; fieldHero2 = null; flashHint('Truppen unterwegs ' + fArt(FIELD_KINDS[f.kind], 'zu') + '.', 2500); closeFieldSheet(); }
+        if (n < 1 || !marschPlatz('player')) return; if (alsBefehl('feld', { home: src, feld: f.id, n, held: fieldHero, held2: fieldHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else if (!fieldSend('player', src, f.id, n, fieldHero, fieldHero2)) return; heroLetzteMerken(fieldHero, fieldHero2); fieldHero = null; fieldHero2 = null; questProgress('sammeln', 1); flashHint('Truppen unterwegs ' + fArt(FIELD_KINDS[f.kind], 'zu') + '.', 2500); closeFieldSheet(); }
 });
 // ===== BARBAREN-LAGER + TAGESBOSS: camps (Stufe 1-25) out on the land and one boss a day with a big pool of life for everyone.
 // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
@@ -10766,6 +10825,7 @@ function barbSend(who, homeId, k, tid, troops, hero, hero2) {  // troops leave a
         resolveAt: now + travelDurationSeconds(home, barbPt(t), who === 'player' ? undefined : who) / (1 + (mx ? mx.spd : 0) / 100) * 1000, back: false });
     if (k === 'b') barbRec(who).h++;
     if (k === 'd') { dr.hits[who] = (dr.hits[who] || 0) + 1; evDirty = true; }
+    if (k !== 'c') goalBump(who, 'q' + k);                                                     // Tagesaufgaben + Saison-Pass: Angriff auf Tagesboss (qb), Drache (qd), Barbaren-Armee (qi)
     saveBarb(); if (who === 'player') { sfx('send'); updateHud(); saveGame(); } requestRender(); return true;
 }
 function barbHome(m, n, now) { if (n < 1) return; const home = islandById[m.homeId] || islandById[playerIslandId]; if (!home) return;   // the survivors walk home
@@ -10796,7 +10856,7 @@ function barbArrive(m, now) {
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), before = c.t, fb = barbFight(who, m.troops, hx, c.t), wounded = fieldHurt(who, fb.loss, hx), best0 = rec.b;   // the leader: a full rage fires now, every fight fills it
     let gold = 0, item = null, sh = null, shN = 1 + Math.floor(c.L / 5), kGold = 0;
     if (fb.won) {
-        barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb');
+        barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb'); goalBump(who, 'lager');   // (lager: nur Lager – barb zählt auch Invasions-Armeen)
         kGold = Math.round(fb.kill * killGoldRate(who, hx)); gold = payGold(who, barbLootOf(c.L) + kGold);
         if (Math.random() < .1 + c.L * .015) item = isP ? (inboxAdd({ src: 'fight', crate: Math.floor(c.L / 8) }), { box: Math.floor(c.L / 8) }) : (barbCrate(who, Math.floor(c.L / 8)), { box: Math.floor(c.L / 8) });   // (für den Bericht)   // yours wait in the Abholfach
         if (Math.random() < .15 + c.L * .01) sh = isP ? (inboxAdd({ src: 'fight', sh: shN }), { name: '' }) : heroGrantShards(who, shN);
@@ -13624,17 +13684,21 @@ if (window.WELT) {
         const a = Math.min(n, Math.max(0, lv - m.sr.reduce((s, x) => s + x.n, 0))); if (a > 0) m.sr.push({ t: now, n: a });
         const d = spielraumTag(who); if (d && n - a > 0) { d.srN = nn(d.srN) + n - a; saveBotState(); }
     }
-    // Münzen, die auf einmal kommen dürfen: Saison-Pass (je Saison höchstens die Münz-Stufen beider Reihen) und Thron-Shop
+    // Münzen, die auf einmal kommen dürfen: Saison-Pass (je Saison höchstens die Münz-Stufen beider Reihen), Tagesaufgaben (je Tag
+    // ihre Münz-Stunden – der Topf füllt sich gleichmäßig nach, höchstens 2 Tage, weil sein Tag nicht der des Servers ist) und Thron-Shop
     // (so viele Käufe, wie seine Thron-Punkte hergeben – die zählt der Weltrechner selbst). Gemessen in Stunden Ertrag.
     let passMuenzH = null;
+    const AUF_MUENZ_H = 2 * QUEST_COIN_H.reduce((a, x) => a + x, 0);   // 6 Aufgaben: je 2 leicht/mittel/schwer
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
-        if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) { const r = passRewardAt(L, pr); if (r.k === 'coins') passMuenzH += r.n || 1; } }
-        const h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(Date.now());   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) for (const r of passRewardAt(L, pr)) if (r.k === 'coins') passMuenzH += r.n || 1; }
+        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
-        const passRest = Math.max(0, passMuenzH - nn(d.pM)), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
-        const use = Math.min(mehr, (passRest + thronRest * THRONE_STUNDEN) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
-        const ausPass = Math.min(use / h, passRest); d.pM = nn(d.pM) + ausPass; d.tC = nn(d.tC) + (use / h - ausPass) / THRONE_STUNDEN; saveBotState();
+        d.aM = Math.max(0, nn(d.aM) - AUF_MUENZ_H * Math.max(0, now - nn(d.aMt)) / 864e5); d.aMt = now;
+        const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
+        const use = Math.min(mehr, (passRest + aufRest + thronRest * THRONE_STUNDEN) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
+        let r = use / h; const ausPass = Math.min(r, passRest); r -= ausPass; const ausAuf = Math.min(r, aufRest); r -= ausAuf;
+        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; d.tC = nn(d.tC) + r / THRONE_STUNDEN; saveBotState();
         return use;
     }
     function spielraumFrei(who, m) {
@@ -13844,7 +13908,7 @@ if (window.WELT) {
         return ende ? 'pleite' : 'warten';
     }
     // Truppen-Geschenk prüfen → wie viele er bekommt (0 = nichts), oder -1 = warten (z. B. Stufe/Profil noch nicht da)
-    const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Krankenhaus', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk' };
+    const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Krankenhaus', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk', pass: 'Saison-Pass', aufgabe: 'Aufgaben-Bonus' };
     function truppenPruefen(who, b, ende) {
         const q = b.q, name = TRUPPEN_QUELLEN[q] || 'unbekannte Quelle';
         if (!zahlOk(b.n)) { warnen(who, 'truppen', 'Truppen-Geschenk mit kaputter Zahl (' + String(b.n).slice(0, 30) + ') – abgelehnt.'); return 0; }
@@ -13877,7 +13941,23 @@ if (window.WELT) {
             if (d.fund.n >= 300) { if (d.fund.n === 300) warnen(who, 'truppen', 'Über 300 Funde auf der Karte an einem Tag – abgelehnt.', b.n); d.fund.n = 301; saveBotState(); return 0; }
             d.fund.n++; saveBotState();
             erlaubt = Math.max(FUND_TR_MIN, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + FUND_TR_MIN;
-        } else {                                       // Admin-Geschenk: nur so viel, wie der Admin geschickt hat
+        } else if (q === 'pass') {                     // Saison-Pass: jede Stufe (Reihe) zahlt einmal je Saison ihre Truppen-Stunden – und nur so weit, wie man in der Zeit kommen kann
+            const s = passNo(now), l = b.l, pr = b.p === 1 ? 1 : 0, ok = Number.isInteger(l) && l >= 1 && l <= PASS_LVLS && (b.s === s || b.s === s - 1);
+            const r = ok ? passRewardAt(l, !!pr).find(x => x.k === 'tr') : null;
+            if (!r) { warnen(who, 'truppen', 'Saison-Pass: Truppen für eine Stufe ohne Truppen – abgelehnt.', b.n); return 0; }
+            const tage = (now - (PASS_EPOCH + (b.s - 1) * PASS_LEN)) / 864e5, bis = b.s < s ? PASS_LVLS : Math.min(PASS_LVLS, Math.ceil(PASS_LVLS * 2 * tage / 28) + 3);   // (wie das Hauptbuch: alles frühestens nach halber Saison)
+            if (l > bis) { warnen(who, 'truppen', 'Saison-Pass: Stufe ' + l + ' schon nach ' + Math.floor(tage) + ' Tagen – abgelehnt.', b.n); return 0; }
+            const P = d.pTr = d.pTr && typeof d.pTr === 'object' ? d.pTr : {}; for (const k in P) if (+k < s - 1) delete P[k];
+            const schl = l + ':' + pr, L = P[b.s] = Array.isArray(P[b.s]) ? P[b.s] : [];
+            if (L.includes(schl)) { warnen(who, 'truppen', 'Saison-Pass: Truppen von Stufe ' + l + ' schon abgeholt – abgelehnt.', b.n); return 0; }
+            L.push(schl); saveBotState();
+            erlaubt = 3 * Math.max(TR_STUNDE_MIN, hourProduction(who).troops * r.n) + TR_STUNDE_MIN;   // (×3 wie beim Thron-Shop)
+        } else if (q === 'aufgabe') {                  // Tagesaufgaben (Bonus bei 3 erledigt): einmal am Tag – höchstens 2 in 24 Std. (sein Tag ist nicht der des Servers)
+            const L = (Array.isArray(d.aufTr) ? d.aufTr : []).filter(t => now - t < 864e5);
+            if (L.length >= 2) { warnen(who, 'truppen', 'Aufgaben-Bonus: über 2 Truppen-Belohnungen in 24 Std. – abgelehnt.', b.n); return 0; }
+            d.aufTr = [...L, now]; saveBotState();
+            erlaubt = 3 * Math.max(TR_STUNDE_MIN, hourProduction(who).troops * QUEST_BONUS3.tr) + TR_STUNDE_MIN;
+        } else {                                    // Admin-Geschenk: nur so viel, wie der Admin geschickt hat
             if (n > nn(d.gTr) + 0.5 && !ende) return -1;
             erlaubt = nn(d.gTr); d.gTr = Math.max(0, nn(d.gTr) - Math.min(n, erlaubt)); saveBotState();
         }
@@ -13947,7 +14027,7 @@ if (window.WELT) {
         for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
-        g: 25 + 40 + 150 / 7,                         // Gems: Tagesbelohnung (höchstens 25), 3 Aufgaben + Bonus (40), Wochenkette (150 / 7 Tage)
+        g: 25 + questGemsTag() + 150 / 7,             // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42), Wochenkette (150 / 7 Tage)
         k: 3 + 1 + 3 / 7 + 1 / 7,                     // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, Wochenkette (3), epische Tageskiste
         kg: (3 * 27 + 27) / 7,                        // davon „mind. Episch“ (Wochenkette, Tag 7) als sicherer Kisten-Wert (Episch = 27)
         sh: HERO_SHARDS_DAY + HERO_SHARDS_CHAIN / 7   // Splitter: Aufgaben-Bonus, Wochenkette
@@ -13963,7 +14043,7 @@ if (window.WELT) {
     const HB_ACH = () => hbAch !== null ? hbAch : (hbAch = ACHIEVEMENTS.reduce((a, x) => a + (x.gems || 0), 0));
     function hbPass() {                               // was der Saison-Pass (frei + Premium) höchstens gibt
         if (hbPassTopf) return hbPassTopf; const t = { g: 0, k: 0, kg: 0, sh: 0, schild: 0 };
-        for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem), n = r.n || 1;
+        for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) for (const r of passRewardAt(L, prem)) { const n = r.n || 1;   // (Truppen prüft truppenPruefen)
             if (r.k === 'gems') t.g += n; else if (r.k === 'crate') t.k += n; else if (r.k === 'royal') { t.k += n; t.kg += 27 * n; }
             else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; else if (r.k === 'frame') t.g += PASS_OWNED_GEMS; }
         return hbPassTopf = t;
@@ -14311,7 +14391,7 @@ if (window.WELT) {
     // was er nach dem letzten Reset behalten durfte (hb.tpB) + was der Weltrechner ihm seitdem gab (Thron, throneEarnedOf) + der
     // Saison-Pass; mit Profil höchstens seine Punkte darin (+ was danach noch kam). B: einmalige Ausnahme (Alexander 6.10.) –
     // Edelsteine genau SAISON_AUSNAHME_GEMS, Holz/Stein/Eisen 0, die Töpfe des Ausgegebenen leer (Abholfach hb.gIn bleibt).
-    function hbPassTp() { let n = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem); if (r.k === 'tp') n += r.n || 1; } return n; }
+    function hbPassTp() { let n = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) for (const r of passRewardAt(L, prem)) if (r.k === 'tp') n += r.n || 1; return n; }
     function hbThronReset(who, hb, p, now) {
         const E = throneEarnedOf(who), pass = hbPassTp() * (Math.floor(Math.max(0, now - Math.max(PASS_EPOCH, nn(hb.tpT))) / PASS_LEN) + 1);
         let hoch = (hb.tpE === undefined ? E : nn(hb.tpB) + Math.max(0, E - nn(hb.tpE))) + pass;
@@ -14716,7 +14796,8 @@ if (window.WELT) {
     };
 
     // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Krankenhaus, Splitter, Zahlen
-    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires', drache: 'drache', inv: 'inv' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an)
+    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires', drache: 'drache', inv: 'inv',
+        lager: 'lager', qb: 'qb', qd: 'qd', qi: 'qi', invPkt: 'invPkt', qHilfe: 'qHilfe', qVerst: 'qVerst', qRally: 'qRally' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an; die q…: für Tagesaufgaben und Saison-Pass, QUEST_STAT)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;
         if (e.coins) coins = Math.max(0, coins + e.coins);

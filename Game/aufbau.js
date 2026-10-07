@@ -406,7 +406,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
     const mb = e.target.closest('[data-markt-bauen]'); if (mb) { const id = mb.dataset.marktBauen; closeAllPopups(); openCity();
         let n = 0; const auf = () => { if (cityView.hidden && n++ < 50) return setTimeout(auf, 100); cityOpenId = id; renderCitySheet(); }; setTimeout(auf, 100); return; }   // (erst wenn die Stadt da ist – das Einblenden schließt offene Gebäude)
     const mm = e.target.closest('[data-mk-menge]'); if (mm) { marktMenge = +mm.dataset.mkMenge; renderShop(); return; }
-    const mk = e.target.closest('[data-mk]:not([disabled])'); if (mk) { const [art, x] = mk.dataset.mk.split(':'), why = marktTausch('player', art, x, marktMenge); if (why) flashHint(why, 3000); else sfx('coin'); renderShop(); }
+    const mk = e.target.closest('[data-mk]:not([disabled])'); if (mk) { const [art, x] = mk.dataset.mk.split(':'), why = marktTausch('player', art, x, marktMenge); if (why) flashHint(why, 3000); else { sfx('coin'); questProgress('markt', 1); } renderShop(); }
 }); }
 if (!SYSTEM) {
     document.getElementById('hudRoh').addEventListener('click', e => { const b = e.target.closest('[data-roh]'); rohUmschalten(undefined, b ? b.dataset.roh : rohWahl); });

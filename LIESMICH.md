@@ -986,6 +986,21 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   nach 1,1 s weg; Karten-Hinweise (Invasion …) verschwinden in der Stadt hart statt durchzuscheinen; Desktop startet
   etwas weiter weg (× 0,85) und 40 px tiefer. „ab Burg-Stufe 4“ bricht nicht mehr am Bindestrich um.
   Test: `stadt_fenster_test` erweitert.
+- **7.10. – Saison-Pass 100 Stufen + 6 Tagesaufgaben (Event-Zahlen, Alexander zugestimmt; NICHT hochgeladen):** Pass
+  100 Stufen × 150 Punkte, jede Stufe gibt in beiden Reihen etwas (`passRewardAt` → Liste; frei z. B. 1 = 3 Std. Münzen,
+  2 = 2 Std. Truppen, 3 = Kiste, 4 = 3 Splitter, 5 = 20 Edelsteine, 10 = Königliche Kiste, 25/50/75/100 = 50 + Königliche;
+  Premium 12 Std. Münzen + 10, 6 Std. Truppen, Schild 8 Std., 150 Thron-Punkte, Rahmen bei 100). Edelsteine je Saison frei
+  360, Premium 950. Ansicht: lange waagrechte Leiste (oben Premium, Mitte Stufe, unten Frei) mit Belohnungs-Kacheln (05e).
+  Premium kaufen mit „Wirklich?“ (`gemsWirklich`). Neue Pass-Punkte: Lager besiegt 5, Angriff auf Tagesboss/Drache 10,
+  Invasions-Punkt 1 (`PASS_XP.invPkt` – das Zählen `goalBump(who, 'invPkt', n)` baut der Events-Programmierer ein).
+  Aufgaben: 6 am Tag (2 leicht/2 mittel/2 schwer, 3/5/8 Edelsteine + 1/2/3 Std. Münzen), Bonus bei 3 (2 Std. Truppen) und
+  bei allen 6 (Kiste, 10 Edelsteine, 5 Splitter) – 42 Edelsteine am Tag. 14 neue Arten (Lager, Tagesboss, Sammler,
+  Bau-Hilfe, Verstärkung, Rally, Gegenstand verbessern, zusammenlegen, Heilen, Markt, Tempel, Thron-Minuten, Invasion,
+  Drache), nur was heute geht (Bündnis, Gebäude, Invasions-/Drachen-Tag). Gezählt über neue Zähler (`QUEST_STAT`:
+  lager/qb/qd/qi/qHilfe/qVerst/qRally, auch vom Weltrechner) und die Knöpfe. Weltrechner: Truppen-Quellen `pass` (je
+  Stufe/Reihe einmal je Saison, höchstens so weit wie in der Zeit möglich) und `aufgabe` (höchstens 2 in 24 Std.),
+  Münz-Topf der Aufgaben (12 Std. am Tag, hält 2 Tage), `HB_TAG` Edelsteine 42. Tests: `pass_saison_test`,
+  `aufgabe_sechs_test`, `welt_test` erweitert.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -1702,6 +1717,23 @@ Nacht – vorher bauen und testen.
 31. **Namensschild-Skins (Alexander 7.10.: „später Skins machen, sieht geil aus“):** Das Schild unter jeder Basis
     (Wappen, Turm-Stufe, Truppen; fremde „?“ bis gespäht) später in mehreren Skins als KI-Bilder anbieten
     (Ersatz für die entfernten Basis-/Marsch-Skins).
+32. **Zahlen aus Spieler-Sicht (Designer 7.10., beim Fotografieren aller Fenster):** Shop → Thron „10 Truppen“ für 200
+    Thron-Punkte (man hat 5.000); Barbaren-Lager Stufe 4 nur „9 Krieger“; Schild Stufe 1 „+0,2 %“, Verkauf 1 Punkt;
+    Späh-Bericht über fremden Spieler zeigt MEINE Helden; Späh-Bericht sagt „Gold“ statt „Münzen“; Späh-Bericht
+    „Burg schützt 5.556“, Burg-Fenster Stufe 1 sagt 10.000.
+33. **Events neu (Alexander 7.10. 16:00) – Zahlen-Vorschlag folgt, dann bauen:**
+    - Wochen-Event: bleibt Rangliste, Preise nach Platz 1 · 2–5 · 6–10 · 11–20 · 21–100 · 101–1000 (danach nichts),
+      gilt für echte Spieler und Mitspieler.
+    - Invasion + Drache: Belohnungs-LEISTE (Punkte-Linie mit Kisten, sofort abholen, sobald erreicht).
+    - Tagesboss: Schadens-Klassen (z. B. 1–1.000 / 1.000–10.000 / …), je Angriff die Belohnung der erreichten Klasse,
+      im Event-Fenster zum Abholen; gleiche Klasse zweimal = zweimal Belohnung (z. B. 2× Kiste, 2× 1.000 Münzen).
+    - Barbaren-Lager: Belohnung pro geschaffter Lager-Stufe im Event-Fenster (grün = abholen).
+    - Pass viel länger, auch Truppen u. a. als Belohnung. Aufgaben: viel mehr.
+    - Karte: Tipp auf freies Feld → Menü (Teleportieren, Markierung, Truppen dorthin verlegen).
+    - Event-Bilder gefallen Alexander („schon geil“).
+    - ENTSCHIEDEN 7.10. 16:30 (Zahlen: scratchpad/eventzahlen.md): Tagesboss nur Schadens-Klassen (Platz-Preise weg);
+      Drache nur Leiste, keine Extra-Preise für die Besten; Teleport frei wo Platz + Pass offen, neue Spieler 1× gratis;
+      Lager-Stufen-Belohnung jeden Tag neu.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll

@@ -21,7 +21,7 @@ const lokalId = id => (window.WELT && id === WELT.ich) ? 'player' : id;
 // Bündnisse (buendnis.js, wird nach spiel.js geladen): sind a und b im selben Bündnis? – Mitglieder greifen sich nicht an
 function bundFreund(a, b) { return typeof bundVerbuendet === 'function' && bundVerbuendet(a, b); }
 // Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Krankenhaus, Funde, Admin): beim Zuschauer macht es der Weltrechner.
-// q = woher (stufe/thron/heil/fund/geschenk) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
+// q = woher (stufe/thron/heil/fund/geschenk/pass/aufgabe) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
 function eigeneTruppenDazu(base, n, q, mehr) { if (base === null || base === undefined || !(n > 0)) return; islandTroops[base] = (islandTroops[base] || 0) + n; alsBefehl('truppen', Object.assign({ n, q }, mehr || {})); }
 // iPhone Home-Bildschirm-App: iOS macht die Seite um die Statusleiste zu kurz (unten bleibt ein schwarzer Streifen).
 // Die Lücke wird gemessen, und die Leiste unten rutscht genau so weit runter (CSS-Wert --dock-off).

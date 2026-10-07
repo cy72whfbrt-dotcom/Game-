@@ -1672,8 +1672,8 @@ function botPassCare(bot, b) {
     botPassPay(bot.id, b);
 }
 function botPassPay(botId, b) { const ps = b.ps, L = Math.min(PASS_LVLS, Math.floor(Math.max(0, botPassScore(b) - ps.base) / PASS_STEP));
-    while (ps.f < L) passGive(botId, passRewardAt(++ps.f, 0));
-    if (ps.prem) while (ps.p < L) passGive(botId, passRewardAt(++ps.p, 1));
+    while (ps.f < L) for (const r of passRewardAt(++ps.f, 0)) passGive(botId, r);
+    if (ps.prem) while (ps.p < L) for (const r of passRewardAt(++ps.p, 1)) passGive(botId, r);
 }
 
 function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }

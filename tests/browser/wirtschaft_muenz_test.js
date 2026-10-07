@@ -15,7 +15,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 2) Kosten und Belohnungen
     o.burg3 = AUF.stadtKosten('keep', 2).c; o.bund = BUND.KOSTEN; o.stufe = [levelRewardCoins(2), levelRewardCoins(30)];
     const hp = hourProduction('player').coins; o.hp = hp;
-    o.pass = [passRewardAt(2, false), Math.max(wirtM(5000), Math.round(hp)) * 4]; o.thron = throneAmount('player', 'coins');
+    o.pass = [passRewardAt(1, false)[0], passMuenzen(hourProduction('player'), 3)]; o.thron = throneAmount('player', 'coins');
     o.heal = Math.ceil(1000 * HEAL_COIN_PER_TROOP);
     o.maut = [GATE_TOLLS.map(mautJeTruppe), MAUT_MIN, MAUT_MAX];
     const tor = islands.find(i => i.type === 'gate'); const d = document.createElement('div'); d.innerHTML = gateControlsHtml(tor);
@@ -46,7 +46,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.burg3 === 8900, 'Burg 2 → 3 kostet 8.900 Münzen', r.burg3);
   ok(r.bund === 20000, 'Bündnis gründen 20.000 Münzen', r.bund);
   ok(r.stufe[0] === 10000 && r.stufe[1] === 250000, 'Stufen-Belohnung: mindestens 10.000 Münzen, Stufe 30: 250.000', r.stufe);
-  ok(r.pass[0].k === 'coins' && r.pass[1] >= 40000 && r.thron === Math.max(Math.round(5000 / 1.8), Math.round(2 * r.hp)) && r.thron >= 20000, 'Pass (4 Std. Ertrag ≥ 40.000) und Thron-Shop (2 Std. ≥ 20.000)', r);
+  ok(r.pass[0].k === 'coins' && r.pass[0].n === 3 && r.pass[1] >= 30000 && r.thron === Math.max(Math.round(5000 / 1.8), Math.round(2 * r.hp)) && r.thron >= 20000, 'Pass (3 Std. Ertrag ≥ 30.000) und Thron-Shop (2 Std. ≥ 20.000)', r);
   ok(r.heal === 100000, 'Heilen: 1.000 Verwundete kosten 100.000 Münzen (100 je Truppe)', r.heal);
   ok(r.maut[0].join() === '0,100,250,500,1000,2000' && r.maut[1] === 100 && r.maut[2] === 560000, 'Maut je Truppe 100 … 2.000, je Marsch 100 … 560.000', r.maut);
   ok(r.mautText[0].join() === 'frei,100,250,500,1.000,2.000' && /höchstens 560\.000 Münzen pro Marsch/.test(r.mautText[1]), 'Tor-Fenster zeigt die Maut in Münzen', r.mautText);

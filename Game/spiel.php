@@ -363,31 +363,27 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .pass-prem > span,.pass-old > span{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px} .pass-prem b,.pass-old b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
 .pass-prem small,.pass-old small{font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3);font-variant-numeric:tabular-nums} .pass-prem .btn{flex:none;gap:4px}
 .pass-all{width:100%;justify-content:center}
-.pass-track{display:grid;gap:6px;position:relative}
-.pass-head{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:6px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3);text-align:center}
-.pass-head span{display:inline-flex;align-items:center;justify-content:center;gap:4px} .pass-head .icon{width:11px;height:11px} .pass-head span:last-child{color:#8ff5e6}
-.pass-row{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:6px;align-items:stretch;position:relative}
-.pass-row::before{content:"";position:absolute;left:50%;top:-6px;bottom:0;width:4px;margin-left:-2px;background:rgba(255,255,255,.08);z-index:0}
-.pass-row.is-on::before{background:linear-gradient(180deg,var(--gold-300),var(--gold-500))}
-.pass-row:first-child::before{top:50%}
-.pass-node{align-self:center;justify-self:center;position:relative;z-index:1;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:800 var(--fs-12)/1 var(--font-ui);color:var(--tx-3);background:#1c1f27;border:2px solid var(--line-2)}
-.pass-row.is-on .pass-node{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420)}
-.pass-row.is-next .pass-node{border-color:var(--gold-300);color:var(--gold-100);box-shadow:0 0 0 3px rgba(242,210,122,.15)}
-.pass-cell{position:relative;display:flex;align-items:center;gap:8px;min-height:50px;padding:6px 8px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.025);text-align:left;color:var(--tx-2)}
-.pass-cell.is-p{background:linear-gradient(100deg,rgba(91,63,196,.12),rgba(31,138,138,.08));border-color:rgba(143,245,230,.18)}
-.pass-cell.is-lock{opacity:.55} .pass-cell.is-closed{opacity:.5}
-.pass-cell.is-ready{border-color:var(--gold-200);background:radial-gradient(120% 140% at 0% 50%,rgba(242,199,92,.22),transparent 70%),rgba(0,0,0,.2);box-shadow:0 0 10px rgba(242,210,122,.28);cursor:pointer;animation:pass-glow 1.6s ease-in-out infinite alternate}
-@keyframes pass-glow{from{box-shadow:0 0 4px rgba(242,210,122,.2)}to{box-shadow:0 0 12px rgba(242,210,122,.45)}}
-.pass-cell.is-got{opacity:.6}
-.pass-cell.is-special:not(.is-got){border-color:rgba(143,245,230,.55)}
-.pc-ic{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--tile-bg,rgba(0,0,0,.25));border:1px solid var(--line-2)}
-.pc-ic .icon{width:16px;height:16px;color:var(--gold-200)} .pc-ic .ico-coin{color:var(--res-coin)} .pc-ic .ico-gem{color:var(--res-gem)} .pc-ic .ico-tp{color:#f2c75c} .pc-ic .ico-shard{color:#d6a6ff} .pc-ic .ico-royal{color:#ffb04a}
-.pc-ic.is-look{width:32px;height:32px;border:0;background:none}
-.pc-frame{display:block;width:30px;height:30px;border-radius:50%;padding:3px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))} .pc-frame img{display:block;width:100%;height:100%;border-radius:50%}
-.pc-t{min-width:0;display:flex;flex-direction:column;gap:2px} .pc-t b{font:700 var(--fs-13)/1.1 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pc-t small{font:500 10px/1.15 var(--font-ui);color:var(--tx-3);overflow:hidden;text-overflow:ellipsis}
-.pc-ok{position:absolute;top:4px;right:5px;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pc-ok .icon{width:10px;height:10px}
-.pc-ok.is-lock{background:rgba(0,0,0,.45);color:var(--tx-3)}
+/* Pass-Leiste (7.10.): waagrecht wischen, je Stufe eine Spalte (oben Premium, Mitte Stufe, unten Frei), Belohnungs-Kacheln wie überall */
+.pl{--plz:86px;position:relative;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;padding:2px 2px 10px;scrollbar-width:thin}
+.pl-namen{position:sticky;left:0;z-index:3;flex:none;width:20px;display:grid;grid-template-rows:var(--plz) 30px var(--plz);gap:6px;background:linear-gradient(90deg,#11141b 75%,transparent)}
+.pl-namen span{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:center;gap:4px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
+.pl-namen span.is-p{color:#8ff5e6} .pl-namen .icon{width:11px;height:11px;transform:rotate(90deg)}
+.pl-spalte{position:relative;flex:none;width:70px;display:grid;grid-template-rows:var(--plz) 30px var(--plz);gap:6px}
+.pl-spalte::before{content:"";position:absolute;left:-4px;right:0;top:calc(var(--plz) + 19px);height:4px;background:rgba(255,255,255,.08);z-index:0}
+.pl-spalte.is-on::before{background:linear-gradient(90deg,var(--gold-500),var(--gold-300))}
+.pl-knoten{align-self:center;justify-self:center;position:relative;z-index:1;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:800 var(--fs-12)/1 var(--font-ui);color:var(--tx-3);background:#1c1f27;border:2px solid var(--line-2);font-variant-numeric:tabular-nums}
+.pl-spalte.is-on .pl-knoten{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420)}
+.pl-spalte.is-next .pl-knoten{border-color:var(--gold-300);color:var(--gold-100);box-shadow:0 0 0 3px rgba(242,210,122,.18)}
+.pl-spalte.is-viertel .pl-knoten{width:34px;height:34px;border-width:3px}
+.pl-zelle{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;border:1px solid var(--line-1);border-radius:10px;background:rgba(255,255,255,.03);color:inherit;--bk:54px;cursor:default}
+.pl-zelle.is-zwei{--bk:36px}
+.pl-zelle.is-p{background:linear-gradient(180deg,rgba(91,63,196,.16),rgba(31,138,138,.08))}
+.pl-zelle.is-lock{opacity:.6} .pl-zelle.is-closed{opacity:.5} .pl-zelle.is-got{opacity:.5}
+.pl-zelle.is-ready{cursor:pointer;animation:pass-glow 1.6s ease-in-out infinite alternate}
+@keyframes pass-glow{from{filter:drop-shadow(0 0 2px rgba(242,210,122,.25))}to{filter:drop-shadow(0 0 7px rgba(242,210,122,.6))}}
+.pl-ok{position:absolute;top:5px;right:5px;z-index:2;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pl-ok .icon{width:10px;height:10px}
+.pl-ok.is-lock{background:rgba(0,0,0,.55);color:var(--tx-3)}
+.pl-rahmen .frame-ring{display:block;width:48px;height:48px;border-radius:50%;padding:4px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))} .pl-rahmen img{display:block;width:100%;height:100%;border-radius:50%}
 .pass-how-l{display:grid;gap:2px;margin-top:8px;padding:4px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.18)}
 .pass-how-l div{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .pass-how-l div:last-child{border-bottom:0}
 .pass-how-l .icon{width:14px;height:14px;color:var(--gold-300);flex:none} .pass-how-l b{margin-left:auto;color:var(--gold-100);font-variant-numeric:tabular-nums}
@@ -484,7 +480,7 @@ body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapContro
 body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
 body[data-anl-puls="stadt"] #cityNavBtn > .icon,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
 body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn > .icon,
-body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
+body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus3],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
   {animation:anl-puls 1.4s ease-out infinite}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
@@ -1204,14 +1200,14 @@ use[href="#i-coin"]{color:var(--res-coin)}
 /* a5: Zeilen mit overflow:hidden – Platz für die Punkte über Ä/Ö/Ü */
 .tab span{line-height:1.35;padding-top:1px}
 .overline,.kl-seite .kl-kopf .overline{line-height:1.4}
-.hud-me-text b,.rp-stat b,.pc-t b,.act-s,.gslot small,.vh-chip-t small,.lk-me-t b,.ap-hchip-t b,.ap-hchip-t small,.slot-r,.lb-name small{line-height:1.35}
+.hud-me-text b,.rp-stat b,.act-s,.gslot small,.vh-chip-t small,.lk-me-t b,.ap-hchip-t b,.ap-hchip-t small,.slot-r,.lb-name small{line-height:1.35}
 /* a11: Knopftext passt immer in den Knopf (kleine Knöpfe neben Text: nicht zusammendrücken) */
 .btn--sm,.btn--chip{flex-shrink:0;min-width:max-content}
 .btn:disabled{color:var(--tx-3)}
 /* a12: Platzhalter in Eingabefeldern ruhig: normal, gedämpft, nicht größer als Text */
 input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(--fs-15));color:var(--tx-4);opacity:1;letter-spacing:normal}
 /* Schriftstufen: lesbarer Kleintext mindestens --fs-11 (10/10,5 px gibt es nicht mehr; Plaketten/Stufenzahlen ausgenommen) */
-.logGearMeta,.logSrc,.rp-gear small,.pc-t small,.ghero small,.hh-foot small,.hh-skt small,.hh-steps span,.hud-me-text small,.auf-grid span,.fo-wirk span,.ptitle-tag{font-size:var(--fs-11)}
+.logGearMeta,.logSrc,.rp-gear small,.ghero small,.hh-foot small,.hh-skt small,.hh-steps span,.hud-me-text small,.auf-grid span,.fo-wirk span,.ptitle-tag{font-size:var(--fs-11)}
 
 /* =====================================================================
    SLIDER  #attackTroopsSlider  (JS keeps --pct in sync)
@@ -1876,7 +1872,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 /* Umlaut-Punkte über Großbuchstaben (Ä/Ö/Ü in Überschriften, Reitern, Versalien) nicht abschneiden: einzeilige Texte mit
    „…“ schneiden nur noch seitlich ab (overflow-x:clip), nach oben bleibt Platz – die Zeilenhöhe (oft 1) war kleiner als die Punkte hoch sind */
 @supports (overflow:clip) {
-  .tab span,.overline,.ptitle:not(.ptitle--input),.hh-head h2,.city-title h2,.act-t,.stat-l,.stat-v,.slot-r,.gslot small,.lb-name small,.hud-me-text b,.rp-stat b,.pc-t b,.lk-me-t b,.kv b,.statRow b,.res b{overflow-x:clip;overflow-y:visible}
+  .tab span,.overline,.ptitle:not(.ptitle--input),.hh-head h2,.city-title h2,.act-t,.stat-l,.stat-v,.slot-r,.gslot small,.lb-name small,.hud-me-text b,.rp-stat b,.lk-me-t b,.kv b,.statRow b,.res b{overflow-x:clip;overflow-y:visible}
 }
     </style>
     <style>
@@ -1903,7 +1899,6 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 .quest-rew:has(.bk){padding:0;border:0;background:none;gap:3px} .quest-rew .bk{--bk:38px}
 .inbox-row .bk-raster{margin-top:4px}
 .tour-prize .bk-raster{--bk:32px;gap:2px;margin-top:3px} .tour-prize .bk{display:block}
-.pc-ic.is-bk{width:36px;height:36px;border:0;background:none} .pc-ic.is-bk .bk{--bk:36px}
 .daily-row .bk-raster{justify-content:flex-start;margin-top:4px}
 .kl-rss .bk-raster{--bk:46px;justify-content:flex-start;margin:4px 0 2px} .kl-rss.bk-an > .kl-rss-zeilen{display:none}
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}
@@ -2098,11 +2093,11 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .lvlup-rule{height:10px;background:url(bilder/ui_linie.webp) center/100% 100% no-repeat}
 
 /* ---------------- Listen-Karten in allen Fenstern (Shop, Events, Bündnis, Kampf, Berichte, Pass, Rangliste, Einstellungen, Gebäude) ---------------- */
-:is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.chain,.tour-prize,.pass-cell,.pass-how-l,.ach-sum,.pass-hero,
+:is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.chain,.tour-prize,.pl-zelle,.pass-how-l,.ach-sum,.pass-hero,
   .pass-prem,.pass-old,.daily-row,.title-row,.forge-row,.fo-row,.fo-detail,.bd-zeile,.bd-form,.anf,.gate-ctl,.city-vgl,.shop-info,.skin-card,.crest-card,.statChip,.notice,
   .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in,.from-sel,.ap-kopf,.ap-hchip,.inbox-empty,.empty-state,.lb-row,.rank-row,.p5-zeile,.lk-mid,.lk-card){border-radius:0!important;box-shadow:none;
   border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch!important}   /* (!important: Grundform gilt immer – auch gegen ältere „border:“-Kurzregeln mit #id) */
-:is(.ki-karte--an,.ach.is-ready,.quest.is-done:not(.is-claimed),.pass-cell.is-ready,.inbox-row.is-gold,.barb-rank li.me,.logRow.is-new,.ap-hchip.on,.bd-gk,.daily-day.is-today){border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch!important}
+:is(.ki-karte--an,.ach.is-ready,.quest.is-done:not(.is-claimed),.pl-zelle.is-ready,.inbox-row.is-gold,.barb-rank li.me,.logRow.is-new,.ap-hchip.on,.bd-gk,.daily-day.is-today){border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch!important}
 .set-zeile{padding:0 10px;margin-bottom:4px} .set-zeile:last-child{border-bottom:0}
 /* Unter-Reiter und Wahl-Knöpfe: Schildchen, aktiv gold */
 :is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border-radius:0!important;box-shadow:none;

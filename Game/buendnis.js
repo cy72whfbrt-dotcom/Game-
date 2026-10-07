@@ -248,17 +248,18 @@ function bundOp(who, b) {
         bundChatAntworten(a, who, k, z);
         return fertig('');
     }
-    if (op === 'rally') return bundRallyStart(a, who, b) || fertig('');
-    if (op === 'rallyDazu') return bundRallyDazu(a, who, b) || fertig('');
+    const aufgabe = (k, n) => { goalBump(who, k, n); return fertig(''); };   // (Tagesaufgaben: zählt nur, was geklappt hat)
+    if (op === 'rally') return bundRallyStart(a, who, b) || aufgabe('qRally');
+    if (op === 'rallyDazu') return bundRallyDazu(a, who, b) || aufgabe('qRally');
     if (op === 'rallyAbbruch') {
         const r = bund.r.find(x => x.id === kennung(b.rid) && x.aid === a.id); if (!r) return '';
         if (r.by !== who && !chef) return 'Nur wer die Rally gestartet hat';
         bundRallyEnde(r, bundName(who) + ' hat die Rally abgebrochen'); return fertig('');
     }
-    if (op === 'hilfe') return bundHilfe(who, b.von, b.nach, b.n) || fertig('');
+    if (op === 'hilfe') return bundHilfe(who, b.von, b.nach, b.n) || aufgabe('qVerst');
     if (op === 'hilfeBitte') return bundHilfeBitte(a, who, b, now) || fertig('');
     if (op === 'helfen') { let n = 0; for (const id of b.alle ? (a.hilfe || []).map(h => h.id) : [kennung(b.hid)]) if (bundHelfen(a, who, id, now)) n++;
-        return n ? fertig('') : b.alle ? '' : 'Da kannst du gerade nicht helfen'; }
+        return n ? aufgabe('qHilfe', n) : b.alle ? '' : 'Da kannst du gerade nicht helfen'; }
     if (op === 'verstZurueck') {                                   // Verstärkung heim: der Helfer holt sie, oder der Gastgeber schickt sie
         const v = verst.l.find(x => x.id === kennung(b.vid)); if (!v) return '';
         const gast = islandOwnerOf(v.t); if (v.w !== who && gast !== who) return 'Nicht deine Verstärkung';

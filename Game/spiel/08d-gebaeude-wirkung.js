@@ -107,7 +107,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
     if (st) { const item = inventory[st.dataset.star]; if (!item) return;
         const s0 = item.stars || 0, cost = starGemCost(s0);
         if (s0 >= Math.min(STAR_MAX, forgeLevel()) || gems < cost) return;
-        gems -= cost; item.stars = s0 + 1; saveGame(); saveProgression(); updateHud();
+        gems -= cost; item.stars = s0 + 1; saveGame(); saveProgression(); updateHud(); questProgress('schmiede', 1);
         flashHint(EQUIPMENT_DEFS[item.slot].name + ' hat jetzt ' + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (+' + item.stars * STAR_PCT + ' % Wirkung).', 2500); renderCitySheet(); }
     else if (hl) { const c = loadCity(), w = c.wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
         if (!w || coins < cost) return;
