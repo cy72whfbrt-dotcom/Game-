@@ -56,22 +56,23 @@ let b;
   await p.waitForTimeout(800);
   // Angriff auf eine neutrale Basis
   wo = 'angriff'; await zu();
-  // Ziel: die nächste neutrale Basis, die man sieht, über offenen Weg (Tor/Pass) erreicht und mit allen Truppen der Startbasis
-  // sicher schlägt (wie der Angriffs-Knopf: angriffStart/angriffReicht) – sonst verliert der Test gegen eine starke Basis
+  // Ziel: die nächste neutrale Basis, die man sieht, über offenen Weg (Tor/Pass) erreicht, mit allen Truppen der Startbasis
+  // sicher schlägt (wie der Angriffs-Knopf: angriffStart/angriffReicht) und in 90 s erreicht (der Test wartet 120 s)
   out.angriff = await ev(async () => { const h = islandById[playerIslandId];
     const passt = i => { if (islandOwnerOf(i.id) || /temple|gate/i.test(i.type || '') || bossAt(i.id) || !islandSeen(i)) return false;
-      const von = angriffStart(i); if (von === null || !angriffReicht(von, i)) return false;
+      const von = angriffStart(i); if (von === null || !angriffReicht(von, i) || travelDurationSeconds(islandById[von], i) > 90) return false;
       const hop = lastHop(islandById[von].landmassId, i.landmassId, 'player'), tl = tollFor(hop[0], hop[1], islandTroops[von] || 0, 'player', i.id);
       return !tl.closed && (tl.cost || 0) <= coins; };
     const ziel = islands.filter(passt).sort((a, c) => Math.hypot(a.x - h.x, a.y - h.y) - Math.hypot(c.x - h.x, c.y - h.y))[0];
-    if (!ziel) return { ziel: null, grund: 'keine sichtbare, erreichbare, schwächere neutrale Basis' };
-    const staerke = Math.round(effectiveTroops(ziel) + effectiveDefense(ziel)), von = angriffStart(ziel), truppen = islandTroops[von] || 0;
+    if (!ziel) return { ziel: null, grund: 'keine sichtbare, erreichbare, schwächere neutrale Basis in 90 s Marsch' };
+    const staerke = Math.round(effectiveTroops(ziel) + effectiveDefense(ziel)), von = angriffStart(ziel), truppen = islandTroops[von] || 0, dauer = Math.round(travelDurationSeconds(islandById[von], ziel));
     const vor = pendingAttacks.length; openIslandPopup(ziel); await new Promise(r => setTimeout(r, 400)); document.getElementById('attackBtn').click(); await new Promise(r => setTimeout(r, 600)); const vorschauText = document.getElementById('islandPopup').innerText.slice(0, 200); document.getElementById('attackBtn').click(); await new Promise(r => setTimeout(r, 400));
-    return { ziel: ziel.id, staerke, truppen, unterwegs: pendingAttacks.length - vor, vorschau: vorschauText.replace(/\n+/g, ' | ').slice(0, 160) }; }).catch(e => 'FEHLER ' + e.message);
+    return { ziel: ziel.id, staerke, truppen, dauer, unterwegs: pendingAttacks.length - vor, vorschau: vorschauText.replace(/\n+/g, ' | ').slice(0, 160) }; }).catch(e => 'FEHLER ' + e.message);
   // warten bis angekommen, dann aufwerten
   const ziel = out.angriff.ziel; let gehoert = false;
   for (let i = 0; ziel !== null && i < 40 && !gehoert; i++) { await p.waitForTimeout(3000); await zu(); gehoert = await ev(id => islandOwnerOf(id) === 'player', ziel); }
   out.erobert = gehoert;
+  if (!gehoert && ziel) out.angriff.danach = await ev(id => ({ besitzer: islandOwnerOf(id), unterwegs: pendingAttacks.filter(a => a.targetId === id).length }), ziel);   // (verloren / noch unterwegs / jemand anders)
   wo = 'aufwerten';
   if (gehoert) out.aufwerten = await ev(async id => { const vor = islandLevels[id] || 1; openIslandPopup(islandById[id]); await new Promise(r => setTimeout(r, 400)); document.getElementById('upgradeBtn').click(); await new Promise(r => setTimeout(r, 600)); return { vor, nach: islandLevels[id] }; }, ziel).catch(e => 'FEHLER ' + e.message);
   await ev(() => { try { closeIslandPopup(); } catch (e) {} });
