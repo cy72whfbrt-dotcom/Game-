@@ -234,7 +234,8 @@ function glyph(name) {                     // parse the sprite symbol once
 const GLYPH_BILD = { coin: 'res_muenzen', gem: 'res_edelstein', troops: 'res_truppen', wood: 'res_holz', stone: 'res_stein', iron: 'res_eisen',
   scout: 'sym_spaeher', attack: 'sym_schwert', hourglass: 'sym_zeit', lock: 'sym_schloss', star: 'sym_stern', losses: 'sym_verluste',
   defense: 'sym_turm', tower: 'sym_turm', flag: 'k_fahne', crown: 'k_krone', castle: 'sym_burg', shield: 'sym_friedensschild', weapon: 'sym_waffe', recall: 'sym_rueckzug',
-  beute: 'k_beute', rund: 'rund' };   // (nur Bild: Fund-Beutel, runder Knopf-Grund)
+  beute: 'k_beute', rund: 'rund', drache: 'karte_drache',
+  send: 'sym_senden', temple: 'sym_tempelbonus', market: 'sym_markt', sell: 'sym_handeln' };   // (nur Bild: Fund-Beutel, runder Knopf-Grund)
 const GLYPH_IMG = {};
 function glyphBild(name) {
   const n = GLYPH_BILD[name]; if (!n || typeof Image === 'undefined') return null;

@@ -234,7 +234,8 @@ function glyph(name) {                     // parse the sprite symbol once
 const GLYPH_BILD = { coin: 'res_muenzen', gem: 'res_edelstein', troops: 'res_truppen', wood: 'res_holz', stone: 'res_stein', iron: 'res_eisen',
   scout: 'sym_spaeher', attack: 'sym_schwert', hourglass: 'sym_zeit', lock: 'sym_schloss', star: 'sym_stern', losses: 'sym_verluste',
   defense: 'sym_turm', tower: 'sym_turm', flag: 'k_fahne', crown: 'k_krone', castle: 'sym_burg', shield: 'sym_friedensschild', weapon: 'sym_waffe', recall: 'sym_rueckzug',
-  beute: 'k_beute', rund: 'rund' };   // (nur Bild: Fund-Beutel, runder Knopf-Grund)
+  beute: 'k_beute', rund: 'rund', drache: 'karte_drache',
+  send: 'sym_senden', temple: 'sym_tempelbonus', market: 'sym_markt', sell: 'sym_handeln' };   // (nur Bild: Fund-Beutel, runder Knopf-Grund)
 const GLYPH_IMG = {};
 function glyphBild(name) {
   const n = GLYPH_BILD[name]; if (!n || typeof Image === 'undefined') return null;
@@ -10123,14 +10124,14 @@ function cityBild() {                                                        // 
     return CITY_BILD.img;
 }
 
-// ---- Kamera: Bild-Punkte; das Bild deckt immer den ganzen Bildschirm (Handy hochkant: nur zwischen HUD und Leiste – mehr Stadt zu sehen) ----
-const cityZMin = (W, H) => Math.max(W / CITY_BILD_W, (W < 900 && H > 500 ? H - 150 : H) / CITY_BILD_H);
+// ---- Kamera: Bild-Punkte; das Bild deckt immer den ganzen Bildschirm (auch hinter HUD und Leiste) ----
+const cityZMin = (W, H) => Math.max(W / CITY_BILD_W, H / CITY_BILD_H);
 function cityStartZoom(W, H) { return cityZMin(W, H); }
 function cityClampCam(W, H) {
     const c = cityCam, zMin = cityZMin(W, H);
     c.z = Math.max(zMin, Math.min(Math.max(1.6, zMin * 2.5), c.z));
     const hw = W / 2 / c.z, hh = H / 2 / c.z;
-    c.x = Math.max(hw, Math.min(CITY_BILD_W - hw, c.x)); c.y = hh * 2 > CITY_BILD_H ? CITY_BILD_H / 2 : Math.max(hh, Math.min(CITY_BILD_H - hh, c.y));
+    c.x = Math.max(hw, Math.min(CITY_BILD_W - hw, c.x)); c.y = Math.max(hh, Math.min(CITY_BILD_H - hh, c.y));
 }
 function cityFocus(id, now) {                                               // die Kamera gleitet (oder springt) zum Gebäude
     const o = cityOrt(id); if (!o || !cityCam) return;
@@ -11357,7 +11358,9 @@ function drawEvents(now, wallNow) {
     const dead = D.hp <= 0; setScreen(ctx);
     if (!dead) { const R = 110 * kb, gr = ctx.createRadialGradient(s.x, s.y, 6, s.x, s.y, R); gr.addColorStop(0, 'rgba(255,120,60,.45)'); gr.addColorStop(1, 'rgba(255,80,40,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, 7); ctx.fill(); }
     ctx.save(); ctx.translate(s.x, s.y - (dead ? 0 : Math.sin(now / 700) * 4 * kb)); ctx.scale(kb, kb); if (dead) { ctx.globalAlpha = .45; ctx.filter = 'grayscale(1)'; }
-    drDraw(ctx, dead ? 0 : Math.sin(now / 260)); ctx.restore();
+    const bild = glyphBild('drache');                                          // der Drache als KI-Bild (Alexander 7.10.), sonst gezeichnet
+    if (bild) { const w = 170, h = w * bild.naturalHeight / bild.naturalWidth; ctx.drawImage(bild, -w / 2, -h * .62, w, h); } else drDraw(ctx, dead ? 0 : Math.sin(now / 260));
+    ctx.restore();
     liveAnimation = true;
 }
 function drawDragonName(wallNow) {                   // Name und Leben des Drachen: nach allen Gebäuden (die Thron-Kuppel deckt ihn sonst zu)
@@ -11488,7 +11491,7 @@ function woHtml() {                                   // das Wochen-Event: Thema
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
     const meinePkt = fmtNum(Math.floor((W.pts || {}).player || 0)) + ' Punkte';   // (noch ohne Platz: nur die Punkte, kein „– ·“)
     return evKarte(th.ic, th.name, kopf, '<div class="ev-zeilen"><div><small>Punkte für</small><span>' + th.pkt + (th.k === 'krieg' ? ' (' + woPunkteJe() + ')' : '') + '</span></div><div><small>Bonus</small><span>' + th.bonus + '</span></div></div>' +
-            (live ? '<div class="field-lines"><span>' + (mine ? 'Dein Platz' : 'Deine Punkte') + '</span><b>' + (mine ? mine + ' · ' : '') + meinePkt + '</b></div>' : ''), 'is-tour', 'tour') +
+            (live ? '<div class="field-lines"><span>' + (mine ? 'Dein Platz' : 'Deine Punkte') + '</span><b>' + (mine ? mine + ' · ' : '') + meinePkt + '</b></div>' : ''), 'is-tour ev-woche--' + th.k, 'tour') +
         '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
         (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || rangLeer(w.on ? 'Sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.')) +
         '<div class="lb-gap">Preise</div><div class="tour-prizes">' + preise + '</div>' +
@@ -11532,7 +11535,7 @@ function evBossHtml() {                              // Reiter „Boss & Lager�
     const b = dbossEnsure(), rec = barbRec('player'), near = barbNearest();
     const boss = evKarte('crown', 'Tagesboss · ' + escapeHtml(b.name), b.hp <= 0 ? 'Besiegt · neuer in ' + evUhr(Date.now() + msToMidnight()) : rec.h + ' / ' + dbossHitsMax() + ' Angriffe heute',
         '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (b.hp <= 0 ? 'Besiegt' : fmtCompact(b.hp) + ' Leben') + '</span></div>' +
-        (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''), '', 'boss');
+        (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''), 'ev-boss--' + b.k, 'boss');   // (Klasse je Boss: sein Bild im Banner, 05z)
     const lager = evKarte('attack', 'Barbaren-Lager', rec.n + ' / ' + barbTagMax() + ' heute', '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b><span>Neuer Tag in</span>' + evUhr(Date.now() + msToMidnight()) + '</div>' +
         (near ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="camp">' + icon('send') + '<span>Nächstes Lager · Stufe ' + near.L + '</span></button>' : ''));
     return boss + lager;

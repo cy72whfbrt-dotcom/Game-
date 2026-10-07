@@ -28,14 +28,14 @@ function cityBild() {                                                        // 
     return CITY_BILD.img;
 }
 
-// ---- Kamera: Bild-Punkte; das Bild deckt immer den ganzen Bildschirm (Handy hochkant: nur zwischen HUD und Leiste – mehr Stadt zu sehen) ----
-const cityZMin = (W, H) => Math.max(W / CITY_BILD_W, (W < 900 && H > 500 ? H - 150 : H) / CITY_BILD_H);
+// ---- Kamera: Bild-Punkte; das Bild deckt immer den ganzen Bildschirm (auch hinter HUD und Leiste) ----
+const cityZMin = (W, H) => Math.max(W / CITY_BILD_W, H / CITY_BILD_H);
 function cityStartZoom(W, H) { return cityZMin(W, H); }
 function cityClampCam(W, H) {
     const c = cityCam, zMin = cityZMin(W, H);
     c.z = Math.max(zMin, Math.min(Math.max(1.6, zMin * 2.5), c.z));
     const hw = W / 2 / c.z, hh = H / 2 / c.z;
-    c.x = Math.max(hw, Math.min(CITY_BILD_W - hw, c.x)); c.y = hh * 2 > CITY_BILD_H ? CITY_BILD_H / 2 : Math.max(hh, Math.min(CITY_BILD_H - hh, c.y));
+    c.x = Math.max(hw, Math.min(CITY_BILD_W - hw, c.x)); c.y = Math.max(hh, Math.min(CITY_BILD_H - hh, c.y));
 }
 function cityFocus(id, now) {                                               // die Kamera gleitet (oder springt) zum Gebäude
     const o = cityOrt(id); if (!o || !cityCam) return;

@@ -26,7 +26,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       hp.click(); await warte(500); hud.profil = isPanelOpen(profilePopup); closeAllPopups(); await warte(200);
       // 3) Leiste: 5 runde Knöpfe in fester Reihenfolge, Profil nicht in der Leiste, Tippfläche ≥ 44 px
       const knoepfe = [...document.querySelectorAll('#cornerButtons .nav-btn')].filter(sicht);
-      const leiste = { ids: knoepfe.map(e => e.id), rund: knoepfe.every(e => { const i = e.querySelector('.icon'); return box(i).width >= 44 && getComputedStyle(i).borderRadius === '50%'; }),
+      const leiste = { ids: knoepfe.map(e => e.id), rund: knoepfe.every(e => { const i = e.querySelector('.icon'); return box(e).width >= 44 && box(e).height >= 44 && getComputedStyle(i).borderRadius === '50%'; }),   // (Alexander 7.10.: Knöpfe kleiner, die Tippfläche bleibt ≥ 44 px)
         hoehe: Math.min(...knoepfe.map(e => box(e).height)) };
       // 4) EIN Streifen: mehrere Dauer-Hinweise → einer sichtbar + „+N“, antippen klappt alle auf
       const altEv = evChips; evChips = () => [[2, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache"><span>Drache</span></button>'], [3, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv"><span>Barbaren-Invasion in</span></button>']];

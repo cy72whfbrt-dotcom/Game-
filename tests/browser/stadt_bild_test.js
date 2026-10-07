@@ -36,7 +36,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         const W = innerWidth, H = innerHeight, c = cityCam, mitte = Object.fromEntries(Object.keys(CITY_ORTE).map(id => [id, W / 2 + (cityOrt(id).x - c.x) * c.z]));
         const kleben = cityNamen.every(s => mitte[s.id] !== undefined && Math.abs(s.x + s.w / 2 - mitte[s.id]) < 1.5);
         const deckt = cityNamen.some((s, i) => cityNamen.some((t, j) => j > i && s.x < t.x + t.w && t.x < s.x + s.w && s.y < t.y + t.h && t.y < s.y + s.h));
-        const ox = W / 2 - c.x * c.z, oy = H / 2 - c.y * c.z, rand = W < 900 && H > 500 ? 75 : 0, voll = ox <= .5 && oy <= rand + .5 && ox + CITY_BILD_W * c.z >= W - .5 && oy + CITY_BILD_H * c.z >= H - rand - .5;   // Handy hochkant: unter HUD/Leiste darf es dunkel sein
+        const ox = W / 2 - c.x * c.z, oy = H / 2 - c.y * c.z, voll = ox <= .5 && oy <= .5 && ox + CITY_BILD_W * c.z >= W - .5 && oy + CITY_BILD_H * c.z >= H - .5;
         return { name, n: cityNamen.length, kleben, deckt, voll, burg: cityNamen.some(s => s.id === '_keep') }; };
       o.schilder = [];
       o.schilder.push(await pruef('start', () => {}));

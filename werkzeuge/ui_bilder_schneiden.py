@@ -51,6 +51,24 @@ BLAETTER = {
                                  ('sym_waffe', 64, (1380, 494)), ('sym_ruestung', 64, (133, 832)), ('sym_schild', 64, (396, 830)),
                                  ('sym_stiefel', 64, (635, 832)), ('res_punkte', 64, (907, 829)), ('sym_beschleuniger', 64, (1168, 824)),
                                  ('res_xp', 64, (1407, 844))]),
+    # dritte Lieferung (eingang2, Alexander 7.10.): Karte/Basis-Knöpfe, Kosten/Bericht, Profil, Rang, Saison-Rahmen, Forschung
+    '01': ('schwelle', 4, [('karte_drache', 160, (236, 256)), ('sym_senden', 64, (650, 236)), ('sym_sammeln', 64, (984, 256)),
+                           ('sym_verlegen', 64, (1358, 256)), ('sym_rally', 64, (217, 689)), ('sym_tempelbonus', 64, (551, 689)),
+                           ('sym_hilfe', 64, (945, 709)), ('sym_markt', 64, (1339, 709))]),
+    '02': ('schwelle', 4, [('sym_bauarbeiter', 64, (197, 276)), ('sym_held_leer', 64, (610, 295)), ('sym_verwundete', 64, (1024, 315)),
+                           ('sym_macht', 64, (1358, 295)), ('sym_eroberung', 64, (256, 709)), ('sym_handeln', 64, (728, 728)),
+                           ('sym_medaille', 64, (1240, 728))]),
+    '03': ('zeilen', 1, [('skill_angriff', 64, (177, 276)), ('skill_truppen', 64, (551, 256)), ('skill_verteidigung', 64, (984, 256)),
+                           ('set_glocke', 64, (1358, 236)), ('set_ton', 64, (217, 709)), ('set_konto', 64, (728, 709)), ('set_hilfe', 64, (1280, 709))]),
+    '04': ('schwelle', 4, [('rang_neuling', 72, (217, 256)), ('rang_silberritter', 72, (551, 256)), ('rang_goldfuerst', 72, (945, 276)),
+                           ('rang_platingraf', 72, (1319, 256)), ('rang_diamantherzog', 72, (335, 669)), ('rang_meister', 72, (768, 669)),
+                           ('rang_legende', 72, (1201, 650))]),
+    '05': ('zeilen', 1, [('rahmen_neuling', 112, (236, 217), 'ring'), ('rahmen_kapitaen', 112, (669, 217), 'ring'),
+                           ('rahmen_admiral', 112, (1201, 217), 'ring'), ('rahmen_grossadmiral', 112, (276, 669), 'ring'),
+                           ('rahmen_champion', 112, (768, 669), 'ring'), ('rahmen_mitte', 112, (1240, 669), 'ring')]),
+    '06': ('schwelle', 4, [('fo_ertrag', 64, (197, 217)), ('fo_traglast', 64, (571, 217)), ('fo_burgschutz', 64, (984, 217)),
+                           ('fo_marschtempo', 64, (1358, 197)), ('fo_kundschaft', 64, (236, 610)), ('held_aktiv', 64, (827, 630)),
+                           ('held_passiv', 64, (1280, 630))]),
 }
 
 
@@ -64,12 +82,26 @@ def saeubern(rgba, verfahren):
         a = np.where(innen, a, 0)
         a = ndimage.uniform_filter(a, 2)
     a = np.clip((a - 110) / (235 - 110), 0, 1) * 255   # schwacher Schein raus, Kante bleibt weich
+    if verfahren == 'zeilen':   # zwei Reihen, deren Schein sich berührt: an der dünnsten Stelle dazwischen trennen
+        ym = 350 + int(np.argmin(a[350:650].sum(axis=1))); a[ym - 3:ym + 3] = 0
     voll = a >= 250
     # Randfarbe: jedes nicht ganz deckende Pixel nimmt die Farbe des nächsten ganz deckenden (Säume weg)
     _, (iy, ix) = ndimage.distance_transform_edt(~voll, return_indices=True)
     rgb = rgba[:, :, :3][iy, ix]
     out = np.dstack([rgb, a.astype(np.uint8)])
     return out
+
+
+def ring_innen_frei(st):   # Rahmen-Ring: alles innerhalb des Rings hart durchsichtig (Schein-Flecken weg); Innenrand = erster Radius, der rundum deckt
+    h, w = st.shape[:2]; cy, cx = h / 2, w / 2
+    yy, xx = np.mgrid[0:h, 0:w]; r = np.hypot(yy - cy, xx - cx); voll = st[:, :, 3] > 200
+    innen = 0
+    for k in range(4, int(min(h, w) / 2)):
+        ring = (r >= k) & (r < k + 1)
+        if voll[ring].mean() > 0.9: innen = k; break
+    st = st.copy(); a = st[:, :, 3].astype(np.float32)
+    st[:, :, 3] = (a * np.clip(r - (innen - 1), 0, 1)).astype(np.uint8)
+    return st
 
 
 def teil(a, d, punkt):   # Kasten des Teils, das am Punkt liegt (oder ihm am nächsten ist)
@@ -105,6 +137,7 @@ for blatt, (verfahren, d, auswahl) in BLAETTER.items():
             groesse = ndimage.sum(np.ones(lab.shape), lab, range(1, n + 1))
             for i, g in enumerate(groesse, 1):
                 if g < groesse.max() * 0.05: stueck[ndimage.binary_dilation(lab == i, iterations=3), 3] = 0
+            if art == ['ring']: stueck = ring_innen_frei(stueck)
         stueck = Image.fromarray(stueck)
         stueck = stueck.crop(stueck.getchannel('A').point(lambda v: 255 if v > 8 else 0).getbbox())
         h = round(stueck.height * breite / stueck.width)
@@ -113,4 +146,19 @@ for blatt, (verfahren, d, auswahl) in BLAETTER.items():
         stueck.save(datei, 'WEBP', quality=84, method=6)
         summe += os.path.getsize(datei)
         print(f'ui_{name}.webp {breite}x{h} {os.path.getsize(datei) // 1024} KB')
+# Kopfbilder (Events, Bosse, Wochen-Thema): ganzes Bild, ~1000 px breit, WebP < 150 KB
+BANNER = [('07', 'event_invasion'), ('08', 'event_drache'), ('09', 'boss_kraken'), ('10', 'boss_nebelkoenig'), ('12', 'boss_steinriese'),
+          ('13', 'boss_feuerdrache'), ('20', 'woche_sammeln'),
+          ('woche_krieger', 'woche_krieg'), ('woche_boss', 'woche_boss'), ('woche_bau', 'woche_bau')]
+for blatt, name in BANNER:
+    if NUR and blatt != NUR: continue
+    datei = next((os.path.join(q, blatt + '.png') for q in QUELLEN if os.path.exists(os.path.join(q, blatt + '.png'))), None)
+    if not datei: continue
+    im = Image.open(datei).convert('RGB'); im = im.resize((1000, round(im.height * 1000 / im.width)), Image.LANCZOS)
+    ziel = os.path.join(ZIEL, name + '.webp'); q = 74
+    while True:
+        im.save(ziel, 'WEBP', quality=q, method=6)
+        if os.path.getsize(ziel) < 150 * 1024 or q <= 40: break
+        q -= 6
+    summe += os.path.getsize(ziel); print(f'{name}.webp {im.width}x{im.height} {os.path.getsize(ziel) // 1024} KB (q {q})')
 print('zusammen', summe // 1024, 'KB')
