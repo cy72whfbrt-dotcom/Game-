@@ -62,11 +62,16 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Hauptbuch: fester Münz-Spielraum in Münzen × 1.000 (27.778 + 3 × 2.778 statt 65.000 vor dem 5.10.)', t.fix === 27778 + 3 * 2778 && t.lv === 0);
     pruefe('Hauptbuch: Mindest-Truppen (Thron-Shop 1.000, Fund 100) × WIRTSCHAFT_KOSTEN, nie unter 1', S.TR_STUNDE_MIN === 1 && S.FUND_TR_MIN === 1);
     // Thron-Shop zahlt wie Händler/Markt 2 Stunden Produktion (Alexander 6.10.): 3 freie Käufe = 3 × 2 Stunden ohne Fehlalarm
-    const MG = new Function('PASS_LVLS', 'passRewardAt', 'SR_STUNDE_MIN', 'nn', 'hourProduction', 'passNo', 'throneEarnedOf', 'saveBotState', 'THRONE_STUNDEN',
-        stueck('    let passMuenzH', '    function spielraumFrei') + '; return muenzGutscheine;')(0, null, 3, x => +x || 0, () => ({ coins: 1000 }), () => 7, () => 0, () => {}, 1 / 1800 / (1 / 3600));
-    const dT = { pS: 7, pM: 0, tC: 0 }, h12 = 1000 * 1.2;
+    const MG = new Function('PASS_LVLS', 'passRewardAt', 'SR_STUNDE_MIN', 'nn', 'hourProduction', 'passNo', 'throneEarnedOf', 'saveBotState', 'THRONE_STUNDEN', 'QUEST_COIN_H',
+        stueck('    let passMuenzH', '    function spielraumFrei') + '; return muenzGutscheine;')(0, null, 3, x => +x || 0, () => ({ coins: 1000 }), () => 7, () => 0, () => {}, 1 / 1800 / (1 / 3600), [1, 2, 3]);
+    const dT = { pS: 7, pM: 0, tC: 0, aM: 24, aMt: Date.now() + 6e4 }, h12 = 1000 * 1.2;   // (Aufgaben-Topf leer – und füllt sich in der Testzeit nicht nach)
     pruefe('Hauptbuch: 3 Thron-Käufe à 2 Stunden Münzen gedeckt (je Kauf 2 × Stundenproduktion)', MG('u1', 3 * 2 * h12, dT) === 3 * 2 * h12 && Math.abs(dT.tC - 3) < 1e-9);
     pruefe('Hauptbuch: … ein 4. Kauf ohne Thron-Punkte nicht', MG('u1', 2 * h12, dT) === 0);
+    // Tagesaufgaben (7.10.): 6 Aufgaben je 1/2/3 Stunden Münzen = 12 Stunden am Tag, der Topf hält höchstens 2 Tage und füllt sich gleichmäßig nach
+    const dA = { pS: 7, pM: 0, tC: 5 };
+    pruefe('Hauptbuch: Aufgaben-Münzen – 2 Tage (24 Stunden) gedeckt, mehr nicht', MG('u1', 24 * h12, dA) === 24 * h12 && MG('u1', h12, dA) < h12 * 1e-3);
+    dA.aMt -= 864e5 / 2;
+    pruefe('Hauptbuch: … nach einem halben Tag wieder 6 Stunden', Math.abs(MG('u1', 10 * h12, dA) - 6 * h12) < h12 * 1e-3);
 }
 
 // 4) Welt-Saison (09f-saison.js): der Termin ist immer ein Sonntag 18 Uhr deutscher Zeit, 8 Wochen nach dem Start (auch über
@@ -124,7 +129,7 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Burg fair: alte Burg-Bauzeiten gelten bis 14.10. – nach dem Reset mit Burg fair nicht mehr', alt({ nr: 1 })(t) && !alt({ nr: 2, burgFair: 2 })(t) && /const alt = id === 'keep' && burgAlt\(now\)/.test(s10));
     // Thron-Punkte (jeder Reset): das Hauptbuch erlaubt die Edelsteine aus dem Abholfach – nie mehr, als er an Punkten haben kann
     const thron = (E, pass) => new Function('throneEarnedOf', 'nn', 'PASS_LVLS', 'passRewardAt', 'PASS_EPOCH', 'PASS_LEN', 'SAISON_TP_MAX', 'SAISON_TP_JE_GEM',
-        stueck(s10, 'function hbPassTp', 'WELT.saisonKonto') + 'return hbThronReset;')(() => E, v => Number.isFinite(+v) ? +v : 0, 1, (L, prem) => prem && pass ? { k: 'tp', n: pass } : { k: 'gems', n: 1 }, Date.UTC(2026, 9, 1), 864e5 * 56, 20000, 10);
+        stueck(s10, 'function hbPassTp', 'WELT.saisonKonto') + 'return hbThronReset;')(() => E, v => Number.isFinite(+v) ? +v : 0, 1, (L, prem) => prem && pass ? [{ k: 'tp', n: pass }] : [{ k: 'gems', n: 1 }], Date.UTC(2026, 9, 1), 864e5 * 56, 20000, 10);
     const hbT = { gIn: 0 }, jetzt = Date.UTC(2026, 9, 6);
     thron(35000, 0)(null, hbT, { tp: 35000, earned: 35000 }, jetzt); const g1 = hbT.gIn;
     thron(40000, 0)(null, hbT, { tp: 25000, earned: 40000 }, jetzt + 864e5); const g2 = hbT.gIn - g1;

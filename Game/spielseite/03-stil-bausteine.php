@@ -605,11 +605,11 @@ use[href="#i-coin"]{color:var(--res-coin)}
 /* a5: Zeilen mit overflow:hidden – Platz für die Punkte über Ä/Ö/Ü */
 .tab span{line-height:1.35;padding-top:1px}
 .overline,.kl-seite .kl-kopf .overline{line-height:1.4}
-.hud-me-text b,.rp-stat b,.pc-t b,.act-s,.gslot small,.vh-chip-t small,.lk-me-t b,.ap-hchip-t b,.ap-hchip-t small,.slot-r,.lb-name small{line-height:1.35}
+.hud-me-text b,.rp-stat b,.act-s,.gslot small,.vh-chip-t small,.lk-me-t b,.ap-hchip-t b,.ap-hchip-t small,.slot-r,.lb-name small{line-height:1.35}
 /* a11: Knopftext passt immer in den Knopf (kleine Knöpfe neben Text: nicht zusammendrücken) */
 .btn--sm,.btn--chip{flex-shrink:0;min-width:max-content}
 .btn:disabled{color:var(--tx-3)}
 /* a12: Platzhalter in Eingabefeldern ruhig: normal, gedämpft, nicht größer als Text */
 input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(--fs-15));color:var(--tx-4);opacity:1;letter-spacing:normal}
 /* Schriftstufen: lesbarer Kleintext mindestens --fs-11 (10/10,5 px gibt es nicht mehr; Plaketten/Stufenzahlen ausgenommen) */
-.logGearMeta,.logSrc,.rp-gear small,.pc-t small,.ghero small,.hh-foot small,.hh-skt small,.hh-steps span,.hud-me-text small,.auf-grid span,.fo-wirk span,.ptitle-tag{font-size:var(--fs-11)}
+.logGearMeta,.logSrc,.rp-gear small,.ghero small,.hh-foot small,.hh-skt small,.hh-steps span,.hud-me-text small,.auf-grid span,.fo-wirk span,.ptitle-tag{font-size:var(--fs-11)}
