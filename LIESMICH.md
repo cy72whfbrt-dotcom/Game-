@@ -1708,6 +1708,10 @@ Nacht – vorher bauen und testen.
     - ENTSCHIEDEN 7.10. 16:30 (Zahlen: scratchpad/eventzahlen.md): Tagesboss nur Schadens-Klassen (Platz-Preise weg);
       Drache nur Leiste, keine Extra-Preise für die Besten; Teleport frei wo Platz + Pass offen, neue Spieler 1× gratis;
       Lager-Stufen-Belohnung jeden Tag neu (210 Edelsteine/Woche ok, Alexander B).
+35. **Zahlen an RoK (Alexander 7.10. abends, Vorschlag scratchpad/rokzahlen.md):** alle 10 Punkte ja; Burg 25 NICHT in
+    einer Saison (Saison 1 ≈ Burg 16–18, Burg 25 nach ~4 Saisons, Anfang schnell). Schild 80/300/700 (A). Truppen aus
+    Basen: ausgewogen anpassen („nicht zu langsam, nicht zu schnell“). Start-Helden: alle behalten die 3 Standard-Helden
+    (B). Neue Zeiten gelten sofort (A).
 34. **Teleport-Animation (Alexander 7.10.: „wäre geil, merken“):** beim Teleportieren eine Animation (Basis verschwindet
     mit Lichtsäule/Staub, taucht am Ziel auf). Später.
 
