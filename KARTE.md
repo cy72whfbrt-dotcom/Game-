@@ -8,11 +8,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `abmelden` → Game/server/01-grundlagen-login.php:79
 - `abosHolen` → Game/weltrechner/push.js:174
 - `academyLevel` → Game/spiel/08d-gebaeude-wirkung.js:3
-- `achCheck` → Game/spiel/05c-erfolge-rangliste.js:114
+- `achCheck` → Game/spiel/05c-erfolge-rangliste.js:118
 - `achCheckSoon` → Game/spiel/05c-erfolge-rangliste.js:113
 - `achClaimable` → Game/spiel/05c-erfolge-rangliste.js:105
 - `achClaimed` → Game/spiel/05c-erfolge-rangliste.js:5
 - `achDone` → Game/spiel/05c-erfolge-rangliste.js:104
+- `achFensterOffen` → Game/spiel/05c-erfolge-rangliste.js:114
 - `achLookKept` → Game/spiel/05c-erfolge-rangliste.js:108
 - `achStat` → Game/spiel/05c-erfolge-rangliste.js:17
 - `achVal` → Game/spiel/05c-erfolge-rangliste.js:103
@@ -31,7 +32,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `adminMelden` → Game/weltrechner/push.js:215
 - `adminSenden` → Game/weltrechner/push.js:216
 - `afterSplash` → Game/spiel/06d-schild-produktion.js:432
-- `ago` → Game/spiel/05c-erfolge-rangliste.js:188
+- `ago` → Game/spiel/05c-erfolge-rangliste.js:192
 - `ago` → Game/spiel/05d-maersche-kampfbericht.js:153
 - `Aktion 'befehle_da'` → Game/server/06-speichern-push-konto.php:26
 - `Aktion 'geschenk'` → Game/admin.php:65
@@ -206,7 +207,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `baseDefenseForLevel` → Game/spiel/01b-weltkarte.js:94
 - `baseLevelOf` → Game/spiel/03a-karte-hintergrund.js:615
 - `baseShieldedFor` → Game/spiel/06d-schild-produktion.js:52
-- `basesTxt` → Game/spiel/05c-erfolge-rangliste.js:295
+- `basesTxt` → Game/spiel/05c-erfolge-rangliste.js:299
 - `basis_pfad` → Game/server/01-grundlagen-login.php:28
 - `basisBild` → Game/spiel/03b-gebaeude-3d.js:320
 - `basisBildNr` → Game/spiel/03b-gebaeude-3d.js:319
@@ -625,7 +626,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundZahl` → Game/buendnis/01-daten-regeln.js:118
 - `bundZahlen` → Game/buendnis/01-daten-regeln.js:127
 - `bundZeichenHtml` → Game/buendnis/04-fenster-karte-welt.js:13
-- `bundZeigen` → Game/spiel/05c-erfolge-rangliste.js:251
+- `bundZeigen` → Game/spiel/05c-erfolge-rangliste.js:255
 - `bundZielName` → Game/buendnis/01-daten-regeln.js:81
 - `bundZielOk` → Game/buendnis/01-daten-regeln.js:119
 - `bundZielVon` → Game/buendnis/03-mitspieler.js:15
@@ -654,7 +655,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `canConnectHalos` → Game/spiel/09a-funde-felder.js:138
 - `canReach` → Game/spiel/01b-weltkarte.js:256
 - `canvasTex` → Game/baukunst/01-werkzeugkasten.js:31
-- `card` → Game/spiel/05c-erfolge-rangliste.js:131
+- `card` → Game/spiel/05c-erfolge-rangliste.js:135
 - `cart` → Game/baukunst/05-umland.js:170
 - `centerIsland` → Game/spiel/01c-basen-spielstand.js:148
 - `cfg` → Game/server/01-grundlagen-login.php:17
@@ -665,14 +666,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `chipN` → Game/spiel/01a-grundlagen.js:207
 - `choose` → Game/baukunst/05-umland.js:682
 - `cityAnfHtml` → Game/spiel/08b-burg-aussehen.js:95
-- `cityBauId` → Game/spiel/08a-stadt-bauen.js:271
+- `cityBauId` → Game/spiel/08a-stadt-bauen.js:272
 - `cityBild` → Game/spiel/08e-stadtbild-haeuser.js:24
 - `cityBildSetzen` → Game/spiel/08b-burg-aussehen.js:74
 - `cityBlocker` → Game/spiel/08a-stadt-bauen.js:109
 - `cityBuildOf` → Game/spiel/08a-stadt-bauen.js:74
 - `cityBuildsFix` → Game/spiel/08a-stadt-bauen.js:65
 - `cityBurgFehlt` → Game/spiel/08b-burg-aussehen.js:103
-- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:258
+- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:259
 - `cityClampBuild` → Game/spiel/08a-stadt-bauen.js:101
 - `cityClampCam` → Game/spiel/08e-stadtbild-haeuser.js:34
 - `cityCost` → Game/spiel/08a-stadt-bauen.js:90
@@ -707,7 +708,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityVergleich` → Game/spiel/08d-gebaeude-wirkung.js:27
 - `cityVglHtml` → Game/spiel/08b-burg-aussehen.js:107
 - `cityZMin` → Game/spiel/08e-stadtbild-haeuser.js:32
-- `claimAch` → Game/spiel/05c-erfolge-rangliste.js:142
+- `claimAch` → Game/spiel/05c-erfolge-rangliste.js:146
 - `claimChain` → Game/spiel/06a-aufgaben.js:219
 - `claimDaily` → Game/spiel/06a-aufgaben.js:49
 - `claimQuest` → Game/spiel/06a-aufgaben.js:190
@@ -730,12 +731,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeAllPopups` → Game/spiel/09e-inselfenster.js:75
 - `closeArmySheet` → Game/spiel/09d-armeen-wegmarken.js:207
 - `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:377
-- `closeCity` → Game/spiel/08a-stadt-bauen.js:231
+- `closeCity` → Game/spiel/08a-stadt-bauen.js:232
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:74
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:358
 - `closeHeroHall` → Game/spiel/08c-helden.js:282
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:112
-- `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:118
+- `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:120
 - `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:56
 - `closeMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:311
 - `closePanel` → Game/spiel/09e-inselfenster.js:35
@@ -756,7 +757,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `combatLogKey` → Game/spiel/05d-maersche-kampfbericht.js:128
 - `cone` → Game/spiel/03b-gebaeude-3d.js:27
 - `confirmRecall` → Game/spiel/10b-inselfenster-knoepfe.js:79
-- `conquestsOf` → Game/spiel/05c-erfolge-rangliste.js:275
+- `conquestsOf` → Game/spiel/05c-erfolge-rangliste.js:279
 - `convexHull` → Game/spiel/03e-kamera-eingabe.js:41
 - `coordText` → Game/spiel/10a-inselfenster-vorschau.js:96
 - `CORE` → Game/baukunst/08-himmelsfeste-bilder.js:24
@@ -902,7 +903,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ereignisse_abholen` → Game/server/05-datenbank-welt.php:261
 - `ereignisse_verbucht` → Game/server/05-datenbank-welt.php:269
 - `ertrag` → Game/aufbau.js:235
-- `escapeHtml` → Game/spiel/05c-erfolge-rangliste.js:263
+- `escapeHtml` → Game/spiel/05c-erfolge-rangliste.js:267
 - `EV_SZENE.boss` → Game/spiel/09c-events-drache.js:429
 - `EV_SZENE.drache` → Game/spiel/09c-events-drache.js:419
 - `EV_SZENE.inv` → Game/spiel/09c-events-drache.js:423
@@ -1060,7 +1061,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fogTexture` → Game/spiel/06e-nebel-zeichnen.js:28
 - `foKosten` → Game/aufbau.js:191
 - `FONT` → Game/spiel/03c-wappen-thronplatz.js:59
-- `foPunkte` → Game/spiel/05c-erfolge-rangliste.js:276
+- `foPunkte` → Game/spiel/05c-erfolge-rangliste.js:280
 - `forgeLevel` → Game/spiel/08d-gebaeude-wirkung.js:4
 - `foSperre` → Game/aufbau.js:197
 - `foStart` → Game/aufbau.js:207
@@ -1144,7 +1145,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `giveTitle` → Game/spiel/04-kampf.js:50
 - `GLA` → Game/baukunst/06-turmhof-festung.js:236
 - `gleich` → Game/benachrichtigung.js:35
-- `gleich` → Game/spiel/05c-erfolge-rangliste.js:299
+- `gleich` → Game/spiel/05c-erfolge-rangliste.js:303
 - `glowy` → Game/baukunst/04-vielfalt-stile.js:236
 - `glyph` → Game/spiel/01a-grundlagen.js:222
 - `glyphBild` → Game/spiel/01a-grundlagen.js:243
@@ -1464,7 +1465,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `landmassAtWorld` → Game/spiel/09d-armeen-wegmarken.js:12
 - `landmassesConnected` → Game/spiel/01b-weltkarte.js:208
 - `lantern` → Game/baukunst/07-hafen-palast.js:172
-- `lastFightWith` → Game/spiel/05c-erfolge-rangliste.js:184
+- `lastFightWith` → Game/spiel/05c-erfolge-rangliste.js:188
 - `lastHop` → Game/spiel/01b-weltkarte.js:269
 - `lastJeKern` → Game/weltrechner/start.js:60
 - `lathe` → Game/baukunst/04-vielfalt-stile.js:249
@@ -1494,7 +1495,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:134
 - `levelRewardCoins` → Game/spiel/02a-shop-stufen.js:229
 - `levelRewardGems` → Game/spiel/02a-shop-stufen.js:232
-- `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:90
+- `levelRewardText` → Game/spiel/08f-stadtbild-bild.js:92
 - `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:226
 - `levelUpItem` → Game/spiel/02a-shop-stufen.js:174
 - `LILY` → Game/baukunst/08-himmelsfeste-bilder.js:20
@@ -1533,7 +1534,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `los` → Game/speichern.js:100
 - `los` → Game/weltrechner/start.js:239
 - `lute` → Game/spiel/10c-start-einstellungen.js:33
-- `macht` → Game/spiel/05c-erfolge-rangliste.js:298
+- `macht` → Game/spiel/05c-erfolge-rangliste.js:302
 - `makeTileKeyboard` → Game/spiel/05b-truhe-skills.js:36
 - `male` → Game/ladebildschirm.js:100
 - `maleBurg` → Game/ladebildschirm.js:45
@@ -1740,9 +1741,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openLookSheet` → Game/spiel/08b-burg-aussehen.js:52
 - `openMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:302
 - `openPanel` → Game/spiel/09e-inselfenster.js:34
-- `openRankings` → Game/spiel/05c-erfolge-rangliste.js:327
+- `openRankings` → Game/spiel/05c-erfolge-rangliste.js:331
 - `openRucksack` → Game/spiel/06d-schild-produktion.js:101
-- `openRulerProfile` → Game/spiel/05c-erfolge-rangliste.js:196
+- `openRulerProfile` → Game/spiel/05c-erfolge-rangliste.js:200
 - `openShop` → Game/spiel/06d-schild-produktion.js:186
 - `opts` → Game/spiel/04-kampf.js:62
 - `ortName` → Game/spiel/10a-inselfenster-vorschau.js:36
@@ -1879,7 +1880,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `poly` → Game/spiel/03b-gebaeude-3d.js:181
 - `positionIslandPopover` → Game/spiel/03e-kamera-eingabe.js:460
 - `post` → Game/baukunst/07-hafen-palast.js:457
-- `powerOf` → Game/spiel/05c-erfolge-rangliste.js:177
+- `powerOf` → Game/spiel/05c-erfolge-rangliste.js:181
 - `preiseFaerben` → Game/spiel/06d-schild-produktion.js:165
 - `privaterSchluessel` → Game/weltrechner/push.js:48
 - `prodGanz` → Game/spiel/06d-schild-produktion.js:234
@@ -1889,7 +1890,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `profil_bereinigen` → Game/server/02-sicherheit-datenlecks.php:51
 - `profil_oeffentlich` → Game/server/02-sicherheit-datenlecks.php:162
 - `profil_setzen` → Game/server/05-datenbank-welt.php:312
-- `profilBundHtml` → Game/spiel/05c-erfolge-rangliste.js:246
+- `profilBundHtml` → Game/spiel/05c-erfolge-rangliste.js:250
 - `profilVon` → Game/spiel/10d-welt-weltrechner.js:149
 - `profilZuBot` → Game/welt.js:237
 - `profilZuBotRoh` → Game/welt.js:243
@@ -1945,7 +1946,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questStat` → Game/spiel/06a-aufgaben.js:121
 - `questTempelGeht` → Game/spiel/06a-aufgaben.js:126
 - `queueHover` → Game/spiel/03e-kamera-eingabe.js:362
-- `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:95
+- `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:97
 - `rahmenAufKarte` → Game/spiel/03b-gebaeude-3d.js:377
 - `rahmenDef` → Game/spiel/05a-aussehen-profil.js:18
 - `rahmenHat` → Game/spiel/05a-aussehen-profil.js:22
@@ -1964,8 +1965,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rangLeer` → Game/spiel/09c-events-drache.js:451
 - `rangSaison` → Game/spiel/09f-saison.js:106
 - `rankIndexFor` → Game/spiel/05a-aussehen-profil.js:41
-- `rankPeople` → Game/spiel/05c-erfolge-rangliste.js:280
-- `rankRowHtml` → Game/spiel/05c-erfolge-rangliste.js:285
+- `rankPeople` → Game/spiel/05c-erfolge-rangliste.js:284
+- `rankRowHtml` → Game/spiel/05c-erfolge-rangliste.js:289
 - `ratio` → Game/spiel/03a-karte-hintergrund.js:509
 - `raus` → Game/spiel/01d-helden-mitspieler.js:116
 - `raus.push` → Game/spiel/10d-welt-weltrechner.js:248
@@ -1984,14 +1985,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `reiter` → Game/ladebildschirm.js:185
 - `releaseVelocity` → Game/spiel/03e-kamera-eingabe.js:267
 - `render` → Game/baukunst/08-himmelsfeste-bilder.js:375
-- `renderAchievements` → Game/spiel/05c-erfolge-rangliste.js:124
+- `renderAchievements` → Game/spiel/05c-erfolge-rangliste.js:128
 - `renderActiveMarches` → Game/spiel/05d-maersche-kampfbericht.js:47
 - `renderArmySheet` → Game/spiel/09d-armeen-wegmarken.js:219
 - `renderAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:237
 - `renderChestEquipment` → Game/spiel/05b-truhe-skills.js:46
 - `renderChestItemPopup` → Game/spiel/05b-truhe-skills.js:189
 - `renderCitySheet` → Game/spiel/08b-burg-aussehen.js:124
-- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:272
+- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:273
 - `renderCombatLog` → Game/spiel/05d-maersche-kampfbericht.js:146
 - `renderCrestCard` → Game/spiel/05a-aussehen-profil.js:72
 - `renderCrestEditor` → Game/spiel/05a-aussehen-profil.js:77
@@ -2003,7 +2004,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderInbox` → Game/spiel/06a-aufgaben.js:273
 - `renderKeep` → Game/aufbau.js:309
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:4
-- `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:105
+- `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:107
 - `renderLook` → Game/spiel/05a-aussehen-profil.js:56
 - `renderLookSheet` → Game/spiel/08b-burg-aussehen.js:32
 - `renderLookTop` → Game/spiel/08b-burg-aussehen.js:26
@@ -2012,7 +2013,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderPopup` → Game/spiel/10a-inselfenster-vorschau.js:97
 - `renderProfile` → Game/spiel/05a-aussehen-profil.js:103
 - `renderQuestPanel` → Game/spiel/06a-aufgaben.js:296
-- `renderRankings` → Game/spiel/05c-erfolge-rangliste.js:293
+- `renderRankings` → Game/spiel/05c-erfolge-rangliste.js:297
 - `renderRecallPreview` → Game/spiel/10b-inselfenster-knoepfe.js:56
 - `renderRucksack` → Game/spiel/06d-schild-produktion.js:84
 - `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:324
@@ -2434,7 +2435,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `unb64` → Game/weltrechner/push.js:19
 - `unten` → Game/spiel/08d-gebaeude-wirkung.js:74
 - `updateCamera` → Game/spiel/03e-kamera-eingabe.js:203
-- `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:249
+- `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:250
 - `updateGoalsBadge` → Game/spiel/06a-aufgaben.js:287
 - `updateHud` → Game/spiel/01e-nebel-kampfwerte-hud.js:233
 - `updateHudPlayer` → Game/spiel/01e-nebel-kampfwerte-hud.js:249
@@ -2573,11 +2574,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wert` → Game/spiel/08c-helden.js:241
 - `wert` → Game/spiel/08d-gebaeude-wirkung.js:84
 - `who` → Game/spiel/04-kampf.js:59
-- `whoBases` → Game/spiel/05c-erfolge-rangliste.js:161
+- `whoBases` → Game/spiel/05c-erfolge-rangliste.js:165
 - `whoIslands` → Game/spiel/05c-erfolge-rangliste.js:21
-- `whoLink` → Game/spiel/05c-erfolge-rangliste.js:262
-- `whoProfile` → Game/spiel/05c-erfolge-rangliste.js:162
-- `whoTroops` → Game/spiel/05c-erfolge-rangliste.js:158
+- `whoLink` → Game/spiel/05c-erfolge-rangliste.js:266
+- `whoProfile` → Game/spiel/05c-erfolge-rangliste.js:166
+- `whoTroops` → Game/spiel/05c-erfolge-rangliste.js:162
 - `width` → Game/spiel/03d-maersche-tagnacht.js:108
 - `willkommenFenster` → Game/spiel/10d-welt-weltrechner.js:1365
 - `win` → Game/baukunst/07-hafen-palast.js:442
@@ -4136,30 +4137,31 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `achClaimable` :105
 - `achLookKept` :108
 - `achCheckSoon` :113
-- `achCheck` :114 — newly reached ones are announced once
-- `renderAchievements` :124
-- `card` :131
-- `claimAch` :142
-- `whoTroops` :158
-- `whoBases` :161
-- `whoProfile` :162 — the same facts for you and for anyone else
-- `powerOf` :177 — Macht: troops, bases, gear, heroes, skills and city - one number to compare rul…
-- `lastFightWith` :184 — what's between the two of you, from the battle log
-- `ago` :188
-- `openRulerProfile` :196
-- `profilBundHtml` :246 — Bündnis im Profil (eigenes und fremdes): Wappen + Name, antippen öffnet gleich …
-- `bundZeigen` :251
-- `whoLink` :262
-- `escapeHtml` :263 — auch Anführungszeichen: sicher in Text UND in Attributen
-- `conquestsOf` :275
-- `foPunkte` :276 — alle erforschten Stufen – von anderen nur die Summe (rechnet der Weltrechner, f…
-- `rankPeople` :280 — everyone once: name, frame, look title, level, bases
-- `rankRowHtml` :285
-- `renderRankings` :293
-- `basesTxt` :295
-- `macht` :298
-- `gleich` :299 — Gleichstand: erst Macht, sonst du hinter den anderen (nie bevorzugt)
-- `openRankings` :327
+- `achFensterOffen` :114 — Handy: ein offenes Fenster füllt den Schirm – der Erfolgs-Hinweis kommt erst da…
+- `achCheck` :118 — newly reached ones are announced once
+- `renderAchievements` :128
+- `card` :135
+- `claimAch` :146
+- `whoTroops` :162
+- `whoBases` :165
+- `whoProfile` :166 — the same facts for you and for anyone else
+- `powerOf` :181 — Macht: troops, bases, gear, heroes, skills and city - one number to compare rul…
+- `lastFightWith` :188 — what's between the two of you, from the battle log
+- `ago` :192
+- `openRulerProfile` :200
+- `profilBundHtml` :250 — Bündnis im Profil (eigenes und fremdes): Wappen + Name, antippen öffnet gleich …
+- `bundZeigen` :255
+- `whoLink` :266
+- `escapeHtml` :267 — auch Anführungszeichen: sicher in Text UND in Attributen
+- `conquestsOf` :279
+- `foPunkte` :280 — alle erforschten Stufen – von anderen nur die Summe (rechnet der Weltrechner, f…
+- `rankPeople` :284 — everyone once: name, frame, look title, level, bases
+- `rankRowHtml` :289
+- `renderRankings` :297
+- `basesTxt` :299
+- `macht` :302
+- `gleich` :303 — Gleichstand: erst Macht, sonst du hinter den anderen (nie bevorzugt)
+- `openRankings` :331
 
 ### Game/spiel/05d-maersche-kampfbericht.js — Liste der Märsche und Kampfbericht
 - `showBattleTab` :13
@@ -4480,11 +4482,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weich` :205
 - `stadtBlende` :209 — die Stadt über der Karte ein-/ausblenden
 - `openCity` :214 — dann: läuft, sobald die Stadt da ist (z. B. die Burg öffnen) – nicht nach feste…
-- `closeCity` :231
-- `updateCityBuilder` :249
-- `cityBuyBuilder2` :258
-- `cityBauId` :271 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
-- `renderCitySheetTimer` :272
+- `closeCity` :232
+- `updateCityBuilder` :250
+- `cityBuyBuilder2` :259
+- `cityBauId` :272 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
+- `renderCitySheetTimer` :273
 
 ### Game/spiel/08b-burg-aussehen.js — Burg (Ausbau, Friedensschild) und Fenster Aussehen
 - `shieldStock` :3 — DEINE BURG (tap the castle in the city): upgrade it, switch on a Friedensschild
@@ -4635,10 +4637,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `citySchild` :13 — → {x, y, w, h}; x/y = Mitte des Schilds
 - `rund` :17
 - `cityFrame` :42 — ---- ein Bild ----
-- `levelRewardText` :90
-- `queueLevelUpModal` :95
-- `renderLevelUpModal` :105
-- `closeLevelUpModal` :118
+- `levelRewardText` :92
+- `queueLevelUpModal` :97
+- `renderLevelUpModal` :107
+- `closeLevelUpModal` :120
 
 ### Game/spiel/09a-funde-felder.js — Funde auf der Karte und Ressourcenfelder
 - `pickupAmount` :6

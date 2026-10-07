@@ -69,6 +69,8 @@ function cityFrame(now) {
         cityHitRects.push({ id, x: sx - rw, y: sy - rh, w: rw * 2, h: rh * 2, cx: sx, cy: sy });
         schilder.push({ id, s, x: sx, y: oy + o.sy * Z });
     }
+    const leiste = document.getElementById('cornerButtons'), lr = leiste && leiste.getBoundingClientRect();   // die untere Leiste: kein Schild darunter (Desktop: „Steinbruch Bauen“)
+    if (lr && lr.height) for (const p of schilder) if (p.y + 18 > lr.top - 6 && p.x + 70 > lr.left && p.x - 70 < lr.right) p.y = lr.top - 6 - 18;
     if (im) for (const p of schilder) {                                      // die Schilder zuletzt, über allem
         const an = cityOpenId === p.id || cityRingId === p.id, q = citySchild(g, p.s, p.x, p.y, an, now);
         if (q.x + q.w > 0 && q.x < W && q.y + q.h > 0 && q.y < H) cityNamen.push({ id: p.id, ...q });

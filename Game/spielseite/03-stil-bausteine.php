@@ -320,7 +320,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .hh-foot small{font-size:10px;color:#ffffffaa}
 .hh-frag{display:block;width:80%;height:6px;border-radius:3px;background:#0009;overflow:hidden;margin-top:3px} .hh-frag i{display:block;height:100%;background:var(--gold-300)}
 .hh-qstars{display:inline-flex;gap:3px;align-items:center}
-.hh-qstars i{width:14px;height:14px;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);background:linear-gradient(90deg,var(--gold-200) 0 var(--f),#ffffff26 var(--f) 100%)}
+.hh-qstars i{width:14px;height:14px;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);background:conic-gradient(from 0deg at 50% 55%,var(--gold-200) 0 var(--f),#ffffff26 var(--f) 100%)}   /* Viertelstern als Tortenstück vom Kern aus, nicht als Streifen am Rand */
 .hh-hero{position:relative;display:grid;grid-template-columns:1fr 320px;margin-top:10px;border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;background:radial-gradient(circle at 35% 40%,var(--glow),#0a0b0e 65%)}
 .hh-stage{position:sticky;top:0;align-self:start;height:min(560px,calc(100vh - 140px));min-height:440px}
 .hh-id{position:absolute;left:14px;top:12px;display:flex;flex-direction:column;gap:4px;z-index:2;text-shadow:0 1px 3px #000}

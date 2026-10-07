@@ -5886,11 +5886,15 @@ if (store.get('openWaterAchLook') === null) {                            // (the
 const goalsPopup = document.getElementById('goalsPopup'); var goalsTab = 'daily', achReadyN = 0;   // Ziele: the daily tasks and the Erfolge in one sheet
 let achKnown = null, achTimer = null;
 function achCheckSoon() { clearTimeout(achTimer); achTimer = setTimeout(achCheck, 400); }
+function achFensterOffen() {                                                 // Handy: ein offenes Fenster füllt den Schirm – der Erfolgs-Hinweis kommt erst danach (nicht über Heldenkarten/Gebäudekopf)
+    if (uiLayout() === 'desktop') return false;
+    return !document.getElementById('heroHall').hidden || !document.getElementById('citySheet').hidden || document.body.classList.contains('has-panel');
+}
 function achCheck() {                                                        // newly reached ones are announced once
     if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
     const ready = achClaimable();
     if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Edelsteine unter „Events“ ab.', 4500); sfx('crown'); }
+    if (!achFensterOffen()) for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg: ' + a.name + ' – ' + a.gems + ' Edelsteine unter „Events“', 4500); sfx('crown'); }
     updateGoalsBadge(ready.length);
     if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
 }
@@ -9226,6 +9230,7 @@ function stadtBlende(von, bis, dann) {                                       // 
     a.onfinish = () => { a.cancel(); if (dann) dann(); };
 }
 function openCity(dann) {                                                   // dann: läuft, sobald die Stadt da ist (z. B. die Burg öffnen) – nicht nach fester Zeit
+    if (typeof dann !== 'function') dann = null;
     if (!cityView.hidden && !cityBusy) { if (dann) dann(); return; }
     if (cityBusy || !cityView.hidden) return;
     closeAllPopups();
@@ -9677,7 +9682,7 @@ function hhGrid() {
     const karte = h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r], frei = !s.own && bereit.includes(h);
         return '<button type="button" class="hh-card' + (s.own ? '' : frei ? ' is-ready' : ' is-locked') + '" data-hh="' + h.id + '" data-r="' + rd.key + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
             '<span class="hh-art">' + heroImg(h.id, '', true) + '</span>' + (heroCanDo('player', h.id) && !frei ? '<span class="hh-dot"></span>' : '') + (s.own || frei ? '' : '<span class="hh-lk">Gesperrt</span>') +
-            '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : frei ? '<span class="hh-frei" data-hh-frei="' + h.id + '">' + icon('plus') + 'Freischalten</span>'
+            '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : frei ? '<span class="hh-frei" data-hh-frei="' + h.id + '">' + icon('plus') + 'Freischalten<em>' + need + ' Splitter</em></span>'
                 : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; };
     return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="seg hh-seiten">' + [['helden', 'Helden'], ['paare', 'Paare']].map(([k, t]) => '<button type="button" data-hh-seite="' + k + '"' + (hhSeite === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
@@ -9903,7 +9908,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
         const base = rewardBaseId(); if (base !== null) eigeneTruppenDazu(base, w, 'heil');
         saveGame(); updateHud(); flashHint(fmtNum(w) + ' Truppen geheilt – sie sind in deiner Hauptstadt.', 3000); renderCitySheet(); }
 });
-document.getElementById('cityBtn').addEventListener('click', openCity);
+document.getElementById('cityBtn').addEventListener('click', () => openCity());   // nicht openCity direkt: sonst käme das Klick-Ereignis als „dann“ an
 document.getElementById('cityNavBtn').addEventListener('click', () => { if (!cityView.hidden) { closeAllPopups(); closeCity(); } else openCity(); });   // in der Stadt: zurück zur Karte (wie in Rise of Kingdoms)
 // Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) und die untere Knopf-Leiste – überall gleich (Alexander 4.10.)
 function stadtLeiste(an) {
@@ -10174,6 +10179,8 @@ function cityFrame(now) {
         cityHitRects.push({ id, x: sx - rw, y: sy - rh, w: rw * 2, h: rh * 2, cx: sx, cy: sy });
         schilder.push({ id, s, x: sx, y: oy + o.sy * Z });
     }
+    const leiste = document.getElementById('cornerButtons'), lr = leiste && leiste.getBoundingClientRect();   // die untere Leiste: kein Schild darunter (Desktop: „Steinbruch Bauen“)
+    if (lr && lr.height) for (const p of schilder) if (p.y + 18 > lr.top - 6 && p.x + 70 > lr.left && p.x - 70 < lr.right) p.y = lr.top - 6 - 18;
     if (im) for (const p of schilder) {                                      // die Schilder zuletzt, über allem
         const an = cityOpenId === p.id || cityRingId === p.id, q = citySchild(g, p.s, p.x, p.y, an, now);
         if (q.x + q.w > 0 && q.x < W && q.y + q.h > 0 && q.y < H) cityNamen.push({ id: p.id, ...q });
