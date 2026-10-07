@@ -85,13 +85,13 @@ function renderRucksack() {
     if (!isPanelOpen(rucksackPopup)) return;
     const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis(), st = shieldStock(), nt = teleImRucksack(), gratis = tpGratis('player');
     liveHtml(document.getElementById('rkSchildStand'), icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
-    const kaufen = was => '<button type="button" class="btn btn--secondary rk-knopf" data-rk-kauf="' + was + '"><span>Kaufen</span></button>';
+    const kaufen = (was, preis) => '<button type="button" class="btn btn--secondary rk-knopf" data-rk-kauf="' + was + '" aria-label="Kaufen für ' + fmtNum(preis) + ' Edelsteine"><span>Kaufen</span>' + icon('gem') + '<b class="rk-preis">' + fmtNum(preis) + '</b></button>';   // Preis wie im Shop
     let h = '<div class="sect"><h4>Friedensschilde</h4><span class="sect-aside">Zeit kommt dazu</span></div><div class="rk-liste">' +
         [2, 8, 24].map(n => rkFach({ a: 'schild', n }, 'Schild ' + n + ' Std.', st[n] + '× im Rucksack',
-            st[n] ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-schild="' + n + '"><span>Einsetzen</span></button>' : kaufen('schild'))).join('') + '</div>';
+            st[n] ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-schild="' + n + '"><span>Einsetzen</span></button>' : kaufen('schild', SHIELD_PRICES[n]))).join('') + '</div>';
     h += '<div class="sect"><h4>Teleporter</h4><span class="sect-aside">Hauptstadt umziehen</span></div><div class="rk-liste">' +
         rkFach({ a: 'tele', n: nt }, 'Teleporter', nt + '× im Rucksack' + (gratis ? ' (1 gratis für neue Spieler)' : ''),
-            nt ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-tele><span>Benutzen</span></button>' : kaufen('tele')) + '</div>';
+            nt ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-tele><span>Benutzen</span></button>' : kaufen('tele', TP_GEMS)) + '</div>';
     const helden = HEROES.map(x => [x, heroSt('player', x.id)]).filter(([, s]) => s && s.sh > 0);
     h += '<div class="sect"><h4>Helden-Splitter</h4><span class="sect-aside">Tipp → Held</span></div>' + (helden.length
         ? '<div class="bk-raster rk-splitter">' + helden.map(([x, s]) => '<button type="button" class="bk-mit" data-rk-held="' + x.id + '" aria-label="' + escapeHtml(x.name) + ' öffnen">' + beuteKachel({ a: 'sh', n: s.sh, held: x.id }) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>'
@@ -132,8 +132,9 @@ function kisteBild(k) { return '<img class="kiste-bild" src="bilder/' + (KISTE_B
 const KISTE_MEHR = 10;
 const kistenMehrN = preis => Math.max(0, Math.min(KISTE_MEHR, Math.floor(gems / preis)));
 function kistenMehrKnopf(id, preis) {               // „10×“ (oder „N×“ mit dem Rest) neben dem Einzel-Knopf
-    const n = kistenMehrN(preis), m = n >= 2 ? n : KISTE_MEHR;
-    return '<button type="button" class="ware-preis" data-mehr="' + id + '" aria-label="' + m + ' Kisten öffnen"' + (n < 2 ? ' disabled' : '') + '><span class="ware-x">' + m + '×</span>' + icon('gem') + '<b>' + fmtNum(m * preis) + '</b></button>';
+    const n = kistenMehrN(preis), m = n >= 2 ? n : KISTE_MEHR, rest = n >= 2 && n < KISTE_MEHR;   // rest: für 10× reicht es nicht – „max. N×“ sagt, warum es weniger sind
+    const was = rest ? 'Für ' + KISTE_MEHR + '× reichen deine Edelsteine nicht – ' + m + ' Kisten öffnen' : m + ' Kisten öffnen';
+    return '<button type="button" class="ware-preis" data-mehr="' + id + '" aria-label="' + was + '" title="' + was + '"' + (n < 2 ? ' disabled' : '') + '><span class="ware-x">' + (rest ? 'max. ' : '') + m + '×</span>' + icon('gem') + '<b>' + fmtNum(m * preis) + '</b></button>';
 }
 for (const el of document.querySelectorAll('[data-kiste-art]')) el.innerHTML = kisteBild(el.dataset.kisteArt);
 shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sinfo]'); if (!b) return;   // „i“: Erklärung/Chancen auf und zu
@@ -432,9 +433,15 @@ var splashQueue, splashFinished;   // no initialisers: afterSplash() already run
 function afterSplash(fn) { if (splashFinished || SYSTEM) { if (!SYSTEM) fn(); return; }   // (Weltrechner: kein Ladebildschirm – Hinweise braucht er nicht)
      else (splashQueue || (splashQueue = [])).push(fn); }
 function splashDone() { splashFinished = true; const q = splashQueue || []; splashQueue = []; q.forEach(f => { try { f(); } catch (e) {} }); }
+function hintFrei() {                           // Desktop: liegt der Hinweis über einem offenen Fenster (z. B. Basis-Fenster unten rechts), oben unter das HUD
+    hintEl.classList.remove('toast--oben');
+    if (!hintEl.textContent || innerWidth < 900 || innerHeight <= 500) return;
+    const r = hintEl.getBoundingClientRect();
+    if ([...document.querySelectorAll('.panel.is-open')].some(p => { const q = p.getBoundingClientRect(); return q.width > 0 && r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top; })) hintEl.classList.add('toast--oben');
+}
 function flashHint(text, ms, lang) {                // lang: langer Hinweis – ganz lesbar (kein „…“), am Handy nicht über einem offenen Fenster
     clearTimeout(hintResetTimer);
     hintEl.classList.toggle('toast--lang', !!lang);
-    hintEl.textContent = text;
+    hintEl.textContent = text; hintFrei();
     if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; hintEl.classList.remove('toast--lang'); }, ms);
 }

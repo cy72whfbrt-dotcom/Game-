@@ -43,7 +43,7 @@ function launchScout(targetId, explore, at) {
     questProgress('scout', 1);
     saveGame();
     saveProgression();
-    flashHint((explore ? 'Späher erkundet das Gebiet · ca. ' : 'Späher unterwegs zu ' + ortName(target) + ' · ca. ') + fmtClock(durationSec));
+    flashHint((explore ? 'Späher erkundet das Gebiet · ca. ' : 'Späher unterwegs: ' + ortName(target) + ' · ca. ') + fmtClock(durationSec));
     renderActiveMarches();
 }
 
