@@ -361,8 +361,9 @@ document.getElementById('welcomeOkBtn').addEventListener('click', () => { closeW
 document.getElementById('welcomeModal').addEventListener('click', e => { if (e.target.id === 'welcomeModal') { closeWelcome(); maybeShowDaily(); } });
 afterSplash(() => setTimeout(() => { if (welcomeFrom) showWelcome(); }, 700));
 
-// Center the view on the player's island at start
+// Center the view on the player's island at start – auf „mittel“: die eigene Burg gut erkennbar, die Nachbarn im Bild
 const startIsland = islandById[playerIslandId];
+mapState.zoom = mapState.targetZoom = 0.012;
 mapState.offsetX = window.innerWidth / 2 - startIsland.x * mapState.zoom;
 mapState.offsetY = window.innerHeight / 2 - startIsland.y * mapState.zoom;
 

@@ -90,15 +90,20 @@ function nebelLandPfade() {
         P.moveTo(lm.shape[0].x, lm.shape[0].y); for (const q of lm.shape) P.lineTo(q.x, q.y); P.closePath(); }
     return nebelLand;
 }
-let nebelWeltCv = null;                                 // die Weltübersicht unter dem Nebel (dunkel, Ringfarben, Gebirgs-Bänder) – EINMAL gemalt, danach nur verschoben/skaliert
+let nebelWeltCv = null;                                 // die Weltübersicht unter dem Nebel – EINMAL gemalt, danach nur verschoben/skaliert
 function nebelWelt() {
     if (nebelWeltCv) return nebelWeltCv;
+    if (karteBilder()) {                                // mit den Bildern: die Übersicht wie die Karten-Testdatei (03a), nur leicht verschleiert
+        const U = karteUebersicht(), c = document.createElement('canvas'); c.width = c.height = U.width;
+        const g = c.getContext('2d'); g.drawImage(U, 0, 0); g.fillStyle = 'rgba(16,20,28,.28)'; g.fillRect(0, 0, c.width, c.height);
+        c.R = FRAME_HALF; return (nebelWeltCv = c);
+    }
     const R = FRAME_HALF + 20000, n = 1536, k = n / (2 * R), c = document.createElement('canvas'); c.width = c.height = n;
     const g = c.getContext('2d'); g.fillStyle = '#1a2433'; g.fillRect(0, 0, n, n);
     g.setTransform(k, 0, 0, k, R * k, R * k);
     g.globalAlpha = .75; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); }
     g.globalAlpha = 1; paintBaender(g, k / 1.4, true);
-    c.R = R; return (nebelWeltCv = c);
+    c.R = R; return c;                                  // (ohne Bilder nur vorläufig: nicht merken)
 }
 function drawFog(view, now) {
     const z = mapState.zoom;

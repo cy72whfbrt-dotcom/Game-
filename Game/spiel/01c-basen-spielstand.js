@@ -80,8 +80,9 @@ for (const lm of landmasses) {
         neutralLevel: tierStats ? tierStats.templeLevel : 1
     });
 }
-// Startplätze als Basen (Spieler + Mitspieler ziehen dort ein, die übrigen bleiben leeres Land)
-for (const sl of startSlots) islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true,
+// Startplätze als Basen (Spieler + Mitspieler ziehen dort ein, die übrigen bleiben leeres Land). startSicht: so weit sieht man von dort
+// aus (01e/10d) – mindestens bis zum nächsten Gebirge des eigenen Gebiets (Alexander 7.10.: Startsicht im eigenen Gebiet)
+for (const sl of startSlots) islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true, startSicht: Math.min(120000, grenzAbstandWeit(sl.x, sl.y) + 8000),
     neutralTroops: 0, neutralDefense: 1, neutralLevel: 1 });   // (Startplätze: leer – hier ziehen neue Hauptstädte ein)
 for (const gsp of gateSpots) {
     gsp.br.gateId = id;

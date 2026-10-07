@@ -103,10 +103,10 @@ function bodenMuster(art, z, lage) {                 // Muster der Bodenkachel i
   if (!p) { p = KB.muster[key] = ctx.createPattern(c, 'repeat'); p.setTransform(new DOMMatrix().rotate(dr).scale(b * gr / c.width)); }
   return p;
 }
-function bodenFuellen(x, art, z, l, t, w, h) {      // Kachel + darüber dieselbe Kachel gedreht und größer, durchscheinend (karger Boden mit Steinplatten: noch eine Lage); „ton…“: Farbe
-  if (art.startsWith('ton')) { x.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; x.fillRect(l, t, w, h); return; }
+function bodenFuellen(x, art, z, l, t, w, h, a = 1) { // Kachel + darüber dieselbe Kachel gedreht und größer, durchscheinend (karger Boden mit Steinplatten: noch eine Lage); „ton…“: Farbe; a: Deckkraft
+  if (art.startsWith('ton')) { x.globalAlpha = a; x.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; x.fillRect(l, t, w, h); x.globalAlpha = 1; return; }
   const n = art === 'innen' || art === 'sand' ? 3 : 2;
-  for (let i = 0; i < n; i++) { x.globalAlpha = BODEN_LAGEN[i][2]; x.fillStyle = bodenMuster(art, z, i); x.fillRect(l, t, w, h); }
+  for (let i = 0; i < n; i++) { x.globalAlpha = BODEN_LAGEN[i][2] * a; x.fillStyle = bodenMuster(art, z, i); x.fillRect(l, t, w, h); }
   x.globalAlpha = 1;
 }
 // Boden in den Ausschnitt (Weltrechteck cl, ct, W, H) einer Kachel T; bild = Kacheln aus den Bildern, sonst die Farbfläche
@@ -184,6 +184,35 @@ function paintGelaende(g, T, v) {                    // die Gelände-Bilder im W
     g.setTransform(k * o.f, k * o.sy * o.f, k * o.sx, k, k * o.x + E, k * o.y + F);
     g.drawImage(kbBild(o.n, px), -o.ax * o.w, -o.ay * o.h, o.w, o.h);
   }
+}
+// ===== Übersicht ganz weit (wie die Karten-Testdatei werkzeuge/kartentest): einmal die ganze Karte als Bild – Boden je Zone, weich in
+// der Zonenfarbe getönt (Nachbarn hell/dunkel), Gebirge aus den Ketten-Bildern (2,4 × so breit, damit es von weitem ein Felsband ist) =====
+const ZONEN_FARBE = { 1: [[104, 150, 70], [80, 124, 58]], 2: [[64, 138, 116], [50, 116, 98]], 3: [[196, 164, 104], [176, 146, 92]],
+  4: [[64, 106, 150], [52, 90, 132]], 5: [[150, 108, 56], [150, 108, 56]] };
+const ZONEN_TOENUNG = { 1: .35, 2: .45, 3: .3, 4: .55, 5: .25 };
+const PASS_FARBE = { 1: '#5cbf62', 2: '#3fc2a4', 3: '#e2c069', 4: '#4f9ef2', 5: '#e8a640' };   // je Stufe (Zone, in die der Pass führt) – Punkte ganz weit
+const UEB_KETTE = 2.4;
+let KUE = null;
+function karteUebersicht() {                         // → Zeichenfläche über das Weltquadrat ±FRAME_HALF (erst mit allen Bildern fertig, dann einmal)
+  if (KUE) return KUE;
+  const H = FRAME_HALF, n = Math.min(innerWidth, innerHeight) < 600 ? 2048 : 3072, k = n / (2 * H), c = document.createElement('canvas'); c.width = c.height = n;
+  const g = c.getContext('2d'), bild = karteBilder(), welt = () => g.setTransform(k, 0, 0, k, H * k, H * k);
+  welt();
+  for (const lm of landmasses) { const farbe = ZONEN_FARBE[lm.zone][lm.id % 2];
+    g.save(); g.clip(lm.path);
+    if (bild) { for (const [art, a] of [['aussen', 1], ...BODEN_ZONE[lm.zone]]) bodenFuellen(g, art, k / dpr, -H, -H, 2 * H, 2 * H, a);
+      g.fillStyle = 'rgba(' + farbe + ',' + ZONEN_TOENUNG[lm.zone] + ')'; g.fillRect(-H, -H, 2 * H, 2 * H); }
+    else { g.fillStyle = 'rgb(' + farbe + ')'; g.fillRect(-H, -H, 2 * H, 2 * H); }
+    g.restore(); }
+  if (bild) {
+    g.lineJoin = 'round'; g.strokeStyle = 'rgba(58,52,40,.8)'; g.lineWidth = KARTE_MASS.quer * .48; g.stroke(gebirgsPfad());
+    const kk = k * UEB_KETTE;
+    for (const o of karteObjekte().liste) { g.setTransform(kk * o.f, kk * o.sy * o.f, kk * o.sx, kk, k * o.x + H * k, k * o.y + H * k); g.drawImage(kbBild(o.n, o.w * kk), -o.ax * o.w, -o.ay * o.h, o.w, o.h); }
+    welt();
+  } else paintBaender(g, 1 / k);
+  g.strokeStyle = 'rgba(232,190,110,.8)'; g.lineWidth = 2 / k; g.stroke(landmasses[0].path);
+  if (bild) KUE = c;
+  return c;
 }
 // Weit draußen / ohne Bilder: Gebirge als Band entlang jeder Grenze (Weltmaß, nie dünner als ein paar Pixel)
 let gebirgsPfadMem = null;
@@ -437,6 +466,10 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
   const W = (clip ? clip.w : w) / dpr / z, H = (clip ? clip.h : h) / dpr / z;
   const view = { l: cl - ISLAND_RADIUS * 2, t: ct - ISLAND_RADIUS * 2, r: cl + W + ISLAND_RADIUS * 2, b: ct + H + ISLAND_RADIUS * 2 };
   const world = () => g.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr);
+  // ganz weit: die Übersicht (wie die Karten-Testdatei) – fertiges Bild, nur ausgeschnitten
+  if ((T.part || z < KARTE_BILD_ZOOM) && karteBilder()) { world(); g.imageSmoothingEnabled = true; g.drawImage(karteUebersicht(), -FRAME_HALF, -FRAME_HALF, 2 * FRAME_HALF, 2 * FRAME_HALF);
+    if (!noTerritory) drawTerritoriesInto(g, layer, z, T.l, T.t, w, h, clip);
+    g.restore(); return; }
   // 1 Boden nach Ringen – nah aus den Bildern, weit draußen (und solange sie laden) die Farbfläche
   const bild = !T.part && z >= KARTE_BILD_ZOOM && karteBilder(), zd = T.part ? 0 : z;
   paintBoden(g, T, cl, ct, W, H, clip, bild && z >= BODEN_BILD_ZOOM);

@@ -54,7 +54,8 @@ function revealAround(x, y, r, fade) {
     if (changed) { fogMaskDirty = true; store.set('openWaterFogCells', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
     return changed;
 }
-function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, REVEAL_BASE, false); } }
+const sichtVon = (i, weit) => Math.max(weit, i.startSicht || 0);   // ein Startplatz sieht bis zum Gebirge seines Gebiets
+function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, sichtVon(i, REVEAL_BASE), false); } }
 function effectiveTroops(island) {
     const boss = bossAt(island.id); if (boss) return boss.troops;
     const owner = islandOwnerOf(island.id);

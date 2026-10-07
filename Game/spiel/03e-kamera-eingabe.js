@@ -19,7 +19,8 @@ let cameraFlight = null;         // { path(e) → {x, y, z} centre, end, z1, ins
 const clampZoom = z => Math.min(maxZoom, Math.max(minZoom, z));
 
 function updateZoomBounds() {    // call at boot (after WORLD exists) and on every resize
-  minZoom = Math.max(0.0004, Math.min(TERRITORY_VIEW_ZOOM * 0.5, viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));
+  minZoom = Math.max(0.0002, Math.min(TERRITORY_VIEW_ZOOM * 0.5,   // (die Zonen-Karte ist groß: auch auf dem Handy ganz draußen die ganze Karte)
+    viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));
   maxZoom = CAM.MAX_ZOOM;
   mapState.zoom = clampZoom(mapState.zoom); mapState.targetZoom = clampZoom(mapState.targetZoom);
 }

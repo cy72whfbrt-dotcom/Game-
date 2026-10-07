@@ -238,6 +238,7 @@ function drawMap() {
   drawToreImNebel(view, z);                                                      // (unerforschte Pass-Tore: Lücke in der Kette nicht leer, Nebel darüber)
   drawFog(view, now);
   drawWorldFrame();                                                            // Nebel des Krieges over unexplored islands
+  drawUebersichtZeichen(z);                                                      // ganz weit: Pass-Punkte, Zonen-Nummern, Thron und Tempel (wie die Karten-Testdatei)
   const vis = visibleIslands(viewPad);
   drawRings(vis, z, now);                                                        // 5
   for (const a of pendingAttacks) { if (a.attackerBotId && islandOwnerOf(a.targetId) !== 'player') continue;         // fog of war (unchanged)

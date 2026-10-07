@@ -134,6 +134,10 @@ function grenzAbstand(x, y) {                   // (höchstens 2 Rasterfelder we
     for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const p = grenzRaster.get((gx + i) + ',' + (gy + j)); if (p) for (let k = 0; k < p.length; k += 2) m = Math.min(m, Math.hypot(p[k] - x, p[k + 1] - y)); }
     return m;
 }
+function grenzAbstandWeit(x, y) {               // wie grenzAbstand, aber ohne Grenze für die Weite (alle Grenzpunkte – nur selten gebraucht)
+    let m = Infinity; for (const p of grenzRaster.values()) for (let k = 0; k < p.length; k += 2) m = Math.min(m, Math.hypot(p[k] - x, p[k + 1] - y));
+    return m;
+}
 function gebietAn(x, y) {                       // das Gebiet unter einem Weltpunkt (undefined: außerhalb der Karte)
     for (const lm of landmasses) if (Math.abs(lm.x - x) <= lm.shapeMaxR && Math.abs(lm.y - y) <= lm.shapeMaxR && pointInPolygon(x, y, lm.shape)) return lm.id;
 }
@@ -160,6 +164,8 @@ function passOpensAt(br) {
     const tag = KARTE_ZONEN.oeffnen[br.pass.stufe] || 1;
     return tag > 1 ? worldStartAt() + (tag - 1) * 86400000 : 0;
 }
+// Der Thron (Mega-Tempel in der Mitte) zählt erst ab Tag 7 (Alexander 7.10.: KARTE_ZONEN.thron.tag) – vorher kann ihn niemand angreifen
+function thronOffenAb() { return worldStartAt() + (KARTE_ZONEN.thron.tag - 1) * 86400000; }
 function landmassesConnected(a, b) {
     if (a === b) return true;
     const br = bridgeBetween(a, b);

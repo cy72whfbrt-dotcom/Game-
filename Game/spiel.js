@@ -408,6 +408,10 @@ function grenzAbstand(x, y) {                   // (höchstens 2 Rasterfelder we
     for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const p = grenzRaster.get((gx + i) + ',' + (gy + j)); if (p) for (let k = 0; k < p.length; k += 2) m = Math.min(m, Math.hypot(p[k] - x, p[k + 1] - y)); }
     return m;
 }
+function grenzAbstandWeit(x, y) {               // wie grenzAbstand, aber ohne Grenze für die Weite (alle Grenzpunkte – nur selten gebraucht)
+    let m = Infinity; for (const p of grenzRaster.values()) for (let k = 0; k < p.length; k += 2) m = Math.min(m, Math.hypot(p[k] - x, p[k + 1] - y));
+    return m;
+}
 function gebietAn(x, y) {                       // das Gebiet unter einem Weltpunkt (undefined: außerhalb der Karte)
     for (const lm of landmasses) if (Math.abs(lm.x - x) <= lm.shapeMaxR && Math.abs(lm.y - y) <= lm.shapeMaxR && pointInPolygon(x, y, lm.shape)) return lm.id;
 }
@@ -434,6 +438,8 @@ function passOpensAt(br) {
     const tag = KARTE_ZONEN.oeffnen[br.pass.stufe] || 1;
     return tag > 1 ? worldStartAt() + (tag - 1) * 86400000 : 0;
 }
+// Der Thron (Mega-Tempel in der Mitte) zählt erst ab Tag 7 (Alexander 7.10.: KARTE_ZONEN.thron.tag) – vorher kann ihn niemand angreifen
+function thronOffenAb() { return worldStartAt() + (KARTE_ZONEN.thron.tag - 1) * 86400000; }
 function landmassesConnected(a, b) {
     if (a === b) return true;
     const br = bridgeBetween(a, b);
@@ -606,8 +612,9 @@ for (const lm of landmasses) {
         neutralLevel: tierStats ? tierStats.templeLevel : 1
     });
 }
-// Startplätze als Basen (Spieler + Mitspieler ziehen dort ein, die übrigen bleiben leeres Land)
-for (const sl of startSlots) islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true,
+// Startplätze als Basen (Spieler + Mitspieler ziehen dort ein, die übrigen bleiben leeres Land). startSicht: so weit sieht man von dort
+// aus (01e/10d) – mindestens bis zum nächsten Gebirge des eigenen Gebiets (Alexander 7.10.: Startsicht im eigenen Gebiet)
+for (const sl of startSlots) islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true, startSicht: Math.min(120000, grenzAbstandWeit(sl.x, sl.y) + 8000),
     neutralTroops: 0, neutralDefense: 1, neutralLevel: 1 });   // (Startplätze: leer – hier ziehen neue Hauptstädte ein)
 for (const gsp of gateSpots) {
     gsp.br.gateId = id;
@@ -1016,7 +1023,8 @@ function revealAround(x, y, r, fade) {
     if (changed) { fogMaskDirty = true; store.set('openWaterFogCells', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
     return changed;
 }
-function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, REVEAL_BASE, false); } }
+const sichtVon = (i, weit) => Math.max(weit, i.startSicht || 0);   // ein Startplatz sieht bis zum Gebirge seines Gebiets
+function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, sichtVon(i, REVEAL_BASE), false); } }
 function effectiveTroops(island) {
     const boss = bossAt(island.id); if (boss) return boss.troops;
     const owner = islandOwnerOf(island.id);
@@ -1943,6 +1951,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     if (!attackerBotId && target.id === playerIslandId) return false;
     { const ow = islandOwnerOf(target.id); if (bundFreund(attackerBotId || 'player', ow)) { if (!attackerBotId) flashHint((botById[ow] || {}).name + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.', 3500); return false; } }   // Bündnis: gesperrt
     if (!attackerBotId && !islandSeen(target)) { flashHint('Dieses Ziel liegt im Nebel – schick zuerst einen Späher.', 3000); return false; }   // nichts im Nebel angreifen
+    if (target.type === 'megaTemple' && Date.now() < thronOffenAb()) { if (!attackerBotId) flashHint('Der Thron zählt erst ab Tag ' + KARTE_ZONEN.thron.tag + ' – noch ' + fmtPassWait(thronOffenAb() - Date.now()) + '.', 4000); return false; }   // (für alle: Spieler, Mitspieler, Rally, Weltrechner)
     if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
     if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
@@ -2701,10 +2710,10 @@ function bodenMuster(art, z, lage) {                 // Muster der Bodenkachel i
   if (!p) { p = KB.muster[key] = ctx.createPattern(c, 'repeat'); p.setTransform(new DOMMatrix().rotate(dr).scale(b * gr / c.width)); }
   return p;
 }
-function bodenFuellen(x, art, z, l, t, w, h) {      // Kachel + darüber dieselbe Kachel gedreht und größer, durchscheinend (karger Boden mit Steinplatten: noch eine Lage); „ton…“: Farbe
-  if (art.startsWith('ton')) { x.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; x.fillRect(l, t, w, h); return; }
+function bodenFuellen(x, art, z, l, t, w, h, a = 1) { // Kachel + darüber dieselbe Kachel gedreht und größer, durchscheinend (karger Boden mit Steinplatten: noch eine Lage); „ton…“: Farbe; a: Deckkraft
+  if (art.startsWith('ton')) { x.globalAlpha = a; x.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; x.fillRect(l, t, w, h); x.globalAlpha = 1; return; }
   const n = art === 'innen' || art === 'sand' ? 3 : 2;
-  for (let i = 0; i < n; i++) { x.globalAlpha = BODEN_LAGEN[i][2]; x.fillStyle = bodenMuster(art, z, i); x.fillRect(l, t, w, h); }
+  for (let i = 0; i < n; i++) { x.globalAlpha = BODEN_LAGEN[i][2] * a; x.fillStyle = bodenMuster(art, z, i); x.fillRect(l, t, w, h); }
   x.globalAlpha = 1;
 }
 // Boden in den Ausschnitt (Weltrechteck cl, ct, W, H) einer Kachel T; bild = Kacheln aus den Bildern, sonst die Farbfläche
@@ -2782,6 +2791,35 @@ function paintGelaende(g, T, v) {                    // die Gelände-Bilder im W
     g.setTransform(k * o.f, k * o.sy * o.f, k * o.sx, k, k * o.x + E, k * o.y + F);
     g.drawImage(kbBild(o.n, px), -o.ax * o.w, -o.ay * o.h, o.w, o.h);
   }
+}
+// ===== Übersicht ganz weit (wie die Karten-Testdatei werkzeuge/kartentest): einmal die ganze Karte als Bild – Boden je Zone, weich in
+// der Zonenfarbe getönt (Nachbarn hell/dunkel), Gebirge aus den Ketten-Bildern (2,4 × so breit, damit es von weitem ein Felsband ist) =====
+const ZONEN_FARBE = { 1: [[104, 150, 70], [80, 124, 58]], 2: [[64, 138, 116], [50, 116, 98]], 3: [[196, 164, 104], [176, 146, 92]],
+  4: [[64, 106, 150], [52, 90, 132]], 5: [[150, 108, 56], [150, 108, 56]] };
+const ZONEN_TOENUNG = { 1: .35, 2: .45, 3: .3, 4: .55, 5: .25 };
+const PASS_FARBE = { 1: '#5cbf62', 2: '#3fc2a4', 3: '#e2c069', 4: '#4f9ef2', 5: '#e8a640' };   // je Stufe (Zone, in die der Pass führt) – Punkte ganz weit
+const UEB_KETTE = 2.4;
+let KUE = null;
+function karteUebersicht() {                         // → Zeichenfläche über das Weltquadrat ±FRAME_HALF (erst mit allen Bildern fertig, dann einmal)
+  if (KUE) return KUE;
+  const H = FRAME_HALF, n = Math.min(innerWidth, innerHeight) < 600 ? 2048 : 3072, k = n / (2 * H), c = document.createElement('canvas'); c.width = c.height = n;
+  const g = c.getContext('2d'), bild = karteBilder(), welt = () => g.setTransform(k, 0, 0, k, H * k, H * k);
+  welt();
+  for (const lm of landmasses) { const farbe = ZONEN_FARBE[lm.zone][lm.id % 2];
+    g.save(); g.clip(lm.path);
+    if (bild) { for (const [art, a] of [['aussen', 1], ...BODEN_ZONE[lm.zone]]) bodenFuellen(g, art, k / dpr, -H, -H, 2 * H, 2 * H, a);
+      g.fillStyle = 'rgba(' + farbe + ',' + ZONEN_TOENUNG[lm.zone] + ')'; g.fillRect(-H, -H, 2 * H, 2 * H); }
+    else { g.fillStyle = 'rgb(' + farbe + ')'; g.fillRect(-H, -H, 2 * H, 2 * H); }
+    g.restore(); }
+  if (bild) {
+    g.lineJoin = 'round'; g.strokeStyle = 'rgba(58,52,40,.8)'; g.lineWidth = KARTE_MASS.quer * .48; g.stroke(gebirgsPfad());
+    const kk = k * UEB_KETTE;
+    for (const o of karteObjekte().liste) { g.setTransform(kk * o.f, kk * o.sy * o.f, kk * o.sx, kk, k * o.x + H * k, k * o.y + H * k); g.drawImage(kbBild(o.n, o.w * kk), -o.ax * o.w, -o.ay * o.h, o.w, o.h); }
+    welt();
+  } else paintBaender(g, 1 / k);
+  g.strokeStyle = 'rgba(232,190,110,.8)'; g.lineWidth = 2 / k; g.stroke(landmasses[0].path);
+  if (bild) KUE = c;
+  return c;
 }
 // Weit draußen / ohne Bilder: Gebirge als Band entlang jeder Grenze (Weltmaß, nie dünner als ein paar Pixel)
 let gebirgsPfadMem = null;
@@ -3035,6 +3073,10 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
   const W = (clip ? clip.w : w) / dpr / z, H = (clip ? clip.h : h) / dpr / z;
   const view = { l: cl - ISLAND_RADIUS * 2, t: ct - ISLAND_RADIUS * 2, r: cl + W + ISLAND_RADIUS * 2, b: ct + H + ISLAND_RADIUS * 2 };
   const world = () => g.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr);
+  // ganz weit: die Übersicht (wie die Karten-Testdatei) – fertiges Bild, nur ausgeschnitten
+  if ((T.part || z < KARTE_BILD_ZOOM) && karteBilder()) { world(); g.imageSmoothingEnabled = true; g.drawImage(karteUebersicht(), -FRAME_HALF, -FRAME_HALF, 2 * FRAME_HALF, 2 * FRAME_HALF);
+    if (!noTerritory) drawTerritoriesInto(g, layer, z, T.l, T.t, w, h, clip);
+    g.restore(); return; }
   // 1 Boden nach Ringen – nah aus den Bildern, weit draußen (und solange sie laden) die Farbfläche
   const bild = !T.part && z >= KARTE_BILD_ZOOM && karteBilder(), zd = T.part ? 0 : z;
   paintBoden(g, T, cl, ct, W, H, clip, bild && z >= BODEN_BILD_ZOOM);
@@ -3451,12 +3493,27 @@ function torMitte(island) {
 // Senkrechte Grenze: das Tor-Bild für Nord-Süd-Ketten, Weg genau auf dem Torpunkt, Kettenachse auf der Grenzlinie.
 function drawTorBild(island, open, z, dunkel) {
   const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z, mx = toSX(tm.x), my = toSY(tm.y);   // (fest in der Welt wie die Kette)
-  if (w < 16) { if (dunkel || z < TOR_PUNKT_ZOOM) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
+  if (w < 16) { if (dunkel || z < KARTE_BILD_ZOOM) return;                       // (ganz weit: die Pass-Punkte in Zonenfarbe, drawUebersichtZeichen) ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
     ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
   if (mx + w < 0 || mx - w > viewW || my + w < 0 || my - w > viewH) return;
   if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z, ws = hs * KB.img[ns].width / KB.img[ns].height;
     ctx.drawImage(kbBild(ns, ws * dpr), mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
   const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
+}
+// Ganz weit (wie die Karten-Testdatei): Pass-Punkte in der Farbe ihrer Stufe (noch zu: blass), die Zonen-Nummern und Thron und
+// Tempel – auch unter dem Nebel (das Ziel aller ist immer zu sehen, wie RoK)
+function drawUebersichtZeichen(z) {
+  if (z >= KARTE_BILD_ZOOM || !karteBilder()) return;
+  setScreen(ctx); const jetzt = Date.now(), r = viewW < 600 ? 6 : 5;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 ' + (viewW < 600 ? 11 : 14) + 'px Georgia, serif'; ctx.lineJoin = 'round';
+  for (const lm of landmasses) { if (lm.zone === ZONE_MITTE) continue; const t = lm.tier === 'guardian', x = toSX(lm.x), y = toSY(lm.y) + (t ? Math.max(HEILIGTUM_BREITE.guardian * z, 30) * .55 : 0);
+    if (x < -20 || y < -20 || x > viewW + 20 || y > viewH + 20) continue;
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(lm.name, x, y); ctx.fillStyle = '#e4c886'; ctx.fillText(lm.name, x, y); }
+  for (const isl of islands) if (isl.bildR && !islandSeen(isl)) heiligtumBild(isl, z);
+  for (const br of bridges) { const x = toSX(br.pass.x), y = toSY(br.pass.y); if (x < -10 || y < -10 || x > viewW + 10 || y > viewH + 10) continue;
+    ctx.globalAlpha = passOpensAt(br) > jetzt ? .45 : 1; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[br.pass.stufe]; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#0c0f14'; ctx.stroke(); }
+  ctx.globalAlpha = 1;
 }
 function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
   if (!karteBilder() || KARTE_MASS.tor * z < 16) return;
@@ -3473,11 +3530,12 @@ function heiligtumBild(island, z) {                                            /
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;
   ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
 }
+const basisGroesse = z => 1 + Math.max(0, Math.min(1, (0.04 - z) / 0.03));   // Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erkennbar), nah wie gehabt
 function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)
   const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
   const home = island.id === playerIslandId, cap = home || isCapital(island.id);
   const tier = island.type === 'tower' ? towerTier(baseLevelOf(island)) : 1;
-  const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
+  const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] * basisGroesse(z) : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
   if (island.bildR && KB.fertig) { heiligtumBild(island, z); return; }        // Thron und Wächter-Tempel: das KI-Bild (fest in der Welt, ganz weit nie winzig)
   if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
     if (torMitte(island)) { drawTorBild(island, ownerKey !== 'neutral' && !gateSettings(island).closed, z); return; }   // Karte wie RoK: das Pass-Tor (Bild) in der Kette, offen/zu wie heute
@@ -4323,6 +4381,7 @@ function drawMap() {
   drawToreImNebel(view, z);                                                      // (unerforschte Pass-Tore: Lücke in der Kette nicht leer, Nebel darüber)
   drawFog(view, now);
   drawWorldFrame();                                                            // Nebel des Krieges over unexplored islands
+  drawUebersichtZeichen(z);                                                      // ganz weit: Pass-Punkte, Zonen-Nummern, Thron und Tempel (wie die Karten-Testdatei)
   const vis = visibleIslands(viewPad);
   drawRings(vis, z, now);                                                        // 5
   for (const a of pendingAttacks) { if (a.attackerBotId && islandOwnerOf(a.targetId) !== 'player') continue;         // fog of war (unchanged)
@@ -4391,7 +4450,8 @@ let cameraFlight = null;         // { path(e) → {x, y, z} centre, end, z1, ins
 const clampZoom = z => Math.min(maxZoom, Math.max(minZoom, z));
 
 function updateZoomBounds() {    // call at boot (after WORLD exists) and on every resize
-  minZoom = Math.max(0.0004, Math.min(TERRITORY_VIEW_ZOOM * 0.5, viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));
+  minZoom = Math.max(0.0002, Math.min(TERRITORY_VIEW_ZOOM * 0.5,   // (die Zonen-Karte ist groß: auch auf dem Handy ganz draußen die ganze Karte)
+    viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));
   maxZoom = CAM.MAX_ZOOM;
   mapState.zoom = clampZoom(mapState.zoom); mapState.targetZoom = clampZoom(mapState.targetZoom);
 }
@@ -7970,8 +8030,9 @@ document.getElementById('welcomeOkBtn').addEventListener('click', () => { closeW
 document.getElementById('welcomeModal').addEventListener('click', e => { if (e.target.id === 'welcomeModal') { closeWelcome(); maybeShowDaily(); } });
 afterSplash(() => setTimeout(() => { if (welcomeFrom) showWelcome(); }, 700));
 
-// Center the view on the player's island at start
+// Center the view on the player's island at start – auf „mittel“: die eigene Burg gut erkennbar, die Nachbarn im Bild
 const startIsland = islandById[playerIslandId];
+mapState.zoom = mapState.targetZoom = 0.012;
 mapState.offsetX = window.innerWidth / 2 - startIsland.x * mapState.zoom;
 mapState.offsetY = window.innerHeight / 2 - startIsland.y * mapState.zoom;
 
@@ -8087,15 +8148,20 @@ function nebelLandPfade() {
         P.moveTo(lm.shape[0].x, lm.shape[0].y); for (const q of lm.shape) P.lineTo(q.x, q.y); P.closePath(); }
     return nebelLand;
 }
-let nebelWeltCv = null;                                 // die Weltübersicht unter dem Nebel (dunkel, Ringfarben, Gebirgs-Bänder) – EINMAL gemalt, danach nur verschoben/skaliert
+let nebelWeltCv = null;                                 // die Weltübersicht unter dem Nebel – EINMAL gemalt, danach nur verschoben/skaliert
 function nebelWelt() {
     if (nebelWeltCv) return nebelWeltCv;
+    if (karteBilder()) {                                // mit den Bildern: die Übersicht wie die Karten-Testdatei (03a), nur leicht verschleiert
+        const U = karteUebersicht(), c = document.createElement('canvas'); c.width = c.height = U.width;
+        const g = c.getContext('2d'); g.drawImage(U, 0, 0); g.fillStyle = 'rgba(16,20,28,.28)'; g.fillRect(0, 0, c.width, c.height);
+        c.R = FRAME_HALF; return (nebelWeltCv = c);
+    }
     const R = FRAME_HALF + 20000, n = 1536, k = n / (2 * R), c = document.createElement('canvas'); c.width = c.height = n;
     const g = c.getContext('2d'); g.fillStyle = '#1a2433'; g.fillRect(0, 0, n, n);
     g.setTransform(k, 0, 0, k, R * k, R * k);
     g.globalAlpha = .75; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); }
     g.globalAlpha = 1; paintBaender(g, k / 1.4, true);
-    c.R = R; return (nebelWeltCv = c);
+    c.R = R; return c;                                  // (ohne Bilder nur vorläufig: nicht merken)
 }
 function drawFog(view, now) {
     const z = mapState.zoom;
@@ -14913,7 +14979,7 @@ if (window.WELT) {
     }
     function nebelRunde(who, hb, now) {
         const z = nbZ(who, hb), I = nbIndex(), own = botOwnedIslands[who], weit = REVEAL_BASE * (AUF ? AUF.nebelWeite(who) : 1);
-        if (own) for (const id of own) if (!z.gesehen.has(id)) { z.gesehen.add(id); const i = islandById[id]; if (i && nbAufdecken(z, i.x, i.y, weit)) z.dirty = true; }
+        if (own) for (const id of own) if (!z.gesehen.has(id)) { z.gesehen.add(id); const i = islandById[id]; if (i && nbAufdecken(z, i.x, i.y, sichtVon(i, weit))) z.dirty = true; }
         if (hb.sp && hb.sp.length) hb.sp = hb.sp.filter(sc => {    // Erkundungs-Späher: unterwegs eine Gasse, am Ziel die Umgebung
             const h = islandById[sc[0]]; if (!h) return false;
             const L = Math.hypot(sc[1] - h.x, sc[2] - h.y) || 1, prog = Math.max(0, Math.min(1, (now - sc[3]) / Math.max(1, sc[4] - sc[3])));
