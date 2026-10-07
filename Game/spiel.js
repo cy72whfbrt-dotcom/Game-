@@ -10101,6 +10101,7 @@ function inselOrtAnwenden() {                    // verlegte Basen an ihren Plat
         if (isl.x === o[0] && isl.y === o[1] && isl.landmassId === o[2]) continue;
         if (isl.landmassId !== o[2]) { const alt = islandsByLandmass[isl.landmassId] || [], k = alt.indexOf(isl); if (k >= 0) alt.splice(k, 1); (islandsByLandmass[o[2]] = islandsByLandmass[o[2]] || []).push(isl); }
         isl.x = o[0]; isl.y = o[1]; isl.landmassId = o[2]; neu = true;
+        if (!SYSTEM && ownedIslands.has(isl.id)) revealAround(isl.x, isl.y, REVEAL_BASE, true);   // (Handy: um die eigene Basis ist kein Nebel)
         const lm = landmasses[o[2]]; if (lm.tier === 'guardian' || lm.tier === 'throne') midZoneIds.add(isl.id); else midZoneIds.delete(isl.id);
     }
     if (!neu) return;
@@ -10142,9 +10143,8 @@ function tpPruefen(who, x, y) {                  // → null (geht) oder der Gru
     return null;
 }
 function tpVerlegen(who, x, y) {                 // (geprüft, bezahlt) die Hauptstadt steht jetzt bei x, y
-    const cap = who === 'player' ? playerIslandId : botCapitalOf(who), c = islandById[cap];
+    const cap = who === 'player' ? playerIslandId : botCapitalOf(who);
     inselOrt[cap] = [Math.round(x), Math.round(y), gebietAn(x, y)]; store.set('openWaterInselOrt', JSON.stringify(inselOrt)); inselOrtAnwenden();
-    if (who === 'player') { statBump('teleports'); revealAround(c.x, c.y, REVEAL_BASE, true); saveProgression(); }
     saveGame(); requestRender();
 }
 function teleportOrt(x, y) {                     // (Spieler) Tipp auf „Teleportieren“, schon bestätigt → true: unterwegs bzw. erledigt
@@ -10152,7 +10152,7 @@ function teleportOrt(x, y) {                     // (Spieler) Tipp auf „Telepo
     const gratis = tpGratis('player'), k = gratis ? 0 : TP_GEMS;
     if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine.', 3000); return false; }
     gems -= k; if (gratis) store.set('openWaterTpGratis', '1');
-    saveGame(); saveProgression(); updateHud();
+    statBump('teleports'); saveGame(); saveProgression(); updateHud();
     if (alsBefehl('teleport', { x: Math.round(x), y: Math.round(y), gratis })) { flashHint('Die Hauptstadt zieht um …', 3000); return true; }   // (Zuschauer: der Weltrechner verlegt sie)
     tpVerlegen('player', x, y);
     spawnBattleFx(playerIslandId, true, 'Hauptstadt', 'hierher teleportiert');

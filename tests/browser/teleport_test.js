@@ -68,7 +68,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(t1.gleich && /Hierher teleportieren\?/.test(t1.text) && t1.gems === 0, 'erster Tipp: nur „Hierher teleportieren?“ – noch nichts passiert', t1);
   if (bilder) await p.screenshot({ path: path.join(bilder, 'teleport_bestaetigen.png') });
   await p.waitForTimeout(600);
-  const t2 = await p.evaluate(() => { const id = playerIslandId, tr = islandTroops[id], g0 = gems; if (gemsArm) gemsArm.at = Date.now() - 1000; document.querySelector('#feldRing [data-fring="tp"]').click(); const c = islandById[playerIslandId];
+  const t2 = await p.evaluate(() => { const id = playerIslandId, tr = islandTroops[id], g0 = gems; const tp = document.querySelector('#feldRing [data-fring="tp"]'); if (!gemsArmed('teleport')) tp.click(); gemsArm.at = Date.now() - 1000; document.querySelector('#feldRing [data-fring="tp"]').click(); const c = islandById[playerIslandId];   // (unter Last ist die Bestätigung nach 4 s wieder aus: neu bestätigen, zweiter Tipp 1 s danach)
     return { id: playerIslandId === id, da: Math.hypot(c.x - __ziel[0], c.y - __ziel[1]) < 2, tr: islandTroops[playerIslandId] === tr, gems: g0 - gems, ort: !!inselOrt[id], lm: islandsByLandmass[c.landmassId].includes(c), zu: document.getElementById('feldRing').hidden }; });
   ok(t2.id && t2.da && t2.tr && t2.gems === 500 && t2.ort && t2.lm && t2.zu, 'zweiter Tipp: Hauptstadt steht dort, Truppen dabei, 500 Edelsteine weg', t2);
   if (bilder) { await p.evaluate(() => { flashHint('', 1); requestRender(); }); await p.waitForTimeout(1500); await p.screenshot({ path: path.join(bilder, 'teleport_danach.png') }); }

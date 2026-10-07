@@ -2355,12 +2355,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tower` → Game/spiel/03b-gebaeude-3d.js:102
 - `tower` → Game/spiel/03b-gebaeude-3d.js:216
 - `towerTier` → Game/spiel/03b-gebaeude-3d.js:61
-- `tpGebiete` → Game/spiel/08d-gebaeude-wirkung.js:180
-- `tpGratis` → Game/spiel/08d-gebaeude-wirkung.js:192
+- `tpGebiete` → Game/spiel/08d-gebaeude-wirkung.js:181
+- `tpGratis` → Game/spiel/08d-gebaeude-wirkung.js:193
 - `tpl` → Game/baukunst/05-umland.js:60
-- `tpMarschDa` → Game/spiel/08d-gebaeude-wirkung.js:187
-- `tpPruefen` → Game/spiel/08d-gebaeude-wirkung.js:196
-- `tpVerlegen` → Game/spiel/08d-gebaeude-wirkung.js:213
+- `tpMarschDa` → Game/spiel/08d-gebaeude-wirkung.js:188
+- `tpPruefen` → Game/spiel/08d-gebaeude-wirkung.js:197
+- `tpVerlegen` → Game/spiel/08d-gebaeude-wirkung.js:214
 - `trace` → Game/spiel/03c-wappen-thronplatz.js:472
 - `traglast` → Game/aufbau.js:237
 - `travelDurationSeconds` → Game/spiel/02b-maersche.js:23
@@ -4578,11 +4578,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `teleportCapital` :142
 - `inselOrtLaden` :165
 - `inselOrtAnwenden` :166 — verlegte Basen an ihren Platz (und zurück, wenn der Eintrag fehlt – neue Saison)
-- `tpGebiete` :180 — die Gebiete, die man von vonLm aus über (offene) Pässe erreicht
-- `tpMarschDa` :187 — hängt ein Marsch an der Hauptstadt (hin, weg, Angriff darauf)?
-- `tpGratis` :192 — neue Spieler (Anfängerschutz): einmal gratis
-- `tpPruefen` :196 — → null (geht) oder der Grund für den Spieler
-- `tpVerlegen` :213 — (geprüft, bezahlt) die Hauptstadt steht jetzt bei x, y
+- `tpGebiete` :181 — die Gebiete, die man von vonLm aus über (offene) Pässe erreicht
+- `tpMarschDa` :188 — hängt ein Marsch an der Hauptstadt (hin, weg, Angriff darauf)?
+- `tpGratis` :193 — neue Spieler (Anfängerschutz): einmal gratis
+- `tpPruefen` :197 — → null (geht) oder der Grund für den Spieler
+- `tpVerlegen` :214 — (geprüft, bezahlt) die Hauptstadt steht jetzt bei x, y
 - `teleportOrt` :219 — (Spieler) Tipp auf „Teleportieren“, schon bestätigt → true: unterwegs bzw. erle…
 
 ### Game/spiel/08e-stadtbild-haeuser.js — Stadtansicht als KI-Bild: Gebäude-Orte, Kamera, Wischen/Zoomen, Tippen
