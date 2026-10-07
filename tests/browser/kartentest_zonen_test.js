@@ -20,7 +20,7 @@ const K = path.resolve(__dirname, '../../werkzeuge/kartentest'), arbeit = proces
     const gerade = g.punkte.filter((q, i) => Math.abs(s[i] - s[i0]) < 15000).every(q => Math.abs(p.senk ? q[0] - p.x : q[1] - p.y) < 30);   // (entlang der Grenze ±15.000: so breit ist das Tor)
     return { id: p.id, ab: Math.round(abst(p, g)), gerade, paar: g.a === p.a && g.b === p.b }; });
   const jeGebiet = 2 * D.paesse.length / D.gebiete.length;
-  ok(jeGebiet >= 2 && jeGebiet <= 3.5, 'Pässe: im Mittel 2–3,5 je Gebiet', { paesse: D.paesse.length, jeGebiet: jeGebiet.toFixed(2) });
+  ok(jeGebiet >= 2 && jeGebiet <= 4.5, 'Pässe: im Mittel 2–4,5 je Gebiet', { paesse: D.paesse.length, jeGebiet: jeGebiet.toFixed(2) });
   ok(auf.every(a => a.ab < 50 && a.paar), 'jeder Pass liegt genau auf der Grenze seiner zwei Gebiete', auf.filter(a => a.ab >= 50 || !a.paar));
   const lage = D.paesse.map(p => { const g = D.grenzen[p.grenze].punkte; let s = 0, bei = 0, bd = Infinity;
     for (let i = 1; i < g.length; i++) { s += Math.hypot(g[i][0] - g[i - 1][0], g[i][1] - g[i - 1][1]); const d = Math.hypot(g[i][0] - p.x, g[i][1] - p.y); if (d < bd) { bd = d; bei = s; } }
@@ -40,6 +40,22 @@ const K = path.resolve(__dirname, '../../werkzeuge/kartentest'), arbeit = proces
     pass: Math.round(Math.min(...D.paesse.map(p => Math.hypot(p.x - t.x, p.y - t.y)))) }));
   ok(T.length === z4.length && z4.every(g => T.some(t => t.gebiet === g.id)) && T.every(t => t.im && t.rand > 40000 && t.pass > 40000) && T.some(t => t.art === 'tempel') && T.some(t => t.art === 'waechtertempel'),
     'Tempel: je Zone-4-Gebiet einer, mitten im Gebiet (weit weg von Grenzen und Pässen), beide Arten', T.map(t => [t.gebiet, t.art, t.rand, t.pass]));
+  const gleich = [...new Set(D.grenzen.filter(g => g.b >= 0 && zoneVon(g.a) === zoneVon(g.b)).map(g => g.a + ',' + g.b))]
+    .map(k => { const [a, b] = k.split(',').map(Number); return [k, D.paesse.filter(p => p.a === a && p.b === b).length]; });
+  ok(gleich.length > 0 && gleich.every(([, n]) => n === 1), 'jede Grenze zwischen zwei Gebieten derselben Zone hat genau einen Pass', gleich.filter(([, n]) => n !== 1));
+  // Gestreutes: Anzahl je Art, nichts auf Grenzen/Pässen/Tempeln, Startplätze gleich je Zone-1-Gebiet, Stufen steigen nach innen
+  const gp = D.grenzen.filter(g => g.b >= 0).flatMap(g => g.punkte), weg = (o, liste, d) => liste.every(q => Math.hypot((q.x ?? q[0]) - o.x, (q.y ?? q[1]) - o.y) >= d);
+  const arten = { startplaetze: D.startplaetze, felder: D.felder, barbaren: D.barbaren, ruinen: D.ruinen }, zahl = {};
+  for (const [n, l] of Object.entries(arten)) zahl[n] = l.length;
+  ok(zahl.startplaetze === 100 && zahl.felder >= 400 && zahl.barbaren >= 100 && zahl.ruinen >= 20, 'Gestreut: 100 Startplätze, ≥ 400 Felder, ≥ 100 Barbaren, ≥ 20 Ruinen', zahl);
+  const schlecht = Object.entries(arten).flatMap(([n, l]) => l.filter(o => !weg(o, gp, 26000) || !weg(o, D.paesse, 45000) || !weg(o, D.tempel, 50000) || !drin(o.x, o.y, D.gebiete[o.gebiet].umriss)).map(o => n + '@' + o.x + ',' + o.y));
+  ok(!schlecht.length, 'nichts davon auf Grenzen, Pässen oder Tempeln, jedes in seinem Gebiet', schlecht.slice(0, 5));
+  const jeStart = D.gebiete.filter(g => g.zone === 1).map(g => D.startplaetze.filter(o => o.gebiet === g.id).length);
+  ok(jeStart.every(n => n === jeStart[0]) && D.startplaetze.every(o => zoneVon(o.gebiet) === 1), 'Startplätze nur in Zone 1, gleich viele je Gebiet', jeStart);
+  const mittelStufe = (l, z) => { const a = l.filter(o => zoneVon(o.gebiet) === z); return a.reduce((m, o) => m + o.stufe, 0) / a.length; };
+  const fS = [1, 2, 3, 4].map(z => mittelStufe(D.felder, z)), bS = [1, 2, 3, 4].map(z => mittelStufe(D.barbaren, z));
+  ok(fS.every((v, i) => !i || v > fS[i - 1]) && bS.every((v, i) => !i || v > bS[i - 1]) && D.barbaren.every(o => o.stufe >= 1 && o.stufe <= 25) && D.ruinen.every(o => zoneVon(o.gebiet) >= 2),
+    'Stufen von Feldern und Barbaren steigen nach innen (Barbaren 1–25), Ruinen nur Zone 2–4', { felder: fS.map(v => v.toFixed(1)), barbaren: bS.map(v => v.toFixed(1)) });
   // 2) Seite im Browser: Handy + Desktop, alle Stufen
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
   const pruefen = async (datei, name) => {

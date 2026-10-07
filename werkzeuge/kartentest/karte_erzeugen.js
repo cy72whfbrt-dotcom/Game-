@@ -99,18 +99,18 @@ const grenzen = linien.map((l, id) => {
   return { id, a: l.a, b: l.b, punkte: pts };
 });
 
-// 4) Pässe: im Ring jedes zweite Nachbarpaar, je Gebiet einer nach innen (zum Gebiet mit den wenigsten), Zone 4 → Mitte.
+// 4) Pässe: im Ring jedes Nachbarpaar, je Gebiet einer nach innen (zum Gebiet mit den wenigsten), Zone 4 → Mitte.
 //    stufe = Zone, in die der Pass führt (1: Zone 1 untereinander … 5: in die Mitte) – danach öffnen sie gestaffelt.
 const paare = new Map();                                // "a,b" → Grenzen
 for (const g of grenzen) if (g.b !== -1) { const k = g.a + ',' + g.b; (paare.get(k) || paare.set(k, []).get(k)).push(g); }
 const RAND_FREI = 60000;                              // Pässe nie am Kartenrand
-const TOR_GERADE = 20000, TOR_WEICH = 34000, TOR_ABSTAND = 70000;
+const TOR_GERADE = 20000, TOR_WEICH = 34000, TOR_ABSTAND = 50000;
 const paesse = [];
 function passSetzen(a, b, stufe) {
   const gs = paare.get(Math.min(a, b) + ',' + Math.max(a, b)); if (!gs) return false;
   let best = null; const lang = Math.max(...gs.map(g => laengen(g.punkte).pop()));
   for (const g of gs) {
-    const s = laengen(g.punkte), len = s[s.length - 1], rand = TOR_GERADE + TOR_WEICH + 15000;
+    const s = laengen(g.punkte), len = s[s.length - 1], rand = TOR_GERADE + 12000;   // (kurze Grenzstücke im Ring: das Tor passt, der weiche Übergang wird kürzer)
     for (let d = rand; d <= len - rand; d += 3000) {
       const p = punktBei(g.punkte, s, d), p0 = punktBei(g.punkte, s, d - TOR_GERADE), p1 = punktBei(g.punkte, s, d + TOR_GERADE);
       const senk = Math.abs(p1[1] - p0[1]) > Math.abs(p1[0] - p0[0]);
@@ -122,7 +122,7 @@ function passSetzen(a, b, stufe) {
   if (!best) return false;
   // Grenze am Pass gerade ziehen: ±TOR_GERADE genau waagrecht/senkrecht, weich zurück in den Schwung
   const g = best.g, s = laengen(g.punkte);
-  g.punkte = g.punkte.map((q, i) => { if (Math.abs(s[i] - best.d) > 2 * (TOR_GERADE + TOR_WEICH)) return q;   // (Abstand längs der Tor-Richtung: so bleibt das gerade Stück wirklich ±TOR_GERADE lang)
+  g.punkte = g.punkte.map((q, i) => { if (Math.abs(s[i] - best.d) > 2 * (TOR_GERADE + TOR_WEICH) || i === 0 || i === g.punkte.length - 1) return q;   // (die Knoten an den Enden bleiben: dort stoßen andere Grenzen an)   // (Abstand längs der Tor-Richtung: so bleibt das gerade Stück wirklich ±TOR_GERADE lang)
     const u = best.senk ? Math.abs(q[1] - best.y) : Math.abs(q[0] - best.x); if (u >= TOR_GERADE + TOR_WEICH) return q;
     const w = u <= TOR_GERADE ? 1 : 1 - (u - TOR_GERADE) / TOR_WEICH, k = w * w * (3 - 2 * w);
     return best.senk ? [q[0] + (best.x - q[0]) * k, q[1]] : [q[0], q[1] + (best.y - q[1]) * k]; });
@@ -131,7 +131,7 @@ function passSetzen(a, b, stufe) {
 }
 const nachbarn = g => [...paare.keys()].map(k => k.split(',').map(Number)).filter(([a, b]) => a === g || b === g).map(([a, b]) => a === g ? b : a);
 const laenge = (a, b) => (paare.get(Math.min(a, b) + ',' + Math.max(a, b)) || []).reduce((m, q) => m + q.punkte.length, 0);
-for (let z = 1; z <= 4; z++) for (let k = 0; k < ANZAHL[z]; k += z === 1 ? 1 : 2) passSetzen(START[z] + k, START[z] + (k + 1) % ANZAHL[z], z);   // im Ring: Zone 1 an jeder Grenze, innen jedes zweite Paar
+for (let z = 1; z <= 4; z++) for (let k = 0; k < ANZAHL[z]; k++) passSetzen(START[z] + k, START[z] + (k + 1) % ANZAHL[z], z);   // im Ring: an jeder Grenze zum Nachbarn ein Pass
 const herein = new Map();
 for (let z = 1; z <= 4; z++) for (let k = 0; k < ANZAHL[z]; k++) {                                        // nach innen
   const g = START[z] + k, innen = nachbarn(g).filter(n => zoneVon(n) === z + 1);
@@ -182,13 +182,42 @@ for (const g of gebiete.filter(g => g.zone === 4)) {
   tempel.push({ gebiet: g.id, x: Math.round(best.x), y: Math.round(best.y), art: tempel.length % 2 ? 'waechtertempel' : 'tempel' });
 }
 
-const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, tempel, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
+// 7) Startplätze, Rohstoff-Felder, Barbaren-Lager, Ruinen: locker gestreut (Mindestabstände, keine Klumpen), nie auf Grenzen,
+//    Pässen, Tempeln. Startplätze gleich viele je Zone-1-Gebiet; Felder überall außer der Mitte (Stufe steigt nach innen);
+//    Barbaren Stufe 1–25 (Zone 1 schwach … Zone 4 stark, wie BARB_MAX_L im Spiel); Ruinen nur Zone 2–4.
+const streu = (() => { let x = 20251007; return () => (x = (x * 48271) % 2147483647) / 2147483647; })();
+const grenzPunkte = new Map(), GZ = 20000;
+for (const g of grenzen) if (g.b !== -1) for (const q of g.punkte) { const k = Math.floor(q[0] / GZ) + ',' + Math.floor(q[1] / GZ); (grenzPunkte.get(k) || grenzPunkte.set(k, []).get(k)).push(q); }
+const grenzAbst = (x, y) => { let m = Infinity; for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) for (const q of grenzPunkte.get((Math.floor(x / GZ) + i) + ',' + (Math.floor(y / GZ) + j)) || []) m = Math.min(m, Math.hypot(q[0] - x, q[1] - y)); return m; };
+const gebietBei = (x, y) => L[Math.min(N - 1, Math.floor((y + H) / ZELLE)) * N + Math.min(N - 1, Math.floor((x + H) / ZELLE))];
+const alle = [];                                      // alles Gestreute: [x, y, Mindestabstand zu anderen]
+const frei = (x, y, eigen, liste) => Math.max(Math.abs(x), Math.abs(y)) < H - 20000 && grenzAbst(x, y) > 26000
+  && !paesse.some(p => Math.hypot(p.x - x, p.y - y) < 45000) && !tempel.some(t => Math.hypot(t.x - x, t.y - y) < 50000)
+  && !alle.some(a => Math.hypot(a[0] - x, a[1] - y) < 24000) && !liste.some(o => Math.hypot(o.x - x, o.y - y) < eigen);
+function streuen(anzahl, eigen, passt, neu) {         // Pfeilwurf: bis anzahl Stück, je Versuch ein Zufallspunkt
+  const liste = [];
+  for (let v = 0; v < anzahl * 400 && liste.length < anzahl; v++) {
+    const x = (streu() * 2 - 1) * H, y = (streu() * 2 - 1) * H, g = gebietBei(x, y);
+    if (!passt(g, liste) || !frei(x, y, eigen, liste)) continue;
+    const o = Object.assign({ x: Math.round(x), y: Math.round(y), gebiet: g }, neu(zoneVon(g))); liste.push(o); alle.push([x, y]);
+  }
+  return liste;
+}
+const START_JE_GEBIET = 10;
+const startplaetze = streuen(START_JE_GEBIET * ANZAHL[1], 60000, (g, l) => zoneVon(g) === 1 && l.filter(o => o.gebiet === g).length < START_JE_GEBIET, () => ({}));
+const FELD_ARTEN = ['holz', 'holz', 'holz', 'stein', 'stein', 'stein', 'eisen', 'eisen', 'gold', 'gold', 'edelstein'];   // (die Feld-Arten des Spiels, FIELD_KINDS)
+const felder = streuen(560, 52000, g => zoneVon(g) < MITTE, z => ({ art: FELD_ARTEN[Math.floor(streu() * FELD_ARTEN.length)], stufe: 2 * z - 1 + (streu() < .5 ? 0 : 1) }));
+const barbaren = streuen(110, 70000, g => zoneVon(g) < MITTE, z => ({ stufe: Math.min(25, 1 + (z - 1) * 6 + Math.floor(streu() * (z === 4 ? 7 : 6))) }));
+const ruinen = streuen(30, 120000, g => zoneVon(g) >= 2 && zoneVon(g) <= 4, () => ({}));
+
+const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, tempel, startplaetze, felder, barbaren, ruinen, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
 const kopf = '// Datenmodell der Zonen-Karte (erzeugt von karte_erzeugen.js – nicht von Hand ändern)\n' +
   '// gebiete: { id, zone 1–4 (5 = Mitte), name, boden, mitte, rand: Grenzen-Ids (−id−1 = rückwärts), umriss: Punkte }\n' +
   '// grenzen: { id, a, b (−1 = Kartenrand), punkte } · paesse: { id, a, b, grenze, x, y, senk (Grenze läuft senkrecht), stufe 1–5 }\n' +
   '// tempel: { gebiet, x, y, art tempel|waechtertempel } – je Zone-4-Gebiet einer\n' +
+  '// startplaetze / felder { art, stufe } / barbaren { stufe } / ruinen: { x, y, gebiet } – locker gestreut, nie auf Grenzen, Pässen, Tempeln\n' +
   '// oeffnen: Stufe → Tag, an dem die Pässe aufgehen (von außen nach innen); thron.tag: ab dann zählt der Thron\n';
 fs.writeFileSync(path.join(__dirname, 'karte_daten.js'), kopf + 'const KARTE_ZONEN = ' + JSON.stringify(daten) + ';\n');
 console.log('Gebiete', gebiete.length, '· Grenzen', grenzen.length, '(Rand', grenzen.filter(g => g.b === -1).length + ') · Pässe', paesse.length,
   [1, 2, 3, 4, 5].map(st => 'Stufe ' + st + ': ' + paesse.filter(p => p.stufe === st).length).join(', '),
-  '· ohne Pass:', gebiete.filter(g => !paesse.some(p => p.a === g.id || p.b === g.id)).map(g => g.id).join(' ') || '-');
+  '· Start', startplaetze.length, 'Felder', felder.length, 'Barbaren', barbaren.length, 'Ruinen', ruinen.length, '· ohne Pass:', gebiete.filter(g => !paesse.some(p => p.a === g.id || p.b === g.id)).map(g => g.id).join(' ') || '-');

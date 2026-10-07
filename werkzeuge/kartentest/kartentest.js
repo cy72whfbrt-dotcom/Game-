@@ -10,7 +10,7 @@ let toreOffen = true;
 
 // ===== Bilder (wie 03a: halbierte Fassungen, damit verkleinert nichts flimmert) =====
 const DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
-  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'wald1', 'wald2', 'tempel', 'waechtertempel', 'thron'];   // (thron: aus dem KI-Blatt ausgeschnitten, liegt hier im Ordner)
+  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'barbaren', 'feld_holz', 'feld_stein', 'feld_eisen', 'feld_gold', 'feld_edelstein', 'ruinen', 'tempel', 'waechtertempel', 'thron'];   // (thron: aus dem KI-Blatt ausgeschnitten, liegt hier im Ordner)
 const KB = { img: {}, mip: {}, muster: {}, fertig: false };
 let offen = DATEIEN.length;
 for (const n of DATEIEN) { const im = new Image();
@@ -29,7 +29,10 @@ function kbBild(n, px) {
 
 // ===== Maße (Welt-Einheiten, Burg ≈ 1.000; wie 03a) =====
 const GROSS = 2.0;                                    // die Gebiete sind viel größer als im Spiel: Gebirge, Knoten und Tore entsprechend breiter
-const MASS = { boden: 7000, quer: 12500 * GROSS, hoch: 12500 * GROSS, knoten: 11000 * GROSS, tor: 12500 * GROSS, wald: [2600, 3400], abstand: .42 };
+const MASS = { boden: 7000, quer: 12500 * GROSS, hoch: 12500 * GROSS, knoten: 11000 * GROSS, tor: 12500 * GROSS, abstand: .42 };
+const DINGE = { feld: 9000, barbaren: 10500, ruinen: 12000, start: 7000 };   // Weltbreite der gestreuten Dinge (Kette 25.000, Tempel 38.000)
+const FELD_FARBE = { holz: '#c08a4c', stein: '#aab3bd', eisen: '#8fb6e0', gold: '#e8c547', edelstein: '#7fd0ff' };   // (wie FIELD_KINDS im Spiel)
+const STUFE_ZOOM = 0.003;                             // ab hier stehen die Stufen-Zahlen an Feldern und Lagern
 const TOR_SENK = { hoch: 18000 * GROSS, achse: .539, weg: .488 };
 const KETTE_REIHEN = [[-1500, .5, .85], [0, 0, 1], [1300, .25, .8]].map(([a, v, g]) => [a * GROSS, v, g]);   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe
 const ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_hoch2: .485, tor_zu: .553, tor_offen: .553, kette_knoten: .6 };
@@ -60,12 +63,12 @@ function laengen(pts) { const s = [0]; for (let i = 1; i < pts.length; i++) s.pu
 function punktBei(pts, s, d) { d = Math.max(0, Math.min(s[s.length - 1], d)); let i = 1; while (i < pts.length - 1 && s[i] < d) i++;
   const t = (d - s[i - 1]) / ((s[i] - s[i - 1]) || 1); return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t]; }
 
-// ===== Gelände-Objekte: Kettenstücke, Knoten, Tore, Wald – eine Liste nach Fuß-y, Raster zum Finden =====
+// ===== Gelände-Objekte: Kettenstücke, Knoten, Tore, Felder, Lager, Ruinen – eine Liste nach Fuß-y, Raster zum Finden =====
 let KO = null;
 const ZELLE = 25000;
 function objekteBauen() {
   const liste = [], rnd = zufall(90917);
-  const neu = (n, x, y, w, ax, ay, sx, sy, fuss, f = 1, gross = !n.startsWith('wald'), extra) => { const im = KB.img[n], h = w * im.height / im.width;
+  const neu = (n, x, y, w, ax, ay, sx, sy, fuss, f = 1, gross = true, extra) => { const im = KB.img[n], h = w * im.height / im.width;
     const xs = [], ys = []; for (const u of [-ax * w, (1 - ax) * w]) for (const v of [-ay * h, (1 - ay) * h]) { xs.push(x + f * u + sx * v); ys.push(y + v + sy * f * u); }
     liste.push(Object.assign({ n, x, y, w, h, ax, ay, sx, sy, f, fuss, gross, bb: { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) } }, extra)); };
   // Knoten: wo Grenzen zusammenstoßen
@@ -98,19 +101,10 @@ function objekteBauen() {
         else neu(n, x, y, gr, .5, ACHSE[n], 0, Math.max(-SCHER, Math.min(SCHER, ty / tx)), y, f);
       } }
   }
-  // Wald: lockere Gruppen auf freier Wiese (Zone 1 dicht, Zone 2 weniger, Mitte keiner), nicht an Ketten und Toren
-  const nahe = new Map(), NZ = 10000;
-  for (const g of innen) for (const q of g.punkte) { const k = Math.floor(q[0] / NZ) + ',' + Math.floor(q[1] / NZ); (nahe.get(k) || nahe.set(k, []).get(k)).push(q); }
-  const randAbstand = (x, y) => { let m = Infinity; for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const q of nahe.get((Math.floor(x / NZ) + i) + ',' + (Math.floor(y / NZ) + j)) || []) m = Math.min(m, Math.hypot(q[0] - x, q[1] - y)); return m; };
-  const pruef = document.createElement('canvas').getContext('2d');
-  for (let i = 0; i < 9000; i++) {
-    const x = (rnd() * 2 - 1) * (H - 6000), y = (rnd() * 2 - 1) * (H - 6000), g = KD.gebiete.find(q => pruef.isPointInPath(q.pfad, x, y));
-    if (!g || g.zone === MITTE || (g.zone === 3 && rnd() < .8) || (g.zone === 4 && rnd() < .5)) continue;   // Wüste und karger Ring: wenig Wald
-    for (let k = 0, m = 1 + Math.floor(rnd() * 4); k < m; k++) {
-      const wx = x + (rnd() - .5) * 9000, wy = y + (rnd() - .5) * 7000, w = MASS.wald[0] + rnd() * (MASS.wald[1] - MASS.wald[0]);
-      if (randAbstand(wx, wy) < 9000 || KD.tempel.some(t => Math.hypot(t.x - wx, t.y - wy) < TEMPEL.breit * .7) || KD.paesse.some(p => Math.hypot(p.x - wx, p.y - wy) < 24000) || Math.abs(wx) > H - 3000 || Math.abs(wy) > H - 3000) continue;
-      neu(rnd() < .55 ? 'wald1' : 'wald2', wx, wy, w, .5, .78, 0, 0, wy, rnd() < .5 ? -1 : 1);
-    } }
+  // Gestreutes aus den Daten (gross = false: kein Gebirge, kommt nicht ins Übersichtsbild)
+  for (const o of KD.felder) neu('feld_' + o.art, o.x, o.y, DINGE.feld, .5, .62, 0, 0, o.y, 1, false, { stufe: o.stufe });
+  for (const o of KD.barbaren) neu('barbaren', o.x, o.y, DINGE.barbaren, .5, .62, 0, 0, o.y, 1, false, { stufe: o.stufe, barb: true });
+  for (const o of KD.ruinen) neu('ruinen', o.x, o.y, DINGE.ruinen, .5, .62, 0, 0, o.y, rnd() < .5 ? -1 : 1, false);
   liste.sort((a, b) => a.fuss - b.fuss);
   const zellen = new Map();
   liste.forEach((o, i) => { o.ord = i;
@@ -129,7 +123,7 @@ function uebersicht() {
   for (const geb of KD.gebiete) {
     if (!KB.fertig) { g.fillStyle = `rgb(${geb.farbe.join(',')})`; g.fill(geb.pfad); continue; }
     g.save(); g.clip(geb.pfad); gebietBoden(g, geb, k / dpr, v); g.fillStyle = `rgba(${geb.farbe.join(',')},${ZONEN_TOENUNG[geb.zone]})`; g.fillRect(-H, -H, 2 * H, 2 * H); g.restore(); }
-  if (KB.fertig) { g.lineJoin = 'round'; g.strokeStyle = 'rgba(58,52,40,.8)'; g.lineWidth = 6000 * GROSS; g.stroke(kettenPfad); gelaende(g, k, H * k, H * k, 2.4, v); }
+  if (KB.fertig) { g.lineJoin = 'round'; g.strokeStyle = 'rgba(58,52,40,.8)'; g.lineWidth = 6000 * GROSS; g.stroke(kettenPfad); gelaende(g, k, H * k, H * k, 2.4, v, true); }
   else baender(g, 1 / k);
   g.setTransform(k, 0, 0, k, H * k, H * k); g.strokeStyle = 'rgba(232,190,110,.8)'; g.lineWidth = 2 / k; g.stroke(KD.gebiete[0].pfad);
   return (UEB = c);
@@ -180,11 +174,13 @@ function zeichnen() {
       ctx.restore();
       ctx.lineWidth = 5000; ctx.strokeStyle = bodenMuster(g.boden, z, 0); ctx.stroke(g.pfad); }   // Boden ein Stück unter die Kette ziehen: keine Naht zwischen den Gebieten
     wege(v); ctx.restore();
-    gelaende(ctx, dpr * z, dpr * (W / 2 - cam.x * z), dpr * (HT / 2 - cam.y * z), 1, v);   // fest in der Welt: bei jedem Zoom dieselben Stücke in derselben Weltgröße
+    const da = gelaende(ctx, dpr * z, dpr * (W / 2 - cam.x * z), dpr * (HT / 2 - cam.y * z), 1, v);   // fest in der Welt: bei jedem Zoom dieselben Stücke in derselben Weltgröße
+    startMarken(v);
+    if (z >= STUFE_ZOOM) stufenZahlen(da);
   }
   for (const t of KD.tempel) heiligtum(t.art, t, TEMPEL);
   heiligtum('thron', KD.thron, THRON);
-  if (z < BILD_ZOOM) { namen(); passPunkte(); }
+  if (z < BILD_ZOOM) { dingePunkte(); namen(); passPunkte(); }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   document.getElementById('info').classList.toggle('kurz', z >= BILD_ZOOM);   // die Legende nur ganz weit (nah bleibt die Karte frei)
   document.getElementById('stufe').textContent = stufe() + ' · Zoom ' + z.toFixed(4) + ' · ' + KD.gebiete.length + ' Gebiete · ' + KD.paesse.length + ' Pässe';
@@ -196,17 +192,46 @@ function wege(v) {                                    // Weg durchs Quer-Tor: qu
     ctx.globalAlpha = .85; ctx.lineWidth = WEG.breit; ctx.stroke(); ctx.globalAlpha = 1; }
   ctx.lineCap = 'butt';
 }
-function gelaende(g, k0, E, F, sk, v) {              // Gelände-Bilder im Weltrechteck v: Gerät = k0 · Welt + (E, F); sk: Vergrößerung der Ketten/Tore
+function gelaende(g, k0, E, F, sk, v, nurGebirge) {  // Gelände-Bilder im Weltrechteck v: Gerät = k0 · Welt + (E, F); sk: Vergrößerung der Ketten/Tore → die gezeichneten
   const hier = new Set();
   const drin = o => { const s = o.gross ? sk : 1; return o.x + (o.bb.r - o.x) * s > v.l && o.x + (o.bb.l - o.x) * s < v.r && o.y + (o.bb.b - o.y) * s > v.t && o.y + (o.bb.t - o.y) * s < v.b; };
   for (let cx = Math.floor(v.l / ZELLE) - 1; cx <= Math.floor(v.r / ZELLE); cx++) for (let cy = Math.floor(v.t / ZELLE) - 1; cy <= Math.floor(v.b / ZELLE); cy++)
-    for (const o of KO.zellen.get(cx + ',' + cy) || []) if (drin(o)) hier.add(o);
-  for (const o of [...hier].sort((a, b) => a.ord - b.ord)) {
+    for (const o of KO.zellen.get(cx + ',' + cy) || []) if ((o.gross || !nurGebirge) && drin(o)) hier.add(o);
+  const reihe = [...hier].sort((a, b) => a.ord - b.ord);
+  for (const o of reihe) {
     const k = o.gross ? k0 * sk : k0, px = o.w * k; if (px < 2) continue;
     let n = o.n; if (o.tor) n = o.tor.senk ? (toreOffen ? 'tor_senk_offen' : 'tor_senk_zu') : (toreOffen ? 'tor_offen' : 'tor_zu');
     g.setTransform(k * o.f, k * o.sy * o.f, k * o.sx, k, k0 * o.x + E, k0 * o.y + F);
     g.drawImage(kbBild(n, px), -o.ax * o.w, -o.ay * o.h, o.w, o.h);
   }
+  return reihe;
+}
+function stufenZahlen(reihe) {                        // Stufe als kleine Zahl oben rechts an Feldern und Barbaren-Lagern
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.font = '700 11px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const o of reihe) { if (!o.stufe) continue;
+    const x = sx(o.x) + o.w * cam.z * .32, y = sy(o.y) - o.h * cam.z * .5, t = String(o.stufe), b = Math.max(16, ctx.measureText(t).width + 8);
+    ctx.fillStyle = o.barb ? 'rgba(120,24,18,.92)' : 'rgba(16,14,10,.85)'; ctx.beginPath(); ctx.roundRect(x - b / 2, y - 8, b, 16, 8); ctx.fill();
+    ctx.lineWidth = 1; ctx.strokeStyle = o.barb ? '#f0a080' : '#d9b46a'; ctx.stroke(); ctx.fillStyle = '#fff3d6'; ctx.fillText(t, x, y + .5); }
+}
+function burg(x, y, w) {                              // (Bildschirm) kleine Burg-Markierung eines Startplatzes: Mauer mit drei Türmen und Fahne, Fuß bei (x, y)
+  const h = w * .7, u = w / 10;
+  ctx.beginPath(); ctx.moveTo(x - 5 * u, y); ctx.lineTo(x - 5 * u, y - h * .55); ctx.lineTo(x - 3 * u, y - h * .55); ctx.lineTo(x - 3 * u, y - h * .4);
+  ctx.lineTo(x - 1.5 * u, y - h * .4); ctx.lineTo(x - 1.5 * u, y - h); ctx.lineTo(x + 1.5 * u, y - h); ctx.lineTo(x + 1.5 * u, y - h * .4);
+  ctx.lineTo(x + 3 * u, y - h * .4); ctx.lineTo(x + 3 * u, y - h * .55); ctx.lineTo(x + 5 * u, y - h * .55); ctx.lineTo(x + 5 * u, y); ctx.closePath();
+  ctx.fillStyle = '#d8cdb4'; ctx.fill(); ctx.lineWidth = Math.max(1, u * .5); ctx.strokeStyle = '#3a3226'; ctx.stroke();
+  ctx.fillStyle = '#4f9ef2'; ctx.beginPath(); ctx.moveTo(x, y - h); ctx.lineTo(x, y - h * 1.45); ctx.lineTo(x + 3 * u, y - h * 1.3); ctx.lineTo(x, y - h * 1.15); ctx.fill();
+  ctx.strokeStyle = '#3a3226'; ctx.beginPath(); ctx.moveTo(x, y - h); ctx.lineTo(x, y - h * 1.45); ctx.stroke();
+}
+function startMarken(v) {                             // Startplätze (wo neue Spieler landen)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); const w = Math.max(DINGE.start * cam.z, 12);
+  for (const o of KD.startplaetze) if (o.x > v.l - DINGE.start && o.x < v.r + DINGE.start && o.y > v.t - DINGE.start && o.y < v.b + DINGE.start) burg(sx(o.x), sy(o.y), w);
+}
+function dingePunkte() {                              // ganz weit: Felder, Lager und Startplätze nur als kleine Punkte
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const punkt = (o, farbe, r) => { const x = sx(o.x), y = sy(o.y); if (x < -4 || y < -4 || x > W + 4 || y > HT + 4) return; ctx.fillStyle = farbe; ctx.fillRect(x - r, y - r, 2 * r, 2 * r); };
+  for (const o of KD.felder) punkt(o, FELD_FARBE[o.art], 1.2);
+  for (const o of KD.barbaren) punkt(o, '#d2402e', 1.5);
+  for (const o of KD.startplaetze) punkt(o, '#4f9ef2', 1.8);
 }
 function heiligtum(n, t, M) {                         // Thron/Tempel (KI-Bild) an seinem Weltpunkt; ganz weit nie kleiner als M.minPx
   const im = KB.img[n]; if (!im) return;
@@ -270,5 +295,7 @@ addEventListener('resize', groesse);
 groesse(); zoomStufe('ganz');
 document.getElementById('legende').innerHTML = Object.entries(KD.oeffnen).map(([st, tag]) =>
   `<div><i style="background:${PASS_FARBE[st]}"></i>${+st === 1 ? 'Pass in Zone 1' : +st === MITTE ? 'Pass zur Mitte' : 'Pass nach Zone ' + st} · offen ab Tag ${tag}</div>`).join('')
-  + `<div><i style="background:#9a6a2c"></i>Thron · ab Tag ${KD.thron.tag}</div>`;
+  + `<div><i style="background:#9a6a2c"></i>Thron · ab Tag ${KD.thron.tag}</div>`
+  + `<div><i style="background:#4f9ef2;border-radius:2px"></i>Startplatz (${KD.startplaetze.length}) · <i style="background:#d2402e;border-radius:2px"></i>Barbaren (${KD.barbaren.length})</div>`
+  + `<div><i style="background:#c08a4c;border-radius:2px"></i>Felder: Holz, Stein, Eisen, Gold, Edelstein (${KD.felder.length})</div>`;
 window.KT = { cam, zoomStufe, zeichnen, bereit: () => KB.fertig && !!KO, daten: KD, get objekte() { return KO; } };
