@@ -629,11 +629,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `burgZeitAlt` → Game/spiel/10d-welt-weltrechner.js:503
 - `burgZeitRoh` → Game/aufbau.js:101
 - `bytes` → Game/benachrichtigung.js:31
-- `CAM_PIECES` → Game/spiel/03e-kamera-eingabe.js:50
-- `camInsetTarget` → Game/spiel/03e-kamera-eingabe.js:94
-- `camPiece` → Game/spiel/03e-kamera-eingabe.js:124
-- `camRange` → Game/spiel/03e-kamera-eingabe.js:104
-- `camRegion` → Game/spiel/03e-kamera-eingabe.js:112
+- `CAM_PIECES` → Game/spiel/03e-kamera-eingabe.js:49
+- `camInsetTarget` → Game/spiel/03e-kamera-eingabe.js:93
+- `camPiece` → Game/spiel/03e-kamera-eingabe.js:123
+- `camRange` → Game/spiel/03e-kamera-eingabe.js:103
+- `camRegion` → Game/spiel/03e-kamera-eingabe.js:111
 - `cancelGesture` → Game/spiel/03e-kamera-eingabe.js:334
 - `cancelMultiAttack` → Game/spiel/09e-inselfenster.js:167
 - `canConnectHalos` → Game/spiel/09a-funde-felder.js:137
@@ -748,8 +748,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `claimQuest` → Game/spiel/06a-aufgaben.js:168
 - `claimQuestBonus` → Game/spiel/06a-aufgaben.js:196
 - `clamp` → Game/baukunst/04-vielfalt-stile.js:135
-- `clampCamera` → Game/spiel/03e-kamera-eingabe.js:145
-- `clampCentre` → Game/spiel/03e-kamera-eingabe.js:130
+- `clampCamera` → Game/spiel/03e-kamera-eingabe.js:144
+- `clampCentre` → Game/spiel/03e-kamera-eingabe.js:129
 - `clampZoom` → Game/spiel/03e-kamera-eingabe.js:19
 - `classOf` → Game/baukunst/04-vielfalt-stile.js:199
 - `clear` → Game/baukunst/04-vielfalt-stile.js:522
@@ -757,8 +757,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `clearIslandOwner` → Game/spiel/01e-nebel-kampfwerte-hud.js:167
 - `client_ip` → Game/server/03-nebel-maersche-seite.php:120
 - `clientZuWelt` → Game/welt.js:180
-- `clipHalf` → Game/spiel/03e-kamera-eingabe.js:74
-- `clipToBox` → Game/spiel/03e-kamera-eingabe.js:81
+- `clipHalf` → Game/spiel/03e-kamera-eingabe.js:73
+- `clipToBox` → Game/spiel/03e-kamera-eingabe.js:80
 - `clock` → Game/spiel/05d-maersche-kampfbericht.js:50
 - `clock` → Game/spiel/06c-thron-mitte.js:112
 - `closeAllPopups` → Game/spiel/09e-inselfenster.js:75
@@ -791,7 +791,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cone` → Game/spiel/03b-gebaeude-3d.js:27
 - `confirmRecall` → Game/spiel/10b-inselfenster-knoepfe.js:79
 - `conquestsOf` → Game/spiel/05c-erfolge-rangliste.js:275
-- `convexHull` → Game/spiel/03e-kamera-eingabe.js:42
+- `convexHull` → Game/spiel/03e-kamera-eingabe.js:41
 - `coordText` → Game/spiel/10a-inselfenster-vorschau.js:91
 - `CORE` → Game/baukunst/08-himmelsfeste-bilder.js:24
 - `cornersOk` → Game/baukunst/04-vielfalt-stile.js:379
@@ -1062,7 +1062,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `flushBannerSprites` → Game/spiel/03c-wappen-thronplatz.js:125
 - `flushBotState` → Game/bots/04-stand-stadt.js:71
 - `flute` → Game/spiel/10c-start-einstellungen.js:49
-- `flyTo` → Game/spiel/03e-kamera-eingabe.js:171
+- `flyTo` → Game/spiel/03e-kamera-eingabe.js:170
 - `fmt` → Game/spiel/05d-maersche-kampfbericht.js:358
 - `fmt1` → Game/spiel/05b-truhe-skills.js:196
 - `fmt1` → Game/spiel/05d-maersche-kampfbericht.js:154
@@ -1401,7 +1401,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `inselMittig` → Game/spiel/10a-inselfenster-vorschau.js:211
 - `inselOk` → Game/spiel/10d-welt-weltrechner.js:124
 - `inside` → Game/spiel/01c-basen-spielstand.js:45
-- `insideConvex` → Game/spiel/03e-kamera-eingabe.js:90
+- `insideConvex` → Game/spiel/03e-kamera-eingabe.js:89
 - `invAktiv` → Game/spiel/09c-events-drache.js:89
 - `invAnkunft` → Game/spiel/09c-events-drache.js:142
 - `invArmee` → Game/spiel/09c-events-drache.js:90
@@ -1485,7 +1485,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `lager` → Game/baukunst/02-buehne-grundbasis.js:158
 - `lager` → Game/server/01-grundlagen-login.php:43
 - `LAMP` → Game/baukunst/07-hafen-palast.js:24
-- `LAND_BOX` → Game/spiel/03e-kamera-eingabe.js:63
+- `LAND_BOX` → Game/spiel/03e-kamera-eingabe.js:62
 - `landmassAtWorld` → Game/spiel/09d-armeen-wegmarken.js:12
 - `landmassesConnected` → Game/spiel/01b-weltkarte.js:169
 - `lantern` → Game/baukunst/07-hafen-palast.js:172
@@ -1917,7 +1917,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `profilVon` → Game/spiel/10d-welt-weltrechner.js:148
 - `profilZuBot` → Game/welt.js:237
 - `profilZuBotRoh` → Game/welt.js:243
-- `projectConvex` → Game/spiel/03e-kamera-eingabe.js:82
+- `projectConvex` → Game/spiel/03e-kamera-eingabe.js:81
 - `proStunde` → Game/spiel/01e-nebel-kampfwerte-hud.js:228
 - `pruefen` → Game/benachrichtigung.js:60
 - `pruefen` → Game/weltrechner/start.js:172
@@ -1984,7 +1984,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `reach` → Game/bots/05-verteidigen-takt.js:174
 - `recallMarch` → Game/spiel/02b-maersche.js:223
 - `recallSources` → Game/spiel/10b-inselfenster-knoepfe.js:46
-- `recenterOnHome` → Game/spiel/03e-kamera-eingabe.js:197
+- `recenterOnHome` → Game/spiel/03e-kamera-eingabe.js:196
 - `rechnerStatus` → Game/spiel/10d-welt-weltrechner.js:10
 - `rechnet` → Game/spiel/01a-grundlagen.js:11
 - `recol` → Game/baukunst/04-vielfalt-stile.js:214
@@ -2312,7 +2312,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `stoneWarte` → Game/baukunst/05-umland.js:356
 - `stop` → Game/ladebildschirm.js:290
 - `stop` → Game/spiel/10c-start-einstellungen.js:129
-- `stopFlight` → Game/spiel/03e-kamera-eingabe.js:140
+- `stopFlight` → Game/spiel/03e-kamera-eingabe.js:139
 - `Strip` → Game/baukunst/05-umland.js:151
 - `strip` → Game/spiel/08e-stadtbild-haeuser.js:430
 - `Strip.prototype.line` → Game/baukunst/05-umland.js:153
@@ -2320,7 +2320,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `Strip.prototype.tri` → Game/baukunst/05-umland.js:152
 - `strokeBox` → Game/spiel/03a-karte-hintergrund.js:608
 - `suche` → Game/spiel/01b-weltkarte.js:198
-- `sumBox` → Game/spiel/03e-kamera-eingabe.js:67
+- `sumBox` → Game/spiel/03e-kamera-eingabe.js:66
 - `surf` → Game/baukunst/04-vielfalt-stile.js:271
 - `syncPanelState` → Game/spiel/09e-inselfenster.js:36
 - `system_zugang` → Game/server/01-grundlagen-login.php:58
@@ -2435,7 +2435,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `UMRECHNEN.openWaterVerstaerkung` → Game/welt.js:128
 - `unb64` → Game/weltrechner/push.js:19
 - `unten` → Game/spiel/08d-gebaeude-wirkung.js:74
-- `updateCamera` → Game/spiel/03e-kamera-eingabe.js:204
+- `updateCamera` → Game/spiel/03e-kamera-eingabe.js:203
 - `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:238
 - `updateGoalsBadge` → Game/spiel/06a-aufgaben.js:252
 - `updateHud` → Game/spiel/01e-nebel-kampfwerte-hud.js:233
@@ -2655,7 +2655,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zielPruefen` → Game/spiel/10d-welt-weltrechner.js:1020
 - `zinnen` → Game/ladebildschirm.js:49
 - `zitadelle` → Game/baukunst/02-buehne-grundbasis.js:330
-- `zoomAt` → Game/spiel/03e-kamera-eingabe.js:154
+- `zoomAt` → Game/spiel/03e-kamera-eingabe.js:153
 - `zug` → Game/spiel/08e-stadtbild-haeuser.js:333
 - `zuOft` → Game/spiel/10d-welt-weltrechner.js:142
 
@@ -3998,25 +3998,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 ### Game/spiel/03e-kamera-eingabe.js — Kamera und Eingabe: Ziehen, Zoomen, Tippen, Bildgröße
 - `clampZoom` :19
 - `updateZoomBounds` :21 — call at boot (after WORLD exists) and on every resize
-- `convexHull` :42 — Andrew's monotone chain; positive orientation (cross > 0 = interior on the left)
-- `CAM_PIECES` :50
-- `LAND_BOX` :63
-- `sumBox` :67 — convex P ⊕ the box [x0, x1] × [y0, y1]: each vertex takes the box corners of it…
-- `clipHalf` :74 — Sutherland-Hodgman against one half-plane f(p) ≥ 0 (convex stays convex)
-- `clipToBox` :81
-- `projectConvex` :82 — nearest point of the convex polygon Q (positive orientation) to (x, y)
-- `insideConvex` :90
-- `camInsetTarget` :94 — the island sheet (phone: bottom, landscape: right side) covers part of the map
-- `camRange` :104 — allowed centre interval on one axis; a / b: world units covered at the low / hi…
-- `camRegion` :112 — → { R: [{ l, t, r, b }] the pieces' boxes (camPiece(G, p): the polygon, built o…
-- `camPiece` :124 — a piece of R: grown, cut to the box ([] when the cut leaves nothing)
-- `clampCentre` :130 — nearest point of R(z) (ins: the sheet slack, default the current one)
-- `stopFlight` :140 — cancel / end a flight where it is: its view is valid for its inset, so that
-- `clampCamera` :145 — ins: the sheet slack (optional) → true when it moved the centre: the caller re-…
-- `zoomAt` :154 — the ONE zoom primitive: keeps the world point under (sx, sy) fixed
-- `flyTo` :171 — animated camera move; the world point ends at screen (sx, sy)
-- `recenterOnHome` :197 — harness calls it without an argument → instant
-- `updateCamera` :204 — Called once per frame BEFORE drawMap(). Returns true while something is moving.
+- `convexHull` :41 — Andrew's monotone chain; positive orientation (cross > 0 = interior on the left)
+- `CAM_PIECES` :49
+- `LAND_BOX` :62
+- `sumBox` :66 — convex P ⊕ the box [x0, x1] × [y0, y1]: each vertex takes the box corners of it…
+- `clipHalf` :73 — Sutherland-Hodgman against one half-plane f(p) ≥ 0 (convex stays convex)
+- `clipToBox` :80
+- `projectConvex` :81 — nearest point of the convex polygon Q (positive orientation) to (x, y)
+- `insideConvex` :89
+- `camInsetTarget` :93 — the island sheet (phone: bottom, landscape: right side) covers part of the map
+- `camRange` :103 — allowed centre interval on one axis; a / b: world units covered at the low / hi…
+- `camRegion` :111 — → { R: [{ l, t, r, b }] the pieces' boxes (camPiece(G, p): the polygon, built o…
+- `camPiece` :123 — a piece of R: grown, cut to the box ([] when the cut leaves nothing)
+- `clampCentre` :129 — nearest point of R(z) (ins: the sheet slack, default the current one)
+- `stopFlight` :139 — cancel / end a flight where it is: its view is valid for its inset, so that
+- `clampCamera` :144 — ins: the sheet slack (optional) → true when it moved the centre: the caller re-…
+- `zoomAt` :153 — the ONE zoom primitive: keeps the world point under (sx, sy) fixed
+- `flyTo` :170 — animated camera move; the world point ends at screen (sx, sy)
+- `recenterOnHome` :196 — harness calls it without an argument → instant
+- `updateCamera` :203 — Called once per frame BEFORE drawMap(). Returns true while something is moving.
 - `resetGesture` :246
 - `freezeCamera` :250 — nothing may move under a resting finger
 - `startPinch` :257

@@ -4450,8 +4450,7 @@ let cameraFlight = null;         // { path(e) → {x, y, z} centre, end, z1, ins
 const clampZoom = z => Math.min(maxZoom, Math.max(minZoom, z));
 
 function updateZoomBounds() {    // call at boot (after WORLD exists) and on every resize
-  minZoom = Math.max(0.0002, Math.min(TERRITORY_VIEW_ZOOM * 0.5,   // (die Zonen-Karte ist groß: auch auf dem Handy ganz draußen die ganze Karte)
-    viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));
+  minZoom = Math.max(0.0002, Math.min(viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));   // die ganze Karte (die Zonen-Karte ist groß: auch auf dem Handy), nie kleiner (sonst rechnet die Kamera-Grenze ins Leere)
   maxZoom = CAM.MAX_ZOOM;
   mapState.zoom = clampZoom(mapState.zoom); mapState.targetZoom = clampZoom(mapState.targetZoom);
 }
@@ -4635,7 +4634,8 @@ window.recenterOnHome = recenterOnHome;
 function updateCamera(dt, now) {
   let animating = false;
   if (cameraFlight) {
-    const f = cameraFlight, k = Math.min(1, (now - f.t0) / f.dur), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    const f = cameraFlight, k = Math.max(0, Math.min(1, (now - f.t0) / f.dur)),   // (das Bild kann vor dem Start des Flugs liegen: nie unter 0 – sonst Zoom 0, Kamera NaN)
+    e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     const p = k >= 1 ? { x: f.end.x, y: f.end.y, z: f.z1 } : f.path(e), z = k >= 1 ? f.z1 : clampZoom(p.z);   // the last frame lands exactly
     mapState.zoom = mapState.targetZoom = z; mapState.offsetX = viewW / 2 - p.x * z; mapState.offsetY = viewH / 2 - p.y * z;
     clampCamera(f.ins);                                                              // every frame in R(z): land stays in view
