@@ -1653,6 +1653,13 @@ Nacht – vorher bauen und testen.
     („1.000“, „60m“, „4h“), unten rechts Anzahl („25“). In Tabellen: Zeile je Stufe/Platz (z. B. „10001+“), Kacheln
     nebeneinander. Überall gleich nutzen: Events, Pass, Kisten-Ergebnis, Shop, Postfach, Ranglisten-Belohnung.
     Vorbild-Datei: scratchpad/vorbilder/11_belohnung_rok_alexander.jpg.
+    ✅ **Umgesetzt (7.10., mit 23 „Kisten“):** Teil `05e-belohnung.js` (`beuteKachel`, `beuteRaster`, `beuteFenster`) + Stil `05y-stil-kisten.php`:
+    Kachel `ui_kachel_*` je Seltenheit, KI-Symbol `bilder/beute_*.webp`, Menge unten rechts – in Shop, Aufgaben, Erfolgen, Tagesbelohnung,
+    Abholfach, Pass, Stufe, Kriegsherr, Event-Preisen, Thron-Shop, Kampfbericht (Rohstoffe). Belohnungs-Fenster: Kiste (`kiste_*_zu/offen.webp`)
+    wackelt, geht auf, Strahlen, Kacheln nacheinander; Tipp = gleich Endbild, „OK“ schließt. Shop: Kisten als KI-Bild, unter 500 Edelsteinen
+    „1ד und „10ד (weniger Edelsteine: „N×“ mit dem Rest, ab 500 „Wirklich?“) – ruft nur `openCrate`/`heroChestOpen` N-mal (Inhalt,
+    Chancen, Hauptbuch unverändert; Große/Epische Kiste bleiben einzeln wegen Bündnis-Geschenk). Bilder geschnitten mit
+    `werkzeuge/beute_bilder_schneiden.py` (Blätter ohne Transparenz: Hintergrund geschätzt). Test `belohnung_test`.
 25. **Weltkarte neu wie RoK – Entscheidungen Alexander (6.10. abends):** KEIN Wasser mehr (kein Meer, keine Flüsse, keine
     Seen), eine große Land-Karte. Statt Flüssen hohe Felsketten zwischen den Gebieten, durch die man nicht laufen kann –
     nur durch Pass-Tore (heutige Brücken-Tore; Logik Gebiete/Tore/Maut/Öffnungszeiten bleibt). Boden nur nach Ringen
