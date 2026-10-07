@@ -72,6 +72,17 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Hauptbuch: Aufgaben-Münzen – 2 Tage (24 Stunden) gedeckt, mehr nicht', MG('u1', 24 * h12, dA) === 24 * h12 && MG('u1', h12, dA) < h12 * 1e-3);
     dA.aMt -= 864e5 / 2;
     pruefe('Hauptbuch: … nach einem halben Tag wieder 6 Stunden', Math.abs(MG('u1', 10 * h12, dA) - 6 * h12) < h12 * 1e-3);
+    // Truppen aus Saison-Pass und Aufgaben-Bonus (7.10.): je Stufe/Reihe einmal je Saison, nur so weit, wie man in der Zeit kommen kann; Bonus höchstens 2 in 24 Std.
+    const s6b = fs.readFileSync(path.join(G, 'spiel', '06b-pass-anleitung.js'), 'utf8'), pr = new Function('PASS_LVLS', s6b.slice(s6b.indexOf('function passRewardAt'), s6b.indexOf('const passMuenzen')) + 'return passRewardAt;')(100);
+    const warn = [], dW = {}, EP = Date.UTC(2026, 0, 5), LEN = 28 * 864e5, s = Math.floor((Date.now() - EP) / LEN) + 1, tage = (Date.now() - (EP + (s - 1) * LEN)) / 864e5;
+    const TP = new Function('zahlOk', 'warnen', 'fz', 'wacheSehen', 'wd', 'TR_STUNDE_MIN', 'hourProduction', 'saveBotState', 'passNo', 'PASS_LVLS', 'passRewardAt', 'PASS_EPOCH', 'PASS_LEN', 'QUEST_BONUS3',
+        stueck('    const TRUPPEN_QUELLEN', '    function truppenGeben') + 'return truppenPruefen;')(Number.isFinite, (w, a, t) => warn.push(t), String, () => ({}), () => dW, 1, () => ({ troops: 100 }), () => {},
+        () => s, 100, pr, EP, LEN, { n: 3, tr: 2 });
+    const bisL = Math.min(100, Math.ceil(100 * 2 * tage / 28) + 3), L2 = 2;   // Stufe 2: frei 2 Std. Truppen
+    pruefe('Hauptbuch: Pass-Truppen Stufe 2 (2 Std.) angenommen – ein zweites Mal nicht', TP('u1', { q: 'pass', n: 200, s, l: L2, p: 0 }) === 200 && TP('u1', { q: 'pass', n: 200, s, l: L2, p: 0 }) === 0 && warn.length === 1);
+    pruefe('Hauptbuch: Pass-Truppen für eine Stufe ohne Truppen / zu früh abgelehnt', TP('u1', { q: 'pass', n: 50, s, l: 3, p: 0 }) === 0 && (bisL >= 100 || TP('u1', { q: 'pass', n: 50, s, l: 98, p: 0 }) === 0));
+    pruefe('Hauptbuch: Pass-Truppen (Premium Stufe 2: 6 Std.) – mehr als das 3-Fache wird gekappt', TP('u1', { q: 'pass', n: 1e6, s, l: 2, p: 1 }) === 3 * 600 + 1);
+    pruefe('Hauptbuch: Aufgaben-Bonus (2 Std. Truppen) – höchstens 2 in 24 Std.', TP('u1', { q: 'aufgabe', n: 200 }) === 200 && TP('u1', { q: 'aufgabe', n: 200 }) === 200 && TP('u1', { q: 'aufgabe', n: 200 }) === 0);
 }
 
 // 4) Welt-Saison (09f-saison.js): der Termin ist immer ein Sonntag 18 Uhr deutscher Zeit, 8 Wochen nach dem Start (auch über
