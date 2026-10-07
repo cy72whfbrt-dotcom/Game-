@@ -45,12 +45,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       window.questProgress = () => {};   // (eine fertige Aufgabe „Öffne Kisten“ schenkt sonst Edelsteine mitten in die Rechnung)
       try {
         const g0 = gems, inv0 = Object.keys(inventory).length; document.getElementById('shopOpenCrateBtn').click(); await warte(50);
-        o.aus = { weg: g0 - gems, teil: Object.keys(inventory).length - inv0, ergebnis: document.getElementById('shopCrateResult').style.display === 'block' };
+        o.aus = { weg: g0 - gems, teil: Object.keys(inventory).length - inv0, ergebnis: !!document.getElementById('beuteFenster') && !document.getElementById('beuteFenster').hidden && document.getElementById('shopCrateResult').style.display !== 'block' };   // (Belohnungs-Fenster, keine Liste mehr unten im Shop)
         const g1 = gems; document.querySelector('[data-hchest="hc1"]').click(); await warte(50); o.held = { weg: g1 - gems };
         const g2 = gems, gross = () => document.querySelector('[data-hchest="hc3"]');
         gross().click(); await warte(50); o.gross = { erst: g2 - gems, frage: /Wirklich/.test(gross().textContent) && gross().classList.contains('is-armed') };
         T += 100; gross().click(); await warte(50); o.gross.doppel = g2 - gems;
-        T += 600; gross().click(); await warte(50); o.gross.dann = g2 - gems; o.gross.ergebnis = !document.getElementById('shopHeroResult').hidden;
+        T += 600; gross().click(); await warte(50); o.gross.dann = g2 - gems; o.gross.ergebnis = !!document.getElementById('beuteFenster') && !document.getElementById('beuteFenster').hidden && document.getElementById('shopHeroResult').hidden;
         T += 600; o.gross.wieder = /^[\d.]+$/.test(gross().textContent.trim()); gross().click(); await warte(50); o.gross.neuFrage = g2 - gems;
         gemsArmAus();
       } finally { Date.now = echt; window.questProgress = qp; }

@@ -8028,11 +8028,7 @@ function heroChestKauf(c, n, bt) {                   // n Heldenkisten auf einma
     for (; anz < n && gems >= c.gems && heroChestPool(c.minR).length; anz++) { gems -= c.gems; got.push(...heroChestOpen('player', c)); questProgress('crate', 1); }   // (zählt für „Öffne … Kisten“)
     updateHud(); saveGame(); renderShop();
     const k = HCHEST_ART[c.id] || 'held', beute = got.map(h => ({ a: 'sh', n: c.sh, held: h.id }));
-    const res = document.getElementById('shopHeroResult');
-    res.innerHTML = '<b class="hchest-h">' + (anz > 1 ? anz + '× ' : '') + c.name + '</b>' + [...new Set(got)].map(h => { const s = heroSt('player', h.id), need = s.own ? (s.q >= HERO_MAXQ ? 0 : heroStepCost(h, s.q)) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
-        return '<div class="hchest-row" style="--rc:' + rd.color + '">' + heroImg(h.id, 'hchest-pic') + '<span><b>' + h.name + '</b><small style="color:' + rd.color + '">' + rd.label + '</small></span><i>+' + c.sh * got.filter(x => x === h).length + ' Splitter' + (need ? ' · ' + (s.sh >= need ? (s.own ? 'Aufwerten bereit' : 'Freischalten bereit') : s.sh + ' / ' + need) : '') + '</i></div>'; }).join('') +
-        '<button type="button" class="btn btn--primary btn--sm" data-hchest-hall>Zu den Helden</button>';
-    res.hidden = false; res.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    // (keine Liste mehr unten im Shop – das Belohnungs-Fenster mit Animation zeigt alles, Alexander 7.10.)
     beuteFenster(c.name, beute, { kiste: k, n: anz, unter: anz > 1 ? anz + ' Kisten geöffnet' : '' });
 }
 shopPopup.addEventListener('click', e => { if (e.target.closest('[data-mehr]')) return;   // (10×: eigener Knopf unten)
@@ -8046,7 +8042,9 @@ function preiseFaerben(root) {                         // Edelstein-Preise: reic
     for (const b of root.querySelectorAll('.ware-preis:not(.thron)')) { const t = b.querySelector('b'), n = t ? parseInt(t.textContent.replace(/\D/g, ''), 10) : NaN;
         b.classList.toggle('zu-teuer', n > 0 && n > Math.floor(gems)); }
 }
+let kopfVorab = null;
 function renderShop() {
+    if (!kopfVorab) kopfVorab = HEROES.map(h => { const i = new Image(); i.src = heroPic(h.id); return i; });   // Heldenköpfe vorab laden: in den Splitter-Kacheln nach dem Kistenöffnen nie ein leerer Kreis
     const hdTab = document.querySelector('#shopTabs [data-stab="hd"]'), hdHier = typeof hdDa === 'function' && !!hdDa();   // der Reiter „Händler“ nur, wenn einer da ist
     if (hdTab.hidden === hdHier) hdTab.hidden = !hdHier;
     if (shopTab === 'hd' && !hdHier) { showShopTab('gems'); return; }
@@ -8082,12 +8080,7 @@ function ausKistenKauf(n, bt) {                     // n Ausrüstungskisten (ope
         shopCrateResult.scrollIntoView({ block: 'nearest' });
         return;
     }
-    const beute = items.map(it => ({ a: 'item', slot: it.slot, r: it.rarity })), best = items.reduce((a, b) => b.rarity > a.rarity ? b : a), rd = RARITY_DEFS[best.rarity];
-    shopCrateResult.style.display = 'block';
-    shopCrateResult.dataset.r = rd.key;
-    shopCrateResult.innerHTML = beuteRaster(beute, 'bk-klein') + '<div><span class="overline rar-text" data-r="' + rd.key + '">' + (items.length > 1 ? items.length + ' Kisten · bestes: ' : '') + rd.label + '</span><b>' +
-        (items.length > 1 ? items.length + ' Teile' : EQUIPMENT_DEFS[best.slot].name) + '</b><small>Stufe 1 · im Inventar</small></div>';
-    shopCrateResult.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    const beute = items.map(it => ({ a: 'item', slot: it.slot, r: it.rarity }));
     beuteFenster('Ausrüstungskiste', beute, { kiste: 'aus', n: items.length, unter: items.length > 1 ? items.length + ' Kisten geöffnet' : '' });
 }
 shopOpenCrateBtn.addEventListener('click', () => ausKistenKauf(1, shopOpenCrateBtn));
