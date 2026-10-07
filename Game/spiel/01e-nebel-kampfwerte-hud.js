@@ -232,12 +232,12 @@ function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.text
 function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
 function updateHud() {
     const troops = totalTroops();
-    setText(coinCountEl, fmtCompact(Math.floor(coins)));
+    setText(coinCountEl, fmtHud(Math.floor(coins)));
     const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Edelsteine', tt = fmtNum(troops) + ' Truppen';
     if (coinCountEl.parentNode.title !== tc) coinCountEl.parentNode.title = tc;
-    setText(gemCountEl, fmtCompact(Math.floor(gems)));
+    setText(gemCountEl, fmtHud(Math.floor(gems)));
     if (gemCountEl.parentNode.title !== tg) gemCountEl.parentNode.title = tg;
-    setText(troopCountEl, fmtCompact(troops));
+    setText(troopCountEl, fmtHud(troops));
     if (troopCountEl.parentNode.title !== tt) troopCountEl.parentNode.title = tt;
     if (AUF) AUF.hud();                                                       // Holz, Stein, Eisen (aufbau.js)
     requestRender();   // HUD changes coincide with state changes -> the map may need a redraw
