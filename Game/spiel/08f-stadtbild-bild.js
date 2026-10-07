@@ -10,10 +10,13 @@ function cityStand(c, id) {                                                  // 
     return { name: bid === 'keep' ? 'Burg' : cityDef(bid).name, lvl, bau, zeile, zu, pfeil };
 }
 const CITY_HAMMER = new Path2D('M-7-9h11l2 2v4h-15z M-2-3h3v13h-3z');           // Hammer (Kopf + Stiel) um den Mittelpunkt
-function citySchild(g, s, x, y, an, now) {                                   // → {x, y, w, h}; x/y = Mitte des Schilds
+function citySchildBreite(g, s) {                                            // → [Breite, Breite der unteren Zeile]
     g.font = '700 13px Cinzel, Georgia, serif'; const wn = g.measureText(s.name).width;
     g.font = '600 11px Inter, system-ui, sans-serif'; const wz = g.measureText(s.zeile).width + (s.zu || s.bau ? 15 : 0);
-    const h = 36, w = Math.ceil(Math.max(wn, wz) + 22 + (s.pfeil ? 18 : 0)), x0 = Math.round(x - w / 2), y0 = Math.round(y - h / 2);
+    return [Math.ceil(Math.max(wn, wz) + 22 + (s.pfeil ? 18 : 0)), wz];
+}
+function citySchild(g, s, x, y, an, now) {                                   // → {x, y, w, h}; x/y = Mitte des Schilds
+    const [w, wz] = citySchildBreite(g, s), h = 36, x0 = Math.round(x - w / 2), y0 = Math.round(y - h / 2);
     const rund = (a, b, ww, hh, r) => { g.beginPath(); g.roundRect ? g.roundRect(a, b, ww, hh, r) : g.rect(a, b, ww, hh); };
     g.save(); g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 6; g.shadowOffsetY = 2;
     const bg = g.createLinearGradient(0, y0, 0, y0 + h); bg.addColorStop(0, 'rgba(44,34,24,.94)'); bg.addColorStop(1, 'rgba(16,12,8,.94)');
@@ -70,7 +73,10 @@ function cityFrame(now) {
         schilder.push({ id, s, x: sx, y: oy + o.sy * Z });
     }
     const leiste = document.getElementById('cornerButtons'), lr = leiste && leiste.getBoundingClientRect();   // die untere Leiste: kein Schild darunter (Desktop: „Steinbruch Bauen“)
-    if (lr && lr.height) for (const p of schilder) if (p.y + 18 > lr.top - 6 && p.x + 70 > lr.left && p.x - 70 < lr.right) p.y = lr.top - 6 - 18;
+    if (lr && lr.height) { for (const p of schilder) p.w = citySchildBreite(cityCtx, p.s)[0];
+        const trifft = (p, q) => Math.abs(p.x - q.x) < (p.w + q.w) / 2 && Math.abs(p.y - q.y) < 40;
+        for (const p of schilder) if (p.y + 18 > lr.top - 6 && p.x + p.w / 2 > lr.left && p.x - p.w / 2 < lr.right) {
+            p.y = lr.top - 6 - 18; while (schilder.some(q => q !== p && trifft(p, q))) p.y -= 40; } }   // (nicht auf ein anderes Schild)
     if (im) for (const p of schilder) {                                      // die Schilder zuletzt, über allem
         const an = cityOpenId === p.id || cityRingId === p.id, q = citySchild(g, p.s, p.x, p.y, an, now);
         if (q.x + q.w > 0 && q.x < W && q.y + q.h > 0 && q.y < H) cityNamen.push({ id: p.id, ...q });
