@@ -105,15 +105,7 @@ function renderLevelUpModal() {
     document.getElementById('levelUpTitle').textContent = 'Stufe ' + s.to;
     const n = s.to - s.from;
     document.getElementById('levelUpSub').textContent = n > 1 ? 'Stufe ' + s.from + ' → ' + s.to + ' · ' + n + ' Aufstiege' : 'Du bist aufgestiegen!';
-    const row = (ic, label, val) => '<li>' + icon(ic, 'ico-' + ic) + '<span>' + label + '</span><b>+' + val + '</b></li>';
-    let html = '';
-    if (s.coins) html += row('coin', 'Münzen', fmtNum(s.coins));
-    if (s.troops) html += row('troops', 'Truppen (Heimat)', fmtNum(s.troops));
-    if (s.gems) html += row('gem', 'Edelsteine', fmtNum(s.gems));
-    html += row('points', s.points === 1 ? 'Fähigkeitspunkt' : 'Fähigkeitspunkte', fmtNum(s.points));
-    const list = document.getElementById('levelUpRewards');
-    list.innerHTML = html;
-    [...list.children].forEach((li, i) => { li.style.animationDelay = (180 + i * 110) + 'ms'; });
+    beuteLis([{ a: 'coins', n: s.coins }, { a: 'tr', n: s.troops }, { a: 'gems', n: s.gems }, { a: 'punkte', n: s.points }], document.getElementById('levelUpRewards'));   // Kacheln wie RoK (05e)
     document.getElementById('levelUpNext').innerHTML = 'Nächste Stufe ' + (s.to + 1) + ': ' + levelRewardText(s.to + 1);
     if (m.hidden) { m.hidden = false; dismissTutorialHint && dismissTutorialHint(); }
     updateHud();

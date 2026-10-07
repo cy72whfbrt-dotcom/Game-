@@ -18,7 +18,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const s = await ev(() => ({ welcome: !document.getElementById('welcomeModal').hidden, daily: !document.getElementById('dailyModal').hidden, anl: !document.getElementById('anleitung').hidden, schritt: anleitung.schritt, wf: !!welcomeFrom }));
   ok(!s.welcome && !s.wf && !s.daily && s.anl && s.schritt === 0, 'Erster Start: nur Anleitung Schritt 1 (kein „Willkommen zurück“, Tagesbelohnung erst später)', s);
   const d = await ev(() => { anleitung.schritt = ANLEITUNG.length; showDailyModal();
-    const o = { rows: [...document.querySelectorAll('#dailyModalRewards li')].map(li => li.innerText.replace(/\s+/g, ' ')), tage: document.querySelectorAll('#dailyModalDays .daily-day').length, heute: !!document.querySelector('#dailyModalDays .is-today') };
+    const o = { rows: [...document.querySelectorAll('#dailyModalRewards li')].map(li => li.title || li.innerText.replace(/\s+/g, ' ')), tage: document.querySelectorAll('#dailyModalDays .daily-day').length, heute: !!document.querySelector('#dailyModalDays .is-today') };
     return o; });
   await bild('daily');
   ok(d.rows.length >= 1 && /kiste/i.test(d.rows[0]) && d.tage === 7 && d.heute, 'Tagesbelohnung zeigt, was es heute gibt (Kiste ×1) und die Woche mit „heute“', d);

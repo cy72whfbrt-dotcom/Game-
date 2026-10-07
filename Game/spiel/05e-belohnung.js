@@ -1,7 +1,7 @@
 // Teil 05e-belohnung.js: Belohnungen überall gleich wie RoK (Kachel je Seltenheit, großes KI-Symbol, Menge unten rechts) und das Belohnungs-Fenster (Kiste wackelt, geht auf, Strahlen, Kacheln nacheinander)
 // ===== BELOHNUNGEN: eine Kachel je Sache – Kachel-Bild nach Seltenheit (ui_kachel_*), Symbol aus bilder/beute_*.webp, Menge unten rechts =====
 // Eine Belohnung b: { a: Art (BEUTE_ART), n: Menge, r: Seltenheit 0–5 (sonst nach Art/Menge), slot: Ausrüstungs-Platz (a 'item'), held: Helden-ID (a 'sh'),
-// k: Kisten-Art (a 'kiste': aus|held|gross|episch|royal) }. Nur Anzeige – wer etwas gibt, gibt es wie bisher und meldet hier nur, WAS es war.
+// k: Kisten-Art (a 'kiste': aus|held|gross|episch|royal), min: „mind.“ Seltenheit, ohneZahl: Menge steht schon daneben, minus: verloren (Kampfbericht) }. Nur Anzeige – wer etwas gibt, gibt es wie bisher und meldet hier nur, WAS es war.
 var BEUTE_ART = {
     gems: { b: 'beute_edelsteine', t: 'Edelsteine' }, coins: { b: 'beute_muenzen', t: 'Münzen', r: 1 }, holz: { b: 'beute_holz', t: 'Holz', r: 1 },
     stein: { b: 'beute_stein', t: 'Stein', r: 1 }, eisen: { b: 'beute_eisen', t: 'Eisen', r: 1 }, tr: { b: 'beute_truppen', t: 'Truppen', r: 2 },
@@ -30,7 +30,9 @@ function beuteBild(b) {
     if (b.a === 'kiste') return KISTE_BILD[b.k || 'aus'] + '_zu';
     return (BEUTE_ART[b.a] || BEUTE_ART.gems).b;
 }
-function beuteMenge(b) {                            // unten rechts: Anzahl (Schild: Stunden); ein einzelnes Teil/eine Kiste ohne Zahl
+function beuteMenge(b) {                            // unten rechts: Anzahl (Schild: Stunden); ein einzelnes Teil/eine Kiste ohne Zahl; ohneZahl: steht daneben
+    if (b.ohneZahl) return '';
+    if (b.minus) return '−' + (b.n >= 1e4 ? fmtCompact(b.n) : fmtNum(b.n));
     if (b.a === 'schild') return b.n + ' h';
     if ((b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen') && !(b.n > 1)) return '';
     return b.n >= 1e4 ? fmtCompact(b.n) : fmtNum(b.n || 1);
@@ -38,13 +40,13 @@ function beuteMenge(b) {                            // unten rechts: Anzahl (Sch
 function beuteKachel(b, tag) {                      // tag: 'li' in Listen (Tages-, Stufen-, Boss-Fenster), sonst span
     tag = tag || 'span'; const r = beuteR(b), m = beuteMenge(b), name = beuteName(b);
     const held = b.a === 'sh' && b.held && typeof heroImg === 'function' ? heroImg(b.held, 'bk-held') : '';
-    return '<' + tag + ' class="bk" data-r="' + (RARITY_DEFS[r] || RARITY_DEFS[0]).key + '" data-beute="' + b.a + '" title="' + escapeHtml(name + (m ? ' · ' + m : '')) + '">' +
+    return '<' + tag + ' class="bk" data-r="' + (RARITY_DEFS[r] || RARITY_DEFS[0]).key + '" data-beute="' + b.a + '"' + (b.minus ? ' data-minus' : '') + ' title="' + escapeHtml(name + (m ? ' · ' + m : '')) + '">' +
         '<img src="bilder/' + beuteBild(b) + '.webp" alt="' + escapeHtml(name) + '" draggable="false">' + held + (m ? '<b>' + m + '</b>' : '') + '</' + tag + '>';
 }
 function beuteZusammen(liste) {                     // gleiche Sachen in eine Kachel (10 Kisten: „3 × Episch Waffe“)
     const out = [], idx = {};
     for (const b of liste) { if (!b || !(b.n > 0 || b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen')) continue;
-        const k = [b.a, beuteR(b), b.slot || '', b.held || '', b.k || '', b.a === 'schild' ? b.n : ''].join('|');
+        const k = [b.a, beuteR(b), b.slot || '', b.held || '', b.k || '', b.a === 'schild' ? b.n : '', b.minus ? 1 : ''].join('|');
         if (idx[k] !== undefined && b.a !== 'schild') { out[idx[k]].n = (out[idx[k]].n || 1) + (b.n || 1); continue; }
         idx[k] = out.length; out.push(Object.assign({}, b, { n: b.n || 1 })); }
     return out;
@@ -52,6 +54,11 @@ function beuteZusammen(liste) {                     // gleiche Sachen in eine Ka
 function beuteRaster(liste, cls, mitNamen) {        // Reihe von Kacheln; mitNamen: Name klein darunter (Belohnungs-Fenster)
     const L = beuteZusammen(liste); if (!L.length) return '';
     return '<div class="bk-raster' + (cls ? ' ' + cls : '') + '">' + L.map((b, i) => mitNamen ? '<span class="bk-mit" style="--i:' + i + '">' + beuteKachel(b) + '<small>' + escapeHtml(beuteName(b)) + '</small></span>' : beuteKachel(b)).join('') + '</div>';
+}
+function itemBeute(it) { return { a: 'item', slot: it.slot, r: it.rarity }; }   // ein Ausrüstungs-Teil als Kachel
+function beuteLis(liste, el) {                      // Kacheln als <li> in die Listen der Fenster (Tag, Stufe, Kriegsherr) – kommen nacheinander
+    el.innerHTML = beuteZusammen(liste).map(b => beuteKachel(b, 'li')).join('');
+    [...el.children].forEach((li, i) => { li.style.animationDelay = (120 + i * 110) + 'ms'; });
 }
 
 // ---- Belohnungs-Fenster: über allem, mit Kiste (Animation) oder ohne; ein Tipp überspringt die Animation, „OK“ schließt ----
