@@ -24,8 +24,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.waitForTimeout(3000);
     await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
       document.querySelectorAll('body > div').forEach(d => { if (d.style.zIndex === '100000') d.remove(); }); closeAllPopups(); flashHint('', 1);
-      anleitung.schritt = ANLEITUNG.length; anleitungZeigen(); });
+      anleitung.schritt = 0; anleitungZeigen(); });
     const bild = async n => { if (bilder) await p.screenshot({ path: path.join(bilder, art.toLowerCase() + '_' + n + '.png') }); };
+    await bild('anleitung'); await p.evaluate(() => { anleitung.schritt = ANLEITUNG.length; anleitungZeigen(); });   // (Bild: Anleitung Schritt 1, ganz lesbar)
     const ev = (f, a) => p.evaluate(f, a);
     // „frei“: Abstand vom Ende des Elements bis zum unteren Rand des Fensterinhalts (≥ 30: nicht unter der Blende)
     const frei = sel => ev(sel => { const pb = document.querySelector('.panel.is-open > .pbody'), e = document.querySelector(sel); return pb && e ? Math.round(pb.getBoundingClientRect().bottom - e.getBoundingClientRect().bottom) : null; }, sel);
@@ -45,6 +46,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // E) Abholen: tägliche Belohnung mit Abstand zum linken Rand
     await ev(() => { showGoalsTab('reward'); }); await p.waitForTimeout(400);
     const tag = await ev(() => { const r = document.querySelector('#dailyCard .daily-row'), t = r && r.querySelector('.daily-txt'); return r && t ? Math.round(t.getBoundingClientRect().left - r.getBoundingClientRect().left) : null; });
+    await bild('abholen');
     ok(tag >= 8, art + ': Abholen – „Tag 1 …“ mit Abstand zum linken Rand (≥ 8 px)', tag);
     // C) Markt so hoch wie die anderen Fenster (Handy), Kisten bleibt höher
     await ev(() => { closeAllPopups(); openShop('markt'); }); await p.waitForTimeout(400);
