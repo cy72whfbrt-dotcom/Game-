@@ -10,7 +10,7 @@ let toreOffen = true;
 
 // ===== Bilder (wie 03a: halbierte Fassungen, damit verkleinert nichts flimmert) =====
 const DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
-  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'barbaren', 'feld_holz', 'feld_stein', 'feld_eisen', 'feld_gold', 'feld_edelstein', 'ruinen', 'tempel', 'waechtertempel', 'thron'];   // (thron: aus dem KI-Blatt ausgeschnitten, liegt hier im Ordner)
+  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'barbaren', 'feld_holz', 'feld_stein', 'feld_eisen', 'feld_gold', 'feld_edelstein', 'tempel', 'waechtertempel', 'thron'];   // (thron: aus dem KI-Blatt ausgeschnitten, liegt hier im Ordner)
 const KB = { img: {}, mip: {}, muster: {}, fertig: false };
 let offen = DATEIEN.length;
 for (const n of DATEIEN) { const im = new Image();
@@ -30,7 +30,7 @@ function kbBild(n, px) {
 // ===== Maße (Welt-Einheiten, Burg ≈ 1.000; wie 03a) =====
 const GROSS = 2.0;                                    // die Gebiete sind viel größer als im Spiel: Gebirge, Knoten und Tore entsprechend breiter
 const MASS = { boden: 7000, quer: 12500 * GROSS, hoch: 12500 * GROSS, knoten: 11000 * GROSS, tor: 12500 * GROSS, abstand: .42 };
-const DINGE = { feld: 9000, barbaren: 10500, ruinen: 12000, start: 7000 };   // Weltbreite der gestreuten Dinge (Kette 25.000, Tempel 38.000)
+const DINGE = { feld: 9000, barbaren: 10500, start: 7000 };   // Weltbreite der gestreuten Dinge (Kette 25.000, Tempel 38.000)
 const FELD_FARBE = { holz: '#c08a4c', stein: '#aab3bd', eisen: '#8fb6e0', gold: '#e8c547', edelstein: '#7fd0ff' };   // (wie FIELD_KINDS im Spiel)
 const STUFE_ZOOM = 0.003;                             // ab hier stehen die Stufen-Zahlen an Feldern und Lagern
 const TOR_SENK = { hoch: 18000 * GROSS, achse: .539, weg: .488 };
@@ -63,7 +63,7 @@ function laengen(pts) { const s = [0]; for (let i = 1; i < pts.length; i++) s.pu
 function punktBei(pts, s, d) { d = Math.max(0, Math.min(s[s.length - 1], d)); let i = 1; while (i < pts.length - 1 && s[i] < d) i++;
   const t = (d - s[i - 1]) / ((s[i] - s[i - 1]) || 1); return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t]; }
 
-// ===== Gelände-Objekte: Kettenstücke, Knoten, Tore, Felder, Lager, Ruinen – eine Liste nach Fuß-y, Raster zum Finden =====
+// ===== Gelände-Objekte: Kettenstücke, Knoten, Tore, Felder, Lager – eine Liste nach Fuß-y, Raster zum Finden =====
 let KO = null;
 const ZELLE = 25000;
 function objekteBauen() {
@@ -104,7 +104,6 @@ function objekteBauen() {
   // Gestreutes aus den Daten (gross = false: kein Gebirge, kommt nicht ins Übersichtsbild)
   for (const o of KD.felder) neu('feld_' + o.art, o.x, o.y, DINGE.feld, .5, .62, 0, 0, o.y, 1, false, { stufe: o.stufe });
   for (const o of KD.barbaren) neu('barbaren', o.x, o.y, DINGE.barbaren, .5, .62, 0, 0, o.y, 1, false, { stufe: o.stufe, barb: true });
-  for (const o of KD.ruinen) neu('ruinen', o.x, o.y, DINGE.ruinen, .5, .62, 0, 0, o.y, rnd() < .5 ? -1 : 1, false);
   liste.sort((a, b) => a.fuss - b.fuss);
   const zellen = new Map();
   liste.forEach((o, i) => { o.ord = i;

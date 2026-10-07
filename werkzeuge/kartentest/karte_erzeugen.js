@@ -182,9 +182,9 @@ for (const g of gebiete.filter(g => g.zone === 4)) {
   tempel.push({ gebiet: g.id, x: Math.round(best.x), y: Math.round(best.y), art: tempel.length % 2 ? 'waechtertempel' : 'tempel' });
 }
 
-// 7) Startplätze, Rohstoff-Felder, Barbaren-Lager, Ruinen: locker gestreut (Mindestabstände, keine Klumpen), nie auf Grenzen,
+// 7) Startplätze, Rohstoff-Felder, Barbaren-Lager: locker gestreut (Mindestabstände, keine Klumpen), nie auf Grenzen,
 //    Pässen, Tempeln. Startplätze gleich viele je Zone-1-Gebiet; Felder überall außer der Mitte (Stufe steigt nach innen);
-//    Barbaren Stufe 1–25 (Zone 1 schwach … Zone 4 stark, wie BARB_MAX_L im Spiel); Ruinen nur Zone 2–4.
+//    Barbaren Stufe 1–25 (Zone 1 schwach … Zone 4 stark, wie BARB_MAX_L im Spiel).
 const streu = (() => { let x = 20251007; return () => (x = (x * 48271) % 2147483647) / 2147483647; })();
 const grenzPunkte = new Map(), GZ = 20000;
 for (const g of grenzen) if (g.b !== -1) for (const q of g.punkte) { const k = Math.floor(q[0] / GZ) + ',' + Math.floor(q[1] / GZ); (grenzPunkte.get(k) || grenzPunkte.set(k, []).get(k)).push(q); }
@@ -208,16 +208,15 @@ const startplaetze = streuen(START_JE_GEBIET * ANZAHL[1], 60000, (g, l) => zoneV
 const FELD_ARTEN = ['holz', 'holz', 'holz', 'stein', 'stein', 'stein', 'eisen', 'eisen', 'gold', 'gold', 'edelstein'];   // (die Feld-Arten des Spiels, FIELD_KINDS)
 const felder = streuen(560, 52000, g => zoneVon(g) < MITTE, z => ({ art: FELD_ARTEN[Math.floor(streu() * FELD_ARTEN.length)], stufe: 2 * z - 1 + (streu() < .5 ? 0 : 1) }));
 const barbaren = streuen(110, 70000, g => zoneVon(g) < MITTE, z => ({ stufe: Math.min(25, 1 + (z - 1) * 6 + Math.floor(streu() * (z === 4 ? 7 : 6))) }));
-const ruinen = streuen(30, 120000, g => zoneVon(g) >= 2 && zoneVon(g) <= 4, () => ({}));
 
-const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, tempel, startplaetze, felder, barbaren, ruinen, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
+const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, tempel, startplaetze, felder, barbaren, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
 const kopf = '// Datenmodell der Zonen-Karte (erzeugt von karte_erzeugen.js – nicht von Hand ändern)\n' +
   '// gebiete: { id, zone 1–4 (5 = Mitte), name, boden, mitte, rand: Grenzen-Ids (−id−1 = rückwärts), umriss: Punkte }\n' +
   '// grenzen: { id, a, b (−1 = Kartenrand), punkte } · paesse: { id, a, b, grenze, x, y, senk (Grenze läuft senkrecht), stufe 1–5 }\n' +
   '// tempel: { gebiet, x, y, art tempel|waechtertempel } – je Zone-4-Gebiet einer\n' +
-  '// startplaetze / felder { art, stufe } / barbaren { stufe } / ruinen: { x, y, gebiet } – locker gestreut, nie auf Grenzen, Pässen, Tempeln\n' +
+  '// startplaetze / felder { art, stufe } / barbaren { stufe }: { x, y, gebiet } – locker gestreut, nie auf Grenzen, Pässen, Tempeln\n' +
   '// oeffnen: Stufe → Tag, an dem die Pässe aufgehen (von außen nach innen); thron.tag: ab dann zählt der Thron\n';
 fs.writeFileSync(path.join(__dirname, 'karte_daten.js'), kopf + 'const KARTE_ZONEN = ' + JSON.stringify(daten) + ';\n');
 console.log('Gebiete', gebiete.length, '· Grenzen', grenzen.length, '(Rand', grenzen.filter(g => g.b === -1).length + ') · Pässe', paesse.length,
   [1, 2, 3, 4, 5].map(st => 'Stufe ' + st + ': ' + paesse.filter(p => p.stufe === st).length).join(', '),
-  '· Start', startplaetze.length, 'Felder', felder.length, 'Barbaren', barbaren.length, 'Ruinen', ruinen.length, '· ohne Pass:', gebiete.filter(g => !paesse.some(p => p.a === g.id || p.b === g.id)).map(g => g.id).join(' ') || '-');
+  '· Start', startplaetze.length, 'Felder', felder.length, 'Barbaren', barbaren.length, '· ohne Pass:', gebiete.filter(g => !paesse.some(p => p.a === g.id || p.b === g.id)).map(g => g.id).join(' ') || '-');
