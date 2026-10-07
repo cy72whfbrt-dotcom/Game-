@@ -1691,6 +1691,10 @@ Nacht – vorher bauen und testen.
 31. **Namensschild-Skins (Alexander 7.10.: „später Skins machen, sieht geil aus“):** Das Schild unter jeder Basis
     (Wappen, Turm-Stufe, Truppen; fremde „?“ bis gespäht) später in mehreren Skins als KI-Bilder anbieten
     (Ersatz für die entfernten Basis-/Marsch-Skins).
+32. **Zahlen aus Spieler-Sicht (Designer 7.10., beim Fotografieren aller Fenster):** Shop → Thron „10 Truppen“ für 200
+    Thron-Punkte (man hat 5.000); Barbaren-Lager Stufe 4 nur „9 Krieger“; Schild Stufe 1 „+0,2 %“, Verkauf 1 Punkt;
+    Späh-Bericht über fremden Spieler zeigt MEINE Helden; Späh-Bericht sagt „Gold“ statt „Münzen“; Späh-Bericht
+    „Burg schützt 5.556“, Burg-Fenster Stufe 1 sagt 10.000.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
