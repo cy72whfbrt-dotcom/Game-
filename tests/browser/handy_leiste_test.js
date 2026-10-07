@@ -24,15 +24,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       closeAllPopups(); anleitung.schritt = 0; anleitungFrage = false; anleitungZeigen(); await warte(300);
       const a = document.getElementById('anleitung'), n = document.getElementById('anleitungSchritt').getBoundingClientRect(), t = document.getElementById('anleitungText');
       const zeilen = Math.round(t.getBoundingClientRect().height / parseFloat(getComputedStyle(t).lineHeight));
-      const roh = document.getElementById('hudRoh'), mini = roh.querySelector('.roh-mini'), nach = getComputedStyle(roh, '::after');
-      const zahlen = [...roh.querySelectorAll('.roh-mini b')].map(x => x.getBoundingClientRect()).filter(r => r.width > 0 && r.right <= innerWidth);
+      const roh = document.getElementById('hudRoh');   // (Alexander 7.10.: Holz/Stein/Eisen als Kapseln in der EINEN Werte-Reihe, kein Rohstoff-Knopf mehr)
+      const zahlen = [...roh.querySelectorAll('[data-roh] b')].map(x => x.getBoundingClientRect()).filter(r => r.width > 0 && r.right <= innerWidth);
       return { sicht: !a.hidden, nebenText: (n.top + n.bottom) / 2 > t.getBoundingClientRect().top && (n.top + n.bottom) / 2 < t.getBoundingClientRect().bottom && n.right <= t.getBoundingClientRect().left, zeilen, hoehe: Math.round(a.getBoundingClientRect().height),
-        mini: getComputedStyle(mini).display !== 'none' && zahlen.length === 3, schrift: nach.content, schriftRechts: (() => { const r = roh.getBoundingClientRect(), w = parseFloat(nach.width) || 0;   // ragt die Beschriftung rechts aus dem Bild?
-          return w > 0 && (nach.right === 'auto' ? r.left + r.width / 2 + w / 2 : r.right - parseFloat(nach.right)) <= innerWidth + 0.5; })() };
+        mini: zahlen.length === 3 };
     });
     ok(anl.sicht && anl.nebenText && anl.zeilen <= 2 && anl.hoehe <= 56, art + ': Anleitung – „Schritt“ links neben dem Text, Text höchstens 2 Zeilen, ≤ 56 px hoch', anl);   // (Entscheidung Projektleiter 6.10.: eine Zeile statt Überzeile)
-    if (handy) ok(/Rohstoffe/.test(anl.schrift) && anl.schriftRechts, art + ': Rohstoff-Knopf beschriftet („Rohstoffe“)', anl);
-    else ok(anl.mini, art + ': Holz/Stein/Eisen im HUD zu sehen', anl);
+    ok(anl.mini, art + ': Holz/Stein/Eisen im HUD zu sehen', anl);
     await bild('hud');
     // 2) Nebel ganz draußen: ruhige Fläche (kaum Helligkeits-Unterschiede), nah: Wolken
     const nebel = await ev(async () => {

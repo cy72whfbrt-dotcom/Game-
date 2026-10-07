@@ -433,7 +433,8 @@ function botScouting(bot, targetId) { const it = botIntelMem[bot.id] && botIntel
 
 function botLearn(botId, targetId, ready, vonLm) {            // (ready = when the report comes in; vonLm = Landmasse, von der der Späher losläuft)
     if (!botById[botId]) return false; const t = islandById[targetId]; if (!t) return false;
-    if (ready) {                                              // geschlossenes fremdes Tor auf dem Weg: der Späher kommt nicht durch – dann geht er gar nicht erst los
+    if (ready) {                                              // geschlossenes fremdes Tor auf dem Weg oder Anfängerschutz: der Späher geht gar nicht erst los
+        const ow = islandOwnerOf(targetId); if (ow && ow !== botId && neulingAktiv(ow)) return false;
         if (vonLm === undefined) { const cap = islandById[botCapitalOf(botId)]; vonLm = cap ? cap.landmassId : undefined; }
         if (vonLm !== undefined && !spaeherWeg(vonLm, t.landmassId, botId)) return false;
     }

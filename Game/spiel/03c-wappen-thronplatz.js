@@ -31,7 +31,7 @@ function drawCrest(g, x, y, s, c) {
     g.restore();
     const sym = CREST_SYMBOLS[c.sym], ink = CREST_INK[c.ink];
     if (sym === 'crown') { const cw = s * .42; g.save(); g.translate(x, y + cw * .3); g.fillStyle = ink; g.beginPath(); g.moveTo(-cw / 2, 0); g.lineTo(-cw / 2, -cw * .34); g.lineTo(-cw / 4, -cw * .16); g.lineTo(0, -cw * .62); g.lineTo(cw / 4, -cw * .16); g.lineTo(cw / 2, -cw * .34); g.lineTo(cw / 2, 0); g.closePath(); g.fill(); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.55)'; g.stroke(); g.restore(); }
-    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink);
+    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink, true);   // (Wappen-Zeichen: Linien)
     crestPath(g, x, y, s, shape); g.lineWidth = Math.max(1, s * .05); g.strokeStyle = '#d8b56c'; g.stroke();
     crestPath(g, x, y, s * 1.04, shape); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.7)'; g.stroke();
 }
@@ -150,9 +150,13 @@ function senkSchildX(tm, w, z) { const k = TOR_SENK.hoch * .13 * z, x = toSX(tm.
 function layoutBanners(visible, z, selectedId) {  // places every nameplate (sets bannerHitRects) → items for paintBanners()
   bannerHitRects = [];
   const towers = towerRects = visible.map(isl => { const s = 2 * isl.radius * z; return { id: isl.id, x: toSX(isl.x) - s / 2, y: toSY(isl.y) - s * 0.65, w: s, h: s }; });
+  const schild = isl => isl.type === 'tower' && z >= SCHILD_ZOOM && !!KB.img.schild;   // Basen tragen ihr Namensschild – Fahne nur noch beim Antippen
+  const schilde = visible.filter(schild).map(isl => Object.assign({ id: isl.id }, schildRect(isl, z)));
+  bannerHitRects.push(...schilde);                                                // (Schild antippen öffnet die Basis, Funde und Märsche weichen aus)
   if (z < TERRITORY_VIEW_ZOOM) return [];
+  for (const q of schilde) towers.push({ id: -1, x: q.x, y: q.y, w: q.w, h: q.h });
   const base = tierFor(z);
-  let items = visible.map(isl => {
+  let items = visible.filter(isl => !schild(isl) || isl.id === selectedId).map(isl => {
     const m = bannerModel(isl);
     let p = m.p; if (isl.id === selectedId) p = 5;
     let tier = base;
@@ -165,7 +169,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const placed = [];
   for (const it of items) {
     const tm = torMitte(it.isl);                                                   // Pass-Tor (Karten-Bild): das Schild direkt unter das Tor
-    const r = tm ? tm.r * z * karteSkala(z) : it.isl.radius * z * (it.isl.type === 'megaTemple' ? 1.8 : it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
+    const r = tm ? tm.r * z : it.isl.bildR ? Math.max(it.isl.bildR * z, 14) : it.isl.radius * z * (it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
     let best = null;
     for (let t = it.tier; ; t = DOWN[t]) {
       const sp = bannerSprite(t, it.m), w = sp.w, h = sp.h;
@@ -436,18 +440,24 @@ function drawRings(visible, z, now) {
 const MARCH_STYLE = { attack: ['#ff8d82', [7, 6], 'attack'], incoming: ['#ff8d82', [7, 6], 'bot'], send: ['#8cc0ff', [7, 6], 'send'],
                       scout: ['#e4c886', [3, 6], 'scout'], retreat: ['#f2a066', [5, 5], 'recall'], enemyScout: ['#ff9f7a', [3, 6], 'scout'] };
 let marchTokens = [], liveAnimation = false;
-function marchPath(source, target) {             // source → over every bridge on the route → target
-  const path = [{ x: source.x, y: source.y }];
-  if (source.landmassId !== target.landmassId) {
-    const route = routeFor(source.landmassId, target.landmassId, islandOwnerOf(source.id) || 'player') || [source.landmassId, target.landmassId];
-    for (let i = 0; i < route.length - 1; i++) {
-      const br = bridgeBetween(route[i], route[i + 1]); if (!br) continue;
-      const sA = br.a === route[i];
-      path.push(sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 });
-    }
+const MARSCH_WEG_MERK = new Map();
+function marchPath(source, target) {             // source → over every pass on the route → target: nie durchs Gebirge (in jedem Gebiet gebietWeg, 01b)
+  const payer = islandOwnerOf(source.id) || 'player', key = source.id + '>' + target.id + '|' + payer + '|' + ownVer + '|' + offenePaesse() + '|' + source.x + ',' + source.y + '|' + target.x + ',' + target.y;
+  const m = MARSCH_WEG_MERK.get(key); if (m && Date.now() - m.t < 2000) return m.p;
+  const sL = source.landmassId ?? gebietAn(source.x, source.y), tL = target.landmassId ?? gebietAn(target.x, target.y);
+  const route = sL === undefined || tL === undefined || sL === tL ? [sL] : routeFor(sL, tL, payer) || routeFor(sL, tL, payer, true) || [sL];
+  const path = [{ x: source.x, y: source.y }]; let lm = sL;
+  const bis = (p, l) => { const w = l === undefined ? [path[path.length - 1], p] : gebietWeg(path[path.length - 1], p, l); for (let k = 1; k < w.length; k++) path.push(w[k]); };
+  for (let i = 0; i < route.length - 1; i++) {
+    const br = bridgeBetween(route[i], route[i + 1]); if (!br) continue;
+    const sA = br.a === route[i];
+    bis(sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, lm);
+    path.push({ x: br.pass.x, y: br.pass.y }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 }); lm = route[i + 1];   // (durch den Pass)
   }
-  path.push({ x: target.x, y: target.y });
-  return felsenPfad(path);                       // um die Berge herum (01f; Schalter aus: unverändert)
+  bis({ x: target.x, y: target.y }, lm);
+  if (MARSCH_WEG_MERK.size > 3000) MARSCH_WEG_MERK.clear();
+  MARSCH_WEG_MERK.set(key, { t: Date.now(), p: path });
+  return path;
 }
 function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (their Marsch-Skin); yours by default
   if (!source || !target) return;
@@ -466,7 +476,7 @@ function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOver
   // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
   const own = type !== 'incoming' && type !== 'enemyScout'; if (who === undefined) who = own ? 'player' : null;
   marchTokens.push({ pts, seg, tot, progress, r: (source.radius || 0) * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
-                    who, sk: who && glyphName !== 'scout' ? marchSkinOf(who) : null });
+                    who, fahne: !!who && glyphName !== 'scout' });
 }
 function marchPointAt(m, d) {                   // screen point at path distance d
   for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;

@@ -20,7 +20,8 @@ const barbLeft = who => Math.max(0, barbTagMax() - barbRec(who).n - barbOut(who)
 const barbOpenFor = (who, L) => L <= barbRec(who).b + 1;
 const barbPt = o => ({ id: 'barb' + (o.id || o.tid || 'b'), x: o.x, y: o.y, landmassId: o.lm, radius: ISLAND_RADIUS * .6 });
 const barbFa = who => (1 + fieldAtkPct(who) / 100) * titleMult(who, 'attack') * (AUF ? AUF.kampf(who, 'a') : 1);
-const BARB_LMS = landmasses.filter(l => l.tier === 'outer');
+const BARB_LMS = landmasses.filter(l => l.zone <= 4);   // Zone 1–4 (die Mitte nicht)
+const barbStufeZone = (z, r) => Math.min(BARB_MAX_L, 1 + (z - 1) * 6 + Math.floor(r() * (z === 4 ? 7 : 6)));   // Stufe nach der Zone (wie die Karten-Testdatei): 1–6 außen … 19–25 in Zone 4
 function barbSpot(lm, r, edge) {                    // a free place on the land: clear of bases, fields, other camps and the boss (edge: room to the shore)
     const e = ISLAND_RADIUS * (edge || 1);
     for (let t = 0; t < 30; t++) {
@@ -28,20 +29,19 @@ function barbSpot(lm, r, edge) {                    // a free place on the land:
         if (!aufLand(lm, x, y) || [[e, 0], [-e, 0], [0, e], [0, -e]].some(([dx, dy]) => !aufLand(lm, x + dx, y + dy)) || (islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 3)) continue;
         if (resFields.some(f => f.landmassId === lm.id && Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 2.2) || barbState.camps.some(c => Math.hypot(c.x - x, c.y - y) < ISLAND_RADIUS * 3)) continue;
         if (dayBoss && Math.hypot(dayBoss.x - x, dayBoss.y - y) < ISLAND_RADIUS * 5) continue;
-        if (felsAuf(x, y, 1200) || grenzAbstand(x, y) < 4000) continue;          // nicht auf einen Berg (01f) und nicht ins Grenzgebirge
+        if (felsAuf(x, y, 1200) || grenzAbstand(x, y) < KETTE_FREI) continue;          // nicht auf einen Berg (01f) und nicht ins Grenzgebirge
         return { x, y };
     }
     return null;
 }
-function barbSpawn() {                              // a third near you, 40 % near someone else (at a level that fits them), the rest anywhere
+function barbSpawn() {                              // a third near you, 40 % near someone else, the rest anywhere – die Stufe kommt aus der Zone des Lagers
     const r = Math.random(), who = r < .3 ? 'player' : r < .7 ? BOT_DEFS[Math.floor(Math.random() * BOT_DEFS.length)].id : null, own = who && (who === 'player' ? ownedIslands : botOwnedIslands[who]);
-    let lm = null, L = Math.min(BARB_MAX_L, 1 + Math.floor(BARB_MAX_L * Math.pow(Math.random(), 1.7)));   // anywhere: many small camps, few big ones
+    let lm = null;
     if (own && own.size) { const ids = [...own], b = islandById[ids[Math.floor(Math.random() * ids.length)]];
-        if (b) { const rs = (reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => l === b.landmassId || landmassesConnected(b.landmassId, l)); lm = landmasses[rs[Math.floor(Math.random() * rs.length)]]; }
-        L = Math.max(1, Math.min(BARB_MAX_L, barbRec(who).b + 1 - Math.floor(Math.pow(Math.random(), 2) * 5))); }
-    if (!lm || lm.tier !== 'outer') lm = BARB_LMS[Math.floor(Math.random() * BARB_LMS.length)];
+        if (b) { const rs = (reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => l === b.landmassId || landmassesConnected(b.landmassId, l)); lm = landmasses[rs[Math.floor(Math.random() * rs.length)]]; } }
+    if (!lm || lm.zone > 4) lm = BARB_LMS[Math.floor(Math.random() * BARB_LMS.length)];
     const p = barbSpot(lm, Math.random); if (!p) return false;
-    const t = barbTroopsOf(L); barbState.camps.push({ id: 'c' + (barbState.n++), x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, L, t, max: t, until: Date.now() + (3 + Math.random() * 3) * 36e5 }); return true;   // moves on after 3-6 h
+    const L = barbStufeZone(lm.zone, Math.random), t = barbTroopsOf(L); barbState.camps.push({ id: 'c' + (barbState.n++), x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, L, t, max: t, until: Date.now() + (3 + Math.random() * 3) * 36e5 }); return true;   // moves on after 3-6 h
 }
 function dbossEnsure() {                            // today's boss: the kind turns every day, the place is the same for everyone today
     const d = todayKey(); if (dayBoss && dayBoss.d === d) return dayBoss;
@@ -275,6 +275,10 @@ function drawBarb(now, wallNow) {
     if (z >= .004) for (const c of barbState.camps) {
         const x = c.x * z + mapState.offsetX, y = c.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(c.x, c.y)) continue;
         const open = c.L <= best + 1, rd = RARITY_DEFS[barbTier(c.L)];
+        if (KB.fertig && KB.img.barbaren) {                                 // Karte wie RoK: das KI-Bild (fest in der Welt, nie winzig), die Stufe daneben
+            const im = KB.img.barbaren, w = Math.max(BARB_BREITE * z, 22), h = w * im.height / im.width;
+            ctx.globalAlpha = open ? 1 : .6; ctx.drawImage(kbBild('barbaren', w * dpr), x - w / 2, y - h * .62, w, h); ctx.globalAlpha = 1;
+            stufenZahl(x + w * .32, y - h * .5, c.L, true, open ? rd.color : '#6b6660'); continue; }
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k); if (!open) ctx.globalAlpha = .6;
         ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 5, 15, 5, 0, 0, 7); ctx.fill();
         for (const [dx, s, col] of [[-6, 1, '#8a5a33'], [6, .8, '#a0412e']]) {        // two hide tents
@@ -360,7 +364,7 @@ function barbNearest() {                            // the closest camp you may 
     let pick = null, ps = -Infinity; for (const c of barbState.camps) { if (c.L > best + 1 || !isCellOpen(c.x, c.y)) continue; const s = c.L * 3 - Math.hypot(c.x - home.x, c.y - home.y) / 4000; if (s > ps) { ps = s; pick = c; } }
     return pick;
 }
-function openBarbSheet(v) { barbView = v; liveHtml(barbSheetEl, barbSheetHtml()); barbSheetEl.hidden = false; }
+function openBarbSheet(v) { if (barbSheetEl.hidden) [barbHero, barbHero2] = heroLetzte(); barbView = v; liveHtml(barbSheetEl, barbSheetHtml()); barbSheetEl.hidden = false; }
 function closeBarbSheet() { barbSheetEl.hidden = true; barbView = null; }
 function barbSheetRefresh() { if (barbView && !barbSheetEl.hidden) liveHtml(barbSheetEl, barbSheetHtml()); }   // (auch jede Sekunde aus liveTick)
 barbSheetEl.addEventListener('click', e => {
@@ -387,5 +391,5 @@ barbSheetEl.addEventListener('click', e => {
         if (alsBefehl('lager', { home: src, k: 'c', tid: c.id, n, held: barbHero, held2: barbHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'c', c.id, n, barbHero, barbHero2); flashHint('Truppen unterwegs zum Barbaren-Lager (Stufe ' + c.L + ').', 2500); }
     else { const b = dbossEnsure(); if (b.hp <= 0 || barbRec('player').h >= dbossHitsMax()) return barbSheetRefresh(); const src = barbSource(b, 1, true); if (src === null) return;
         const n = barbShareOf(islandTroops[src] || 0, (islandTroops[src] || 0) * .5); if (n < 1) return; if (alsBefehl('lager', { home: src, k: 'b', tid: null, n, held: barbHero, held2: barbHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'b', null, n, barbHero, barbHero2); flashHint('Truppen unterwegs zu ' + b.name + '.', 2500); }
-    barbHero = null; barbHero2 = null; closeBarbSheet();
+    heroLetzteMerken(barbHero, barbHero2); barbHero = null; barbHero2 = null; closeBarbSheet();
 });

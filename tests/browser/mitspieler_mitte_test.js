@@ -14,10 +14,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const lange = Date.now() + 1e9; for (const d of BOT_DEFS) botNextAt[d.id] = lange;   // (keiner zieht nebenher)
     const R = ISLAND_RADIUS * 25, gut = i => i.type === 'tower' && i.id !== megaTempleId && !bossAt(i.id) && !ownedIslands.has(i.id);
     const nah = t => islands.filter(i => gut(i) && i.id !== t.id && Math.hypot(i.x - t.x, i.y - t.y) <= R && (reachableLandmassIds[t.landmassId] || [t.landmassId]).includes(i.landmassId));
-    // vorne T (Ring r, mit ≥ 7 Türmen drumherum) und hinten C (Ring r+1, ≥ 4 Türme, weit weg von T)
+    // vorne T (Zone 2 oder 3, mit ≥ 7 Türmen drumherum) und hinten C (die Zone davor, ≥ 4 Türme, weit weg von T) – Zonen wie RoK: Ringe 7 / 5 / 2
     let T = null, C = null;
-    for (const t of islands) { const rg = landmasses[t.landmassId].ring; if (!gut(t) || rg < 2 || rg > 4 || nah(t).length < 7) continue;
-      const c = islands.find(i => gut(i) && landmasses[i.landmassId].ring === rg + 1 && Math.hypot(i.x - t.x, i.y - t.y) > ISLAND_RADIUS * 70 && nah(i).length >= 4);
+    for (const t of islands) { const zn = landmasses[t.landmassId].zone; if (!gut(t) || zn < 2 || zn > 3 || nah(t).length < 7) continue;
+      const c = islands.find(i => gut(i) && landmasses[i.landmassId].zone === zn - 1 && Math.hypot(i.x - t.x, i.y - t.y) > ISLAND_RADIUS * 70 && nah(i).length >= 4);
       if (c) { T = t; C = c; break; } }
     if (!T) return { fehlt: 'keine passenden Türme auf der Karte' };
     const Y = BOT_DEFS.find(d => !d.mensch); if (bundVon(Y.id)) bundOp(Y.id, { op: 'verlassen' });
@@ -31,7 +31,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const out = { ringT: landmasses[T.landmassId].ring, ringC: landmasses[C.landmassId].ring };
     const sends = []; let a = null;
     try {
-      // (a) ruhig: 1 Ring nach vorne (früher erst ab 2 Ringen und 10 Türmen)
+      // (a) ruhig: 1 Zone nach vorne (früher erst ab 2 Ringen und 10 Türmen)
       const pa = botCapitalPlan(Y, Date.now());
       out.a = pa && { why: pa.why, ring: landmasses[islandById[pa.to].landmassId].ring, vorne: vorne.includes(pa.to) };
       // (b) Hauptstadt vorne bei T, hinten drei Angriffe in kurzer Zeit → zurück in die Nähe, helfen
@@ -76,7 +76,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   console.log(JSON.stringify(r));
   ok(!r.fehlt, 'passende Türme gefunden', r.fehlt);
-  ok(r.a && r.a.why === 'forward' && r.a.ring === r.ringC - 1 && r.a.vorne, '(a) ruhig: Hauptstadt 1 Ring nach vorne (ab 6 Türmen in der Nähe)', r.a);
+  ok(r.a && r.a.why === 'forward' && r.a.ring === r.ringT && r.a.vorne, '(a) ruhig: Hauptstadt 1 Zone nach vorne (ab 6 Türmen in der Nähe)', r.a);
   ok(r.b && r.b.why === 'hilfe' && r.b.hinten, '(b) Ärger hinten: Plan „zurück, helfen“', r.b);
   ok(r.bZug && r.bZug.hinten && r.bZug.gems === r.bZug.teleGems && r.bZug.truppen >= 1e6 && r.bZug.alt === 0, '(b) Hauptstadt verlegt: kostet Edelsteine wie bei dir, Truppen ziehen mit', r.bZug);
   ok(r.bNichtVor, '(b) nicht gleich wieder nach vorne (Ärger noch frisch)');

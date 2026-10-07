@@ -401,7 +401,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `pts`, `salvage`, `shields`, `goals`, `ps` (Pass), `tp`, ganze Stadt/Forschung u. a. Der eigene Eintrag (`u<id>`) und der
   Weltrechner bekommen alles. Auch die Profile anderer in `spieler_liste` nur noch öffentlich (`profil_oeffentlich`).
   **Macht:** der Weltrechner rechnet sie jede Minute für alle (`powerOf`, in `hbRunde` neben `tt`, nur bei > 1 % Änderung) –
-  Handys nehmen `b.macht` (Rangliste, Profil, Bündnis, Anfängerschutz-Grenze). **Spähen:** Späher zu einer fremden Basis schickt
+  Handys nehmen `b.macht` (Rangliste, Profil, Bündnis), `tt` auch für die Anfängerschutz-Grenze (100.000 Truppen). **Spähen:** Späher zu einer fremden Basis schickt
   zusätzlich den Befehl `spaehen` mit `blick`; der Weltrechner merkt ihn (`hb.sb`) und schickt bei Ankunft die Nachricht `spaeh`
   (Truppen, Verteidigung, Spähblick wie bisher + Abwehr-Werte `k`) – sie füllt den Kampflog-Eintrag (`spaehBericht`, auch wenn
   sie vor dem eigenen Späher ankommt). Gespähte Abwehr (Insel-Fenster, Angriffs-Vorschau) rechnet mit den Werten aus dem
@@ -999,9 +999,13 @@ Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 23. ✅ **Sammeln ohne Bericht:** Kehren Sammler zurück, gibt es einen Bericht „Sammler zurück · Goldmine · +… Münzen ·
     … Truppen zurück“ (auch für Zuschauer, über den Weltrechner).
 24. ✅ **Neue Spieler sofort plattgemacht:** **Anfängerschutz** – 48 Std. unangreifbar (für Mitspieler und echte
-    Spieler), auch wenn man selbst Mitspieler/Lager/Felder angreift. Endet früher, sobald die **Macht 50 Mio.** erreicht
-    (wie in der Rangliste) oder man einen echten Spieler angreift. Gilt auch für alle, die schon spielen und ihn noch nie
-    hatten (einmalig ab dem nächsten Start).
+    Spieler), auch wenn man selbst Mitspieler/Lager/Felder angreift. **Neu (Alexander 7.10., Variante B):** Der Schutz endet,
+    sobald EINES eintritt: 48 Std. vorbei, **100.000 Truppen** (Gesamttruppen wie im HUD, `whoTroops`; ersetzt die alte
+    50-Mio.-Macht-Grenze) oder man greift selbst einen echten Spieler an. Solange er steht, kann einen auch **niemand
+    ausspähen** (Spieler, Mitspieler, Weltrechner: `neulingAktiv` in `launchScout`, `botLearn`, Befehl `spaehen`, `spaehRunde`);
+    Mitspieler wählen Neulinge gar nicht erst als Späher-Ziel. Hinweis „Anfängerschutz – noch … (oder bis 100.000 Truppen)“
+    (`neulingBlockText`) bei Spähen/Angreifen, im Schild-Fenster, in der Burg und im Profil. Gilt auch nach dem Saison-Reset.
+    Getestet: `neuling_test`. Gilt auch für alle, die schon spielen und ihn noch nie hatten (einmalig ab dem nächsten Start).
 25. ✅ **Späher durch geschlossene Tore:** Ein geschlossenes fremdes Tor lässt keinen Späher durch (`spaeherWeg`) – gilt
     für dich und die Mitspieler. Gibt es einen anderen Weg ohne geschlossenes Tor, darf er den nehmen.
 27. ✅ **Kopieren/Nachschlagen beim langen Drücken:** Im Spiel lässt sich nichts mehr markieren, kein Kopieren-Menü
@@ -1011,8 +1015,8 @@ Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 29. ✅ **„Hier weiterspielen“ reagierte nicht:** Der Knopf zeigt sofort „Lädt …“, reagiert direkt aufs Tippen, und
     `spiel.php?weiter=1` übernimmt sofort (ohne bis zu 8 s auf das alte Gerät zu warten). Getestet: 1,7 s, altes Gerät fliegt raus.
 26. ✅ **Anfängerschutz auch für Mitspieler:** gleiche Regeln (48 Std. ab Weltstart bzw. ab ihrem Neustart, endet mit
-    50 Mio. Macht oder wenn sie einen echten Spieler angreifen; `botNeulingBis`). Text: „Anfängerschutz: … ist neu und
-    noch … unangreifbar.“
+    100.000 Truppen oder wenn sie einen echten Spieler angreifen; `botNeulingBis`). Text: „Anfängerschutz – noch … (oder bis
+    100.000 Truppen): … ist neu und kann nicht angegriffen und nicht ausgespäht werden.“
 - Hochladen: `hochladen.sh` wartet nach dem Einschalten der Wartung jetzt 10 s, damit jedes laufende Spiel noch
   speichert (beim Wartungs-Fenster wird automatisch gesichert), am Ende geht die Wartung wieder aus.
 
@@ -1653,6 +1657,13 @@ Nacht – vorher bauen und testen.
     („1.000“, „60m“, „4h“), unten rechts Anzahl („25“). In Tabellen: Zeile je Stufe/Platz (z. B. „10001+“), Kacheln
     nebeneinander. Überall gleich nutzen: Events, Pass, Kisten-Ergebnis, Shop, Postfach, Ranglisten-Belohnung.
     Vorbild-Datei: scratchpad/vorbilder/11_belohnung_rok_alexander.jpg.
+    ✅ **Umgesetzt (7.10., mit 23 „Kisten“):** Teil `05e-belohnung.js` (`beuteKachel`, `beuteRaster`, `beuteFenster`) + Stil `05y-stil-kisten.php`:
+    Kachel `ui_kachel_*` je Seltenheit, KI-Symbol `bilder/beute_*.webp`, Menge unten rechts – in Shop, Aufgaben, Erfolgen, Tagesbelohnung,
+    Abholfach, Pass, Stufe, Kriegsherr, Event-Preisen, Thron-Shop, Kampfbericht (Rohstoffe). Belohnungs-Fenster: Kiste (`kiste_*_zu/offen.webp`)
+    wackelt, geht auf, Strahlen, Kacheln nacheinander; Tipp = gleich Endbild, „OK“ schließt. Shop: Kisten als KI-Bild, unter 500 Edelsteinen
+    „1ד und „10ד (weniger Edelsteine: „N×“ mit dem Rest, ab 500 „Wirklich?“) – ruft nur `openCrate`/`heroChestOpen` N-mal (Inhalt,
+    Chancen, Hauptbuch unverändert; Große/Epische Kiste bleiben einzeln wegen Bündnis-Geschenk). Bilder geschnitten mit
+    `werkzeuge/beute_bilder_schneiden.py` (Blätter ohne Transparenz: Hintergrund geschätzt). Test `belohnung_test`.
 25. **Weltkarte neu wie RoK – Entscheidungen Alexander (6.10. abends):** KEIN Wasser mehr (kein Meer, keine Flüsse, keine
     Seen), eine große Land-Karte. Statt Flüssen hohe Felsketten zwischen den Gebieten, durch die man nicht laufen kann –
     nur durch Pass-Tore (heutige Brücken-Tore; Logik Gebiete/Tore/Maut/Öffnungszeiten bleibt). Boden nur nach Ringen
