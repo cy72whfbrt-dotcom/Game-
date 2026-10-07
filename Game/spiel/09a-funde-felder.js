@@ -120,7 +120,7 @@ function dismissTutorialHint() {
 // confirmed completely clear of every other base (owned by anyone
 // or neutral) - never assumed just because the bases are close.
 const TERRITORY_PADDING = 250;
-const TERRITORY_CONNECT_MAX_DIST = 6000;
+const TERRITORY_CONNECT_MAX_DIST = 6000 * KARTE_MASSSTAB;
 
 function pointToSegmentDistance(px, py, ax, ay, bx, by) {
     const abx = bx - ax, aby = by - ay;
@@ -171,7 +171,7 @@ const resFields = (() => {
         const want = lm.ring >= 5 ? 3 : 2, near = islandsByLandmass[lm.id] || [];
         for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
             const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!aufLand(lm, x, y)) continue;
+            if (!aufLand(lm, x, y) || grenzAbstand(x, y) < KETTE_FREI) continue;                // (nicht ins Gebirge an der Grenze)
             if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
             const kind = r() < .78 ? 'gold' : 'gem';
             out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: fieldCapFor(kind, ringMult(lm)), dauer: fieldDauerSec(ringMult(lm)) }); k++;
@@ -185,7 +185,7 @@ const resFields = (() => {
         const want = lm.ring >= 6 ? 3 : 2, near = islandsByLandmass[lm.id] || [], ar = arten[lm.bio] || arten.green;
         for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
             const x = lm.x + (r2() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r2() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!aufLand(lm, x, y)) continue;
+            if (!aufLand(lm, x, y) || grenzAbstand(x, y) < KETTE_FREI) continue;
             if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
             const kind = ar[Math.floor(r2() * ar.length)];
             out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: fieldCapFor(kind, ringMult(lm)), dauer: fieldDauerSec(ringMult(lm)) }); k++;

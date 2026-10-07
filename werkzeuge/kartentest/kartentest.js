@@ -1,5 +1,5 @@
 // Karten-Testdatei (LIESMICH 11c Punkt 30): nur die Weltkarte mit Zonen wie das RoK-Königreich, aus dem Datenmodell
-// KARTE_ZONEN (karte_daten.js). Boden je Zone, Gebirgsketten an allen Grenzen, Pass-Tore genau in der Kette, Kamera
+// KARTE_ZONEN (Spiel-Teil Game/spiel/01a2-karte-zonen.js, Felder/Barbaren aus karte_dinge.js). Boden je Zone, Gebirgsketten an allen Grenzen, Pass-Tore genau in der Kette, Kamera
 // (Ziehen, Zoomen mit Finger + Maus). Ganz weit: Übersicht (Zonenfarben, Gebirgsbänder, Pass-Punkte). Maße wie im Spiel (03a).
 'use strict';
 const KD = KARTE_ZONEN, H = KD.welt.halb;
@@ -16,7 +16,7 @@ let offen = DATEIEN.length;
 for (const n of DATEIEN) { const im = new Image();
   im.onload = () => { KB.img[n] = im; if (!--offen) { KB.fertig = true; objekteBauen(); UEB = null; zeichnen(); } };
   im.onerror = () => { --offen; };
-  im.src = typeof KARTE_BILDER !== 'undefined' ? KARTE_BILDER[n] : n === 'thron' ? 'karte_thron.webp' : KARTE_BILD_PFAD + 'karte_' + n + '.webp'; }
+  im.src = typeof KARTE_BILDER !== 'undefined' ? KARTE_BILDER[n] : KARTE_BILD_PFAD + 'karte_' + n + '.webp'; }
 function kbBild(n, px) {
   const m = KB.mip[n] || (KB.mip[n] = [KB.img[n]]);
   let i = 0;
@@ -53,7 +53,11 @@ function zufall(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
 // ===== Wege der Gebiete und Grenzen =====
-for (const g of KD.gebiete) { const p = new Path2D(); g.umriss.forEach((q, i) => i ? p.lineTo(q[0], q[1]) : p.moveTo(q[0], q[1])); p.closePath(); g.pfad = p;
+function umrissVon(g) {                               // der Umriss eines Gebiets: der Ring aus seinen Grenzen (−id−1 = rückwärts), wie im Spiel (01b)
+  const out = []; for (const r of g.rand) { const p = KD.grenzen[r < 0 ? -r - 1 : r].punkte; out.push(...(r < 0 ? [...p].reverse() : p).slice(out.length ? 1 : 0)); }
+  return out.slice(0, -1);
+}
+for (const g of KD.gebiete) { g.umriss = umrissVon(g); const p = new Path2D(); g.umriss.forEach((q, i) => i ? p.lineTo(q[0], q[1]) : p.moveTo(q[0], q[1])); p.closePath(); g.pfad = p;
   const xs = g.umriss.map(q => q[0]), ys = g.umriss.map(q => q[1]); g.bb = { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) };
   g.farbe = ZONEN_FARBE[g.zone][g.id % 2]; }
 const innen = KD.grenzen.filter(g => g.b !== -1);
@@ -250,7 +254,7 @@ function namen() {                                    // Übersicht: Namen der G
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = `700 ${W < 600 ? 11 : 15}px Georgia, serif`; ctx.lineJoin = 'round';
   for (const g of KD.gebiete) { if (g.zone === MITTE) continue; const t = KD.tempel.find(q => q.gebiet === g.id);   // (mit Tempel: der Name unter dem Tempel)
-    const x = t ? sx(t.x) : sx(g.mitte[0]), y = t ? sy(t.y) + Math.max(TEMPEL.breit * cam.z, TEMPEL.minPx) * .55 : sy(g.mitte[1]);
+    const x = sx(g.kern[0]), y = sy(g.kern[1]) + (t ? Math.max(TEMPEL.breit * cam.z, TEMPEL.minPx) * .55 : 0);
     ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(g.name, x, y); ctx.fillStyle = '#e4c886'; ctx.fillText(g.name, x, y); }
 }
 

@@ -8,7 +8,7 @@ const islands = [];
 let playerIslandId = null;
 
 let id = 0;
-// Tore first (the bases keep clear of them): a capturable gate on the outer bank of every bridge.
+// Tore first (the bases keep clear of them): a capturable gate in every pass (genau auf der Grenze, br.pass).
 // Whoever owns a gate crosses its bridge for free and collects the toll everyone else pays. Unowned gates are shut.
 // Truppen in festen Zahlen (Alexander 6.10., Z4: 5.000 Start-Truppen): die Grenz-Tore 5.000–20.000 (deutlich über den Basen), die Wächter-Tore über
 // den stärksten Wächter-Türmen, die Thron-Tore darüber – nie unter THRON_TOR_MIN (sonst nähme man den Thron am ersten Tag)
@@ -23,26 +23,26 @@ const gateSpots = bridges.map(br => {
     const bl = Math.hypot(ox - ex, oy - ey) || 1, key = Math.max(1, Math.min(4, Math.ceil((Math.min(A.ring, B.ring) - 1) / 1.5)));
     const st0 = kind === 'border' ? Object.assign({ toll: 0.1 }, BORDER_GATE[key]) : GATE_STATS[kind], mn = kind === 'throne' ? THRON_TOR_MIN : { troops: 1, def: 1 };
     const st = Object.assign({}, st0, { troops: Math.max(st0.troops, mn.troops), def: Math.max(st0.def, mn.def) });
-    return { br, kind, st, lm: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, ex, ey };
+    return { br, kind, st, lm: outerA ? br.a : br.b, x: br.pass.x, y: br.pass.y, ex: ex - (ox - ex) / bl * 900, ey: ey - (oy - ey) / bl * 900 };   // (ex/ey: wo der Weg aus dem Pass ins Gebiet kommt)
 });
-// Start places: 4 per region on the outermost two rings (player and bot capitals go there, the rest stays empty land).
-const START_SLOT_OFFS = [[-.24, -.2], [.24, -.2], [-.24, .26], [.24, .26]];
-const startSlots = [];
-for (const lm of landmasses) if (lm.tier === 'outer' && lm.ring >= GRID_HALF - 1) for (const [sx, sy] of START_SLOT_OFFS) startSlots.push({ lm: lm.id, x: lm.x + sx * HEX_SPACING, y: lm.y + sy * HEX_SPACING });
-const BASE_SPACING = HEX_SPACING * .083;                   // one distance between neighbouring bases everywhere (about 95 per region)
+// Startplätze (KARTE_ZONEN): je Zone-1-Gebiet gleich viele – Hauptstädte von Spielern und Mitspielern ziehen dort ein.
+const startSlots = KARTE_ZONEN.startplaetze.map(p => ({ lm: p.gebiet, x: p.x, y: p.y }));
+const BASE_SPACING = HEX_SPACING * .083 * KARTE_MASSSTAB;  // one distance between neighbouring bases everywhere (größere Karte: etwa so viele Basen wie vorher)
+const KETTE_FREI = 16000;                                  // so weit bleiben Basen vom Gebirge an der Grenze weg (dort stehen die Ketten)
+const HEILIGTUM_BREITE = { megaTemple: 80000, guardian: 38000 };   // Thron und Wächter-Tempel als Bild (Welt-Breite, 03b) – Basen bleiben davor
 const segDistW = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L)); return Math.hypot(px - ax - dx * t, py - ay - dy * t); };
 for (const lm of landmasses) {
-    const isMega = lm.isCenter, hasTemple = regionHasTemple(lm), tierStats = TIER_STATS[lm.tier];
+    const isMega = lm.isCenter, hasTemple = lm.isCenter || lm.tier === 'guardian', tierStats = TIER_STATS[lm.tier];
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const p of lm.shape) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
     // Keep clear: the temple, every gate on this region's banks with its road to the bridge, and the start places.
-    const templeClear = !hasTemple ? 0 : HEX_SPACING * (isMega ? .19 : lm.corner ? .15 : .12);
+    const templeClear = !hasTemple ? 0 : HEILIGTUM_BREITE[isMega ? 'megaTemple' : 'guardian'] * .55;
     const myGates = gateSpots.filter(gsp => gsp.lm === lm.id || (gsp.br.a === lm.id || gsp.br.b === lm.id));
     const mySlots = startSlots.filter(sl => sl.lm === lm.id);
     const d = BASE_SPACING, inset = d * .45, grid = new Map(), mine = [];
-    const safe = 7700 + inset;                                 // the banks meander at most ±3.8k: deeper inside than this is land for sure
-    const inside = (x, y) => (x > minX + safe && x < maxX - safe && y > minY + safe && y < maxY - safe) ||
-        (pointInPolygon(x, y, lm.shape) && pointInPolygon(x + inset, y, lm.shape) && pointInPolygon(x - inset, y, lm.shape) && pointInPolygon(x, y + inset, lm.shape) && pointInPolygon(x, y - inset, lm.shape));
+    // Im Gebiet: weit genug vom Gebirge und vom Kartenrand. (Die Saat liegt sicher im Gebiet, jeder neue Punkt nur bis 1,25 · d daneben –
+    // über das Gebirge (2 · KETTE_FREI breit) kommt so keiner ins Nachbargebiet.)
+    const inside = (x, y) => Math.abs(x) < FRAME_HALF - inset - 3000 && Math.abs(y) < FRAME_HALF - inset - 3000 && grenzAbstand(x, y) >= KETTE_FREI + inset;
     const free = (x, y) => {                                   // cheapest checks first
         const gx = Math.floor(x / d), gy = Math.floor(y / d);
         for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const m of grid.get((gx + i) + ',' + (gy + j)) || []) if (Math.hypot(m.x - x, m.y - y) < d) return false;
@@ -55,7 +55,7 @@ for (const lm of landmasses) {
     // Even spread without gaps (Poisson-disc): start near the middle, grow outwards until the region is full.
     const active = [];
     const seed = () => { let best = null, bd = Infinity;
-        for (let t = 0; t < 400; t++) { const x = minX + rand() * (maxX - minX), y = minY + rand() * (maxY - minY), dd = Math.hypot(x - lm.x, y - lm.y); if (dd < bd && free(x, y)) { bd = dd; best = { x, y }; } }
+        for (let t = 0; t < 400; t++) { const x = minX + rand() * (maxX - minX), y = minY + rand() * (maxY - minY), dd = Math.hypot(x - lm.x, y - lm.y); if (dd < bd && free(x, y) && pointInPolygon(x, y, lm.shape)) { bd = dd; best = { x, y }; } }
         if (best) { add(best); active.push(best); } return best; };
     if (seed()) while (true) {
         if (!active.length && !seed()) break;
@@ -72,27 +72,20 @@ for (const lm of landmasses) {
     });
     if (hasTemple) islands.push({
         id: id++, landmassId: lm.id, x: lm.x, y: lm.y,
-        radius: ISLAND_RADIUS * (isMega ? 1.6 : lm.tier === 'guardian' ? 1.45 : 1.3),
-        type: isMega ? 'megaTemple' : 'temple',
+        radius: ISLAND_RADIUS * (isMega ? 1.6 : lm.tier === 'guardian' ? 1.45 : 1.3), bildR: HEILIGTUM_BREITE[isMega ? 'megaTemple' : 'guardian'] * .35,   // (bildR: so weit tippt man ihn auf seinem Bild an)
+        type: isMega ? 'megaTemple' : 'temple', tempelArt: isMega ? null : (KARTE_ZONEN.tempel.find(t => t.gebiet === lm.id) || {}).art,
         guardian: lm.tier === 'guardian',
         neutralTroops: tierStats ? tierStats.temple[0] : Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * ringTruppen(lm) / 100),
         neutralDefense: tierStats ? tierStats.temple[1] : Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * ringTruppen(lm) / 100),
         neutralLevel: tierStats ? tierStats.templeLevel : 1
     });
 }
-// Start places as bases: 64 of them, spread evenly round the edge (player + bots take them, the rest stay empty land).
-{
-    const order = startSlots.slice().sort((u, v) => Math.atan2(u.y, u.x) - Math.atan2(v.y, v.x));
-    const want = 64, step = order.length / want;
-    for (let k = 0; k < want && k * step < order.length; k++) {
-        const sl = order[Math.floor(k * step)], lm = landmasses[sl.lm];
-        islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true,
-            neutralTroops: 0, neutralDefense: 1, neutralLevel: 1 });   // (Startplätze: leer – hier ziehen neue Hauptstädte ein)
-    }
-}
+// Startplätze als Basen (Spieler + Mitspieler ziehen dort ein, die übrigen bleiben leeres Land)
+for (const sl of startSlots) islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true,
+    neutralTroops: 0, neutralDefense: 1, neutralLevel: 1 });   // (Startplätze: leer – hier ziehen neue Hauptstädte ein)
 for (const gsp of gateSpots) {
     gsp.br.gateId = id;
-    islands.push({ id: id++, ends: [[gsp.br.x1, gsp.br.y1], [gsp.br.x2, gsp.br.y2]], landmassId: gsp.lm, x: gsp.x, y: gsp.y, radius: ISLAND_RADIUS * 1.25,
+    islands.push({ id: id++, ends: [[gsp.br.x1, gsp.br.y1], [gsp.br.x2, gsp.br.y2]], pass: gsp.br.pass, landmassId: gsp.lm, x: gsp.x, y: gsp.y, radius: ISLAND_RADIUS * 1.25,
                    type: 'gate', gateKind: gsp.kind, toll: gsp.st.toll, neutralTroops: gsp.st.troops, neutralDefense: gsp.st.def, neutralLevel: gsp.st.level });
 }
 const islandById = {};
@@ -104,7 +97,7 @@ if (SYSTEM && store.get('openWaterKarte') !== KARTE_KENNUNG) store.set('openWate
 // The map was rebuilt (Thron-Insel + Wächter-Inseln): old base ids no longer match, so every
 // map-bound part of an old save is cleared once. Coins, gems, gear, skills and level stay,
 // and the player's whole army moves to the new home base.
-const WORLD_VERSION = '7';   // 7: Karte 17 × 17 (Paket C) – welt.js setzt dieselbe Zahl (WELT_VERSION)
+const WORLD_VERSION = '8';   // 8: Karte mit Zonen wie RoK (7: 17 × 17, Paket C) – welt.js setzt dieselbe Zahl (WELT_VERSION)
 if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
     let carry = 0;
     try {
@@ -138,6 +131,13 @@ for (const idStr of Object.keys(neutralTroopOverrides)) {
     if (isl) isl.neutralTroops = neutralTroopOverrides[idStr];
 }
 
+// Die Startplätze reihum je Zone-1-Gebiet (1. Platz jedes Gebiets, dann der 2. …): wer vorn nimmt, verteilt sich gleichmäßig
+function startplaetzeReihum() {
+    const je = {}; for (const i of islands) if (i.startSlot) (je[i.landmassId] = je[i.landmassId] || []).push(i);
+    const lms = Object.keys(je).sort((u, v) => Math.atan2(landmasses[u].y, landmasses[u].x) - Math.atan2(landmasses[v].y, landmasses[v].x)), out = [];
+    for (let k = 0; out.length < islands.length && lms.some(l => je[l][k]); k++) for (const l of lms) if (je[l][k]) out.push(je[l][k]);
+    return out;
+}
 function centerIsland() {
     // Player's home base: a regular tower near the middle of the southernmost outer landmass,
     // as far from the Thron-Insel as the bots start.
@@ -146,7 +146,7 @@ function centerIsland() {
 }
 
 // Startplatz für einen neuen Spieler in der EINEN Welt (gibt { insel, aus } zurück; aus = Mitspieler, dem sie gehörte):
-// 1. eine freie Basis am äußeren Rand, auf der Landmasse mit den wenigsten Besitzern
+// 1. ein freier Startplatz in Zone 1, im Gebiet mit den wenigsten Besitzern (dann eine freie Basis in Zone 1, dann weiter innen)
 // 2. Rand voll: irgendeine freie Basis (nie in der Mitte oder bei den Wächter-Tempeln)
 // 3. Karte voll: eine Randbasis vom größten Mitspieler-Reich (nie von einem echten Spieler, nie eine Hauptstadt) – wie bei den Mitspielern
 // besitz: { besitzer: [Basen] } – beim Weltrechner die lebenden Daten, sonst aus dem Speicher
@@ -158,7 +158,11 @@ function freierStartplatz(besitz) {
     for (const id of wem.keys()) { const i = islandById[id]; if (i) proLm[i.landmassId] = (proLm[i.landmassId] || 0) + 1; }
     const besterOrt = liste => { const min = Math.min(...liste.map(i => proLm[i.landmassId] || 0)), beste = liste.filter(i => (proLm[i.landmassId] || 0) === min); return beste.find(i => i.startSlot) || beste[Math.floor(Math.random() * beste.length)]; };
     const turm = i => { if (i.type !== 'tower') return false; try { return !bossAt(i.id); } catch (e) { return true; } };   // (beim Laden gibt es den Besitz noch nicht – dann prüft es der Weltrechner)
-    let frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier === 'outer');
+    let frei = islands.filter(i => i.startSlot && turm(i) && !wem.has(i.id));                       // zuerst die Startplätze in Zone 1
+    if (frei.length) return { insel: besterOrt(frei) };
+    frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].zone === 1);
+    if (frei.length) return { insel: besterOrt(frei) };
+    frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier === 'outer');
     if (frei.length) return { insel: besterOrt(frei) };
     frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier !== 'throne' && landmasses[i.landmassId].tier !== 'guardian');
     if (frei.length) return { insel: besterOrt(frei) };

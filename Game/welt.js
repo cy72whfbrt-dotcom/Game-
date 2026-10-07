@@ -10,7 +10,7 @@
     'use strict';
     const OW = window.__OW || {}, S = window.__owSpeicher;
     const ICH = 'u' + OW.uid;
-    const WELT_VERSION = '7';                // wie WORLD_VERSION in spiel.js (7: Karte 17 × 17, Paket C)
+    const WELT_VERSION = '8';                // wie WORLD_VERSION in spiel.js (8: Zonen wie RoK, 7: Karte 17 × 17)
     const SYSTEM = !!OW.system;              // der Weltrechner auf dem Server (weltrechner/start.js): hat keine eigenen Basen
     const P = s => { try { return s == null ? null : JSON.parse(s); } catch (e) { return null; } };
     const J = v => JSON.stringify(v);

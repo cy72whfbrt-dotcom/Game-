@@ -141,7 +141,7 @@ function drawFog(view, now) {
         ctx.lineJoin = 'round'; ctx.fillStyle = ctx.strokeStyle = 'rgba(228,200,134,.55)'; ctx.lineWidth = 6 / z;
         for (const t of TERR.player.values()) { ctx.fill(t.path); ctx.stroke(t.path); }
         const mitte = landmasses[0];                                                // die Mitte (Thron) ist immer zu sehen – das Ziel aller (wie RoK)
-        if (!isExplored(mitte.id)) { ctx.fillStyle = 'rgba(' + BODEN_FARBE.sand + ',.9)'; ctx.fill(mitte.path); }
+        if (!isExplored(mitte.id)) { ctx.fillStyle = 'rgba(' + BODEN_FARBE[mitte.boden] + ',.9)'; ctx.fill(mitte.path); }
         ctx.strokeStyle = '#d4ad66'; ctx.lineWidth = 3 / z; ctx.stroke(mitte.path);
         ctx.restore();
     }
@@ -219,7 +219,7 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         // Karten-Bilder: der Countdown nie über dem Schild mit der Stufe – waagrecht über dem Tor-Bild, senkrecht über dem Schild neben dem Weg
         const px = !tm ? mx : tm.senk ? senkSchildX(tm, w, z) + w / 2 : toSX(tm.x);
         const cy = !tm ? my - H * .15 + H * .42 + 13 : tm.senk ? toSY(tm.y + TOR_SENK.hoch * .05) - 13
-            : toSY(tm.y) - KARTE_MASS.tor * KB.img.tor_zu.height / KB.img.tor_zu.width * KETTE_ACHSE.tor_zu * karteSkala(z) * z - 4;
+            : toSY(tm.y) - KARTE_MASS.tor * KB.img.tor_zu.height / KB.img.tor_zu.width * KETTE_ACHSE.tor_zu * z - 4;
         ctx.fillStyle = 'rgba(14,12,10,.9)'; ctx.strokeStyle = 'rgba(228,200,134,.75)'; ctx.lineWidth = 1.2;
         ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - w / 2, cy - 10, w, 20, 10) : ctx.rect(px - w / 2, cy - 10, w, 20); ctx.fill(); ctx.stroke();
         drawGlyph(ctx, 'lock', px - w / 2 + 12, cy, 12, '#f0d69a');

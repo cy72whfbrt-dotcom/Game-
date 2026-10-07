@@ -1,19 +1,13 @@
 // Teil 01b-weltkarte.js: Weltkarte: Inseln, Gebiete, Brücken, Pässe, Wege und Tore, Grundwerte für Verteidigung und Produktion
-// Layout: a honeycomb - the important central landmass (the hub) at
-// the middle of a hex grid, with rings of same-size landmasses
-// radiating outward around it (like Million Lord: lots of islands
-// packed tightly edge to edge). Every hex-ADJACENT pair of
-// landmasses gets its own short "mini bridge", not just hub-to-
-// outer - so expanding means hopping from island to island outward
-// through whichever neighbors you've bridged/captured, not
-// attacking anything anywhere. Spacing found via a search against
-// the actual coastline generator for the tightest hex packing with
-// zero overlap.
-const GRID_N = 17;         // square world: 17 × 17 regions (Paket C, vorher 15 × 15 – Messwerte in LIESMICH 23), the Thron-Insel in the middle, the 8 regions around it form the ring
-const HEX_SPACING = 56120; // distance between orthogonally adjacent cell centres (tightest packing with zero overlap)
-const GRID_HALF = (GRID_N - 1) / 2;
-const RIVER_HALF = 1500;   // one big square continent: its regions are split by mountain chains (half width; früher Flüsse) – nur durch die Tore
-const FRAME_HALF = (GRID_HALF + .5) * HEX_SPACING + 9000;   // the square map border (world units from the centre)
+// Weltkarte wie das RoK-Königreich (LIESMICH 11c Punkt 30): Zone 1 außen (Start) … Zone 4 (Wächter-Tempel), in der Mitte der
+// Thron – große Gebiete, zwischen ihnen Gebirge, durch das man nur an den Pässen kommt. Gebiete, Grenzen, Pässe, Tempel und
+// Startplätze kommen aus KARTE_ZONEN (01a2, erzeugt von werkzeuge/kartentest/karte_erzeugen.js). Kein Wasser.
+const GRID_N = 29;         // Kennung der Karte für den Weltrechner (start.js vergleicht sie mit der Welt): 29 Gebiete
+const HEX_SPACING = 56120; // Längenmaß (früher die Breite einer Region): Basen-Abstände, Freiräume
+const FRAME_HALF = KARTE_ZONEN.welt.halb;                   // der quadratische Kartenrand (Welt-Einheiten von der Mitte)
+const KARTE_MASSSTAB = 1.8;  // die Karte ist größer als die 17 × 17-Karte: Basen-Abstand, Sicht, Gebiets-Verbund und Marschtempo wachsen mit (gleiches Spielgefühl)
+const ZONE_MITTE = 5;
+const ZONE_RING = { 1: 7, 2: 5, 3: 2, 4: 1, 5: 0 };       // Stärke wie die Ringe vorher: Zone 1 = außen (leicht) … Zone 4 = Wächter, Mitte = Thron
 // Bases are scattered freely across a landmass (rejection-sampled,
 // not a rigid grid) - only constraint is a minimum distance from
 // every other base and the temple, so nothing ends up crowded.
@@ -68,19 +62,9 @@ function mulberry32(seed) {
 }
 const rand = mulberry32(1337);
 
-// Ray-casting point-in-polygon test, used to keep towers from being
-// placed off the edge of a landmass's organic (non-square) coastline.
-// Liegt (x, y) auf dem Land? Reine Rechnung (die geglättete Küste in feine Stücke zerlegt) – gibt in jedem Browser und
-// auf dem Server genau dasselbe Ergebnis (früher über die Zeichenfläche: je nach Browser minimal anders, auf dem Server gar nicht).
-function aufLand(lm, x, y) {
-    if (!lm.feinKueste) { const P = lm.shape, n = P.length, out = [], mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-        let m0 = mid(P[n - 1], P[0]);
-        for (let i = 0; i < n; i++) { const c = P[i], m1 = mid(P[i], P[(i + 1) % n]);
-            for (let k = 0; k < 12; k++) { const t = k / 12, u = 1 - t; out.push({ x: u * u * m0.x + 2 * u * t * c.x + t * t * m1.x, y: u * u * m0.y + 2 * u * t * c.y + t * t * m1.y }); }
-            m0 = m1; }
-        lm.feinKueste = out; }
-    return pointInPolygon(x, y, lm.feinKueste);
-}
+// Liegt (x, y) im Gebiet lm? Reine Rechnung über seinen Umriss (die Grenzen aus KARTE_ZONEN) – in jedem Browser und beim
+// Weltrechner genau gleich.
+function aufLand(lm, x, y) { return pointInPolygon(x, y, lm.shape); }
 function pointInPolygon(px, py, poly) {
     let inside = false;
     for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -91,27 +75,6 @@ function pointInPolygon(px, py, poly) {
         if (intersects) inside = !inside;
     }
     return inside;
-}
-
-// The point on a landmass's coastline that faces exactly toward
-// some other point, i.e. where the straight line between the two
-// landmass centers crosses the coastline - not just "whichever
-// shape point happens to be closest", which could sit off to the
-// side and make the bridge cut across at a crooked angle. Works
-// directly off generateRegionShape()'s own parametrization: its
-// points are sampled at uniformly increasing angles around the
-// landmass's center, so the point at any bearing is a straight
-// interpolation between the two samples that bracket it.
-function polygonPointAtAngle(lm, angle) {
-    const n = lm.shape.length;
-    const step = (Math.PI * 2) / n;
-    const norm = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-    const idx = norm / step;
-    const i0 = Math.floor(idx) % n;
-    const i1 = (i0 + 1) % n;
-    const t = idx - Math.floor(idx);
-    const p0 = lm.shape[i0], p1 = lm.shape[i1];
-    return { x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t };
 }
 
 // Game balance - exponential, so a base keeps mattering from the first
@@ -151,153 +114,51 @@ function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 
     return Math.round(upgradeCostRoh(level) * r);
 }
 
-// The big islands themselves - just background land, drawn as one
-// organic coastline each, no ownership state of their own. Landmass
-// 0 is always the centre (Thron-Insel); the others sit on a square
-// 9 × 9 grid around it.
-// A region of the continent: a square cell whose edges follow the river centre lines between the cells
-// (shared by both neighbours, so the banks match) - sampled at uniform angles,
-// so polygonPointAtAngle works on it. The continent's outer edge is a gently wavy coast.
-function riverOffset(vertical, line, t) {       // meander of the river line `line` (between cells) at position t along it
-    const k = line * 2.37 + (vertical ? 0 : 11.3);
-    return 1400 * Math.sin(t / 6100 + k) + 700 * Math.sin(t / 2300 + k * 1.9) + 300 * Math.sin(t / 900 + k * 3.7);
+// Die Gebiete (landmasses): Umriss = Ring aus ihren Grenzen, Mittelpunkt = Kern (Tempel, Thron, sonst am weitesten von den Grenzen).
+// Landmasse 0 ist die Mitte (Thron), dann Zone 4 … Zone 1. ring/tier wie vorher (Stärke der Neutralen, Tore, Mitspieler).
+function gebietUmriss(g) {
+    const out = []; for (const r of g.rand) { const p = KARTE_ZONEN.grenzen[r < 0 ? -r - 1 : r].punkte; out.push(...(r < 0 ? [...p].reverse() : p).slice(out.length ? 1 : 0)); }
+    return out.slice(0, -1).map(([x, y]) => ({ x, y }));
 }
-// Grenzlinie `line` (zwischen den Zellen, ±(GRID_HALF + .5) = Kartenrand) an der Stelle t: senkrecht → x, waagrecht → y
-// (heute ein Gebirgszug – LIESMICH 11c Punkt 25; am Rand schlängelt sie sich stärker)
-function grenzLinie(vertical, line, t) { return line * HEX_SPACING + riverOffset(vertical, line, t) * (Math.abs(line) > GRID_HALF ? 1.6 : 1); }
-// Abstand eines Weltpunkts zur nächsten Grenzlinie (dort steht das Gebirge)
-function grenzAbstand(x, y) {
-    const q = Math.round(x / HEX_SPACING - .5) + .5, r = Math.round(y / HEX_SPACING - .5) + .5;
-    return Math.min(Math.abs(x - grenzLinie(true, q, y)), Math.abs(y - grenzLinie(false, r, x)));
+const landmasses = KARTE_ZONEN.gebiete.map(g => {
+    const z = g.zone, shape = gebietUmriss(g), [x, y] = g.kern;
+    let shapeMaxR = 0; for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
+    return { id: g.id, zone: z, name: g.name, ring: ZONE_RING[z], x, y, shape, shapeMaxR, isCenter: z === ZONE_MITTE, tier: z === ZONE_MITTE ? 'throne' : z === 4 ? 'guardian' : 'outer',
+             corner: false, bio: z === 3 ? 'sand' : 'green', boden: g.boden };
+});
+// Gebirge: Abstand eines Weltpunkts zur nächsten Grenze zwischen zwei Gebieten (Raster zum Finden; die Punkte liegen 3.000 auseinander)
+const GRENZ_RASTER = 20000, grenzRaster = new Map();
+for (const g of KARTE_ZONEN.grenzen) if (g.b !== -1) for (const [x, y] of g.punkte) { const k = Math.floor(x / GRENZ_RASTER) + ',' + Math.floor(y / GRENZ_RASTER); (grenzRaster.get(k) || grenzRaster.set(k, []).get(k)).push(x, y); }
+function grenzAbstand(x, y) {                   // (höchstens 2 Rasterfelder weit gesucht: 40.000 reicht für jede Frage „steht es im Gebirge?“)
+    const gx = Math.floor(x / GRENZ_RASTER), gy = Math.floor(y / GRENZ_RASTER); let m = 2 * GRENZ_RASTER;
+    for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const p = grenzRaster.get((gx + i) + ',' + (gy + j)); if (p) for (let k = 0; k < p.length; k += 2) m = Math.min(m, Math.hypot(p[k] - x, p[k + 1] - y)); }
+    return m;
 }
-// Ring unter einem Weltpunkt (über die geschlängelten Grenzen; außerhalb der Karte GRID_HALF + 1)
-function ringAn(x, y) {
-    let q = Math.round(x / HEX_SPACING), r = Math.round(y / HEX_SPACING);
-    if (x > grenzLinie(true, q + .5, y)) q++; else if (x < grenzLinie(true, q - .5, y)) q--;
-    if (y > grenzLinie(false, r + .5, x)) r++; else if (y < grenzLinie(false, r - .5, x)) r--;
-    return Math.min(GRID_HALF + 1, Math.max(Math.abs(q), Math.abs(r)));
-}
-function generateRegionShape(q, r) {
-    const S = HEX_SPACING, cx = q * S, cy = r * S, N = 120, out = [];
-    const edge = (side, t) => {                  // world coordinate of one bank at position t along it
-        const vertical = side === 0 || side === 2, line = side === 0 ? q + .5 : side === 2 ? q - .5 : side === 1 ? r + .5 : r - .5;
-        const outer = Math.abs(line) > GRID_HALF, base = grenzLinie(vertical, line, t);
-        const sign = side === 0 || side === 1 ? -1 : 1;             // right / bottom bank sits left / above the river line
-        return base + sign * (outer ? 0 : RIVER_HALF);
-    };
-    for (let i = 0; i < N; i++) {
-        const th = i / N * Math.PI * 2, dx = Math.cos(th), dy = Math.sin(th);
-        let best = Infinity;
-        for (let side = 0; side < 4; side++) {
-            const vertical = side === 0 || side === 2, d = vertical ? dx : dy;
-            if ((side === 0 || side === 1) ? d <= 1e-6 : d >= -1e-6) continue;
-            let tt = S * .5;
-            for (let it = 0; it < 4; it++) {                         // the bank moves with t: a few fixed-point steps
-                const along = vertical ? cy + dy * tt : cx + dx * tt;
-                tt = ((edge(side, along)) - (vertical ? cx : cy)) / d;
-            }
-            if (tt > 0) best = Math.min(best, tt);
-        }
-        out.push({ x: cx + dx * best, y: cy + dy * best });
-    }
-    return out;
+function gebietAn(x, y) {                       // das Gebiet unter einem Weltpunkt (undefined: außerhalb der Karte)
+    for (const lm of landmasses) if (Math.abs(lm.x - x) <= lm.shapeMaxR && Math.abs(lm.y - y) <= lm.shapeMaxR && pointInPolygon(x, y, lm.shape)) return lm.id;
 }
 
-// Landscape: snow in the north, grassland in the middle band, desert in the south (the border steps a little per column);
-// the ring around the middle is stone, the regions right next to it stay green.
-// Paket C: dazu Eis ganz im Norden (oberste Reihe), zwei Vulkan-Gebiete nahe der Mitte (west und ost, je 5 Regionen)
-// und Sumpf in den Flussniederungen des grünen Mittelstreifens (außen, verstreut).
-// Seit der Karte wie RoK (LIESMICH 11c Punkt 25) nicht mehr zu sehen: gilt nur noch für Rohstoffe, Felder, Berge und das Stadtbild.
-// Die Karte malt den Boden nach Ringen (lm.boden): außen grün → Mitte Sand.
-const BODEN_RING = r => r <= 1 ? 'sand' : r <= 3 ? 'innen' : r <= 5 ? 'mitte' : 'aussen';
-const VULKANE = [[-4, 0], [4, 1]];
-function regionBiome(q, r) {
-    const ring = Math.max(Math.abs(q), Math.abs(r)); if (ring <= 2) return 'green';
-    if (ring <= 5 && VULKANE.some(([vq, vr]) => Math.abs(q - vq) + Math.abs(r - vr) <= 1)) return 'volcano';
-    const h = Math.sin(q * 12.9898 + 78.233) * 43758.5453, wob = Math.round((h - Math.floor(h)) * 2 - 1), y = r + wob * .6;
-    if (y <= -GRID_HALF + .6) return 'ice';
-    if (y <= -2.6) return 'snow';
-    if (y >= 2.6) return 'sand';
-    const n = Math.sin(q * 39.346 + r * 11.135 + 4.17) * 24634.6345, nass = n - Math.floor(n);   // feuchte Niederung?
-    return ring >= 4 && Math.abs(y) < 2 && nass > .6 ? 'swamp' : 'green';
-}
-// Temples: the Mega-Tempel in the middle, a Wächter-Tempel in each of the 4 corners of the ring, and 24 normal temples on two
-// clean squares around the middle (ring 3: corners + side middles, ring 5: corners, side middles and two more per side).
-function regionHasTemple(lm) {
-    if (lm.isCenter || lm.corner) return true;
-    const aq = Math.abs(lm.q), ar = Math.abs(lm.r);
-    return (lm.ring === 3 && ((aq === 3 && ar === 3) || lm.q === 0 || lm.r === 0)) || (lm.ring === 5 && ((aq === 5 && ar === 5) || lm.q === 0 || lm.r === 0 || aq === 3 || ar === 3));
-}
-const landmasses = [];
-{
-    let lmId = 0;
-    // World layout (square map): the Thron-Insel (Mega-Tempel) in the middle cell, the 4 Wächter-Inseln
-    // north / east / south / west of it, every other cell an outer island where the player and bots start.
-    const cells = [];
-    for (let r = -GRID_HALF; r <= GRID_HALF; r++) for (let q = -GRID_HALF; q <= GRID_HALF; q++) cells.push({ q, r, d: Math.max(Math.abs(q), Math.abs(r)) });
-    cells.sort((u, v) => u.d - v.d || u.r - v.r || u.q - v.q);                      // landmass 0 = the centre, then the guardians
-    for (const cell of cells) {
-        const isC = cell.d === 0, tier = isC ? 'throne' : cell.d === 1 ? 'guardian' : 'outer';
-        const radius = HEX_SPACING * .4;                                             // (tower spacing scales with it)
-        const x = cell.q * HEX_SPACING, y = cell.r * HEX_SPACING;
-        const shape = generateRegionShape(cell.q, cell.r);
-        let shapeMaxR = 0;
-        for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
-        const corner = cell.d === 1 && Math.abs(cell.q) === 1 && Math.abs(cell.r) === 1;
-        landmasses.push({ id: lmId, q: cell.q, r: cell.r, ring: cell.d, x, y, radius, shape, shapeMaxR, isCenter: isC, tier, corner, bio: regionBiome(cell.q, cell.r), boden: BODEN_RING(cell.d) });
-        lmId++;
-    }
-}
-
-// Bridges: the ONLY way to cross from one landmass to a different
-// one - every hex-ADJACENT pair of landmasses gets its own short
-// bridge (not just hub-to-outer), so the honeycomb is a proper mesh
-// you expand outward through island by island. Anchored exactly on
-// the straight line between the two landmass centers (see
-// polygonPointAtAngle), so the bridge always crosses the water
-// directly instead of angling off toward whatever shape point
-// happened to be closest. Some coastline pairs land almost flush
-// against each other (a near-zero gap) - stretched out to a
-// minimum visible length here so the bridge always reads as a
-// short straight line instead of collapsing into a round blob
-// where its two line-cap ends overlap.
-const MIN_BRIDGE_VISUAL_LENGTH = 700;
-const bridges = [];
-for (let i = 0; i < landmasses.length; i++) {
-    for (let j = i + 1; j < landmasses.length; j++) {
-        const a = landmasses[i], b = landmasses[j];
-        const dq = a.q - b.q, dr = a.r - b.r;
-        const isAdjacent = Math.abs(dq) + Math.abs(dr) === 1;                          // north / south / east / west neighbours
-        if (!isAdjacent) continue;
-        const angleAtoB = Math.atan2(b.y - a.y, b.x - a.x);
-        let p1 = polygonPointAtAngle(a, angleAtoB);
-        let p2 = polygonPointAtAngle(b, angleAtoB + Math.PI);
-        const dx = p2.x - p1.x, dy = p2.y - p1.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist > 0 && dist < MIN_BRIDGE_VISUAL_LENGTH) {
-            const ux = dx / dist, uy = dy / dist;
-            const extra = (MIN_BRIDGE_VISUAL_LENGTH - dist) / 2;
-            p1 = { x: p1.x - ux * extra, y: p1.y - uy * extra };
-            p2 = { x: p2.x + ux * extra, y: p2.y + uy * extra };
-        }
-        bridges.push({ a: a.id, b: b.id, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
-    }
-}
+// Brücken (heute Pässe): der EINZIGE Weg von einem Gebiet ins andere – je Pass eine, quer durch das Gebirge (Enden je PASS_TIEFE
+// vor und hinter dem Tor, im Gebiet a bzw. b). Das Tor steht genau auf der Grenze (br.pass), offen ab dem Tag seiner Stufe.
+const PASS_TIEFE = 16000;
+const bridges = KARTE_ZONEN.paesse.map(p => {
+    const e1 = p.senk ? [p.x - PASS_TIEFE, p.y] : [p.x, p.y - PASS_TIEFE], e2 = p.senk ? [p.x + PASS_TIEFE, p.y] : [p.x, p.y + PASS_TIEFE];
+    const [A, B] = pointInPolygon(e1[0], e1[1], landmasses[p.a].shape) ? [e1, e2] : [e2, e1];
+    return { a: p.a, b: p.b, x1: A[0], y1: A[1], x2: B[0], y2: B[1], pass: p };
+});
 function bridgeBetween(a, b) {
     return bridges.find(br => (br.a === a && br.b === b) || (br.a === b && br.b === a)) || null;
 }
-// Pässe: die Brücken zu den Wächter-Inseln und zur Thron-Insel öffnen erst 3 Tage nach dem Welt-Start (Alexander 6.10.: „dann haben
-// alle genug Zeit“) – bis dahin für alle zu, Spieler wie Mitspieler. Der Welt-Start kommt bei jedem Saison-Reset neu (saisonWelt).
-const PASS_OPEN_DAYS = { guardian: 3, throne: 3 };        // Tage ab Welt-Start (0 = Timer aus)
+// Pässe öffnen von außen nach innen (Alexander 7.10.): Zone 1 untereinander ab Tag 1, in Zone 2 ab Tag 2 … zur Mitte ab Tag 5
+// (KARTE_ZONEN.oeffnen) – bis dahin für alle zu, Spieler wie Mitspieler. Der Welt-Start kommt bei jedem Saison-Reset neu (saisonWelt).
 function worldStartAt() {
     let t = parseInt(store.get('openWaterWorldStart'), 10);
     if (!t) { t = Date.now(); store.set('openWaterWorldStart', String(t)); }
     return t;
 }
 function passOpensAt(br) {
-    const ta = landmasses[br.a].tier, tb = landmasses[br.b].tier;
-    const inner = ta === 'throne' || tb === 'throne' ? 'throne' : ta === 'guardian' || tb === 'guardian' ? 'guardian' : null;
-    return inner ? worldStartAt() + PASS_OPEN_DAYS[inner] * 86400000 : 0;
+    const tag = KARTE_ZONEN.oeffnen[br.pass.stufe] || 1;
+    return tag > 1 ? worldStartAt() + (tag - 1) * 86400000 : 0;
 }
 function landmassesConnected(a, b) {
     if (a === b) return true;

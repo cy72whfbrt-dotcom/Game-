@@ -88,7 +88,7 @@ const upgradeCostLabel = document.getElementById('upgradeCostLabel');
 // they are disabled, and what is visible without scouting (fog of
 // war) are exactly the old rules.
 // Koordinaten like in the big strategy games: X and Y from 0 to 1200 across the world, the Mega-Tempel at X 600 · Y 600
-function coordText(x, y) { const k = (GRID_HALF + .5) * HEX_SPACING, f = 1200 / (2 * k); return 'X ' + Math.round((x + k) * f) + ' · Y ' + Math.round((y + k) * f); }
+function coordText(x, y) { const k = FRAME_HALF, f = 1200 / (2 * k); return 'X ' + Math.round((x + k) * f) + ' · Y ' + Math.round((y + k) * f); }
 function renderPopup() {
     const island = islandById[popupIslandId];
     if (!island) return;

@@ -8,7 +8,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
 const K = path.resolve(__dirname, '../../werkzeuge/kartentest'), arbeit = process.argv[3] || fs.mkdtempSync(path.join(require('os').tmpdir(), 'kt-'));
 (async () => {
   // 1) Datenmodell (ohne Browser)
-  const D = new Function(fs.readFileSync(path.join(K, 'karte_daten.js'), 'utf8') + '; return KARTE_ZONEN;')();
+  const D = new Function(fs.readFileSync(path.resolve(__dirname, '../../Game/spiel/01a2-karte-zonen.js'), 'utf8') + fs.readFileSync(path.join(K, 'karte_dinge.js'), 'utf8') + '; return KARTE_ZONEN;')();
+  for (const g of D.gebiete) { g.umriss = []; for (const r of g.rand) { const p = D.grenzen[r < 0 ? -r - 1 : r].punkte; g.umriss.push(...(r < 0 ? [...p].reverse() : p).slice(g.umriss.length ? 1 : 0)); } }
   const zonen = [1, 2, 3, 4, 5].map(z => D.gebiete.filter(g => g.zone === z).length);
   ok(zonen.join() === '10,8,6,4,1', 'Gebiete: Zone 1–4 mit 10/8/6/4, dazu 1 Mitte', zonen);
   const geschlossen = D.gebiete.every(g => g.rand.length && g.umriss.length > 20 && g.rand.every(r => { const gr = D.grenzen[r < 0 ? -r - 1 : r]; return gr.a === g.id || gr.b === g.id; }));

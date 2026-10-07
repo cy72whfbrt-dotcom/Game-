@@ -2,7 +2,7 @@
 // Nebel des Krieges: only explored islands are visible. Owning a base explores its island and
 // every island bridged to it; a scout sent into the fog explores the island it reaches.
 // The fog lifts in small sections (FOG_CELL squares): around every own base, and wherever a scout goes.
-const FOG_CELL = 4000, REVEAL_BASE = 7000, REVEAL_SCOUT = 8000;
+const FOG_CELL = 4000 * KARTE_MASSSTAB, REVEAL_BASE = 7000 * KARTE_MASSSTAB, REVEAL_SCOUT = 8000 * KARTE_MASSSTAB;
 var fogCells = null, fogLmCount = {}, cellLm = null, fogFx = [], fogMaskDirty = true, fogPrompt = null;
 function fogKey(cx, cy) { return cx + ',' + cy; }
 function fogLandCells() {                        // key → landmass id for every cell that touches land

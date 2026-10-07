@@ -159,12 +159,9 @@ for (let id = 0; id < GEBIETE; id++) {
     const x = teile.splice(k, 1)[0], vor = gleich(x.pts[0], ende); rand.push(vor ? x.id : -x.id - 1);
     ring.push(...(vor ? x.pts : [...x.pts].reverse()).slice(1));
   }
-  let sx = 0, sy = 0, n = 0; for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (L[j * N + i] === id) { sx += i; sy += j; n++; }
   const z = zoneVon(id);
-  gebiete.push({ id, zone: z, name: z === MITTE ? 'Mitte' : String(z), boden: ['', 'aussen', 'mitte', 'sand', 'mitte', 'innen'][z],
-    mitte: [Math.round(((sx / n + .5) / N * 2 - 1) * H), Math.round(((sy / n + .5) / N * 2 - 1) * H)], rand, umriss: ring.slice(0, -1) });
+  gebiete.push({ id, zone: z, name: z === MITTE ? 'Mitte' : String(z), boden: ['', 'aussen', 'mitte', 'sand', 'mitte', 'innen'][z], rand });
 }
-gebiete[0].mitte = [0, 0];
 
 // 6) Tempel: in jedem Zone-4-Gebiet einer, an der Stelle am weitesten weg von allen Grenzen (Raster-Abstand), nicht nah an Pässen;
 //    abwechselnd Tempel im Felskessel und Wächter-Tempel (Bilder karte_tempel / karte_waechtertempel)
@@ -181,6 +178,11 @@ for (const g of gebiete.filter(g => g.zone === 4)) {
     if (!best || wert > best.wert) best = { wert, x, y }; }
   tempel.push({ gebiet: g.id, x: Math.round(best.x), y: Math.round(best.y), art: tempel.length % 2 ? 'waechtertempel' : 'tempel' });
 }
+// Kern jedes Gebiets (dort steht im Spiel sein Mittelpunkt): der Tempel, die Mitte (0, 0), sonst die Stelle am weitesten weg von den Grenzen
+for (const g of gebiete) { const t = tempel.find(q => q.gebiet === g.id);
+  if (t || g.zone === MITTE) { g.kern = t ? [t.x, t.y] : [0, 0]; continue; }
+  let best = -1, bp = 0; for (let p = 0; p < N * N; p++) if (L[p] === g.id && abst[p] > best) { best = abst[p]; bp = p; }
+  const i = bp % N, j = (bp - i) / N; g.kern = [Math.round(((i + .5) / N * 2 - 1) * H), Math.round(((j + .5) / N * 2 - 1) * H)]; }
 
 // 7) Startplätze, Rohstoff-Felder, Barbaren-Lager: locker gestreut (Mindestabstände, keine Klumpen), nie auf Grenzen,
 //    Pässen, Tempeln. Startplätze gleich viele je Zone-1-Gebiet; Felder überall außer der Mitte (Stufe steigt nach innen);
@@ -191,7 +193,7 @@ for (const g of grenzen) if (g.b !== -1) for (const q of g.punkte) { const k = M
 const grenzAbst = (x, y) => { let m = Infinity; for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) for (const q of grenzPunkte.get((Math.floor(x / GZ) + i) + ',' + (Math.floor(y / GZ) + j)) || []) m = Math.min(m, Math.hypot(q[0] - x, q[1] - y)); return m; };
 const gebietBei = (x, y) => L[Math.min(N - 1, Math.floor((y + H) / ZELLE)) * N + Math.min(N - 1, Math.floor((x + H) / ZELLE))];
 const alle = [];                                      // alles Gestreute: [x, y, Mindestabstand zu anderen]
-const frei = (x, y, eigen, liste) => Math.max(Math.abs(x), Math.abs(y)) < H - 20000 && grenzAbst(x, y) > 26000
+const frei = (x, y, eigen, liste) => Math.max(Math.abs(x), Math.abs(y)) < H - 45000 && grenzAbst(x, y) > 26000
   && !paesse.some(p => Math.hypot(p.x - x, p.y - y) < 45000) && !tempel.some(t => Math.hypot(t.x - x, t.y - y) < 50000)
   && !alle.some(a => Math.hypot(a[0] - x, a[1] - y) < 24000) && !liste.some(o => Math.hypot(o.x - x, o.y - y) < eigen);
 function streuen(anzahl, eigen, passt, neu) {         // Pfeilwurf: bis anzahl Stück, je Versuch ein Zufallspunkt
@@ -209,14 +211,17 @@ const FELD_ARTEN = ['holz', 'holz', 'holz', 'stein', 'stein', 'stein', 'eisen', 
 const felder = streuen(560, 52000, g => zoneVon(g) < MITTE, z => ({ art: FELD_ARTEN[Math.floor(streu() * FELD_ARTEN.length)], stufe: 2 * z - 1 + (streu() < .5 ? 0 : 1) }));
 const barbaren = streuen(110, 70000, g => zoneVon(g) < MITTE, z => ({ stufe: Math.min(25, 1 + (z - 1) * 6 + Math.floor(streu() * (z === 4 ? 7 : 6))) }));
 
-const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, tempel, startplaetze, felder, barbaren, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
-const kopf = '// Datenmodell der Zonen-Karte (erzeugt von karte_erzeugen.js – nicht von Hand ändern)\n' +
-  '// gebiete: { id, zone 1–4 (5 = Mitte), name, boden, mitte, rand: Grenzen-Ids (−id−1 = rückwärts), umriss: Punkte }\n' +
+// Ausgabe: die Karte als Teil des Spiels (eine Quelle für Spiel und Kartentest), Felder/Barbaren nur für den Kartentest
+const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, tempel, startplaetze, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
+const SPIEL = path.join(__dirname, '../../Game/spiel/01a2-karte-zonen.js');
+fs.writeFileSync(SPIEL, '// Teil 01a2-karte-zonen.js: Weltkarte wie das RoK-Königreich – Daten (erzeugt von werkzeuge/kartentest/karte_erzeugen.js, nicht von Hand ändern)\n' +
+  '// gebiete: { id, zone 1–4 (5 = Mitte), name, boden, kern: Mittelpunkt, rand: Grenzen-Ids (−id−1 = rückwärts) – der Umriss ist der Ring daraus }\n' +
   '// grenzen: { id, a, b (−1 = Kartenrand), punkte } · paesse: { id, a, b, grenze, x, y, senk (Grenze läuft senkrecht), stufe 1–5 }\n' +
-  '// tempel: { gebiet, x, y, art tempel|waechtertempel } – je Zone-4-Gebiet einer\n' +
-  '// startplaetze / felder { art, stufe } / barbaren { stufe }: { x, y, gebiet } – locker gestreut, nie auf Grenzen, Pässen, Tempeln\n' +
-  '// oeffnen: Stufe → Tag, an dem die Pässe aufgehen (von außen nach innen); thron.tag: ab dann zählt der Thron\n';
-fs.writeFileSync(path.join(__dirname, 'karte_daten.js'), kopf + 'const KARTE_ZONEN = ' + JSON.stringify(daten) + ';\n');
+  '// tempel: { gebiet, x, y, art tempel|waechtertempel } – je Zone-4-Gebiet einer · startplaetze: { x, y, gebiet } – je Zone-1-Gebiet gleich viele\n' +
+  '// oeffnen: Stufe → Tag, an dem die Pässe aufgehen (von außen nach innen); thron.tag: ab dann zählt der Thron\n' +
+  'const KARTE_ZONEN = ' + JSON.stringify(daten) + ';\n');
+fs.writeFileSync(path.join(__dirname, 'karte_dinge.js'), '// Kartentest: Felder und Barbaren-Lager (erzeugt von karte_erzeugen.js) – im Spiel kommen sie später\n' +
+  'Object.assign(KARTE_ZONEN, ' + JSON.stringify({ felder, barbaren }) + ');\n');
 console.log('Gebiete', gebiete.length, '· Grenzen', grenzen.length, '(Rand', grenzen.filter(g => g.b === -1).length + ') · Pässe', paesse.length,
   [1, 2, 3, 4, 5].map(st => 'Stufe ' + st + ': ' + paesse.filter(p => p.stufe === st).length).join(', '),
   '· Start', startplaetze.length, 'Felder', felder.length, 'Barbaren', barbaren.length, '· ohne Pass:', gebiete.filter(g => !paesse.some(p => p.a === g.id || p.b === g.id)).map(g => g.id).join(' ') || '-');

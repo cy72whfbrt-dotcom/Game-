@@ -2,7 +2,7 @@
 // Attacks and troop transfers now take real time to arrive, scaled
 // by the distance between the two towers - the "Geschwindigkeit"
 // skill (which also speeds up production) shortens the march.
-const BASE_ATTACK_SPEED = 300; // world units per second - slow enough that speed upgrades are felt
+const BASE_ATTACK_SPEED = 300 * KARTE_MASSSTAB; // world units per second - slow enough that speed upgrades are felt
 const MIN_ATTACK_SECONDS = 6;
 const MAX_ATTACK_SECONDS = 60;
 // A lost attack isn't one-sided: the defender takes real casualties
