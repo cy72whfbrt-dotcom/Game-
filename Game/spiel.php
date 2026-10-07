@@ -1916,11 +1916,11 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
   border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 fill / 16px stretch;animation:lvlup-in 420ms cubic-bezier(.2,1.4,.3,1)}
 .bf-band{position:relative;margin:-14px -6px 4px;padding:10px 40px 14px;background:url(bilder/ui_band_gold.webp) center/100% 100% no-repeat}
 .bf-band h2{margin:0;font:700 19px/1.15 var(--font-display);letter-spacing:.04em;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.55)}
-.bf-unter{font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-3);margin-bottom:4px}
+.bf-unter{position:relative;z-index:1;font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-2);text-shadow:0 1px 3px #000;margin-bottom:4px}
 .bf-buehne{position:relative;display:none;height:150px;margin:0 auto 6px;width:200px}
 .bf.mit-kiste .bf-buehne{display:block}
 .bf-strahlen{position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;background:url(bilder/ui_strahlen.webp) center/contain no-repeat;
-  opacity:0;transform:scale(.4);pointer-events:none}
+  opacity:0;transform:scale(.4);pointer-events:none;-webkit-mask-image:radial-gradient(circle,#000 30%,transparent 68%);mask-image:radial-gradient(circle,#000 30%,transparent 68%)}
 .bf.is-auf .bf-strahlen{opacity:.95;transform:scale(1);transition:opacity .3s,transform .4s cubic-bezier(.2,1.4,.3,1);animation:lvlup-spin 12s linear infinite}
 .bf-kiste{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
 .bf.is-wackeln .bf-kiste{animation:bf-wackeln .7s ease-in-out}
@@ -1943,7 +1943,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 /* ---- Shop: Kisten als Bild, Öffnen 1× / 10× ---- */
 .ware-bild > img.kiste-bild{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 6px rgba(0,0,0,.55))}
 .ware-preise{display:flex;margin:8px -10px 0}
-.ware-preise > .ware-preis{flex:1 1 0;min-width:0;margin:0}
+.ware-preise > .ware-preis{flex:1 1 0;min-width:0;margin:0;gap:3px;padding:0 3px;font-size:15px} .ware-preise > .ware-preis .icon{width:13px;height:13px}
 .ware-preise > .ware-preis + .ware-preis{border-left:1px solid rgba(0,0,0,.35)}
 .ware-preis[data-x]::before{content:attr(data-x);font:800 12px/1 var(--font-ui);opacity:.85;margin-right:-2px}
 .ware-preis .ware-x{font:800 12px/1 var(--font-ui);opacity:.85;margin-right:-2px}
