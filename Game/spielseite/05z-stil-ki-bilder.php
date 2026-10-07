@@ -100,8 +100,8 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 
 /* ---------------- Grundform Fenster: Rahmen, Kopfzeile, Schließen, Reiter, Trennlinie ---------------- */
 /* der Rahmen ist der eigene Rand jedes Fensters (nicht ein darübergelegtes ::before): immer sichtbar, egal welcher Reiter und wie geöffnet; der Inhalt liegt nie darunter */
-.panel{border:14px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 14px stretch;background-clip:border-box}
-.panel::before{content:none}
+.panel{border:solid transparent;border-width:12px 12px 8px;border-image:url(bilder/ui_rahmen.webp) 44 / 12px 12px 8px stretch;background-clip:border-box}
+.panel::before{content:none} .panel .sheet-grab{display:none}   /* kein grauer Griff – der Rahmen ist überall gleich */
 .hh::before{border:16px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch}
 .ki-fenster,.marker-sheet{border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);border-radius:0}
 .marker-sheet{padding:16px}
