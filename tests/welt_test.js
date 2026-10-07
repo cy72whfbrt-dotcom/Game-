@@ -62,11 +62,14 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Hauptbuch: fester Münz-Spielraum in Münzen × 1.000 (27.778 + 3 × 2.778 statt 65.000 vor dem 5.10.)', t.fix === 27778 + 3 * 2778 && t.lv === 0);
     pruefe('Hauptbuch: Mindest-Truppen (Thron-Shop 1.000, Fund 100) × WIRTSCHAFT_KOSTEN, nie unter 1', S.TR_STUNDE_MIN === 1 && S.FUND_TR_MIN === 1);
     // Thron-Shop zahlt wie Händler/Markt 2 Stunden Produktion (Alexander 6.10.): 3 freie Käufe = 3 × 2 Stunden ohne Fehlalarm
-    const MG = new Function('PASS_LVLS', 'passRewardAt', 'SR_STUNDE_MIN', 'nn', 'hourProduction', 'passNo', 'throneEarnedOf', 'saveBotState', 'THRONE_STUNDEN', 'QUEST_COIN_H',
-        stueck('    let passMuenzH', '    function spielraumFrei') + '; return muenzGutscheine;')(0, null, 3, x => +x || 0, () => ({ coins: 1000 }), () => 7, () => 0, () => {}, 1 / 1800 / (1 / 3600), [1, 2, 3]);
-    const dT = { pS: 7, pM: 0, tC: 0, aM: 24, aMt: Date.now() + 6e4 }, h12 = 1000 * 1.2;   // (Aufgaben-Topf leer – und füllt sich in der Testzeit nicht nach)
+    const mgMit = c => new Function('PASS_LVLS', 'passRewardAt', 'SR_STUNDE_MIN', 'nn', 'hourProduction', 'passNo', 'throneEarnedOf', 'saveBotState', 'THRONE_STUNDEN', 'QUEST_COIN_H', 'THRONE_MIN',
+        stueck('    let passMuenzH', '    function spielraumFrei') + '; return muenzGutscheine;')(0, null, 3, x => +x || 0, () => ({ coins: c }), () => 7, () => 0, () => {}, 1 / 1800 / (1 / 3600), [1, 2, 3], { coins: 20000, troops: 2000 });
+    const MG = mgMit(20000), dT = { pS: 7, pM: 0, tC: 0, aM: 24, aMt: Date.now() + 6e4 }, h12 = 20000 * 1.2;   // (Aufgaben-Topf leer – und füllt sich in der Testzeit nicht nach)
     pruefe('Hauptbuch: 3 Thron-Käufe à 2 Stunden Münzen gedeckt (je Kauf 2 × Stundenproduktion)', MG('u1', 3 * 2 * h12, dT) === 3 * 2 * h12 && Math.abs(dT.tC - 3) < 1e-9);
-    pruefe('Hauptbuch: … ein 4. Kauf ohne Thron-Punkte nicht', MG('u1', 2 * h12, dT) === 0);
+    pruefe('Hauptbuch: … ein 4. Kauf ohne Thron-Punkte nicht', MG('u1', 2 * h12, dT) < h12 * 1e-3);
+    // Thron-Shop mindestens 20.000 Münzen (7.10.): auch bei kleiner Produktion (1.000 / Std.) ist ein Kauf gedeckt – zwei nicht
+    const dK = { pS: 7, pM: 0, tC: 2, aM: 24, aMt: Date.now() + 6e4 }, MK = mgMit(1000);
+    pruefe('Hauptbuch: Thron-Kauf mind. 20.000 Münzen gedeckt, ein zweiter nicht', MK('u1', 20000, dK) === 20000 && Math.abs(dK.tC - 3) < 1e-6 && MK('u1', 20000, dK) < 1);
     // Tagesaufgaben (7.10.): 6 Aufgaben je 1/2/3 Stunden Münzen = 12 Stunden am Tag, der Topf hält höchstens 2 Tage und füllt sich gleichmäßig nach
     const dA = { pS: 7, pM: 0, tC: 5 };
     pruefe('Hauptbuch: Aufgaben-Münzen – 2 Tage (24 Stunden) gedeckt, mehr nicht', MG('u1', 24 * h12, dA) === 24 * h12 && MG('u1', h12, dA) < h12 * 1e-3);

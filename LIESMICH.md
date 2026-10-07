@@ -1752,6 +1752,18 @@ Nacht – vorher bauen und testen.
     einer Saison (Saison 1 ≈ Burg 16–18, Burg 25 nach ~4 Saisons, Anfang schnell). Schild 80/300/700 (A). Truppen aus
     Basen: ausgewogen anpassen („nicht zu langsam, nicht zu schnell“). Start-Helden: alle behalten die 3 Standard-Helden
     (B). Neue Zeiten gelten sofort (A).
+    - GEBAUT 7.10. (Zahlen-Paket, nicht hochgeladen): Burg-Bauzeit als Tabelle (`burgZeitTab`, 08a): 1→2 10 s … 10→11 12 Std.,
+      ab 11 steil bis 45 Tage (24→25) – Burg 10 am ersten Tag, Burg 18 nach ~35 Tagen Grundzeit, Burg 25 nach ~231 Tagen (~4 Saisons).
+      Burg-Kosten `burgBasis` 1.000 × 1,75 je Stufe bis 10, danach × 1,6 (Burg 2: 1.000 Holz/1.100 Münzen, Burg 25: 110 Mio. Holz
+      statt 5,6 Mrd.). Gebäude = 30 % der Burg-Kosten, 15 % der Burg-Zeit gleicher Stufe (mind. 10 s, höchstens 7 Tage),
+      Krankenhaus 26–40 × 1,15 je Stufe (40: ~300 Mio. statt 21.000 Mrd. Münzen). Rohstoff-Gebäude + 33 % je Stufe (statt 42 %).
+      Barbaren-Lager 500 × 1,42^(Stufe−1) Krieger (1: 500, 4: 1.400, 10: 12.000, 25: 2,3 Mio.), Beute Krieger × 20 + 5.000 × Stufe.
+      Schild 80/300/700 Edelsteine (700 mit „Wirklich?“). Thron-Shop mind. 20.000 Münzen / 2.000 Truppen. Ausrüstung: Wirkung
+      (Wert + 6) × 0,15 % (grau 1 ≈ 1 %), Zerlegen 5 + Wert Punkte (grau 1 = 6). Tagesboss-Klassen als Anteil vom Boss-Leben
+      (bis 0,05 % / 0,5 % / 1 % / 2,5 % / darüber). Truppen aus Basen 15 je Std. auf Stufe 1 (vorher 5, alle gleich – auch
+      Mitspieler). Spähbericht: Holz/Stein/Eisen gegen den Rohstoff-Schutz (vorher fälschlich der Münzen-Schutz). „Gold“ →
+      „Münzen“ in Fähigkeiten, Berichten, Helden-Texten („Goldmine“ und die Seltenheit „Gold“ bleiben). Hauptbuch: bis 17.10.
+      zählt für Gebäude auch die alte, kürzere Bauzeit und für Schilde der alte Preis (kein falscher Alarm). Test: `burg_tempo_test`.
 34. **Teleport-Animation (Alexander 7.10.: „wäre geil, merken“):** beim Teleportieren eine Animation (Basis verschwindet
     mit Lichtsäule/Staub, taucht am Ziel auf). Später.
 
@@ -2432,7 +2444,7 @@ für beide Spieler. Keine Fehler in der Konsole oder im Weltrechner, keine Schum
   wertest du weiter sofort mit Münzen auf (ohne Bauzeit). Ziehst du um, bekommt die alte Hauptstadt ihre alte Stufe
   zurück (Welt-Schlüssel `openWaterHauptVor`). Mitspieler werten ihre Hauptstadt draußen nicht mehr auf.
 - **Neue Stadt-Gebäude vor der Mauer:** Holzfäller, Steinbruch, Eisenmine (je bis Stufe 25, Bauzeit + Bauarbeiter wie die
-  anderen). Pro Stunde: 150 (die Burg allein) + 600 × 1,42^(Stufe−1) × Landschaft der Hauptstadt (0,6–1,0) × Ertrag
+  anderen). Pro Stunde: 150 (die Burg allein) + 600 × 1,33^(Stufe−1) (bis 7.10.: 1,42) × Landschaft der Hauptstadt (0,6–1,0) × Ertrag
   (Forschung, Titel). Beispiel Holzfäller 5 auf Wiese: ~1.900 Holz/Std. Das Gebäude-Fenster zeigt „Jetzt … pro Stunde,
   nächste Stufe …“. Die alten Basis-Rohstoffe gibt es nicht mehr (nur noch Stadt + Felder sammeln). Mitspieler bauen sie auch.
 - Anleitung angepasst (Schritt 4: Holzfäller bauen, Schritt 6: Belohnungen unter „Events“); in der Stadt erscheint sie nur
@@ -3412,8 +3424,9 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
 - **T1–T5 komplett raus:** keine Truppen-Stufen, keine Forschung dafür, nichts mehr im Kampf, Profil, Hauptbuch, Server.
 - **Labor (alles wird geforscht, kostet Rohstoffe und Zeit, Stufen wie bisher):** neu **Tempel** (+10 % Tempel-Bonus je
   Stufe, statt Tempelschrein), **Späher** jetzt bis Stufe 10 (statt Späherturm), **Wachturm** (Stufe 1–10, statt Gebäude).
-- **Burg (Hauptstadt, max. 25):** jede Stufe kostet Gold, Holz, Stein, Eisen (Stufe 1: 10.000 Gold … Stufe 24: 11 Mrd.)
-  und dauert **1 Tag bis 60 Tage** – zusammen **rund 1 Jahr** bis 25. Mit Gems schneller wie jeder Bau.
+- **Burg (Hauptstadt, max. 25):** jede Stufe kostet Münzen, Holz, Stein, Eisen und dauert Zeit. Seit 7.10. (Merkliste 35):
+  10 s (1→2) bis 45 Tage (24→25), Burg 25 nach ~4 Saisons, Burg 25 kostet ~110 Mio. Holz (vorher 1–60 Tage, 5,6 Mrd.).
+  Mit Gems schneller wie jeder Bau.
   Übergang: eine Woche (bis 14.10.) nimmt das Hauptbuch für die Burg auch noch die alten Zeiten/Kosten (kein falscher Alarm).
 - **Burg-Schutz (statt Lager):** von jedem Rohstoff (Gold, Holz, Stein, Eisen) ist so viel sicher:
   Stufe 1: 10.000 · 10: 1 Mio. · 25: 100 Mio. (dazwischen gleichmäßig).

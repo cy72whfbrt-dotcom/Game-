@@ -9336,10 +9336,10 @@ function burgZeitTab(L) {
 }
 // Grundwert der Burg-Kosten (Holz; Stein 0,8 ×, Eisen 0,5 ×, Münzen 2 × in wirtM): 1.000 · 1,75 je Stufe bis 10, danach × 1,6 – Burg 25 ≈ 110 Mio. Holz
 function burgBasis(L) { return 1000 * Math.pow(1.75, Math.min(Math.max(1, L), 10) - 1) * Math.pow(1.6, Math.max(0, L - 10)); }
-function stadtFaktor(L) { return L >= 25 ? Math.pow(1.15, L - 24) : 1; }   // (nur das Krankenhaus geht über 25: + 15 % je Stufe)
+function stadtFaktor(L) { return L >= 25 ? Math.pow(1.15, L - 24) : 1; }   // (nur das Krankenhaus geht über 25: Burg 24 + 15 % je Stufe)
 function cityCost(id, level) {                    // coins to go from `level` to level + 1 (Münzen: wirtM)
     if (id === 'keep') return niceRound(wirtM(2 * burgBasis(level)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
-    return niceRound(wirtM(.6 * burgBasis(level) * stadtFaktor(level)));   // Gebäude: 30 % der Burg derselben Stufe
+    return niceRound(wirtM(.6 * burgBasis(Math.min(24, level)) * stadtFaktor(level)));   // Gebäude: 30 % der Burg derselben Stufe
 }
 function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)
     // Gebäude: 15 % der Burg-Zeit derselben Stufe (mind. 10 s; Krankenhaus über 25: + 10 % je Stufe), nie mehr als 7 Tage
@@ -13913,13 +13913,14 @@ if (window.WELT) {
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
         if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) for (const r of passRewardAt(L, pr)) if (r.k === 'coins') passMuenzH += r.n || 1; }
-        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, THRONE_MIN.coins / THRONE_STUNDEN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni · ein Thron-Kauf bringt mind. THRONE_MIN)
+        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        const thH = Math.max(THRONE_STUNDEN, THRONE_MIN.coins / h);   // Stunden je Thron-Kauf (mind. THRONE_MIN Münzen, 7.10.)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
         d.aM = Math.max(0, nn(d.aM) - AUF_MUENZ_H * Math.max(0, now - nn(d.aMt)) / 864e5); d.aMt = now;
         const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
-        const use = Math.min(mehr, (passRest + aufRest + thronRest * THRONE_STUNDEN) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
+        const use = Math.min(mehr, (passRest + aufRest + thronRest * thH) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
         let r = use / h; const ausPass = Math.min(r, passRest); r -= ausPass; const ausAuf = Math.min(r, aufRest); r -= ausAuf;
-        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; d.tC = nn(d.tC) + r / THRONE_STUNDEN; saveBotState();
+        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; d.tC = nn(d.tC) + r / thH; saveBotState();
         return use;
     }
     function spielraumFrei(who, m) {

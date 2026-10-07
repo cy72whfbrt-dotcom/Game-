@@ -110,7 +110,7 @@ const rohStd = n => fmtNum(Math.round(n));                    // Rohstoffe pro S
 const STADT_MIX = { lumber: { h: .3, s: .9, e: .2 }, quarry: { h: 1.1, s: .2, e: .2 }, mine: { h: 1, s: .9, e: 0 }, wall: { h: .5, s: 1.3, e: .3 }, forge: { h: .6, s: .6, e: 1 }, market: { h: 1.2, s: .6, e: .2 } };
 function stadtKosten(id, L) {                                  // alles für ein Gebäude von Stufe L auf L + 1 (Burg: eigene Tabelle)
     if (id === 'keep') return burgKosten(L);
-    const m = STADT_MIX[id] || { h: 1, s: .7, e: .35 }, b = .3 * burgBasis(L) * stadtFaktor(L);   // 30 % der Burg derselben Stufe (7.10.)
+    const m = STADT_MIX[id] || { h: 1, s: .7, e: .35 }, b = .3 * burgBasis(Math.min(24, L)) * stadtFaktor(L);   // 30 % der Burg derselben Stufe (7.10.)
     return { c: cityCost(id, L), h: niceRound(wirtR(b * m.h)), s: L >= 2 ? niceRound(wirtR(b * m.s)) : 0, e: L >= 6 ? niceRound(wirtR(b * m.e)) : 0 };
 }
 function stadtCapB(id, B) { return id === 'keep' ? BURG_MAX : B >= BURG_MAX ? cityMaxLevel(id) : Math.min(cityMaxLevel(id), B); }   // höchste Stufe bei Burg-Stufe B

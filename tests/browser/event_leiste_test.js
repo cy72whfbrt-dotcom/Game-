@@ -36,8 +36,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     D.dmg[bot.id] = 5; D.hp = 0; drAuszahlen(true); out.drFall = [fach('drache|' + D.start + '|fall').length, inboxList().filter(x => x.src === 'drache').length];
     // Tagesboss: zweimal Klasse 1 = zweimal Belohnung, Klasse nach Schaden; Boss fällt: alle, die trafen – keine Platz-Preise
     const B = dbossEnsure(); B.kl = {};
-    out.klasse = [dbossKlasse(1), dbossKlasse(1000), dbossKlasse(1001), dbossKlasse(2e5), dbossKlasse(5e6)];
-    dbossKlasseZahlen(B, 'player', 500); dbossKlasseZahlen(B, 'player', 700); dbossKlasseZahlen(B, 'player', 2e6);
+    // Klassen als Anteil vom Boss-Leben (7.10.): bis 0,05 % / 0,5 % / 1 % / 2,5 % / darüber
+    out.klasse = [dbossKlasse(1, 1e6), dbossKlasse(500, 1e6), dbossKlasse(501, 1e6), dbossKlasse(2e4, 1e6), dbossKlasse(5e4, 1e6)];
+    const max0 = B.max; B.max = 1e6; dbossKlasseZahlen(B, 'player', 300); dbossKlasseZahlen(B, 'player', 400); dbossKlasseZahlen(B, 'player', 5e4); B.max = max0;
     out.boss = [B.kl.player.join(), inboxList().filter(x => x.src === 'boss').length];
     B.dmg = { player: 2000, [bot.id]: 10 }; dbossPayout(B);
     out.bossFall = [fach('boss|' + B.d + '|fall').length, inboxList().filter(x => x.src === 'boss' && /Platz/.test(x.title)).length];

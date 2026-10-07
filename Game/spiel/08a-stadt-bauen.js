@@ -86,10 +86,10 @@ function burgZeitTab(L) {
 }
 // Grundwert der Burg-Kosten (Holz; Stein 0,8 ×, Eisen 0,5 ×, Münzen 2 × in wirtM): 1.000 · 1,75 je Stufe bis 10, danach × 1,6 – Burg 25 ≈ 110 Mio. Holz
 function burgBasis(L) { return 1000 * Math.pow(1.75, Math.min(Math.max(1, L), 10) - 1) * Math.pow(1.6, Math.max(0, L - 10)); }
-function stadtFaktor(L) { return L >= 25 ? Math.pow(1.15, L - 24) : 1; }   // (nur das Krankenhaus geht über 25: + 15 % je Stufe)
+function stadtFaktor(L) { return L >= 25 ? Math.pow(1.15, L - 24) : 1; }   // (nur das Krankenhaus geht über 25: Burg 24 + 15 % je Stufe)
 function cityCost(id, level) {                    // coins to go from `level` to level + 1 (Münzen: wirtM)
     if (id === 'keep') return niceRound(wirtM(2 * burgBasis(level)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
-    return niceRound(wirtM(.6 * burgBasis(level) * stadtFaktor(level)));   // Gebäude: 30 % der Burg derselben Stufe
+    return niceRound(wirtM(.6 * burgBasis(Math.min(24, level)) * stadtFaktor(level)));   // Gebäude: 30 % der Burg derselben Stufe
 }
 function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)
     // Gebäude: 15 % der Burg-Zeit derselben Stufe (mind. 10 s; Krankenhaus über 25: + 10 % je Stufe), nie mehr als 7 Tage

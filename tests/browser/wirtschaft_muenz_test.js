@@ -43,7 +43,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   console.log(JSON.stringify(r));
   ok(r.faktor === 1000, 'MUENZ_FAKTOR = 1.000', r.faktor);
   ok(r.basis[0] === 10000 && r.basis[1] === 35000 && r.tempel === 15000, 'Ertrag: Basis Stufe 1 10.000 / Std. (Stufe 10: 35.000), Tempel 15.000 / Std.', [r.basis, r.tempel]);
-  ok(r.burg3 === 8900, 'Burg 2 → 3 kostet 8.900 Münzen', r.burg3);
+  ok(r.burg3 === 1900, 'Burg 2 → 3 kostet 1.900 Münzen (7.10.: Anfang billig, Burg 25 ≈ 120 Mio.)', r.burg3);
   ok(r.bund === 20000, 'Bündnis gründen 20.000 Münzen', r.bund);
   ok(r.stufe[0] === 10000 && r.stufe[1] === 250000, 'Stufen-Belohnung: mindestens 10.000 Münzen, Stufe 30: 250.000', r.stufe);
   ok(r.pass[0].k === 'coins' && r.pass[0].n === 3 && r.pass[1] >= 30000 && r.thron === Math.max(Math.round(5000 / 1.8), Math.round(2 * r.hp)) && r.thron >= 20000, 'Pass (3 Std. Ertrag ≥ 30.000) und Thron-Shop (2 Std. ≥ 20.000)', r);
@@ -53,7 +53,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const K = r.klein;
   ok(Object.keys(K).every(k => K[k] >= 100) && K.stufe >= 10000 && K.aufwerten >= 1000 && K.haendler >= 10000 && K.feld >= 10000, 'keine Einer-/Zehner-Münzbeträge (Belohnungen, Kosten, Händler, Funde, Felder, Beute, Markt)', K);
   ok(/100 Rohstoffe = 278 Münzen/.test(r.marktText), 'Markt erklärt den Kurs (100 Rohstoffe = 278 Münzen)', r.marktText);
-  ok(r.gold === '+167 Gold je 1.000 Kills', 'Fähigkeit „Angriff: Gold“ Stufe 1: +167 Gold je 1.000 Kills', r.gold);
+  ok(r.gold === '+167 Münzen je 1.000 Kills', 'Fähigkeit „Angriff: Münzen“ Stufe 1: +167 Münzen je 1.000 Kills', r.gold);
   ok(r.grund.join() === '50,500,1000,2000,46408' && r.steigt, 'Grundverteidigung: Stufe 1 50, Stufe 10 500, Stufe 20 1.000, Stufe 60 ~46.000 – steigt immer', r.grund);
   ok(!r.meineVert || r.meineVert[1] >= 50 * r.meineVert[0], 'deine Basis verteidigt mindestens mit der Grundverteidigung', r.meineVert);
   ok(r.bot.hp >= 10000 && r.bot.thron >= 20000 && r.bot.kiste >= 30000, 'Mitspieler: gleiche Münz-Größen (Ertrag, Thron-Shop, Händler)', r.bot);

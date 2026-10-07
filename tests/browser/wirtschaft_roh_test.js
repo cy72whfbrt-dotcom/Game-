@@ -47,8 +47,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   console.log(JSON.stringify(r));
   ok(r.faktor === 1800, 'ROH_FAKTOR = 1.800', r.faktor);
-  ok(r.burg3.h === 13000 && r.burg3.s === 10000 && r.burg3.e === 6400 && r.burg3.c === 14000, 'Burg 3 → 4: 13.000 Holz, 10.000 Stein, 6.400 Eisen, 14.000 Münzen (6.10.: Münzen × 1.000)', r.burg3);
-  ok(r.burg9.h >= 2e5 && r.burg9.h <= 2.2e5, 'Burg 9 → 10: etwa 210.000 Holz', r.burg9);
+  ok(r.burg3.h === 3100 && r.burg3.s === 2500 && r.burg3.e === 1500 && r.burg3.c === 3400, 'Burg 3 → 4: 3.100 Holz, 2.500 Stein, 1.500 Eisen, 3.400 Münzen (7.10.: rokzahlen)', r.burg3);
+  ok(r.burg9.h >= 8.5e4 && r.burg9.h <= 9e4, 'Burg 9 → 10: etwa 88.000 Holz', r.burg9);
   ok(r.burgStunde >= 75 * .6 && r.burgStunde <= 75 * 1.4 * 1.3 + 1, 'Burg allein: etwa 75 Holz pro Stunde (× Landschaft)', r.burgStunde);
   const F = r.felder;
   ok(F.h8 === 4000 && F.h2 === Math.round(8000 * Math.sqrt(300) / 2), 'Holz-Feld außen 4.000, Ring 2 nur × √300 (' + F.h2 + ')', F);

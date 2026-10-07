@@ -192,13 +192,14 @@ if (window.WELT) {
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
         if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) for (const r of passRewardAt(L, pr)) if (r.k === 'coins') passMuenzH += r.n || 1; }
-        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, THRONE_MIN.coins / THRONE_STUNDEN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni · ein Thron-Kauf bringt mind. THRONE_MIN)
+        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        const thH = Math.max(THRONE_STUNDEN, THRONE_MIN.coins / h);   // Stunden je Thron-Kauf (mind. THRONE_MIN Münzen, 7.10.)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
         d.aM = Math.max(0, nn(d.aM) - AUF_MUENZ_H * Math.max(0, now - nn(d.aMt)) / 864e5); d.aMt = now;
         const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
-        const use = Math.min(mehr, (passRest + aufRest + thronRest * THRONE_STUNDEN) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
+        const use = Math.min(mehr, (passRest + aufRest + thronRest * thH) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
         let r = use / h; const ausPass = Math.min(r, passRest); r -= ausPass; const ausAuf = Math.min(r, aufRest); r -= ausAuf;
-        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; d.tC = nn(d.tC) + r / THRONE_STUNDEN; saveBotState();
+        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; d.tC = nn(d.tC) + r / thH; saveBotState();
         return use;
     }
     function spielraumFrei(who, m) {
