@@ -64,7 +64,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `andere_sitzungen_loeschen` → Game/server/05-datenbank-welt.php:292
 - `anfKosten` → Game/spiel/08b-burg-aussehen.js:89
 - `anfZeile` → Game/spiel/08b-burg-aussehen.js:84
-- `angreiferZeilen` → Game/spiel/01a-grundlagen.js:191
+- `angreiferZeilen` → Game/spiel/01a-grundlagen.js:195
 - `angriffQuellen` → Game/spiel/10b-inselfenster-knoepfe.js:122
 - `angriffReicht` → Game/spiel/10b-inselfenster-knoepfe.js:127
 - `angriffStart` → Game/spiel/10b-inselfenster-knoepfe.js:133
@@ -141,7 +141,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `attackFlatBonus` → Game/spiel/04-kampf.js:272
 - `attackParts` → Game/spiel/01e-nebel-kampfwerte-hud.js:123
 - `attackSpeedMultiplier` → Game/spiel/02b-maersche.js:14
-- `AUF.rohJeStunde` → Game/aufbau.js:510
+- `AUF.rohJeStunde` → Game/aufbau.js:515
 - `auffaelligSammeln` → Game/weltrechner/start.js:136
 - `aufLand` → Game/spiel/01b-weltkarte.js:67
 - `aufraeumen` → Game/server/05-datenbank-welt.php:219
@@ -163,7 +163,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `band` → Game/baukunst/08-himmelsfeste-bilder.js:159
 - `banner` → Game/baukunst/06-turmhof-festung.js:275
 - `banner` → Game/baukunst/07-hafen-palast.js:477
-- `bannerModel` → Game/spiel/03b-gebaeude-3d.js:471
+- `bannerModel` → Game/spiel/03b-gebaeude-3d.js:467
 - `bannerSprite` → Game/spiel/03c-wappen-thronplatz.js:126
 - `barbAlong` → Game/spiel/09b-lager-tagesboss.js:221
 - `barbArrive` → Game/spiel/09b-lager-tagesboss.js:124
@@ -206,9 +206,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `baseShieldedFor` → Game/spiel/06d-schild-produktion.js:41
 - `basesTxt` → Game/spiel/05c-erfolge-rangliste.js:295
 - `basis_pfad` → Game/server/01-grundlagen-login.php:28
-- `basisBild` → Game/spiel/03b-gebaeude-3d.js:319
-- `basisBildNr` → Game/spiel/03b-gebaeude-3d.js:318
-- `basisGroesse` → Game/spiel/03b-gebaeude-3d.js:378
+- `basisBild` → Game/spiel/03b-gebaeude-3d.js:318
+- `basisBildNr` → Game/spiel/03b-gebaeude-3d.js:317
+- `basisGroesse` → Game/spiel/03b-gebaeude-3d.js:374
 - `basisRoh` → Game/aufbau.js:53
 - `Batch` → Game/baukunst/05-umland.js:93
 - `Batch` → Game/baukunst/06-turmhof-festung.js:240
@@ -266,7 +266,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bestRank` → Game/spiel/05a-aussehen-profil.js:42
 - `bestSlot` → Game/spiel/03d-maersche-tagnacht.js:120
 - `beute` → Game/spiel/02c-spaeher-ankunft.js:130
-- `beuteChips` → Game/spiel/01a-grundlagen.js:205
+- `beuteChips` → Game/spiel/01a-grundlagen.js:209
 - `beuteText` → Game/spiel/08a-stadt-bauen.js:44
 - `bgDropGen` → Game/spiel/03a-karte-hintergrund.js:404
 - `bgGen` → Game/spiel/03a-karte-hintergrund.js:405
@@ -281,10 +281,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bis` → Game/spiel/03c-wappen-thronplatz.js:450
 - `bitHat` → Game/spiel/10d-welt-weltrechner.js:918
 - `bitsZu` → Game/spiel/10d-welt-weltrechner.js:917
-- `bk3d` → Game/spiel/03b-gebaeude-3d.js:444
-- `bkDraw` → Game/spiel/03b-gebaeude-3d.js:469
-- `bkModel` → Game/spiel/03b-gebaeude-3d.js:446
-- `bkSprite` → Game/spiel/03b-gebaeude-3d.js:462
+- `bk3d` → Game/spiel/03b-gebaeude-3d.js:440
+- `bkDraw` → Game/spiel/03b-gebaeude-3d.js:465
+- `bkModel` → Game/spiel/03b-gebaeude-3d.js:442
+- `bkSprite` → Game/spiel/03b-gebaeude-3d.js:458
 - `blit` → Game/spiel/03a-karte-hintergrund.js:561
 - `blob` → Game/spiel/01f-felsen.js:208
 - `block` → Game/spiel/05d-maersche-kampfbericht.js:452
@@ -322,7 +322,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botBestRarity` → Game/bots/04-stand-stadt.js:204
 - `botBld` → Game/bots/04-stand-stadt.js:76
 - `botBountyReward` → Game/bots/06-aussehen-felder-barbaren.js:55
-- `botBurgWert` → Game/aufbau.js:460
+- `botBurgWert` → Game/aufbau.js:465
 - `botById` → Game/welt.js:367
 - `botCanCross` → Game/bots/01-spieler.js:116
 - `botCapitalMoveOk` → Game/bots/05-verteidigen-takt.js:163
@@ -342,7 +342,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botDrache` → Game/bots/06-aussehen-felder-barbaren.js:324
 - `botDropShield` → Game/bots/06-aussehen-felder-barbaren.js:67
 - `botFails` → Game/bots/02-kampf-karte.js:280
-- `botForschung` → Game/aufbau.js:438
+- `botForschung` → Game/aufbau.js:443
 - `botFreeSlots` → Game/bots/03-angreifen.js:38
 - `botFrei` → Game/bots/02-kampf-karte.js:329
 - `botGather` → Game/bots/04-stand-stadt.js:310
@@ -376,7 +376,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botLoyal` → Game/bots/02-kampf-karte.js:382
 - `botMarchMult` → Game/bots/04-stand-stadt.js:202
 - `botMarginFor` → Game/bots/02-kampf-karte.js:412
-- `botMarkt` → Game/aufbau.js:451
+- `botMarkt` → Game/aufbau.js:456
 - `botMidPull` → Game/bots/02-kampf-karte.js:292
 - `botMigrateV2` → Game/bots/04-stand-stadt.js:34
 - `botMood` → Game/bots/03-angreifen.js:17
@@ -400,7 +400,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botRespawn` → Game/bots/05-verteidigen-takt.js:306
 - `botRespects` → Game/bots/02-kampf-karte.js:384
 - `botRevengeLaunched` → Game/bots/02-kampf-karte.js:244
-- `botRohWunsch` → Game/aufbau.js:466
+- `botRohWunsch` → Game/aufbau.js:471
 - `botRulerTitles` → Game/bots/05-verteidigen-takt.js:284
 - `botSampleSources` → Game/bots/04-stand-stadt.js:349
 - `botSchaetzAngriff` → Game/bots/05-verteidigen-takt.js:27
@@ -419,7 +419,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botSituation` → Game/bots/02-kampf-karte.js:392
 - `botSortGroups` → Game/bots/01-spieler.js:104
 - `botSpendSkills` → Game/bots/04-stand-stadt.js:57
-- `botStadtFix` → Game/aufbau.js:430
+- `botStadtFix` → Game/aufbau.js:435
 - `botStat` → Game/bots/06-aussehen-felder-barbaren.js:52
 - `botStrategic` → Game/bots/02-kampf-karte.js:311
 - `botStyle` → Game/bots/03-angreifen.js:21
@@ -617,7 +617,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `burg` → Game/ladebildschirm.js:55
 - `burgFair` → Game/aufbau.js:175
 - `burgFairWer` → Game/spiel/09f-saison.js:152
-- `burgKarte` → Game/aufbau.js:478
+- `burgKarte` → Game/aufbau.js:483
 - `burgKosten` → Game/aufbau.js:97
 - `burgKostenAlt` → Game/spiel/10d-welt-weltrechner.js:504
 - `burgSchutz` → Game/aufbau.js:106
@@ -645,7 +645,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `chainStreak` → Game/spiel/06a-aufgaben.js:180
 - `checkRuler` → Game/spiel/07b-kriegsherr.js:205
 - `chip` → Game/spiel/05b-truhe-skills.js:9
-- `chipN` → Game/spiel/01a-grundlagen.js:199
+- `chipN` → Game/spiel/01a-grundlagen.js:203
 - `choose` → Game/baukunst/05-umland.js:682
 - `cityAnfHtml` → Game/spiel/08b-burg-aussehen.js:95
 - `cityBauId` → Game/spiel/08a-stadt-bauen.js:260
@@ -801,18 +801,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawBarb` → Game/spiel/09b-lager-tagesboss.js:256
 - `drawBaseAuras` → Game/spiel/03c-wappen-thronplatz.js:300
 - `drawBaseSparks` → Game/spiel/03c-wappen-thronplatz.js:322
-- `drawBasisBild` → Game/spiel/03b-gebaeude-3d.js:325
-- `drawBasisSchilder` → Game/spiel/03b-gebaeude-3d.js:371
+- `drawBasisBild` → Game/spiel/03b-gebaeude-3d.js:324
+- `drawBasisSchilder` → Game/spiel/03b-gebaeude-3d.js:367
 - `drawBattleFx` → Game/spiel/07a-schlachten.js:398
-- `drawBrand` → Game/spiel/03b-gebaeude-3d.js:422
-- `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:379
+- `drawBrand` → Game/spiel/03b-gebaeude-3d.js:418
+- `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:375
 - `drawCrest` → Game/spiel/03c-wappen-thronplatz.js:19
 - `drawCrown` → Game/spiel/07b-kriegsherr.js:185
 - `drawDragonName` → Game/spiel/09c-events-drache.js:322
 - `drawEvents` → Game/spiel/09c-events-drache.js:293
 - `drawFog` → Game/spiel/06e-nebel-zeichnen.js:108
 - `drawGatehouse` → Game/spiel/06e-nebel-zeichnen.js:174
-- `drawGlyph` → Game/spiel/01a-grundlagen.js:227
+- `drawGlyph` → Game/spiel/01a-grundlagen.js:231
 - `drawHaendler` → Game/haendler.js:152
 - `drawHeimWappen` → Game/spiel/06e-nebel-zeichnen.js:234
 - `drawMap` → Game/spiel/03d-maersche-tagnacht.js:214
@@ -865,7 +865,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `edgeDist` → Game/spiel/03a-karte-hintergrund.js:245
 - `effectiveDefense` → Game/spiel/01e-nebel-kampfwerte-hud.js:67
 - `effectiveTroops` → Game/spiel/01e-nebel-kampfwerte-hud.js:59
-- `effektText` → Game/aufbau.js:328
+- `effektText` → Game/aufbau.js:333
 - `eigeneFeldBarb` → Game/spiel/09b-lager-tagesboss.js:75
 - `eigeneTruppen` → Game/buendnis/01-daten-regeln.js:458
 - `eigeneTruppenDazu` → Game/spiel/01a-grundlagen.js:25
@@ -921,7 +921,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evWann` → Game/spiel/09c-events-drache.js:387
 - `exploreOwned` → Game/spiel/01e-nebel-kampfwerte-hud.js:58
 - `ext` → Game/baukunst/06-turmhof-festung.js:14
-- `extraHtml` → Game/aufbau.js:368
+- `extraHtml` → Game/aufbau.js:373
 - `face` → Game/baukunst/06-turmhof-festung.js:21
 - `faceWindow` → Game/spiel/03b-gebaeude-3d.js:54
 - `fachwerk` → Game/baukunst/06-turmhof-festung.js:48
@@ -1018,13 +1018,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fmt1` → Game/spiel/05b-truhe-skills.js:196
 - `fmt1` → Game/spiel/05d-maersche-kampfbericht.js:154
 - `fmtAway` → Game/spiel/06d-schild-produktion.js:312
-- `fmtClock` → Game/spiel/01a-grundlagen.js:139
+- `fmtClock` → Game/spiel/01a-grundlagen.js:143
 - `fmtCompact` → Game/spiel/01a-grundlagen.js:124
 - `fmtD` → Game/spiel/05d-maersche-kampfbericht.js:156
-- `fmtDHMS` → Game/spiel/01a-grundlagen.js:134
+- `fmtDHMS` → Game/spiel/01a-grundlagen.js:138
 - `fmtDuration` → Game/spiel/08a-stadt-bauen.js:93
 - `fmtExact` → Game/spiel/01a-grundlagen.js:122
 - `fmtHours` → Game/spiel/06d-schild-produktion.js:46
+- `fmtHud` → Game/spiel/01a-grundlagen.js:132
 - `fmtM` → Game/spiel/05d-maersche-kampfbericht.js:155
 - `fmtNum` → Game/spiel/01a-grundlagen.js:123
 - `fmtPassWait` → Game/spiel/01b-weltkarte.js:314
@@ -1032,9 +1033,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fo` → Game/spiel/10c-start-einstellungen.js:57
 - `foAkaFuer` → Game/aufbau.js:170
 - `FOAM` → Game/baukunst/08-himmelsfeste-bilder.js:21
-- `foBaum` → Game/aufbau.js:343
-- `foBedingt` → Game/aufbau.js:342
-- `foDetail` → Game/aufbau.js:351
+- `foBaum` → Game/aufbau.js:348
+- `foBedingt` → Game/aufbau.js:347
+- `foDetail` → Game/aufbau.js:356
 - `foFertig` → Game/aufbau.js:216
 - `fogBlob` → Game/spiel/06e-nebel-zeichnen.js:48
 - `foGems` → Game/aufbau.js:226
@@ -1063,7 +1064,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `free` → Game/spiel/01c-basen-spielstand.js:46
 - `freezeCamera` → Game/spiel/03e-kamera-eingabe.js:250
 - `freierStartplatz` → Game/spiel/01c-basen-spielstand.js:160
-- `freiText` → Game/aufbau.js:297
+- `freiText` → Game/aufbau.js:302
 - `fremd_kuerzen` → Game/server/02-sicherheit-datenlecks.php:155
 - `fremd_wert` → Game/server/02-sicherheit-datenlecks.php:150
 - `fremdGeheim` → Game/spiel/01a-grundlagen.js:16
@@ -1135,7 +1136,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gleich` → Game/benachrichtigung.js:35
 - `gleich` → Game/spiel/05c-erfolge-rangliste.js:299
 - `glowy` → Game/baukunst/04-vielfalt-stile.js:236
-- `glyph` → Game/spiel/01a-grundlagen.js:214
+- `glyph` → Game/spiel/01a-grundlagen.js:218
 - `GOAL_VAL.armyWins` → Game/spiel/05c-erfolge-rangliste.js:30
 - `GOAL_VAL.burg` → Game/spiel/05c-erfolge-rangliste.js:32
 - `GOAL_VAL.captures` → Game/spiel/05c-erfolge-rangliste.js:27
@@ -1176,9 +1177,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `HATCH_PX` → Game/spiel/03a-karte-hintergrund.js:350
 - `hatchPatterns` → Game/spiel/03a-karte-hintergrund.js:355
 - `hatchTile` → Game/spiel/03a-karte-hintergrund.js:351
-- `hauptstadtStufen` → Game/aufbau.js:481
-- `hauptVon` → Game/aufbau.js:479
-- `hauptVor` → Game/aufbau.js:480
+- `hauptstadtStufen` → Game/aufbau.js:486
+- `hauptVon` → Game/aufbau.js:484
+- `hauptVor` → Game/aufbau.js:485
 - `HB_ACH` → Game/spiel/10d-welt-weltrechner.js:522
 - `hbAusProfil` → Game/spiel/10d-welt-weltrechner.js:840
 - `hbBauten` → Game/spiel/10d-welt-weltrechner.js:519
@@ -1419,7 +1420,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kisteStern` → Game/spiel/06d-schild-produktion.js:80
 - `klippe` → Game/ladebildschirm.js:51
 - `knopf` → Game/buendnis/04-fenster-karte-welt.js:91
-- `knoten` → Game/aufbau.js:346
+- `knoten` → Game/aufbau.js:351
 - `konten_gueltig` → Game/server/07-welt-puls.php:23
 - `konten_zurueck` → Game/server/05-datenbank-welt.php:185
 - `konto` → Game/spiel/10d-welt-weltrechner.js:135
@@ -1478,9 +1479,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `LIMELT` → Game/baukunst/07-hafen-palast.js:410
 - `liste` → Game/spiel/08d-gebaeude-wirkung.js:75
 - `liveBald` → Game/spiel/10c-start-einstellungen.js:261
-- `liveHtml` → Game/spiel/01a-grundlagen.js:145
+- `liveHtml` → Game/spiel/01a-grundlagen.js:149
 - `liveTick` → Game/spiel/10c-start-einstellungen.js:265
-- `liveUhren` → Game/spiel/01a-grundlagen.js:163
+- `liveUhren` → Game/spiel/01a-grundlagen.js:167
 - `lkBuy` → Game/spiel/08b-burg-aussehen.js:21
 - `lkCard` → Game/spiel/08b-burg-aussehen.js:14
 - `lkDef` → Game/spiel/08b-burg-aussehen.js:18
@@ -1497,10 +1498,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `loadTitles` → Game/spiel/04-kampf.js:16
 - `loadWander` → Game/spiel/07b-kriegsherr.js:45
 - `log` → Game/weltrechner/start.js:32
-- `logBadge` → Game/spiel/01a-grundlagen.js:175
-- `logBalance` → Game/spiel/01a-grundlagen.js:176
-- `logChips` → Game/spiel/01a-grundlagen.js:200
-- `logRowHtml` → Game/spiel/01a-grundlagen.js:208
+- `logBadge` → Game/spiel/01a-grundlagen.js:179
+- `logBalance` → Game/spiel/01a-grundlagen.js:180
+- `logChips` → Game/spiel/01a-grundlagen.js:204
+- `logRowHtml` → Game/spiel/01a-grundlagen.js:212
 - `lokalId` → Game/spiel/01a-grundlagen.js:20
 - `look` → Game/spiel/05a-aussehen-profil.js:40
 - `lookMigrate` → Game/spiel/05a-aussehen-profil.js:49
@@ -1526,7 +1527,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `markers` → Game/spiel/09d-armeen-wegmarken.js:296
 - `marktGebuehr` → Game/aufbau.js:253
 - `marktHeute` → Game/aufbau.js:259
-- `marktHtml` → Game/aufbau.js:379
+- `marktHtml` → Game/aufbau.js:384
 - `marktLimit` → Game/aufbau.js:254
 - `marktTausch` → Game/aufbau.js:260
 - `marsch_fehlt` → Game/server/03-nebel-maersche-seite.php:75
@@ -1539,7 +1540,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `marschPlatz` → Game/spiel/02b-maersche.js:94
 - `marschStrecke` → Game/spiel/02b-maersche.js:18
 - `marschTempo` → Game/aufbau.js:238
-- `marschUhr` → Game/spiel/01a-grundlagen.js:140
+- `marschUhr` → Game/spiel/01a-grundlagen.js:144
 - `marschUmkehren` → Game/spiel/09b-lager-tagesboss.js:78
 - `marschVoll` → Game/aufbau.js:145
 - `marschVon` → Game/spiel/10d-welt-weltrechner.js:99
@@ -1954,7 +1955,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderHeroChests` → Game/spiel/06d-schild-produktion.js:64
 - `renderHeroHall` → Game/spiel/08c-helden.js:270
 - `renderInbox` → Game/spiel/06a-aufgaben.js:239
-- `renderKeep` → Game/aufbau.js:304
+- `renderKeep` → Game/aufbau.js:309
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:4
 - `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:100
 - `renderLook` → Game/spiel/05a-aussehen-profil.js:56
@@ -2095,9 +2096,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `schedule` → Game/baukunst/08-himmelsfeste-bilder.js:392
 - `schedule` → Game/spiel/10c-start-einstellungen.js:108
 - `schild` → Game/spiel/03c-wappen-thronplatz.js:153
-- `schildBild` → Game/spiel/03b-gebaeude-3d.js:354
-- `schildDaten` → Game/spiel/03b-gebaeude-3d.js:349
-- `schildRect` → Game/spiel/03b-gebaeude-3d.js:345
+- `schildBild` → Game/spiel/03b-gebaeude-3d.js:350
+- `schildDaten` → Game/spiel/03b-gebaeude-3d.js:345
+- `schildRect` → Game/spiel/03b-gebaeude-3d.js:341
 - `schluesselTausch` → Game/welt.js:90
 - `schnellerDrueber` → Game/spiel/02b-maersche.js:261
 - `schnellerMerken` → Game/spiel/02b-maersche.js:260
@@ -2122,7 +2123,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `server` → Game/weltrechner/push.js:168
 - `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:165
 - `setArmyPlace` → Game/spiel/09d-armeen-wegmarken.js:280
-- `setBtnLabel` → Game/spiel/01a-grundlagen.js:133
+- `setBtnLabel` → Game/spiel/01a-grundlagen.js:137
 - `setGateSettings` → Game/spiel/01b-weltkarte.js:279
 - `setMarkerMode` → Game/spiel/09d-armeen-wegmarken.js:310
 - `setMode` → Game/spiel/10c-start-einstellungen.js:139
@@ -2186,7 +2187,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spaeherBlick` → Game/spiel/02c-spaeher-ankunft.js:52
 - `spaeherBlickHtml` → Game/spiel/02c-spaeher-ankunft.js:124
 - `spaeherHeim` → Game/spiel/02c-spaeher-ankunft.js:144
-- `spaeherMehr` → Game/aufbau.js:412
+- `spaeherMehr` → Game/aufbau.js:417
 - `spaeherTempo` → Game/aufbau.js:239
 - `spaeherVon` → Game/spiel/10d-welt-weltrechner.js:102
 - `spaeherWeg` → Game/spiel/01b-weltkarte.js:259
@@ -2239,14 +2240,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `startPinch` → Game/spiel/03e-kamera-eingabe.js:257
 - `startplaetzeReihum` → Game/spiel/01c-basen-spielstand.js:142
 - `statBump` → Game/spiel/05c-erfolge-rangliste.js:15
-- `statTile` → Game/spiel/01a-grundlagen.js:171
+- `statTile` → Game/spiel/01a-grundlagen.js:175
 - `statue` → Game/baukunst/03-wahrzeichen-feuer.js:30
 - `std` → Game/baukunst/01-werkzeugkasten.js:102
 - `step` → Game/spiel/08a-stadt-bauen.js:156
 - `stepGable` → Game/baukunst/07-hafen-palast.js:65
 - `stepOf` → Game/baukunst/02-buehne-grundbasis.js:142
 - `stern` → Game/spiel/02c-spaeher-ankunft.js:126
-- `stoesst` → Game/spiel/03b-gebaeude-3d.js:375
+- `stoesst` → Game/spiel/03b-gebaeude-3d.js:371
 - `stoneLantern` → Game/baukunst/04-vielfalt-stile.js:497
 - `stoneWarte` → Game/baukunst/05-umland.js:356
 - `stop` → Game/ladebildschirm.js:290
@@ -2334,7 +2335,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `troopProductionMultiplier` → Game/spiel/04-kampf.js:256
 - `troopsPerTick` → Game/spiel/01b-weltkarte.js:106
 - `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:297
-- `trunc` → Game/spiel/03b-gebaeude-3d.js:504
+- `trunc` → Game/spiel/03b-gebaeude-3d.js:500
 - `truppenBekannt` → Game/spiel/01e-nebel-kampfwerte-hud.js:38
 - `truppenGeben` → Game/spiel/10d-welt-weltrechner.js:446
 - `truppenMitRest` → Game/spiel/06d-schild-produktion.js:185
@@ -2348,9 +2349,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `uebersicht` → Game/server/05-datenbank-welt.php:336
 - `uebertragen` → Game/speichern.js:147
 - `ufer` → Game/ladebildschirm.js:163
-- `uhrHtml` → Game/spiel/01a-grundlagen.js:160
-- `uhrText` → Game/spiel/01a-grundlagen.js:159
-- `uiLayout` → Game/spiel/01a-grundlagen.js:243
+- `uhrHtml` → Game/spiel/01a-grundlagen.js:164
+- `uhrText` → Game/spiel/01a-grundlagen.js:163
+- `uiLayout` → Game/spiel/01a-grundlagen.js:247
 - `umbauen` → Game/spiel/05d-maersche-kampfbericht.js:499
 - `UMRECHNEN.openWaterArmies` → Game/welt.js:110
 - `UMRECHNEN.openWaterBarbMarches` → Game/welt.js:100
@@ -2386,7 +2387,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `vapidJwt` → Game/weltrechner/push.js:54
 - `variant` → Game/baukunst/04-vielfalt-stile.js:188
 - `verdachtPruefen` → Game/weltrechner/start.js:125
-- `verlustChips` → Game/spiel/01a-grundlagen.js:204
+- `verlustChips` → Game/spiel/01a-grundlagen.js:208
 - `verschluesseln` → Game/weltrechner/push.js:24
 - `verstAnteile` → Game/buendnis/02-rally-geschenke.js:186
 - `verstBelegt` → Game/buendnis/01-daten-regeln.js:465
@@ -2408,7 +2409,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verstUnbekannt` → Game/buendnis/01-daten-regeln.js:468
 - `verstVorKampf` → Game/buendnis/01-daten-regeln.js:488
 - `verstWert` → Game/buendnis/01-daten-regeln.js:498
-- `verstZeilen` → Game/spiel/01a-grundlagen.js:182
+- `verstZeilen` → Game/spiel/01a-grundlagen.js:186
 - `vhBest` → Game/spiel/08c-helden.js:178
 - `vhChip` → Game/spiel/08d-gebaeude-wirkung.js:67
 - `vhFx` → Game/spiel/08c-helden.js:160
@@ -3519,27 +3520,28 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fmtExact` :122
 - `fmtNum` :123
 - `fmtCompact` :124
-- `setBtnLabel` :133
-- `fmtDHMS` :134 — every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front …
-- `fmtClock` :139
-- `marschUhr` :140
-- `liveHtml` :145 — → true, wenn neu geschrieben wurde
-- `uhrText` :159
-- `uhrHtml` :160 — eine Restzeit, die von selbst herunterzählt (bis = Zeitpunkt in ms; art 'clock'…
-- `liveUhren` :163 — → true, wenn eine Uhr gerade abgelaufen ist (dann muss das Fenster gleich umste…
-- `statTile` :171
-- `logBadge` :175
-- `logBalance` :176 — who was stronger, as a bar (like the attack preview) - your side is always green
-- `verstZeilen` :182 — Verstärkung (Botschaft) im Kampfbericht: wer mit wie vielen Truppen verteidigt …
-- `angreiferZeilen` :191 — Gemeinsamer Angriff im Kampfbericht: jeder Angreifer mit seinen Truppen – und w…
-- `chipN` :199 — Kampfbericht: jede Karte gleich – Titel, bei Kämpfen der Kräfte-Balken, dann kl…
-- `logChips` :200 — [[Symbol, Text, gut|schlecht|warn], …] – leere fallen weg
-- `verlustChips` :204
-- `beuteChips` :205 — oben auf der Karte nur „Hauptstadt brennt“ – Gold, Holz, Stein, Eisen stehen un…
-- `logRowHtml` :208
-- `glyph` :214 — parse the sprite symbol once
-- `drawGlyph` :227
-- `uiLayout` :243
+- `fmtHud` :132 — HUD-Reihe (6 Kapseln auf 390 px): höchstens 5 Zeichen – 950 · 5,4K · 12,6K · 12…
+- `setBtnLabel` :137
+- `fmtDHMS` :138 — every longer time the same way: 3 T 4 h 5 m 6 s (units that are 0 at the front …
+- `fmtClock` :143
+- `marschUhr` :144
+- `liveHtml` :149 — → true, wenn neu geschrieben wurde
+- `uhrText` :163
+- `uhrHtml` :164 — eine Restzeit, die von selbst herunterzählt (bis = Zeitpunkt in ms; art 'clock'…
+- `liveUhren` :167 — → true, wenn eine Uhr gerade abgelaufen ist (dann muss das Fenster gleich umste…
+- `statTile` :175
+- `logBadge` :179
+- `logBalance` :180 — who was stronger, as a bar (like the attack preview) - your side is always green
+- `verstZeilen` :186 — Verstärkung (Botschaft) im Kampfbericht: wer mit wie vielen Truppen verteidigt …
+- `angreiferZeilen` :195 — Gemeinsamer Angriff im Kampfbericht: jeder Angreifer mit seinen Truppen – und w…
+- `chipN` :203 — Kampfbericht: jede Karte gleich – Titel, bei Kämpfen der Kräfte-Balken, dann kl…
+- `logChips` :204 — [[Symbol, Text, gut|schlecht|warn], …] – leere fallen weg
+- `verlustChips` :208
+- `beuteChips` :209 — oben auf der Karte nur „Hauptstadt brennt“ – Gold, Holz, Stein, Eisen stehen un…
+- `logRowHtml` :212
+- `glyph` :218 — parse the sprite symbol once
+- `drawGlyph` :231
+- `uiLayout` :247
 
 ### Game/spiel/01a2-karte-zonen.js — Weltkarte wie das RoK-Königreich – Daten (erzeugt von werkzeuge/kartentest/kart…
 
@@ -3861,23 +3863,23 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawUebersichtZeichen` :285 — Ganz weit (wie die Karten-Testdatei): Pass-Punkte in der Farbe ihrer Stufe (noc…
 - `drawToreImNebel` :298 — die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel…
 - `heiligtumBild` :307 — (Bildschirm) Thron bzw. Wächter-Tempel an seinem Weltpunkt
-- `basisBildNr` :318
-- `basisBild` :319 — das Bild nr (1–15), lädt beim ersten Mal alle 15
-- `drawBasisBild` :325 — (Bildschirm) → true, wenn das Bild gezeichnet ist
-- `schildRect` :345 — (Bildschirm) wo das Schild einer Basis steht
-- `schildDaten` :349 — → { art, wer, stufe, truppen }
-- `schildBild` :354 — das fertige Schild, W px breit (Leinwand × dpr)
-- `drawBasisSchilder` :371 — nach allen Basen: die Schilde liegen obenauf
-- `stoesst` :375
-- `basisGroesse` :378 — Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erke…
-- `drawBuilding` :379 — screen space (setScreen active)
-- `drawBrand` :422 — Flammen auf den Dächern und Rauch, der aufsteigt
-- `bk3d` :444
-- `bkModel` :446 — → [cache id, model config]
-- `bkSprite` :462 — → { s: sprite, W: width in px } or null
-- `bkDraw` :469
-- `bannerModel` :471
-- `trunc` :504
+- `basisBildNr` :317
+- `basisBild` :318 — das Bild nr (1–15), lädt beim ersten Mal alle 15
+- `drawBasisBild` :324 — (Bildschirm) → true, wenn das Bild gezeichnet ist
+- `schildRect` :341 — (Bildschirm) wo das Schild einer Basis steht
+- `schildDaten` :345 — → { art, wer, stufe, truppen }
+- `schildBild` :350 — das fertige Schild, W px breit (Leinwand × dpr)
+- `drawBasisSchilder` :367 — nach allen Basen: die Schilde liegen obenauf
+- `stoesst` :371
+- `basisGroesse` :374 — Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erke…
+- `drawBuilding` :375 — screen space (setScreen active)
+- `drawBrand` :418 — Flammen auf den Dächern und Rauch, der aufsteigt
+- `bk3d` :440
+- `bkModel` :442 — → [cache id, model config]
+- `bkSprite` :458 — → { s: sprite, W: width in px } or null
+- `bkDraw` :465
+- `bannerModel` :467
+- `trunc` :500
 
 ### Game/spiel/03c-wappen-thronplatz.js — Wappen und der Thronplatz in der Mitte
 - `loadCrest` :7
@@ -5122,28 +5124,28 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `marktTausch` :260 — art 'k' = kaufen (Münzen → Rohstoff), 'v' = verkaufen; → '' oder warum nicht
 - `spielerTakt` :276 — -------------------------------------------------------------------------------…
 - `hudRoh` :282
-- `rohDropMalen` :289
-- `rohUmschalten` :295
-- `freiText` :297 — was die Burg-Stufe B freischaltet
-- `renderKeep` :304 — das Burg-Fenster (Burg in der Stadt antippen)
-- `effektText` :328
-- `foBedingt` :342
-- `foBaum` :343
-- `knoten` :346
-- `foDetail` :351
-- `extraHtml` :368
-- `marktHtml` :379 — Shop → Markt: Rohstoffe gegen Münzen (die Stufe des Markt-Gebäudes bestimmt Geb…
-- `spaeherMehr` :412 — Spähbericht: der Späher sieht alles (Alexander 4.10.) – Burg, Rohstoffe (und wi…
-- `botStadtFix` :430 — fehlende Felder (alte Spielstände): Burg 1, keine Forschung, Start-Rohstoffe
-- `botForschung` :438 — fertig? sonst: die nächste, die zum Spielstil passt und bezahlbar ist (behält R…
-- `botMarkt` :451 — fehlt ein Rohstoff, kauft er ihn auf dem Markt – nur mit Münzen, die er übrig h…
-- `botBurgWert` :460 — wie dringend die Burg ist (kleiner = eher): sobald ein Gebäude anstößt
-- `botRohWunsch` :466 — Sammeln: welcher Rohstoff fehlt am meisten? (für die Wahl des Feldes)
-- `burgKarte` :478 — -------------------------------------------------------------------------------…
-- `hauptVon` :479
-- `hauptVor` :480 — je Herr: { id: Hauptstadt, vor: ihre eigene Stufe }
-- `hauptstadtStufen` :481
-- `AUF.rohJeStunde` :510
+- `rohDropMalen` :289 — die Blase unter der angetippten Rohstoff-Kapsel: Bestand und Ertrag/Std.
+- `rohUmschalten` :295 — x: welche Kapsel (gleiche nochmal = zu); zu nach 3 s von selbst
+- `freiText` :302 — was die Burg-Stufe B freischaltet
+- `renderKeep` :309 — das Burg-Fenster (Burg in der Stadt antippen)
+- `effektText` :333
+- `foBedingt` :347
+- `foBaum` :348
+- `knoten` :351
+- `foDetail` :356
+- `extraHtml` :373
+- `marktHtml` :384 — Shop → Markt: Rohstoffe gegen Münzen (die Stufe des Markt-Gebäudes bestimmt Geb…
+- `spaeherMehr` :417 — Spähbericht: der Späher sieht alles (Alexander 4.10.) – Burg, Rohstoffe (und wi…
+- `botStadtFix` :435 — fehlende Felder (alte Spielstände): Burg 1, keine Forschung, Start-Rohstoffe
+- `botForschung` :443 — fertig? sonst: die nächste, die zum Spielstil passt und bezahlbar ist (behält R…
+- `botMarkt` :456 — fehlt ein Rohstoff, kauft er ihn auf dem Markt – nur mit Münzen, die er übrig h…
+- `botBurgWert` :465 — wie dringend die Burg ist (kleiner = eher): sobald ein Gebäude anstößt
+- `botRohWunsch` :471 — Sammeln: welcher Rohstoff fehlt am meisten? (für die Wahl des Feldes)
+- `burgKarte` :483 — -------------------------------------------------------------------------------…
+- `hauptVon` :484
+- `hauptVor` :485 — je Herr: { id: Hauptstadt, vor: ihre eigene Stufe }
+- `hauptstadtStufen` :486
+- `AUF.rohJeStunde` :515
 
 ### Game/benachrichtigung.js — benachrichtigung.js – „Benachrichtigungen erlauben“ im Profil (Web-Push aufs Ha…
 - `hinweis` :17

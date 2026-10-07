@@ -9724,7 +9724,7 @@ function hhPairs() {                                  // Paket E: die passenden 
     return '<div class="hh-pairs"><h3>Paare</h3><p class="hh-hint">Ein Marsch kann zwei Helden haben: den Haupthelden und einen Zweithelden. Der Zweitheld gibt seine Werte und passiven Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) +
         ' %, die Wut-Fähigkeit zündet nur beim Haupthelden. Ziehen zwei Helden eines Paars zusammen los: +' + HERO_PAIR_BONUS + ' % auf alle Heldenwerte. Jeder Held kann nur in einem Marsch sein.</p>' +
         HERO_PAIRS.map(p => { const both = H[p.a].own && H[p.b].own, A = heroById(p.a), B = heroById(p.b);
-            return '<div class="hh-pair' + (both ? ' is-on' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + p.a + '" class="' + (H[p.a].own ? '' : 'is-locked') + '">' + heroImg(p.a) + '</button><button type="button" data-hh="' + p.b + '" class="' + (H[p.b].own ? '' : 'is-locked') + '">' + heroImg(p.b) + '</button></span>' +
+            return '<div class="hh-pair ki-karte' + (both ? ' is-on ki-karte--an' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + p.a + '" class="' + (H[p.a].own ? '' : 'is-locked') + '">' + heroImg(p.a) + '</button><button type="button" data-hh="' + p.b + '" class="' + (H[p.b].own ? '' : 'is-locked') + '">' + heroImg(p.b) + '</button></span>' +
                 '<span class="hh-pair-t"><b>' + p.name + '</b><small>' + A.name + ' & ' + B.name + (both ? ' · bereit' : ' · noch nicht beide freigeschaltet') + '</small><em>' + p.story + '</em></span></div>'; }).join('') + '</div>';
 }
 function hhHero(id) {
@@ -9735,12 +9735,12 @@ function hhHero(id) {
               '<div class="hh-qinfo"><span>Nächstes Viertel</span><b>' + s.sh + ' / ' + need + ' Splitter</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div>')
         : '<div class="hh-qinfo"><span>Freischalten</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div><div class="hh-qinfo"><span>Startet danach mit 0 Sternen.</span></div>';
     const skills = h.sk.map((x, k) => { const lv = s.sk[k], max = heroSkillVal(h, k, 5);
-        return '<div class="hh-sk' + (s.own ? '' : ' is-locked') + '"><span class="hh-hx' + (k ? '' : ' act') + '" data-r="' + rd.key + '">' + x[0][0] + '</span><div class="hh-skt"><b>' + x[0] + '</b><small>' + (k ? 'Passiv' : 'Aktiv · bei voller Wut') + ' · Stufe ' + lv + '/5</small>' +
+        return '<div class="hh-sk ki-karte' + (s.own ? '' : ' is-locked') + '"><span class="hh-hx' + (k ? '' : ' act') + '" data-r="' + rd.key + '">' + x[0][0] + '</span><div class="hh-skt"><b>' + x[0] + '</b><small>' + (k ? 'Passiv' : 'Aktiv · bei voller Wut') + ' · Stufe ' + lv + '/5</small>' +
             '<p>' + (lv ? x[1].replace('{v}', heroNum(heroSkillVal(h, k, lv))) : 'Stufe 1: ' + x[1].replace('{v}', heroNum(heroSkillVal(h, k, 1)))) + '</p>' + (lv < 5 ? '<p class="hh-max">Stufe 5: ' + x[1].replace('{v}', heroNum(max)) + '</p>' : '') +
             (s.own ? '<span class="hh-pips">' + [1, 2, 3, 4, 5].map(q => '<i' + (q <= lv ? ' class="on"' : '') + '></i>').join('') + '</span>' : '') + '</div>' +
             (s.own && lv < 5 ? '<button type="button" class="hh-plus" data-hh-sk="' + k + '"' + (free ? '' : ' disabled') + ' aria-label="' + x[0] + ' verbessern">+</button>' : '<span></span>') + '</div>'; }).join('');
     const kacheln = h.sk.map((x, k) => '<span class="hh-skk' + (k ? '' : ' act') + (s.sk[k] ? '' : ' is-null') + '" data-r="' + rd.key + '" title="' + x[0] + '">' + x[0][0] + '<i>' + s.sk[k] + '</i></span>').join('');   // die 4 Fähigkeiten als Kacheln unter der Figur (wie RoK)
-    const wert = (ic, t, v) => '<div><span class="hh-vi">' + icon(ic) + '</span><span>' + t + '</span><b>' + v + '</b></div>';
+    const wert = (ic, t, v) => '<div class="ki-karte"><span class="hh-vi">' + icon(ic) + '</span><span>' + t + '</span><b>' + v + '</b></div>';
     const spent = s.sk.reduce((a, v) => a + v, 0);
     return '<div class="hh-head"><button class="btn-x" type="button" data-hh-back aria-label="Zurück">' + icon('back') + '</button><h2>' + h.name + '</h2><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="hh-hero" data-r="' + rd.key + '" style="--glow:' + h.color + '88;--rc:' + rd.color + '">' +
@@ -9767,7 +9767,7 @@ function hhSwapHtml(id, s) {                          // übrige Splitter umtaus
 }
 function hhPartnerBlk(id) {                           // sein Paar: Partner, Bonus, gemeinsame Geschichte
     const pp = heroPartner(id); if (!pp) return ''; const o = heroById(pp.id), own = heroOwned('player', pp.id);
-    return '<div class="hh-blk"><h3>Paar · ' + pp.pair.name + '</h3><div class="hh-pair' + (own && heroOwned('player', id) ? ' is-on' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + pp.id + '" class="' + (own ? '' : 'is-locked') + '">' + heroImg(pp.id) + '</button></span>' +
+    return '<div class="hh-blk"><h3>Paar · ' + pp.pair.name + '</h3><div class="hh-pair ki-karte' + (own && heroOwned('player', id) ? ' is-on ki-karte--an' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + pp.id + '" class="' + (own ? '' : 'is-locked') + '">' + heroImg(pp.id) + '</button></span>' +
         '<span class="hh-pair-t"><b>mit ' + o.name + '</b><small>' + o.title + (own ? '' : ' · gesperrt') + ' · zusammen +' + HERO_PAIR_BONUS + ' %</small><em>' + pp.pair.story + '</em></span></div></div>';
 }
 function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (liveHtml(el, hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }

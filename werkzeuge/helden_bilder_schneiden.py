@@ -26,6 +26,7 @@ BLAETTER = {
     'blatt_11': (1.6, [('-sigrun', 1000, 520, 985, 280, [(1100, 830), (1180, 850)]), ('aldric', 1330, 560, 1340, 255),
                        ('-ragna', 600, 560, 615, 250)]),
 }
+WEG = {'bruno': [(700, 640, 782, 800)]}   # Kasten im Blatt, der nicht zum Helden gehört (Lenes Arm hängt an Brunos Fell)
 BOX_W, BOX_H, KOPF_OBEN = 390, 520, 120   # Ausschnitt im Blatt: Kopf-Mitte 120 px unter dem oberen Rand, waagrecht mittig
 FIG_W, FIG_H = 360, 480
 KOPF_SEITE, KOPF_PX = 220, 160
@@ -46,6 +47,7 @@ for blatt, (mass, helden) in BLAETTER.items():
         cl, _ = ndimage.label(lab == i + 1)
         m = cl == cl[ry, rx]                              # nur das Stück am Rumpf (keine Splitter der Nachbarn)
         m = ndimage.binary_dilation(m, iterations=2) & fg  # Kante weich lassen
+        for x0, y0, x1, y1 in WEG.get(hid, []): m[y0:y1, x0:x1] = False
         al = a * m
         rgba = im.copy(); rgba[:, :, 3] = al
         full = Image.fromarray(rgba.astype(np.uint8), 'RGBA')

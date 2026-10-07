@@ -26,14 +26,15 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const i = daten[n] && await lade('data:image/webp;base64,' + daten[n]); if (!i) { out.fehlt.push(n); continue; }
       if (gross ? i.naturalWidth !== 360 || i.naturalHeight !== 480 : i.naturalWidth !== 160 || i.naturalHeight !== 160) out.groesse.push([n, i.naturalWidth, i.naturalHeight]);
       const c = document.createElement('canvas'); c.width = i.naturalWidth; c.height = i.naturalHeight; const g = c.getContext('2d'); g.drawImage(i, 0, 0);
-      if (g.getImageData(1, 1, 1, 1).data[3] > 10 || g.getImageData(c.width - 2, 1, 1, 1).data[3] > 10) out.deckend.push(n);
+      const d = g.getImageData(0, 0, c.width, c.height).data; let leer = 0; for (let k = 3; k < d.length; k += 4) if (d[k] < 10) leer++;
+      if (leer < c.width * c.height * .1) out.deckend.push(n);                 // (Hintergrund durchsichtig: mindestens ein Zehntel ganz leer)
     }
     out.chip = heroImg(HEROES[0].id); out.gross = heroImg(HEROES[0].id, 'x', true);
     return out;
   }, daten);
   ok(A.ids === 20 && !A.fehlt.length, 'A 20 Helden mit Figur und Kopf (alle Bilder da)', A.fehlt);
   ok(!A.groesse.length, 'A einheitlich zugeschnitten (Figur 360×480, Kopf 160×160)', A.groesse);
-  ok(!A.deckend.length, 'A echte Transparenz (obere Ecken durchsichtig)', A.deckend);
+  ok(!A.deckend.length, 'A echte Transparenz (Hintergrund durchsichtig)', A.deckend);
   ok(/held_[a-z]+_kopf\.webp/.test(A.chip) && /held_[a-z]+\.webp/.test(A.gross) && !/data:image/.test(A.chip), 'A heroImg: Kopf für Chips, Figur für große Karten', [A.chip, A.gross]);
   // B) Heldenhalle
   await p.evaluate(() => { const H = loadHeroes(); for (const id of ['sigrun', 'bernhard', 'ida', 'brunhild', 'ragna']) Object.assign(H[id], { own: true, q: 6, sk: [1, 2, 0, 0], sh: 3 }); saveHeroes(); openHeroHall(); });

@@ -3,7 +3,7 @@
 /* =====================================================================
    HELDEN (Merkliste 20, Alexander 7.10.: Helden-Fenster neu wie RoK): Raster aus Bild-Karten im Seltenheits-Rahmen (ui_kachel_*),
    Held groß auf einer Bühne mit Name, Sternen, Macht und den 4 Fähigkeiten als Kacheln; darunter Werte, Sterne, Fähigkeiten.
-   Nur Aussehen – Zahlen und Knöpfe bleiben dieselben.
+   Nur Aussehen – Zahlen und Knöpfe bleiben dieselben. Rahmen/Listen-Karten aus der Grundform (05z: .ki-karte, [data-r]).
    ===================================================================== */
 /* Kopf-Chips (Marsch-Auswahl, Kampfbericht, Profil, Mauer, Kisten): Kopfbild auf dem Farbgrund der Seltenheit */
 .hero-pic{object-fit:cover;object-position:50% 0;background:radial-gradient(circle at 50% 30%,color-mix(in srgb,var(--hc,var(--rc,#8a8f99)) 60%,#20232a),#0b0c10 80%)}
@@ -22,7 +22,7 @@
 .hh-foot .hh-qstars i{width:12px;height:12px}
 .hh-dot{left:8px;top:8px;z-index:1}
 .hh-lk{right:7px;top:7px;z-index:1}
-.hh-frei{max-width:100%;padding:5px 8px;font-size:10px;letter-spacing:.02em}   /* „Freischalten“ passt ganz in die schmale Karte */
+.hh-frei{max-width:100%;padding:5px 7px;gap:3px;font-size:9.5px;letter-spacing:0}   /* „Freischalten“ passt ganz in die schmale Karte */
 .hh-head [data-hh-back] > .icon{background-image:url(bilder/ui_zurueck.webp)}   /* Zurück statt Schließen-Bild (05z gibt jedem .btn-x das X) */
 .hh-cards--zu{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px}
 .hh-cards--zu .hh-card{aspect-ratio:3/4;border-image:var(--ki-kachel) 24 fill / 7px stretch}
@@ -58,7 +58,7 @@
 /* ---------------- Ein Held: Werte als Kacheln, Fähigkeiten mit Kachel-Symbol ---------------- */
 .hh-panel{background:linear-gradient(180deg,rgba(20,22,28,.94),rgba(10,11,14,.97))}
 .hh-vals{grid-template-columns:repeat(2,1fr);gap:6px}
-.hh-vals div{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:6px;padding:7px 9px;border:1px solid var(--line-1);border-radius:7px;background:linear-gradient(180deg,#ffffff0d,#0006)}
+.hh-vals div{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:6px;padding:7px 9px;background:none}   /* Rahmen: Grundform .ki-karte (05z) */
 .hh-vals b{font:700 var(--fs-13)/1 var(--font-ui);color:var(--gold-100)}
 .hh-vi{width:28px;height:28px;display:grid;place-items:center;border-style:solid;border-width:0;border-image:var(--ki-kachel) 24 fill / 6px stretch}
 .hh-vi .icon{width:16px;height:16px;color:#fff;filter:drop-shadow(0 1px 1px #000)}
