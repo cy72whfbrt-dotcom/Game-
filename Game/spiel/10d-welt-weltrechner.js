@@ -962,6 +962,7 @@ if (window.WELT) {
             if (now < sc[1]) return true;
             const t = islandById[sc[0]], ow = t && islandOwnerOf(t.id);
             const r = { art: 'spaeh', ziel: sc[0] };
+            if (ow && ow !== who && neulingAktiv(ow)) { r.fehl = 1; WELT.nachricht(parseInt(who.slice(1), 10), r); return false; }   // inzwischen Anfängerschutz (neu angefangen, Saison): kein Bericht
             if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.verst = verst.l.reduce((s, v) => s + (v.t === t.id ? v.n : 0), 0); r.spy = ow && ow !== who ? spaeherBlick(ow, t) : null; if (ow && ow !== who) ausgespaeht(ow, who, t.id); }   // (verst: Verstärkung – eigene Zeile im Bericht)
             WELT.nachricht(parseInt(who.slice(1), 10), r); return false;
         });
@@ -1093,7 +1094,7 @@ if (window.WELT) {
             if (zuOft(wm(who), 'spaehen', 120, 3600000)) { warnen(who, 'spaehen', 'Über 120 Späher in einer Stunde – abgelehnt.'); return nein(); }
             const t = islandById[b.ziel], pt = { x: Number.isFinite(b.ex) ? b.ex : t.x, y: Number.isFinite(b.ey) ? b.ey : t.y, lm: t.landmassId };
             if (b.blick) {                            // Späher zu einer fremden Basis: bei Ankunft schreibt der Weltrechner den Bericht (nur er kennt die Werte des Herrn)
-                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id)) return nein();
+                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id) || neulingAktiv(ow)) return nein();   // (Anfängerschutz: niemand späht Neulinge aus)
                 let h = null, hd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < hd) { hd = d; h = i; } }
                 if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return nein();
                 if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return nein(); }
@@ -1366,7 +1367,7 @@ if (window.WELT) {
 
     if (store.get('openWaterNeulingBis') === null) {
         store.set('openWaterNeulingBis', String(Date.now() + NEULING_MS));
-        afterSplash(() => setTimeout(() => flashHint('Anfängerschutz: 48 Stunden kann dich niemand angreifen – bau dich in Ruhe auf. (Er endet früher, wenn dein Reich 50 Mio. Macht hat oder du einen echten Spieler angreifst.)', 9000), 4000));
+        afterSplash(() => setTimeout(() => flashHint('Anfängerschutz: 48 Stunden kann dich niemand angreifen und niemand ausspähen – bau dich in Ruhe auf. (Er endet früher, wenn du 100.000 Truppen hast oder einen echten Spieler angreifst.)', 9000), 4000));
     }
     // frisch beigetreten und nicht selbst Weltrechner: den Platz anmelden
     if (startplatzNeu && !WELT.leiter) WELT.befehl('beitreten', { insel: playerIslandId });
