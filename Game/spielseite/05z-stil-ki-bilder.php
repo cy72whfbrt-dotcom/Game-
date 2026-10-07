@@ -29,11 +29,12 @@
   text-shadow:0 1px 2px #000}
 /* EINE Reihe: Münzen · Edelsteine · Truppen · Holz · Stein · Eisen – kleine Kapseln (Symbol links, Zahl rechts, fmtHud höchstens 5 Zeichen) */
 .hud-werte{background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;gap:2px;padding:0;height:24px;margin-top:6px}
+.hud{z-index:calc(var(--z-hud) + 1)}   /* die Tippflächen der Kapseln liegen über dem Streifen darunter */
 .hud-werte .res-roh{display:contents}
-.hud-werte .res{position:relative;flex:1 1 auto;min-width:0;height:24px;padding:0 3px 0 20px;gap:0;justify-content:center;border-style:solid;border-width:0;
+.hud-werte .res{position:relative;flex:1 1 auto;min-width:max-content;height:24px;padding:0 3px 0 20px;gap:0;justify-content:center;border-style:solid;border-width:0;
   border-image:url(bilder/ui_kapsel.webp) 20 30 20 90 fill / 6px 6px 6px 21px stretch}
 .hud-werte .res > .icon{position:absolute;left:1px;top:50%;width:19px;height:19px;margin-top:-10px}
-.hud-werte .res b{font:600 11px/1 var(--font-ui);letter-spacing:-.02em;color:var(--tx-1);text-shadow:0 1px 2px #000}
+.hud-werte .res b{overflow:visible;font:600 11px/1 var(--font-ui);letter-spacing:-.02em;color:var(--tx-1);text-shadow:0 1px 2px #000}
 .hud-werte button.res::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
 #hudRoh.on [data-roh]{filter:brightness(1.1)}
 .roh-blase{position:fixed;z-index:var(--z-toast);display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;max-width:240px;padding:6px 10px;
@@ -52,7 +53,7 @@
 .nav-btn > .icon{border:0;border-radius:50%;padding:0;box-shadow:none;background:var(--ki-bild,none) center/60% auto no-repeat,var(--ui-rund) center/100% 100% no-repeat;transition:none}
 .nav-btn.active > .icon,.nav-btn:hover > .icon{border:0;box-shadow:none;background:var(--ki-bild,none) center/62% auto no-repeat,var(--ui-rund-an) center/100% 100% no-repeat}
 .nav{padding-bottom:max(2px,calc(var(--safe-bd) - 18px))}   /* Knöpfe tiefer in die Leiste (der Home-Balken-Rand bleibt frei genug) */
-.nav-btn{gap:1px;justify-content:flex-end;padding-bottom:6px} .nav-btn > .icon{width:42px;height:42px}
+.nav-btn{gap:1px;justify-content:flex-end;padding-bottom:6px} .nav-btn > .icon{width:44px;height:44px}
 .nav-btn .nav-l{font-size:10px;color:var(--gold-100);text-shadow:0 1px 2px #000,0 0 4px #000}
 #cityNavBtn{--ki-bild:url(bilder/ui_dock_burg.webp)} body.in-stadt #cityNavBtn{--ki-bild:url(bilder/ui_fahne.webp)}
 #bundBtn{--ki-bild:url(bilder/ui_dock_bund.webp)} #battleLogBtn{--ki-bild:url(bilder/ui_dock_kampf.webp)}
@@ -75,7 +76,7 @@
 .btn--primary:active{--k-bild:url(bilder/ui_k_gold_an.webp)}
 .btn--secondary{--k-bild:url(bilder/ui_k_dunkel.webp)}
 .btn--danger{--k-bild:url(bilder/ui_k_rot.webp)}
-.btn:disabled{--k-bild:url(bilder/ui_k_grau.webp);color:var(--tx-1);text-shadow:0 1px 2px #000}
+.btn:disabled{--k-bild:url(bilder/ui_k_grau.webp);color:var(--tx-3);text-shadow:0 1px 2px #000}
 .btn--chip.btn--secondary,.btn--chip.btn--primary{border-image:var(--k-bild) 30 40 30 40 fill / 9px 12px 9px 12px stretch}
 .chip:not(.chip--rar):not(.chip--scouted){border:0;background:none;border-style:solid;border-image:url(bilder/ui_k_chip.webp) 26 fill / 10px stretch}
 
