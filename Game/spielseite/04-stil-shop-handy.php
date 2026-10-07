@@ -90,9 +90,7 @@
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
 .odds .chip--rar{height:auto;min-height:20px;padding:4px 6px;line-height:1.3}   /* zweizeilig (Handy): Innenabstand oben/unten, nicht am Rand */
-.hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)} .hchest-h{font:600 var(--fs-13)/1.2 var(--font-display);color:var(--gold-100)}
-.hchest-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--r-sm);border:1px solid color-mix(in srgb,var(--rc) 55%,transparent);background:rgba(0,0,0,.2)}
-.hchest-row .hchest-pic{width:44px;height:44px;border-radius:8px} .hchest-row span{display:grid;gap:2px} .hchest-row small{font-size:var(--fs-10)} .hchest-row i{font-style:normal;font-weight:700;color:var(--gold-100);font-size:var(--fs-12);text-align:right}
+.hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)}
 .hchest-res .btn{justify-self:start}
 .inbox{display:grid;gap:6px;margin-bottom:6px} .inbox-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-2)}
 .inbox-row.is-gold{border-color:color-mix(in srgb,var(--gold-300) 55%,transparent)} .inbox-row>.icon{width:22px;height:22px;color:var(--gold-200);justify-self:center}
@@ -200,7 +198,6 @@
   .hud-me-text{max-width:none;text-align:left}
   .hud-me-text small{display:block}
   .hud-werte{flex:none;height:auto;padding:0;background:none;border:0;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-  .hud > .res--roh{width:auto;height:48px;padding:0 14px;border:0;border-left:1px solid var(--line-1);border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
   .hud-me:hover{background:rgba(255,255,255,.03)}
   .hud-me-text b{display:block;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 13px/1.1 var(--font-display);color:var(--gold-100);letter-spacing:.04em}
   .hud-me-text small{display:block;font:500 10.5px/1.2 var(--font-ui);color:var(--tx-3);margin-top:2px}
@@ -290,7 +287,7 @@
 .lvlup .btn{width:100%}
 .xp-next{margin-top:4px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
 .xp-next b{color:var(--tx-2);font-weight:600}
-.ico-coin{color:var(--gold-300)} .ico-gem{color:#7fd3ff} .ico-troops{color:#e8e2d2}
+.ico-coin{color:var(--gold-300)} .ico-troops{color:#e8e2d2}
 @media (prefers-reduced-motion:reduce){.lvlup-card,.lvlup-card::before,.lvlup-rewards li{animation:none;opacity:1}}
 
 /* ---- daily reward + quests ---- */

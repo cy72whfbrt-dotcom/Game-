@@ -194,19 +194,10 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mb-chip::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
 .res{position:relative;flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;justify-content:center;gap:var(--ab-1);padding:0 var(--ab-1)}
 .res > .icon{width:16px;height:16px}
-/* der Rohstoff-Knopf: rund, oben rechts (Tippfläche 44 px) */
-.hud > .res--roh{flex:none;width:var(--hud-h);height:var(--hud-h);padding:0;justify-content:center;border-radius:50%;
-  background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.hud > .res--roh .roh-mini b{min-width:0;font-size:var(--fs-13)}
-@media (max-width:899px) and (min-height:501px){   /* Handy: Beschriftung unter dem runden Knopf (wie „Du“ unter dem Wappen, rechtsbündig – sonst ragt sie aus dem Bild) – antippen öffnet Holz/Stein/Eisen */
-  .hud > .res--roh::after{content:"Rohstoffe";position:absolute;top:calc(100% + 4px);right:-2px;pointer-events:none;
-    font:600 10px/1 var(--font-ui);color:var(--gold-100);white-space:nowrap;text-shadow:0 1px 2px #000} }
-@media (min-width:900px) and (min-height:501px){ .hud > .res--roh .roh-mini{display:flex} }   /* Desktop: Holz · Stein · Eisen immer im HUD */
-.hud > .res--roh::before{content:"";position:absolute;inset:-7px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
 /* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .hud-werte,.res--roh,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .hud-werte,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
 
 /* avatar ring (profile header + desktop HUD). --progress (0-100) is written by renderProfile */
 .avatar-ring{--progress:0;position:relative;flex:none;width:48px;height:48px;border-radius:50%;padding:2px;
@@ -266,10 +257,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .troop-in{width:9.5em;max-width:46vw;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:700 var(--fs-13)/1 var(--font-ui);text-align:right;font-variant-numeric:tabular-nums}
 .troop-in.is-bad{border-color:#e0685c;box-shadow:0 0 0 2px rgba(224,104,92,.25)} @media (pointer:coarse){ .troop-in{height:36px} }
 .troop-in:focus{outline:none;border-color:var(--gold-300);box-shadow:0 0 0 2px rgba(214,170,90,.25)}
-.look-title .icon{width:10px;height:10px}
-.look-titles{display:flex;flex-wrap:wrap;gap:6px}
-.look-title{display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
-.look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
 .pfoot[hidden]{display:none} #profileTabs.tabs{grid-template-columns:repeat(5,minmax(min-content,1fr))} #shopTabs.tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
 .pill--throne .icon{color:#f2c75c} .psub .pill + .pill{margin-left:6px}
 .throne-status{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;
@@ -628,7 +615,7 @@ body.has-panel .mapctl{display:none}
 .cost{display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 5px;border-radius:var(--r-xs);background:rgba(0,0,0,.22);
   font:700 10.5px/1 var(--font-ui);letter-spacing:0;font-variant-numeric:tabular-nums;text-transform:none}
 .cost .icon{width:12px;height:12px}
-.cost--gem .icon{color:var(--res-gem)} .cost--pt .icon{color:#5b3310}
+.cost--pt .icon{color:#5b3310}
 .btn--secondary .cost{background:rgba(255,255,255,.05);color:var(--tx-1)}
 .btn--secondary .cost--pt .icon{color:var(--res-point)}
 .btn:disabled .cost{background:rgba(255,255,255,.03)}
@@ -662,9 +649,6 @@ body.has-panel .mapctl{display:none}
 .pill small{font:500 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)}
 .pill .icon{width:14px;height:14px}
 .pill--points .icon{color:var(--res-point)} .pill--gem .icon{color:var(--res-gem)}
-.unk{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border-radius:var(--r-xs);background:rgba(255,255,255,.04);border:1px dashed var(--line-2);
-  font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
-.unk .icon{width:11px;height:11px}
 
 .rar-text{color:color-mix(in srgb,var(--rc) 70%,#fff)}
 
@@ -673,7 +657,6 @@ body.has-panel .mapctl{display:none}
    ===================================================================== */
 .popup-stats{display:flex;flex-direction:column;gap:10px}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.stat-grid--3{grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
 .stat{min-width:0;padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)}
 .stat-l{display:flex;align-items:center;gap:5px;font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-l .icon{width:12px;height:12px;flex:none}
@@ -878,7 +861,7 @@ body.has-panel .mapctl{display:none}
 .city-sheet::before{content:none}   /* Gebäude-Fenster: der Rahmen ist der eigene Rand – er scrollt nicht mit dem Inhalt (die Ecken bleiben in den Ecken) */
 #citySheet{border-image:var(--frame) 20 / 20px stretch}   /* (#: das „border“ der Grundform weiter hinten setzt border-image sonst zurück) */
 .panel--sheet{height:var(--sheet-max)}
-body.in-stadt .hud,body.in-stadt .nav{z-index:52} body.in-stadt .panel{z-index:53} body.in-stadt .roh-drop{z-index:54}
+body.in-stadt .hud,body.in-stadt .nav{z-index:52} body.in-stadt .panel{z-index:53}
 body.in-stadt .city-head{padding-top:calc(var(--safe-t) + var(--hud-top-space) + 6px);background:linear-gradient(180deg,rgba(6,8,12,.75),rgba(6,8,12,.3) 70%,transparent)}
 body.in-stadt .city-title,body.in-stadt #cityCloseBtn{display:none}
 body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bottom:14px;max-height:calc(100% - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space) - 60px)}
@@ -985,7 +968,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .crest-row button.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)} .crest-row button canvas{width:22px;height:22px} .crest-row .sw{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.5)}
 .avatar img{width:78%;height:78%;object-fit:contain}
 .forge-tabs{display:flex;flex-wrap:wrap;margin:8px 0} .forge-tabs button{display:inline-flex;align-items:center;gap:4px} .forge-tabs .icon{width:14px;height:14px} .forge-on{font-style:normal;font-size:var(--fs-12);color:var(--gold-300)}
-.keep-h{margin:12px 0 6px;font:700 var(--fs-12)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-2)} .keep-shields{display:grid;grid-template-columns:repeat(3,1fr);gap:6px} .keep-shields .btn{justify-content:center;gap:4px}
+.keep-h{margin:12px 0 6px;font:700 var(--fs-12)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-2)}
 .keep-note{display:block;margin-top:6px;color:var(--tx-2)}
 .skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .skin-card{display:grid;justify-items:center;gap:2px;padding:6px 4px 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);cursor:pointer} .skin-card.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)}
@@ -998,10 +981,8 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .lk-card{align-content:start;min-height:100px} .lk-card.is-shop{background:rgba(0,0,0,.28);border-style:dashed} .lk-card b{font:600 var(--fs-12)/1.2 var(--font-ui);text-align:center}
 .lk-card.on small{color:var(--gold-100)} .lk-cost{display:inline-flex;align-items:center;gap:3px;font-weight:700;color:var(--gold-100);font-variant-numeric:tabular-nums} .lk-cost.is-bad{color:#e0685c}
 .lk-frame{width:48px;height:48px;margin:4px 0 2px;border-radius:50%;padding:5px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))} .lk-frame img{display:block;width:100%;height:100%;border-radius:50%;background:#141a24;padding:3px}
-.lk-grid--t .lk-card{min-height:0} .lk-plate{display:grid;place-items:center;width:100%;min-height:40px;padding:4px 6px;border-radius:4px;border:1px solid var(--line-3);background:linear-gradient(180deg,#2a2419,#15120d);font:600 var(--fs-12)/1.15 var(--font-display);color:var(--gold-100);text-align:center}
 .lk-mid{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:rgba(0,0,0,.22)} .lk-mid > .icon{width:22px;height:22px;flex:none;color:var(--tx-3)} .lk-mid > span:not(.frame-ring){display:grid;gap:2px} .lk-mid > .frame-ring{flex:none} .lk-mid small{color:var(--tx-2)}
 .lk-mid.is-good{border-color:#ffd05a} .lk-mid.is-good > .icon{color:#ffd05a} .lk-mid.is-bad{border-color:#e13030} .lk-mid.is-bad > .icon{color:#e13030} .lk-mid.is-ruler{border-color:#eb3c32;box-shadow:inset 0 0 0 1px rgba(255,208,90,.5)} .lk-mid.is-ruler > .icon{color:#ffd05a}
-.lk .look-titles .look-title .icon{width:12px;height:12px}
 .logWounded,.logRetreat.logWounded{color:#f2c94c;font-weight:600}
 .logCasualty.wounded span,.logCasualty.wounded span:last-child{color:#f2c94c}
 .march-all{display:flex;justify-content:flex-end;padding:2px 4px 6px}
@@ -1065,7 +1046,6 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .logList .kl-gruppe.kl-a .logSide .logSideLabel{color:#ff9f8f}
 .logList .kl-gruppe.kl-v .logSide .logSideLabel{color:#9fc4ff}
 .kl-null span{color:var(--tx-3)}
-.kl-alt span:last-child{color:#f1c27a}   /* Spähbericht älter als 30 Min. */
 .logHero .ghero > span > small{display:block;min-height:2.7em}
 .logBalTxt{gap:10px}
 .logBalTxt span{min-width:0;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
@@ -1193,7 +1173,6 @@ use[href="#i-coin"]{color:var(--res-coin)}
 .btn:disabled .icon:has(> use[href="#i-gem"]),.btn:disabled .icon:has(> use[href="#i-coin"]){opacity:.75}
 /* a2: Zahlen – rechtsbündig, gleich breite Ziffern; Plus grün, Minus/fehlt rot */
 .zahl{font-variant-numeric:tabular-nums;font-weight:600;color:var(--tx-1);text-align:right;white-space:nowrap}
-.zahl--plus{color:var(--good)} .zahl--minus{color:var(--blood-300)}
 /* a4: Unter-Reiter (Chips) nie größer als die Hauptreiter darüber */
 .tabs + .p5-chips .p5-chip{height:var(--k-chip);font-size:var(--fs-12)}
 /* a5: Zeilen mit overflow:hidden – Platz für die Punkte über Ä/Ö/Ü */
@@ -1298,9 +1277,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
 .odds .chip--rar{height:auto;min-height:20px;padding:4px 6px;line-height:1.3}   /* zweizeilig (Handy): Innenabstand oben/unten, nicht am Rand */
-.hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)} .hchest-h{font:600 var(--fs-13)/1.2 var(--font-display);color:var(--gold-100)}
-.hchest-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--r-sm);border:1px solid color-mix(in srgb,var(--rc) 55%,transparent);background:rgba(0,0,0,.2)}
-.hchest-row .hchest-pic{width:44px;height:44px;border-radius:8px} .hchest-row span{display:grid;gap:2px} .hchest-row small{font-size:var(--fs-10)} .hchest-row i{font-style:normal;font-weight:700;color:var(--gold-100);font-size:var(--fs-12);text-align:right}
+.hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)}
 .hchest-res .btn{justify-self:start}
 .inbox{display:grid;gap:6px;margin-bottom:6px} .inbox-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-2)}
 .inbox-row.is-gold{border-color:color-mix(in srgb,var(--gold-300) 55%,transparent)} .inbox-row>.icon{width:22px;height:22px;color:var(--gold-200);justify-self:center}
@@ -1408,7 +1385,6 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
   .hud-me-text{max-width:none;text-align:left}
   .hud-me-text small{display:block}
   .hud-werte{flex:none;height:auto;padding:0;background:none;border:0;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-  .hud > .res--roh{width:auto;height:48px;padding:0 14px;border:0;border-left:1px solid var(--line-1);border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
   .hud-me:hover{background:rgba(255,255,255,.03)}
   .hud-me-text b{display:block;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 13px/1.1 var(--font-display);color:var(--gold-100);letter-spacing:.04em}
   .hud-me-text small{display:block;font:500 10.5px/1.2 var(--font-ui);color:var(--tx-3);margin-top:2px}
@@ -1498,7 +1474,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .lvlup .btn{width:100%}
 .xp-next{margin-top:4px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
 .xp-next b{color:var(--tx-2);font-weight:600}
-.ico-coin{color:var(--gold-300)} .ico-gem{color:#7fd3ff} .ico-troops{color:#e8e2d2}
+.ico-coin{color:var(--gold-300)} .ico-troops{color:#e8e2d2}
 @media (prefers-reduced-motion:reduce){.lvlup-card,.lvlup-card::before,.lvlup-rewards li{animation:none;opacity:1}}
 
 /* ---- daily reward + quests ---- */
@@ -1727,20 +1703,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .starbar i{display:contents}
 .starbar i .icon{color:rgba(255,255,255,.18)}
 /* ===== AUFBAU (aufbau.js, Paket D): Rohstoffe im HUD, Kosten, Forschung, Markt, Truppen-Stufe ===== */
-.res--roh{flex:0 0 auto;max-width:none;cursor:pointer;color:var(--tx-1);padding:0 8px}
-.res--roh > .icon{color:#d9b27a}
-.res--roh.on{border-color:var(--line-3);background:rgba(214,170,90,.16)}
-.roh-mini{display:none;align-items:center;gap:10px}
 .roh-v{display:flex;align-items:center;gap:4px} .roh-v .icon{width:15px;height:15px}
 .roh-h .icon,.icon.roh-h{color:#c08a4c} .roh-s .icon,.icon.roh-s{color:#aab3bd} .roh-e .icon,.icon.roh-e{color:#8fb6e0}
-.roh-drop{position:fixed;z-index:calc(var(--z-hud) + 1);top:calc(var(--safe-t) + 14px + var(--hud-h));right:calc(var(--safe-r) + 10px);width:min(300px,calc(100vw - 20px));padding:10px 12px;border-radius:var(--r-sm);
-  background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.roh-drop[hidden]{display:none}
-.roh-row{display:grid;grid-template-columns:22px 1fr auto;grid-template-rows:auto auto;column-gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line-1)}
-.roh-row .icon{width:20px;height:20px;grid-row:1 / 3} .roh-row span{font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-2)}
-.roh-row b{font:700 var(--fs-15)/1.2 var(--font-ui);color:var(--tx-1);font-variant-numeric:tabular-nums;text-align:right}
-.roh-row small{grid-column:2 / 4;font:600 var(--fs-11)/1.2 var(--font-ui);color:#9fd28a;text-align:right}
-.roh-hint{display:block;margin-top:8px;font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
 .city-bstats b .kost{display:inline-flex;align-items:center;gap:3px;margin:0 10px 0 0;white-space:nowrap;letter-spacing:0;text-transform:none;font:700 var(--fs-15)/1.2 var(--font-ui);color:var(--tx-1)}
 .city-bstats b{flex-wrap:wrap}
 .kost.is-bad,.city-bstats b .kost.is-bad{color:#ff8d7e}.kost--h .icon{color:#c08a4c} .kost--s .icon{color:#aab3bd} .kost--e .icon{color:#8fb6e0}
@@ -1761,8 +1725,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fo-row.is-max{opacity:.75} .fo-row.is-run{border-color:var(--line-3);background:rgba(214,170,90,.1)}
 .fo-row .btn .icon{width:13px;height:13px}
 .fo-lauf{margin-top:8px;align-items:center;gap:10px}
-@media (min-width:900px) and (min-height:501px){ .res--roh{min-width:0;padding:0 14px} .roh-drop{top:72px;left:14px;right:auto} }
-@media (min-width:1560px) and (min-height:501px){ .roh-mini{display:flex} }   /* nur bei viel Platz die drei Zahlen im HUD (sonst stößt es an die Leiste rechts) */
 /* ===== HÄNDLER (haendler.js) ===== */
 .mb-chip.is-hd{border-color:rgba(242,199,92,.6);background:linear-gradient(90deg,rgba(120,80,20,.8),rgba(20,14,6,.88))} .mb-chip.is-hd .icon{color:#f2c75c} .mb-chip.is-hd i{color:#f6e2b0}
 .hd-live{display:grid;gap:8px} .hd-info{display:flex;align-items:center;gap:6px;margin:0;color:var(--tx-3);font-size:var(--fs-12);line-height:1.4} .hd-info .icon{width:14px;height:14px;flex:none;color:var(--gold-300)}
@@ -2474,10 +2436,10 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   <div class="pbody">
     <div id="tabInfo" class="profileTabPanel active" role="tabpanel">
       <div id="xpNext" class="xp-next p5-naechste"></div>
-      <!-- Aussehen: nur hier (Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe) -->
-      <button id="crestCard" class="crest-card" type="button" aria-label="Aussehen: Wappen, Rahmen, Skins, Ringe">
+      <!-- Aussehen: nur hier (Wappen, Rahmen, Titel) -->
+      <button id="crestCard" class="crest-card" type="button" aria-label="Aussehen: Wappen, Rahmen">
         <canvas id="crestSmall" width="112" height="112"></canvas>
-        <span id="lookNow" class="crest-card-t"><b>Aussehen</b><small>Wappen, Rahmen, Skins, Ringe</small></span>
+        <span id="lookNow" class="crest-card-t"><b>Aussehen</b><small>Wappen · Rahmen</small></span>
         <span class="crest-card-go">Ändern<svg class="icon"><use href="#i-upgrade"/></svg></span>
       </button>
       <!-- Rangliste: eigenes Fenster, hier nur der Weg dorthin -->

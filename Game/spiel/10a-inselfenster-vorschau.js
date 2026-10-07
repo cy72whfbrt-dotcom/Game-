@@ -55,15 +55,14 @@ popupStats.addEventListener('click', e => {
     openIslandPopup(isl); requestRender();
 });
 popupStats.addEventListener('click', e => { const k = e.target.closest('[data-spaehen]'); if (k && !k.disabled && !scoutBtn.disabled) scoutBtn.click(); });   // die Kachel „Stärke unbekannt“ schickt den Späher
-function ringNotice(isl) {                         // whose ring is it: a title from the middle or a bought Ring-Skin
+function ringNotice(isl) {                         // whose ring is it: a title from the middle
     if (isl.type !== 'tower') return '';
     const o = islandOwnerOf(isl.id), st = o ? ringStatusByOwner().get(o) : null; if (!st) return '';
     const me = o === 'player', n = me ? '' : escapeHtml(botById[o].name), t = titleOf(o);
     const txt = st.k === 'ruler' ? (me ? 'Blutrot-goldener Ring: Du bist Herrscher der Meere – er bleibt, solange du den Mega-Tempel hältst.' : 'Blutrot-goldener Ring: ' + n + ' ist Herrscher der Meere.')
         : st.k === 'good' ? (me ? 'Goldring: Du trägst den Titel „' + t.name + '“ – solange du ihn behältst.' : 'Goldring: ' + n + ' trägt den Titel „' + t.name + '“ aus der Mitte.')
-        : st.k === 'bad' ? (me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.')
-        : (me ? 'Ring „' + st.name + '“ – wechseln unter „Aussehen“.' : 'Ring „' + st.name + '“.');
-    return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : st.k === 'skin' ? '' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
+        : me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.';
+    return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
 }
 function throneNotice(island) {                   // your own throne or Wächter-Tempel: points and fire at a glance
     if (island.type === 'megaTemple') { const sh = throneShooters().length;

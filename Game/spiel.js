@@ -180,7 +180,6 @@ function liveUhren(root) {                          // → true, wenn eine Uhr g
 function statTile(label, iconName, valueHtml, cls) {
   return '<div class="stat"><span class="stat-l">' + icon(iconName) + label + '</span><b class="stat-v' + (cls ? ' ' + cls : '') + '">' + valueHtml + '</b></div>';
 }
-const UNK = '<span class="unk">' + icon('scout') + 'Erst spähen</span>';
 const logBadge = (kind, text) => '<span class="lbadge lbadge--' + kind + '">' + text + '</span>';
 function logBalance(atk, def, atkLabel, defLabel, youDefend) {          // who was stronger, as a bar (like the attack preview) - your side is always green
     const a = Math.max(0, atk || 0), d = Math.max(0, def || 0), pct = a + d > 0 ? Math.round(a / (a + d) * 100) : 50;
@@ -3478,11 +3477,11 @@ function bkModel(island, ownerKey, open) {                                      
   if (island.type === 'temple') { const held = templeHoldSince[island.id] ? Date.now() - templeHoldSince[island.id] : -1, sz = !o ? 'klein' : held >= TEMPLE_HOLD_STREAK_MS ? 'gross' : 'mittel';   // the longer it is held, the bigger
     return ['p|' + ownerKey + '|' + sz, { model: 'tempel', owner: ownerKey, variant: { size: sz, bonus: 'gems' } }]; }
   const lv = baseLevelOf(island), step = lv >= 100 ? 100 : Math.max(1, Math.floor(lv / 10) * 10 + (lv % 10 >= 5 ? 5 : 0));   // a new design every 10 levels, small additions at every 5
-  const home = island.id === playerIslandId, cap = home || isCapital(island.id), bs = { style: BAUSTILE[island.landmassId % 5], cap: 'huegel' };   // the style of its region
+  const home = island.id === playerIslandId, cap = home || isCapital(island.id), style = BAUSTILE[island.landmassId % 5];   // the style of its region
   const seed = o === 'player' ? 7 : o ? (parseInt(String(o).replace(/\D/g, ''), 10) || 7) * 13 + 5 : 1 + island.id % 4, cr = o ? crestFor(o) : null;
   const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null;
-  return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : ''),
-          { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest }];
+  return ['b|' + step + '|' + ownerKey + '|' + (cap ? 'huegel' : '') + '|' + style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : ''),
+          { model: 'basis', level: step, owner: ownerKey, capital: cap, style, seed, crest }];
 }
 const BK_LAST = new Map();                                                       // island → id of the 3D sprite drawn last
 function bkSprite(island, ownerKey, open, z) {                                   // → { s: sprite, W: width in px } or null
@@ -3926,11 +3925,9 @@ function drawRings(visible, z, now) {
         ctx.moveTo(x + Math.cos(a) * r * 1.44, y + Math.sin(a) * r * 1.44); ctx.lineTo(x + Math.cos(a) * r * 1.52, y + Math.sin(a) * r * 1.52); }
         ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke(); }
     }
-    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base: a title from the middle or a bought Ring-Skin (see ringStatusByOwner)
+    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base with a title from the middle (see ringStatusByOwner)
       const o = islandOwnerOf(isl.id), st = o ? rankOf.get(o) : null;
-      if (st && st.k === 'skin') {                                                  // a bought Ring-Skin: one plain thin ring - quiet, so the title rings stand out
-        const R1 = Math.max(r * 1.35, 21); ring(x, y, R1, 3.6, 'rgba(10,8,4,.45)'); ring(x, y, R1, 1.8, st.c0);
-      } else if (st) {                                                                // a title from the middle: bold double ring with notches + a badge (crown, or skull for a penalty)
+      if (st) {                                                                       // bold double ring with notches + a badge (crown, or skull for a penalty)
         const R1 = Math.max(r * 1.35, 21), R2 = R1 + Math.max(r * .28, 5), W = 3.4;
         ring(x, y, R1, W + 2.5, 'rgba(10,8,4,.55)'); ring(x, y, R1, W, st.c0);          // dark underlay so the ring reads on grass and territory
         ring(x, y, R2, 3, 'rgba(10,8,4,.35)'); ring(x, y, R2, 1.4, st.c1);
@@ -3990,7 +3987,7 @@ function marchPath(source, target) {             // source → over every pass o
   MARSCH_WEG_MERK.set(key, { t: Date.now(), p: path });
   return path;
 }
-function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (their Marsch-Skin); yours by default
+function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (its flag); yours by default
   if (!source || !target) return;
   if (!startedAt) startedAt = resolveAt - MIN_ATTACK_SECONDS * 1000;
   const total = resolveAt - startedAt, progress = total > 0 ? Math.min(1, Math.max(0, (now - startedAt) / total)) : 1;
@@ -4862,7 +4859,7 @@ function loadTitles() {
 }
 function saveTitles() { titleVer++; store.set('openWaterTitles', JSON.stringify(titleState)); requestRender(); }
 // The ring round someone's bases - only a title from the middle while it holds (good = gold, penalty = red,
-// the ruler himself blood-red and gold); Ring-Skins gibt es nicht mehr (Alexander 7.10.). owner → ring style { k, name, c0, c1, n, spin, pulse, dash }
+// the ruler himself blood-red and gold); Ring-Skins gibt es nicht mehr (Alexander 7.10.). owner → ring style { k, c0, c1, n, spin, pulse, dash }
 const RING_TITLE = { ruler: { k: 'ruler', c0: 'rgba(235,60,50,.95)', c1: 'rgba(255,208,90,.7)', n: 24, spin: 1, pulse: 1, dash: 'rgba(255,214,110,.9)' },
                      good:  { k: 'good',  c0: 'rgba(255,208,90,.95)', c1: 'rgba(255,208,90,.5)', n: 24, pulse: 1 },
                      bad:   { k: 'bad',   c0: 'rgba(225,48,48,.95)', c1: 'rgba(150,20,30,.6)', n: 16, pulse: 1 } };
@@ -6769,7 +6766,6 @@ function beuteFensterFertig() {                     // Endbild: Kiste offen, all
     f.classList.remove('is-wackeln'); f.classList.add('is-auf', 'is-fertig');
 }
 function beuteFensterZu() { const f = document.getElementById('beuteFenster'); if (!f || f.hidden) return false; beuteFensterTimer.forEach(clearTimeout); beuteFensterTimer = []; f.hidden = true; return true; }
-function beuteFensterOffen() { const f = document.getElementById('beuteFenster'); return !!f && !f.hidden; }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && beuteFensterZu()) e.stopPropagation(); }, true);
 // ===== AUFGABEN (daily quests) + TÄGLICHE BELOHNUNG =====
 
@@ -7041,7 +7037,7 @@ function inboxClaim(id, aus) {                      // into your coffers - retur
     inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
 }
 function renderInbox() {
-    const L = inboxList(), now = Date.now(), el = document.getElementById('inboxList'); if (!el) return;
+    const L = inboxList(), el = document.getElementById('inboxList'); if (!el) return;
     setText(document.getElementById('inboxAside'), L.length ? L.length + ' bereit' : '');
     liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
         return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b>' + beuteRaster(inboxBeute(x), 'bk-mini') + '<small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
@@ -11814,7 +11810,7 @@ function renderArmySheet() {
                 '<button class="btn btn--primary btn--sm" type="button" data-ago' + (sum < 1 ? ' disabled' : '') + '>' + icon('send') + '<span>' + (s.mode === 'new' ? 'Aufstellen' : 'Schicken') + ' · ' + fmtCompact(sum) + ' Truppen</span></button>'
               : '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>'));
     } else {
-        const now = Date.now(), inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
+        const inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
         const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + uhrHtml(a.mv.resolveAt, 'marsch') : 'lagert';
         liveHtml(el, head('Armee im Feld') +
             '<div class="field-lines"><span>Truppen</span><b>' + fmtTile(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
@@ -12468,15 +12464,14 @@ popupStats.addEventListener('click', e => {
     openIslandPopup(isl); requestRender();
 });
 popupStats.addEventListener('click', e => { const k = e.target.closest('[data-spaehen]'); if (k && !k.disabled && !scoutBtn.disabled) scoutBtn.click(); });   // die Kachel „Stärke unbekannt“ schickt den Späher
-function ringNotice(isl) {                         // whose ring is it: a title from the middle or a bought Ring-Skin
+function ringNotice(isl) {                         // whose ring is it: a title from the middle
     if (isl.type !== 'tower') return '';
     const o = islandOwnerOf(isl.id), st = o ? ringStatusByOwner().get(o) : null; if (!st) return '';
     const me = o === 'player', n = me ? '' : escapeHtml(botById[o].name), t = titleOf(o);
     const txt = st.k === 'ruler' ? (me ? 'Blutrot-goldener Ring: Du bist Herrscher der Meere – er bleibt, solange du den Mega-Tempel hältst.' : 'Blutrot-goldener Ring: ' + n + ' ist Herrscher der Meere.')
         : st.k === 'good' ? (me ? 'Goldring: Du trägst den Titel „' + t.name + '“ – solange du ihn behältst.' : 'Goldring: ' + n + ' trägt den Titel „' + t.name + '“ aus der Mitte.')
-        : st.k === 'bad' ? (me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.')
-        : (me ? 'Ring „' + st.name + '“ – wechseln unter „Aussehen“.' : 'Ring „' + st.name + '“.');
-    return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : st.k === 'skin' ? '' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
+        : me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.';
+    return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
 }
 function throneNotice(island) {                   // your own throne or Wächter-Tempel: points and fire at a glance
     if (island.type === 'megaTemple') { const sh = throneShooters().length;

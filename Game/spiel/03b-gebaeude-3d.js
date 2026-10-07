@@ -466,11 +466,11 @@ function bkModel(island, ownerKey, open) {                                      
   if (island.type === 'temple') { const held = templeHoldSince[island.id] ? Date.now() - templeHoldSince[island.id] : -1, sz = !o ? 'klein' : held >= TEMPLE_HOLD_STREAK_MS ? 'gross' : 'mittel';   // the longer it is held, the bigger
     return ['p|' + ownerKey + '|' + sz, { model: 'tempel', owner: ownerKey, variant: { size: sz, bonus: 'gems' } }]; }
   const lv = baseLevelOf(island), step = lv >= 100 ? 100 : Math.max(1, Math.floor(lv / 10) * 10 + (lv % 10 >= 5 ? 5 : 0));   // a new design every 10 levels, small additions at every 5
-  const home = island.id === playerIslandId, cap = home || isCapital(island.id), bs = { style: BAUSTILE[island.landmassId % 5], cap: 'huegel' };   // the style of its region
+  const home = island.id === playerIslandId, cap = home || isCapital(island.id), style = BAUSTILE[island.landmassId % 5];   // the style of its region
   const seed = o === 'player' ? 7 : o ? (parseInt(String(o).replace(/\D/g, ''), 10) || 7) * 13 + 5 : 1 + island.id % 4, cr = o ? crestFor(o) : null;
   const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null;
-  return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : ''),
-          { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest }];
+  return ['b|' + step + '|' + ownerKey + '|' + (cap ? 'huegel' : '') + '|' + style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : ''),
+          { model: 'basis', level: step, owner: ownerKey, capital: cap, style, seed, crest }];
 }
 const BK_LAST = new Map();                                                       // island → id of the 3D sprite drawn last
 function bkSprite(island, ownerKey, open, z) {                                   // → { s: sprite, W: width in px } or null
