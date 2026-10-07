@@ -92,7 +92,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   const Y = n.y; ok(Y.keep === 4 && Y.aca === 4 && JSON.stringify(Y.fo) === '{"w_prod":2}' && Y.st && JSON.stringify([Y.st.keep[0], Y.st.academy[0], Y.st.lumber[0], Y.st.wall[0]]) === '[4,4,4,3]' && JSON.stringify(Y.hfo) === '{"w_prod":2}',
     'Burg fair beim echten Spieler: Welt-Stadt und Hauptbuch (Burg 6 → 4, Labor 4, Holzfäller 4, Mauer 3 bleibt, Forschung passend) – wie sein Handy, also kein Fehlalarm', Y);
   ok(n.inv && n.eq && n.hel, 'Ausrüstung und Helden bleiben', { inv: n.inv, eq: n.eq, hel: n.hel });
-  ok(n.nGems === '1000' && n.nRes && n.nRes.h === 0 && n.nRes.s === 0 && n.nRes.e === 0, 'Einmalige Ausnahme (Alexander 6.10.): Edelsteine genau 1.000 (vorher 12.345), Holz/Stein/Eisen 0', { gems: n.nGems, res: n.nRes });
+  ok(n.nGems === '1000' && n.nRes && n.nRes.h <= 5 && n.nRes.s === 0 && n.nRes.e === 0, 'Einmalige Ausnahme (Alexander 6.10.): Edelsteine genau 1.000 (vorher 12.345), Holz/Stein/Eisen 0 (Holz ≤ 5: der Holzfäller arbeitet bis zum Auslesen weiter)', { gems: n.nGems, res: n.nRes });
   ok(n.tp === 20000 && n.tpPost && n.tpPost[0] === 1500 && /Saison 1/.test(n.tpPost[1]), 'Thron-Punkte: 35.000 → 20.000, 1.500 Edelsteine im Abholfach („Thron-Punkte aus Saison 1 umgetauscht“)', { tp: n.tp, post: n.tpPost });
   const ab = await p.evaluate(() => { const x = inboxList().find(y => y.src === 'saison' && /Thron-Punkte/.test(y.title || '')), g0 = gems; inboxClaim(x.id); return gems - g0; });
   ok(ab === 1500, 'Abholen: Edelsteine + 1.500', ab);
@@ -142,7 +142,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   await p.waitForNavigation({ timeout: 30000 }).catch(() => {}); await p.waitForTimeout(500);
   const z3 = await p.evaluate(() => ({ gems: window.__nach.gems, keep: (JSON.parse(window.__nach.city || '{}').levels || {}).keep, lvl: window.__nach.lvl, coins: window.__nach.coins, mein: localStorage.getItem('openWaterSaisonMein'), res: JSON.parse(window.__nach.res || '{}') }));
   ok(z3.lvl === '1' && z3.coins === '0' && z3.mein === '2', 'Rückfall: nach dem Neuladen Stufe 1, 0 Münzen, Saison 2', z3);
-  ok(z3.res.h === 0 && z3.res.s === 0 && z3.res.e === 0 && z3.gems === '1000', 'Rückfall ohne Nachricht: Ausnahme trotzdem (die Welt sagt: saison.burgFair = 2) – Holz/Stein/Eisen 0, Edelsteine 1.000', { vor: z.res, nach: z3.res, gems: z3.gems });
+  ok(z3.res.h <= 5 && z3.res.s === 0 && z3.res.e === 0 && z3.gems === '1000', 'Rückfall ohne Nachricht: Ausnahme trotzdem (die Welt sagt: saison.burgFair = 2) – Holz/Stein/Eisen 0, Edelsteine 1.000', { vor: z.res, nach: z3.res, gems: z3.gems });
   ok(z3.keep === 4, 'Rückfall ohne Nachricht: Burg fair trotzdem (die Welt sagt: saison.burgFair = 2) – Burg 7 → 4', z3.keep);
   // 4) noch ein Reset: Burg fair war schon – Burgen über 4 (inzwischen gebaut) bleiben, für dich, Mitspieler und das Hauptbuch
   await p.waitForFunction(() => typeof AUF !== 'undefined' && typeof saisonJetzt === 'function' && saison && saison.nr === 2 && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
