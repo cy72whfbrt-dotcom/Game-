@@ -389,6 +389,7 @@ body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96
 .overline b{color:var(--gold-200);font-weight:600}
 .ptitle{display:block;margin:3px 0 2px;font:600 var(--fs-17)/1.15 var(--font-display);letter-spacing:var(--track-display);color:var(--gold-100);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ptitle:not(.ptitle--input){white-space:normal;overflow-wrap:break-word}   /* langer Titel („Hauptstadt von Yusuf_T“) bricht in die 2. Zeile statt „…“ */
+.panel:has(#attackBtn.mit-zeit) .ptitle{white-space:nowrap}   /* Angriff vorbereiten: kompakt, eine Zeile (Handy ≤ 55 % hoch) */
 .ptitle--input{width:100%;min-width:0;padding:1px 4px;margin-left:-4px;background:transparent;border:1px solid transparent;border-radius:var(--r-xs);outline:none}
 .ptitle--input:hover{border-color:var(--line-1)}
 .ptitle--input:focus{border-color:var(--line-3);background:rgba(0,0,0,.25);box-shadow:none}
