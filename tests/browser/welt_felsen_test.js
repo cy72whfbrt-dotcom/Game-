@@ -17,10 +17,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const fern = (islandsByLandmass[anderes] || []).find(i => i.type === 'tower'), mp = marchPath(A, fern);
     const luft = Math.hypot(A.x - C.x, A.y - C.y);
     return { schalter: WELT_FELSEN, berge: felsenListe().length, aufFels: felsAuf(A.x, A.y, 1e9), gerade: Math.abs(marschStrecke(A, C) - luft) < 1e-6, pfad: marchPath(A, C).length,
-      passPfad: mp.length, ueberPass: mp.length === 4 && Math.hypot(mp[1].x - br.x1, mp[1].y - br.y1) * Math.hypot(mp[1].x - br.x2, mp[1].y - br.y2) < 1 };
+      passPfad: mp.length, ueberPass: [{ x: br.x1, y: br.y1 }, br.pass, { x: br.x2, y: br.y2 }].every(q => mp.some(m => Math.hypot(m.x - q.x, m.y - q.y) < 1)) };
   });
   ok(f.schalter === false && f.berge === 0 && !f.aufFels, 'keine Bergstöcke in den Gebieten (WELT_FELSEN = false, Gebirge nur an den Grenzen)', f);
   ok(f.gerade && f.pfad === 2, 'Marsch im eigenen Gebiet: Luftlinie', f);
-  ok(f.passPfad === 4 && f.ueberPass, 'Marsch ins Nachbargebiet: über den Pass (Basis – Pass – Ziel)', f);
+  ok(f.passPfad >= 5 && f.ueberPass, 'Marsch ins Nachbargebiet: durch den Pass (Basis – Passanfang – Pass – Passende – Ziel)', f);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

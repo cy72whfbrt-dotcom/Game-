@@ -20,6 +20,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const geld = () => ({ A: botCoins[A.id], E: botCoins[E.id], F: botCoins[F.id], Z: botCoins[Z.id] });
     const out = {};
     const takt = () => { bundMem.sigSeh = bundMem.rallySeh = bundMem.runde = Date.now(); bundTakt(); };   // (nur die Rallys – sonst treten Mitspieler zufällig dem Bündnis bei, z. B. Z)
+    for (const br of bridges) { clearIslandOwner(br.gateId); botOwnedIslands[A.id].add(br.gateId); }   // (Weg frei: Märsche nur über eigene Pässe – alle Tore dem Anführer)
     // 1) Maut nach Anteil: Alex 3000 Truppen, Emma 1000 → 3000 + 1000 Münzen, Z bekommt 4000
     botCoins[A.id] = 1e6; botCoins[E.id] = 1e6; botCoins[Z.id] = 0;
     bundRallyLos(rally('rm1', 3000, 1000));
