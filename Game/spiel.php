@@ -2134,6 +2134,14 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .ev-banner--inv{--ki-banner:url(bilder/event_invasion.webp)} .ev-banner--drache{--ki-banner:url(bilder/event_drache.webp)} .ev-boss--kraken{--ki-banner:url(bilder/boss_kraken.webp)}
 .ev-boss--giant{--ki-banner:url(bilder/boss_steinriese.webp)} .ev-boss--dragon{--ki-banner:url(bilder/boss_feuerdrache.webp)} .ev-boss--wraith{--ki-banner:url(bilder/boss_nebelkoenig.webp)}
 .ev-woche--sam{--ki-banner:url(bilder/woche_sammeln.webp)} .ev-woche--krieg{--ki-banner:url(bilder/woche_krieg.webp)} .ev-woche--boss{--ki-banner:url(bilder/woche_boss.webp)} .ev-woche--bau{--ki-banner:url(bilder/woche_bau.webp)}
+/* Tipp auf ein freies Feld der Karte (Merkliste 33): runde KI-Knöpfe im Bogen wie am Gebäude (.cr-btn), Stelle = Nadel auf der Karte */
+.feld-ring{position:fixed;left:0;top:0;z-index:44;width:0;height:0;pointer-events:none}
+.feld-ring[hidden]{display:none}
+.feld-ring .cr-btn{border:0;border-radius:50%;background:var(--ui-rund) center/100% 100% no-repeat;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.feld-ring .cr-btn.is-armed{background-image:var(--ui-rund-an)}
+.feld-ring .fr-ic{width:34px;height:34px;background:var(--b) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
+.feld-ring .cr-btn small{font-size:11px}
+.feld-ring .cr-btn small .icon{width:12px;height:12px;vertical-align:-2px}
     </style>
 </head>
 <body>
@@ -2250,6 +2258,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 <div id="armySheet" class="marker-sheet field-sheet" hidden></div>
 <div id="fieldSheet" class="marker-sheet field-sheet" hidden></div>
 <div id="barbSheet" class="marker-sheet field-sheet barb-sheet" hidden></div>
+<div id="feldRing" class="feld-ring" hidden></div>
 <div id="markerSheet" class="marker-sheet" hidden>
   <div class="marker-head"><b id="markerTitle">Wegmarke</b><button id="markerClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div class="marker-presets" id="markerPresets"></div>

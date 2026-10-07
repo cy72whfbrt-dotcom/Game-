@@ -36,6 +36,7 @@ if (window.WELT) {
         if (k.has('openWaterIslandTroops')) islandTroops = PJ('openWaterIslandTroops') || {};
         if (k.has('openWaterNeutralTroopOverrides')) { neutralTroopOverrides = PJ('openWaterNeutralTroopOverrides') || {}; for (const isl of islands) if (!(isl.id in neutralTroopOverrides) && isl.nt0 !== undefined) isl.neutralTroops = isl.nt0;   // (neue Welt-Saison: wieder die erzeugte Besatzung)
             for (const id in neutralTroopOverrides) if (islandById[id]) islandById[id].neutralTroops = neutralTroopOverrides[id]; }
+        if (k.has('openWaterInselOrt')) inselOrtLaden();   // (teleportierte Hauptstädte)
         if (k.has('openWaterTempleHoldSince')) templeHoldSince = PJ('openWaterTempleHoldSince') || {};
         if (k.has('openWaterGateCfg')) gateCfg = null;
         if (k.has('openWaterPendingAttacks')) pendingAttacks = PJ('openWaterPendingAttacks') || [];
@@ -1120,6 +1121,14 @@ if (window.WELT) {
             const hb = hbDa(who); if (hb && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
             const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
             bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender(); befehlBezahlt(b);
+        },
+        teleport(who, b) {                            // Hauptstadt an eine freie Stelle (08d tpPruefen) – nur echte Spieler
+            const bs = loadBotState()[who]; if (!bs || !bs.mensch || typeof b.x !== 'number' || typeof b.y !== 'number') return;
+            if (zuOft(wm(who), 'teleport', 20, 3600000)) { warnen(who, 'teleport', 'Über 20-mal in einer Stunde teleportiert – abgelehnt.'); return; }
+            if (tpPruefen(who, b.x, b.y)) return;           // (kein Platz, Pass zu, Marsch unterwegs – das Handy prüft dasselbe; ein Wettlauf ist kein Schummeln)
+            if (b.gratis === true) { if (!tpGratis(who)) { warnen(who, 'teleport', 'Gratis-Teleport verlangt, steht ihm nicht (mehr) zu – abgelehnt.'); return; } bs.tpGratis = 1; }
+            else { const hb = hbDa(who); if (hb && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: TP_GEMS })) { warnen(who, 'gems', 'Teleport für ' + TP_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TP_GEMS); return; } }
+            tpVerlegen(who, b.x, b.y); saveBotState(); befehlBezahlt(b);
         },
         truppen(who, b) {                             // geschenkte Truppen (Stufe, Thron-Shop, Krankenhaus, Fund, Admin) → Hauptstadt
             const x = { b, bis: Date.now() + WACHE_WARTEN_MS }, l = wm(who).warte.truppen; l.push(x); wacheAbarbeiten(who);

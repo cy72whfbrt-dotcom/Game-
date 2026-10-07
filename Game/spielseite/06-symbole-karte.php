@@ -114,6 +114,7 @@
 <div id="armySheet" class="marker-sheet field-sheet" hidden></div>
 <div id="fieldSheet" class="marker-sheet field-sheet" hidden></div>
 <div id="barbSheet" class="marker-sheet field-sheet barb-sheet" hidden></div>
+<div id="feldRing" class="feld-ring" hidden></div>
 <div id="markerSheet" class="marker-sheet" hidden>
   <div class="marker-head"><b id="markerTitle">Wegmarke</b><button id="markerClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div class="marker-presets" id="markerPresets"></div>
