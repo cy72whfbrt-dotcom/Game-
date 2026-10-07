@@ -335,7 +335,7 @@ function drawBasisBild(island, ownerKey, z) {                                  /
 // des Besitzers (frei: keins), im Balken Stufe und Truppen – eigene und Bündnis die echte Zahl (sofern das Handy sie hat), fremde und
 // freie „?“ bis gespäht (wie die Fahnen, bannerModel). Text und Strich in der Besitzer-Farbe. Stößt ein Schild an ein anderes oder passt
 // die Zahl nicht: nur die Stufe. Ein Schild wird je Größe (8-px-Stufen) einmal gemalt und gemerkt.
-const SCHILD_ANTEIL = .7, SCHILD_MIN = 48, SCHILD_ZAHL = 96, SCHILD_ZOOM = BASIS_MIN_PX / BASIS_BREITE;   // (Truppen-Zahl erst ab 96 px Breite)
+const SCHILD_ANTEIL = .7, SCHILD_MIN = 72, SCHILD_ZAHL = 96, SCHILD_ZOOM = BASIS_MIN_PX / BASIS_BREITE;   // (Truppen-Zahl erst ab 96 px Breite)
 const SCHILD_FARBE = { player: '#8cc0ff', ally: '#86e09a', bot: '#ff8d82', neutral: '#eadfc4' };
 const SCHILD_MERK = new Map();
 function schildRect(island, z) {                                               // (Bildschirm) wo das Schild einer Basis steht
