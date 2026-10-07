@@ -364,7 +364,7 @@ function barbNearest() {                            // the closest camp you may 
     let pick = null, ps = -Infinity; for (const c of barbState.camps) { if (c.L > best + 1 || !isCellOpen(c.x, c.y)) continue; const s = c.L * 3 - Math.hypot(c.x - home.x, c.y - home.y) / 4000; if (s > ps) { ps = s; pick = c; } }
     return pick;
 }
-function openBarbSheet(v) { barbView = v; liveHtml(barbSheetEl, barbSheetHtml()); barbSheetEl.hidden = false; }
+function openBarbSheet(v) { if (barbSheetEl.hidden) [barbHero, barbHero2] = heroLetzte(); barbView = v; liveHtml(barbSheetEl, barbSheetHtml()); barbSheetEl.hidden = false; }
 function closeBarbSheet() { barbSheetEl.hidden = true; barbView = null; }
 function barbSheetRefresh() { if (barbView && !barbSheetEl.hidden) liveHtml(barbSheetEl, barbSheetHtml()); }   // (auch jede Sekunde aus liveTick)
 barbSheetEl.addEventListener('click', e => {
@@ -391,5 +391,5 @@ barbSheetEl.addEventListener('click', e => {
         if (alsBefehl('lager', { home: src, k: 'c', tid: c.id, n, held: barbHero, held2: barbHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'c', c.id, n, barbHero, barbHero2); flashHint('Truppen unterwegs zum Barbaren-Lager (Stufe ' + c.L + ').', 2500); }
     else { const b = dbossEnsure(); if (b.hp <= 0 || barbRec('player').h >= dbossHitsMax()) return barbSheetRefresh(); const src = barbSource(b, 1, true); if (src === null) return;
         const n = barbShareOf(islandTroops[src] || 0, (islandTroops[src] || 0) * .5); if (n < 1) return; if (alsBefehl('lager', { home: src, k: 'b', tid: null, n, held: barbHero, held2: barbHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'b', null, n, barbHero, barbHero2); flashHint('Truppen unterwegs zu ' + b.name + '.', 2500); }
-    barbHero = null; barbHero2 = null; closeBarbSheet();
+    heroLetzteMerken(barbHero, barbHero2); barbHero = null; barbHero2 = null; closeBarbSheet();
 });

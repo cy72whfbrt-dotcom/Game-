@@ -158,7 +158,7 @@ function updateMultiAttackBar() {
 function startMultiAttack(sourceId) {
     multiAttackMode = true;
     multiAttackSourceId = sourceId;
-    multiAttackTargets = []; multiAttackShare = 1; multiAttackHero = null; multiAttackHero2 = null;
+    multiAttackTargets = []; multiAttackShare = 1; [multiAttackHero, multiAttackHero2] = heroLetzte();
     multiAttackBar.style.display = 'flex';
     document.body.classList.add('is-multi');
     updateMultiAttackBar();
@@ -205,7 +205,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
         let troopsForThis = perTarget;
         if (remainder > 0) { troopsForThis++; remainder--; }
         nextAttackHero = ok === 0 ? multiAttackHero : null; nextAttackHero2 = ok === 0 ? multiAttackHero2 : null;   // the heroes lead the first wave that goes out
-        if (launchAttack(sourceId, targetId, null, troopsForThis)) ok++;
+        if (launchAttack(sourceId, targetId, null, troopsForThis)) { if (!ok) heroLetzteMerken(multiAttackHero, multiAttackHero2); ok++; }
         else { failed.push(targetId); why.add(baseShieldedFor(targetId, 'player') ? 'Friedensschild' : isCapital(targetId) ? 'inzwischen eine Hauptstadt' : 'Tor oder Maut'); }
         nextAttackHero = null; nextAttackHero2 = null;
     }

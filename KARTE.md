@@ -277,7 +277,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bgShow` → Game/spiel/03a-karte-hintergrund.js:406
 - `bgWarm` → Game/spiel/03a-karte-hintergrund.js:433
 - `bild30` → Game/ladebildschirm.js:289
-- `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:307
+- `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:309
 - `bis` → Game/spiel/03c-wappen-thronplatz.js:450
 - `bitHat` → Game/spiel/10d-welt-weltrechner.js:918
 - `bitsZu` → Game/spiel/10d-welt-weltrechner.js:917
@@ -496,7 +496,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundBasenText` → Game/buendnis/01-daten-regeln.js:85
 - `bundBedroht` → Game/buendnis/01-daten-regeln.js:100
 - `bundBefehl` → Game/buendnis/04-fenster-karte-welt.js:8
-- `bundBerichtDaten` → Game/buendnis/04-fenster-karte-welt.js:426
+- `bundBerichtDaten` → Game/buendnis/04-fenster-karte-welt.js:428
 - `bundBerichtLesen` → Game/buendnis/03-mitspieler.js:256
 - `bundBonus` → Game/buendnis/02-rally-geschenke.js:260
 - `bundBotBereit` → Game/buendnis/03-mitspieler.js:17
@@ -512,7 +512,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundChatText` → Game/buendnis/04-fenster-karte-welt.js:72
 - `bundChatZeilen` → Game/buendnis/04-fenster-karte-welt.js:88
 - `bundDanke` → Game/buendnis/03-mitspieler.js:276
-- `bundEingeladen` → Game/buendnis/04-fenster-karte-welt.js:441
+- `bundEingeladen` → Game/buendnis/04-fenster-karte-welt.js:443
 - `bundEinladungen` → Game/buendnis/01-daten-regeln.js:147
 - `bundEinladungenHtml` → Game/buendnis/04-fenster-karte-welt.js:33
 - `bundEinmal` → Game/buendnis/01-daten-regeln.js:113
@@ -521,11 +521,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundGebiet` → Game/buendnis/02-rally-geschenke.js:274
 - `bundGehoert` → Game/buendnis/01-daten-regeln.js:117
 - `bundGeschenk` → Game/buendnis/02-rally-geschenke.js:234
-- `bundGesehen` → Game/buendnis/04-fenster-karte-welt.js:286
+- `bundGesehen` → Game/buendnis/04-fenster-karte-welt.js:288
 - `bundGeteilt` → Game/buendnis/03-mitspieler.js:216
 - `bundGruendenKnopf` → Game/buendnis/04-fenster-karte-welt.js:159
 - `bundGutGemacht` → Game/buendnis/03-mitspieler.js:281
 - `bundHeimschicken` → Game/buendnis/01-daten-regeln.js:353
+- `bundHeldVor` → Game/buendnis/04-fenster-karte-welt.js:205
 - `bundHelfen` → Game/buendnis/01-daten-regeln.js:393
 - `bundHilfe` → Game/buendnis/01-daten-regeln.js:296
 - `bundHilfeBitte` → Game/buendnis/01-daten-regeln.js:379
@@ -535,10 +536,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundIch` → Game/buendnis/04-fenster-karte-welt.js:12
 - `bundIndex` → Game/buendnis/01-daten-regeln.js:74
 - `bundInfoHtml` → Game/buendnis/04-fenster-karte-welt.js:45
-- `bundInselfenster` → Game/buendnis/04-fenster-karte-welt.js:293
-- `bundKannEinladen` → Game/buendnis/04-fenster-karte-welt.js:440
-- `bundKarteOben` → Game/buendnis/04-fenster-karte-welt.js:337
-- `bundKarteUnten` → Game/buendnis/04-fenster-karte-welt.js:328
+- `bundInselfenster` → Game/buendnis/04-fenster-karte-welt.js:295
+- `bundKannEinladen` → Game/buendnis/04-fenster-karte-welt.js:442
+- `bundKarteOben` → Game/buendnis/04-fenster-karte-welt.js:339
+- `bundKarteUnten` → Game/buendnis/04-fenster-karte-welt.js:330
 - `bundKommtHin` → Game/buendnis/02-rally-geschenke.js:27
 - `bundLaden` → Game/buendnis/01-daten-regeln.js:68
 - `bundListeHtml` → Game/buendnis/04-fenster-karte-welt.js:126
@@ -555,12 +556,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundObenSchluessel` → Game/buendnis/04-fenster-karte-welt.js:135
 - `bundObenZeichnen` → Game/buendnis/04-fenster-karte-welt.js:136
 - `bundOeffnen` → Game/buendnis/04-fenster-karte-welt.js:14
-- `bundOhneListeHtml` → Game/buendnis/04-fenster-karte-welt.js:443
+- `bundOhneListeHtml` → Game/buendnis/04-fenster-karte-welt.js:445
 - `bundOp` → Game/buendnis/01-daten-regeln.js:148
 - `bundProdFaktor` → Game/spiel/01e-nebel-kampfwerte-hud.js:204
 - `bundProdMult` → Game/buendnis/02-rally-geschenke.js:271
-- `bundProfilKnopf` → Game/buendnis/04-fenster-karte-welt.js:454
-- `bundPunkt` → Game/buendnis/04-fenster-karte-welt.js:287
+- `bundProfilKnopf` → Game/buendnis/04-fenster-karte-welt.js:456
+- `bundPunkt` → Game/buendnis/04-fenster-karte-welt.js:289
 - `bundPush` → Game/buendnis/01-daten-regeln.js:116
 - `bundQuellen` → Game/buendnis/04-fenster-karte-welt.js:171
 - `bundRallyBeute` → Game/buendnis/02-rally-geschenke.js:213
@@ -581,7 +582,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundRein` → Game/buendnis/01-daten-regeln.js:142
 - `bundRender` → Game/buendnis/04-fenster-karte-welt.js:17
 - `bundRueckzugTun` → Game/buendnis/03-mitspieler.js:288
-- `bundSaisonNeu` → Game/buendnis/04-fenster-karte-welt.js:375
+- `bundSaisonNeu` → Game/buendnis/04-fenster-karte-welt.js:377
 - `bundSchliessen` → Game/buendnis/04-fenster-karte-welt.js:15
 - `bundSendAnkunft` → Game/buendnis/01-daten-regeln.js:316
 - `bundSicherKnopf` → Game/buendnis/04-fenster-karte-welt.js:16
@@ -594,7 +595,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundTagHeute` → Game/buendnis/02-rally-geschenke.js:232
 - `bundTagVon` → Game/buendnis/01-daten-regeln.js:79
 - `bundTakt` → Game/buendnis/03-mitspieler.js:434
-- `bundTeilenKnopf` → Game/buendnis/04-fenster-karte-welt.js:422
+- `bundTeilenKnopf` → Game/buendnis/04-fenster-karte-welt.js:424
 - `bundTempo` → Game/buendnis/02-rally-geschenke.js:285
 - `bundTreffpunkt` → Game/buendnis/03-mitspieler.js:145
 - `bundUnterAngriff` → Game/buendnis/01-daten-regeln.js:91
@@ -602,7 +603,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundVon` → Game/buendnis/01-daten-regeln.js:77
 - `bundVorschau` → Game/buendnis/04-fenster-karte-welt.js:164
 - `bundWahlHtml` → Game/buendnis/04-fenster-karte-welt.js:179
-- `bundWahlLos` → Game/buendnis/04-fenster-karte-welt.js:205
+- `bundWahlLos` → Game/buendnis/04-fenster-karte-welt.js:206
 - `bundWahlRechnen` → Game/buendnis/04-fenster-karte-welt.js:196
 - `bundWeg` → Game/buendnis/03-mitspieler.js:10
 - `bundZahl` → Game/buendnis/01-daten-regeln.js:118
@@ -713,8 +714,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:368
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:220
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:81
-- `closeFieldSheet` → Game/spiel/09a-funde-felder.js:343
-- `closeHeroHall` → Game/spiel/08c-helden.js:396
+- `closeFieldSheet` → Game/spiel/09a-funde-felder.js:344
+- `closeHeroHall` → Game/spiel/08c-helden.js:277
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:111
 - `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:121
 - `closeLookSheet` → Game/spiel/08b-burg-aussehen.js:56
@@ -1250,7 +1251,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroCanDo` → Game/spiel/08c-helden.js:140
 - `heroChestOpen` → Game/spiel/06d-schild-produktion.js:102
 - `heroChestPool` → Game/spiel/06d-schild-produktion.js:63
-- `heroChipHtml` → Game/spiel/08c-helden.js:433
+- `heroChipHtml` → Game/spiel/08c-helden.js:314
 - `heroConvert` → Game/spiel/08c-helden.js:5
 - `heroDefCut` → Game/spiel/01e-nebel-kampfwerte-hud.js:139
 - `heroDefPart` → Game/spiel/01e-nebel-kampfwerte-hud.js:149
@@ -1268,11 +1269,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroGatherFx` → Game/spiel/08c-helden.js:105
 - `heroGefOf` → Game/spiel/08c-helden.js:49
 - `heroGrantShards` → Game/spiel/08c-helden.js:127
-- `heroHallLive` → Game/spiel/08c-helden.js:390
-- `heroImg` → Game/spiel/08c-helden.js:214
+- `heroHallLive` → Game/spiel/08c-helden.js:271
+- `heroImg` → Game/spiel/08c-helden.js:202
 - `heroIn` → Game/spiel/08c-helden.js:107
 - `heroLaunch` → Game/spiel/08c-helden.js:85
 - `heroLead` → Game/spiel/08c-helden.js:32
+- `heroLetzte` → Game/spiel/08c-helden.js:192
+- `heroLetzteMerken` → Game/spiel/08c-helden.js:188
 - `heroMarchFx` → Game/spiel/08c-helden.js:104
 - `heroNum` → Game/spiel/08c-helden.js:30
 - `heroOnField` → Game/spiel/08c-helden.js:106
@@ -1280,7 +1283,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroPairOf` → Game/spiel/01d-helden-mitspieler.js:64
 - `heroPartner` → Game/spiel/01d-helden-mitspieler.js:65
 - `heroPeek` → Game/spiel/08c-helden.js:84
-- `heroPic` → Game/spiel/08c-helden.js:213
+- `heroPic` → Game/spiel/08c-helden.js:201
 - `heroPickBest` → Game/spiel/08c-helden.js:116
 - `heroPickPair` → Game/spiel/08c-helden.js:125
 - `heroPoints` → Game/spiel/08c-helden.js:25
@@ -1288,27 +1291,26 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroRageUp` → Game/spiel/08c-helden.js:93
 - `heroReportOf` → Game/spiel/01e-nebel-kampfwerte-hud.js:107
 - `heroSave` → Game/spiel/08c-helden.js:24
-- `heroSeg2Html` → Game/spiel/08c-helden.js:426
-- `heroSegHtml` → Game/spiel/08c-helden.js:421
+- `heroSeg2Html` → Game/spiel/08c-helden.js:307
+- `heroSegHtml` → Game/spiel/08c-helden.js:302
 - `heroSkillVal` → Game/spiel/08c-helden.js:31
 - `heroSt` → Game/spiel/08c-helden.js:22
 - `heroStarNum` → Game/spiel/08c-helden.js:28
 - `heroStarTxt` → Game/spiel/08c-helden.js:29
 - `heroStats` → Game/spiel/08c-helden.js:33
 - `heroStepCost` → Game/spiel/08c-helden.js:27
-- `heroSvg` → Game/spiel/08c-helden.js:215
 - `heroTag` → Game/spiel/08c-helden.js:184
 - `heroWouldFire` → Game/spiel/08c-helden.js:71
 - `heroWutZurueck` → Game/spiel/08c-helden.js:90
 - `heroZweitOk` → Game/spiel/08c-helden.js:83
 - `herzSchreiben` → Game/weltrechner/start.js:65
-- `hfl` → Game/spiel/10a-inselfenster-vorschau.js:391
-- `hhGrid` → Game/spiel/08c-helden.js:327
-- `hhHero` → Game/spiel/08c-helden.js:350
-- `hhPairs` → Game/spiel/08c-helden.js:342
-- `hhPartnerBlk` → Game/spiel/08c-helden.js:384
-- `hhStars` → Game/spiel/08c-helden.js:188
-- `hhSwapHtml` → Game/spiel/08c-helden.js:379
+- `hfl` → Game/spiel/10a-inselfenster-vorschau.js:393
+- `hhGrid` → Game/spiel/08c-helden.js:204
+- `hhHero` → Game/spiel/08c-helden.js:227
+- `hhPairs` → Game/spiel/08c-helden.js:219
+- `hhPartnerBlk` → Game/spiel/08c-helden.js:265
+- `hhStars` → Game/spiel/08c-helden.js:199
+- `hhSwapHtml` → Game/spiel/08c-helden.js:260
 - `hideAllButtons` → Game/spiel/09e-inselfenster.js:120
 - `hilfeAnwenden` → Game/buendnis/01-daten-regeln.js:403
 - `hilfeDauer` → Game/buendnis/01-daten-regeln.js:367
@@ -1398,7 +1400,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kampfTeile` → Game/buendnis/02-rally-geschenke.js:184
 - `kannZahlen` → Game/aufbau.js:68
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:160
-- `karte` → Game/spiel/08c-helden.js:330
+- `karte` → Game/spiel/08c-helden.js:207
 - `karteBilder` → Game/spiel/03a-karte-hintergrund.js:42
 - `karteObjekte` → Game/spiel/03a-karte-hintergrund.js:148
 - `karteTauchen` → Game/spiel/08a-stadt-bauen.js:191
@@ -1705,7 +1707,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openCrate` → Game/spiel/02a-shop-stufen.js:80
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:325
 - `openGoals` → Game/spiel/06a-aufgaben.js:309
-- `openHeroHall` → Game/spiel/08c-helden.js:395
+- `openHeroHall` → Game/spiel/08c-helden.js:276
 - `openIslandPopup` → Game/spiel/09e-inselfenster.js:102
 - `openLookSheet` → Game/spiel/08b-burg-aussehen.js:52
 - `openMarkerSheet` → Game/spiel/09d-armeen-wegmarken.js:300
@@ -1768,7 +1770,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `palm` → Game/baukunst/05-umland.js:598
 - `panBy` → Game/spiel/03e-kamera-eingabe.js:432
 - `parapet` → Game/baukunst/07-hafen-palast.js:202
-- `parseTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:296
+- `parseTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:298
 - `partLines` → Game/spiel/05d-maersche-kampfbericht.js:161
 - `partsFor` → Game/bots/02-kampf-karte.js:43
 - `passBump` → Game/spiel/06b-pass-anleitung.js:25
@@ -1794,8 +1796,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `passScroll` → Game/spiel/06b-pass-anleitung.js:105
 - `passwort_anfrage` → Game/server/06-speichern-push-konto.php:159
 - `passXp` → Game/spiel/06b-pass-anleitung.js:26
-- `patchAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:368
-- `patchSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:348
+- `patchAttackPreview` → Game/spiel/10a-inselfenster-vorschau.js:370
+- `patchSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:350
 - `pathSoFar` → Game/spiel/02b-maersche.js:215
 - `PAVE` → Game/baukunst/07-hafen-palast.js:17
 - `PAVE` → Game/baukunst/07-hafen-palast.js:411
@@ -1811,7 +1813,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pickupScreenPos` → Game/spiel/09a-funde-felder.js:12
 - `pickupVerdeckt` → Game/spiel/09a-funde-felder.js:13
 - `piecesPath` → Game/spiel/03a-karte-hintergrund.js:314
-- `pille` → Game/buendnis/04-fenster-karte-welt.js:341
+- `pille` → Game/buendnis/04-fenster-karte-welt.js:343
 - `pinnGeo` → Game/baukunst/04-vielfalt-stile.js:342
 - `Pipeline` → Game/baukunst/02-buehne-grundbasis.js:28
 - `Pipeline.prototype.render` → Game/baukunst/02-buehne-grundbasis.js:42
@@ -1868,7 +1870,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pulsFrist` → Game/weltrechner/start.js:64
 - `pulsPruefen` → Game/weltrechner/start.js:103
 - `pump` → Game/baukunst/08-himmelsfeste-bilder.js:381
-- `punkt` → Game/buendnis/04-fenster-karte-welt.js:340
+- `punkt` → Game/buendnis/04-fenster-karte-welt.js:342
 - `punktOk` → Game/spiel/10d-welt-weltrechner.js:1016
 - `push_abmelden` → Game/server/05-datenbank-welt.php:286
 - `push_alle` → Game/server/05-datenbank-welt.php:294
@@ -1950,7 +1952,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderEvents` → Game/spiel/09c-events-drache.js:497
 - `renderGoalsSub` → Game/spiel/06a-aufgaben.js:307
 - `renderHeroChests` → Game/spiel/06d-schild-produktion.js:64
-- `renderHeroHall` → Game/spiel/08c-helden.js:389
+- `renderHeroHall` → Game/spiel/08c-helden.js:270
 - `renderInbox` → Game/spiel/06a-aufgaben.js:239
 - `renderKeep` → Game/aufbau.js:304
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:4
@@ -1965,7 +1967,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderQuestPanel` → Game/spiel/06a-aufgaben.js:260
 - `renderRankings` → Game/spiel/05c-erfolge-rangliste.js:293
 - `renderRecallPreview` → Game/spiel/10b-inselfenster-knoepfe.js:56
-- `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:317
+- `renderSendPreview` → Game/spiel/10a-inselfenster-vorschau.js:319
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:47
 - `renderShop` → Game/spiel/06d-schild-produktion.js:118
 - `renderSkillGrid` → Game/spiel/05b-truhe-skills.js:305
@@ -2127,7 +2129,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `setScreen` → Game/spiel/03a-karte-hintergrund.js:5
 - `setShown` → Game/spiel/01e-nebel-kampfwerte-hud.js:232
 - `setText` → Game/spiel/01e-nebel-kampfwerte-hud.js:231
-- `setTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:306
+- `setTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:308
 - `setW` → Game/spiel/03a-karte-hintergrund.js:362
 - `setze_cookie` → Game/server/01-grundlagen-login.php:37
 - `setzen` → Game/spiel/01a-grundlagen.js:29
@@ -2169,7 +2171,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `skillBonusText` → Game/spiel/04-kampf.js:294
 - `skript` → Game/server/03-nebel-maersche-seite.php:145
 - `slab` → Game/baukunst/06-turmhof-festung.js:15
-- `sliderToTroops` → Game/spiel/10a-inselfenster-vorschau.js:294
+- `sliderToTroops` → Game/spiel/10a-inselfenster-vorschau.js:296
 - `slot` → Game/spiel/03d-maersche-tagnacht.js:109
 - `smokeTexture` → Game/baukunst/03-wahrzeichen-feuer.js:307
 - `sofort` → Game/speichern.js:168
@@ -2331,7 +2333,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `triPrism` → Game/baukunst/04-vielfalt-stile.js:564
 - `troopProductionMultiplier` → Game/spiel/04-kampf.js:256
 - `troopsPerTick` → Game/spiel/01b-weltkarte.js:106
-- `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:295
+- `troopsToSlider` → Game/spiel/10a-inselfenster-vorschau.js:297
 - `trunc` → Game/spiel/03b-gebaeude-3d.js:504
 - `truppenBekannt` → Game/spiel/01e-nebel-kampfwerte-hud.js:38
 - `truppenGeben` → Game/spiel/10d-welt-weltrechner.js:446
@@ -2505,6 +2507,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltZuClient` → Game/welt.js:143
 - `werIst` → Game/aufbau.js:122
 - `werIstWer` → Game/spiel/10d-welt-weltrechner.js:1043
+- `wert` → Game/spiel/08c-helden.js:240
 - `wert` → Game/spiel/08d-gebaeude-wirkung.js:84
 - `who` → Game/spiel/04-kampf.js:59
 - `whoBases` → Game/spiel/05c-erfolge-rangliste.js:161
@@ -2521,7 +2524,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `window.__owSpeicher.roh` → Game/speichern.js:185
 - `window.__stopSplashScene` → Game/ladebildschirm.js:335
 - `window.__weltBefehl` → Game/spiel/10d-welt-weltrechner.js:1231
-- `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:396
+- `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:398
 - `window.__weltLaden` → Game/haendler.js:139
 - `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1359
 - `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1384
@@ -3310,22 +3313,23 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundQuellen` :171 — Auswahl: Rally starten (Ziel t) · bei einer Rally mitmachen (rid) · Hilfe sende…
 - `bundWahlHtml` :179
 - `bundWahlRechnen` :196
-- `bundWahlLos` :205
-- `bundGesehen` :286
-- `bundPunkt` :287
-- `bundInselfenster` :293 — Inselfenster: Bündnis-Knöpfe (Signal, Rally, Hilfe) und keine Angriffe auf Mitg…
-- `bundKarteUnten` :328 — 7) KARTE: Gebiet zart in der Bündnisfarbe, Signale und Rally-Fahnen
-- `bundKarteOben` :337
-- `punkt` :340
-- `pille` :341
-- `bundSaisonNeu` :375 — Neue Welt-Saison (09f-saison.js saisonWelt): alle Bündnisse aufgelöst (neu grün…
-- `window.__weltLaden` :396
-- `bundTeilenKnopf` :422 — Kampfbericht im Bündnis teilen (Knopf neben „Zeigen“ im Kampfbericht, 05d): Ort…
-- `bundBerichtDaten` :426 — → { s: Sieg (aus deiner Sicht), n: Stärke des Gegners, v: 'a' Angriff / 'v' Ver…
-- `bundKannEinladen` :440 — Darf ich (Anführer, Platz frei) w einladen? Ist w schon eingeladen?
-- `bundEingeladen` :441
-- `bundOhneListeHtml` :443 — Reiter „Suchen“ für den Anführer: alle ohne Bündnis (Mitspieler und echte Spiel…
-- `bundProfilKnopf` :454 — Profil eines Spielers (spiel.js openRulerProfile): als Anführer „Ins Bündnis ei…
+- `bundHeldVor` :205
+- `bundWahlLos` :206
+- `bundGesehen` :288
+- `bundPunkt` :289
+- `bundInselfenster` :295 — Inselfenster: Bündnis-Knöpfe (Signal, Rally, Hilfe) und keine Angriffe auf Mitg…
+- `bundKarteUnten` :330 — 7) KARTE: Gebiet zart in der Bündnisfarbe, Signale und Rally-Fahnen
+- `bundKarteOben` :339
+- `punkt` :342
+- `pille` :343
+- `bundSaisonNeu` :377 — Neue Welt-Saison (09f-saison.js saisonWelt): alle Bündnisse aufgelöst (neu grün…
+- `window.__weltLaden` :398
+- `bundTeilenKnopf` :424 — Kampfbericht im Bündnis teilen (Knopf neben „Zeigen“ im Kampfbericht, 05d): Ort…
+- `bundBerichtDaten` :428 — → { s: Sieg (aus deiner Sicht), n: Stärke des Gegners, v: 'a' Angriff / 'v' Ver…
+- `bundKannEinladen` :442 — Darf ich (Anführer, Platz frei) w einladen? Ist w schon eingeladen?
+- `bundEingeladen` :443
+- `bundOhneListeHtml` :445 — Reiter „Suchen“ für den Anführer: alle ohne Bündnis (Mitspieler und echte Spiel…
+- `bundProfilKnopf` :456 — Profil eines Spielers (spiel.js openRulerProfile): als Anführer „Ins Bündnis ei…
 
 ## Game/server/ (Teile)
 
@@ -4470,23 +4474,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `vhSetzen` :170 — eintragen (prüft: eigener Held, Mauer-Stufe) → true, wenn es gilt
 - `vhBest` :178 — der beste eigene Held fürs Verteidigen (Mitspieler): Angriff + weniger Verluste…
 - `heroTag` :184
-- `hhStars` :188
-- `heroPic` :213
-- `heroImg` :214
-- `heroSvg` :215
-- `hhGrid` :327
-- `karte` :330
-- `hhPairs` :342 — Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwe…
-- `hhHero` :350
-- `hhSwapHtml` :379 — übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
-- `hhPartnerBlk` :384 — sein Paar: Partner, Bonus, gemeinsame Geschichte
-- `renderHeroHall` :389
-- `heroHallLive` :390 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
-- `openHeroHall` :395
-- `closeHeroHall` :396
-- `heroSegHtml` :421 — the hero choice for an attack, an army or a field march: the ones you have, wit…
-- `heroSeg2Html` :426 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
-- `heroChipHtml` :433 — profile + report: a hero with rarity and stars
+- `heroLetzteMerken` :188 — nach dem Losschicken: Haupt- und Zweitheld vorn in die Liste
+- `heroLetzte` :192 — → [Haupt-, Zweitheld]: die ersten freien aus der Liste (der gerade Losgeschickt…
+- `hhStars` :199
+- `heroPic` :201 — ---- Heldenbilder (KI-Bilder, werkzeuge/helden_bilder_schneiden.py): Figur bild…
+- `heroImg` :202
+- `hhGrid` :204
+- `karte` :207
+- `hhPairs` :219 — Paket E: die passenden Paare – zusammen in einem Marsch +10 % auf alle Heldenwe…
+- `hhHero` :227
+- `wert` :240
+- `hhSwapHtml` :260 — übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
+- `hhPartnerBlk` :265 — sein Paar: Partner, Bonus, gemeinsame Geschichte
+- `renderHeroHall` :270
+- `heroHallLive` :271 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
+- `openHeroHall` :276
+- `closeHeroHall` :277
+- `heroSegHtml` :302 — the hero choice for an attack, an army or a field march: the ones you have, wit…
+- `heroSeg2Html` :307 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
+- `heroChipHtml` :314 — profile + report: a hero with rarity and stars
 
 ### Game/spiel/08d-gebaeude-wirkung.js — Wirkung der Gebäude (Labor, Schmiede, Lazarett), Stadt-Leiste, Hauptstadt verle…
 - `academyLevel` :3 — ---- building effects ----
@@ -4564,7 +4570,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawResFields` :272
 - `fieldSource` :323
 - `openFieldSheet` :325
-- `closeFieldSheet` :343
+- `closeFieldSheet` :344
 
 ### Game/spiel/09b-lager-tagesboss.js — Barbaren-Lager und Tagesboss
 - `barbTroopsOf` :5 — × WIRTSCHAFT_KOSTEN (5.10.): 1 at 1, ~570 at 10, ~19 Mio. at 25 (vorher 2 Tsd. …
@@ -4802,15 +4808,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `apHeldChip` :223 — ein Chip: Bild, Name, darunter klein Sterne/Hinweis
 - `renderAttackPreview` :232 — Attack preview. Built ONCE per (target, source, scouted, bonus); later calls (t…
 - `sourceTroops` :233
-- `sliderToTroops` :294
-- `troopsToSlider` :295
-- `parseTroopInput` :296
-- `setTroopInput` :306
-- `bindTroopInput` :307
-- `renderSendPreview` :317 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
-- `patchSendPreview` :348
-- `patchAttackPreview` :368 — Writes the live numbers of the attack preview (own force, enemy force when scou…
-- `hfl` :391
+- `sliderToTroops` :296
+- `troopsToSlider` :297
+- `parseTroopInput` :298
+- `setTroopInput` :308
+- `bindTroopInput` :309
+- `renderSendPreview` :319 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
+- `patchSendPreview` :350
+- `patchAttackPreview` :370 — Writes the live numbers of the attack preview (own force, enemy force when scou…
+- `hfl` :393
 
 ### Game/spiel/10b-inselfenster-knoepfe.js — Insel-Fenster: Ausbau merken, Zurückrufen, Nebel antippen, Tippen auf die Karte
 - `ausbauMerken` :5
@@ -5029,6 +5035,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 ### Game/spielseite/06-symbole-karte.php — <body>: Symbole, Ladebildschirm, HUD, Navigation, Kartenknöpfe, Hinweis, Schlei…
 
 ### Game/spielseite/07-fenster.php — Fenster: Profil, Kampfbericht, Herrscher, Bündnis, Rangliste, Events, Shop, Geg…
+
+### Game/spielseite/07x-stil-helden.php — Stil: Helden mit KI-Bildern (bilder/held_*.webp) – Heldenhalle wie RoK/Call of …
 
 ### Game/spielseite/08-dialoge-stadt-skripte.php — Level-/Tages-/Belohnungs-Fenster, Hauptstadt, Heldenhalle, Insel-Fenster, Skrip…
 
