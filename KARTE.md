@@ -6,7 +6,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 ## Index (Name → Datei:Zeile)
 
 - `abmelden` → Game/server/01-grundlagen-login.php:79
-- `abosHolen` → Game/weltrechner/push.js:173
+- `abosHolen` → Game/weltrechner/push.js:174
 - `academyLevel` → Game/spiel/08d-gebaeude-wirkung.js:3
 - `achCheck` → Game/spiel/05c-erfolge-rangliste.js:114
 - `achCheckSoon` → Game/spiel/05c-erfolge-rangliste.js:113
@@ -28,8 +28,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `addProps` → Game/baukunst/04-vielfalt-stile.js:514
 - `addXp` → Game/spiel/02a-shop-stufen.js:263
 - `adminBefehl` → Game/spiel/10d-welt-weltrechner.js:1234
-- `adminMelden` → Game/weltrechner/push.js:214
-- `adminSenden` → Game/weltrechner/push.js:215
+- `adminMelden` → Game/weltrechner/push.js:215
+- `adminSenden` → Game/weltrechner/push.js:216
 - `afterSplash` → Game/spiel/06d-schild-produktion.js:432
 - `ago` → Game/spiel/05c-erfolge-rangliste.js:188
 - `ago` → Game/spiel/05d-maersche-kampfbericht.js:153
@@ -657,8 +657,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cart` → Game/baukunst/05-umland.js:170
 - `centerIsland` → Game/spiel/01c-basen-spielstand.js:148
 - `cfg` → Game/server/01-grundlagen-login.php:17
-- `chainLink` → Game/spiel/06a-aufgaben.js:211
-- `chainStreak` → Game/spiel/06a-aufgaben.js:210
+- `chainLink` → Game/spiel/06a-aufgaben.js:213
+- `chainStreak` → Game/spiel/06a-aufgaben.js:212
 - `checkRuler` → Game/spiel/07b-kriegsherr.js:202
 - `chip` → Game/spiel/05b-truhe-skills.js:9
 - `chipN` → Game/spiel/01a-grundlagen.js:208
@@ -707,11 +707,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `cityVglHtml` → Game/spiel/08b-burg-aussehen.js:107
 - `cityZMin` → Game/spiel/08e-stadtbild-haeuser.js:32
 - `claimAch` → Game/spiel/05c-erfolge-rangliste.js:142
-- `claimChain` → Game/spiel/06a-aufgaben.js:217
+- `claimChain` → Game/spiel/06a-aufgaben.js:219
 - `claimDaily` → Game/spiel/06a-aufgaben.js:49
-- `claimQuest` → Game/spiel/06a-aufgaben.js:188
-- `claimQuestBonus` → Game/spiel/06a-aufgaben.js:226
-- `claimQuestBonus3` → Game/spiel/06a-aufgaben.js:199
+- `claimQuest` → Game/spiel/06a-aufgaben.js:190
+- `claimQuestBonus` → Game/spiel/06a-aufgaben.js:228
+- `claimQuestBonus3` → Game/spiel/06a-aufgaben.js:201
 - `clamp` → Game/baukunst/04-vielfalt-stile.js:135
 - `clampCamera` → Game/spiel/03e-kamera-eingabe.js:144
 - `clampCentre` → Game/spiel/03e-kamera-eingabe.js:129
@@ -781,7 +781,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `dailyBeute` → Game/spiel/06a-aufgaben.js:60
 - `dailyClaimable` → Game/spiel/06a-aufgaben.js:29
 - `dailyDaysHtml` → Game/spiel/06a-aufgaben.js:38
-- `dailyGoalCount` → Game/spiel/06a-aufgaben.js:237
+- `dailyGoalCount` → Game/spiel/06a-aufgaben.js:239
 - `dailyNextDay` → Game/spiel/06a-aufgaben.js:30
 - `dailyRewardLabel` → Game/spiel/06a-aufgaben.js:35
 - `dbossEnsure` → Game/spiel/09b-lager-tagesboss.js:65
@@ -1184,7 +1184,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `goalGates` → Game/spiel/05c-erfolge-rangliste.js:23
 - `goalHeroes` → Game/spiel/05c-erfolge-rangliste.js:24
 - `goalHeroStars` → Game/spiel/05c-erfolge-rangliste.js:25
-- `goalsGrpVon` → Game/spiel/06a-aufgaben.js:334
+- `goalsGrpVon` → Game/spiel/06a-aufgaben.js:336
 - `goldPerKillRate` → Game/spiel/04-kampf.js:277
 - `gone` → Game/spiel/09d-armeen-wegmarken.js:127
 - `grantFreeCrate` → Game/spiel/06a-aufgaben.js:13
@@ -1381,12 +1381,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `icon` → Game/spiel/01a-grundlagen.js:123
 - `img.onload` → Game/ladebildschirm.js:295
 - `impulse` → Game/spiel/10c-start-einstellungen.js:18
-- `inboxAdd` → Game/spiel/06a-aufgaben.js:250
-- `inboxBeute` → Game/spiel/06a-aufgaben.js:257
-- `inboxClaim` → Game/spiel/06a-aufgaben.js:261
-- `inboxList` → Game/spiel/06a-aufgaben.js:243
-- `inboxPiles` → Game/spiel/06a-aufgaben.js:248
-- `inboxSave` → Game/spiel/06a-aufgaben.js:246
+- `inboxAdd` → Game/spiel/06a-aufgaben.js:252
+- `inboxBeute` → Game/spiel/06a-aufgaben.js:259
+- `inboxClaim` → Game/spiel/06a-aufgaben.js:263
+- `inboxList` → Game/spiel/06a-aufgaben.js:245
+- `inboxPiles` → Game/spiel/06a-aufgaben.js:250
+- `inboxSave` → Game/spiel/06a-aufgaben.js:248
 - `infoKlapp` → Game/spiel/09c-events-drache.js:447
 - `init` → Game/spiel/10c-start-einstellungen.js:20
 - `inselMittig` → Game/spiel/10a-inselfenster-vorschau.js:217
@@ -1432,7 +1432,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `itemPct` → Game/spiel/02a-shop-stufen.js:32
 - `itemScore` → Game/spiel/02a-shop-stufen.js:29
 - `json_antwort` → Game/server/03-nebel-maersche-seite.php:133
-- `jwtFuer` → Game/weltrechner/push.js:183
+- `jwtFuer` → Game/weltrechner/push.js:184
 - `kampf` → Game/aufbau.js:231
 - `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:194
 - `kampfAufraeumen` → Game/spiel/04-kampf.js:243
@@ -1542,7 +1542,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `loadDaily` → Game/spiel/06a-aufgaben.js:23
 - `loadGateCfg` → Game/spiel/01b-weltkarte.js:277
 - `loadHeroes` → Game/spiel/08c-helden.js:13
-- `loadQuests` → Game/spiel/06a-aufgaben.js:149
+- `loadQuests` → Game/spiel/06a-aufgaben.js:151
 - `loadTitles` → Game/spiel/04-kampf.js:16
 - `loadWander` → Game/spiel/07b-kriegsherr.js:42
 - `log` → Game/weltrechner/start.js:32
@@ -1608,7 +1608,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `MDK` → Game/baukunst/08-himmelsfeste-bilder.js:16
 - `meinAbo` → Game/benachrichtigung.js:36
 - `meinProfil` → Game/welt.js:215
-- `melder` → Game/weltrechner/push.js:161
+- `melder` → Game/weltrechner/push.js:162
 - `memo` → Game/baukunst/04-vielfalt-stile.js:149
 - `mensch` → Game/bots/02-kampf-karte.js:42
 - `mensch` → Game/weltrechner/push.js:68
@@ -1625,7 +1625,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `midNotice` → Game/spiel/06c-thron-mitte.js:236
 - `mine` → Game/spiel/08c-helden.js:110
 - `mini` → Game/spiel/05a-aussehen-profil.js:81
-- `minuten` → Game/weltrechner/push.js:124
+- `minuten` → Game/weltrechner/push.js:125
 - `missing` → Game/spiel/03a-karte-hintergrund.js:538
 - `mitspieler_kuerzen` → Game/server/02-sicherheit-datenlecks.php:136
 - `mix` → Game/spiel/03d-maersche-tagnacht.js:181
@@ -1700,7 +1700,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `MysqlLager->tx_anfang` → Game/server/04-datenbank-spieler.php:10
 - `MysqlLager->tx_ende` → Game/server/04-datenbank-spieler.php:11
 - `MysqlLager->zuletzt_gespeichert` → Game/server/04-datenbank-spieler.php:165
-- `nachrichtBauen` → Game/weltrechner/push.js:126
+- `nachrichtBauen` → Game/weltrechner/push.js:127
 - `naechsterRang` → Game/spiel/05a-aussehen-profil.js:102
 - `name` → Game/weltrechner/push.js:69
 - `name_anfrage` → Game/server/06-speichern-push-konto.php:176
@@ -1758,7 +1758,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openCity` → Game/spiel/08a-stadt-bauen.js:214
 - `openCrate` → Game/spiel/02a-shop-stufen.js:82
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:330
-- `openGoals` → Game/spiel/06a-aufgaben.js:348
+- `openGoals` → Game/spiel/06a-aufgaben.js:350
 - `openHeroHall` → Game/spiel/08c-helden.js:281
 - `openIslandPopup` → Game/spiel/09e-inselfenster.js:103
 - `openLookSheet` → Game/spiel/08b-burg-aussehen.js:52
@@ -1953,20 +1953,21 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pyr` → Game/baukunst/06-turmhof-festung.js:65
 - `pyramid` → Game/spiel/03b-gebaeude-3d.js:33
 - `q` → Game/ladebildschirm.js:181
-- `questAuffuellen` → Game/spiel/06a-aufgaben.js:145
-- `questBereit` → Game/spiel/06a-aufgaben.js:125
-- `questBonus3Bereit` → Game/spiel/06a-aufgaben.js:198
+- `questAuffuellen` → Game/spiel/06a-aufgaben.js:147
+- `questBereit` → Game/spiel/06a-aufgaben.js:127
+- `questBonus3Bereit` → Game/spiel/06a-aufgaben.js:200
 - `questBundGeht` → Game/spiel/06a-aufgaben.js:123
-- `questChain` → Game/spiel/06a-aufgaben.js:209
+- `questChain` → Game/spiel/06a-aufgaben.js:211
 - `questEvHeute` → Game/spiel/06a-aufgaben.js:124
-- `questFertigN` → Game/spiel/06a-aufgaben.js:197
-- `questGeht` → Game/spiel/06a-aufgaben.js:143
-- `questGemsTag` → Game/spiel/06a-aufgaben.js:141
-- `questNeu` → Game/spiel/06a-aufgaben.js:144
-- `questProgress` → Game/spiel/06a-aufgaben.js:174
-- `questStadtGeht` → Game/spiel/06a-aufgaben.js:127
+- `questFertigN` → Game/spiel/06a-aufgaben.js:199
+- `questGeht` → Game/spiel/06a-aufgaben.js:145
+- `questGemsTag` → Game/spiel/06a-aufgaben.js:143
+- `questNeu` → Game/spiel/06a-aufgaben.js:146
+- `questProgress` → Game/spiel/06a-aufgaben.js:176
+- `questStadtGeht` → Game/spiel/06a-aufgaben.js:129
 - `questStadtStufe` → Game/spiel/06a-aufgaben.js:122
 - `questStat` → Game/spiel/06a-aufgaben.js:121
+- `questTempelGeht` → Game/spiel/06a-aufgaben.js:126
 - `queueHover` → Game/spiel/03e-kamera-eingabe.js:362
 - `queueLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:95
 - `rahmenAufKarte` → Game/spiel/03b-gebaeude-3d.js:361
@@ -2020,10 +2021,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderCrestEditor` → Game/spiel/05a-aussehen-profil.js:77
 - `renderEquipGrid` → Game/spiel/05b-truhe-skills.js:7
 - `renderEvents` → Game/spiel/09c-events-drache.js:579
-- `renderGoalsSub` → Game/spiel/06a-aufgaben.js:346
+- `renderGoalsSub` → Game/spiel/06a-aufgaben.js:348
 - `renderHeroChests` → Game/spiel/06d-schild-produktion.js:118
 - `renderHeroHall` → Game/spiel/08c-helden.js:275
-- `renderInbox` → Game/spiel/06a-aufgaben.js:271
+- `renderInbox` → Game/spiel/06a-aufgaben.js:273
 - `renderKeep` → Game/aufbau.js:309
 - `renderKeepSheet` → Game/spiel/08b-burg-aussehen.js:4
 - `renderLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:105
@@ -2034,7 +2035,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderPass` → Game/spiel/06b-pass-anleitung.js:86
 - `renderPopup` → Game/spiel/10a-inselfenster-vorschau.js:98
 - `renderProfile` → Game/spiel/05a-aussehen-profil.js:103
-- `renderQuestPanel` → Game/spiel/06a-aufgaben.js:294
+- `renderQuestPanel` → Game/spiel/06a-aufgaben.js:296
 - `renderRankings` → Game/spiel/05c-erfolge-rangliste.js:293
 - `renderRecallPreview` → Game/spiel/10b-inselfenster-knoepfe.js:56
 - `renderRucksack` → Game/spiel/06d-schild-produktion.js:84
@@ -2108,7 +2109,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rulerOwner` → Game/spiel/01d-helden-mitspieler.js:162
 - `runBotTick` → Game/bots/05-verteidigen-takt.js:325
 - `rund` → Game/spiel/08f-stadtbild-bild.js:17
-- `runde` → Game/weltrechner/push.js:224
+- `runde` → Game/weltrechner/push.js:225
 - `rundturm` → Game/baukunst/02-buehne-grundbasis.js:204
 - `runeGeo` → Game/baukunst/04-vielfalt-stile.js:500
 - `runProductionTick` → Game/spiel/06d-schild-produktion.js:238
@@ -2162,7 +2163,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveMarkers` → Game/spiel/09d-armeen-wegmarken.js:300
 - `saveProgression` → Game/spiel/02a-shop-stufen.js:275
 - `saveProgressionNow` → Game/spiel/02a-shop-stufen.js:281
-- `saveQuests` → Game/spiel/06a-aufgaben.js:173
+- `saveQuests` → Game/spiel/06a-aufgaben.js:175
 - `saveThrone` → Game/spiel/06c-thron-mitte.js:17
 - `saveTitles` → Game/spiel/04-kampf.js:23
 - `saveWander` → Game/spiel/07b-kriegsherr.js:48
@@ -2188,12 +2189,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `segDistW` → Game/spiel/01c-basen-spielstand.js:33
 - `seiteUmbauen` → Game/spiel/05d-maersche-kampfbericht.js:406
 - `senden` → Game/speichern.js:160
-- `sendenAlle` → Game/weltrechner/push.js:205
-- `sendenAn` → Game/weltrechner/push.js:191
+- `sendenAlle` → Game/weltrechner/push.js:206
+- `sendenAn` → Game/weltrechner/push.js:192
 - `senkSchildX` → Game/spiel/03c-wappen-thronplatz.js:149
 - `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:524
 - `server` → Game/benachrichtigung.js:20
-- `server` → Game/weltrechner/push.js:168
+- `server` → Game/weltrechner/push.js:169
 - `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:165
 - `setArmyPlace` → Game/spiel/09d-armeen-wegmarken.js:282
 - `setBtnLabel` → Game/spiel/01a-grundlagen.js:142
@@ -2226,7 +2227,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `showBattleTab` → Game/spiel/05d-maersche-kampfbericht.js:13
 - `showChestFlash` → Game/spiel/05b-truhe-skills.js:156
 - `showDailyModal` → Game/spiel/06a-aufgaben.js:62
-- `showGoalsTab` → Game/spiel/06a-aufgaben.js:335
+- `showGoalsTab` → Game/spiel/06a-aufgaben.js:337
 - `showProfileTab` → Game/spiel/05b-truhe-skills.js:369
 - `showShopTab` → Game/spiel/06c-thron-mitte.js:163
 - `showWelcome` → Game/spiel/06d-schild-produktion.js:388
@@ -2458,7 +2459,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `unten` → Game/spiel/08d-gebaeude-wirkung.js:74
 - `updateCamera` → Game/spiel/03e-kamera-eingabe.js:203
 - `updateCityBuilder` → Game/spiel/08a-stadt-bauen.js:249
-- `updateGoalsBadge` → Game/spiel/06a-aufgaben.js:285
+- `updateGoalsBadge` → Game/spiel/06a-aufgaben.js:287
 - `updateHud` → Game/spiel/01e-nebel-kampfwerte-hud.js:233
 - `updateHudPlayer` → Game/spiel/01e-nebel-kampfwerte-hud.js:249
 - `updateMapControls` → Game/spiel/03e-kamera-eingabe.js:454
@@ -4283,38 +4284,39 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questStadtStufe` :122
 - `questBundGeht` :123
 - `questEvHeute` :124
-- `questBereit` :125 — (beim Skript-Start sind aufbau.js und buendnis.js noch nicht da)
-- `questStadtGeht` :127 — Bau/Forschung nur als Aufgabe, wenn es heute noch geht (Bauarbeiter bzw. Labor …
-- `questGemsTag` :141 — Edelsteine am Tag (Hauptbuch: 42)
-- `questGeht` :143
-- `questNeu` :144
-- `questAuffuellen` :145 — bis 6: je Platz eine Art, die heute geht und auf dieser Stufe vorkommt (Zufall,…
-- `loadQuests` :149
-- `saveQuests` :173
-- `questProgress` :174
-- `claimQuest` :188
-- `questFertigN` :197
-- `questBonus3Bereit` :198
-- `claimQuestBonus3` :199 — 3 Aufgaben abgeholt: Truppen in die Hauptstadt (der Weltrechner prüft: einmal a…
-- `questChain` :209
-- `chainStreak` :210
-- `chainLink` :211
-- `claimChain` :217
-- `claimQuestBonus` :226
-- `dailyGoalCount` :237 — Events → Täglich: tasks, the bonus and the week chain
-- `inboxList` :243
-- `inboxSave` :246
-- `inboxPiles` :248 — a crate keeps its own entry (one entry holds one crate)
-- `inboxAdd` :250 — o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none)…
-- `inboxBeute` :257 — was im Fach liegt, als Kacheln (05e)
-- `inboxClaim` :261 — into your coffers - returns what you got (aus: Belohnungs-Kacheln dazu)
-- `renderInbox` :271
-- `updateGoalsBadge` :285
-- `renderQuestPanel` :294
-- `goalsGrpVon` :334
-- `showGoalsTab` :335
-- `renderGoalsSub` :346
-- `openGoals` :348
+- `questTempelGeht` :126 — Tempel (alle in Zone 4): nur, wenn heute ein Pass in ein Tempel-Gebiet aufgeht …
+- `questBereit` :127 — (beim Skript-Start sind aufbau.js und buendnis.js noch nicht da)
+- `questStadtGeht` :129 — Bau/Forschung nur als Aufgabe, wenn es heute noch geht (Bauarbeiter bzw. Labor …
+- `questGemsTag` :143 — Edelsteine am Tag (Hauptbuch: 42)
+- `questGeht` :145
+- `questNeu` :146
+- `questAuffuellen` :147 — bis 6: je Platz eine Art, die heute geht und auf dieser Stufe vorkommt (Zufall,…
+- `loadQuests` :151
+- `saveQuests` :175
+- `questProgress` :176
+- `claimQuest` :190
+- `questFertigN` :199
+- `questBonus3Bereit` :200
+- `claimQuestBonus3` :201 — 3 Aufgaben abgeholt: Truppen in die Hauptstadt (der Weltrechner prüft: einmal a…
+- `questChain` :211
+- `chainStreak` :212
+- `chainLink` :213
+- `claimChain` :219
+- `claimQuestBonus` :228
+- `dailyGoalCount` :239 — Events → Täglich: tasks, the bonus and the week chain
+- `inboxList` :245
+- `inboxSave` :248
+- `inboxPiles` :250 — a crate keeps its own entry (one entry holds one crate)
+- `inboxAdd` :252 — o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none)…
+- `inboxBeute` :259 — was im Fach liegt, als Kacheln (05e)
+- `inboxClaim` :263 — into your coffers - returns what you got (aus: Belohnungs-Kacheln dazu)
+- `renderInbox` :273
+- `updateGoalsBadge` :287
+- `renderQuestPanel` :296
+- `goalsGrpVon` :336
+- `showGoalsTab` :337
+- `renderGoalsSub` :348
+- `openGoals` :350
 
 ### Game/spiel/06b-pass-anleitung.js — Saison-Pass und Anleitung für neue Spieler
 - `passRewardAt` :10 — what level L gives in each row – eine Liste (coins/tr: n Stunden Ertrag); die e…
@@ -5494,17 +5496,17 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mensch` :68
 - `name` :69
 - `titel` :70
-- `minuten` :124
-- `nachrichtBauen` :126 — Aus den gesammelten Meldungen eines Spielers EINE Benachrichtigung bauen (kurz,…
-- `melder` :161 — Der Melder: wird von start.js angelegt. holen = start.js-holen (mit Weltrechner…
-- `server` :168
-- `abosHolen` :173
-- `jwtFuer` :183
-- `sendenAn` :191 — an ein Gerät senden → 'ok' | 'weg' (Abo gibt es nicht mehr) | 'fehler'
-- `sendenAlle` :205 — an alle Geräte einer Liste senden (abgelaufene Abos austragen)
-- `adminMelden` :214 — Nachricht an die Admin-Konten (auch wenn sie gerade spielen) – geht mit der näc…
-- `adminSenden` :215
-- `runde` :224 — Jede Runde (alle 5 s aus start.js): neue Meldungen einsammeln und fällige senden
+- `minuten` :125
+- `nachrichtBauen` :127 — Aus den gesammelten Meldungen eines Spielers EINE Benachrichtigung bauen (kurz,…
+- `melder` :162 — Der Melder: wird von start.js angelegt. holen = start.js-holen (mit Weltrechner…
+- `server` :169
+- `abosHolen` :174
+- `jwtFuer` :184
+- `sendenAn` :192 — an ein Gerät senden → 'ok' | 'weg' (Abo gibt es nicht mehr) | 'fehler'
+- `sendenAlle` :206 — an alle Geräte einer Liste senden (abgelaufene Abos austragen)
+- `adminMelden` :215 — Nachricht an die Admin-Konten (auch wenn sie gerade spielen) – geht mit der näc…
+- `adminSenden` :216
+- `runde` :225 — Jede Runde (alle 5 s aus start.js): neue Meldungen einsammeln und fällige senden
 
 ### Game/weltrechner/start.js — weltrechner/start.js – der Weltrechner auf dem Server
 - `log` :32
