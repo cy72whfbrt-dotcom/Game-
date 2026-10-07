@@ -12553,7 +12553,7 @@ function saisonNeu(now) {
     //    je Saison. Erst nach der Nachricht „saison“: sein Handy verbucht den Preis dann nach dem Neuladen, also nach der Ausnahme
     //    (Edelsteine = 1.000) – vorher konnte er ihn in den 1,5 s bis zum Neuladen abholen und verlor ihn wieder
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
-    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, rb, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
+    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) }, rb }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
         store.set('openWaterSaisonNeu', String(nr)); if (B) store.set('openWaterSaisonBurg', String(B)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
