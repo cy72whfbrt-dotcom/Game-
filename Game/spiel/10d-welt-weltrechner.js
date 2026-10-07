@@ -547,7 +547,7 @@ if (window.WELT) {
         if (hbPassTopf) return hbPassTopf; const t = { g: 0, k: 0, kg: 0, sh: 0, schild: 0 };
         for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) for (const r of passRewardAt(L, prem)) { const n = r.n || 1;   // (Truppen prüft truppenPruefen)
             if (r.k === 'gems') t.g += n; else if (r.k === 'crate') t.k += n; else if (r.k === 'royal') { t.k += n; t.kg += 27 * n; }
-            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; else if (r.k === 'frame') t.g += PASS_OWNED_GEMS; }
+            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; }
         return hbPassTopf = t;
     }
     // Helden: „Splitter-Wert“ = unverbrauchte Splitter + was Freischalten und Sterne gekostet haben
@@ -622,7 +622,7 @@ if (window.WELT) {
         for (let l = Math.max(1, hb.lvG | 0) + 1; l <= L && l < 5000; l++) f.g = nn(f.g) + levelRewardGems(l);   // Stufen-Gems (EP sind sicher)
         if (L > (hb.lvG | 0)) hb.lvG = L;
         const n = passNo(now); if (hb.pass !== n) { hb.pass = n; hb.passF = 0; }             // Saison-Pass: nach und nach in einer halben Saison (ab Saison-Beginn bzw. ab seinem Start)
-        const frac = Math.min(1, 2 * Math.max(0, now - Math.max(PASS_EPOCH + (n - 1) * PASS_LEN, nn(hb.t0))) / PASS_LEN);
+        const frac = Math.min(1, 2 * Math.max(0, now - Math.max(PASS_EPOCH + (n - 1) * PASS_LEN, nn(hb.t0), nn(hb.passAb))) / PASS_LEN);   // (passAb: Saison-Reset – der Pass fängt neu an)
         if (frac > nn(hb.passF)) { const T = hbPass(), d = frac - nn(hb.passF); hb.passF = frac; for (const k of ['g', 'k', 'kg', 'sh', 'schild']) f[k] = nn(f[k]) + T[k] * d; }
     }
     // Kosten {c, g, h, s, e}: aus Topf (ausgegeben), Konto und Spielraum – alles oder nichts
@@ -847,7 +847,7 @@ if (window.WELT) {
     WELT.klemmen = hbKlemmen;
     // Rahmen (Alexander 6.10.): nicht mehr zu kaufen – was er bis jetzt hatte, merkt sich das Hauptbuch einmal (neu: nichts), danach
     // kommt aus dem Profil keiner mehr dazu. Saison-Rahmen und die aus der Mitte führt die Welt selbst (05a rahmenHat / rahmenVon).
-    // (Saisonkrone: Saison-Pass Stufe 40 – die Stufe kennt das Hauptbuch nicht genau, darum erlaubt)
+    // (Saisonkrone: gab es bis 7.10. im Saison-Pass – wer sie hat, behält sie, darum erlaubt)
     // Gemerkt wird erst am ersten Profil mit look.frames (nach dem Neustart kommen zuerst alte Profile ohne die Listen – sonst blieben
     // gekaufte Rahmen für immer leer); bis dahin wie vorher der angelegte (welt.js profilZuBotRoh)
     function hbRahmen(hb, b, p) {
@@ -908,8 +908,8 @@ if (window.WELT) {
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
-        if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; }
-        if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; }
+        if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; delete d.pTr; }   // (pTr: sein Saison-Pass fängt neu an – Truppen-Stufen wieder abholbar)
+        if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; hb.passF = 0; hb.passAb = Date.now(); }
         if (f > 0 && f < 1) {
             if (hb) hb.cA = Math.floor(nn(hb.cA) * f);   // (Holz/Stein/Eisen bleiben – auch ihre Töpfe rU/rA, 6.10.)
             if (d) d.gC = Math.floor(nn(d.gC) * f);

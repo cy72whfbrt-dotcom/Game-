@@ -54,7 +54,7 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09f-saison.js), danach lädt die
 // Seite neu. Bleibt: Stadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes, Abholfach.
 // Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
-// alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
+// alte Befehle, Saison-Pass (Punkte und abgeholte Stufen – gekauftes Premium bleibt; Erfolge bleiben). (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
 // Burg fair (Alexander 6.10. A): der erste Reset danach setzt jede Burg über Stufe BURG_FAIR auf BURG_FAIR (saison.burgFair = diese Saison,
 // sonst openWaterSaisonBurg aus der Nachricht) – Gebäude, Forschung, Bauten passt aufbau.js beim Laden an (openWaterBurgFair, burgFair).
@@ -65,7 +65,7 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
 var saisonNeuGeladen = 0, saisonZurueckGeladen = 0, saisonBurgGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen · Burg: aufbau.js)
 const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000, SAISON_TP_MAX = 20000, SAISON_TP_JE_GEM = 10;
-const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
+const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis', 'openWaterPass', 'openWaterSaisonRang'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
     let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, fairNr = 0;
     const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
@@ -92,6 +92,10 @@ if (!SYSTEM) {
         store.set('openWaterSaisonVorher', JSON.stringify(vorher));   // (für ein Zurückspielen der Sicherung von vor dem Reset)
         store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
         store.set('openWaterCoins', '0');
+        try { const st = JSON.parse(store.get('openWaterStats')) || {}, t = JSON.parse(store.get('openWaterThrone')) || {};   // Ranglisten zählen ab jetzt (09f rangSaison)
+            store.set('openWaterSaisonRang', JSON.stringify([st.captures || 0, Math.floor(Math.max(t.earned || 0, (t.week || {}).player || 0))])); } catch (e) {}
+        try { const ps = JSON.parse(store.get('openWaterPass')); if (ps && ps.s && typeof ps.s === 'object') {   // Saison-Pass von vorn (Premium bleibt gekauft)
+            for (const k in ps.s) ps.s[k] = { xp: 0, prem: !!(ps.s[k] || {}).prem, f: [], p: [] }; store.set('openWaterPass', JSON.stringify(ps)); } } catch (e) {}
         const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
         for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
         try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
@@ -5518,7 +5522,7 @@ const RAHMEN = [
     { id: 'conq', name: 'Eroberer', t: 'conq', ach: 'cap100' }, { id: 'warlord', name: 'Kriegsherr', t: 'warlord', ach: 'cap1000' }, { id: 'wall', name: 'Standhaft', t: 'wall', ach: 'def25' },
     { id: 'emma', name: 'Gefürchtet', t: 'emma', ach: 'emma10' }, { id: 'slayer', name: 'Bezwinger', t: 'slayer', ach: 'boss1' }, { id: 'builder', name: 'Baumeister', t: 'builder', ach: 'city5' },
     { id: 'king', name: 'Herrscher der Meere', t: 'king', ach: 'throne' }, { id: 'throne', name: 'Thronhüter', t: 'keeper', buy: 'throne' },
-    { id: 'saison', name: 'Saisonkrone', buy: 'pass' },                     // Saison-Pass (Premium, Stufe 40)
+    { id: 'saison', name: 'Saisonkrone' },                                  // gab es bis 7.10. im Saison-Pass – wer sie hat, behält sie
     // Saison-Rahmen: die besten 10 am Ende einer Welt-Saison – nur bis zum nächsten Saison-Ende (dann bekommen ihn die neuen)
     { id: 'sz1', name: 'Saison-Champion', platz: [1, 1] }, { id: 'sz2', name: 'Saison-Großadmiral', platz: [2, 3] },
     { id: 'sz4', name: 'Saison-Admiral', platz: [4, 5] }, { id: 'sz6', name: 'Saison-Kapitän', platz: [6, 10] }
@@ -6306,10 +6310,10 @@ function escapeHtml(str) {                         // auch Anführungszeichen: s
 const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
 let rankTab = 'power';
 const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
-    caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
+    caps: { t: 'Eroberungen', sub: 'Eroberte Basen in dieser Saison', unit: 'erobert' },
     burg: { t: 'Hauptstadt', sub: 'Burg-Stufe, dann Forschung', unit: 'Burg-Stufe' },
     titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
-    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };
+    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · in dieser Saison verdient', unit: 'Thron-P.' } };
 function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
 function foPunkte(who, bs) {                             // alle erforschten Stufen – von anderen nur die Summe (rechnet der Weltrechner, foP)
     if (!AUF) return 0; if (who !== 'player' && fremdGeheim()) { const b = (bs || loadBotState())[who]; return b && Number.isFinite(b.foP) ? b.foP : 0; }
@@ -6336,17 +6340,17 @@ function renderRankings() {
     const macht = e => { if (e.macht === undefined) { const pr = whoProfile(e.who); e.macht = pr ? powerOf(pr) : 0; } return e.macht; };
     const gleich = (a, b) => macht(b) - macht(a) || (a.who === 'player') - (b.who === 'player');   // Gleichstand: erst Macht, sonst du hinter den anderen (nie bevorzugt)
     if (rankTab === 'power') { for (const e of people) { const pr = whoProfile(e.who); e.val = pr ? powerOf(pr) : 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); }
-    else if (rankTab === 'caps') { for (const e of people) { e.val = conquestsOf(e.who); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
+    else if (rankTab === 'caps') { for (const e of people) { e.val = rangSaison(e.who, 0); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
     else if (rankTab === 'burg') { for (const e of people) { e.val = AUF ? AUF.burgStufe(e.who) : 1; e.fo = foPunkte(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· Forschung ' + fmtNum(e.fo) + '</i>'; }
         list = people.slice().sort((a, b) => b.val - a.val || b.fo - a.fo || b.lvl - a.lvl || gleich(a, b)); }
     else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
         medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
-        for (const e of people) { const x = by[e.who]; e.val = throneEarnedOf(e.who, bs);
+        for (const e of people) { const x = by[e.who]; e.val = rangSaison(e.who, 1, bs);
             e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ troops: 'Truppen', coins: 'Münzen', attack: 'Angriff', defense: 'Abwehr' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
         const tr = e => e.who === ruler ? 0 : by[e.who] ? (by[e.who].good ? 1 : 2) : 3;
         list = people.filter(e => tr(e) < 3).sort((a, b) => tr(a) - tr(b) || b.val - a.val || gleich(a, b));
         empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
-    } else { for (const e of people) { e.val = throneEarnedOf(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
+    } else { for (const e of people) { e.val = rangSaison(e.who, 1, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
         empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
     if (rankTab !== 'titles' && rankTab !== 'burg') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl || gleich(a, b));
     const lim = RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player');
@@ -7438,7 +7442,7 @@ setInterval(() => {                 // day rollover while the game stays open
 }, 60000);
 updateGoalsBadge();
 // ===== SAISON-PASS: 28 days on one calendar for everyone, 100 levels of 150 points (7.10., vorher 40 × 300), a free row and a premium row (Gems, never money) – jede Stufe gibt in beiden Reihen etwas. Points come from what you do anyway =====
-var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 100, PASS_STEP = 150, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 150;   // (Skin schon da: 150 Gems – vorher 1000, dann brachte der Premium-Pass mehr Gems zurück, als er kostet)
+var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 100, PASS_STEP = 150, PASS_PREMIUM = 1000;   // (keine Rahmen mehr im Pass – Alexander 7.10.: Stufe 100 gibt Edelsteine)
 var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2, bau: 15, forschung: 15,
     lager: 5, qb: 10, qd: 10, invPkt: 1 };   // what each deed is worth (bau/forschung: in der Stadt gestartet · lager: Lager besiegt · qb/qd: Angriff auf Tagesboss/Drache · invPkt: Invasions-Punkte)
 var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15, lager: 5, qb: 10, qd: 10, invPkt: 1 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
@@ -7449,7 +7453,7 @@ function passRewardAt(L, prem) {                          // what level L gives 
     const g = (k, n) => ({ k, n }), viertel = L % 25 === 0;
     if (!prem) return viertel ? [g('gems', 50), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 20)] : L % 4 === 0 ? [g('shards', 3)] :
         L % 3 === 0 ? [g('crate', 1)] : L % 2 === 0 ? [g('tr', 2)] : [g('coins', 3)];
-    return L === PASS_LVLS ? [{ k: 'frame', id: 'saison' }] : viertel ? [g('gems', 150), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 30)] :
+    return viertel ? [g('gems', 150), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 30)] :
         L % 4 === 0 ? [g('shards', 8)] : L % 6 === 0 ? [g('tp', 150)] : L % 3 === 0 ? [g('shield', 8)] : L % 2 === 0 ? [g('tr', 6)] : [g('coins', 12), g('gems', 10)];
 }
 const passMuenzen = (hp, n) => Math.max(wirtM(5000), Math.round(hp.coins)) * n;     // n Stunden Münzen (mindestens 5.000 je Stunde – wie beim Weltrechner)
@@ -7484,11 +7488,6 @@ function passGive(who, r, aus, schl) {                    // one reward to anyon
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
             if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); aus.push({ a: 'item', slot, r: rr }); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
-    if (r.k === 'frame') { const d = lkDef(r.k, r.id), has = ((b ? b.frames : look.frames) || []).includes(r.id);
-        if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; aus.push({ a: 'gems', n: PASS_OWNED_GEMS }); return '+' + PASS_OWNED_GEMS + ' Edelsteine („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
-        if (b) b.frames = [...(b.frames || []), r.id];
-        else { look.frames = [...new Set([...(look.frames || []), r.id])]; look.frame = r.id; saveLook(); renderLook(); aus.push({ a: 'rahmen' }); }
-        return 'Rahmen „' + d.name + '“ – schon angelegt'; }
     return '';
 }
 function passClaim(list) {                                // [[season, level, premium], …] → hand out, one hint
@@ -7509,7 +7508,7 @@ function passBuy(btn) {
     gems -= PASS_PREMIUM; x.prem = true; passSave(); saveGame(); updateHud(); sfx('coin');
     flashHint('Premium freigeschaltet – die zweite Reihe gehört dir, auch für erreichte Stufen.', 3500); renderPass(); updateGoalsBadge();
 }
-function passKachel(r, hp, got) {                         // eine Belohnung als Kachel (05e) mit Menge – Münzen/Truppen: was dein Reich in n Stunden macht
+function passKachel(r, hp) {                         // eine Belohnung als Kachel (05e) mit Menge – Münzen/Truppen: was dein Reich in n Stunden macht
     const k = r.k, n = r.n || 1;
     if (k === 'coins') return beuteKachel({ a: 'coins', n: passMuenzen(hp, n) });
     if (k === 'tr') return beuteKachel({ a: 'tr', n: passTruppen(hp, n) });
@@ -7517,9 +7516,7 @@ function passKachel(r, hp, got) {                         // eine Belohnung als 
     if (k === 'shards') return beuteKachel({ a: 'sh', n });
     if (k === 'shield') return beuteKachel({ a: 'schild', n });
     if (k === 'crate') return beuteKachel({ a: 'kiste', k: 'aus', n });
-    if (k === 'royal') return beuteKachel({ a: 'kiste', k: 'royal', r: 3, n, min: 1 });
-    const own = !got && lkHas(k, r.id);                   // Rahmen: schon da → Edelsteine
-    return own ? beuteKachel({ a: 'gems', n: PASS_OWNED_GEMS }) : '<span class="pl-rahmen" title="' + escapeHtml(lkDef(k, r.id).name) + '"><span class="frame-ring" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span></span>';
+    return beuteKachel({ a: 'kiste', k: 'royal', r: 3, n, min: 1 });
 }
 function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
     return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
@@ -7537,7 +7534,7 @@ function renderPass() {
         '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
         '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
     let unten = '';                                       // unter der Leiste: Premium kaufen, voriger Pass
-    if (!x.prem) unten += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Truppen, Königliche Kisten und Rahmen „' + escapeHtml(lkDef('frame', 'saison').name) + '“ (Stufe ' + PASS_LVLS + ') – auch für erreichte Stufen.</small></span>' +
+    if (!x.prem) unten += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Truppen und Königliche Kisten – auch für erreichte Stufen.</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-buy><span class="lbl">' + icon('gem') + fmtNum(PASS_PREMIUM) + '</span></button></div>';
     if (old.length) unten += '<div class="pass-old">' + icon('hourglass') + '<span><b>Voriger Saison-Pass: ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
@@ -7546,7 +7543,7 @@ function renderPass() {
     h += '<div class="pl"><div class="pl-namen"><span class="is-p">' + (x.prem ? icon('crown') : icon('lock')) + 'Premium</span><span></span><span>Frei</span></div>';
     for (let l = 1; l <= PASS_LVLS; l++) { const zelle = pr => { const got = (pr ? x.p : x.f).includes(l), ok = l <= L && (!pr || x.prem), rs = passRewardAt(l, pr);
             return '<button type="button" class="pl-zelle' + (pr ? ' is-p' : '') + (rs.length > 1 ? ' is-zwei' : '') + (got ? ' is-got' : ok ? ' is-ready' : ' is-lock') + (pr && !x.prem ? ' is-closed' : '') + '"' +
-                (ok && !got ? ' data-pass-l="' + l + '" data-pass-p="' + pr + '"' : '') + '>' + rs.map(r => passKachel(r, hp, got)).join('') +
+                (ok && !got ? ' data-pass-l="' + l + '" data-pass-p="' + pr + '"' : '') + '>' + rs.map(r => passKachel(r, hp)).join('') +
                 (got ? '<span class="pl-ok">' + icon('check') + '</span>' : pr && !x.prem ? '<span class="pl-ok is-lock">' + icon('lock') + '</span>' : '') + '</button>'; };
         h += '<div class="pl-spalte' + (l <= L ? ' is-on' : '') + (l === L + 1 ? ' is-next' : '') + (l % 25 === 0 ? ' is-viertel' : '') + '" data-pass-row="' + l + '">' + zelle(1) + '<span class="pl-knoten">' + l + '</span>' + zelle(0) + '</div>'; }
     h += '</div>' + unten + '<details class="ach-done pass-how"><summary><span>So sammelst du Punkte</span><em>' + PASS_STEP + ' je Stufe</em>' + icon('upgrade') + '</summary><div class="pass-how-l">' +
@@ -9578,7 +9575,7 @@ function cityFehlt(id) {                           // fehlt nur etwas zum Bezahl
 }
 // ===== AUSSEHEN: Wappen und Rahmen (= Titel, 05a RAHMEN) – nichts zu kaufen (Basis- und Marsch-Skins gibt es nicht mehr, Alexander 7.10.) =====
 var lkTab = 'frame';
-function lkPrice(d) { return d.platz || d.buy === 'pass' ? '<span class="lk-cost">' + icon('crown') + (d.platz ? rahmenPlatzText(d) : 'Saison-Pass') + '</span>' : ''; }   // woher ein Rahmen kommt
+function lkPrice(d) { return d.platz ? '<span class="lk-cost">' + icon('crown') + rahmenPlatzText(d) + '</span>' : ''; }   // woher ein Rahmen kommt
 function lkCard(kind, d, prev, has, on, label) {     // one look: preview, name, and Angelegt / Anlegen / price
     return '<button type="button" class="skin-card lk-card' + (on ? ' on' : '') + (has ? '' : ' is-shop') + '" data-lk="' + kind + ':' + d.id + '">' + prev + (label === false ? '' : '<b>' + (label || d.name) + '</b>') +
         '<small>' + (on ? icon('check') + 'Angelegt' : has ? 'Anlegen' : lkPrice(d)) + '</small></button>';
@@ -9589,7 +9586,7 @@ function lkUse(kind, id) { look.frame = id; saveLook(); renderLook(); requestRen
 function lkBuy(kind, id) {                            // Rahmen gibt es nicht zu kaufen (Alexander 6.10.): nur der Hinweis, woher
     const d = lkDef(kind, id); if (!d) return;
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
-    flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : d.buy === 'pass' ? 'gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500);
+    flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500);
 }
 function renderLookTop() {                            // what you wear now + what you can pay with
     const el = document.getElementById('lkTop'); if (!el || document.getElementById('lookSheet').hidden) return;
@@ -12477,7 +12474,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // nächsten Saison-Ende (05a RAHMEN: Platz 1 · 2–3 · 4–5 · 6–10, aus last.top – Alexander 6.10.).
 // Bleibt: die ganze Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, alles Gekaufte.
 // Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (0 wie ein neuer Spieler), Stufe (→ 1,
-// damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
+// damit alle Fähigkeitspunkte), Saison-Pass (Punkte, Stufen – Premium bleibt; Erfolge bleiben), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 // Burg fair (Alexander 6.10. A): der ERSTE Reset danach setzt EINMAL jede Burg über Stufe BURG_FAIR auf BURG_FAIR (bis 5.10. galt die alte,
@@ -12540,7 +12537,7 @@ function saisonTop() {                                // die besten 10 nach Mach
     return l.sort((a, b) => b[1] - a[1]).slice(0, SAISON_PREISE.length);
 }
 function saisonNeu(now) {
-    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
+    const alt = saison.nr, nr = alt + 1, top = saisonTop(), rb = saisonRangBasis(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
     const burgFair = saison.burgFair > 0 ? saison.burgFair : nr, B = burgFair === nr ? BURG_FAIR : 0;   // B: Burg fair (nur beim ersten Reset danach)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
     if (B) saisonAusnahme();                           // (vor den Preisen: die kommen wie bei echten Spielern zusätzlich dazu)
@@ -12556,12 +12553,25 @@ function saisonNeu(now) {
     //    je Saison. Erst nach der Nachricht „saison“: sein Handy verbucht den Preis dann nach dem Neuladen, also nach der Ausnahme
     //    (Edelsteine = 1.000) – vorher konnte er ihn in den 1,5 s bis zum Neuladen abholen und verlor ihn wieder
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
-    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
+    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, rb, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
         store.set('openWaterSaisonNeu', String(nr)); if (B) store.set('openWaterSaisonBurg', String(B)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 600);
     }
+}
+// Ranglisten Eroberungen und Thron-Punkte zählen je Saison (die Erfolge zählen weiter alles): der Stand beim Reset ist die Grundlinie –
+// saison.rb = { wer: [Eroberungen, Thron-Punkte] } für alle anderen, die eigene merkt sich der Spielstand (01a openWaterSaisonRang)
+function saisonRangBasis() {
+    const bs = loadBotState(), rb = {};
+    for (const bd of BOT_DEFS) if (bs[bd.id]) { const c = botConquests(bd.id), t = throneEarnedOf(bd.id, bs); if (c > 0 || t > 0) rb[bd.id] = [c, t]; }
+    return rb;
+}
+function rangSaison(who, k, bs) {                     // k 0: Eroberungen, 1: Thron-Punkte – seit dem letzten Reset
+    const roh = k ? throneEarnedOf(who, bs) : conquestsOf(who); let b = 0;
+    if (who === 'player') { try { b = (JSON.parse(store.get('openWaterSaisonRang')) || [])[k] || 0; } catch (e) { b = 0; } }
+    else b = (((saison || {}).rb || {})[neutralId(who)] || [])[k] || 0;
+    return Math.max(0, roh - b);
 }
 function saisonWelt(now, f, B) {                      // alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Münz-Töpfe umrechnen, B: Burg fair)
     const bs = loadBotState(), wer = (SYSTEM || window.WELT ? [] : ['player']).concat(BOT_DEFS.map(b => b.id).filter(id => bs[id]));
@@ -12570,6 +12580,10 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = [];
     fieldState = {}; fieldMarches = []; barbMarches = []; armies = []; armyJoins = []; armyRaids = [];
     if (evState.inv && Array.isArray(evState.inv.armies)) evState.inv.armies = [];
+    // Event-Stände der alten Welt: laufendes Wochen-Event, Drache, Invasion fangen bei 0 an (schon Ausgezahltes und „zuletzt“ bleiben)
+    if (evState.wo && !evState.wo.paid) { evState.wo.pts = {}; evState.wo.kb = {}; }
+    if (evState.dr && !evState.dr.paid) { evState.dr.dmg = {}; evState.dr.hits = {}; }
+    if (evState.inv && !evState.inv.paid) evState.inv.pts = {};
     if (typeof bundSaisonNeu === 'function') bundSaisonNeu();
     // Barbaren-Lager: der Fortschritt fängt für alle wieder bei Stufe 1 an (Alexander 5.10.), die alten Lager weg – neue entstehen gleich
     // (die Zähler von heute bleiben; barbWho ist Welt-Stand – das Handy bekommt ihn vom Weltrechner)
@@ -12583,13 +12597,16 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     inselOrt = {}; store.set('openWaterInselOrt', '{}'); inselOrtAnwenden();   // teleportierte Hauptstädte: jede Basis wieder an ihrem Platz
     hauptVor = {}; store.set('openWaterHauptVor', '{}'); brand = {}; store.set('openWaterBrand', '{}'); store.set('openWaterWorldStart', String(now));
     for (const o of [battleHeat, baseFought, ownerLoss, botTooStrongMem, botIntelMem, botAct, botKenntMem, botKenntBasen, botEvacuated, botLossMem, botAergerMem, botLmShareMem]) for (const k of Object.keys(o)) delete o[k];   // was die Mitspieler über die alte Karte wussten
-    // Hauptstädte: je ein freier Turm am äußeren Rand, auf der Landmasse mit den wenigsten Nachbarn (wie freierStartplatz), zufällig
-    const frei = islands.filter(i => i.type === 'tower' && landmasses[i.landmassId].tier === 'outer' && !bossAt(i.id)), proLm = {}, belegt = new Set();
+    // Hauptstädte: wie freierStartplatz erst die freien Startplätze, dann Türme in Zone 1 (tier 'outer' sind Zone 1–3 – sonst landeten sie
+    // innen), zuletzt der übrige Rand; je Stufe auf der Landmasse mit den wenigsten Nachbarn, zufällig
+    const turm = i => i.type === 'tower' && !bossAt(i.id), lm = i => landmasses[i.landmassId];
+    const stufen = [islands.filter(i => i.startSlot && turm(i)), islands.filter(i => !i.startSlot && turm(i) && lm(i).zone === 1),
+        islands.filter(i => !i.startSlot && turm(i) && lm(i).zone !== 1 && lm(i).tier === 'outer')], proLm = {}, belegt = new Set();
     for (let i = hatte.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [hatte[i], hatte[j]] = [hatte[j], hatte[i]]; }
     for (const w of hatte) {
-        const offen = frei.filter(i => !belegt.has(i.id)); if (!offen.length) break;
+        let offen = []; for (const s of stufen) { offen = s.filter(i => !belegt.has(i.id)); if (offen.length) break; } if (!offen.length) break;
         let min = Infinity; for (const i of offen) min = Math.min(min, proLm[i.landmassId] || 0);
-        const beste = offen.filter(i => (proLm[i.landmassId] || 0) === min), start = beste.filter(i => i.startSlot), l = start.length ? start : beste, z = l[Math.floor(Math.random() * l.length)];
+        const beste = offen.filter(i => (proLm[i.landmassId] || 0) === min), z = beste[Math.floor(Math.random() * beste.length)];
         belegt.add(z.id); proLm[z.landmassId] = (proLm[z.landmassId] || 0) + 1;
         islandLevels[z.id] = 1; islandTroops[z.id] = PLAYER_START_TROOPS;   // (die Stufe der Hauptstadt folgt gleich wieder der Burg – aufbau.js)
         if (w === 'player') { ownedIslands.add(z.id); playerIslandId = z.id; store.set('openWaterPlayerIslandId', String(z.id)); }
@@ -12601,6 +12618,7 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, keine Münzen, keine Verwundeten, keine alten Pläne
     for (const w of wer) { if (w === 'player') continue; const b = bs[w];
         b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
+        if (b.ps) { b.ps.base = botPassScore(b); b.ps.f = 0; b.ps.p = 0; }   // Saison-Pass von vorn (Premium bleibt)
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
         if (B > 0 && AUF) burgFairWer(b, B);
         if (!(botById[w] && botById[w].mensch) && b.tp > SAISON_TP_MAX) { const g = Math.floor((b.tp - SAISON_TP_MAX) / SAISON_TP_JE_GEM); b.tp = SAISON_TP_MAX;   // Thron-Punkte (echte Spieler: ihr Handy)
@@ -14306,7 +14324,7 @@ if (window.WELT) {
         if (hbPassTopf) return hbPassTopf; const t = { g: 0, k: 0, kg: 0, sh: 0, schild: 0 };
         for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) for (const r of passRewardAt(L, prem)) { const n = r.n || 1;   // (Truppen prüft truppenPruefen)
             if (r.k === 'gems') t.g += n; else if (r.k === 'crate') t.k += n; else if (r.k === 'royal') { t.k += n; t.kg += 27 * n; }
-            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; else if (r.k === 'frame') t.g += PASS_OWNED_GEMS; }
+            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; }
         return hbPassTopf = t;
     }
     // Helden: „Splitter-Wert“ = unverbrauchte Splitter + was Freischalten und Sterne gekostet haben
@@ -14381,7 +14399,7 @@ if (window.WELT) {
         for (let l = Math.max(1, hb.lvG | 0) + 1; l <= L && l < 5000; l++) f.g = nn(f.g) + levelRewardGems(l);   // Stufen-Gems (EP sind sicher)
         if (L > (hb.lvG | 0)) hb.lvG = L;
         const n = passNo(now); if (hb.pass !== n) { hb.pass = n; hb.passF = 0; }             // Saison-Pass: nach und nach in einer halben Saison (ab Saison-Beginn bzw. ab seinem Start)
-        const frac = Math.min(1, 2 * Math.max(0, now - Math.max(PASS_EPOCH + (n - 1) * PASS_LEN, nn(hb.t0))) / PASS_LEN);
+        const frac = Math.min(1, 2 * Math.max(0, now - Math.max(PASS_EPOCH + (n - 1) * PASS_LEN, nn(hb.t0), nn(hb.passAb))) / PASS_LEN);   // (passAb: Saison-Reset – der Pass fängt neu an)
         if (frac > nn(hb.passF)) { const T = hbPass(), d = frac - nn(hb.passF); hb.passF = frac; for (const k of ['g', 'k', 'kg', 'sh', 'schild']) f[k] = nn(f[k]) + T[k] * d; }
     }
     // Kosten {c, g, h, s, e}: aus Topf (ausgegeben), Konto und Spielraum – alles oder nichts
@@ -14606,7 +14624,7 @@ if (window.WELT) {
     WELT.klemmen = hbKlemmen;
     // Rahmen (Alexander 6.10.): nicht mehr zu kaufen – was er bis jetzt hatte, merkt sich das Hauptbuch einmal (neu: nichts), danach
     // kommt aus dem Profil keiner mehr dazu. Saison-Rahmen und die aus der Mitte führt die Welt selbst (05a rahmenHat / rahmenVon).
-    // (Saisonkrone: Saison-Pass Stufe 40 – die Stufe kennt das Hauptbuch nicht genau, darum erlaubt)
+    // (Saisonkrone: gab es bis 7.10. im Saison-Pass – wer sie hat, behält sie, darum erlaubt)
     // Gemerkt wird erst am ersten Profil mit look.frames (nach dem Neustart kommen zuerst alte Profile ohne die Listen – sonst blieben
     // gekaufte Rahmen für immer leer); bis dahin wie vorher der angelegte (welt.js profilZuBotRoh)
     function hbRahmen(hb, b, p) {
@@ -14667,8 +14685,8 @@ if (window.WELT) {
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
-        if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; }
-        if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; }
+        if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; delete d.pTr; }   // (pTr: sein Saison-Pass fängt neu an – Truppen-Stufen wieder abholbar)
+        if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; hb.passF = 0; hb.passAb = Date.now(); }
         if (f > 0 && f < 1) {
             if (hb) hb.cA = Math.floor(nn(hb.cA) * f);   // (Holz/Stein/Eisen bleiben – auch ihre Töpfe rU/rA, 6.10.)
             if (d) d.gC = Math.floor(nn(d.gC) * f);

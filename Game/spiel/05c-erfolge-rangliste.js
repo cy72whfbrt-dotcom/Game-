@@ -268,10 +268,10 @@ function escapeHtml(str) {                         // auch Anführungszeichen: s
 const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
 let rankTab = 'power';
 const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
-    caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
+    caps: { t: 'Eroberungen', sub: 'Eroberte Basen in dieser Saison', unit: 'erobert' },
     burg: { t: 'Hauptstadt', sub: 'Burg-Stufe, dann Forschung', unit: 'Burg-Stufe' },
     titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
-    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };
+    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · in dieser Saison verdient', unit: 'Thron-P.' } };
 function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
 function foPunkte(who, bs) {                             // alle erforschten Stufen – von anderen nur die Summe (rechnet der Weltrechner, foP)
     if (!AUF) return 0; if (who !== 'player' && fremdGeheim()) { const b = (bs || loadBotState())[who]; return b && Number.isFinite(b.foP) ? b.foP : 0; }
@@ -298,17 +298,17 @@ function renderRankings() {
     const macht = e => { if (e.macht === undefined) { const pr = whoProfile(e.who); e.macht = pr ? powerOf(pr) : 0; } return e.macht; };
     const gleich = (a, b) => macht(b) - macht(a) || (a.who === 'player') - (b.who === 'player');   // Gleichstand: erst Macht, sonst du hinter den anderen (nie bevorzugt)
     if (rankTab === 'power') { for (const e of people) { const pr = whoProfile(e.who); e.val = pr ? powerOf(pr) : 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); }
-    else if (rankTab === 'caps') { for (const e of people) { e.val = conquestsOf(e.who); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
+    else if (rankTab === 'caps') { for (const e of people) { e.val = rangSaison(e.who, 0); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
     else if (rankTab === 'burg') { for (const e of people) { e.val = AUF ? AUF.burgStufe(e.who) : 1; e.fo = foPunkte(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· Forschung ' + fmtNum(e.fo) + '</i>'; }
         list = people.slice().sort((a, b) => b.val - a.val || b.fo - a.fo || b.lvl - a.lvl || gleich(a, b)); }
     else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
         medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
-        for (const e of people) { const x = by[e.who]; e.val = throneEarnedOf(e.who, bs);
+        for (const e of people) { const x = by[e.who]; e.val = rangSaison(e.who, 1, bs);
             e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ troops: 'Truppen', coins: 'Münzen', attack: 'Angriff', defense: 'Abwehr' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
         const tr = e => e.who === ruler ? 0 : by[e.who] ? (by[e.who].good ? 1 : 2) : 3;
         list = people.filter(e => tr(e) < 3).sort((a, b) => tr(a) - tr(b) || b.val - a.val || gleich(a, b));
         empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
-    } else { for (const e of people) { e.val = throneEarnedOf(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
+    } else { for (const e of people) { e.val = rangSaison(e.who, 1, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
         empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
     if (rankTab !== 'titles' && rankTab !== 'burg') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl || gleich(a, b));
     const lim = RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player');

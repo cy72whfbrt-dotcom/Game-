@@ -54,7 +54,7 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09f-saison.js), danach lädt die
 // Seite neu. Bleibt: Stadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes, Abholfach.
 // Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
-// alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
+// alte Befehle, Saison-Pass (Punkte und abgeholte Stufen – gekauftes Premium bleibt; Erfolge bleiben). (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
 // Burg fair (Alexander 6.10. A): der erste Reset danach setzt jede Burg über Stufe BURG_FAIR auf BURG_FAIR (saison.burgFair = diese Saison,
 // sonst openWaterSaisonBurg aus der Nachricht) – Gebäude, Forschung, Bauten passt aufbau.js beim Laden an (openWaterBurgFair, burgFair).
@@ -65,7 +65,7 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
 var saisonNeuGeladen = 0, saisonZurueckGeladen = 0, saisonBurgGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen · Burg: aufbau.js)
 const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000, SAISON_TP_MAX = 20000, SAISON_TP_JE_GEM = 10;
-const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
+const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis', 'openWaterPass', 'openWaterSaisonRang'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
     let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, fairNr = 0;
     const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
@@ -92,6 +92,10 @@ if (!SYSTEM) {
         store.set('openWaterSaisonVorher', JSON.stringify(vorher));   // (für ein Zurückspielen der Sicherung von vor dem Reset)
         store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
         store.set('openWaterCoins', '0');
+        try { const st = JSON.parse(store.get('openWaterStats')) || {}, t = JSON.parse(store.get('openWaterThrone')) || {};   // Ranglisten zählen ab jetzt (09f rangSaison)
+            store.set('openWaterSaisonRang', JSON.stringify([st.captures || 0, Math.floor(Math.max(t.earned || 0, (t.week || {}).player || 0))])); } catch (e) {}
+        try { const ps = JSON.parse(store.get('openWaterPass')); if (ps && ps.s && typeof ps.s === 'object') {   // Saison-Pass von vorn (Premium bleibt gekauft)
+            for (const k in ps.s) ps.s[k] = { xp: 0, prem: !!(ps.s[k] || {}).prem, f: [], p: [] }; store.set('openWaterPass', JSON.stringify(ps)); } } catch (e) {}
         const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
         for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
         try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}

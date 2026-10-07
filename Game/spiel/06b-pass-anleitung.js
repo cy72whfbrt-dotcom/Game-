@@ -1,6 +1,6 @@
 // Teil 06b-pass-anleitung.js: Saison-Pass und Anleitung für neue Spieler
 // ===== SAISON-PASS: 28 days on one calendar for everyone, 100 levels of 150 points (7.10., vorher 40 × 300), a free row and a premium row (Gems, never money) – jede Stufe gibt in beiden Reihen etwas. Points come from what you do anyway =====
-var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 100, PASS_STEP = 150, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 150;   // (Skin schon da: 150 Gems – vorher 1000, dann brachte der Premium-Pass mehr Gems zurück, als er kostet)
+var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 100, PASS_STEP = 150, PASS_PREMIUM = 1000;   // (keine Rahmen mehr im Pass – Alexander 7.10.: Stufe 100 gibt Edelsteine)
 var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2, bau: 15, forschung: 15,
     lager: 5, qb: 10, qd: 10, invPkt: 1 };   // what each deed is worth (bau/forschung: in der Stadt gestartet · lager: Lager besiegt · qb/qd: Angriff auf Tagesboss/Drache · invPkt: Invasions-Punkte)
 var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15, lager: 5, qb: 10, qd: 10, invPkt: 1 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
@@ -11,7 +11,7 @@ function passRewardAt(L, prem) {                          // what level L gives 
     const g = (k, n) => ({ k, n }), viertel = L % 25 === 0;
     if (!prem) return viertel ? [g('gems', 50), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 20)] : L % 4 === 0 ? [g('shards', 3)] :
         L % 3 === 0 ? [g('crate', 1)] : L % 2 === 0 ? [g('tr', 2)] : [g('coins', 3)];
-    return L === PASS_LVLS ? [{ k: 'frame', id: 'saison' }] : viertel ? [g('gems', 150), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 30)] :
+    return viertel ? [g('gems', 150), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 30)] :
         L % 4 === 0 ? [g('shards', 8)] : L % 6 === 0 ? [g('tp', 150)] : L % 3 === 0 ? [g('shield', 8)] : L % 2 === 0 ? [g('tr', 6)] : [g('coins', 12), g('gems', 10)];
 }
 const passMuenzen = (hp, n) => Math.max(wirtM(5000), Math.round(hp.coins)) * n;     // n Stunden Münzen (mindestens 5.000 je Stunde – wie beim Weltrechner)
@@ -46,11 +46,6 @@ function passGive(who, r, aus, schl) {                    // one reward to anyon
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
             if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); aus.push({ a: 'item', slot, r: rr }); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
-    if (r.k === 'frame') { const d = lkDef(r.k, r.id), has = ((b ? b.frames : look.frames) || []).includes(r.id);
-        if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; aus.push({ a: 'gems', n: PASS_OWNED_GEMS }); return '+' + PASS_OWNED_GEMS + ' Edelsteine („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
-        if (b) b.frames = [...(b.frames || []), r.id];
-        else { look.frames = [...new Set([...(look.frames || []), r.id])]; look.frame = r.id; saveLook(); renderLook(); aus.push({ a: 'rahmen' }); }
-        return 'Rahmen „' + d.name + '“ – schon angelegt'; }
     return '';
 }
 function passClaim(list) {                                // [[season, level, premium], …] → hand out, one hint
@@ -71,7 +66,7 @@ function passBuy(btn) {
     gems -= PASS_PREMIUM; x.prem = true; passSave(); saveGame(); updateHud(); sfx('coin');
     flashHint('Premium freigeschaltet – die zweite Reihe gehört dir, auch für erreichte Stufen.', 3500); renderPass(); updateGoalsBadge();
 }
-function passKachel(r, hp, got) {                         // eine Belohnung als Kachel (05e) mit Menge – Münzen/Truppen: was dein Reich in n Stunden macht
+function passKachel(r, hp) {                         // eine Belohnung als Kachel (05e) mit Menge – Münzen/Truppen: was dein Reich in n Stunden macht
     const k = r.k, n = r.n || 1;
     if (k === 'coins') return beuteKachel({ a: 'coins', n: passMuenzen(hp, n) });
     if (k === 'tr') return beuteKachel({ a: 'tr', n: passTruppen(hp, n) });
@@ -79,9 +74,7 @@ function passKachel(r, hp, got) {                         // eine Belohnung als 
     if (k === 'shards') return beuteKachel({ a: 'sh', n });
     if (k === 'shield') return beuteKachel({ a: 'schild', n });
     if (k === 'crate') return beuteKachel({ a: 'kiste', k: 'aus', n });
-    if (k === 'royal') return beuteKachel({ a: 'kiste', k: 'royal', r: 3, n, min: 1 });
-    const own = !got && lkHas(k, r.id);                   // Rahmen: schon da → Edelsteine
-    return own ? beuteKachel({ a: 'gems', n: PASS_OWNED_GEMS }) : '<span class="pl-rahmen" title="' + escapeHtml(lkDef(k, r.id).name) + '"><span class="frame-ring" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span></span>';
+    return beuteKachel({ a: 'kiste', k: 'royal', r: 3, n, min: 1 });
 }
 function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
     return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
@@ -99,7 +92,7 @@ function renderPass() {
         '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
         '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
     let unten = '';                                       // unter der Leiste: Premium kaufen, voriger Pass
-    if (!x.prem) unten += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Truppen, Königliche Kisten und Rahmen „' + escapeHtml(lkDef('frame', 'saison').name) + '“ (Stufe ' + PASS_LVLS + ') – auch für erreichte Stufen.</small></span>' +
+    if (!x.prem) unten += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Truppen und Königliche Kisten – auch für erreichte Stufen.</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-buy><span class="lbl">' + icon('gem') + fmtNum(PASS_PREMIUM) + '</span></button></div>';
     if (old.length) unten += '<div class="pass-old">' + icon('hourglass') + '<span><b>Voriger Saison-Pass: ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
@@ -108,7 +101,7 @@ function renderPass() {
     h += '<div class="pl"><div class="pl-namen"><span class="is-p">' + (x.prem ? icon('crown') : icon('lock')) + 'Premium</span><span></span><span>Frei</span></div>';
     for (let l = 1; l <= PASS_LVLS; l++) { const zelle = pr => { const got = (pr ? x.p : x.f).includes(l), ok = l <= L && (!pr || x.prem), rs = passRewardAt(l, pr);
             return '<button type="button" class="pl-zelle' + (pr ? ' is-p' : '') + (rs.length > 1 ? ' is-zwei' : '') + (got ? ' is-got' : ok ? ' is-ready' : ' is-lock') + (pr && !x.prem ? ' is-closed' : '') + '"' +
-                (ok && !got ? ' data-pass-l="' + l + '" data-pass-p="' + pr + '"' : '') + '>' + rs.map(r => passKachel(r, hp, got)).join('') +
+                (ok && !got ? ' data-pass-l="' + l + '" data-pass-p="' + pr + '"' : '') + '>' + rs.map(r => passKachel(r, hp)).join('') +
                 (got ? '<span class="pl-ok">' + icon('check') + '</span>' : pr && !x.prem ? '<span class="pl-ok is-lock">' + icon('lock') + '</span>' : '') + '</button>'; };
         h += '<div class="pl-spalte' + (l <= L ? ' is-on' : '') + (l === L + 1 ? ' is-next' : '') + (l % 25 === 0 ? ' is-viertel' : '') + '" data-pass-row="' + l + '">' + zelle(1) + '<span class="pl-knoten">' + l + '</span>' + zelle(0) + '</div>'; }
     h += '</div>' + unten + '<details class="ach-done pass-how"><summary><span>So sammelst du Punkte</span><em>' + PASS_STEP + ' je Stufe</em>' + icon('upgrade') + '</summary><div class="pass-how-l">' +

@@ -10,7 +10,7 @@ function cityFehlt(id) {                           // fehlt nur etwas zum Bezahl
 }
 // ===== AUSSEHEN: Wappen und Rahmen (= Titel, 05a RAHMEN) – nichts zu kaufen (Basis- und Marsch-Skins gibt es nicht mehr, Alexander 7.10.) =====
 var lkTab = 'frame';
-function lkPrice(d) { return d.platz || d.buy === 'pass' ? '<span class="lk-cost">' + icon('crown') + (d.platz ? rahmenPlatzText(d) : 'Saison-Pass') + '</span>' : ''; }   // woher ein Rahmen kommt
+function lkPrice(d) { return d.platz ? '<span class="lk-cost">' + icon('crown') + rahmenPlatzText(d) + '</span>' : ''; }   // woher ein Rahmen kommt
 function lkCard(kind, d, prev, has, on, label) {     // one look: preview, name, and Angelegt / Anlegen / price
     return '<button type="button" class="skin-card lk-card' + (on ? ' on' : '') + (has ? '' : ' is-shop') + '" data-lk="' + kind + ':' + d.id + '">' + prev + (label === false ? '' : '<b>' + (label || d.name) + '</b>') +
         '<small>' + (on ? icon('check') + 'Angelegt' : has ? 'Anlegen' : lkPrice(d)) + '</small></button>';
@@ -21,7 +21,7 @@ function lkUse(kind, id) { look.frame = id; saveLook(); renderLook(); requestRen
 function lkBuy(kind, id) {                            // Rahmen gibt es nicht zu kaufen (Alexander 6.10.): nur der Hinweis, woher
     const d = lkDef(kind, id); if (!d) return;
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
-    flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : d.buy === 'pass' ? 'gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500);
+    flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500);
 }
 function renderLookTop() {                            // what you wear now + what you can pay with
     const el = document.getElementById('lkTop'); if (!el || document.getElementById('lookSheet').hidden) return;

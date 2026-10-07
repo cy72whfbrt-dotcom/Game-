@@ -10,7 +10,7 @@
 // nächsten Saison-Ende (05a RAHMEN: Platz 1 · 2–3 · 4–5 · 6–10, aus last.top – Alexander 6.10.).
 // Bleibt: die ganze Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, alles Gekaufte.
 // Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (0 wie ein neuer Spieler), Stufe (→ 1,
-// damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
+// damit alle Fähigkeitspunkte), Saison-Pass (Punkte, Stufen – Premium bleibt; Erfolge bleiben), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 // Burg fair (Alexander 6.10. A): der ERSTE Reset danach setzt EINMAL jede Burg über Stufe BURG_FAIR auf BURG_FAIR (bis 5.10. galt die alte,
@@ -73,7 +73,7 @@ function saisonTop() {                                // die besten 10 nach Mach
     return l.sort((a, b) => b[1] - a[1]).slice(0, SAISON_PREISE.length);
 }
 function saisonNeu(now) {
-    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
+    const alt = saison.nr, nr = alt + 1, top = saisonTop(), rb = saisonRangBasis(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
     const burgFair = saison.burgFair > 0 ? saison.burgFair : nr, B = burgFair === nr ? BURG_FAIR : 0;   // B: Burg fair (nur beim ersten Reset danach)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
     if (B) saisonAusnahme();                           // (vor den Preisen: die kommen wie bei echten Spielern zusätzlich dazu)
@@ -89,12 +89,25 @@ function saisonNeu(now) {
     //    je Saison. Erst nach der Nachricht „saison“: sein Handy verbucht den Preis dann nach dem Neuladen, also nach der Ausnahme
     //    (Edelsteine = 1.000) – vorher konnte er ihn in den 1,5 s bis zum Neuladen abholen und verlor ihn wieder
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
-    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
+    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, rb, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
         store.set('openWaterSaisonNeu', String(nr)); if (B) store.set('openWaterSaisonBurg', String(B)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 600);
     }
+}
+// Ranglisten Eroberungen und Thron-Punkte zählen je Saison (die Erfolge zählen weiter alles): der Stand beim Reset ist die Grundlinie –
+// saison.rb = { wer: [Eroberungen, Thron-Punkte] } für alle anderen, die eigene merkt sich der Spielstand (01a openWaterSaisonRang)
+function saisonRangBasis() {
+    const bs = loadBotState(), rb = {};
+    for (const bd of BOT_DEFS) if (bs[bd.id]) { const c = botConquests(bd.id), t = throneEarnedOf(bd.id, bs); if (c > 0 || t > 0) rb[bd.id] = [c, t]; }
+    return rb;
+}
+function rangSaison(who, k, bs) {                     // k 0: Eroberungen, 1: Thron-Punkte – seit dem letzten Reset
+    const roh = k ? throneEarnedOf(who, bs) : conquestsOf(who); let b = 0;
+    if (who === 'player') { try { b = (JSON.parse(store.get('openWaterSaisonRang')) || [])[k] || 0; } catch (e) { b = 0; } }
+    else b = (((saison || {}).rb || {})[neutralId(who)] || [])[k] || 0;
+    return Math.max(0, roh - b);
 }
 function saisonWelt(now, f, B) {                      // alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Münz-Töpfe umrechnen, B: Burg fair)
     const bs = loadBotState(), wer = (SYSTEM || window.WELT ? [] : ['player']).concat(BOT_DEFS.map(b => b.id).filter(id => bs[id]));
@@ -103,6 +116,10 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = [];
     fieldState = {}; fieldMarches = []; barbMarches = []; armies = []; armyJoins = []; armyRaids = [];
     if (evState.inv && Array.isArray(evState.inv.armies)) evState.inv.armies = [];
+    // Event-Stände der alten Welt: laufendes Wochen-Event, Drache, Invasion fangen bei 0 an (schon Ausgezahltes und „zuletzt“ bleiben)
+    if (evState.wo && !evState.wo.paid) { evState.wo.pts = {}; evState.wo.kb = {}; }
+    if (evState.dr && !evState.dr.paid) { evState.dr.dmg = {}; evState.dr.hits = {}; }
+    if (evState.inv && !evState.inv.paid) evState.inv.pts = {};
     if (typeof bundSaisonNeu === 'function') bundSaisonNeu();
     // Barbaren-Lager: der Fortschritt fängt für alle wieder bei Stufe 1 an (Alexander 5.10.), die alten Lager weg – neue entstehen gleich
     // (die Zähler von heute bleiben; barbWho ist Welt-Stand – das Handy bekommt ihn vom Weltrechner)
@@ -116,13 +133,16 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     inselOrt = {}; store.set('openWaterInselOrt', '{}'); inselOrtAnwenden();   // teleportierte Hauptstädte: jede Basis wieder an ihrem Platz
     hauptVor = {}; store.set('openWaterHauptVor', '{}'); brand = {}; store.set('openWaterBrand', '{}'); store.set('openWaterWorldStart', String(now));
     for (const o of [battleHeat, baseFought, ownerLoss, botTooStrongMem, botIntelMem, botAct, botKenntMem, botKenntBasen, botEvacuated, botLossMem, botAergerMem, botLmShareMem]) for (const k of Object.keys(o)) delete o[k];   // was die Mitspieler über die alte Karte wussten
-    // Hauptstädte: je ein freier Turm am äußeren Rand, auf der Landmasse mit den wenigsten Nachbarn (wie freierStartplatz), zufällig
-    const frei = islands.filter(i => i.type === 'tower' && landmasses[i.landmassId].tier === 'outer' && !bossAt(i.id)), proLm = {}, belegt = new Set();
+    // Hauptstädte: wie freierStartplatz erst die freien Startplätze, dann Türme in Zone 1 (tier 'outer' sind Zone 1–3 – sonst landeten sie
+    // innen), zuletzt der übrige Rand; je Stufe auf der Landmasse mit den wenigsten Nachbarn, zufällig
+    const turm = i => i.type === 'tower' && !bossAt(i.id), lm = i => landmasses[i.landmassId];
+    const stufen = [islands.filter(i => i.startSlot && turm(i)), islands.filter(i => !i.startSlot && turm(i) && lm(i).zone === 1),
+        islands.filter(i => !i.startSlot && turm(i) && lm(i).zone !== 1 && lm(i).tier === 'outer')], proLm = {}, belegt = new Set();
     for (let i = hatte.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [hatte[i], hatte[j]] = [hatte[j], hatte[i]]; }
     for (const w of hatte) {
-        const offen = frei.filter(i => !belegt.has(i.id)); if (!offen.length) break;
+        let offen = []; for (const s of stufen) { offen = s.filter(i => !belegt.has(i.id)); if (offen.length) break; } if (!offen.length) break;
         let min = Infinity; for (const i of offen) min = Math.min(min, proLm[i.landmassId] || 0);
-        const beste = offen.filter(i => (proLm[i.landmassId] || 0) === min), start = beste.filter(i => i.startSlot), l = start.length ? start : beste, z = l[Math.floor(Math.random() * l.length)];
+        const beste = offen.filter(i => (proLm[i.landmassId] || 0) === min), z = beste[Math.floor(Math.random() * beste.length)];
         belegt.add(z.id); proLm[z.landmassId] = (proLm[z.landmassId] || 0) + 1;
         islandLevels[z.id] = 1; islandTroops[z.id] = PLAYER_START_TROOPS;   // (die Stufe der Hauptstadt folgt gleich wieder der Burg – aufbau.js)
         if (w === 'player') { ownedIslands.add(z.id); playerIslandId = z.id; store.set('openWaterPlayerIslandId', String(z.id)); }
@@ -134,6 +154,7 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, keine Münzen, keine Verwundeten, keine alten Pläne
     for (const w of wer) { if (w === 'player') continue; const b = bs[w];
         b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
+        if (b.ps) { b.ps.base = botPassScore(b); b.ps.f = 0; b.ps.p = 0; }   // Saison-Pass von vorn (Premium bleibt)
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
         if (B > 0 && AUF) burgFairWer(b, B);
         if (!(botById[w] && botById[w].mensch) && b.tp > SAISON_TP_MAX) { const g = Math.floor((b.tp - SAISON_TP_MAX) / SAISON_TP_JE_GEM); b.tp = SAISON_TP_MAX;   // Thron-Punkte (echte Spieler: ihr Handy)
