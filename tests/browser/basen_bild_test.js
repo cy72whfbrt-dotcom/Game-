@@ -35,10 +35,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     islandTroops[h.id] = 1234;
     o.schild = [h, frei[0], frei[1], frei[2], frei[3]].map(i => { const d = schildDaten(i); return [d.art, d.truppen, !!d.wer]; });
     bundVerbuendet = bv;
-    let schilde = 0, ringe2 = 0; ctx.drawImage = function (im) { if (im instanceof HTMLCanvasElement && im.width >= SCHILD_W) schilde++; };
+    let schilde = 0, ringe2 = 0, sr = null; ctx.drawImage = function (im, x, y, w, hh) { if (im instanceof HTMLCanvasElement && im.width >= 90) { schilde++; sr = { x, y, w }; } };
     ctx.stroke = function () { ringe2++; };
-    drawBasisSchilder([h], 0.012); drawBasisBild(h, 'player', 0.012); o.mittel = { schilde, ringe: ringe2 };
-    schilde = 0; drawBasisSchilder([h], 0.006); o.weitSchild = schilde;
+    const zn = 0.03; mapState.zoom = zn; mapState.offsetX = viewW / 2 - h.x * zn; mapState.offsetY = viewH / 2 - h.y * zn;
+    drawBasisSchilder([h], zn); drawBasisBild(h, 'player', zn); const bw = BASIS_BREITE * zn;
+    o.nah = { schilde, ringe: ringe2, breit: sr && sr.w <= bw * .7 + .5, mittig: sr && Math.abs(sr.x + sr.w / 2 - viewW / 2) < 1, unter: sr && sr.y > viewH / 2 };
+    schilde = 0; drawBasisSchilder([h], 0.012); o.mittelSchild = schilde;
     ctx.drawImage = dr; ctx.stroke = st;
     return o;
   });
@@ -48,6 +50,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.weit === false, 'ganz weit: kein Bild (Punkte wie bisher)', r.weit);
   ok(JSON.stringify(r.schild) === JSON.stringify([['player', '1.234', true], ['bot', '?', true], ['bot', '800', true], ['ally', '700', true], ['neutral', '?', false]]),
     'Namensschild: eigene und Bündnis echte Truppen, fremde „?“ bis gespäht, frei ohne Wappen', r.schild);
-  ok(r.mittel.schilde === 1 && r.mittel.ringe === 0 && r.weitSchild === 0, 'Schild ab mittel statt des Rings, weit kein Schild', [r.mittel, r.weitSchild]);
+  ok(r.nah.schilde === 1 && r.nah.ringe === 0 && r.nah.breit && r.nah.mittig && r.nah.unter && r.mittelSchild === 0, 'Schild nah statt des Rings: höchstens 70 % der Basis-Breite, mittig darunter; mittel kein Schild (Ring)', [r.nah, r.mittelSchild]);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
