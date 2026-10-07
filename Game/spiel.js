@@ -10104,7 +10104,7 @@ function inselOrtAnwenden() {                    // verlegte Basen an ihren Plat
         const lm = landmasses[o[2]]; if (lm.tier === 'guardian' || lm.tier === 'throne') midZoneIds.add(isl.id); else midZoneIds.delete(isl.id);
     }
     if (!neu) return;
-    TERR.player.clear(); TERR.enemy.clear(); ownVer++; capitalCache = null;   // Gebiets-Flächen neu (die Basis steht woanders)
+    TERR.player.clear(); TERR.enemy.clear(); ownVer++; capitalCache = null; BG.valid = false;   // Gebiets-Flächen und Boden neu (die Basis steht woanders)
     if (typeof flushBannerSprites === 'function') flushBannerSprites();
     requestRender();
 }
