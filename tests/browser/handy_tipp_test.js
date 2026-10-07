@@ -1,7 +1,7 @@
 // Gesamt-Spieltest 6.10. (fix-st2), Handy (390×844) + Desktop: Tippflächen ≥ 44 px (sichtbar kleiner erlaubt: Rohstoffe, Anleitung-×,
 // „Spähen“, Prozent-Chips, „Abholen“, „2. Bauarbeiter“, Kartenknöpfe), Anleitung Schritt 2 + Angriff mit „Alle“ aus der Hauptstadt sagt
 // „… bleibt deine Hauptstadt ohne Truppen“ (nur Hinweis; das Fenster bleibt ≤ 55 % hoch), Profil → Rangliste/Einstellungen mit echtem Tipp, Heldenkisten: Tipp auf die ganze Karte fragt „Wirklich?“
-// (ab 500), Wochen-Event-Chip springt nicht, wenn der Rang erscheint, Stadt: alle Baufelder samt Mauer im Start-Bild, Funde auf der Karte
+// (ab 500), Wochen-Event-Chip springt nicht, wenn der Rang erscheint, Stadt: Stadtbild füllt den Bildschirm, jedes Gebäude erreichbar, Funde auf der Karte
 // beschriftet und nie auf einem Namensschild. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
 const { chromium, devices } = require('playwright');
 const path = require('path');
@@ -78,14 +78,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const o = { schild: true, verdeckt: pickupVerdeckt(pickupScreenPos(pickups[0])), nimmt: collectPickupAt(s.x, s.y) };
       pickups = alt; return o; });
     ok(fu.schild && fu.verdeckt && !fu.nimmt, art + ': Fund auf einem Namensschild wird nicht gezeigt (und nicht genommen)', fu);
-    // 8) Stadt: 2. Bauarbeiter ≥ 44 px, alle Baufelder samt Mauer im Start-Bild
+    // 8) Stadt: 2. Bauarbeiter ≥ 44 px, das Stadtbild füllt den Bildschirm, jedes Gebäude erreichbar
     const st = await ev(async () => { cityCam = null; openCity(); const t0 = Date.now(); while (Date.now() - t0 < 15000 && (cityBusy || cityView.hidden || !cityCam || cityCam.anim)) await new Promise(f => setTimeout(f, 100));
       await new Promise(f => setTimeout(f, 300)); const W = innerWidth, c = cityCam, raus = [];
-      for (const [id, [x, y]] of Object.entries(CITY_LOTS)) { const sx = W / 2 + (cIso(x, y)[0] - c.x) * c.z, rand = 52 * c.z; if (sx - rand < 0 || sx + rand > W) raus.push(id + ':' + Math.round(sx)); }
-      const schilder = cityNamen.map(n => n.id); return { z: Math.round(c.z * 100) / 100, raus, schilder, fehlen: Object.keys(CITY_LOTS).filter(id => !schilder.includes(id)), bau: __t44('[data-cb-buy]') }; });
+      const ox = W / 2 - c.x * c.z, oy = innerHeight / 2 - c.y * c.z; if (ox > .5 || oy > .5 || ox + CITY_BILD_W * c.z < W - .5 || oy + CITY_BILD_H * c.z < innerHeight - .5) raus.push('Bildrand');   // das Stadtbild deckt den Bildschirm
+      const schilder = cityNamen.map(n => n.id), fehlen = [];
+      for (const id of Object.keys(CITY_ORTE)) { cityFocus(id, true); cityFrame.drawn = 0; await new Promise(f => setTimeout(f, 120)); if (!cityNamen.some(n => n.id === id)) fehlen.push(id); }   // jedes Gebäude per Wischen mit Schild
+      cityFocus('_keep', true); return { z: Math.round(c.z * 100) / 100, raus, schilder, fehlen, bau: __t44('[data-cb-buy]') }; });
     await bild('stadt');
-    ok(!st.raus.length, art + ': Stadt-Start: alle Baufelder (Steinbruch rechts, Mauer links) ganz im Bild', st);
-    ok(!st.fehlen.length, art + ': Stadt-Start: jedes Baufeld mit Namensschild', st);
+    ok(!st.raus.length && st.schilder.includes('_keep'), art + ': Stadt-Start: das Stadtbild füllt den Bildschirm, die Burg mit Schild', st);
+    ok(!st.fehlen.length, art + ': Stadt: jedes Gebäude per Wischen erreichbar, mit Namensschild', st);
     if (st.bau.length) ok(gross(st.bau), art + ': „2. Bauarbeiter“ mit Tippfläche ≥ 44 px', st.bau);
     await ctx.close();
   }

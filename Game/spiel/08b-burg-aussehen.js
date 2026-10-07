@@ -71,20 +71,14 @@ function cityNutz(id, lvl) {                       // die eigene Seite eines Geb
     if (!lvl) return null;
     return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], wall: ['Helden', 'defense'] }[id] || null;   // (Mauer: die Verteidigungs-Helden)
 }
-function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt (noch nicht gebaut: das Gebäude der Stufe 1, ausgegraut – jedes sein eigenes)
-    if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
-    const t = cityTierOf(lvl) || 1;
-    if (id === 'wall') return citySprite('gatehouse', t);
-    return citySprite(id, t, id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '');
-}
-function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben links im Fenster (nur neu gemalt, wenn sich die Stufe ändert)
-    const el = document.getElementById('cityBIcon'), s = cityBildSpr(id, lvl), zu = id !== 'keep' && !lvl, key = id + ':' + (id === 'keep' ? Math.floor((lvl || 1) / 5) : cityTierOf(lvl)) + ':' + s.c.width;
-    el.classList.toggle('is-zu', zu);
+function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben links im Fenster: sein Ausschnitt aus dem Stadtbild (noch nicht gebaut: ausgegraut)
+    const el = document.getElementById('cityBIcon'), im = cityBild(), o = cityOrt(id === 'keep' ? '_keep' : id), key = id + ':' + (im ? 'bild' : 'leer');
+    el.classList.toggle('is-zu', id !== 'keep' && !lvl);
     if (el.dataset.bild === key && el.firstChild && el.firstChild.tagName === 'CANVAS') return;
     el.dataset.bild = key; el._lh = undefined;
     const N = 192, cv = document.createElement('canvas'); cv.width = cv.height = N;
-    const g = cv.getContext('2d'), f = Math.min(N / s.c.width, N / s.c.height) * 1.08, w = s.c.width * f, h = s.c.height * f;
-    g.imageSmoothingQuality = 'high'; g.drawImage(s.c, (N - w) / 2, Math.min(N - h, (N - h) / 2 + N * .04), w, h);
+    if (im && o) { const a = Math.max(o.w, o.h), x = Math.max(0, Math.min(CITY_BILD_W - a, o.x - a / 2)), y = Math.max(0, Math.min(CITY_BILD_H - a, o.y - a / 2));
+        const g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, x, y, a, a, 0, 0, N, N); }
     el.replaceChildren(cv);
 }
 function anfZeile(ok, ic, txt, val, geh) {         // eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz – geh [Fenster, Knopf]: fehlt ein Gebäude, springt der Knopf dorthin
