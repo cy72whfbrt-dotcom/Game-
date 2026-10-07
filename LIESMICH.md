@@ -401,7 +401,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `pts`, `salvage`, `shields`, `goals`, `ps` (Pass), `tp`, ganze Stadt/Forschung u. a. Der eigene Eintrag (`u<id>`) und der
   Weltrechner bekommen alles. Auch die Profile anderer in `spieler_liste` nur noch öffentlich (`profil_oeffentlich`).
   **Macht:** der Weltrechner rechnet sie jede Minute für alle (`powerOf`, in `hbRunde` neben `tt`, nur bei > 1 % Änderung) –
-  Handys nehmen `b.macht` (Rangliste, Profil, Bündnis, Anfängerschutz-Grenze). **Spähen:** Späher zu einer fremden Basis schickt
+  Handys nehmen `b.macht` (Rangliste, Profil, Bündnis), `tt` auch für die Anfängerschutz-Grenze (100.000 Truppen). **Spähen:** Späher zu einer fremden Basis schickt
   zusätzlich den Befehl `spaehen` mit `blick`; der Weltrechner merkt ihn (`hb.sb`) und schickt bei Ankunft die Nachricht `spaeh`
   (Truppen, Verteidigung, Spähblick wie bisher + Abwehr-Werte `k`) – sie füllt den Kampflog-Eintrag (`spaehBericht`, auch wenn
   sie vor dem eigenen Späher ankommt). Gespähte Abwehr (Insel-Fenster, Angriffs-Vorschau) rechnet mit den Werten aus dem
@@ -986,6 +986,21 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   nach 1,1 s weg; Karten-Hinweise (Invasion …) verschwinden in der Stadt hart statt durchzuscheinen; Desktop startet
   etwas weiter weg (× 0,85) und 40 px tiefer. „ab Burg-Stufe 4“ bricht nicht mehr am Bindestrich um.
   Test: `stadt_fenster_test` erweitert.
+- **7.10. – Saison-Pass 100 Stufen + 6 Tagesaufgaben (Event-Zahlen, Alexander zugestimmt; NICHT hochgeladen):** Pass
+  100 Stufen × 150 Punkte, jede Stufe gibt in beiden Reihen etwas (`passRewardAt` → Liste; frei z. B. 1 = 3 Std. Münzen,
+  2 = 2 Std. Truppen, 3 = Kiste, 4 = 3 Splitter, 5 = 20 Edelsteine, 10 = Königliche Kiste, 25/50/75/100 = 50 + Königliche;
+  Premium 12 Std. Münzen + 10, 6 Std. Truppen, Schild 8 Std., 150 Thron-Punkte, Rahmen bei 100). Edelsteine je Saison frei
+  360, Premium 950. Ansicht: lange waagrechte Leiste (oben Premium, Mitte Stufe, unten Frei) mit Belohnungs-Kacheln (05e).
+  Premium kaufen mit „Wirklich?“ (`gemsWirklich`). Neue Pass-Punkte: Lager besiegt 5, Angriff auf Tagesboss/Drache 10,
+  Invasions-Punkt 1 (`PASS_XP.invPkt` – das Zählen `goalBump(who, 'invPkt', n)` baut der Events-Programmierer ein).
+  Aufgaben: 6 am Tag (2 leicht/2 mittel/2 schwer, 3/5/8 Edelsteine + 1/2/3 Std. Münzen), Bonus bei 3 (2 Std. Truppen) und
+  bei allen 6 (Kiste, 10 Edelsteine, 5 Splitter) – 42 Edelsteine am Tag. 14 neue Arten (Lager, Tagesboss, Sammler,
+  Bau-Hilfe, Verstärkung, Rally, Gegenstand verbessern, zusammenlegen, Heilen, Markt, Tempel, Thron-Minuten, Invasion,
+  Drache), nur was heute geht (Bündnis, Gebäude, Invasions-/Drachen-Tag). Gezählt über neue Zähler (`QUEST_STAT`:
+  lager/qb/qd/qi/qHilfe/qVerst/qRally, auch vom Weltrechner) und die Knöpfe. Weltrechner: Truppen-Quellen `pass` (je
+  Stufe/Reihe einmal je Saison, höchstens so weit wie in der Zeit möglich) und `aufgabe` (höchstens 2 in 24 Std.),
+  Münz-Topf der Aufgaben (12 Std. am Tag, hält 2 Tage), `HB_TAG` Edelsteine 42. Tests: `pass_saison_test`,
+  `aufgabe_sechs_test`, `welt_test` erweitert.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -999,9 +1014,13 @@ Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 23. ✅ **Sammeln ohne Bericht:** Kehren Sammler zurück, gibt es einen Bericht „Sammler zurück · Goldmine · +… Münzen ·
     … Truppen zurück“ (auch für Zuschauer, über den Weltrechner).
 24. ✅ **Neue Spieler sofort plattgemacht:** **Anfängerschutz** – 48 Std. unangreifbar (für Mitspieler und echte
-    Spieler), auch wenn man selbst Mitspieler/Lager/Felder angreift. Endet früher, sobald die **Macht 50 Mio.** erreicht
-    (wie in der Rangliste) oder man einen echten Spieler angreift. Gilt auch für alle, die schon spielen und ihn noch nie
-    hatten (einmalig ab dem nächsten Start).
+    Spieler), auch wenn man selbst Mitspieler/Lager/Felder angreift. **Neu (Alexander 7.10., Variante B):** Der Schutz endet,
+    sobald EINES eintritt: 48 Std. vorbei, **100.000 Truppen** (Gesamttruppen wie im HUD, `whoTroops`; ersetzt die alte
+    50-Mio.-Macht-Grenze) oder man greift selbst einen echten Spieler an. Solange er steht, kann einen auch **niemand
+    ausspähen** (Spieler, Mitspieler, Weltrechner: `neulingAktiv` in `launchScout`, `botLearn`, Befehl `spaehen`, `spaehRunde`);
+    Mitspieler wählen Neulinge gar nicht erst als Späher-Ziel. Hinweis „Anfängerschutz – noch … (oder bis 100.000 Truppen)“
+    (`neulingBlockText`) bei Spähen/Angreifen, im Schild-Fenster, in der Burg und im Profil. Gilt auch nach dem Saison-Reset.
+    Getestet: `neuling_test`. Gilt auch für alle, die schon spielen und ihn noch nie hatten (einmalig ab dem nächsten Start).
 25. ✅ **Späher durch geschlossene Tore:** Ein geschlossenes fremdes Tor lässt keinen Späher durch (`spaeherWeg`) – gilt
     für dich und die Mitspieler. Gibt es einen anderen Weg ohne geschlossenes Tor, darf er den nehmen.
 27. ✅ **Kopieren/Nachschlagen beim langen Drücken:** Im Spiel lässt sich nichts mehr markieren, kein Kopieren-Menü
@@ -1011,8 +1030,8 @@ Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 29. ✅ **„Hier weiterspielen“ reagierte nicht:** Der Knopf zeigt sofort „Lädt …“, reagiert direkt aufs Tippen, und
     `spiel.php?weiter=1` übernimmt sofort (ohne bis zu 8 s auf das alte Gerät zu warten). Getestet: 1,7 s, altes Gerät fliegt raus.
 26. ✅ **Anfängerschutz auch für Mitspieler:** gleiche Regeln (48 Std. ab Weltstart bzw. ab ihrem Neustart, endet mit
-    50 Mio. Macht oder wenn sie einen echten Spieler angreifen; `botNeulingBis`). Text: „Anfängerschutz: … ist neu und
-    noch … unangreifbar.“
+    100.000 Truppen oder wenn sie einen echten Spieler angreifen; `botNeulingBis`). Text: „Anfängerschutz – noch … (oder bis
+    100.000 Truppen): … ist neu und kann nicht angegriffen und nicht ausgespäht werden.“
 - Hochladen: `hochladen.sh` wartet nach dem Einschalten der Wartung jetzt 10 s, damit jedes laufende Spiel noch
   speichert (beim Wartungs-Fenster wird automatisch gesichert), am Ende geht die Wartung wieder aus.
 
@@ -1653,6 +1672,13 @@ Nacht – vorher bauen und testen.
     („1.000“, „60m“, „4h“), unten rechts Anzahl („25“). In Tabellen: Zeile je Stufe/Platz (z. B. „10001+“), Kacheln
     nebeneinander. Überall gleich nutzen: Events, Pass, Kisten-Ergebnis, Shop, Postfach, Ranglisten-Belohnung.
     Vorbild-Datei: scratchpad/vorbilder/11_belohnung_rok_alexander.jpg.
+    ✅ **Umgesetzt (7.10., mit 23 „Kisten“):** Teil `05e-belohnung.js` (`beuteKachel`, `beuteRaster`, `beuteFenster`) + Stil `05y-stil-kisten.php`:
+    Kachel `ui_kachel_*` je Seltenheit, KI-Symbol `bilder/beute_*.webp`, Menge unten rechts – in Shop, Aufgaben, Erfolgen, Tagesbelohnung,
+    Abholfach, Pass, Stufe, Kriegsherr, Event-Preisen, Thron-Shop, Kampfbericht (Rohstoffe). Belohnungs-Fenster: Kiste (`kiste_*_zu/offen.webp`)
+    wackelt, geht auf, Strahlen, Kacheln nacheinander; Tipp = gleich Endbild, „OK“ schließt. Shop: Kisten als KI-Bild, unter 500 Edelsteinen
+    „1ד und „10ד (weniger Edelsteine: „N×“ mit dem Rest, ab 500 „Wirklich?“) – ruft nur `openCrate`/`heroChestOpen` N-mal (Inhalt,
+    Chancen, Hauptbuch unverändert; Große/Epische Kiste bleiben einzeln wegen Bündnis-Geschenk). Bilder geschnitten mit
+    `werkzeuge/beute_bilder_schneiden.py` (Blätter ohne Transparenz: Hintergrund geschätzt). Test `belohnung_test`.
 25. **Weltkarte neu wie RoK – Entscheidungen Alexander (6.10. abends):** KEIN Wasser mehr (kein Meer, keine Flüsse, keine
     Seen), eine große Land-Karte. Statt Flüssen hohe Felsketten zwischen den Gebieten, durch die man nicht laufen kann –
     nur durch Pass-Tore (heutige Brücken-Tore; Logik Gebiete/Tore/Maut/Öffnungszeiten bleibt). Boden nur nach Ringen
@@ -1704,10 +1730,24 @@ Nacht – vorher bauen und testen.
     - Barbaren-Lager: Belohnung pro geschaffter Lager-Stufe im Event-Fenster (grün = abholen).
     - Pass viel länger, auch Truppen u. a. als Belohnung. Aufgaben: viel mehr.
     - Karte: Tipp auf freies Feld → Menü (Teleportieren, Markierung, Truppen dorthin verlegen).
+      ✅ **Gebaut 7.10. (nicht hochgeladen):** Tipp auf freies Land → runde KI-Knöpfe (`feldRingAuf`, 09d): **Teleportieren**
+      (`tpPruefen`/`teleportOrt`, 08d) – die Hauptstadt-Basis selbst zieht an die Stelle (Truppen, Stufe, Stadt bleiben), Platz wie
+      für eine Basis (nicht im Gebirge, an Basen/Toren/Feldern/Lagern/Tempeln, nicht in der Thron-Mitte), nur in Gebiete hinter
+      Pässen, deren Öffnungs-Zeit vorbei ist (Tor-Besitzer egal; Schalter `TELEPORT_NUR_OFFEN`), nicht solange ein Marsch/Angriff
+      an der Hauptstadt hängt. Immer 500 Edelsteine mit „Hierher teleportieren?“-Bestätigung (`gemsWirklich`), keine Abklingzeit,
+      im Anfängerschutz 1× gratis. Weltrechner-Befehl `teleport` (Hauptbuch, nur echte Spieler), Welt-Teil `openWaterInselOrt`
+      (verlegte Basen, neue Saison: alle zurück). **Markierung** = Wegmarken-Fenster, **Truppen hierher** = neue Armee an der
+      Stelle (bestehende Armee-Funktion). Alter Umzug auf eigenen Turm (50) bleibt. Test `teleport_test`.
     - Event-Bilder gefallen Alexander („schon geil“).
     - ENTSCHIEDEN 7.10. 16:30 (Zahlen: scratchpad/eventzahlen.md): Tagesboss nur Schadens-Klassen (Platz-Preise weg);
       Drache nur Leiste, keine Extra-Preise für die Besten; Teleport frei wo Platz + Pass offen, neue Spieler 1× gratis;
       Lager-Stufen-Belohnung jeden Tag neu (210 Edelsteine/Woche ok, Alexander B).
+    - GEBAUT 7.10. (Events-Teil, nicht hochgeladen): Wochen-Preise bis Platz 1000; Invasion/Drache/Lager als Leiste (Balken mit
+      Kisten, leuchtet = Abholen, Haken = abgeholt), jede Stufe sofort im Abholfach (Schlüssel je Stufe, nie doppelt); Drache-Treffer
+      zählt ab 10 % aller Truppen; Tagesboss: Belohnung je Angriff nach Schadens-Klasse (Zähler ×n) + „Boss fällt“ für alle, keine
+      Platz-Preise und kein „entkommen“-Preis mehr; Lager-Reiter neu (Stufe 1–25 je Tag). „N Std. Münzen/Truppen“ rechnet der
+      Weltrechner beim Auszahlen; echte Spieler: Münzen/Truppen als Gutschrift im Schummel-Schutz. Lebensbalken-Zahl nicht mehr
+      abgeschnitten. Test: `event_leiste_test`.
 35. **Zahlen an RoK (Alexander 7.10. abends, Vorschlag scratchpad/rokzahlen.md):** alle 10 Punkte ja; Burg 25 NICHT in
     einer Saison (Saison 1 ≈ Burg 16–18, Burg 25 nach ~4 Saisons, Anfang schnell). Schild 80/300/700 (A). Truppen aus
     Basen: ausgewogen anpassen („nicht zu langsam, nicht zu schnell“). Start-Helden: alle behalten die 3 Standard-Helden

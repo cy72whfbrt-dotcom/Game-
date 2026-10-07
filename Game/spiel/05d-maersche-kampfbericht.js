@@ -393,9 +393,10 @@ const kampflogUmbauen = (function () {
             h.insertAdjacentHTML('beforeend', [...fest.map(n => L.find(l => l[0] === n) || [n, '–']), ...rest.slice(0, 3)].map(([a, b]) => zl(a, b, b === '–' ? ' kl-null' : ' buff')).join(''));
         });
         box.querySelectorAll(':scope > .kl-rss').forEach(x => x.remove());
-        box.insertAdjacentHTML('beforeend', '<div class="kl-rss"><div class="logGearHead">Rohstoffe</div>' +
-            [['g', 'Gold'], ['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].map(([k, n]) => { const v = roh[k] || 0;
-                return zl(n, (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v)), v > 0 ? ' buff' : v < 0 ? ' buff malus' : ''); }).join('') +
+        const ROH = [['g', 'Gold', 'coins'], ['h', 'Holz', 'holz'], ['s', 'Stein', 'stein'], ['e', 'Eisen', 'eisen']], kacheln = beuteRaster(ROH.map(([k, , a]) => ({ a, n: Math.abs(roh[k] || 0), minus: roh[k] < 0 })));   // Beute/Verlust als Kacheln (05e), die Zeilen bleiben für Vorleser
+        box.insertAdjacentHTML('beforeend', '<div class="kl-rss' + (kacheln ? ' bk-an' : '') + '"><div class="logGearHead">Rohstoffe</div>' + kacheln + '<div class="kl-rss-zeilen">' +
+            ROH.map(([k, n]) => { const v = roh[k] || 0;
+                return zl(n, (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v)), v > 0 ? ' buff' : v < 0 ? ' buff malus' : ''); }).join('') + '</div>' +
             (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' Gold · ' + fmt(schutz * ROH_JE_MUENZE) + ' je Rohstoff</small>', '') : '') + '</div>');
         return box;
     }

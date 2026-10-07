@@ -18,10 +18,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       bundOp(A.id, { op: 'gruenden', name: 'Mittebund', tag: 'MTB', offen: true }); const a = bundVon(A.id);
       bundOp(E.id, { op: 'beitreten', aid: a.id }); bundOp(F.id, { op: 'beitreten', aid: a.id });
       const geben = (w, id, n) => { const ow = islandOwnerOf(id); if (ow && botOwnedIslands[ow]) botOwnedIslands[ow].delete(id); botOwnedIslands[w].add(id); islandTroops[id] = n; };
-      // 1) Reiz: freier Turm kein Rally-Ziel; freier Thron vor Wächter-Tempel vor Tor (gleicher Abstand)
+      // 1) Reiz: freier Turm kein Rally-Ziel; freier Thron vor Wächter-Tempel vor Tor (gleicher Abstand; besetzter Turm im Gebiet des Tors)
       const frei = typ => islands.find(i => !islandOwnerOf(i.id) && typ(i));
       const gate = islands.find(i => i.type === 'gate' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && (islandsByLandmass[i.landmassId] || []).filter(t => t.type === 'tower' && !islandOwnerOf(t.id)).length >= 2);
-      const turm = frei(i => i.type === 'tower'), wt = frei(i => i.guardian), thron = islandById[megaTempleId];
+      const turm = frei(i => i.type === 'tower' && i.landmassId === gate.landmassId), wt = frei(i => i.guardian), thron = islandById[megaTempleId];
       const r = t => bundRallyReiz(t, null, { x: t.x + 1000, y: t.y });
       out.reiz = { turm: r(turm), thron: r(thron), waechter: r(wt), tor: r(gate), turmBesetzt: bundRallyReiz(turm, Z.id, { x: turm.x + 1000, y: turm.y }) };
       // 2) Rally-Plan auf das freie Tor: A und E haben je einen Turm in seiner Gegend, A allein zu schwach, zusammen stark genug

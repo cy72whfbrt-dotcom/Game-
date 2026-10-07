@@ -5,6 +5,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
   const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
+  await p.evaluate(() => store.set('openWaterNeulingBis', '0'));   // (Anfängerschutz aus: hier wird die eigene Basis angegriffen)
   const v = await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
     const bots = BOT_DEFS.filter(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).slice(0, 2);
     for (const x of bots) if (bundVon(x.id)) bundOp(x.id, { op: 'verlassen' });
@@ -16,6 +17,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const vorher = { A: { c: botCoins[A.id], ...AUF.rohVon(A.id) }, B: { c: botCoins[B.id], ...AUF.rohVon(B.id) } };
     window.__t = { A: A.id, B: B.id, vorher: JSON.parse(JSON.stringify(vorher)) };
     const r = { id: 'rt1', by: A.id, at: ca, t: ziel, n0: 3e6, j: [{ w: B.id, f: cb, n: 1e6, da: true }], aid: bundVon(A.id).id };
+    for (const br of bridges) { clearIslandOwner(br.gateId); botOwnedIslands[A.id].add(br.gateId); }   // (Weg frei: Märsche nur über eigene Pässe – alle Tore dem Anführer)
     bund.r.push(r); islandTroops[ca] = Math.max(0, (islandTroops[ca] || 0));
     bundRallyLos(r);
     const a = pendingAttacks.find(x => x.rally && x.rally.id === 'rt1'); if (!a) return { fehler: 'keine Rally' };

@@ -130,6 +130,7 @@ function autoCombineAll() {
         }
     }
     if (totalCombines > 0) {
+        questProgress('zusammen', totalCombines);
         saveGame();
         saveProgression();
         updateHud();
@@ -175,7 +176,7 @@ function levelUpItem(itemId) {
     if (upgradePoints < cost) return false;
     upgradePoints -= cost;
     item.level += 1;
-    saveProgression();
+    saveProgression(); questProgress('schmiede', 1);
     return true;
 }
 function equipInventoryItem(itemId) {

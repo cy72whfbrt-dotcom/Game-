@@ -107,7 +107,7 @@ function bundChatNeu() {                                          // (Handy) neu
 function bundRallyZeile(r, meins) {
     const now = Date.now(), ziel = islandById[r.t], mein = r.j.filter(j => j.w === 'player').reduce((s, j) => s + j.n, 0) + (r.by === 'player' ? r.n0 : 0);
     return '<div class="bd-zeile bd-rally' + (meins ? '' : ' is-feind') + '"><span class="bd-sic">' + icon(meins ? 'flag' : 'attack') + '</span><span class="bd-name"><b>' + (meins ? 'Rally auf ' : 'Gefahr: Rally auf ') + escapeHtml(bundZielName(ziel)) + '</b>' +
-        '<small>' + escapeHtml(bundName(r.by)) + (meins && r.held && heroById(r.held) ? ' mit ' + heroById(r.held).name + (r.held2 && heroById(r.held2) ? ' & ' + heroById(r.held2).name : '') : '') + ' · los in ' + uhrHtml(r.los, 'clock') + (meins ? ' · ' + fmtCompact(bundRallyTruppen(r)) + ' bereit' + (bundRallyUnterwegs(r) ? ' + ' + fmtCompact(bundRallyUnterwegs(r)) + ' unterwegs' : '') + ' · ' + (new Set([r.by].concat(r.j.map(j => j.w))).size) + ' dabei' + (mein ? ' · du: ' + fmtCompact(mein) : '') : '') + '</small></span>' +
+        '<small>' + escapeHtml(bundName(r.by)) + (meins && r.held && heroById(r.held) ? ' mit ' + heroImg(r.held, 'bd-hpic') + heroById(r.held).name + (r.held2 && heroById(r.held2) ? ' & ' + heroImg(r.held2, 'bd-hpic') + heroById(r.held2).name : '') : '') + ' · los in ' + uhrHtml(r.los, 'clock') + (meins ? ' · ' + fmtCompact(bundRallyTruppen(r)) + ' bereit' + (bundRallyUnterwegs(r) ? ' + ' + fmtCompact(bundRallyUnterwegs(r)) + ' unterwegs' : '') + ' · ' + (new Set([r.by].concat(r.j.map(j => j.w))).size) + ' dabei' + (mein ? ' · du: ' + fmtCompact(mein) : '') : '') + '</small></span>' +
         '<button type="button" class="btn btn--secondary btn--sm" data-bact="zeigen" data-z="' + r.at + '">Zeigen</button>' +
         (meins && now < r.los - 2000 ? '<button type="button" class="btn btn--primary btn--sm" data-bact="dazuWahl" data-rid="' + r.id + '">Mitmachen</button>' : '') +
         (meins && (r.by === 'player' || bundIch().anf === 'player') ? '<button type="button" class="btn btn--ghost btn--sm" data-bact="abbruch" data-rid="' + r.id + '">' + bundSicherKnopf('abbruch:' + r.id, 'Abbrechen', 'Sicher?') + '</button>' : '') +
@@ -202,6 +202,7 @@ function bundWahlRechnen() {
     info.textContent = fmtNum(Math.min(n, frei)) + ' Truppen · ' + (w.mode === 'rally' ? 'Angriff nach ' + (w.min || 3) + ' Min. · Marsch dann ca. ' + fmtClock(travelDurationSeconds(von, ziel)) : 'Ankunft in ca. ' + fmtClock(travelDurationSeconds(von, ziel)) +
         (w.mode === 'hilfe' ? (offen ? ' · höchstens so viele, wie in die Botschaft passen' : ' · Platz in der Botschaft: ' + fmtNum(frei) + (n > frei ? ' (mehr passt nicht)' : '')) + ' · bleiben deine, zurückholen in der Botschaft' : ''));
 }
+function bundHeldVor() { const [held, held2] = heroLetzte(); return { held, held2 }; }   // Rally/Mitmachen: die zuletzt geschickten Helden vorausgewählt (Merkliste 18)
 function bundWahlLos() {
     const w = bundWahl; if (!w || w.von === null || w.von === undefined) return;
     const von = islandById[w.von]; let n = Math.floor((islandTroops[w.von] || 0) * (w.f || 1)); if (!von || n < 1) { flashHint('Dort sind keine Truppen.', 2500); return; }
@@ -209,12 +210,13 @@ function bundWahlLos() {
     if (w.mode === 'rally') {
         const why = bundZielOk('player', w.t); if (why) { flashHint(why + '.', 3000); return; }
         const held = w.held && heroOwned('player', w.held) && !heroBusy('player', w.held) ? w.held : null, held2 = heroZweitOk('player', held, w.held2);
-        bundBefehl('rally', { basis: w.von, ziel: w.t, min: w.min || 3, n, held, held2 }, 'Rally gestartet – dein Bündnis kann jetzt mitmachen.');
+        bundBefehl('rally', { basis: w.von, ziel: w.t, min: w.min || 3, n, held, held2 }, 'Rally gestartet – dein Bündnis kann jetzt mitmachen.'); heroLetzteMerken(held, held2);
         islandTroops[w.von] = Math.max(0, (islandTroops[w.von] || 0) - n);
     } else {
         const nach = w.mode === 'dazu' ? (bund.r.find(r => r.id === w.rid) || {}).at : w.nach; if (nach === undefined) return;
         const vh = lastHop(von.landmassId, islandById[nach].landmassId, 'player'); if (!mautVorab(vh[0], vh[1], n)) return;
         const held = w.mode === 'dazu' && w.held && heroOwned('player', w.held) && !heroBusy('player', w.held) ? w.held : null, held2 = heroZweitOk('player', held, w.held2);   // (Rally-Mitglied: seine Helden für seine Truppen)
+        heroLetzteMerken(held, held2);
         bundBefehl(w.mode === 'dazu' ? 'rallyDazu' : 'hilfe', w.mode === 'dazu' ? { rid: w.rid, von: w.von, n, held, held2 } : { von: w.von, nach, n }, w.mode === 'dazu' ? 'Truppen unterwegs zur Rally.' :
             verstUnbekannt(islandOwnerOf(nach)) ? 'Verstärkung geschickt – passt nicht alles in die Botschaft, bleibt der Rest daheim.' : 'Verstärkung unterwegs – sie bleibt deine.');   // (fremde Botschaft: nur der Weltrechner kennt den Platz)
         islandTroops[w.von] = Math.max(0, (islandTroops[w.von] || 0) - n);
@@ -269,7 +271,7 @@ if (bundPopup) {
             bundBefehl('chat', { k, z: null }); sfx('send'); }
         else if (act === 'zeigen') { const isl = islandById[+b.dataset.z]; if (isl) { bundSchliessen(); flyTo(isl.x, isl.y); setTimeout(() => openIslandPopup(isl), 380); } }
         else if (act === 'hilfeWahl') { bundWahl = { mode: 'hilfe', nach: +b.dataset.z, f: .5 }; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; }
-        else if (act === 'dazuWahl') { bundWahl = { mode: 'dazu', rid: b.dataset.rid, f: .5 }; bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; }
+        else if (act === 'dazuWahl') { bundWahl = Object.assign({ mode: 'dazu', rid: b.dataset.rid, f: .5 }, bundHeldVor()); bundRender(true); bundPopup.querySelector('.pbody').scrollTop = 0; }
         else if (act === 'zurKarte') { closeAllPopups(); flashHint('Tippe ein feindliches Ziel an → „Rally“.', 3500); }
         else if (act === 'abbruch') { if (sicher('abbruch:' + b.dataset.rid)) bundBefehl('rallyAbbruch', { rid: b.dataset.rid }, 'Rally wird abgebrochen.'); }
         else if (act === 'wahlZu') { bundWahl = null; bundRender(true); }
@@ -314,7 +316,7 @@ document.getElementById('popupBund') && document.getElementById('popupBund').add
     if (v) { vh.disabled = true; bundBefehl('verstZurueck', { vid: v.id }, v.w === 'player' ? 'Deine Truppen kommen zurück.' : 'Die Verstärkung marschiert heim.'); return; }
     const b = e.target.closest('[data-bsig]'); if (!b || popupIslandId === null) return;
     const id = popupIslandId, art = b.dataset.bsig;
-    if (art === 'rallyWahl') { const why = bundZielOk('player', id); if (why) { flashHint(why + '.', 3000); return; } closeIslandPopup(); bundWahl = { mode: 'rally', t: id, min: 3, f: 1 }; bundOeffnen('rally'); return; }
+    if (art === 'rallyWahl') { const why = bundZielOk('player', id); if (why) { flashHint(why + '.', 3000); return; } closeIslandPopup(); bundWahl = Object.assign({ mode: 'rally', t: id, min: 3, f: 1 }, bundHeldVor()); bundOeffnen('rally'); return; }
     if (art === 'hilfeWahl') { closeIslandPopup(); bundWahl = { mode: 'hilfe', nach: id, f: .5 }; bundOeffnen('sig'); return; }
     if (art === 'einladen') { const ow = islandOwnerOf(id); if (!bundKannEinladen(ow) || bundEingeladen(ow)) return; b.disabled = true; bundBefehl('einladen', { w: ow }, 'Einladung an ' + bundName(ow) + ' geschickt.'); return; }
     if (art === 'hilfe' && !verstMoeglich('player')) { flashHint('Hilfe braucht eine Botschaft (ab Burg-Stufe 5).', 3500); return; }   // (ohne Botschaft kann keiner Truppen schicken)

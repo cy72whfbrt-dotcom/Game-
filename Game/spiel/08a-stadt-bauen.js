@@ -184,8 +184,8 @@ function cityShow() {
 }
 // Eintauchen wie bei RoK: die Kamera fliegt bis kurz vor die Hauptstadt (CITY_NAH × größter Zoom, die Basis noch klein),
 // die Karte taucht noch ein Stück weiter (nur ein CSS-Zoom des Karten-Bilds, höchstens CITY_TAUCH – sonst wird das flache
-// Basis-Symbol riesig und unscharf) und wird weich; schon bei ~40 % blendet die Stadt darüber und kommt von unten näher,
-// dünne Wolken am Rand decken die Kanten. Beim Verlassen umgekehrt: die Stadt fällt weg und blendet aus, die Karte kommt
+// Basis-Symbol riesig und unscharf) und wird weich; schon bei ~40 % blendet die Stadt darüber und setzt sich aus der Nähe,
+// dünne Wolken am Rand decken die Kanten. Beim Verlassen umgekehrt: die Stadt rückt näher und blendet aus, die Karte kommt
 // aus der Nähe zurück auf ihre Höhe.
 const CITY_TAUCH = 1.8, CITY_NAH = .4, CITY_TAUCH_MS = 700, CITY_BLENDE_AB = 280, CITY_BLENDE_MS = 320;
 function karteTauchen(von, bis, ms, isl) {
@@ -212,8 +212,8 @@ function openCity(dann) {                                                   // d
     setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, CITY_TAUCH_MS, home);   // 2) … dives on a little, getting soft …
         let offen = 2; const fertig = () => { if (--offen === 0) cityBusy = false; };   // frei erst, wenn die Wolken weg sind UND die Karte nicht mehr eintaucht
         cloudsRun(240, 0, .35, () => cloudsRun(300, .35, 0, fertig));      // (nur Wolken am Rand, nie ganz weiß – ab dem Tipp nach 1,1 s ganz weg)
-        setTimeout(() => { cityShow(); stadtBlende(0, 1); if (dann) dann();    // 3) … and the town fades in, coming up from below
-            if (cityCam) cityCam.anim = { from: .62, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
+        setTimeout(() => { cityShow(); stadtBlende(0, 1); if (dann) dann();    // 3) … and the town fades in, settling from close by
+            if (cityCam) cityCam.anim = { from: 1.18, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
         setTimeout(() => { if (tauch) tauch.cancel(); fertig(); }, CITY_TAUCH_MS); }, 560);
 }
 let cityPendingAnim = false;
@@ -224,11 +224,11 @@ function closeCity() {
     const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
     cityMapReturn = null;
     if (home) flyTo(home.x, home.y, { zoom: maxZoom * CITY_NAH, instant: true });   // unter der Stadt liegt die Karte schon über der Hauptstadt
-    if (cityCam) cityCam.anim = { from: 1, to: .62, t0: performance.now(), dur: 650 };   // the town falls away …
+    if (cityCam) cityCam.anim = { from: 1, to: 1.18, t0: performance.now(), dur: 650 };   // the town draws close as it fades …
     const auf = karteTauchen(CITY_TAUCH, 1, 650, home);                      // … the map comes back up from close by …
     cloudsRun(300, 0, .35, () => cloudsRun(500, .35, 0));
     let offen = 2; const fertig = () => { if (--offen === 0) cityBusy = false; };   // frei erst, wenn die Stadt weg ist UND die Karte zurückfliegt (unter Last kann das Ausblenden länger dauern)
-    setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); cityLagenFrei(); requestRender(); fertig(); }), 120);
+    setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); requestRender(); fertig(); }), 120);
     setTimeout(() => { if (auf) auf.cancel();
         flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });                // … and opens up again where it was
         fertig(); }, 650);

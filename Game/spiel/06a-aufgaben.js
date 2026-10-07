@@ -57,11 +57,7 @@ function claimDaily() {
     saveGame(); saveProgression(); updateHud(); updateGoalsBadge(); anleitungAbgeholt();
     return { day, gems: r.gems, items };
 }
-function itemRewardRow(item) {
-    const rd = RARITY_DEFS[item.rarity], def = EQUIPMENT_DEFS[item.slot];
-    return '<li style="border-color:' + rd.color + '66">' + '<svg class="icon" style="color:' + rd.color + '"><use href="#i-' + def.icon + '"/></svg>' +
-        '<span>' + def.name + '</span><b style="color:' + rd.color + '">' + rd.label + '</b></li>';
-}
+function dailyBeute(r) { return [{ a: 'kiste', k: r.epic ? 'royal' : 'aus', n: r.crates, r: r.epic ? 3 : 0, min: !!r.epic }, { a: 'gems', n: r.gems }]; }
 const dailyModal = document.getElementById('dailyModal');
 function showDailyModal() {
     if (!dailyClaimable()) return;
@@ -70,10 +66,7 @@ function showDailyModal() {
     document.getElementById('dailyModalSub').textContent = day > 1 ? day + ' Tage in Folge – weiter so!' : 'Jeden Tag vorbeischauen lohnt sich.';
     document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
     document.getElementById('dailyModalLabel').textContent = 'Heute';
-    document.getElementById('dailyModalRewards').innerHTML =
-        '<li>' + icon('shop', 'ico-coin') + '<span>' + (r.epic ? 'Epische Kiste (mind. Episch)' : r.crates === 1 ? 'Ausrüstungskiste' : 'Ausrüstungskisten') + '</span><b>×' + r.crates + '</b></li>' +
-        (r.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Edelsteine</span><b>+' + r.gems + '</b></li>' : '');
-    [...document.getElementById('dailyModalRewards').children].forEach((li, i) => { li.style.animationDelay = (150 + i * 110) + 'ms'; });
+    beuteLis(dailyBeute(r), document.getElementById('dailyModalRewards'));
     const btn = document.getElementById('dailyModalBtn');
     btn.dataset.state = 'claim'; btn.querySelector('span').textContent = 'Abholen';
     dailyModal.hidden = false;
@@ -91,14 +84,13 @@ document.getElementById('dailyModalBtn').addEventListener('click', () => {
     if (!res) { closeDailyModal(); return; }
     document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
     document.getElementById('dailyModalLabel').textContent = 'Erhalten';
-    const list = document.getElementById('dailyModalRewards');
-    list.innerHTML = res.items.map(itemRewardRow).join('') + (res.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Edelsteine</span><b>+' + res.gems + '</b></li>' : '');
-    [...list.children].forEach((li, i) => { li.style.animationDelay = (80 + i * 120) + 'ms'; });
+    beuteLis([...res.items.map(itemBeute), { a: 'gems', n: res.gems }], document.getElementById('dailyModalRewards'));
     btn.dataset.state = 'done'; btn.querySelector('span').textContent = 'Weiter';
 });
 dailyModal.addEventListener('click', e => { if (e.target === dailyModal) closeDailyModal(); });
 
-// ---- daily quests: 3 random tasks per day, gems each, bonus crate for all 3 ----
+// ---- daily quests: 6 random tasks per day (7.10.: vorher 3) – 2 leicht, 2 mittel, 2 schwer; je Edelsteine + Münzen, Bonus bei 3 (Truppen) und bei allen 6 (Kiste) ----
+// steps: Ziel je Stufe (0 = auf dieser Stufe nicht), geht: nur würfeln, was heute geht
 var QUEST_DEFS = {
     capture: { icon: 'flag',        text: n => 'Erobere ' + n + ' Basen',             steps: [3, 5, 8] },
     attack:  { icon: 'attack',      text: n => 'Starte ' + n + ' Angriffe',            steps: [5, 10, 15] },
@@ -108,8 +100,29 @@ var QUEST_DEFS = {
     send:    { icon: 'send',        text: n => 'Schicke ' + n + '-mal Truppen',        steps: [2, 4, 6] },
     crate:   { icon: 'shop',        text: n => 'Öffne ' + n + (n === 1 ? ' Kiste' : ' Kisten'), steps: [1, 2, 3] },   // (jede Kiste: Shop, Helden-Kiste, Abholfach, Pass, Thron-Shop, Belohnungen)
     bau:     { icon: 'castle',      text: n => n === 1 ? 'Starte einen Bau in der Stadt' : 'Starte ' + n + ' Bauten in der Stadt', steps: [1, 1, 2], geht: () => questStadtGeht('bau') },
-    forschung: { icon: 'flask',     text: () => 'Starte eine Forschung im Labor', steps: [1, 1, 1], geht: () => questStadtGeht('forschung') }
+    forschung: { icon: 'flask',     text: () => 'Starte eine Forschung im Labor', steps: [1, 1, 1], geht: () => questStadtGeht('forschung') },
+    barbLager: { icon: 'attack',    text: n => n === 1 ? 'Besiege ein Barbaren-Lager' : 'Besiege ' + n + ' Barbaren-Lager', steps: [2, 5, 10] },
+    tagesboss: { icon: 'star',      text: n => n === 1 ? 'Greife den Tagesboss an' : 'Greife den Tagesboss ' + n + '-mal an', steps: [1, 3, 5] },
+    sammeln: { icon: 'wood',        text: n => n === 1 ? 'Schicke Sammler auf ein Feld' : 'Schicke ' + n + '-mal Sammler auf Felder', steps: [1, 3, 5] },
+    bundHilfe: { icon: 'bund',      text: n => n === 1 ? 'Hilf einmal im Bündnis (Bau-Hilfe)' : 'Hilf ' + n + '-mal im Bündnis (Bau-Hilfe)', steps: [1, 3, 5], geht: () => questBundGeht() },
+    verstaerkung: { icon: 'send',   text: n => n === 1 ? 'Schicke Verstärkung an ein Bündnis-Mitglied' : 'Schicke ' + n + '-mal Verstärkung an Bündnis-Mitglieder', steps: [1, 1, 2], geht: () => questBundGeht() },
+    rally: { icon: 'multiattack',   text: () => 'Mach bei einer Rally mit', steps: [1, 1, 1], geht: () => questBundGeht() },
+    schmiede: { icon: 'weapon',     text: n => n === 1 ? 'Verbessere einen Gegenstand' : 'Verbessere ' + n + '-mal Gegenstände', steps: [1, 2, 3] },   // (Stufe oder Stern)
+    zusammen: { icon: 'combine',    text: n => n === 1 ? 'Lege 3 Gegenstände zusammen' : 'Lege ' + n + '-mal 3 Gegenstände zusammen', steps: [1, 1, 2] },
+    heilen: { icon: 'plus',         text: () => 'Heile Verwundete im Krankenhaus', steps: [1, 1, 1], geht: () => questStadtStufe('hospital') > 0 },
+    markt: { icon: 'market',        text: n => n === 1 ? 'Tausche auf dem Markt' : 'Tausche ' + n + '-mal auf dem Markt', steps: [1, 1, 2], geht: () => questStadtStufe('market') > 0 },
+    tempel: { icon: 'temple',       text: () => 'Erobere einen Tempel', steps: [0, 1, 1] },
+    thron: { icon: 'crown',         text: n => 'Halte den Thron ' + n + ' Minuten', steps: [0, 5, 15] },
+    invArmee: { icon: 'defense',    text: n => n === 1 ? 'Greife eine Barbaren-Armee an (Invasion)' : 'Greife ' + n + ' Barbaren-Armeen an (Invasion)', steps: [1, 2, 3], geht: () => questEvHeute('inv') },
+    drache: { icon: 'event',        text: n => n === 1 ? 'Greife den Drachen an' : 'Greife den Drachen ' + n + '-mal an', steps: [1, 3, 5], geht: () => questEvHeute('dr') }
 };
+// Zähler (statBump, auch vom Weltrechner) → Aufgabe; eine Zahl: so viel zählt jedes Mal (Heilen: einmal, egal wie viele)
+var QUEST_STAT = { lager: 'barbLager', qb: 'tagesboss', qd: 'drache', qi: 'invArmee', qHilfe: 'bundHilfe', qVerst: 'verstaerkung', qRally: 'rally', temples: 'tempel', throneMin: 'thron', healed: ['heilen', 1] };
+function questStat(k, n) { const q = QUEST_STAT[k]; if (q) questProgress(Array.isArray(q) ? q[0] : q, Array.isArray(q) ? q[1] : n || 1); }
+const questStadtStufe = id => { try { return loadCity().levels[id] || 0; } catch (e) { return 0; } };
+function questBundGeht() { try { const a = bundIch(); return !!a && a.mit.length > 1; } catch (e) { return false; } }   // (nur mit Bündnis und mindestens einem Mitglied)
+function questEvHeute(k) { try { const p = evPlanVon(k), nacht = new Date().setHours(24, 0, 0, 0); return !!p && p.start < nacht && p.end > Date.now(); } catch (e) { return false; } }   // Invasion/Drache: nur an ihrem Tag
+const questBereit = () => !!AUF && typeof bundIch === 'function';   // (beim Skript-Start sind aufbau.js und buendnis.js noch nicht da)
 // Bau/Forschung nur als Aufgabe, wenn es heute noch geht (Bauarbeiter bzw. Labor vor Mitternacht frei, etwas zu bauen/erforschen da)
 function questStadtGeht(art) {
     try {
@@ -121,33 +134,40 @@ function questStadtGeht(art) {
             return !cityBuildOf(c, id) && (id === 'keep' ? L < AUF.BURG_MAX : L < AUF.stadtCap('player', id) && !(!L && AUF.BAU_AB_BURG[id] > B)); });
     } catch (e) { return true; }
 }
-var QUEST_GEMS = [5, 10, 15];
-var QUEST_BONUS = { crates: 1, gems: 10 };
+var QUEST_TIER = [0, 0, 1, 1, 2, 2];                  // 6 am Tag: 2 leicht, 2 mittel, 2 schwer
+var QUEST_GEMS = [3, 5, 8], QUEST_COIN_H = [1, 2, 3];  // je Stufe: Edelsteine + so viele Stunden Münzen
+var QUEST_BONUS3 = { n: 3, tr: 2 };                    // Bonus bei 3 erledigt: 2 Stunden Truppen
+var QUEST_BONUS = { crates: 1, gems: 10 };             // Bonus bei allen 6 (+ Helden-Splitter)
+const questGemsTag = () => QUEST_TIER.reduce((a, st) => a + QUEST_GEMS[st], 0) + QUEST_BONUS.gems;   // Edelsteine am Tag (Hauptbuch: 42)
 var questState = null;
+const questGeht = k => { const d = QUEST_DEFS[k]; try { return !d.geht || !!d.geht(); } catch (e) { return false; } };
+function questNeu(type, st) { return { type, st, target: QUEST_DEFS[type].steps[st], progress: 0, gems: QUEST_GEMS[st], h: QUEST_COIN_H[st], claimed: false }; }
+function questAuffuellen(q) {                          // bis 6: je Platz eine Art, die heute geht und auf dieser Stufe vorkommt (Zufall, keine doppelt)
+    const frei = Object.keys(QUEST_DEFS).filter(k => questGeht(k) && !q.list.some(x => x.type === k)).sort(() => Math.random() - 0.5);
+    for (let i = q.list.length; i < QUEST_TIER.length; i++) { const st = QUEST_TIER[i], j = frei.findIndex(k => QUEST_DEFS[k].steps[st] > 0); if (j < 0) break; q.list.push(questNeu(frei.splice(j, 1)[0], st)); }
+}
 function loadQuests() {
     const today = todayKey();
     if (!questState) { try { questState = JSON.parse(store.get('openWaterQuests')) || null; } catch (e) { questState = null; } }
     if (!questState || questState.date !== today || !Array.isArray(questState.list)) {
-        const types = Object.keys(QUEST_DEFS).filter(t => !QUEST_DEFS[t].geht || QUEST_DEFS[t].geht()).sort(() => Math.random() - 0.5).slice(0, 3);
-        questState = { date: today, bonusClaimed: false, geprueft: AUF ? 1 : 0, list: types.map((type, i) => {
-            const tier = i;                                  // one easy, one medium, one hard
-            return { type, target: QUEST_DEFS[type].steps[tier], progress: 0, gems: QUEST_GEMS[tier], claimed: false };
-        }) };
-        saveQuests();
+        questState = { date: today, bonusClaimed: false, bonus3: false, geprueft: questBereit() ? 1 : 0, frueh: questBereit() ? 0 : 1, list: [] };
+        questAuffuellen(questState); saveQuests();
     }
-    // Liste beim Skript-Start gewürfelt (aufbau.js noch nicht da, geht() sagte ja): einmal nachprüfen, sonst Tagesbonus unmöglich
-    if (AUF && !questState.geprueft) {
+    // Liste beim Skript-Start gewürfelt (aufbau.js/buendnis.js noch nicht da): einmal nachprüfen – ganz neu, solange nichts getan ist
+    // (sonst kämen Bündnis-Aufgaben nie), sonst nur, was heute nicht geht, tauschen (Stufe bleibt) – sonst ist der Tagesbonus unmöglich
+    if (questBereit() && !questState.geprueft) {
         questState.geprueft = 1;
+        if (questState.frueh && questState.list.every(t => !t.claimed && !t.progress)) { questState.list = []; questAuffuellen(questState); }
         questState.list.forEach((t, i) => {
-            const def = QUEST_DEFS[t.type];
-            if (!def || t.claimed || t.progress > 0 || !def.geht || def.geht()) return;   // (Fortschritt bleibt)
-            const frei = Object.keys(QUEST_DEFS).filter(k => !questState.list.some(x => x.type === k) && (!QUEST_DEFS[k].geht || QUEST_DEFS[k].geht()));
+            if (t.claimed || t.progress > 0 || (QUEST_DEFS[t.type] && questGeht(t.type))) return;   // (Fortschritt bleibt)
+            const st = t.st !== undefined ? t.st : i, frei = Object.keys(QUEST_DEFS).filter(k => !questState.list.some(x => x.type === k) && questGeht(k) && QUEST_DEFS[k].steps[st] > 0);
             if (!frei.length) return;
             const neu = frei[Math.floor(Math.random() * frei.length)];
-            t.type = neu; t.target = QUEST_DEFS[neu].steps[i];             // (Index = Stufe: leicht, mittel, schwer)
+            t.type = neu; t.target = QUEST_DEFS[neu].steps[st];
         });
         saveQuests();
     }
+    if (questState.list.length < QUEST_TIER.length) { questAuffuellen(questState); saveQuests(); }   // (eine Liste von vorher mit 3 Aufgaben: bis 6 auffüllen)
     return questState;
 }
 function saveQuests() { store.set('openWaterQuests', JSON.stringify(questState)); }
@@ -169,9 +189,19 @@ function claimQuest(i) {
     const q = loadQuests(), t = q.list[i];
     if (!t || t.claimed || t.progress < t.target) return;
     t.claimed = true; passBump('quest'); anleitungAbgeholt();
-    gems += t.gems;
+    const c = t.h > 0 ? passMuenzen(hourProduction('player'), t.h) : 0; gems += t.gems; coins += c;   // (Münzen: so viel, wie dein Reich in t.h Stunden macht – der Weltrechner kennt den Topf)
     saveQuests(); saveGame(); updateHud();
-    flashHint('+' + t.gems + ' Edelsteine', 1800);
+    beuteFenster('Aufgabe erledigt', [{ a: 'gems', n: t.gems }, { a: 'coins', n: c }], { unter: QUEST_DEFS[t.type].text(t.target) });
+    renderQuestPanel(); updateGoalsBadge();
+}
+const questFertigN = q => q.list.filter(t => t.claimed).length;
+const questBonus3Bereit = q => !q.bonus3 && questFertigN(q) >= QUEST_BONUS3.n;
+function claimQuestBonus3() {                          // 3 Aufgaben abgeholt: Truppen in die Hauptstadt (der Weltrechner prüft: einmal am Tag)
+    const q = loadQuests(), b = rewardBaseId(); if (!questBonus3Bereit(q)) return;
+    if (b === null) { flashHint('Truppen brauchen eine eigene Basis – erst dann abholbar.', 3000); return; }
+    const n = passTruppen(hourProduction('player'), QUEST_BONUS3.tr); q.bonus3 = true; eigeneTruppenDazu(b, n, 'aufgabe'); anleitungAbgeholt();
+    saveQuests(); saveGame(); updateHud(); sfx('coin');
+    beuteFenster('Bonus: 3 erledigt', [{ a: 'tr', n }], { unter: fmtCompact(n) + ' Truppen in ' + islandTitle(islandById[b]) });
     renderQuestPanel(); updateGoalsBadge();
 }
 // ---- the week chain: every day with ALL tasks done is a link; 7 in a row = the big chest ----
@@ -190,7 +220,7 @@ function claimChain() {
     gems += CHAIN_REWARD.gems; questChain.streak = Math.max(0, questChain.streak - 7); store.set('openWaterQuestChain', JSON.stringify(questChain));   // (ein 8. Tag zählt schon für die nächste Kette)
     const shH = heroGrantShards('player', HERO_SHARDS_CHAIN); if (!shH) gems += HERO_SHARDS_CHAIN * 20;   // (alle Helden voll: Gems statt Splitter, wie im Abholfach)
     saveGame(); saveProgression(); updateHud(); sfx('crate'); anleitungAbgeholt();
-    flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Edelsteine' + (shH ? ' + ' + HERO_SHARDS_CHAIN + ' Splitter ' + shH.name : ''), 5000);
+    beuteFenster('Große Kiste', [...items.map(itemBeute), { a: 'gems', n: CHAIN_REWARD.gems + (shH ? 0 : HERO_SHARDS_CHAIN * 20) }, shH && { a: 'sh', n: HERO_SHARDS_CHAIN, held: shH.id }], { kiste: 'royal', unter: 'Wochenkette: 7 Tage geschafft' });
     renderQuestPanel(); updateGoalsBadge();
 }
 function claimQuestBonus() {
@@ -201,13 +231,12 @@ function claimQuestBonus() {
     for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
     gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY); if (!shH) gems += HERO_SHARDS_DAY * 20;   // (alle Helden voll)
     saveQuests(); saveGame(); saveProgression(); updateHud();
-    const it = items[0];
-    flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Edelsteine' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
+    beuteFenster('Bonus: alle ' + q.list.length + ' erledigt', [...items.map(itemBeute), { a: 'gems', n: QUEST_BONUS.gems + (shH ? 0 : HERO_SHARDS_DAY * 20) }, shH && { a: 'sh', n: HERO_SHARDS_DAY, held: shH.id }], { kiste: 'aus' });
     renderQuestPanel(); updateGoalsBadge();
 }
 function dailyGoalCount() {                                      // Events → Täglich: tasks, the bonus and the week chain
     const q = loadQuests();
-    return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
+    return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (questBonus3Bereit(q) ? 1 : 0) + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
 }
 // ---- Abholfach: prizes and spoils are sent here and collected by hand (Wochen-Event, Invasion, Drache, Tagesboss, Kriegsherr, Kopfgeld, Kampfbeute) ----
 var inboxState = null;
@@ -217,7 +246,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' }, lager: { ic: 'attack', t: 'Barbaren-Lager' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler)
@@ -225,37 +254,42 @@ function inboxAdd(o) {                              // o: { src, title?, gems, c
     if (pile) { pile.coins = (pile.coins || 0) + o.coins; pile.gems = (pile.gems || 0) + o.gems; pile.sh = (pile.sh || 0) + (o.sh || 0); pile.n = (pile.n || 1) + 1; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));   // (shards pile up too)
     inboxSave(); updateGoalsBadge(); if (isPanelOpen(goalsPopup) && goalsTab === 'reward') renderInbox(); return o.coins || o.gems;
 }
-function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Edelsteine' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : '', x.tr ? '+' + fmtCompact(x.tr) + ' Truppen' : '', x.kiste >= 0 ? 'Kiste (' + RARITY_DEFS[x.kiste].label + ')' : '', x.schild ? 'Friedensschild ' + x.schild + ' h' : ''].filter(Boolean).join(' · '); }
-function inboxClaim(id) {                           // into your coffers - returns what you got
-    const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
-    if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Edelsteine'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
-    if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
-    if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); questProgress('crate', 1); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
-    if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); }
-    if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); } }
-    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox
+function inboxBeute(x) {                            // was im Fach liegt, als Kacheln (05e)
+    return [{ a: 'gems', n: x.gems }, { a: 'coins', n: x.coins }, x.crate >= 0 && { a: 'kiste', k: kisteVonR(x.crate), r: x.crate, min: x.crate > 0 }, { a: 'sh', n: x.sh }, { a: 'tr', n: x.tr },
+        x.kiste >= 0 && { a: 'kiste', k: 'aus', r: x.kiste }, x.schild > 0 && { a: 'schild', n: x.schild }];
+}
+function inboxClaim(id, aus) {                      // into your coffers - returns what you got (aus: Belohnungs-Kacheln dazu)
+    aus = aus || []; const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
+    if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Edelsteine'); aus.push({ a: 'gems', n: x.gems }); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); aus.push({ a: 'coins', n: x.coins }); }
+    if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) { got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); aus.push(itemBeute(it)); } }
+    if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); questProgress('crate', 1); if (it && it.rarity !== undefined) { got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); aus.push(itemBeute(it)); } }
+    if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); aus.push({ a: 'schild', n: 2 }); }
+    if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) { got.push(x.sh + ' Splitter ' + h.name); aus.push({ a: 'sh', n: x.sh, held: h.id }); } else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); aus.push({ a: 'gems', n: x.sh * 20 }); } }
+    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); aus.push({ a: 'tr', n: x.tr }); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox
     inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
 }
 function renderInbox() {
     const L = inboxList(), now = Date.now(), el = document.getElementById('inboxList'); if (!el) return;
     setText(document.getElementById('inboxAside'), L.length ? L.length + ' bereit' : '');
     liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
-        return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
+        return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b>' + beuteRaster(inboxBeute(x), 'bk-mini') + '<small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
             '<button class="btn btn--primary btn--sm" type="button" data-inbox="' + x.id + '"><span>Abholen</span></button></div>'; }).join('') + (L.length > 1 ? '<button class="btn btn--secondary btn--sm inbox-all" type="button" data-inbox-all><span>Alle abholen · ' + L.length + '</span></button>' : '')
         : '<div class="inbox-empty">' + (dailyClaimable() ? 'Deine tägliche Belohnung wartet unten.' : 'Gerade nichts zum Abholen.') + '</div>');   // (eine Zeile – Preise und Beute landen hier von selbst)
 }
 goalsPopup.addEventListener('click', e => {
     const one = e.target.closest('[data-inbox]'), all = e.target.closest('[data-inbox-all]'); if (!one && !all) return;
-    const txt = all ? inboxList().map(x => x.id).map(inboxClaim).filter(Boolean).join(', ') : inboxClaim(one.dataset.inbox);
-    if (txt) { sfx('coin'); flashHint('Abgeholt: ' + txt + '.', 4500); } renderInbox(); updateGoalsBadge();
+    const aus = [], kiste = (all ? inboxList() : inboxList().filter(x => x.id === one.dataset.inbox)).find(x => x.crate >= 0 || x.kiste >= 0);
+    const txt = all ? inboxList().map(x => x.id).map(id => inboxClaim(id, aus)).filter(Boolean).join(', ') : inboxClaim(one.dataset.inbox, aus);
+    if (txt) { sfx('coin'); if (aus.length) beuteFenster('Abgeholt', aus, { kiste: kiste ? (kiste.crate >= 0 ? kisteVonR(kiste.crate) : 'aus') : null }); else flashHint('Abgeholt: ' + txt + '.', 4500); } renderInbox(); updateGoalsBadge();
 });
 function updateGoalsBadge(nAch) {
     if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
     const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxList().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
     set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
-    const jetzt = evJetzt(); for (const k of ['inv', 'drache']) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), jetzt === k);   // „!“ am Ereignis, das gerade läuft
+    const jetzt = evJetzt(), hol = ['tour', 'inv', 'drache', 'boss', 'lager'].filter(k => jetzt === k || evHolBereit(k));
+    for (const k of EV_TABS) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), hol.includes(k));   // „!“ am Ereignis, das gerade läuft oder eine Belohnung zum Abholen hat
     const g = k => goalsPopup.querySelector('[data-ggbadge="' + k + '"]');   // die 4 Reiter: Summe ihrer Unterreiter
-    set(g('aufgaben'), nd + nAch); set(g('abholen'), nr); set(g('pass'), np); setShown(g('ereignisse'), jetzt === 'inv' || jetzt === 'drache');
+    set(g('aufgaben'), nd + nAch); set(g('abholen'), nr); set(g('pass'), np); setShown(g('ereignisse'), hol.length > 0);
 }
 function renderQuestPanel() {
     const q = loadQuests();
@@ -273,24 +307,29 @@ function renderQuestPanel() {
         '<span class="chain-chest' + (full ? ' on' : '') + '">' + icon('shop') + '</span></div>' +
         '<div class="daily-row"><div class="daily-txt"><b>' + (full ? 'Große Kiste bereit!' : k + ' von 7 Tagen') + '</b><small>' + (full ? CHAIN_REWARD.crates + ' Kisten (mind. episch) + ' + CHAIN_REWARD.gems + ' Edelsteine' : 'Schaffe jeden Tag alle Aufgaben – ein verpasster Tag bricht die Kette.') + '</small></div>' +
         (full ? '<button class="btn btn--primary btn--sm" type="button" data-chain>' + icon('shop') + '<span>Abholen</span></button>' : '') + '</div>'; }
+    const hp = hourProduction('player');
     let html = q.list.map((t, i) => {
         const def = QUEST_DEFS[t.type], done = t.progress >= t.target;
         return '<div class="quest' + (t.claimed ? ' is-claimed' : done ? ' is-done' : '') + '">' + icon(def.icon) +
             '<div class="quest-main"><b>' + def.text(t.target) + '</b><div class="quest-bar"><i style="--p:' + Math.round(t.progress / t.target * 100) + '%"></i><span>' + t.progress + ' / ' + t.target + '</span></div></div>' +
-            '<div class="quest-side"><span class="quest-rew">' + icon('gem') + t.gems + '</span>' +
+            '<div class="quest-side"><span class="quest-rew">' + beuteKachel({ a: 'gems', n: t.gems }) + (t.h > 0 ? beuteKachel({ a: 'coins', n: passMuenzen(hp, t.h) }) : '') + '</span>' +
             (t.claimed ? '<span class="quest-ok">Abgeholt</span>' : done ? '<button class="btn btn--primary btn--sm" type="button" data-quest="' + i + '"><span>Abholen</span></button>' : '') +
             '</div></div>';
     }).join('');
-    const allClaimed = q.list.every(t => t.claimed), doneCount = q.list.filter(t => t.claimed).length;
+    const allClaimed = q.list.every(t => t.claimed), doneCount = questFertigN(q), alle = q.list.length, n3 = QUEST_BONUS3.n, b3 = questBonus3Bereit(q);
+    html += '<div class="quest' + (q.bonus3 ? ' is-claimed' : b3 ? ' is-done' : '') + '">' + icon('troops') +
+        '<div class="quest-main"><b>Bonus: ' + n3 + ' erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(Math.min(n3, doneCount) / n3 * 100) + '%"></i><span>' + Math.min(n3, doneCount) + ' / ' + n3 + '</span></div></div>' +
+        '<div class="quest-side"><span class="quest-rew is-gold">' + beuteKachel({ a: 'tr', n: passTruppen(hp, QUEST_BONUS3.tr) }) + '</span>' +
+        (q.bonus3 ? '<span class="quest-ok">Abgeholt</span>' : b3 ? '<button class="btn btn--primary btn--sm" type="button" data-bonus3><span>Abholen</span></button>' : '') + '</div></div>';
     html += '<div class="quest' + (q.bonusClaimed ? ' is-claimed' : allClaimed ? ' is-done' : '') + '">' + icon('star') +
-        '<div class="quest-main"><b>Bonus: alle erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(doneCount / 3 * 100) + '%"></i><span>' + doneCount + ' / 3</span></div></div>' +
-        '<div class="quest-side"><span class="quest-rew is-gold">' + icon('shop') + 'Kiste + ' + QUEST_BONUS.gems + icon('gem') + '</span>' +
+        '<div class="quest-main"><b>Bonus: alle ' + alle + ' erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(doneCount / alle * 100) + '%"></i><span>' + doneCount + ' / ' + alle + '</span></div></div>' +
+        '<div class="quest-side"><span class="quest-rew is-gold">' + beuteKachel({ a: 'kiste', k: 'aus', n: QUEST_BONUS.crates }) + beuteKachel({ a: 'gems', n: QUEST_BONUS.gems }) + beuteKachel({ a: 'sh', n: HERO_SHARDS_DAY }) + '</span>' +
         (q.bonusClaimed ? '<span class="quest-ok">Abgeholt</span>' : allClaimed ? '<button class="btn btn--primary btn--sm" type="button" data-bonus><span>Abholen</span></button>' : '') + '</div></div>';
     document.getElementById('questList').innerHTML = html;
 }
 // ---- Events: one sheet, 4 Reiter - Aufgaben: Täglich (tasks + week chain), Erfolge · Abholen: Belohnung (Abholfach + 7-day login chest) ·
-// Pass · Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager (renderEvents); Unterreiter als Chips ----
-const EV_TABS = ['tour', 'inv', 'drache', 'boss'];
+// Pass · Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss, Barbaren-Lager (renderEvents); Unterreiter als Chips ----
+const EV_TABS = ['tour', 'inv', 'drache', 'boss', 'lager'];
 const GOALS_GRP = { aufgaben: ['daily', 'ach'], abholen: ['reward'], pass: ['pass'], ereignisse: EV_TABS }, goalsGrpLetzt = {};
 const goalsGrpVon = t => Object.keys(GOALS_GRP).find(k => GOALS_GRP[k].includes(t));
 function showGoalsTab(t) {
@@ -305,7 +344,7 @@ function showGoalsTab(t) {
     goalsPopup.querySelector('.pbody').scrollTop = 0; if (t === 'pass') requestAnimationFrame(passScroll); updateGoalsBadge();
 }
 function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.claimed).length, na = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
-    liveHtml(document.getElementById('goalsSub'), '<span class="pill">' + icon('flag') + '<b>' + nd + ' / 3</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'); }
+    liveHtml(document.getElementById('goalsSub'), '<span class="pill">' + icon('flag') + '<b>' + nd + ' / ' + q.list.length + '</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'); }
 function openGoals(tab) {
     closeAllPopups(); if (barbView) closeBarbSheet(); renderGoalsSub();
     const nd = dailyGoalCount(), na = achClaimable().length;
@@ -320,6 +359,7 @@ goalsPopup.addEventListener('click', e => {
     const b = e.target.closest('button'); if (b && b.hasAttribute('data-daily')) return showDailyModal();   // Belohnung: the quick-claim window does the rest
     if (!b || !e.target.closest('[data-gpane="daily"]')) return;
     if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
+    else if (b.hasAttribute('data-bonus3')) claimQuestBonus3();
     else if (b.hasAttribute('data-bonus')) claimQuestBonus();
     else if (b.hasAttribute('data-chain')) claimChain();
     renderGoalsSub();

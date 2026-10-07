@@ -38,7 +38,30 @@
 .empty-state.ev-leer > .icon{width:40px;height:40px;color:var(--gold-300)} .empty-state.ev-leer > span{max-width:34ch}
 .empty-state.ev-leer > b{font-size:var(--fs-15)} .empty-state.ev-leer .btn{margin-top:8px;max-width:100%}
 #shieldUse > .lb-leer{grid-column:1/-1}
-.ev-saison{margin-top:12px} .ev-saison .field-lines b{text-align:left;justify-content:flex-start}
+/* Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen – erreicht leuchtet („Abholen“), abgeholt = offene Kiste + Haken */
+.evl{contain:inline-size;width:100%;overflow-x:auto;overscroll-behavior-x:contain;margin:2px -2px 6px;padding:4px 2px 2px;scrollbar-width:thin}
+.evl-bahn{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(52px,1fr));min-width:calc(var(--n) * 52px)}
+.evl-spur{position:absolute;left:0;right:0;top:20px;height:8px;border-radius:4px;background:rgba(0,0,0,.45);border:1px solid var(--line-2);overflow:hidden}
+.evl-spur i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#a8831a,#f2c75c);box-shadow:0 0 8px rgba(242,199,92,.6)}
+.evl-k{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:none;color:var(--tx-3);font:700 10.5px/1.1 var(--font-ui);white-space:nowrap}
+.evl-bild{position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:10px} .evl-bild img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7))}
+.evl-k.is-ding .evl-bild{background:rgba(10,8,6,.75);border:1px solid var(--line-2)} .evl-k.is-ding .evl-bild img{width:32px;height:32px}
+.evl-k.is-zu .evl-bild img{filter:grayscale(.85) brightness(.6)} .evl-k.is-zu{opacity:.85}
+.evl-k.is-hol,.evl-k.is-bald{color:var(--gold-100);cursor:pointer} .evl-k.is-hol .evl-bild{background:radial-gradient(circle,rgba(255,214,110,.55),rgba(255,214,110,0) 70%);animation:evlGlueh 1.4s ease-in-out infinite}
+.evl-k.is-ok{color:var(--tx-2)} .evl-haken{position:absolute;right:-4px;top:-4px;width:20px;height:20px} .evl-haken img{width:20px;height:20px;filter:none}
+@keyframes evlGlueh{50%{transform:scale(1.08);box-shadow:0 0 14px rgba(255,214,110,.6)}}
+@media (prefers-reduced-motion:reduce){.evl-k.is-hol .evl-bild{animation:none}}
+.evl-zeilen{display:grid;gap:6px;margin-bottom:8px}
+.evl-z{display:grid;grid-template-columns:minmax(64px,38%) 1fr auto;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.evl-z > b{display:flex;flex-direction:column;gap:1px;font:700 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-1)} .evl-z > b small{font:600 10.5px/1.2 var(--font-ui);color:var(--tx-3)}
+.evl-z.is-hol{border-color:rgba(242,199,92,.7);background:linear-gradient(90deg,rgba(242,199,92,.16),rgba(0,0,0,.2));box-shadow:0 0 10px rgba(242,199,92,.25)}
+.evl-z.is-ok{opacity:.8} .evl-z.is-zu .bk-raster{filter:saturate(.5) brightness(.8)}
+.evl-st{display:flex;align-items:center;gap:4px;justify-content:flex-end;color:var(--tx-3)} .evl-st img{width:20px;height:20px} .evl-st small{font:600 11px/1 var(--font-ui)} .evl-st .icon{width:16px;height:16px}
+.evk-n{min-width:30px;font:800 var(--fs-15)/1 var(--font-display);color:var(--gold-100)}
+#eventBody > .btn[data-ev-hol]{width:100%;margin:0 0 8px}
+/* Lebensbalken (Tagesboss/Drache): die Zahl nie halb abgeschnitten – Höhe wächst mit der Schrift */
+.barb-hp{height:auto;min-height:20px} .barb-hp span{line-height:1.35;padding:2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-saison{margin-top:12px}.ev-saison .field-lines b{text-align:left;justify-content:flex-start}
 .tour-prize{gap:4px;padding:9px 4px} .tour-prize b{font-size:var(--fs-13)} .tour-prize span{font-size:12px} .tour-prize .icon{width:14px;height:14px} .tour-prize em{font-size:10px}
 .lb-info summary{display:flex;align-items:center;gap:6px;min-height:44px;list-style:none;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-2)} .lb-info summary::-webkit-details-marker{display:none}
 .lb-info summary .icon{width:18px;height:18px;color:var(--gold-300)} .lb-info p{margin:0 0 8px}
@@ -344,7 +367,8 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><span>Woche</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="inv" data-ggrp-von="ereignisse" hidden><span>Invasion</span><span class="badge" data-gbadge="inv" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="drache" data-ggrp-von="ereignisse" hidden><span>Drache</span><span class="badge" data-gbadge="drache" style="display:none">!</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span>Boss</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span>Boss</span><span class="badge" data-gbadge="boss" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="lager" data-ggrp-von="ereignisse" hidden><span>Lager</span><span class="badge" data-gbadge="lager" style="display:none">!</span></button>
   </div>
   <div class="pbody">
     <div class="mail-pane" data-gpane="daily">
@@ -408,11 +432,11 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <div id="shieldUse" class="shield-opts"></div>
     </div>
     <div class="mail-pane" data-spane="gems">
-      <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte gezeichnete Truhe in der Farbe der Seltenheit, Preis-Knopf unten über die ganze Breite (ein Tipp = kaufen) -->
+      <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte das KI-Bild der Kiste, Preis-Knöpfe unten über die ganze Breite (ein Tipp = kaufen; unter 500 Edelsteinen „1ד und „10ד) -->
       <div class="waren">
         <div id="heroChestOpts" class="waren-teil"></div>
         <div class="ware" data-r="grau"><span class="ware-bild" data-kiste-art="aus"></span><span class="ware-txt"><b class="ware-name">Ausrüstungs&shy;kiste</b><small>1 Teil · Grau bis Episch</small></span>
-          <button id="shopOpenCrateBtn" class="ware-preis" type="button" aria-label="Ausrüstungskiste kaufen"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></button></div>
+          <span class="ware-preise"><button id="shopOpenCrateBtn" class="ware-preis" type="button" data-x="1×" aria-label="Ausrüstungskiste kaufen"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></button><button type="button" class="ware-preis" data-mehr="aus" aria-label="10 Kisten öffnen" disabled><span class="ware-x">10×</span><svg class="icon"><use href="#i-gem"/></svg><b>1.500</b></button></span></div>
         <div class="ware-mehr"><button id="shopToEquipBtn" class="ware-link" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Inventar ›</span></button>
           <button type="button" class="ware-link" data-sinfo="kiste" aria-expanded="false"><svg class="icon"><use href="#i-info"/></svg><span>Chancen</span></button></div>
       </div>

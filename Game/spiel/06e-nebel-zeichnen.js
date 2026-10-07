@@ -90,15 +90,20 @@ function nebelLandPfade() {
         P.moveTo(lm.shape[0].x, lm.shape[0].y); for (const q of lm.shape) P.lineTo(q.x, q.y); P.closePath(); }
     return nebelLand;
 }
-let nebelWeltCv = null;                                 // die Weltübersicht unter dem Nebel (dunkel, Ringfarben, Gebirgs-Bänder) – EINMAL gemalt, danach nur verschoben/skaliert
+let nebelWeltCv = null;                                 // die Weltübersicht unter dem Nebel – EINMAL gemalt, danach nur verschoben/skaliert
 function nebelWelt() {
     if (nebelWeltCv) return nebelWeltCv;
+    if (karteBilder()) {                                // mit den Bildern: die Übersicht wie die Karten-Testdatei (03a), nur leicht verschleiert
+        const U = karteUebersicht(), c = document.createElement('canvas'); c.width = c.height = U.width;
+        const g = c.getContext('2d'); g.drawImage(U, 0, 0); g.fillStyle = 'rgba(16,20,28,.28)'; g.fillRect(0, 0, c.width, c.height);
+        c.R = FRAME_HALF; return (nebelWeltCv = c);
+    }
     const R = FRAME_HALF + 20000, n = 1536, k = n / (2 * R), c = document.createElement('canvas'); c.width = c.height = n;
     const g = c.getContext('2d'); g.fillStyle = '#1a2433'; g.fillRect(0, 0, n, n);
     g.setTransform(k, 0, 0, k, R * k, R * k);
     g.globalAlpha = .75; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); }
     g.globalAlpha = 1; paintBaender(g, k / 1.4, true);
-    c.R = R; return (nebelWeltCv = c);
+    c.R = R; return c;                                  // (ohne Bilder nur vorläufig: nicht merken)
 }
 function drawFog(view, now) {
     const z = mapState.zoom;
@@ -141,7 +146,7 @@ function drawFog(view, now) {
         ctx.lineJoin = 'round'; ctx.fillStyle = ctx.strokeStyle = 'rgba(228,200,134,.55)'; ctx.lineWidth = 6 / z;
         for (const t of TERR.player.values()) { ctx.fill(t.path); ctx.stroke(t.path); }
         const mitte = landmasses[0];                                                // die Mitte (Thron) ist immer zu sehen – das Ziel aller (wie RoK)
-        if (!isExplored(mitte.id)) { ctx.fillStyle = 'rgba(' + BODEN_FARBE.sand + ',.9)'; ctx.fill(mitte.path); }
+        if (!isExplored(mitte.id)) { ctx.fillStyle = 'rgba(' + BODEN_FARBE[mitte.boden] + ',.9)'; ctx.fill(mitte.path); }
         ctx.strokeStyle = '#d4ad66'; ctx.lineWidth = 3 / z; ctx.stroke(mitte.path);
         ctx.restore();
     }
@@ -219,7 +224,7 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         // Karten-Bilder: der Countdown nie über dem Schild mit der Stufe – waagrecht über dem Tor-Bild, senkrecht über dem Schild neben dem Weg
         const px = !tm ? mx : tm.senk ? senkSchildX(tm, w, z) + w / 2 : toSX(tm.x);
         const cy = !tm ? my - H * .15 + H * .42 + 13 : tm.senk ? toSY(tm.y + TOR_SENK.hoch * .05) - 13
-            : toSY(tm.y) - KARTE_MASS.tor * KB.img.tor_zu.height / KB.img.tor_zu.width * KETTE_ACHSE.tor_zu * karteSkala(z) * z - 4;
+            : toSY(tm.y) - KARTE_MASS.tor * KB.img.tor_zu.height / KB.img.tor_zu.width * KETTE_ACHSE.tor_zu * z - 4;
         ctx.fillStyle = 'rgba(14,12,10,.9)'; ctx.strokeStyle = 'rgba(228,200,134,.75)'; ctx.lineWidth = 1.2;
         ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - w / 2, cy - 10, w, 20, 10) : ctx.rect(px - w / 2, cy - 10, w, 20); ctx.fill(); ctx.stroke();
         drawGlyph(ctx, 'lock', px - w / 2 + 12, cy, 12, '#f0d69a');

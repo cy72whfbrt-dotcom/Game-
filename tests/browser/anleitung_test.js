@@ -92,15 +92,15 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
     ok(r.start.abholbar && r.start.daily && r.haupt.daily, art + ': tägliche Belohnung beim ersten Start nicht in Schritt 1/2', { start: r.start.daily, nachSchritt1: r.haupt.daily });
     ok(r.start.zeile.eine && r.start.zeile.zeilen <= 2 && r.start.zeile.hoehe <= 56 && r.start.zeile.x44, art + ': Leiste kompakt: Schritt, Text und „×“ in einer Zeile, Text höchstens 2 Zeilen, ≤ 56 px hoch (× tippbar 44 px)', r.start.zeile);
     if (art === 'Handy') ok(r.start.zeile.auf > 2 && r.start.zeile.wiederZu === r.start.zeile.zeilen, art + ': langer Text gekürzt – antippen zeigt alles, nochmal antippen kürzt wieder', r.start.zeile);
-    ok(r.start.puls === 'heim' && r.start.heim, art + ': Schritt 1: das Fadenkreuz (zur Hauptstadt) pulsiert', r.start);
+    ok(r.start.puls === 'heim' && r.start.heim, art + ': Schritt 1: der Kompass (zur Hauptstadt) pulsiert', r.start);
     ok(r.haupt.schritt === 1 && r.haupt.satz, art + ': Hauptstadt-Fenster erklärt sich („Hier stehen deine Truppen …“)', r.haupt);
     ok(/^Gut!/.test(r.haupt.text) && !/keine neutrale/.test(r.haupt.text), art + ': Schritt 2 beginnt positiv (Hauptstadt noch offen: „Gut! …“, kein Fehler-Satz)', r.haupt.text);
     ok(r.angriff.neutral && r.angriff.puls === 'angriff' && r.angriff.knopf && r.angriff.satzWeg, art + ': Schritt 2: bei einer neutralen Basis pulsiert „Angreifen“', r.angriff);
     ok(r.angriff.schritt === 2 && r.angriff.daily, art + ': nach dem ersten Angriff springt die tägliche Belohnung NICHT mitten in die Anleitung', r.angriff);
     ok(r.events.bereit > 0 && r.events.schritt === 5 && r.events.puls === 'abholen' && r.events.pulsKnopf > 0, art + ': Schritt 6: Events öffnen allein zählt nicht, „Abholen“ pulsiert', r.events);
     ok(r.events.abgeholt && r.events.nichtAbholbar, art + ': Schritt 6 zählt nach echtem Abholen', r.events);
-    ok(r.knoepfe.sicht && /Fadenkreuz/.test(r.knoepfe.text) && /Fahne/.test(r.knoepfe.text) && /Schwerter/.test(r.knoepfe.text) && r.knoepfe.ok && r.knoepfe.okUnten && r.knoepfe.puls, art + ': Schritt 7 erklärt die Knöpfe ohne Text, „Verstanden“ sichtbar (unter dem Text), Knöpfe pulsieren', r.knoepfe);
-    ok(/Würfel/.test(r.knoepfe.text) && /Rohstoffe/.test(r.knoepfe.text) && r.knoepfe.wurfelPuls, art + ': Schritt 7 erklärt den Würfel oben (Rohstoffe), er pulsiert mit', r.knoepfe);
+    ok(r.knoepfe.sicht && /Kompass/.test(r.knoepfe.text) && /Fahne/.test(r.knoepfe.text) && /Schild/.test(r.knoepfe.text) && r.knoepfe.ok && r.knoepfe.okUnten && r.knoepfe.puls, art + ': Schritt 7 erklärt die Knöpfe ohne Text, „Verstanden“ sichtbar (unter dem Text), Knöpfe pulsieren', r.knoepfe);
+    ok(/Holz, Stein, Eisen/.test(r.knoepfe.text) && /Stunde/.test(r.knoepfe.text) && r.knoepfe.wurfelPuls, art + ': Schritt 7 erklärt Holz/Stein/Eisen oben (Ertrag pro Stunde), sie pulsieren mit', r.knoepfe);
     ok(r.fertig.schritt === 7 && r.fertig.belohnt && r.fertig.geschenk === 1 && r.fertig.weg && r.fertig.puls === '' && r.fertig.gespeichert, art + ': fertig: einmal Belohnung ins Abholfach, nichts pulsiert mehr', r.fertig);
     ok(r.fertig.taeglich, art + ': nach der Anleitung wird die tägliche Belohnung angeboten', r.fertig);
     ok(r.nochmal.knopf && r.nochmal.schritt === 0 && r.nochmal.sicht && r.nochmal.profilZu, art + ': „Anleitung noch mal“ startet von vorn', r.nochmal);

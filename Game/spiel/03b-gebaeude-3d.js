@@ -60,9 +60,9 @@ const ROOF = { neutral: '#8a5a3c', player: '#3f86d8', bot: '#c9423a' };
 
 function towerTier(level) { return level >= 80 ? 4 : level >= 50 ? 3 : level >= 25 ? 2 : level >= 10 ? 1 : 0; }
 
-function paintTowerTier(g, ownerKey, detail, home, tier, skin) {
+function paintTowerTier(g, ownerKey, detail, home, tier) {
   const K = isoKit(g, ISO_OY), own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;
-  const stone = skin && skin.stone ? skin.stone[1] : STONE, roof = skin && skin.roof ? skin.roof[1] : (home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral);
+  const stone = STONE, roof = home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral;
   g.lineJoin = 'round';
   if (tier === 0) {                                          // Lager: palisade, a wooden hall and a tent
     K.shadow(24, 13);
@@ -249,40 +249,51 @@ function paintMegaTemple(g, ownerKey, detail) {           // Haupttempel in real
 // Sprite cache: key = kind|owner|home|half-octave size bucket|dpr. Sprite box covers x −31…31, y −48…24
 const BUILDING_SPRITES = new Map();
 function buildingSprite(kind, ownerKey, home, sizePx, tier) {
-  const bucket = Math.pow(2, Math.round(Math.log2(sizePx) * 2) / 2), skin = home && ownerKey === 'player' ? activeSkin() : null;
-  const key = kind + '|' + ownerKey + '|' + (home ? 1 : 0) + '|' + bucket + '|' + dpr + '|' + (tier || 0) + '|' + (skin ? skin.id : '');
+  const bucket = Math.pow(2, Math.round(Math.log2(sizePx) * 2) / 2);
+  const key = kind + '|' + ownerKey + '|' + (home ? 1 : 0) + '|' + bucket + '|' + dpr + '|' + (tier || 0);
   let s = BUILDING_SPRITES.get(key); if (s) return s;
   const u = bucket / 64, c = document.createElement('canvas');
   c.width = Math.ceil(62 * u * dpr) + 2; c.height = Math.ceil(72 * u * dpr) + 2;
   const g = c.getContext('2d'); g.setTransform(u * dpr, 0, 0, u * dpr, 31 * u * dpr + 1, 48 * u * dpr + 1); g.lineJoin = 'round';
   const detail = bucket >= 28;
-  if (kind === 'tower') paintTowerTier(g, ownerKey, detail, home, tier ?? 1, skin); else if (kind === 'temple') paintTemple(g, ownerKey, detail); else if (kind === 'guardian') paintGuardianTemple(g, ownerKey, detail);
+  if (kind === 'tower') paintTowerTier(g, ownerKey, detail, home, tier ?? 1); else if (kind === 'temple') paintTemple(g, ownerKey, detail); else if (kind === 'guardian') paintGuardianTemple(g, ownerKey, detail);
   else if (kind === 'gate' || kind === 'gateShut') paintGateIso(g, ownerKey, detail, kind === 'gate'); else paintMegaTemple(g, ownerKey, detail);
   BUILDING_SPRITES.set(key, s = { c, bucket }); return s;
 }
-// Pass-Tor auf der Karte: steht genau auf der Grenzlinie (die Kette läuft dort gerade auf das Tor zu, 03a karteObjekte)
+// Pass-Tor auf der Karte: steht genau auf der Grenze im Pass (KARTE_ZONEN.paesse – die Grenze läuft dort gerade, 03a karteObjekte)
 // → { x, y, r: Abstand Mitte–Schild, senk: Grenze läuft senkrecht } oder null
 const TOR_PUNKT_ZOOM = 0.0015;                                                  // noch weiter draußen keine Tor-Punkte (Handy: über 500 Punkte wären nur Rauschen)
 function torMitte(island) {
   if (island.type !== 'gate' || !karteBilder()) return null;
   if (island.torMitte) return island.torMitte;
-  const [[x1, y1], [x2, y2]] = island.ends, im = KB.img.tor_zu, S = HEX_SPACING, senk = Math.abs(x2 - x1) > Math.abs(y2 - y1);
-  let x = (x1 + x2) / 2, y = (y1 + y2) / 2;
-  if (senk) x = grenzLinie(true, Math.round(x / S - .5) + .5, y); else y = grenzLinie(false, Math.round(y / S - .5) + .5, x);
+  const p = island.pass, im = KB.img.tor_zu, x = p.x, y = p.y, senk = p.senk;
   return (island.torMitte = { x, y, senk, r: senk ? TOR_SENK.hoch * .07 : KARTE_MASS.tor * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });   // (senkrecht: Schild knapp unter dem Weg)
 }
 // (Bildschirm) Pass-Tor offen/zu; dunkel: noch im Nebel. Waagrechte Grenze: das Pass-Tor-Bild (Mauer in Kettenrichtung).
 // Senkrechte Grenze: das Tor-Bild für Nord-Süd-Ketten, Weg genau auf dem Torpunkt, Kettenachse auf der Grenzlinie.
 function drawTorBild(island, open, z, dunkel) {
-  const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z * karteSkala(z), mx = toSX(tm.x), my = toSY(tm.y);
-  if (w < 16) { if (dunkel || z < TOR_PUNKT_ZOOM) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
+  const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z, mx = toSX(tm.x), my = toSY(tm.y);   // (fest in der Welt wie die Kette)
+  if (w < 16) { if (dunkel || z < KARTE_BILD_ZOOM) return;                       // (ganz weit: die Pass-Punkte in Zonenfarbe, drawUebersichtZeichen) ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
     ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
   if (mx + w < 0 || mx - w > viewW || my + w < 0 || my - w > viewH) return;
-  if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z, ws = hs * KB.img[ns].width / KB.img[ns].height, im = kbBild(ns, ws * dpr);   // (nicht vergrößert: Felsen so groß wie die Kette daneben)
-    if (z >= 0.006) { ctx.drawImage(im, mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
-    const a = TOR_SENK.achse - .2, b = TOR_SENK.achse + .2;                    // weiter draußen nur die Kette mit Mauer, ohne die Weg-Stummel
-    ctx.drawImage(im, a * im.width, 0, (b - a) * im.width, im.height, mx - ws * .2, my - hs * TOR_SENK.weg, ws * .4, hs); return; }
+  if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z, ws = hs * KB.img[ns].width / KB.img[ns].height;
+    ctx.drawImage(kbBild(ns, ws * dpr), mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
   const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
+}
+// Ganz weit (wie die Karten-Testdatei): Pass-Punkte in der Farbe ihrer Stufe (noch zu: blass), die Zonen-Nummern und Thron und
+// Tempel – auch unter dem Nebel (das Ziel aller ist immer zu sehen, wie RoK)
+function drawUebersichtZeichen(z) {
+  if (z >= KARTE_BILD_ZOOM || !karteBilder()) return;
+  setScreen(ctx); const jetzt = Date.now(), r = viewW < 600 ? 6 : 5;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 ' + (viewW < 600 ? 11 : 14) + 'px Georgia, serif'; ctx.lineJoin = 'round';
+  for (const lm of landmasses) { if (lm.zone === ZONE_MITTE) continue; const t = lm.tier === 'guardian', x = toSX(lm.x), y = toSY(lm.y) + (t ? Math.max(HEILIGTUM_BREITE.guardian * z, 30) * .55 : 0);
+    if (x < -20 || y < -20 || x > viewW + 20 || y > viewH + 20) continue;
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(lm.name, x, y); ctx.fillStyle = '#e4c886'; ctx.fillText(lm.name, x, y); }
+  for (const isl of islands) if (isl.bildR && !islandSeen(isl)) heiligtumBild(isl, z);
+  for (const br of bridges) { const x = toSX(br.pass.x), y = toSY(br.pass.y); if (x < -10 || y < -10 || x > viewW + 10 || y > viewH + 10) continue;
+    ctx.globalAlpha = passOpensAt(br) > jetzt ? .45 : 1; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[br.pass.stufe]; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#0c0f14'; ctx.stroke(); }
+  ctx.globalAlpha = 1;
 }
 function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
   if (!karteBilder() || KARTE_MASS.tor * z < 16) return;
@@ -292,11 +303,85 @@ function drawToreImNebel(view, z) {                                            /
     const tm = torMitte(isl); if (tm.x < view.l - m || tm.x > view.r + m || tm.y < view.t - m || tm.y > view.b + m) continue;
     drawTorBild(isl, false, z, true); }
 }
+const HEILIGTUM_BILD = { megaTemple: ['thron', .56, 64], tempel: ['tempel', .6, 30], waechtertempel: ['waechtertempel', .6, 30] };   // Bild, Fuß im Bild (y), kleinste Breite (px)
+function heiligtumBild(island, z) {                                            // (Bildschirm) Thron bzw. Wächter-Tempel an seinem Weltpunkt
+  const art = island.type === 'megaTemple' ? 'megaTemple' : island.tempelArt, [n, ay, minPx] = HEILIGTUM_BILD[art], im = KB.img[n];
+  const w = Math.max(HEILIGTUM_BREITE[island.type === 'megaTemple' ? 'megaTemple' : 'guardian'] * z, minPx), h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
+  if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;
+  ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
+}
+// Basen als KI-Bild (Alexander 7.10.): Stufe 1–100 gleichmäßig auf 15 Bilder, ALLE gleich groß (keine Größe nach Stufe); die Hauptstadt
+// über ihre Kartenstufe (burgKarte). Darunter auf jeder Zoomstufe das Namensschild (drawBasisSchilder, weit nur kleiner); ganz weit Punkte wie bisher.
+const BASIS_BREITE = 5500, BASIS_MIN_PX = 22;
+const BASIS_BILD = { img: [], offen: -1 };
+const basisBildNr = L => Math.max(1, Math.min(15, Math.ceil(Math.max(1, L) * 15 / 100)));
+function basisBild(nr) {                                                       // das Bild nr (1–15), lädt beim ersten Mal alle 15
+  if (BASIS_BILD.offen < 0) { BASIS_BILD.offen = 15;
+    for (let i = 1; i <= 15; i++) { const im = new Image(); im.onload = () => { if (im.naturalWidth) { BASIS_BILD.img[i] = im; requestRender(); } };
+      im.src = 'bilder/basis_' + String(i).padStart(2, '0') + '.webp'; } }
+  return BASIS_BILD.img[nr] || null;
+}
+function basisKreis(isl, z) {                                                 // Basis als Bild: Mitte (dy über dem Fußpunkt) und Halbmesser für Ringe/Kuppel – sonst null
+  const w = BASIS_BREITE * z, im = isl.type === 'tower' && w >= BASIS_MIN_PX && basisBild(basisBildNr(baseLevelOf(isl)));
+  return im ? { dy: w * im.height / im.width * .22, r: w * .42 } : null;
+}
+function drawBasisBild(island, ownerKey, z) {                                  // (Bildschirm) → true, wenn das Bild gezeichnet ist
+  const w = BASIS_BREITE * z; if (w < BASIS_MIN_PX) return false;
+  const im = basisBild(basisBildNr(baseLevelOf(island))); if (!im) return false;
+  const h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
+  if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return true;
+  ctx.drawImage(im, x - w / 2, y - h * .72, w, h);
+  if ((island.id === playerIslandId || isCapital(island.id)) && brennt(island.id)) drawBrand(x, y - h * .3, w / 64);   // eine geplünderte Hauptstadt brennt
+  return true;
+}
+// Namensschild unter jeder Basis (Alexander 7.10., wie im alten Spiel): 70 % so breit wie das Basis-Bild, mittig direkt darunter
+// (Unterkante Basis = Oberkante Schild). Auf jeder Zoomstufe mit Basis-Bild (Alexander 7.10.: nichts springt), weit nur die Stufe. Im runden Feld das Wappen
+// des Besitzers (frei: keins), im Balken Stufe und Truppen – eigene und Bündnis die echte Zahl (sofern das Handy sie hat), fremde und
+// freie „?“ bis gespäht (wie die Fahnen, bannerModel). Text und Strich in der Besitzer-Farbe. Stößt ein Schild an ein anderes oder passt
+// die Zahl nicht: nur die Stufe. Ein Schild wird je Größe (8-px-Stufen) einmal gemalt und gemerkt.
+const SCHILD_ANTEIL = .7, SCHILD_MIN = 90, SCHILD_ZAHL = 96, SCHILD_ZOOM = BASIS_MIN_PX / BASIS_BREITE;   // (Truppen-Zahl erst ab 96 px Breite)
+const SCHILD_FARBE = { player: '#8cc0ff', ally: '#86e09a', bot: '#ff8d82', neutral: '#eadfc4' };
+const SCHILD_MERK = new Map();
+function schildRect(island, z) {                                               // (Bildschirm) wo das Schild einer Basis steht
+  const w = BASIS_BREITE * z, im = basisBild(basisBildNr(baseLevelOf(island))), h = im ? w * im.height / im.width : w;
+  const W = Math.max(SCHILD_MIN, Math.floor(SCHILD_ANTEIL * w / 8) * 8), H = W * 159 / 512; return { x: toSX(island.x) - W / 2, y: toSY(island.y) + h * .17, w: W, h: H };   // (das Bild hat unten einen leeren Rand)
+}
+function schildDaten(island) {                                                 // → { art, wer, stufe, truppen }
+  const m = bannerModel(island), wer = islandOwnerOf(island.id);
+  const truppen = m.kind === 'ally' && islandTroops[island.id] !== undefined ? fmtCompact(islandTroops[island.id]) : m.troops;
+  return { art: m.kind === 'player' || m.kind === 'ally' || m.kind === 'bot' ? m.kind : 'neutral', wer, stufe: anzeigeStufe(island.id), truppen };
+}
+function schildBild(d, W, mitZahl) {                                           // das fertige Schild, W px breit (Leinwand × dpr)
+  const cr = d.wer ? crestFor(d.wer) : null, key = d.art + '|' + d.stufe + '|' + (mitZahl ? d.truppen : '') + '|' + (cr ? crestKeyOf(cr) : '') + '|' + W + '|' + dpr;
+  let c = SCHILD_MERK.get(key); if (c) return c;
+  const H = W * 159 / 512, k = W / 512, farbe = SCHILD_FARBE[d.art];
+  c = document.createElement('canvas'); c.width = Math.ceil(W * dpr); c.height = Math.ceil(H * dpr);
+  const g = c.getContext('2d'); g.scale(dpr, dpr); g.drawImage(KB.img.schild, 0, 0, W, H);
+  if (cr) drawCrest(g, 82 * k, 79 * k, 76 * k, cr);                           // im runden Feld
+  const x0 = 168 * k, x1 = 462 * k, ym = 79 * k, fs = Math.max(8, Math.min(14, Math.round(W * .1)));   // (klein: die Schrift passt in den Balken)   // der Balken innen
+  g.textBaseline = 'middle'; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
+  const lang = 'Stufe ' + d.stufe, t = mitZahl ? g.measureText(d.truppen).width + fs + 6 : 0;   // erst „Stufe 12“, wird es eng nur „12“
+  const st = g.measureText(lang).width + t <= x1 - x0 ? lang : String(d.stufe), zahl = mitZahl && g.measureText(st).width + t <= x1 - x0;
+  g.textAlign = zahl ? 'left' : 'center'; g.fillStyle = farbe; g.fillText(st, zahl ? x0 : (x0 + x1) / 2, ym + .5);
+  if (zahl) { g.textAlign = 'right'; g.fillStyle = '#f3e6c4'; g.fillText(d.truppen, x1, ym + .5);
+    drawGlyph(g, 'troops', x1 - g.measureText(d.truppen).width - fs * .55 - 2, ym, fs - 1, '#d9c9a0'); }
+  if (W >= SCHILD_ZAHL) { g.strokeStyle = farbe; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x0, 106 * k); g.lineTo(x1, 106 * k); g.stroke(); }   // der Besitzer auf einen Blick (klein: nur die Schriftfarbe)
+  if (SCHILD_MERK.size > 400) SCHILD_MERK.clear(); SCHILD_MERK.set(key, c); return c;
+}
+function drawBasisSchilder(vis, z) {                                          // nach allen Basen: die Schilde liegen obenauf
+  if (z < SCHILD_ZOOM || !KB.img.schild) return;
+  setScreen(ctx);
+  const rs = vis.filter(i => i.type === 'tower').map(i => [i, schildRect(i, z)]).filter(([, r]) => r.x + r.w >= 0 && r.x <= viewW && r.y + r.h >= 0 && r.y <= viewH);
+  const stoesst = r => rs.some(([, q]) => q !== r && overlap(r, q) > 0);
+  for (const [isl, r] of rs) ctx.drawImage(schildBild(schildDaten(isl), r.w, r.w >= SCHILD_ZAHL && !stoesst(r)), Math.round(r.x * dpr) / dpr, Math.round(r.y * dpr) / dpr, r.w, r.h);
+}
+const basisGroesse = z => 1 + Math.max(0, Math.min(1, (0.04 - z) / 0.03));   // Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erkennbar), nah wie gehabt
 function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)
   const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
   const home = island.id === playerIslandId, cap = home || isCapital(island.id);
   const tier = island.type === 'tower' ? towerTier(baseLevelOf(island)) : 1;
-  const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
+  const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] * basisGroesse(z) : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
+  if (island.bildR && KB.fertig) { heiligtumBild(island, z); return; }        // Thron und Wächter-Tempel: das KI-Bild (fest in der Welt, ganz weit nie winzig)
   if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
     if (torMitte(island)) { drawTorBild(island, ownerKey !== 'neutral' && !gateSettings(island).closed, z); return; }   // Karte wie RoK: das Pass-Tor (Bild) in der Kette, offen/zu wie heute
     if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
@@ -310,6 +395,7 @@ function drawBuilding(island, ownerKey, z) {                                   /
     for (const [gx, gy] of spots) if (!bkDraw(bk, gx, gy)) ctx.drawImage(sp.c, gx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
     return;
   }
+  if (kind === 'tower' && drawBasisBild(island, ownerKey, z)) return;          // Basen als KI-Bild (Stufe → Bild, alle gleich groß)
   if (kind === 'tower' && ownerKey !== 'player' && z < TOR_PUNKT_ZOOM && karteBilder()) return;   // ganz draußen: keine Punkt-Tapete fremder und freier Basen (wie RoK nur Zonen, Tempel, eigenes Gebiet)
   if (kind === 'tower' && ownerKey === 'neutral' && size < 30 && karteBilder()) {   // Karte wie RoK: freie Basen von weitem nur ein leiser Fleck, keine Symbol-Tapete (Alexander)
     ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, size * .07), 0, Math.PI * 2); ctx.fillStyle = 'rgba(40,30,18,.3)'; ctx.fill(); return; }
@@ -352,16 +438,12 @@ function drawBrand(x, y, u) {                                                  /
 
 // ===== BAUKUNST: the bases in 3D (baukunst.js), each model rendered once into a sprite (OW.game, lazy + cached) =====
 // Until a sprite is ready, and without three.js or WebGL (offline), the drawn sprites above stay. Owner colour only on roofs
-// and flags, every owner builds in their own style with their coat of arms on the flags; the level shows in the material.
-const BAUSTILE = { klassisch: 'Klassisch', nordisch: 'Nordisch', suedlich: 'Südländisch', morgenland: 'Morgenland', fernost: 'Fernost' };
+// and flags, the style comes from the region (Baustil-Wahl gibt es nicht mehr, Alexander 7.10.), the coat of arms on the flags; the level shows in the material.
+const BAUSTILE = ['klassisch', 'nordisch', 'suedlich', 'morgenland', 'fernost'];
 const BK_K = ISLAND_RADIUS * .12, BK_SCALE = { mega: 2.2, tempel: 1.6, waechter: 1.6 }, BK_ELEM = ['nebel', 'gezeiten', 'fels', 'sonne'], BK_GRADE = { throne: 'thron', guardian: 'waechter' };
-function loadBaustil() { let v; try { v = JSON.parse(store.get('openWaterBaustil')); } catch (e) {} v = Object.assign({ style: 'klassisch', cap: 'huegel' }, v || {}); if (!BAUSTILE[v.style]) v.style = 'klassisch'; if (v.cap !== 'wasser') v.cap = 'huegel'; if (!Array.isArray(v.own)) v.own = [...new Set(['klassisch', v.style])]; return v; }   // own: the Basis-Skins you have (the style picked before stays yours)
-let baustilMem = null;                                                          // [raw, value]: the map asks for every base in every frame - parse only when it changed
-function baustilOf(owner) { if (owner !== 'player') return owner ? botBaustil(owner) : null; const raw = store.get('openWaterBaustil'); if (!baustilMem || baustilMem[0] !== raw) baustilMem = [raw, loadBaustil()]; return baustilMem[1]; }   // (read only: the sheet changes loadBaustil()'s own copy)
-function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => { BK_PREVIEW.forEach(f => f()); requestRender(); }; return G; }
-const BK_PREVIEW = new Set();                                                  // open previews that wait for a sprite
+function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => requestRender(); return G; }
 let bkGuards = null;
-function bkModel(island, ownerKey, open, style) {                                // → [cache id, model config]; style: try another one (keep sheet)
+function bkModel(island, ownerKey, open) {                                       // → [cache id, model config]
   if (island.type === 'gate') { const gr = BK_GRADE[island.gateKind] || 'grenz'; return ['t|' + ownerKey + '|' + gr + '|' + (open ? 1 : 0), { model: 'tor', owner: ownerKey, variant: { grade: gr, open, houseOnly: true } }]; }
   if (island.type === 'megaTemple') return ['m|' + ownerKey, { model: 'mega', owner: ownerKey }];
   const o = islandOwnerOf(island.id);
@@ -370,11 +452,11 @@ function bkModel(island, ownerKey, open, style) {                               
   if (island.type === 'temple') { const held = templeHoldSince[island.id] ? Date.now() - templeHoldSince[island.id] : -1, sz = !o ? 'klein' : held >= TEMPLE_HOLD_STREAK_MS ? 'gross' : 'mittel';   // the longer it is held, the bigger
     return ['p|' + ownerKey + '|' + sz, { model: 'tempel', owner: ownerKey, variant: { size: sz, bonus: 'gems' } }]; }
   const lv = baseLevelOf(island), step = lv >= 100 ? 100 : Math.max(1, Math.floor(lv / 10) * 10 + (lv % 10 >= 5 ? 5 : 0));   // a new design every 10 levels, small additions at every 5
-  const home = island.id === playerIslandId, cap = home || isCapital(island.id), b0 = baustilOf(o) || { style: Object.keys(BAUSTILE)[island.landmassId % 5], cap: 'huegel' }, bs = style ? { style, cap: b0.cap } : b0;   // free land: the style of its region
+  const home = island.id === playerIslandId, cap = home || isCapital(island.id), bs = { style: BAUSTILE[island.landmassId % 5], cap: 'huegel' };   // the style of its region
   const seed = o === 'player' ? 7 : o ? (parseInt(String(o).replace(/\D/g, ''), 10) || 7) * 13 + 5 : 1 + island.id % 4, cr = o ? crestFor(o) : null;
-  const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null, skin = home ? (activeSkin() || {}).id || '' : '';
-  return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : '') + '|' + skin,
-          { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest, skin }];
+  const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null;
+  return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : ''),
+          { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest }];
 }
 const BK_LAST = new Map();                                                       // island → id of the 3D sprite drawn last
 function bkSprite(island, ownerKey, open, z) {                                   // → { s: sprite, W: width in px } or null
@@ -383,14 +465,6 @@ function bkSprite(island, ownerKey, open, z) {                                  
   let s = G.get(id, c, need <= 140 ? 128 : need <= 300 ? 256 : 512);
   if (s) BK_LAST.set(island.id, id); else { const o = BK_LAST.get(island.id); s = o && G.peek(o) || null; }   // new look (upgrade, +5 step) still rendering: the old 3D sprite stays, not the big drawn one
   return s ? { s, W: 2 * s.v * k } : null;                                     // W from the sprite's own frame: an old sprite keeps its size
-}
-function bkPreviews() {                                                          // the keep sheet's style cards: your capital in each style
-  const cvs = [...document.querySelectorAll('[data-bk-prev]')]; if (!cvs.length) { BK_PREVIEW.delete(bkPreviews); return; }
-  const G = bk3d(), isl = islandById[playerIslandId]; let waiting = false;
-  for (const cv of cvs) { const g = cv.getContext('2d'), [id, c] = bkModel(isl, 'player', false, cv.dataset.bkPrev), s = G && G.get(id, c, 256); g.clearRect(0, 0, cv.width, cv.height);
-    if (s) { const w = s.px * .6; g.drawImage(s.c, (s.px - w) / 2, Math.max(0, s.px * s.ay - w * .82), w, w, (cv.width - cv.height) / 2, 0, cv.height, cv.height); }   // cut out the building
-    else { waiting = !!G; g.save(); g.setTransform(1.6, 0, 0, 1.6, cv.width / 2, cv.height * .72); paintTowerTier(g, 'player', true, true, towerTier(islandLevels[playerIslandId] || 1), activeSkin()); g.restore(); } }
-  if (waiting) BK_PREVIEW.add(bkPreviews); else BK_PREVIEW.delete(bkPreviews);
 }
 function bkDraw(b, x, y) { if (!b) return false; ctx.drawImage(b.s.c, x - b.W / 2, y - b.W * b.s.ay, b.W, b.W); return true; }   // (x, y) = the ground centre
 

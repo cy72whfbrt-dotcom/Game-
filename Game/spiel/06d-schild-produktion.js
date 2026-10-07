@@ -13,39 +13,50 @@ function ownerShieldUntil(who) {
     if (who === 'player') return Math.max(shieldUntil(), neulingBis());
     const b = loadBotState()[who] || {}; return Math.max(b.shieldUntil || 0, botNeulingBis(who, b));   // auch ihr Anfängerschutz
 }
-// ANFÄNGERSCHUTZ (EINE Welt) – für echte Spieler UND Mitspieler gleich: 48 Std. unangreifbar (auch wenn sie selbst
-// Mitspieler, Lager oder Felder angreifen). Endet früher, sobald die Macht (Gesamtstärke) 50 Mio. erreicht oder sie
-// einen echten Spieler angreifen.
-const NEULING_MS = 48 * 3600000, NEULING_MACHT = 50e6;
+// ANFÄNGERSCHUTZ (EINE Welt) – für echte Spieler UND Mitspieler gleich: 48 Std. kann sie niemand angreifen und niemand
+// ausspähen (auch wenn sie selbst Mitspieler, Lager oder Felder angreifen). Endet früher, sobald sie 100.000 Truppen haben
+// (Gesamttruppen wie im HUD) oder einen echten Spieler angreifen (Alexander 7.10.).
+const NEULING_MS = 48 * 3600000, NEULING_TRUPPEN = 100000;
 const staerkeMem = {};
 function staerke(who) {                           // Macht wie in der Rangliste, höchstens einmal pro Minute neu gerechnet
     const m = staerkeMem[who], now = Date.now(); if (m && now - m.at < 60000) return m.v;
     let v = 0; try { v = powerOf(whoProfile(who)); } catch (e) { v = 0; }
     staerkeMem[who] = { v, at: now }; return v;
 }
+const truppenMem = {};
+function neulingTruppen(who) {                    // Gesamttruppen (whoTroops), höchstens einmal pro Sekunde neu gezählt
+    const m = truppenMem[who], now = Date.now(); if (m && now - m.at < 1000) return m.v;
+    let v = 0; try { v = whoTroops(who); } catch (e) { v = 0; }
+    truppenMem[who] = { v, at: now }; return v;
+}
 function neulingBis() {
-    if (!window.WELT) return 0; const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
-    if (staerke('player') >= NEULING_MACHT) { store.set('openWaterNeulingBis', '0'); afterSplash(() => flashHint('Dein Anfängerschutz ist vorbei – dein Reich hat 50 Mio. Macht erreicht.', 5000)); return 0; }
+    if (!window.WELT && store.get('openWaterNeulingBis') === null) store.set('openWaterNeulingBis', String(Date.now() + NEULING_MS));   // Vorschau ohne Server: derselbe Schutz ab dem ersten Start (Alexander 7.10.; Tests schalten ihn mit '0' ab)
+    const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
+    if (neulingTruppen('player') >= NEULING_TRUPPEN) { store.set('openWaterNeulingBis', '0'); afterSplash(() => flashHint('Dein Anfängerschutz ist vorbei – du hast 100.000 Truppen.', 5000)); return 0; }
     return t;
 }
 function botNeulingBis(who, b) {
     if (!window.WELT || !b) return 0;
     if (b.neuBis === undefined && !b.mensch) b.neuBis = worldStartAt() + NEULING_MS;   // Mitspieler der laufenden Welt: ab Weltstart
     const t = b.neuBis || 0; if (t <= Date.now()) return 0;
-    if (staerke(who) >= NEULING_MACHT) { b.neuBis = 0; saveBotState(); return 0; }   // (auch bei echten Spielern – nicht dem Handy überlassen)
+    if (neulingTruppen(who) >= NEULING_TRUPPEN) { b.neuBis = 0; saveBotState(); return 0; }   // (auch bei echten Spielern – nicht dem Handy überlassen)
     return t;
 }
+function neulingVon(who) { return !who ? 0 : who === 'player' ? neulingBis() : botNeulingBis(who, loadBotState()[who]); }
+function neulingAktiv(who, now) { return neulingVon(who) > (now || Date.now()); }   // Anfängerschutz: nicht angreifen, nicht ausspähen
+function neulingBlockText(who) { const n = who === 'player' ? 'Du bist' : ((botById[who] || {}).name || 'Dieser Spieler') + ' ist';
+    return 'Anfängerschutz – noch ' + fmtHours(neulingVon(who) - Date.now()) + ' (oder bis 100.000 Truppen): ' + n + ' neu und kann nicht angegriffen und nicht ausgespäht werden.'; }
 function neulingEnde(grund) { if (neulingBis() <= Date.now()) return; store.set('openWaterNeulingBis', '0'); if (grund) flashHint(grund, 4500); requestRender(); }
 function ownerShielded(who, now) { return !!who && (now || Date.now()) < ownerShieldUntil(who); }
 function shieldCovers(isl) { return !!isl && isl.type === 'tower'; }   // the shield covers the towers - never gates, temples or the throne (the middle stays open to everyone)
 function baseShieldedFor(id, by, now) { const ow = islandOwnerOf(id); return !!ow && ow !== by && shieldCovers(islandById[id]) && ownerShielded(ow, now); }   // by: 'player' | bot id
 function shieldedOwners(now) { const s = new Set(); if (now < ownerShieldUntil('player')) s.add('player'); for (const bot of BOT_DEFS) if (ownerShieldUntil(bot.id) > now) s.add(bot.id); return s; }
 function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spieler', b = ow !== 'player' && loadBotState()[ow];
-    if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return 'Anfängerschutz: ' + n + ' ist neu und noch ' + fmtHours(b.neuBis - Date.now()) + ' unangreifbar.';
+    if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return neulingBlockText(ow);
     return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
 function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock(), now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
-    liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Schild aktiv.') + '</span>');
+    liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
     liveHtml(document.getElementById('shieldUse'), !(st[2] || st[8] || st[24]) ? '<div class="empty-state lb-leer">' + icon('shield') + '<span><b>Kein Schild im Vorrat</b>Oben kaufen – dann hier einschalten, wann du willst.</span></div>' : [2, 8, 24].map(h => '<button type="button" class="btn btn--' + (st[h] ? 'primary' : 'secondary') + '" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '><span>' + h + ' Std.</span><span class="cost">' + st[h] + '× im Vorrat</span></button>').join('')); }   // (leer: ein Satz statt drei grauer „0×“-Kästen)
 shopPopup.addEventListener('click', e => {                 // Shop → Schilde: kaufen (in den Vorrat) und einschalten – beides nur hier
     const su = e.target.closest('[data-shield-use]');
@@ -67,34 +78,21 @@ function renderHeroChests() {                       // the odds per rarity follo
         return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + (tot ? Math.round(w / tot * 100) : 0) + ' %</span>'; }).join(''));
     liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.slice().reverse().map(c => { const k = HCHEST_ART[c.id] || 'held';   // die wertvollste groß zuerst
         return '<div class="ware' + (c.id === 'hcE' ? ' ware--gross glanz' : '') + '" data-r="' + KISTE_R[k] + '">' + (HCHEST_BAND[c.id] ? '<span class="band">' + HCHEST_BAND[c.id] + '</span>' : '') +
-            '<span class="ware-bild">' + kisteBild(k, 'k') + '</span><span class="ware-txt"><b class="ware-name">' + c.name + '</b><small>' + c.txt + '</small></span>' +
-            '<button type="button" class="ware-preis" data-hchest="' + c.id + '" aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '>' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></button></div>'; }).join(''));
+            '<span class="ware-bild">' + kisteBild(k) + '</span><span class="ware-txt"><b class="ware-name">' + c.name + '</b><small>' + c.txt + '</small></span>' +
+            (c.gems < GEMS_WIRKLICH ? '<span class="ware-preise">' : '') + '<button type="button" class="ware-preis" data-hchest="' + c.id + '"' + (c.gems < GEMS_WIRKLICH ? ' data-x="1×"' : '') + ' aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '>' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></button>' +
+            (c.gems < GEMS_WIRKLICH ? kistenMehrKnopf(c.id, c.gems) + '</span>' : '') + '</div>'; }).join(''));
 }
-// Gezeichnete Truhe für die Shop-Karten (SVG): Deckel, Kasten, Bänder, Schloss, Glanz, Sterne – das Leuchten macht die Karte
-const KISTE_ART = {                                  // Kasten oben/unten, Bänder hell/dunkel, Zeichen auf dem Schloss
-    aus: { k: ['#8a5a2e', '#3e2410'], b: ['#e3e7ec', '#6b7078'] }, held: { k: ['#8a5a2e', '#3e2410'], b: ['#a9d4ff', '#2c62b0'], z: 'krone' },
-    gross: { k: ['#9a6428', '#432410'], b: ['#f6e7bf', '#a27832'], z: 'stern' }, episch: { k: ['#7c4cc4', '#1e1033'], b: ['#f6e7bf', '#a27832'], z: 'stein' },
-    royal: { k: ['#2f5490', '#0d1a33'], b: ['#f6e7bf', '#a27832'], z: 'krone' } };
 const KISTE_R = { aus: 'grau', held: 'blau', gross: 'gold', episch: 'lila', royal: 'lila' };
 const HCHEST_ART = { hc1: 'held', hc3: 'gross', hcE: 'episch' }, HCHEST_BAND = { hcE: 'Bester Wert', hc1: 'Beliebt' };   // (Bänder nur Optik)
-function kisteStern(x, y, r, o) { const q = r * .28, p = r * .72;   // 4-Zack-Stern (Glanz)
-    return '<path d="M' + x + ' ' + (y - r) + 'l' + q + ' ' + p + ' ' + p + ' ' + q + ' ' + -p + ' ' + q + ' ' + -q + ' ' + p + ' ' + -q + ' ' + -p + ' ' + -p + ' ' + -q + 'z" fill="#fff" opacity="' + o + '"/>'; }
-function kisteBild(k, ort) {                         // ort: eigene Verlaufs-Namen je Reiter (gleich bei jedem Neuzeichnen – liveHtml tauscht nichts)
-    const a = KISTE_ART[k] || KISTE_ART.aus, n = 'kb' + (ort || 'k') + k;
-    const z = a.z === 'stein' ? '<path d="M60 42l6.5 7.5-6.5 8.5-6.5-8.5z" fill="#c99bff" stroke="#fff" stroke-width=".8"/><circle cx="58" cy="47" r="1.3" fill="#fff"/>'
-        : a.z === 'krone' ? '<path d="M53 55v-8l3.5 3 3.5-5 3.5 5 3.5-3v8z" fill="#2a1a05"/>' : a.z === 'stern' ? '<path d="M60 42l2.3 4.7 5.2.7-3.8 3.6.9 5.1-4.6-2.4-4.6 2.4.9-5.1-3.8-3.6 5.2-.7z" fill="#2a1a05"/>'
-        : '<path d="M60 45a3 3 0 0 1 1.6 5.5l1.1 4.5h-5.4l1.1-4.5A3 3 0 0 1 60 45z" fill="#1c1205"/>';
-    return '<svg viewBox="0 0 120 100" aria-hidden="true"><defs>' +
-        '<linearGradient id="' + n + 'k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a.k[0] + '"/><stop offset="1" stop-color="' + a.k[1] + '"/></linearGradient>' +
-        '<linearGradient id="' + n + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a.b[0] + '"/><stop offset="1" stop-color="' + a.b[1] + '"/></linearGradient></defs>' +
-        '<ellipse cx="60" cy="91" rx="44" ry="6" fill="#000" opacity=".5"/>' +
-        '<rect x="14" y="46" width="92" height="42" rx="4" fill="url(#' + n + 'k)" stroke="#0b0805" stroke-width="2"/>' +
-        '<path d="M14 48V34Q14 14 60 14Q106 14 106 34V48Z" fill="url(#' + n + 'k)" stroke="#0b0805" stroke-width="2"/>' +
-        '<path d="M14 62h92M14 75h92" stroke="#000" stroke-opacity=".22" stroke-width="1.2"/><path d="M20 34Q22 21 56 19" stroke="#fff" stroke-opacity=".3" stroke-width="4" fill="none" stroke-linecap="round"/>' +
-        '<g fill="url(#' + n + 'b)" stroke="#2a1a05" stroke-width="1"><path d="M30 17.5h8v70.5h-8zM82 17.5h8v70.5h-8z"/><rect x="12.5" y="43" width="95" height="7" rx="2"/><rect x="51" y="39" width="18" height="20" rx="3"/></g>' +
-        z + kisteStern(101, 14, 6, .95) + kisteStern(16, 24, 3.5, .7) + kisteStern(110, 40, 2.5, .6) + '</svg>';
+function kisteBild(k) { return '<img class="kiste-bild" src="bilder/' + (KISTE_BILD[k] || KISTE_BILD.aus) + '_zu.webp" alt="" draggable="false">'; }   // KI-Bild der Kiste (zu)
+// Mehrere auf einmal öffnen (wie RoK „10×“): höchstens 10, sonst so viele, wie die Edelsteine reichen – nur bei Kisten unter 500 (die großen bleiben einzeln: Bündnis-Geschenk je Kiste)
+const KISTE_MEHR = 10;
+const kistenMehrN = preis => Math.max(0, Math.min(KISTE_MEHR, Math.floor(gems / preis)));
+function kistenMehrKnopf(id, preis) {               // „10×“ (oder „N×“ mit dem Rest) neben dem Einzel-Knopf
+    const n = kistenMehrN(preis), m = n >= 2 ? n : KISTE_MEHR;
+    return '<button type="button" class="ware-preis" data-mehr="' + id + '" aria-label="' + m + ' Kisten öffnen"' + (n < 2 ? ' disabled' : '') + '><span class="ware-x">' + m + '×</span>' + icon('gem') + '<b>' + fmtNum(m * preis) + '</b></button>';
 }
-for (const el of document.querySelectorAll('[data-kiste-art]')) el.innerHTML = kisteBild(el.dataset.kisteArt, 'k');
+for (const el of document.querySelectorAll('[data-kiste-art]')) el.innerHTML = kisteBild(el.dataset.kisteArt);
 shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sinfo]'); if (!b) return;   // „i“: Erklärung/Chancen auf und zu
     const k = b.dataset.sinfo, auf = !shopInfoAuf.has(k); if (auf) shopInfoAuf.add(k); else shopInfoAuf.delete(k);
     b.setAttribute('aria-expanded', auf ? 'true' : 'false'); b.classList.toggle('on', auf);
@@ -103,30 +101,46 @@ function heroChestOpen(who, c) {                    // the same chest for you an
     if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
     const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;
 }
-shopPopup.addEventListener('click', e => { const karte = e.target.closest('#heroChestOpts .ware'), bt = e.target.closest('[data-hchest]') || (karte && karte.querySelector('[data-hchest]')); if (!bt || bt.disabled) return;   // die ganze Karte ist der Knopf (Spieltest: Tipp aufs Bild lief ins Leere)
-    const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (!c) return;
-    if (gems < c.gems) { flashHint('Zu wenig Edelsteine – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
+function heroChestKauf(c, n, bt) {                   // n Heldenkisten auf einmal (Edelsteine genau n-mal) – dieselbe Kiste wie bisher, nur öfter
+    if (gems < c.gems * n) { flashHint('Zu wenig Edelsteine – ' + (n > 1 ? n + '× ' : 'die ') + c.name + ' kostet ' + fmtNum(c.gems * n) + '.', 3000); return; }
     if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
-    if (!gemsWirklich('kiste:' + c.id, c.gems, bt)) return;
-    gems -= c.gems; const got = heroChestOpen('player', c); questProgress('crate', 1); updateHud(); saveGame(); renderShop();   // (zählt für „Öffne … Kisten“)
+    if (!gemsWirklich((n > 1 ? 'mehr:' : 'kiste:') + c.id, c.gems * n, bt)) return;
+    const got = []; let anz = 0;
+    for (; anz < n && gems >= c.gems && heroChestPool(c.minR).length; anz++) { gems -= c.gems; got.push(...heroChestOpen('player', c)); questProgress('crate', 1); }   // (zählt für „Öffne … Kisten“)
+    updateHud(); saveGame(); renderShop();
+    const k = HCHEST_ART[c.id] || 'held', beute = got.map(h => ({ a: 'sh', n: c.sh, held: h.id }));
     const res = document.getElementById('shopHeroResult');
-    res.innerHTML = '<b class="hchest-h">' + c.name + '</b>' + got.map(h => { const s = heroSt('player', h.id), need = s.own ? (s.q >= HERO_MAXQ ? 0 : heroStepCost(h, s.q)) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
-        return '<div class="hchest-row" style="--rc:' + rd.color + '">' + heroImg(h.id, 'hchest-pic') + '<span><b>' + h.name + '</b><small style="color:' + rd.color + '">' + rd.label + '</small></span><i>+' + c.sh + ' Splitter' + (need ? ' · ' + (s.sh >= need ? (s.own ? 'Aufwerten bereit' : 'Freischalten bereit') : s.sh + ' / ' + need) : '') + '</i></div>'; }).join('') +
+    res.innerHTML = '<b class="hchest-h">' + (anz > 1 ? anz + '× ' : '') + c.name + '</b>' + [...new Set(got)].map(h => { const s = heroSt('player', h.id), need = s.own ? (s.q >= HERO_MAXQ ? 0 : heroStepCost(h, s.q)) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
+        return '<div class="hchest-row" style="--rc:' + rd.color + '">' + heroImg(h.id, 'hchest-pic') + '<span><b>' + h.name + '</b><small style="color:' + rd.color + '">' + rd.label + '</small></span><i>+' + c.sh * got.filter(x => x === h).length + ' Splitter' + (need ? ' · ' + (s.sh >= need ? (s.own ? 'Aufwerten bereit' : 'Freischalten bereit') : s.sh + ' / ' + need) : '') + '</i></div>'; }).join('') +
         '<button type="button" class="btn btn--primary btn--sm" data-hchest-hall>Zu den Helden</button>';
-    res.hidden = false; res.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+    res.hidden = false; res.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    beuteFenster(c.name, beute, { kiste: k, n: anz, unter: anz > 1 ? anz + ' Kisten geöffnet' : '' });
+}
+shopPopup.addEventListener('click', e => { if (e.target.closest('[data-mehr]')) return;   // (10×: eigener Knopf unten)
+    const karte = e.target.closest('#heroChestOpts .ware'), bt = e.target.closest('[data-hchest]') || (karte && karte.querySelector('[data-hchest]')); if (!bt || bt.disabled) return;   // die ganze Karte ist der Knopf (Spieltest: Tipp aufs Bild lief ins Leere)
+    const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (c) heroChestKauf(c, 1, bt); });
+shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-mehr]'); if (!bt || bt.disabled) return;
+    if (bt.dataset.mehr === 'aus') { ausKistenKauf(kistenMehrN(CRATE_GEM_COST), bt); return; }
+    const c = HERO_CHESTS.find(x => x.id === bt.dataset.mehr); if (c && c.gems < GEMS_WIRKLICH) heroChestKauf(c, kistenMehrN(c.gems), bt); });
 shopPopup.addEventListener('click', e => { if (e.target.closest('[data-hchest-hall]')) { closeAllPopups(); openHeroHall(); } });
+function preiseFaerben(root) {                         // Edelstein-Preise: reicht es nicht, steht der Preis rot (sonst hell) – überall dieselbe Regel
+    for (const b of root.querySelectorAll('.ware-preis:not(.thron)')) { const t = b.querySelector('b'), n = t ? parseInt(t.textContent.replace(/\D/g, ''), 10) : NaN;
+        b.classList.toggle('zu-teuer', n > 0 && n > Math.floor(gems)); }
+}
 function renderShop() {
     const hdTab = document.querySelector('#shopTabs [data-stab="hd"]'), hdHier = typeof hdDa === 'function' && !!hdDa();   // der Reiter „Händler“ nur, wenn einer da ist
     if (hdTab.hidden === hdHier) hdTab.hidden = !hdHier;
     if (shopTab === 'hd' && !hdHier) { showShopTab('gems'); return; }
     if (shopTab === 'shield') renderShieldState(); else if (shopTab === 'gems') renderHeroChests();
-    const tc = document.getElementById('shopThroneCount'); setText(tc, fmtCompact(throneState.pts || 0)); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
+    const tc = document.getElementById('shopThroneCount'); setText(tc, fmtHud(throneState.pts || 0)); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
     if (shopTab === 'throne') renderThroneShop();
     if (shopTab === 'hd' && typeof hdRender === 'function') hdRender();
     if (shopTab === 'markt' && AUF) liveHtml(document.getElementById('shopMarkt'), AUF.marktHtml());
-    setText(shopGemCount, fmtCompact(Math.floor(gems)));
+    setText(shopGemCount, fmtHud(Math.floor(gems)));
     shopGemCount.title = fmtNum(Math.floor(gems)) + ' Edelsteine';
     shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
+    const mehr = document.querySelector('#shopPopup [data-mehr="aus"]'); if (mehr && !gemsArmed('mehr:aus')) mehr.outerHTML = kistenMehrKnopf('aus', CRATE_GEM_COST);
+    preiseFaerben(document.getElementById('shopPopup'));
 }
 function openShop(tab) {                              // der EINE Shop (Dock); tab: gems | shield | throne | hd | markt
     closeAllPopups();
@@ -137,10 +151,11 @@ shopBtn.addEventListener('click', () => { if (isPanelOpen(shopPopup)) shopCloseB
 shopCloseBtn.addEventListener('click', () => {
     closePanel(shopPopup);
 });
-shopOpenCrateBtn.addEventListener('click', () => {
-    const item = openCrate();
+function ausKistenKauf(n, bt) {                     // n Ausrüstungskisten (openCrate n-mal: Edelsteine und Teile genau wie n einzelne Käufe)
+    if (n > 1 && !gemsWirklich('mehr:aus', CRATE_GEM_COST * n, bt)) return;
+    const items = []; for (let i = 0; i < n; i++) { const it = openCrate(); if (!it) break; items.push(it); }
     renderShop();
-    if (!item) {
+    if (!items.length) {
         shopCrateResult.style.display = 'block';
         delete shopCrateResult.dataset.r;
         shopCrateResult.innerHTML = '<div class="tile empty">' + icon('gem') + '</div>' +
@@ -148,16 +163,15 @@ shopOpenCrateBtn.addEventListener('click', () => {
         shopCrateResult.scrollIntoView({ block: 'nearest' });
         return;
     }
-    const rd = RARITY_DEFS[item.rarity];
-    const slotDef = EQUIPMENT_DEFS[item.slot];
+    const beute = items.map(it => ({ a: 'item', slot: it.slot, r: it.rarity })), best = items.reduce((a, b) => b.rarity > a.rarity ? b : a), rd = RARITY_DEFS[best.rarity];
     shopCrateResult.style.display = 'block';
     shopCrateResult.dataset.r = rd.key;
-    shopCrateResult.innerHTML =
-        '<div class="tile" data-r="' + rd.key + '">' + icon(slotDef.icon) + '<span class="lvl">' + item.level + '</span></div>' +
-        '<div><span class="overline rar-text" data-r="' + rd.key + '">' + rd.label + '</span><b>' + slotDef.name + '</b>' +
-        '<small>Stufe ' + item.level + ' · im Inventar</small></div>';
+    shopCrateResult.innerHTML = beuteRaster(beute, 'bk-klein') + '<div><span class="overline rar-text" data-r="' + rd.key + '">' + (items.length > 1 ? items.length + ' Kisten · bestes: ' : '') + rd.label + '</span><b>' +
+        (items.length > 1 ? items.length + ' Teile' : EQUIPMENT_DEFS[best.slot].name) + '</b><small>Stufe 1 · im Inventar</small></div>';
     shopCrateResult.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-});
+    beuteFenster('Ausrüstungskiste', beute, { kiste: 'aus', n: items.length, unter: items.length > 1 ? items.length + ' Kisten geöffnet' : '' });
+}
+shopOpenCrateBtn.addEventListener('click', () => ausKistenKauf(1, shopOpenCrateBtn));
 shopToEquipBtn.addEventListener('click', () => {
     closePanel(shopPopup);
     renderProfile();
@@ -361,8 +375,9 @@ document.getElementById('welcomeOkBtn').addEventListener('click', () => { closeW
 document.getElementById('welcomeModal').addEventListener('click', e => { if (e.target.id === 'welcomeModal') { closeWelcome(); maybeShowDaily(); } });
 afterSplash(() => setTimeout(() => { if (welcomeFrom) showWelcome(); }, 700));
 
-// Center the view on the player's island at start
+// Center the view on the player's island at start – auf „mittel“: die eigene Burg gut erkennbar, die Nachbarn im Bild
 const startIsland = islandById[playerIslandId];
+mapState.zoom = mapState.targetZoom = 0.012;
 mapState.offsetX = window.innerWidth / 2 - startIsland.x * mapState.zoom;
 mapState.offsetY = window.innerHeight / 2 - startIsland.y * mapState.zoom;
 
