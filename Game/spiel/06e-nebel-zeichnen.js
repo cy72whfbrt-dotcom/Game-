@@ -231,8 +231,13 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, px - w / 2 + 22, cy + .5);
     }
 }
+const heimWappenSicht = z => Math.max(0, Math.min(1, (0.005 - z) / 0.002));
+function heimWappenRect(z) {                           // Tipp-Fläche des Wappens (öffnet die Hauptstadt; Funde dahinter werden nicht gezeigt) oder null
+    const heim = heimWappenSicht(z) > 0 && islandById[playerIslandId]; if (!heim) return null;
+    return { id: heim.id, x: heim.x * z + mapState.offsetX - 22, y: heim.y * z + mapState.offsetY - 22, w: 44, h: 44 };
+}
 function drawHeimWappen(z) {                           // ganz draußen (die Basis selbst ist nur noch ein Punkt): das eigene Wappen an der Hauptstadt, über allem
-    const k = Math.max(0, Math.min(1, (0.005 - z) / 0.002)), heim = k > 0 && islandById[playerIslandId]; if (!heim) return;
+    const k = heimWappenSicht(z), heim = k > 0 && islandById[playerIslandId]; if (!heim) return;
     setScreen(ctx);
     const hx = heim.x * z + mapState.offsetX, hy = heim.y * z + mapState.offsetY;
     ctx.save(); ctx.globalAlpha = k;

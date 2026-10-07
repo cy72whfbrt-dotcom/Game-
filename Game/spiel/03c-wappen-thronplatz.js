@@ -151,8 +151,9 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   bannerHitRects = [];
   const towers = towerRects = visible.map(isl => { const s = 2 * isl.radius * z; return { id: isl.id, x: toSX(isl.x) - s / 2, y: toSY(isl.y) - s * 0.65, w: s, h: s }; });
   const schild = isl => isl.type === 'tower' && z >= SCHILD_ZOOM && !!KB.img.schild;   // Basen tragen ihr Namensschild – Fahne nur noch beim Antippen
-  const schilde = visible.filter(schild).map(isl => Object.assign({ id: isl.id }, schildRect(isl, z)));
+  const schilde = basisSchilde(visible, z).map(s => Object.assign({ id: s.isl.id }, s.r));   // (nur die gezeigten: verdeckte sind weggelassen)
   bannerHitRects.push(...schilde);                                                // (Schild antippen öffnet die Basis, Funde und Märsche weichen aus)
+  const hw = heimWappenRect(z); if (hw) bannerHitRects.push(hw);                 // das Wappen an der Hauptstadt ebenso (Funde nicht halb dahinter)
   if (z < Math.min(TERRITORY_VIEW_ZOOM, maxZoom * .25)) return [];
   for (const q of schilde) towers.push({ id: -1, x: q.x, y: q.y, w: q.w, h: q.h });
   const base = tierFor(z);
