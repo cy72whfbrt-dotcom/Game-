@@ -3572,3 +3572,11 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   Schilde liegen nie übereinander (verdeckte fallen weg); freie Basen mit Wimpel statt leerem Kreis; Wappen an der Hauptstadt
   hält Funde fern und ist antippbar; Pass-Punkt bei mittlerem Zoom wieder gezeichnet. (03b/03c/06e)
 - **Tagesaufgaben (7.10.):** Tempel-Aufgabe erst, wenn Zone 4 offen ist; Thron-Aufgabe erst ab Tag 7. Push-Text angepasst.
+
+## Fix-Pakete (7.10., zusammengeführt)
+- **Teleport-Fix:** Teleport auf die eigene Stelle wird abgelehnt; die Bestätigung bleibt offen, bis sie klappt; Pass-Hinweis
+  kommt als eine Meldung; Shop-Text „Teleporter“ ganz lesbar; Anleitung liegt nicht mehr unter dem Feld-Menü.
+- **Stadt/Helden-Feinschliff:** Stadt betreten ohne Fehler, Heldenkarten, Erfolgs-Hinweis, Stern; Stadt-Schilder über der
+  Leiste: geschobene Schilder legen sich nicht auf andere (08f). Test `stadt_feinschliff_test`.
+- **Fenster/Anleitung-Feinschliff:** Anleitung ganz lesbar (bis 4 Zeilen), Meldungen „unterwegs: …“, Hinweis rutscht nach oben,
+  Rucksack-Preise, Reiter, Pass/Markt am Handy. Test `fenster_fein_test`.

@@ -121,7 +121,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         WELT.befehl('angriff', { src: sourceId, ziel: targetId, n: rawTroops, held: vHeld, held2: vHeld2, grp: grp || undefined });
         islandTroops[sourceId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('a', { sourceId, targetId, rawTroops, startedAt: t0, resolveAt: t0 + Math.max(3, travelDurationSeconds(source, target)) * 1000, attackerBotId: null, hero: vHeld, hero2: vHeld2, grp: grp || undefined }); }
-        updateHud(); flashHint('Angriff unterwegs zu ' + ortName(target) + '.');
+        updateHud(); flashHint('Angriff unterwegs: ' + ortName(target) + '.');
         dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); sfx('attack');
         return true;
     }
@@ -158,7 +158,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     updateHud();
     saveGame();
     saveProgression();
-    if (!attackerBotId) flashHint('Angriff unterwegs zu ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
+    if (!attackerBotId) flashHint('Angriff unterwegs: ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
     if (!attackerBotId) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(attackerBotId);
     if (!attackerBotId) { questProgress('attack', 1); sfx('attack'); }
     else if (islandOwnerOf(target.id) === 'player') sfx('warn');      // someone marches on one of your bases
@@ -183,7 +183,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
         WELT.befehl('senden', { von: fromId, nach: toId, n: rawTroops, grp: grp || undefined });
         islandTroops[fromId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('s', { fromId, toId, troops: rawTroops, startedAt: t0, resolveAt: t0 + travelDurationSeconds(source, target) * 1000, senderBotId: null, grp: grp || undefined }); } questProgress('send', 1); sfx('send'); updateHud();
-        flashHint('Truppen unterwegs zu ' + ortName(target) + '.'); return;
+        flashHint('Truppen unterwegs: ' + ortName(target) + '.'); return;
     }
     const hop = lastHop(source.landmassId, target.landmassId, senderBotId || 'player');
     if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return;
@@ -205,7 +205,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     saveGame();
     saveProgression();
     if (!senderBotId) {
-        flashHint('Truppen unterwegs zu ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
+        flashHint('Truppen unterwegs: ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
         renderActiveMarches();
     }
 }

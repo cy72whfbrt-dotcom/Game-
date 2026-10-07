@@ -38,7 +38,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       o.truppen = islandTroops[playerIslandId] > 0; const tx = document.getElementById('anleitungText');
       o.zeilen = Math.round(tx.getBoundingClientRect().height / parseFloat(getComputedStyle(tx).lineHeight)); o.ganz = tx.scrollHeight <= tx.clientHeight + 1; o.text = tx.textContent; anleitung.schritt = s0; anleitungZeigen(); an.hidden = true; return o; });
     await bild('angriff');
-    ok(a.quelle && a.alle && !a.halb && a.wieder && a.truppen && a.zeilen <= 2 && a.ganz, art + ': Anleitung + Angriff mit „Alle“ aus der Hauptstadt: Hinweis „… bleibt deine Hauptstadt ohne Truppen“ (bei 50 % nicht, nichts abgezogen, ganz in ≤ 2 Zeilen)', a);
+    ok(a.quelle && a.alle && !a.halb && a.wieder && a.truppen && a.zeilen <= 4 && a.ganz, art + ': Anleitung + Angriff mit „Alle“ aus der Hauptstadt: Hinweis „… bleibt deine Hauptstadt ohne Truppen“ (bei 50 % nicht, nichts abgezogen, ganz in ≤ 4 Zeilen)', a);
     ok(gross(a.spaeh) && gross(a.chips), art + ': „Spähen“ und 25/50/75 %/Alle mit Tippfläche ≥ 44 px', { spaeh: a.spaeh, chips: a.chips });
     await ev(() => closeAllPopups());
     // 3) Events: „Abholen“ ≥ 44 px

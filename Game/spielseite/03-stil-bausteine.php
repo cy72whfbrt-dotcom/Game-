@@ -499,7 +499,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .tag--player{color:#cfe3ff;background:rgba(63,134,216,.2);border:1px solid rgba(140,192,255,.4)}
 /* Rangliste sheet: rank, crest in its frame + level, name, value; top 3 gold/silver/bronze, your row blue (pinned in the foot when outside the list) */
 #rankPopup{height:var(--sheet-max)}   /* steady: switching tabs never makes the sheet jump */
- #rankTabs.tabs{grid-template-columns:repeat(5,minmax(0,1fr))} #rankBody{gap:6px;padding:10px 10px 14px}
+ #rankBody{gap:6px;padding:10px 10px 14px}
 .lb-row{--acc:transparent;display:grid;grid-template-columns:30px 40px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:54px;padding:6px 10px 6px 6px;border-radius:var(--r-sm);
   border:1px solid var(--line-1);background:rgba(255,255,255,.025);box-shadow:inset 3px 0 0 var(--acc);cursor:pointer;text-align:left;color:inherit}
 .lb-row:hover{background-color:rgba(255,255,255,.05)} .lb-row:active{transform:scale(.995)}

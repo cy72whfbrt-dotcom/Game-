@@ -56,7 +56,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   // 5) weniger als 10 bezahlbar: „N×“ mit dem Rest; unter 2: aus
   const sn = await ev(async () => { gems = 3 * CRATE_GEM_COST + 20; renderShop(); const bt = () => document.querySelector('#shopPopup [data-mehr="aus"]'), g0 = gems, i0 = Object.keys(inventory).length, text = bt().textContent.replace(/\s+/g, '');
     bt().click(); const o = { text, weg: g0 - gems, teile: Object.keys(inventory).length - i0 }; beuteFensterZu(); gems = 100; renderShop(); o.aus = bt().disabled && /10×/.test(bt().textContent); return o; });
-  ok(sn.text === '3×450' && sn.weg === 450 && sn.teile === 3 && sn.aus, 'Rest: „3ד für 450 (unter 500 ohne Frage), unter 2 Kisten ist „10ד aus', sn);
+  ok(sn.text === 'max.3×450' && sn.weg === 450 && sn.teile === 3 && sn.aus, 'Rest: „max. 3ד für 450 (sagt, warum nicht 10×; unter 500 ohne Frage), unter 2 Kisten ist „10ד aus', sn);
   // 6) Heldenkiste 10×: dieselbe Kiste 10-mal (Splitter-Kacheln mit Held), Edelsteine genau 10 × 150
   const sh = await ev(async () => { gems = 1600; renderShop(); const bt = () => document.querySelector('#heroChestOpts [data-mehr="hc1"]'), g0 = gems; bt().click(); await new Promise(f => setTimeout(f, 600)); bt().click();
     const f = document.getElementById('beuteFenster'); return { weg: g0 - gems, held: !!f.querySelector('.bk[data-beute="sh"] img.bk-held'), kiste: f.querySelector('.bf-kiste').dataset.auf, keineGrosse: !document.querySelector('#heroChestOpts [data-mehr="hc3"], #heroChestOpts [data-mehr="hcE"]') }; });

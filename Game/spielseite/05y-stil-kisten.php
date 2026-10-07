@@ -32,7 +32,8 @@
 .rk-inhalt{display:grid;gap:8px} .rk-liste{display:grid;gap:6px}
 .rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
 .rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}
-.rk-knopf{flex:none;min-width:96px;min-height:44px}
+.rk-knopf{flex:none;min-width:96px;min-height:44px;gap:6px} .rk-knopf[data-rk-kauf]{min-width:132px} .rk-knopf .icon{width:14px;height:14px} .rk-preis{font:700 13px/1 var(--font-ui)}   /* „Kaufen ◆ 80“ wie im Shop */
+@media (max-width:899px) and (min-height:501px){ #rucksackPopup .pbody{gap:8px} .rk-fach{--bk:46px;padding:4px 8px} .rk-liste{gap:4px} }   /* Handy: enger, damit die Splitter-Reihe ganz im Fenster steht */
 .rk-splitter{--bk:56px;justify-content:flex-start;gap:8px} .rk-splitter .bk-mit{padding:0;border:0;background:none;cursor:pointer;min-height:44px}
 
 /* ---- Belohnungs-Fenster: Kiste wackelt, geht auf, Strahlen drehen, Kacheln kommen nacheinander ---- */

@@ -215,6 +215,9 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 @keyframes pass-glow{from{filter:drop-shadow(0 0 2px rgba(242,210,122,.25))}to{filter:drop-shadow(0 0 7px rgba(242,210,122,.6))}}
 .pl-ok{position:absolute;top:5px;right:5px;z-index:2;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pl-ok .icon{width:10px;height:10px}
 .pl-ok.is-lock{background:rgba(0,0,0,.55);color:var(--tx-3)}
+@media (max-width:899px) and (min-height:501px){   /* Handy: Pass enger, damit die Premium-Reihe ganz im Fenster steht (Spieltest 7.10.) */
+  .pass-hero{padding:8px 10px;gap:5px} .pass-lvl{width:42px;height:42px} .pass-lvl b{font-size:17px}
+  .pl{padding-bottom:4px} .pl-spalte,.pl-namen{gap:3px} .pl-spalte::before{top:calc(var(--plz) + 16px)} .pass-prem{padding:8px} }
 .pass-how-l{display:grid;gap:2px;margin-top:8px;padding:4px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.18)}
 .pass-how-l div{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .pass-how-l div:last-child{border-bottom:0}
 .pass-how-l .icon{width:14px;height:14px;color:var(--gold-300);flex:none} .pass-how-l b{margin-left:auto;color:var(--gold-100);font-variant-numeric:tabular-nums}
@@ -292,13 +295,12 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
-.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 58px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text höchstens 2 Zeilen, ≤ 56 px), Knöpfe darunter */
+.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 66px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
+  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text ganz, höchstens 4 Zeilen), Knöpfe darunter; rechts 10 px Luft zu den Kartenknöpfen */
   background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .anleitung[hidden]{display:none}
 .anleitung-n{width:min-content;font:700 10px/1.15 var(--font-ui);color:var(--gold-200);text-align:center}   /* „Schritt“ über „1/7“: schmal */
-.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1);cursor:pointer}
-.anleitung:not(.is-auf):not(.is-frage):not(.is-ok) .anleitung-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}   /* langer Text: „…“, antippen zeigt alles */
+.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}   /* immer ganz lesbar, kein „…“ (Spieltest 7.10.) */
 #anleitungWeg{position:relative;width:32px;height:32px;align-self:center} #anleitungWeg::before{content:"";position:absolute;inset:-7px}   /* (sichtbar 32 px, Tippfläche 44 px – ab der Innenkante: 1 px Rand dazu) */
 /* Handy: mit offenem Basis-Fenster oben unter dem HUD statt direkt über dem Fenster – dort steht die Basis (inselMittig) */
 @media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important} }

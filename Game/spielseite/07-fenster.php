@@ -2,7 +2,8 @@
 
 <style>
 /* Fenster Events, Kampf, Bündnis, Profil: höchstens 4 Reiter, Unterreiter als Chips, Tippflächen mind. 44 px, nichts abgeschnitten */
-#goalsGruppen.tabs,#profilePopup #profileTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+#goalsGruppen.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+#profilePopup #profileTabs.tabs,#rankTabs.tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:auto}   /* Breite nach dem Text: „Einstellungen“, „Thron-Punkte“ bekommen mehr Platz, stoßen nicht an den Rand */
 #battleTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 .p5-reiter .tab .badge{position:absolute;top:4px;right:8px}
 @media (min-height:501px),(orientation:portrait){

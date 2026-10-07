@@ -370,6 +370,9 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 @keyframes pass-glow{from{filter:drop-shadow(0 0 2px rgba(242,210,122,.25))}to{filter:drop-shadow(0 0 7px rgba(242,210,122,.6))}}
 .pl-ok{position:absolute;top:5px;right:5px;z-index:2;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pl-ok .icon{width:10px;height:10px}
 .pl-ok.is-lock{background:rgba(0,0,0,.55);color:var(--tx-3)}
+@media (max-width:899px) and (min-height:501px){   /* Handy: Pass enger, damit die Premium-Reihe ganz im Fenster steht (Spieltest 7.10.) */
+  .pass-hero{padding:8px 10px;gap:5px} .pass-lvl{width:42px;height:42px} .pass-lvl b{font-size:17px}
+  .pl{padding-bottom:4px} .pl-spalte,.pl-namen{gap:3px} .pl-spalte::before{top:calc(var(--plz) + 16px)} .pass-prem{padding:8px} }
 .pass-how-l{display:grid;gap:2px;margin-top:8px;padding:4px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.18)}
 .pass-how-l div{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .pass-how-l div:last-child{border-bottom:0}
 .pass-how-l .icon{width:14px;height:14px;color:var(--gold-300);flex:none} .pass-how-l b{margin-left:auto;color:var(--gold-100);font-variant-numeric:tabular-nums}
@@ -447,13 +450,12 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
-.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 58px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text höchstens 2 Zeilen, ≤ 56 px), Knöpfe darunter */
+.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 66px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
+  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text ganz, höchstens 4 Zeilen), Knöpfe darunter; rechts 10 px Luft zu den Kartenknöpfen */
   background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .anleitung[hidden]{display:none}
 .anleitung-n{width:min-content;font:700 10px/1.15 var(--font-ui);color:var(--gold-200);text-align:center}   /* „Schritt“ über „1/7“: schmal */
-.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1);cursor:pointer}
-.anleitung:not(.is-auf):not(.is-frage):not(.is-ok) .anleitung-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}   /* langer Text: „…“, antippen zeigt alles */
+.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}   /* immer ganz lesbar, kein „…“ (Spieltest 7.10.) */
 #anleitungWeg{position:relative;width:32px;height:32px;align-self:center} #anleitungWeg::before{content:"";position:absolute;inset:-7px}   /* (sichtbar 32 px, Tippfläche 44 px – ab der Innenkante: 1 px Rand dazu) */
 /* Handy: mit offenem Basis-Fenster oben unter dem HUD statt direkt über dem Fenster – dort steht die Basis (inselMittig) */
 @media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important} }
@@ -1083,7 +1085,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .tag--player{color:#cfe3ff;background:rgba(63,134,216,.2);border:1px solid rgba(140,192,255,.4)}
 /* Rangliste sheet: rank, crest in its frame + level, name, value; top 3 gold/silver/bronze, your row blue (pinned in the foot when outside the list) */
 #rankPopup{height:var(--sheet-max)}   /* steady: switching tabs never makes the sheet jump */
- #rankTabs.tabs{grid-template-columns:repeat(5,minmax(0,1fr))} #rankBody{gap:6px;padding:10px 10px 14px}
+ #rankBody{gap:6px;padding:10px 10px 14px}
 .lb-row{--acc:transparent;display:grid;grid-template-columns:30px 40px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:54px;padding:6px 10px 6px 6px;border-radius:var(--r-sm);
   border:1px solid var(--line-1);background:rgba(255,255,255,.025);box-shadow:inset 3px 0 0 var(--acc);cursor:pointer;text-align:left;color:inherit}
 .lb-row:hover{background-color:rgba(255,255,255,.05)} .lb-row:active{transform:scale(.995)}
@@ -1230,6 +1232,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
    (Verlauf, Rahmen, Leuchten), gezeichnete Truhe, Name groß, Inhalt eine Zeile, Preis-Knopf unten über die volle Breite
    (Gold = Edelsteine, Navy = Thron-Punkte). Die Epische Kiste groß über beide Spalten. Erklärungen hinter „i“. */
 #shopPopup.panel--sheet{--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd))}   /* (Handy: mehr Platz, damit alle Kisten ohne Scrollen passen) */
+@media (max-width:899px) and (min-height:501px){ #shopPopup.panel--sheet:has([data-spane="markt"]:not([hidden])){--sheet-max:min(70dvh,calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd)))} }   /* Markt (kurz): so hoch wie die anderen Fenster, keine leere Fläche */
 #shopPopup .phead{min-height:56px;padding-bottom:8px} #shopPopup .phead .overline{display:none} #shopPopup .emblem{width:38px;height:38px}
 #shopPopup .phead-text{display:flex;align-items:center;gap:10px;min-width:0} #shopPopup .ptitle{margin:0;flex:none} #shopPopup .psub{min-width:0}
 #shopPopup .psub small{display:none}   /* (nur Zahl + Zeichen – „Edelsteine“ steht im title) */
@@ -1418,6 +1421,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
   .toast{top:auto;bottom:104px;max-width:min(640px,calc(100vw - 40px))}   /* über der Leiste */
   body.has-sheet .toast{left:calc(50% - 209px);max-width:min(640px,calc(100vw - 458px))}   /* centred in the map area left of the drawer */
   body.is-multi .toast{bottom:170px}
+  body .toast.toast--oben{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto}   /* über einem offenen Fenster: oben (06d hintFrei) */
   .scrim{display:none!important}
   .sheet-grab{display:none}
   .panel .sheet-grab + .phead{padding-top:10px}
@@ -1499,7 +1503,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .daily-day.is-done::after{content:"";position:absolute;right:3px;top:3px;width:5px;height:5px;border-radius:50%;background:#5cbf62}
 .daily-day.is-today{border-color:var(--gold-300);color:var(--gold-100);box-shadow:var(--glow-gold)} .daily-day.is-today .icon{color:var(--gold-200)}
 .daily-day.is-big .icon{color:var(--r-lila)}
-.daily-row{display:flex;align-items:center;gap:10px}
+.daily-row{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 12px}   /* Abstand zum Kartenrand (Spieltest 7.10.: Text klebte links) */
 .daily-row .daily-txt{flex:1;min-width:0}
 .daily-row .daily-txt b{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--tx-1)}
 .daily-row .daily-txt small{display:block;font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
@@ -1880,7 +1884,8 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 .rk-inhalt{display:grid;gap:8px} .rk-liste{display:grid;gap:6px}
 .rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
 .rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}
-.rk-knopf{flex:none;min-width:96px;min-height:44px}
+.rk-knopf{flex:none;min-width:96px;min-height:44px;gap:6px} .rk-knopf[data-rk-kauf]{min-width:132px} .rk-knopf .icon{width:14px;height:14px} .rk-preis{font:700 13px/1 var(--font-ui)}   /* „Kaufen ◆ 80“ wie im Shop */
+@media (max-width:899px) and (min-height:501px){ #rucksackPopup .pbody{gap:8px} .rk-fach{--bk:46px;padding:4px 8px} .rk-liste{gap:4px} }   /* Handy: enger, damit die Splitter-Reihe ganz im Fenster steht */
 .rk-splitter{--bk:56px;justify-content:flex-start;gap:8px} .rk-splitter .bk-mit{padding:0;border:0;background:none;cursor:pointer;min-height:44px}
 
 /* ---- Belohnungs-Fenster: Kiste wackelt, geht auf, Strahlen drehen, Kacheln kommen nacheinander ---- */
@@ -2293,7 +2298,8 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 
 <style>
 /* Fenster Events, Kampf, Bündnis, Profil: höchstens 4 Reiter, Unterreiter als Chips, Tippflächen mind. 44 px, nichts abgeschnitten */
-#goalsGruppen.tabs,#profilePopup #profileTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+#goalsGruppen.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+#profilePopup #profileTabs.tabs,#rankTabs.tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:auto}   /* Breite nach dem Text: „Einstellungen“, „Thron-Punkte“ bekommen mehr Platz, stoßen nicht an den Rand */
 #battleTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 .p5-reiter .tab .badge{position:absolute;top:4px;right:8px}
 @media (min-height:501px),(orientation:portrait){
