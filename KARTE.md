@@ -851,8 +851,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawArmyCamps` → Game/spiel/09d-armeen-wegmarken.js:172
 - `drawBackground` → Game/spiel/03a-karte-hintergrund.js:491
 - `drawBarb` → Game/spiel/09b-lager-tagesboss.js:256
-- `drawBaseAuras` → Game/spiel/03c-wappen-thronplatz.js:293
-- `drawBaseSparks` → Game/spiel/03c-wappen-thronplatz.js:315
+- `drawBaseAuras` → Game/spiel/03c-wappen-thronplatz.js:296
+- `drawBaseSparks` → Game/spiel/03c-wappen-thronplatz.js:318
 - `drawBattleFx` → Game/spiel/07a-schlachten.js:398
 - `drawBrand` → Game/spiel/03b-gebaeude-3d.js:333
 - `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:293
@@ -870,7 +870,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawMarchButtons` → Game/spiel/03d-maersche-tagnacht.js:71
 - `drawMarchChips` → Game/spiel/03d-maersche-tagnacht.js:99
 - `drawMarchColumn` → Game/spiel/03d-maersche-tagnacht.js:24
-- `drawMarchLine` → Game/spiel/03c-wappen-thronplatz.js:449
+- `drawMarchLine` → Game/spiel/03c-wappen-thronplatz.js:452
 - `drawMarchTokens` → Game/spiel/03d-maersche-tagnacht.js:41
 - `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:326
 - `drawn` → Game/spiel/03a-karte-hintergrund.js:525
@@ -878,13 +878,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:190
 - `drawPickups` → Game/spiel/09a-funde-felder.js:62
 - `drawResFields` → Game/spiel/09a-funde-felder.js:294
-- `drawRings` → Game/spiel/03c-wappen-thronplatz.js:377
+- `drawRings` → Game/spiel/03c-wappen-thronplatz.js:380
 - `drawRulerCrowns` → Game/spiel/07b-kriegsherr.js:195
 - `drawTerritoriesInto` → Game/spiel/03a-karte-hintergrund.js:358
-- `drawThroneFx` → Game/spiel/03c-wappen-thronplatz.js:274
-- `drawThronePlaza` → Game/spiel/03c-wappen-thronplatz.js:215
+- `drawThroneFx` → Game/spiel/03c-wappen-thronplatz.js:277
+- `drawThronePlaza` → Game/spiel/03c-wappen-thronplatz.js:218
 - `drawThroneShots` → Game/spiel/06c-thron-mitte.js:117
-- `drawTitleBadges` → Game/spiel/03c-wappen-thronplatz.js:351
+- `drawTitleBadges` → Game/spiel/03c-wappen-thronplatz.js:354
 - `drawTorBild` → Game/spiel/03b-gebaeude-3d.js:276
 - `drawToreImNebel` → Game/spiel/03b-gebaeude-3d.js:285
 - `drawWander` → Game/spiel/07b-kriegsherr.js:148
@@ -1137,7 +1137,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `FX.upgrade` → Game/spiel/10c-start-einstellungen.js:91
 - `FX.victory` → Game/spiel/10c-start-einstellungen.js:87
 - `FX.warn` → Game/spiel/10c-start-einstellungen.js:84
-- `fxCurseFlames` → Game/spiel/03c-wappen-thronplatz.js:205
+- `fxCurseFlames` → Game/spiel/03c-wappen-thronplatz.js:208
 - `fxRibbon` → Game/spiel/07a-schlachten.js:370
 - `G.box` → Game/baukunst/05-umland.js:67
 - `G.cbox` → Game/baukunst/05-umland.js:68
@@ -1499,7 +1499,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `launchAttack` → Game/spiel/02b-maersche.js:97
 - `launchScout` → Game/spiel/02c-spaeher-ankunft.js:19
 - `launchSend` → Game/spiel/02b-maersche.js:169
-- `layoutBanners` → Game/spiel/03c-wappen-thronplatz.js:148
+- `layoutBanners` → Game/spiel/03c-wappen-thronplatz.js:150
 - `lazarettPlus` → Game/aufbau.js:240
 - `leafGeo` → Game/baukunst/04-vielfalt-stile.js:495
 - `leaveAtBoot` → Game/spiel/06d-schild-produktion.js:271
@@ -1573,8 +1573,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `marchButtons` → Game/spiel/02b-maersche.js:329
 - `marchFlag` → Game/spiel/03d-maersche-tagnacht.js:4
 - `marchKeyOf` → Game/spiel/02b-maersche.js:212
-- `marchPath` → Game/spiel/03c-wappen-thronplatz.js:436
-- `marchPointAt` → Game/spiel/03c-wappen-thronplatz.js:468
+- `marchPath` → Game/spiel/03c-wappen-thronplatz.js:439
+- `marchPointAt` → Game/spiel/03c-wappen-thronplatz.js:471
 - `marchSkinOf` → Game/spiel/05a-aussehen-profil.js:109
 - `marchTapAt` → Game/spiel/03d-maersche-tagnacht.js:91
 - `marchTrail` → Game/spiel/03d-maersche-tagnacht.js:13
@@ -1810,7 +1810,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pagoda` → Game/baukunst/05-umland.js:222
 - `paintBackground` → Game/spiel/03a-karte-hintergrund.js:465
 - `paintBaender` → Game/spiel/03a-karte-hintergrund.js:229
-- `paintBanners` → Game/spiel/03c-wappen-thronplatz.js:187
+- `paintBanners` → Game/spiel/03c-wappen-thronplatz.js:190
 - `paintBoden` → Game/spiel/03a-karte-hintergrund.js:115
 - `paintGateIso` → Game/spiel/03b-gebaeude-3d.js:156
 - `paintGelaende` → Game/spiel/03a-karte-hintergrund.js:208
@@ -2054,9 +2054,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ribbed` → Game/baukunst/04-vielfalt-stile.js:258
 - `ribbon` → Game/spiel/02c-spaeher-ankunft.js:305
 - `ring` → Game/baukunst/04-vielfalt-stile.js:266
-- `ring` → Game/spiel/03c-wappen-thronplatz.js:366
+- `ring` → Game/spiel/03c-wappen-thronplatz.js:369
 - `ringAn` → Game/spiel/01b-weltkarte.js:174
-- `ringBadge` → Game/spiel/03c-wappen-thronplatz.js:370
+- `ringBadge` → Game/spiel/03c-wappen-thronplatz.js:373
 - `ringCardsHtml` → Game/spiel/05a-aussehen-profil.js:74
 - `ringGive` → Game/spiel/05a-aussehen-profil.js:67
 - `ringMult` → Game/spiel/01b-weltkarte.js:31
@@ -2181,6 +2181,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `senden` → Game/speichern.js:160
 - `sendenAlle` → Game/weltrechner/push.js:205
 - `sendenAn` → Game/weltrechner/push.js:191
+- `senkSchildX` → Game/spiel/03c-wappen-thronplatz.js:149
 - `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:523
 - `server` → Game/benachrichtigung.js:20
 - `server` → Game/weltrechner/push.js:168
@@ -2364,7 +2365,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `titel` → Game/weltrechner/push.js:70
 - `titelSzene` → Game/ladebildschirm.js:17
 - `titleCleanup` → Game/spiel/04-kampf.js:46
-- `titledCapitals` → Game/spiel/03c-wappen-thronplatz.js:199
+- `titledCapitals` → Game/spiel/03c-wappen-thronplatz.js:202
 - `titleMult` → Game/spiel/04-kampf.js:40
 - `titleOf` → Game/spiel/04-kampf.js:45
 - `tnGlow` → Game/spiel/03d-maersche-tagnacht.js:198
@@ -2391,7 +2392,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tower` → Game/spiel/08e-stadtbild-haeuser.js:464
 - `towerTier` → Game/spiel/03b-gebaeude-3d.js:61
 - `tpl` → Game/baukunst/05-umland.js:60
-- `trace` → Game/spiel/03c-wappen-thronplatz.js:459
+- `trace` → Game/spiel/03c-wappen-thronplatz.js:462
 - `traglast` → Game/aufbau.js:237
 - `travelDurationSeconds` → Game/spiel/02b-maersche.js:23
 - `triPrism` → Game/baukunst/04-vielfalt-stile.js:564
@@ -3954,22 +3955,23 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bannerSprite` :126
 - `tierFor` :141
 - `overlap` :143
-- `layoutBanners` :148 — places every nameplate (sets bannerHitRects) → items for paintBanners()
-- `paintBanners` :187
-- `titledCapitals` :199 — capital id → title (only people who hold one)
-- `fxCurseFlames` :205 — ---- base effects: nothing by level any more - only titles from the middle: hal…
-- `drawThronePlaza` :215 — THRONPLATZ: the centre of the world looks the part ===== a paved round plaza wi…
-- `drawThroneFx` :274 — over the Mega-Tempel: a warm glow, and when someone rules: their pillar of ligh…
-- `drawBaseAuras` :293 — under the towers
-- `drawBaseSparks` :315 — over the towers
-- `drawTitleBadges` :351 — the title's name over the titled capital
-- `ring` :366
-- `ringBadge` :370 — the title's sign on top of the ring: a crown (good title, ruler) or a skull (pe…
-- `drawRings` :377
-- `marchPath` :436 — source → over every bridge on the route → target
-- `drawMarchLine` :449 — who: whose column (their Marsch-Skin); yours by default
-- `trace` :459
-- `marchPointAt` :468 — screen point at path distance d
+- `senkSchildX` :149 — Schild am senkrechten Tor: neben dem Weg, rechts der Kette – passt es dort nich…
+- `layoutBanners` :150 — places every nameplate (sets bannerHitRects) → items for paintBanners()
+- `paintBanners` :190
+- `titledCapitals` :202 — capital id → title (only people who hold one)
+- `fxCurseFlames` :208 — ---- base effects: nothing by level any more - only titles from the middle: hal…
+- `drawThronePlaza` :218 — THRONPLATZ: the centre of the world looks the part ===== a paved round plaza wi…
+- `drawThroneFx` :277 — over the Mega-Tempel: a warm glow, and when someone rules: their pillar of ligh…
+- `drawBaseAuras` :296 — under the towers
+- `drawBaseSparks` :318 — over the towers
+- `drawTitleBadges` :354 — the title's name over the titled capital
+- `ring` :369
+- `ringBadge` :373 — the title's sign on top of the ring: a crown (good title, ruler) or a skull (pe…
+- `drawRings` :380
+- `marchPath` :439 — source → over every bridge on the route → target
+- `drawMarchLine` :452 — who: whose column (their Marsch-Skin); yours by default
+- `trace` :462
+- `marchPointAt` :471 — screen point at path distance d
 
 ### Game/spiel/03d-maersche-tagnacht.js — Märsche auf der Karte (Spur, Fahne, Skins) und Tag und Nacht
 - `marchFlag` :4 — (x, y) = the token's centre; the pole stands on its upper right

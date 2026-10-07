@@ -145,6 +145,8 @@ function overlap(a, b) { return Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Mat
 // candidate slots [x shift (in half widths + 0.6 r), y mode (0 below, ±1 below nudged by 0.3 h, 2 above, 3 centred), penalty]
 const BANNER_SLOTS = [[0, 0, 0], [0, 1, 12], [0, -1, 12], [0, 2, 40], [1, 3, 60], [-1, 3, 60]];
 let towerRects = [];                             // screen boxes of the visible buildings (the countdown chips keep off them)
+// Schild am senkrechten Tor: neben dem Weg, rechts der Kette – passt es dort nicht ins Bild, links davon
+function senkSchildX(tm, w, z) { const k = TOR_SENK.hoch * .13 * z, x = toSX(tm.x); return x + k + w <= viewW - 8 ? x + k : x - k - w >= 8 ? x - k - w : Math.max(8, viewW - 8 - w); }   // (zu schmal für beides: so weit rechts wie möglich)
 function layoutBanners(visible, z, selectedId) {  // places every nameplate (sets bannerHitRects) → items for paintBanners()
   bannerHitRects = [];
   const towers = towerRects = visible.map(isl => { const s = 2 * isl.radius * z; return { id: isl.id, x: toSX(isl.x) - s / 2, y: toSY(isl.y) - s * 0.65, w: s, h: s }; });
@@ -168,7 +170,8 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
     for (let t = it.tier; ; t = DOWN[t]) {
       const sp = bannerSprite(t, it.m), w = sp.w, h = sp.h;
       for (const [dx, dy, cost] of BANNER_SLOTS) {                                 // below, nudged, above, beside
-        const rect = { x: sx - w / 2 + dx * (w / 2 + 0.6 * r), y: dy === 2 ? sy - 1.32 * r - h : dy === 3 ? sy - h / 2 : sy + 0.95 * r + dy * 0.3 * h, w, h };
+        const rect = tm && tm.senk ? { x: senkSchildX(tm, w, z) + dx * w * .3, y: toSY(tm.y + TOR_SENK.hoch * .05) + Math.max(0, dy) * .3 * h, w, h }   // senkrechtes Tor: neben dem Weg (rechts der Kette), nicht auf der Kette
+          : { x: sx - w / 2 + dx * (w / 2 + 0.6 * r), y: dy === 2 ? sy - 1.32 * r - h : dy === 3 ? sy - h / 2 : sy + 0.95 * r + dy * 0.3 * h, w, h };
         let sc = cost;
         for (const q of placed) sc += overlap(rect, q);
         for (const tw of towers) if (tw.id !== it.isl.id) sc += 0.35 * overlap(rect, tw);
