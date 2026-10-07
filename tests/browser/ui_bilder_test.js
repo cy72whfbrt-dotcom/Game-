@@ -45,15 +45,41 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(fenster.offen && fenster.rahmen && fenster.reiter && fenster.zu, 'Fenster: Bild-Rahmen, Reiter, rotes X', fenster);
   await bild('fenster');
-  // 3) Belohnungs-Kacheln (Inventar im Profil)
+  // 3) Belohnungs-Kacheln (Ausrüstung: je Seltenheit ein Teil)
   const kachel = await ev(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms));
-    const t = [...document.querySelectorAll('#profileTabs .tab')].find(t => /Ausr|Inv|Gegen/i.test(t.textContent)); if (t) t.click(); await warte(600);
-    const k = document.querySelector('.tile[data-r]:not(.empty)');
-    return { da: !!k, bild: k ? /ui_kachel_/.test(getComputedStyle(k).backgroundImage) : null };
+    for (let r = 0; r < 6; r++) addInventoryItem(['weapon', 'armor', 'shield', 'boots'][r % 4], r, 1);
+    showProfileTab('equip'); if (typeof renderProfile === 'function') renderProfile(); await warte(600);
+    const k = [...document.querySelectorAll('#profilePopup .tile[data-r]:not(.empty)')];
+    return { n: k.length, bild: k.length > 0 && k.every(t => /ui_kachel_/.test(getComputedStyle(t).backgroundImage)) };
   });
-  ok(!kachel.da || kachel.bild, 'Kacheln: Seltenheit als Bild', kachel);
+  ok(kachel.n >= 6 && kachel.bild, 'Kacheln: Seltenheit als Bild', kachel);
   await bild('kacheln');
+  // 4) Events → Aufgaben (Listen-Karten, Symbole) und Anleitung (Hinweisbox)
+  const ziele = await ev(async () => {
+    const warte = ms => new Promise(f => setTimeout(f, ms));
+    closeAllPopups(); openGoals(); await warte(800);
+    const s = document.querySelector('#goalsPopup svg.icon:has(> use[href="#i-star"]), #goalsPopup svg.icon:has(> use[href="#i-goal"])');
+    return { offen: isPanelOpen(goalsPopup), sym: !s || /ui_sym_/.test(getComputedStyle(s).backgroundImage) };
+  });
+  ok(ziele.offen && ziele.sym, 'Events: Symbole als Bild', ziele);
+  await bild('aufgaben');
+  const anl = await ev(async () => {
+    closeAllPopups(); anleitung.schritt = 0; anleitungFrage = false; anleitungZeigen(); await new Promise(f => setTimeout(f, 400));
+    const a = document.getElementById('anleitung');
+    return { sicht: !a.hidden, bild: /ui_hinweis/.test(getComputedStyle(a).borderImageSource) };
+  });
+  ok(anl.sicht && anl.bild, 'Anleitung: Hinweisbox mit Rolle als Bild', anl);
+  // 5) Aufstieg: Strahlen, Wappen, Lorbeer
+  const auf = await ev(async () => {
+    const m = document.getElementById('levelUpModal'); document.getElementById('levelUpLevel').textContent = '2'; m.hidden = false;
+    await new Promise(f => setTimeout(f, 900));
+    const c = getComputedStyle(document.querySelector('.lvlup-badge'));
+    return { wappen: /ui_wappen/.test(c.backgroundImage), strahlen: /ui_strahlen/.test(getComputedStyle(document.querySelector('.lvlup-card'), '::before').backgroundImage) };
+  });
+  ok(auf.wappen && auf.strahlen, 'Aufstieg: Wappen mit Krone und Strahlen', auf);
+  await bild('aufstieg');
+  await ev(() => { document.getElementById('levelUpModal').hidden = true; });
   await ev(() => closeAllPopups());
   await p.waitForTimeout(1500);
   ok(!fehlt.length, 'alle ui-Bilder geladen', fehlt);
