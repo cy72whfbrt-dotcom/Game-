@@ -95,12 +95,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(an.sicht && !an.ueber && /Abholen/.test(an.t), art + ': Anleitung Schritt 6 im Events-Fenster sichtbar und nicht darüber', an);
     // I) Krankenhaus „Heilen“: zu wenig Münzen → „Fehlt: … Münzen“; „1.000 / 1.422“ in einer Zeile; „Truppen geheilt“ bleibt stehen (Erfolg kommt später)
     const kh = await ev(async () => { openCity(); await new Promise(f => setTimeout(f, 1500)); const c = loadCity(); c.levels.hospital = 3; c.wounded = 1000; saveCity(); coins = 50000;
-      cityPage = 'nutz'; cityOpenId = 'hospital'; renderCitySheet(); await new Promise(f => setTimeout(f, 300));
+      cityPage = 'nutz'; cityOpenId = 'hospital'; renderCitySheet(); await new Promise(f => setTimeout(f, 900));   // (Fenster fertig aufgeklappt)
       const k = document.querySelector('#citySheet [data-heal]'), sm = document.querySelector('#citySheet .heal-row small'), zeile = parseFloat(getComputedStyle(sm).lineHeight) || 20;
       const o = { knopf: k.textContent, aus: k.disabled, einzeilig: sm.getBoundingClientRect().height < zeile * 1.5, rand: Math.round(document.querySelector('#citySheet .heal-row').getBoundingClientRect().right - k.getBoundingClientRect().right) };
-      coins = 5e8; renderCitySheet(); statBump('healed', 1e9); document.querySelector('#citySheet [data-heal]').click(); await new Promise(f => setTimeout(f, 1200)); o.hint = hintEl.textContent;
+      coins = 5e8; renderCitySheet(); statBump('healed', 1e9); const seen = [], alt = flashHint; flashHint = function (t) { seen.push([Date.now(), t]); return alt.apply(this, arguments); };
+      try { document.querySelector('#citySheet [data-heal]').click(); await new Promise(f => setTimeout(f, 1200)); } finally { flashHint = alt; }
+      const h0 = seen.find(x => /geheilt/.test(x[1])); o.hint = h0 ? h0[1] : seen.map(x => x[1]).join(' | '); o.zuFrueh = !!h0 && seen.some(x => x[0] > h0[0] && x[0] - h0[0] < 2000);   // (Erfolg erst nach dem Hinweis – auch unter Last)
       cityOpenId = null; document.getElementById('citySheet').hidden = true; closeCity(); return o; });
-    ok(/^Fehlt: (49\.9\d\d|50\.000) Münzen$/.test(kh.knopf.trim()) && kh.aus && kh.einzeilig && kh.rand >= 4 && /geheilt/.test(kh.hint), art + ': Krankenhaus – „Fehlt: … Münzen“, Verwundete in einer Zeile, Knopf mit Rand, „Truppen geheilt“ bleibt', kh);
+    ok(/^Fehlt: (49\.9\d\d|50\.000) Münzen$/.test(kh.knopf.trim()) && kh.aus && kh.einzeilig && kh.rand >= 4 && /geheilt/.test(kh.hint) && !kh.zuFrueh, art + ': Krankenhaus – „Fehlt: … Münzen“, Verwundete in einer Zeile, Knopf mit Rand, „Truppen geheilt“ bleibt', kh);
     // J) Bündnis gründen ohne Verbindung zur Welt: Meldung statt nichts; K) Handy: „Gründen“ im sichtbaren Teil des Fensters
     const bd = await ev(async () => { closeAllPopups(); flashHint('', 1); coins = 5e6; bundOeffnen(); await new Promise(f => setTimeout(f, 300)); bundPopup.querySelector('[data-bact="gruendenAuf"]').click(); await new Promise(f => setTimeout(f, 300));
       const k = bundPopup.querySelector('.bd-gf-los').getBoundingClientRect(), pb = bundPopup.querySelector('.pbody').getBoundingClientRect();
