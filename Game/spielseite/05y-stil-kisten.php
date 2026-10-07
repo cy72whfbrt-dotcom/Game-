@@ -28,7 +28,7 @@
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}
 
 /* Rucksack (Dock): je Gegenstand eine Listen-Karte mit Kachel, Name und Knopf; Splitter als Kacheln mit Heldennamen */
-#rucksackPopup .pbody{display:grid;gap:10px;align-content:start}
+#rucksackPopup .pbody{display:grid;gap:10px;align-content:start} .rk-emblem{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
 .rk-inhalt{display:grid;gap:8px} .rk-liste{display:grid;gap:6px}
 .rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
 .rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}

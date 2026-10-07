@@ -457,7 +457,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 <section id="rucksackPopup" class="panel panel--sheet" role="dialog" aria-labelledby="rucksackTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
-    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-crate"/></svg></div>
+    <div class="emblem emblem--gold"><img class="rk-emblem" src="bilder/ui_dock_rucksack.webp" alt="" draggable="false"></div>
     <div class="phead-text"><div class="overline">Deine Gegenstände</div><h3 id="rucksackTitle" class="ptitle">Rucksack</h3></div>
     <button id="rucksackCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>

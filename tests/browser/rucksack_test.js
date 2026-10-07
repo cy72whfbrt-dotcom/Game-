@@ -34,7 +34,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const k = [...document.querySelectorAll('#cornerButtons .nav-btn')].filter(e => R(e).width > 0);
     const rs = k.map(R), l = k.map(e => R(e.querySelector('.nav-l')));
     return { ids: k.map(e => e.id).join(), tipp: Math.min(...rs.map(r => Math.min(r.width, r.height))), drin: rs.every(r => r.left >= nav.left - 1 && r.right <= nav.right + 1),
-      ueber: rs.some((r, i) => i && r.left < rs[i - 1].right - 1), text: l.some((r, i) => i && r.left < l[i - 1].right - 1), bild: /kiste_ausruestung_zu/.test(getComputedStyle(document.getElementById('rucksackBtn')).backgroundImage + getComputedStyle(document.querySelector('#rucksackBtn > .icon')).backgroundImage) };
+      ueber: rs.some((r, i) => i && r.left < rs[i - 1].right - 1), text: l.some((r, i) => i && r.left < l[i - 1].right - 1), bild: /ui_dock_rucksack/.test(getComputedStyle(document.getElementById('rucksackBtn')).backgroundImage + getComputedStyle(document.querySelector('#rucksackBtn > .icon')).backgroundImage) };
   });
   ok(a.ids === 'cityNavBtn,bundBtn,battleLogBtn,goalsBtn,rucksackBtn,shopBtn' && a.tipp >= 44 && a.drin && !a.ueber && !a.text && a.bild, 'Leiste: 6 Knöpfe (… Events · Rucksack · Shop), Tippfläche ≥ 44 px, nichts überlappt (auch die Namen), Rucksack-Bild', a);
   await bild('leiste');
@@ -58,7 +58,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const c = await p.evaluate(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};
     document.querySelector('[data-zum-rucksack]').click(); await warte(300);
-    o.offen = isPanelOpen(rucksackPopup) && !isPanelOpen(shopPopup) && document.getElementById('rucksackBtn').classList.contains('active');
+    o.offen = isPanelOpen(rucksackPopup) && !isPanelOpen(shopPopup) && document.getElementById('rucksackBtn').classList.contains('active'); const em = document.querySelector('#rucksackPopup .rk-emblem'); o.kopf = !!em && em.complete && em.naturalWidth > 0;
     const jetzt = serverJetzt(); store.set('openWaterShield', String(jetzt + 3600000)); shieldMemAt = 0; renderRucksack();
     document.querySelector('[data-rk-schild="2"]').click(); await warte(100);
     o.dazu = Math.round((shieldUntil() - jetzt) / 60000); o.weg = shieldStock()[2] === 0;
@@ -66,7 +66,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.tele = !!document.querySelector('[data-rk-tele]') && /1× im Rucksack/.test(document.getElementById('rkInhalt').innerText);
     return o;
   });
-  ok(c.offen, 'Shop „Rucksack ›“ öffnet den Rucksack (Leisten-Knopf leuchtet)', c);
+  ok(c.offen && c.kopf, 'Shop „Rucksack ›“ öffnet den Rucksack (Leisten-Knopf leuchtet, Rucksack-Bild im Kopf)', c);
   ok(c.dazu >= 179 && c.dazu <= 181 && c.weg, 'Schild einsetzen: 1 Std. laufend + 2 Std. = 3 Std. (Zeit addiert), Schild aus dem Rucksack weg', c);
   ok(c.kaufen && c.tele, 'Rucksack: ohne Schild „Kaufen“, Teleporter 1× mit „Benutzen“', c);
   // E) Splitter je Held

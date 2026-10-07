@@ -1903,7 +1903,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}
 
 /* Rucksack (Dock): je Gegenstand eine Listen-Karte mit Kachel, Name und Knopf; Splitter als Kacheln mit Heldennamen */
-#rucksackPopup .pbody{display:grid;gap:10px;align-content:start}
+#rucksackPopup .pbody{display:grid;gap:10px;align-content:start} .rk-emblem{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
 .rk-inhalt{display:grid;gap:8px} .rk-liste{display:grid;gap:6px}
 .rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
 .rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}
@@ -2030,7 +2030,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
 }
 #cityNavBtn{--ki-bild:url(bilder/ui_dock_burg.webp)} body.in-stadt #cityNavBtn{--ki-bild:url(bilder/ui_fahne.webp)}
 #bundBtn{--ki-bild:url(bilder/ui_dock_bund.webp)} #battleLogBtn{--ki-bild:url(bilder/ui_dock_kampf.webp)}
-#goalsBtn{--ki-bild:url(bilder/ui_dock_events.webp)} #rucksackBtn{--ki-bild:url(bilder/kiste_ausruestung_zu.webp)} #shopBtn{--ki-bild:url(bilder/ui_dock_shop.webp)} #profileBtn{--ki-bild:url(bilder/ui_dock_krone.webp)}
+#goalsBtn{--ki-bild:url(bilder/ui_dock_events.webp)} #rucksackBtn{--ki-bild:url(bilder/ui_dock_rucksack.webp)} #shopBtn{--ki-bild:url(bilder/ui_dock_shop.webp)} #profileBtn{--ki-bild:url(bilder/ui_dock_krone.webp)}
 
 /* ---------------- Karten-Knöpfe ---------------- */
 .mapctl{gap:6px;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
@@ -2770,7 +2770,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 <section id="rucksackPopup" class="panel panel--sheet" role="dialog" aria-labelledby="rucksackTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
-    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-crate"/></svg></div>
+    <div class="emblem emblem--gold"><img class="rk-emblem" src="bilder/ui_dock_rucksack.webp" alt="" draggable="false"></div>
     <div class="phead-text"><div class="overline">Deine Gegenstände</div><h3 id="rucksackTitle" class="ptitle">Rucksack</h3></div>
     <button id="rucksackCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
