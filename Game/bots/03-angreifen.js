@@ -270,7 +270,7 @@ function botThink(bot) {
         }
         if (!it) {                                                                               // their best targets they don't know yet: scout those first
             if (botHopeless(bot, e.target, st, atk)) continue;                                   // they saw it last time - far beyond them
-            if (li < 3 && !botScouting(bot, e.target.id)) { const ready = now + scoutSecs(islandById[e.sources[0].id], e.target, bot.id) * 1000;
+            if (li < 3 && !botScouting(bot, e.target.id) && !neulingAktiv(islandOwnerOf(e.target.id))) { const ready = now + scoutSecs(islandById[e.sources[0].id], e.target, bot.id) * 1000;
                 if (botLearn(bot.id, e.target.id, ready, islandById[e.sources[0].id].landmassId) !== false && islandOwnerOf(e.target.id) === 'player') botScoutVisible(bot, e.sources[0].id, e.target.id, now, ready);
                 scouted++; break; }
             continue;
@@ -330,7 +330,7 @@ function botThink(bot) {
     // nothing to strike: scout the most interesting base they don't know yet (that is this move's order)
     if (!n && !rallied && !scouted) for (const e of list.slice(0, 8)) {
         if (botIntel(bot, e.target.id) || botScouting(bot, e.target.id) || bossAt(e.target.id)) continue;
-        const ow = islandOwnerOf(e.target.id);
+        const ow = islandOwnerOf(e.target.id); if (neulingAktiv(ow)) continue;   // Anfängerschutz: nicht ausspähen
         if (ow && ow !== 'player' && botStrategic(bot, e.target) >= .9 && !botGrudgeOn(bot.id, ow)) continue;   // a far base of someone else: not worth a look
         if (botHopeless(bot, e.target, st, atk)) continue;
         const ready = now + scoutSecs(islandById[e.sources[0].id], e.target, bot.id) * 1000;   // their scout walks as long as yours would

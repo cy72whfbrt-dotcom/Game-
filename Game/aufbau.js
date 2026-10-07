@@ -317,7 +317,7 @@ function renderKeep() {                                        // das Burg-Fenst
     setText(document.getElementById('cityBDesc'), 'Das Herz deines Reiches – unabhängig von der Basis-Stufe draußen auf der Karte. Die Burg-Stufe bestimmt, wie hoch deine Gebäude gehen, wie viele Märsche gleichzeitig laufen und wie viele Münzen und wie viel Holz, Stein und Eisen vor Angreifern sicher sind. Jede Stufe dauert lange (1 bis 60 Tage).');
     const note = document.getElementById('cityBNote'), blk = !bau && !max ? cityBlocker('keep') : null; let cls, nh;
     if (bau) { cls = 'notice notice--gold'; nh = icon('hourglass') + '<span style="flex:1">Ausbau auf Burg-Stufe ' + bau.to + ' · noch <b id="cityBNoteTime"></b><div class="city-progress" style="margin-top:6px"><i></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('bau', 'keep', bau.to, bau.endsAt) : '') + '</span>'; }
-    else { cls = 'notice city-wirkung'; nh = icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Friedensschild aktiv.') + '</span>'; }
+    else { cls = 'notice city-wirkung'; nh = icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Friedensschild aktiv.') + '</span>'; }
     if (note.className !== cls) note.className = cls; liveHtml(note, nh);
     liveHtml(document.getElementById('cityBStats'), max || bau ? '' : cityAnfHtml('keep', B, k));
     const up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');

@@ -2333,6 +2333,7 @@ function launchScout(targetId, explore, at) {
     const sourceId = nearestOwnedIslandTo(target);
     const home = islandById[sourceId];
     if (!home) return;
+    if (!explore) { const ow = islandOwnerOf(targetId); if (ow && ow !== 'player' && neulingAktiv(ow)) { flashHint(neulingBlockText(ow), 4000); return; } }   // Anfängerschutz: niemand späht Neulinge aus
     if (!spaeherWeg(home.landmassId, target.landmassId, 'player')) { const g = wegGrund(home.landmassId, target.landmassId, 'player'); flashHint(g && /öffnet/.test(g) ? g : 'Ein geschlossenes Tor versperrt den Weg – dein Späher kommt nicht durch.', 3500); return; }
     sfx('scout');
 
@@ -6243,7 +6244,7 @@ function openRulerProfile(who) {
     document.getElementById('rulerBody').innerHTML =
         '<div class="rp-stats"><div class="rp-stat"><small>Macht</small><b>' + fmtCompact(powerOf(pr)) + '</b></div><div class="rp-stat"><small>Basen</small><b>' + fmtNum(pr.bases) + '</b></div>' +
         '<div class="rp-stat"><small>Stufe</small><b>' + pr.lvl + '</b></div><div class="rp-stat"><small>Tempel</small><b>' + (rulerOwner() === who ? 'Herrscher' : pr.temple ? escapeHtml(pr.temple.name) : '–') + '</b></div></div>' +
-        (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now()) + '</span></div>' : '') +
+        (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (neulingVon(who) >= ownerShieldUntil(who) ? 'Anfängerschutz – noch ' + fmtHours(neulingVon(who) - Date.now()) + ' (oder bis 100.000 Truppen)' : (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now())) + '</span></div>' : '') +
         (verdeckt ? '' : passChip(who)) + (last ? '<div class="rp-last">' + last + '</div>' : '') +
         (verdeckt ? verdecktHtml :
         '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
@@ -7767,39 +7768,49 @@ function ownerShieldUntil(who) {
     if (who === 'player') return Math.max(shieldUntil(), neulingBis());
     const b = loadBotState()[who] || {}; return Math.max(b.shieldUntil || 0, botNeulingBis(who, b));   // auch ihr Anfängerschutz
 }
-// ANFÄNGERSCHUTZ (EINE Welt) – für echte Spieler UND Mitspieler gleich: 48 Std. unangreifbar (auch wenn sie selbst
-// Mitspieler, Lager oder Felder angreifen). Endet früher, sobald die Macht (Gesamtstärke) 50 Mio. erreicht oder sie
-// einen echten Spieler angreifen.
-const NEULING_MS = 48 * 3600000, NEULING_MACHT = 50e6;
+// ANFÄNGERSCHUTZ (EINE Welt) – für echte Spieler UND Mitspieler gleich: 48 Std. kann sie niemand angreifen und niemand
+// ausspähen (auch wenn sie selbst Mitspieler, Lager oder Felder angreifen). Endet früher, sobald sie 100.000 Truppen haben
+// (Gesamttruppen wie im HUD) oder einen echten Spieler angreifen (Alexander 7.10.).
+const NEULING_MS = 48 * 3600000, NEULING_TRUPPEN = 100000;
 const staerkeMem = {};
 function staerke(who) {                           // Macht wie in der Rangliste, höchstens einmal pro Minute neu gerechnet
     const m = staerkeMem[who], now = Date.now(); if (m && now - m.at < 60000) return m.v;
     let v = 0; try { v = powerOf(whoProfile(who)); } catch (e) { v = 0; }
     staerkeMem[who] = { v, at: now }; return v;
 }
+const truppenMem = {};
+function neulingTruppen(who) {                    // Gesamttruppen (whoTroops), höchstens einmal pro Sekunde neu gezählt
+    const m = truppenMem[who], now = Date.now(); if (m && now - m.at < 1000) return m.v;
+    let v = 0; try { v = whoTroops(who); } catch (e) { v = 0; }
+    truppenMem[who] = { v, at: now }; return v;
+}
 function neulingBis() {
     if (!window.WELT) return 0; const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
-    if (staerke('player') >= NEULING_MACHT) { store.set('openWaterNeulingBis', '0'); afterSplash(() => flashHint('Dein Anfängerschutz ist vorbei – dein Reich hat 50 Mio. Macht erreicht.', 5000)); return 0; }
+    if (neulingTruppen('player') >= NEULING_TRUPPEN) { store.set('openWaterNeulingBis', '0'); afterSplash(() => flashHint('Dein Anfängerschutz ist vorbei – du hast 100.000 Truppen.', 5000)); return 0; }
     return t;
 }
 function botNeulingBis(who, b) {
     if (!window.WELT || !b) return 0;
     if (b.neuBis === undefined && !b.mensch) b.neuBis = worldStartAt() + NEULING_MS;   // Mitspieler der laufenden Welt: ab Weltstart
     const t = b.neuBis || 0; if (t <= Date.now()) return 0;
-    if (staerke(who) >= NEULING_MACHT) { b.neuBis = 0; saveBotState(); return 0; }   // (auch bei echten Spielern – nicht dem Handy überlassen)
+    if (neulingTruppen(who) >= NEULING_TRUPPEN) { b.neuBis = 0; saveBotState(); return 0; }   // (auch bei echten Spielern – nicht dem Handy überlassen)
     return t;
 }
+function neulingVon(who) { return !who ? 0 : who === 'player' ? neulingBis() : botNeulingBis(who, loadBotState()[who]); }
+function neulingAktiv(who, now) { return neulingVon(who) > (now || Date.now()); }   // Anfängerschutz: nicht angreifen, nicht ausspähen
+function neulingBlockText(who) { const n = who === 'player' ? 'Du bist' : ((botById[who] || {}).name || 'Dieser Spieler') + ' ist';
+    return 'Anfängerschutz – noch ' + fmtHours(neulingVon(who) - Date.now()) + ' (oder bis 100.000 Truppen): ' + n + ' neu und kann nicht angegriffen und nicht ausgespäht werden.'; }
 function neulingEnde(grund) { if (neulingBis() <= Date.now()) return; store.set('openWaterNeulingBis', '0'); if (grund) flashHint(grund, 4500); requestRender(); }
 function ownerShielded(who, now) { return !!who && (now || Date.now()) < ownerShieldUntil(who); }
 function shieldCovers(isl) { return !!isl && isl.type === 'tower'; }   // the shield covers the towers - never gates, temples or the throne (the middle stays open to everyone)
 function baseShieldedFor(id, by, now) { const ow = islandOwnerOf(id); return !!ow && ow !== by && shieldCovers(islandById[id]) && ownerShielded(ow, now); }   // by: 'player' | bot id
 function shieldedOwners(now) { const s = new Set(); if (now < ownerShieldUntil('player')) s.add('player'); for (const bot of BOT_DEFS) if (ownerShieldUntil(bot.id) > now) s.add(bot.id); return s; }
 function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spieler', b = ow !== 'player' && loadBotState()[ow];
-    if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return 'Anfängerschutz: ' + n + ' ist neu und noch ' + fmtHours(b.neuBis - Date.now()) + ' unangreifbar.';
+    if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return neulingBlockText(ow);
     return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
 function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock(), now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
-    liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Schild aktiv.') + '</span>');
+    liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
     liveHtml(document.getElementById('shieldUse'), !(st[2] || st[8] || st[24]) ? '<div class="empty-state lb-leer">' + icon('shield') + '<span><b>Kein Schild im Vorrat</b>Oben kaufen – dann hier einschalten, wann du willst.</span></div>' : [2, 8, 24].map(h => '<button type="button" class="btn btn--' + (st[h] ? 'primary' : 'secondary') + '" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '><span>' + h + ' Std.</span><span class="cost">' + st[h] + '× im Vorrat</span></button>').join('')); }   // (leer: ein Satz statt drei grauer „0×“-Kästen)
 shopPopup.addEventListener('click', e => {                 // Shop → Schilde: kaufen (in den Vorrat) und einschalten – beides nur hier
     const su = e.target.closest('[data-shield-use]');
@@ -14296,6 +14307,7 @@ if (window.WELT) {
             if (now < sc[1]) return true;
             const t = islandById[sc[0]], ow = t && islandOwnerOf(t.id);
             const r = { art: 'spaeh', ziel: sc[0] };
+            if (ow && ow !== who && neulingAktiv(ow)) { r.fehl = 1; WELT.nachricht(parseInt(who.slice(1), 10), r); return false; }   // inzwischen Anfängerschutz (neu angefangen, Saison): kein Bericht
             if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.verst = verst.l.reduce((s, v) => s + (v.t === t.id ? v.n : 0), 0); r.spy = ow && ow !== who ? spaeherBlick(ow, t) : null; if (ow && ow !== who) ausgespaeht(ow, who, t.id); }   // (verst: Verstärkung – eigene Zeile im Bericht)
             WELT.nachricht(parseInt(who.slice(1), 10), r); return false;
         });
@@ -14427,7 +14439,7 @@ if (window.WELT) {
             if (zuOft(wm(who), 'spaehen', 120, 3600000)) { warnen(who, 'spaehen', 'Über 120 Späher in einer Stunde – abgelehnt.'); return nein(); }
             const t = islandById[b.ziel], pt = { x: Number.isFinite(b.ex) ? b.ex : t.x, y: Number.isFinite(b.ey) ? b.ey : t.y, lm: t.landmassId };
             if (b.blick) {                            // Späher zu einer fremden Basis: bei Ankunft schreibt der Weltrechner den Bericht (nur er kennt die Werte des Herrn)
-                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id)) return nein();
+                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id) || neulingAktiv(ow)) return nein();   // (Anfängerschutz: niemand späht Neulinge aus)
                 let h = null, hd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < hd) { hd = d; h = i; } }
                 if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return nein();
                 if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return nein(); }
@@ -14700,7 +14712,7 @@ if (window.WELT) {
 
     if (store.get('openWaterNeulingBis') === null) {
         store.set('openWaterNeulingBis', String(Date.now() + NEULING_MS));
-        afterSplash(() => setTimeout(() => flashHint('Anfängerschutz: 48 Stunden kann dich niemand angreifen – bau dich in Ruhe auf. (Er endet früher, wenn dein Reich 50 Mio. Macht hat oder du einen echten Spieler angreifst.)', 9000), 4000));
+        afterSplash(() => setTimeout(() => flashHint('Anfängerschutz: 48 Stunden kann dich niemand angreifen und niemand ausspähen – bau dich in Ruhe auf. (Er endet früher, wenn du 100.000 Truppen hast oder einen echten Spieler angreifst.)', 9000), 4000));
     }
     // frisch beigetreten und nicht selbst Weltrechner: den Platz anmelden
     if (startplatzNeu && !WELT.leiter) WELT.befehl('beitreten', { insel: playerIslandId });

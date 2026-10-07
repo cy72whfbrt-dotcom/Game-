@@ -22,6 +22,7 @@ function launchScout(targetId, explore, at) {
     const sourceId = nearestOwnedIslandTo(target);
     const home = islandById[sourceId];
     if (!home) return;
+    if (!explore) { const ow = islandOwnerOf(targetId); if (ow && ow !== 'player' && neulingAktiv(ow)) { flashHint(neulingBlockText(ow), 4000); return; } }   // Anfängerschutz: niemand späht Neulinge aus
     if (!spaeherWeg(home.landmassId, target.landmassId, 'player')) { const g = wegGrund(home.landmassId, target.landmassId, 'player'); flashHint(g && /öffnet/.test(g) ? g : 'Ein geschlossenes Tor versperrt den Weg – dein Späher kommt nicht durch.', 3500); return; }
     sfx('scout');
 
