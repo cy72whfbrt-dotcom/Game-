@@ -28,29 +28,30 @@ function passXp(v) {
     if (L1 > L0) { flashHint('Saison-Pass: Stufe ' + L1 + ' erreicht – hol dir die Belohnung unter „Events“.', 3500); updateGoalsBadge(); }
     if (isPanelOpen(goalsPopup) && goalsTab === 'pass') passRenderSoon();
 }
-function passGive(who, r) {                               // one reward to anyone (you or the others) - returns the text for the hint
-    const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
-    if (r.k === 'coins') { const c = Math.max(wirtM(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
-    if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
-    if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
-    if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
-    if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } return 'Friedensschild ' + n + ' h'; }
+function passGive(who, r, aus) {                          // one reward to anyone (you or the others) - returns the text for the hint (aus: Belohnungs-Kacheln dazu)
+    aus = aus || []; const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
+    if (r.k === 'coins') { const c = Math.max(wirtM(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; aus.push({ a: 'coins', n: c }); return '+' + fmtCompact(c) + ' Münzen'; }
+    if (r.k === 'gems') { if (b) b.gems += n; else gems += n; aus.push({ a: 'gems', n }); return '+' + n + ' Edelsteine'; }
+    if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } aus.push({ a: 'tp', n }); return '+' + n + ' Thron-Punkte'; }
+    if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) { aus.push({ a: 'sh', n, held: h.id }); return '+' + n + ' Splitter ' + h.name; } if (b) b.gems += n * 20; else gems += n * 20; aus.push({ a: 'gems', n: n * 20 }); return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
+    if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } aus.push({ a: 'schild', n }); return 'Friedensschild ' + n + ' h'; }
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
-            if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
+            if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); aus.push({ a: 'item', slot, r: rr }); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
     if (r.k === 'frame') { const d = lkDef(r.k, r.id), has = ((b ? b.frames : look.frames) || []).includes(r.id);
-        if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; return '+' + PASS_OWNED_GEMS + ' Edelsteine („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
+        if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; aus.push({ a: 'gems', n: PASS_OWNED_GEMS }); return '+' + PASS_OWNED_GEMS + ' Edelsteine („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
         if (b) b.frames = [...(b.frames || []), r.id];
-        else { look.frames = [...new Set([...(look.frames || []), r.id])]; look.frame = r.id; saveLook(); renderLook(); }
+        else { look.frames = [...new Set([...(look.frames || []), r.id])]; look.frame = r.id; saveLook(); renderLook(); aus.push({ a: 'rahmen' }); }
         return 'Rahmen „' + d.name + '“ – schon angelegt'; }
     return '';
 }
 function passClaim(list) {                                // [[season, level, premium], …] → hand out, one hint
-    const got = [];
+    const got = [], aus = []; let kiste = null;
     for (const [n, l, pr] of list) { const x = passLoad().s[n]; if (!x || !passOpen(n) || l > passLvl(x) || (pr && !x.prem)) continue; const arr = pr ? x.p : x.f; if (arr.includes(l)) continue;
-        arr.push(l); got.push(passGive('player', passRewardAt(l, pr)) || 'Belohnung'); }
+        arr.push(l); const r = passRewardAt(l, pr); if (r.k === 'royal' || (r.k === 'crate' && !kiste)) kiste = r.k === 'royal' ? 'royal' : 'aus'; got.push(passGive('player', r, aus) || 'Belohnung'); }
     if (!got.length) return; passSave(); saveGame(); saveProgression(); updateHud(); sfx('crate'); anleitungAbgeholt();
-    flashHint(got.length > 3 ? got.length + ' Belohnungen abgeholt: ' + got.slice(0, 2).join(' · ') + ' …' : got.join(' · '), 4000);
+    if (aus.length) beuteFenster('Saison-Pass', aus, { kiste, unter: got.length > 1 ? got.length + ' Belohnungen abgeholt' : '' });
+    else flashHint(got.join(' · '), 4000);
     renderPass(); updateGoalsBadge();
 }
 function passBuy() {
@@ -62,13 +63,14 @@ function passBuy() {
 }
 function passCellHtml(r, hp, got) {                            // icon + amount of one reward
     const k = r.k, n = r.n || 1, row = (ic, b, s, cls) => '<span class="pc-ic' + (cls ? ' ' + cls : '') + '">' + ic + '</span><span class="pc-t"><b>' + b + '</b><small>' + s + '</small></span>';
-    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(wirtM(5000), Math.round(hp.coins)) * n), 'Münzen');
-    if (k === 'gems') return row(icon('gem', 'ico-gem'), '+' + n, 'Edelsteine');
-    if (k === 'tp') return row(icon('crown', 'ico-tp'), '+' + n, 'Thron-Punkte');
-    if (k === 'shards') return row(icon('star', 'ico-shard'), '+' + n, 'Helden-Splitter');
-    if (k === 'shield') return row(icon('shield'), n + ' h', 'Friedensschild');
-    if (k === 'crate') return row(icon('shop'), n + '×', n === 1 ? 'Kiste' : 'Kisten');
-    if (k === 'royal') return row(icon('shop', 'ico-royal'), '1×', 'Königliche Kiste');
+    const kachel = b => beuteKachel(Object.assign(b, { ohneZahl: 1 }));   // Belohnungs-Kachel (05e) – die Menge steht daneben
+    if (k === 'coins') return row(kachel({ a: 'coins' }), fmtCompact(Math.max(wirtM(5000), Math.round(hp.coins)) * n), 'Münzen', 'is-bk');
+    if (k === 'gems') return row(kachel({ a: 'gems', n }), '+' + n, 'Edelsteine', 'is-bk');
+    if (k === 'tp') return row(kachel({ a: 'tp' }), '+' + n, 'Thron-Punkte', 'is-bk');
+    if (k === 'shards') return row(kachel({ a: 'sh' }), '+' + n, 'Helden-Splitter', 'is-bk');
+    if (k === 'shield') return row(kachel({ a: 'schild', n }), n + ' h', 'Friedensschild', 'is-bk');
+    if (k === 'crate') return row(kachel({ a: 'kiste', k: 'aus' }), n + '×', n === 1 ? 'Kiste' : 'Kisten', 'is-bk');
+    if (k === 'royal') return row(kachel({ a: 'kiste', k: 'royal', r: 3 }), '1×', 'Königliche Kiste', 'is-bk');
     const d = lkDef(k, r.id), own = !got && lkHas(k, r.id);
     return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Rahmen', 'is-look');
 }
