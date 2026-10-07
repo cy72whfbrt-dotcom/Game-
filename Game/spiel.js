@@ -3604,6 +3604,29 @@ function heiligtumBild(island, z) {                                            /
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;
   ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
 }
+// Basen als KI-Bild (Alexander 7.10.): Stufe 1–100 gleichmäßig auf 15 Bilder, ALLE gleich groß (keine Größe nach Stufe); die Hauptstadt
+// über ihre Kartenstufe (burgKarte). Darunter ein Ring in der Besitzer-Farbe (eigene blau, Bündnis grün, fremde rot); ganz weit Punkte wie bisher.
+const BASIS_BREITE = 5500, BASIS_MIN_PX = 22, BASIS_RING = { player: '#3f86d8', bund: '#3fae6a', bot: '#c9423a' };
+const BASIS_BILD = { img: [], offen: -1 };
+const basisBildNr = L => Math.max(1, Math.min(15, Math.ceil(Math.max(1, L) * 15 / 100)));
+function basisBild(nr) {                                                       // das Bild nr (1–15), lädt beim ersten Mal alle 15
+  if (BASIS_BILD.offen < 0) { BASIS_BILD.offen = 15;
+    for (let i = 1; i <= 15; i++) { const im = new Image(); im.onload = () => { if (im.naturalWidth) { BASIS_BILD.img[i] = im; requestRender(); } };
+      im.src = 'bilder/basis_' + String(i).padStart(2, '0') + '.webp'; } }
+  return BASIS_BILD.img[nr] || null;
+}
+function drawBasisBild(island, ownerKey, z) {                                  // (Bildschirm) → true, wenn das Bild gezeichnet ist
+  const w = BASIS_BREITE * z; if (w < BASIS_MIN_PX) return false;
+  const im = basisBild(basisBildNr(baseLevelOf(island))); if (!im) return false;
+  const h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
+  if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return true;
+  const ow = islandOwnerOf(island.id), farbe = ownerKey === 'player' ? BASIS_RING.player : ow && bundFreund(ow, 'player') ? BASIS_RING.bund : ow ? BASIS_RING.bot : null;
+  if (farbe) { ctx.beginPath(); ctx.ellipse(x, y + h * .12, w * .5, w * .2, 0, 0, Math.PI * 2); ctx.fillStyle = farbe + '55'; ctx.fill();
+    ctx.lineWidth = Math.max(2, w * .03); ctx.strokeStyle = farbe; ctx.stroke(); }
+  ctx.drawImage(im, x - w / 2, y - h * .72, w, h);
+  if ((island.id === playerIslandId || isCapital(island.id)) && brennt(island.id)) drawBrand(x, y - h * .3, w / 64);   // eine geplünderte Hauptstadt brennt
+  return true;
+}
 const basisGroesse = z => 1 + Math.max(0, Math.min(1, (0.04 - z) / 0.03));   // Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erkennbar), nah wie gehabt
 function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)
   const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
@@ -3624,6 +3647,7 @@ function drawBuilding(island, ownerKey, z) {                                   /
     for (const [gx, gy] of spots) if (!bkDraw(bk, gx, gy)) ctx.drawImage(sp.c, gx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
     return;
   }
+  if (kind === 'tower' && drawBasisBild(island, ownerKey, z)) return;          // Basen als KI-Bild (Stufe → Bild, alle gleich groß)
   if (kind === 'tower' && ownerKey !== 'player' && z < TOR_PUNKT_ZOOM && karteBilder()) return;   // ganz draußen: keine Punkt-Tapete fremder und freier Basen (wie RoK nur Zonen, Tempel, eigenes Gebiet)
   if (kind === 'tower' && ownerKey === 'neutral' && size < 30 && karteBilder()) {   // Karte wie RoK: freie Basen von weitem nur ein leiser Fleck, keine Symbol-Tapete (Alexander)
     ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, size * .07), 0, Math.PI * 2); ctx.fillStyle = 'rgba(40,30,18,.3)'; ctx.fill(); return; }
