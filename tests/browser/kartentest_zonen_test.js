@@ -30,7 +30,7 @@ const K = path.resolve(__dirname, '../../werkzeuge/kartentest'), arbeit = proces
   // 2) Seite im Browser: Handy + Desktop, alle Stufen
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
   const pruefen = async (datei, name) => {
-    for (const [art, opt] of [['Handy', { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }], ['Desktop', { viewport: { width: 1440, height: 900 } }]]) {
+    for (const [art, opt] of [['Handy', { viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }], ['Desktop', { viewport: { width: 1440, height: 900 } }]]) {
       const p = await (await b.newContext(opt)).newPage(), fe = []; p.on('pageerror', e => fe.push(e.message)); p.on('console', m => { if (m.type() === 'error') fe.push(m.text()); });
       await p.goto('file://' + datei); await p.waitForFunction(() => window.KT && KT.bereit(), null, { timeout: 60000 });
       const r = await p.evaluate(() => { const o = {}, P = KT.daten.paesse;
@@ -51,6 +51,21 @@ const K = path.resolve(__dirname, '../../werkzeuge/kartentest'), arbeit = proces
       ok(/^ganz weit/.test(r.ganz) && /^weit/.test(r.weit) && /^mittel/.test(r.mittel) && /^nah/.test(r.nah), name + ' ' + art + ': Stufen nah/mittel/weit/ganz weit', [r.ganz, r.weit, r.mittel, r.nah].map(t => t.split(' · ')[0]));
       ok(r.fest, name + ' ' + art + ': Bilder fest in der Welt (gleiche Weltgröße bei Zoom 0,02 und 0,01)', r.festN);
       ok(r.tore === KT_PASSE && !r.ohneKette.length && !r.imTor.length, name + ' ' + art + ': Kette an jeder Grenze, an jedem Pass ein Tor in einer Lücke', { tore: r.tore, ohneKette: r.ohneKette, imTor: r.imTor });
+      if (art === 'Handy') {                          // iPhone: mit zwei Fingern bis „Nah“ (Karte zoomt, nicht die Seite), auf jeder Stufe Karte mit Bildern
+        const cdp = await p.context().newCDPSession(p), finger = (typ, d) => cdp.send('Input.dispatchTouchEvent', { type: typ,
+          touchPoints: typ === 'touchEnd' ? [] : [{ x: 195 - d, y: 422, id: 1 }, { x: 195 + d, y: 422, id: 2 }] });
+        await p.evaluate(() => KT.zoomStufe('ganz', 0, 0));
+        for (let n = 0; n < 6; n++) { await finger('touchStart', 20); for (let d = 25; d <= 180; d += 15) await finger('touchMove', d); await finger('touchEnd', 0); }
+        const z = await p.evaluate(() => ({ z: KT.cam.z, seite: visualViewport.scale }));
+        ok(z.z >= 0.05 && z.seite === 1, name + ' Handy: zwei Finger zoomen die Karte bis „Nah“, die Seite bleibt (iPhone)', z);
+        if (/einzeln/.test(datei)) {                    // (nur hier: Bilder als data-URL, das Bild der Zeichenfläche ist lesbar)
+          const bunt = await p.evaluate(() => ['ganz', 'weit', 'mittel', 'nah'].map(s => { const P = KT.daten.paesse[3]; KT.zoomStufe(s, P.x, P.y); KT.zeichnen();
+            const c = document.getElementById('karte'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, farben = new Set();
+            for (let i = 0; i < d.length; i += 4 * 997) farben.add((d[i] >> 4) + ',' + (d[i + 1] >> 4) + ',' + (d[i + 2] >> 4));
+            return farben.size; }));
+          ok(bunt.every(n => n >= 25), name + ' Handy: auf jeder Stufe Karte mit Bildern (viele Farben, nichts leer)', bunt);
+        }
+      }
       await p.close();
     } };
   const KT_PASSE = D.paesse.length;

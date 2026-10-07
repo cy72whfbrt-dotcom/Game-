@@ -122,7 +122,8 @@ function objekteBauen() {
 let UEB = null;
 function uebersicht() {
   if (UEB) return UEB;
-  const n = 3072, k = n / (2 * H), c = document.createElement('canvas'); c.width = c.height = n;
+  const n = Math.min(innerWidth, innerHeight) < 600 ? 2048 : 3072, k = n / (2 * H),   // (Handy: kleiner, iOS hat wenig Speicher für Zeichenflächen)
+    c = document.createElement('canvas'); c.width = c.height = n;
   const g = c.getContext('2d'), v = { l: -H, t: -H, r: H, b: H }; g.setTransform(k, 0, 0, k, H * k, H * k);
   for (const geb of KD.gebiete) {
     if (!KB.fertig) { g.fillStyle = `rgb(${geb.farbe.join(',')})`; g.fill(geb.pfad); continue; }
@@ -252,10 +253,14 @@ cv.addEventListener('pointermove', e => {
 });
 const los = e => { finger.delete(e.pointerId); griff = null; };
 cv.addEventListener('pointerup', los); cv.addEventListener('pointercancel', los);
+// iPhone (auch im eingebetteten Fenster): Safari zoomt sonst bei zwei Fingern die ganze Seite statt der Karte (weiße Ränder, „Nah“ nie erreicht)
+for (const t of ['touchstart', 'touchmove']) cv.addEventListener(t, e => e.preventDefault(), { passive: false });
+for (const t of ['gesturestart', 'gesturechange', 'gestureend']) document.addEventListener(t, e => e.preventDefault(), { passive: false });
 cv.addEventListener('wheel', e => { e.preventDefault(); zoomUm(e.clientX, e.clientY, cam.z * Math.exp(-e.deltaY * (e.ctrlKey ? .01 : .0015))); }, { passive: false });
 document.querySelectorAll('#leiste [data-zoom]').forEach(b => b.addEventListener('click', () => zoomStufe(b.dataset.zoom)));
 document.getElementById('tore').addEventListener('click', e => { toreOffen = !toreOffen; UEB = null; e.target.textContent = toreOffen ? 'Tore zu' : 'Tore auf'; neu(); });
-function groesse() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; HT = innerHeight; cv.width = Math.round(W * dpr); cv.height = Math.round(HT * dpr); begrenzen(); neu(); }
+function groesse() { W = innerWidth; HT = innerHeight; dpr = Math.min(2, devicePixelRatio || 1, Math.sqrt(8e6 / Math.max(1, W * HT)));   // (Zeichenfläche höchstens 8 Mio. Pixel: iOS zeigt größere leer)
+  cv.width = Math.round(W * dpr); cv.height = Math.round(HT * dpr); begrenzen(); neu(); }
 addEventListener('resize', groesse);
 groesse(); zoomStufe('ganz');
 document.getElementById('legende').innerHTML = Object.entries(KD.oeffnen).map(([st, tag]) =>

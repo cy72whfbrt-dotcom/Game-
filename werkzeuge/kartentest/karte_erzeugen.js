@@ -103,6 +103,7 @@ const grenzen = linien.map((l, id) => {
 //    stufe = Zone, in die der Pass führt (1: Zone 1 untereinander … 5: in die Mitte) – danach öffnen sie gestaffelt.
 const paare = new Map();                                // "a,b" → Grenzen
 for (const g of grenzen) if (g.b !== -1) { const k = g.a + ',' + g.b; (paare.get(k) || paare.set(k, []).get(k)).push(g); }
+const RAND_FREI = 90000;                              // Pässe nie am Kartenrand
 const TOR_GERADE = 20000, TOR_WEICH = 34000, TOR_ABSTAND = 70000;
 const paesse = [];
 function passSetzen(a, b, stufe) {
@@ -114,7 +115,7 @@ function passSetzen(a, b, stufe) {
       const p = punktBei(g.punkte, s, d), p0 = punktBei(g.punkte, s, d - TOR_GERADE), p1 = punktBei(g.punkte, s, d + TOR_GERADE);
       const senk = Math.abs(p1[1] - p0[1]) > Math.abs(p1[0] - p0[0]);
       let abw = 0; for (let e = -TOR_GERADE - TOR_WEICH; e <= TOR_GERADE + TOR_WEICH; e += 3000) { const q = punktBei(g.punkte, s, d + e); abw += Math.abs(senk ? q[0] - p[0] : q[1] - p[1]); }
-      if (paesse.some(o => Math.hypot(o.x - p[0], o.y - p[1]) < TOR_ABSTAND)) continue;
+      if (paesse.some(o => Math.hypot(o.x - p[0], o.y - p[1]) < TOR_ABSTAND) || Math.max(Math.abs(p[0]), Math.abs(p[1])) > H - RAND_FREI) continue;
       const wert = abw + Math.abs(d - len / 2) * .6;
       if (!best || wert < best.wert) best = { wert, g, d, x: p[0], y: p[1], senk };
     } }
@@ -129,7 +130,7 @@ function passSetzen(a, b, stufe) {
 }
 const nachbarn = g => [...paare.keys()].map(k => k.split(',').map(Number)).filter(([a, b]) => a === g || b === g).map(([a, b]) => a === g ? b : a);
 const laenge = (a, b) => (paare.get(Math.min(a, b) + ',' + Math.max(a, b)) || []).reduce((m, q) => m + q.punkte.length, 0);
-for (let z = 1; z <= 4; z++) for (let k = 0; k < ANZAHL[z]; k += 2) passSetzen(START[z] + k, START[z] + (k + 1) % ANZAHL[z], z);   // im Ring
+for (let z = 1; z <= 4; z++) for (let k = 0; k < ANZAHL[z]; k += z === 1 ? 1 : 2) passSetzen(START[z] + k, START[z] + (k + 1) % ANZAHL[z], z);   // im Ring: Zone 1 an jeder Grenze, innen jedes zweite Paar
 const herein = new Map();
 for (let z = 1; z <= 4; z++) for (let k = 0; k < ANZAHL[z]; k++) {                                        // nach innen
   const g = START[z] + k, innen = nachbarn(g).filter(n => zoneVon(n) === z + 1);
@@ -138,6 +139,10 @@ for (let z = 1; z <= 4; z++) for (let k = 0; k < ANZAHL[z]; k++) {              
 for (let g = 1; g < START[1]; g++) if (!herein.get(g)) {                                                    // jedes innere Gebiet von außen erreichbar
   const z = zoneVon(g);
   for (const n of nachbarn(g).filter(n => zoneVon(n) === z - 1)) if (passSetzen(n, g, z)) { herein.set(g, 1); break; } }
+const zahl = g => paesse.filter(p => p.a === g || p.b === g).length;
+for (let g = 0; g < GEBIETE; g++) for (const n of nachbarn(g).sort((x, y) => Math.abs(zoneVon(x) - zoneVon(g)) - Math.abs(zoneVon(y) - zoneVon(g)) || zahl(x) - zahl(y))) {   // jedes Gebiet mindestens 2 Pässe
+  if (zahl(g) >= 2) break;
+  if (!paesse.some(p => (p.a === g && p.b === n) || (p.a === n && p.b === g))) passSetzen(g, n, Math.max(zoneVon(g), zoneVon(n))); }
 
 // 5) Gebiete als Ringe aus ihren Grenzen
 const rund = p => [Math.round(p[0]), Math.round(p[1])];
