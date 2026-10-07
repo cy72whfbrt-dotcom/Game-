@@ -11,7 +11,8 @@ const EV_WOCHE = [
     { k: 'bau', name: 'Bauherr', ic: 'upgrade', pkt: 'Aufwerten von Basen und Gebäuden in der Stadt (2 + neue Stufe)', bonus: 'Ausbau 20 % günstiger' }
 ];
 // ---- WOCHEN-EVENT Mo 0:00 – Fr 23:59, Wochenende frei jede Woche eins der 4 Themen, eigene Punkte (gedeckelt), Rangliste und kleine Preise ----
-const WO_PRIZES = [{ to: 1, gems: 200, sh: 10, crate: 3, t: '1.' }, { to: 3, gems: 100, sh: 5, crate: 2, t: '2.–3.' }, { to: 10, gems: 40, sh: 2, crate: 1, t: '4.–10.' }, { to: Infinity, gems: 10, sh: 1, crate: -1, t: 'Alle anderen' }];
+const WO_PRIZES = [{ to: 1, gems: 250, crate: 3, sh: 20, mh: 8, t: '1.' }, { to: 5, gems: 150, crate: 2, sh: 12, mh: 6, t: '2.–5.' }, { to: 10, gems: 100, crate: 2, sh: 8, mh: 4, t: '6.–10.' },
+    { to: 20, gems: 60, crate: 1, sh: 5, mh: 3, t: '11.–20.' }, { to: 100, gems: 30, crate: 0, sh: 3, mh: 2, t: '21.–100.' }, { to: 1000, gems: 10, sh: 1, mh: 1, t: '101.–1000.' }];   // (Merkliste 33: mh = Stunden Münzen; ab Platz 1001 nichts)
 let woWinMemo = null;
 function woWin(now) {                                 // diese oder (am Wochenende) nächste Woche, Mo 0:00 – Fr 23:59: { on, start, end, key }
     now = now || Date.now(); const m = woWinMemo; if (m && now >= m.from && now < m.to) return m.w;
@@ -40,7 +41,7 @@ function woDeckel(who, n, kind) {                     // höchstens 30 Punkte au
 function woPay() {                                    // Platz 1, 2–3, 4–10 und alle anderen mit Punkten – du, echte Spieler und Mitspieler gleich
     const W = woSt(), th = EV_WOCHE.find(x => x.k === W.k) || EV_WOCHE[0], list = evRang(W.pts).filter(e => e[1] >= 1);
     W.paid = true; let me = 0;
-    list.forEach(([who], i) => { evPreis(who, 'woche', 'Wochen-Event ' + th.name + ' · Platz ' + (i + 1), WO_PRIZES.find(p => i + 1 <= p.to), W.key); if (who === 'player') me = i + 1; });
+    list.forEach(([who], i) => { const p = WO_PRIZES.find(x => i + 1 <= x.to); if (p) evPreis(who, 'woche', 'Wochen-Event ' + th.name + ' · Platz ' + (i + 1), p, W.key); if (who === 'player' && p) me = i + 1; });
     W.last = { key: W.key, k: W.k, top: list.slice(0, WO_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length };
     evDirty = true; saveBotState(); saveEv();
     if (me) afterSplash(() => setTimeout(() => flashHint('Wochen-Event vorbei: Platz ' + me + ' – dein Preis liegt unter Events → Belohnung.', 6000), 2500));
@@ -55,13 +56,20 @@ let evDirty = false, evSaveAt = 0;
 function saveEv() { evDirty = false; evSaveAt = Date.now(); store.set('openWaterEvents', JSON.stringify(evState)); }
 window.addEventListener('pagehide', () => { if (evDirty && rechnet()) saveEv(); });
 const evRang = o => Object.entries(o || {}).filter(e => e[1] > 0 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]);
-function evPreis(who, src, title, p, schl) {          // schl: fester Schlüssel der Auszahlung (Woche, Tag …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
+// Belohnung „N Std. Münzen / Truppen“ (mh, th): so viel, wie das Reich in N Stunden erzeugt (wie beim Pass) – rechnet, wer auszahlt
+function evStunden(who, p, hp0) {
+    let hp = hp0 || null; const h = () => hp || (hp = hourProduction(who));
+    return { coins: p.mh > 0 ? Math.round(Math.max(wirtM(5000), h().coins) * p.mh) : 0, tr: p.th > 0 ? Math.round(Math.max(wirtK(500), h().troops) * p.th) : 0 };
+}
+function evPreis(who, src, title, p, schl) {          // schl: fester Schlüssel der Auszahlung (Woche, Tag, Stufe …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
     const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
-    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate }); if (titel) saisonTitelGeben(titel); return; }
+    const { coins, tr } = evStunden(who, p), k = schl != null ? src + '|' + schl : undefined;   // k: das Abholfach kennt die Stufe (Leiste im Event-Fenster)
+    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k }); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
-    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, titel ? { titel } : {}), schl != null ? src + '|' + schl : undefined); return; }
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, titel ? { titel } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
     const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
+    if (coins) botCoins[who] = (botCoins[who] || 0) + coins; if (tr) { const cap = botCapitalOf(who); if (cap !== null && cap !== undefined) islandTroops[cap] = (islandTroops[cap] || 0) + tr; }
     if (bs && titel) { bs.titles = [...new Set([...(bs.titles || []), titel])]; saveBotState(); }
 }
 function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
@@ -75,11 +83,17 @@ function evPlanTag(now, ok, stunde, dauer) {          // der nächste Tag (ab he
 }
 
 // ===== BARBAREN-INVASION: alle 3 Tage um 20 Uhr eine Stunde lang kommen Wellen von Barbaren-Armeen vom Rand ihrer Insel
-// und greifen die nächsten Basen an (echte Spieler und Mitspieler). Abwehren und Armeen schlagen bringt Punkte, danach
-// eine kleine Belohnung nach Punkten. Barbaren erobern nichts – wer verliert, verliert Truppen.
+// und greifen die nächsten Basen an (echte Spieler und Mitspieler). Abwehren und Armeen schlagen bringt Punkte, jede erreichte
+// Stufe der Belohnungs-Leiste liegt sofort im Abholfach (Merkliste 33). Barbaren erobern nichts – wer verliert, verliert Truppen.
 const INV_TAGE = 3, INV_STUNDE = 20, INV_DAUER = 60 * 60000, INV_WELLEN = 6, INV_WELLE_MS = 9 * 60000, INV_PRO_WELLE = 12;
 const INV_PTS_WEHR = 15, INV_PTS_SIEG = 20;
-const INV_PREISE = [{ ab: 100, gems: 60, sh: 6, crate: 2, t: 'ab 100 Punkten' }, { ab: 40, gems: 30, sh: 3, crate: 1, t: 'ab 40 Punkten' }, { ab: 10, gems: 10, sh: 1, crate: -1, t: 'ab 10 Punkten' }];
+const INV_LEISTE = [{ ab: 20, gems: 5, mh: 2 }, { ab: 50, gems: 15, crate: 0 }, { ab: 100, gems: 20, sh: 5, crate: 1 }, { ab: 150, th: 2, mh: 4 }, { ab: 200, gems: 20, crate: 2 }, { ab: 300, gems: 30, sh: 10, crate: 2 }];   // Punkte → Belohnung (mh/th: Stunden Münzen/Truppen)
+// Leiste auszahlen (nur wer rechnet): jede erreichte Stufe genau einmal (lst[who] = so viele Stufen schon bezahlt, fester Schlüssel je Stufe)
+function evLeisteZahlen(X, stufen, who, wert, src, titel, schl) {
+    const L = X.lst || (X.lst = {}); let n = L[who] || 0;
+    while (n < stufen.length && wert >= stufen[n].ab) { evPreis(who, src, titel(stufen[n], n), stufen[n], schl + '|' + n); n++; L[who] = n; evDirty = true; }
+}
+function invLeiste(I, who) { evLeisteZahlen(I, INV_LEISTE, who, (I.pts || {})[who] || 0, 'inv', x => 'Barbaren-Invasion · ' + x.ab + ' Punkte', I.start); }
 const evTagNr = t => Math.round(new Date(t.getFullYear(), t.getMonth(), t.getDate(), 12).getTime() / 864e5);
 function invPlan(now) {
     now = now || Date.now();
@@ -138,7 +152,7 @@ function invWelle(I, now) {                          // eine Welle: jede Armee s
     evDirty = true; requestRender();
     flashHint('Barbaren-Invasion: Welle ' + w + ' von ' + INV_WELLEN + ' rückt an!' + (mich ? ' Eine Armee marschiert auf deine Basis.' : ''), 4500);
 }
-function invPunkteDazu(I, who, n) { if (!who || !(n > 0) || (who !== 'player' && !botById[who])) return; I.pts[who] = (I.pts[who] || 0) + n; evDirty = true; }
+function invPunkteDazu(I, who, n) { if (!who || !(n > 0) || (who !== 'player' && !botById[who])) return; I.pts[who] = (I.pts[who] || 0) + n; evDirty = true; invLeiste(I, who); }
 function invAnkunft(I, a, now) {                     // die Armee erreicht ihr Ziel: dieselbe Rechnung wie jeder Angriff (Truppen + Verteidigung)
     const isl = islandById[a.tid], o = isl && islandOwnerOf(a.tid); if (!o || invGeschuetzt(o, now)) return;
     const vk = typeof verstVorKampf === 'function' ? verstVorKampf(a.tid) : null;   // Verstärkung (Botschaft) verteidigt mit
@@ -173,12 +187,11 @@ function invTreffer(m, now) {                        // deine (oder ihre) Truppe
     if (isP) { spawnBattleFx({ x: m.x, y: m.y }, fb.won, fb.won ? 'Armee geschlagen' : 'Geschwächt', '+' + pts + ' Punkte'); updateHud(); saveGame(); }
     if (barbView && barbView.kind === 'inv') barbSheetRefresh();
 }
-function invAuszahlen() {                            // nach der Invasion: Belohnung nach Punkten (klein)
+function invAuszahlen() {                            // nach der Invasion: was noch fehlt von der Leiste, Erfolg für alle mit mindestens einer Stufe
     const I = evState.inv; if (!I || I.paid) return; I.paid = true; I.armies = []; evDirty = true;
     let n = 0;
-    for (const [who, p] of evRang(I.pts)) { const pr = INV_PREISE.find(x => p >= x.ab); if (!pr) continue; n++; goalBump(who, 'inv');   // (Erfolg: eine Invasion mit Preis überstanden)
-        evPreis(who, 'inv', 'Barbaren-Invasion · ' + Math.floor(p) + ' Punkte', pr, I.start); }
-    if (n) flashHint('Die Barbaren-Invasion ist vorbei – ' + n + ' Verteidiger werden belohnt (Events → Belohnung).', 5000);
+    for (const [who, p] of evRang(I.pts)) { invLeiste(I, who); if (p < INV_LEISTE[0].ab) continue; n++; goalBump(who, 'inv'); }   // (Erfolg: eine Invasion mit Preis überstanden)
+    if (n) flashHint('Die Barbaren-Invasion ist vorbei – ' + n + ' Verteidiger haben Belohnungen geholt.', 5000);
     saveBotState(); requestRender();
 }
 function invTakt(now) {                              // (nur Weltrechner) Wellen losschicken, Ankünfte, Ende
@@ -200,11 +213,13 @@ function invTakt(now) {                              // (nur Weltrechner) Wellen
 
 // ===== DER DRACHE: jeden Sonntag 19–22 Uhr erscheint über dem Thron ein riesiger Drache, den nur alle zusammen besiegen.
 // Jeder Angriff macht Schaden (wie beim Tagesboss, höchstens 2 % seines Lebens), 10 Angriffe pro Person.
-// Fällt er: Platz 1 lila Kiste, Platz 2–10 blaue Kiste (nie Legendär – Alexander 2.10.), alle anderen etwas Kleines. Entkommt er: alle etwas Kleines.
+// Belohnungs-Leiste nach Treffern (Merkliste 33): ein Treffer zählt nur mit mind. 10 % der eigenen Truppen. Fällt er, bekommen alle
+// mit mind. einem Treffer noch etwas dazu – keine Extra-Preise für die Besten.
 const DR_STUNDE = 19, DR_DAUER = 3 * 3600000, DR_HITS = 10, DR_CAP = .02, DR_NAME = 'Urdrache Vharak', DR_COL = '#d8452e';
-const DR_PREISE = [{ gems: 150, crate: 3, sh: 20, t: '1.' }, { gems: 60, crate: 2, sh: 8, t: '2.–10.' }, { gems: 15, crate: -1, sh: 2, t: 'Alle anderen' }];
+const DR_LEISTE = [{ ab: 1, mh: 4 }, { ab: 3, gems: 10, crate: 0 }, { ab: 5, sh: 5, th: 2 }, { ab: 8, gems: 20, crate: 1 }, { ab: 10, gems: 30, sh: 10, crate: 2 }], DR_FALL = { crate: 2, sh: 5 }, DR_ANTEIL = .1;
 const DR_MIN_ANFANG = 4 * DR_HITS * PLAYER_START_TROOPS * .25;   // neue Welt-Saison (erste 3 Tage, nur Start-Truppen): 4 Spieler mit je 10 Angriffen aus einem Viertel schaffen ihn (sonst 1e7 × WIRTSCHAFT_KOSTEN) – bei 5.000 Start-Truppen 50.000 Leben
-const drPreisVon = i => DR_PREISE[i < 1 ? 0 : i < 10 ? 1 : 2];
+function evTruppenAlle(who) { let n = 0; for (const id of (who === 'player' ? ownedIslands : botOwnedIslands[who]) || []) n += islandTroops[id] || 0; return n; }   // alle Truppen in den eigenen Basen
+function drLeiste(D, who) { evLeisteZahlen(D, DR_LEISTE, who, (D.tr || {})[who] || 0, 'drache', x => D.name + ' · ' + x.ab + ' Treffer', D.start); }
 function drPlan(now) {
     now = now || Date.now();
     if (EV_TEST && EV_TEST.dr) return { start: EV_TEST.dr, end: EV_TEST.dr + DR_DAUER };
@@ -225,22 +240,23 @@ function drTreffer(m, now) {                         // wie beim Tagesboss: Scha
     const dmg = Math.max(1, Math.min(D.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(D.max * DR_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .33 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);
     D.hp -= dmg; D.dmg[who] = (D.dmg[who] || 0) + dmg; evDirty = true;
+    const zaehlt = m.voll !== false; if (zaehlt) { (D.tr || (D.tr = {}))[who] = (D.tr[who] || 0) + 1; drLeiste(D, who); }   // (mit weniger als 10 % der Truppen: Schaden ja, Treffer nein)
     const gold = payGold(who, dmg * .2 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     evPunkte('boss', who, 30 * dmg / (D.max * DR_CAP));
     barbHome(m, m.troops - loss, now);
     const rk = evRang(D.dmg), pl = rk.findIndex(e => e[0] === who) + 1;
-    evBericht(who, { type: 'ev', ic: 'star', gut: true, badge: 'Drache', title: D.name, txt: fmtCompact(dmg) + ' Schaden · noch ' + fmtCompact(Math.max(0, D.hp)) + ' Leben · Platz ' + pl + ' von ' + rk.length + ' · ' + fmtCompact(loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : ''), at: now },
-        'Treffer beim Drachen: ' + fmtCompact(dmg) + ' Schaden – Platz ' + pl + '.');
+    evBericht(who, { type: 'ev', ic: 'star', gut: true, badge: 'Drache', title: D.name, txt: fmtCompact(dmg) + ' Schaden · noch ' + fmtCompact(Math.max(0, D.hp)) + ' Leben · ' + (zaehlt ? 'Treffer ' + D.tr[who] + ' / ' + DR_HITS : 'zählt nicht (unter 10 % deiner Truppen)') + ' · Platz ' + pl + ' von ' + rk.length + ' · ' + fmtCompact(loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : ''), at: now },
+        zaehlt ? 'Treffer beim Drachen: ' + fmtCompact(dmg) + ' Schaden – Treffer ' + D.tr[who] + ' / ' + DR_HITS + '.' : 'Schaden beim Drachen: ' + fmtCompact(dmg) + ' – zählt nicht als Treffer (unter 10 % deiner Truppen).');
     if (isP) { spawnBattleFx({ x: D.x, y: D.y }, true, 'Treffer', '−' + fmtCompact(dmg) + ' Leben'); updateHud(); saveGame(); }
     if (D.hp <= 0) { D.hp = 0; D.fell = now; drAuszahlen(true); }
     if (barbView && barbView.kind === 'drache') barbSheetRefresh();
 }
 function drAuszahlen(fell) {
     const D = evState.dr; if (!D || D.paid) return; D.paid = true; evDirty = true;
-    const rk = evRang(D.dmg);
-    rk.forEach(([who], i) => { const p = fell ? drPreisVon(i) : DR_PREISE[2]; goalBump(who, 'dboss'); if (fell) goalBump(who, 'drache');   // (Erfolg: beim Sieg über den Drachen dabei)
-        evPreis(who, 'drache', D.name + (fell ? ' · Platz ' + (i + 1) : ' entkommen'), p, D.start); });
-    flashHint(fell ? D.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden nach Schaden belohnt.' : D.name + ' ist entkommen – alle Kämpfer bekommen eine kleine Belohnung.', 6000);
+    const rk = evRang(D.dmg); let n = 0;
+    rk.forEach(([who]) => { goalBump(who, 'dboss'); if (fell) goalBump(who, 'drache');   // (Erfolg: beim Sieg über den Drachen dabei)
+        drLeiste(D, who); if (fell && (D.tr || {})[who] >= 1) { n++; evPreis(who, 'drache', D.name + ' gefallen', DR_FALL, D.start + '|fall'); } });
+    flashHint(fell ? D.name + ' ist gefallen! ' + n + ' Kämpfer bekommen eine Belohnung.' : D.name + ' ist entkommen.', 6000);
     if (fell) spawnBattleFx({ x: D.x, y: D.y }, true, D.name + ' gefallen', rk.length + ' Kämpfer belohnt');
     saveBotState(); requestRender();
 }
@@ -377,7 +393,7 @@ function drSheetHtml(head) {
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '') +
         (dead ? '' : hits >= DR_HITS ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Du hast alle ' + DR_HITS + ' Angriffe gemacht – jetzt sind die anderen dran.</span></div>' :
             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen hat Truppen.</span></div>' : barbAttackHtml(islandTroops[src] || 0, (islandTroops[src] || 0) * .5, src, 'Angreifen')) +
-        '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Fällt er: Platz 1 epische Kiste, Platz 2–10 seltene Kiste, alle anderen Edelsteine und Splitter. Entkommt er: alle etwas Kleines.</div>';
+        '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Ein Treffer zählt für die Belohnungs-Leiste nur mit mind. 10 % deiner Truppen (jetzt ' + fmtCompact(Math.ceil(evTruppenAlle('player') * DR_ANTEIL)) + '). Fällt er, bekommen alle mit einem Treffer noch etwas dazu.</div>';
 }
 
 // ---- die Ereignisse im Events-Fenster (Dock → Events, untere Reiter): Termine, Uhren, Ranglisten ----
@@ -437,14 +453,52 @@ function woPunkteJe() {                               // „18 Punkte je 10 besi
     const p = 1 / WO_KILL_PER, n = [1, 10, 100, 1000].find(n => Math.abs(p * n - Math.round(p * n)) < 1e-6 && p * n >= 1) || 1000;
     return fmtNum(Math.round(p * n)) + (Math.round(p * n) === 1 ? ' Punkt' : ' Punkte') + (n === 1 ? ' pro besiegtem Krieger' : ' je ' + fmtNum(n) + ' besiegte Krieger');
 }
-function evPreisHtml(p, i) {                          // ein Preis (Platz): Kacheln wie RoK (05e) – Edelsteine, Splitter, Kiste
-    return '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b>' + beuteRaster([{ a: 'gems', n: p.gems }, { a: 'sh', n: p.sh }, p.crate >= 0 && { a: 'kiste', k: kisteVonR(p.crate), r: p.crate, min: true }]) + '</div>';
+function evPreisHtml(p, i) {                          // ein Preis (Platz): Kacheln wie RoK (05e) – Edelsteine, Münzen, Splitter, Kiste
+    return '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b>' + beuteRaster(evBeute(p)) + '</div>';
+}
+// ---- Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen; erreicht = leuchtet + „Abholen“ (liegt im Abholfach),
+// abgeholt = offene Kiste mit Haken. Was erreicht und bezahlt ist, sagt der Weltrechner (evState / barbWho / dayBoss), das Fach sagt „abgeholt“. ----
+function evHolBereit(tab) { const q = tab === 'tour' ? 'woche' : tab; return inboxList().some(x => x.src === q); }   // (läuft schon beim Laden – nichts aus diesem Teil davor)
+let evHpMemo = null;
+function evBeute(p) {                                 // Kacheln einer Belohnung – Stunden Münzen/Truppen mit deinen Zahlen von jetzt
+    const now = Date.now(); if (!evHpMemo || now - evHpMemo.t > 5000) evHpMemo = { t: now, hp: hourProduction('player') };
+    const { coins, tr } = evStunden('player', p, evHpMemo.hp);
+    return [{ a: 'gems', n: p.gems }, { a: 'coins', n: coins }, { a: 'tr', n: tr }, { a: 'sh', n: p.sh }, p.crate >= 0 && { a: 'kiste', k: kisteVonR(p.crate), r: p.crate, min: p.crate > 0 }];
+}
+const evKisteBild = p => p.crate >= 3 ? 'kiste_royal' : p.crate === 2 ? 'kiste_episch' : p.crate === 1 ? 'kiste_gross' : p.crate === 0 ? 'kiste_ausruestung' : null;
+const evHolKnopf = (schl, txt) => '<button class="btn btn--primary btn--sm" type="button" data-ev-hol="' + escapeHtml(schl) + '"><span>' + (txt || 'Abholen') + '</span></button>';
+function evLeistePos(stufen, wert) {                  // wie weit der Balken reicht (0–1): Stufe i sitzt in der Mitte ihrer Spalte
+    const n = stufen.length; let k = 0; while (k < n && wert >= stufen[k].ab) k++;
+    if (k >= n) return 1; const a = k ? stufen[k - 1].ab : 0, f = Math.max(0, Math.min(1, (wert - a) / Math.max(1e-9, stufen[k].ab - a)));
+    return Math.max(0, (k ? k - .5 + f : f * .5) / n);
+}
+// o: { stufen, schl(i): Schlüssel im Abholfach, erreicht(i), bezahlt(i), pos 0–1, label(x, i), zeilen/mehr: nur so viele Zeilen darunter }
+function evLeisteHtml(o) {
+    const L = inboxList(), n = o.stufen.length;
+    const st = o.stufen.map((x, i) => L.some(y => y.k === o.schl(i)) ? 'hol' : !o.erreicht(i) ? 'zu' : o.bezahlt(i) ? 'ok' : 'bald');
+    const knoten = o.stufen.map((x, i) => { const s = st[i], kb = evKisteBild(x), b0 = evBeute(x).find(y => y && (y.n > 0 || y.a === 'kiste'));
+        const bild = kb ? kb + (s === 'ok' ? '_offen' : '_zu') : beuteBild(b0 || { a: 'gems' }), tag = s === 'hol' ? 'button' : 'span';
+        return '<' + tag + (s === 'hol' ? ' type="button" data-ev-hol="' + escapeHtml(o.schl(i)) + '"' : '') + ' class="evl-k is-' + s + (kb ? '' : ' is-ding') + '" title="' + escapeHtml(o.label(x, i)) + '"><span class="evl-bild"><img src="bilder/' + bild + '.webp" alt="" draggable="false">' +
+            (s === 'ok' ? '<i class="evl-haken"><img src="bilder/ui_sym_haken.webp" alt="abgeholt" draggable="false"></i>' : '') + '</span><small>' + o.label(x, i) + '</small></' + tag + '>'; }).join('');
+    const zeile = (x, i) => { const s = st[i];
+        return '<div class="evl-z is-' + s + '"><b>' + o.label(x, i) + '</b>' + beuteRaster(evBeute(x), 'bk-mini') + '<span class="evl-st">' +
+            (s === 'hol' ? evHolKnopf(o.schl(i)) : s === 'ok' ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false"><small>Abgeholt</small>' : s === 'bald' ? '<small>kommt gleich</small>' : icon('lock')) + '</span></div>'; };
+    const nz = Math.min(n, o.zeilen || n);
+    return '<div class="evl" style="--n:' + n + '"><div class="evl-bahn"><div class="evl-spur"><i style="width:' + (o.pos * 100).toFixed(1) + '%"></i></div>' + knoten + '</div></div>' +
+        '<div class="evl-zeilen">' + o.stufen.slice(0, nz).map(zeile).join('') + '</div>' + (nz < n ? '<div class="barb-note">' + o.mehr + '</div>' : '');
+}
+function evHolen(schl) {                              // „Abholen“: eine Stufe (Schlüssel) oder alles einer Quelle („src:boss“) aus dem Abholfach
+    const quelle = schl.startsWith('src:') ? schl.slice(4) : null, ids = inboxList().filter(x => quelle ? x.src === quelle : x.k === schl).map(x => x.id);
+    if (!ids.length) return renderEvents();
+    const aus = [], kiste = inboxList().find(x => ids.includes(x.id) && x.crate >= 0), txt = ids.map(id => inboxClaim(id, aus)).filter(Boolean).join(', ');
+    if (txt) { sfx('coin'); if (aus.length) beuteFenster('Abgeholt', aus, { kiste: kiste ? kisteVonR(kiste.crate) : null }); else flashHint('Abgeholt: ' + txt + '.', 4500); }
+    updateGoalsBadge(); renderEvents();
 }
 function evTourHtml() { return woHtml(); }            // Events → Reiter „Wochen-Event“ (Schlüssel 'tour' von früher)
 function woHtml() {                                   // das Wochen-Event: Thema, Uhr, dein Platz, Preise, Rangliste, die nächsten Wochen
     const now = Date.now(), w = woWin(now), th = woThemaAm(now), W = evState.wo || {}, live = w.on && W.key === w.key, rk = live ? evRang(W.pts) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
     const kopf = (w.on ? 'Läuft · endet in ' : 'Montag bis Freitag · beginnt in ') + evUhr(w.on ? w.end : w.start);
-    const preise = WO_PRIZES.map(evPreisHtml).join('');
+    const preise = WO_PRIZES.map(evPreisHtml).join(''), hol = inboxList().some(x => x.src === 'woche') ? evHolKnopf('src:woche', 'Preis abholen') : '';
     const plan = [1, 2, 3, 4].map(i => { const t = w.start + 7 * 864e5 * i + 3600000, x = woThemaAm(t), a = new Date(t), e = new Date(t + 4 * 864e5); return '<span>Mo ' + a.getDate() + '.' + (a.getMonth() === e.getMonth() ? '' : (a.getMonth() + 1) + '.') + ' – Fr ' + e.getDate() + '.' + (e.getMonth() + 1) + '.</span><b>' + icon(x.ic) + ' ' + x.name + '</b>'; }).join('');
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
     const meinePkt = fmtNum(Math.floor((W.pts || {}).player || 0)) + ' Punkte';   // (noch ohne Platz: nur die Punkte, kein „– ·“)
@@ -452,7 +506,7 @@ function woHtml() {                                   // das Wochen-Event: Thema
             (live ? '<div class="field-lines"><span>' + (mine ? 'Dein Platz' : 'Deine Punkte') + '</span><b>' + (mine ? mine + ' · ' : '') + meinePkt + '</b></div>' : ''), 'is-tour ev-woche--' + th.k, 'tour') +
         '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
         (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || rangLeer(w.on ? 'Sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.')) +
-        '<div class="lb-gap">Preise</div><div class="tour-prizes">' + preise + '</div>' +
+        '<div class="lb-gap">Preise nach Platz</div>' + hol + '<div class="tour-prizes ev-prizes3">' + preise + '</div>' +
         infoKlapp('tour', 'So gibt es Punkte', '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + WO_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + WO_KILL_MIN + ' pro Minute. Jede Woche (Mo–Fr) ein anderes Thema, am Wochenende ist frei.</span></span></div>') +
         '<div class="lb-gap">Nächste Wochen</div><div class="field-lines ev-plan">' + plan + '</div>';
 }
@@ -464,49 +518,73 @@ function evInvHtml() {
     let inh = '<div class="field-lines"><span>Termin</span><b>' + evWann(akt ? akt.start : p.start) + ' – ' + evWann(akt ? akt.end : p.end).slice(-5) + '</b>' +
         (akt ? '<span>Armeen unterwegs</span><b>' + akt.armies.length + (meine.length ? ' · <span class="ev-rot">' + meine.length + ' auf dich</span>' : '') + '</b>' : '') +
         (I && (akt || last) ? '<span>' + (akt ? 'Deine Punkte' : 'Letztes Mal') + '</span><b>' + fmtNum(me) + (mine ? ' · Platz ' + mine : '') + '</b>' : '') + '</div>';
-    const preise = INV_PREISE.map(x => evPreisHtml(x, 1)).join('');
+    const st = I ? I.start : 0, lst = I && I.lst ? I.lst.player || 0 : 0;
+    const leiste = evLeisteHtml({ stufen: INV_LEISTE, schl: i => 'inv|' + st + '|' + i, erreicht: i => me >= INV_LEISTE[i].ab, bezahlt: i => i < lst, pos: evLeistePos(INV_LEISTE, me), label: x => x.ab + ' P.' });
     return evKarte('defense', 'Barbaren-Invasion', kopf, inh +
         (meine.length ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="inv">' + icon('send') + '<span>Zur Armee auf deine Basis</span></button>' : ''), akt ? 'is-warn' : '', 'inv') +
+        '<div class="lb-gap">Belohnungs-Leiste · ' + (akt || !I ? 'deine Punkte' : 'letzte Invasion') + '</div>' + leiste +
         infoKlapp('inv', 'Alle 3 Tage · so gibt es Punkte', '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Alle 3 Tage um ' + INV_STUNDE + ' Uhr, eine Stunde</b> – ' + INV_WELLEN + ' Wellen, je 5–7 Minuten Marsch vom Rand der Insel</span></span>' +
         '<span>' + icon('defense') + '<span><b>+' + INV_PTS_WEHR + ' Punkte</b> für jede abgewehrte Armee an deiner Basis – schick vorher Verstärkung</span></span>' +
         '<span>' + icon('attack') + '<span><b>+' + INV_PTS_SIEG + ' Punkte</b> für jede Armee, die du unterwegs schlägst – auch die auf deine Nachbarn (Teilschaden zählt anteilig)</span></span>' +
+        '<span>' + icon('crown') + '<span>Jede Stufe der Leiste liegt sofort zum Abholen bereit, sobald du sie erreichst.</span></span>' +
         '<span>' + icon('losses') + '<span>Barbaren erobern nichts – aber wer sie nicht aufhält, verliert viele Truppen.</span></span></div>') +
-        '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Top 10' : 'Letzte Invasion') + '</div>' +
+        '<div class="lb-gap">' + (akt ? 'Live · Top 10' : 'Letzte Invasion') + '</div>' +
         (evRangHtml(rk, v => fmtNum(Math.floor(v)) + ' P.') || rangLeer(akt ? 'Sobald jemand Punkte holt, steht er hier.' : 'Noch keine Invasion gewesen.'));
 }
 function evDrHtml() {
     const now = Date.now(), D = evState.dr, akt = drAktiv(now), p = evPlanVon('dr'), rk = D ? evRang(D.dmg) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
     const kopf = akt ? 'Da · fliegt weg in ' + evUhr(akt.end) : D && D.start === p.start && D.hp <= 0 && now < D.end ? 'Besiegt!' : 'Nächster in ' + evUhr(p.start);
+    const tr = D && D.tr ? D.tr.player || 0 : 0, lst = D && D.lst ? D.lst.player || 0 : 0, st = D ? D.start : 0;
     let inh = (akt ? '<div class="barb-hp"><i style="width:' + (akt.hp / akt.max * 100).toFixed(1) + '%"></i><span>' + fmtCompact(akt.hp) + ' / ' + fmtCompact(akt.max) + ' Leben</span></div>' : '') +
         '<div class="field-lines"><span>Termin</span><b>' + evWann(akt ? akt.start : p.start) + ' – ' + evWann(akt ? akt.end : p.end).slice(-5) + '</b>' +
-        (D && rk.length ? '<span>' + (akt ? 'Dein Schaden' : 'Letztes Mal') + '</span><b>' + (mine ? fmtCompact(rk[mine - 1][1]) + ' · Platz ' + mine : '–') + '</b>' : '') + '</div>';
+        (D ? '<span>' + (akt ? 'Deine Treffer' : 'Letztes Mal') + '</span><b>' + tr + ' / ' + DR_HITS + '</b>' : '') +
+        '<span>Treffer zählt ab</span><b>' + fmtCompact(Math.max(1, Math.ceil(evTruppenAlle('player') * DR_ANTEIL))) + ' Truppen (10 %)</b>' +
+        (D && rk.length ? '<span>' + (akt ? 'Dein Schaden' : 'Schaden') + '</span><b>' + (mine ? fmtCompact(rk[mine - 1][1]) : '–') + '</b>' : '') + '</div>';
     const go = drOnMap() ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="drache">' + icon('send') + '<span>Zum Drachen</span></button>' : '';
-    const preise = DR_PREISE.map(evPreisHtml).join('');
+    const leiste = evLeisteHtml({ stufen: DR_LEISTE, schl: i => 'drache|' + st + '|' + i, erreicht: i => tr >= DR_LEISTE[i].ab, bezahlt: i => i < lst, pos: evLeistePos(DR_LEISTE, tr), label: x => x.ab + '×' });
+    const fk = 'drache|' + st + '|fall', fHol = inboxList().some(x => x.k === fk), fOk = D && D.hp <= 0 && tr >= 1;
+    const fall = '<div class="evl-zeilen"><div class="evl-z is-' + (fHol ? 'hol' : fOk ? 'ok' : 'zu') + '"><b>Drache fällt<small>mit 1 Treffer</small></b>' + beuteRaster(evBeute(DR_FALL), 'bk-mini') + '<span class="evl-st">' +
+        (fHol ? evHolKnopf(fk) : fOk ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false"><small>Abgeholt</small>' : icon('lock')) + '</span></div></div>';
     return evKarte('star', 'Der Drache', kopf, inh + go, akt ? 'is-drache' : '', 'drache') +
+        '<div class="lb-gap">Belohnungs-Leiste · Treffer</div>' + leiste + fall +
         infoKlapp('drache', 'Jeden Sonntag · so läuft es', '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Jeden Sonntag ' + DR_STUNDE + '–' + (DR_STUNDE + DR_DAUER / 3600000) + ' Uhr</b> kreist ' + DR_NAME + ' über dem Thron – sehr viel Leben, nur alle zusammen schaffen ihn</span></span>' +
         '<span>' + icon('attack') + '<span><b>' + DR_HITS + ' Angriffe</b> pro Person, höchstens 2 % seines Lebens pro Angriff, ein Drittel der Kämpfer fällt</span></span>' +
-        '<span>' + icon('crown') + '<span>Fällt er, gibt es Preise nach Schaden. Entkommt er, bekommen alle Kämpfer etwas Kleines.</span></span></div>') +
-        '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Schaden' : 'Letzter Drache') + '</div>' +
+        '<span>' + icon('crown') + '<span>Ein Treffer zählt für die Leiste nur mit mind. 10 % deiner Truppen. Fällt er, bekommen alle mit einem Treffer noch etwas dazu.</span></span></div>') +
+        '<div class="lb-gap">' + (akt ? 'Live · Schaden' : 'Letzter Drache') + '</div>' +
         (evRangHtml(rk, v => fmtCompact(v)) || rangLeer(akt ? 'Noch hat niemand angegriffen.' : 'Noch kein Drache gewesen.'));
 }
-function evBossHtml() {                              // Reiter „Boss & Lager“: Tagesboss und Barbaren-Lager (jeden Tag neu)
-    const b = dbossEnsure(), rec = barbRec('player'), near = barbNearest();
+function evBossHtml() {                              // Reiter „Boss“: Tagesboss, Schadens-Klassen je Angriff (mit Zähler), „Boss fällt“
+    const b = dbossEnsure(), rec = barbRec('player'), kl = (b.kl || {}).player || [], hol = inboxList().filter(x => x.src === 'boss').length;
     const boss = evKarte('crown', 'Tagesboss · ' + escapeHtml(b.name), b.hp <= 0 ? 'Besiegt · neuer in ' + evUhr(Date.now() + msToMidnight()) : rec.h + ' / ' + dbossHitsMax() + ' Angriffe heute',
-        '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (b.hp <= 0 ? 'Besiegt' : fmtCompact(b.hp) + ' Leben') + '</span></div>' +
+        '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (b.hp <= 0 ? 'Besiegt' : fmtCompact(b.hp) + ' / ' + fmtCompact(b.max) + ' Leben') + '</span></div>' +
         (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''), 'ev-boss--' + b.k, 'boss');   // (Klasse je Boss: sein Bild im Banner, 05z)
-    const lager = evKarte('attack', 'Barbaren-Lager', rec.n + ' / ' + barbTagMax() + ' heute', '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b><span>Neuer Tag in</span>' + evUhr(Date.now() + msToMidnight()) + '</div>' +
+    const zeile = (x, i) => '<div class="evl-z' + (kl[i] ? ' is-ok' : '') + '"><b>Klasse ' + (i + 1) + '<small>' + x.t + ' Schaden</small></b>' + beuteRaster(evBeute(x), 'bk-mini') + '<span class="evl-st evk-n">' + (kl[i] ? '×' + kl[i] : '') + '</span></div>';
+    const fk = 'boss|' + b.d + '|fall', fHol = inboxList().some(x => x.k === fk), fOk = b.hp <= 0 && b.dmg.player > 0;
+    const fall = '<div class="evl-z is-' + (fHol ? 'hol' : fOk ? 'ok' : 'zu') + '"><b>Boss fällt<small>alle, die trafen</small></b>' + beuteRaster(evBeute(DBOSS_FALL), 'bk-mini') + '<span class="evl-st">' + (fHol ? '<small>bereit</small>' : fOk ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false">' : icon('lock')) + '</span></div>';
+    return boss + '<div class="lb-gap">Belohnung je Angriff · nach Schaden</div>' + (hol ? evHolKnopf('src:boss', 'Alles abholen · ' + hol) : '') +
+        '<div class="evl-zeilen evk">' + DBOSS_KLASSEN.map(zeile).join('') + fall + '</div>' +
+        '<div class="barb-note">Jeder Angriff zählt einzeln: zweimal dieselbe Klasse = zweimal die Belohnung. Höchstens 5 % seines Lebens pro Angriff.</div>';
+}
+function evLagerHtml() {                             // Reiter „Lager“: Barbaren-Lager, Belohnung je Stufe – jeden Tag neu
+    const rec = barbRec('player'), near = barbNearest(), s = rec.s || 0, offen = Math.min(BARB_MAX_L, rec.b + 1);
+    let hoch = 0; for (let L = BARB_MAX_L; L >= 1; L--) if (s & (1 << (L - 1))) { hoch = L; break; }
+    const lager = evKarte('attack', 'Barbaren-Lager', rec.n + ' / ' + barbTagMax() + ' heute', '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + offen + '</b><span>Neuer Tag in</span>' + evUhr(Date.now() + msToMidnight()) + '</div>' +
         (near ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="camp">' + icon('send') + '<span>Nächstes Lager · Stufe ' + near.L + '</span></button>' : ''));
-    return boss + lager;
+    const hol = inboxList().filter(x => x.src === 'lager').length;
+    return lager + '<div class="lb-gap">Belohnung je Stufe · jeden Tag neu</div>' + (hol > 1 ? evHolKnopf('src:lager', 'Alles abholen · ' + hol) : '') +
+        evLeisteHtml({ stufen: LAGER_LEISTE, schl: i => 'lager|' + rec.d + '|' + (i + 1), erreicht: i => !!(s & (1 << i)), bezahlt: i => !!(s & (1 << i)), pos: hoch ? (hoch - .5) / BARB_MAX_L : 0, label: x => 'St. ' + x.ab,
+            zeilen: Math.max(5, offen), mehr: 'Weitere Stufen: besiege zuerst ein Lager der Stufe ' + offen + '.' });
 }
 function evOffen() { return isPanelOpen(goalsPopup) && EV_TABS.includes(goalsTab); }
 function renderEvents() {
     evRenderAt = Date.now();
     const sk = saisonKarte(), oben = sk && saisonOben(Date.now()), sz = sk ? '<div class="ev-saison">' + sk + '</div>' : '';
-    liveHtml(document.getElementById('eventBody'), (oben ? sz : '') + (evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evBossHtml()) + (!oben && evTab === 'tour' ? sz : ''));
+    liveHtml(document.getElementById('eventBody'), (oben ? sz : '') + (evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evTab === 'lager' ? evLagerHtml() : evBossHtml()) + (!oben && evTab === 'tour' ? sz : ''));
 }
 // Welt-Saison: nur in den letzten 3 Tagen (oder angehalten) oben in jedem Reiter – sonst unten im Wochen-Event (der Inhalt des Reiters geht vor)
 function saisonOben(now) { return !!(saison && (saison.halt || saison.ende - now <= SAISON_BALD_MS)); }
 document.getElementById('eventBody').addEventListener('click', e => {
+    const hol = e.target.closest('[data-ev-hol]'); if (hol) return evHolen(hol.dataset.evHol);
     const go = e.target.closest('[data-ev-go]'); if (!go) return; const k = go.dataset.evGo;
     let t = null, v = null;
     if (k === 'drache') { t = drOnMap(); v = { kind: 'drache' }; }

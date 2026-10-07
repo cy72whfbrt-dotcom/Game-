@@ -228,6 +228,7 @@ if (window.WELT) {
             if (zahlOk(e.sh, 1e6)) hb.shB += e.sh;
             if (Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 5) hbKisteDazu(hb, e.crate);
         }
+        if (e.art === 'evPreis' && (zahlOk(e.coins, 1e15) || zahlOk(e.tr, 1e15))) { const d = wd(who); if (d) { if (zahlOk(e.coins, 1e15)) d.gC = nn(d.gC) + e.coins; if (zahlOk(e.tr, 1e15)) d.gTr = nn(d.gTr) + e.tr; } }   // Event-Leisten (Merkliste 33): Münzen/Truppen aus dem Abholfach – wie ein Geschenk gutgeschrieben (Abholen: Münzen im Profil, Truppen als Befehl „geschenk“)
         if (e.art === 'startschild' && zahlOk(e.bis, 1e15)) hb.schild = Math.max(nn(hb.schild), e.bis);
         if (e.art === 'haendlerWare') {                // beim Händler mit Münzen bezahlt: die Ware ist bezahlt (vorher verlangte das Hauptbuch sie nochmal in Gems)
             if (zahlOk(e.sh, 1e3)) hb.shB += e.sh;
@@ -1315,7 +1316,9 @@ if (window.WELT) {
         const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
         const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'woche', title = String(e.title || '').slice(0, 80);
         if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Platz (Ende einer Welt-Saison): der Saison-Rahmen, gleich angelegt (bis zum nächsten Saison-Ende)
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
+        const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
+        if (k && inboxList().some(x => x.k === k)) return;                     // (dieselbe Stufe nie zweimal im Fach)
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;
