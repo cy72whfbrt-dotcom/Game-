@@ -1,5 +1,7 @@
 // Basen als KI-Bild (Alexander 7.10.): Stufe 1–100 gleichmäßig auf 15 Bilder (Bild = ceil(Stufe·15/100)), ALLE gleich groß,
 // darunter auf jeder Zoomstufe das Namensschild (kein Ring, nichts springt beim Zoomen); ganz weit weiter Punkte (kein Bild).
+// Mittlerer Zoom (Grafik-Bericht 7.10.): Basen bleiben sichtbar (mit Besitzer mind. 22 px, frei in echter Größe ab 10 px);
+// Schilde nie übereinander, freie mit Wimpel statt leerem Kreis; das Wappen an der Hauptstadt hält Funde fern (nicht halb dahinter).
 //   node tests/browser/basen_bild_test.js <vorschau>
 const { chromium, devices } = require('playwright');
 const path = require('path');
@@ -16,17 +18,19 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const h = islandById[playerIslandId], fremd = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && i.id !== h.id);
     const z = 0.012; mapState.zoom = z; mapState.offsetX = viewW / 2 - h.x * z; mapState.offsetY = viewH / 2 - h.y * z;
     const breiten = [], dr = ctx.drawImage, st = ctx.stroke; let ringe = [];
-    ctx.drawImage = function (im, x, y, w) { if (/basis_/.test(im.src || '')) breiten.push([im.src.match(/basis_(\d+)/)[1], Math.round(w)]); };
+    ctx.drawImage = function (im, x, y, w) { if (/basis_/.test(im.src || '')) breiten.push([im.src.match(/basis_(\d+)/)[1], Math.round(w)]); else if (im instanceof HTMLCanvasElement && BASIS_BILD.mip.some(m => m && m.includes(im))) breiten.push(['klein', Math.round(w)]); };
     ctx.stroke = function () { ringe.push(ctx.strokeStyle); };
     setScreen(ctx);
     const zeig = (isl, L) => { const alt = isl.neutralLevel, altL = islandLevels[isl.id]; isl.neutralLevel = L; islandLevels[isl.id] = L;
       fremd.x = h.x + 3000; fremd.y = h.y; const d = drawBasisBild(isl, ownerKeyOf(isl), z); isl.neutralLevel = alt; islandLevels[isl.id] = altL; return d; };
     const fx = fremd.x, fy = fremd.y;
-    o.gezeichnet = [zeig(fremd, 1), zeig(fremd, 100)];
+    o.gezeichnet = [zeig(fremd, 1), zeig(fremd, 100)]; const breiten2 = breiten.slice();
     ringe = []; o.heim = drawBasisBild(h, 'player', 0.006); o.ringHeim = ringe.slice();   // (kein Ring mehr – das Schild auf jeder Stufe)
-    o.weit = drawBasisBild(h, 'player', 0.002);
+    o.weit = drawBasisBild(h, 'player', 0.001);
+    breiten.length = 0; o.mittel = [drawBasisBild(h, 'player', 0.002), drawBasisBild(fremd, 'neutral', 0.002), drawBasisBild(fremd, 'neutral', 0.0016)];
+    o.mittelBreit = breiten.map(x => x[1]);
     fremd.x = fx; fremd.y = fy; ctx.drawImage = dr; ctx.stroke = st;
-    o.breiten = breiten;
+    o.breiten = breiten2;
     // Namensschild: eigene und Bündnis echte Truppenzahl, fremde „?“ bis gespäht, frei ohne Wappen; ab mittel, ersetzt den Ring
     const bots = BOT_DEFS.filter(d => !d.mensch), F = bots[0].id, A = bots[1].id, frei = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && i.id !== h.id).slice(0, 4);
     const geben = (w, i, n) => { clearIslandOwner(i.id); botOwnedIslands[w].add(i.id); islandTroops[i.id] = n; };
@@ -42,12 +46,27 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.nah = { schilde, ringe: ringe2, breit: sr && sr.w <= bw * .7 + .5, mittig: sr && Math.abs(sr.x + sr.w / 2 - viewW / 2) < 1, unter: sr && sr.y > viewH / 2 };
     schilde = 0; drawBasisSchilder([h], 0.012); o.mittelSchild = schilde;
     ctx.drawImage = dr; ctx.stroke = st;
+    // dicht (wie 75 % Zoom): kein Schild über einem anderen, freie mit Wimpel; die Tipp-Flächen sind genau die gezeigten
+    const zd = 0.0072; mapState.zoom = zd; mapState.offsetX = viewW / 2 - h.x * zd; mapState.offsetY = viewH / 2 - h.y * zd;
+    const vis = visibleIslands({ l: -1e9, t: -1e9, r: 1e9, b: 1e9 }), ss = basisSchilde(vis, zd), alle = vis.filter(i => i.type === 'tower' && (() => { const q = schildRect(i, zd); return q.x + q.w >= 0 && q.x <= viewW && q.y + q.h >= 0 && q.y <= viewH; })()).length;
+    o.dicht = { gezeigt: ss.length, alle, ueber: ss.some(a => ss.some(b => a !== b && overlap(a.r, b.r) > 0)), heim: ss.some(s => s.isl.id === h.id) };
+    layoutBanners(vis, zd, null); o.dicht.tipp = ss.every(s => bannerHitRects.some(q => q.id === s.isl.id && q.x === s.r.x && q.y === s.r.y));
+    const dg = drawGlyph, glyphen = []; drawGlyph = function (g, n) { glyphen.push(n); return dg.apply(this, arguments); };
+    SCHILD_MERK.clear(); schildBild({ art: 'neutral', wer: null, stufe: 1, truppen: '?' }, 96, true); drawGlyph = dg; o.wimpel = glyphen.includes('flag');
+    // Wappen an der Hauptstadt (weit): Tipp-Fläche, ein Fund daneben wird nicht halb dahinter gezeigt
+    const zw = 0.003; mapState.zoom = zw; mapState.offsetX = viewW / 2 - h.x * zw; mapState.offsetY = viewH / 2 - h.y * zw;
+    layoutBanners(visibleIslands({ l: -1e9, t: -1e9, r: 1e9, b: 1e9 }), zw, null);
+    o.wappen = { tipp: (pickIslandAtScreen(viewW / 2 + 18, viewH / 2 - 18) || {}).id === h.id, fund: pickupVerdeckt({ x: viewW / 2 - 25, y: viewH / 2 - 20 }) };
     return o;
   });
   ok(JSON.stringify(r.nr) === JSON.stringify([1, 1, 2, 2, 3, 8, 14, 15, 15]) && r.geladen === 15, 'Stufe 1–100 → Bild 1–15 (ceil(Stufe·15/100)), alle 15 Bilder geladen', r);
   ok(r.gezeichnet.every(Boolean) && r.breiten.length >= 2 && r.breiten[0][1] === r.breiten[1][1] && r.breiten[0][0] === '01' && r.breiten[1][0] === '15', 'alle Basen gleich groß (Stufe 1 und 100 gleich breit), anderes Bild', r.breiten);
   ok(r.heim && !r.ringHeim.length, 'eigene Basis weit: Bild ohne Ring (das Schild bleibt)', r.ringHeim);
   ok(r.weit === false, 'ganz weit: kein Bild (Punkte wie bisher)', r.weit);
+  ok(JSON.stringify(r.mittel) === '[true,true,false]' && r.mittelBreit[0] === 22 && r.mittelBreit[1] === 11, 'mittlerer Zoom: eigene Basis 22 px, freie in echter Größe (11 px), unter 10 px keine', [r.mittel, r.mittelBreit]);
+  ok(r.dicht.gezeigt > 3 && r.dicht.gezeigt < r.dicht.alle && !r.dicht.ueber && r.dicht.heim && r.dicht.tipp, 'dicht: Schilde nie übereinander (verdeckte weg), eigenes bleibt, Tipp-Flächen = gezeigte', r.dicht);
+  ok(r.wimpel, 'freies Schild: Wimpel im runden Feld (kein leerer schwarzer Kreis)', r.wimpel);
+  ok(r.wappen.tipp && r.wappen.fund, 'weit: Wappen an der Hauptstadt antippbar, Fund daneben nicht halb dahinter', r.wappen);
   ok(JSON.stringify(r.schild) === JSON.stringify([['player', '1.234', true], ['bot', '?', true], ['bot', '800', true], ['ally', '700', true], ['neutral', '?', false]]),
     'Namensschild: eigene und Bündnis echte Truppen, fremde „?“ bis gespäht, frei ohne Wappen', r.schild);
   ok(r.nah.schilde === 1 && r.nah.ringe === 0 && r.nah.breit && r.nah.mittig && r.nah.unter && r.mittelSchild === 1, 'Schild nah: höchstens 70 % der Basis-Breite, mittig darunter; mittel auch das Schild (kein Ring)', [r.nah, r.mittelSchild]);
