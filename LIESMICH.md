@@ -1730,6 +1730,14 @@ Nacht – vorher bauen und testen.
     - Barbaren-Lager: Belohnung pro geschaffter Lager-Stufe im Event-Fenster (grün = abholen).
     - Pass viel länger, auch Truppen u. a. als Belohnung. Aufgaben: viel mehr.
     - Karte: Tipp auf freies Feld → Menü (Teleportieren, Markierung, Truppen dorthin verlegen).
+      ✅ **Gebaut 7.10. (nicht hochgeladen):** Tipp auf freies Land → runde KI-Knöpfe (`feldRingAuf`, 09d): **Teleportieren**
+      (`tpPruefen`/`teleportOrt`, 08d) – die Hauptstadt-Basis selbst zieht an die Stelle (Truppen, Stufe, Stadt bleiben), Platz wie
+      für eine Basis (nicht im Gebirge, an Basen/Toren/Feldern/Lagern/Tempeln, nicht in der Thron-Mitte), nur in Gebiete hinter
+      Pässen, deren Öffnungs-Zeit vorbei ist (Tor-Besitzer egal; Schalter `TELEPORT_NUR_OFFEN`), nicht solange ein Marsch/Angriff
+      an der Hauptstadt hängt. Immer 500 Edelsteine mit „Hierher teleportieren?“-Bestätigung (`gemsWirklich`), keine Abklingzeit,
+      im Anfängerschutz 1× gratis. Weltrechner-Befehl `teleport` (Hauptbuch, nur echte Spieler), Welt-Teil `openWaterInselOrt`
+      (verlegte Basen, neue Saison: alle zurück). **Markierung** = Wegmarken-Fenster, **Truppen hierher** = neue Armee an der
+      Stelle (bestehende Armee-Funktion). Alter Umzug auf eigenen Turm (50) bleibt. Test `teleport_test`.
     - Event-Bilder gefallen Alexander („schon geil“).
     - ENTSCHIEDEN 7.10. 16:30 (Zahlen: scratchpad/eventzahlen.md): Tagesboss nur Schadens-Klassen (Platz-Preise weg);
       Drache nur Leiste, keine Extra-Preise für die Besten; Teleport frei wo Platz + Pass offen, neue Spieler 1× gratis;

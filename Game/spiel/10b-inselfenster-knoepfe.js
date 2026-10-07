@@ -244,6 +244,8 @@ function fogPromptHit(sx, sy) {                   // → 'go' (the button), 'off
     return sx >= r.x - 6 && sx <= r.x + r.w + 6 && sy >= r.y - 6 && sy <= r.y + r.h + 6 ? 'go' : 'off';
 }
 function handleTap(screenX, screenY) {
+    if (feldRing) { feldRingZu(); return; }                                 // daneben tippen schließt das Feld-Menü
+    const blattOffen = !!armySheet || !document.getElementById('markerSheet').hidden || !!fieldSheetId || !!barbView || isPanelOpen(popup);
     if (teleportMode && Date.now() > teleportBis) { teleportMode = false; requestRender(); }
     if (teleportMode) {
         teleportMode = false; requestRender();
@@ -272,7 +274,7 @@ function handleTap(screenX, screenY) {
     if (!multiAttackMode && marchTapAt(screenX, screenY)) return;
     const island = pickIslandAtScreen(screenX, screenY);
     if (!island && !multiAttackMode) { const fp = fogPointAt(screenX, screenY); if (fp) { tapFog(fp); return; } }
-    if (!island) { if (isPanelOpen(popup) && !multiAttackMode) closeIslandPopup(); return; }
+    if (!island) { if (isPanelOpen(popup) && !multiAttackMode) closeIslandPopup(); else if (!multiAttackMode && !blattOffen && !markerMode) feldRingAuf(screenX, screenY); return; }   // freies Feld: Teleport, Markierung, Truppen
 
     if (multiAttackMode) {
         const source = islandById[multiAttackSourceId];

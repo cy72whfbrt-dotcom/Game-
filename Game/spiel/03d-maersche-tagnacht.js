@@ -270,6 +270,7 @@ function drawMap() {
   drawMapBattles(now);                                                                                                 // fights playing out at the bases
   drawThroneShots(now);                                                                                                // the Wächter-Tempel firing on the throne
   drawMarkers();                                                                                                       // your own Wegmarken
+  feldRingFrame();                                                                                                     // Tipp auf freies Feld: Nadel + Knöpfe
   if (typeof bundKarteOben === 'function') bundKarteOben(z, now);                                                      // Bündnis: Signale und Rally-Fahnen
   drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
   if (shake) { mapState.offsetX -= shake.x; mapState.offsetY -= shake.y; }

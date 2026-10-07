@@ -113,6 +113,7 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     islandTroops = {}; neutralTroopOverrides = {}; for (const isl of islands) if (isl.nt0 !== undefined) isl.neutralTroops = isl.nt0;
     templeHoldSince = {}; scoutedIslands.clear(); gateCfg = {}; store.set('openWaterGateCfg', '{}');
     titleState = { ruler: null, by: {} }; saveTitles(); bountyState = { ruler: null, gems: 0, coins: 0, since: now }; saveBounty();
+    inselOrt = {}; store.set('openWaterInselOrt', '{}'); inselOrtAnwenden();   // teleportierte Hauptstädte: jede Basis wieder an ihrem Platz
     hauptVor = {}; store.set('openWaterHauptVor', '{}'); brand = {}; store.set('openWaterBrand', '{}'); store.set('openWaterWorldStart', String(now));
     for (const o of [battleHeat, baseFought, ownerLoss, botTooStrongMem, botIntelMem, botAct, botKenntMem, botKenntBasen, botEvacuated, botLossMem, botAergerMem, botLmShareMem]) for (const k of Object.keys(o)) delete o[k];   // was die Mitspieler über die alte Karte wussten
     // Hauptstädte: je ein freier Turm am äußeren Rand, auf der Landmasse mit den wenigsten Nachbarn (wie freierStartplatz), zufällig

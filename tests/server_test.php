@@ -96,6 +96,10 @@ pruefe('ohne Spieler-Nummer: alle fremd', isset($b['u3']['hs']), false);
 // Verteidigungs-Helden (Mauer, 6.10.): Befehl „vheld“ geht durch; Fremde sehen die Helden eines anderen nur im Spähbericht
 pruefe('Befehl vheld', befehl_ok(['art' => 'vheld', 'h1' => 'brunhild', 'h2' => 'sigrun', 'at' => 1]), true);
 pruefe('Befehl vheld mit HTML', befehl_ok(['art' => 'vheld', 'h1' => '<b>']), false);
+// Teleport (Merkliste 33): Befehl geht durch (Stelle darf negativ sein), ist ein bezahlter Befehl, kaputte Werte nicht
+pruefe('Befehl teleport', befehl_ok(['art' => 'teleport', 'x' => -123456, 'y' => 98765, 'gratis' => false, 'at' => 1]), true);
+pruefe('Befehl teleport bezahlt', in_array('teleport', BEFEHLE_BEZAHLT, true), true);
+pruefe('Befehl teleport mit HTML', befehl_ok(['art' => 'teleport', 'x' => '<b>', 'y' => 1]), false);
 $b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"bot1":{"lvl":3,"vh":["brunhild","sigrun"]},"u3":{"lvl":3,"vh":["ida",null]}}', 'u3'), true);
 pruefe('vh: fremd weg, eigener bleibt', [isset($b['bot1']['vh']), $b['u3']['vh'][0] ?? null], [false, 'ida']);
 $f = json_decode(flicken_fuer_spieler('openWaterBotState', '{"d":{"bot1":{"s":{"vh":["brunhild",null],"lvl":4}},"u3":{"s":{"vh":["ida",null]}}}}', 'u3'), true);

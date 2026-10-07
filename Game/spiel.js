@@ -4580,6 +4580,7 @@ function drawMap() {
   drawMapBattles(now);                                                                                                 // fights playing out at the bases
   drawThroneShots(now);                                                                                                // the Wächter-Tempel firing on the throne
   drawMarkers();                                                                                                       // your own Wegmarken
+  feldRingFrame();                                                                                                     // Tipp auf freies Feld: Nadel + Knöpfe
   if (typeof bundKarteOben === 'function') bundKarteOben(z, now);                                                      // Bündnis: Signale und Rally-Fahnen
   drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
   if (shake) { mapState.offsetX -= shake.x; mapState.offsetY -= shake.y; }
@@ -10150,6 +10151,81 @@ function teleportCapital(toId) {
     flashHint('Die Hauptstadt ist umgezogen – deine Truppen sind mitgekommen.', 3500);
     return true;
 }
+// Teleportieren (Alexander 7.10., Merkliste 33): die Hauptstadt an eine freie Stelle der Karte – die Basis selbst zieht um (Truppen,
+// Stufe, Stadt bleiben). Platz wie für eine Basis (nicht im Gebirge, nicht auf Toren, Feldern, Lagern, Tempeln, nicht in der Thron-Mitte),
+// nur in Gebiete, die von der Hauptstadt über offene Pässe erreichbar sind (TELEPORT_NUR_OFFEN). Immer 500 Edelsteine, neue Spieler
+// (Anfängerschutz) einmal gratis, keine Abklingzeit; nicht, solange ein Marsch an der Hauptstadt hängt. Der Weltrechner entscheidet
+// (Befehl teleport), verlegte Basen stehen im Welt-Teil openWaterInselOrt { id: [x, y, Gebiet] } – Mitspieler teleportieren nicht.
+const TP_GEMS = 500, TELEPORT_NUR_OFFEN = true, TP_ABSTAND = BASE_SPACING * .5;
+let inselOrt = {};
+for (const isl of islands) isl.ort0 = [isl.x, isl.y, isl.landmassId];
+function inselOrtLaden() { try { inselOrt = JSON.parse(store.get('openWaterInselOrt')) || {}; } catch (e) { inselOrt = {}; } inselOrtAnwenden(); }
+function inselOrtAnwenden() {                    // verlegte Basen an ihren Platz (und zurück, wenn der Eintrag fehlt – neue Saison)
+    let neu = false;
+    for (const isl of islands) {
+        const e = inselOrt[isl.id], o = e && isl.type === 'tower' && Number.isFinite(e[0]) && Number.isFinite(e[1]) && landmasses[e[2]] ? e : isl.ort0;
+        if (isl.x === o[0] && isl.y === o[1] && isl.landmassId === o[2]) continue;
+        if (isl.landmassId !== o[2]) { const alt = islandsByLandmass[isl.landmassId] || [], k = alt.indexOf(isl); if (k >= 0) alt.splice(k, 1); (islandsByLandmass[o[2]] = islandsByLandmass[o[2]] || []).push(isl); }
+        isl.x = o[0]; isl.y = o[1]; isl.landmassId = o[2]; neu = true;
+        if (!SYSTEM && ownedIslands.has(isl.id)) revealAround(isl.x, isl.y, REVEAL_BASE, true);   // (Handy: um die eigene Basis ist kein Nebel)
+        const lm = landmasses[o[2]]; if (lm.tier === 'guardian' || lm.tier === 'throne') midZoneIds.add(isl.id); else midZoneIds.delete(isl.id);
+    }
+    if (!neu) return;
+    TERR.player.clear(); TERR.enemy.clear(); ownVer++; capitalCache = null; BG.valid = false;   // Gebiets-Flächen und Boden neu (die Basis steht woanders)
+    if (typeof flushBannerSprites === 'function') flushBannerSprites();
+    requestRender();
+}
+function tpGebiete(vonLm) {                      // die Gebiete, die man von vonLm aus über (offene) Pässe erreicht
+    const da = new Set([vonLm]), q = [vonLm], now = Date.now();
+    while (q.length) { const a = q.shift();
+        for (const br of bridges) { const b = br.a === a ? br.b : br.b === a ? br.a : null;
+            if (b === null || da.has(b) || (TELEPORT_NUR_OFFEN && now < passOpensAt(br))) continue; da.add(b); q.push(b); } }
+    return da;
+}
+function tpMarschDa(cap) {                       // hängt ein Marsch an der Hauptstadt (hin, weg, Angriff darauf)?
+    const an = m => m && [m.sourceId, m.targetId, m.fromId, m.toId, m.homeId].includes(cap);
+    return pendingAttacks.some(an) || pendingSends.some(an) || pendingRetreats.some(an) || fieldMarches.some(an) || barbMarches.some(an) ||
+        armies.some(a => a.mv && a.mv.to && a.mv.to.id === cap);
+}
+function tpGratis(who) {                         // neue Spieler (Anfängerschutz): einmal gratis
+    if (who === 'player') return store.get('openWaterTpGratis') !== '1' && neulingBis() > Date.now();
+    const b = loadBotState()[who]; return !!b && !b.tpGratis && botNeulingBis(who, b) > Date.now();
+}
+function tpPruefen(who, x, y) {                  // → null (geht) oder der Grund für den Spieler
+    const cap = who === 'player' ? playerIslandId : botCapitalOf(who), c = islandById[cap];
+    if (!c || c.type !== 'tower' || !Number.isFinite(x) || !Number.isFinite(y)) return 'Du hast keine Hauptstadt, die umziehen kann.';
+    const lmId = gebietAn(x, y), lm = landmasses[lmId];
+    if (!lm || Math.abs(x) > FRAME_HALF - 8000 || Math.abs(y) > FRAME_HALF - 8000) return 'Dort ist kein Land.';
+    if (lm.tier === 'throne') return 'In die Thron-Mitte kann die Hauptstadt nicht ziehen.';
+    if (grenzAbstand(x, y) < KETTE_FREI + BASE_SPACING * .45) return 'Zu nah am Gebirge – such dir einen Platz weiter drinnen.';
+    for (const i of islandsByLandmass[lmId] || []) { if (i.id === cap) continue;
+        const frei = i.bildR ? i.bildR / .35 * .55 : i.type === 'gate' ? BASE_SPACING * 1.1 : TP_ABSTAND;
+        if (Math.hypot(i.x - x, i.y - y) < frei) return 'Zu nah an einer anderen Basis – dort ist kein Platz.'; }
+    for (const g of gateSpots) if (g.lm === lmId && (Math.hypot(x - g.x, y - g.y) < BASE_SPACING * 1.1 || segDistW(x, y, g.x, g.y, g.ex, g.ey) < BASE_SPACING * .7)) return 'Zu nah am Pass – dort ist kein Platz.';
+    for (const f of resFields) if (Math.hypot(f.x - x, f.y - y) < f.radius + TP_ABSTAND * .6) return 'Dort liegt ein Feld – such dir einen freien Platz.';
+    for (const k of barbState.camps || []) if (Math.hypot(k.x - x, k.y - y) < TP_ABSTAND) return 'Dort lagern Barbaren – such dir einen freien Platz.';
+    if (!tpGebiete(c.landmassId).has(lmId)) return 'Dorthin führt noch kein offener Pass.';
+    if (tpMarschDa(cap)) return 'Erst wenn keine Märsche und kein Angriff mehr an deiner Hauptstadt hängen.';
+    return null;
+}
+function tpVerlegen(who, x, y) {                 // (geprüft, bezahlt) die Hauptstadt steht jetzt bei x, y
+    const cap = who === 'player' ? playerIslandId : botCapitalOf(who);
+    inselOrt[cap] = [Math.round(x), Math.round(y), gebietAn(x, y)]; store.set('openWaterInselOrt', JSON.stringify(inselOrt)); inselOrtAnwenden();
+    saveGame(); requestRender();
+}
+function teleportOrt(x, y) {                     // (Spieler) Tipp auf „Teleportieren“, schon bestätigt → true: unterwegs bzw. erledigt
+    const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return false; }
+    const gratis = tpGratis('player'), k = gratis ? 0 : TP_GEMS;
+    if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine.', 3000); return false; }
+    gems -= k; if (gratis) store.set('openWaterTpGratis', '1');
+    statBump('teleports'); saveGame(); saveProgression(); updateHud();
+    if (alsBefehl('teleport', { x: Math.round(x), y: Math.round(y), gratis })) { flashHint('Die Hauptstadt zieht um …', 3000); return true; }   // (Zuschauer: der Weltrechner verlegt sie)
+    tpVerlegen('player', x, y);
+    spawnBattleFx(playerIslandId, true, 'Hauptstadt', 'hierher teleportiert');
+    flashHint('Die Hauptstadt ist hierher teleportiert – deine Truppen sind mitgekommen.', 3500);
+    return true;
+}
+inselOrtLaden();
 document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
 document.getElementById('cityInfoBtn').addEventListener('click', e => { const s = document.getElementById('citySheet'); s.classList.toggle('zeig-info'); e.currentTarget.classList.toggle('on', s.classList.contains('zeig-info')); });   // Beschreibung nur auf Tipp (weniger Text)
 document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; });
@@ -11981,6 +12057,39 @@ function drawMarkers() {                                                     // 
         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(m.text, x + 25, y - 22.5);
     }
 }
+// ===== FREIES FELD (Merkliste 33): Tipp auf freies Land → runde Knöpfe: Teleportieren · Markierung · Truppen hierher =====
+let feldRing = null;                                                        // { x, y, lm } die angetippte Stelle (Welt)
+function feldRingAuf(sx, sy) {                                              // → true, wenn dort freies Land ist
+    const w = screenToWorld(sx, sy), lm = landmassAtWorld(w.x, w.y); if (!lm) return false;
+    const k = tpGratis('player') ? 0 : TP_GEMS, el = document.getElementById('feldRing');
+    const kn = [['tp', 'ui_sym_verlegen', 'Teleportieren', k ? icon('gem') + fmtNum(k) : 'Gratis'], ['mark', 'ui_k_nadel', 'Markierung', ''], ['arm', 'ui_armee', 'Truppen hierher', '']];
+    feldRing = { x: w.x, y: w.y, lm: lm.id };
+    el.innerHTML = kn.map(([p, b, t, z], i) => '<button type="button" class="cr-btn" data-fring="' + p + '" style="--x:' + (i - 1) * 84 + 'px;--y:' + (i === 1 ? -92 : -58) + 'px;--d:' + i * 40 + 'ms"><span class="fr-ic" style="--b:url(bilder/' + b + '.webp)"></span><small>' + t + (z ? ' ' + z : '') + '</small></button>').join('');
+    el.hidden = false; feldRingFrame(); requestRender(); return true;
+}
+function feldRingZu() { if (!feldRing) return; feldRing = null; document.getElementById('feldRing').hidden = true; if (gemsArmed('teleport')) gemsArmAus(); requestRender(); }
+function feldRingFrame() {                                                  // (jedes Bild) die Knöpfe folgen der Stelle, dort eine Nadel
+    if (!feldRing) return;
+    const z = mapState.zoom, x = feldRing.x * z + mapState.offsetX, y = feldRing.y * z + mapState.offsetY, el = document.getElementById('feldRing');
+    el.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)';
+    setScreen(ctx); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, y, 9, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#f3d27a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 16, 6.5, 0, 0, Math.PI * 2); ctx.stroke();
+}
+document.getElementById('feldRing').addEventListener('click', e => {
+    const b = e.target.closest('[data-fring]'); if (!b || !feldRing) return; e.stopPropagation();
+    const { x, y, lm } = feldRing, was = b.dataset.fring;
+    if (was === 'tp') {
+        const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return; }
+        const k = tpGratis('player') ? 0 : TP_GEMS; if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine.', 3000); return; }
+        if (!gemsWirklich('teleport', k, b, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren? ' + (k ? icon('gem') + fmtNum(k) : 'Gratis'); return; }   // (immer bestätigen – ab 500 „Wirklich?“)
+        if (teleportOrt(x, y)) feldRingZu(); return;
+    }
+    feldRingZu();
+    if (was === 'mark') { openMarkerSheet({ id: null, x, y, text: MARKER_PRESETS[0], col: MARKER_COLORS[0] }); return; }
+    if (myArmies().length >= ARMY_MAX) { flashHint('Höchstens ' + ARMY_MAX + ' Armeen gleichzeitig im Feld.', 3000); return; }   // (wie der Armee-Knopf: dort sammeln sich die Truppen)
+    if ((islandsByLandmass[lm] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.5)) { flashHint('Dort geht es nicht – tippe auf freies Land mit etwas Abstand zu den Basen.', 3000); return; }
+    closeIslandPopup(); openArmySheet({ mode: 'new', x, y, lm });
+});
 function screenToWorld(screenX, screenY) {
     return {
         x: (screenX - mapState.offsetX) / mapState.zoom,
@@ -12326,6 +12435,7 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     islandTroops = {}; neutralTroopOverrides = {}; for (const isl of islands) if (isl.nt0 !== undefined) isl.neutralTroops = isl.nt0;
     templeHoldSince = {}; scoutedIslands.clear(); gateCfg = {}; store.set('openWaterGateCfg', '{}');
     titleState = { ruler: null, by: {} }; saveTitles(); bountyState = { ruler: null, gems: 0, coins: 0, since: now }; saveBounty();
+    inselOrt = {}; store.set('openWaterInselOrt', '{}'); inselOrtAnwenden();   // teleportierte Hauptstädte: jede Basis wieder an ihrem Platz
     hauptVor = {}; store.set('openWaterHauptVor', '{}'); brand = {}; store.set('openWaterBrand', '{}'); store.set('openWaterWorldStart', String(now));
     for (const o of [battleHeat, baseFought, ownerLoss, botTooStrongMem, botIntelMem, botAct, botKenntMem, botKenntBasen, botEvacuated, botLossMem, botAergerMem, botLmShareMem]) for (const k of Object.keys(o)) delete o[k];   // was die Mitspieler über die alte Karte wussten
     // Hauptstädte: je ein freier Turm am äußeren Rand, auf der Landmasse mit den wenigsten Nachbarn (wie freierStartplatz), zufällig
@@ -13095,6 +13205,8 @@ function fogPromptHit(sx, sy) {                   // → 'go' (the button), 'off
     return sx >= r.x - 6 && sx <= r.x + r.w + 6 && sy >= r.y - 6 && sy <= r.y + r.h + 6 ? 'go' : 'off';
 }
 function handleTap(screenX, screenY) {
+    if (feldRing) { feldRingZu(); return; }                                 // daneben tippen schließt das Feld-Menü
+    const blattOffen = !!armySheet || !document.getElementById('markerSheet').hidden || !!fieldSheetId || !!barbView || isPanelOpen(popup);
     if (teleportMode && Date.now() > teleportBis) { teleportMode = false; requestRender(); }
     if (teleportMode) {
         teleportMode = false; requestRender();
@@ -13123,7 +13235,7 @@ function handleTap(screenX, screenY) {
     if (!multiAttackMode && marchTapAt(screenX, screenY)) return;
     const island = pickIslandAtScreen(screenX, screenY);
     if (!island && !multiAttackMode) { const fp = fogPointAt(screenX, screenY); if (fp) { tapFog(fp); return; } }
-    if (!island) { if (isPanelOpen(popup) && !multiAttackMode) closeIslandPopup(); return; }
+    if (!island) { if (isPanelOpen(popup) && !multiAttackMode) closeIslandPopup(); else if (!multiAttackMode && !blattOffen && !markerMode) feldRingAuf(screenX, screenY); return; }   // freies Feld: Teleport, Markierung, Truppen
 
     if (multiAttackMode) {
         const source = islandById[multiAttackSourceId];
@@ -13537,6 +13649,7 @@ if (window.WELT) {
         if (k.has('openWaterIslandTroops')) islandTroops = PJ('openWaterIslandTroops') || {};
         if (k.has('openWaterNeutralTroopOverrides')) { neutralTroopOverrides = PJ('openWaterNeutralTroopOverrides') || {}; for (const isl of islands) if (!(isl.id in neutralTroopOverrides) && isl.nt0 !== undefined) isl.neutralTroops = isl.nt0;   // (neue Welt-Saison: wieder die erzeugte Besatzung)
             for (const id in neutralTroopOverrides) if (islandById[id]) islandById[id].neutralTroops = neutralTroopOverrides[id]; }
+        if (k.has('openWaterInselOrt')) inselOrtLaden();   // (teleportierte Hauptstädte)
         if (k.has('openWaterTempleHoldSince')) templeHoldSince = PJ('openWaterTempleHoldSince') || {};
         if (k.has('openWaterGateCfg')) gateCfg = null;
         if (k.has('openWaterPendingAttacks')) pendingAttacks = PJ('openWaterPendingAttacks') || [];
@@ -14641,6 +14754,14 @@ if (window.WELT) {
             const hb = hbDa(who); if (hb && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
             const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
             bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender(); befehlBezahlt(b);
+        },
+        teleport(who, b) {                            // Hauptstadt an eine freie Stelle (08d tpPruefen) – nur echte Spieler
+            const bs = loadBotState()[who]; if (!bs || !bs.mensch || typeof b.x !== 'number' || typeof b.y !== 'number') return;
+            if (zuOft(wm(who), 'teleport', 20, 3600000)) { warnen(who, 'teleport', 'Über 20-mal in einer Stunde teleportiert – abgelehnt.'); return; }
+            if (tpPruefen(who, b.x, b.y)) return;           // (kein Platz, Pass zu, Marsch unterwegs – das Handy prüft dasselbe; ein Wettlauf ist kein Schummeln)
+            if (b.gratis === true) { if (!tpGratis(who)) { warnen(who, 'teleport', 'Gratis-Teleport verlangt, steht ihm nicht (mehr) zu – abgelehnt.'); return; } bs.tpGratis = 1; }
+            else { const hb = hbDa(who); if (hb && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: TP_GEMS })) { warnen(who, 'gems', 'Teleport für ' + TP_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TP_GEMS); return; } }
+            tpVerlegen(who, b.x, b.y); saveBotState(); befehlBezahlt(b);
         },
         truppen(who, b) {                             // geschenkte Truppen (Stufe, Thron-Shop, Krankenhaus, Fund, Admin) → Hauptstadt
             const x = { b, bis: Date.now() + WACHE_WARTEN_MS }, l = wm(who).warte.truppen; l.push(x); wacheAbarbeiten(who);
