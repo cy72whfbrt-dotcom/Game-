@@ -175,6 +175,8 @@ function anleitungPuls(k) { if ((document.body.dataset.anlPuls || '') !== k) doc
 function anleitungFenster() {                             // Hauptstadt-Fenster: ein Satz, was es zeigt (solange die Anleitung läuft)
     const n = document.getElementById('popupAnleitung'); if (n) n.hidden = SYSTEM || anleitung.schritt >= ANLEITUNG.length || popupIslandId !== playerIslandId || popupView !== 'menu';
 }
+{ const a = document.getElementById('anleitung');           // ihre Höhe als --anl-h: steht sie oben (Handy, Basis-Fenster offen), kommt der Hinweis darunter (02)
+    if (a && window.ResizeObserver) new ResizeObserver(() => { if (a.offsetHeight) document.documentElement.style.setProperty('--anl-h', a.offsetHeight + 'px'); }).observe(a); }
 let anleitungUhr = 0, anleitungFrage = false;             // Frage: „Wirklich überspringen?“ steht gerade da
 function anleitungZeigen() {
     const el = document.getElementById('anleitung'); if (!el) return;

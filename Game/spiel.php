@@ -458,7 +458,8 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}   /* immer ganz lesbar, kein „…“ (Spieltest 7.10.) */
 #anleitungWeg{position:relative;width:32px;height:32px;align-self:center} #anleitungWeg::before{content:"";position:absolute;inset:-7px}   /* (sichtbar 32 px, Tippfläche 44 px – ab der Innenkante: 1 px Rand dazu) */
 /* Handy: mit offenem Basis-Fenster oben unter dem HUD statt direkt über dem Fenster – dort steht die Basis (inselMittig) */
-@media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important} }
+@media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important}
+  body:has(#islandPopup.is-open):has(#anleitung:not([hidden])) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--anl-h,64px) + 8px)} }   /* der Hinweis (z. B. „Der Drache ist erschienen“) dann darunter, nie hinter der Anleitung (--anl-h: 06b) */
 .anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
 .anleitung-ok{grid-column:1/-1;justify-self:end}
 body.has-sheet .anleitung:not(.is-events){display:none}   /* (Schritt 6 „Abholen“ bleibt im Events-Fenster sichtbar: 06b) */
@@ -1622,6 +1623,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .city-progress{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .city-progress i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
 /* Stadt im Stil von Rise of Kingdoms (Alexander 4.10.): runde Knöpfe am Gebäude, Bild, Voraussetzungen, Forschungs-Baum */
+.city-wisch{position:absolute;left:50%;top:37%;z-index:2;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:var(--r-pill);background:rgba(6,8,12,.72);border:1px solid var(--line-2);color:var(--gold-100);font:600 var(--fs-14,14px)/1.2 var(--font-ui);white-space:nowrap;pointer-events:none;transform:translateX(-50%);animation:city-wisch 1.6s ease-in-out infinite}
+.city-wisch[hidden]{display:none} .city-wisch-r{transform:scaleX(-1)}   /* Handy: beim ersten Betreten – die Stadt geht links und rechts weiter */
+@keyframes city-wisch{50%{transform:translateX(calc(-50% + 10px))}}
 .city-ring{position:absolute;left:0;top:0;z-index:2;width:0;height:0;pointer-events:none}
 .city-ring[hidden]{display:none}
 .cr-btn{position:absolute;left:0;top:0;width:58px;height:58px;margin:-29px 0 0 -29px;transform:translate(var(--x),var(--y));pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent;
@@ -1656,6 +1660,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .anf .icon.icon--coin,.anf > .icon[data-i="coin"]{color:#e8b64a}
 .city-uptime{display:inline-flex;align-items:center;margin-left:8px;padding:2px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.28);font:700 11px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
 .city-uptime:empty{display:none}
+.city-lbl2{display:inline-flex;flex-direction:column;align-items:center;min-width:0} .city-warte{font:600 11px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;opacity:.85} .city-warte:empty{display:none}   /* „Fehlt: …“ – darunter, wann es reicht */
 .fo-baum{display:flex;gap:22px;overflow-x:auto;padding:4px 2px 10px;overscroll-behavior-x:contain;scrollbar-width:thin}
 .fo-spalte{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;flex:none}
 .fo-spalte + .fo-spalte::before{content:"";position:absolute;left:-22px;top:calc(50% + 9px);width:22px;height:2px;background:linear-gradient(90deg,var(--gold-500),var(--gold-300));opacity:.7}
@@ -1810,9 +1815,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 #bdFarben{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-items:center} #bdFarben button{width:34px;height:34px}
 .bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
 /* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
-/* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen und Wirkung zuerst, Schild-Kasten unten */
+/* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen zuerst, dann der Schild-Kasten */
 .city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}
-.city-sheet.cs-keep > #cityBNote.city-wirkung{order:4}
+.city-sheet.cs-keep > #cityBStats{order:1} .city-sheet.cs-keep > #cityBNote.city-wirkung{order:2} .city-sheet.cs-keep > #cityBExtra{order:3}   /* Burg: Schild-Kasten unter den Voraussetzungen – nie halb unter dem festen Knopf (Handy) */
 .city-bfoot .btn{min-height:48px}
 .city-sheet .fo-go{position:sticky;bottom:0;z-index:3;width:100%;min-height:48px;box-shadow:0 0 0 10px #15161b}   /* Forschen: bleibt sichtbar, solange die Forschung offen ist */
 .anf.is-bad > i{visibility:hidden}   /* fehlt etwas: die rote Zahl reicht, der Knopf sagt „Fehlt: …“ */
@@ -2935,6 +2940,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 <div id="cityView" class="city" hidden>
   <canvas id="cityCanvas" class="city-canvas" aria-label="Hauptstadt"></canvas>
   <div id="cityRing" class="city-ring" hidden></div>
+  <div id="cityWisch" class="city-wisch" hidden><svg class="icon"><use href="#i-back"/></svg><span>Wischen – mehr Gebäude</span><svg class="icon city-wisch-r"><use href="#i-back"/></svg></div>
   <header class="city-head">
     <div class="city-title"><div class="overline">Hauptstadt</div><h2 id="cityName">Deine Stadt</h2></div>
     <div id="cityBuilder" class="city-builder"></div>
@@ -2953,7 +2959,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <div id="cityBStats" class="city-bstats"></div>
     <div id="cityBExtra"></div>
     <div class="city-bfoot">
-      <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="lbl">Aufwerten</span><small id="cityUpTime" class="city-uptime"></small></button>
+      <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="city-lbl2"><span class="lbl">Aufwerten</span><small id="cityUpWarte" class="city-warte"></small></span><small id="cityUpTime" class="city-uptime"></small></button>
       <button id="citySpeedBtn" class="btn btn--secondary btn--grow" type="button" style="display:none"><svg class="icon"><use href="#i-gem"/></svg><span class="lbl">Beschleunigen</span></button>
     </div>
   </section>

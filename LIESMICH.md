@@ -3586,3 +3586,11 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   Bündnis-Knopf ohne Welt-Verbindung meldet „Keine Verbindung zur Welt“; „Gründen“ bleibt am Handy unten sichtbar; Spähen:
   „Neutrale Basis gespäht – Bericht unter „Kampf““ und Bericht „Neutrale Basis“ (`ortName`); „Zeigen“ als Knopf.
   Test `fenster_fein_test` (H–M).
+- **Fix-Runde 3 (Spieltest r3):** Burg-Fenster: Schild-Kasten direkt unter den Voraussetzungen – beim Öffnen keine Karte halb
+  unter dem festen Knopf (Handy); „Fehlt: 1.062 Münzen“ zeigt darunter die Wartezeit beim jetzigen Ertrag pro Stunde („in ~7 Min.“,
+  mehreres fehlt: das Längste; `cityWarte`, 08b); hast/brauchst gleich geschrieben („998.912 / 1.900“ statt „998,9 Tsd. / 1.900“,
+  `anfKosten`); Stadt am Handy: beim ersten Betreten „‹ Wischen – mehr Gebäude ›“ (`cityWischZeigen`, 08e); gesperrter Held ohne
+  „Macht Gesperrt“, Gefolge nur über 0; Heldenhalle: Reiter/Knopf „Helden“ öffnet gleich die Helden (kein zweites „Helden öffnen“);
+  Hinweis (z. B. „Der Drache ist erschienen“) steht am Handy beim Angriff unter der Anleitung statt dahinter (`--anl-h`).
+  Geprüft, kein Fehler: „Unterwegs 1“ nach dem Kampf = die Truppen auf dem Heimweg; „Kampfdetails“ öffnet (ist ein `<summary>`).
+  Test `stadt_feinschliff_test`.

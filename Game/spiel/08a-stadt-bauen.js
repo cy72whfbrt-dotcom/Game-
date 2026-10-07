@@ -190,7 +190,7 @@ function cityShow() {
     document.getElementById('cityName').textContent = (profileName.value || 'Deine') + (profileName.value ? 's Hauptstadt' : ' Hauptstadt');
     cityView.hidden = false; stadtLeiste(true);
     cityOpenId = null; cityRingZu(); document.getElementById('citySheet').hidden = true;
-    updateCityBuilder();
+    updateCityBuilder(); cityWischZeigen();
     cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
 }
 // Eintauchen wie bei RoK: die Kamera fliegt bis kurz vor die Hauptstadt (CITY_NAH × größter Zoom, die Basis noch klein),

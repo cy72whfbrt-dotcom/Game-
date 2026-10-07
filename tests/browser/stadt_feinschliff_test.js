@@ -1,6 +1,7 @@
 // Stadt-Feinschliff (Spieltest 7.10.): „Stadt betreten“ ohne Konsolenfehler (Klick-Ereignis kam als „dann“ in openCity),
 // Heldenkarte „Freischalten“ mit Kosten und ganz in der Karte, Viertelstern als Tortenstück, Erfolgs-Hinweis am Handy erst
 // nach dem Fenster, Burg-Blatt: letzte Karte über dem festen Knopf lesbar, Stadt-Schilder nie unter der unteren Leiste.
+// Fix-Runde 3: Wisch-Hinweis (Handy), Burg-Blatt ohne halbe Karte, Wartezeit am „Fehlt“-Knopf, gleiche Zahlen, Helden-Reiter, Hinweis unter der Anleitung.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -17,8 +18,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.waitForTimeout(400);
     await p.evaluate(() => { const k = document.getElementById('cityBtn'); k.hidden = false; k.style.display = ''; k.click(); });
     await p.waitForFunction(() => !cityView.hidden && !cityBusy, null, { timeout: 20000, polling: 100 }).catch(() => {});
-    const r1 = await p.evaluate(() => ({ stadt: !cityView.hidden, anim: !!(cityCam && cityCam.anim) || cityPendingAnim }));
+    const r1 = await p.evaluate(() => ({ stadt: !cityView.hidden, anim: !!(cityCam && cityCam.anim) || cityPendingAnim, wisch: !document.getElementById('cityWisch').hidden }));
     ok(r1.stadt && !fe.length, art + ': „Stadt betreten“ öffnet die Stadt ohne Konsolenfehler', { ...r1, fe: fe.slice(0, 3) });
+    // Fix-Runde 3 D: Handy hoch – die Stadt ist breiter als der Bildschirm: beim ersten Betreten „‹ Wischen ›“; Desktop (passt): keiner
+    ok(r1.wisch === (art === 'Handy'), art + ': Wisch-Hinweis in der Stadt ' + (art === 'Handy' ? 'da' : 'nicht nötig'), r1.wisch);
     const r = await p.evaluate(async () => {
       const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};
       coins = 5e6; updateHud(); await warte(600);
@@ -61,6 +64,37 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       closeHeroHall(); await warte(100); achCheck(); o.hinweisZu = hintEl.textContent; a.goal = ziel; achKnown = null;
       return o;
     }));
+    // Fix-Runde 3 (Spieltest r3): B Burg-Blatt beim Öffnen ohne halb verdeckte Karte · C „Fehlt“ mit Wartezeit · E gesperrter Held ohne
+    // „Macht Gesperrt“, Gefolge nur über 0 · F „Helden“ öffnet gleich die Halle · G hast/brauchst gleich geschrieben · H Hinweis unter der Anleitung
+    const f3 = await p.evaluate(async () => {
+      const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};
+      closeHeroHall(); cityOpenId = 'keep'; cityPage = 'bau'; loadCity().builds = []; coins = 0; renderCitySheet(); await warte(300);
+      const sh = document.getElementById('citySheet'); sh.scrollTop = 0; await warte(200);
+      const ft = sh.querySelector('.city-bfoot').getBoundingClientRect().top;
+      o.halb = [...sh.querySelectorAll('.anf, #cityBNote, .auf-grid > div')].filter(e => e.offsetParent).map(e => e.getBoundingClientRect()).filter(q => q.top < ft - 2 && q.bottom > ft + 2).length;
+      o.knopf = document.getElementById('cityUpgradeBtn').querySelector('.lbl').textContent; o.warte = document.getElementById('cityUpWarte').textContent;
+      const r = AUF.rohVon('player'), alt = { h: r.h, s: r.s, e: r.e }; r.h = r.s = r.e = 5000; coins = 998912; renderCitySheet(); await warte(100);
+      o.zahlen = [...document.querySelectorAll('#cityBStats .anf b')].map(b => b.textContent); Object.assign(r, alt);
+      o.warteVoll = document.getElementById('cityUpWarte').textContent;   // (alles da: keine Wartezeit)
+      coins = 5e6; cityOpenId = null; sh.hidden = true;
+      loadCity().levels.heroes = Math.max(1, loadCity().levels.heroes || 0); cityOpenId = 'heroes'; cityPage = 'bau'; renderCitySheet(); await warte(100);
+      o.extra = document.getElementById('cityBExtra').textContent;
+      document.querySelector('#cityTabs [data-cpage="nutz"]').click(); await warte(200);
+      o.halle = !document.getElementById('heroHall').hidden; o.seite = cityPage;
+      const H = loadHeroes(), zu = HEROES.find(x => !H[x.id].own); openHeroHall(zu.id); await warte(200);
+      o.macht = document.querySelector('#heroHall .hh-unten').textContent;
+      o.gefolge = HEROES.every(x => hhHero(x.id).includes('<span>Gefolge</span>') === heroStats('player', x.id).gef > 0);
+      closeHeroHall(); cityOpenId = null; sh.hidden = true;
+      if (innerWidth < 900) { closeCity(); await warte(1500);   // Handy: Basis-Fenster offen, Anleitung oben – der Hinweis steht darunter
+        const a = document.getElementById('anleitung'); openIslandPopup(islandById[playerIslandId]); a.hidden = false; flashHint('Der Drache ist erschienen! Urdrache Vharak kreist über dem Thron – nur alle zusammen können ihn besiegen.', 5000); await warte(400);
+        o.anl = Math.round(a.getBoundingClientRect().bottom); o.hinweis = Math.round(hintEl.getBoundingClientRect().top); }
+      return o; });
+    ok(!f3.halb, art + ': Burg-Blatt beim Öffnen – keine Karte halb unter dem festen Knopf', f3.halb);
+    ok(/^Fehlt: .*Münzen$/.test(f3.knopf) && /^in ~\d+ (Min\.|Std\.|Tagen)$/.test(f3.warte) && f3.warteVoll === '', art + ': „Fehlt: … Münzen“ mit Wartezeit darunter (nur wenn etwas fehlt)', [f3.knopf, f3.warte, f3.warteVoll]);
+    ok(f3.zahlen.length >= 4 && f3.zahlen.every(z => /^\d{1,3}(\.\d{3})* \/ \d{1,3}(\.\d{3})*$/.test(z)), art + ': Voraussetzungen hast/brauchst gleich geschrieben (998.912 / 1.100)', f3.zahlen);
+    ok(f3.extra === '' && f3.halle && f3.seite === 'bau', art + ': Heldenhalle „Helden“ öffnet gleich die Helden (kein doppeltes „Helden öffnen“)', f3);
+    ok(!/Gesperrt|Macht/.test(f3.macht) && f3.gefolge, art + ': gesperrter Held ohne „Macht Gesperrt“, Gefolge nur über 0', f3.macht);
+    if (art === 'Handy') ok(f3.hinweis >= f3.anl, art + ': Hinweis beim Angriff unter der Anleitung, nicht dahinter', { anl: f3.anl, hinweis: f3.hinweis });
     ok(r.geprueft > 0 && !r.schilder.length, art + ': kein Stadt-Schild unter der unteren Leiste', { geprueft: r.geprueft, drunter: r.schilder });
     ok(r.burg.schutz, art + ': Burg-Blatt zeigt die Anfängerschutz-Karte');
     ok(r.burg.frei, art + ': Burg-Blatt ganz unten – letzte Karte über dem festen Knopf', r.burg);

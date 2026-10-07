@@ -42,9 +42,17 @@ function cityFocus(id, now) {                                               // d
     cityCam.tx = o.x; cityCam.ty = o.y;
     if (now) { cityCam.x = cityCam.tx; cityCam.y = cityCam.ty; cityCam.tx = cityCam.ty = undefined; }
 }
+// Handy hoch: das Bild ist breiter als der Bildschirm (Heldenhalle, Botschaft … liegen rechts) – beim ersten Betreten kurz „‹ Wischen ›“
+let cityWischGezeigt = false;
+function cityWischZeigen() {
+    const el = document.getElementById('cityWisch'); if (!el || cityWischGezeigt || cityZMin(innerWidth, innerHeight) * CITY_BILD_W < innerWidth * 1.15) return;
+    cityWischGezeigt = true; el.hidden = false; setTimeout(cityWischWeg, 6000);
+}
+function cityWischWeg() { const el = document.getElementById('cityWisch'); if (el) el.hidden = true; }
 
 // ---- wischen, mit zwei Fingern oder dem Mausrad zoomen, tippen ----
 cityCanvas.addEventListener('pointerdown', e => {
+    cityWischWeg();
     if (e.isPrimary) { cityPointers.clear(); cityGesture = null; }             // ein neuer erster Finger: Reste von vorher sind weg
     try { cityCanvas.setPointerCapture(e.pointerId); } catch (err) {}
     cityPointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (cityCam) cityCam.tx = cityCam.ty = undefined;

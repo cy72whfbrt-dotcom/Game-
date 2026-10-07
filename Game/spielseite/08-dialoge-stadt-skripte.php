@@ -72,6 +72,7 @@
 <div id="cityView" class="city" hidden>
   <canvas id="cityCanvas" class="city-canvas" aria-label="Hauptstadt"></canvas>
   <div id="cityRing" class="city-ring" hidden></div>
+  <div id="cityWisch" class="city-wisch" hidden><svg class="icon"><use href="#i-back"/></svg><span>Wischen – mehr Gebäude</span><svg class="icon city-wisch-r"><use href="#i-back"/></svg></div>
   <header class="city-head">
     <div class="city-title"><div class="overline">Hauptstadt</div><h2 id="cityName">Deine Stadt</h2></div>
     <div id="cityBuilder" class="city-builder"></div>
@@ -90,7 +91,7 @@
     <div id="cityBStats" class="city-bstats"></div>
     <div id="cityBExtra"></div>
     <div class="city-bfoot">
-      <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="lbl">Aufwerten</span><small id="cityUpTime" class="city-uptime"></small></button>
+      <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="city-lbl2"><span class="lbl">Aufwerten</span><small id="cityUpWarte" class="city-warte"></small></span><small id="cityUpTime" class="city-uptime"></small></button>
       <button id="citySpeedBtn" class="btn btn--secondary btn--grow" type="button" style="display:none"><svg class="icon"><use href="#i-gem"/></svg><span class="lbl">Beschleunigen</span></button>
     </div>
   </section>

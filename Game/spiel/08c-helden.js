@@ -244,10 +244,11 @@ function hhHero(id) {
         '<div class="hh-hero" data-r="' + rd.key + '" style="--glow:' + h.color + '88;--rc:' + rd.color + '">' +
             '<div class="hh-stage"><div class="hh-strahl"></div><div class="hh-floor"></div>' + heroImg(id, 'hh-portrait' + (s.own ? '' : ' is-locked'), true) +
                 '<div class="hh-id"><span class="hh-gem">' + rd.label + '</span><span class="hh-nm">' + h.name + '</span><span class="hh-ttl">' + h.title + ' · ' + h.role + '</span>' + hhStars(s.q) + '</div>' +
-                '<div class="hh-unten"><div class="hh-top"><div><h3>Macht</h3><b class="hh-pow">' + (s.own ? fmtNum(heroPower('player', id)) : 'Gesperrt') + '</b></div><div class="hh-role">' + (busy ? '<em>unterwegs</em>' : s.own ? 'bereit' : '') + '</div></div>' +
+                '<div class="hh-unten"><div class="hh-top">' + (s.own ? '<div><h3>Macht</h3><b class="hh-pow">' + fmtNum(heroPower('player', id)) + '</b></div>' : '<div></div>') +   // (gesperrt: keine Macht – der Kasten unten sagt „Freischalten“)
+                    '<div class="hh-role">' + (busy ? '<em>unterwegs</em>' : s.own ? 'bereit' : '') + '</div></div>' +
                     '<div class="hh-skks">' + kacheln + '</div></div></div>' +
             '<div class="hh-panel">' +
-                '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals">' + wert('attack', 'Angriff', '+' + st.atk + ' %') + wert('defense', 'Verteidigung', '+' + st.def + ' %') + wert('boots', 'Tempo', '+' + st.spd + ' %') + wert('troops', 'Gefolge', '+' + fmtCompact(st.gef)) + '</div>' +
+                '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals">' + wert('attack', 'Angriff', '+' + st.atk + ' %') + wert('defense', 'Verteidigung', '+' + st.def + ' %') + wert('boots', 'Tempo', '+' + st.spd + ' %') + (st.gef > 0 ? wert('troops', 'Gefolge', '+' + fmtCompact(st.gef)) : '') + '</div>' +
                     '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit (höchstens so viele, wie der Held anführt) – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
                 '<div class="hh-blk"><h3>Sterne</h3>' + hhStars(s.q) + stars + '</div>' +
                 '<div class="hh-blk"><div class="hh-skh"><h3>Fähigkeiten</h3>' + (s.own ? '<span class="hh-pts">' + free + (free === 1 ? ' Punkt' : ' Punkte') + ' frei</span>' : '<span class="hh-pts off">nach dem Freischalten</span>') + '</div><div class="hh-sklist">' + skills + '</div>' +

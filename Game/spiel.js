@@ -7349,6 +7349,8 @@ function anleitungPuls(k) { if ((document.body.dataset.anlPuls || '') !== k) doc
 function anleitungFenster() {                             // Hauptstadt-Fenster: ein Satz, was es zeigt (solange die Anleitung läuft)
     const n = document.getElementById('popupAnleitung'); if (n) n.hidden = SYSTEM || anleitung.schritt >= ANLEITUNG.length || popupIslandId !== playerIslandId || popupView !== 'menu';
 }
+{ const a = document.getElementById('anleitung');           // ihre Höhe als --anl-h: steht sie oben (Handy, Basis-Fenster offen), kommt der Hinweis darunter (02)
+    if (a && window.ResizeObserver) new ResizeObserver(() => { if (a.offsetHeight) document.documentElement.style.setProperty('--anl-h', a.offsetHeight + 'px'); }).observe(a); }
 let anleitungUhr = 0, anleitungFrage = false;             // Frage: „Wirklich überspringen?“ steht gerade da
 function anleitungZeigen() {
     const el = document.getElementById('anleitung'); if (!el) return;
@@ -9222,7 +9224,7 @@ function cityShow() {
     document.getElementById('cityName').textContent = (profileName.value || 'Deine') + (profileName.value ? 's Hauptstadt' : ' Hauptstadt');
     cityView.hidden = false; stadtLeiste(true);
     cityOpenId = null; cityRingZu(); document.getElementById('citySheet').hidden = true;
-    updateCityBuilder();
+    updateCityBuilder(); cityWischZeigen();
     cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
 }
 // Eintauchen wie bei RoK: die Kamera fliegt bis kurz vor die Hauptstadt (CITY_NAH × größter Zoom, die Basis noch klein),
@@ -9317,13 +9319,25 @@ document.addEventListener('click', e => { const d = document.getElementById('roh
     if (d && !d.hidden && typeof rohUmschalten === 'function' && !e.target.closest('#hudRoh, #rohDrop')) rohUmschalten(false); }, true);
 // ===== DEINE BURG (tap the castle in the city): upgrade it, switch on a Friedensschild =====
 function shieldStock() { let v; try { v = JSON.parse(store.get('openWaterShieldStock')); } catch (e) {} return Object.assign({ 2: 0, 8: 0, 24: 0 }, v || {}); }
-function renderKeepSheet() { AUF.renderKeep(); const f = cityFehlt('keep'); if (f) setBtnLabel(document.getElementById('cityUpgradeBtn'), f); }   // die Burg-Stufe (aufbau.js)
-function cityFehlt(id) {                           // fehlt nur etwas zum Bezahlen: der Knopf sagt, was („Fehlt: 2.000 Holz“, mehreres: „Fehlt: Holz, Stein, Eisen“)
-    if (!AUF || cityBlocker(id)) return '';
+function renderKeepSheet() { AUF.renderKeep(); const f = cityFehlt('keep'); if (f) setBtnLabel(document.getElementById('cityUpgradeBtn'), f); cityWarteSetzen(f && 'keep'); }   // die Burg-Stufe (aufbau.js)
+function cityFehltListe(id) {                      // was zum Bezahlen fehlt: [[Menge, Name], …]
+    if (!AUF || cityBlocker(id)) return [];
     const c = loadCity(), k = AUF.stadtKosten(id, id === 'keep' ? AUF.burgStufe('player') : c.levels[id] || 0), r = AUF.rohVon('player') || {};
-    const f = (k.c > coins ? [[k.c - coins, 'Münzen']] : []).concat(['h', 's', 'e'].filter(x => k[x] > (r[x] || 0)).map(x => [k[x] - (r[x] || 0), AUF.ROH_DEF[x].name]));
+    return (k.c > coins ? [[k.c - coins, 'Münzen']] : []).concat(['h', 's', 'e'].filter(x => k[x] > (r[x] || 0)).map(x => [k[x] - (r[x] || 0), AUF.ROH_DEF[x].name]));
+}
+function cityFehlt(id) {                           // fehlt nur etwas zum Bezahlen: der Knopf sagt, was („Fehlt: 2.000 Holz“, mehreres: „Fehlt: Holz, Stein, Eisen“)
+    const f = cityFehltListe(id);
     return f.length > 1 ? 'Fehlt: ' + f.map(x => x[1]).join(', ') : f.length ? 'Fehlt: ' + fmtCompact(Math.ceil(f[0][0])) + ' ' + f[0][1] : '';
 }
+function cityWarte(id) {                           // wann es reicht, beim jetzigen Ertrag pro Stunde („in ~7 Min.“; mehreres: das, was am längsten dauert) – nur Anzeige
+    const f = id ? cityFehltListe(id) : []; if (!f.length) return '';
+    const rs = AUF.rohStunde('player'), je = { Münzen: proStunde(totalCoinProductionPerTick()) };
+    for (const x of ['h', 's', 'e']) je[AUF.ROH_DEF[x].name] = rs[x];
+    const sec = f.reduce((m, x) => Math.max(m, je[x[1]] > 0 ? x[0] / je[x[1]] * 3600 : Infinity), 0);
+    if (!Number.isFinite(sec)) return '';           // (kein Ertrag: keine Zeit)
+    return 'in ~' + (sec < 3600 ? Math.max(1, Math.ceil(sec / 60)) + ' Min.' : sec < 172800 ? Math.ceil(sec / 3600) + ' Std.' : Math.ceil(sec / 86400) + ' Tagen');
+}
+function cityWarteSetzen(id) { setText(document.getElementById('cityUpWarte'), cityWarte(id)); }   // die kleine Zeile unter „Fehlt: …“
 // ===== AUSSEHEN: Wappen und Rahmen (= Titel, 05a RAHMEN) – nichts zu kaufen (Basis- und Marsch-Skins gibt es nicht mehr, Alexander 7.10.) =====
 var lkTab = 'frame';
 function lkPrice(d) { return d.platz ? '<span class="lk-cost">' + icon('crown') + rahmenPlatzText(d) + '</span>' : ''; }   // woher ein Rahmen kommt
@@ -9402,10 +9416,10 @@ function anfZeile(ok, ic, txt, val, geh) {         // eine Voraussetzung: Zeiche
     return '<div class="anf' + (ok ? ' is-ok' : ' is-bad') + (zu ? ' is-geh' : '') + '">' + icon(n, k) + '<span>' + txt + '</span>' + (val ? '<b>' + val + '</b>' : '') +
         (zu ? '<button type="button" class="btn btn--secondary btn--sm anf-geh" data-anf-geh="' + geh[0] + '">' + geh[1] + icon('send') + '</button>' : '<i>' + icon(ok ? 'check' : 'close') + '</i>') + '</div>';
 }
-function anfKosten(k) {                            // Münzen und Rohstoffe: hast / brauchst
+function anfKosten(k) {                            // Münzen und Rohstoffe: hast / brauchst (beide gleich geschrieben: „998.912 / 1.900“, nie „998,9 Tsd. / 1.900“)
     if (!k) return ''; const r = AUF ? AUF.rohVon('player') || {} : {}, out = [];
-    if (k.c) out.push(anfZeile(coins >= k.c, ['coin', 'icon--coin'], 'Münzen', fmtCompact(Math.floor(coins)) + ' / ' + fmtCompact(k.c)));
-    if (AUF) for (const x of ['h', 's', 'e']) if (k[x]) out.push(anfZeile((r[x] || 0) >= k[x], [AUF.ROH_DEF[x].icon, 'roh-' + x], AUF.ROH_DEF[x].name, fmtCompact(Math.floor(r[x] || 0)) + ' / ' + fmtCompact(k[x])));
+    if (k.c) out.push(anfZeile(coins >= k.c, ['coin', 'icon--coin'], 'Münzen', fmtNum(Math.floor(coins)) + ' / ' + fmtNum(k.c)));
+    if (AUF) for (const x of ['h', 's', 'e']) if (k[x]) out.push(anfZeile((r[x] || 0) >= k[x], [AUF.ROH_DEF[x].icon, 'roh-' + x], AUF.ROH_DEF[x].name, fmtNum(Math.floor(r[x] || 0)) + ' / ' + fmtNum(k[x])));
     return out.join('');
 }
 function cityAnfHtml(id, lvl, k) {                 // Voraussetzungen für die nächste Stufe (Burg, Bauarbeiter, Münzen, Rohstoffe)
@@ -9429,14 +9443,21 @@ const cityStufeHtml = (lvl, max, von) => max ? 'Stufe ' + lvl + ' · höchste St
 function citySeite(id, lvl) {                      // Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
     const sh = document.getElementById('citySheet'), tabs = document.getElementById('cityTabs'), n = id === '_keep' ? null : cityNutz(id, lvl);
     if (!n) cityPage = 'bau';
-    sh.classList.toggle('cs-keep', id === '_keep');                           // (Burg: Schild-Kasten nach unten)
+    sh.classList.toggle('cs-keep', id === '_keep');                           // (Burg: Schild-Kasten unter die Voraussetzungen)
     sh.classList.toggle('cs-nutz', !!n && cityPage === 'nutz'); sh.classList.toggle('cs-bau', !!n && cityPage === 'bau');
     tabs.hidden = !n;
-    if (n) liveHtml(tabs, '<button type="button" data-cpage="bau"' + (cityPage === 'bau' ? ' class="on"' : '') + '>' + icon('upgrade') + 'Aufwerten</button><button type="button" data-cpage="nutz"' + (cityPage === 'nutz' ? ' class="on"' : '') + '>' + icon(n[1]) + n[0] + '</button>');
+    if (n) liveHtml(tabs, '<button type="button" data-cpage="bau"' + (cityPage === 'bau' ? ' class="on"' : '') + '>' + icon('upgrade') + 'Aufwerten</button><button type="button" data-cpage="nutz"' + (cityPage === 'nutz' ? ' class="on"' : '') + '>' + icon(n[1]) + n[0] + (id === 'heroes' ? cityHeldenBadge() : '') + '</button>');
 }
 document.getElementById('citySheet').addEventListener('click', e => { const g = e.target.closest('[data-anf-geh]'); if (!g) return;   // „Zur Burg“: das fehlende Gebäude öffnen
     cityPage = 'bau'; cityOpenId = g.dataset.anfGeh; cityFocus(cityOpenId); renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; });
-document.getElementById('cityTabs').addEventListener('click', e => { const b = e.target.closest('[data-cpage]'); if (b) { cityPage = b.dataset.cpage; renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; } });
+document.getElementById('cityTabs').addEventListener('click', e => { const b = e.target.closest('[data-cpage]'); if (!b) return;
+    if (cityHeldenDirekt(cityOpenId, b.dataset.cpage)) return;
+    cityPage = b.dataset.cpage; renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; });
+function cityHeldenDirekt(id, page) {             // Heldenhalle „Helden“ (Reiter oder runder Knopf): gleich die Helden – keine Seite, auf der nur „Helden öffnen“ steht
+    if (id !== 'heroes' || page !== 'nutz') return false;
+    cityPage = 'bau'; openHeroHall(); return true;
+}
+const cityHeldenBadge = () => { const up = HEROES.filter(h => heroCanDo('player', h.id)).length; return up ? '<em class="hh-badge">' + up + '</em>' : ''; };   // wie viele Helden etwas zu tun haben
 function renderCitySheet() {                       // (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
     if (cityOpenId === 'keep') cityOpenId = '_keep';
     const id = cityOpenId; if (!id) return;
@@ -9460,7 +9481,9 @@ function renderCitySheet() {                       // (läuft auch jede Sekunde 
     liveHtml(note, nh);
     const cost = !max ? cityCost(id, lvl) : 0, kost = !max ? (AUF ? AUF.stadtKosten(id, lvl) : { c: cost }) : null;
     liveHtml(document.getElementById('cityBStats'), !max && !building ? cityAnfHtml(id, lvl, kost) : '');
-    setBtnLabel(up, max ? 'Höchste Stufe' : (!building && (cityBurgFehlt(id, lvl) || cityFehlt(id))) || (lvl ? 'Aufwerten' : 'Bauen'));
+    const fehlt = !max && !building && !cityBurgFehlt(id, lvl) && cityFehlt(id);
+    setBtnLabel(up, max ? 'Höchste Stufe' : (!building && (cityBurgFehlt(id, lvl) || fehlt)) || (lvl ? 'Aufwerten' : 'Bauen'));
+    cityWarteSetzen(fehlt && id);
     setText(document.getElementById('cityUpTime'), max ? '' : fmtDuration(cityTimeSec(id, lvl)));
     up.disabled = !!blocker || (AUF ? !AUF.kannZahlen('player', kost) : coins < cost);
     up.title = blocker || '';
@@ -9485,6 +9508,7 @@ function cityRingAuf(id) {
 function cityRingZu() { cityRingId = null; const el = document.getElementById('cityRing'); if (el && !el.hidden) el.hidden = true; }
 document.getElementById('cityRing').addEventListener('click', e => {
     const b = e.target.closest('[data-cring]'); if (!b || !cityRingId) return;
+    if (cityHeldenDirekt(cityRingId, b.dataset.cring)) return cityRingZu();
     cityPage = b.dataset.cring; cityOpenId = cityRingId; cityRingZu(); renderCitySheet(); document.getElementById('citySheet').scrollTop = 0;
 });
 // ===== HELDEN: shards → unlock → quarter stars → skill points. A hero only works in the fight he leads - for you and everyone else =====
@@ -9732,10 +9756,11 @@ function hhHero(id) {
         '<div class="hh-hero" data-r="' + rd.key + '" style="--glow:' + h.color + '88;--rc:' + rd.color + '">' +
             '<div class="hh-stage"><div class="hh-strahl"></div><div class="hh-floor"></div>' + heroImg(id, 'hh-portrait' + (s.own ? '' : ' is-locked'), true) +
                 '<div class="hh-id"><span class="hh-gem">' + rd.label + '</span><span class="hh-nm">' + h.name + '</span><span class="hh-ttl">' + h.title + ' · ' + h.role + '</span>' + hhStars(s.q) + '</div>' +
-                '<div class="hh-unten"><div class="hh-top"><div><h3>Macht</h3><b class="hh-pow">' + (s.own ? fmtNum(heroPower('player', id)) : 'Gesperrt') + '</b></div><div class="hh-role">' + (busy ? '<em>unterwegs</em>' : s.own ? 'bereit' : '') + '</div></div>' +
+                '<div class="hh-unten"><div class="hh-top">' + (s.own ? '<div><h3>Macht</h3><b class="hh-pow">' + fmtNum(heroPower('player', id)) + '</b></div>' : '<div></div>') +   // (gesperrt: keine Macht – der Kasten unten sagt „Freischalten“)
+                    '<div class="hh-role">' + (busy ? '<em>unterwegs</em>' : s.own ? 'bereit' : '') + '</div></div>' +
                     '<div class="hh-skks">' + kacheln + '</div></div></div>' +
             '<div class="hh-panel">' +
-                '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals">' + wert('attack', 'Angriff', '+' + st.atk + ' %') + wert('defense', 'Verteidigung', '+' + st.def + ' %') + wert('boots', 'Tempo', '+' + st.spd + ' %') + wert('troops', 'Gefolge', '+' + fmtCompact(st.gef)) + '</div>' +
+                '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals">' + wert('attack', 'Angriff', '+' + st.atk + ' %') + wert('defense', 'Verteidigung', '+' + st.def + ' %') + wert('boots', 'Tempo', '+' + st.spd + ' %') + (st.gef > 0 ? wert('troops', 'Gefolge', '+' + fmtCompact(st.gef)) : '') + '</div>' +
                     '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit (höchstens so viele, wie der Held anführt) – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
                 '<div class="hh-blk"><h3>Sterne</h3>' + hhStars(s.q) + stars + '</div>' +
                 '<div class="hh-blk"><div class="hh-skh"><h3>Fähigkeiten</h3>' + (s.own ? '<span class="hh-pts">' + free + (free === 1 ? ' Punkt' : ' Punkte') + ' frei</span>' : '<span class="hh-pts off">nach dem Freischalten</span>') + '</div><div class="hh-sklist">' + skills + '</div>' +
@@ -9846,8 +9871,8 @@ function cityVergleich(id, L) {                    // Gebäude-Fenster „Jetzt 
 }
 function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
-    if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
-        return (lvl ? '' : '<small class="keep-note">Baue die Heldenhalle – erst dann kannst du Helden freischalten, aufwerten und mitschicken.</small>') + '<button type="button" class="btn btn--' + (lvl ? 'primary' : 'secondary') + ' btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
+    if (id === 'heroes') return lvl ? '' : '<small class="keep-note">Baue die Heldenhalle – erst dann kannst du Helden freischalten, aufwerten und mitschicken.</small>' +   // gebaut: der Reiter „Helden“ öffnet sie (08b)
+        '<button type="button" class="btn btn--secondary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + cityHeldenBadge() + '</button>';
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
     if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
     if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest
@@ -10091,9 +10116,17 @@ function cityFocus(id, now) {                                               // d
     cityCam.tx = o.x; cityCam.ty = o.y;
     if (now) { cityCam.x = cityCam.tx; cityCam.y = cityCam.ty; cityCam.tx = cityCam.ty = undefined; }
 }
+// Handy hoch: das Bild ist breiter als der Bildschirm (Heldenhalle, Botschaft … liegen rechts) – beim ersten Betreten kurz „‹ Wischen ›“
+let cityWischGezeigt = false;
+function cityWischZeigen() {
+    const el = document.getElementById('cityWisch'); if (!el || cityWischGezeigt || cityZMin(innerWidth, innerHeight) * CITY_BILD_W < innerWidth * 1.15) return;
+    cityWischGezeigt = true; el.hidden = false; setTimeout(cityWischWeg, 6000);
+}
+function cityWischWeg() { const el = document.getElementById('cityWisch'); if (el) el.hidden = true; }
 
 // ---- wischen, mit zwei Fingern oder dem Mausrad zoomen, tippen ----
 cityCanvas.addEventListener('pointerdown', e => {
+    cityWischWeg();
     if (e.isPrimary) { cityPointers.clear(); cityGesture = null; }             // ein neuer erster Finger: Reste von vorher sind weg
     try { cityCanvas.setPointerCapture(e.pointerId); } catch (err) {}
     cityPointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (cityCam) cityCam.tx = cityCam.ty = undefined;
