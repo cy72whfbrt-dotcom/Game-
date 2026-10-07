@@ -93,12 +93,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     feldRingZu(); handleTap(viewW / 2, viewH / 2); const k = document.querySelector('#feldRing [data-fring="tp"]'); return k ? k.textContent.trim() : ''; }, i);
   const bestaetigen = () => p.evaluate(async () => { const warte = ms => new Promise(f => setTimeout(f, ms)), tp = () => document.querySelector('#feldRing [data-fring="tp"]');
     const g0 = gems, n0 = teleVorrat(); window.__befehle.length = 0; tp().click(); const frage = tp().textContent; await warte(600); tp().click(); await warte(100);
-    const tb = window.__befehle.find(x => x[0] === 'teleport'); return { frage, gems: g0 - gems, tele: n0 - teleVorrat(), gratis: tb ? tb[1].gratis : null, ring: document.getElementById('feldRing').hidden }; });
+    const tb = window.__befehle.find(x => x[0] === 'teleport'); return { frage, gems: g0 - gems, tele: n0 - teleVorrat(), gratis: tb ? tb[1].gratis : store.get('openWaterTpGratis') === '1', ring: document.getElementById('feldRing').hidden }; });
   ok(d0.zu && d0.frei >= 3, 'Rucksack „Benutzen“: Fenster zu, Karte zur Zielwahl', d0);
   await p.waitForTimeout(1500);   // (die Karte fährt zur Hauptstadt)
   const k1 = await tippe(0); await p.waitForTimeout(300); await bild('feld');
   const d1 = await bestaetigen();
-  ok(/1 Teleporter/.test(k1) && /1 Teleporter/.test(d1.frage) && d1.gems === 0 && d1.tele === 1 && d1.gratis === false && d1.ring, 'freies Feld mit Teleporter: „1 Teleporter“ statt 500, verbraucht ihn, keine Edelsteine (Befehl ohne gratis)', { k1, d1 });
+  ok(/1 Teleporter/.test(k1) && /1 Teleporter/.test(d1.frage) && d1.gems === 0 && d1.tele === 1 && d1.gratis === false && d1.ring, 'freies Feld mit Teleporter: „1 Teleporter“ statt 500, verbraucht ihn, keine Edelsteine (nicht gratis)', { k1, d1 });
   const k2 = await tippe(1), d2 = await bestaetigen();
   ok(/500/.test(k2) && d2.gems === 500 && d2.tele === 0, 'ohne Teleporter wie bisher 500 Edelsteine', { k2, d2 });
   // Gratis-Teleporter neuer Spieler: liegt als 1 Teleporter im Rucksack, geht vor dem gekauften
@@ -107,7 +107,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(g.n === 2 && /2× im Rucksack/.test(g.text) && /gratis/.test(g.text), 'neuer Spieler: Gratis-Teleporter liegt (zusätzlich) im Rucksack', g);
   await p.evaluate(() => closeAllPopups());
   const k3 = await tippe(2), d3 = await bestaetigen();
-  ok(/1 Teleporter/.test(k3) && d3.gems === 0 && d3.tele === 0 && d3.gratis === true, 'zuerst der Gratis-Teleporter (Befehl gratis), der gekaufte bleibt', { k3, d3 });
+  ok(/1 Teleporter/.test(k3) && d3.gems === 0 && d3.tele === 0 && d3.gratis === true, 'zuerst der Gratis-Teleporter (gratis verbraucht), der gekaufte bleibt', { k3, d3 });
   const g2 = await p.evaluate(() => ({ n: teleImRucksack(), vorrat: teleVorrat() }));
   ok(g2.n === 1 && g2.vorrat === 1, 'danach: 1 gekaufter Teleporter übrig', g2);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();

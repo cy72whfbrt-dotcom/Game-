@@ -8005,7 +8005,7 @@ function renderRucksack() {
     liveHtml(document.getElementById('rkSchildStand'), icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
     const kaufen = was => '<button type="button" class="btn btn--secondary rk-knopf" data-rk-kauf="' + was + '"><span>Kaufen</span></button>';
     let h = '<div class="sect"><h4>Friedensschilde</h4><span class="sect-aside">Zeit kommt dazu</span></div><div class="rk-liste">' +
-        [2, 8, 24].map(n => rkFach({ a: 'schild', n }, 'Friedensschild ' + n + ' Std.', st[n] + '× im Rucksack',
+        [2, 8, 24].map(n => rkFach({ a: 'schild', n }, 'Schild ' + n + ' Std.', st[n] + '× im Rucksack',
             st[n] ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-schild="' + n + '"><span>Einsetzen</span></button>' : kaufen('schild'))).join('') + '</div>';
     h += '<div class="sect"><h4>Teleporter</h4><span class="sect-aside">Hauptstadt umziehen</span></div><div class="rk-liste">' +
         rkFach({ a: 'tele', n: nt }, 'Teleporter', nt + '× im Rucksack' + (gratis ? ' (1 gratis für neue Spieler)' : ''),
