@@ -296,7 +296,7 @@ function skillBonusText(def, level) {
     if (def.atkPct) return '+' + fmtNum(level * def.atkPct) + ' % Truppen';
     if (def.defPct) return '+' + fmtNum(level * def.defPct) + ' % Truppen';
     if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
-    if (def.rate) return '+' + fmtNum(Math.round(level * def.rate * 1000)) + ' Gold je 1.000 Kills';   // (Münzen × MUENZ_FAKTOR: Stufe 1 = 167)
+    if (def.rate) return '+' + fmtNum(Math.round(level * def.rate * 1000)) + ' Münzen je 1.000 Kills';   // (Münzen × MUENZ_FAKTOR: Stufe 1 = 167)
     if (def.msPerLevel) { const l = Math.min(level, def.max || level); return '+' + fmtNum(Math.round(1000 / (1000 - l * def.msPerLevel) * 100 - 100)) + ' % Produktion, +' + fmtNum(l * 5) + ' % Marschtempo' + (def.max && level >= def.max ? ' (max.)' : ''); }
     return '';
 }

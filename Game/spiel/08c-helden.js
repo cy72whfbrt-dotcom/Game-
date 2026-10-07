@@ -43,7 +43,7 @@ const HERO_EFF = { atk: ['atk', 'fight'], loss: ['loss', 'fight'], hosp: ['hosp'
     strongAtk: ['atk', 'strong'], midAtk: ['atk', 'mid'], midLoss: ['loss', 'mid'], guardAtk: ['atk', 'guard'], rulerAtk: ['atk', 'ruler'], templeLoss: ['loss', 'temple'], templeGold: ['gold', 'temple'],
     templeAtk: ['atk', 'temple'], templeHosp: ['hosp', 'temple'], scoutAtk: ['atk', 'scouted'], neutralAtk: ['atk', 'neutral'], fieldAtk: ['atk', 'vsArmy'], fieldGold: ['gold', 'field'],
     fieldLoss: ['loss', 'field'], fieldDef: ['fdef', 'fdefending'], resAtk: ['atk', 'res'], gatherDef: ['fdef', 'gatherDef'], gatherSpd: ['gSpd', 'gather'], carry: ['carry', 'gather'], rage: [null, 'never'] };
-const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Krankenhaus', gold: v => '+' + v + ' % Gold',
+const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Krankenhaus', gold: v => '+' + v + ' % Münzen',
     flee: v => '+' + v + ' % fliehen', ret: v => 'Rückzug +' + v + ' % Tempo', late: v => v + ' % später bemerkt', spd: v => '+' + v + ' % Tempo', toll: v => '−' + v + ' % Maut',
     fdef: v => '+' + v + ' % Verteidigung', gSpd: v => '+' + v + ' % Sammeln', carry: v => '+' + v + ' % Traglast' };
 function heroGefOf(hx, n) { return hx ? Math.min(hx.gef || 0, Math.max(0, n)) : 0; }   // Gefolge: never more than the troops the hero leads (no 1-troop marches with a big following)

@@ -13,7 +13,7 @@ const HEROES = [
     { id: 'kasimir', name: 'Kasimir', title: 'Gestürzter König', role: 'Thron', r: 3, icon: 'crown', color: '#6a2f5b', c2: '#2a1a2a', hair: '#2a1a1a', g: 'weapon', base: [6, 3, 0],
       sk: [['Königsruf', 'Im Kampf um die Mitte: +{v} % Angriff.', 'midAtk'], ['Thronsturm', '+{v} % Angriff gegen die Wächter-Tempel.', 'guardAtk'], ['Rache am Thron', '+{v} % Angriff gegen den Herrscher.', 'rulerAtk'], ['Altes Wissen', '{v} % weniger Verluste im Kampf um die Mitte.', 'midLoss']] },
     { id: 'yrsa', name: 'Yrsa', title: 'Tempelwächterin', role: 'Tempel', r: 3, icon: 'temple', color: '#4a6a4a', c2: '#2a3a2a', hair: '#b0602a', g: 'shield', base: [3, 7, 0],
-      sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Gold aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
+      sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Münzen aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
     { id: 'ida', name: 'Ida', title: 'Pfadfinderin', role: 'Tempo', r: 2, icon: 'boots', color: '#2f7a6a', c2: '#1f3a2f', hair: '#7a3a1a', g: 'weapon', base: [2, 2, 8],
       sk: [['Eilmarsch', 'Ihre Armee marschiert {v} % schneller.', 'spd'], ['Kartenkunde', '+{v} % Marschtempo.', 'spd'], ['Leichtfuß', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Rückweg', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'bernhard', name: 'Bernhard', title: 'Feldscher', role: 'Krankenhaus', r: 2, icon: 'plus', color: '#3d6b9b', c2: '#2a2a3a', hair: '#555', g: 'shield', base: [0, 6, 0],
@@ -21,11 +21,11 @@ const HEROES = [
     { id: 'mira', name: 'Mira', title: 'Späherin', role: 'Späher', r: 2, icon: 'scout', color: '#6b7a2f', c2: '#2f3a1f', hair: '#1a1a1a', g: 'weapon', base: [2, 3, 4],
       sk: [['Adlerauge', '+{v} % Angriff gegen eine Basis, die du vorher ausgespäht hast.', 'scoutAtk'], ['Leise Sohlen', '+{v} % Marschtempo.', 'spd'], ['Spurlos', 'Die anderen bemerken ihren Angriff {v} % später.', 'late'], ['Fährtenleserin', '+{v} % Angriff gegen Armeen im Feld.', 'fieldAtk']] },
     { id: 'nora', name: 'Nora', title: 'Jägerin', role: 'Feldkampf', r: 2, icon: 'troops', color: '#4a5a8a', c2: '#20283a', hair: '#6a2a2a', g: 'weapon', base: [6, 2, 4],
-      sk: [['Hinterhalt', 'Gegen Armeen im Feld: +{v} % Angriff.', 'fieldAtk'], ['Pirsch', '+{v} % Marschtempo im Feld.', 'fieldSpd'], ['Beute', '+{v} % Gold aus Kämpfen im Feld.', 'fieldGold'], ['Zäh', '{v} % weniger Verluste im Feld.', 'fieldLoss']] },
+      sk: [['Hinterhalt', 'Gegen Armeen im Feld: +{v} % Angriff.', 'fieldAtk'], ['Pirsch', '+{v} % Marschtempo im Feld.', 'fieldSpd'], ['Beute', '+{v} % Münzen aus Kämpfen im Feld.', 'fieldGold'], ['Zäh', '{v} % weniger Verluste im Feld.', 'fieldLoss']] },
     { id: 'fenn', name: 'Fenn', title: 'Goldsucher', role: 'Felder', r: 2, icon: 'coin', color: '#7a6a4a', c2: '#3a3020', hair: '#a07a3a', g: 'none', base: [2, 3, 3],
       sk: [['Goldrausch', 'Im Kampf um ein Feld: +{v} % Angriff.', 'resAtk'], ['Spürnase', 'Seine Sammler sind {v} % schneller.', 'gatherSpd'], ['Packesel', '+{v} % Traglast seiner Sammler.', 'carry'], ['Lagerwache', 'Seine Sammler verteidigen mit +{v} %.', 'gatherDef']] },
-    { id: 'otto', name: 'Otto', title: 'Händler', role: 'Gold', r: 1, icon: 'sell', color: '#8a7a2e', c2: '#3a2f1f', hair: '#8a6a3a', g: 'none', base: [3, 2, 0],
-      sk: [['Beutezug', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Feilschen', '+{v} % Gold aus Kämpfen.', 'gold'], ['Lastträger', '+{v} % Traglast seiner Sammler.', 'carry'], ['Sparsam', '−{v} % Maut an fremden Toren.', 'toll']] },
+    { id: 'otto', name: 'Otto', title: 'Händler', role: 'Münzen', r: 1, icon: 'sell', color: '#8a7a2e', c2: '#3a2f1f', hair: '#8a6a3a', g: 'none', base: [3, 2, 0],
+      sk: [['Beutezug', 'Dieser Kampf bringt +{v} % Münzen.', 'gold'], ['Feilschen', '+{v} % Münzen aus Kämpfen.', 'gold'], ['Lastträger', '+{v} % Traglast seiner Sammler.', 'carry'], ['Sparsam', '−{v} % Maut an fremden Toren.', 'toll']] },
     { id: 'greta', name: 'Greta', title: 'Kräuterfrau', role: 'Krankenhaus', r: 1, icon: 'plus', color: '#8a4a5b', c2: '#3a2030', hair: '#c0c0a0', g: 'none', base: [0, 6, 0],
       sk: [['Kräutersud', '+{v} % der Gefallenen kommen ins Krankenhaus.', 'hosp'], ['Salben', '{v} % weniger Verluste.', 'loss'], ['Hausmittel', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Wegzehrung', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'hagen', name: 'Hagen', title: 'Söldner', role: 'Angriff', r: 1, icon: 'weapon', color: '#5a5a5a', c2: '#2a2a2a', hair: '#3a3a3a', g: 'weapon', base: [8, 0, 2],
@@ -45,10 +45,10 @@ const HEROES = [
       sk: [['Fährmannslist', 'Greift sie über eine Brücke an: Verteidigung des Ziels −{v} %.', 'bridgeDef'], ['Strömung', '+{v} % Marschtempo.', 'spd'], ['Fährgeld', '−{v} % Maut an fremden Toren.', 'toll'], ['Zurück ans Ufer', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'bruno', name: 'Bruno', title: 'Bärenringer', role: 'Angriff', r: 2, icon: 'weapon', color: '#6a4a2a', c2: '#2a1e14', hair: '#4a2a1a', g: 'weapon', base: [7, 3, 1],
       story: 'Auf jedem Jahrmarkt rang er mit Bären, bis Hagen ihn zum Söldner machte. Seitdem prügeln sich die beiden durch jede Hafenkneipe – meistens Seite an Seite.',
-      sk: [['Bärenkraft', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Ringer', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Dickes Fell', '{v} % weniger Verluste.', 'loss'], ['Zechpreller', '+{v} % Gold aus Kämpfen.', 'gold']] },
+      sk: [['Bärenkraft', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Ringer', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Dickes Fell', '{v} % weniger Verluste.', 'loss'], ['Zechpreller', '+{v} % Münzen aus Kämpfen.', 'gold']] },
     { id: 'pia', name: 'Pia', title: 'Perlentaucherin', role: 'Sammeln', r: 1, icon: 'coin', color: '#3a7a8a', c2: '#183038', hair: '#2a2a3a', g: 'none', base: [2, 2, 3],
       story: 'Sie taucht nach Perlen, wo andere nur Wasser sehen. Mit Fenn teilt sie jeden Fund – er sucht im Fels, sie im Meer.',
-      sk: [['Großer Fang', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Flinke Hände', 'Ihre Sammler sind {v} % schneller.', 'gatherSpd'], ['Tiefe Taschen', '+{v} % Traglast ihrer Sammler.', 'carry'], ['Strandwache', 'Ihre Sammler verteidigen mit +{v} %.', 'gatherDef']] }
+      sk: [['Großer Fang', 'Dieser Kampf bringt +{v} % Münzen.', 'gold'], ['Flinke Hände', 'Ihre Sammler sind {v} % schneller.', 'gatherSpd'], ['Tiefe Taschen', '+{v} % Traglast ihrer Sammler.', 'carry'], ['Strandwache', 'Ihre Sammler verteidigen mit +{v} %.', 'gatherDef']] }
 ];
 // Paket E: zwei Helden pro Marsch. Der Zweitheld gibt seine Werte und passiven Fähigkeiten zu 50 % (die Wut-Fähigkeit zündet nur
 // beim Haupthelden), ein passendes Paar gibt +10 % auf alle Heldenwerte des Marsches. Jeder Held steht in höchstens einem Paar.

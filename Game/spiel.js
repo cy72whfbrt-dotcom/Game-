@@ -377,7 +377,7 @@ function pointInPolygon(px, py, poly) {
 // Costs grow a bit faster than income, so every level takes longer.
 const MAX_BASE_LEVEL = 100;
 const BASE_DEFENSE = 100, DEFENSE_GROWTH = 1.26;
-const BASE_COINS = 10, BASE_TROOPS = 5, PRODUCTION_GROWTH = 1.15;
+const BASE_COINS = 10, BASE_TROOPS = 15, PRODUCTION_GROWTH = 1.15;   // Truppen 7.10.: 15 je Std. auf Stufe 1 (vorher 5 – „nicht zu langsam, nicht zu schnell“), alle gleich (Mitspieler auch)
 const UPGRADE_BASE_COST = 120, UPGRADE_COST_GROWTH = 1.27;
 
 // The level-based defense every base gets, with no equipment/
@@ -911,7 +911,7 @@ const HEROES = [
     { id: 'kasimir', name: 'Kasimir', title: 'Gestürzter König', role: 'Thron', r: 3, icon: 'crown', color: '#6a2f5b', c2: '#2a1a2a', hair: '#2a1a1a', g: 'weapon', base: [6, 3, 0],
       sk: [['Königsruf', 'Im Kampf um die Mitte: +{v} % Angriff.', 'midAtk'], ['Thronsturm', '+{v} % Angriff gegen die Wächter-Tempel.', 'guardAtk'], ['Rache am Thron', '+{v} % Angriff gegen den Herrscher.', 'rulerAtk'], ['Altes Wissen', '{v} % weniger Verluste im Kampf um die Mitte.', 'midLoss']] },
     { id: 'yrsa', name: 'Yrsa', title: 'Tempelwächterin', role: 'Tempel', r: 3, icon: 'temple', color: '#4a6a4a', c2: '#2a3a2a', hair: '#b0602a', g: 'shield', base: [3, 7, 0],
-      sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Gold aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
+      sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Münzen aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
     { id: 'ida', name: 'Ida', title: 'Pfadfinderin', role: 'Tempo', r: 2, icon: 'boots', color: '#2f7a6a', c2: '#1f3a2f', hair: '#7a3a1a', g: 'weapon', base: [2, 2, 8],
       sk: [['Eilmarsch', 'Ihre Armee marschiert {v} % schneller.', 'spd'], ['Kartenkunde', '+{v} % Marschtempo.', 'spd'], ['Leichtfuß', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Rückweg', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'bernhard', name: 'Bernhard', title: 'Feldscher', role: 'Krankenhaus', r: 2, icon: 'plus', color: '#3d6b9b', c2: '#2a2a3a', hair: '#555', g: 'shield', base: [0, 6, 0],
@@ -919,11 +919,11 @@ const HEROES = [
     { id: 'mira', name: 'Mira', title: 'Späherin', role: 'Späher', r: 2, icon: 'scout', color: '#6b7a2f', c2: '#2f3a1f', hair: '#1a1a1a', g: 'weapon', base: [2, 3, 4],
       sk: [['Adlerauge', '+{v} % Angriff gegen eine Basis, die du vorher ausgespäht hast.', 'scoutAtk'], ['Leise Sohlen', '+{v} % Marschtempo.', 'spd'], ['Spurlos', 'Die anderen bemerken ihren Angriff {v} % später.', 'late'], ['Fährtenleserin', '+{v} % Angriff gegen Armeen im Feld.', 'fieldAtk']] },
     { id: 'nora', name: 'Nora', title: 'Jägerin', role: 'Feldkampf', r: 2, icon: 'troops', color: '#4a5a8a', c2: '#20283a', hair: '#6a2a2a', g: 'weapon', base: [6, 2, 4],
-      sk: [['Hinterhalt', 'Gegen Armeen im Feld: +{v} % Angriff.', 'fieldAtk'], ['Pirsch', '+{v} % Marschtempo im Feld.', 'fieldSpd'], ['Beute', '+{v} % Gold aus Kämpfen im Feld.', 'fieldGold'], ['Zäh', '{v} % weniger Verluste im Feld.', 'fieldLoss']] },
+      sk: [['Hinterhalt', 'Gegen Armeen im Feld: +{v} % Angriff.', 'fieldAtk'], ['Pirsch', '+{v} % Marschtempo im Feld.', 'fieldSpd'], ['Beute', '+{v} % Münzen aus Kämpfen im Feld.', 'fieldGold'], ['Zäh', '{v} % weniger Verluste im Feld.', 'fieldLoss']] },
     { id: 'fenn', name: 'Fenn', title: 'Goldsucher', role: 'Felder', r: 2, icon: 'coin', color: '#7a6a4a', c2: '#3a3020', hair: '#a07a3a', g: 'none', base: [2, 3, 3],
       sk: [['Goldrausch', 'Im Kampf um ein Feld: +{v} % Angriff.', 'resAtk'], ['Spürnase', 'Seine Sammler sind {v} % schneller.', 'gatherSpd'], ['Packesel', '+{v} % Traglast seiner Sammler.', 'carry'], ['Lagerwache', 'Seine Sammler verteidigen mit +{v} %.', 'gatherDef']] },
-    { id: 'otto', name: 'Otto', title: 'Händler', role: 'Gold', r: 1, icon: 'sell', color: '#8a7a2e', c2: '#3a2f1f', hair: '#8a6a3a', g: 'none', base: [3, 2, 0],
-      sk: [['Beutezug', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Feilschen', '+{v} % Gold aus Kämpfen.', 'gold'], ['Lastträger', '+{v} % Traglast seiner Sammler.', 'carry'], ['Sparsam', '−{v} % Maut an fremden Toren.', 'toll']] },
+    { id: 'otto', name: 'Otto', title: 'Händler', role: 'Münzen', r: 1, icon: 'sell', color: '#8a7a2e', c2: '#3a2f1f', hair: '#8a6a3a', g: 'none', base: [3, 2, 0],
+      sk: [['Beutezug', 'Dieser Kampf bringt +{v} % Münzen.', 'gold'], ['Feilschen', '+{v} % Münzen aus Kämpfen.', 'gold'], ['Lastträger', '+{v} % Traglast seiner Sammler.', 'carry'], ['Sparsam', '−{v} % Maut an fremden Toren.', 'toll']] },
     { id: 'greta', name: 'Greta', title: 'Kräuterfrau', role: 'Krankenhaus', r: 1, icon: 'plus', color: '#8a4a5b', c2: '#3a2030', hair: '#c0c0a0', g: 'none', base: [0, 6, 0],
       sk: [['Kräutersud', '+{v} % der Gefallenen kommen ins Krankenhaus.', 'hosp'], ['Salben', '{v} % weniger Verluste.', 'loss'], ['Hausmittel', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Wegzehrung', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'hagen', name: 'Hagen', title: 'Söldner', role: 'Angriff', r: 1, icon: 'weapon', color: '#5a5a5a', c2: '#2a2a2a', hair: '#3a3a3a', g: 'weapon', base: [8, 0, 2],
@@ -943,10 +943,10 @@ const HEROES = [
       sk: [['Fährmannslist', 'Greift sie über eine Brücke an: Verteidigung des Ziels −{v} %.', 'bridgeDef'], ['Strömung', '+{v} % Marschtempo.', 'spd'], ['Fährgeld', '−{v} % Maut an fremden Toren.', 'toll'], ['Zurück ans Ufer', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'bruno', name: 'Bruno', title: 'Bärenringer', role: 'Angriff', r: 2, icon: 'weapon', color: '#6a4a2a', c2: '#2a1e14', hair: '#4a2a1a', g: 'weapon', base: [7, 3, 1],
       story: 'Auf jedem Jahrmarkt rang er mit Bären, bis Hagen ihn zum Söldner machte. Seitdem prügeln sich die beiden durch jede Hafenkneipe – meistens Seite an Seite.',
-      sk: [['Bärenkraft', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Ringer', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Dickes Fell', '{v} % weniger Verluste.', 'loss'], ['Zechpreller', '+{v} % Gold aus Kämpfen.', 'gold']] },
+      sk: [['Bärenkraft', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Ringer', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Dickes Fell', '{v} % weniger Verluste.', 'loss'], ['Zechpreller', '+{v} % Münzen aus Kämpfen.', 'gold']] },
     { id: 'pia', name: 'Pia', title: 'Perlentaucherin', role: 'Sammeln', r: 1, icon: 'coin', color: '#3a7a8a', c2: '#183038', hair: '#2a2a3a', g: 'none', base: [2, 2, 3],
       story: 'Sie taucht nach Perlen, wo andere nur Wasser sehen. Mit Fenn teilt sie jeden Fund – er sucht im Fels, sie im Meer.',
-      sk: [['Großer Fang', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Flinke Hände', 'Ihre Sammler sind {v} % schneller.', 'gatherSpd'], ['Tiefe Taschen', '+{v} % Traglast ihrer Sammler.', 'carry'], ['Strandwache', 'Ihre Sammler verteidigen mit +{v} %.', 'gatherDef']] }
+      sk: [['Großer Fang', 'Dieser Kampf bringt +{v} % Münzen.', 'gold'], ['Flinke Hände', 'Ihre Sammler sind {v} % schneller.', 'gatherSpd'], ['Tiefe Taschen', '+{v} % Traglast ihrer Sammler.', 'carry'], ['Strandwache', 'Ihre Sammler verteidigen mit +{v} %.', 'gatherDef']] }
 ];
 // Paket E: zwei Helden pro Marsch. Der Zweitheld gibt seine Werte und passiven Fähigkeiten zu 50 % (die Wut-Fähigkeit zündet nur
 // beim Haupthelden), ein passendes Paar gibt +10 % auf alle Heldenwerte des Marsches. Jeder Held steht in höchstens einem Paar.
@@ -1325,9 +1325,9 @@ const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
   troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },
   defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3, max: 50 },
-  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 },
+  defenseGold: { icon: 'shield',    name: 'Verteidigung: Münzen', desc: 'Münzen für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 },
   attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
-  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 }
+  attackGold:  { icon: 'sell',      name: 'Angriff: Münzen',    desc: 'Münzen für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 }
 };   // (Gold je Truppe × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR wie alle Münzen außerhalb der Produktion: je Stufe ~0,17 Münzen je Kill)
 const EQUIPMENT_BASE_COST = 100;
 
@@ -1663,12 +1663,14 @@ const ITEM_MAX_LEVEL = 20;
 const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen (seit 2.10. auch kein Preis mehr mit „mind. Legendär“)
 const CRATE_GEM_COST = 150;  // (5.10. Alexander: vorher 30, davor 5 – Gold-Ausrüstung kam zu schnell)
 const COMBINE_COUNT = 3;
-const RARITY_PCT_PER_SCORE = 0.15;
+const RARITY_PCT_PER_SCORE = 0.15, ITEM_GRUND = 6;   // %-Wirkung = (Wert + 6) × 0,15 → grau Stufe 1 = 1 % (7.10.: vorher 0,15 %)
 const RARITY_FLAT_PER_SCORE = 0.3;
 
 function itemScore(item) {
     return item.rarity * ITEM_MAX_LEVEL + item.level;
 }
+const itemPct = item => (itemScore(item) + ITEM_GRUND) * RARITY_PCT_PER_SCORE;   // Grundwert in % (ohne Sterne)
+const salvagePoints = item => 5 + itemScore(item);   // Zerlegen: grau 1 = 6 Punkte (= eine Aufwertung, 7.10.)
 function itemLevelUpCost(item) {
     return item.level * 5;
 }
@@ -1693,7 +1695,7 @@ let upgradePoints = parseInt(store.get('openWaterUpgradePoints'), 10) || 0;
 function equippedItemBonusPct(slot) {
     const id = equippedItems[slot];
     const item = id ? inventory[id] : null;
-    return item ? itemScore(item) * RARITY_PCT_PER_SCORE * (1 + (item.stars || 0) * STAR_PCT / 100) : 0;
+    return item ? itemPct(item) * (1 + (item.stars || 0) * STAR_PCT / 100) : 0;
 }
 
 function pickRandomSlot() {
@@ -1783,7 +1785,7 @@ function starRefund(item) { let g = 0; for (let s = 0; s < (item.stars || 0); s+
 function salvageItem(itemId) {
     const item = inventory[itemId];
     if (!item || equippedItems[item.slot] === itemId) return 0;
-    const points = itemScore(item);
+    const points = salvagePoints(item);
     upgradePoints += points; gems += starRefund(item);   // the gems paid for its stars come back
     delete inventory[itemId];
     saveGame();
@@ -1798,7 +1800,7 @@ function salvageItems(itemIds) {
     for (const id of itemIds) {
         const item = inventory[id];
         if (!item || equippedItems[item.slot] === id) continue;
-        total += itemScore(item); gems += starRefund(item);
+        total += salvagePoints(item); gems += starRefund(item);
         delete inventory[id];
     }
     if (total > 0) {
@@ -2449,8 +2451,8 @@ function spaeherBlickHtml(s) {
         (s.wall !== undefined ? zeile('Mauer', 'Stufe ' + s.wall) : '') +
         (s.held ? zeile('Helden', s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') : '') +
         (s.vh !== undefined ? zeile('Verteidigungs-Held', s.vh && heroById(s.vh.id) ? escapeHtml(heroTag(Object.assign({}, s.vh, { id2: s.vh.h2 && s.vh.h2.id }))) : 'keiner') : '') +
-        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' Gold, ' + fmtCompact(schR) + ' je Rohstoff' : '')) : '') +
-        (R ? zeile('Gold', beute(R.c, R.schutz)) + (R.h !== undefined ? zeile('Holz', beute(R.h, schR)) + zeile('Stein', beute(R.s, schR)) + zeile('Eisen', beute(R.e, schR)) : '') : '') +
+        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' Münzen, ' + fmtCompact(schR) + ' je Rohstoff' : '')) : '') +
+        (R ? zeile('Münzen', beute(R.c, R.schutz)) + (R.h !== undefined ? zeile('Holz', beute(R.h, schR)) + zeile('Stein', beute(R.s, schR)) + zeile('Eisen', beute(R.e, schR)) : '') : '') +
         (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
         (A.fo ? zeile('Forschung', 'Angriff ' + (A.fo.atk | 0) + ' · Vert. ' + (A.fo.def | 0) + ' · Krankenhaus ' + (A.fo.laz | 0)) : '') + gear + '</div></details>';
 }
@@ -5431,7 +5433,7 @@ function skillBonusText(def, level) {
     if (def.atkPct) return '+' + fmtNum(level * def.atkPct) + ' % Truppen';
     if (def.defPct) return '+' + fmtNum(level * def.defPct) + ' % Truppen';
     if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
-    if (def.rate) return '+' + fmtNum(Math.round(level * def.rate * 1000)) + ' Gold je 1.000 Kills';   // (Münzen × MUENZ_FAKTOR: Stufe 1 = 167)
+    if (def.rate) return '+' + fmtNum(Math.round(level * def.rate * 1000)) + ' Münzen je 1.000 Kills';   // (Münzen × MUENZ_FAKTOR: Stufe 1 = 167)
     if (def.msPerLevel) { const l = Math.min(level, def.max || level); return '+' + fmtNum(Math.round(1000 / (1000 - l * def.msPerLevel) * 100 - 100)) + ' % Produktion, +' + fmtNum(l * 5) + ' % Marschtempo' + (def.max && level >= def.max ? ' (max.)' : ''); }
     return '';
 }
@@ -5785,7 +5787,7 @@ function renderChestEquipment() {
         chestSelectionLabel.textContent = chestFlashMessage;
     } else if (selected.length > 0) {
         chestSelectionLabel.style.display = 'block';
-        const selPoints = selected.reduce((sum, it) => sum + itemScore(it), 0);
+        const selPoints = selected.reduce((sum, it) => sum + salvagePoints(it), 0);
         chestSelectionLabel.innerHTML = '<b>' + selected.length + '</b> gewählt · +' +
             fmtNum(selPoints) + (selPoints === 1 ? ' Punkt' : ' Punkte');
     } else {
@@ -5846,7 +5848,7 @@ function renderChestItemPopup() {
     const fmt1 = v => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const starF = 1 + (item.stars || 0) * STAR_PCT / 100;                   // forge stars multiply the item's effect
     const bonusText = sc => def.pct !== undefined
-        ? '+' + fmt1(Math.min(item.slot === 'shield' ? 90 : Infinity, sc * RARITY_PCT_PER_SCORE * starF)) + ' % ' + def.desc
+        ? '+' + fmt1(Math.min(item.slot === 'shield' ? 90 : Infinity, (sc + ITEM_GRUND) * RARITY_PCT_PER_SCORE * starF)) + ' % ' + def.desc
         : '+' + fmt1(sc * RARITY_FLAT_PER_SCORE * starF) + ' ' + def.desc;
 
     chestItemIconBig.dataset.r = rd.key;
@@ -5858,11 +5860,11 @@ function renderChestItemPopup() {
     const maxed = item.level >= ITEM_MAX_LEVEL;
     chestItemStats.innerHTML =
         '<div><span>' + icon(def.icon) + 'Bonus</span><b class="up">' + bonusText(score) + '</b></div>' +
-        (item.stars ? '<div><span>' + icon(def.icon) + 'Grundwert</span><b>+' + fmt1(score * RARITY_PCT_PER_SCORE) + ' %</b></div>' +
-                      '<div><span>' + icon('star') + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (Grundwert ×' + fmt1(starF).replace(',0', '') + ')</span><b class="up">+' + fmt1(score * RARITY_PCT_PER_SCORE * (starF - 1)) + ' %</b></div>' : '') +
+        (item.stars ? '<div><span>' + icon(def.icon) + 'Grundwert</span><b>+' + fmt1(itemPct(item)) + ' %</b></div>' +
+                      '<div><span>' + icon('star') + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (Grundwert ×' + fmt1(starF).replace(',0', '') + ')</span><b class="up">+' + fmt1(itemPct(item) * (starF - 1)) + ' %</b></div>' : '') +
         (isEquipped ? '' : '<div><span>' + icon('info') + 'Status</span><b>wirkt, sobald ausgerüstet</b></div>') +
         (maxed ? '' : '<div><span>' + icon('upgrade') + 'Nächste Stufe</span><b>' + bonusText(itemScore({ ...item, level: item.level + 1 })) + '</b></div>') +
-        '<div><span>' + icon('points') + 'Verkaufswert</span><b>' + fmtNum(score) + (score === 1 ? ' Punkt' : ' Punkte') + '</b></div>';
+        '<div><span>' + icon('points') + 'Verkaufswert</span><b>' + fmtNum(salvagePoints(item)) + ' Punkte' + '</b></div>';
 
     setBtnLabel(chestItemUpgradeBtn, maxed ? 'Max. Stufe' : 'Verbessern');
     const upgradeCostEl = chestItemUpgradeBtn.querySelector('.cost');
@@ -6554,7 +6556,7 @@ function renderCombatLog() {
             const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
             return karte(entry, entry.won ? 'win' : 'loss', K.icon, [entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren'], K.name, fieldHeroLine(entry).replace(/^ · /, ''),
                 logBalance(entry.atk, entry.def, icon('attack') + escapeHtml(entry.attacker) + ' ' + fmtM(entry.atk), fmtM(entry.def) + ' ' + escapeHtml(entry.defender) + icon('defense'), entry.attacker !== 'Du'),
-                [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Gold', 'gut']], fieldHeroDet(entry));
+                [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Münzen', 'gut']], fieldHeroDet(entry));
         }
         if (entry.type === 'barb' || entry.type === 'dboss') {    // out in the open against a camp or the boss: your side vs. theirs, losses, rewards
             const boss = entry.type === 'dboss', tr = entry.troops, gef = entry.gef || 0, bon = tr !== undefined ? entry.atk - tr - gef : 0;
@@ -6573,7 +6575,7 @@ function renderCombatLog() {
                     '<div class="logSum' + (entry.won ? '' : ' advantage') + '"><span>Gesamt</span><span>' + fmtD(entry.def) + '</span></div>' +
                     '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.kill) + '</span></div>' + (!entry.won ? '<div class="logLine"><span>Noch im Lager</span><span>' + fmtD(entry.left) + '</span></div>' : '') + '</div>';
             const rew = boss ? (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen nach Schaden</div>' : '') + (entry.capped ? '<div class="logRetreat">Höchstens 5 % Leben pro Angriff.</div>' : '')
-                : (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen' + (entry.kGold ? ' (davon ' + fmtBig(entry.kGold) + ' Angriff: Gold)' : '') + '</div>' : '') +
+                : (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen' + (entry.kGold ? ' (davon ' + fmtBig(entry.kGold) + ' Angriff: Münzen)' : '') + '</div>' : '') +
                   (entry.crate ? '<div class="logGold">Kiste: ' + escapeHtml(entry.crate) + '</div>' : '') + (entry.sh ? '<div class="logGold">' + escapeHtml(entry.sh) + '</div>' : '') +
                   (entry.n !== undefined ? '<div class="logRetreat">' + (entry.up ? 'Stufe ' + entry.open + ' freigeschaltet · ' : entry.open ? 'Freigeschaltet bis Stufe ' + entry.open + ' · ' : '') + entry.n + ' / ' + barbTagMax() + ' heute</div>' : '');
             const det = tr === undefined ? fieldHeroDet(entry) : '<details><summary>Kampfdetails</summary>' +
@@ -6581,7 +6583,7 @@ function renderCombatLog() {
                 (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
                 (entry.hx ? gearHtml({ items: [], lvl: playerLvl, hx: entry.hx, skills: [], city: [], heroOnly: 1 }) : '') + '</details>';
             const von = (entry.sourceId !== undefined ? 'von ' + T(entry.sourceId) : '') + fieldHeroLine(entry), verl = verlustChips((entry.loss || 0) - (entry.wounded || 0), entry.wounded);
-            const extra = [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Gold', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']];
+            const extra = [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Münzen', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']];
             if (boss) return karte(entry, 'win', 'crown', ['win', 'Tagesboss'], escapeHtml(entry.name), von.replace(/^ · /, ''), '',
                 [['attack', chipN(entry.dmg) + ' Schaden', 'gut'], ['crown', 'noch ' + chipN(entry.left) + ' Leben'], entry.rank && ['rank', 'Platz ' + entry.rank + ' von ' + entry.of], ...verl, ...extra], det);
             return karte(entry, entry.won ? 'win' : 'loss', 'attack', [entry.won ? 'win' : 'loss', entry.won ? 'Besiegt' : 'Abgewehrt'], 'Barbaren-Lager · Stufe ' + entry.L, von.replace(/^ · /, ''),
@@ -6595,7 +6597,7 @@ function renderCombatLog() {
             const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
             return karte(entry, entry.won ? 'win' : 'loss', 'troops', [entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen'], 'Kampf im Feld', side(entry.attacker, true) + ' gegen ' + side(entry.defender, false) + fieldHeroLine(entry),
                 logBalance(entry.atk, entry.def, icon('attack') + fmtM(entry.atk), fmtM(entry.def) + icon('defense'), entry.attacker !== 'Du'),
-                [...verlustChips(0, entry.wounded), entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Gold', 'gut']], fieldHeroDet(entry));
+                [...verlustChips(0, entry.wounded), entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Münzen', 'gut']], fieldHeroDet(entry));
         }
         if (entry.type === 'volley') {
             const dead = entry.hit - entry.wounded;
@@ -6661,14 +6663,14 @@ function renderCombatLog() {
                 (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
                 (entry.atkWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.botName) + ' bringt ' + fmtNum(entry.atkWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
                 (entry.atkFled ? '<div class="logRetreat">' + fmtNum(entry.atkFled) + ' Truppen von ' + escapeHtml(entry.botName) + ' fliehen zurück</div>' : '') +
-                (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtBig(entry.defGold) + ' Münzen</div>' : '') +
+                (entry.defGold ? '<div class="logGold">Verteidigung: Münzen +' + fmtBig(entry.defGold) + ' Münzen</div>' : '') +
                 '</details>';
             const bbar = logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' ' + (entry.rolle === 'helfer' ? escapeHtml(entry.defName || '?') : 'Du') + icon('defense'), true);
             if (entry.rolle === 'helfer') { const mh = entry.meine || {};   // deine Verstärkung bei einem Bündnis-Mitglied hat mitverteidigt
                 return karte(entry, entry.won ? 'loss' : 'win', 'defense', [entry.won ? 'loss' : 'win', 'Verstärkung'], T(entry.targetId), escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten'), bbar,
                     [['troops', 'deine ' + chipN(mh.n) + ' Truppen'], ...verlustChips(mh.fallen, mh.wounded)], bdet); }
             const wer = escapeHtml(entry.botName) + (angreiferZeilen(entry, gearHtml) ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
-            const bchips = [...verlustChips(Math.max(0, fallen - (entry.wounded || 0)), entry.wounded), ...beuteChips(entry, false), entry.defGold > 0 && ['coin', '+' + chipN(entry.defGold) + ' Gold', 'gut']];
+            const bchips = [...verlustChips(Math.max(0, fallen - (entry.wounded || 0)), entry.wounded), ...beuteChips(entry, false), entry.defGold > 0 && ['coin', '+' + chipN(entry.defGold) + ' Münzen', 'gut']];
             return entry.capitalHolds
                 ? karte(entry, 'loss', 'bot', ['loss', 'Geplündert'], T(entry.targetId), wer + ' hat die Garnison geschlagen – die Stadt hält', bbar, bchips, bdet)
                 : entry.won
@@ -6713,7 +6715,7 @@ function renderCombatLog() {
                     gearHtml(entry.defGear) +
                 '</div>' +
             '</div>' +
-            (entry.killGold ? '<div class="logGold">Angriff: Gold +' + fmtBig(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Gold +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
+            (entry.killGold ? '<div class="logGold">Angriff: Münzen +' + fmtBig(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Münzen +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
             (!entry.won && (ich ? ich.fled : entry.retreatSurvivors) ? '<div class="logRetreat">' + fmtNum(ich ? ich.fled : entry.retreatSurvivors) + (ich ? ' deiner' : '') + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
             ((ich ? ich.wounded : entry.wounded) ? '<div class="logRetreat logWounded">' + fmtNum(ich ? ich.wounded : entry.wounded) + (ich ? ' deiner' : '') + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
             (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
@@ -6724,7 +6726,7 @@ function renderCombatLog() {
             logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')),
             [...(entry.rolle === 'mit' || ich ? verlustChips(meine.fallen, meine.wounded) : verlustChips(entry.attackerCasualties, entry.wounded)),
                 entry.won ? ['troops', chipN(ichUeb ? ich.rest : entry.remaining) + ' übrig'] : (ichUeb ? ich.fled : entry.retreatSurvivors) > 0 && ['recall', chipN(ichUeb ? ich.fled : entry.retreatSurvivors) + ' fliehen heim'],
-                ...beuteChips(entry, true), entry.killGold > 0 && ['coin', '+' + chipN(entry.killGold) + ' Gold für Kills', 'gut']], details);
+                ...beuteChips(entry, true), entry.killGold > 0 && ['coin', '+' + chipN(entry.killGold) + ' Münzen für Kills', 'gut']], details);
     })(entry); } catch (err) { console.warn('Kampfbericht', err); return logRowHtml('loss', 'info', 'Kampfbericht', 'Dieser Bericht kann nicht angezeigt werden.', ''); }
     }).join('');
     [...combatLogListEl.children].forEach((row, i) => { const e = combatLog[i]; if (!e) return; row.dataset.key = combatLogKey(e);
@@ -6774,11 +6776,11 @@ const kampflogUmbauen = (function () {
             h.insertAdjacentHTML('beforeend', [...fest.map(n => L.find(l => l[0] === n) || [n, '–']), ...rest.slice(0, 3)].map(([a, b]) => zl(a, b, b === '–' ? ' kl-null' : ' buff')).join(''));
         });
         box.querySelectorAll(':scope > .kl-rss').forEach(x => x.remove());
-        const ROH = [['g', 'Gold', 'coins'], ['h', 'Holz', 'holz'], ['s', 'Stein', 'stein'], ['e', 'Eisen', 'eisen']], kacheln = beuteRaster(ROH.map(([k, , a]) => ({ a, n: Math.abs(roh[k] || 0), minus: roh[k] < 0 })));   // Beute/Verlust als Kacheln (05e), die Zeilen bleiben für Vorleser
+        const ROH = [['g', 'Münzen', 'coins'], ['h', 'Holz', 'holz'], ['s', 'Stein', 'stein'], ['e', 'Eisen', 'eisen']], kacheln = beuteRaster(ROH.map(([k, , a]) => ({ a, n: Math.abs(roh[k] || 0), minus: roh[k] < 0 })));   // Beute/Verlust als Kacheln (05e), die Zeilen bleiben für Vorleser
         box.insertAdjacentHTML('beforeend', '<div class="kl-rss' + (kacheln ? ' bk-an' : '') + '"><div class="logGearHead">Rohstoffe</div>' + kacheln + '<div class="kl-rss-zeilen">' +
             ROH.map(([k, n]) => { const v = roh[k] || 0;
                 return zl(n, (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v)), v > 0 ? ' buff' : v < 0 ? ' buff malus' : ''); }).join('') + '</div>' +
-            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' Gold · ' + fmt(schutz * ROH_JE_MUENZE) + ' je Rohstoff</small>', '') : '') + '</div>');
+            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' Münzen · ' + fmt(schutz * ROH_JE_MUENZE) + ' je Rohstoff</small>', '') : '') + '</div>');
         return box;
     }
     const rohTeil = (beute, anteil, vz) => ({ g: vz * Math.round(beute.g * anteil), h: vz * Math.round(beute.h * anteil), s: vz * Math.round(beute.s * anteil), e: vz * Math.round(beute.e * anteil) });
@@ -6861,8 +6863,10 @@ const kampflogUmbauen = (function () {
     }
     function spaehRoh(s) {                                                    // was er hat – und was davon an der Hauptstadt zu holen ist
         const R = (s.auf || {}).roh; if (!R) return '';
-        const z = (n, v) => v === undefined ? '' : zl(n, fmtCompact(v), v > R.schutz ? ' buff' : ' kl-null', v > R.schutz ? fmtCompact(Math.floor((v - R.schutz) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt' : 'alles von der Burg geschützt');
-        return z('Gold', R.c) + z('Holz', R.h) + z('Stein', R.s) + z('Eisen', R.e) + (R.schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(R.schutz) + ' je Rohstoff</small>', '') : '');
+        const sR = R.schutzR || R.schutz * ROH_JE_MUENZE;               // Holz/Stein/Eisen: eigener (größerer) Schutz – nicht der Münzen-Schutz
+        const z = (n, v, sch) => v === undefined ? '' : zl(n, fmtCompact(v), v > sch ? ' buff' : ' kl-null', v > sch ? fmtCompact(Math.floor((v - sch) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt' : 'alles von der Burg geschützt');
+        return z('Münzen', R.c, R.schutz) + z('Holz', R.h, sR) + z('Stein', R.s, sR) + z('Eisen', R.e, sR) +
+            (R.schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(niceRound(R.schutz)) + ' Münzen · ' + fmt(niceRound(sR)) + ' je Rohstoff</small>', '') : '');
     }
     function spaeh(row, e) {
         const d = row.querySelector('details'); if (!d) return;
@@ -7703,11 +7707,11 @@ function hourProduction(who) {                       // what an empire makes in 
         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) { const mult = templeBaseMult(isl) * templeHoldMultiplier(id) * shrineMult(who); c += TEMPLE_COIN_BONUS_PER_TICK * mult; t += TEMPLE_TROOP_BONUS_PER_TICK * mult; } }
     return { coins: c * k, troops: t * k };
 }
-// Münzen/Truppen wie Händler und Markt (Alexander 6.10.): Stunden-Produktion × Kosten ÷ Ertrag (= 2 Stunden), Mindestwerte × WIRTSCHAFT_KOSTEN
-// (Münzen: wirtM)
-const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG;
+// Münzen/Truppen wie Händler und Markt (Alexander 6.10.): Stunden-Produktion × Kosten ÷ Ertrag (= 2 Stunden), mindestens 20.000 Münzen
+// bzw. 2.000 Truppen (7.10.: vorher 10 Truppen für 200 Punkte)
+const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG, THRONE_MIN = { coins: 20000, troops: 2000 };
 function throneAmount(who, id) { const hp = hourProduction(who);
-    return id === 'coins' ? Math.max(wirtM(5000), Math.round(hp.coins * THRONE_STUNDEN)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
+    return id === 'coins' || id === 'troops' ? Math.max(THRONE_MIN[id], Math.round(hp[id] * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
 function throneGive(who, id, aus) {                   // hands one offer over; returns what it was, for the hint (aus: Belohnungs-Kacheln dazu, 05e)
     aus = aus || []; const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
     if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; aus.push({ a: 'coins', n }); return '+' + fmtCompact(n) + ' Münzen'; }
@@ -7914,7 +7918,7 @@ function midNotice(island) {                          // das Kopfgeld auf dem Me
 }
 
 // ===== FRIEDENSSCHILD: nobody may attack the player's bases while it stands; attacking yourself drops it =====
-const SHIELD_PRICES = { 2: 40, 8: 120, 24: 300 };
+const SHIELD_PRICES = { 2: 80, 8: 300, 24: 700 };   // Edelsteine (7.10., RoK-näher: vorher 40/120/300) – 700 mit „Wirklich?“
 var shieldMemAt = 0, shieldMemV = 0;                                   // hot loops ask thousands of times - no storage read each time
 function shieldUntil() { const t = Date.now(); if (t - shieldMemAt > 500) { shieldMemV = parseInt(store.get('openWaterShield'), 10) || 0; shieldMemAt = t; } return shieldMemV; }
 function playerShielded() { return Date.now() < ownerShieldUntil('player'); }
@@ -7982,6 +7986,7 @@ shopPopup.addEventListener('click', e => {                 // Shop → Schilde: 
     const bt = e.target.closest('[data-shield]'); if (!bt) return;
     const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
     if (gems < cost) { flashHint('Zu wenig Edelsteine – der Schild kostet ' + cost + '.', 3000); return; }
+    if (!gemsWirklich('schild:' + h, cost, bt)) return;
     gems -= cost; const stock = shieldStock(); stock[h]++; store.set('openWaterShieldStock', JSON.stringify(stock));
     updateHud(); saveGame(); renderShop();
     flashHint('Schild (' + h + ' Std.) liegt im Vorrat – unten einschalten, wann du willst.', 3500); });
@@ -9286,7 +9291,7 @@ function plunderMove(from, to, loot, roh) {         // Gold (und bei der Hauptst
         if (to === 'player') coins += loot; else if (to) botCoins[to] = (botCoins[to] || 0) + loot; }
     if (roh && AUF && (roh.h || roh.s || roh.e)) { AUF.rohDazu(from, { h: -roh.h, s: -roh.s, e: -roh.e }); if (to) AUF.rohDazu(to, roh); }
 }
-const beuteText = p => p ? [p.loot ? fmtCompact(p.loot) + ' Gold' : '', ...(p.roh ? [['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].filter(([x]) => p.roh[x] > 0).map(([x, n]) => fmtCompact(p.roh[x]) + ' ' + n) : [])].filter(Boolean).join(', ') : '';
+const beuteText = p => p ? [p.loot ? fmtCompact(p.loot) + ' Münzen' : '', ...(p.roh ? [['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].filter(([x]) => p.roh[x] > 0).map(([x, n]) => fmtCompact(p.roh[x]) + ' ' + n) : [])].filter(Boolean).join(', ') : '';
 // die Hauptstadt brennt nach einem verlorenen Kampf (nur zu sehen) – Welt-Teil openWaterBrand: { Basis: brennt bis }
 const BRAND_MS = 30 * 60000;
 var brand = (() => { try { const v = JSON.parse(store.get('openWaterBrand')); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } })();
@@ -9320,19 +9325,30 @@ const cityBuildOf = (c, id) => c.builds.find(b => b.id === id) || null;
 function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
 const KEEP_DEF = { id: 'keep', name: 'Burg', icon: 'castle' };   // die Burg als „Gebäude“ (Bauarbeiter, Bauzeit) – Paket D
 function cityDef(id) { return id === 'keep' ? KEEP_DEF : CITY_BUILDINGS.find(b => b.id === id); }
+// Burg-Tempo (Alexander 7.10., rokzahlen): Bauzeit der Burg je Schritt L → L + 1 in Sekunden. Anfang schnell (1 → 2: 10 s,
+// Burg 10 am ersten Tag), ab 11 steil: Saison 1 ≈ Burg 16–18 (sehr aktiv), Burg 25 nach etwa 4 Saisons
+// (Funktionen statt Konstanten: loadCity kürzt Bauten evtl. schon beim Laden früherer Teile)
+function burgZeitTab(L) {
+    const T = 86400, Z = [10, 60, 300, 900, 1800, 3600, 7200, 14400, 28800, 43200,   // 1 → 2 … 10 → 11
+        T, 1.5 * T, 2 * T, 4 * T, 6 * T, 8 * T, 11 * T, 14 * T, 18 * T,                 // 11 → 12 … 19 → 20
+        22 * T, 27 * T, 32 * T, 38 * T, 45 * T];                                         // 20 → 21 … 24 → 25
+    return Z[Math.max(1, Math.min(Z.length, L | 0 || 1)) - 1];
+}
+// Grundwert der Burg-Kosten (Holz; Stein 0,8 ×, Eisen 0,5 ×, Münzen 2 × in wirtM): 1.000 · 1,75 je Stufe bis 10, danach × 1,6 – Burg 25 ≈ 110 Mio. Holz
+function burgBasis(L) { return 1000 * Math.pow(1.75, Math.min(Math.max(1, L), 10) - 1) * Math.pow(1.6, Math.max(0, L - 10)); }
+function stadtFaktor(L) { return L >= 25 ? Math.pow(1.15, L - 24) : 1; }   // (nur das Krankenhaus geht über 25: + 15 % je Stufe)
 function cityCost(id, level) {                    // coins to go from `level` to level + 1 (Münzen: wirtM)
-    if (id === 'keep') return niceRound(wirtM(2000 * Math.pow(1.85, level - 1)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
-    return niceRound(wirtM(500 * Math.pow(1.9, level)));
+    if (id === 'keep') return niceRound(wirtM(2 * burgBasis(level)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
+    return niceRound(wirtM(.6 * burgBasis(level) * stadtFaktor(level)));   // Gebäude: 30 % der Burg derselben Stufe
 }
 function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)
-    // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
-    return id === 'keep' ? (AUF ? AUF.burgZeitRoh(level) : 60 * Math.pow(1.55, level - 1)) : Math.min(7 * 86400, level <= 12 ? 20 * Math.pow(1.6, level) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, level - 12));   // die Burg: eigene, längere Zeiten
+    // Gebäude: 15 % der Burg-Zeit derselben Stufe (mind. 10 s; Krankenhaus über 25: + 10 % je Stufe), nie mehr als 7 Tage
+    return id === 'keep' ? burgZeitTab(level) : Math.min(7 * 86400, Math.max(10, .15 * burgZeitTab(Math.min(24, level)) * (level >= 25 ? Math.pow(1.1, level - 24) : 1)));
 }
 function cityTimeSec(id, level) {
     return Math.round(cityTimeRoh(id, level));
 }
 function cityClampBuild(b, now) {                 // a build started under the old, far too long times ends by the new rule at the latest
-    if (b && b.id === 'keep' && !AUF) return;        // (beim Laden fehlt aufbau.js noch: die Burg hat dort ihre lange Bauzeit 1–60 Tage – nicht auf die alte kürzen)
     if (b && b.endsAt - (b.startedAt || now) > cityTimeSec(b.id, b.to - 1) * 1000) b.endsAt = Math.min(b.endsAt, (b.startedAt || now) + cityTimeSec(b.id, b.to - 1) * 1000);
 }
 function fmtDuration(sec) {                       // Bauzeiten kurz: Einheiten, die 0 sind, fallen weg (1 T statt 1 T 0 h 0 m 0 s)
@@ -9732,7 +9748,7 @@ const HERO_EFF = { atk: ['atk', 'fight'], loss: ['loss', 'fight'], hosp: ['hosp'
     strongAtk: ['atk', 'strong'], midAtk: ['atk', 'mid'], midLoss: ['loss', 'mid'], guardAtk: ['atk', 'guard'], rulerAtk: ['atk', 'ruler'], templeLoss: ['loss', 'temple'], templeGold: ['gold', 'temple'],
     templeAtk: ['atk', 'temple'], templeHosp: ['hosp', 'temple'], scoutAtk: ['atk', 'scouted'], neutralAtk: ['atk', 'neutral'], fieldAtk: ['atk', 'vsArmy'], fieldGold: ['gold', 'field'],
     fieldLoss: ['loss', 'field'], fieldDef: ['fdef', 'fdefending'], resAtk: ['atk', 'res'], gatherDef: ['fdef', 'gatherDef'], gatherSpd: ['gSpd', 'gather'], carry: ['carry', 'gather'], rage: [null, 'never'] };
-const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Krankenhaus', gold: v => '+' + v + ' % Gold',
+const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Krankenhaus', gold: v => '+' + v + ' % Münzen',
     flee: v => '+' + v + ' % fliehen', ret: v => 'Rückzug +' + v + ' % Tempo', late: v => v + ' % später bemerkt', spd: v => '+' + v + ' % Tempo', toll: v => '−' + v + ' % Maut',
     fdef: v => '+' + v + ' % Verteidigung', gSpd: v => '+' + v + ' % Sammeln', carry: v => '+' + v + ' % Traglast' };
 function heroGefOf(hx, n) { return hx ? Math.min(hx.gef || 0, Math.max(0, n)) : 0; }   // Gefolge: never more than the troops the hero leads (no 1-troop marches with a big following)
@@ -10803,16 +10819,17 @@ document.getElementById('fieldSheet').addEventListener('click', e => {
 // ===== BARBAREN-LAGER + TAGESBOSS: camps (Stufe 1-25) out on the land and one boss a day with a big pool of life for everyone.
 // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
 const BARB_MAX_L = 25, BARB_DAY = 20, BARB_WANT = 110, DBOSS_HITS = 10, DBOSS_CAP = .05;   // camps on the map · a boss hit takes at most 5 % of its life
-const barbTroopsOf = L => niceRound(wirtK(2000 * Math.pow(2, L - 1)));                  // × WIRTSCHAFT_KOSTEN (5.10.): 1 at 1, ~570 at 10, ~19 Mio. at 25 (vorher 2 Tsd. · 1 Mio. · 34 Mrd.)
-const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 * MUENZ_FAKTOR + wirtM(500 * L * L));   // coins for a win (+ Angriff: Gold per warrior) – Münzen × MUENZ_FAKTOR
+const barbTroopsOf = L => niceRound(500 * Math.pow(1.42, L - 1));                         // 7.10. (rokzahlen): 500 at 1, 1.400 at 4, 12.000 at 10, 2,3 Mio. at 25 – Stufe 1 ≈ 10 % der Start-Armee
+const barbLootOf = L => niceRound(barbTroopsOf(L) * 20 + 5000 * L);                          // Münzen für einen Sieg (+ Angriff: Münzen je Krieger): 15.000 at 1, 290.000 at 10, 46 Mio. at 25
 const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
 const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
 // Tagesboss (Merkliste 33): JE Angriff die Belohnung seiner Schadens-Klasse (zweimal dieselbe = zweimal), fällt er: alle, die trafen, noch etwas
-const DBOSS_KLASSEN = [{ bis: 1e3, mh: 1, t: '1 – 1.000' }, { bis: 1e4, mh: 2, t: '1.000 – 10.000' }, { bis: 1e5, mh: 3, sh: 1, t: '10.000 – 100.000' },
-    { bis: 1e6, gems: 5, sh: 1, th: 1, crate: 0, t: '100.000 – 1 Mio.' }, { bis: Infinity, gems: 10, sh: 2, th: 2, crate: 1, t: 'über 1 Mio.' }], DBOSS_FALL = { gems: 20, sh: 5 };
-const dbossKlasse = dmg => DBOSS_KLASSEN.findIndex(k => dmg <= k.bis);
+// Klassen als Anteil vom Boss-Leben (7.10.): ein Angriff nimmt höchstens 5 % (DBOSS_CAP) – so ist jede Klasse bei jedem Boss erreichbar
+const DBOSS_KLASSEN = [{ bis: .0005, mh: 1, t: 'bis 0,05 %' }, { bis: .005, mh: 2, t: '0,05 – 0,5 %' }, { bis: .01, mh: 3, sh: 1, t: '0,5 – 1 %' },
+    { bis: .025, gems: 5, sh: 1, th: 1, crate: 0, t: '1 – 2,5 %' }, { bis: Infinity, gems: 10, sh: 2, th: 2, crate: 1, t: 'über 2,5 %' }], DBOSS_FALL = { gems: 20, sh: 5 };
+const dbossKlasse = (dmg, max) => DBOSS_KLASSEN.findIndex(k => dmg <= k.bis * max + 1e-9);
 function dbossKlasseZahlen(b, who, dmg) {           // (nur wer rechnet) ein Angriff: Zähler je Klasse, Belohnung ins Abholfach – Schlüssel je Angriff
-    const i = dbossKlasse(dmg), kl = (b.kl || (b.kl = {}))[who] || (b.kl[who] = DBOSS_KLASSEN.map(() => 0)), n = kl.reduce((a, x) => a + x, 0);
+    const i = dbossKlasse(dmg, b.max), kl = (b.kl || (b.kl = {}))[who] || (b.kl[who] = DBOSS_KLASSEN.map(() => 0)), n = kl.reduce((a, x) => a + x, 0);
     kl[i]++; evPreis(who, 'boss', b.name + ' · Klasse ' + (i + 1), DBOSS_KLASSEN[i], b.d + '|' + n); return i;
 }
 // Barbaren-Lager (Merkliste 33): jede Stufe 1–25 bringt einmal am Tag eine Belohnung (jeden Tag neu)
@@ -10973,7 +10990,7 @@ function dbossHit(m, now) {                         // every attack takes life o
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack') * (AUF ? AUF.kampf(who, 'a') : 1);
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
-    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; const kl = dbossKlasse(dmg); dbossKlasseZahlen(b, who, dmg); evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
+    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; const kl = dbossKlasse(dmg, b.max); dbossKlasseZahlen(b, who, dmg); evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
     const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     barbHome(m, m.troops - loss, now);
     if (isP) {
@@ -11385,7 +11402,7 @@ function invTreffer(m, now) {                        // deine (oder ihre) Truppe
     barbHome(m, m.troops - fb.loss, now); evDirty = true;
     const ziel = islandById[a.tid], fuer = ziel && islandOwnerOf(ziel.id) !== who ? ' (auf ' + fieldWhoName(islandOwnerOf(ziel.id)) + ')' : '';
     evBericht(who, { type: 'ev', ic: 'attack', gut: fb.won, badge: fb.won ? 'Besiegt' : 'Geschwächt', title: 'Barbaren-Armee' + fuer,
-        txt: fmtCompact(fb.SA) + ' gegen ' + fmtCompact(fb.won ? a.t : a.t + fb.kill) + ' Barbaren · ' + fmtCompact(fb.loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : '') + ' · +' + pts + ' Punkte', at: now },
+        txt: fmtCompact(fb.SA) + ' gegen ' + fmtCompact(fb.won ? a.t : a.t + fb.kill) + ' Barbaren · ' + fmtCompact(fb.loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Münzen' : '') + ' · +' + pts + ' Punkte', at: now },
         fb.won ? 'Barbaren-Armee geschlagen: +' + pts + ' Punkte.' : 'Die Barbaren-Armee ist geschwächt (noch ' + fmtCompact(a.t) + ') – +' + pts + ' Punkte.');
     if (isP) { spawnBattleFx({ x: m.x, y: m.y }, fb.won, fb.won ? 'Armee geschlagen' : 'Geschwächt', '+' + pts + ' Punkte'); updateHud(); saveGame(); }
     if (barbView && barbView.kind === 'inv') barbSheetRefresh();
@@ -11448,7 +11465,7 @@ function drTreffer(m, now) {                         // wie beim Tagesboss: Scha
     evPunkte('boss', who, 30 * dmg / (D.max * DR_CAP));
     barbHome(m, m.troops - loss, now);
     const rk = evRang(D.dmg), pl = rk.findIndex(e => e[0] === who) + 1;
-    evBericht(who, { type: 'ev', ic: 'star', gut: true, badge: 'Drache', title: D.name, txt: fmtCompact(dmg) + ' Schaden · noch ' + fmtCompact(Math.max(0, D.hp)) + ' Leben · ' + (zaehlt ? 'Treffer ' + D.tr[who] + ' / ' + DR_HITS : 'zählt nicht (unter 10 % deiner Truppen)') + ' · Platz ' + pl + ' von ' + rk.length + ' · ' + fmtCompact(loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : ''), at: now },
+    evBericht(who, { type: 'ev', ic: 'star', gut: true, badge: 'Drache', title: D.name, txt: fmtCompact(dmg) + ' Schaden · noch ' + fmtCompact(Math.max(0, D.hp)) + ' Leben · ' + (zaehlt ? 'Treffer ' + D.tr[who] + ' / ' + DR_HITS : 'zählt nicht (unter 10 % deiner Truppen)') + ' · Platz ' + pl + ' von ' + rk.length + ' · ' + fmtCompact(loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Münzen' : ''), at: now },
         zaehlt ? 'Treffer beim Drachen: ' + fmtCompact(dmg) + ' Schaden – Treffer ' + D.tr[who] + ' / ' + DR_HITS + '.' : 'Schaden beim Drachen: ' + fmtCompact(dmg) + ' – zählt nicht als Treffer (unter 10 % deiner Truppen).');
     if (isP) { spawnBattleFx({ x: D.x, y: D.y }, true, 'Treffer', '−' + fmtCompact(dmg) + ' Leben'); updateHud(); saveGame(); }
     if (D.hp <= 0) { D.hp = 0; D.fell = now; drAuszahlen(true); }
@@ -11761,7 +11778,7 @@ function evBossHtml() {                              // Reiter „Boss“: Tages
     const boss = evKarte('crown', 'Tagesboss · ' + escapeHtml(b.name), b.hp <= 0 ? 'Besiegt · neuer in ' + evUhr(Date.now() + msToMidnight()) : rec.h + ' / ' + dbossHitsMax() + ' Angriffe heute',
         '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (b.hp <= 0 ? 'Besiegt' : fmtCompact(b.hp) + ' / ' + fmtCompact(b.max) + ' Leben') + '</span></div>' +
         (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''), 'ev-boss--' + b.k, 'boss');   // (Klasse je Boss: sein Bild im Banner, 05z)
-    const zeile = (x, i) => '<div class="evl-z' + (kl[i] ? ' is-ok' : '') + '"><b>Klasse ' + (i + 1) + '<small>' + x.t + ' Schaden</small></b>' + beuteRaster(evBeute(x), 'bk-mini') + '<span class="evl-st evk-n">' + (kl[i] ? '×' + kl[i] : '') + '</span></div>';
+    const zeile = (x, i) => '<div class="evl-z' + (kl[i] ? ' is-ok' : '') + '"><b>Klasse ' + (i + 1) + '<small>' + x.t + ' seines Lebens</small></b>' + beuteRaster(evBeute(x), 'bk-mini') + '<span class="evl-st evk-n">' + (kl[i] ? '×' + kl[i] : '') + '</span></div>';
     const fk = 'boss|' + b.d + '|fall', fHol = inboxList().some(x => x.k === fk), fOk = b.hp <= 0 && b.dmg.player > 0;
     const fall = '<div class="evl-z is-' + (fHol ? 'hol' : fOk ? 'ok' : 'zu') + '"><b>Boss fällt<small>alle, die trafen</small></b>' + beuteRaster(evBeute(DBOSS_FALL), 'bk-mini') + '<span class="evl-st">' + (fHol ? '<small>bereit</small>' : fOk ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false">' : icon('lock')) + '</span></div>';
     return boss + '<div class="lb-gap">Belohnung je Angriff · nach Schaden</div>' + (hol ? evHolKnopf('src:boss', 'Alles abholen · ' + hol) : '') +
@@ -13896,7 +13913,7 @@ if (window.WELT) {
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
         if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) for (const r of passRewardAt(L, pr)) if (r.k === 'coins') passMuenzH += r.n || 1; }
-        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, THRONE_MIN.coins / THRONE_STUNDEN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni · ein Thron-Kauf bringt mind. THRONE_MIN)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
         d.aM = Math.max(0, nn(d.aM) - AUF_MUENZ_H * Math.max(0, now - nn(d.aMt)) / 864e5); d.aMt = now;
         const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
@@ -14132,7 +14149,7 @@ if (window.WELT) {
             const kaeufe = Math.floor(throneEarnedOf(who) / 200) + 5;
             if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
             d.tk++; saveBotState();
-            erlaubt = 3 * Math.max(TR_STUNDE_MIN, hourProduction(who).troops * THRONE_STUNDEN) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
+            erlaubt = 3 * Math.max(THRONE_MIN.troops, hourProduction(who).troops * THRONE_STUNDEN) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders (mind. THRONE_MIN wie im Shop)
         } else if (q === 'heil') {                     // Krankenhaus: höchstens so viele, wie verwundet sind
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
@@ -14222,11 +14239,14 @@ if (window.WELT) {
     // gibt es eine Auffälligkeit (warnen → Admin-Seite). So bekommen echte Spieler keine Fehlalarme, wenn Gems/Münzen erst
     // einen Puls später im Konto stehen.
     const HB_V = 1, HB_WARTEN_MS = 120000, TAG = 864e5;
-    // Burg neu (4.10.: 1–60 Tage, teurer): eine Woche lang gelten für die Burg auch noch die alten (kürzeren, billigeren) Werte –
+    // Burg neu (4.10., seit 7.10. Tabelle burgZeitTab): eine Woche lang gelten für die Burg auch noch die alten (kürzeren, billigeren) Werte –
     // wer beim Hochladen gerade nach den alten Regeln baute, bekommt sonst einen falschen Alarm. Nach „Burg fair“ (09f saison.burgFair:
     // alle Burgen höchstens Stufe 4, laufende Burg-Bauten abgebrochen) baut niemand mehr nach den alten Regeln – dann nicht mehr
     const BURG_ALT_BIS = Date.UTC(2026, 9, 14), burgAlt = now => now < BURG_ALT_BIS && !(saison && saison.burgFair > 0);
     const burgZeitAlt = L => Math.min(7 * 86400, L <= 14 ? 60 * Math.pow(1.55, L - 1) : 60 * Math.pow(1.55, 13) * Math.pow(1.25, L - 14));
+    // Zahlen neu (7.10.): Gebäude 15 % der Burg-Zeit (ab Stufe 4 länger als vorher), Schilde teurer – bis ZAHLEN_ALT_BIS zählt auch
+    // die alte, kürzere Zeit bzw. der alte Schild-Preis: ein Bau, der beim Hochladen lief, oder ein vorher gekaufter Schild gibt sonst falschen Alarm
+    const ZAHLEN_ALT_BIS = Date.UTC(2026, 9, 17), stadtZeitAlt = L => Math.min(7 * 86400, L <= 12 ? 20 * Math.pow(1.6, L) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, L - 12));
     function burgKostenAlt(L) { const b = 1000 * Math.pow(1.72, L - 1), n = AUF ? AUF.stadtKosten('keep', L) : {};
         const a = { c: niceRound(2000 * Math.pow(1.85, L - 1)), h: niceRound(b), s: L >= 2 ? niceRound(b * .8) : 0, e: L >= 5 ? niceRound(b * .4) : 0 };
         for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
@@ -14267,7 +14287,7 @@ if (window.WELT) {
     const kWert = r => Math.pow(3, r);
     const hbKistenGrenze = N => N >= 1 ? 0.855 * N + 3 * 3.08 * Math.sqrt(N) + 27 : 0;
     const hbKistenGesamt = N => N >= 1 ? 3.42 * N + 3 * 5.4 * Math.sqrt(N) + 27 : 0;   // alle 4 Plätze zusammen (Ø 3,42 je Kiste, Streuung 5,4) – das glückliche Lila nur einmal
-    const hbPunkteGrenze = N => 25.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 12,8 je Kiste, doppelt + Start
+    const hbPunkteGrenze = N => 35.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 17,8 je Kiste (Zerlegen 5 + Wert, 7.10.), doppelt + Start
     const hbLvlPunkte = l => 2.5 * l * (l - 1);       // Stufe 1 → l kostet 5 + 10 + … Punkte
     const hbItemWert = z => (z[0] * ITEM_MAX_LEVEL + z[1]) * (1 + z[2] * STAR_PCT / 100);
     // Alle Helden voll (5 Sterne): neue Splitter kommen als Gems (06a-aufgaben.js, 06b-pass-anleitung.js: 20 je Splitter – Abholfach, Aufgaben, Wochenkette,
@@ -14357,7 +14377,8 @@ if (window.WELT) {
         const [L, T] = hb.st[id], B = hb.st.keep[0];
         if (L + 1 > hbMax(id)) return 'nein';
         if (id !== 'keep' && AUF) { if (!L && AUF.BAU_AB_BURG[id] > B) return 'nein'; if (L + 1 > (B >= AUF.BURG_MAX ? hbMax(id) : Math.min(hbMax(id), B))) return 'nein'; }
-        const alt = id === 'keep' && burgAlt(now), zeit = alt ? Math.min(cityTimeRoh(id, L), burgZeitAlt(L)) : cityTimeRoh(id, L);   // (Übergang: eine Burg, die noch nach den alten Regeln gebaut wurde)
+        const alt = id === 'keep' && burgAlt(now), zeit = alt ? Math.min(cityTimeRoh(id, L), burgZeitAlt(L))
+            : id !== 'keep' && now < ZAHLEN_ALT_BIS ? Math.min(cityTimeRoh(id, L), stadtZeitAlt(L)) : cityTimeRoh(id, L);   // (Übergang: ein Bau, der noch nach den alten Regeln lief)
         // Bauzeit zählt erst ab Baubeginn: nie vor dem letzten Profil, das dieses Gebäude ohne Bau zeigte (hb.ruhe), und nie vor dem Ende
         // des letzten Baus dieses Bauarbeiters (hb.bu – 1 bzw. 2 Bauarbeiter). Vorher zählte Leerlauf mit (10 Tage still = 10 Tage Bauzeit gratis).
         const pl = (hb.b2 ? 2 : 1), bu = hb.bu || (hb.bu = [0, 0]), i = pl > 1 && bu[1] < bu[0] ? 1 : 0, start = Math.max(T, nn((hb.ruhe || {})[id]), nn(bu[i]));
@@ -14475,12 +14496,12 @@ if (window.WELT) {
         hb.hs = jetzt;
         if (zu.length) hbWarte(who, hb, 'helden', now, 'Helden: ' + zu.join(', ') + ' – dafür reichen seine Splitter nicht (' + fz(wert(neu)) + ' verlangt, möglich ' + fz(nn(hb.shB)) + ').', wert(neu) - nn(hb.shB));
     }
-    // Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = 300) oder geschenkt bekommen haben kann (Pass, Startschild)
+    // Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = SHIELD_PRICES[24]) oder geschenkt bekommen haben kann (Pass, Startschild)
     function hbSchildPruefen(who, hb, m, p, now, schildAlt) {
         if (schildAlt && nn(p.shieldUntil) <= schildAlt) { hbGut(hb, 'schild'); return; }   // sein Handy meldet noch den Schild, den die Welt fallen ließ: gilt nicht (welt.js), kostet nichts
         const S = Math.min(nn(p.shieldUntil), now + 8 * TAG);
         if (S <= nn(hb.schild) + 60000) { if (S < nn(hb.schild)) hb.schild = S; hbGut(hb, 'schild'); return; }   // (gefallen oder kürzer: gilt)
-        const stunden = (S - Math.max(now, nn(hb.schild))) / 36e5, frei = Math.min(stunden, nn(hb.fr.schild)), g = Math.ceil((stunden - frei) * SHIELD_PRICES[24] / 24 - 1e-9);
+        const stunden = (S - Math.max(now, nn(hb.schild))) / 36e5, frei = Math.min(stunden, nn(hb.fr.schild)), g = Math.ceil((stunden - frei) * (now < ZAHLEN_ALT_BIS ? 300 : SHIELD_PRICES[24]) / 24 - 1e-9);
         if (g > 0 && !hbZahlen(who, hb, m, { g })) { hbWarte(who, hb, 'schild', now, 'Friedensschild bis ' + new Date(S).toLocaleString('de-DE') + ' – den kann er nicht gekauft haben (' + g + ' Gems fehlen).', stunden); return; }
         hb.fr.schild = nn(hb.fr.schild) - frei; hb.schild = S; hbGut(hb, 'schild');
     }

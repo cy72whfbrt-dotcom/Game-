@@ -136,8 +136,8 @@ function spaeherBlickHtml(s) {
         (s.wall !== undefined ? zeile('Mauer', 'Stufe ' + s.wall) : '') +
         (s.held ? zeile('Helden', s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') : '') +
         (s.vh !== undefined ? zeile('Verteidigungs-Held', s.vh && heroById(s.vh.id) ? escapeHtml(heroTag(Object.assign({}, s.vh, { id2: s.vh.h2 && s.vh.h2.id }))) : 'keiner') : '') +
-        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' Gold, ' + fmtCompact(schR) + ' je Rohstoff' : '')) : '') +
-        (R ? zeile('Gold', beute(R.c, R.schutz)) + (R.h !== undefined ? zeile('Holz', beute(R.h, schR)) + zeile('Stein', beute(R.s, schR)) + zeile('Eisen', beute(R.e, schR)) : '') : '') +
+        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' Münzen, ' + fmtCompact(schR) + ' je Rohstoff' : '')) : '') +
+        (R ? zeile('Münzen', beute(R.c, R.schutz)) + (R.h !== undefined ? zeile('Holz', beute(R.h, schR)) + zeile('Stein', beute(R.s, schR)) + zeile('Eisen', beute(R.e, schR)) : '') : '') +
         (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
         (A.fo ? zeile('Forschung', 'Angriff ' + (A.fo.atk | 0) + ' · Vert. ' + (A.fo.def | 0) + ' · Krankenhaus ' + (A.fo.laz | 0)) : '') + gear + '</div></details>';
 }

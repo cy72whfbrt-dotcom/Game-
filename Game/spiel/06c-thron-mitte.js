@@ -30,11 +30,11 @@ function hourProduction(who) {                       // what an empire makes in 
         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) { const mult = templeBaseMult(isl) * templeHoldMultiplier(id) * shrineMult(who); c += TEMPLE_COIN_BONUS_PER_TICK * mult; t += TEMPLE_TROOP_BONUS_PER_TICK * mult; } }
     return { coins: c * k, troops: t * k };
 }
-// Münzen/Truppen wie Händler und Markt (Alexander 6.10.): Stunden-Produktion × Kosten ÷ Ertrag (= 2 Stunden), Mindestwerte × WIRTSCHAFT_KOSTEN
-// (Münzen: wirtM)
-const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG;
+// Münzen/Truppen wie Händler und Markt (Alexander 6.10.): Stunden-Produktion × Kosten ÷ Ertrag (= 2 Stunden), mindestens 20.000 Münzen
+// bzw. 2.000 Truppen (7.10.: vorher 10 Truppen für 200 Punkte)
+const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG, THRONE_MIN = { coins: 20000, troops: 2000 };
 function throneAmount(who, id) { const hp = hourProduction(who);
-    return id === 'coins' ? Math.max(wirtM(5000), Math.round(hp.coins * THRONE_STUNDEN)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
+    return id === 'coins' || id === 'troops' ? Math.max(THRONE_MIN[id], Math.round(hp[id] * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
 function throneGive(who, id, aus) {                   // hands one offer over; returns what it was, for the hint (aus: Belohnungs-Kacheln dazu, 05e)
     aus = aus || []; const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
     if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; aus.push({ a: 'coins', n }); return '+' + fmtCompact(n) + ' Münzen'; }

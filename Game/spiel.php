@@ -2726,11 +2726,11 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <p class="mail-intro shop-info" data-sinfo-box="schild" hidden>Friedensschild: niemand kann deine Türme angreifen, solange er steht – Tore, Tempel und der Thron bleiben angreifbar. Greifst du selbst an, fällt der Schild sofort.</p>
       <div class="waren waren--3">
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>2 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>2 Stunden</small></span>
-          <button type="button" class="ware-preis" data-shield="2" aria-label="Schild 2 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>40</b></button></div>
+          <button type="button" class="ware-preis" data-shield="2" aria-label="Schild 2 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>80</b></button></div>
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>8 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>8 Stunden</small></span>
-          <button type="button" class="ware-preis" data-shield="8" aria-label="Schild 8 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>120</b></button></div>
+          <button type="button" class="ware-preis" data-shield="8" aria-label="Schild 8 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>300</b></button></div>
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>24 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>24 Stunden</small></span>
-          <button type="button" class="ware-preis" data-shield="24" aria-label="Schild 24 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>300</b></button></div>
+          <button type="button" class="ware-preis" data-shield="24" aria-label="Schild 24 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>700</b></button></div>
       </div>
       <div class="sect"><h4>Einschalten</h4><span class="sect-aside">aus dem Vorrat</span></div>
       <div id="shieldUse" class="shield-opts"></div>

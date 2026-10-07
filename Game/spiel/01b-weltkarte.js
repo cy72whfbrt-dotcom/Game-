@@ -82,7 +82,7 @@ function pointInPolygon(px, py, poly) {
 // Costs grow a bit faster than income, so every level takes longer.
 const MAX_BASE_LEVEL = 100;
 const BASE_DEFENSE = 100, DEFENSE_GROWTH = 1.26;
-const BASE_COINS = 10, BASE_TROOPS = 5, PRODUCTION_GROWTH = 1.15;
+const BASE_COINS = 10, BASE_TROOPS = 15, PRODUCTION_GROWTH = 1.15;   // Truppen 7.10.: 15 je Std. auf Stufe 1 (vorher 5 – „nicht zu langsam, nicht zu schnell“), alle gleich (Mitspieler auch)
 const UPGRADE_BASE_COST = 120, UPGRADE_COST_GROWTH = 1.27;
 
 // The level-based defense every base gets, with no equipment/

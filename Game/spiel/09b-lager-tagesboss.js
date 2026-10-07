@@ -2,16 +2,17 @@
 // ===== BARBAREN-LAGER + TAGESBOSS: camps (Stufe 1-25) out on the land and one boss a day with a big pool of life for everyone.
 // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
 const BARB_MAX_L = 25, BARB_DAY = 20, BARB_WANT = 110, DBOSS_HITS = 10, DBOSS_CAP = .05;   // camps on the map · a boss hit takes at most 5 % of its life
-const barbTroopsOf = L => niceRound(wirtK(2000 * Math.pow(2, L - 1)));                  // × WIRTSCHAFT_KOSTEN (5.10.): 1 at 1, ~570 at 10, ~19 Mio. at 25 (vorher 2 Tsd. · 1 Mio. · 34 Mrd.)
-const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 * MUENZ_FAKTOR + wirtM(500 * L * L));   // coins for a win (+ Angriff: Gold per warrior) – Münzen × MUENZ_FAKTOR
+const barbTroopsOf = L => niceRound(500 * Math.pow(1.42, L - 1));                         // 7.10. (rokzahlen): 500 at 1, 1.400 at 4, 12.000 at 10, 2,3 Mio. at 25 – Stufe 1 ≈ 10 % der Start-Armee
+const barbLootOf = L => niceRound(barbTroopsOf(L) * 20 + 5000 * L);                          // Münzen für einen Sieg (+ Angriff: Münzen je Krieger): 15.000 at 1, 290.000 at 10, 46 Mio. at 25
 const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
 const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
 // Tagesboss (Merkliste 33): JE Angriff die Belohnung seiner Schadens-Klasse (zweimal dieselbe = zweimal), fällt er: alle, die trafen, noch etwas
-const DBOSS_KLASSEN = [{ bis: 1e3, mh: 1, t: '1 – 1.000' }, { bis: 1e4, mh: 2, t: '1.000 – 10.000' }, { bis: 1e5, mh: 3, sh: 1, t: '10.000 – 100.000' },
-    { bis: 1e6, gems: 5, sh: 1, th: 1, crate: 0, t: '100.000 – 1 Mio.' }, { bis: Infinity, gems: 10, sh: 2, th: 2, crate: 1, t: 'über 1 Mio.' }], DBOSS_FALL = { gems: 20, sh: 5 };
-const dbossKlasse = dmg => DBOSS_KLASSEN.findIndex(k => dmg <= k.bis);
+// Klassen als Anteil vom Boss-Leben (7.10.): ein Angriff nimmt höchstens 5 % (DBOSS_CAP) – so ist jede Klasse bei jedem Boss erreichbar
+const DBOSS_KLASSEN = [{ bis: .0005, mh: 1, t: 'bis 0,05 %' }, { bis: .005, mh: 2, t: '0,05 – 0,5 %' }, { bis: .01, mh: 3, sh: 1, t: '0,5 – 1 %' },
+    { bis: .025, gems: 5, sh: 1, th: 1, crate: 0, t: '1 – 2,5 %' }, { bis: Infinity, gems: 10, sh: 2, th: 2, crate: 1, t: 'über 2,5 %' }], DBOSS_FALL = { gems: 20, sh: 5 };
+const dbossKlasse = (dmg, max) => DBOSS_KLASSEN.findIndex(k => dmg <= k.bis * max + 1e-9);
 function dbossKlasseZahlen(b, who, dmg) {           // (nur wer rechnet) ein Angriff: Zähler je Klasse, Belohnung ins Abholfach – Schlüssel je Angriff
-    const i = dbossKlasse(dmg), kl = (b.kl || (b.kl = {}))[who] || (b.kl[who] = DBOSS_KLASSEN.map(() => 0)), n = kl.reduce((a, x) => a + x, 0);
+    const i = dbossKlasse(dmg, b.max), kl = (b.kl || (b.kl = {}))[who] || (b.kl[who] = DBOSS_KLASSEN.map(() => 0)), n = kl.reduce((a, x) => a + x, 0);
     kl[i]++; evPreis(who, 'boss', b.name + ' · Klasse ' + (i + 1), DBOSS_KLASSEN[i], b.d + '|' + n); return i;
 }
 // Barbaren-Lager (Merkliste 33): jede Stufe 1–25 bringt einmal am Tag eine Belohnung (jeden Tag neu)
@@ -172,7 +173,7 @@ function dbossHit(m, now) {                         // every attack takes life o
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack') * (AUF ? AUF.kampf(who, 'a') : 1);
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
-    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; const kl = dbossKlasse(dmg); dbossKlasseZahlen(b, who, dmg); evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
+    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; const kl = dbossKlasse(dmg, b.max); dbossKlasseZahlen(b, who, dmg); evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
     const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     barbHome(m, m.troops - loss, now);
     if (isP) {

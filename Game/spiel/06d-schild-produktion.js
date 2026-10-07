@@ -1,6 +1,6 @@
 // Teil 06d-schild-produktion.js: Friedensschild, Willkommen zurück, Produktion
 // ===== FRIEDENSSCHILD: nobody may attack the player's bases while it stands; attacking yourself drops it =====
-const SHIELD_PRICES = { 2: 40, 8: 120, 24: 300 };
+const SHIELD_PRICES = { 2: 80, 8: 300, 24: 700 };   // Edelsteine (7.10., RoK-näher: vorher 40/120/300) – 700 mit „Wirklich?“
 var shieldMemAt = 0, shieldMemV = 0;                                   // hot loops ask thousands of times - no storage read each time
 function shieldUntil() { const t = Date.now(); if (t - shieldMemAt > 500) { shieldMemV = parseInt(store.get('openWaterShield'), 10) || 0; shieldMemAt = t; } return shieldMemV; }
 function playerShielded() { return Date.now() < ownerShieldUntil('player'); }
@@ -68,6 +68,7 @@ shopPopup.addEventListener('click', e => {                 // Shop → Schilde: 
     const bt = e.target.closest('[data-shield]'); if (!bt) return;
     const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
     if (gems < cost) { flashHint('Zu wenig Edelsteine – der Schild kostet ' + cost + '.', 3000); return; }
+    if (!gemsWirklich('schild:' + h, cost, bt)) return;
     gems -= cost; const stock = shieldStock(); stock[h]++; store.set('openWaterShieldStock', JSON.stringify(stock));
     updateHud(); saveGame(); renderShop();
     flashHint('Schild (' + h + ' Std.) liegt im Vorrat – unten einschalten, wann du willst.', 3500); });

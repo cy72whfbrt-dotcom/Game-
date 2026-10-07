@@ -192,7 +192,7 @@ if (window.WELT) {
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
         if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) for (const r of passRewardAt(L, pr)) if (r.k === 'coins') passMuenzH += r.n || 1; }
-        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, THRONE_MIN.coins / THRONE_STUNDEN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni · ein Thron-Kauf bringt mind. THRONE_MIN)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
         d.aM = Math.max(0, nn(d.aM) - AUF_MUENZ_H * Math.max(0, now - nn(d.aMt)) / 864e5); d.aMt = now;
         const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
@@ -428,7 +428,7 @@ if (window.WELT) {
             const kaeufe = Math.floor(throneEarnedOf(who) / 200) + 5;
             if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
             d.tk++; saveBotState();
-            erlaubt = 3 * Math.max(TR_STUNDE_MIN, hourProduction(who).troops * THRONE_STUNDEN) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
+            erlaubt = 3 * Math.max(THRONE_MIN.troops, hourProduction(who).troops * THRONE_STUNDEN) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders (mind. THRONE_MIN wie im Shop)
         } else if (q === 'heil') {                     // Krankenhaus: höchstens so viele, wie verwundet sind
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
@@ -518,11 +518,14 @@ if (window.WELT) {
     // gibt es eine Auffälligkeit (warnen → Admin-Seite). So bekommen echte Spieler keine Fehlalarme, wenn Gems/Münzen erst
     // einen Puls später im Konto stehen.
     const HB_V = 1, HB_WARTEN_MS = 120000, TAG = 864e5;
-    // Burg neu (4.10.: 1–60 Tage, teurer): eine Woche lang gelten für die Burg auch noch die alten (kürzeren, billigeren) Werte –
+    // Burg neu (4.10., seit 7.10. Tabelle burgZeitTab): eine Woche lang gelten für die Burg auch noch die alten (kürzeren, billigeren) Werte –
     // wer beim Hochladen gerade nach den alten Regeln baute, bekommt sonst einen falschen Alarm. Nach „Burg fair“ (09f saison.burgFair:
     // alle Burgen höchstens Stufe 4, laufende Burg-Bauten abgebrochen) baut niemand mehr nach den alten Regeln – dann nicht mehr
     const BURG_ALT_BIS = Date.UTC(2026, 9, 14), burgAlt = now => now < BURG_ALT_BIS && !(saison && saison.burgFair > 0);
     const burgZeitAlt = L => Math.min(7 * 86400, L <= 14 ? 60 * Math.pow(1.55, L - 1) : 60 * Math.pow(1.55, 13) * Math.pow(1.25, L - 14));
+    // Zahlen neu (7.10.): Gebäude 15 % der Burg-Zeit (ab Stufe 4 länger als vorher), Schilde teurer – bis ZAHLEN_ALT_BIS zählt auch
+    // die alte, kürzere Zeit bzw. der alte Schild-Preis: ein Bau, der beim Hochladen lief, oder ein vorher gekaufter Schild gibt sonst falschen Alarm
+    const ZAHLEN_ALT_BIS = Date.UTC(2026, 9, 17), stadtZeitAlt = L => Math.min(7 * 86400, L <= 12 ? 20 * Math.pow(1.6, L) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, L - 12));
     function burgKostenAlt(L) { const b = 1000 * Math.pow(1.72, L - 1), n = AUF ? AUF.stadtKosten('keep', L) : {};
         const a = { c: niceRound(2000 * Math.pow(1.85, L - 1)), h: niceRound(b), s: L >= 2 ? niceRound(b * .8) : 0, e: L >= 5 ? niceRound(b * .4) : 0 };
         for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
@@ -563,7 +566,7 @@ if (window.WELT) {
     const kWert = r => Math.pow(3, r);
     const hbKistenGrenze = N => N >= 1 ? 0.855 * N + 3 * 3.08 * Math.sqrt(N) + 27 : 0;
     const hbKistenGesamt = N => N >= 1 ? 3.42 * N + 3 * 5.4 * Math.sqrt(N) + 27 : 0;   // alle 4 Plätze zusammen (Ø 3,42 je Kiste, Streuung 5,4) – das glückliche Lila nur einmal
-    const hbPunkteGrenze = N => 25.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 12,8 je Kiste, doppelt + Start
+    const hbPunkteGrenze = N => 35.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 17,8 je Kiste (Zerlegen 5 + Wert, 7.10.), doppelt + Start
     const hbLvlPunkte = l => 2.5 * l * (l - 1);       // Stufe 1 → l kostet 5 + 10 + … Punkte
     const hbItemWert = z => (z[0] * ITEM_MAX_LEVEL + z[1]) * (1 + z[2] * STAR_PCT / 100);
     // Alle Helden voll (5 Sterne): neue Splitter kommen als Gems (06a-aufgaben.js, 06b-pass-anleitung.js: 20 je Splitter – Abholfach, Aufgaben, Wochenkette,
@@ -653,7 +656,8 @@ if (window.WELT) {
         const [L, T] = hb.st[id], B = hb.st.keep[0];
         if (L + 1 > hbMax(id)) return 'nein';
         if (id !== 'keep' && AUF) { if (!L && AUF.BAU_AB_BURG[id] > B) return 'nein'; if (L + 1 > (B >= AUF.BURG_MAX ? hbMax(id) : Math.min(hbMax(id), B))) return 'nein'; }
-        const alt = id === 'keep' && burgAlt(now), zeit = alt ? Math.min(cityTimeRoh(id, L), burgZeitAlt(L)) : cityTimeRoh(id, L);   // (Übergang: eine Burg, die noch nach den alten Regeln gebaut wurde)
+        const alt = id === 'keep' && burgAlt(now), zeit = alt ? Math.min(cityTimeRoh(id, L), burgZeitAlt(L))
+            : id !== 'keep' && now < ZAHLEN_ALT_BIS ? Math.min(cityTimeRoh(id, L), stadtZeitAlt(L)) : cityTimeRoh(id, L);   // (Übergang: ein Bau, der noch nach den alten Regeln lief)
         // Bauzeit zählt erst ab Baubeginn: nie vor dem letzten Profil, das dieses Gebäude ohne Bau zeigte (hb.ruhe), und nie vor dem Ende
         // des letzten Baus dieses Bauarbeiters (hb.bu – 1 bzw. 2 Bauarbeiter). Vorher zählte Leerlauf mit (10 Tage still = 10 Tage Bauzeit gratis).
         const pl = (hb.b2 ? 2 : 1), bu = hb.bu || (hb.bu = [0, 0]), i = pl > 1 && bu[1] < bu[0] ? 1 : 0, start = Math.max(T, nn((hb.ruhe || {})[id]), nn(bu[i]));
@@ -771,12 +775,12 @@ if (window.WELT) {
         hb.hs = jetzt;
         if (zu.length) hbWarte(who, hb, 'helden', now, 'Helden: ' + zu.join(', ') + ' – dafür reichen seine Splitter nicht (' + fz(wert(neu)) + ' verlangt, möglich ' + fz(nn(hb.shB)) + ').', wert(neu) - nn(hb.shB));
     }
-    // Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = 300) oder geschenkt bekommen haben kann (Pass, Startschild)
+    // Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = SHIELD_PRICES[24]) oder geschenkt bekommen haben kann (Pass, Startschild)
     function hbSchildPruefen(who, hb, m, p, now, schildAlt) {
         if (schildAlt && nn(p.shieldUntil) <= schildAlt) { hbGut(hb, 'schild'); return; }   // sein Handy meldet noch den Schild, den die Welt fallen ließ: gilt nicht (welt.js), kostet nichts
         const S = Math.min(nn(p.shieldUntil), now + 8 * TAG);
         if (S <= nn(hb.schild) + 60000) { if (S < nn(hb.schild)) hb.schild = S; hbGut(hb, 'schild'); return; }   // (gefallen oder kürzer: gilt)
-        const stunden = (S - Math.max(now, nn(hb.schild))) / 36e5, frei = Math.min(stunden, nn(hb.fr.schild)), g = Math.ceil((stunden - frei) * SHIELD_PRICES[24] / 24 - 1e-9);
+        const stunden = (S - Math.max(now, nn(hb.schild))) / 36e5, frei = Math.min(stunden, nn(hb.fr.schild)), g = Math.ceil((stunden - frei) * (now < ZAHLEN_ALT_BIS ? 300 : SHIELD_PRICES[24]) / 24 - 1e-9);
         if (g > 0 && !hbZahlen(who, hb, m, { g })) { hbWarte(who, hb, 'schild', now, 'Friedensschild bis ' + new Date(S).toLocaleString('de-DE') + ' – den kann er nicht gekauft haben (' + g + ' Gems fehlen).', stunden); return; }
         hb.fr.schild = nn(hb.fr.schild) - frei; hb.schild = S; hbGut(hb, 'schild');
     }
