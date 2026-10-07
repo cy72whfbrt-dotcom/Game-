@@ -28,7 +28,7 @@ function kbBild(n, px) {
 }
 
 // ===== Maße (Welt-Einheiten, Burg ≈ 1.000; wie 03a) =====
-const GROSS = 1.8;                                    // die Gebiete sind viel größer als im Spiel: Gebirge, Knoten und Tore entsprechend breiter
+const GROSS = 2.0;                                    // die Gebiete sind viel größer als im Spiel: Gebirge, Knoten und Tore entsprechend breiter
 const MASS = { boden: 7000, quer: 12500 * GROSS, hoch: 12500 * GROSS, knoten: 11000 * GROSS, tor: 12500 * GROSS, wald: [2600, 3400], abstand: .42 };
 const TOR_SENK = { hoch: 18000 * GROSS, achse: .539, weg: .488 };
 const KETTE_REIHEN = [[-1500, .5, .85], [0, 0, 1], [1300, .25, .8]].map(([a, v, g]) => [a * GROSS, v, g]);   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe
@@ -36,13 +36,15 @@ const ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_ho
 const SCHER = .4;                                     // Stücke folgen schrägen Grenzen nur bis zu dieser Scherung (stärker wirkt der Fels zerrissen)
 const ZOOM = { nah: 0.05, mittel: 0.012, weit: 0.004, max: 0.16 };
 const BILD_ZOOM = 0.0025;                             // darunter: Übersicht (ein Bild der ganzen Karte)
-const ZONEN_FARBE = { 1: [[104, 150, 70], [74, 118, 56]], 2: [[58, 102, 150], [44, 84, 130]], 3: [[100, 66, 160], [100, 66, 160]] };   // Tönung ganz weit: hell/dunkel abwechselnd
-const ZONEN_TOENUNG = { 1: .35, 2: .62, 3: .6 };       // so stark liegt die Zonenfarbe ganz weit über dem Boden
-const BODEN_DAZU = { 2: ['innen', .35, 'rgba(34,44,22,.30)'] };   // Zone 2: auf das gelbgrüne Gras etwas karge Erde, dunkler (deutlich anders als Zone 1 und der Sand der Mitte)
-const THRON = { breit: 70000, ax: .5, ay: .56, minPx: 64 };   // Thron-Tempel in der Mitte (Welt-Breite; ganz weit nie kleiner als minPx)
-const PASS_FARBE = { gruen: '#5cbf62', blau: '#4f9ef2', lila: '#a970f2' };
-const WEG = { lang: 13000, breit: 2400 };              // Weg durchs Tor: so weit in beide Gebiete, so breit
-const skala = z => 1 + .5 * Math.max(0, Math.min(1, (0.03 - z) / 0.018));   // mittlerer Zoom: Ketten, Knoten, Tore bis 1,5×
+const MITTE = 5;                                      // Zone der Mitte (1 außen … 4 innen)
+const ZONEN_FARBE = { 1: [[104, 150, 70], [80, 124, 58]], 2: [[64, 138, 116], [50, 116, 98]], 3: [[196, 164, 104], [176, 146, 92]],
+  4: [[64, 106, 150], [52, 90, 132]], 5: [[150, 108, 56], [150, 108, 56]] };   // Tönung ganz weit: hell/dunkel abwechselnd, Mitte braun-gold
+const ZONEN_TOENUNG = { 1: .35, 2: .45, 3: .3, 4: .55, 5: .25 };   // so stark liegt die Zonenfarbe ganz weit über dem Boden
+// Boden je Zone über der Grundkachel (data.boden): [weitere Kachel, Deckkraft, Farbschicht] – Nachbar-Ringe sehen deutlich anders aus
+const BODEN_DAZU = { 3: [null, 0, 'rgba(110,88,58,.24)'], 4: ['innen', .35, 'rgba(34,44,22,.30)'] };   // 3 gedämpfte Wüste · 4 karg-oliv (Mitte: braune Erde)
+const WEG = { lang: 13000, breit: 2400 };              // Weg durchs Quer-Tor: so weit in beide Gebiete, so breit
+const THRON = { breit: 80000, ax: .5, ay: .56, minPx: 64 };   // Thron-Tempel in der Mitte (Welt-Breite; ganz weit nie kleiner als minPx)
+const PASS_FARBE = { 1: '#5cbf62', 2: '#3fc2a4', 3: '#e2c069', 4: '#4f9ef2', 5: '#e8a640' };   // je Stufe (Zone, in die der Pass führt)
 function zufall(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
@@ -100,9 +102,9 @@ function objekteBauen() {
   for (const g of innen) for (const q of g.punkte) { const k = Math.floor(q[0] / NZ) + ',' + Math.floor(q[1] / NZ); (nahe.get(k) || nahe.set(k, []).get(k)).push(q); }
   const randAbstand = (x, y) => { let m = Infinity; for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const q of nahe.get((Math.floor(x / NZ) + i) + ',' + (Math.floor(y / NZ) + j)) || []) m = Math.min(m, Math.hypot(q[0] - x, q[1] - y)); return m; };
   const pruef = document.createElement('canvas').getContext('2d');
-  for (let i = 0; i < 2600; i++) {
+  for (let i = 0; i < 9000; i++) {
     const x = (rnd() * 2 - 1) * (H - 6000), y = (rnd() * 2 - 1) * (H - 6000), g = KD.gebiete.find(q => pruef.isPointInPath(q.pfad, x, y));
-    if (!g || g.zone === 3 || (g.zone === 2 && rnd() < .5)) continue;
+    if (!g || g.zone === MITTE || (g.zone === 3 && rnd() < .8) || (g.zone === 4 && rnd() < .5)) continue;   // Wüste und karger Ring: wenig Wald
     for (let k = 0, m = 1 + Math.floor(rnd() * 4); k < m; k++) {
       const wx = x + (rnd() - .5) * 9000, wy = y + (rnd() - .5) * 7000, w = MASS.wald[0] + rnd() * (MASS.wald[1] - MASS.wald[0]);
       if (randAbstand(wx, wy) < 9000 || KD.paesse.some(p => Math.hypot(p.x - wx, p.y - wy) < 24000) || Math.abs(wx) > H - 3000 || Math.abs(wy) > H - 3000) continue;
@@ -127,14 +129,14 @@ function uebersicht() {
     g.save(); g.clip(geb.pfad); gebietBoden(g, geb, k / dpr, v); g.fillStyle = `rgba(${geb.farbe.join(',')},${ZONEN_TOENUNG[geb.zone]})`; g.fillRect(-H, -H, 2 * H, 2 * H); g.restore(); }
   if (KB.fertig) { g.lineJoin = 'round'; g.strokeStyle = 'rgba(58,52,40,.8)'; g.lineWidth = 6000 * GROSS; g.stroke(kettenPfad); gelaende(g, k, H * k, H * k, 2.4, v); }
   else baender(g, 1 / k);
-  g.setTransform(k, 0, 0, k, H * k, H * k); g.strokeStyle = 'rgba(190,150,240,.8)'; g.lineWidth = 2 / k; g.stroke(KD.gebiete[0].pfad);
+  g.setTransform(k, 0, 0, k, H * k, H * k); g.strokeStyle = 'rgba(232,190,110,.8)'; g.lineWidth = 2 / k; g.stroke(KD.gebiete[0].pfad);
   return (UEB = c);
 }
-function baender(g, px, unten) {                     // (Weltmaß gesetzt) Gebirge als dunkles Band mit Lichtkante; px = Welt pro Pixel; unten: unter den Bildern (schmal, ohne dunklen Rand)
+function baender(g, px) {                             // (Weltmaß gesetzt) Gebirge als dunkles Band mit Lichtkante, solange die Bilder fehlen; px = Welt pro Pixel
   const w = Math.max(4200 * GROSS, 3 * px);
   g.lineJoin = 'round'; g.lineCap = 'round';
-  if (!unten) { g.strokeStyle = '#2e2b24'; g.lineWidth = w * 1.3; g.stroke(kettenPfad); }
-  g.strokeStyle = unten ? '#8c8a64' : '#6b6552'; g.lineWidth = unten ? w * .6 : w; g.stroke(kettenPfad);
+  g.strokeStyle = '#2e2b24'; g.lineWidth = w * 1.3; g.stroke(kettenPfad);
+  g.strokeStyle = '#6b6552'; g.lineWidth = w; g.stroke(kettenPfad);
   g.strokeStyle = 'rgba(170,164,140,.6)'; g.lineWidth = w * .35; g.stroke(kettenPfad);
 }
 
@@ -150,7 +152,7 @@ function bodenMuster(art, z, lage) {
 function gebietBoden(g, geb, z, v) {                 // (Weltmaß, auf das Gebiet geschnitten) Boden der Zone
   bodenFuellen(g, geb.boden, z, v);
   const d = BODEN_DAZU[geb.zone]; if (!d) return;
-  g.save(); g.globalAlpha = d[1]; g.fillStyle = bodenMuster(d[0], z, 1); g.fillRect(v.l, v.t, v.r - v.l, v.b - v.t);
+  g.save(); if (d[0]) { g.globalAlpha = d[1]; g.fillStyle = bodenMuster(d[0], z, 1); g.fillRect(v.l, v.t, v.r - v.l, v.b - v.t); }
   g.globalAlpha = 1; g.fillStyle = d[2]; g.fillRect(v.l, v.t, v.r - v.l, v.b - v.t); g.restore();
 }
 function bodenFuellen(g, art, z, v) {
@@ -176,8 +178,7 @@ function zeichnen() {
       ctx.restore();
       ctx.lineWidth = 5000; ctx.strokeStyle = bodenMuster(g.boden, z, 0); ctx.stroke(g.pfad); }   // Boden ein Stück unter die Kette ziehen: keine Naht zwischen den Gebieten
     wege(v); ctx.restore();
-    if (z < 0.006) baender(ctx, 1 / z, true);         // weit: unter den Bildern ein Band, damit die Kette geschlossen wirkt
-    gelaende(ctx, dpr * z, dpr * (W / 2 - cam.x * z), dpr * (HT / 2 - cam.y * z), skala(z), v);
+    gelaende(ctx, dpr * z, dpr * (W / 2 - cam.x * z), dpr * (HT / 2 - cam.y * z), 1, v);   // fest in der Welt: bei jedem Zoom dieselben Stücke in derselben Weltgröße
   }
   thron();
   if (z < BILD_ZOOM) { namen(); passPunkte(); }
@@ -187,8 +188,8 @@ function zeichnen() {
 }
 function wege(v) {                                    // Weg durchs Quer-Tor: quer zur Grenze in beide Gebiete (das Tor für Nord-Süd-Ketten hat ihn im Bild)
   for (const p of KD.paesse) { if (p.senk) continue;
-    const dx = 0, dy = WEG.lang; if (p.x + dx < v.l || p.x - dx > v.r || p.y + dy < v.t || p.y - dy > v.b) continue;
-    ctx.beginPath(); ctx.moveTo(p.x - dx, p.y - dy); ctx.lineTo(p.x + dx, p.y + dy); ctx.lineCap = 'round'; ctx.strokeStyle = bodenMuster('innen', cam.z, 0);
+    const dy = WEG.lang; if (p.x < v.l || p.x > v.r || p.y + dy < v.t || p.y - dy > v.b) continue;
+    ctx.beginPath(); ctx.moveTo(p.x, p.y - dy); ctx.lineTo(p.x, p.y + dy); ctx.lineCap = 'round'; ctx.strokeStyle = bodenMuster('innen', cam.z, 0);
     ctx.globalAlpha = .85; ctx.lineWidth = WEG.breit; ctx.stroke(); ctx.globalAlpha = 1; }
   ctx.lineCap = 'butt';
 }
@@ -214,14 +215,14 @@ function passPunkte() {                               // Übersicht: Pässe als 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const r = W < 600 ? 7 : 6;
   for (const p of KD.paesse) { const x = sx(p.x), y = sy(p.y); if (x < -10 || y < -10 || x > W + 10 || y > HT + 10) continue;
-    ctx.globalAlpha = toreOffen ? 1 : .45; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[p.art]; ctx.fill();
+    ctx.globalAlpha = toreOffen ? 1 : .45; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[p.stufe]; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = '#0c0f14'; ctx.stroke(); }
   ctx.globalAlpha = 1;
 }
 function namen() {                                    // Übersicht: Namen der Gebiete
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.font = `700 ${W < 600 ? 11 : 15}px Georgia, serif`; ctx.lineJoin = 'round';
-  for (const g of KD.gebiete) { if (!g.zone || g.zone === 3) continue; const x = sx(g.mitte[0]), y = sy(g.mitte[1]);
+  for (const g of KD.gebiete) { if (g.zone === MITTE) continue; const x = sx(g.mitte[0]), y = sy(g.mitte[1]);
     ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(g.name, x, y); ctx.fillStyle = '#e4c886'; ctx.fillText(g.name, x, y); }
 }
 
@@ -257,4 +258,7 @@ document.getElementById('tore').addEventListener('click', e => { toreOffen = !to
 function groesse() { dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; HT = innerHeight; cv.width = Math.round(W * dpr); cv.height = Math.round(HT * dpr); begrenzen(); neu(); }
 addEventListener('resize', groesse);
 groesse(); zoomStufe('ganz');
+document.getElementById('legende').innerHTML = Object.entries(KD.oeffnen).map(([st, tag]) =>
+  `<div><i style="background:${PASS_FARBE[st]}"></i>${+st === 1 ? 'Pass in Zone 1' : +st === MITTE ? 'Pass zur Mitte' : 'Pass nach Zone ' + st} · offen ab Tag ${tag}</div>`).join('')
+  + `<div><i style="background:#9a6a2c"></i>Thron · ab Tag ${KD.thron.tag}</div>`;
 window.KT = { cam, zoomStufe, zeichnen, bereit: () => KB.fertig && !!KO, daten: KD, get objekte() { return KO; } };

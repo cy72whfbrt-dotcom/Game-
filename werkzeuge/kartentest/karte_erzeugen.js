@@ -1,23 +1,28 @@
 // Karten-Testdatei (LIESMICH 11c Punkt 30): erzeugt das Datenmodell der Zonen-Karte wie das RoK-Königreich
 // (Vorlage vorbilder/13_rok_zonen_vorlage.png) → karte_daten.js. Aufruf: node werkzeuge/kartentest/karte_erzeugen.js
-// Zone 1 außen: 8 Gebiete · Zone 2: 4 Gebiete als Ring · Zone 3: die Mitte mit dem Thron. Grenzen = Linienzüge zwischen
+// Zone 1 außen … Zone 4 innen: je Ring mehrere große Gebiete, dann die Mitte mit dem Thron. Grenzen = Linienzüge zwischen
 // genau zwei Gebieten (b = -1: Kartenrand), jedes Gebiet ist ein Ring aus seinen Grenzen. Pässe liegen auf einer Grenze,
 // dort läuft die Grenze ein Stück genau waagrecht (Quer-Tor) bzw. senkrecht (Tor für Nord-Süd-Ketten).
 'use strict';
 const fs = require('fs'), path = require('path');
 
-const H = 477000;                                     // halbe Kartenbreite (wie im Spiel: 8,5 × 56.120)
-const N = 96, ZELLE = 2 * H / N;                      // Raster zum Finden der Grenzen (danach geglättet)
-const GRAD = Math.PI / 180;
-// Grenzwinkel (0° = Osten, 90° = Süden): Zone 1 zwischen den Ecken und Seiten, Zone 2 um 45° dazu versetzt
-const Z1_WINKEL = [22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5].map((w, k) => (w + [5, -8, 6, -4, 9, -6, 3, -7][k]) * GRAD);
-const Z2_WINKEL = [0, 90, 180, 270].map((w, k) => (w + [8, -6, 5, -9][k]) * GRAD);
+const H = 850000;                                     // halbe Kartenbreite (größer als das Spiel heute: Platz für 5 Ringe)
+const N = 150, ZELLE = 2 * H / N;                     // Raster zum Finden der Grenzen (danach geglättet)
+const MITTE = 5;                                      // Zonen 1 (außen) … 4, 5 = Mitte
+const ANZAHL = { 1: 10, 2: 8, 3: 6, 4: 4 };           // Gebiete je Ring
+const RING_R = [.68, .5, .33, .165];                  // Außenrand von Zone 2 … Mitte (Anteil der halben Breite, ohne Wellen)
+const zufall = (() => { let x = 4711; return () => (x = (x * 16807) % 2147483647) / 2147483647; })();
+const WINKEL = {};                                    // Grenzwinkel je Ring (0° = Osten, 90° = Süden), gegeneinander versetzt, leicht ungleich
+for (let z = 1; z <= 4; z++) { const n = ANZAHL[z], ph = [.5, 0, .5, 0][z - 1];
+  WINKEL[z] = Array.from({ length: n }, (_, k) => (k + ph + (zufall() - .5) * .3) * 2 * Math.PI / n).sort((a, b) => a - b); }
+const START = { [MITTE]: 0 }; { let id = 1; for (let z = 4; z >= 1; z--) { START[z] = id; id += ANZAHL[z]; } }   // Gebiet-Nummern: 0 = Mitte, dann Zone 4 … Zone 1
+const GEBIETE = START[1] + ANZAHL[1];
 
-function zoneAn(u, v) {                               // u, v: −1…1; 3 = Mitte, 2 = Ring, 1 = außen
+function zoneAn(u, v) {                               // u, v: −1…1 → Zone 1…4, 5 = Mitte
   const r = Math.pow(Math.abs(u) ** 3 + Math.abs(v) ** 3, 1 / 3), t = Math.atan2(v, u);
-  const r3 = .27 + .035 * Math.sin(3 * t + 1) + .02 * Math.sin(5 * t + 2) + .012 * Math.sin(9 * t + .3);
-  const r2 = .62 + .05 * Math.sin(2 * t + .5) + .03 * Math.sin(5 * t + 4) + .015 * Math.sin(11 * t + 1.7);
-  return r < r3 ? 3 : r < r2 ? 2 : 1;
+  let z = 1;
+  RING_R.forEach((R, k) => { const w = R + R * (.07 * Math.sin(3 * t + 1 + k) + .04 * Math.sin(5 * t + 2 + 2 * k) + .02 * Math.sin(9 * t + .3 + k)); if (r < w) z = k + 2; });
+  return z;
 }
 function sektor(u, v, winkel, wellen) {               // Index des Winkelbereichs (Grenzen schwingen mit dem Abstand zur Mitte)
   const r = Math.hypot(u, v); let t = Math.atan2(v, u); if (t < 0) t += 2 * Math.PI;
@@ -27,11 +32,11 @@ function sektor(u, v, winkel, wellen) {               // Index des Winkelbereich
   }
   return winkel.length - 1;
 }
-// Gebiet-Nummern: 0 = Mitte, 1–4 Zone 2, 5–12 Zone 1
 function gebietAn(u, v) {
   const z = zoneAn(u, v);
-  return z === 3 ? 0 : z === 2 ? 1 + sektor(u, v, Z2_WINKEL, .1) : 5 + sektor(u, v, Z1_WINKEL, .09);
+  return z === MITTE ? 0 : START[z] + sektor(u, v, WINKEL[z], .06);
 }
+const zoneVon = g => g === 0 ? MITTE : +Object.keys(START).find(z => z < MITTE && g >= START[z] && g < START[z] + ANZAHL[z]);
 
 // 1) Raster füllen, kleine Splitter dem Nachbarn geben
 const L = new Int8Array(N * N);
@@ -42,7 +47,7 @@ for (let pass = 0; pass < 3; pass++) for (let j = 0; j < N; j++) for (let i = 0;
   const best = Object.keys(z).sort((a, b) => z[b] - z[a])[0];
   if (z[best] >= 3 && +best !== L[j * N + i]) L[j * N + i] = +best;
 }
-for (let g = 0; g < 13; g++) {                        // je Gebiet nur das größte zusammenhängende Stück
+for (let g = 0; g < GEBIETE; g++) {                   // je Gebiet nur das größte zusammenhängende Stück
   const seen = new Uint8Array(N * N), teile = [];
   for (let p = 0; p < N * N; p++) if (L[p] === g && !seen[p]) {
     const st = [p], teil = []; seen[p] = 1;
@@ -94,13 +99,13 @@ const grenzen = linien.map((l, id) => {
   return { id, a: l.a, b: l.b, punkte: pts };
 });
 
-// 4) Pässe: je Paar Nachbarn (Zone 1 untereinander, je Zone-1-Gebiet einer nach innen, Zone 2 untereinander, Zone 2 → Mitte)
-const zoneVon = g => g === 0 ? 3 : g <= 4 ? 2 : 1;
+// 4) Pässe: im Ring jedes zweite Nachbarpaar, je Gebiet einer nach innen (zum Gebiet mit den wenigsten), Zone 4 → Mitte.
+//    stufe = Zone, in die der Pass führt (1: Zone 1 untereinander … 5: in die Mitte) – danach öffnen sie gestaffelt.
 const paare = new Map();                                // "a,b" → Grenzen
 for (const g of grenzen) if (g.b !== -1) { const k = g.a + ',' + g.b; (paare.get(k) || paare.set(k, []).get(k)).push(g); }
-const TOR_GERADE = 16000, TOR_WEICH = 34000, TOR_ABSTAND = 70000;
+const TOR_GERADE = 20000, TOR_WEICH = 34000, TOR_ABSTAND = 70000;
 const paesse = [];
-function passSetzen(a, b, art) {
+function passSetzen(a, b, stufe) {
   const gs = paare.get(Math.min(a, b) + ',' + Math.max(a, b)); if (!gs) return false;
   let best = null;
   for (const g of gs) {
@@ -119,22 +124,26 @@ function passSetzen(a, b, art) {
   g.punkte = g.punkte.map((q, i) => { const u = Math.abs(s[i] - best.d); if (u >= TOR_GERADE + TOR_WEICH) return q;
     const w = u <= TOR_GERADE ? 1 : 1 - (u - TOR_GERADE) / TOR_WEICH, k = w * w * (3 - 2 * w);
     return best.senk ? [q[0] + (best.x - q[0]) * k, q[1]] : [q[0], q[1] + (best.y - q[1]) * k]; });
-  paesse.push({ id: paesse.length, a: g.a, b: g.b, grenze: g.id, x: best.x, y: best.y, senk: best.senk, art });
+  paesse.push({ id: paesse.length, a: g.a, b: g.b, grenze: g.id, x: Math.round(best.x), y: Math.round(best.y), senk: best.senk, stufe });
   return true;
 }
 const nachbarn = g => [...paare.keys()].map(k => k.split(',').map(Number)).filter(([a, b]) => a === g || b === g).map(([a, b]) => a === g ? b : a);
-for (let g = 5; g <= 12; g++) passSetzen(g, g === 12 ? 5 : g + 1, 'gruen');                              // Zone 1 im Kreis
-for (let g = 5; g <= 12; g++) { const innen = nachbarn(g).filter(n => zoneVon(n) === 2);                // je Zone-1-Gebiet ein Pass nach innen
-  innen.sort((x, y) => paare.get(Math.min(g, y) + ',' + Math.max(g, y)).reduce((m, q) => m + q.punkte.length, 0) - paare.get(Math.min(g, x) + ',' + Math.max(g, x)).reduce((m, q) => m + q.punkte.length, 0));
-  for (const n of innen) if (passSetzen(g, n, 'blau')) break; }
-for (let g = 1; g <= 4; g++) passSetzen(g, g === 4 ? 1 : g + 1, 'blau');                                // Zone 2 im Kreis
-for (let g = 1; g <= 4; g++) passSetzen(g, 0, 'lila');                                                  // Zone 2 → Mitte
+const laenge = (a, b) => (paare.get(Math.min(a, b) + ',' + Math.max(a, b)) || []).reduce((m, q) => m + q.punkte.length, 0);
+for (let z = 1; z <= 4; z++) for (let k = 0; k < ANZAHL[z]; k += 2) passSetzen(START[z] + k, START[z] + (k + 1) % ANZAHL[z], z);   // im Ring
+const herein = new Map();
+for (let z = 1; z <= 4; z++) for (let k = 0; k < ANZAHL[z]; k++) {                                        // nach innen
+  const g = START[z] + k, innen = nachbarn(g).filter(n => zoneVon(n) === z + 1);
+  innen.sort((x, y) => (herein.get(x) || 0) - (herein.get(y) || 0) || laenge(g, y) - laenge(g, x));
+  for (const n of innen) if (passSetzen(g, n, z + 1)) { herein.set(n, (herein.get(n) || 0) + 1); break; } }
+for (let g = 1; g < START[1]; g++) if (!herein.get(g)) {                                                    // jedes innere Gebiet von außen erreichbar
+  const z = zoneVon(g);
+  for (const n of nachbarn(g).filter(n => zoneVon(n) === z - 1)) if (passSetzen(n, g, z)) { herein.set(g, 1); break; } }
 
 // 5) Gebiete als Ringe aus ihren Grenzen
 const rund = p => [Math.round(p[0]), Math.round(p[1])];
 for (const g of grenzen) g.punkte = g.punkte.map(rund);
 const gebiete = [];
-for (let id = 0; id < 13; id++) {
+for (let id = 0; id < GEBIETE; id++) {
   const teile = grenzen.filter(g => g.a === id || g.b === id).map(g => ({ id: g.id, pts: g.punkte }));
   const ring = [], rand = [], gleich = (p, q) => Math.abs(p[0] - q[0]) < 2 && Math.abs(p[1] - q[1]) < 2;
   let t = teile.shift(); rand.push(t.id); ring.push(...t.pts);
@@ -146,15 +155,17 @@ for (let id = 0; id < 13; id++) {
   }
   let sx = 0, sy = 0, n = 0; for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) if (L[j * N + i] === id) { sx += i; sy += j; n++; }
   const z = zoneVon(id);
-  gebiete.push({ id, zone: z, name: z === 3 ? 'Mitte' : 'Zone ' + z + ' · ' + (z === 2 ? id : id - 4), boden: ['', 'aussen', 'mitte', 'sand'][z],
+  gebiete.push({ id, zone: z, name: z === MITTE ? 'Mitte' : String(z), boden: ['', 'aussen', 'mitte', 'sand', 'mitte', 'innen'][z],
     mitte: [Math.round(((sx / n + .5) / N * 2 - 1) * H), Math.round(((sy / n + .5) / N * 2 - 1) * H)], rand, umriss: ring.slice(0, -1) });
 }
 gebiete[0].mitte = [0, 0];
 
-const daten = { welt: { halb: H }, thron: { x: 0, y: 0 }, gebiete, grenzen, paesse };
+const daten = { welt: { halb: H }, thron: { x: 0, y: 0, tag: 7 }, zonen: 4, oeffnen: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 }, gebiete, grenzen, paesse };
 const kopf = '// Datenmodell der Zonen-Karte (erzeugt von karte_erzeugen.js – nicht von Hand ändern)\n' +
-  '// gebiete: { id, zone 1–3, name, boden, mitte, rand: Grenzen-Ids (−id−1 = rückwärts), umriss: Punkte }\n' +
-  '// grenzen: { id, a, b (−1 = Kartenrand), punkte } · paesse: { id, a, b, grenze, x, y, senk (Grenze läuft senkrecht), art gruen|blau|lila }\n';
+  '// gebiete: { id, zone 1–4 (5 = Mitte), name, boden, mitte, rand: Grenzen-Ids (−id−1 = rückwärts), umriss: Punkte }\n' +
+  '// grenzen: { id, a, b (−1 = Kartenrand), punkte } · paesse: { id, a, b, grenze, x, y, senk (Grenze läuft senkrecht), stufe 1–5 }\n' +
+  '// oeffnen: Stufe → Tag, an dem die Pässe aufgehen (von außen nach innen); thron.tag: ab dann zählt der Thron\n';
 fs.writeFileSync(path.join(__dirname, 'karte_daten.js'), kopf + 'const KARTE_ZONEN = ' + JSON.stringify(daten) + ';\n');
 console.log('Gebiete', gebiete.length, '· Grenzen', grenzen.length, '(Rand', grenzen.filter(g => g.b === -1).length + ') · Pässe', paesse.length,
-  paesse.map(p => p.art[0] + p.a + '-' + p.b + (p.senk ? '|' : '—')).join(' '));
+  [1, 2, 3, 4, 5].map(st => 'Stufe ' + st + ': ' + paesse.filter(p => p.stufe === st).length).join(', '),
+  '· ohne Pass:', gebiete.filter(g => !paesse.some(p => p.a === g.id || p.b === g.id)).map(g => g.id).join(' ') || '-');

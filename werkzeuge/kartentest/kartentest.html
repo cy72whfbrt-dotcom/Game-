@@ -14,16 +14,12 @@
   #info { position: fixed; left: 10px; top: 10px; color: #f3e2bd; background: rgba(20, 16, 10, .72); border: 1px solid #6b5230; border-radius: 8px; padding: 6px 10px; font: 12px/1.5 system-ui, sans-serif; pointer-events: none; }
   #info i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #0c0f14; margin-right: 6px; vertical-align: -2px; }
   #stufe { color: #e4c886; font-weight: 700; }
-  #info.kurz div:not(#stufe) { display: none; }
+  #info.kurz #legende { display: none; }
 </style>
 </head>
 <body>
 <canvas id="karte"></canvas>
-<div id="info"><div id="stufe"></div>
-  <div><i style="background:#5cbf62"></i>Pass Zone 1 ↔ Zone 1 · offen ab Tag 1</div>
-  <div><i style="background:#4f9ef2"></i>Pass zu Zone 2 · offen ab Tag 3</div>
-  <div><i style="background:#a970f2"></i>Pass zur Mitte · offen ab Tag 5</div>
-  <div><i style="background:#e7c35a"></i>Thron · ab Tag 7</div></div>
+<div id="info"><div id="stufe"></div><div id="legende"></div></div>
 <div id="leiste">
   <button data-zoom="nah">Nah</button><button data-zoom="mittel">Mittel</button><button data-zoom="weit">Weit</button><button data-zoom="ganz">Ganz weit</button>
   <button id="tore">Tore zu</button>
