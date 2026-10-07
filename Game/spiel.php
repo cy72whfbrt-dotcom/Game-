@@ -1883,6 +1883,18 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 /* =====================================================================
    KI-BILDER (Alexander 7.10.: „alles mit KI-Bildern, sieht besser aus“) – überschreibt das gezeichnete Aussehen.
    Rahmen/Knöpfe dehnen sich per border-image (Ecken fest, Mitte gedehnt); Symbole als Hintergrund, das SVG-<use> bleibt (Karte/Tests).
+
+   GRUNDFORM FENSTER (EINE für alle – neue Fenster nur daraus bauen, nichts Eigenes zeichnen):
+     .ki-fenster   Fenster-Rahmen ui_rahmen + dunkler Grund (schon dran: .panel, .hh, .lvlup-card, .marker-sheet, #citySheet)
+     .phead        Kopfzeile: Wappen/Symbol · Überzeile (.overline) + Titel (.ptitle) · rotes X (.btn-x); darunter die Trennlinie ui_linie
+     .tabs > .tab  Reiter ui_reiter, aktiv (.active) ui_reiter_an · Unter-Reiter/Wahl (.p5-chip, .seg button): ui_k_chip, aktiv ui_k_gold
+     .ki-karte     Listen-Karte ui_karte (Zeile/Kasten im Fenster), .ki-karte--an hervorgehoben ui_karte_an (abholbar/fertig)
+                   (schon dran: KI_KARTE unten – .quest, .ach, .logRow, .stat, .inbox-row, …)
+     Knöpfe        .btn--primary Gold (gedrückt ui_k_gold_an) · .btn--secondary Dunkel · .btn--danger Rot · :disabled Grau · .chip Schildchen
+     Kacheln       [data-r="grau|gruen|blau|lila|gold|rot"] ui_kachel_* · .tile.empty ui_platz
+     Hinweis       .anleitung ui_hinweis (Rolle links) · .notice wie Listen-Karte
+     Balken        .pass-bar/.ach-sum-bar/.ki-balken Rahmen ui_balken (Füllung <i> bleibt Code)
+     Symbole       automatisch: <svg class="icon"><use href="#i-…"> → bilder/ui_sym_*.webp (Liste unten)
    ===================================================================== */
 :root{
   --ui-rund:url(bilder/ui_rund.webp); --ui-rund-an:url(bilder/ui_rund_an.webp);
@@ -1911,12 +1923,13 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 .badge{border:0;background:url(bilder/ui_punkt.webp) center/100% 100% no-repeat;text-shadow:0 1px 1px rgba(0,0,0,.6)}
 
 /* ---------------- Leiste unten (Dock) ---------------- */
-.nav{background:#07090c;border-top:0;border-style:solid;border-width:0;border-image:url(bilder/ui_dock.webp) 30 60 30 60 fill / 10px 30px 8px 30px stretch}
+.nav{background:#07090c;border-top:0;border-style:solid;border-width:0;border-image:url(bilder/ui_dock.webp) 30 60 30 60 fill / 9px 30px 6px 30px stretch}
 .nav::before{display:none}
 .nav-btn > .icon{border:0;padding:0;box-shadow:none;background:var(--ki-bild,none) center/60% auto no-repeat,var(--ui-rund) center/100% 100% no-repeat;transition:none}
 .nav-btn.active > .icon,.nav-btn:hover > .icon{border:0;box-shadow:none;background:var(--ki-bild,none) center/62% auto no-repeat,var(--ui-rund-an) center/100% 100% no-repeat}
-.nav-btn{gap:0} .nav-btn > .icon{width:44px;height:44px}
-.nav-btn .nav-l{position:relative;margin-top:-11px;padding:2px 5px;border-radius:3px;background:rgba(8,10,14,.88);box-shadow:0 0 0 1px rgba(212,176,102,.35);color:var(--gold-100);text-shadow:0 1px 1px #000}   /* Beschriftung als Schildchen am Knopf, über dem Leisten-Rand */
+.nav{padding-bottom:max(2px,calc(var(--safe-bd) - 18px))}   /* Knöpfe tiefer in die Leiste (der Home-Balken-Rand bleibt frei genug) */
+.nav-btn{gap:1px;justify-content:flex-end;padding-bottom:6px} .nav-btn > .icon{width:42px;height:42px}
+.nav-btn .nav-l{font-size:10px;color:var(--gold-100);text-shadow:0 1px 2px #000,0 0 4px #000}
 #cityNavBtn{--ki-bild:url(bilder/ui_dock_burg.webp)} body.in-stadt #cityNavBtn{--ki-bild:url(bilder/ui_fahne.webp)}
 #bundBtn{--ki-bild:url(bilder/ui_dock_bund.webp)} #battleLogBtn{--ki-bild:url(bilder/ui_dock_kampf.webp)}
 #goalsBtn{--ki-bild:url(bilder/ui_dock_events.webp)} #shopBtn{--ki-bild:url(bilder/ui_dock_shop.webp)} #profileBtn{--ki-bild:url(bilder/ui_dock_krone.webp)}
@@ -1941,8 +1954,11 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 .btn--chip.btn--secondary,.btn--chip.btn--primary{border-image:var(--k-bild) 30 40 30 40 fill / 9px 12px 9px 12px stretch}
 .chip:not(.chip--rar):not(.chip--scouted){border:0;background:none;border-style:solid;border-image:url(bilder/ui_k_chip.webp) 26 fill / 10px stretch}
 
-/* ---------------- Fenster: Rahmen, Schließen, Reiter, Trennlinie ---------------- */
-.panel::before{border:16px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch}
+/* ---------------- Grundform Fenster: Rahmen, Kopfzeile, Schließen, Reiter, Trennlinie ---------------- */
+.panel::before,.hh::before{border:16px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch}
+.ki-fenster,.marker-sheet{border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);border-radius:0}
+.marker-sheet{padding:16px}
+#citySheet{border-style:solid;border-width:1px 1px 0;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;border-radius:0}
 .phead::after{width:160px;height:10px;background:url(bilder/ui_linie.webp) center/100% 100% no-repeat}
 .btn-x{border:0}
 .btn-x > .icon{width:32px;height:32px;background:url(bilder/ui_zu.webp) center/contain no-repeat}
@@ -1979,6 +1995,20 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .lvlup-badge{width:84px;height:96px;border:0;border-radius:0;box-shadow:none;background:url(bilder/ui_wappen.webp) center/contain no-repeat;padding-top:16px;isolation:isolate}
 .lvlup-badge::after{content:"";position:absolute;inset:-6px -26px -10px;background:url(bilder/ui_lorbeer.webp) center/contain no-repeat;pointer-events:none;z-index:-1}
 .lvlup-rule{height:10px;background:url(bilder/ui_linie.webp) center/100% 100% no-repeat}
+
+/* ---------------- Listen-Karten in allen Fenstern (Shop, Events, Bündnis, Kampf, Berichte, Pass, Rangliste, Einstellungen, Gebäude) ---------------- */
+:is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.chain,.tour-prize,.pass-cell,.pass-how-l,.ach-sum,.pass-hero,
+  .pass-prem,.pass-old,.daily-row,.title-row,.forge-row,.fo-row,.fo-detail,.bd-zeile,.bd-form,.anf,.gate-ctl,.city-vgl,.shop-info,.skin-card,.crest-card,.statChip,.notice,
+  .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in){border:0;border-style:solid;border-radius:0;background:none;box-shadow:none;
+  border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch}
+:is(.ki-karte--an,.ach.is-ready,.quest.is-done:not(.is-claimed),.pass-cell.is-ready,.inbox-row.is-gold,.barb-rank li.me,.logRow.is-new){border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch}
+.set-zeile{padding:0 10px;margin-bottom:4px} .set-zeile:last-child{border-bottom:0}
+/* Unter-Reiter und Wahl-Knöpfe: Schildchen, aktiv gold */
+:is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border:0;border-style:solid;border-radius:0;background:none;box-shadow:none;
+  border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch}
+:is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
+:is(.seg:not(.hero-seg) > button):disabled{border-image:url(bilder/ui_k_grau.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch}
+.ki-balken{border-style:solid;border-width:0;border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch}
     </style>
 </head>
 <body>
