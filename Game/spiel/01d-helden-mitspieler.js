@@ -107,18 +107,16 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
 // Nur der Weltrechner verteilt (Handys bekommen den Besitz von ihm), und nur an Mitspieler, die noch nie
 // eine Basis hatten: wer ausgeschieden ist, kommt über botRespawn zurück (Wartezeit, Schild …), auch nach einem Neustart.
 if (rechnet()) {
-    // every bot starts on one of the start places round the edge, spread out, never on the player's
+    // every bot starts on one of the start places in Zone 1 – reihum je Gebiet (gleich viele je Gebiet), never on the player's
     const usedTowerIds = new Set([playerIslandId]);
     for (const bot of BOT_DEFS) for (const id of botOwnedIslands[bot.id]) usedTowerIds.add(id);
     for (const id of ownedIslands) usedTowerIds.add(id);
-    const home = islandById[playerIslandId], slots = islands.filter(i => i.startSlot && !usedTowerIds.has(i.id) && i.landmassId !== home.landmassId)
-        .sort((u, v) => Math.atan2(u.y, u.x) - Math.atan2(v.y, v.x));
-    const stepB = Math.max(1, slots.length / BOT_DEFS.length);
+    const home = islandById[playerIslandId], slots = startplaetzeReihum().filter(i => !usedTowerIds.has(i.id));
     let stand = {}; try { stand = JSON.parse(store.get('openWaterBotState')) || {}; } catch (e) {}
     const raus = bot => !!((botBesitzRoh && Array.isArray(botBesitzRoh[bot.id])) || (stand[bot.id] && stand[bot.id].outAt));   // hatte schon Basen (ausgeschieden)
     BOT_DEFS.forEach((bot, i) => {
         if (bot.mensch || botOwnedIslands[bot.id].size > 0 || raus(bot)) return;      // echte Spieler bekommen ihren Platz vom Weltrechner
-        const tower = slots[Math.floor(i * stepB) % slots.length];
+        const tower = slots[i % slots.length];
         if (!tower || usedTowerIds.has(tower.id)) return;
         botOwnedIslands[bot.id].add(tower.id);
         islandLevels[tower.id] = 1;
@@ -130,7 +128,7 @@ if (rechnet()) {
     if (late.length) {
         const taken = [...usedTowerIds].map(id => islandById[id]).filter(Boolean);
         for (const bot of BOT_DEFS) { let k = 0; for (const id of botOwnedIslands[bot.id]) { if (k++ % 25 === 0) taken.push(islandById[id]); } }   // a sample of every empire is enough
-        const pool = islands.filter(i => i.type === 'tower' && !usedTowerIds.has(i.id) && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= GRID_HALF - 2 && i.landmassId !== home.landmassId);
+        const pool = islands.filter(i => i.type === 'tower' && !usedTowerIds.has(i.id) && !islandOwnerOf(i.id) && landmasses[i.landmassId].zone <= 2 && i.landmassId !== home.landmassId);
         const rnd = mulberry32(4242);
         for (const bot of late) {
             let best = null, bestD = -1;

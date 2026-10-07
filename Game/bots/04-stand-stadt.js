@@ -233,22 +233,9 @@ function botOnlinePlan(bot, now) {                                              
     return r < Math.min(.97, st.act * 1.15);
 }
 
-// Ring-Skins: about a third of them like a ring round their bases - always the same favourite, bought with gems or Thron-Punkte like the player
-function botRingFav(botId) { const idn = parseInt(botId.slice(3), 10) || 0, r = mulberry32(idn * 613 + 29); return r() < .3 ? RING_SKINS[Math.floor(r() * RING_SKINS.length)] : null; }
-function botRings(bot, b) {
-    if (!b.ringMig) { let L = 0; for (const id of botOwnedIslands[bot.id] || []) L = Math.max(L, islandLevels[id] || 1);   // what they wore by level stays theirs as a skin (as for the player)
-        b.rings = [...new Set([...(b.rings || []), ...(L >= 10 ? ['bronze'] : []), ...(L >= 25 ? ['silver'] : [])])]; b.ringMig = 1; }
-    const fav = botRingFav(bot.id); if (!fav) return;
-    if (fav.gems && !b.rings.includes(fav.id) && b.gems >= fav.gems * 2 && b.gems - fav.gems >= TELEPORT_GEMS) { b.gems -= fav.gems; b.rings.push(fav.id); }
-    const wear = b.rings.includes(fav.id) ? fav.id : b.rings[b.rings.length - 1] || '';   // the favourite, until then the best they have
-    if ((b.ring || '') !== wear) { b.ring = wear; ringVer++; requestRender(); }
-}
-
 function botShop(bot) {                                  // gems and points spent the way a player would: heroes, stars, crates, gear
     botThroneShop(bot.id);
     const b = loadBotState()[bot.id], slots = Object.keys(EQUIPMENT_DEFS);
-    botRings(bot, b);
-    botLookShop(bot, b);                                 // frame, title, Marsch-Skin
     botPassCare(bot, b);                                 // Saison-Pass: premium (some), rewards as they climb
     botHeroCare(bot);                                    // shards → unlock, stars, skill points
     const starCap = Math.min(STAR_MAX, botBld(bot.id, 'forge'));   // one star per visit on the best-worn piece

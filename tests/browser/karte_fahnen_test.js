@@ -12,6 +12,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
   const v = await p.evaluate(() => {
     for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
+    delete KB.img.schild;                                                          // (die Fahnen selbst: ohne Namensschild tragen Basen wieder Fahnen – Schild: basen_bild_test)
     const h = islandById[playerIslandId], dist = i => Math.hypot(i.x - h.x, i.y - h.y);
     const nb = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id)).sort((a, c) => dist(a) - dist(c));
     const bot = Object.values(botById)[0], basis = nb[0], neutral = nb.slice(1, 6);
