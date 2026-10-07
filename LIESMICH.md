@@ -3580,3 +3580,9 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   Leiste: geschobene Schilder legen sich nicht auf andere (08f). Test `stadt_feinschliff_test`.
 - **Fenster/Anleitung-Feinschliff:** Anleitung ganz lesbar (bis 4 Zeilen), Meldungen „unterwegs: …“, Hinweis rutscht nach oben,
   Rucksack-Preise, Reiter, Pass/Markt am Handy. Test `fenster_fein_test`.
+- **Fix-Runde 2 (Spieltest r2a/r2b):** Anleitung Schritt 6 bleibt im Events-Fenster sichtbar (Handy darüber, Desktop links
+  daneben); Feld/Lager zu weit: Tipp „wähle ein … näher an deinen Basen“; Krankenhaus: „Fehlt: X Münzen“ (wie beim Bauen),
+  „1.000 / 1.422“ in einer Zeile, „Truppen geheilt“ wird nicht mehr vom Erfolgs-Hinweis überdeckt (`hintFrisch`, 06d);
+  Bündnis-Knopf ohne Welt-Verbindung meldet „Keine Verbindung zur Welt“; „Gründen“ bleibt am Handy unten sichtbar; Spähen:
+  „Neutrale Basis gespäht – Bericht unter „Kampf““ und Bericht „Neutrale Basis“ (`ortName`); „Zeigen“ als Knopf.
+  Test `fenster_fein_test` (H–M).

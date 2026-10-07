@@ -6,6 +6,8 @@
 // E) Events → Abholen: „Tag 1: … / Bereit zum Abholen“ klebt nicht am linken Rand
 // F) Desktop: Hinweis bei offenem Basis-Fenster liegt nicht über dem Fenster (z. B. „Zum Verlegen brauchst du …“)
 // G) Marsch-Meldungen ohne falsches „zu Neutrale Basis“: „Späher unterwegs: Neutrale Basis …“
+// H–M) Fix-Runde 2: Anleitung Schritt 6 im Events-Fenster sichtbar · Krankenhaus „Fehlt: … Münzen“, Verwundete einzeilig, „geheilt“ bleibt ·
+//   Bündnis ohne Welt-Verbindung meldet sich · „Gründen“ sichtbar · Spähen „Neutrale Basis“/„Kampf“, „Zeigen“-Knopf · Feld zu weit: Tipp „näher“
 //   node tests/browser/fenster_fein_test.js <vorschau> [bilder]
 const { chromium, devices } = require('playwright');
 const path = require('path');
@@ -83,6 +85,40 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       if (!n) return null; const alt = flashHint; flashHint = function (t) { seen.push(t); return alt.apply(this, arguments); };
       try { launchScout(n.id); } finally { flashHint = alt; } return seen.join(' | '); });
     ok(sp && /Späher unterwegs: Neutrale Basis/.test(sp) && !/unterwegs zu Neutrale/.test(sp), art + ': Späher-Meldung „Späher unterwegs: Neutrale Basis …“', sp);
+    // --- Fix-Runde 2 (Spieltest r2a/r2b) ---
+    // H) Anleitung Schritt 6: im offenen Events-Fenster sichtbar (Hinweis „Abholen“), nicht über dem Fenster
+    const an = await ev(async () => { closeAllPopups(); flashHint('', 1); anleitung.schritt = 5; openGoals(); showGoalsTab('reward'); await new Promise(f => setTimeout(f, 500)); anleitungZeigen();
+      const el = document.getElementById('anleitung'), r = el.getBoundingClientRect(), q = goalsPopup.getBoundingClientRect();
+      const o = { sicht: !el.hidden && r.height > 0 && getComputedStyle(el).visibility !== 'hidden', ueber: r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top, t: el.textContent };
+      closeAllPopups(); anleitung.schritt = ANLEITUNG.length; anleitungZeigen(); return o; });
+    await bild('anleitung_events');
+    ok(an.sicht && !an.ueber && /Abholen/.test(an.t), art + ': Anleitung Schritt 6 im Events-Fenster sichtbar und nicht darüber', an);
+    // I) Krankenhaus „Heilen“: zu wenig Münzen → „Fehlt: … Münzen“; „1.000 / 1.422“ in einer Zeile; „Truppen geheilt“ bleibt stehen (Erfolg kommt später)
+    const kh = await ev(async () => { openCity(); await new Promise(f => setTimeout(f, 1500)); const c = loadCity(); c.levels.hospital = 3; c.wounded = 1000; saveCity(); coins = 50000;
+      cityPage = 'nutz'; cityOpenId = 'hospital'; renderCitySheet(); await new Promise(f => setTimeout(f, 300));
+      const k = document.querySelector('#citySheet [data-heal]'), sm = document.querySelector('#citySheet .heal-row small'), zeile = parseFloat(getComputedStyle(sm).lineHeight) || 20;
+      const o = { knopf: k.textContent, aus: k.disabled, einzeilig: sm.getBoundingClientRect().height < zeile * 1.5, rand: Math.round(document.querySelector('#citySheet .heal-row').getBoundingClientRect().right - k.getBoundingClientRect().right) };
+      coins = 5e8; renderCitySheet(); statBump('healed', 1e9); document.querySelector('#citySheet [data-heal]').click(); await new Promise(f => setTimeout(f, 1200)); o.hint = hintEl.textContent;
+      cityOpenId = null; document.getElementById('citySheet').hidden = true; closeCity(); return o; });
+    ok(/^Fehlt: (49\.9\d\d|50\.000) Münzen$/.test(kh.knopf.trim()) && kh.aus && kh.einzeilig && kh.rand >= 4 && /geheilt/.test(kh.hint), art + ': Krankenhaus – „Fehlt: … Münzen“, Verwundete in einer Zeile, Knopf mit Rand, „Truppen geheilt“ bleibt', kh);
+    // J) Bündnis gründen ohne Verbindung zur Welt: Meldung statt nichts; K) Handy: „Gründen“ im sichtbaren Teil des Fensters
+    const bd = await ev(async () => { closeAllPopups(); flashHint('', 1); coins = 5e6; bundOeffnen(); await new Promise(f => setTimeout(f, 300)); bundPopup.querySelector('[data-bact="gruendenAuf"]').click(); await new Promise(f => setTimeout(f, 300));
+      const k = bundPopup.querySelector('.bd-gf-los').getBoundingClientRect(), pb = bundPopup.querySelector('.pbody').getBoundingClientRect();
+      document.getElementById('bdName').value = 'Testbund'; document.getElementById('bdTag').value = 'TB'; const W = window.WELT; delete window.WELT;
+      try { bundPopup.querySelector('.bd-gf-los').click(); } finally { window.WELT = W; } const o = { sicht: k.top >= pb.top && k.bottom <= pb.bottom + 1, hint: hintEl.textContent }; return o; });
+    await bild('bund_gruenden'); await ev(() => closeAllPopups());
+    ok(/Keine Verbindung zur Welt/.test(bd.hint), art + ': Bündnis gründen ohne Welt – Meldung „Keine Verbindung zur Welt“', bd.hint);
+    ok(bd.sicht, art + ': Bündnis gründen – Knopf „Gründen“ ohne Scrollen sichtbar', bd);
+    // L) Spähen: Meldung und Bericht mit „Neutrale Basis“ (wie das Fenster), Verweis auf „Kampf“; „Zeigen“ als Knopf
+    const sb = await ev(async () => { flashHint('', 1); const t = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id));
+      resolveScout({ sourceId: playerIslandId, targetId: t.id, startedAt: Date.now() - 1000, resolveAt: Date.now() }); const hint = hintEl.textContent;
+      document.getElementById('battleLogBtn').click(); await new Promise(f => setTimeout(f, 400)); const e = combatLog.find(x => x.type === 'scout' && x.targetId === t.id), z = document.querySelector('#combatLogList [data-logzeigen="' + t.id + '"]');
+      const o = { hint, name: e && e.names[t.id], zeigen: z ? z.className : null }; closeAllPopups(); return o; });
+    ok(sb.hint === 'Neutrale Basis gespäht – Bericht unter „Kampf“.' && sb.name === 'Neutrale Basis' && /btn--secondary/.test(sb.zeigen || ''), art + ': Spähen – „Neutrale Basis“ in Meldung und Bericht, „Kampf“ statt „Kampflog“, „Zeigen“ als Knopf', sb);
+    // M) Feld, das keine Basis mit Truppen erreicht: Tipp „näher“
+    const fd = await ev(() => { const alt = Object.assign({}, islandTroops); for (const id of ownedIslands) islandTroops[id] = 0;
+      try { const f = resFields.find(x => !(fieldState[x.id] && fieldState[x.id].occ)); openFieldSheet(f); return document.getElementById('fieldSheet').textContent; } finally { Object.assign(islandTroops, alt); closeFieldSheet(); } });
+    ok(/kommt hierher – wähle ein Feld näher an deinen Basen/.test(fd), art + ': Feld zu weit – Tipp „wähle ein Feld näher an deinen Basen“', fd.slice(0, 200));
     await ctx.close();
   }
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
