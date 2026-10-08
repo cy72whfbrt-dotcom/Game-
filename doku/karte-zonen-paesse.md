@@ -46,6 +46,8 @@ Die Weltkarte ist EINE große Landkarte wie das RoK-Königreich: Gebiete in Zone
 - Eigene Hauptstadt: pulsierender Goldring am Boden (`drawHauptstadtRing`, 1,6× Basisbreite, Deckkraft 0,55↔0,9 in 2 s, eigener
   Takt ~8 Bilder/s `hauptPulsWeiter`; Akku sparen: fest 0,8, kein Puls), Krone auf dem Wappen im Namensschild. Bild `bilder/karte_hauptstadt_ring.webp` – fehlt es,
   `marsch_ring_gold` (neues Bild nur reinkopieren). Nur die eigene, nie fremde Hauptstädte.
+  Hauptstädte sonst ohne Ring-Effekte (kein roter/blauer/gestrichelter Ring, kein Glow/Fackeln am Boden; nur Krone + Kranz). Herrscher: Königsburg-Skin
+  ersetzt den Kranz (nie beides). Test `karte_ring_test`.
 - Grenztor, das du nicht angreifen kannst: Schloss `ui_sym_schloss` 30 px oben auf dem Tor, bei jedem Zoom gleich groß
   (`torSchloesser`/`drawTorSchloesser`; Fahnen und Märsche weichen aus). Regel wie der Angriffsknopf: keine eigene Basis grenzt
   an (`torAngreifbar` → `canReach`); eigene/Bündnis-Tore und Pässe mit Countdown ohne dieses Schloss.

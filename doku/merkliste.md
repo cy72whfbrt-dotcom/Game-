@@ -46,30 +46,5 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - Nachricht an alle / Welt-Ereignis auf Knopfdruck (Admin), Schatzkarten im Nebel, Wetter, Leuchttürme, Handel,
   Statistik-Seite.
 
-## Geplant: Events neu (Alexander 8.10., noch nicht gebaut)
-- Wochen-Event Mo–Fr, jede Woche gleich, je Tag ein Thema: Mo Bauherr (Ausbau, Beschleunigen je Min., Edelsteine),
-  Di Krieger (getötete Truppen), Mi Sammel-Rausch (gesammelte Rohstoffe), Do Boss-Jagd, Fr Invasion.
-  Fr 20 Uhr Ende → Auswertung, Plätze + Belohnungen.
-- Sa 10 – So 22 Thron-Event (Mitte): Plan + Test-Datei `werkzeuge/thronevent/thronevent.html` (Zahlen in ZAHLEN-Vorschlag
-  dort). Thron-Punkte → Event-Münzen + Event-Shop-Reiter im Shop. Weiter, wenn die Wochen-Events fertig sind.
-- Drache, Boss, Lager bleiben als eigene Events (Einordnung offen).
-- Beschlüsse 8.10. (Wochen-Event): Mo Bauherr · Di Krieger · Mi Sammeln · Do Boss-Jagd (1 P./1.000 Schaden) · Fr Helden-Tag.
-  Je Tag 5 Tages-Kisten (Edelsteine bleiben, bis 190/Tag); nicht abgeholte Kisten → Abholfach. Wochen-Rangliste Fr 20 Uhr,
-  6. Feld „Rangliste“ hinter Fr. Test-Datei `werkzeuge/wochenevent/wochenevent.html`. Alte Woche/Invasion/Drache/Boss raus.
-- Barbaren-Lager bleibt (letzter Chip): nur feste Münzen je Stufe (höhere Stufen etwas mehr) + Schlüssel ab höheren Stufen;
-  dort getötete Truppen zählen nicht für Krieger.
-- Schlüssel 1 (normal) / 2 (episch) öffnen Ausrüstungs- und Helden-Kisten; ohne Schlüssel 100 / 500 Edelsteine; episch: sicher
-  1 Lila spätestens nach 20 Versuchen. Beschleuniger 1/5/15 Min, 1/3/8/24 Std – gelten für Bauen, Forschen, Heilen (nicht Truppen).
-- Schlüssel 1/2 und Beschleuniger gibt es auch als Event-Belohnung. Wochenkette (7 Tage Aufgaben) fliegt raus.
-- Marsch-Plätze: nicht mehr über Burg-Stufe, sondern Labor-Forschung: 2 von Anfang an, Platz 3 ab Labor 5, 4 ab 10, 5 ab 16, 6 ab 22.
-- Shop: neuer Reiter „Event“ (Event-Shop, Event-Münzen). Beschleuniger: Belohnung bei Events UND im Shop kaufbar für
-  Edelsteine oder Event-Münzen. Kisten-Reiter: öffnen mit Schlüssel oder Edelsteinen.
-- Bilder für Thron-/Wochen-Event (Karte, Herrscher, Titel, Event-Münze, Schlüssel, epische Helden-Kiste, Beschleuniger klein/mittel/groß) liegen in `Game/bilder/`; Test-Dateien nutzen sie (Test `eventbilder_test`), Shop dort mit Reitern Kisten + Event.
-- Lager-Tagesgrenze: höchstens 2,5 Mio. Münzen, 3 Schlüssel 1 und 1 Schlüssel 2 pro Tag. Wochen-Rangliste-Stufen ok
-  (1/2/3/4–10/11–50/Rest). Alte Thron-Punkte: Start bei 0. Shop sortiert (Test-Datei): Reiter Kisten · Event · Tempo · Schilde · Markt; Gruppen mit Zwischenüberschrift, je Gruppe nach Wert aufsteigend. Lager: 30K × 1,15^(Stufe−1), Tagesgrenze oben mit Balken.
-- Mitte, Beschlüsse 8.10.: Nur die Thron-RANGPUNKTE starten jedes Wochenende bei 0; Event-Münzen bleiben. Herrscher vergibt
-  keine Titel → Titel bleiben leer. Kisten gut/mittel/normal = episch/groß/normal, Inhalt sichtbar (Vorschau beim Verteilen).
-  Verteilen freiwillig, Rest verfällt beim nächsten Thron-Event. Tote im Thron wie überall (Krankenhaus, wenn voll sterben).
-  Türme dürfen verstärkt werden. Herrscher-Burg: vorhandenes Kronen-Bild über dem Skin (kein neues Bild nötig).
-- Event-Shop: Friedensschild · Teleporter · Beschleuniger · Schlüssel (Preise in ZAHLEN_WOCHE-Vorschlag). Helden-Splitter RAUS.
+## Ideen
 - Idee für später (Alexander): eigenes Helden-Event (dort Helden/Splitter bekommen) – noch zu planen.
