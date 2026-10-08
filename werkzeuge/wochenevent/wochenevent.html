@@ -82,11 +82,11 @@ const kachel = (bild, r, zahl, platzh) => '<span class="bk' + (platzh ? ' platzh
 const zahl = n => n.toLocaleString('de-DE');
 const A = new URLSearchParams(location.search).get('a') || 'mo';
 const TAGE = ['mo', 'di', 'mi', 'do', 'fr'], heute = A === 'rang' ? 4 : Math.max(0, TAGE.indexOf(A)), rangSicht = A === 'rang';
-document.getElementById('wahl').innerHTML = [...TAGE, 'rang'].map(k => '<a href="?a=' + k + '"' + (k === A ? ' class="on"' : '') + '>' + (k === 'rang' ? 'Rangliste' : k[0].toUpperCase() + k[1]) + '</a>').join('');
+document.getElementById('wahl').innerHTML = [...TAGE, 'rang', 'lager'].map(k => '<a href="?a=' + k + '"' + (k === A ? ' class="on"' : '') + '>' + (k === 'rang' ? 'Rangliste' : k === 'lager' ? 'Lager' : k[0].toUpperCase() + k[1]) + '</a>').join('');
 
 // Chips: nur Woche und Thron; grüner Punkt = läuft gerade
-document.getElementById('goalsTabs').innerHTML = [['Woche', true, ''], ['Thron', false, 'Sa 10']].map(([t, an, ab]) =>
-  '<button class="p5-chip' + (t === 'Woche' ? ' active' : '') + '" type="button"><i class="ev-st' + (an ? ' an' : '') + '"></i><span>' + t + '</span>' + (ab ? '<small>' + ab + '</small>' : '') + '</button>').join('');
+document.getElementById('goalsTabs').innerHTML = [['Woche', true, ''], ['Thron', false, 'Sa 10'], ['Lager', true, '']].map(([t, an, ab]) =>
+  '<button class="p5-chip' + (t === (A === 'lager' ? 'Lager' : 'Woche') ? ' active' : '') + '" type="button"><i class="ev-st' + (an ? ' an' : '') + '"></i><span>' + t + '</span>' + (ab ? '<small>' + ab + '</small>' : '') + '</button>').join('');
 
 // Die fünf Tages-Events: Name, Symbol, so gibt es Punkte
 const EVENTS = [
@@ -143,7 +143,14 @@ const kisten = '<div class="lb-gap">Kisten heute · ab Punkten des Tages</div>' 
 const rang = '<div class="lb-gap">Wochen-Rangliste · Mo–Fr zusammen</div>' + liste +
   '<div class="lb-gap">Preise nach Platz · Freitag 20 Uhr im Abholfach</div>' + preise;
 const thron = '<div class="thron-satz">' + icon('crown') + '<span>Samstag und Sonntag: <b>Thron-Event</b> – Kampf um den Königsthron (Chip „Thron“).</span></div>';
-document.getElementById('eventBody').innerHTML = rangSicht ? kopf + rang + thron : kopf + punkte + kisten + rang + thron;
+// Barbaren-Lager (eigenes Event, letzter Chip): nur feste Münzen je Stufe, zählt nicht für Krieger-Punkte
+const LAGER = Array.from({ length: 25 }, (x, i) => { const m = Math.round(20 * 1.2 ** i); return [i + 1, m >= 1000 ? (m / 1000).toFixed(1).replace('.', ',') + ' Mio.' : m + 'K']; }), LG = 4;   // 25 Stufen wie BARB_MAX_L
+const lager = '<div class="barb-card ev-card"><div class="barb-ct"><b>' + icon('attack') + ' Barbaren-Lager</b><small>3 / 20 heute · jeden Tag neu</small></div>' +
+  '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + (LG + 1) + '</b></div>' +
+  '<div class="thron-satz">' + icon('coin') + '<span>Jedes besiegte Lager gibt <b>feste Münzen</b> nach Stufe – sonst keine Beute. Getötete Truppen zählen <b>nicht</b> für den Krieger-Tag.</span></div></div>' +
+  '<div class="lb-gap">Münzen je Lager-Stufe</div><div class="evl-zeilen">' + LAGER.map(([st, m]) => '<div class="evl-z is-' + (st <= LG ? 'ok' : st === LG + 1 ? 'bald' : 'zu') + '"><b>Stufe ' + st + '</b><div class="bk-raster bk-mini">' + kachel('beute_muenzen', st <= 5 ? 'gruen' : st <= 10 ? 'blau' : st <= 18 ? 'lila' : 'gold', m) + '</div><span class="evl-st">' +
+    (st <= LG ? '<img src="' + B + 'ui_sym_haken.webp" alt=""><small>besiegt</small>' : st === LG + 1 ? '<small>offen</small>' : icon('lock')) + '</span></div>').join('') + '</div>';
+document.getElementById('eventBody').innerHTML = A === 'lager' ? lager : rangSicht ? kopf + rang + thron : kopf + punkte + kisten + rang + thron;
 </script>
 </body>
 </html>
