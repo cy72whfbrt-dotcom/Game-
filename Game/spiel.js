@@ -3092,6 +3092,10 @@ function basisKreis(isl, z) {                                                 //
   const w = isl.type === 'tower' ? basisBreite(isl, z) : 0, im = w && basisBild(basisBildNr(baseLevelOf(isl)));
   return im ? { dy: w * im.height / im.width * .22, r: w * .42 } : null;
 }
+function basisBildRect(island, z) {                                            // (Bildschirm) wo das Basis-Bild steht (ohne den leeren Rand unten) oder null
+  const w = basisBreite(island, z), im = w && basisBild(basisBildNr(baseLevelOf(island))); if (!im) return null;
+  const h = w * im.height / im.width; return { x: toSX(island.x) - w / 2, y: toSY(island.y) - h * .72, w, h: h * .89 };
+}
 function drawBasisBild(island, ownerKey, z) {                                  // (Bildschirm) → true, wenn das Bild gezeichnet ist
   const w = basisBreite(island, z); if (!w) return false;
   const nr = basisBildNr(baseLevelOf(island)), im = basisBild(nr); if (!im) return false;
@@ -3498,7 +3502,8 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const placed = [];
   for (const it of items) {
     const tm = torMitte(it.isl);                                                   // Pass-Tor (Karten-Bild): das Schild direkt unter das Tor
-    const r = tm ? tm.r * z : it.isl.bildR ? Math.max(it.isl.bildR * z, 14) : it.isl.radius * z * (it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
+    const bb = schild(it.isl) && basisBildRect(it.isl, z);                        // (angetippte Basis mit Schild: Abstand nach dem Bild, Fahne darüber)
+    const r = bb ? Math.max(it.isl.radius * z, (toSY(it.isl.y) - bb.y) / 1.32) : tm ? tm.r * z : it.isl.bildR ? Math.max(it.isl.bildR * z, 14) : it.isl.radius * z * (it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
     let best = null;
     for (let t = it.tier; ; t = DOWN[t]) {
       const sp = bannerSprite(t, it.m), w = sp.w, h = sp.h;
@@ -3508,6 +3513,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
         let sc = cost;
         for (const q of placed) sc += overlap(rect, q);
         for (const tw of towers) if (tw.id !== it.isl.id) sc += 0.35 * overlap(rect, tw);
+        if (bb) sc += 2 * overlap(rect, bb);   // angetippte Basis mit Schild: Fahne neben/über die Burg, nie darauf
         if (!best || sc < best.sc) best = { sc, rect, sp, t };
       }
       if (best.sc <= 0.25 * best.rect.w * best.rect.h || it.p >= 4 || DOWN[t] === t) break;   // überdeckt → kleinere Stufe (Hauptstadt, Tempel, Auswahl bleiben)
@@ -3520,10 +3526,14 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   return items;
 }
 const BANNER_UNTER = ['hud', 'midBar', 'mapControls', 'anleitung', 'cornerButtons'];   // Leisten über der Karte: Fahnen darunter blass
-function paintBanners(items) {
-  setScreen(ctx);
+function leistenRects() {                                                      // (Bildschirm) die Leisten über der Karte
   const cv = canvas.getBoundingClientRect(), unter = [];
   for (const id of BANNER_UNTER) { const el = document.getElementById(id); if (!el || el.hidden) continue; const b = el.getBoundingClientRect(); if (b.width && b.height) unter.push({ x: b.left - cv.left, y: b.top - cv.top, w: b.width, h: b.height }); }
+  return unter;
+}
+function paintBanners(items) {
+  setScreen(ctx);
+  const unter = leistenRects();
   for (const it of items) {
     ctx.globalAlpha = (it.m.filler ? 0.8 : 1) * (unter.some(q => overlap(it.rect, q) > 0) ? 0.35 : 1);
     const x = Math.round(it.rect.x * dpr) / dpr, y = Math.round(it.rect.y * dpr) / dpr;
@@ -10541,7 +10551,7 @@ function drawResFields(now, wallNow) {
     const z = mapState.zoom; if (z < .004) return;
     for (const m of fieldMarches) if (m.who === 'player') { const f = fieldById[m.fieldId], home = islandById[m.homeId]; if (!f || !home) continue;
         m.back ? drawMarchLine('send', m.vx !== undefined ? { x: m.vx, y: m.vy, landmassId: m.vlm ?? f.landmassId } : f, home, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)); }   // (antippen: Knöpfe wie jeder Marsch)
-    setScreen(ctx);
+    setScreen(ctx); let leisten = null;                                       // (Leisten über der Karte: erst beim ersten Vorrat-Text holen)
     const k = Math.max(.6, Math.min(2.2, z / .012));
     for (const f of resFields) {
         const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(f.x, f.y)) continue;
@@ -10581,7 +10591,8 @@ function drawResFields(now, wallNow) {
         }
         ctx.restore();
         if (z >= .008) { ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            const t = empty ? 'erschöpft' : fmtCompact(Math.floor(left)); const w = ctx.measureText(t).width + 12;
+            const t = empty ? 'erschöpft' : fmtCompact(Math.floor(left)); const w = ctx.measureText(t).width + 12, kr = { x: x - w / 2, y: y + 8 * k, w, h: 15 };
+            if ((leisten || (leisten = leistenRects())).some(q => overlap(kr, q) > 0)) continue;   // unter HUD/Event-Leiste: kein halber Vorrat-Text
             ctx.fillStyle = 'rgba(14,14,20,.8)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y + 8 * k, w, 15, 7) : ctx.rect(x - w / 2, y + 8 * k, w, 15); ctx.fill();
             ctx.fillStyle = empty ? '#9a927f' : FIELD_KINDS[f.kind].col; ctx.fillText(t, x, y + 8 * k + 3); }
     }

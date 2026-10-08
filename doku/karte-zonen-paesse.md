@@ -72,3 +72,4 @@ Die Weltkarte ist EINE große Landkarte wie das RoK-Königreich: Gebiete in Zone
 ## Wichtige Schlüssel (nie umbenennen)
 `openWater…`-Speicherschlüssel, `WORLD_VERSION` (spiel.js) = `WELT_VERSION` (welt.js), Kartenerzeugung – sonst sind
 Spielstände weg. `openWaterKarte` (Kennung der Karte): passt sie nicht zum Code, startet der Weltrechner nicht.
+- Vorrat-Texte der Felder (09a) unter HUD-/Event-Leisten werden weggelassen (`leistenRects`, 03c – wie die Fahnen unter `BANNER_UNTER`).
