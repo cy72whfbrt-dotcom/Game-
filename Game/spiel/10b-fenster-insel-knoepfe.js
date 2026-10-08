@@ -181,6 +181,7 @@ attackBtn.addEventListener('click', () => {
     const target = islandById[popupIslandId];
     const best = angriffStart(target);
     if (best === null) {
+        if (attackBtn.classList.contains('is-grau')) { const z = popupStats.querySelector('.tor-hinweis'); if (z) { z.classList.remove('blinkt'); void z.offsetWidth; z.classList.add('blinkt'); } return; }   // der Grund steht schon im Fenster: die Zeile blinkt, kein Hinweis darüber
         const any = [...ownedIslands].some(id => canReach(islandById[id].landmassId, target.landmassId));
         flashHint(any ? 'Deine Basen neben diesem Gebiet haben keine Truppen – schicke erst Truppen dorthin (Senden).'
                       : 'Keine deiner Basen grenzt an dieses Gebiet. Erobere zuerst eine Basis oder ein Tor direkt daneben und schicke Truppen hin.', 5000);

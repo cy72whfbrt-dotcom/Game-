@@ -229,7 +229,10 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .bw-wert b{font:600 16px/1.2 Georgia,serif;color:#eee6d4;white-space:nowrap;font-variant-numeric:tabular-nums}
 .bw-wert.is-good b{color:var(--good)} .bw-wert.is-enemy b{color:#ff8d7e}
 .tor-hinweis{min-height:40px;align-items:center;background:#1c212a;border:0;border-left:3px solid #d24c40;color:#c0b7a3;font-size:14px}
-.tor-hinweis img{width:20px;height:20px;flex:none;object-fit:contain}
+.tor-hinweis .icon{width:20px;height:20px;flex:none;color:#d24c40}
+@keyframes tor-blink{0%,100%{background:#1c212a}40%{background:#4a1d19}} .tor-hinweis.blinkt{animation:tor-blink .5s 2}
+.emblem--bild .bw-bild[src*="karte_tor"]{object-fit:cover;transform:scale(1.9)} .emblem--bild{overflow:hidden}
+@media (min-width:900px) and (min-height:501px){ body:has(#islandPopup.is-open) .toast.toast{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto} }   /* Hinweise nie über den Fenster-Knöpfen */
 /* runde Knöpfe: Symbol im goldenen Ring (ui_rund), kurzes Wort darunter, Preis klein */
 #popupActions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 2px}
 #popupActions > .act[style*="inline-block"],#popupActions > .act.act--haupt[style*="inline-block"]{display:flex!important}
@@ -262,6 +265,16 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .ap-oben{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:start} .ap-oben--ohne{grid-template-columns:minmax(0,1fr)}
 .ap-oben .ap-kopf{position:static;padding-bottom:0;border-bottom:0;background:none}
 .ap-oben .versus{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px}
+#popupStats .ap-oben .force small,#popupStats .ap-oben .force--foe small[data-foe="sub"]{white-space:normal;overflow:visible;text-overflow:clip;font-size:10px;line-height:1.2}
+.ap-oben .ap-bal{min-width:0;gap:6px} .ap-oben .ap-bal .balance{min-width:40px} .ap-oben .ap-bal .balance-note{flex:none;font-size:10px;gap:3px}
+#islandPopup .ap-oben .from-sel{font-size:12px;padding-left:6px;padding-right:22px}
+.panel--island:has(.ap-oben){max-height:calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space) - 40px)}   /* Angriff: alles ohne Scrollen sichtbar; darüber Platz für einen Hinweis (2 Zeilen) */
+@media (max-width:899px){ body:has(#islandPopup.is-open) .toast{-webkit-line-clamp:2} }
+@media (max-width:899px) and (max-height:700px){ .panel--island:has(.ap-oben) :is(.ap-leiste,.ap-herofx,#popupOverline){display:none}
+  .panel--island:has(.ap-oben) .ptitle{font-size:15px;margin:0} #popupStats:has(.ap-oben){gap:4px} .panel--island:has(.ap-oben) .pfoot{padding-top:6px;padding-bottom:6px}
+  .ap-oben .force{padding-top:4px!important;padding-bottom:4px!important}
+  .panel--island:has(.ap-oben) .pbody{padding-top:6px;padding-bottom:4px} .panel--island:has(.ap-oben) .phead{padding-bottom:6px} .ap-truppen .slider{margin-top:0;margin-bottom:0} }   /* kleines Handy: Zeit steht im Knopf, Truppen im Feld, Kraft bei „Angriff“, Helden-Wirkung beim Draufzeigen */
+@media (max-width:380px){ .ap-oben{grid-template-columns:76px minmax(0,1fr)} .ap-hchip.ap-hchip--gross{width:76px;height:94px} .ap-hchip.ap-hchip--klein{width:76px} }
 .ap-held{display:flex;flex-direction:column;gap:4px}
 .ap-hchip.ap-hchip--gross{flex:none;width:96px;height:118px;padding:0;flex-direction:column;justify-content:flex-end;align-items:stretch;overflow:hidden;
   border:3px solid transparent;border-image:url(bilder/ui_kachel_gold.webp) 30 fill / 3px stretch;background:#0f1217}
@@ -275,7 +288,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .ap-hchip--klein .ap-hchip-leer{position:static;width:24px;flex:none} .ap-hchip--klein .ap-hchip-leer .icon{width:16px;height:16px}
 .ap-hchip--klein .ap-hchip-t b,.ap-hchip--klein .ap-hchip-t small{white-space:normal;font-size:10px;line-height:1.15}
 .ap-held-wahl{display:flex;flex-direction:column;gap:4px}
-#islandPopup .hero-seg button,#islandPopup .ap-truppen .seg button{min-height:44px;height:44px}
+#islandPopup .hero-seg button,#islandPopup .ap-truppen .seg button{min-height:44px;height:44px} .ap-truppen .slider{height:28px}
 #islandPopup .from-sel{height:44px} #islandPopup .ap-spaehen{min-height:44px}
 .ap-truppen{gap:4px}
 .ap-truppen .ap-regler{justify-content:flex-start;gap:8px}

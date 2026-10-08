@@ -927,8 +927,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fogKey` → Game/spiel/01e-kampf-werte-nebel-hud.js:7
 - `fogLandCells` → Game/spiel/01e-kampf-werte-nebel-hud.js:8
 - `fogMask` → Game/spiel/06e-karte-nebel-paesse.js:54
-- `fogPointAt` → Game/spiel/10b-fenster-insel-knoepfe.js:220
-- `fogPromptHit` → Game/spiel/10b-fenster-insel-knoepfe.js:241
+- `fogPointAt` → Game/spiel/10b-fenster-insel-knoepfe.js:221
+- `fogPromptHit` → Game/spiel/10b-fenster-insel-knoepfe.js:242
 - `fogSet` → Game/spiel/01e-kampf-werte-nebel-hud.js:22
 - `fogTexture` → Game/spiel/06e-karte-nebel-paesse.js:28
 - `foKosten` → Game/aufbau.js:191
@@ -1023,7 +1023,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `haendlerAt` → Game/haendler.js:178
 - `haendlerChip` → Game/haendler.js:212
 - `haendlerOeffnen` → Game/haendler.js:183
-- `handleTap` → Game/spiel/10b-fenster-insel-knoepfe.js:246
+- `handleTap` → Game/spiel/10b-fenster-insel-knoepfe.js:247
 - `has` → Game/spiel/03a-karte-hintergrund.js:500
 - `HATCH_PX` → Game/spiel/03a-karte-hintergrund.js:348
 - `hatchPatterns` → Game/spiel/03a-karte-hintergrund.js:353
@@ -2031,7 +2031,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `szene` → Game/ladebildschirm.js:252
 - `tagLicht` → Game/spiel/03d-karte-ebenen-tagnacht.js:34
 - `tal` → Game/ladebildschirm.js:35
-- `tapFog` → Game/spiel/10b-fenster-insel-knoepfe.js:226
+- `tapFog` → Game/spiel/10b-fenster-insel-knoepfe.js:227
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:240
@@ -4308,10 +4308,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `angriffQuellen` :122 — Angriff: eigene Basen mit Truppen, die hinkommen – die nächste (kürzester Weg) …
 - `angriffReicht` :127 — Reicht eine Basis mit allen Truppen (ohne Held) gegen das gespähte Ziel? – gere…
 - `angriffStart` :133 — Vorausgewählt: die nächste Basis mit genug Truppen; reicht keine, die mit den m…
-- `fogPointAt` :220 — a fogged spot on land under the finger
-- `tapFog` :226
-- `fogPromptHit` :241 — → 'go' (the button), 'off' (elsewhere)
-- `handleTap` :246
+- `fogPointAt` :221 — a fogged spot on land under the finger
+- `tapFog` :227
+- `fogPromptHit` :242 — → 'go' (the button), 'off' (elsewhere)
+- `handleTap` :247
 
 ### Game/spiel/10c-start-einstellungen.js — Ladebild, Musik, Einstellungen, Live-Anzeige
 - `Music` :8 — LOADING SCREEN ===== Shown from the first paint (markup + CSS); the bar runs to…

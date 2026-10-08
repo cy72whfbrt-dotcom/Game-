@@ -105,7 +105,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.fremd.spaeher, art + ': Kachel antippen schickt den Späher', r.fremd);
     for (const k of r.kompakt) {
       const w = art + ': Angriff kompakt (' + (k.sp ? 'gespäht' : 'ungespäht') + ', 3 Helden)';
-      ok(art === 'Handy' ? k.hoch <= 0.63 : k.scroll <= 1, w + (art === 'Handy' ? ' – höchstens 62 % hoch (Rest scrollt)' : ' – alles ohne Scrollen'), k);
+      ok(k.scroll <= 1 && (art !== 'Handy' || k.hoch <= 0.72), w + ' – alles ohne Scrollen' + (art === 'Handy' ? ', Karte oben bleibt sichtbar (≤ 72 % hoch)' : ''), k);
       ok(k.kopf === '' && k.zeit === 0 && k.knopfZeit && !k.label && (!k.sp || /Tor geschlossen/.test(k.tor)), w + ' – Marschzeit nur einmal (Sanduhr im Knopf „Angreifen“), keine Unterzeile (Maut/Tor in der Überzeile), kein Extra-Label', k);
       ok(k.titel === 'Angriff,Abwehr' && k.spaehen === !k.sp && (k.sp || k.geschickt) && k.strich === 'none' && k.schieber >= 0.95, w + ' – Überschriften Angriff/Abwehr, ungespäht „Spähen“ in der Abwehr, Schieber ganze Breite, keine gestrichelte Linie', k);
       ok(k.chips === 2 && k.chipsOk && k.zahlen && k.zu, w + ' – Held + Zweitheld als zwei ganze Chips (≥ 44 px), Zahlen ganz', k);
