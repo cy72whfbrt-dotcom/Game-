@@ -18,7 +18,6 @@ Erst lesen: `CLAUDE.md`, dann `doku/INDEX.md`. Offene Punkte: `doku/merkliste.md
    Live-Wächter-Routine trig_01Qoa3CR2p5twrXZEv5Uvahh aktivieren, alte `baukunst.js` auf dem Server löschen.
 
 ## Offene Fragen an Alexander
-- Fremde Tabellen eines anderen Spiels in der Datenbank löschen?
 - Erfolge bleiben über den Saison-Reset – so gewollt?
 - Ansehen: Ladebild/Login, Heldenhalle, Saison-Reset.
 

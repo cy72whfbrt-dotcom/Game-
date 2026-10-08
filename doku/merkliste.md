@@ -41,7 +41,6 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
   (`claude/chat-session-k7ozkc`, `claude/aaa-rpg-character-vfx-9ydhnc`, `claude/game-server-setup-0n2gbr`,
   `claude/login-finance-dashboard-89et7f`, `claude/office-login-game-server-u7tgrc`, `claude/rpg-player-effects-design-kxqmsb`,
   `claude/spiel-anzeigen-6e8l5z`), fremdes Repo `-Open-source-pixel-art-game-project-built`.
-- Fremde Tabellen eines anderen Spiels in der Datenbank (`nutzer`, `mail`, `handel` …): löschen? (noch nicht gefragt)
 - Erfolge bleiben über den Reset (25/63) – so gewollt?
 
 ## Ideen (gemerkt, nicht gebaut)
