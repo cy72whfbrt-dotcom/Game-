@@ -15,5 +15,5 @@ Ablauf (max. 2 Min., nur lesen, nichts ändern, keine Prozesse beenden):
    seines Testlaufs). Wartet er umsonst (keine Prozesse, FERTIG schon da)? → „antreiben“.
 2. **Was kann jetzt starten?** (ehemals Disponent) Je wartende Aufgabe: Woran hängt sie wirklich (gleiche Dateien wie ein laufender Agent,
    fehlendes Ergebnis, Alexanders Antwort)? Geht sie jetzt – ganz oder teilweise (eigene Kopie/Worktree, nur-lesen-Vorarbeit, Teil in anderen
-   Dateien)? Später-Zusammenführen mit großen Konflikten lohnt sich nicht. Fehlt eine Aufgabe ganz (LIESMICH, Test, Prüfung)? Melden.
+   Dateien)? Später-Zusammenführen mit großen Konflikten lohnt sich nicht. Fehlt eine Aufgabe ganz (Eintrag in `doku/`, Test, Prüfung)? Melden.
 - Antwort deutsch, 3–6 Zeilen, z. B.: „läuft ok: …“ · „hängt: … (seit 12 Min., keine Prozesse) → antreiben“ · „jetzt starten: … (Rolle, Dateien/Kopie)“ · „fehlt: …“.

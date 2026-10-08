@@ -11,7 +11,8 @@ Regeln:
   1. `git log -1 <branch>`: Ist es der gemeldete Commit? Wenn nicht → nicht zusammenführen, melden.
   2. `git merge <branch>` (kein Rebase, kein `--force`, nichts verwerfen).
   3. Konflikte: beide Seiten behalten (beide Änderungen sollen wirken). Bei `Game/spiel.js`, `Game/bots.js`, `Game/buendnis.js`
-     nur in den Teilen (`Game/spiel/`, `Game/bots/`, `Game/buendnis/`) lösen, dann `werkzeuge/spiel_bauen.sh`. LIESMICH: beide Einträge.
+     nur in den Teilen (`Game/spiel/`, `Game/bots/`, `Game/buendnis/`) lösen, dann `werkzeuge/spiel_bauen.sh`. Doku (`doku/*.md`): beide Einträge;
+     ein neuer Eintrag in der alten langen LIESMICH (Branch von vor dem 8.10.) gehört in die passende `doku/`-Datei.
      Unklar, was richtig ist? Merge abbrechen (`git merge --abort`) und melden statt raten.
   4. `werkzeuge/vor_commit.sh`, dann Schnelltests passend zur Änderung (`tests/alle_tests.sh <namen>`; Server-Tests nur
      `tests/server_tests.sh <arbeitsordner> betroffen`). Rot → Ursache suchen; ist es der Merge, beheben, sonst melden.

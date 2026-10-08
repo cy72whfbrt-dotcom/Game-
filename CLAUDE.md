@@ -1,7 +1,8 @@
 # Open Water – Hinweise für Claude und Agenten
 
 Spiel von Alexander (Browser-Strategiespiel, Deutsch). Antworten an Alexander: kurz, einfach, auf Deutsch.
-Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
+Doku in `doku/` (`doku/INDEX.md`): je Thema eine Datei; erst `grep -ril <begriff> doku/`, nur die passende Datei öffnen;
+jede Änderung in die passende Themen-Datei eintragen (aktueller Stand, keine Geschichte). `LIESMICH.md` = kurzer Einstieg.
 
 ## Code
 - **Erst in `KARTE.md` suchen** (`grep -n "bundHilfe" KARTE.md` → Datei:Zeile, auch Teile und Server-Aktionen).
@@ -72,7 +73,7 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   einmal an Alexander. Dann in einem Rutsch abarbeiten – nicht Stück für Stück immer Neues anfangen.
 - **Agenten-Firma** (immer benutzen): Alexander = Chef (Aufgaben, Ideen). Claude = Projektleiter: redet mit Alexander,
   klärt Fragen, verteilt an die Firma, prüft alle 5 Min. (Wecker), treibt langsame Agenten an.
-  **Grenze:** Claude macht selbst nur Kleinkram unter 2 Min. (ein Satz in Regeln/LIESMICH, Live-Seite). Spiel-Code, Tests,
+  **Grenze:** Claude macht selbst nur Kleinkram unter 2 Min. (ein Satz in Regeln/doku, Live-Seite). Spiel-Code, Tests,
   Skripte, Zusammenführen und Prüfen machen immer Agenten. Hochladen macht Claude nur nach Alexanders Ja, danach immer
   `werkzeuge/nach_hochladen.sh`.
   Rollen in `.claude/agents/`: **sucher** (findet Fehler/Lücken, nur lesen) · **programmierer** (baut eine Aufgabe in
@@ -127,7 +128,9 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   auch wenn die Tests grün sind. Vergleich mit RoK-Größen.
 
 ## Tempo-Regeln (Alexander 8.10., gelten sofort)
-- **A Doku kurz:** LIESMICH = aktueller Stand (Ziel ≤ 300 Zeilen); Altes ins Archiv (`LIESMICH_ARCHIV.md`), nur bei Bedarf lesen.
+- **A Doku kurz:** Doku in `doku/` je Thema (aktueller Stand, Ziel ≤ 150 Zeilen je Datei, `INDEX.md` ≤ 40 Zeilen),
+  `LIESMICH.md` ≤ 80 Zeilen. Agenten lesen nur die passende Datei (`grep -ril <begriff> doku/`), nie alles. Erledigtes
+  raus aus `doku/merkliste.md`; Altes/Verlauf nur in `doku/archiv.md` (nur bei Bedarf lesen).
   Agenten lesen KARTE.md nur per `grep`, nie ganz.
 - **B Volle Testreihe nur einmal am Ende** (Endprüfer/letztes Zusammenführen vor dem Hochladen). Programmierer und
   Zusammenführer zwischendurch nur betroffene Tests (`tests/alle_tests.sh <namen>`).

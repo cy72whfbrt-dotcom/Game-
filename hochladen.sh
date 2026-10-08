@@ -1,7 +1,7 @@
 #!/bin/bash
 # hochladen.sh – lädt den Ordner Game/ auf office.hobbitonhill.de (…/klassenarbeit_GR4/Game/).
 # Während des Hochladens ist WARTUNG an (Datei wartung.txt): niemand kommt ins Spiel (auch kein Admin).
-# NUR nach Alexanders Ja benutzen (Regel in LIESMICH.md). Nur lesend, jederzeit: ./hochladen.sh pruefen (PHP-Dateien auf dem
+# NUR nach Alexanders Ja benutzen (Regel in CLAUDE.md, doku/tests-werkzeuge.md). Nur lesend, jederzeit: ./hochladen.sh pruefen (PHP-Dateien auf dem
 # Server = Game/ hier?).
 # Zugangsdaten nur aus den Umgebungsvariablen: OFFICE_USER, OFFICE_PASS, DB_USER, DB_PASS (DB_HOST, DB_NAME optional).
 # config.php (Datenbank-Zugang) wird dabei aus den Variablen erzeugt – sie liegt nie im Git.
