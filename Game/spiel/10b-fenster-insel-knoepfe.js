@@ -25,7 +25,7 @@ upgradeBtn.addEventListener('click', () => {
     coins -= cost;
     islandLevels[popupIslandId] = level + 1;
     ausbauMerken(popupIslandId, level + 1);
-    if (!alsBefehl('ausbau', { insel: popupIslandId, stufe: level + 1 })) evPunkte('bau', 'player', 2 + level + 1);   // (sonst zählt es der Weltrechner)
+    if (!alsBefehl('ausbau', { insel: popupIslandId, stufe: level + 1 })) evPunkte('bau', 'player', WO_PKT.bauStufe * (level + 1));   // (sonst zählt es der Weltrechner)
     updateHud();
     saveGame();
     flashHint(islandTitle(islandById[popupIslandId]) + ' ist jetzt Stufe ' + (level + 1) + '.', 1800);

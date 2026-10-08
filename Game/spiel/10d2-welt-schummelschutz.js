@@ -293,10 +293,9 @@
         if (L >= MAX_BASE_LEVEL) return 'nein';
         if (b.stufe <= L) return 'nein';                                   // doppelt geschickt – nichts zu tun
         if (b.stufe > L + 1) { warnen(who, 'ausbau', 'Ausbau springt: ' + islandTitle(islandById[b.insel]) + ' von Stufe ' + L + ' auf ' + b.stufe + ' – erlaubt ist nur +1.', b.stufe - L); return 'nein'; }
-        const jetzt = Date.now(), damals = zahlOk(b.at) && b.at <= jetzt + 5000 && jetzt - b.at < 120000 && (!zahlOk(b._t) || Math.abs(b._t - b.at) < 30000) && evThemaAktivAm(b.at, 'bau');   // (_t: wann der Server ihn bekam – das Handy kann die Zeit nicht weit zurückdrehen)   // (Bauherr: bezahlt hat er den Preis von da – nie aus der Zukunft)
         if (b._nach) return 'ok';                                          // nach dem Zurückspielen nachgeholt: bezahlt hat er damals schon
         if (schonBezahlt(wacheSehen(who), b, false)) return 'ok';           // vor dem Eichen bezahlt (steckt schon im Konto)
-        const m = wacheSehen(who), kosten = upgradeCostRoh(L) * (damals || evThemaAktiv('bau') ? .8 : 1);   // (der Rabatt nur EINMAL – vorher doppelt)
+        const m = wacheSehen(who), kosten = upgradeCostRoh(L);
         if (wacheBezahlen(who, m, kosten)) return 'ok';
         return ende ? 'pleite' : 'warten';
     }
@@ -366,7 +365,7 @@
             while (l.length) {
                 const x = l[0], ende = now >= x.bis;
                 if (art === 'ausbau') { const r = ausbauPruefen(who, x.b, ende); if (r === 'warten') break;
-                    if (r === 'ok') { islandLevels[x.b.insel] = (islandLevels[x.b.insel] || 1) + 1; evPunkte('bau', who, 2 + islandLevels[x.b.insel]); saveGame(); requestRender(); befehlBezahlt(x.b); }
+                    if (r === 'ok') { islandLevels[x.b.insel] = (islandLevels[x.b.insel] || 1) + 1; evPunkte('bau', who, WO_PKT.bauStufe * islandLevels[x.b.insel]); saveGame(); requestRender(); befehlBezahlt(x.b); }
                     if (r === 'pleite') {                  // nach 60 s immer noch nicht bezahlbar: ablehnen – die weiteren Stufen dieser Basis auch
                         const L = islandLevels[x.b.insel] || 1, m2 = wacheSehen(who), weitere = l.filter((y, i) => i > 0 && y.b.insel === x.b.insel).length;
                         for (let i = l.length - 1; i > 0; i--) if (l[i].b.insel === x.b.insel) befehlFertig(l.splice(i, 1)[0]);

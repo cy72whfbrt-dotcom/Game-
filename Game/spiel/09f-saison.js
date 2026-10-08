@@ -4,7 +4,7 @@
 // halt = { seit, grund }: eine Sicherung mit fälligem Reset wurde zurückgespielt (server.php saison_anhalten) – kein Reset, bis der
 // Admin „Neue Saison jetzt beginnen“ drückt (sonst begänne gleich wieder eine neue Saison und das Zurückspielen wäre umsonst).
 // Wer rechnet (der Weltrechner – in der Vorschau das eigene Gerät), beginnt zum Termin die neue Saison: Sonntag 18 Uhr deutscher Zeit
-// (Europe/Berlin mit Sommer-/Winterzeit – nicht die Uhr des Servers; vor dem Drachen um 19 Uhr), 8 Wochen nach dem Start. Vorher immer eine Sicherung der Welt beim Server (welt.js sicherungBitte → server.php).
+// (Europe/Berlin mit Sommer-/Winterzeit – nicht die Uhr des Servers), 8 Wochen nach dem Start. Vorher immer eine Sicherung der Welt beim Server (welt.js sicherungBitte → server.php).
 // 3 Tage vorher eine Nachricht an alle echten Spieler, im Spiel ein Countdown (Leiste unter dem HUD, Events-Fenster).
 // Ende: die besten 10 nach Macht (wie die Rangliste) bekommen Gems ins Abholfach und einen Saison-Rahmen bis zum
 // nächsten Saison-Ende (05a RAHMEN: Platz 1 · 2–3 · 4–5 · 6–10, aus last.top – Alexander 6.10.).
@@ -115,11 +115,8 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     // Märsche, Späher, Armeen, Felder, Barbaren-Märsche, Verstärkungen, Rallys, Bündnisse – mit allen Truppen darin
     pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = [];
     fieldState = {}; fieldMarches = []; barbMarches = []; armies = []; armyJoins = []; armyRaids = [];
-    if (evState.inv && Array.isArray(evState.inv.armies)) evState.inv.armies = [];
-    // Event-Stände der alten Welt: laufendes Wochen-Event, Drache, Invasion fangen bei 0 an (schon Ausgezahltes und „zuletzt“ bleiben)
-    if (evState.wo && !evState.wo.paid) { evState.wo.pts = {}; evState.wo.kb = {}; }
-    if (evState.dr && !evState.dr.paid) { evState.dr.dmg = {}; evState.dr.hits = {}; }
-    if (evState.inv && !evState.inv.paid) evState.inv.pts = {};
+    // Event-Stand der alten Welt: das laufende Wochen-Event fängt bei 0 an (schon Ausgezahltes und „zuletzt“ bleiben)
+    if (evState.wo && !evState.wo.paid) { evState.wo.tp = {}; evState.wo.kl = {}; }
     if (typeof bundSaisonNeu === 'function') bundSaisonNeu();
     // Barbaren-Lager: der Fortschritt fängt für alle wieder bei Stufe 1 an (Alexander 5.10.), die alten Lager weg – neue entstehen gleich
     // (die Zähler von heute bleiben; barbWho ist Welt-Stand – das Handy bekommt ihn vom Weltrechner)
@@ -178,11 +175,11 @@ function burgFairWer(b, B) {
     AUF.burgFair(c, B); for (const id in h.st) if (c.levels[id] < h.st[id][0]) h.st[id] = [c.levels[id], h.st[id][1]];
 }
 // ---- was man sieht: der Countdown (Leiste unter dem HUD in den letzten 3 Tagen, Karte oben im Events-Fenster) ----
-// In den ersten 3 Tagen einer neuen Saison haben alle nur Start-Truppen: Tagesboss und Drache mit weniger Leben (09b dbossEnsure, 09c drNeu)
+// In den ersten 3 Tagen einer neuen Saison haben alle nur Start-Truppen: der Tagesboss mit weniger Leben (09b dbossEnsure)
 function saisonAnfang(now) { return !!(saison && saison.nr > 1 && saison.start > 0 && (now || Date.now()) - saison.start < SAISON_ANFANG_MS); }
 function saisonChip(now) {
     const S = saison; if (!S || now >= S.ende || S.ende - now > SAISON_BALD_MS) return null;
-    return [1, '<button type="button" class="mb-chip is-warn" data-mb="ev-boss">' + icon('crown') + '<span>Neue Saison in</span><i data-ev-bis="' + S.ende + '"></i></button>'];
+    return [1, '<button type="button" class="mb-chip is-warn" data-mb="ev-tour">' + icon('crown') + '<span>Neue Saison in</span><i data-ev-bis="' + S.ende + '"></i></button>'];
 }
 function saisonKarte() {
     const S = saison; if (!S) return '';

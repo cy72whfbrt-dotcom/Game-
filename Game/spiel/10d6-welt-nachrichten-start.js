@@ -1,8 +1,8 @@
 // Teil 10d6-welt-nachrichten-start.js: Nachrichten vom Weltrechner, Kampfbericht, Willkommen, Start (im Block „if (window.WELT)“ aus 10d1 – nur zusammengesetzt gültig)
 
     // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Krankenhaus, Splitter, Zahlen
-    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires', drache: 'drache', inv: 'inv',
-        lager: 'lager', qb: 'qb', qd: 'qd', qi: 'qi', invPkt: 'invPkt', qHilfe: 'qHilfe', qVerst: 'qVerst', qRally: 'qRally' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an; die q…: für Tagesaufgaben und Saison-Pass, QUEST_STAT)
+    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires',
+        lager: 'lager', qb: 'qb', qHilfe: 'qHilfe', qVerst: 'qVerst', qRally: 'qRally' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an; die q…: für Tagesaufgaben und Saison-Pass, QUEST_STAT)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;
         if (e.coins) coins = Math.max(0, coins + e.coins);
@@ -38,7 +38,7 @@
         sfx(x.won === (x.type === 'attack') ? 'victory' : 'warn');
     });
     WELT.beiNachricht.push(function (e) { if (e && e.art === 'spaeh') spaehBericht(e); });   // Spähbericht vom Weltrechner (fremde Werte kennt nur er)
-    WELT.beiNachricht.push(function (e) {             // Preis aus einem Event (Wochen-Event, Invasion, Drache): ins Abholfach, auch Kisten
+    WELT.beiNachricht.push(function (e) {             // Preis aus einem Event (Wochen-Event, Lager, Welt-Saison): ins Abholfach, auch Kisten
         if (!e || e.art !== 'evPreis') return;
         const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
         const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'woche', title = String(e.title || '').slice(0, 80);
@@ -46,7 +46,8 @@
         const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
         if (k && inboxList().some(x => x.k === k)) return;                     // (dieselbe Stufe nie zweimal im Fach)
         const bis = typeof e.bis === 'number' && e.bis > Date.now() ? Math.min(e.bis, Date.now() + 864e5) : undefined;   // (Event-Stufe: bis zum Ende nur im Event abholbar, höchstens einen Tag)
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k, bis }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
+        const besch = typeof e.besch === 'string' && BESCH_TXT[e.besch] ? e.besch : undefined;   // Event-Münzen, Schlüssel, Beschleuniger (Wochen-Event, Lager)
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), em: z(e.em, 1e5), s1: z(e.s1, 100), s2: z(e.s2, 100), besch, k, bis }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;

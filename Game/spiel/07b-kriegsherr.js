@@ -47,7 +47,7 @@ function loadWander() {
 }
 function saveWander() { store.set('openWaterWander', JSON.stringify(wander || null)); store.set('openWaterWanderNext', String(nextWanderAt)); }
 function endWander(msg) {
-    wander = null; nextWanderAt = Date.now() + (360 + Math.random() * 120) * 60 * 1000 * evBossTakt(); saveWander(); requestRender();
+    wander = null; nextWanderAt = Date.now() + (360 + Math.random() * 120) * 60 * 1000; saveWander(); requestRender();
     if (msg) flashHint(msg, 4500);
     if (isPanelOpen(popup)) renderPopup();
 }

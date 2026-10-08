@@ -29,8 +29,8 @@ const GOAL_VAL = {
     cityMin: cityMinLevel, baseTop: () => goalBaseTop('player'), gates: () => goalGates('player'), tolls: () => achStat('tolls'), tollCoins: () => achStat('tollCoins'),
     armyWins: () => achStat('armyWins'), heroes: () => goalHeroes('player'), heroStars: () => goalHeroStars('player'), heroFires: () => achStat('heroFires'),
     healed: () => achStat('healed'), shields: () => achStat('shields'), teleports: () => achStat('teleports'), barb: () => achStat('barb'), dboss: () => achStat('dboss'),
-    burg: () => AUF ? AUF.burgStufe('player') : 1, foStufen: () => AUF ? AUF.foSumme('player') : 0, drache: () => achStat('drache'), inv: () => achStat('inv'),
-    saisonTop: () => (look.titles || []).filter(saisonTitel).length   // Hauptstadt (Burg, Labor), Drache, Invasion, Saison-Platz (die besten 10)
+    burg: () => AUF ? AUF.burgStufe('player') : 1, foStufen: () => AUF ? AUF.foSumme('player') : 0,
+    saisonTop: () => (look.titles || []).filter(saisonTitel).length   // Hauptstadt (Burg, Labor), Saison-Platz (die besten 10)
 };
 const foGesamtZiel = () => AUF ? AUF.foGesamt() : 95;   // „alles erforscht“ – wächst mit, wenn neue Forschungen dazukommen
 const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one kind share k
@@ -92,10 +92,6 @@ const ACHIEVEMENTS = [   // the old ids stay (claims are kept); the tiers of one
     { id: 'fo10',    name: 'Forscher',         icon: 'flask',   desc: 'Erforsche 10 Stufen im Labor.',          goal: 10,   k: 'foStufen', gems: 100 },
     { id: 'fo50',    name: 'Gelehrter',        icon: 'flask',   desc: 'Erforsche 50 Stufen im Labor.',          goal: 50,   k: 'foStufen', gems: 400 },
     { id: 'foall',   name: 'Meister des Wissens', icon: 'flask', desc: 'Erforsche alles im Labor.',             get goal() { return foGesamtZiel(); }, k: 'foStufen', gems: 2000 },
-    { id: 'drache1', name: 'Drachentöter',     icon: 'star',    desc: 'Kämpf mit, wenn der Drache besiegt wird.', goal: 1,  k: 'drache', gems: 250 },
-    { id: 'drache5', name: 'Drachenbezwinger', icon: 'star',    desc: 'Kämpf bei 5 besiegten Drachen mit.',     goal: 5,    k: 'drache', gems: 600 },
-    { id: 'inv1',    name: 'Grenzwacht',       icon: 'defense', desc: 'Hol dir einen Preis bei einer Barbaren-Invasion.', goal: 1, k: 'inv', gems: 100 },
-    { id: 'inv10',   name: 'Küstenwacht',      icon: 'defense', desc: 'Hol dir bei 10 Barbaren-Invasionen einen Preis.', goal: 10, k: 'inv', gems: 500 },
     { id: 'saison1', name: 'Saison-Held',      icon: 'crown',   desc: 'Komm am Ende einer Welt-Saison unter die besten 10.', goal: 1, k: 'saisonTop', gems: 1000 },
     { id: 'saison3', name: 'Legende',          icon: 'crown',   desc: 'Komm in 3 Welt-Saisons unter die besten 10.', goal: 3, k: 'saisonTop', gems: 2500 },
 ];

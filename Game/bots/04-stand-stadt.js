@@ -77,7 +77,7 @@ function botBld(botId, id) { const b = loadBotState()[botId]; return b ? (b.city
 
 function botCityFinish(bot, now) {                        // a build is done when its time is up - online or not, like yours
     const c = loadBotState()[bot.id].city, done = c.builds.filter(x => now >= x.endsAt); if (!done.length) return;
-    for (const x of done) { c.levels[x.id] = x.to; evPunkte('bau', bot.id, 2 + x.to); } c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();   // (Wochen-Event Bauherr: auch die Stadt)
+    for (const x of done) { c.levels[x.id] = x.to; evPunkte('bau', bot.id, WO_PKT.bauStufe * x.to); } c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();   // (Wochen-Event Bauherr: auch die Stadt)
 }
 
 const BOT_GEMS_REST = 50;                                 // a small rest stays when they buy (Sterne, Schilde: dringend – nur diese Rücklage)
@@ -160,9 +160,8 @@ const BOT_HERO_LIKES = { raider: ['atk', 'strongAtk', 'neutralAtk', 'fieldAtk', 
 
 function botHeroCare(bot) {                               // like a player in the Heldenhalle: the day's shards, unlock, quarter stars, points into what suits their style
     const b = loadBotState()[bot.id], day = todayKey(); if (!b || !b.hs) return;
-    if (b.hsDay !== day) { const first = !b.hsDay; b.hsDay = day;               // the daily tasks - on the days they play enough to finish them: shards + gems like yours (alle 6: questGemsTag, Wochenkette 150)
-        if (!first && Math.random() < Math.min(.95, (BOT_STYLES[bot.style].act || .6) + .2)) { heroGrantShards(bot.id, HERO_SHARDS_DAY); b.gems += questGemsTag(); b.hsDays = (b.hsDays || 0) + 1;
-            if (b.hsDays % 7 === 0) { heroGrantShards(bot.id, HERO_SHARDS_CHAIN); b.gems += CHAIN_REWARD.gems; } } }
+    if (b.hsDay !== day) { const first = !b.hsDay; b.hsDay = day;               // the daily tasks - on the days they play enough to finish them: shards + gems like yours (alle 6: questGemsTag)
+        if (!first && Math.random() < Math.min(.95, (BOT_STYLES[bot.style].act || .6) + .2)) { heroGrantShards(bot.id, HERO_SHARDS_DAY); b.gems += questGemsTag(); } }
     if (b.hcDay !== day && (b.hcDay = day) && Math.random() < .3) {               // a hero chest from the shop now and then (at most one a day), only from gems they can spare - like the player
         const c = [...HERO_CHESTS].reverse().find(x => botGemsFrei(bot, b) >= x.gems * 3 + BOT_GEMS_REST); if (c && heroChestOpen(bot.id, c).length) { b.gems -= c.gems; b.hcN = (b.hcN || 0) + 1; } }
     const like = botHeroLikes(bot), rank = t => { const i = like.indexOf(t); return i < 0 ? 99 : i; }, now = Date.now();
@@ -297,7 +296,7 @@ function botConsiderUpgrade(bot) {
     let budget = botCoins[bot.id] * st.spend, did = 0;
     for (const c of cand) {
         if (did >= 25 || c.cost > budget) break;
-        budget -= c.cost; botCoins[bot.id] -= c.cost; islandLevels[c.id] = (islandLevels[c.id] || 1) + 1; did++; evPunkte('bau', bot.id, 2 + islandLevels[c.id]);   // (Wochen-Event Bauherr)
+        budget -= c.cost; botCoins[bot.id] -= c.cost; islandLevels[c.id] = (islandLevels[c.id] || 1) + 1; did++; evPunkte('bau', bot.id, WO_PKT.bauStufe * islandLevels[c.id]);   // (Wochen-Event Bauherr)
     }
     if (did) saveGame();
 }

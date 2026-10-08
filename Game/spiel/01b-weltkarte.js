@@ -109,10 +109,7 @@ function troopsPerTick(level) {
 // Basis aufwerten (ohne Rabatt): Münzen wirtM, gerundet, nie unter AUFWERTEN_MIN (6.10.: sonst „67 Münzen“ bei einem Ertrag von 10.000 / Std.)
 const AUFWERTEN_MIN = 1000;
 function upgradeCostRoh(level) { return Math.max(AUFWERTEN_MIN, niceRoundW(wirtM(UPGRADE_BASE_COST * Math.pow(UPGRADE_COST_GROWTH, level - 1)))); }
-function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 20 % günstiger
-    let r = 1; try { if (evThemaAktiv('bau')) r = .8; } catch (e) {}
-    return Math.round(upgradeCostRoh(level) * r);
-}
+function upgradeCost(level) { return upgradeCostRoh(level); }   // (ohne Rabatt – den Bauherr-Rabatt gibt es nicht mehr)
 
 // Die Gebiete (landmasses): Umriss = Ring aus ihren Grenzen, Mittelpunkt = Kern (Tempel, Thron, sonst am weitesten von den Grenzen).
 // Landmasse 0 ist die Mitte (Thron), dann Zone 4 … Zone 1. ring/tier wie vorher (Stärke der Neutralen, Tore, Mitspieler).

@@ -155,7 +155,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .lvlup-rule{height:10px;background:url(bilder/ui_linie.webp) center/100% 100% no-repeat}
 
 /* ---------------- Listen-Karten in allen Fenstern (Shop, Events, Bündnis, Kampf, Berichte, Pass, Rangliste, Einstellungen, Gebäude) ---------------- */
-:is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.chain,.tour-prize,.pl-zelle,.pass-how-l,.ach-sum,.pass-hero,
+:is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.pl-zelle,.pass-how-l,.ach-sum,.pass-hero,
   .pass-prem,.pass-old,.daily-row,.title-row,.forge-row,.fo-row,.fo-detail,.bd-zeile,.bd-form,.anf,.gate-ctl,.city-vgl,.shop-info,.skin-card,.crest-card,.statChip,.notice,
   .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in,.from-sel,.ap-kopf,.ap-hchip,.inbox-empty,.empty-state,.lb-row,.rank-row,.p5-zeile,.lk-mid,.lk-card){border-radius:0!important;box-shadow:none;
   border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch!important}   /* (!important: Grundform gilt immer – auch gegen ältere „border:“-Kurzregeln mit #id) */
@@ -205,12 +205,6 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 [data-frame="silver"]{--ki-rang:url(bilder/ui_rang_silberritter.webp)} [data-frame="gold"]{--ki-rang:url(bilder/ui_rang_goldfuerst.webp)} [data-frame="platin"]{--ki-rang:url(bilder/ui_rang_platingraf.webp)}
 [data-frame="diamond"]{--ki-rang:url(bilder/ui_rang_diamantherzog.webp)} [data-frame="master"]{--ki-rang:url(bilder/ui_rang_meister.webp)} [data-frame="legend"]{--ki-rang:url(bilder/ui_rang_legende.webp)}
 
-/* ---------------- Ereignis-Banner: KI-Bild statt gezeichneter Szene (Invasion, Drache, Tagesboss je Boss, Sammel-Rausch) ---------------- */
-:is(.ev-banner--inv,.ev-banner--drache,.ev-boss--kraken .ev-banner,.ev-boss--giant .ev-banner,.ev-boss--dragon .ev-banner,.ev-boss--wraith .ev-banner,.ev-woche--sam .ev-banner,.ev-woche--krieg .ev-banner,.ev-woche--boss .ev-banner,.ev-woche--bau .ev-banner){height:118px;background:var(--ki-banner) center 35%/cover no-repeat}
-:is(.ev-banner--inv,.ev-banner--drache,.ev-boss--kraken .ev-banner,.ev-boss--giant .ev-banner,.ev-boss--dragon .ev-banner,.ev-boss--wraith .ev-banner,.ev-woche--sam .ev-banner,.ev-woche--krieg .ev-banner,.ev-woche--boss .ev-banner,.ev-woche--bau .ev-banner) .ev-bild{visibility:hidden}
-.ev-banner--inv{--ki-banner:url(bilder/event_invasion.webp)} .ev-banner--drache{--ki-banner:url(bilder/event_drache.webp)} .ev-boss--kraken{--ki-banner:url(bilder/boss_kraken.webp)}
-.ev-boss--giant{--ki-banner:url(bilder/boss_steinriese.webp)} .ev-boss--dragon{--ki-banner:url(bilder/boss_feuerdrache.webp)} .ev-boss--wraith{--ki-banner:url(bilder/boss_nebelkoenig.webp)}
-.ev-woche--sam{--ki-banner:url(bilder/woche_sammeln.webp)} .ev-woche--krieg{--ki-banner:url(bilder/woche_krieg.webp)} .ev-woche--boss{--ki-banner:url(bilder/woche_boss.webp)} .ev-woche--bau{--ki-banner:url(bilder/woche_bau.webp)}
 /* Tipp auf ein freies Feld der Karte (Merkliste 33): runde KI-Knöpfe im Bogen wie am Gebäude (.cr-btn), Stelle = Nadel auf der Karte */
 .feld-ring{position:fixed;left:0;top:0;z-index:44;width:0;height:0;pointer-events:none}
 .feld-ring[hidden]{display:none}
