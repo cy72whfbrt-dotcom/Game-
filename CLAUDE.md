@@ -98,6 +98,8 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   aus. Gezeichnet (Canvas) wird nur noch, was sich dauernd ändert (Zahlen, Balken, Linien). Jeder Design-Auftrag prüft zuerst:
   „Geht das als Bild?“ Sieht etwas schlecht aus (Claude, Designer, Prüfer oder Alexander), wird SOFORT im laufenden
   Durchlauf ein KI-Bild-Prompt dafür geschrieben und Alexander gegeben – nicht erst am Ende, nicht mit Code nachbessern.
+  **BELOHNUNG = BILD + ZAHL (Alexander 8.10.: „sowas müssen wir immer behalten“):** Jede Belohnung, jeder Preis, jede
+  Beute wird als Bild-Kachel (beute_*/kiste_*, Seltenheits-Rahmen) mit Zahl darauf gezeigt – nie nur als Text „+120.000 Münzen“.
   **Niemand wartet still:** jeder Agent schreibt beim Start und mindestens alle 5 Min. eine Zeile in
   `<scratchpad>/firma/<kurzname>.txt` (`<Uhrzeit UTC> | <Schritt> | <was läuft>`, am Ende `… | fertig | <Ergebnis>`);
   den Kurznamen gibt Claude im Auftrag mit. Älter als 10 Min. = „hängt“.
