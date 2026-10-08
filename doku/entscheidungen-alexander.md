@@ -74,3 +74,4 @@ Ausführlich: Themen-Dateien; Wortlaut und Verlauf: `archiv.md`. Spätere Entsch
 - Mitspieler sparen wie echte Spieler (Teleport, Premium-Pass, 2. Baumeister) und bekommen Aufgaben-Edelsteine wie du.
 - 3D-Burg raus (KI-Bilder statt Code). Freie Basen ohne Namensschild. Marsch-Logik ist fertig – Testdatei nur Darstellung.
 - Belohnung immer als Bild + Zahl. Tempo-Regeln A–D (CLAUDE.md). Doku in `doku/` je Thema (Merkliste 36c).
+- Erfolge bleiben über den Saison-Reset (dauerhafte Abzeichen, Edelsteine nur einmal) – Alexander A, 8.10.
