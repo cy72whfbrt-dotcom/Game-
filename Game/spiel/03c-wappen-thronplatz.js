@@ -437,8 +437,7 @@ function drawRings(visible, z, now) {
   }
 }
 
-const MARCH_STYLE = { attack: ['#ff8d82', [7, 6], 'attack'], incoming: ['#ff8d82', [7, 6], 'bot'], send: ['#8cc0ff', [7, 6], 'send'],
-                      scout: ['#e4c886', [3, 6], 'scout'], retreat: ['#f2a066', [5, 5], 'recall'], enemyScout: ['#ff9f7a', [3, 6], 'scout'] };
+const MARCH_GLYPH = { attack: 'attack', incoming: 'bot', send: 'send', scout: 'scout', retreat: 'recall', enemyScout: 'scout' };
 let marchTokens = [], liveAnimation = false;
 const MARSCH_WEG_MERK = new Map();
 function marchPath(source, target) {             // source → over every pass on the route → target: nie durchs Gebirge (in jedem Gebiet gebietWeg, 01b)
@@ -459,7 +458,7 @@ function marchPath(source, target) {             // source → over every pass o
   MARSCH_WEG_MERK.set(key, { t: Date.now(), p: path });
   return path;
 }
-function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (its flag); yours by default
+function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who, obj) {   // who: whose column; obj: der Marsch selbst (Truppen, Held)
   if (!source || !target) return;
   if (!startedAt) startedAt = resolveAt - MIN_ATTACK_SECONDS * 1000;
   const total = resolveAt - startedAt, progress = total > 0 ? Math.min(1, Math.max(0, (now - startedAt) / total)) : 1;
@@ -467,16 +466,12 @@ function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOver
   const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
   if (Math.max(...xs) < -20 || Math.min(...xs) > viewW + 20 || Math.max(...ys) < -20 || Math.min(...ys) > viewH + 20) return;
   liveAnimation = true;
-  const [col, dash, glyphName] = MARCH_STYLE[type];
-  setScreen(ctx); ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-  const trace = () => { ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y); for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y); };
-  trace(); ctx.setLineDash([]); ctx.lineWidth = 5; ctx.strokeStyle = 'rgba(6,8,12,.55)'; ctx.stroke();
-  trace(); ctx.setLineDash(dash); ctx.lineDashOffset = -(now / 40) % 26; ctx.lineWidth = 2.5; ctx.strokeStyle = col; ctx.stroke(); ctx.setLineDash([]);
   const seg = []; let tot = 0; for (let i = 0; i < pts.length - 1; i++) { const l = Math.hypot(pts[i + 1].x - pts[i].x, pts[i + 1].y - pts[i].y); seg.push(l); tot += l; }
-  // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
+  // Linie, Trupp, Kopf und Chip zeichnet 03f (drawMarchTokens/drawMarchChips) – mit den Zahlen dieses Marschs
   const own = type !== 'incoming' && type !== 'enemyScout'; if (who === undefined) who = own ? 'player' : null;
-  marchTokens.push({ pts, seg, tot, progress, r: (source.radius || 0) * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
-                    who, fahne: !!who && glyphName !== 'scout' });
+  const info = mzInfo(type, obj || (mk ? mzMarschVon(mk) : null), who, own, target, progress);
+  marchTokens.push({ pts, seg, tot, progress, r: mzRadius(source), tr: mzRadius(target), srcId: source.id, tgtId: target.id, key: type + source.id + '>' + target.id + '@' + resolveAt, glyph: MARCH_GLYPH[type], own, mk: mk || null,
+                    secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)), who, info });
 }
 function marchPointAt(m, d) {                   // screen point at path distance d
   for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;

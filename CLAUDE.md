@@ -12,10 +12,10 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
   `werkzeuge/spiel_bauen.sh pruefen` meldet einen Fehler, wenn eine Datei nicht zu ihren Teilen passt.
   Jeder Teil beginnt mit EINER Kopfzeile `// Teil <name>: …` (kommt nicht in die zusammengesetzte Datei).
   (Eine Datei im Spiel, weil der Code beim Laden Funktionen aufruft, die weiter hinten stehen.)
-- Teile von spiel.js (43): 01a grundlagen · 01a2 karte-zonen (Kartendaten, erzeugt von werkzeuge/kartentest) · 01b weltkarte ·
+- Teile von spiel.js (44): 01a grundlagen · 01a2 karte-zonen (Kartendaten, erzeugt von werkzeuge/kartentest) · 01b weltkarte ·
   01c basen-spielstand · 01d helden-mitspieler · 01e nebel-kampfwerte-hud · 02a shop-stufen · 02b maersche ·
   02c spaeher-ankunft (resolveAttack) · 03a karte-hintergrund · 03b gebaeude-3d (Basen, Tore, Thron als KI-Bild; keine 3D-Burg mehr) ·
-  03c wappen-thronplatz · 03d maersche-tagnacht · 03e kamera-eingabe · 04 kampf (Ankunft, kampfDazu) ·
+  03c wappen-thronplatz · 03d maersche-tagnacht · 03e kamera-eingabe · 03f marsch-bilder (Märsche/Kämpfe als KI-Bilder) · 04 kampf (Ankunft, kampfDazu) ·
   05a aussehen-profil · 05b truhe-skills · 05c erfolge-rangliste · 05d maersche-kampfbericht · 05e belohnung (Kacheln, Kisten) ·
   06a aufgaben · 06b pass-anleitung · 06c thron-mitte · 06d schild-produktion · 06e nebel-zeichnen · 07a schlachten ·
   07b kriegsherr · 08a stadt-bauen · 08b burg-aussehen · 08c helden · 08d gebaeude-wirkung · 08e stadtbild-haeuser ·

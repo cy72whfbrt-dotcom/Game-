@@ -1035,6 +1035,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   nach außen), `basen_bild_test` (Platzhalter beim Laden), `server_test` (CSP ohne CDN), `karte_test`, `design_stil_test`.
   Auf dem Server liegen `baukunst.js`/`klein/baukunst.js` noch – werden nicht mehr geladen (beim nächsten Aufräumen löschen).
 
+- **8.10. – Märsche und Kämpfe als KI-Bilder im Spiel (Alexander: Aussehen aus der Marsch-Testdatei; NICHT hochgeladen):**
+  Neuer Teil `03f-marsch-bilder.js` (nur Darstellung, Spiel-Logik unverändert): jede Armee = Trupp-Bild (`marsch_trupp_*`,
+  31 Bilder `Game/bilder/marsch_*.webp`) + Sechseck-Kopf (Held, sonst Wappen) + Chip „Truppen · ⌛ Restzeit“ (fremde Truppen „?“
+  bis zum Kampf, wie bisher); Weg als wandernde Pfeilkette in Seitenfarbe (eigen blau, Bündnis grün, Feind rot, Rally 3 goldene
+  Ketten), Späher Reiter + Punktlinie, Sammeln Karren + gestrichelt, Rückweg blass (mit Beute-Kachel), zurückgerufen weiße Fahne,
+  Feind auf dich zu rotes Warn-Dreieck. Kampf (07a, gleicher Ablauf): Kampf-Kreis + Lichtsäule, alle Armeen des Kampfs je mit
+  Sechseck und Anteil im Halbkreis (nie auf anderen Basen, nichts übereinander), Verteidiger mit sinkender Zahl, Verstärker der
+  Basis je eigenes Sechseck, Tafel „N Armeen · X ⚔ Y“, Geschosse, fliegende Verluste; wer an deinem Kampf wartet, steht mit
+  Sanduhr davor. Sieg/Niederlage: kleines Band-Bild am Bildrand. Rally-Sammelpunkt: goldener Ring. Armee antippen → runde
+  Knöpfe (deine: Info/Zurück/Schneller, fremde: Info/Angreifen/Spähen). Test `marsch_bild_test` (Handy + Desktop).
+
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

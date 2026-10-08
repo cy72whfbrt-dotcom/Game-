@@ -204,7 +204,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `BERLIN` → Game/spiel/09f-saison.js:32
 - `berlinTeile` → Game/spiel/09f-saison.js:33
 - `berlinUm` → Game/spiel/09f-saison.js:34
-- `berlinZeit` → Game/spiel/03d-maersche-tagnacht.js:166
+- `berlinZeit` → Game/spiel/03d-maersche-tagnacht.js:27
 - `besondere.createImageData` → Game/weltrechner/start.js:227
 - `besondere.createLinearGradient` → Game/weltrechner/start.js:225
 - `besondere.createPattern` → Game/weltrechner/start.js:226
@@ -215,7 +215,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `best` → Game/bots/05-verteidigen-takt.js:183
 - `besterOrt` → Game/spiel/01c-basen-spielstand.js:166
 - `bestRank` → Game/spiel/05a-aussehen-profil.js:42
-- `bestSlot` → Game/spiel/03d-maersche-tagnacht.js:120
 - `beute` → Game/spiel/02c-spaeher-ankunft.js:131
 - `beuteBild` → Game/spiel/05e-belohnung.js:28
 - `beuteChips` → Game/spiel/01a-grundlagen.js:214
@@ -240,7 +239,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bgWarm` → Game/spiel/03a-karte-hintergrund.js:431
 - `bild30` → Game/ladebildschirm.js:289
 - `bindTroopInput` → Game/spiel/10a-inselfenster-vorschau.js:313
-- `bis` → Game/spiel/03c-wappen-thronplatz.js:450
+- `bis` → Game/spiel/03c-wappen-thronplatz.js:449
 - `bitHat` → Game/spiel/10d-welt-weltrechner.js:941
 - `bitsZu` → Game/spiel/10d-welt-weltrechner.js:940
 - `blit` → Game/spiel/03a-karte-hintergrund.js:554
@@ -400,7 +399,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bountyOf` → Game/spiel/06c-thron-mitte.js:187
 - `bountyPay` → Game/spiel/06c-thron-mitte.js:194
 - `bountyState` → Game/spiel/06c-thron-mitte.js:185
-- `box` → Game/spiel/03d-maersche-tagnacht.js:32
 - `brand` → Game/spiel/08a-stadt-bauen.js:47
 - `brandSetzen` → Game/spiel/08a-stadt-bauen.js:48
 - `bremse` → Game/server/02-sicherheit-datenlecks.php:38
@@ -408,7 +406,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `brennt` → Game/spiel/08a-stadt-bauen.js:49
 - `bridgeBetween` → Game/spiel/01b-weltkarte.js:192
 - `bridgeOfGate` → Game/spiel/01b-weltkarte.js:191
-- `bsSoldier` → Game/spiel/07a-schlachten.js:313
+- `bsSoldier` → Game/spiel/07a-schlachten.js:113
 - `bt` → Game/speichern.js:196
 - `buildForest` → Game/spiel/03a-karte-hintergrund.js:240
 - `buildTerritoryChunk` → Game/spiel/03a-karte-hintergrund.js:275
@@ -420,7 +418,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundBasenText` → Game/buendnis/01-daten-regeln.js:85
 - `bundBedroht` → Game/buendnis/01-daten-regeln.js:100
 - `bundBefehl` → Game/buendnis/04-fenster-karte-welt.js:8
-- `bundBerichtDaten` → Game/buendnis/04-fenster-karte-welt.js:429
+- `bundBerichtDaten` → Game/buendnis/04-fenster-karte-welt.js:428
 - `bundBerichtLesen` → Game/buendnis/03-mitspieler.js:256
 - `bundBonus` → Game/buendnis/02-rally-geschenke.js:260
 - `bundBotBereit` → Game/buendnis/03-mitspieler.js:17
@@ -436,7 +434,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundChatText` → Game/buendnis/04-fenster-karte-welt.js:73
 - `bundChatZeilen` → Game/buendnis/04-fenster-karte-welt.js:89
 - `bundDanke` → Game/buendnis/03-mitspieler.js:276
-- `bundEingeladen` → Game/buendnis/04-fenster-karte-welt.js:444
+- `bundEingeladen` → Game/buendnis/04-fenster-karte-welt.js:443
 - `bundEinladungen` → Game/buendnis/01-daten-regeln.js:147
 - `bundEinladungenHtml` → Game/buendnis/04-fenster-karte-welt.js:34
 - `bundEinmal` → Game/buendnis/01-daten-regeln.js:113
@@ -461,7 +459,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundIndex` → Game/buendnis/01-daten-regeln.js:74
 - `bundInfoHtml` → Game/buendnis/04-fenster-karte-welt.js:46
 - `bundInselfenster` → Game/buendnis/04-fenster-karte-welt.js:296
-- `bundKannEinladen` → Game/buendnis/04-fenster-karte-welt.js:443
+- `bundKannEinladen` → Game/buendnis/04-fenster-karte-welt.js:442
 - `bundKarteOben` → Game/buendnis/04-fenster-karte-welt.js:340
 - `bundKarteUnten` → Game/buendnis/04-fenster-karte-welt.js:331
 - `bundKommtHin` → Game/buendnis/02-rally-geschenke.js:27
@@ -480,11 +478,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundObenSchluessel` → Game/buendnis/04-fenster-karte-welt.js:136
 - `bundObenZeichnen` → Game/buendnis/04-fenster-karte-welt.js:137
 - `bundOeffnen` → Game/buendnis/04-fenster-karte-welt.js:15
-- `bundOhneListeHtml` → Game/buendnis/04-fenster-karte-welt.js:446
+- `bundOhneListeHtml` → Game/buendnis/04-fenster-karte-welt.js:445
 - `bundOp` → Game/buendnis/01-daten-regeln.js:148
 - `bundProdFaktor` → Game/spiel/01e-nebel-kampfwerte-hud.js:204
 - `bundProdMult` → Game/buendnis/02-rally-geschenke.js:271
-- `bundProfilKnopf` → Game/buendnis/04-fenster-karte-welt.js:457
+- `bundProfilKnopf` → Game/buendnis/04-fenster-karte-welt.js:456
 - `bundPunkt` → Game/buendnis/04-fenster-karte-welt.js:290
 - `bundPush` → Game/buendnis/01-daten-regeln.js:116
 - `bundQuellen` → Game/buendnis/04-fenster-karte-welt.js:172
@@ -506,7 +504,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundRein` → Game/buendnis/01-daten-regeln.js:142
 - `bundRender` → Game/buendnis/04-fenster-karte-welt.js:18
 - `bundRueckzugTun` → Game/buendnis/03-mitspieler.js:288
-- `bundSaisonNeu` → Game/buendnis/04-fenster-karte-welt.js:378
+- `bundSaisonNeu` → Game/buendnis/04-fenster-karte-welt.js:377
 - `bundSchliessen` → Game/buendnis/04-fenster-karte-welt.js:16
 - `bundSendAnkunft` → Game/buendnis/01-daten-regeln.js:317
 - `bundSicherKnopf` → Game/buendnis/04-fenster-karte-welt.js:17
@@ -519,7 +517,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundTagHeute` → Game/buendnis/02-rally-geschenke.js:232
 - `bundTagVon` → Game/buendnis/01-daten-regeln.js:79
 - `bundTakt` → Game/buendnis/03-mitspieler.js:432
-- `bundTeilenKnopf` → Game/buendnis/04-fenster-karte-welt.js:425
+- `bundTeilenKnopf` → Game/buendnis/04-fenster-karte-welt.js:424
 - `bundTempo` → Game/buendnis/02-rally-geschenke.js:285
 - `bundTreffpunkt` → Game/buendnis/03-mitspieler.js:145
 - `bundUnterAngriff` → Game/buendnis/01-daten-regeln.js:91
@@ -698,6 +696,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `dismissTutorialHint` → Game/spiel/09a-funde-felder.js:107
 - `dockLuecke` → Game/spiel/01a-grundlagen.js:28
 - `drAktiv` → Game/spiel/09c-events-drache.js:228
+- `drauf` → Game/spiel/03f-marsch-bilder.js:336
 - `drAuszahlen` → Game/spiel/09c-events-drache.js:254
 - `drawArmies` → Game/spiel/09d-armeen-wegmarken.js:163
 - `drawArmyCamps` → Game/spiel/09d-armeen-wegmarken.js:174
@@ -707,7 +706,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawBaseSparks` → Game/spiel/03c-wappen-thronplatz.js:323
 - `drawBasisBild` → Game/spiel/03b-gebaeude-3d.js:83
 - `drawBasisSchilder` → Game/spiel/03b-gebaeude-3d.js:184
-- `drawBattleFx` → Game/spiel/07a-schlachten.js:398
+- `drawBattleFx` → Game/spiel/07a-schlachten.js:168
 - `drawBrand` → Game/spiel/03b-gebaeude-3d.js:209
 - `drawBuilding` → Game/spiel/03b-gebaeude-3d.js:195
 - `drawCrest` → Game/spiel/03c-wappen-thronplatz.js:19
@@ -719,16 +718,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawGlyph` → Game/spiel/01a-grundlagen.js:249
 - `drawHaendler` → Game/haendler.js:152
 - `drawHeimWappen` → Game/spiel/06e-nebel-zeichnen.js:239
-- `drawMap` → Game/spiel/03d-maersche-tagnacht.js:214
-- `drawMapBattles` → Game/spiel/07a-schlachten.js:103
-- `drawMarchButtons` → Game/spiel/03d-maersche-tagnacht.js:59
-- `drawMarchChips` → Game/spiel/03d-maersche-tagnacht.js:87
-- `drawMarchColumn` → Game/spiel/03d-maersche-tagnacht.js:13
-- `drawMarchLine` → Game/spiel/03c-wappen-thronplatz.js:462
-- `drawMarchTokens` → Game/spiel/03d-maersche-tagnacht.js:30
+- `drawMap` → Game/spiel/03d-maersche-tagnacht.js:75
+- `drawMapBattles` → Game/spiel/07a-schlachten.js:87
+- `drawMarchButtons` → Game/spiel/03f-marsch-bilder.js:267
+- `drawMarchChips` → Game/spiel/03f-marsch-bilder.js:190
+- `drawMarchLine` → Game/spiel/03c-wappen-thronplatz.js:461
+- `drawMarchTokens` → Game/spiel/03f-marsch-bilder.js:159
 - `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:328
 - `drawn` → Game/spiel/03a-karte-hintergrund.js:525
-- `drawNacht` → Game/spiel/03d-maersche-tagnacht.js:193
+- `drawNacht` → Game/spiel/03d-maersche-tagnacht.js:54
 - `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:206
 - `drawPickups` → Game/spiel/09a-funde-felder.js:62
 - `drawPlatzhalter` → Game/spiel/03b-gebaeude-3d.js:192
@@ -747,6 +745,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawWorldFrame` → Game/spiel/06e-nebel-zeichnen.js:3
 - `drDraw` → Game/spiel/09c-events-drache.js:351
 - `drin` → Game/spiel/03a-karte-hintergrund.js:186
+- `drin` → Game/spiel/03f-marsch-bilder.js:298
 - `drK` → Game/spiel/09c-events-drache.js:307
 - `drLeiste` → Game/spiel/09c-events-drache.js:222
 - `drNeu` → Game/spiel/09c-events-drache.js:230
@@ -875,9 +874,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fighterSnapshot` → Game/spiel/01e-nebel-kampfwerte-hud.js:110
 - `fightEstimate` → Game/spiel/03e-kamera-eingabe.js:535
 - `findAnyCombinableGroup` → Game/spiel/02a-shop-stufen.js:96
-- `finishMapBattle` → Game/spiel/07a-schlachten.js:42
+- `finishMapBattle` → Game/spiel/07a-schlachten.js:26
 - `finishSplash` → Game/spiel/10c-start-einstellungen.js:190
 - `first` → Game/spiel/10c-start-einstellungen.js:137
+- `flaeche` → Game/spiel/03f-marsch-bilder.js:333
 - `flashHint` → Game/spiel/06d-schild-produktion.js:443
 - `flicken_anwenden` → Game/server/02-sicherheit-datenlecks.php:104
 - `flicken_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:182
@@ -959,7 +959,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `FX.victory` → Game/spiel/10c-start-einstellungen.js:87
 - `FX.warn` → Game/spiel/10c-start-einstellungen.js:84
 - `fxCurseFlames` → Game/spiel/03c-wappen-thronplatz.js:213
-- `fxRibbon` → Game/spiel/07a-schlachten.js:370
 - `gateControlsHtml` → Game/spiel/10a-inselfenster-vorschau.js:41
 - `gateOnRoute` → Game/spiel/01b-weltkarte.js:270
 - `gateSettings` → Game/spiel/01b-weltkarte.js:278
@@ -1168,7 +1167,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hintFrei` → Game/spiel/06d-schild-produktion.js:436
 - `hintFrisch` → Game/spiel/06d-schild-produktion.js:442
 - `hinweis` → Game/benachrichtigung.js:17
-- `hitsAny` → Game/spiel/03d-maersche-tagnacht.js:29
+- `hJetzt` → Game/spiel/03f-marsch-bilder.js:360
 - `holen` → Game/weltrechner/start.js:179
 - `homeAgain` → Game/bots/02-kampf-karte.js:75
 - `horn` → Game/spiel/10c-start-einstellungen.js:71
@@ -1235,11 +1234,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kampf` → Game/aufbau.js:231
 - `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:194
 - `kampfAufraeumen` → Game/spiel/04-kampf.js:243
-- `kampfDazu` → Game/spiel/07a-schlachten.js:50
+- `kampfDazu` → Game/spiel/07a-schlachten.js:34
 - `kampfEp` → Game/spiel/02a-shop-stufen.js:263
 - `kampfGearHtml` → Game/spiel/05d-maersche-kampfbericht.js:115
 - `kampfHeimTeile` → Game/bots/02-kampf-karte.js:16
-- `kampfKey` → Game/spiel/07a-schlachten.js:55
+- `kampfKey` → Game/spiel/07a-schlachten.js:39
 - `kampfTeile` → Game/buendnis/02-rally-geschenke.js:184
 - `kannZahlen` → Game/aufbau.js:68
 - `karte` → Game/spiel/05d-maersche-kampfbericht.js:160
@@ -1270,7 +1269,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kostenHtml` → Game/aufbau.js:76
 - `kraft` → Game/buendnis/03-mitspieler.js:408
 - `kWert` → Game/spiel/10d-welt-weltrechner.js:564
-- `label` → Game/spiel/03d-maersche-tagnacht.js:104
 - `lage` → Game/ladebildschirm.js:20
 - `lager` → Game/server/01-grundlagen-login.php:43
 - `lagerPreis` → Game/spiel/09b-lager-tagesboss.js:19
@@ -1343,14 +1341,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `maleBurg` → Game/ladebildschirm.js:45
 - `maleFoto` → Game/ladebildschirm.js:215
 - `maleNebel` → Game/ladebildschirm.js:207
-- `mapBattleShake` → Game/spiel/07a-schlachten.js:304
+- `mapBattleShake` → Game/spiel/07a-schlachten.js:104
 - `mapFocusPoint` → Game/spiel/03e-kamera-eingabe.js:445
 - `marchButtons` → Game/spiel/02b-maersche.js:331
-- `marchFlag` → Game/spiel/03d-maersche-tagnacht.js:4
 - `marchKeyOf` → Game/spiel/02b-maersche.js:214
-- `marchPath` → Game/spiel/03c-wappen-thronplatz.js:444
-- `marchPointAt` → Game/spiel/03c-wappen-thronplatz.js:481
-- `marchTapAt` → Game/spiel/03d-maersche-tagnacht.js:79
+- `marchPath` → Game/spiel/03c-wappen-thronplatz.js:443
+- `marchPointAt` → Game/spiel/03c-wappen-thronplatz.js:476
+- `marchTapAt` → Game/spiel/03f-marsch-bilder.js:297
 - `markerAt` → Game/spiel/09d-armeen-wegmarken.js:301
 - `markers` → Game/spiel/09d-armeen-wegmarken.js:298
 - `marktGebuehr` → Game/aufbau.js:253
@@ -1375,8 +1372,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mautJeTruppe` → Game/spiel/01b-weltkarte.js:283
 - `mautVorab` → Game/spiel/01b-weltkarte.js:307
 - `maybeShowDaily` → Game/spiel/06b-pass-anleitung.js:126
-- `mbArmyPlan` → Game/spiel/07a-schlachten.js:9
-- `mbReplan` → Game/spiel/07a-schlachten.js:20
+- `mbReplan` → Game/spiel/07a-schlachten.js:9
 - `mbT` → Game/spiel/07a-schlachten.js:8
 - `meinAbo` → Game/benachrichtigung.js:36
 - `meinProfil` → Game/welt.js:215
@@ -1395,7 +1391,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `minuten` → Game/weltrechner/push.js:125
 - `missing` → Game/spiel/03a-karte-hintergrund.js:531
 - `mitspieler_kuerzen` → Game/server/02-sicherheit-datenlecks.php:136
-- `mix` → Game/spiel/03d-maersche-tagnacht.js:181
+- `mix` → Game/spiel/03d-maersche-tagnacht.js:42
 - `msToMidnight` → Game/spiel/06a-aufgaben.js:10
 - `muenzen_kuerzen` → Game/server/02-sicherheit-datenlecks.php:172
 - `muenzGutscheine` → Game/spiel/10d-welt-weltrechner.js:192
@@ -1437,6 +1433,43 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `MysqlLager->tx_anfang` → Game/server/04-datenbank-spieler.php:10
 - `MysqlLager->tx_ende` → Game/server/04-datenbank-spieler.php:11
 - `MysqlLager->zuletzt_gespeichert` → Game/server/04-datenbank-spieler.php:165
+- `mzBalken` → Game/spiel/03f-marsch-bilder.js:74
+- `mzBand` → Game/spiel/03f-marsch-bilder.js:53
+- `mzBeute` → Game/spiel/03f-marsch-bilder.js:80
+- `mzBild` → Game/spiel/03f-marsch-bilder.js:15
+- `mzBildAn` → Game/spiel/03f-marsch-bilder.js:60
+- `mzChip` → Game/spiel/03f-marsch-bilder.js:67
+- `mzEigenerMarsch` → Game/spiel/03f-marsch-bilder.js:263
+- `mzErgebnisBand` → Game/spiel/03f-marsch-bilder.js:450
+- `mzFrei` → Game/spiel/03f-marsch-bilder.js:189
+- `mzGeschosse` → Game/spiel/03f-marsch-bilder.js:424
+- `mzInfo` → Game/spiel/03f-marsch-bilder.js:117
+- `mzInfoZeigen` → Game/spiel/03f-marsch-bilder.js:292
+- `mzKampf` → Game/spiel/03f-marsch-bilder.js:343
+- `mzKampfFern` → Game/spiel/03f-marsch-bilder.js:442
+- `mzKampfTeile` → Game/spiel/03f-marsch-bilder.js:316
+- `mzKopf` → Game/spiel/03f-marsch-bilder.js:40
+- `mzKopfText` → Game/spiel/03f-marsch-bilder.js:184
+- `mzLinie` → Game/spiel/03f-marsch-bilder.js:137
+- `mzMarschVon` → Game/spiel/03f-marsch-bilder.js:113
+- `mzMerk` → Game/spiel/03f-marsch-bilder.js:33
+- `mzMiniKoepfe` → Game/spiel/03f-marsch-bilder.js:244
+- `mzName` → Game/spiel/03f-marsch-bilder.js:24
+- `mzPfeile` → Game/spiel/03f-marsch-bilder.js:93
+- `mzPlaetze` → Game/spiel/03f-marsch-bilder.js:329
+- `mzRadius` → Game/spiel/03f-marsch-bilder.js:133
+- `mzRallyRing` → Game/spiel/03f-marsch-bilder.js:465
+- `mzS` → Game/spiel/03f-marsch-bilder.js:21
+- `mzSanduhr` → Game/spiel/03f-marsch-bilder.js:87
+- `mzSechseck` → Game/spiel/03f-marsch-bilder.js:39
+- `mzSeite` → Game/spiel/03f-marsch-bilder.js:23
+- `mzSelKey` → Game/spiel/03f-marsch-bilder.js:262
+- `mzStrich` → Game/spiel/03f-marsch-bilder.js:106
+- `mzStufe` → Game/spiel/03f-marsch-bilder.js:22
+- `mzTruppBild` → Game/spiel/03f-marsch-bilder.js:151
+- `mzVerstAnBasen` → Game/spiel/03f-marsch-bilder.js:232
+- `mzWarnung` → Game/spiel/03f-marsch-bilder.js:249
+- `mzWartetBeiMir` → Game/spiel/03f-marsch-bilder.js:130
 - `nachrichtBauen` → Game/weltrechner/push.js:127
 - `naechsterRang` → Game/spiel/05a-aussehen-profil.js:102
 - `name` → Game/weltrechner/push.js:69
@@ -1507,7 +1540,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `out` → Game/spiel/10c-start-einstellungen.js:32
 - `overHole` → Game/spiel/03a-karte-hintergrund.js:568
 - `overlap` → Game/spiel/03c-wappen-thronplatz.js:143
-- `ownerKeyOf` → Game/spiel/03d-maersche-tagnacht.js:141
+- `ownerKeyOf` → Game/spiel/03d-maersche-tagnacht.js:2
 - `ownerShielded` → Game/spiel/06d-schild-produktion.js:50
 - `ownerShieldUntil` → Game/spiel/06d-schild-produktion.js:11
 - `ownershipDelta` → Game/spiel/03a-karte-hintergrund.js:324
@@ -1565,7 +1598,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pickupVerdeckt` → Game/spiel/09a-funde-felder.js:13
 - `piecesPath` → Game/spiel/03a-karte-hintergrund.js:312
 - `pille` → Game/buendnis/04-fenster-karte-welt.js:344
-- `place` → Game/spiel/03d-maersche-tagnacht.js:118
 - `plane` → Game/haendler.js:163
 - `plateFw` → Game/spiel/03c-wappen-thronplatz.js:62
 - `plateGeo` → Game/spiel/03c-wappen-thronplatz.js:63
@@ -1743,7 +1775,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ringStatusByOwner` → Game/spiel/04-kampf.js:29
 - `ringTruppen` → Game/spiel/01b-weltkarte.js:23
 - `rkFach` → Game/spiel/06d-schild-produktion.js:81
-- `rnd` → Game/spiel/07a-schlachten.js:359
+- `rnd` → Game/spiel/07a-schlachten.js:157
 - `rng` → Game/ladebildschirm.js:7
 - `roh` → Game/aufbau.js:20
 - `rohBuchen` → Game/aufbau.js:58
@@ -1847,7 +1879,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sentLossFor` → Game/spiel/03e-kamera-eingabe.js:524
 - `server` → Game/benachrichtigung.js:20
 - `server` → Game/weltrechner/push.js:169
-- `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:165
+- `serverJetzt` → Game/spiel/03d-maersche-tagnacht.js:26
 - `setArmyPlace` → Game/spiel/09d-armeen-wegmarken.js:282
 - `setBtnLabel` → Game/spiel/01a-grundlagen.js:143
 - `setGateSettings` → Game/spiel/01b-weltkarte.js:279
@@ -1860,7 +1892,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `setW` → Game/spiel/03a-karte-hintergrund.js:360
 - `setze_cookie` → Game/server/01-grundlagen-login.php:37
 - `setzen` → Game/spiel/01a-grundlagen.js:29
-- `sfx` → Game/spiel/07a-schlachten.js:355
+- `sfx` → Game/spiel/07a-schlachten.js:153
 - `shieldBlockText` → Game/spiel/06d-schild-produktion.js:54
 - `shieldCovers` → Game/spiel/06d-schild-produktion.js:51
 - `shieldedOwners` → Game/spiel/06d-schild-produktion.js:53
@@ -1890,7 +1922,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `skillBonusText` → Game/spiel/04-kampf.js:294
 - `skript` → Game/server/03-nebel-maersche-seite.php:145
 - `sliderToTroops` → Game/spiel/10a-inselfenster-vorschau.js:300
-- `slot` → Game/spiel/03d-maersche-tagnacht.js:109
 - `sofort` → Game/speichern.js:168
 - `sourceTroops` → Game/spiel/10a-inselfenster-vorschau.js:237
 - `spaeh` → Game/spiel/05d-maersche-kampfbericht.js:487
@@ -1917,8 +1948,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spaehWann` → Game/spiel/02c-spaeher-ankunft.js:118
 - `spaehWerte` → Game/spiel/02c-spaeher-ankunft.js:74
 - `spaeter` → Game/buendnis/03-mitspieler.js:185
-- `spawnBattleFx` → Game/spiel/07a-schlachten.js:356
-- `spawnMapBattle` → Game/spiel/07a-schlachten.js:24
+- `spawnBattleFx` → Game/spiel/07a-schlachten.js:154
+- `spawnMapBattle` → Game/spiel/07a-schlachten.js:12
 - `spawnWander` → Game/spiel/07b-kriegsherr.js:54
 - `speedableMarches` → Game/spiel/02b-maersche.js:314
 - `speedUpAll` → Game/spiel/02b-maersche.js:318
@@ -1968,7 +1999,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `syncPanelState` → Game/spiel/09e-inselfenster.js:36
 - `system_zugang` → Game/server/01-grundlagen-login.php:58
 - `szene` → Game/ladebildschirm.js:252
-- `tagLicht` → Game/spiel/03d-maersche-tagnacht.js:173
+- `tagLicht` → Game/spiel/03d-maersche-tagnacht.js:34
 - `tal` → Game/ladebildschirm.js:35
 - `tapFog` → Game/spiel/10b-inselfenster-knoepfe.js:226
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
@@ -2006,7 +2037,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `titledCapitals` → Game/spiel/03c-wappen-thronplatz.js:207
 - `titleMult` → Game/spiel/04-kampf.js:37
 - `titleOf` → Game/spiel/04-kampf.js:42
-- `tnGlow` → Game/spiel/03d-maersche-tagnacht.js:186
+- `tnGlow` → Game/spiel/03d-maersche-tagnacht.js:47
 - `todayKey` → Game/spiel/06a-aufgaben.js:5
 - `toggle` → Game/spiel/10c-start-einstellungen.js:130
 - `tollFor` → Game/spiel/01b-weltkarte.js:284
@@ -2023,7 +2054,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tpPreisHtml` → Game/spiel/09d-armeen-wegmarken.js:353
 - `tpPruefen` → Game/spiel/08d-gebaeude-wirkung.js:180
 - `tpVerlegen` → Game/spiel/08d-gebaeude-wirkung.js:198
-- `trace` → Game/spiel/03c-wappen-thronplatz.js:472
 - `traglast` → Game/aufbau.js:237
 - `travelDurationSeconds` → Game/spiel/02b-maersche.js:23
 - `troopProductionMultiplier` → Game/spiel/04-kampf.js:256
@@ -2113,7 +2143,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `vhSetzen` → Game/spiel/08c-helden.js:171
 - `vhSoll` → Game/spiel/08c-helden.js:146
 - `vhWaehlen` → Game/spiel/08d-gebaeude-wirkung.js:91
-- `visibleIslands` → Game/spiel/03d-maersche-tagnacht.js:142
+- `visibleIslands` → Game/spiel/03d-maersche-tagnacht.js:3
 - `vorAltern` → Game/spiel/10d-welt-weltrechner.js:290
 - `vorhangZeigen` → Game/speichern.js:86
 - `vorlaeufigDazu` → Game/spiel/02b-maersche.js:273
@@ -2205,14 +2235,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `whoLink` → Game/spiel/05c-erfolge-rangliste.js:266
 - `whoProfile` → Game/spiel/05c-erfolge-rangliste.js:166
 - `whoTroops` → Game/spiel/05c-erfolge-rangliste.js:162
-- `width` → Game/spiel/03d-maersche-tagnacht.js:108
 - `willkommenFenster` → Game/spiel/10d-welt-weltrechner.js:1356
 - `window.__owSpeicher.privat` → Game/speichern.js:187
 - `window.__owSpeicher.rauswurf` → Game/speichern.js:189
 - `window.__owSpeicher.roh` → Game/speichern.js:185
 - `window.__stopSplashScene` → Game/ladebildschirm.js:335
 - `window.__weltBefehl` → Game/spiel/10d-welt-weltrechner.js:1254
-- `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:399
+- `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:398
 - `window.__weltLaden` → Game/haendler.js:139
 - `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1385
 - `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1410
@@ -2629,14 +2658,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundKarteOben` :340
 - `punkt` :343
 - `pille` :344
-- `bundSaisonNeu` :378 — Neue Welt-Saison (09f-saison.js saisonWelt): alle Bündnisse aufgelöst (neu grün…
-- `window.__weltLaden` :399
-- `bundTeilenKnopf` :425 — Kampfbericht im Bündnis teilen (Knopf neben „Zeigen“ im Kampfbericht, 05d): Ort…
-- `bundBerichtDaten` :429 — → { s: Sieg (aus deiner Sicht), n: Stärke des Gegners, v: 'a' Angriff / 'v' Ver…
-- `bundKannEinladen` :443 — Darf ich (Anführer, Platz frei) w einladen? Ist w schon eingeladen?
-- `bundEingeladen` :444
-- `bundOhneListeHtml` :446 — Reiter „Suchen“ für den Anführer: alle ohne Bündnis (Mitspieler und echte Spiel…
-- `bundProfilKnopf` :457 — Profil eines Spielers (spiel.js openRulerProfile): als Anführer „Ins Bündnis ei…
+- `bundSaisonNeu` :377 — Neue Welt-Saison (09f-saison.js saisonWelt): alle Bündnisse aufgelöst (neu grün…
+- `window.__weltLaden` :398
+- `bundTeilenKnopf` :424 — Kampfbericht im Bündnis teilen (Knopf neben „Zeigen“ im Kampfbericht, 05d): Ort…
+- `bundBerichtDaten` :428 — → { s: Sieg (aus deiner Sicht), n: Stärke des Gegners, v: 'a' Angriff / 'v' Ver…
+- `bundKannEinladen` :442 — Darf ich (Anführer, Platz frei) w einladen? Ist w schon eingeladen?
+- `bundEingeladen` :443
+- `bundOhneListeHtml` :445 — Reiter „Suchen“ für den Anführer: alle ohne Bündnis (Mitspieler und echte Spiel…
+- `bundProfilKnopf` :456 — Profil eines Spielers (spiel.js openRulerProfile): als Anführer „Ins Bündnis ei…
 
 ## Game/server/ (Teile)
 
@@ -3170,35 +3199,21 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ring` :374
 - `ringBadge` :378 — the title's sign on top of the ring: a crown (good title, ruler) or a skull (pe…
 - `drawRings` :385
-- `marchPath` :444 — source → over every pass on the route → target: nie durchs Gebirge (in jedem Ge…
-- `bis` :450
-- `drawMarchLine` :462 — who: whose column (its flag); yours by default
-- `trace` :472
-- `marchPointAt` :481 — screen point at path distance d
+- `marchPath` :443 — source → over every pass on the route → target: nie durchs Gebirge (in jedem Ge…
+- `bis` :449
+- `drawMarchLine` :461 — who: whose column; obj: der Marsch selbst (Truppen, Held)
+- `marchPointAt` :476 — screen point at path distance d
 
-### Game/spiel/03d-maersche-tagnacht.js — Märsche auf der Karte (Fahne) und Tag und Nacht
-- `marchFlag` :4 — (x, y) = the token's centre; the pole stands on its upper right
-- `drawMarchColumn` :13 — a short column of soldiers (pairs) trailing the token along its path
-- `hitsAny` :29
-- `drawMarchTokens` :30 — drawn BEFORE the nameplates: a token slides along its path (up to 60 px)
-- `box` :32
-- `drawMarchButtons` :59
-- `marchTapAt` :79 — → true when the tap was meant for a column or its buttons
-- `drawMarchChips` :87 — after the nameplates: one chip per cluster of tokens, "×n" when merged
-- `label` :104
-- `width` :108 — steady from second to second
-- `slot` :109
-- `place` :118
-- `bestSlot` :120
-- `ownerKeyOf` :141
-- `visibleIslands` :142
-- `serverJetzt` :165
-- `berlinZeit` :166 — → { h: Stunde mit Bruchteil, doy: Tag im Jahr, utc: Stunden vor UTC }
-- `tagLicht` :173 — → { n: Nacht 0…1, r: Morgen-/Abendrot 0…1, farbe (zum Multiplizieren), licht: L…
-- `mix` :181
-- `tnGlow` :186 — fertiges Leucht-Bild (warm: Fenster, fackel: Fackeln)
-- `drawNacht` :193 — nach den Gebäuden, vor den Namensschildern (die bleiben gut lesbar)
-- `drawMap` :214
+### Game/spiel/03d-maersche-tagnacht.js — Karte zeichnen (drawMap: Reihenfolge der Ebenen) und Tag und Nacht
+- `ownerKeyOf` :2
+- `visibleIslands` :3
+- `serverJetzt` :26
+- `berlinZeit` :27 — → { h: Stunde mit Bruchteil, doy: Tag im Jahr, utc: Stunden vor UTC }
+- `tagLicht` :34 — → { n: Nacht 0…1, r: Morgen-/Abendrot 0…1, farbe (zum Multiplizieren), licht: L…
+- `mix` :42
+- `tnGlow` :47 — fertiges Leucht-Bild (warm: Fenster, fackel: Fackeln)
+- `drawNacht` :54 — nach den Gebäuden, vor den Namensschildern (die bleiben gut lesbar)
+- `drawMap` :75
 
 ### Game/spiel/03e-kamera-eingabe.js — Kamera und Eingabe: Ziehen, Zoomen, Tippen, Bildgröße
 - `clampZoom` :19
@@ -3245,6 +3260,53 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verstSchaetzung` :527 — Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mi…
 - `fightEstimate` :535 — the fight as it stands right now (no side effects) - same maths as resolveAttac…
 - `fightDurationMs` :546 — a skirmish is over in ~4 s, a clash of millions takes ~12 s
+
+### Game/spiel/03f-marsch-bilder.js — Märsche und Kämpfe auf der Karte als KI-Bilder (Trupp, Sechseck-Kopf, Pfeilkett…
+- `mzBild` :15 — bilder/<n>.webp, einmal geladen (danach neu zeichnen)
+- `mzS` :21 — Desktop: alle Pixelwerte ×1,25
+- `mzStufe` :22
+- `mzSeite` :23
+- `mzName` :24 — „[NW]Alex“ wie im Bündnis
+- `mzMerk` :33
+- `mzSechseck` :39
+- `mzKopf` :40 — Sechseck: Rahmen der Seite, darin rund der Held – ohne Held das Wappen des Besi…
+- `mzBand` :53 — Namensband „[NW]Alex“ in Seitenfarbe hell auf dunkel
+- `mzBildAn` :60 — Bild mit Breite w an (x, y); → Höhe (0: noch nicht geladen)
+- `mzChip` :67 — Chip „12,4 Mio. · ⌛ 2:14“ (am Bildrand nach innen) → { x, y, w, h }
+- `mzBalken` :74 — Lebensbalken: unter 25 % pulst er
+- `mzBeute` :80 — BELOHNUNG = BILD + ZAHL: kleine Kachel mit Beute-Bild und Zahl darauf
+- `mzSanduhr` :87 — wartet: goldene Sanduhr im dunklen Kreis, pulst
+- `mzPfeile` :93 — Pfeilkette ››› entlang der Punkte, wandert mit 40 px/s zum Ziel
+- `mzStrich` :106
+- `mzMarschVon` :113 — Märsche: was ein Marsch ist (aus den echten Daten), Linie, Trupp, Kopf mit Chip
+- `mzInfo` :117
+- `mzWartetBeiMir` :130 — fremde Welle steht schon am Ziel, an dem gerade DEINE Schlacht läuft (sie warte…
+- `mzRadius` :133 — halbe Breite des Ziels auf dem Bildschirm (Basis-Bild, sonst Radius)
+- `mzLinie` :137 — der noch offene Weg ab der Armee: Pfeilkette in Seitenfarbe
+- `mzTruppBild` :151
+- `drawMarchTokens` :159 — vor den Namensschildern: Linie und Trupp (Kopf und Chip danach: drawMarchChips)
+- `mzKopfText` :184 — Chip am Sechseck: Truppen · Restzeit (fremd unbekannt: „?“)
+- `mzFrei` :189
+- `drawMarchChips` :190 — nach den Namensschildern: Sechseck-Kopf, Namensband, Chip (nie übereinander)
+- `mzVerstAnBasen` :232 — Verstärker (Botschaft) in einer Basis, die du kennst: je ein Mini-Sechseck mit …
+- `mzMiniKoepfe` :244 — Rally: bis zu 4 Mitglieder als Mini-Sechseck (ohne Anführer), sonst „+6“
+- `mzWarnung` :249 — Feind auf dich zu: rotes Warn-Dreieck an deiner Basis, auf der Seite, von der e…
+- `mzSelKey` :262
+- `mzEigenerMarsch` :263 — → [Liste, Marsch] (für Zurück/Schneller wie bisher)
+- `drawMarchButtons` :267
+- `mzInfoZeigen` :292 — Kurzinfo ohne Fenster: wer, Held, Truppen, Ziel, Restzeit
+- `marchTapAt` :297 — → true, wenn der Tipp einer Armee oder ihren Knöpfen galt
+- `drin` :298
+- `mzKampfTeile` :316 — Kampf: Kreis + Säule am Ziel, Armeen im Halbkreis, Verteidiger mit Verstärkern,…
+- `mzPlaetze` :329 — freie Plätze am nächsten zur Ankunftsseite: nicht auf einer anderen Basis, Kopf…
+- `flaeche` :333 — (Trupp, Kopf und Chip darüber)
+- `drauf` :336
+- `mzKampf` :343 — (Bildschirm) eine Schlacht nah: t = Ablauf 0 … MB_MS
+- `hJetzt` :360
+- `mzGeschosse` :424 — je Seite alle 400 ms 1–3 Pfeile/Steine im Bogen (450 ms, 30 px hoch), Einschlag…
+- `mzKampfFern` :442 — weit draußen: kleiner Kampf-Kreis mit gekreuzten Schwertern, pulst
+- `mzErgebnisBand` :450 — Sieg / Niederlage: kleines Band (KI-Bild) am Bildrand, weg vom Ziel – verdeckt …
+- `mzRallyRing` :465 — Rally sammelt: goldener Bodenring dreht (12°/s) am Sammelpunkt
 
 ### Game/spiel/04-kampf.js — Titel (Mega-Tempel), Takt der Mitspieler, Ankunft und Kämpfe (kampfDazu, Warten…
 - `loadTitles` :16
@@ -3625,20 +3687,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 
 ### Game/spiel/07a-schlachten.js — Schlachten auf der Karte (auch Zuschauer-Anzeige) und Kampf-Effekte
 - `mbT` :8
-- `mbArmyPlan` :9 — how many soldiers a side shows and when the fallen go down
-- `mbReplan` :20 — new numbers (reinforcements, or the real result): re-plan who falls from here on
-- `spawnMapBattle` :24
-- `finishMapBattle` :42 — the fight is decided: the live battle (if any) plays out the real result, else …
-- `kampfDazu` :50 — Läuft auf dem Ziel schon ein Kampf, in den die ankommende Welle a mit hineingeh…
-- `kampfKey` :55
-- `drawMapBattles` :103 — screen space
-- `mapBattleShake` :304 — a short jolt of the camera on the impact and when the base falls
-- `bsSoldier` :313
-- `sfx` :355
-- `spawnBattleFx` :356
-- `rnd` :359
-- `fxRibbon` :370 — result banner at (0,0): ribbon with swallow tails + icon medallion
-- `drawBattleFx` :398 — screen space (setScreen active)
+- `mbReplan` :9 — new numbers (reinforcements, or the real result): the counters follow from here…
+- `spawnMapBattle` :12
+- `finishMapBattle` :26 — the fight is decided: the live battle (if any) plays out the real result, else …
+- `kampfDazu` :34 — Läuft auf dem Ziel schon ein Kampf, in den die ankommende Welle a mit hineingeh…
+- `kampfKey` :39
+- `drawMapBattles` :87 — screen space
+- `mapBattleShake` :104 — a short jolt of the camera on the impact and when the base falls
+- `bsSoldier` :113
+- `sfx` :153
+- `spawnBattleFx` :154
+- `rnd` :157
+- `drawBattleFx` :168 — screen space (setScreen active)
 
 ### Game/spiel/07b-kriegsherr.js — Kriegsherr (Wanderboss) auf der Karte
 - `bossAt` :4

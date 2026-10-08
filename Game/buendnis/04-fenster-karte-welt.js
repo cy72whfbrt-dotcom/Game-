@@ -350,11 +350,10 @@ function bundKarteOben(z, now) {
         if (!meins && !gegen) continue;
         const p = punkt(r.at), q = punkt(r.t); if (!p || !q) continue;
         const farbe = meins ? BUND.FARBEN[a.farbe] : '#e74c3c';
-        ctx.setLineDash([6, 6]); ctx.lineDashOffset = -(now / 60) % 12; ctx.strokeStyle = farbe; ctx.globalAlpha = .75; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(q.x, q.y); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1;
+        mzPfeile([p, q], meins ? '#eab24a' : '#ff4a3e', 2, 16, .75, 0);                 // goldene Pfeilkette zum Ziel (gegen euch rot)
         if (p.x < -160 || p.x > viewW + 160 || p.y < -80 || p.y > viewH + 80) continue;
+        mzRallyRing(p.x, p.y, p.r);                                                     // goldener Bodenring am Sammelpunkt (dreht)
         const fx = p.x + p.r * .5, fy = p.y - p.r * 1.1;
-        ctx.strokeStyle = '#2a241b'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(fx, fy + 8); ctx.lineTo(fx, fy - 26); ctx.stroke();
-        const wv = Math.sin(now / 260) * 2; ctx.fillStyle = farbe; ctx.beginPath(); ctx.moveTo(fx, fy - 26); ctx.quadraticCurveTo(fx + 10, fy - 30 + wv, fx + 20, fy - 22); ctx.lineTo(fx, fy - 14); ctx.closePath(); ctx.fill(); ctx.lineWidth = 1; ctx.stroke();
         const rest = Math.max(0, (r.los - Date.now()) / 1000);
         pille(fx + 22, fy - 20, (meins ? 'Rally ' : 'Rally gegen euch ') + fmtClock(rest) + (meins ? ' · ' + fmtCompact(bundRallyTruppen(r)) : ''), farbe);
         liveAnimation = true;
