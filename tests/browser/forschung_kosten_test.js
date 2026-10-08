@@ -1,4 +1,4 @@
-// Wirtschaft 2 (5.10.): Kosten und Gegner × WIRTSCHAFT_KOSTEN, Kiste 150 Edelsteine, neue Forschungen ab Labor 23
+// Wirtschaft 2 (5.10.): Kosten und Gegner × WIRTSCHAFT_KOSTEN, Kisten 100/500 Edelsteine (8.10.), neue Forschungen ab Labor 23
 // (6.10.: Münzen dazu × MUENZ_FAKTOR = 1.000, Holz/Stein/Eisen × ROH_FAKTOR)
 // (Krankenhaus II, Burg-Schutz+, Marschtempo II – wirken bei dir und bei Mitspielern)
 const { chromium, devices } = require('playwright');
@@ -18,7 +18,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const atk = AUF.FORSCHUNG.find(d => d.id === 'm_atk'), fk = AUF.foKosten(atk, 1);
     o.forschKosten = [fk.c === nm(3000 * Math.pow(1.6, atk.aka - 1)) && fk.h === niceRound(Math.round(1500 * Math.pow(1.6, atk.aka - 1))), fk];
     o.gebaeude = [cityCost('wall', 5) === nm(.6 * 1000 * Math.pow(1.75, 4)), AUF.stadtKosten('wall', 5).h === niceRound(Math.round(.3 * 1000 * Math.pow(1.75, 4) * .5))];   // (30 % der Burg gleicher Stufe)
-    o.kiste = [CRATE_GEM_COST, (document.querySelector('[data-const="CRATE_GEM_COST"]') || {}).textContent];
+    o.kiste = [CRATE_GEM_COST, HERO_CHESTS.map(c => c.gems).join(',')];
     o.bund = BUND.KOSTEN;
     o.belohnung = [levelRewardTroops(30), levelRewardCoins(30), levelRewardTroops(2), stufenTruppenMass(30), [2, 5, 10, 20, 30, 40].map(levelRewardTroops)];
     o.ep = kampfEp(2, 10, 2, 2) === Math.ceil(xpNeededForLevel(10) * KAMPF_EP_ANTEIL);   // 2 besiegte Krieger zählen wie vorher 3.600
@@ -59,7 +59,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.schutzRoh[0] === Math.round(r.schutzRoh[1] * 1.8) && r.schutzRoh[0] >= 10000, 'Burg-Schutz Holz/Stein/Eisen × ROH_FAKTOR ÷ MUENZ_FAKTOR (Stufe 1: ~10.000)', r.schutzRoh);
   ok(r.forschKosten[0], 'Forschung Angriff Stufe 1: Münzen × 1.000 ÷ 1.800, Holz in RoK-Größe', r.forschKosten[1]);
   ok(r.gebaeude.every(Boolean), 'Gebäude (Mauer 5): Münzen × 1.000 ÷ 1.800, Holz in RoK-Größe', r.gebaeude);
-  ok(r.kiste[0] === 150 && r.kiste[1] === '150', 'Ausrüstungskiste kostet 150 Edelsteine (auch der Knopf)', r.kiste);
+  ok(r.kiste[0] === 100 && r.kiste[1] === '100,500', 'Kisten kosten 100 / episch 500 Edelsteine (Alexander 8.10.)', r.kiste);
   ok(r.bund === 20000, 'Bündnis gründen: 30.000 × 1.000 ÷ 1.800 auf 10.000 gerundet = 20.000 Münzen', r.bund);
   ok(r.belohnung[0] === 21000 && r.belohnung[1] === 250000 && r.belohnung[2] === 410 && r.belohnung[3] === 1100, 'Stufen-Belohnung (Alexander 8.10.): Truppen = 1 Tag Ertrag einer Basis der Stufe (Stufe 2: 410, Stufe 30: 21.000), Münzen Stufe 30: 250.000; Gefolge/Funde-Maß bleibt (1.100)', r.belohnung);
   ok(r.belohnung[4].every((x, i, a) => !i || x > a[i - 1]) && r.belohnung[4][0] / 5000 >= .05 && r.belohnung[4][0] / 5000 <= .1, 'Stufen-Truppen wachsen mit der Stufe, Stufe 2 ≈ 5–10 % der 5.000 Start-Truppen', r.belohnung[4]);

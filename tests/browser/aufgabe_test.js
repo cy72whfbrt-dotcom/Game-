@@ -16,7 +16,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await auf('crate');
   const k = await ev(() => {
     const out = { text: QUEST_DEFS.crate.text(3) };
-    gems = 5000; openCrate(); out.shop = loadQuests().list[0].progress;
+    gems = 5000; kisteOeffnen('aus', 1); beuteFensterZu(); out.shop = loadQuests().list[0].progress;
     grantFreeCrate(0); out.frei = loadQuests().list[0].progress;                                   // tägliche Belohnung, Bonus, Wochenkette, Abholfach (crate)
     inboxAdd({ src: 'haendler', kiste: 1 }); inboxClaim(inboxList()[0].id); out.abholfach = loadQuests().list[0].progress;   // Abholfach: genau diese Kiste
     passGive('player', { k: 'crate', n: 2 }); out.pass = loadQuests().list[0].progress;
