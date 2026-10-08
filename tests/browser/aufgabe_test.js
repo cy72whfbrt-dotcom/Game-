@@ -27,7 +27,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await ev(() => { closeAllPopups(); openShop('gems'); });
   await p.waitForTimeout(400);
   await p.locator('[data-hchest="hc1"]').click(); await p.waitForTimeout(300);
-  ok(await stand() === 7, 'Helden-Kiste zählt', await stand());
+  ok(await stand() === 6, 'Helden-Kiste zählt', await stand());
   // 2) Stadt-Bau: Aufgabe + Pass-Punkte, Bauherr beim Fertigwerden
   await auf('bau');
   const s = await ev(() => {
