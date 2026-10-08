@@ -71,3 +71,5 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
   keine Titel → Titel bleiben leer. Kisten gut/mittel/normal = episch/groß/normal, Inhalt sichtbar (Vorschau beim Verteilen).
   Verteilen freiwillig, Rest verfällt beim nächsten Thron-Event. Tote im Thron wie überall (Krankenhaus, wenn voll sterben).
   Türme dürfen verstärkt werden. Herrscher-Burg: vorhandenes Kronen-Bild über dem Skin (kein neues Bild nötig).
+- Event-Shop: Friedensschild · Teleporter · Beschleuniger · Schlüssel (Preise in ZAHLEN_WOCHE-Vorschlag). Helden-Splitter RAUS.
+- Idee für später (Alexander): eigenes Helden-Event (dort Helden/Splitter bekommen) – noch zu planen.
