@@ -45,3 +45,11 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 ## Ideen (gemerkt, nicht gebaut)
 - Nachricht an alle / Welt-Ereignis auf Knopfdruck (Admin), Schatzkarten im Nebel, Wetter, Leuchttürme, Handel,
   Statistik-Seite.
+
+## Geplant: Events neu (Alexander 8.10., noch nicht gebaut)
+- Wochen-Event Mo–Fr, jede Woche gleich, je Tag ein Thema: Mo Bauherr (Ausbau, Beschleunigen je Min., Edelsteine),
+  Di Krieger (getötete Truppen), Mi Sammel-Rausch (gesammelte Rohstoffe), Do Boss-Jagd, Fr Invasion.
+  Fr 20 Uhr Ende → Auswertung, Plätze + Belohnungen.
+- Sa 10 – So 22 Thron-Event (Mitte): Plan + Test-Datei `werkzeuge/thronevent/thronevent.html` (Zahlen in ZAHLEN-Vorschlag
+  dort). Thron-Punkte → Event-Münzen + Event-Shop-Reiter im Shop. Weiter, wenn die Wochen-Events fertig sind.
+- Drache, Boss, Lager bleiben als eigene Events (Einordnung offen).
