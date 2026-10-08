@@ -1041,6 +1041,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Entscheidung. Ein Kampfkreis, Armeen stellen sich um das Ziel, Tafel „4 Armeen · 10,3 Mio. ⚔ 8,4 Mio.“, Chip am Sechseck
   immer „Truppen · Restzeit“ (auch im Kampf), Kampfdauer wie `fightDurationMs` (4–12 s). Knöpfe unter „Mehr“: 3 Angriffe,
   + eigener Marsch, + Verbündeter, + Verstärkung Gegner, Dritter Spieler. Test `marschtest_test.js`.
+  Runde 2: Sammeln wie 09a (`fieldArrive`): ein Sammler je Feld, ein zweiter eigener Marsch tritt bei (Truppen + Traglast
+  wachsen, Tempo bleibt fest), Bündnis-Mitglied kehrt um; Verstärker des Gegners stehen als eigene Sechsecke in der Basis
+  (Name, Truppen, Balken, eigene Schadenszahlen, nach Niederlage weg); jeder Marsch nimmt nur freie Truppen der Basis
+  (12,4 → 6,2 + 3,1 Mio., vorher zählte jeder Marsch die ganze Basis); Sieg-Band am Bildrand.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

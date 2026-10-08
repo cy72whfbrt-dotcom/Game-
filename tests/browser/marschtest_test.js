@@ -34,7 +34,7 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       ok(groesse[0] >= 44 && groesse[1] >= 44, `${name} ${art}: Knöpfe mindestens 44 px`, groesse);
       await p.click('[data-knopf="info"]', { force: true });
       const info = await p.$eval('#karte-info', e => e.classList.contains('offen') && e.textContent);
-      ok(/Held: Aldric/.test(info) && /Truppen: 12,4\sMio\./.test(info) && /Restzeit: ⌛ \d+:\d\d/.test(info), `${name} ${art}: Info zeigt Held, Truppen, Ziel, Restzeit`, info);
+      ok(/Held: Aldric/.test(info) && /Truppen: 6,2\sMio\./.test(info) && /Restzeit: ⌛ \d+:\d\d/.test(info), `${name} ${art}: Info zeigt Held, Truppen, Ziel, Restzeit`, info);
       const vorher = await p.evaluate(() => MT.armeen[0].dauer - (MT.jetzt - MT.armeen[0].t0));
       await p.mouse.click(f.x + f.w / 2, f.y + 18); await p.click('[data-knopf="schneller"]', { force: true });
       const nachher = await p.evaluate(() => [MT.armeen[0].dauer - (MT.jetzt - MT.armeen[0].t0), document.querySelector('[data-knopf="schneller"] i').textContent]);
@@ -88,7 +88,20 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
         wartet: MT.armeen.filter(a => a.phase === 'wartet').map(a => a.name) }; });
       ok(vb.n === 1 && vb.bund && vb.a0 === 4.2e6 + 2.9e6 && vb.d0 === 8.1e6 + 3.5e6 && !vb.verst && vb.wartet.join() === '[DK]Wulfgar',
         `${name} ${art}: Verbündeter addiert Angreifer, Verstärkung Gegner addiert Verteidiger, Wulfgar wartet (kein zweiter Kreis)`, vb);
+      ok(await p.evaluate(() => MT.D.basen.find(b => b.id === 'kevin').verst.length === 1), `${name} ${art}: der Verstärker steht als eigenes Sechseck in der Basis`);
       ok(await bis(() => MT.kaempfe.length === 1 && MT.kaempfe[0].a.kuerzel === 'DK', null, 40000), `${name} ${art}: nach der Entscheidung kämpft der Wartende gegen die Basis`);
+      const nach = await p.evaluate(() => { const k = MT.kaempfe[0]; return { verst: MT.D.basen.find(b => b.id === 'kevin').verst.length, d0: k.d0 }; });
+      ok(nach.verst === 0 && nach.d0 < 8.1e6, `${name} ${art}: Verteidiger verloren → Verstärker weg, Wulfgar trifft nur den Rest der Besatzung`, nach);
+      // Marsch zweimal: jeder nur mit den Truppen, die noch in der Basis sind (12,4 → 6,2 + 3,1 Mio.), nie doppelt
+      await leer(); await knopf('marsch'); await knopf('marsch');
+      const mz = await p.evaluate(() => MT.armeen.map(a => a.truppen));
+      ok(mz.join() === '6200000,3100000', `${name} ${art}: zwei Märsche teilen die Truppen der Basis (nie doppelt)`, mz);
+      // Sammeln zweimal aufs selbe Feld: der zweite tritt bei (EIN Sammler, Truppen und Traglast wachsen), Tempo bleibt
+      await leer(); await p.evaluate(() => { MT.D.feld.rest = 412000; MT.D.feld.sammler = null; }); await knopf('sammeln'); await knopf('sammeln'); await p.evaluate(() => { MT.tempo = 5; });
+      ok(await bis(() => MT.armeen.length === 1 && MT.armeen[0].phase === 'sammelt'), `${name} ${art}: zwei Sammel-Märsche → ein Sammler am Feld`);
+      const sm = await p.evaluate(() => { const a = MT.armeen[0]; return { t: a.truppen, dazu: MT.effekte.some(e => e.art === 'dazu' && /Traglast jetzt 240/.test(e.text)) }; });
+      ok(sm.t === 120000 && sm.dazu, `${name} ${art}: Truppen addiert (120 Tsd.), Hinweis „Traglast jetzt 240 Tsd. Holz“`, sm);
+      ok(await bis(() => MT.armeen[0] && MT.armeen[0].phase === 'rueck' && MT.armeen[0].beute && MT.armeen[0].beute.n >= 239999), `${name} ${art}: voll beladen heim mit 240 Tsd. Holz`);
       // Zurückrufen ohne laufenden Marsch: Marsch geht los und dreht nach 2,5 s
       await leer(); await knopf('zurueck');
       ok(await bis(() => MT.armeen[0] && MT.armeen[0].phase === 'rueck' && MT.armeen[0].zurueck), `${name} ${art}: Zurückrufen dreht einen Marsch um`);
