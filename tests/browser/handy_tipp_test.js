@@ -55,14 +55,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 5) Heldenkisten: Tipp auf das Bild der Karte = Preis-Knopf, ab 500 erst „Wirklich?“
     await ev(() => { gems = 5000; updateHud(); }); await tap('#shopBtn'); await p.waitForTimeout(700);
     const ks = {};
-    for (const id of ['hc3', 'hcE']) { await p.waitForTimeout(900); const g0 = await ev(() => gems);   // (nach einem Kauf rollt das Ergebnis weich ins Bild)
-      await tap('#heroChestOpts .ware:has([data-hchest="' + id + '"]) .ware-bild'); await p.waitForTimeout(200);
-      ks[id] = await ev(([id, g0]) => { const bt = document.querySelector('[data-hchest="' + id + '"]'); return { frage: /Wirklich\?/.test(bt.textContent), nichtsWeg: gems === g0 }; }, [id, g0]);
-      await p.waitForTimeout(600); await tap('#heroChestOpts .ware:has([data-hchest="' + id + '"]) .ware-bild'); await p.waitForTimeout(300);
-      ks[id].gekauft = await ev(([id, g0]) => g0 - gems === HERO_CHESTS.find(c => c.id === id).gems, [id, g0]);
+    for (const id of ['ausE', 'heldE']) { await p.waitForTimeout(900); const g0 = await ev(() => gems);   // (nach einem Kauf rollt das Ergebnis weich ins Bild)
+      await tap('[data-kiste="' + id + '"][data-anz="1"]'); await p.waitForTimeout(200);
+      ks[id] = await ev(([id, g0]) => { const bt = document.querySelector('[data-kiste="' + id + '"][data-anz="1"]'); return { frage: /Wirklich\?/.test(bt.textContent), nichtsWeg: gems === g0 }; }, [id, g0]);
+      await p.waitForTimeout(600); await tap('[data-kiste="' + id + '"][data-anz="1"]'); await p.waitForTimeout(300);
+      ks[id].gekauft = await ev(([id, g0]) => g0 - gems === 500, [id, g0]);
       ks[id].fenster = await ev(() => !document.getElementById('beuteFenster').hidden); await tap('#beuteFenster .bf-ok'); await p.waitForTimeout(200); ks[id].zu = await ev(() => document.getElementById('beuteFenster').hidden); }   // Belohnungs-Fenster: „OK“ schließt
     await bild('kisten');
-    ok(Object.values(ks).every(x => x.frage && x.nichtsWeg && x.gekauft && x.fenster && x.zu), art + ': Große/Epische Kiste: Tipp auf die Karte fragt „Wirklich?“, zweiter Tipp kauft, Belohnungs-Fenster mit „OK“ zu', ks);
+    ok(Object.values(ks).every(x => x.frage && x.nichtsWeg && x.gekauft && x.fenster && x.zu), art + ': Epische Kisten (500): erster Tipp fragt „Wirklich?“, zweiter Tipp kauft, Belohnungs-Fenster mit „OK“ zu', ks);
     await ev(() => closeAllPopups());
     // 6) Wochen-Event-Chip: gleiche Breite ohne und mit Rang
     const wc = await ev(async () => { const on = woOn; woOn = () => true; midBarHtml = ''; renderMidBar(); await new Promise(f => setTimeout(f, 100));

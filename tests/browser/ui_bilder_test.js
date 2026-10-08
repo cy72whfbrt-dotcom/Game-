@@ -124,7 +124,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(preise.reich.length && preise.reich.every(c => c === 'rgb(251, 238, 201)') && preise.arm.every(c => c === 'rgb(255, 141, 130)') && preise.passt && preise.kopf === '100K',
     'Shop: Preise hell, wenn es reicht, rot, wenn nicht; „10×“ passt; Kopf im Kurzformat (100K)', preise);
   await bild('shop');
-  for (const t of ['shield', 'throne', 'markt']) { await ev(t => showShopTab(t), t); await p.waitForTimeout(600); await bild('shop_' + t); }
+  for (const t of ['shield', 'ev', 'markt']) { await ev(t => showShopTab(t), t); await p.waitForTimeout(600); await bild('shop_' + t); }
   await ev(async () => { closeAllPopups(); document.getElementById('bundBtn').click(); await new Promise(f => setTimeout(f, 800)); });
   await bild('buendnis');
   await ev(() => closeAllPopups());

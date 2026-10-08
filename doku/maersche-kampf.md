@@ -10,7 +10,7 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
 - Arten: Angriff, Senden (eigene Basis), Mehrfachangriff/„Truppen sammeln“ (◆1, zählt als EIN Marsch-Platz, Kennung `grp`,
   nur vom selben Ort und zur selben Basis, innerhalb 60 s), Sammeln (Feld), Lager/Tagesboss/Drache/Invasion, Armee, Rally,
   Verstärkung, Späher.
-- Marsch-Plätze: 2 + (Burg−1)/6 (Burg 1: 2 … Burg 25: 6), geprüft in `marschPlatz` für dich, Mitspieler und beim Weltrechner.
+- Marsch-Plätze: 2 + Stufe der Labor-Forschung „Marsch-Plätze“ (`x_marsch`, Labor 5/10/16/22 → höchstens 6), geprüft in `marschPlatz` für dich, Mitspieler und beim Weltrechner.
   Rückwege zählen nicht.
 - Startbasis eines Angriffs (`angriffStart`, 10b): die nächste eigene Basis mit GENUG Truppen (wie die Vorschau gerechnet,
   ohne Held); reicht keine → die mit den meisten; ungespäht → die nächste mit Truppen. Im Angriffsfenster änderbar.

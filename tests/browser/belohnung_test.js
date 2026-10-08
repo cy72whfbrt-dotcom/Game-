@@ -37,30 +37,30 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   // 3) Shop: Ausrüstungskiste 1× – Edelsteine genau einmal, Fenster mit Kiste (zu → offen), eine Kachel
   const s1 = await ev(async () => { gems = 2000; updateHud(); openShop('gems'); await new Promise(f => setTimeout(f, 400));
     const g0 = gems, i0 = Object.keys(inventory).length, bilder = [...document.querySelectorAll('#shopPopup [data-spane="gems"] .ware .ware-bild img.kiste-bild')].length;
-    document.getElementById('shopOpenCrateBtn').click(); const f = document.getElementById('beuteFenster');
+    document.querySelector('[data-kiste="aus"][data-anz="1"]').click(); const f = document.getElementById('beuteFenster');
     const amAnfang = f.querySelector('.bf-kiste').getAttribute('src'), wackelt = f.classList.contains('is-wackeln');
     return { weg: g0 - gems, teile: Object.keys(inventory).length - i0, amAnfang, wackelt, bilder }; });
   await p.waitForTimeout(2600); const f1 = await fenster(); await bild('kiste_1x');
-  ok(s1.bilder === 4 && s1.weg === 150 && s1.teile === 1 && /kiste_ausruestung_zu/.test(s1.amAnfang) && s1.wackelt, 'Ausrüstungskiste 1×: 150 weg, 1 Teil, Kiste (KI-Bild) wackelt zuerst', s1);
+  ok(s1.bilder === 6 && s1.weg === 100 && s1.teile === 1 && /kiste_ausruestung_zu/.test(s1.amAnfang) && s1.wackelt, 'Ausrüstungskiste 1×: 100 weg, 1 Teil, Kiste (KI-Bild) wackelt zuerst', s1);
   ok(f1 && /kiste_ausruestung_offen/.test(f1.kiste) && f1.fertig && f1.kacheln === 1 && /^item:/.test(f1.arten[0]) && f1.voll, 'danach: Kiste offen, Strahlen, eine Kachel im Fenster', f1);
   await zu();
   // 4) 10×: „Wirklich?“ (1.500), dann genau 10 Teile und 1.500 weg; das Fenster fasst zusammen
-  const s10 = await ev(async () => { gems = 2000; renderShop(); const bt = () => document.querySelector('#shopPopup [data-mehr="aus"]'), g0 = gems, i0 = Object.keys(inventory).length;
+  const s10 = await ev(async () => { gems = 2000; renderShop(); const bt = () => document.querySelector('#shopPopup [data-kiste="aus"][data-anz="10"]'), g0 = gems, i0 = Object.keys(inventory).length;
     const text = bt().textContent.replace(/\s+/g, ''); bt().click(); const frage = /Wirklich/.test(bt().textContent), nichts = gems === g0;
     await new Promise(f => setTimeout(f, 600)); bt().click();
     return { text, frage, nichts, weg: g0 - gems, teile: Object.keys(inventory).length - i0 }; });
   await p.waitForTimeout(3000); const f10 = await fenster(); await bild('kiste_10x');
-  ok(s10.text === '10×1.500' && s10.frage && s10.nichts && s10.weg === 1500 && s10.teile === 10, '10×: erst „Wirklich?“, dann genau 1.500 weg und 10 Teile', s10);
+  ok(s10.text === '10×1.000' && s10.frage && s10.nichts && s10.weg === 1000 && s10.teile === 10, '10×: erst „Wirklich?“, dann genau 1.000 weg und 10 Teile', s10);
   ok(f10 && f10.fertig && f10.summe === 10 && f10.kacheln <= 10 && f10.arten.every(a => /^item:/.test(a)) && f10.voll, '10×-Ergebnis: Kacheln zusammengefasst (Summe 10), ganz im Bild', f10);
   await zu();
-  // 5) weniger als 10 bezahlbar: „N×“ mit dem Rest; unter 2: aus
-  const sn = await ev(async () => { gems = 3 * CRATE_GEM_COST + 20; renderShop(); const bt = () => document.querySelector('#shopPopup [data-mehr="aus"]'), g0 = gems, i0 = Object.keys(inventory).length, text = bt().textContent.replace(/\s+/g, '');
-    bt().click(); const o = { text, weg: g0 - gems, teile: Object.keys(inventory).length - i0 }; beuteFensterZu(); gems = 100; renderShop(); o.aus = bt().disabled && /10×/.test(bt().textContent); return o; });
-  ok(sn.text === 'max.3×450' && sn.weg === 450 && sn.teile === 3 && sn.aus, 'Rest: „max. 3ד für 450 (sagt, warum nicht 10×; unter 500 ohne Frage), unter 2 Kisten ist „10ד aus', sn);
+  // 5) zu wenig Edelsteine für 10×: nichts weg, keine Teile
+  const sn = await ev(async () => { gems = 3 * CRATE_GEM_COST + 20; renderShop(); const bt = () => document.querySelector('#shopPopup [data-kiste="aus"][data-anz="10"]'), g0 = gems, i0 = Object.keys(inventory).length;
+    bt().click(); return { weg: g0 - gems, teile: Object.keys(inventory).length - i0 }; });
+  ok(sn.weg === 0 && sn.teile === 0, 'zu wenig Edelsteine für 10×: nichts weg', sn);
   // 6) Heldenkiste 10×: dieselbe Kiste 10-mal (Splitter-Kacheln mit Held), Edelsteine genau 10 × 150
-  const sh = await ev(async () => { gems = 1600; renderShop(); const bt = () => document.querySelector('#heroChestOpts [data-mehr="hc1"]'), g0 = gems; bt().click(); await new Promise(f => setTimeout(f, 600)); bt().click();
-    const f = document.getElementById('beuteFenster'); return { weg: g0 - gems, held: !!f.querySelector('.bk[data-beute="sh"] img.bk-held'), kiste: f.querySelector('.bf-kiste').dataset.auf, keineGrosse: !document.querySelector('#heroChestOpts [data-mehr="hc3"], #heroChestOpts [data-mehr="hcE"]') }; });
-  ok(sh.weg === 1500 && sh.held && /kiste_held_offen/.test(sh.kiste) && sh.keineGrosse, 'Heldenkiste 10×: 1.500 weg, Splitter-Kacheln mit Held; Große/Epische nur einzeln', sh);
+  const sh = await ev(async () => { gems = 1600; renderShop(); const bt = () => document.querySelector('[data-kiste="held"][data-anz="10"]'), g0 = gems; bt().click(); await new Promise(f => setTimeout(f, 600)); bt().click();
+    const f = document.getElementById('beuteFenster'); return { weg: g0 - gems, held: !!f.querySelector('.bk[data-beute="sh"] img.bk-held'), kiste: f.querySelector('.bf-kiste').dataset.auf}; });
+  ok(sh.weg === 1000 && sh.held && /kiste_held_offen/.test(sh.kiste), 'Helden-Kiste 10×: 1.000 weg (nach „Wirklich?“), Splitter-Kacheln mit Held', sh);
   await zu(); await ev(() => closeAllPopups());
 
   // 7) Aufgabe abholen: Belohnungs-Fenster mit Edelstein-Kachel; Zeile zeigt die Kachel

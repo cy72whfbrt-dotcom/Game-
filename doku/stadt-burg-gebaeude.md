@@ -12,7 +12,7 @@ Markt, Marsch-Plätze, `burgFair`), `Game/spiel/08a-stadt-bauen.js` (`burgZeitTa
   Burg 10 am ersten Tag, Burg 18 nach ~35 Tagen, Burg 25 nach ~231 Tagen (~4 Saisons). Burg 25 NICHT in einer Saison.
 - Kosten `burgBasis` = 1.000 × 1,75 je Stufe bis 10, danach × 1,6 (Burg 2: 1.000 Holz / 1.100 Münzen; Burg 25 ~110 Mio. Holz),
   Münzen + Holz + Stein + Eisen. Mit Edelsteinen schneller (1 je Minute, ab 500 „Wirklich?“).
-- Schaltet frei: Gebäude höchstens bis zur Burg-Stufe; Marsch-Plätze 2 + (Burg−1)/6; Markt ab Burg 4, Botschaft ab 5.
+- Schaltet frei: Gebäude höchstens bis zur Burg-Stufe; Markt ab Burg 4, Botschaft ab 5.
 - Burg-Schutz: so viel von jedem Rohstoff ist vor Beute sicher – Münzen `burgSchutz`, Holz/Stein/Eisen `burgSchutzRoh`
   (= Münz-Schutz × `ROH_JE_MUENZE`); wächst mit der Burg, Forschung „Burg-Schutz+“ +10/20/30 %. Anzeige gerundet (`schutzText`).
 

@@ -27,7 +27,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(k.shop === 1 && k.frei === 2 && k.abholfach === 3 && k.pass === 5 && k.thron === 6, 'Shop, Gratis-Kiste, Abholfach, Pass (2), Thron-Shop zählen', k);
   await ev(() => { closeAllPopups(); openShop('gems'); });
   await p.waitForTimeout(400);
-  await p.locator('[data-hchest="hc1"]').click(); await p.waitForTimeout(300);
+  await p.locator('[data-kiste="held"][data-anz="1"]').click(); await p.waitForTimeout(300);
   ok(await stand() === 7, 'Helden-Kiste zählt', await stand());
   // 2) Stadt-Bau: Aufgabe + Pass-Punkte, Bauherr beim Fertigwerden
   await auf('bau');

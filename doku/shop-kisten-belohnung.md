@@ -1,8 +1,8 @@
 # Shop, Kisten, Belohnungen, Abholfach
 
 Alles, was man kauft oder bekommt: Shop-Reiter, Ausrüstungs- und Heldenkisten, Belohnungs-Kacheln, Abholfach, Händler,
-Thron-Shop, Markt. Wichtigste Dateien: `Game/spiel/02a-shop-stufen.js` (`CRATE_GEM_COST`, `openCrate`), `05e-belohnung.js`
-(`beuteKachel`, `beuteRaster`, `beuteFenster`), `spielseite/05y-stil-kisten.php`, `06c-thron-mitte.js` (`throneAmount`),
+Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (Reiter Kisten/Event/Tempo, Beschleuniger benutzen),
+`02a-shop-stufen.js` (`CRATE_GEM_COST`), `05e-belohnung.js` (`gibBelohnung`, `beuteKachel`, `beuteRaster`, `beuteFenster`), `spielseite/05y-stil-kisten.php`, `06c-thron-mitte.js` (`throneAmount`),
 `05b-profil-truhe-skills.js` (Truhe, Ausrüstung), `Game/haendler.js`, `aufbau.js` (`marktHtml`).
 
 ## Regeln
@@ -15,20 +15,32 @@ Thron-Shop, Markt. Wichtigste Dateien: `Game/spiel/02a-shop-stufen.js` (`CRATE_G
 - Wörter: im Spiel „Edelsteine“ und „Fähigkeiten“ (nie „Gems“/„Skills“); Code-Namen bleiben. „Münzen“ statt „Gold“
   (außer „Goldmine“ und Seltenheit „Gold“).
 
-## Kisten
-- Ausrüstungskiste 150 Edelsteine (`CRATE_GEM_COST`). Aus gekauften/freien Kisten höchstens Episch
-  (`RARITY_DROP_WEIGHTS`); Legendär/Mythisch nur durch Zusammenlegen (3 → 1). Nirgends eine Legendär-Kiste als Preis.
-- Heldenkisten 150 / 500 / 1.200 Edelsteine (`HERO_CHESTS`), die ganze Karte kauft. Heldenkiste (hc1, `teile`): 6 Splitter auf
-  2–3 verschiedene Helden (`heroChestTeile`, gewöhnlichere öfter, 5 Sterne fallen raus), im Fenster je Held eine Kachel.
-- Shop-Knöpfe „1ד und „10ד (weniger Edelsteine: „N×“ mit dem Rest; ruft nur `openCrate`/`heroChestOpen` N-mal);
-  Große/Epische Kiste einzeln (Bündnis-Geschenk ab 500 Edelsteinen, siehe `buendnis.md`).
+## Gegenstände (gemeinsam für alle Events, 05e)
+- Spielstand `openWaterGegenst`: `eventMuenzen`, `schluessel1`, `schluessel2`, `besch` {'1m','5m','15m','1h','3h','8h','24h'}.
+  Gutschreiben nur über `gibBelohnung(art, menge, extra)` (Arten `eventMuenzen`, `schluessel1/2`, `besch` mit Dauer, `gems`, `coins`)
+  → Kachel-Angabe. Kacheln: beute_eventmuenze, beute_schluessel(_episch), beute_beschleuniger_klein/mittel/gross (Dauer oben links).
+- Preise in 05e: `SCHLUESSEL_PREIS` (100/500 Edelsteine, 200/1.000 Event-Münzen, Woche 10/3), `BESCH_PREIS` (Edelsteine, Event-Münzen, Limit).
+- Beschleuniger kürzen Bauen und Forschen (Knopf im Gebäude-Fenster und im Labor → Fenster `beschPopup`, einzeln oder
+  „Passend benutzen“); nicht Truppen. Heilen geht sofort mit Münzen – dort keiner.
+- Hauptbuch (10d3 `hbGegenst`, Profil `gg`): Zuwachs nur aus Nachrichten (evPreis/bundGeschenk mit `em`, `s1`, `s2`,
+  `besch` {Dauer: n} → `hbGegenstDazu`), Spielraum je Tag (`HB_TAG` em/s1/s2/bm) oder mit Edelsteinen gekauft; benutzte Schlüssel
+  zählen als Kisten/Splitter, benutzte Beschleuniger kürzen die Bauzeit-Prüfung (`hbTempo`), ausgegebene Event-Münzen zählen halb als Edelsteine.
+
+## Kisten (Reiter „Kisten“)
+- Ausrüstung + Helden je normal und episch, „1ד/„10ד: mit Schlüssel (1/10), solange genug da, sonst 100/500 Edelsteine je Kiste
+  (`CRATE_GEM_COST` 100, `HERO_CHESTS` hc1 100 / hcE 500). Ab 500 „Wirklich?“.
+- Ausrüstungs-Kiste: `RARITY_DROP_WEIGHTS` (höchstens Episch); Epische Ausrüstung `RARITY_EPISCH` (Ungewöhnlich 40/Selten 45/Episch 15).
+  Helden-Kiste: 6 Splitter auf 2–3 Helden (`heroChestTeile`); Epische Helden-Kiste: 10 Splitter, 15 % epischer Held, sonst seltener.
+- Episch: spätestens beim 20. Mal sicher Lila (`openWaterKistenZ`, Anzeige „Lila sicher X/20“). Gruppe „Schlüssel“ kaufen 100/500.
+- Legendär/Mythisch nur durch Zusammenlegen (3 → 1). Epische Helden-Kiste: Bündnis-Geschenk (siehe `buendnis.md`).
 - Öffnen: Belohnungs-Fenster mit KI-Kiste (`kiste_*_zu/offen.webp`), wackelt, geht auf, Strahlen, Kacheln nacheinander;
   Tipp = Endbild, „OK“ schließt. Test `belohnung_test`.
 - Aufgabe „Öffne 3 Kisten“ zählt jede Kiste (Shop, Helden, Abholfach, Pass, Thron-Shop, Belohnungen).
 
 ## Shop (ein Fenster, Schaufenster-Stil)
-- Reiter: Kisten (Ausrüstung + Helden) · Schilde (kaufen und einschalten nur hier) · Thron · Händler (nur solange einer da
-  ist) · Markt (Handeln nur hier). Waren als Karten in Seltenheitsfarbe, Preis-Knopf unten (Gold = Edelsteine, Navy =
+- Reiter: Kisten · Event (nur Event-Münzen: Schild 8/24 Std 600/1.400, Teleporter 1.000, Beschleuniger, Schlüssel; Woche-Limit,
+  füllt Montag 0 Uhr auf, `openWaterEvShop`) · Tempo (Beschleuniger für Edelsteine) · Schilde · Händler (nur solange einer da
+  ist) · Markt. Kein Thron-Reiter mehr. Oben Edelsteine + Event-Münzen. Gruppen mit Zwischenüberschrift (`.sort-kopf`), 3 Spalten. Waren als Karten in Seltenheitsfarbe, Preis-Knopf unten (Gold = Edelsteine, Navy =
   Thron-Punkte, zu wenig = grau mit roter Zahl). Am Handy alle Kisten ohne Scrollen. CSS-Block in spielseite/04.
 - Rucksack: Teleporter, Schilde u. a. Gegenstände (siehe `teleport-schild-rucksack.md`).
 - Thron-Shop (Thron-Punkte): Münzen/Truppen = 2 Std. eigener Ertrag (`THRONE_STUNDEN`), Kisten, keine Edelsteine, kein
