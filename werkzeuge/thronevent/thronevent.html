@@ -8,7 +8,7 @@
 <!-- Stil + Symbole wie im Spiel (aus Game/spiel.php, neu holen mit stil_holen.sh) -->
 <link rel="stylesheet" href="spiel_stil.css">
 <style>
-  /* Nur Ansicht zum Zeigen (Thron-Event): Regeln/Zahlen sind Vorschlag, nicht im Spiel. Ansicht wählen: ?a=woche|wochenende|shop|karte|herrscher */
+  /* Nur Ansicht zum Zeigen (Thron-Event): Regeln/Zahlen sind Vorschlag, nicht im Spiel. Ansicht wählen: ?a=woche|wochenende|shopkisten|shop|karte|herrscher */
   body { background: #0d1118 url(../../Game/bilder/karte_boden_mitte.webp) center/cover; }
   body::after { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,.45); pointer-events: none; }
   .panel.is-open { z-index: 5; animation: none; }
@@ -42,17 +42,16 @@
   .ware .lim { font: 600 10.5px/1 var(--font-ui); color: var(--tx-3); }
   .ware.leer { opacity: .5; }
   .ware-preis img { width: 16px; height: 16px; }
-  .platzh { outline: 2px dashed #ff8d82; outline-offset: -2px; }
-  .hinweis { font: 500 11px/1.3 var(--font-ui); color: #ff8d82; }
+  .ware-preis.zwei { height: 34px; } .ware-preis.zwei + .ware-preis.zwei { margin-top: 0; }
+  .ware .zeit { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); font: 800 12px/1 var(--font-ui); color: #fff; text-shadow: 0 1px 2px #000, 0 0 3px #000; white-space: nowrap; }
+  .ware-bild { position: relative; }
   /* Karte: Thron in der Mitte, 4 Türme – jeder mit eigener Kuppel */
   .karten { display: grid; gap: 10px; }
   .karte { position: relative; aspect-ratio: 1.25; border-radius: 10px; overflow: hidden; background: url(../../Game/bilder/karte_boden_mitte.webp) center/cover; border: 1px solid var(--line-2); }
-  .karte > img, .karte .kuppel { position: absolute; transform: translate(-50%, -50%); }
+  .karte > img { position: absolute; transform: translate(-50%, -50%); }
   .karte .thron { left: 50%; top: 50%; width: 34%; }
   .karte .turm { width: 15%; }
-  .karte .kuppel { aspect-ratio: 1; border-radius: 50%; pointer-events: none;
-    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.4), rgba(120,190,255,.16) 45%, rgba(90,160,255,.3) 70%, rgba(150,210,255,.6));
-    border: 2px solid rgba(180,225,255,.85); box-shadow: 0 0 12px rgba(120,190,255,.7); }
+  .karte .kuppel { pointer-events: none; }
   .karte .schuss { position: absolute; height: 3px; background: linear-gradient(90deg, #ffb35c, #ff5a2c); transform-origin: 0 50%; border-radius: 2px; box-shadow: 0 0 6px #ff7a3c; }
   .karte > b { position: absolute; left: 6px; bottom: 6px; font: 700 11px var(--font-ui); background: rgba(0,0,0,.65); padding: 2px 6px; border-radius: 6px; }
   /* Herrscher */
@@ -99,21 +98,17 @@
   <header class="phead">
     <div class="emblem emblem--gold"><svg class="icon"><use href="#i-shop"/></svg></div>
     <div class="phead-text"><div class="overline">Kaufen &amp; Tauschen</div><h3 class="ptitle">Shop</h3>
-      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b>1.240</b><small>Edelsteine</small></span><span class="pill pill--throne"><img class="platzh" src="../../Game/bilder/beute_thron.webp" alt="" style="width:16px;height:16px"><b>2.450</b><small>Event</small></span></div></div>
+      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b>1.240</b><small>Edelsteine</small></span><span class="pill pill--throne"><img src="../../Game/bilder/beute_eventmuenze.webp" alt="" style="width:16px;height:16px"><b>2.450</b><small>Event</small></span></div></div>
     <button class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div id="shopTabs" class="tabs mail-tabs" role="tablist">
-    <button class="tab" type="button"><svg class="icon"><use href="#i-gem"/></svg><span>Kisten</span></button>
+    <button class="tab" type="button" id="reiterKisten"><svg class="icon"><use href="#i-gem"/></svg><span>Kisten</span></button>
     <button class="tab" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Schilde</span></button>
-    <button class="tab" type="button"><svg class="icon"><use href="#i-crown"/></svg><span>Thron</span></button>
-    <button class="tab active" type="button"><svg class="icon"><use href="#i-star"/></svg><span>Event</span></button>
+    <button class="tab" type="button" id="reiterEvent"><svg class="icon"><use href="#i-star"/></svg><span>Event</span></button>
     <button class="tab" type="button"><svg class="icon"><use href="#i-crate"/></svg><span>Markt</span></button>
   </div>
   <div class="pbody">
-    <div class="sect"><h4>Event-Shop</h4><span class="sect-aside"><svg class="icon"><use href="#i-hourglass"/></svg> Neu in <b>3 T 14:20:05</b></span></div>
-    <p class="mail-intro">Event-Münzen gibt es in allen Events (Woche, Thron, Invasion, Drache). Die Limits gelten je Woche und füllen sich Samstag 10 Uhr neu auf.</p>
-    <div class="waren waren--3" id="shopWaren"></div>
-    <p class="hinweis">Rot gestrichelt = Platzhalter-Bild (Prompt in PROMPTS.md).</p>
+    <div id="shopInhalt"></div>
   </div>
 </section>
 
@@ -128,7 +123,7 @@
   <div class="pbody"><div class="karten">
     <div class="karte" id="k1"><b>Sonst: je eine Kuppel über Thron und Türmen</b></div>
     <div class="karte" id="k2"><b>Sa 10 – So 22 Uhr: Kuppeln weg, Türme schießen</b></div>
-  </div><p class="hinweis">Kuppel und Turm-Bild sind Platzhalter (CSS/Symbol) – Prompts in PROMPTS.md.</p></div>
+  </div></div>
 </section>
 
 <section id="herrPopup" class="panel panel--sheet" role="dialog">
@@ -140,20 +135,21 @@
   </header>
   <div class="pbody">
     <div class="herr">
-      <div class="bild"><img src="../../Game/bilder/ui_wappen.webp" alt="" style="inset:18%;width:64%;height:64%"><img src="../../Game/bilder/ui_rahmen_grossadmiral.webp" alt="" style="inset:0;width:100%;height:100%"></div>
+      <div class="bild"><img src="../../Game/bilder/ui_wappen.webp" alt="" style="inset:20%;width:60%;height:60%"><img src="../../Game/bilder/ui_herrscher_rahmen.webp" alt="" style="inset:-14%;width:128%;height:128%"></div>
       <div><b style="font:700 16px var(--font-display);color:var(--gold-100)">Seewolf</b><br><small style="color:var(--tx-3)">Herrscher bis Sa 10:00 · Skin „Königsburg“</small></div>
+      <img src="../../Game/bilder/skin_koenigsburg.webp" alt="" style="width:72px;margin-left:auto">
     </div>
     <div class="sect"><h4>Titel vergeben</h4></div>
-    <div class="titel"><img src="../../Game/bilder/ui_sym_schwert.webp" alt=""><div>Feldherr<small>+5 % Angriff</small></div><span class="wer">Morgana</span></div>
-    <div class="titel"><img src="../../Game/bilder/ui_sym_schild.webp" alt=""><div>Burgvogt<small>+5 % Verteidigung</small></div><button class="btn btn--primary btn--sm" type="button"><span>Vergeben</span></button></div>
-    <div class="titel"><img src="../../Game/bilder/ui_sym_sammeln.webp" alt=""><div>Schatzmeister<small>+10 % Ertrag</small></div><span class="wer">Ragnar</span></div>
-    <div class="titel"><img src="../../Game/bilder/ui_sym_verluste.webp" alt=""><div>Narr<small class="boese">−5 % Marschtempo</small></div><button class="btn btn--primary btn--sm" type="button"><span>Vergeben</span></button></div>
+    <div class="titel"><img src="../../Game/bilder/ui_titel_feldherr.webp" alt=""><div>Feldherr<small>+5 % Angriff</small></div><span class="wer">Morgana</span></div>
+    <div class="titel"><img src="../../Game/bilder/ui_titel_burgvogt.webp" alt=""><div>Burgvogt<small>+5 % Verteidigung</small></div><button class="btn btn--primary btn--sm" type="button"><span>Vergeben</span></button></div>
+    <div class="titel"><img src="../../Game/bilder/ui_titel_schatzmeister.webp" alt=""><div>Schatzmeister<small>+10 % Ertrag</small></div><span class="wer">Ragnar</span></div>
+    <div class="titel"><img src="../../Game/bilder/ui_titel_narr.webp" alt=""><div>Narr<small class="boese">−5 % Marschtempo</small></div><button class="btn btn--primary btn--sm" type="button"><span>Vergeben</span></button></div>
     <div class="sect"><h4>So sieht man den Titel</h4></div>
     <div class="schilder">
-      <div class="schild"><span class="abz feldherr"><img src="../../Game/bilder/ui_sym_schwert.webp" alt="">Feldherr</span><b>Morgana</b></div>
-      <div class="schild"><span class="abz burgvogt"><img src="../../Game/bilder/ui_sym_schild.webp" alt="">Burgvogt</span><b>Eisenfaust</b></div>
-      <div class="schild"><span class="abz schatz"><img src="../../Game/bilder/ui_sym_sammeln.webp" alt="">Schatzmeister</span><b>Ragnar</b></div>
-      <div class="schild"><span class="abz narr"><img src="../../Game/bilder/ui_sym_verluste.webp" alt="">Narr</span><b>Krähe</b></div>
+      <div class="schild"><span class="abz feldherr"><img src="../../Game/bilder/ui_titel_feldherr.webp" alt="">Feldherr</span><b>Morgana</b></div>
+      <div class="schild"><span class="abz burgvogt"><img src="../../Game/bilder/ui_titel_burgvogt.webp" alt="">Burgvogt</span><b>Eisenfaust</b></div>
+      <div class="schild"><span class="abz schatz"><img src="../../Game/bilder/ui_titel_schatzmeister.webp" alt="">Schatzmeister</span><b>Ragnar</b></div>
+      <div class="schild"><span class="abz narr"><img src="../../Game/bilder/ui_titel_narr.webp" alt="">Narr</span><b>Krähe</b></div>
     </div>
     <div class="sect"><h4>Kisten verschicken</h4><span class="sect-aside">nicht an dich selbst</span></div>
     <div class="bk-raster"><span class="bk" data-r="gold"><img src="../../Game/bilder/kiste_royal_zu.webp" alt=""><b>1/2</b></span><span class="bk" data-r="lila"><img src="../../Game/bilder/kiste_episch_zu.webp" alt=""><b>3/5</b></span><span class="bk" data-r="blau"><img src="../../Game/bilder/kiste_gross_zu.webp" alt=""><b>10/10</b></span></div>
@@ -166,25 +162,26 @@
 // Nur Ansicht: Markup und Klassen wie im Spiel (renderEvents, renderThroneShop, beuteKachel)
 const B = '../../Game/bilder/';
 const icon = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"/></svg>';
-const kachel = (bild, r, zahl, platzh) => '<span class="bk' + (platzh ? ' platzh' : '') + '" data-r="' + r + '"><img src="' + B + bild + '.webp" alt="">' + (zahl ? '<b>' + zahl + '</b>' : '') + '</span>';
+const kachel = (bild, r, zahl) => '<span class="bk" data-r="' + r + '"><img src="' + B + bild + '.webp" alt="">' + (zahl ? '<b>' + zahl + '</b>' : '') + '</span>';
 const A = new URLSearchParams(location.search).get('a') || 'woche', ende = A === 'wochenende';
-const ANSICHTEN = [['woche', 'Events Mi'], ['wochenende', 'Events Sa'], ['shop', 'Shop'], ['karte', 'Karte'], ['herrscher', 'Herrscher']];
+const ANSICHTEN = [['woche', 'Events Mi'], ['wochenende', 'Events Sa'], ['shopkisten', 'Shop Kisten'], ['shop', 'Shop Event'], ['karte', 'Karte'], ['herrscher', 'Herrscher']];
 document.getElementById('wahl').innerHTML = ANSICHTEN.map(([k, t]) => '<a href="?a=' + k + '"' + (k === A ? ' class="on"' : '') + '>' + t + '</a>').join('');
-document.getElementById({ woche: 'goalsPopup', wochenende: 'goalsPopup', shop: 'shopPopup', karte: 'kartePopup', herrscher: 'herrPopup' }[A]).classList.add('is-open');
+document.getElementById({ woche: 'goalsPopup', wochenende: 'goalsPopup', shop: 'shopPopup', shopkisten: 'shopPopup', karte: 'kartePopup', herrscher: 'herrPopup' }[A]).classList.add('is-open');
 
 // Chips: Woche läuft Mo–Fr, Thron Sa 10 – So 22; grüner Punkt = läuft gerade
 const CHIPS = [['Woche', !ende, ende ? 'ab Mo' : ''], ['Thron', ende, ende ? '' : 'Sa 10'], ['Invasion', false, ''], ['Drache', false, ''], ['Boss', true, ''], ['Lager', true, '']];
 document.getElementById('goalsTabs').innerHTML = CHIPS.map(([t, an, ab]) => '<button class="p5-chip' + (t === 'Thron' ? ' active' : '') + '" type="button"><i class="ev-st' + (an ? ' an' : '') + '"></i><span>' + t + '</span>' + (ab ? '<small>' + ab + '</small>' : '') + '</button>').join('');
 
 // Ereignis „Kampf um den Königsthron“
-const EM = ['beute_thron', true];                         // Event-Münze: Platzhalter, bis eigenes Bild da ist
-const S1 = ['ui_sym_schloss', true], S2 = ['ui_sym_schloss', true];   // Schlüssel 1/2: Platzhalter, bis beute_schluessel(_episch) da ist
+const EM = 'beute_eventmuenze', S1 = 'beute_schluessel', S2 = 'beute_schluessel_episch';
+// Beschleuniger: Bild nach Dauer (Bronze bis 15 Min., Silber 1/3 Std., Gold 8/24 Std.)
+const BE = z => 'beute_beschleuniger_' + (/Min/.test(z) ? 'klein' : /^(1|3) Std/.test(z) ? 'mittel' : 'gross');
 const RAENGE = [
-  ['p1', 'Platz 1', 'ui_rang_legende', 'Herrscher', [[EM, 'gold', '3.000'], ['beute_muenzen', 'gold', '12 Std.'], ['beute_holz', 'gold', '600K'], ['beute_beschleuniger', 'gold', '24 Std'], [S2, 'gold', '3']]],
-  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200'], ['beute_muenzen', 'lila', '8 Std.'], ['beute_holz', 'lila', '400K'], ['beute_beschleuniger', 'lila', '24 Std'], [S2, 'lila', '2']]],
-  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700'], ['beute_muenzen', 'lila', '6 Std.'], ['beute_holz', 'lila', '300K'], ['beute_beschleuniger', 'lila', '8 Std'], [S2, 'lila', '1']]],
-  ['p4', 'Platz 4–8', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000'], ['beute_muenzen', 'blau', '4 Std.'], ['beute_holz', 'blau', '150K'], ['beute_beschleuniger', 'blau', '8 Std'], [S1, 'blau', '5']]],
-  ['p5', 'Teilnahme', 'ui_rang_neuling', 'ab 500 Punkten', [[EM, 'gruen', '300'], ['beute_muenzen', 'gruen', '1 Std.'], ['beute_beschleuniger', 'gruen', '1 Std'], [S1, 'gruen', '1']]]
+  ['p1', 'Platz 1', 'ui_rang_legende', 'Herrscher', [[EM, 'gold', '3.000'], ['beute_muenzen', 'gold', '12 Std.'], ['beute_holz', 'gold', '600K'], [BE('24 Std'), 'gold', '24 Std'], [S2, 'gold', '3']]],
+  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200'], ['beute_muenzen', 'lila', '8 Std.'], ['beute_holz', 'lila', '400K'], [BE('24 Std'), 'lila', '24 Std'], [S2, 'lila', '2']]],
+  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700'], ['beute_muenzen', 'lila', '6 Std.'], ['beute_holz', 'lila', '300K'], [BE('8 Std'), 'lila', '8 Std'], [S2, 'lila', '1']]],
+  ['p4', 'Platz 4–8', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000'], ['beute_muenzen', 'blau', '4 Std.'], ['beute_holz', 'blau', '150K'], [BE('8 Std'), 'blau', '8 Std'], [S1, 'blau', '5']]],
+  ['p5', 'Teilnahme', 'ui_rang_neuling', 'ab 500 Punkten', [[EM, 'gruen', '300'], ['beute_muenzen', 'gruen', '1 Std.'], [BE('1 Std'), 'gruen', '1 Std'], [S1, 'gruen', '1']]]
 ];
 const TOP = [['Seewolf', 16200, 'Hält den Königsthron'], ['Morgana', 10380, 'Wachturm Nord'], ['Ragnar', 9800, 'Wachturm Ost'], ['Eisenfaust', 7420, ''], ['Krähe', 5100, ''], ['Du', 4100, '']];
 const zahl = n => n.toLocaleString('de-DE');
@@ -198,7 +195,7 @@ document.getElementById('eventBody').innerHTML =
   '<div class="lb-gap">' + (ende ? 'Live · Top 10' : 'Letztes Wochenende · Top 10') + '</div>' + liste +
   '<div class="lb-gap">Preise nach Platz · am Ende im Abholfach</div>' +
   RAENGE.map(([k, name, bild, zusatz, L]) => '<div class="rang"><div class="rband ' + k + '"><img src="' + B + bild + '.webp" alt="">' + name + (zusatz ? '<span>' + zusatz + '</span>' : '') + '</div><div class="bk-raster">' +
-    L.map(([b, r, z]) => Array.isArray(b) ? kachel(b[0], r, z, b[1]) : kachel(b, r, z)).join('') + '</div></div>').join('') +
+    L.map(([b, r, z]) => kachel(b, r, z)).join('') + '</div></div>').join('') +
   '<details class="lb-info ev-info" open><summary>' + icon('info') + '<span>So gibt es Punkte</span></summary><div class="tour-rules">' +
     '<span>' + icon('hourglass') + '<span><b>Mo–Fr Wochen-Event, Freitag Auswertung, Sa 10 – So 22 Uhr Thron-Event.</b> Sonst liegt je eine Kuppel über Thron und Türmen.</span></span>' +
     '<span>' + icon('crown') + '<span><b>Königsthron:</b> 30 Punkte alle 3 Min. für den Halter, Verbündete darin 15.</span></span>' +
@@ -206,22 +203,32 @@ document.getElementById('eventBody').innerHTML =
     '<span>' + icon('attack') + '<span>Türme schießen alle 10 Min. 2 % auf den Thron – nie auf das eigene Bündnis.</span></span>' +
     '<span>' + icon('rank') + '<span>Punkte starten jedes Wochenende bei 0. Platz 1 wird <b>Herrscher</b> für 1 Woche.</span></span></div></details>';
 
-// Event-Shop: 9 Waren, Limit je Woche
-const SHOP = [
-  ['kiste_royal_zu', 'gold', 'Königliche Kiste', 1500, '0/1', true, false],
-  ['beute_edelsteine', 'lila', '500 Edelsteine', 1000, '1/2', false, false],
-  ['beute_beschleuniger', 'lila', '8 Std. Tempo', 600, '2/3', false, false],
-  ['kiste_episch_zu', 'lila', 'Epische Kiste', 500, '0/3', false, false],
-  ['beute_truppen', 'blau', '4 Std. Truppen', 300, '5/5', false, true],
-  ['beute_muenzen', 'blau', '4 Std. Münzen', 250, '1/5', false, false],
-  ['beute_holz', 'gruen', '100K Holz', 150, '0/10', false, false],
-  ['beute_stein', 'gruen', '70K Stein', 150, '0/10', false, false],
-  ['ui_rahmen_champion', 'rot', 'Skin „Goldene Flagge“', 4000, '0/1', true, false]
-];
-document.getElementById('shopWaren').innerHTML = SHOP.map(([b, r, name, preis, lim, platzh, leer]) =>
-  '<div class="ware ware--klein' + (leer ? ' leer' : '') + '" data-r="' + r + '"><span class="ware-bild"><img class="kiste-bild' + (platzh ? ' platzh' : '') + '" src="' + B + b + '.webp" alt=""></span>' +
-  '<span class="ware-txt"><b class="ware-name">' + name + '</b><small class="lim">' + (leer ? 'ausverkauft · ' : 'Woche ') + lim + '</small></span>' +
-  '<button type="button" class="ware-preis thron"' + (leer ? ' disabled' : '') + '><img src="' + B + 'beute_thron.webp" alt=""><b>' + zahl(preis) + '</b></button></div>').join('');
+// Shop: Reiter Kisten (öffnen mit Schlüssel oder Edelsteinen) und Event (Event-Münzen, Limit je Woche)
+const preis = (art, n, leer) => '<button type="button" class="ware-preis zwei' + (art === 'm' ? ' thron' : '') + '"' + (leer ? ' disabled' : '') + '>' +
+  (art === 'm' ? '<img src="' + B + EM + '.webp" alt="">' : art === 'g' ? icon('gem') : '<img src="' + B + art + '.webp" alt="">') + '<b>' + (typeof n === 'number' ? zahl(n) : n) + '</b></button>';
+const ware = (b, r, name, unter, knoepfe, zeit, leer) => '<div class="ware ware--klein' + (leer ? ' leer' : '') + '" data-r="' + r + '"><span class="ware-bild"><img class="kiste-bild" src="' + B + b + '.webp" alt="">' + (zeit ? '<b class="zeit">' + zeit + '</b>' : '') + '</span>' +
+  '<span class="ware-txt"><b class="ware-name">' + name + '</b><small class="lim">' + unter + '</small></span>' + knoepfe + '</div>';
+// Beschleuniger: Dauer, Edelsteine, Event-Münzen, Woche gekauft/Limit (gilt für Bauen, Forschen, Heilen)
+const TEMPO = [['1 Min', 5, 10, '3/20'], ['5 Min', 20, 40, '0/20'], ['15 Min', 50, 100, '0/10'], ['1 Std', 150, 300, '1/10'], ['3 Std', 400, 800, '0/5'], ['8 Std', 1000, 2000, '2/3'], ['24 Std', 2800, 5500, '0/1']];
+const KISTEN = [['kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', S2, 500, '2 Schlüssel · sicher Lila in 20'], ['kiste_episch_zu', 'lila', 'Epische Ausrüstung', S2, 500, '0 Schlüssel'], ['kiste_held_zu', 'blau', 'Helden-Kiste', S1, 100, '5 Schlüssel'], ['kiste_ausruestung_zu', 'blau', 'Ausrüstungs-Kiste', S1, 100, '5 Schlüssel']];
+const kistenReiter = '<div class="sect"><h4>Kisten öffnen</h4><span class="sect-aside">mit Schlüssel oder Edelsteinen</span></div>' +
+  '<div class="waren waren--3">' + KISTEN.map(([b, r, name, s, g, unter]) => ware(b, r, name, unter, preis(s, '1×') + preis('g', g))).join('') + '</div>' +
+  '<div class="sect"><h4>Schlüssel</h4></div><div class="waren waren--3">' +
+  ware(S1, 'blau', 'Schlüssel', 'Woche 1/10', preis('g', 100) + preis('m', 200)) + ware(S2, 'lila', 'Epischer Schlüssel', 'Woche 0/3', preis('g', 500) + preis('m', 1000)) + '</div>' +
+  '<div class="sect"><h4>Beschleuniger</h4><span class="sect-aside">Bauen · Forschen · Heilen</span></div><div class="waren waren--3">' +
+  TEMPO.map(([z, g]) => ware(BE(z), /Min/.test(z) ? 'gruen' : /^(1|3) Std/.test(z) ? 'blau' : 'lila', 'Beschleuniger', 'Edelsteine', preis('g', g), z)).join('') + '</div>';
+const eventReiter = '<div class="sect"><h4>Event-Shop</h4><span class="sect-aside">' + icon('hourglass') + ' Neu in <b>3 T 14:20:05</b></span></div>' +
+  '<p class="mail-intro">Event-Münzen gibt es in allen Events. Die Limits gelten je Woche und füllen sich Montag neu auf.</p>' +
+  '<div class="sect"><h4>Beschleuniger</h4><span class="sect-aside">Edelsteine oder Event-Münzen</span></div><div class="waren waren--3">' +
+  TEMPO.map(([z, g, m, lim]) => { const leer = lim.split('/')[0] === lim.split('/')[1];
+    return ware(BE(z), /Min/.test(z) ? 'gruen' : /^(1|3) Std/.test(z) ? 'blau' : 'lila', 'Beschleuniger', (leer ? 'aus · ' : 'Woche ') + lim, preis('g', g) + preis('m', m, leer), z); }).join('') + '</div>' +
+  '<div class="sect"><h4>Schlüssel und mehr</h4></div><div class="waren waren--3">' +
+  ware(S1, 'blau', 'Schlüssel', 'Woche 1/10', preis('m', 200) + preis('g', 100)) + ware(S2, 'lila', 'Epischer Schlüssel', 'Woche 0/3', preis('m', 1000) + preis('g', 500)) +
+  ware('kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', 'Woche 0/2', preis('m', 1500)) + ware('beute_muenzen', 'blau', '4 Std. Münzen', 'Woche 1/5', preis('m', 250)) +
+  ware('beute_holz', 'gruen', '100K Holz', 'Woche 0/10', preis('m', 150)) + ware('skin_goldene_flagge', 'rot', 'Skin „Goldene Flagge“', 'Woche 0/1', preis('m', 4000)) + '</div>';
+const kistenAnsicht = A === 'shopkisten';
+document.getElementById(kistenAnsicht ? 'reiterKisten' : 'reiterEvent').classList.add('active');
+document.getElementById('shopInhalt').innerHTML = kistenAnsicht ? kistenReiter : eventReiter;
 
 // Karte: Thron in der Mitte, 4 Türme an den Ecken – unter der Woche je eine eigene Kuppel
 const TUERME = [[16, 20], [84, 20], [16, 80], [84, 80]];
@@ -229,9 +236,9 @@ for (const id of ['k1', 'k2']) {
   const k = document.getElementById(id), woche = id === 'k1'; let h = '';
   if (!woche) h += TUERME.map(([x, y], i) => { const dx = 50 - x, dy = (50 - y) * 0.8, l = Math.hypot(dx, dy) * 0.62;
     return i === 3 ? '' : '<i class="schuss" style="left:' + x + '%;top:' + y + '%;width:' + l + '%;transform:rotate(' + Math.atan2(dy, dx) + 'rad)"></i>'; }).join('');
-  h += '<img class="thron" src="' + B + 'karte_thron.webp" alt="">';
-  h += TUERME.map(([x, y]) => '<img class="turm platzh" src="' + B + 'karte_waechtertempel.webp" style="left:' + x + '%;top:' + y + '%" alt="">').join('');
-  if (woche) h += '<i class="kuppel platzh" style="left:50%;top:50%;width:40%"></i>' + TUERME.map(([x, y]) => '<i class="kuppel platzh" style="left:' + x + '%;top:' + y + '%;width:19%"></i>').join('');
+  h += '<img class="thron" src="' + B + 'karte_thron_neu.webp" alt="">';
+  h += TUERME.map(([x, y]) => '<img class="turm" src="' + B + 'karte_wachturm.webp" style="left:' + x + '%;top:' + y + '%" alt="">').join('');
+  if (woche) h += '<img class="kuppel" src="' + B + 'karte_kuppel.webp" style="left:50%;top:47%;width:42%" alt="">' + TUERME.map(([x, y]) => '<img class="kuppel" src="' + B + 'karte_kuppel.webp" style="left:' + x + '%;top:' + (y - 2) + '%;width:20%" alt="">').join('');
   k.insertAdjacentHTML('afterbegin', h);
 }
 </script>

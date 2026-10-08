@@ -64,3 +64,4 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - Marsch-Plätze: nicht mehr über Burg-Stufe, sondern Labor-Forschung: 2 von Anfang an, Platz 3 ab Labor 5, 4 ab 10, 5 ab 16, 6 ab 22.
 - Shop: neuer Reiter „Event“ (Event-Shop, Event-Münzen). Beschleuniger: Belohnung bei Events UND im Shop kaufbar für
   Edelsteine oder Event-Münzen. Kisten-Reiter: öffnen mit Schlüssel oder Edelsteinen.
+- Bilder für Thron-/Wochen-Event (Karte, Herrscher, Titel, Event-Münze, Schlüssel, epische Helden-Kiste, Beschleuniger klein/mittel/groß) liegen in `Game/bilder/`; Test-Dateien nutzen sie (Test `eventbilder_test`), Shop dort mit Reitern Kisten + Event.

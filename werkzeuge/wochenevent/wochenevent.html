@@ -99,7 +99,6 @@
   .sk-bild { display: grid; place-items: center; border-radius: 8px; background: radial-gradient(circle, rgba(255,210,120,.2), transparent 70%); }
   .sk[data-r="lila"] .sk-bild { background: radial-gradient(circle, rgba(200,130,255,.35), transparent 70%); }
   .sk-bild img { width: 80px; height: 80px; object-fit: contain; }
-  .sk-bild.platzh, .sk-bild:has(.platzh) { outline: 2px dashed #ff8d82; }
   .sk-txt { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
   .sk-txt > b { font: 700 13.5px var(--font-ui); color: var(--gold-100); }
   .sk-txt > small { font: 500 11px var(--font-ui); color: var(--tx-3); }
@@ -112,7 +111,6 @@
   .sk-kn img { width: 18px; height: 18px; }
   .sk-kn .bk > img { width: 80%; height: 80%; }
   .sk-frag { font: 600 10px var(--font-ui); color: #ffb37a; text-align: right; }
-  .platzh { outline: 2px dashed #ff8d82; outline-offset: -2px; }
 </style>
 </head>
 <body>
@@ -143,9 +141,7 @@
 const B = '../../Game/bilder/';
 const icon = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"/></svg>';
 // Fehlt ein Bild (Schlüssel, Helden-Kiste episch), zeigt die Kachel ein Ersatzbild mit roter Strich-Linie (Prompts in PROMPTS.md)
-const ERSATZ = { beute_schluessel: 'ui_sym_schloss', beute_schluessel_episch: 'ui_sym_schloss', kiste_held_episch_zu: 'kiste_held_zu' };
-const bildTag = bild => '<img src="' + B + bild + '.webp" alt=""' + (ERSATZ[bild] ? ' onerror="this.onerror=null;this.src=\'' + B + ERSATZ[bild] + '.webp\';this.parentNode.classList.add(\'platzh\')"' : '') + '>';
-const kachel = (bild, r, zahl, platzh) => '<span class="bk' + (platzh ? ' platzh' : '') + '" data-r="' + r + '">' + bildTag(bild) + (zahl ? '<b>' + zahl + '</b>' : '') + '</span>';
+const kachel = (bild, r, zahl) => '<span class="bk" data-r="' + r + '"><img src="' + B + bild + '.webp" alt="">' + (zahl ? '<b>' + zahl + '</b>' : '') + '</span>';
 const zahl = n => n.toLocaleString('de-DE');
 const A = new URLSearchParams(location.search).get('a') || 'mo';
 const TAGE = ['mo', 'di', 'mi', 'do', 'fr'], heute = A === 'rang' ? 4 : Math.max(0, TAGE.indexOf(A)), rangSicht = A === 'rang';
@@ -166,13 +162,15 @@ const EVENTS = [
 const EV = EVENTS[heute], tagPkt = [7400, 5100, 9800, 3600, 2200][heute], wochePkt = [7400, 12500, 22300, 25900, 28100][heute];
 
 // Kisten-Leiste: gleich jeden Tag (Punkte dieses Tages)
-const EM = 'beute_thron', S1 = 'beute_schluessel', S2 = 'beute_schluessel_episch', T = 'beute_beschleuniger';                                  // Event-Münze: Platzhalter, bis eigenes Bild da ist
+const EM = 'beute_eventmuenze', S1 = 'beute_schluessel', S2 = 'beute_schluessel_episch';
+// Beschleuniger: Bild nach Dauer (Bronze bis 15 Min., Silber 1/3 Std., Gold 8/24 Std.)
+const BE = z => 'beute_beschleuniger_' + (/Min/.test(z) ? 'klein' : /^(1|3) Std/.test(z) ? 'mittel' : 'gross');
 const KISTEN = [
-  [1000, 'kiste_ausruestung', [[EM, 'gruen', '50', 1], ['beute_edelsteine', 'gruen', '10'], [T, 'gruen', '5 Min']]],
-  [3000, 'kiste_gross', [[EM, 'blau', '100', 1], ['beute_edelsteine', 'blau', '20'], [T, 'blau', '15 Min']]],
-  [6000, 'kiste_gross', [[EM, 'blau', '150', 1], ['beute_edelsteine', 'blau', '30'], [T, 'blau', '1 Std']]],
-  [12000, 'kiste_episch', [[EM, 'lila', '250', 1], ['beute_edelsteine', 'lila', '50'], [T, 'lila', '3 Std']]],
-  [20000, 'kiste_royal', [[EM, 'gold', '400', 1], ['beute_edelsteine', 'gold', '80'], [S1, 'gold', '1'], [T, 'gold', '8 Std']]]
+  [1000, 'kiste_ausruestung', [[EM, 'gruen', '50'], ['beute_edelsteine', 'gruen', '10'], [BE('5 Min'), 'gruen', '5 Min']]],
+  [3000, 'kiste_gross', [[EM, 'blau', '100'], ['beute_edelsteine', 'blau', '20'], [BE('15 Min'), 'blau', '15 Min']]],
+  [6000, 'kiste_gross', [[EM, 'blau', '150'], ['beute_edelsteine', 'blau', '30'], [BE('1 Std'), 'blau', '1 Std']]],
+  [12000, 'kiste_episch', [[EM, 'lila', '250'], ['beute_edelsteine', 'lila', '50'], [BE('3 Std'), 'lila', '3 Std']]],
+  [20000, 'kiste_royal', [[EM, 'gold', '400'], ['beute_edelsteine', 'gold', '80'], [S1, 'gold', '1'], [BE('8 Std'), 'gold', '8 Std']]]
 ];
 function leiste(wert, an) {
   const n = KISTEN.length; let k = 0; while (k < n && wert >= KISTEN[k][0]) k++;
@@ -182,25 +180,25 @@ function leiste(wert, an) {
     return '<' + tag + ' class="evl-k is-' + s + '"' + (tag === 'button' ? ' type="button"' : '') + '><span class="evl-bild"><img src="' + B + kb + (s === 'ok' ? '_offen' : '_zu') + '.webp" alt="">' +
       (s === 'ok' ? '<i class="evl-haken"><img src="' + B + 'ui_sym_haken.webp" alt=""></i>' : '') + '</span><small>' + zahl(ab) + '</small></' + tag + '>'; }).join('');
   const zeilen = KISTEN.map(([ab, kb, L], i) => { const s = st(i);
-    return '<div class="evl-z is-' + s + '"><b>' + zahl(ab) + ' P.</b><div class="bk-raster bk-mini">' + L.map(([b, r, z, p]) => kachel(b, r, z, p)).join('') + '</div><span class="evl-st">' +
+    return '<div class="evl-z is-' + s + '"><b>' + zahl(ab) + ' P.</b><div class="bk-raster bk-mini">' + L.map(([b, r, z]) => kachel(b, r, z)).join('') + '</div><span class="evl-st">' +
       (s === 'hol' ? '<button class="btn btn--primary btn--sm" type="button"><span>Abholen</span></button>' : s === 'ok' ? '<img src="' + B + 'ui_sym_haken.webp" alt=""><small>Abgeholt</small>' : icon('lock')) + '</span></div>'; }).join('');
   return '<div class="evl" style="--n:' + n + '"><div class="evl-bahn"><div class="evl-spur"><i style="width:' + (an ? pos * 100 : 0).toFixed(1) + '%"></i></div>' + knoten + '</div></div><div class="evl-zeilen">' + zeilen + '</div>';
 }
 
 // Wochen-Rangliste: Punkte Mo–Fr zusammen, Freitag 20 Uhr Auswertung
 const RAENGE = [
-  ['p1', 'Platz 1', 'ui_rang_legende', '', [[EM, 'gold', '3.000', 1], ['beute_edelsteine', 'gold', '500'], [S2, 'gold', '3'], [S1, 'gold', '10'], [T, 'gold', '24 Std']]],
-  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200', 1], ['beute_edelsteine', 'lila', '350'], [S2, 'lila', '2'], [S1, 'lila', '8'], [T, 'lila', '24 Std']]],
-  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700', 1], ['beute_edelsteine', 'lila', '250'], [S2, 'lila', '1'], [S1, 'lila', '6'], [T, 'lila', '8 Std']]],
-  ['p4', 'Platz 4–10', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000', 1], ['beute_edelsteine', 'blau', '150'], [S2, 'blau', '1'], [S1, 'blau', '4'], [T, 'blau', '8 Std']]],
-  ['p4', 'Platz 11–50', 'ui_rang_platingraf', '', [[EM, 'blau', '500', 1], ['beute_edelsteine', 'blau', '80'], [S1, 'blau', '2'], [T, 'blau', '3 Std']]],
-  ['p5', 'Ab Platz 51', 'ui_rang_neuling', 'alle mit mind. 1 Punkt', [[EM, 'gruen', '200', 1], ['beute_edelsteine', 'gruen', '20'], [S1, 'gruen', '1'], [T, 'gruen', '1 Std']]]
+  ['p1', 'Platz 1', 'ui_rang_legende', '', [[EM, 'gold', '3.000'], ['beute_edelsteine', 'gold', '500'], [S2, 'gold', '3'], [S1, 'gold', '10'], [BE('24 Std'), 'gold', '24 Std']]],
+  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200'], ['beute_edelsteine', 'lila', '350'], [S2, 'lila', '2'], [S1, 'lila', '8'], [BE('24 Std'), 'lila', '24 Std']]],
+  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700'], ['beute_edelsteine', 'lila', '250'], [S2, 'lila', '1'], [S1, 'lila', '6'], [BE('8 Std'), 'lila', '8 Std']]],
+  ['p4', 'Platz 4–10', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000'], ['beute_edelsteine', 'blau', '150'], [S2, 'blau', '1'], [S1, 'blau', '4'], [BE('8 Std'), 'blau', '8 Std']]],
+  ['p4', 'Platz 11–50', 'ui_rang_platingraf', '', [[EM, 'blau', '500'], ['beute_edelsteine', 'blau', '80'], [S1, 'blau', '2'], [BE('3 Std'), 'blau', '3 Std']]],
+  ['p5', 'Ab Platz 51', 'ui_rang_neuling', 'alle mit mind. 1 Punkt', [[EM, 'gruen', '200'], ['beute_edelsteine', 'gruen', '20'], [S1, 'gruen', '1'], [BE('1 Std'), 'gruen', '1 Std']]]
 ];
 const TOP = [['Seewolf', 61200], ['Morgana', 48800], ['Ragnar', 41500], ['Eisenfaust', 33900], ['Krähe', 30100], ['Du', wochePkt]].sort((a, b) => b[1] - a[1]);
 const liste = '<ol class="barb-rank">' + TOP.map(([n, p], i) => '<li' + (n === 'Du' ? ' class="me"' : '') + '><em>' + (i + 1) + '</em><span>' + n + '</span><b>' + zahl(p) + ' P.</b></li>').join('') + '</ol>';
 const meinPlatz = TOP.findIndex(x => x[0] === 'Du') + 1;
 const preise = RAENGE.map(([k, name, bild, zusatz, L]) => '<div class="rang"><div class="rband ' + k + '"><img src="' + B + bild + '.webp" alt="">' + name + (zusatz ? '<span>' + zusatz + '</span>' : '') + '</div><div class="bk-raster">' +
-  L.map(([b, r, z, p]) => kachel(b, r, z, p)).join('') + '</div></div>').join('');
+  L.map(([b, r, z]) => kachel(b, r, z)).join('') + '</div></div>').join('');
 
 const tage = '<div class="tage">' + EVENTS.map((e, i) => '<a href="?a=' + TAGE[i] + '"' + (i === heute && !rangSicht ? ' class="jetzt"' : '') + '><b>' + e.k + '</b>' + icon(e.ic) + e.name + '<br>' + (i === heute ? 'heute' : i < heute ? 'vorbei' : i === heute + 1 ? 'morgen' : e.k) + '</a>').join('') +
   '<a href="?a=rang" class="t-rang' + (rangSicht ? ' jetzt' : '') + '"><b>Woche</b><img src="' + B + 'ui_sym_pokal.webp" alt="">Rangliste<br>Fr 20:00</a></div>';
@@ -244,7 +242,7 @@ const SHOPK = [['Ausrüstungs-Kiste', 'kiste_ausruestung_zu', 'blau', S1, 4, 100
   ['Helden-Kiste', 'kiste_held_zu', 'blau', S1, 4, 100, 0, 'Helden-Splitter · meist Grün/Blau'],
   ['Epische Helden-Kiste', 'kiste_held_episch_zu', 'lila', S2, 1, 500, 6, 'Lila- und Gold-Helden-Splitter']];
 const kistenSicht = '<div class="lb-gap">Shop · Kisten</div><div class="sk-liste">' + SHOPK.map(([n, bild, r, sl, hab, gem, ver, inh]) =>
-  '<div class="sk" data-r="' + r + '"><div class="sk-bild">' + bildTag(bild) + '</div><div class="sk-txt"><b>' + n + '</b><small>' + inh + '</small>' +
+  '<div class="sk" data-r="' + r + '"><div class="sk-bild">' + '<img src="' + B + bild + '.webp" alt="">' + '</div><div class="sk-txt"><b>' + n + '</b><small>' + inh + '</small>' +
   (r === 'lila' ? '<div class="sk-sicher"><span>Sicher 1 Lila in <b>' + ver + '/20</b> Versuchen</span><i style="width:' + (ver / 20 * 100) + '%"></i></div>' : '') +
   '<div class="sk-kn"><button class="btn btn--primary btn--sm" type="button">' + kachel(sl, r) + '<span>Öffnen · ' + hab + '</span></button>' +
   '<button class="btn btn--sm" type="button"><img src="' + B + 'ui_edelstein.webp" alt=""><span>' + gem + '</span></button></div>' +
