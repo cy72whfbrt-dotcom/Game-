@@ -72,6 +72,23 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       await p.evaluate(() => { MT.tempo = 5; });
       ok(/rally:sammelt/.test(r0) && await bis(() => MT.armeen.some(a => a.art === 'rally' && a.phase === 'hin' && a.rally.mitglieder.length === 4)), `${name} ${art}: Rally sammelt (3 Beitritte), dann Rally-Marsch mit 4 Mitgliedern`, r0);
       ok(await bis(() => MT.effekte.some(e => e.art === 'pfeile')) && await bis(() => MT.kaempfe.length === 1), `${name} ${art}: Rally kommt an (Pfeile von allen Seiten), dann Kampf`);
+      // Gemeinsamer Kampf wie im Spiel (kampfDazu): 3 eigene Märsche versetzt → EIN Kampf, ein Kreis, Truppen addiert, Armeen um das Ziel
+      await leer(); await p.click('#mehr-knopf'); await p.click('#drei'); await p.click('#mehr-knopf'); await p.evaluate(() => { MT.tempo = 3; });
+      ok(await bis(() => MT.kaempfe.length === 1 && MT.kaempfe[0].teile.length === 3), `${name} ${art}: 3 Angriffe treten EINEM Kampf bei`);
+      const gk = await p.evaluate(() => { const k = MT.kaempfe[0], w = k.teile.map(a => a.winkel);
+        return { n: MT.kaempfe.length, a0: k.a0, summe: k.teile.reduce((x, a) => x + a.truppen, 0), sieg: k.sieg, abstand: Math.min(...w.flatMap((x, i) => w.slice(i + 1).map(y => Math.abs(Math.atan2(Math.sin(x - y), Math.cos(x - y)))))),
+          dazu: MT.effekte.filter(e => e.art === 'dazu').length }; });
+      ok(gk.n === 1 && gk.a0 === 12.4e6 && gk.summe === gk.a0 && gk.sieg && gk.abstand > .4, `${name} ${art}: ein Kreis, Truppen addiert (4,2+3,1+5,1 = 12,4 Mio. → Sieg), Armeen nebeneinander um das Ziel`, gk);
+      ok(await bis(() => MT.effekte.some(e => e.art === 'sieg' && /3 Armeen/.test(e.text))) && await p.evaluate(() => MT.armeen.filter(a => a.phase === 'rueck' && a.beute).length === 3),
+        `${name} ${art}: Sieg-Band „3 Armeen“, jede Armee geht mit ihrem Beute-Anteil heim`);
+      // Verbündeter tritt bei, Verstärkung des Gegners erhöht die Verteidiger, dritte Seite wartet und kämpft danach
+      await leer(); await p.evaluate(() => { MT.D.basen.find(b => b.id === 'kevin').truppen = 8.1e6; MT.dreiAngriffe(); MT.DAZU.bund(); MT.DAZU.gegner(); MT.DAZU.dritter(); MT.tempo = 3; });
+      ok(await bis(() => MT.kaempfe.length === 1 && MT.armeen.some(a => a.phase === 'wartet')), `${name} ${art}: dritter Spieler kommt an und wartet`);
+      const vb = await p.evaluate(() => { const k = MT.kaempfe[0]; return { n: MT.kaempfe.length, bund: k.teile.some(a => a.seite === 'bund'), d0: k.d0, a0: k.a0, verst: MT.armeen.some(a => a.art === 'verst'),
+        wartet: MT.armeen.filter(a => a.phase === 'wartet').map(a => a.name) }; });
+      ok(vb.n === 1 && vb.bund && vb.a0 === 4.2e6 + 2.9e6 && vb.d0 === 8.1e6 + 3.5e6 && !vb.verst && vb.wartet.join() === '[DK]Wulfgar',
+        `${name} ${art}: Verbündeter addiert Angreifer, Verstärkung Gegner addiert Verteidiger, Wulfgar wartet (kein zweiter Kreis)`, vb);
+      ok(await bis(() => MT.kaempfe.length === 1 && MT.kaempfe[0].a.kuerzel === 'DK', null, 40000), `${name} ${art}: nach der Entscheidung kämpft der Wartende gegen die Basis`);
       // Zurückrufen ohne laufenden Marsch: Marsch geht los und dreht nach 2,5 s
       await leer(); await knopf('zurueck');
       ok(await bis(() => MT.armeen[0] && MT.armeen[0].phase === 'rueck' && MT.armeen[0].zurueck), `${name} ${art}: Zurückrufen dreht einen Marsch um`);

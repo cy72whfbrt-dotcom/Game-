@@ -1034,6 +1034,13 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   ca. 600 KB vom CDN fallen weg, spiel.js 977 → 959 KB (verkleinert). Tests: `laden_test` (keine 3D-Dateien, keine Anfrage
   nach außen), `basen_bild_test` (Platzhalter beim Laden), `server_test` (CSP ohne CDN), `karte_test`, `design_stil_test`.
   Auf dem Server liegen `baukunst.js`/`klein/baukunst.js` noch – werden nicht mehr geladen (beim nächsten Aufräumen löschen).
+- **8.10. Marsch-Testdatei (`werkzeuge/marschtest/`, nur Anzeige, Spiel unverändert):** gemeinsamer Kampf wie im Spiel
+  (`kampfDazu`, 04-kampf.js): weitere eigene Märsche und Bündnis-Mitglieder treten dem laufenden Kampf am selben Ziel bei
+  (Truppen addiert, Kampf mindestens noch 2,5 s, Hinweis „Verstärkung im Kampf: +… · jetzt …“), Verstärkung des Gegners
+  erhöht die Verteidiger, ein dritter Spieler wartet sichtbar am Rand (Sanduhr, „wartet“) und kämpft erst nach der
+  Entscheidung. Ein Kampfkreis, Armeen stellen sich um das Ziel, Tafel „4 Armeen · 10,3 Mio. ⚔ 8,4 Mio.“, Chip am Sechseck
+  immer „Truppen · Restzeit“ (auch im Kampf), Kampfdauer wie `fightDurationMs` (4–12 s). Knöpfe unter „Mehr“: 3 Angriffe,
+  + eigener Marsch, + Verbündeter, + Verstärkung Gegner, Dritter Spieler. Test `marschtest_test.js`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
