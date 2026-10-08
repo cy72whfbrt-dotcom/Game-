@@ -1045,6 +1045,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   wachsen, Tempo bleibt fest), Bündnis-Mitglied kehrt um; Verstärker des Gegners stehen als eigene Sechsecke in der Basis
   (Name, Truppen, Balken, eigene Schadenszahlen, nach Niederlage weg); jeder Marsch nimmt nur freie Truppen der Basis
   (12,4 → 6,2 + 3,1 Mio., vorher zählte jeder Marsch die ganze Basis); Sieg-Band am Bildrand.
+  Abgleich Gruppe 1 (Ergebnis wie `resolveAttack`/`barbFight`): Sieg nur, wenn Angriff > Truppen + Verteidigung; Sieger verliert
+  die Verteidigung, Verlierer: 20 % fliehen heim. Hauptstadt: „Geplündert – die Hauptstadt hält“, brennt 30 Min., 10 % über dem
+  Schutz als Beute; Turm erobert: wird deiner, Überlebende bleiben als Besatzung (keine Beute); Lager sofort entschieden (Sieg:
+  Münzen ins Abholfach, Niederlage: alle Truppen weg). Ziel inzwischen eigen/Bündnis: einziehen bzw. heim. Armeen im Halbkreis
+  unter dem Ziel (nie auf anderen Basen), Hinweis = Tafel, Band 60 % breit. Knöpfe „Ergebnis wie im Spiel“ im Mehr-Menü.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

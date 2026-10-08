@@ -23,9 +23,10 @@
   #bps { position: fixed; right: 10px; color: #fff6dc; background: rgba(20, 16, 10, .8); border: 1px solid #8a6a3a; border-radius: 8px;
     padding: 4px 8px; font: 700 13px var(--ui); pointer-events: none; display: none; z-index: 2; }
   #bps.schlecht { color: #ff8d82; }
-  #mehr { position: fixed; right: 10px; display: none; flex-direction: column; gap: 6px; background: rgba(20, 16, 10, .9);
+  #mehr { position: fixed; right: 10px; display: none; grid-template-columns: repeat(2, auto); gap: 6px; max-height: calc(100% - 150px); overflow-y: auto; background: rgba(20, 16, 10, .9);
     border: 1px solid #8a6a3a; border-radius: 12px; padding: 8px; z-index: 4; }
-  #mehr.offen { display: flex; }
+  #mehr.offen { display: grid; }
+  #mehr b { grid-column: 1 / -1; font: 700 11px var(--ui); color: #e4c886; text-transform: uppercase; letter-spacing: .06em; margin-top: 4px; }
   #knoepfe { position: fixed; left: 0; top: 0; width: 0; height: 0; z-index: 2; }
   #knoepfe button { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%; padding: 0;
     background: radial-gradient(circle at 50% 35%, #3a4558, #151b26); border: 2px solid #d9b46a; box-shadow: 0 2px 6px rgba(0, 0, 0, .6); }
@@ -57,10 +58,14 @@
   <button id="zoom">Zoom: Nah</button><button id="mehr-knopf">Mehr ▾</button>
 </div>
 <div id="mehr">
+  <b>Einstellungen</b>
   <button id="seite">Seite: eigen</button><button id="tempo">Tempo ×1</button><button id="gedraenge">Gedränge</button>
+  <button id="nacht">Nacht aus</button><button id="held">Held an</button><button id="tore">Tore zu</button>
+  <b>Gemeinsamer Kampf</b>
   <button id="drei">3 Angriffe</button><button data-dazu="eigen">+ eigener Marsch</button><button data-dazu="bund">+ Verbündeter</button>
   <button data-dazu="gegner">+ Verstärkung Gegner</button><button data-dazu="dritter">Dritter Spieler</button>
-  <button id="nacht">Nacht aus</button><button id="held">Held an</button><button id="tore">Tore zu</button>
+  <b>Ergebnis wie im Spiel</b>
+  <button data-erg="turm">Turm erobern</button><button data-erg="lager">Lager</button><button data-erg="lagerSchwach">Lager zu schwach</button>
 </div>
 <div id="zeile"></div>
 <div id="bps"></div>

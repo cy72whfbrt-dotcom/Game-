@@ -141,13 +141,20 @@ function feldAnkunft(a) {
 // Dauer wie fightDurationMs (03e): 4 s + 1,5 s je Zehnerpotenz über 1000 Truppen, höchstens 12 s. Ergebnis fertig, Verluste in Wellen.
 const dauerVon = (a0, d0) => Math.max(4, Math.min(12, 4 + 1.5 * Math.log10(Math.max(1, a0 + d0) / 1000)));
 const freund = (x, y) => x.kuerzel === y.kuerzel;      // dieselbe Seite: gleicher Angreifer oder Bündnis (gleiches Kürzel)
+// Ergebnis wie resolveAttack (02c) / resolveBotAttack: Sieg, wenn Angriff > Truppen + Verteidigung. Sieger verliert die
+// Verteidigung (anteilig), der Verteidiger alles. Verloren: 20 % fliehen heim (RETREAT_RECOVERY_PCT), der Rest fällt; der Verteidiger
+// verliert min(Besatzung, Angriff). (Ohne Helden, Schild-%, Titel und Forschung – die kämen beim Einbau aus dem Spiel.)
+const FLUCHT = .2;
+function ergebnis(k) {
+  const A = k.a0, T = k.d0, V = k.z.vert || 0, sieg = A > T + V;
+  const aV = sieg ? Math.min(A, V) : k.teile.reduce((x, a) => x + a.truppen - Math.floor(a.truppen * FLUCHT), 0);
+  return { sieg, aV, dV: sieg ? T : Math.min(T, A) };
+}
 function planen(k) {                                   // Verluste aus den jetzigen Zahlen; schon gefallene bleiben, der Rest in neuen Wellen
-  const t = jetzt - k.t0;
-  if (k.fest === undefined) k.sieg = k.a0 > k.d0 * 1.2;
-  const sollA = Math.round(k.a0 * (k.sieg ? .18 : .72)), sollD = Math.round(k.d0 * (k.sieg ? (k.z.art === 'lager' ? 1 : .64) : .21));
+  const t = jetzt - k.t0, e = ergebnis(k); k.sieg = e.sieg;
   k.wellen = k.wellen.filter(w => w.t <= t);
   const ende = k.dauer - .8;
-  for (const [s, soll] of [['a', sollA], ['d', sollD]]) {   // je Seite bis zu 8 Wellen bis kurz vor Schluss, Gewichte zufällig, nie „-0“
+  for (const [s, soll] of [['a', e.aV], ['d', e.dV]]) {   // je Seite bis zu 8 Wellen bis kurz vor Schluss, Gewichte zufällig, nie „-0“
     const v = Math.max(0, soll - kampfStand(k, s)), n = Math.max(1, Math.min(8, v)), w = Array.from({ length: n }, () => .5 + Math.random()), sw = w.reduce((x, y) => x + y, 0);
     let summe = 0;
     w.forEach((x, i) => { const m = i === n - 1 ? v - summe : Math.max(1, Math.round(v * x / sw)); summe += m;
@@ -156,43 +163,85 @@ function planen(k) {                                   // Verluste aus den jetzi
   k.wellen = k.wellen.filter(w => w.n > 0).sort((x, y) => x.t - y.t);
   k.aV = k.wellen.filter(w => w.s === 'a').reduce((x, w) => x + w.n, 0); k.dV = k.wellen.filter(w => w.s === 'd').reduce((x, w) => x + w.n, 0);
 }
-function kampf(a, sieg) {
-  const z = a.ziel, k = { a, teile: [a], z, t0: jetzt, fest: sieg, sieg, a0: a.truppen, g0: z.truppen, d0: z.truppen + (z.verst || []).reduce((x, v) => x + v.truppen, 0), wellen: [], geschosse: [], funken: [], naechst: { a: 0, d: .15 } };
+function kampf(a) {
+  const z = a.ziel, k = { a, teile: [a], z, t0: jetzt, a0: a.truppen, g0: z.truppen, d0: z.truppen + (z.verst || []).reduce((x, v) => x + v.truppen, 0), wellen: [], geschosse: [], funken: [], naechst: { a: 0, d: .15 } };
   k.dauer = dauerVon(k.a0, k.d0); planen(k);
-  if (a.phase === 'wartet') hinstellen(a, halt(a)); else a.steht = halt(a);   // (wer gewartet hat, tritt vom Rand nach vorn)
-  a.phase = 'kampf'; a.kampf = k;
-  a.winkel = Math.atan2(a.steht.y - z.y, a.steht.x - z.x); kaempfe.push(k); return k;
+  if (!a.steht) a.steht = halt(a); hinstellen(a, platz(z, a, [a]));   // (wer gewartet hat, tritt vom Rand nach vorn)
+  a.phase = 'kampf'; a.kampf = k; kaempfe.push(k); return k;
+}
+const PLAETZE = [90, 60, 120, 30, 150, 0, 180, 210, 330].map(g => g * Math.PI / 180);   // Halbkreis unter dem Ziel (oben: Verteidiger, Tafel)
+function platz(z, a, teile) {                          // freier Platz am nächsten zur Ankunftsseite, nicht auf einer anderen Basis
+  const w0 = Math.atan2(halt(a).y - z.y, halt(a).x - z.x), r = z.art === 'lager' ? 10000 : 8500, ort = w => ({ x: z.x + Math.cos(w) * r, y: z.y + Math.sin(w) * r });
+  const ab = (x, y) => Math.abs(Math.atan2(Math.sin(x - y), Math.cos(x - y)));
+  const frei = PLAETZE.filter(w => teile.every(b => b === a || ab(w, b.winkel) > .3) && D.basen.every(b => b === z || Math.hypot(ort(w).x - b.x, ort(w).y - b.y) > 5500));
+  const w = (frei.length ? frei : PLAETZE).sort((x, y) => ab(x, w0) - ab(y, w0))[0];
+  a.winkel = w; return ort(w);
 }
 function beitreten(k, a) {                             // wie kampfDazu: Truppen addieren, Kampf geht mindestens 2,5 s weiter
-  const z = k.z, w0 = Math.atan2(halt(a).y - z.y, halt(a).x - z.x), r = Math.hypot(halt(a).x - z.x, halt(a).y - z.y) || 7500;
-  const frei = [0, .8, -.8, 1.6, -1.6, 2.4, -2.4, 3.1].map(d => w0 + d).find(w => k.teile.every(b => Math.abs(Math.atan2(Math.sin(w - b.winkel), Math.cos(w - b.winkel))) > .6)) ?? w0;
-  a.phase = 'kampf'; a.kampf = k; a.winkel = frei; if (!a.steht) a.steht = halt(a);
-  hinstellen(a, { x: z.x + Math.cos(frei) * r, y: z.y + Math.sin(frei) * r });   // (die Armeen stellen sich um das Ziel)
+  const z = k.z;
+  a.phase = 'kampf'; a.kampf = k; if (!a.steht) a.steht = halt(a);
+  hinstellen(a, platz(z, a, k.teile));                 // (die Armeen stellen sich um das Ziel)
   k.teile.push(a); k.a0 += a.truppen; k.dauer = Math.max(k.dauer, jetzt - k.t0 + 2.5); planen(k);
-  effekte.push({ art: 'dazu', t0: jetzt, ziel: z, text: `Verstärkung im Kampf: +${fmtCompact(a.truppen)} · jetzt ${fmtCompact(k.a0)}` });
+  effekte.push({ art: 'dazu', t0: jetzt, ziel: z, text: `Verstärkung im Kampf: +${fmtCompact(a.truppen)} · jetzt ${fmtCompact(k.a0 - kampfStand(k, 'a'))}` });   // (= Tafel)
 }
 function verteidigerDazu(k, v) {                       // Verstärkung des Verteidigers kämpft mit: mehr Verteidiger, Kampf rechnet neu
   k.d0 += v.truppen; planen(k);
-  effekte.push({ art: 'dazu', t0: jetzt, ziel: k.z, feind: true, text: `${v.name} verstärkt: +${fmtCompact(v.truppen)} · jetzt ${fmtCompact(k.d0)}` });
+  effekte.push({ art: 'dazu', t0: jetzt, ziel: k.z, feind: true, text: `${v.name} verstärkt: +${fmtCompact(v.truppen)} · jetzt ${fmtCompact(k.d0 - kampfStand(k, 'd'))}` });
 }
 function kampfStand(k, s) { const t = jetzt - k.t0; return k.wellen.filter(w => w.s === s && w.t <= t).reduce((x, w) => x + w.n, 0); }
 const verstVerlust = (k, n) => Math.round(kampfStand(k, 'd') * n / k.d0);   // (Verteidiger-Seite: Besatzung g0 oder ein Verstärker)
 const teilVerlust = a => a.kampf ? Math.round(kampfStand(a.kampf, 'a') * a.truppen / a.kampf.a0) : 0;   // (Verluste nach Truppen geteilt)
+const ohneTag = n => n.replace(/^\[\w+\]/, '');
+const kuerzelVon = z => (z.name.match(/^\[(\w+)\]/) || [])[1] || '';
+function bandZeigen(e) { if (e.eigen) effekte.push(Object.assign({ t0: jetzt }, e)); }
 function kampfEnde(k) {
   kaempfe.splice(kaempfe.indexOf(k), 1);
-  const f = (k.d0 - k.dV) / k.d0; k.z.truppen = Math.round(k.g0 * f);   // Besatzung und Verstärker: Verluste nach Truppen geteilt
-  if (k.sieg) k.z.verst = []; else for (const v of k.z.verst || []) v.truppen = Math.round(v.truppen * f);   // (verloren: die Verstärker sind weg)
-  const n = k.teile.length, eigen = k.teile.some(a => a.seite === 'eigen' || a.rally);
-  if (eigen) effekte.push({ art: k.sieg ? 'sieg' : 'niederlage', t0: jetzt, ziel: k.z,
-    text: (k.sieg ? (k.z.art === 'lager' ? `Barbaren-Lager Stufe ${k.z.stufe} besiegt` : `Burg von ${k.z.name.replace(/^\[\w+\]/, '')} erobert`) : `Angriff auf ${k.z.name.replace(/^\[\w+\]/, '')} abgewehrt`)
-      + (n > 1 ? ` · ${n} Armeen` : '') });
-  if (k.sieg) effekte.push({ art: 'blitz', t0: jetzt, ziel: k.z });
-  for (const a of k.teile) {                           // jede Armee: ihr Anteil an Verlusten und Beute, dann heim zu IHRER Basis
-    const t0 = a.truppen; a.truppen = Math.round(t0 * (k.a0 - k.aV) / k.a0); a.kampf = null; a.verletzt = !k.sieg; a.zug = null;
-    if (k.sieg) a.beute = { bild: 'beute_muenzen', n: Math.round(k.dV * 3.2 * t0 / k.a0) };
-    if (a.rally) a.rally.mitglieder.forEach(m => { m.truppen = Math.round(m.truppen * a.truppen / t0); });
-    heimwaerts(a);
+  const z = k.z, n = k.teile.length, mehr = n > 1 ? ` · ${n} Armeen` : '', eigen = k.teile.some(a => a.seite === 'eigen' || a.rally) || z.seite === 'eigen';
+  const e = ergebnis(k); k.sieg = e.sieg; k.aV = e.aV; k.dV = e.dV;   // (das Ergebnis zählt, wie das Spiel es rechnet – die Wellen waren nur die Anzeige)
+  const f = (k.d0 - k.dV) / k.d0;
+  if (!k.sieg) {                                       // abgewehrt: Verteidiger verliert min(Besatzung, Angriff), Angreifer: 20 % fliehen heim
+    z.truppen = Math.round(k.g0 * f); for (const v of z.verst || []) v.truppen = Math.round(v.truppen * f);
+    bandZeigen({ eigen, art: 'niederlage', ziel: z, titel: 'NIEDERLAGE', text: '−' + fmtCompact(k.aV) + ' Truppen' + mehr });
+    for (const a of k.teile) { const t0 = a.truppen; a.truppen = Math.floor(t0 * FLUCHT); a.kampf = null; a.zug = null; a.verletzt = true;
+      if (a.rally) a.rally.mitglieder.forEach(m => { m.truppen = Math.floor(m.truppen * FLUCHT); });
+      heimwaerts(a); }
+    return;
   }
+  z.verst = []; effekte.push({ art: 'blitz', t0: jetzt, ziel: z });   // Sieg: Besatzung und Verstärker fallen
+  const rest = a => a.truppen - Math.round(k.aV * a.truppen / k.a0);
+  if (z.haupt) {                                       // Hauptstadt hält: Garnison fällt, die Stadt brennt (30 Min.), Beute nur hier, Überlebende heim
+    z.truppen = 0; z.brennt = jetzt + 30 * 60;
+    const beute = Math.floor(Math.max(0, (z.gold || 0) - (z.schutz || 0)) * .1); z.gold = Math.max(0, (z.gold || 0) - beute);   // (HAUPT_BEUTE 10 % über dem Schutz)
+    bandZeigen({ eigen, art: 'sieg', ziel: z, titel: 'GEPLÜNDERT', text: 'die Hauptstadt hält' + mehr });
+    for (const a of k.teile) { const t0 = a.truppen; a.truppen = rest(a); a.kampf = null; a.zug = null;
+      a.beute = { bild: 'beute_muenzen', n: Math.round(beute * t0 / k.a0) }; heimwaerts(a); }   // (Beute nach Truppen geteilt)
+    return;
+  }
+  // Turm erobert: gehört jetzt dem Kampf-Besitzer, seine Überlebenden bleiben als Besatzung (keine Beute); Verbündete und die
+  // Rally-Mitglieder (ohne Starter) gehen heim
+  const wer = k.a, bleib = k.teile.filter(a => a.name === wer.name);
+  z.orig = z.orig || { seite: z.seite, name: z.name, held: z.held, truppen: k.g0 };
+  z.seite = wer.seite === 'bund' ? 'bund' : wer.seite; z.name = wer.name; z.held = wer.held; z.truppen = 0;
+  bandZeigen({ eigen, art: 'sieg', ziel: z, titel: 'SIEG', text: ohneTag(z.orig.name) + 's Turm erobert' + mehr });
+  for (const a of k.teile) { const r = rest(a); a.kampf = null; a.zug = null;
+    if (bleib.includes(a) && !a.rally) { z.truppen += r; armeen.splice(armeen.indexOf(a), 1); continue; }
+    if (a.rally) { const st = a.rally.mitglieder[0], anteil = Math.round(r * st.truppen / a.truppen); z.truppen += anteil; a.truppen = r - anteil; a.rally.mitglieder.shift(); }
+    else a.truppen = r;
+    if (a.truppen > 0) heimwaerts(a); else armeen.splice(armeen.indexOf(a), 1); }
+  neu();                                               // (Basis hat jetzt deine Farbe)
+}
+// Barbaren-Lager wie barbFight (09b): sofort entschieden, keine Schlacht. Sieg: Verlust = Lager-Krieger, Münzen ins Abholfach,
+// Überlebende heim; Niederlage: ALLE Truppen weg, das Lager ist um min(Krieger, Angriff) geschwächt
+const lagerHeute = { n: 0 };
+function lagerKampf(a) {
+  const z = a.ziel, T = z.truppen, A = a.truppen, sieg = A > T, eigen = a.seite === 'eigen' || a.seite === 'bund';
+  if (sieg) { lagerHeute.n++; const gold = Math.round((z.truppen0 || T) * 20 + 5000 * z.stufe);   // (barbLootOf)
+    a.truppen = A - Math.min(A, T); z.truppen = z.truppen0 = z.truppen0 || T;   // (ein neues Lager steht bald wieder da)
+    bandZeigen({ eigen, art: 'sieg', ziel: z, titel: 'LAGER BESIEGT', text: `Stufe ${z.stufe} · ${lagerHeute.n} / 20 heute`, beute: { bild: 'beute_muenzen', n: gold } });
+    effekte.push({ art: 'blitz', t0: jetzt, ziel: z }); heimwaerts(a); return; }
+  z.truppen = Math.max(1, T - Math.min(T, A));
+  bandZeigen({ eigen, art: 'niederlage', ziel: z, titel: 'ABGEWEHRT', text: '−' + fmtCompact(A) + ' Truppen' });
+  armeen.splice(armeen.indexOf(a), 1);
 }
 
 // ===== Testknöpfe =====
@@ -228,11 +277,15 @@ const ZUSTAND = {
     if (a) return heimwaerts(a, true);
     const b = armee({ seite: 'eigen', von: basis('eigen'), ziel: basis('kevin'), held: 'aldric', name: '[NW]Alex', truppen: 12.4e6 }); b.rufen = jetzt + 2.5; },
 };
-function schnellKampf(sieg) {                          // eigene Armee kurz vor dem Ziel: gleich Kampf, Ergebnis wie gewünscht
-  const v = basis('eigen'), z = seite === 'bund' ? D.lager : basis('kevin');
+function zuruecksetzen(z) {                            // Testknöpfe: Ziel wie am Anfang (Besitzer, Besatzung, ohne Verstärker, brennt nicht)
+  if (z.orig) { Object.assign(z, z.orig); z.orig = null; neu(); }
+  z.truppen = z.truppen0 = z.truppen0 || z.truppen; z.verst = []; z.brennt = 0;
+}
+function schnellKampf(sieg) {                          // Armee kurz vor dem Ziel: 12,4 Mio. gewinnen, 4,2 Mio. verlieren (Regel wie im Spiel)
+  const v = basis('eigen'), z = seite === 'bund' ? basis('turm') : basis('kevin');
   const a = armee({ seite: seite === 'bund' ? 'bund' : 'eigen', von: seite === 'bund' ? basis('mira') : v, ziel: z, held: seite === 'bund' ? 'mira' : 'aldric',
     name: seite === 'bund' ? '[NW]Mira_7' : '[NW]Alex', truppen: sieg ? 12.4e6 : 4.2e6 });
-  a.t0 = jetzt - a.dauer + 1.2; a.sieg = sieg; z.truppen = z.truppen0 = z.truppen0 || z.truppen; z.verst = []; blickAuf(z, z);
+  a.t0 = jetzt - a.dauer + 1.2; zuruecksetzen(z); blickAuf(z, z);
 }
 function rallyStarten() {                              // Anführer sammelt an seiner Burg, 3 Bündnis-Märsche kommen dazu, dann Rally-Marsch zu Kevin
   const v = basis('eigen'), z = basis('kevin');
@@ -250,7 +303,7 @@ function welle(o, sek) {                               // Marsch, der in sek Sek
   const a = armee(o); a.t0 = jetzt - Math.max(0, a.dauer - sek); return a;
 }
 function dreiAngriffe() {                              // 3 eigene Märsche, versetzt: allein zu schwach, zusammen Sieg
-  const v = basis('eigen'), z = basis('kevin'); z.truppen = z.truppen0 = z.truppen0 || z.truppen; z.verst = [];
+  const v = basis('eigen'), z = basis('kevin'); zuruecksetzen(z);
   [['aldric', 4.2e6, 3], ['greta', 3.1e6, 6], ['wolfram', 5.1e6, 9]].forEach(([held, t, sek]) => welle({ seite: 'eigen', von: v, ziel: z, held, name: '[NW]Alex', truppen: t }, sek));
   blickAuf(z, z);
 }
@@ -261,6 +314,11 @@ const DAZU = {
     welle({ seite: 'feind', art: 'verst', von: q, ziel: z, held: 'ragna', name: q.name, truppen: 3.5e6 }, 3); blickAuf(z, z); },
   dritter() { const z = kampfZiel();                   // ganz andere Seite ([DK], weder du noch der Gegner): muss warten
     welle({ seite: 'feind', kuerzel: 'DK', von: { x: z.x + 6000, y: z.y - 15000, art: 'feld' }, ziel: z, held: 'yrsa', name: '[DK]Wulfgar', truppen: 6.5e6 }, 3); blickAuf(z, z); },
+};
+const ERGEBNIS = {                                     // Ergebnis-Regeln: Turm wird deiner, Lager sofort entschieden
+  turm() { const z = basis('turm'); zuruecksetzen(z); welle({ seite: 'eigen', von: basis('eigen'), ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 6.2e6 }, 3); blickAuf(z, z); },
+  lager() { const z = D.lager; z.truppen = z.truppen0 = z.truppen0 || z.truppen; welle({ seite: 'eigen', von: basis('eigen'), ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 6.2e6 }, 3); blickAuf(z, z); },
+  lagerSchwach() { const z = D.lager; z.truppen = z.truppen0 = z.truppen0 || z.truppen; welle({ seite: 'eigen', von: basis('eigen'), ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 5e5 }, 3); blickAuf(z, z); },
 };
 function gedraenge() {                                 // 12 Armeen + 2 Kämpfe (Leistung: Bilder/s oben rechts)
   const M = D.mitte, rnd = (a, b) => a + Math.random() * (b - a), seiten = ['eigen', 'bund', 'feind', 'barb'];
@@ -277,7 +335,13 @@ function gedraenge() {                                 // 12 Armeen + 2 Kämpfe 
 // ===== Ablauf je Bild =====
 function ankunft(a) {                                 // Welle am Ziel: beitreten, warten oder neuer Kampf (wie 04-kampf.js)
   const k = kaempfe.find(k => k.z === a.ziel);
-  if (!k) return kampf(a, a.sieg);
+  const z = a.ziel;
+  if (!k && z.art === 'lager') return lagerKampf(a);
+  if (!k && z.art === 'basis' && kuerzelVon(z) === a.kuerzel) {   // das Ziel gehört inzwischen dir (ziehen ein) oder deinem Bündnis (kein Kampf, heim)
+    if (z.name === a.name) { z.truppen += a.truppen; armeen.splice(armeen.indexOf(a), 1);
+      return effekte.push({ art: 'dazu', t0: jetzt, ziel: z, text: `gehört schon dir – ${fmtCompact(a.truppen)} Truppen verstärken die Besatzung` }); }
+    effekte.push({ art: 'dazu', t0: jetzt, ziel: z, text: `${ohneTag(z.name)} ist im Bündnis – kein Kampf, ${ohneTag(a.name)} kehrt um` }); return heimwaerts(a); }
+  if (!k) return kampf(a);
   if (freund(k.a, a)) return beitreten(k, a);
   if (a.phase !== 'wartet') {                          // fremder Angreifer: stellt sich am Rand auf und wartet
     const h = halt(a), z = a.ziel, d = Math.hypot(h.x - z.x, h.y - z.y) || 1; a.phase = 'wartet'; a.steht = h; hinstellen(a, { x: z.x + (h.x - z.x) / d * (d + 1800), y: z.y + (h.y - z.y) / d * (d + 1800) }); }
@@ -307,7 +371,7 @@ function schritt(dt) {
   }
   for (const k of [...kaempfe]) if (jetzt - k.t0 >= k.dauer) kampfEnde(k);
   for (const a of armeen) if (a.zug && jetzt - a.zug.t0 >= .6) a.zug = null;
-  for (let i = effekte.length - 1; i >= 0; i--) if (jetzt - effekte[i].t0 > ({ sieg: 2.85, niederlage: 2.85, blitz: .8, licht: 1, pfeile: 1.5, dazu: 2.5 })[effekte[i].art]) effekte.splice(i, 1);
+  for (let i = effekte.length - 1; i >= 0; i--) if (jetzt - effekte[i].t0 > ({ sieg: 1.9, niederlage: 1.9, blitz: .8, licht: 1, pfeile: 1.5, dazu: 2.5 })[effekte[i].art]) effekte.splice(i, 1);
   if (gewaehlt && !armeen.includes(gewaehlt)) waehlen(null);
 }
 
@@ -371,7 +435,7 @@ function balken(x, y, w, h, anteil, farbe) {
   g.strokeStyle = '#0c0f14'; g.lineWidth = 1; g.strokeRect(x - w / 2 - .5, y - .5, w + 1, h + 1);
 }
 function chip(text, x, y, px, farbe = '#eee6d4', grund = 'rgba(10,12,16,.82)', links = false, dick = 600) {
-  g.font = `${dick} ${px}px Inter, system-ui, sans-serif`; const tw = g.measureText(text).width, w = tw + 10, h = px + 6, x0 = links ? x : x - w / 2;
+  g.font = `${dick} ${px}px Inter, system-ui, sans-serif`; const tw = g.measureText(text).width, w = tw + 10, h = px + 6, x0 = Math.max(4, Math.min(W - w - 4, links ? x : x - w / 2));   // (am Bildrand nach innen)
   g.fillStyle = grund; g.beginPath(); g.roundRect(x0, y, w, h, h / 2); g.fill();
   g.fillStyle = farbe; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(text, x0 + 5, y + h / 2 + .5); return w;
 }
@@ -388,7 +452,9 @@ function kopf(a, x, y, w, st, ohneText) {               // Sechseck (Mitte x, y)
   const zeit = a.phase === 'kampf' ? '⚔ ' + uhr(rest(a)) : a.phase === 'wartet' ? '⌛ wartet' : '⌛ ' + uhr(rest(a));
   if (a.art !== 'spaeher') {                           // Chip am Sechseck: Truppen · Restzeit (wie beim Rally, auch im Kampf und beim Warten)
     const txt = a.beute ? zeit + ' · Beute' : fmtCompact(jetztT) + ' · ' + zeit;
-    const cw = chip(txt, x + w / 2 + 4, y - 8 * s, Math.round((st === 'nah' ? 12 : 11) * s), a.phase === 'wartet' ? '#ffd678' : '#fff6dc', 'rgba(10,12,16,.86)', true, 700);
+    const px = Math.round((st === 'nah' ? 12 : 11) * s); g.font = `700 ${px}px Inter, system-ui, sans-serif`;
+    const lx = x - w / 2 - 4 - g.measureText(txt).width - 10, cx = a.kampf && Math.cos(a.winkel) < -.2 && lx > 4 ? lx : x + w / 2 + 4;   // (links vom Ziel: Chip nach links, nichts überdeckt)
+    const cw = chip(txt, cx, y - 8 * s, px, a.phase === 'wartet' ? '#ffd678' : '#fff6dc', 'rgba(10,12,16,.86)', true, 700);
     if (a.beute && st === 'nah') beuteKachel(a.beute, x + w / 2 + 8 + cw, y - 12 * s, 18 * s);
   }
   return fl;
@@ -464,7 +530,7 @@ function kampfZeichnen(k, st) {
   // Lichtsäule mit Schwertern über dem Ziel
   g.globalAlpha = .8; bildAn('marsch_kampf_saeule', z.x, z.y - zw * .1, Math.max(48 * s, zw * .55), .5, .92); g.globalAlpha = 1;
   // Verteidiger-Kopf über dem Ziel
-  const vk = { seite: k.z.seite, held: k.z.held, name: k.z.art === 'lager' ? `Lager Stufe ${k.z.stufe}` : k.z.name, truppen: k.d0, truppen0: k.d0, phase: 'kampf', kuerzel: k.z.art === 'lager' ? '' : 'RX', zurueck: false };
+  const vk = { seite: k.z.seite, held: k.z.held, name: k.z.art === 'lager' ? `Lager Stufe ${k.z.stufe}` : k.z.name, truppen: k.d0, truppen0: k.d0, phase: 'kampf', kuerzel: kuerzelVon(k.z), zurueck: false };
   const m = MASS[st], vy = z.y - zw * .62 - m.kopf * s * .5 - 20 * s;
   const vkh = kopf(vk, z.x, vy, m.kopf * s, st, true);
   const lagerBand = st === 'nah' && k.z.art === 'lager';   // (Basen tragen ihr Namensschild schon auf der Karte: nicht doppelt)
@@ -505,7 +571,7 @@ function kampfZeichnen(k, st) {
   g.globalAlpha = 1;
   // Schadenszahlen: je Welle eine Zahl über dem getroffenen Kopf, steigt 34 px in 900 ms, ab 600 ms aus; höchstens 4 zugleich
   const dTeil = w => w.i % (vp.length + 1);            // (Verteidiger-Welle: trifft die Besatzung oder einen Verstärker, Zahl = sein Anteil)
-  const hk = w => w.s === 'a' ? { x: ap(w.i).x + m.kopf * s * .5 + 30 * s, y: ap(w.i).y - 60 * s }
+  const hk = w => w.s === 'a' ? { x: ap(w.i).x - m.kopf * s * .5 - 34 * s, y: ap(w.i).y - 70 * s }   // (links neben dem Kopf: rechts steht der Chip)
     : dTeil(w) ? { x: vp[dTeil(w) - 1].x + (vp[dTeil(w) - 1].x > z.x ? 1 : -1) * 52 * s, y: vp[dTeil(w) - 1].y } : { x: z.x - m.kopf * s * .5 - 30 * s, y: vy };   // (neben dem Sechseck: nichts überdeckt)
   const zahl = w => w.s === 'a' || !vp.length ? w.n : Math.max(1, Math.round(w.n * (dTeil(w) ? vp[dTeil(w) - 1].n : k.g0) / k.d0));
   const aktiv = k.wellen.filter(w => t >= w.t && t < w.t + .9).slice(-4);
@@ -516,6 +582,18 @@ function kampfZeichnen(k, st) {
     g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText('-' + fmtCompact(zahl(w)), x, y);
     g.fillStyle = gross && d < .25 ? '#ffd678' : eigen ? '#ff8d82' : '#ffffff'; g.fillText('-' + fmtCompact(zahl(w)), x, y); }
   g.globalAlpha = 1;
+}
+function brandZeichnen(x, y, u) {                     // geplünderte Hauptstadt brennt (wie drawBrand, 03b): Rauch steigt, Flammen auf den Dächern
+  const t = performance.now(); g.save();
+  for (let i = 0; i < 5; i++) { const p = ((t / 2600) + i / 5) % 1, px = x + Math.sin(i * 2.1 + p * 3) * 8 * u + p * 10 * u, py = y - 16 * u - p * 46 * u, r = (5 + p * 14) * u;
+    g.fillStyle = 'rgba(40,36,34,' + (.42 * (1 - p)) + ')'; g.beginPath(); g.arc(px, py, r, 0, Math.PI * 2); g.fill(); }
+  g.globalCompositeOperation = 'lighter';
+  for (const [dx, dy, sk] of [[-12, 2, 1], [9, -4, 1.15], [0, -12, .9], [15, 6, .8], [-5, 8, .75]]) {
+    const f = .75 + .25 * Math.sin(t / 90 + dx * 1.7) * Math.sin(t / 133 + dy), fx = x + dx * u, fy = y + dy * u, h = 13 * sk * f * u;
+    const gr = g.createRadialGradient(fx, fy - h * .3, 0, fx, fy - h * .3, h);
+    gr.addColorStop(0, 'rgba(255,240,170,.95)'); gr.addColorStop(.35, 'rgba(255,150,40,.75)'); gr.addColorStop(1, 'rgba(200,40,10,0)');
+    g.fillStyle = gr; g.beginPath(); g.ellipse(fx, fy - h * .35, h * .5, h, 0, 0, Math.PI * 2); g.fill(); }
+  g.restore();
 }
 function verstKoepfe(z, st, k) {                       // Verstärker in der Basis (Botschaft): je ein Sechseck mit Name, Truppen, Balken – rechts/links neben dem Verteidiger
   const vs = z.verst || []; if (!vs.length || (st !== 'nah' && st !== 'mittel')) return [];
@@ -546,17 +624,21 @@ function effektZeichnen(e, st) {
       g.strokeStyle = '#eab24a'; g.lineWidth = 3.5 * s; g.stroke(); }
     g.globalAlpha = 1; return;
   }
-  // Sieg / Niederlage: Band über dem Ziel, rein 250 ms (0,6 → 1,05 → 1), steht 2,2 s, raus 400 ms
-  const sieg = e.art === 'sieg', bw = (W >= 700 ? 420 : 300), im = BILD[sieg ? 'marsch_band_sieg' : 'marsch_band_niederlage']; if (!im) return;
-  const sk = t < .17 ? .6 + .45 * t / .17 : t < .25 ? 1.05 - .05 * (t - .17) / .08 : 1, al = t > 2.45 ? Math.max(0, 1 - (t - 2.45) / .4) : 1;
+  // Sieg / Niederlage (Titel wie spawnBattleFx: Sieg, Geplündert, Lager besiegt, Abgewehrt …): Band am Bildrand, 60 % breit,
+  // rein 250 ms (0,6 → 1,05 → 1), steht 1,25 s, raus 400 ms
+  const sieg = e.art === 'sieg', bw = Math.min(320, W * .6), im = BILD[sieg ? 'marsch_band_sieg' : 'marsch_band_niederlage']; if (!im) return;
+  const sk = t < .17 ? .6 + .45 * t / .17 : t < .25 ? 1.05 - .05 * (t - .17) / .08 : 1, al = t > 1.5 ? Math.max(0, 1 - (t - 1.5) / .4) : 1;
   const bh = bw * im.height / im.width, x = Math.max(bw / 2 + 4, Math.min(W - bw / 2 - 4, z.x)), y = z.y > HT * .55 ? $('leiste').getBoundingClientRect().bottom + 40 + bh / 2 : HT - bh / 2 - 40;   // (am Bildrand, weg vom Ziel: nie über Köpfen und Zahlen)
   g.save(); g.globalAlpha = al; g.translate(x, y); g.scale(sk, sk);
   g.drawImage(im, -bw / 2, -bh / 2, bw, bh);
-  g.font = `900 ${30 * (W >= 700 ? 1.25 : 1)}px Cinzel, Georgia, serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-  if (sieg) { g.fillStyle = '#1d1406'; g.fillText('SIEG', 0, bh * .1); }
-  else { g.lineWidth = 3; g.strokeStyle = 'rgba(40,6,4,.8)'; g.strokeText('NIEDERLAGE', 0, 0); g.fillStyle = '#ffc1b8'; g.fillText('NIEDERLAGE', 0, 0); }
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  const titel = e.titel || (sieg ? 'SIEG' : 'NIEDERLAGE'); g.font = `900 ${Math.round(Math.min(bw / 10, bw * .6 / (titel.length * .78)))}px Cinzel, Georgia, serif`;   // (langer Titel passt aufs Band)
+  if (sieg) { g.fillStyle = '#1d1406'; g.fillText(titel, 0, bh * .1); }
+  else { g.lineWidth = 3; g.strokeStyle = 'rgba(40,6,4,.8)'; g.strokeText(titel, 0, 0); g.fillStyle = '#ffc1b8'; g.fillText(titel, 0, 0); }
   g.font = `700 ${13 * S()}px Inter, system-ui, sans-serif`; g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.8)'; g.strokeText(e.text, 0, bh / 2 + 12 * S());
-  g.fillStyle = sieg ? '#fff3d6' : '#ffc1b8'; g.fillText(e.text, 0, bh / 2 + 12 * S()); g.restore();
+  g.fillStyle = sieg ? '#fff3d6' : '#ffc1b8'; g.fillText(e.text, 0, bh / 2 + 12 * S());
+  if (e.beute) beuteKachel(e.beute, g.measureText(e.text).width / 2 + 8, bh / 2, 26 * S());   // (Beute ins Abholfach: Bild + Zahl)
+  g.restore();
 }
 function rallyPlatz(a, st) {                           // Rally sammelt: goldener Bodenring dreht (12°/s) + Countdown-Chip
   const s = S(), p = P(a.steht), im = BILD.marsch_ring_gold; if (!im) return;
@@ -579,6 +661,7 @@ function malen() {
   for (const a of armeen) if (a.phase === 'sammelt' && a.art === 'rally') rallyPlatz(a, st);
   for (const a of armeen) linie(a, st);
   for (const a of armeen) zielRing(a, st);
+  for (const b of D.basen) if (b.brennt > jetzt && st !== 'ganz weit') { const w = zielBreite(b); brandZeichnen(sx(b.x), sy(b.y) - w * .3, w / 64); }
   for (const k of kaempfe) kampfZeichnen(k, st);
   for (const b of D.basen) if (b.verst && b.verst.length && !kaempfe.some(k => k.z === b)) verstKoepfe(b, st, null);
   warnung(st);
@@ -666,6 +749,7 @@ const SEITEN = ['eigen', 'bund', 'feind', 'barb'], SEITE_NAME = { eigen: 'eigen'
 $('seite').addEventListener('click', e => { seite = SEITEN[(SEITEN.indexOf(seite) + 1) % 4]; e.target.dataset.s = seite; e.target.textContent = 'Seite: ' + SEITE_NAME[seite]; });
 $('tempo').addEventListener('click', e => { tempo = tempo === 1 ? 5 : 1; e.target.textContent = 'Tempo ×' + tempo; e.target.classList.toggle('an', tempo > 1); });
 $('drei').addEventListener('click', () => { dreiAngriffe(); zustandText = '3 Angriffe'; });
+document.querySelectorAll('#mehr [data-erg]').forEach(b => b.addEventListener('click', () => { ERGEBNIS[b.dataset.erg](); zustandText = b.textContent; }));
 document.querySelectorAll('#mehr [data-dazu]').forEach(b => b.addEventListener('click', () => { DAZU[b.dataset.dazu](); zustandText = b.textContent; }));
 $('gedraenge').addEventListener('click', () => { gedraenge(); $('bps').style.display = 'block'; zustandText = 'Gedränge'; });
 $('nacht').addEventListener('click', e => { nacht = !nacht; e.target.textContent = nacht ? 'Nacht an' : 'Nacht aus'; e.target.classList.toggle('an', nacht); });
@@ -692,6 +776,6 @@ function bild(t) {
 ZUSTAND.marsch(); seite = 'feind'; ZUSTAND.marsch(); seite = 'eigen'; zustandText = 'Marsch';
 lage(); zoomStufe('nah', D.mitte.x, D.mitte.y - 4000); zoomText();
 requestAnimationFrame(bild);
-window.MT = { armeen, kaempfe, effekte, ZUSTAND, DAZU, dreiAngriffe, D, tippen, waehlen, get bps() { return bps; }, get jetzt() { return jetzt; }, set tempo(v) { tempo = v; },
+window.MT = { armeen, kaempfe, effekte, ZUSTAND, DAZU, ERGEBNIS, dreiAngriffe, zuruecksetzen, D, tippen, waehlen, get bps() { return bps; }, get jetzt() { return jetzt; }, set tempo(v) { tempo = v; },
   bereit: () => KB.fertig && !bilderOffen, stufe: stufeJetzt, flaeche: a => a.flaeche, gedraenge: () => $('gedraenge').click() };
 })();

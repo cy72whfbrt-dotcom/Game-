@@ -90,8 +90,30 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
         `${name} ${art}: Verbündeter addiert Angreifer, Verstärkung Gegner addiert Verteidiger, Wulfgar wartet (kein zweiter Kreis)`, vb);
       ok(await p.evaluate(() => MT.D.basen.find(b => b.id === 'kevin').verst.length === 1), `${name} ${art}: der Verstärker steht als eigenes Sechseck in der Basis`);
       ok(await bis(() => MT.kaempfe.length === 1 && MT.kaempfe[0].a.kuerzel === 'DK', null, 40000), `${name} ${art}: nach der Entscheidung kämpft der Wartende gegen die Basis`);
-      const nach = await p.evaluate(() => { const k = MT.kaempfe[0]; return { verst: MT.D.basen.find(b => b.id === 'kevin').verst.length, d0: k.d0 }; });
+      const nach = await p.evaluate(() => { const k = MT.kaempfe[0], kv = MT.D.basen.find(b => b.id === 'kevin'); return { verst: kv.verst.length, d0: k.d0, brennt: kv.brennt > MT.jetzt, titel: kv.seite }; });
+      ok(nach.brennt && nach.titel === 'feind', `${name} ${art}: Hauptstadt geplündert: bleibt Kevins, Garnison fällt, die Stadt brennt`, nach);
       ok(nach.verst === 0 && nach.d0 < 8.1e6, `${name} ${art}: Verteidiger verloren → Verstärker weg, Wulfgar trifft nur den Rest der Besatzung`, nach);
+      // Verbündeter allein zu deinem laufenden Kampf: tritt bei (wartet nie), Summe steigt
+      await leer(); await knopf('niederlage'); await p.evaluate(() => { MT.tempo = 3; });
+      ok(await bis(() => MT.kaempfe.length === 1), `${name} ${art}: Kampf läuft`);
+      const vor = await p.evaluate(() => { const a0 = MT.kaempfe[0].a0; MT.DAZU.bund(); return a0; });
+      ok(await bis(() => MT.kaempfe[0] && MT.kaempfe[0].teile.some(a => a.seite === 'bund')), `${name} ${art}: + Verbündeter tritt dem Kampf bei`);
+      const vb2 = await p.evaluate(() => ({ a0: MT.kaempfe[0].a0, wartet: MT.armeen.filter(a => a.phase === 'wartet').length, w: MT.kaempfe[0].teile.map(a => a.winkel) }));
+      ok(vb2.a0 === vor + 2.9e6 && vb2.wartet === 0 && Math.abs(vb2.w[0] - vb2.w[1]) > .5, `${name} ${art}: Summe steigt um 2,9 Mio., niemand wartet, zwei getrennte Plätze`, [vor, vb2]);
+      // Ergebnis wie resolveAttack/barbFight: Hauptstadt geplündert + brennt; Turm erobert (Überlebende bleiben, keine Beute); Lager sofort
+      await leer(); await p.evaluate(() => { MT.ERGEBNIS.turm(); MT.tempo = 3; });
+      ok(await bis(() => MT.D.basen.find(b => b.id === 'turm').seite === 'eigen', null, 30000), `${name} ${art}: Turm erobert → gehört dir`);
+      const tu = await p.evaluate(() => { const t = MT.D.basen.find(b => b.id === 'turm'); return { n: t.truppen, armeen: MT.armeen.length, band: MT.effekte.filter(e => e.art === 'sieg').map(e => e.titel + ' ' + e.text) }; });
+      ok(tu.n === 6.2e6 - .8e6 && tu.armeen === 0 && /SIEG/.test(tu.band.join()), `${name} ${art}: Überlebende (6,2 − 0,8 Verteidigung = 5,4 Mio.) bleiben als Besatzung, keine Beute, Band SIEG`, tu);
+      await p.evaluate(() => MT.zuruecksetzen(MT.D.basen.find(b => b.id === 'turm')));
+      await leer(); await p.evaluate(() => { MT.ERGEBNIS.lager(); MT.tempo = 3; });
+      ok(await bis(() => MT.effekte.some(e => e.titel === 'LAGER BESIEGT' && e.beute && e.beute.n > 0)), `${name} ${art}: Lager sofort besiegt, Band mit Beute-Kachel`);
+      const la = await p.evaluate(() => [MT.kaempfe.length, MT.armeen[0] && MT.armeen[0].phase, MT.armeen[0] && MT.armeen[0].truppen]);
+      ok(la[0] === 0 && la[1] === 'rueck' && la[2] === 6.2e6 - 1.2e6, `${name} ${art}: keine Schlacht, Überlebende (6,2 − 1,2 Mio.) heim`, la);
+      await leer(); await p.evaluate(() => { MT.ERGEBNIS.lagerSchwach(); MT.tempo = 3; });
+      ok(await bis(() => MT.effekte.some(e => e.titel === 'ABGEWEHRT')), `${name} ${art}: Lager zu stark → Band ABGEWEHRT`);
+      const ls = await p.evaluate(() => [MT.armeen.length, MT.D.lager.truppen]);
+      ok(ls[0] === 0 && ls[1] === 1.2e6 - 5e5, `${name} ${art}: Niederlage am Lager: alle Truppen weg, Lager geschwächt`, ls);
       // Marsch zweimal: jeder nur mit den Truppen, die noch in der Basis sind (12,4 → 6,2 + 3,1 Mio.), nie doppelt
       await leer(); await knopf('marsch'); await knopf('marsch');
       const mz = await p.evaluate(() => MT.armeen.map(a => a.truppen));
