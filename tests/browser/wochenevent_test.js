@@ -37,10 +37,10 @@ const TAG = d => new Date(2026, 9, 12 + d, 10, 0, 0).getTime();   // Mo 12.10.20
   ok(!/inv|drache|boss/.test(f.chips) && /tour/.test(f.chips) && /lager/.test(f.chips) && f.an, 'Chips: Woche + Lager (grüner Punkt = läuft), Invasion/Drache/Boss weg', f);
   ok(f.tage === 6 && f.jetzt === 'Mo' && f.kisten === 5 && f.hol === 2 && f.kachel >= 15 && !f.kaputt && f.breit, 'Fenster: Mo–Fr + Rangliste, 5 Kisten (2 leuchten), Belohnung als Kacheln', f);
   if (bilder) await p.screenshot({ path: path.join(bilder, 'woche_mo.png') });
-  const hol = await p.evaluate(() => { const v0 = JSON.stringify(window.evGemeinsamTest || {}); document.querySelector('#eventBody .evl-k.is-hol').click();
+  const hol = await p.evaluate(() => { const em0 = eventMuenzen, b0 = besch['5m'] || 0; document.querySelector('#eventBody .evl-k.is-hol').click();
     const bf = document.getElementById('beuteFenster'), da = !!bf && !bf.hidden; if (bf) bf.remove();
-    return { da, rest: inboxList().filter(x => x.src === 'woche').length, ok: document.querySelectorAll('#eventBody .evl-k.is-ok').length, gem: JSON.stringify(window.evGemeinsamTest || {}) !== v0 || typeof window.evGemeinsamTest === 'undefined' }; });
-  ok(hol.rest === 1 && hol.ok === 1 && hol.gem, 'Abholen: Kiste geht auf (Haken), Event-Münzen/Beschleuniger gutgeschrieben', hol);
+    return { da, rest: inboxList().filter(x => x.src === 'woche').length, ok: document.querySelectorAll('#eventBody .evl-k.is-ok').length, gem: [eventMuenzen - em0, (besch['5m'] || 0) - b0].join() }; });
+  ok(hol.rest === 1 && hol.ok === 1 && hol.gem === '50,1', 'Abholen: Kiste geht auf (Haken), Event-Münzen/Beschleuniger gutgeschrieben', hol);
   // Dienstag: Krieger zählt; die Montags-Kiste liegt jetzt im Abholfach; Lager-Tote zählen nicht
   await p.clock.setSystemTime(TAG(1)); await p.waitForTimeout(300); await zu();
   const di = await p.evaluate(() => {

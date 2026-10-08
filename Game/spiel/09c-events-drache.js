@@ -23,21 +23,6 @@ const WO_RANG = [{ bis: 1, t: 'Platz 1', band: 'p1', bild: 'ui_rang_legende', em
     { bis: 50, t: 'Platz 11–50', band: 'p4', bild: 'ui_rang_silberritter', em: 500, gems: 80, s1: 2, besch: '3h' },
     { bis: Infinity, t: 'Ab Platz 51', zusatz: 'alle mit mind. 1 Punkt', band: 'p5', bild: 'ui_rang_neuling', em: 200, gems: 20, s1: 1, besch: '1h' }];
 
-const BESCH_TXT = { '1m': '1 Min', '5m': '5 Min', '15m': '15 Min', '1h': '1 Std', '3h': '3 Std', '8h': '8 Std', '24h': '24 Std' };
-// GEMEINSAM (Team C legt Gegenstände, Kacheln und gibBelohnung in 05e an) – nur falls noch nicht da; beim Zusammenführen diesen Block löschen
-if (!BEUTE_ART.eventMuenzen) {
-    Object.assign(BEUTE_ART, { eventMuenzen: { b: 'beute_eventmuenze', t: 'Event-Münzen', r: 3 }, schluessel1: { b: 'beute_schluessel', t: 'Schlüssel', r: 2 },
-        schluessel2: { b: 'beute_schluessel_episch', t: 'Epischer Schlüssel', r: 4 }, besch: { b: 'beute_beschleuniger_klein', t: 'Beschleuniger', r: 2 } });
-    const beschBild = d => 'beute_beschleuniger_' + (/m$/.test(d) ? 'klein' : d === '1h' || d === '3h' ? 'mittel' : 'gross');   // Bronze bis 15 Min., Silber 1/3 Std., Gold 8/24 Std.
-    const bb = beuteBild, bm = beuteMenge;
-    beuteBild = b => b.a === 'besch' && BESCH_TXT[b.dauer] ? beschBild(b.dauer) : bb(b);
-    beuteMenge = b => b.a === 'besch' && BESCH_TXT[b.dauer] && !b.ohneZahl && !b.minus ? (b.n > 1 ? b.n + '× ' : '') + BESCH_TXT[b.dauer] : bm(b);
-}
-if (typeof gibBelohnung !== 'function') window.gibBelohnung = function (art, menge, extra) {
-    const v = window.evGemeinsamTest || (window.evGemeinsamTest = { eventMuenzen: 0, schluessel1: 0, schluessel2: 0, besch: {} }); if (!(menge > 0)) return;
-    if (art === 'besch') v.besch[extra.dauer] = (v.besch[extra.dauer] || 0) + menge; else v[art] = (v[art] || 0) + menge;
-};
-// (Ende GEMEINSAM)
 
 let woWinMemo = null;
 function woWin(now) {                                 // diese oder (nach Fr 20 Uhr) nächste Woche, Mo 0:00 – Fr 20:00: { on, start, end, key }
@@ -90,7 +75,7 @@ function evStunden(who, p, hp0) {
     let hp = hp0 || null; const h = () => hp || (hp = hourProduction(who));
     return { coins: p.mh > 0 ? Math.round(Math.max(wirtM(5000), h().coins) * p.mh) : 0, tr: p.th > 0 ? Math.round(Math.max(wirtK(500), h().troops) * p.th) : 0 };
 }
-const evDing = p => ({ em: Math.round(p.em || 0), s1: Math.round(p.s1 || 0), s2: Math.round(p.s2 || 0), besch: BESCH_TXT[p.besch] ? p.besch : undefined });   // Event-Münzen, Schlüssel, Beschleuniger
+const evDing = p => ({ em: Math.round(p.em || 0), s1: Math.round(p.s1 || 0), s2: Math.round(p.s2 || 0), besch: BESCH_MIN[p.besch] ? p.besch : undefined });   // Event-Münzen, Schlüssel, Beschleuniger
 function evPreis(who, src, title, p, schl, bis) {     // schl: fester Schlüssel der Auszahlung (Woche, Tag, Stufe …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
     // bis: Ende des Tages-Events – bis dahin nur im Event abholbar, danach im Abholfach
     const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
@@ -100,7 +85,7 @@ function evPreis(who, src, title, p, schl, bis) {     // schl: fester Schlüssel
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
     if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {},
-        d.em ? { em: d.em } : {}, d.s1 ? { s1: d.s1 } : {}, d.s2 ? { s2: d.s2 } : {}, d.besch ? { besch: d.besch } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
+        d.em ? { em: d.em } : {}, d.s1 ? { s1: d.s1 } : {}, d.s2 ? { s2: d.s2 } : {}, d.besch ? { besch: { [d.besch]: 1 } } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
     const bs = loadBotState()[who]; if (bs) { bs.gems = (bs.gems || 0) + gems; if (d.em) bs.eventMuenzen = (bs.eventMuenzen || 0) + d.em; } if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
     if (coins) botCoins[who] = (botCoins[who] || 0) + coins; if (tr) { const cap = botCapitalOf(who); if (cap !== null && cap !== undefined) islandTroops[cap] = (islandTroops[cap] || 0) + tr; }
     if (bs && titel) { bs.titles = [...new Set([...(bs.titles || []), titel])]; saveBotState(); }

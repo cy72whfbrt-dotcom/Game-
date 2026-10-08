@@ -46,7 +46,7 @@
         const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
         if (k && inboxList().some(x => x.k === k)) return;                     // (dieselbe Stufe nie zweimal im Fach)
         const bis = typeof e.bis === 'number' && e.bis > Date.now() ? Math.min(e.bis, Date.now() + 864e5) : undefined;   // (Event-Stufe: bis zum Ende nur im Event abholbar, höchstens einen Tag)
-        const besch = typeof e.besch === 'string' && BESCH_TXT[e.besch] ? e.besch : undefined;   // Event-Münzen, Schlüssel, Beschleuniger (Wochen-Event, Lager)
+        const besch = e.besch && typeof e.besch === 'object' ? BESCH_DAUERN.find(d => e.besch[d] > 0) : undefined;   // Event-Münzen, Schlüssel, Beschleuniger (Wochen-Event, Lager)
         if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), em: z(e.em, 1e5), s1: z(e.s1, 100), s2: z(e.s2, 100), besch, k, bis }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
