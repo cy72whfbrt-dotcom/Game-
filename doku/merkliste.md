@@ -65,3 +65,5 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - Shop: neuer Reiter „Event“ (Event-Shop, Event-Münzen). Beschleuniger: Belohnung bei Events UND im Shop kaufbar für
   Edelsteine oder Event-Münzen. Kisten-Reiter: öffnen mit Schlüssel oder Edelsteinen.
 - Bilder für Thron-/Wochen-Event (Karte, Herrscher, Titel, Event-Münze, Schlüssel, epische Helden-Kiste, Beschleuniger klein/mittel/groß) liegen in `Game/bilder/`; Test-Dateien nutzen sie (Test `eventbilder_test`), Shop dort mit Reitern Kisten + Event.
+- Lager-Tagesgrenze: höchstens 2,5 Mio. Münzen, 3 Schlüssel 1 und 1 Schlüssel 2 pro Tag. Wochen-Rangliste-Stufen ok
+  (1/2/3/4–10/11–50/Rest). Alte Thron-Punkte: Start bei 0. Shop muss sauber sortiert sein (Reihenfolge in Test-Datei).
