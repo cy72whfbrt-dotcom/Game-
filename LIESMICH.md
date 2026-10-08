@@ -1018,6 +1018,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   20: 330 → 5.100, 30: 1.100 → 21.000, 40: 1.700 → 84.000, 50: 2.200 → 340.000. Helden-Gefolge und Funde rechnen weiter mit
   dem alten Maß (`stufenTruppenMass`). Das Hauptbuch prüft die Stufen-Truppen mit derselben Funktion. Tests: `saison_test`,
   `teleport_test`, `neuling_vorschau_test`, `forschung_kosten_test` angepasst/erweitert.
+  (5) **Mitspieler sparen wie echte Spieler:** Kisten, Heldenkisten, Beschleunigen und Helden-Reset nur noch aus dem, was
+  über ihrem Spar-Ziel liegt (`botSparZiel`, bots/04): Teleport 500 (ab 8 Basen), Premium-Pass (will ihn, noch nicht
+  gekauft, Saison läuft noch ≥ 7 Tage), 2. Baumeister – je Gruppe verschieden (`BOT_SPAR`, fest je Spieler). Pass und
+  Baumeister kaufen sie, sobald es reicht (Rest 50, nicht mehr erst ab 1,5-fach). Sterne und Schilde bleiben dringend
+  (nur Rest 50). An Tagen mit allen Aufgaben bekommen sie dieselben Edelsteine wie du (`questGemsTag` = 42, alle 7 Tage
+  + 150 Wochenkette). Test: `mitspieler_sparen_test`.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
