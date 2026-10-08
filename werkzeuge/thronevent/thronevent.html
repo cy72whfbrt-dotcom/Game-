@@ -178,12 +178,13 @@ document.getElementById('goalsTabs').innerHTML = CHIPS.map(([t, an, ab]) => '<bu
 
 // Ereignis „Kampf um den Königsthron“
 const EM = ['beute_thron', true];                         // Event-Münze: Platzhalter, bis eigenes Bild da ist
+const S1 = ['ui_sym_schloss', true], S2 = ['ui_sym_schloss', true];   // Schlüssel 1/2: Platzhalter, bis beute_schluessel(_episch) da ist
 const RAENGE = [
-  ['p1', 'Platz 1', 'ui_rang_legende', 'Herrscher', [[EM, 'gold', '3.000'], ['beute_muenzen', 'gold', '12 Std.'], ['beute_holz', 'gold', '600K'], ['beute_beschleuniger', 'gold', '24 Std.'], ['kiste_royal_zu', 'gold', '2']]],
-  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200'], ['beute_muenzen', 'lila', '8 Std.'], ['beute_holz', 'lila', '400K'], ['beute_beschleuniger', 'lila', '15 Std.'], ['kiste_royal_zu', 'lila', '1']]],
-  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700'], ['beute_muenzen', 'lila', '6 Std.'], ['beute_holz', 'lila', '300K'], ['beute_beschleuniger', 'lila', '10 Std.'], ['kiste_episch_zu', 'lila', '2']]],
-  ['p4', 'Platz 4–8', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000'], ['beute_muenzen', 'blau', '4 Std.'], ['beute_holz', 'blau', '150K'], ['beute_beschleuniger', 'blau', '5 Std.'], ['kiste_episch_zu', 'blau', '1']]],
-  ['p5', 'Teilnahme', 'ui_rang_neuling', 'ab 500 Punkten', [[EM, 'gruen', '300'], ['beute_muenzen', 'gruen', '1 Std.'], ['beute_beschleuniger', 'gruen', '1 Std.'], ['kiste_gross_zu', 'gruen', '1']]]
+  ['p1', 'Platz 1', 'ui_rang_legende', 'Herrscher', [[EM, 'gold', '3.000'], ['beute_muenzen', 'gold', '12 Std.'], ['beute_holz', 'gold', '600K'], ['beute_beschleuniger', 'gold', '24 Std'], [S2, 'gold', '3']]],
+  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200'], ['beute_muenzen', 'lila', '8 Std.'], ['beute_holz', 'lila', '400K'], ['beute_beschleuniger', 'lila', '24 Std'], [S2, 'lila', '2']]],
+  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700'], ['beute_muenzen', 'lila', '6 Std.'], ['beute_holz', 'lila', '300K'], ['beute_beschleuniger', 'lila', '8 Std'], [S2, 'lila', '1']]],
+  ['p4', 'Platz 4–8', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000'], ['beute_muenzen', 'blau', '4 Std.'], ['beute_holz', 'blau', '150K'], ['beute_beschleuniger', 'blau', '8 Std'], [S1, 'blau', '5']]],
+  ['p5', 'Teilnahme', 'ui_rang_neuling', 'ab 500 Punkten', [[EM, 'gruen', '300'], ['beute_muenzen', 'gruen', '1 Std.'], ['beute_beschleuniger', 'gruen', '1 Std'], [S1, 'gruen', '1']]]
 ];
 const TOP = [['Seewolf', 16200, 'Hält den Königsthron'], ['Morgana', 10380, 'Wachturm Nord'], ['Ragnar', 9800, 'Wachturm Ost'], ['Eisenfaust', 7420, ''], ['Krähe', 5100, ''], ['Du', 4100, '']];
 const zahl = n => n.toLocaleString('de-DE');

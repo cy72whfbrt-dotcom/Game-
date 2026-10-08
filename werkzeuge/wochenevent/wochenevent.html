@@ -8,7 +8,7 @@
 <!-- Stil + Symbole wie im Spiel: aus werkzeuge/thronevent (neu holen mit ../thronevent/stil_holen.sh) -->
 <link rel="stylesheet" href="../thronevent/spiel_stil.css">
 <style>
-  /* Nur Ansicht zum Zeigen (Wochen-Event Mo–Fr): Regeln/Zahlen sind Vorschlag, nicht im Spiel. Ansicht: ?a=mo|di|mi|do|fr|rang */
+  /* Nur Ansicht zum Zeigen (Wochen-Event Mo–Fr): Regeln/Zahlen sind Vorschlag, nicht im Spiel. Ansicht: ?a=mo|di|mi|do|fr|rang|lager|kisten */
   body { background: #0d1118 url(../../Game/bilder/karte_boden_mitte.webp) center/cover; }
   body::after { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,.45); pointer-events: none; }
   .panel.is-open { z-index: 5; animation: none; }
@@ -92,6 +92,26 @@
   .rl-ich li.me { background: linear-gradient(90deg, #1f4a27, #14251a); }
   .rl-ich li { height: 40px; box-shadow: 0 -2px 10px rgba(0,0,0,.6); }
   .rl-ich em { color: #9ff0a8; }
+  /* Shop-Kisten */
+  .sk-liste { display: flex; flex-direction: column; gap: 8px; }
+  .sk { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 10px; padding: 8px; border-radius: 10px; background: rgba(0,0,0,.3); border: 1px solid var(--line-2); }
+  .sk[data-r="lila"] { border-color: rgba(190,120,255,.6); background: linear-gradient(135deg, rgba(120,60,200,.25), rgba(0,0,0,.3)); }
+  .sk-bild { display: grid; place-items: center; border-radius: 8px; background: radial-gradient(circle, rgba(255,210,120,.2), transparent 70%); }
+  .sk[data-r="lila"] .sk-bild { background: radial-gradient(circle, rgba(200,130,255,.35), transparent 70%); }
+  .sk-bild img { width: 80px; height: 80px; object-fit: contain; }
+  .sk-bild.platzh, .sk-bild:has(.platzh) { outline: 2px dashed #ff8d82; }
+  .sk-txt { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .sk-txt > b { font: 700 13.5px var(--font-ui); color: var(--gold-100); }
+  .sk-txt > small { font: 500 11px var(--font-ui); color: var(--tx-3); }
+  .sk-sicher { position: relative; height: 18px; border-radius: 9px; background: rgba(0,0,0,.45); overflow: hidden; border: 1px solid rgba(190,120,255,.5); }
+  .sk-sicher i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #7a3fc8, #c78cff); }
+  .sk-sicher span { position: relative; z-index: 1; display: block; text-align: center; font: 600 10.5px/18px var(--font-ui); color: #fff; text-shadow: 0 1px 2px #000; }
+  .sk-kn { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .sk-kn .btn { display: flex; align-items: center; justify-content: center; gap: 4px; }
+  .sk-kn .bk { --bk: 30px; width: 30px; height: 30px; flex: none; }
+  .sk-kn img { width: 18px; height: 18px; }
+  .sk-kn .bk > img { width: 80%; height: 80%; }
+  .sk-frag { font: 600 10px var(--font-ui); color: #ffb37a; text-align: right; }
   .platzh { outline: 2px dashed #ff8d82; outline-offset: -2px; }
 </style>
 </head>
@@ -122,11 +142,14 @@
 // Nur Ansicht: Markup und Klassen wie im Spiel (renderEvents, evLeisteHtml, beuteKachel)
 const B = '../../Game/bilder/';
 const icon = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"/></svg>';
-const kachel = (bild, r, zahl, platzh) => '<span class="bk' + (platzh ? ' platzh' : '') + '" data-r="' + r + '"><img src="' + B + bild + '.webp" alt="">' + (zahl ? '<b>' + zahl + '</b>' : '') + '</span>';
+// Fehlt ein Bild (Schlüssel, Helden-Kiste episch), zeigt die Kachel ein Ersatzbild mit roter Strich-Linie (Prompts in PROMPTS.md)
+const ERSATZ = { beute_schluessel: 'ui_sym_schloss', beute_schluessel_episch: 'ui_sym_schloss', kiste_held_episch_zu: 'kiste_held_zu' };
+const bildTag = bild => '<img src="' + B + bild + '.webp" alt=""' + (ERSATZ[bild] ? ' onerror="this.onerror=null;this.src=\'' + B + ERSATZ[bild] + '.webp\';this.parentNode.classList.add(\'platzh\')"' : '') + '>';
+const kachel = (bild, r, zahl, platzh) => '<span class="bk' + (platzh ? ' platzh' : '') + '" data-r="' + r + '">' + bildTag(bild) + (zahl ? '<b>' + zahl + '</b>' : '') + '</span>';
 const zahl = n => n.toLocaleString('de-DE');
 const A = new URLSearchParams(location.search).get('a') || 'mo';
 const TAGE = ['mo', 'di', 'mi', 'do', 'fr'], heute = A === 'rang' ? 4 : Math.max(0, TAGE.indexOf(A)), rangSicht = A === 'rang';
-document.getElementById('wahl').innerHTML = [...TAGE, 'rang', 'lager'].map(k => '<a href="?a=' + k + '"' + (k === A ? ' class="on"' : '') + '>' + (k === 'rang' ? 'Rangliste' : k === 'lager' ? 'Lager' : k[0].toUpperCase() + k[1]) + '</a>').join('');
+document.getElementById('wahl').innerHTML = [...TAGE, 'rang', 'lager', 'kisten'].map(k => '<a href="?a=' + k + '"' + (k === A ? ' class="on"' : '') + '>' + (k === 'rang' ? 'Rangliste' : k === 'lager' ? 'Lager' : k === 'kisten' ? 'Shop-Kisten' : k[0].toUpperCase() + k[1]) + '</a>').join('');
 
 // Chips: nur Woche und Thron; grüner Punkt = läuft gerade
 document.getElementById('goalsTabs').innerHTML = [['Woche', true, ''], ['Thron', false, 'Sa 10'], ['Lager', true, '']].map(([t, an, ab]) =>
@@ -143,13 +166,13 @@ const EVENTS = [
 const EV = EVENTS[heute], tagPkt = [7400, 5100, 9800, 3600, 2200][heute], wochePkt = [7400, 12500, 22300, 25900, 28100][heute];
 
 // Kisten-Leiste: gleich jeden Tag (Punkte dieses Tages)
-const EM = 'beute_thron';                                  // Event-Münze: Platzhalter, bis eigenes Bild da ist
+const EM = 'beute_thron', S1 = 'beute_schluessel', S2 = 'beute_schluessel_episch', T = 'beute_beschleuniger';                                  // Event-Münze: Platzhalter, bis eigenes Bild da ist
 const KISTEN = [
-  [1000, 'kiste_ausruestung', [[EM, 'gruen', '50', 1], ['beute_edelsteine', 'gruen', '10'], ['beute_muenzen', 'gruen', '1 Std.']]],
-  [3000, 'kiste_gross', [[EM, 'blau', '100', 1], ['beute_edelsteine', 'blau', '20'], ['beute_beschleuniger', 'blau', '30 Min.']]],
-  [6000, 'kiste_gross', [[EM, 'blau', '150', 1], ['beute_edelsteine', 'blau', '30'], ['beute_truppen', 'blau', '2 Std.']]],
-  [12000, 'kiste_episch', [[EM, 'lila', '250', 1], ['beute_edelsteine', 'lila', '50'], ['beute_beschleuniger', 'lila', '2 Std.']]],
-  [20000, 'kiste_royal', [[EM, 'gold', '400', 1], ['beute_edelsteine', 'gold', '80'], ['kiste_episch_zu', 'gold', '1']]]
+  [1000, 'kiste_ausruestung', [[EM, 'gruen', '50', 1], ['beute_edelsteine', 'gruen', '10'], [T, 'gruen', '5 Min']]],
+  [3000, 'kiste_gross', [[EM, 'blau', '100', 1], ['beute_edelsteine', 'blau', '20'], [T, 'blau', '15 Min']]],
+  [6000, 'kiste_gross', [[EM, 'blau', '150', 1], ['beute_edelsteine', 'blau', '30'], [T, 'blau', '1 Std']]],
+  [12000, 'kiste_episch', [[EM, 'lila', '250', 1], ['beute_edelsteine', 'lila', '50'], [T, 'lila', '3 Std']]],
+  [20000, 'kiste_royal', [[EM, 'gold', '400', 1], ['beute_edelsteine', 'gold', '80'], [S1, 'gold', '1'], [T, 'gold', '8 Std']]]
 ];
 function leiste(wert, an) {
   const n = KISTEN.length; let k = 0; while (k < n && wert >= KISTEN[k][0]) k++;
@@ -166,12 +189,12 @@ function leiste(wert, an) {
 
 // Wochen-Rangliste: Punkte Mo–Fr zusammen, Freitag 20 Uhr Auswertung
 const RAENGE = [
-  ['p1', 'Platz 1', 'ui_rang_legende', '', [[EM, 'gold', '3.000', 1], ['beute_edelsteine', 'gold', '500'], ['kiste_royal_zu', 'gold', '2'], ['beute_beschleuniger', 'gold', '24 Std.']]],
-  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200', 1], ['beute_edelsteine', 'lila', '350'], ['kiste_royal_zu', 'lila', '1'], ['beute_beschleuniger', 'lila', '15 Std.']]],
-  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700', 1], ['beute_edelsteine', 'lila', '250'], ['kiste_episch_zu', 'lila', '2'], ['beute_beschleuniger', 'lila', '10 Std.']]],
-  ['p4', 'Platz 4–10', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000', 1], ['beute_edelsteine', 'blau', '150'], ['kiste_episch_zu', 'blau', '1'], ['beute_beschleuniger', 'blau', '5 Std.']]],
-  ['p4', 'Platz 11–50', 'ui_rang_platingraf', '', [[EM, 'blau', '500', 1], ['beute_edelsteine', 'blau', '80'], ['kiste_gross_zu', 'blau', '1'], ['beute_beschleuniger', 'blau', '2 Std.']]],
-  ['p5', 'Ab Platz 51', 'ui_rang_neuling', 'alle mit mind. 1 Punkt', [[EM, 'gruen', '200', 1], ['beute_edelsteine', 'gruen', '20'], ['kiste_gross_zu', 'gruen', '1']]]
+  ['p1', 'Platz 1', 'ui_rang_legende', '', [[EM, 'gold', '3.000', 1], ['beute_edelsteine', 'gold', '500'], [S2, 'gold', '3'], [S1, 'gold', '10'], [T, 'gold', '24 Std']]],
+  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200', 1], ['beute_edelsteine', 'lila', '350'], [S2, 'lila', '2'], [S1, 'lila', '8'], [T, 'lila', '24 Std']]],
+  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700', 1], ['beute_edelsteine', 'lila', '250'], [S2, 'lila', '1'], [S1, 'lila', '6'], [T, 'lila', '8 Std']]],
+  ['p4', 'Platz 4–10', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000', 1], ['beute_edelsteine', 'blau', '150'], [S2, 'blau', '1'], [S1, 'blau', '4'], [T, 'blau', '8 Std']]],
+  ['p4', 'Platz 11–50', 'ui_rang_platingraf', '', [[EM, 'blau', '500', 1], ['beute_edelsteine', 'blau', '80'], [S1, 'blau', '2'], [T, 'blau', '3 Std']]],
+  ['p5', 'Ab Platz 51', 'ui_rang_neuling', 'alle mit mind. 1 Punkt', [[EM, 'gruen', '200', 1], ['beute_edelsteine', 'gruen', '20'], [S1, 'gruen', '1'], [T, 'gruen', '1 Std']]]
 ];
 const TOP = [['Seewolf', 61200], ['Morgana', 48800], ['Ragnar', 41500], ['Eisenfaust', 33900], ['Krähe', 30100], ['Du', wochePkt]].sort((a, b) => b[1] - a[1]);
 const liste = '<ol class="barb-rank">' + TOP.map(([n, p], i) => '<li' + (n === 'Du' ? ' class="me"' : '') + '><em>' + (i + 1) + '</em><span>' + n + '</span><b>' + zahl(p) + ' P.</b></li>').join('') + '</ol>';
@@ -189,11 +212,13 @@ const rang = '<div class="lb-gap">Wochen-Rangliste · Mo–Fr zusammen</div>' + 
   '<div class="lb-gap">Preise nach Platz · Freitag 20 Uhr im Abholfach</div>' + preise;
 const thron = '<div class="thron-satz">' + icon('crown') + '<span>Samstag und Sonntag: <b>Thron-Event</b> – Kampf um den Königsthron (Chip „Thron“).</span></div>';
 // Barbaren-Lager (eigenes Event, letzter Chip): nur feste Münzen je Stufe, zählt nicht für Krieger-Punkte
-const LAGER = Array.from({ length: 25 }, (x, i) => { const m = Math.round(20 * 1.2 ** i); return [i + 1, m >= 1000 ? (m / 1000).toFixed(1).replace('.', ',') + ' Mio.' : m + 'K']; }), LG = 4;   // 25 Stufen wie BARB_MAX_L
+// 25K × 1,2^(Stufe−1); Schlüssel 1 ab Stufe 10, 2 Stück ab 20, Schlüssel 2 nur auf Stufe 24–25
+const LAGER = Array.from({ length: 25 }, (x, i) => { const m = Math.round(25 * 1.2 ** i), st = i + 1;
+  return [st, m >= 1000 ? (m / 1000).toFixed(1).replace('.', ',') + ' Mio.' : m + 'K', st >= 20 ? 2 : st >= 10 ? 1 : 0, st >= 24 ? 1 : 0]; }), LG = 4;   // 25 Stufen wie BARB_MAX_L
 const lager = '<div class="barb-card ev-card"><div class="barb-ct"><b>' + icon('attack') + ' Barbaren-Lager</b><small>3 / 20 heute · jeden Tag neu</small></div>' +
   '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + (LG + 1) + '</b></div>' +
-  '<div class="thron-satz">' + icon('coin') + '<span>Jedes besiegte Lager gibt <b>feste Münzen</b> nach Stufe – sonst keine Beute. Getötete Truppen zählen <b>nicht</b> für den Krieger-Tag.</span></div></div>' +
-  '<div class="lb-gap">Münzen je Lager-Stufe</div><div class="evl-zeilen">' + LAGER.map(([st, m]) => '<div class="evl-z is-' + (st <= LG ? 'ok' : st === LG + 1 ? 'bald' : 'zu') + '"><b>Stufe ' + st + '</b><div class="bk-raster bk-mini">' + kachel('beute_muenzen', st <= 5 ? 'gruen' : st <= 10 ? 'blau' : st <= 18 ? 'lila' : 'gold', m) + '</div><span class="evl-st">' +
+  '<div class="thron-satz">' + icon('coin') + '<span>Jedes besiegte Lager gibt <b>feste Münzen</b> nach Stufe, ab Stufe 10 auch <b>Schlüssel</b>. Getötete Truppen zählen <b>nicht</b> für den Krieger-Tag.</span></div></div>' +
+  '<div class="lb-gap">Münzen je Lager-Stufe</div><div class="evl-zeilen">' + LAGER.map(([st, m, k1, k2]) => '<div class="evl-z is-' + (st <= LG ? 'ok' : st === LG + 1 ? 'bald' : 'zu') + '"><b>Stufe ' + st + '</b><div class="bk-raster bk-mini">' + kachel('beute_muenzen', st <= 5 ? 'gruen' : st <= 10 ? 'blau' : st <= 18 ? 'lila' : 'gold', m) + (k1 ? kachel(S1, 'blau', String(k1)) : '') + (k2 ? kachel(S2, 'lila', '1') : '') + '</div><span class="evl-st">' +
     (st <= LG ? '<img src="' + B + 'ui_sym_haken.webp" alt=""><small>besiegt</small>' : st === LG + 1 ? '<small>offen</small>' : icon('lock')) + '</span></div>').join('') + '</div>';
 // Rangliste-Ansicht (6. Feld): Podest Top 3, Liste 4–50, eigener Platz fest unten; Umschalter „Belohnungen“ (?b=1)
 const NAMEN = ['Seewolf', 'Morgana', 'Ragnar', 'Eisenfaust', 'Krähe', 'Valeria', 'Sturmbrecher', 'Ottokar', 'Lysandra', 'Grimbart', 'Thorvald', 'Elara', 'Falkenherz', 'Brunhild', 'Kaelen', 'Sigrun', 'Dornfels', 'Isolde', 'Wolfram', 'Fenja',
@@ -213,7 +238,18 @@ const rlKopf = '<div class="barb-card ev-card is-tour"><div class="barb-ct"><b>'
 const rlInhalt = belohnSicht ? '<div class="lb-gap">Preise nach Platz · Freitag 20 Uhr im Abholfach</div>' + preise :
   '<div class="podest">' + pod(1, 's') + pod(0, 'g') + pod(2, 'b') + '</div><ol class="rl">' + WOCHE.slice(3).map((x, i) => zeile(x, i + 3)).join('') + '</ol>' +
   '<div class="rl-ich"><ol class="rl">' + zeile(WOCHE[ichI], ichI) + '</ol></div>';
-document.getElementById('eventBody').innerHTML = A === 'lager' ? lager : rangSicht ? rlKopf + rlInhalt : kopf + punkte + kisten + rang + thron;
+// Shop-Kisten (?a=kisten): öffnen mit Schlüssel oder Edelsteinen; episch sicher 1 Lila nach spätestens 20 Versuchen
+const SHOPK = [['Ausrüstungs-Kiste', 'kiste_ausruestung_zu', 'blau', S1, 4, 100, 0, 'Waffen, Rüstung, Stiefel · meist Grün/Blau'],
+  ['Epische Ausrüstungs-Kiste', 'kiste_episch_zu', 'lila', S2, 1, 500, 13, 'Lila- und Gold-Ausrüstung'],
+  ['Helden-Kiste', 'kiste_held_zu', 'blau', S1, 4, 100, 0, 'Helden-Splitter · meist Grün/Blau'],
+  ['Epische Helden-Kiste', 'kiste_held_episch_zu', 'lila', S2, 1, 500, 6, 'Lila- und Gold-Helden-Splitter']];
+const kistenSicht = '<div class="lb-gap">Shop · Kisten</div><div class="sk-liste">' + SHOPK.map(([n, bild, r, sl, hab, gem, ver, inh]) =>
+  '<div class="sk" data-r="' + r + '"><div class="sk-bild">' + bildTag(bild) + '</div><div class="sk-txt"><b>' + n + '</b><small>' + inh + '</small>' +
+  (r === 'lila' ? '<div class="sk-sicher"><span>Sicher 1 Lila in <b>' + ver + '/20</b> Versuchen</span><i style="width:' + (ver / 20 * 100) + '%"></i></div>' : '') +
+  '<div class="sk-kn"><button class="btn btn--primary btn--sm" type="button">' + kachel(sl, r) + '<span>Öffnen · ' + hab + '</span></button>' +
+  '<button class="btn btn--sm" type="button"><img src="' + B + 'ui_edelstein.webp" alt=""><span>' + gem + '</span></button></div>' +
+  (gem >= 500 ? '<small class="sk-frag">Fragt vorher „Wirklich?“</small>' : '') + '</div></div>').join('') + '</div>';
+document.getElementById('eventBody').innerHTML = A === 'kisten' ? kistenSicht : A === 'lager' ? lager : rangSicht ? rlKopf + rlInhalt : kopf + punkte + kisten + rang + thron;
 </script>
 </body>
 </html>
