@@ -39,7 +39,8 @@
 .empty-state.ev-leer > .icon{width:40px;height:40px;color:var(--gold-300)} .empty-state.ev-leer > span{max-width:34ch}
 .empty-state.ev-leer > b{font-size:var(--fs-15)} .empty-state.ev-leer .btn{margin-top:8px;max-width:100%}
 /* Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen – erreicht leuchtet („Abholen“), abgeholt = offene Kiste + Haken */
-.evl{contain:inline-size;width:100%;overflow-x:auto;overscroll-behavior-x:contain;margin:2px -2px 6px;padding:4px 2px 2px;scrollbar-width:thin}
+.evl{contain:inline-size;width:100%;overflow-x:auto;overscroll-behavior-x:contain;margin:2px -2px 6px;padding:4px 2px 2px;scrollbar-width:thin;
+  position:sticky;top:0;z-index:2;background:rgb(16,19,25);box-shadow:0 6px 8px -4px rgba(0,0,0,.6)}   /* beim Blättern bleibt die Stufen-Leiste ganz oben stehen (Foto 8.10.: sonst halb verdeckt) */
 .evl-bahn{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(52px,1fr));min-width:calc(var(--n) * 52px)}
 .evl-spur{position:absolute;left:0;right:0;top:20px;height:8px;border-radius:4px;background:rgba(0,0,0,.45);border:1px solid var(--line-2);overflow:hidden}
 .evl-spur i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#a8831a,#f2c75c);box-shadow:0 0 8px rgba(242,199,92,.6)}

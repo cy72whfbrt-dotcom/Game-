@@ -2,6 +2,7 @@
 // (jede erreichte Stufe sofort im Abholfach, nie doppelt), Drache: Treffer zählt nur mit mind. 10 % der Truppen, Tagesboss: je Angriff
 // die Belohnung seiner Schadens-Klasse + „Boss fällt“ für alle (keine Platz-Preise), Lager: je Stufe einmal am Tag. Mitspieler gleich,
 // echte Spieler bekommen Münzen/Truppen als Nachricht (Gutschrift). Abholen im Event-Fenster. Fotos in process.argv[3], wenn angegeben.
+// Kurze Handys (Fotos 8.10.): Pass – Premium-Reihe ganz im Fenster; Lager – die Stufen-Leiste beim Blättern nie halb verdeckt.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 300) : ''));
@@ -84,6 +85,20 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const t = () => (evChips(Date.now()).find(c => /ev-inv/.test(c[1])) || [0, ''])[1].replace(/<[^>]+>/g, ' ');
     const null_ = t(); I.pts.player = 1234; return [null_, t()]; });
   ok(!/P\./.test(chip.join()) && !/\d/.test(chip[0].replace(/Welle \d\/\d/, '')) && /1\.234 Punkte/.test(chip[1]), 'Invasions-Leiste: keine „0 P.“, sonst „1.234 Punkte“', chip);
+  for (const [w, h] of [[430, 736], [375, 667]]) {
+    await p.setViewportSize({ width: w, height: h }); await p.evaluate(() => { closeAllPopups(); openGoals('pass'); }); await p.waitForTimeout(700);
+    const q = await p.evaluate(() => { const pb = goalsPopup.querySelector('.pbody').getBoundingClientRect(), pr = document.querySelector('#passPane .pass-prem').getBoundingClientRect();
+      return { pb: Math.round(pb.bottom), prem: Math.round(pr.bottom), oben: Math.round(pr.top) >= Math.round(pb.top) }; });
+    ok(q.prem <= q.pb + 1 && q.oben, 'Pass ' + w + '×' + h + ': Premium-Reihe ganz im Fenster (ohne Blättern)', q);
+    if (bilder) await p.screenshot({ path: path.join(bilder, 'pass_' + w + 'x' + h + '.png') });
+  }
+  await p.evaluate(() => { closeAllPopups(); openGoals('lager'); }); await p.waitForTimeout(700);
+  const lg = await p.evaluate(async () => { const pb = goalsPopup.querySelector('.pbody'), l = document.querySelector('#eventBody .evl'), y0 = l.getBoundingClientRect().top - pb.getBoundingClientRect().top;
+    pb.scrollTop = y0 + 40; await new Promise(f => setTimeout(f, 200));
+    const a = pb.getBoundingClientRect(), r = l.getBoundingClientRect(), z = document.querySelector('#eventBody .evl-zeilen').getBoundingClientRect();
+    return { blaettern: pb.scrollTop > 0, ganz: r.top >= a.top - 1 && r.bottom <= a.bottom, zeilenDarunter: z.top < r.bottom, bg: getComputedStyle(l).backgroundColor !== 'rgba(0, 0, 0, 0)' }; });
+  ok(lg.blaettern && lg.ganz && lg.bg, 'Lager 375×667 geblättert: Stufen-Leiste bleibt ganz oben stehen (deckend, nicht halb verdeckt)', lg);
+  if (bilder) await p.screenshot({ path: path.join(bilder, 'lager_geblaettert.png') });
   ok(!fe.length, 'keine Fehler auf der Seite', fe.slice(0, 3));
   await b.close();
 })();
