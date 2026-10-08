@@ -878,9 +878,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fieldTick` → Game/spiel/09a-funde-felder.js:264
 - `fieldTravelSec` → Game/spiel/09a-funde-felder.js:185
 - `fieldWhoName` → Game/spiel/09a-funde-felder.js:181
-- `fightDurationMs` → Game/spiel/03e-karte-kamera-eingabe.js:546
+- `fightDurationMs` → Game/spiel/03e-karte-kamera-eingabe.js:547
 - `fighterSnapshot` → Game/spiel/01e-kampf-werte-nebel-hud.js:110
-- `fightEstimate` → Game/spiel/03e-karte-kamera-eingabe.js:535
+- `fightEstimate` → Game/spiel/03e-karte-kamera-eingabe.js:536
 - `findAnyCombinableGroup` → Game/spiel/02a-shop-stufen.js:96
 - `finishMapBattle` → Game/spiel/07a-kampf-schlachten.js:26
 - `finishSplash` → Game/spiel/10c-start-einstellungen.js:190
@@ -944,7 +944,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `foZeit` → Game/aufbau.js:196
 - `foZeitRoh` → Game/aufbau.js:195
 - `frame` → Game/spiel/03e-karte-kamera-eingabe.js:382
-- `frameIslandInView` → Game/spiel/03e-karte-kamera-eingabe.js:479
+- `frameIslandInView` → Game/spiel/03e-karte-kamera-eingabe.js:480
 - `free` → Game/spiel/01c-basen-spielstand.js:46
 - `freezeCamera` → Game/spiel/03e-karte-kamera-eingabe.js:250
 - `frei` → Game/spiel/03f-marsch-bilder.js:238
@@ -1234,7 +1234,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `invWelle` → Game/spiel/09c-events-drache.js:146
 - `invZiele` → Game/spiel/09c-events-drache.js:134
 - `invZielOk` → Game/spiel/09c-events-drache.js:130
-- `isCapital` → Game/spiel/03e-karte-kamera-eingabe.js:515
+- `isCapital` → Game/spiel/03e-karte-kamera-eingabe.js:516
 - `isCellOpen` → Game/spiel/01e-kampf-werte-nebel-hud.js:30
 - `isExplored` → Game/spiel/01e-kampf-werte-nebel-hud.js:39
 - `islandOwnerOf` → Game/spiel/01d-helden-daten-herrscher.js:151
@@ -1912,7 +1912,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sendenAlle` → Game/weltrechner/push.js:206
 - `sendenAn` → Game/weltrechner/push.js:192
 - `senkSchildX` → Game/spiel/03c-karte-wappen-thronplatz.js:149
-- `sentLossFor` → Game/spiel/03e-karte-kamera-eingabe.js:524
+- `sentLossFor` → Game/spiel/03e-karte-kamera-eingabe.js:525
 - `server` → Game/benachrichtigung.js:20
 - `server` → Game/weltrechner/push.js:169
 - `serverJetzt` → Game/spiel/03d-karte-ebenen-tagnacht.js:26
@@ -2168,7 +2168,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `verstPlatz` → Game/buendnis/01-daten-regeln.js:461
 - `verstPlatzStufe` → Game/buendnis/01-daten-regeln.js:460
 - `verstPruefen` → Game/buendnis/01-daten-regeln.js:483
-- `verstSchaetzung` → Game/spiel/03e-karte-kamera-eingabe.js:527
+- `verstSchaetzung` → Game/spiel/03e-karte-kamera-eingabe.js:528
 - `verstSpeichern` → Game/buendnis/01-daten-regeln.js:457
 - `verstStufe` → Game/buendnis/01-daten-regeln.js:458
 - `verstUnbekannt` → Game/buendnis/01-daten-regeln.js:469
@@ -3309,12 +3309,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mapFocusPoint` :445 — ---------------- map controls ----------------
 - `updateMapControls` :454
 - `positionIslandPopover` :460 — ---------------- island popup placement ----------------
-- `frameIslandInView` :479 — ease the base into the free map area (next to the sheet / clear of the desktop …
-- `isCapital` :515
-- `sentLossFor` :524
-- `verstSchaetzung` :527 — Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mi…
-- `fightEstimate` :535 — the fight as it stands right now (no side effects) - same maths as resolveAttac…
-- `fightDurationMs` :546 — a skirmish is over in ~4 s, a clash of millions takes ~12 s
+- `frameIslandInView` :480 — ease the base into the free map area (next to the sheet / clear of the desktop …
+- `isCapital` :516
+- `sentLossFor` :525
+- `verstSchaetzung` :528 — Verstärkung in Basis id vor dem Kampf: ihre Truppen (n) und was jeder Helfer mi…
+- `fightEstimate` :536 — the fight as it stands right now (no side effects) - same maths as resolveAttac…
+- `fightDurationMs` :547 — a skirmish is over in ~4 s, a clash of millions takes ~12 s
 
 ### Game/spiel/03f-marsch-bilder.js — Märsche und Kämpfe auf der Karte als KI-Bilder (Trupp, Sechseck-Kopf, Pfeilkett…
 - `mzBild` :15 — bilder/<n>.webp, einmal geladen (danach neu zeichnen)
