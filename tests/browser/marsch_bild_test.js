@@ -55,6 +55,8 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     // sie dem Handy mit der Kampf-Zeit (Zuschauer) – hier so nachgestellt
     await p.evaluate(ids => { const f = pendingAttacks.find(a => a.targetId === ids.T && a.fightEndsAt), v = f && pendingAttacks.find(a => a.attackerBotId === ids.A && a.targetId === ids.T);
       if (v) { v.fightEndsAt = f.fightEndsAt; v.resolveAt = Date.now(); } }, ids);
+    await p.evaluate(ids => { const now = Date.now();                       // Gedränge (Spieltest F1): zwei eigene Rückwege ziehen gerade vom Kampf weg
+      for (const [n, nach] of [[1.8e6, ids.home], [1.6e6, ids.own2]]) pendingRetreats.push({ fromId: ids.T, toId: nach, troops: n, startedAt: now - 2000, resolveAt: now + 60000 }); }, ids);
     await p.waitForTimeout(700);
     const k1 = await bild(); await foto('kampf');
     await p.waitForTimeout(3500);
@@ -71,7 +73,11 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     ok(kf && kf.helfer >= 1 && k1.koepfe.some(k => k.art === 'verst' && k.n > 0) && Math.abs(dSumme - kf.d) <= 2 && kf.d <= daten.b.en, name + ': Verteidiger + Verstärker des Gegners je mit Sechseck und Zahl', { dSumme, kf });
     ok(kf && kf2 && kf2.d < kf.d, name + ': Verteidiger-Zahl sinkt im Kampf', { vorher: kf && kf.d, nachher: kf2 && kf2.d });
     ok(daten.wartet >= 1 && k1.koepfe.some(k => /wartet/.test(k.text)), name + ': fremder Dritter wartet sichtbar (⌛ wartet)', daten);
-    ok(!ueber(k1.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Kampf)', ueber(k1.koepfe));
+    ok(!ueber(k1.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Kampf mit 4 Armeen, Verstärker, Wartendem, 2 Rückwegen)', ueber(k1.koepfe));
+    const imBild = await p.evaluate(() => { mzLeistenLesen(); return { schilde: bannerHitRects.slice(), leisten: mzLeisten, w: viewW, h: viewH }; });
+    const stoert = (l, nur) => l.filter(k => !nur || nur.includes(k.art)).flatMap(k => imBild.schilde.concat(imBild.leisten).filter(q => Math.max(0, Math.min(k.x + k.w, q.x + q.w) - Math.max(k.x, q.x)) * Math.max(0, Math.min(k.y + k.h, q.y + q.h) - Math.max(k.y, q.y)) > .15 * k.w * k.h).map(() => k.text));
+    ok(!stoert(k1.koepfe, ['kampf', 'rueck', 'marsch']).length, name + ': Armeen-Chips nicht auf Basis-Schildern oder Leisten', stoert(k1.koepfe, ['kampf', 'rueck', 'marsch']));
+    ok(!k1.koepfe.some(k => k.seite === 'eigen' && /wartet/.test(k.text)), name + ': eigene Wellen zeigen nie „⌛ wartet“', k1.koepfe.filter(k => /wartet/.test(k.text)));
     // ===== B) Märsche: Chip = Spieldaten, Rally, Sammeln, Späher, Zurückgerufen =====
     await p.waitForFunction(T => !pendingAttacks.some(a => a.targetId === T), ids.T, { timeout: 30000, polling: 300 }).catch(() => {});
     await p.waitForTimeout(3000);
@@ -107,6 +113,19 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
       requestAnimationFrame(() => requestAnimationFrame(() => r({ sel: selMarch, knoepfe: marchBtnRects.map(x => x.act), rund: marchBtnRects.every(x => x.w === 44 && x.h === 44) }))); }); }));
     ok(c.sel && JSON.stringify(c.knoepfe) === '["info","recall","speed"]' && c.rund, name + ': eigene Armee antippen → runde Knöpfe Info/Zurück/Schneller', c);
     await foto('knoepfe');
+    const knoepfe = await p.evaluate(() => {                       // Spieltest F3/F4: Armee am rechten Rand / oben unter der Kopfleiste → Knöpfe frei im Bild, nie übereinander
+      const out = {};
+      for (const [art, wo] of [['rally', 'rechts'], ['sammeln', 'oben']]) {
+        const m = marchTokens.find(t => t.info.art === art && t.mk); if (!m) { out[art] = 'fehlt'; continue; }
+        const W = innerWidth, H = innerHeight, zx = wo === 'rechts' ? W - 24 : W / 2, zy = wo === 'rechts' ? H / 2 : 70;
+        mapState.offsetX += zx - m.x; mapState.offsetY += zy - m.y; selMarch = mzSelKey(m); requestRender(); drawMap(); drawMap();
+        const b = marchBtnRects.map(r => ({ x: r.x - 4, y: r.y, w: r.w + 8, h: r.h + 16 }));   // (mit Text darunter)
+        const ueber2 = b.some((r, i) => b.some((q, j) => j > i && overlap(r, q) > 0)), raus = b.filter(r => r.x < 0 || r.y < 0 || r.x + r.w > viewW || r.y + r.h > viewH).length;
+        out[art] = { n: b.length, ueber: ueber2, raus, leiste: b.filter(r => mzLeisten.some(q => overlap(r, q) > 0)).length };
+      }
+      return out; });
+    await p.waitForTimeout(300); await foto('knoepfe_oben');
+    ok(['rally', 'sammeln'].every(a => knoepfe[a].n >= 2 && !knoepfe[a].ueber && !knoepfe[a].raus && !knoepfe[a].leiste), name + ': Knöpfe am Rand/oben: im Bild, nicht unter Leisten, nie übereinander', knoepfe);
     const ohne = await p.evaluate(() => { selMarch = null; window.__alt = [pendingAttacks, pendingSends, pendingRetreats, pendingScouts]; pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = [];
       return new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; requestRender(); if (performance.now() - t0 < 2500) requestAnimationFrame(f); else r(Math.round(n * 1000 / (performance.now() - t0))); }; requestAnimationFrame(f); }); });
     await p.evaluate(() => { [pendingAttacks, pendingSends, pendingRetreats, pendingScouts] = __alt; });

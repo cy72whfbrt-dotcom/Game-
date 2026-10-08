@@ -4467,6 +4467,12 @@ function mzName(who) {                                 // „[NW]Alex“ wie im 
   return (tag ? '[' + tag + ']' : '') + (who === 'player' ? (window.profileName && profileName.value) || 'Du' : botById[who].name);
 }
 let mzAnzeige = { koepfe: [], kaempfe: [] };          // was gerade gezeichnet ist (Sechsecke mit Zahl, Kampf-Tafeln) – fürs Antippen und Prüfen
+let mzKampfFlaechen = [], mzLeisten = [];              // Sechsecke/Chips der Schlachten vom letzten Bild (Märsche weichen aus) · Leisten über der Karte
+function mzLeistenLesen() {                            // Kopfleiste, Zoom-Knöpfe, Anleitung …: dort kein Chip und kein Knopf
+  const cv = canvas.getBoundingClientRect(); mzLeisten = [];
+  for (const id of BANNER_UNTER) { const el = document.getElementById(id); if (!el || el.hidden) continue; const b = el.getBoundingClientRect(); if (b.width && b.height) mzLeisten.push({ x: b.left - cv.left, y: b.top - cv.top, w: b.width, h: b.height }); }
+}
+const mzImBild = r => r.x >= 4 && r.y >= 4 && r.x + r.w <= viewW - 4 && r.y + r.h <= viewH - 4;
 
 // ===== Vorgemalte Teile (je Größe einmal): Köpfe, Namensbänder – spart je Bild viel Arbeit (Handy ≥ 30 Bilder/s) =====
 var marchFlagCache = new Map();                        // (ein neues Wappen leert ihn: 05a)
@@ -4565,7 +4571,11 @@ function mzInfo(type, o, who, own, target, progress) {
     verletzt: type === 'retreat' && !!o && !('path' in o) && !o.senderBotId,   // (nach einem verlorenen Kampf)
     beute: rueck && feld && o.load >= 1 ? { bild: MZ_BEUTE[feld.kind] || 'beute_muenzen', n: o.load } : null,
     zuMir: !own && target.id !== undefined && islandOwnerOf(target.id) === 'player',
-    wartet: (type === 'attack' || type === 'incoming') && !!o && (!!o.wartet || (progress >= 1 && !o.fightEndsAt && !o.back)) };
+    wartet: (type === 'attack' || type === 'incoming') && !!o && (!!o.wartet || (progress >= 1 && !o.fightEndsAt && !o.back && !mzTrittBei(o))) };
+}
+function mzTrittBei(a) {                               // angekommene Welle, deren Seite (derselbe oder ein Verbündeter) dort gerade kämpft: sie tritt bei, wartet nicht
+  const seite = x => x.attackerBotId || 'player';
+  return pendingAttacks.some(p => p !== a && p.fightEndsAt && p.targetId === a.targetId && (seite(p) === seite(a) || bundFreund(seite(p), seite(a))));
 }
 function mzWartetBeiMir(a, now) {                      // fremde Welle steht schon am Ziel, an dem gerade DEINE Schlacht läuft (sie wartet)
   return a.resolveAt <= now && !a.fightEndsAt && mapBattles.some(b => b.targetId === a.targetId && !b.final);
@@ -4597,7 +4607,8 @@ function mzTruppBild(m) {
   return `marsch_trupp_${s}_${I.verletzt ? 'verletzt' : m.richtung.dy > 0 ? 'runter' : 'hoch'}`;
 }
 function drawMarchTokens() {                            // vor den Namensschildern: Linie und Trupp (Kopf und Chip danach: drawMarchChips)
-  setScreen(ctx); mzAnzeige = { koepfe: [], kaempfe: [] };
+  mzKampfFlaechen = mzAnzeige.koepfe.filter(k => k.art === 'vert' || k.art === 'verst' || k.art === 'kampf' || k.art === 'tafel');
+  setScreen(ctx); mzAnzeige = { koepfe: [], kaempfe: [] }; mzLeistenLesen();
   const st = mzStufe(), s = mzS();
   for (const m of marchTokens) {
     const off = Math.min(m.tot * .45, m.r + 8);
@@ -4626,11 +4637,16 @@ function mzKopfText(I, secs) {                          // Chip am Sechseck: Tru
   if (I.beute) return zeit + ' · Beute';
   return I.n ? fmtCompact(I.n) + ' · ' + zeit : I.seite === 'eigen' ? zeit : '? · ' + zeit;
 }
+const MZ_STUFEN = [[0, 1, 0], [0, 0, 0], [1, 1, 0], [0, 1, 1], [1, 0, 0], [1, 1, 1], [1, 0, 1]];   // [klein, ganz im Bild, weit]
+const MZ_AUSWEICH = [];                                // Ausweich-Plätze (Spalten × Zeilen um den Trupp), die nächsten zuerst (eine Spalte ≈ 2 Zeilen breit)
+for (let ox = -3; ox <= 3; ox++) for (let oy = -5; oy <= 5; oy++) MZ_AUSWEICH.push([ox, oy]);
+MZ_AUSWEICH.sort((a, b) => Math.hypot(a[0] * 2.1, a[1] + (a[1] > 0 ? .3 : 0)) - Math.hypot(b[0] * 2.1, b[1] + (b[1] > 0 ? .3 : 0)));   // (gleich weit: lieber darüber)
+const MZ_NAH = MZ_AUSWEICH.filter(([ox, oy]) => Math.abs(ox) <= 1 && oy >= -2 && oy <= 2);
 function mzFrei(r, liste) { return !liste.some(q => overlap(r, q) > 0); }
 function drawMarchChips() {                             // nach den Namensschildern: Sechseck-Kopf, Namensband, Chip (nie übereinander)
   setScreen(ctx);
-  const st = mzStufe(), s = mzS(), belegt = [];
-  for (const b of mapBattles) { const isl = islandById[b.targetId]; if (!isl || b.final) continue;   // (Schlacht: Verteidiger, Tafel und Armeen-Ring frei halten)
+  const st = mzStufe(), s = mzS(), belegt = mzKampfFlaechen.concat(mzLeisten, bannerHitRects);   // (Schlachten, Leisten, Namensschilder der Basen)
+  if (!mzKampfFlaechen.length) for (const b of mapBattles) { const isl = islandById[b.targetId]; if (!isl || b.final) continue;   // (Schlacht im 1. Bild: Verteidiger, Tafel und Armeen-Ring frei halten – danach genau ihre Flächen)
     const bk = isl.type === 'tower' && basisKreis(isl, mapState.zoom), zw = Math.max(44, bk ? bk.r / .42 : isl.radius * mapState.zoom * 2), x = toSX(isl.x), y = toSY(isl.y) - (bk ? bk.dy : 0);
     belegt.push({ x: x - zw * .9 - 60 * s, y: y - zw * .55 - 110 * s, w: zw * 1.8 + 120 * s, h: zw * 1.2 + 150 * s }); }
   if (st === 'weit') for (const m of marchTokens) if (m.info.seite === 'eigen' && m.info.art !== 'spaeher') {   // weit: nur deine als Mini-Sechseck
@@ -4644,27 +4660,40 @@ function drawMarchChips() {                             // nach den Namensschild
       ctx.beginPath(); ctx.ellipse(m.x, y, 6 * s, 3.5 * s, 0, 0, 7); ctx.strokeStyle = '#fff'; ctx.stroke(); ctx.beginPath(); ctx.arc(m.x, y, 1.8 * s, 0, 7); ctx.fillStyle = '#fff'; ctx.fill();
       m.kopf = { x: m.x - 22, y: y - 22, w: 44, h: 44 }; continue;
     }
-    const kw = MZ_MASS[st].kopf * s, kh = kw * 50 / 44, px = Math.round((st === 'nah' ? 12 : 11) * s), name = st === 'nah' ? mzName(I.who || 'player') : '';
+    const kw0 = MZ_MASS[st].kopf * s, px = Math.round((st === 'nah' ? 12 : 11) * s), name0 = st === 'nah' ? mzName(I.who || 'player') : '';
     const txt = mzKopfText(I, m.secs); ctx.font = `700 ${px}px Inter, system-ui, sans-serif`;
-    const cw = ctx.measureText(txt).width + 10 + (I.beute ? 26 * s : 0), bandH = name ? px + 5 : 0;
-    let x = m.x, y = m.kopfY - kh / 2 - 2 * s, r = null;   // Kopf über dem Trupp; liegt dort schon einer: daneben / darüber
-    for (const [ox, oy] of [[0, 0], [0, -1], [1, 0], [-1, 0], [1, -1], [-1, -1], [0, -2], [0, 1]]) {
-      const xx = m.x + ox * (kw + cw + 8), yy = m.kopfY - kh / 2 - 2 * s + oy * (kh + bandH + 6);
-      const rr0 = { x: xx - kw / 2, y: yy - kh / 2, w: kw + 4 + cw, h: kh + bandH + 2 };
-      if (mzFrei(rr0, belegt)) { x = xx; y = yy; r = rr0; break; }
+    const cw0 = ctx.measureText(txt).width + 10 + (I.beute ? 26 * s : 0);
+    // Platz: Kopf über dem Trupp, Chip rechts (am rechten Rand links); liegt dort schon etwas (Kopf, Chip, Schlacht, Basis-Schild, Leiste):
+    // daneben / darüber / darunter – sonst klein (nur der Kopf, ohne Chip und Namen)
+    const nw0 = name0 ? Math.max(0, ctx.measureText(name0).width + 12 - kw0) / 2 : 0;   // (Namensband breiter als der Kopf)
+    const frei = (xx, yy, links, kw, cw, bandH, ganz) => { const kh = kw * 50 / 44, nw = bandH ? nw0 : 0;
+      const r0 = { x: (links ? xx - kw / 2 - 4 - cw : xx - kw / 2) - nw, y: yy - kh / 2, w: kw + 4 + cw + 2 * nw, h: kh + bandH + 2 };
+      return (ganz ? mzImBild(r0) : xx > 0 && xx < viewW && yy > 0 && yy < viewH) && mzFrei(r0, belegt) ? r0 : null; };   // (ganz: auch der Chip im Bild)
+    let pl = null;
+    for (const [klein, ganz, weit] of MZ_STUFEN) {     // erst groß nah am Trupp, dann klein nah, dann weiter weg (mit Strich zum Trupp)
+      const kw = kw0 * (klein ? .7 : 1), cw = klein ? 0 : cw0, bandH = klein || !name0 ? 0 : px + 5;
+      for (const [ox, oy] of weit ? MZ_AUSWEICH : MZ_NAH) {
+        const xx = m.x + ox * (kw + cw + 8), yy = m.kopfY - kw * 25 / 44 - 2 * s + oy * (kw * 50 / 44 + bandH + 6);
+        for (const links of klein ? [false] : [false, true]) { const r0 = frei(xx, yy, links, kw, cw, bandH, ganz); if (r0) { pl = { x: xx, y: yy, links, r: r0, kw, chip: !klein }; break; } }
+        if (pl) break;
+      }
+      if (pl) break;
     }
-    if (!r) r = { x: x - kw / 2, y: y - kh / 2, w: kw + 4 + cw, h: kh + bandH + 2 };
+    if (!pl) continue;                                 // (kein Platz im Bild: der Trupp allein)
+    const { x, y, r, kw } = pl, kh = kw * 50 / 44, name = pl.chip ? name0 : '', bandH = name ? px + 5 : 0;
     belegt.push(r);
     if (x !== m.x || y < m.kopfY - kh) { ctx.strokeStyle = 'rgba(10,12,16,.7)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(m.x, m.kopfY); ctx.lineTo(x, y + kh / 2); ctx.stroke(); }
     const k = mzKopf({ ...I, rally: I.art === 'rally' }, kw); ctx.drawImage(k, x - kw / 2 - 2, y - kh / 2 - 2, k.w, k.h);
     if (I.zurueck) mzBildAn('marsch_zeichen_zurueck', x + kw * .42, y - kh * .38, 14 * s);
     if (I.wartet) mzSanduhr(x - kw * .5, y - kh * .5, 10 * s);
     if (name) { const b = mzBand(name, (I.art === 'rally' ? MZ_FARBE.rally : MZ_FARBE[I.seite]).hell, px - 1); ctx.drawImage(b, x - b.w / 2, y + kh / 2 + 1, b.w, b.h); }
-    const c = mzChip(txt, x + kw / 2 + 4, y - px / 2 - 3, px, I.wartet ? '#ffd678' : '#fff6dc');
-    if (I.beute && st === 'nah') mzBeute(I.beute, c.x + c.w + 4, y - 12 * s, 18 * s);
-    if (I.rally && I.rally.length > 1) mzMiniKoepfe(I.rally, x, y + kh / 2 + bandH + 4 * s, s);
+    if (pl.chip) {
+      const c = mzChip(txt, pl.links ? x - kw / 2 - 4 - (I.beute ? 26 * s : 0) : x + kw / 2 + 4, y - px / 2 - 3, px, I.wartet ? '#ffd678' : '#fff6dc', pl.links);
+      if (I.beute && st === 'nah') mzBeute(I.beute, c.x + c.w + 4, y - 12 * s, 18 * s);
+    }
+    if (I.rally && I.rally.length > 1 && pl.chip) mzMiniKoepfe(I.rally, x, y + kh / 2 + bandH + 4 * s, s);
     m.kopf = { x: x - Math.max(22, kw / 2), y: y - Math.max(22, kh / 2), w: Math.max(44, kw), h: Math.max(44, kh) };
-    mzAnzeige.koepfe.push({ art: I.art, seite: I.seite, n: I.n, text: txt, x: r.x, y: r.y, w: r.w, h: r.h });
+    mzAnzeige.koepfe.push({ art: I.art, seite: I.seite, n: I.n, text: pl.chip ? txt : I.wartet ? '⌛ wartet' : '', klein: !pl.chip, x: r.x, y: r.y, w: r.w, h: r.h });
   }
   if (st === 'nah') mzVerstAnBasen(s);
   mzWarnung(st);
@@ -4714,10 +4743,9 @@ function drawMarchButtons() {
   if (m.mk) { const [list, mm] = mzEigenerMarsch(m.mk); if (!mm) { selMarch = null; return; }
     acts = ['info'].concat(list !== pendingRetreats && !mm.back ? ['recall'] : [], mm.fightEndsAt ? [] : ['speed']); m.kosten = speedUpCost(mm); }
   else acts = ['info', 'angriff', 'spaehen'];
-  const f = m.kopf || m.tf || { x: m.x - 22, y: m.y - 22, w: 44, h: 44 }, cx = f.x + f.w / 2, cy = f.y + 22, R = 66, n = acts.length;
-  const bogen = Math.max(Math.asin(Math.min(1, 26 / R)) * 2, Math.PI / (n + 1));   // (44 px + 8 px Abstand auf dem Bogen)
+  const f = m.kopf || m.tf || { x: m.x - 22, y: m.y - 22, w: 44, h: 44 }, orte = mzKnopfOrte(f.x + f.w / 2, f.y + 22, acts.length);
   acts.forEach((act, i) => {
-    const w = Math.PI * 1.5 + (i - (n - 1) / 2) * bogen, x = Math.max(26, Math.min(viewW - 26, cx + Math.cos(w) * R)), y = Math.max(30, Math.min(viewH - 40, cy + Math.sin(w) * R * .9));
+    const { x, y } = orte[i];
     const [bild, text0] = MZ_KNOPF[act], text = act === 'speed' && gemsArmed('marsch:' + selMarch) ? 'Wirklich?' : text0;
     ctx.beginPath(); ctx.arc(x, y, 22, 0, 7); ctx.fillStyle = 'rgba(14,12,10,.94)'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = act === 'speed' ? '#7fd0ff' : '#e4c886'; ctx.stroke();
     mzBildAn(bild, x, y - 2, 26);
@@ -4728,6 +4756,18 @@ function drawMarchButtons() {
     marchBtnRects.push({ act, x: x - 22, y: y - 22, w: 44, h: 44 });
   });
   ctx.strokeStyle = 'rgba(228,200,134,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(m.x, m.y, 16, 0, Math.PI * 2); ctx.stroke();   // (Ring um die gewählte Armee)
+}
+function mzKnopfOrte(cx, cy, n) {                      // Bogen über der Armee – passt er nicht (Bildrand, Kopfleiste, Zoom-Knöpfe): Reihe darüber/darunter, Spalte links/rechts
+  const flaeche = p => ({ x: p.x - 26, y: p.y - 24, w: 52, h: 64 });   // (Knopf + Text darunter)
+  const hb = hintEl.textContent !== defaultHint && hintEl.getBoundingClientRect(), cv = canvas.getBoundingClientRect();   // (auch nicht unter einem Hinweis)
+  const leisten = hb && hb.width ? mzLeisten.concat({ x: hb.left - cv.left, y: hb.top - cv.top, w: hb.width, h: hb.height }) : mzLeisten;
+  const fehler = orte => orte.reduce((z, p, i) => z + (mzImBild(flaeche(p)) ? 0 : 1) + leisten.filter(q => overlap(flaeche(p), q) > 0).length
+    + orte.filter((q, j) => j > i && overlap(flaeche(p), flaeche(q)) > 0).length, 0);
+  const bogen = Math.max(Math.asin(30 / 66) * 2, Math.PI / (n + 1)), lagen = [[...Array(n)].map((_, i) => { const w = Math.PI * 1.5 + (i - (n - 1) / 2) * bogen; return { x: cx + Math.cos(w) * 66, y: cy + Math.sin(w) * 59 }; })];
+  const schieb = (v, a, b) => v.length ? Math.max(a - Math.min(...v), Math.min(0, b - Math.max(...v))) : 0;   // ganze Reihe/Spalte ins Bild schieben (Abstände bleiben)
+  for (const dy of [-70, 66, -130, 126]) { const xs = [...Array(n)].map((_, i) => cx + (i - (n - 1) / 2) * 58), d = schieb(xs, 30, viewW - 30); lagen.push(xs.map(x => ({ x: x + d, y: cy + dy }))); }
+  for (const dx of [-62, 62, -120, 120]) { const ys = [...Array(n)].map((_, i) => cy + (i - (n - 1) / 2) * 68), d = schieb(ys, 28, viewH - 44); lagen.push(ys.map(y => ({ x: cx + dx, y: y + d }))); }
+  return lagen.map(l => ({ l, f: fehler(l) })).reduce((a, b) => b.f < a.f ? b : a).l;   // (die erste ohne Fehler, sonst die mit den wenigsten)
 }
 function mzInfoZeigen(m) {                              // Kurzinfo ohne Fenster: wer, Held, Truppen, Ziel, Restzeit
   const I = m.info, h = I.held && heroById(I.held), ziel = islandById[m.tgtId];
@@ -4765,18 +4805,27 @@ function mzKampfTeile(b) {                              // wer auf der Angreifer
     const w = p.attackerBotId || 'player'; if (w === wer || bundFreund(w, wer)) l.push({ who: w, n: p.rawTroops, held: p.hero || null }); }
   return { l, fa };
 }
-const MZ_PLAETZE = [90, 67.5, 112.5, 45, 135, 22.5, 157.5, 0, 180].map(g => g * Math.PI / 180);   // unter und neben dem Ziel (oben: Verteidiger, Tafel)
+const MZ_PLAETZE = [90, 67.5, 112.5, 45, 135, 22.5, 157.5, 0, 180, 78.75, 101.25, 56.25, 123.75, 33.75, 146.25, 11.25, 168.75].map(g => g * Math.PI / 180);   // unter und neben dem Ziel (oben: Verteidiger, Tafel)
+const mzKleinFlaeche = (p, s) => ({ x: p.x - 28 * s, y: p.y - 62 * s, w: 56 * s, h: 66 * s });
+function mzKleinPlatz(reihe, voll, s) {                 // freier Platz für eine kleine Armee – sonst der am wenigsten verdeckte (im Bild)
+  const f = q => voll.reduce((z, v) => z + overlap(mzKleinFlaeche(q, s), v), 0) + (mzImBild(mzKleinFlaeche(q, s)) ? 0 : 1e5);
+  const p = reihe.find(q => !f(q)) || reihe.map(q => ({ q, f: f(q) })).sort((a, c) => a.f - c.f)[0].q;
+  p.klein = true; return p;
+}
 function mzPlaetze(b, n, tx, cy, R, belegt) {           // freie Plätze am nächsten zur Ankunftsseite: nicht auf einer anderen Basis, Kopf + Chip
   const w0 = Math.atan2(-b.uy, -b.ux), ab = (x, y) => Math.abs(Math.atan2(Math.sin(x - y), Math.cos(x - y))), s = mzS();   // nie über einem anderen
-  const andere = towerRects.filter(q => q.id !== b.targetId).map(q => ({ x: q.x + q.w * .2, y: q.y + q.h * .2, w: q.w * .6, h: q.h * .6 }));
-  const reihe = [1, 1.5, 2, 2.6].flatMap(k => MZ_PLAETZE.slice().sort((x, y) => ab(x, w0) - ab(y, w0)).map(w => ({ x: tx + Math.cos(w) * R * k, y: cy + Math.sin(w) * R * k * .72 })));   // (nur unten und seitlich: oben stehen Verteidiger und Tafel)
+  const andere = towerRects.filter(q => q.id !== b.targetId).map(q => ({ x: q.x + q.w * .1, y: q.y + q.h * .1, w: q.w * .8, h: q.h * .8 }))   // (andere Basen samt ihren Schildern:
+    .concat(bannerHitRects.filter(q => q.id !== b.targetId));                                                                          //  sonst sieht die Armee aus, als stünde sie dort)
+  const reihe = [1, 1.5, 2, 2.6, 3.3].flatMap(k => MZ_PLAETZE.slice().sort((x, y) => ab(x, w0) - ab(y, w0)).map(w => ({ x: tx + Math.cos(w) * R * k, y: cy + Math.sin(w) * R * k * .72 })));   // (nur unten und seitlich: oben stehen Verteidiger und Tafel)
   const flaeche = p => ({ x: p.x - 64 * s, y: p.y - 108 * s, w: 128 * s, h: 112 * s });   // (Trupp, Kopf und Chip darüber)
   const voll = belegt.slice(), aus = [];
   for (let i = 0; i < n; i++) {
     const drauf = q => flaeche(q).x >= 0 && flaeche(q).x + flaeche(q).w <= viewW;
-    const p = reihe.find(q => !aus.includes(q) && drauf(q) && mzFrei({ x: q.x - 18, y: q.y - 30, w: 36, h: 44 }, andere) && mzFrei(flaeche(q), voll))
-      || reihe.find(q => !aus.includes(q) && drauf(q) && mzFrei(flaeche(q), voll)) || reihe.find(q => !aus.includes(q) && mzFrei(flaeche(q), voll)) || reihe.find(q => !aus.includes(q));
-    aus.push(p); voll.push(flaeche(p));
+    const p = reihe.find(q => !aus.includes(q) && drauf(q) && mzFrei(flaeche(q), andere) && mzFrei(flaeche(q), voll))
+      || reihe.find(q => !aus.includes(q) && drauf(q) && mzFrei({ x: q.x - 18, y: q.y - 30, w: 36, h: 44 }, andere) && mzFrei(flaeche(q), voll))
+      || reihe.find(q => !aus.includes(q) && drauf(q) && mzFrei(flaeche(q), voll))
+      || mzKleinPlatz(reihe.filter(q => !aus.includes(q)), voll.concat(andere), s);   // (kein Platz für Trupp + Chip: klein, nur Trupp und Kopf)
+    aus.push(p); voll.push(p.klein ? mzKleinFlaeche(p, s) : flaeche(p));
   }
   return aus;
 }
@@ -4794,7 +4843,7 @@ function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Sch
   mzBildAn('marsch_kampf_kreis', tx, cy + zw * .12, zw * 1.3 * puls);
   if (!after) { ctx.globalAlpha = .8 * al; mzBildAn('marsch_kampf_saeule', tx, cy + zw * .12, Math.max(48 * s, zw * .55), .5, .92); }
   ctx.restore();
-  const kw = M.kopf * s, kh = kw * 50 / 44, px = Math.round((st === 'nah' ? 12 : 11) * s), tw = M.trupp * s, belegt = mzAnzeige.koepfe.slice();
+  const kw = M.kopf * s, kh = kw * 50 / 44, px = Math.round((st === 'nah' ? 12 : 11) * s), tw0 = M.trupp * s, kw0 = kw, belegt = mzAnzeige.koepfe.filter(k => k.art === 'vert' || k.art === 'verst' || k.art === 'kampf' || k.art === 'tafel').concat(mzLeisten);   // (Schlacht vor Märschen: die weichen ihr aus)
   const owner = b.feld ? b.dWho : islandOwnerOf(b.targetId), dSeite = b.def === 'mine' ? 'eigen' : b.def === 'neutral' ? 'barb' : mzSeite(owner) === 'eigen' ? 'feind' : mzSeite(owner);
   // Verteidiger über dem Ziel (Wappen des Besitzers), daneben die Verstärker der Basis (am Feld: weitere Märsche der Sammler) je mit eigenem Sechseck
   const vy = cy - zw * .55 - kh / 2 - 4 * s, helfer = b.feld ? b.helfer : typeof verst !== 'undefined' ? verst.l.filter(v => v.t === b.targetId && v.n >= 1) : [];
@@ -4821,10 +4870,11 @@ function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Sch
   ctx.textBaseline = 'middle'; ctx.textAlign = 'left'; ctx.fillStyle = aF.hell; ctx.fillText(links, tbx + 7, tby + (px + 8) / 2 + .5);
   ctx.fillStyle = '#ffd678'; ctx.textAlign = 'center'; ctx.fillText('⚔', tbx + lw + 17 * s, tby + (px + 8) / 2 + .5);
   ctx.textAlign = 'left'; ctx.fillStyle = MZ_FARBE[dSeite].hell; ctx.fillText(rechts, tbx + tbw - rw - 7, tby + (px + 8) / 2 + .5);
+  koepfe.push({ art: 'tafel', text: links + ' ⚔ ' + rechts, x: tbx, y: tby, w: tbw, h: px + 8 });
   // Angreifer im Halbkreis um das Ziel, je Trupp (Kampf-Bild) + Sechseck + Chip mit seinem Anteil
-  const R = zw * .62 + tw * .55, orte = mzPlaetze(b, teile.length, tx, cy, R, belegt.concat(koepfe));
+  const R = zw * .62 + tw0 * .55, orte = mzPlaetze(b, teile.length, tx, cy, R, belegt.concat(koepfe));
   const ap = orte.map((p, i) => {
-    const q = teile[i], sd = mzSeite(q.who), wack = after ? 0 : Math.sin(performance.now() / 70 + i), n = Math.round(va * (q.n || 0) / summe);
+    const q = teile[i], sd = mzSeite(q.who), wack = after ? 0 : Math.sin(performance.now() / 70 + i), n = Math.round(va * (q.n || 0) / summe), kl = p.klein ? .7 : 1, kw = kw0 * kl, kh = kw * 50 / 44, tw = tw0 * kl;
     const fl = b.won && after ? Math.min(1, (t - 3200) / 900) : 0, x = p.x + (tx - p.x) * fl * .6, y = p.y + (cy - p.y) * fl * .6;   // (Sieg: rücken ins Ziel ein)
     ctx.globalAlpha = al;
     const bild = q.rally ? 'marsch_trupp_rally' : 'marsch_trupp_' + (sd === 'eigen' || sd === 'bund' ? sd : 'feind') + '_kampf';
@@ -4832,10 +4882,10 @@ function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Sch
     const ky = y - th * .6 - kh / 2 - 2 * s, k = mzKopf({ seite: sd, who: q.who, held: q.held, rally: !!q.rally }, kw);
     ctx.drawImage(k, x - kw / 2 - 2, ky - kh / 2 - 2, k.w, k.h);
     mzBalken(x, ky + kh / 2 + 3 * s, 28 * s, 4 * s, va / Math.max(1, b.my), MZ_FARBE[sd].haupt); ctx.globalAlpha = al;
-    const txt = fmtCompact(n) + ' · ' + rest; ctx.font = `700 ${px}px Inter, system-ui, sans-serif`;
-    const cw = ctx.measureText(txt).width + 10, c = mzChip(txt, x - cw / 2, ky - kh / 2 - px - 9 * s, px, '#fff6dc');   // (Chip über dem Kopf: schmal, nichts daneben verdeckt)
-    if (q.rally) mzMiniKoepfe(q.rally, x, ky + kh / 2 + 9 * s, s);
-    koepfe.push({ art: 'kampf', seite: sd, n, text: txt, x: Math.min(x - kw / 2, c.x), y: c.y, w: Math.max(kw, c.w), h: ky + kh / 2 - c.y });
+    const txt = p.klein ? '' : fmtCompact(n) + ' · ' + rest; ctx.font = `700 ${px}px Inter, system-ui, sans-serif`;
+    const cw = ctx.measureText(txt).width + 10, c = p.klein ? { x: x - kw / 2, y: ky - kh / 2, w: kw } : mzChip(txt, x - cw / 2, ky - kh / 2 - px - 9 * s, px, '#fff6dc');   // (Chip über dem Kopf: schmal, nichts daneben verdeckt)
+    if (q.rally && !p.klein) mzMiniKoepfe(q.rally, x, ky + kh / 2 + 9 * s, s);
+    koepfe.push({ art: 'kampf', seite: sd, n, text: txt, klein: !!p.klein, x: Math.min(x - Math.max(kw, tw) / 2, c.x), y: c.y, w: Math.max(kw, tw, c.w), h: y + th * .4 - c.y });   // (mit dem Trupp)
     return { x, y: ky };
   });
   ctx.globalAlpha = 1;

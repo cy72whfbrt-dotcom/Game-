@@ -1080,6 +1080,11 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   ~5 s als dieselbe Kampf-Szene ab (`feldKampfBild`, 03f): Zahlen laufen auf das echte Ergebnis zu, danach Sieg/Niederlage-Band;
   weitere eigene Sammel-Märsche am Feld stehen als eigene Sechsecke auf der Verteidiger-Seite (`occ.teile`, nur Anzeige). Zuschauer
   bekommen die Szene über den Feld-Bericht vom Weltrechner (`fieldId`, `aWho`/`dWho`). Test `marsch_bild_test` Teil D.
+  **Spieltest-Funde (8.10.):** nichts liegt mehr übereinander – Marsch-Köpfe weichen den Schlachten (Flächen des letzten Bilds),
+  Basis-Schildern und Leisten (Kopfleiste, Zoom-Knöpfe, Anleitung) aus, Chip am rechten Rand links vom Kopf; kein Platz nah am Trupp:
+  klein (nur Kopf), dann weiter weg mit Strich. Armeen im Kampf nie an einer fremden Basis/auf ihrem Schild und nie außerhalb des
+  Bilds (sonst klein). Antipp-Knöpfe: Bogen, sonst Reihe/Spalte – immer im Bild, nicht unter Leisten/Hinweis, nie übereinander.
+  Eigene/verbündete Welle, die einem laufenden Kampf beitritt, zeigt kein „⌛ wartet“ mehr. Lebensbalken blendet mit dem Kampf aus.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
