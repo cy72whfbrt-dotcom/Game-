@@ -1803,6 +1803,10 @@ Nacht – vorher bauen und testen.
       Test: `burg_tempo_test`.
 34. **Teleport-Animation (Alexander 7.10.: „wäre geil, merken“):** beim Teleportieren eine Animation (Basis verschwindet
     mit Lichtsäule/Staub, taucht am Ziel auf). Später.
+36. **Aufräumen groß (Alexander 8.10.):** (a) Home-App-Bild (Startbildschirm-Symbol) neu + Download/App erneuern;
+    (b) kompletter Code-Check; (c) MD-Dateien aufräumen – LIESMICH (3.600 Zeilen) und KARTE.md viel zu groß: Altes raus
+    bzw. ins Archiv, alles kürzer; (d) alter/unnötiger Code raus; (e) Code sinnvoll sortieren/aufteilen, damit Agenten
+    alles schneller finden.
 
 ## 12a. MERKLISTE – machen wir später (Alexander, 1.10.)
 - ⭐ **SEHR WICHTIG – Hauptbasis:** Die Hauptbasis (Hauptstadt) soll unabhängig von der Spieler-Stufe sein. Man soll
