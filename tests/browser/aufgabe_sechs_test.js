@@ -29,8 +29,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const wuerfeln = () => { let n = 0; for (let i = 0; i < 60; i++) { questState = null; store.set('openWaterQuests', ''); if (loadQuests().list.some(t => t.type === 'tempel' || t.type === 'thron')) n++; } return n; };
     tag(1); const t1 = { tempel: questGeht('tempel'), thron: questGeht('thron'), gewuerfelt: wuerfeln() };
     tag(4); const t4 = { tempel: questGeht('tempel'), thron: questGeht('thron') };
-    tag(7); const t7 = { tempel: questGeht('tempel'), thron: questGeht('thron'), gewuerfelt: wuerfeln() };
-    store.set('openWaterWorldStart', s0); WEG_MERK.clear(); questState = null; store.set('openWaterQuests', ''); return { t1, t4, t7 }; });
+    const tfE = thronFenster; thronFenster = n => ({ start: n - 1000, end: n + 864e5 });    tag(7); const t7 = { tempel: questGeht('tempel'), thron: questGeht('thron'), gewuerfelt: wuerfeln() };
+    store.set('openWaterWorldStart', s0); WEG_MERK.clear(); questState = null; store.set('openWaterQuests', ''); thronFenster = tfE; return { t1, t4, t7 }; });
   ok(!tt.t1.tempel && !tt.t1.thron && !tt.t1.gewuerfelt, 'Tag 1: kein Tempel (Zone 4 zu), kein Thron (erst Tag 7)', tt);
   ok(tt.t4.tempel && !tt.t4.thron && tt.t7.tempel && tt.t7.thron && tt.t7.gewuerfelt > 0, 'Tag 4: Tempel, Tag 7: Tempel + Thron', tt);
   // 2) Zähler → Aufgaben (auch was der Weltrechner meldet)

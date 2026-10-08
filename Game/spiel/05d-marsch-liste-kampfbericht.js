@@ -222,8 +222,8 @@ function renderCombatLog() {
             const dead = entry.hit - entry.wounded;
             const vdet = '<details><summary>Kampfdetails</summary><div class="logCompare"><div class="logSide">' +
                 '<div class="logSideLabel">Beschuss</div>' +
-                (entry.shotBy || []).map((s, i) => '<div class="logLine"><span>Wächter ' + (i + 1) + '</span><span>' + escapeHtml(s) + '</span></div>').join('') +
-                '<div class="logLine"><span>Je Wächter</span><span>' + THRONE_FIRE_PCT + ' %</span></div>' +
+                (entry.shotBy || []).map((s, i) => '<div class="logLine"><span>Wachturm ' + (i + 1) + '</span><span>' + escapeHtml(s) + '</span></div>').join('') +
+                '<div class="logLine"><span>Je Wachturm</span><span>' + THRONE_FIRE_PCT + ' %</span></div>' +
                 (entry.n > 1 ? '<div class="logLine"><span>Salven</span><span>' + entry.n + '</span></div>' : '') +
                 '</div><div class="logVsDivider">VS</div><div class="logSide"><div class="logSideLabel">Du · Thron</div>' +
                 (entry.n === 1 ? '<div class="logLine"><span>Truppen vorher</span><span>' + fmtD(entry.before) + '</span></div>' : '') +
@@ -231,8 +231,8 @@ function renderCombatLog() {
                 '<div class="logCasualty wounded"><span>Ins Krankenhaus</span><span>' + fmtD(entry.wounded) + '</span></div>' +
                 (dead > 0 ? '<div class="logCasualty"><span>Gefallen (kein Platz)</span><span>−' + fmtD(dead) + '</span></div>' : '') +
                 '<div class="logSum"><span>Noch im Thron</span><span>' + fmtD(entry.left) + '</span></div>' +
-                '</div></div><div class="logRetreat">Erobere die Wächter-Tempel, dann schweigen sie. Verwundete heilst du im Krankenhaus in deiner Stadt.</div></details>';
-            return karte(entry, 'loss', 'attack', ['loss', 'Beschuss'], T(entry.targetId), (entry.shotBy || []).length + ' Wächter-Tempel' + (entry.n > 1 ? ' · ' + entry.n + ' Salven' : ''), '',
+                '</div></div><div class="logRetreat">Erobere die Wachtürme, dann schweigen sie. Verwundete heilst du im Krankenhaus in deiner Stadt.</div></details>';
+            return karte(entry, 'loss', 'attack', ['loss', 'Beschuss'], T(entry.targetId), (entry.shotBy || []).length + ' Wachtürme' + (entry.n > 1 ? ' · ' + entry.n + ' Salven' : ''), '',
                 [['attack', chipN(entry.hit) + ' getroffen', 'schlecht'], ...verlustChips(dead, entry.wounded)], vdet);
         }
         if (entry.type === 'scout') {

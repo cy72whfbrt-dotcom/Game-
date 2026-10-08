@@ -285,8 +285,8 @@ function botNoteFail(botId, targetId) { const b = loadBotState()[botId]; if (!b)
 
 function botVendetta(bot, now) { const v = loadBotState()[bot.id].vendetta; return v && now < v.until ? v : null; }
 
-function coalitionOn(now) {                                  // the throne held for 20 min: the others stop quarrelling and go for it
-    const r = rulerOwner(); return r && throneState.rulerSince && now - throneState.rulerSince > 20 * 60000 ? r : null;
+function coalitionOn(now) {                                  // im Thron-Event 20 Min. gehalten: die anderen hören auf zu streiten und gehen auf den Thron los
+    const r = thronHalter(); return r && thronLaeuft(now) && throneState.halterSeit && now - throneState.halterSeit > 20 * 60000 ? r : null;
 }
 
 function botMidPull(bot, target, ruler, now) {             // a fat Kopfgeld draws everyone to the ruler's bases

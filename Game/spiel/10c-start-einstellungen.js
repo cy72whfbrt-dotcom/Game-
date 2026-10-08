@@ -228,7 +228,7 @@ document.addEventListener('contextmenu', e => { if (!feldErlaubt(e.target)) e.pr
 // gerade sichtbaren Fenster neu gerechnet. liveHtml schreibt davon nur, was sich wirklich geändert hat (kein Flackern,
 // Knöpfe bleiben antippbar, die Scroll-Position bleibt), die Restzeiten (uhrHtml) zählen von selbst herunter.
 // Läuft eine Restzeit ab (z. B. der Friedensschild), stellt das Fenster beim nächsten Schritt um.
-let liveZuletzt = 0, liveWartet = 0, liveTitelVer = -1, liveRangAt = 0, liveSkillSig = '', liveGemeldet = false;
+let liveZuletzt = 0, liveWartet = 0, liveRangAt = 0, liveSkillSig = '', liveGemeldet = false;
 function liveBald() {                                  // neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
     if (liveWartet) return;
     liveWartet = setTimeout(() => { liveWartet = 0; liveTick(); }, Math.max(0, liveZuletzt + 1000 - Date.now()));
@@ -252,12 +252,11 @@ function liveTick() {
     if (isPanelOpen(goalsPopup) && goalsTab === 'reward') teil(renderInbox);                              // Events → Belohnung
     if (isPanelOpen(rankPopup) && liveZuletzt - liveRangAt >= 5000) { liveRangAt = liveZuletzt; teil(renderRankings); }   // Rangliste: alle 5 s reicht
     teil(heroHallLive);                                                                                     // Helden
-    if (offen('lookSheet')) teil(() => renderLookSheet(true));                                             // Aussehen: Gems / Thron-Punkte
+    if (offen('lookSheet')) teil(() => renderLookSheet(true));                                             // Aussehen: Gems
     if (fieldSheetId !== null && fieldById[fieldSheetId] && offen('fieldSheet')) teil(() => openFieldSheet(fieldById[fieldSheetId]));
     if (offen('barbSheet')) teil(barbSheetRefresh);
     if (armySheet && offen('armySheet')) teil(renderArmySheet);
     if (multiAttackMode) teil(updateMultiAttackBar);
-    if (offen('titleModal') && titleVer !== liveTitelVer && !document.getElementById('titleList').contains(document.activeElement)) { liveTitelVer = titleVer; teil(renderTitleModal); }   // (nie mitten in einer Auswahl)
     teil(() => { if (liveUhren()) liveBald(); });     // alle Restzeiten weiter; ist eine abgelaufen, gleich noch einmal
 }
 setInterval(liveTick, 1000);

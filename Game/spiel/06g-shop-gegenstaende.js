@@ -135,7 +135,9 @@ function renderBesch() {
 }
 function beschBenutzen(d) {                         // einen Beschleuniger der Dauer d auf das Ziel → true, wenn benutzt
     const l = beschLauf(beschZiel); if (!l || !(besch[d] > 0)) return false;
+    const min = Math.min(BESCH_MIN[d], Math.max(0, (l[1].endsAt - Date.now()) / 60000));   // (nur die wirklich gesparten Minuten zählen)
     besch[d]--; gegenstSpeichern(); l[1].endsAt -= BESCH_MIN[d] * 60000; saveCity();
+    if (beschZiel !== 'fo') evPunkte('bau', 'player', WO_PKT.bauMin * min);   // Wochen-Event „Bauherr“: Punkte je gesparter Bau-Minute (09c)
     if (l[1].endsAt <= Date.now()) { if (beschZiel === 'fo') AUF.foFertig('player'); else cityFinishBuild(true, beschZiel.slice(4)); }
     return true;
 }

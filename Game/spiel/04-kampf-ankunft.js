@@ -1,16 +1,12 @@
 // Teil 04-kampf-ankunft.js: Titel (Mega-Tempel), Takt der Mitspieler, Ankunft und Kämpfe (kampfDazu, Warten), Kampf-Schätzung, Boni
-// ===== TITLES (Mega-Tempel) =====
-// Whoever holds the Mega-Tempel hands out titles: 4 buffs for friends, 4 penalties for rivals (±25 %).
-// A new holder starts with a clean slate. Bots that hold it hand them out too - you may get the Narr.
+// ===== TITEL (Herrscher, Alexander 8.10.) =====
+// Der Herrscher (Platz 1 des Thron-Events) vergibt Titel: 3 gute, einen Narr. Ein neuer Herrscher fängt ohne Titel an.
+// Mitspieler als Herrscher vergeben sie auch – du kannst der Narr werden. Abzeichen über dem Namen: Farbe je Titel (06c HERR_TITEL_FARBE).
 var TITLES = [
-    { key: 'herzog',    name: 'Herzog',        good: true,  kind: 'troops',  v: .25, desc: '+25 % Truppenproduktion' },
-    { key: 'schatz',    name: 'Schatzmeister', good: true,  kind: 'coins',   v: .25, desc: '+25 % Münzen' },
-    { key: 'feldherr',  name: 'Feldherr',      good: true,  kind: 'attack',  v: .25, desc: '+25 % Angriffsstärke' },
-    { key: 'burgherr',  name: 'Burgherr',      good: true,  kind: 'defense', v: .25, desc: '+25 % Verteidigung' },
-    { key: 'narr',      name: 'Narr',          good: false, kind: 'troops',  v: -.25, desc: '−25 % Truppenproduktion' },
-    { key: 'bettler',   name: 'Bettler',       good: false, kind: 'coins',   v: -.25, desc: '−25 % Münzen' },
-    { key: 'feigling',  name: 'Feigling',      good: false, kind: 'attack',  v: -.25, desc: '−25 % Angriffsstärke' },
-    { key: 'verraeter', name: 'Verräter',      good: false, kind: 'defense', v: -.25, desc: '−25 % Verteidigung' }
+    { key: 'feldherr', name: 'Feldherr',      good: true,  kind: 'attack',  v: .05, desc: '+5 % Angriff' },
+    { key: 'burgvogt', name: 'Burgvogt',      good: true,  kind: 'defense', v: .05, desc: '+5 % Verteidigung' },
+    { key: 'schatz',   name: 'Schatzmeister', good: true,  kind: 'coins',   v: .10, desc: '+10 % Ertrag' },
+    { key: 'narr',     name: 'Narr',          good: false, kind: 'speed',   v: -.05, desc: '−5 % Marschtempo' }
 ];
 var titleState = null, titleVer = 0, ringMemo = null;
 function loadTitles() {
@@ -53,28 +49,8 @@ function giveTitle(key, who) {                   // who: 'player' | bot id | nul
     if (who) t.by[key] = who; else delete t.by[key];
     saveTitles();
 }
-const titleModal = document.getElementById('titleModal');
-function renderTitleModal() {
-    const t = loadTitles(), mine = t.ruler === 'player';
-    const who = w => w === 'player' ? (profileName.value || 'Du') : w ? botById[w].name : '–';
-    document.getElementById('titleModalSub').textContent = mine ? 'Du hältst den Mega-Tempel. Ein guter Titel ist Respekt: wer ihn trägt, greift dich deutlich seltener an. Ein Straf-Titel schwächt – und die anderen gehen eher auf ihn los.'
-        : t.ruler ? botById[t.ruler].name + ' hält den Mega-Tempel und verteilt die Titel.' : 'Niemand hält den Mega-Tempel – erobere ihn, um Titel zu vergeben.';
-    const opts = cur => '<option value="">– niemand –</option>' + BOT_DEFS.filter(b => botOwnedIslands[b.id].size).map(b => '<option value="' + b.id + '"' + (cur === b.id ? ' selected' : '') + '>' + escapeHtml(b.name) + '</option>').join('');
-    document.getElementById('titleList').innerHTML = TITLES.map(x => '<div class="title-row ' + (x.good ? 'is-good' : 'is-bad') + '"><div><b>' + x.name + '</b><small>' + x.desc + '</small></div>' +
-        (mine ? '<select data-title="' + x.key + '">' + opts(t.by[x.key]) + '</select>' : '<span class="holder' + (t.by[x.key] === 'player' ? ' is-me' : '') + '">' + escapeHtml(who(t.by[x.key])) + '</span>') + '</div>').join('');
-}
-document.getElementById('titleBtn').addEventListener('click', () => { closeIslandPopup(); renderTitleModal(); titleModal.hidden = false; });
-document.getElementById('popupStats').addEventListener('click', e => { if (!e.target.closest('[data-view-titles]')) return; closeIslandPopup(); renderTitleModal(); titleModal.hidden = false; });   // anyone may look who wears what
-document.getElementById('titleModalBtn').addEventListener('click', () => { titleModal.hidden = true; });
-document.getElementById('titleList').addEventListener('change', e => {
-    const sel = e.target.closest('select[data-title]'); if (!sel || loadTitles().ruler !== 'player') return;
-    giveTitle(sel.dataset.title, sel.value || null);
-    alsBefehl('titel', { key: sel.dataset.title, wem: neutralId(sel.value || null) });
-    const x = TITLES.find(q => q.key === sel.dataset.title);
-    if (sel.value && !x.good) botGrudge(sel.value, 'player', 1);                  // nobody likes being made the Narr - they remember who did it
-    if (sel.value) flashHint(botById[sel.value].name + ' ist jetzt ' + x.name + ' (' + x.desc + ').', 3000);
-    renderTitleModal();
-});
+document.getElementById('titleBtn').addEventListener('click', () => { closeIslandPopup(); openHerr(); });   // Titel: im Herrscher-Fenster (06c)
+document.getElementById('popupStats').addEventListener('click', e => { if (!e.target.closest('[data-view-titles]')) return; closeIslandPopup(); openHerr(); });   // jeder darf schauen, wer was trägt
 setTimeout(runBotTick, BOT_TICK_MS);
 
 // Checks every second whether any in-flight attack or troop transfer
@@ -106,6 +82,10 @@ setInterval(() => {
                     fmtNum(a.rawTroops) + ' Truppen zurück' + (back !== null && back !== undefined ? ' in ' + islandTitle(islandById[back]) : '') + '.', 4500);
                     spawnBattleFx(a.targetId, false, 'Schild hält', 'Dein Angriff prallt ab'); updateHud(); saveGame(); saveProgression(); }
                 renderActiveMarches(); continue;
+            }
+            if (tow !== atkr && thronKuppel(a.targetId, now)) {                      // das Thron-Event ist vorbei: die Kuppel ist wieder zu, die Truppen gehen heim
+                welleHeim(a, atkr, a.targetId); heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+                if (atkr === 'player') flashHint(thronKuppelText(), 4500); renderActiveMarches(); continue;
             }
             if (islandOwnerOf(a.targetId) === (a.attackerBotId || 'player')) {   // the base is already ours (an earlier wave took it): they simply move in
                 heroWutZurueck(atkr, a.hx); islandTroops[a.targetId] = (islandTroops[a.targetId] || 0) + (a.rally ? bundRallyHeim(a, a.rawTroops, a.targetId, true) : a.rawTroops);   // (Rally: nur der Anteil des Starters zieht ein)

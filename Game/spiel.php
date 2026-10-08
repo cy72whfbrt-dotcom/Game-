@@ -245,13 +245,13 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mapctl button + button{border-top-color:rgba(255,255,255,.05)}
 .mapctl button.on{color:var(--gold-100);background:rgba(214,170,90,.18)}
 [data-frame="bronze"]{--fr1:#c9854f;--fr2:#7a4a26} [data-frame="silver"]{--fr1:#e8eef5;--fr2:#8a95a3} [data-frame="gold"]{--fr1:#ffd35a;--fr2:#a0701c}
-[data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b} [data-frame="throne"]{--fr1:#f7d77c;--fr2:#7a1420} [data-frame="saison"]{--fr1:#8ff5e6;--fr2:#5b3fc4}
+[data-frame="platin"]{--fr1:#9fe3da;--fr2:#3f8c86} [data-frame="diamond"]{--fr1:#bfe6ff;--fr2:#3f86d8} [data-frame="master"]{--fr1:#d6a6ff;--fr2:#6a3fa0} [data-frame="legend"]{--fr1:#ffb04a;--fr2:#c0392b} [data-frame="saison"]{--fr1:#8ff5e6;--fr2:#5b3fc4}
 [data-frame="conq"]{--fr1:#ff9a6a;--fr2:#8a2f1c} [data-frame="warlord"]{--fr1:#e0504a;--fr2:#3a0f12} [data-frame="wall"]{--fr1:#b8c4d4;--fr2:#4a5868} [data-frame="emma"]{--fr1:#b07ad8;--fr2:#24122e}
 [data-frame="slayer"]{--fr1:#a6e05a;--fr2:#2f5a1c} [data-frame="builder"]{--fr1:#e2b27a;--fr2:#6a4422} [data-frame="king"]{--fr1:#ffd05a;--fr2:#a3161c}
 [data-frame="sz1"]{--fr1:#fff0a8;--fr2:#d4202a} [data-frame="sz2"]{--fr1:#f2f6ff;--fr2:#2a5ad8} [data-frame="sz4"]{--fr1:#7ef0c8;--fr2:#1c6a8a} [data-frame="sz6"]{--fr1:#f0c87a;--fr2:#3a6a9a}
 [data-frame="mgut"]{--fr1:#ffd05a;--fr2:#c08a1c} [data-frame="mstraf"]{--fr1:#ff5a4a;--fr2:#7a1010}   /* Rahmen aus der Mitte (Alexander 6.10.): wie die Ringe – Gold, Rot, Herrscher Blutrot-Gold */
 #pAvatarRing[data-frame]{background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1));padding:3px;box-shadow:0 0 10px color-mix(in srgb,var(--fr1) 45%,transparent)}
-#pAvatarRing[data-frame^="sz"],#pAvatarRing[data-frame="king"],#pAvatarRing[data-frame="mgut"],#pAvatarRing[data-frame="mstraf"],#pAvatarRing[data-frame="saison"],#pAvatarRing[data-frame="throne"],#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
+#pAvatarRing[data-frame^="sz"],#pAvatarRing[data-frame="king"],#pAvatarRing[data-frame="mgut"],#pAvatarRing[data-frame="mstraf"],#pAvatarRing[data-frame="saison"],#pAvatarRing[data-frame="legend"],#pAvatarRing[data-frame="master"],#pAvatarRing[data-frame="diamond"]{animation:frame-glow 2.4s ease-in-out infinite alternate}
 @keyframes frame-glow{from{box-shadow:0 0 6px color-mix(in srgb,var(--fr1) 35%,transparent)}to{box-shadow:0 0 16px color-mix(in srgb,var(--fr1) 75%,transparent)}}
 .ptitle-tag{margin-top:4px;font:700 10px/1.2 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)}
 .troop-in{width:9.5em;max-width:46vw;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:700 var(--fs-13)/1 var(--font-ui);text-align:right;font-variant-numeric:tabular-nums}
@@ -1261,7 +1261,6 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .ware--gross{grid-column:1/-1;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:1fr auto;align-items:center;text-align:left}
 .ware--gross .ware-bild{height:104px;margin:-4px 0 -2px}
 .ware--gross .band{top:0;left:0;right:auto;width:auto;padding:0 12px;transform:none;border-radius:10px 0 10px 0}   /* gerades Band oben links: ganz lesbar */
-#throneShop{display:grid;gap:10px}
 .ware--gross .ware-bild::before{content:"";position:absolute;inset:-30px -10px;background:conic-gradient(from 0deg,transparent 0 8deg,rgba(169,112,242,.22) 8deg 14deg,transparent 14deg 30deg,rgba(169,112,242,.22) 30deg 36deg,transparent 36deg 52deg,rgba(169,112,242,.22) 52deg 58deg,transparent 58deg 74deg,rgba(169,112,242,.22) 74deg 80deg,transparent 80deg 96deg,rgba(169,112,242,.22) 96deg 102deg,transparent 102deg 120deg);
   -webkit-mask:radial-gradient(circle,#000 25%,transparent 68%);mask:radial-gradient(circle,#000 25%,transparent 68%);animation:ware-strahlen 40s linear infinite;pointer-events:none}
 .ware--gross .ware-bild svg{position:relative}
@@ -1702,16 +1701,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .gate-ctl .seg button{height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:rgba(255,255,255,.04);color:var(--tx-2);font:700 var(--fs-12)/1 var(--font-ui)}
 .gate-ctl .seg button.is-on{border-color:var(--gold-300);background:linear-gradient(180deg,rgba(236,208,138,.28),rgba(236,208,138,.08));color:var(--gold-100)}
 .gate-note{margin:0;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
-.title-card{max-width:440px;width:100%}
-.title-list{display:flex;flex-direction:column;gap:6px;max-height:52vh;overflow:auto;text-align:left}
-.title-row{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:8px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
-.title-row b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
-.title-row small{display:block;font:600 var(--fs-11)/1.3 var(--font-ui)}
-.title-row.is-good small{color:#8fd38a} .title-row.is-bad small{color:#ff9d90}
-.title-row .holder.is-me{color:var(--f-player-hi)}
 .notice [data-view-titles]{flex:none;margin-left:auto}
-.title-row select{max-width:150px;height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#15171c;color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui);padding:0 6px}
-.title-row .holder{font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--gold-100)}
 
 .forge-list{display:flex;flex-direction:column;gap:6px}
 .forge-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
@@ -2136,12 +2126,12 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 #teleportBtn .act-ic > svg.icon{--ki-ort:url(bilder/ui_sym_verlegen.webp)} #sendBtn .act-ic > svg.icon{--ki-ort:url(bilder/ui_sym_senden.webp)} #recallBtn .act-ic > svg.icon{--ki-ort:url(bilder/ui_sym_sammeln.webp)} #titleBtn .act-ic > svg.icon{--ki-ort:url(bilder/ui_sym_tempelbonus.webp)} .cb-slot > svg.icon{--ki-ort:url(bilder/ui_sym_bauarbeiter.webp)} #skillGrid svg.icon:has(> use[href="#i-attack"]){--ki-ort:url(bilder/ui_skill_angriff.webp)} #skillGrid svg.icon:has(> use[href="#i-troops"]){--ki-ort:url(bilder/ui_skill_truppen.webp)} #skillGrid svg.icon:has(> use[href="#i-defense"]){--ki-ort:url(bilder/ui_skill_verteidigung.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-coin"]){--ki-ort:url(bilder/ui_fo_ertrag.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-crate"]){--ki-ort:url(bilder/ui_fo_traglast.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-castle"]){--ki-ort:url(bilder/ui_fo_burgschutz.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-send"]){--ki-ort:url(bilder/ui_fo_marschtempo.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-flag"]){--ki-ort:url(bilder/ui_fo_kundschaft.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-plus"]){--ki-ort:url(bilder/ui_sym_verwundete.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-hourglass"]){--ki-ort:url(bilder/ui_sym_sammeln.webp)} [data-rtab="power"] > svg.icon{--ki-ort:url(bilder/ui_sym_macht.webp)} [data-rtab="caps"] > svg.icon{--ki-ort:url(bilder/ui_sym_eroberung.webp)} #profileKennung svg.icon:has(> use[href="#i-attack"]){--ki-ort:url(bilder/ui_sym_macht.webp)} .bd-rally svg.icon{--ki-ort:url(bilder/ui_sym_rally.webp)} .bd-hilfe-btn svg.icon{--ki-ort:url(bilder/ui_sym_hilfe.webp)} svg.icon:has(> use[href="#i-question"]){--ki-ort:url(bilder/ui_set_hilfe.webp)} svg.icon:has(> use[href="#i-sound"]){--ki-ort:url(bilder/ui_set_ton.webp)} svg.icon:has(> use[href="#i-sfx"]){--ki-ort:url(bilder/ui_set_ton.webp)} svg.icon:has(> use[href="#i-send"]){--ki-ort:url(bilder/ui_sym_senden.webp)} svg.icon:has(> use[href="#i-temple"]){--ki-ort:url(bilder/ui_sym_tempelbonus.webp)} svg.icon:has(> use[href="#i-market"]){--ki-ort:url(bilder/ui_sym_markt.webp)} svg.icon:has(> use[href="#i-sell"]){--ki-ort:url(bilder/ui_sym_handeln.webp)}
 
 /* ---------------- Rahmen um das Wappen: Saison-Rahmen und Neuling als Bild-Ring, Rang-Rahmen mit Rang-Abzeichen oben ---------------- */
-:is(#pAvatarRing,.frame-ring,.lb-crest,.rp-crest,.hud-me .avatar-ring):is([data-frame="bronze"],[data-frame="sz1"],[data-frame="sz2"],[data-frame="sz4"],[data-frame="sz6"],[data-frame="mgut"]){
+:is(#pAvatarRing,.frame-ring,.lb-crest,.rp-crest,.hud-me .avatar-ring):is([data-frame="bronze"],[data-frame="sz1"],[data-frame="sz2"],[data-frame="sz4"],[data-frame="sz6"],[data-frame="mgut"],[data-frame="king"]){
   background:none!important;box-shadow:none!important;animation:none!important;position:relative;overflow:visible}
 :is(#pAvatarRing,.frame-ring,.lb-crest,.rp-crest,.hud-me .avatar-ring)[data-frame]::after{content:"";position:absolute;pointer-events:none;background:var(--ki-rahmen,none) center/100% 100% no-repeat;inset:-12%}
 :is(#pAvatarRing,.frame-ring,.lb-crest,.rp-crest)[data-frame]::before{content:"";position:absolute;pointer-events:none;z-index:1;left:50%;top:-22%;width:40%;aspect-ratio:3/4;transform:translateX(-50%);background:var(--ki-rang,none) center/contain no-repeat}
 [data-frame="bronze"]{--ki-rahmen:url(bilder/ui_rahmen_neuling.webp)} [data-frame="sz1"]{--ki-rahmen:url(bilder/ui_rahmen_champion.webp)} [data-frame="sz2"]{--ki-rahmen:url(bilder/ui_rahmen_grossadmiral.webp)}
-[data-frame="sz4"]{--ki-rahmen:url(bilder/ui_rahmen_admiral.webp)} [data-frame="sz6"]{--ki-rahmen:url(bilder/ui_rahmen_kapitaen.webp)} [data-frame="mgut"]{--ki-rahmen:url(bilder/ui_rahmen_mitte.webp)}
+[data-frame="sz4"]{--ki-rahmen:url(bilder/ui_rahmen_admiral.webp)} [data-frame="sz6"]{--ki-rahmen:url(bilder/ui_rahmen_kapitaen.webp)} [data-frame="mgut"]{--ki-rahmen:url(bilder/ui_rahmen_mitte.webp)} [data-frame="king"]{--ki-rahmen:url(bilder/ui_herrscher_rahmen.webp)}
 [data-frame="silver"]{--ki-rang:url(bilder/ui_rang_silberritter.webp)} [data-frame="gold"]{--ki-rang:url(bilder/ui_rang_goldfuerst.webp)} [data-frame="platin"]{--ki-rang:url(bilder/ui_rang_platingraf.webp)}
 [data-frame="diamond"]{--ki-rang:url(bilder/ui_rang_diamantherzog.webp)} [data-frame="master"]{--ki-rang:url(bilder/ui_rang_meister.webp)} [data-frame="legend"]{--ki-rang:url(bilder/ui_rang_legende.webp)}
 
@@ -2410,6 +2400,34 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 #combatLogList > .logRow{cursor:pointer}
 /* Events (Blick 6.10.): am Handy passen alle 4 Ereignis-Chips (kurze Namen), Welt-Saison linksbündig, Preise gut lesbar */
 @media (max-width:480px){ #goalsTabs{gap:6px;padding-inline:12px} #goalsTabs .p5-chip{padding:0 12px} }
+/* Thron-Event (06c): Chip mit Punkt (grün = läuft) und Startzeit, Ablauf, Kuppel-Satz, Rang-Bänder, Herrscher-Fenster */
+.p5-chip .ev-st{width:7px;height:7px;border-radius:50%;background:#5b6070;flex:none}
+.p5-chip .ev-st.an{background:#5cdb6a;box-shadow:0 0 6px #5cdb6a}
+.p5-chip small{font:600 9.5px/1 var(--font-ui);color:var(--tx-3);white-space:nowrap} .p5-chip small:empty{display:none}
+.thron-ablauf{display:grid;grid-template-columns:5fr 1.3fr 2.6fr;gap:3px;margin:6px 0}
+.thron-ablauf div{padding:5px 4px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--line-1);text-align:center;font:600 10.5px/1.2 var(--font-ui);color:var(--tx-3)}
+.thron-ablauf b{display:block;color:var(--tx-2);font-size:11px} .thron-ablauf div.jetzt{border-color:var(--gold-300);background:rgba(214,170,90,.14)} .thron-ablauf div.jetzt b{color:var(--gold-100)}
+.kuppel-satz{display:flex;gap:8px;align-items:center;padding:6px 8px;margin:6px 0;border-radius:8px;background:rgba(90,160,255,.1);border:1px solid rgba(150,210,255,.35);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.thron-karte > .btn{width:100%;margin-top:8px}
+.thron-herr-zeile{display:flex;align-items:center;gap:10px;width:100%;margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,200,80,.12);border:1px solid rgba(255,210,110,.5);color:var(--tx-1);font:600 var(--fs-13)/1.25 var(--font-ui);text-align:left;cursor:pointer}
+.thron-herr-zeile img{width:28px;height:28px} .thron-herr-zeile small{display:block;color:var(--tx-3);font-size:11px}
+.rang{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.rband{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:6px 16px 16px 6px;font:800 13px var(--font-ui);color:#fff;text-shadow:0 1px 2px #000}
+.rband.p1{background:linear-gradient(90deg,#b8861f,#f2cf6a 60%,transparent)} .rband.p2{background:linear-gradient(90deg,#7d8790,#d3dbe2 60%,transparent)}
+.rband.p3{background:linear-gradient(90deg,#8a4f22,#d08a4f 60%,transparent)} .rband.p4{background:linear-gradient(90deg,#3d5a86,#6f93c8 60%,transparent)}
+.rband.p5{background:linear-gradient(90deg,#4a4033,#7a6a52 60%,transparent)} .rband img{width:22px;height:22px} .rband span{margin-left:auto;font-size:11px;font-weight:600}
+.herr-kopf{display:flex;gap:12px;align-items:center} .herr-kopf b{font:700 16px var(--font-display);color:var(--gold-100)} .herr-kopf small{display:block;color:var(--tx-3);font:500 11.5px/1.3 var(--font-ui)}
+.herr-bild{position:relative;width:64px;height:64px;flex:none;border-radius:50%;background:#1b2638;box-shadow:0 0 14px 4px rgba(255,210,90,.8)}
+.herr-bild img{position:absolute;inset:18%;width:64%;height:64%;border-radius:50%} .herr-bild .herr-rahmen{inset:-14%;width:128%;height:128%;border-radius:0}
+.herr-skin{width:72px;margin-left:auto;filter:drop-shadow(0 0 6px #ffd25a)}
+.herr-angelegt{display:flex;gap:8px;align-items:center;margin-top:10px;padding:7px 9px;border-radius:8px;background:rgba(255,200,80,.12);border:1px solid rgba(255,210,110,.5);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.herr-angelegt .haken{display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:#3f9b48;color:#fff;font-weight:800}
+.herr-angelegt b{flex:none;margin-left:auto;padding:2px 8px;border-radius:6px;background:#3f9b48;color:#fff;font:700 11px var(--font-ui)}
+.herr-titel{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line-1);font:600 var(--fs-13) var(--font-ui)}
+.herr-titel img{width:30px;height:30px} .herr-titel small{display:block;color:#8fd67a;font-size:11px} .herr-titel small.boese{color:#ff8d82}
+.herr-titel .wer{font-size:12px;color:var(--tx-2)} .herr-titel select,.herr-an select{max-width:150px;height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:rgba(0,0,0,.35);color:var(--tx-1);font:600 var(--fs-12) var(--font-ui)}
+.herr-kisten{display:grid;grid-template-columns:repeat(3,1fr);gap:8px} .herr-kiste{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.herr-kiste small{font:500 10.5px/1.25 var(--font-ui);color:var(--tx-3)} .herr-an{display:flex;align-items:center;gap:8px;margin-top:10px;font:600 var(--fs-13) var(--font-ui);color:var(--tx-2)}
 /* Events/Bündnis (Gesamt-Blick 6.10.): Bild-Banner je Ereignis mit Titel + Uhr darauf, lange Erklärungen hinter „i“, leere Zustände mit Bild + Knopf */
 .ev-banner{position:relative;flex:none;height:96px;margin:0 0 10px;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line-2);background:#100b08}
 .ev-banner .ev-bild{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -2687,7 +2705,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
         <p><b>Bündnis</b> → zusammen mit anderen: Chat, Rally, Verstärkung, Bündnis-Hilfe, Tempel-Bonus.</p>
         <p><b>Kampf</b> → Unterwegs (deine Märsche) und Berichte.</p>
         <p><b>Events</b> → Aufgaben (Täglich, Erfolge), Abholen (Abholfach, tägliche Belohnung), Pass, Ereignisse (Wochen-Event Mo–Fr mit Rangliste, Barbaren-Lager).</p>
-        <p><b>Shop</b> → Kisten, Friedensschilde, Thron-Shop, Händler, Markt.</p>
+        <p><b>Shop</b> → Kisten, Friedensschilde, Event-Shop, Tempo, Händler, Markt.</p>
         <p><b>Profil</b> → Spieler (Aussehen, Rangliste), Ausrüstung, Fähigkeiten, Einstellungen.</p>
         <p><b>Karte</b> → Basis antippen: angreifen, Truppen senden, aufwerten. Felder: sammeln. Mitte: wer den Mega-Tempel hält, herrscht.</p>
       </details>
@@ -2734,6 +2752,17 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button id="rulerCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div class="pbody" id="rulerBody"></div>
+</section>
+
+<!-- ============ HERRSCHER (Thron-Event, 06c renderHerr) ============ -->
+<section id="herrPopup" class="panel panel--sheet" role="dialog" aria-labelledby="herrTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-crown"/></svg></div>
+    <div class="phead-text"><div class="overline">Eine Woche lang</div><h3 id="herrTitle" class="ptitle">Herrscher</h3><div class="psub" id="herrSub"></div></div>
+    <button id="herrCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="pbody" id="herrBody"></div>
 </section>
 
 <!-- ============ BÜNDNIS (Dock, buendnis.js) ============ -->
@@ -2794,6 +2823,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button class="p5-chip" type="button" role="tab" data-gtab="reward" data-ggrp-von="abholen" hidden><span>Belohnung</span><span class="badge" data-gbadge="reward" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="pass" data-ggrp-von="pass" hidden><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><i class="ev-st"></i><span>Woche</span><small hidden></small><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="thron" data-ggrp-von="ereignisse" hidden><i class="ev-st" data-ev-st="thron"></i><span>Thron</span><small data-ev-ab="thron">Sa 10</small><span class="badge" data-gbadge="thron" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="lager" data-ggrp-von="ereignisse" hidden><i class="ev-st an"></i><span>Lager</span><small hidden></small><span class="badge" data-gbadge="lager" style="display:none">!</span></button>
   </div>
   <div class="pbody">
@@ -2838,7 +2868,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button class="tab" type="button" role="tab" data-stab="markt"><svg class="icon"><use href="#i-crate"/></svg><span>Markt</span></button>
   </div>
   <div class="pbody">
-    <div class="mail-pane" data-spane="throne" hidden><div id="throneShop"></div></div>
     <div class="mail-pane" data-spane="hd" hidden><div class="sect"><h4 id="hdTitle">Wandernder Händler</h4><span id="hdSub" class="sect-aside"></span></div><div id="hdLive" class="hd-live"></div></div>
     <div class="mail-pane" data-spane="markt" hidden><div id="shopMarkt" class="ev-body"></div></div>
     <div class="mail-pane" data-spane="shield" hidden>
@@ -3043,17 +3072,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 </div>
 
 <!-- ============ REWARD MODAL (boss etc.) ============ -->
-<div id="titleModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="titleModalTitle" hidden>
-  <div class="lvlup-card title-card">
-    <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-temple"/></svg></div>
-    <div class="lvlup-over">Mega-Tempel</div>
-    <h2 id="titleModalTitle" class="lvlup-title">Titel</h2>
-    <div id="titleModalSub" class="lvlup-sub"></div>
-    <div class="lvlup-rule"></div>
-    <div id="titleList" class="title-list"></div>
-    <button id="titleModalBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Fertig</span></button>
-  </div>
-</div>
 <div id="rewardModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="rewardModalTitle" hidden>
   <div class="lvlup-card">
     <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-attack"/></svg></div>

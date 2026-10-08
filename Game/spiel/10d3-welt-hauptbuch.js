@@ -99,16 +99,7 @@
     }
     // Spielraum wächst mit der Zeit (je Quelle die Tages-Grenze), dazu Erfolge, Stufen-Gems und der Saison-Pass
     function hbKontenMerken(hb, m, now) { m.hbMerkT = now; hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; saveBotState(); }   // (für einen Neustart)
-    // Thron-Shop (06c-thron-mitte.js THRONE_OFFERS): jede Ausrüstungskiste 60 Punkte, jede Königliche (mind. Episch) 400. Großzügig: seine
-    // Thron-Punkte (zählt der Weltrechner selbst) zählen für beides – sonst gibt eine gekaufte Kiste einen falschen Alarm
-    const hbThronPreis = (id, sonst) => { const o = typeof THRONE_OFFERS !== 'undefined' && THRONE_OFFERS.find(x => x.id === id); return o && o.cost > 0 ? o.cost : sonst; };
-    function hbThronKisten(hb, E) {
-        if (hb.thK === undefined) { hb.thK = nn(E); return; }   // (bisherige Spieler: erst merken – die schon verdienten Punkte sind keine neuen Kisten)
-        const d = nn(E) - nn(hb.thK); if (!(d > 0)) return; hb.thK = nn(E);
-        hb.fr.k = nn(hb.fr.k) + d / hbThronPreis('crate', 60); hb.fr.kg = nn(hb.fr.kg) + kWert(3) * d / hbThronPreis('royal', 400);
-    }
     function hbFreiDazu(who, hb, now) {
-        try { hbThronKisten(hb, throneEarnedOf(who)); } catch (e) {}   // (bei jedem Profil – eine gerade gekaufte Kiste soll nicht 5 Min. warten)
         const dt =Math.min(HB_KAPPE_TAGE * TAG, now - nn(hb.frT)); if (dt < 300000) return; hb.frT = now;   // (in 5-Minuten-Schritten: das Hauptbuch ändert sich nicht bei jedem Profil)
         const f = hb.fr, on = !!(WELT.menschen[who] && WELT.menschen[who].online), t = dt / TAG;
         const dazu = (k, v, kappe) => { const vorher = nn(f[k]); f[k] = Math.max(vorher, Math.min(vorher + v, kappe)); };
@@ -357,7 +348,7 @@
     }
     // (welt.js profilZuBot, nur beim Weltrechner) ein Profil kommt an → Hauptbuch prüfen, Mitspieler-Datensatz klemmen
     function hbKlemmen(who, b, p, alt) {
-        if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles', 'throneLook', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
+        if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
         const now = Date.now();
         let hb = alt && alt.hb && alt.hb.v === HB_V ? alt.hb : b.hb && b.hb.v === HB_V ? b.hb : null;
         if (!hb) {
@@ -366,7 +357,7 @@
             // dem Profil), zählt er als neu – sonst brächte ein gefälschtes Profil seine Werte in die Welt
             const frisch = !(alt && alt.city) || (!alt.zProfil && (!alt.mensch || !!alt.hbRoh));   // (nach dem Zurückspielen: angleichen wie bisher)
             hb = hbNeu(who, now, p, frisch); if (frisch) hb.lk = { f: [], t: [], th: 0 };   // (ganz neu: keine alten Rahmen)
-            if (frisch) { b.wache = Object.assign({ lv: 0, tk: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 };
+            if (frisch) { b.wache = Object.assign({ lv: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 };
                 if (alt) alt.wache = b.wache; delete wacheMem[who]; }   // (wacheSehen liest den Eintrag in der Welt – und darf sich vorher nicht schon am Profil geeicht haben)
         }
         b.hb = hb; if (alt && alt !== b) alt.hb = hb;
@@ -390,9 +381,9 @@
     // Gemerkt wird erst am ersten Profil mit look.frames (nach dem Neustart kommen zuerst alte Profile ohne die Listen – sonst blieben
     // gekaufte Rahmen für immer leer); bis dahin wie vorher der angelegte (welt.js profilZuBotRoh)
     function hbRahmen(hb, b, p) {
-        if (!hb.lk && Array.isArray(((p || {}).look || {}).frames)) hb.lk = { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60), th: b.throneLook ? 1 : 0 };
+        if (!hb.lk && Array.isArray(((p || {}).look || {}).frames)) hb.lk = { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60) };
         if (!hb.lk) return;
-        b.frames = (b.frames || []).filter(x => x === 'saison' || hb.lk.f.includes(x)); b.titles = (b.titles || []).filter(x => hb.lk.t.includes(x)); if (!hb.lk.th) b.throneLook = 0;
+        b.frames = (b.frames || []).filter(x => x === 'saison' || hb.lk.f.includes(x)); b.titles = (b.titles || []).filter(x => hb.lk.t.includes(x));
     }
     // Nach dem Zurückspielen einer Sicherung (server.php: ow_welt_info.zurueck) ist die Welt – mit dem Hauptbuch – wieder alt, die
     // Spielstände der Spieler nicht (was sie seitdem verdient und gebaut haben, behalten sie). Damit beides zusammenpasst, gleicht der
@@ -427,23 +418,11 @@
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
     // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – die Münz-Töpfe des Ausgegebenen (Münzen, Admin-Münzen) werden
     // umgerechnet (abgerundet). Holz/Stein/Eisen bleiben unverändert wie am Handy (6.10.: wieder RoK-Größe).
-    // Thron-Punkte (Alexander 6.10., jeder Reset): sein Handy behält höchstens SAISON_TP_MAX, der Rest kommt 10 : 1 als Edelsteine ins
-    // Abholfach (01a-grundlagen.js) – das Hauptbuch zählt sie als sicher geschickt (hb.gIn), aber nur so viele, wie er haben kann:
-    // was er nach dem letzten Reset behalten durfte (hb.tpB) + was der Weltrechner ihm seitdem gab (Thron, throneEarnedOf) + der
-    // Saison-Pass; mit Profil höchstens seine Punkte darin (+ was danach noch kam). B: einmalige Ausnahme (Alexander 6.10.) –
-    // Edelsteine genau SAISON_AUSNAHME_GEMS, Holz/Stein/Eisen 0, die Töpfe des Ausgegebenen leer (Abholfach hb.gIn bleibt).
-    function hbPassTp() { let n = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) for (const r of passRewardAt(L, prem)) if (r.k === 'tp') n += r.n || 1; return n; }
-    function hbThronReset(who, hb, p, now) {
-        const E = throneEarnedOf(who), pass = hbPassTp() * (Math.floor(Math.max(0, now - Math.max(PASS_EPOCH, nn(hb.tpT))) / PASS_LEN) + 1);
-        let hoch = (hb.tpE === undefined ? E : nn(hb.tpB) + Math.max(0, E - nn(hb.tpE))) + pass;
-        if (p && p.tp != null) hoch = Math.min(hoch, nn(p.tp) + Math.max(0, E - nn(p.earned)) + 500);
-        const g = Math.floor(Math.max(0, hoch - SAISON_TP_MAX) / SAISON_TP_JE_GEM); if (g > 0) hb.gIn = nn(hb.gIn) + g;
-        hb.tpB = Math.min(hoch, SAISON_TP_MAX); hb.tpE = E; hb.tpT = now;
-    }
+    // B: einmalige Ausnahme (Alexander 6.10.) – Edelsteine genau SAISON_AUSNAHME_GEMS, Holz/Stein/Eisen 0, die Töpfe des Ausgegebenen
+    // leer (Abholfach hb.gIn bleibt).
     WELT.saisonKonto = function (who, f, B) {
         const b = loadBotState()[who]; if (!b) return;
         const m = wacheMem[who], hb = hbDa(who), d = wd(who), x = WELT.menschen[who];
-        if (hb) try { hbThronReset(who, hb, (m && m.prof) || (x && x.profil) || null, Date.now()); } catch (e) { console.warn('Saison:', e); }
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)

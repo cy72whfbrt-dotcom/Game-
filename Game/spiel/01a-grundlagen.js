@@ -60,11 +60,10 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // sonst openWaterSaisonBurg aus der Nachricht) – Gebäude, Forschung, Bauten passt aufbau.js beim Laden an (openWaterBurgFair, burgFair).
 // Alexander 6.10.: einmalige Ausnahme (wegen des Fehlers, damit es fair bleibt) – im selben Schritt Edelsteine auf genau 1.000 und
 // Holz/Stein/Eisen auf 0 (Münzen sind beim Reset immer PLAYER_START_COINS). Bei späteren Resets nicht.
-// Thron-Punkte (Alexander 6.10., jeder Reset): höchstens 20.000 gehen mit, der Rest wird 10 : 1 zu Edelsteinen – ins Abholfach.
 // Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
 var saisonNeuGeladen = 0, saisonZurueckGeladen = 0, saisonBurgGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen · Burg: aufbau.js)
-const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000, SAISON_TP_MAX = 20000, SAISON_TP_JE_GEM = 10;
+const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000;
 const PLAYER_START_COINS = 10000;   // neue Spieler, Mitspieler und jede neue Saison (Alexander 8.10.; Truppen: PLAYER_START_TROOPS, 01c)
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis', 'openWaterPass', 'openWaterSaisonRang'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
@@ -94,7 +93,7 @@ if (!SYSTEM) {
         store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
         store.set('openWaterCoins', String(PLAYER_START_COINS));
         try { const st = JSON.parse(store.get('openWaterStats')) || {}, t = JSON.parse(store.get('openWaterThrone')) || {};   // Ranglisten zählen ab jetzt (09f rangSaison)
-            store.set('openWaterSaisonRang', JSON.stringify([st.captures || 0, Math.floor(Math.max(t.earned || 0, (t.week || {}).player || 0))])); } catch (e) {}
+            store.set('openWaterSaisonRang', JSON.stringify([st.captures || 0, Math.floor(t.earned || 0)])); } catch (e) {}
         try { const ps = JSON.parse(store.get('openWaterPass')); if (ps && ps.s && typeof ps.s === 'object') {   // Saison-Pass von vorn, auch Premium (Alexander 8.10.)
             for (const k in ps.s) ps.s[k] = { xp: 0, prem: false, f: [], p: [] }; store.set('openWaterPass', JSON.stringify(ps)); } } catch (e) {}
         const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
@@ -108,10 +107,6 @@ if (!SYSTEM) {
             for (const k of ['h', 's', 'e']) r[k] = 0; store.set('openWaterRes', JSON.stringify(r));
             store.set('openWaterSaisonVorher', JSON.stringify(vorher));
         }
-        try { const t = JSON.parse(store.get('openWaterThrone'));   // Thron-Punkte: höchstens 20.000, der Rest 10 : 1 als Edelsteine ins Abholfach
-            if (t && t.pts > SAISON_TP_MAX) { const g = Math.floor((t.pts - SAISON_TP_MAX) / SAISON_TP_JE_GEM); t.pts = SAISON_TP_MAX; store.set('openWaterThrone', JSON.stringify(t));
-                let L = null; try { L = JSON.parse(store.get('openWaterInbox')); } catch (e) {} if (!Array.isArray(L)) L = [];
-                const t0 = Date.now(); if (g > 0) { L.unshift({ src: 'saison', title: 'Thron-Punkte aus Saison ' + mein + ' umgetauscht', gems: g, coins: 0, sh: 0, crate: -1, tr: 0, n: 1, id: t0.toString(36) + 'tp', at: t0 }); store.set('openWaterInbox', JSON.stringify(L)); } } } catch (e) {}
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }   // (welt.js hat die alten Befehle schon gelesen – sie gehören zur alten Welt)
         store.set('openWaterSaisonMein', String(neu)); saisonNeuGeladen = neu;
     }

@@ -15,7 +15,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 2) Kosten und Belohnungen
     o.burg3 = AUF.stadtKosten('keep', 2).c; o.bund = BUND.KOSTEN; o.stufe = [levelRewardCoins(2), levelRewardCoins(30)];
     const hp = hourProduction('player').coins; o.hp = hp;
-    o.pass = [passRewardAt(1, false)[0], passMuenzen(hourProduction('player'), 3)]; o.thron = throneAmount('player', 'coins');
+    o.pass = [passRewardAt(1, false)[0], passMuenzen(hourProduction('player'), 3)];
     o.heal = Math.ceil(1000 * HEAL_COIN_PER_TROOP);
     o.maut = [GATE_TOLLS.map(mautJeTruppe), MAUT_MIN, MAUT_MAX];
     const tor = islands.find(i => i.type === 'gate'); const d = document.createElement('div'); d.innerHTML = gateControlsHtml(tor);
@@ -37,7 +37,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const meine = [...ownedIslands][0]; o.meineVert = meine !== undefined ? [islandLevels[meine] || 1, effectiveDefense(islandById[meine])] : null;
     // 5) Mitspieler: dieselben Regeln (Ertrag aus denselben Stufen, gleiche Preise)
     const X = BOT_DEFS.find(x => !x.mensch && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).id;
-    o.bot = { hp: hourProduction(X).coins, thron: throneAmount(X, 'coins'), kiste: hdPreis(X, 'kiste') };
+    o.bot = { hp: hourProduction(X).coins, kiste: hdPreis(X, 'kiste') };
     return o;
   });
   console.log(JSON.stringify(r));
@@ -46,7 +46,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.burg3 === 1900, 'Burg 2 → 3 kostet 1.900 Münzen (7.10.: Anfang billig, Burg 25 ≈ 120 Mio.)', r.burg3);
   ok(r.bund === 20000, 'Bündnis gründen 20.000 Münzen', r.bund);
   ok(r.stufe[0] === 10000 && r.stufe[1] === 250000, 'Stufen-Belohnung: mindestens 10.000 Münzen, Stufe 30: 250.000', r.stufe);
-  ok(r.pass[0].k === 'coins' && r.pass[0].n === 3 && r.pass[1] >= 30000 && r.thron === Math.max(Math.round(5000 / 1.8), Math.round(2 * r.hp)) && r.thron >= 20000, 'Pass (3 Std. Ertrag ≥ 30.000) und Thron-Shop (2 Std. ≥ 20.000)', r);
+  ok(r.pass[0].k === 'coins' && r.pass[0].n === 3 && r.pass[1] >= 30000, 'Pass (3 Std. Ertrag ≥ 30.000)', r);
   ok(r.heal === 100000, 'Heilen: 1.000 Verwundete kosten 100.000 Münzen (100 je Truppe)', r.heal);
   ok(r.maut[0].join() === '0,100,250,500,1000,2000' && r.maut[1] === 100 && r.maut[2] === 560000, 'Maut je Truppe 100 … 2.000, je Marsch 100 … 560.000', r.maut);
   ok(r.mautText[0].join() === 'frei,100,250,500,1.000,2.000' && /höchstens 560\.000 Münzen pro Marsch/.test(r.mautText[1]), 'Tor-Fenster zeigt die Maut in Münzen', r.mautText);
@@ -56,6 +56,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.gold === '+167 Münzen je 1.000 Kills', 'Fähigkeit „Angriff: Münzen“ Stufe 1: +167 Münzen je 1.000 Kills', r.gold);
   ok(r.grund.join() === '50,500,1000,2000,46408' && r.steigt, 'Grundverteidigung: Stufe 1 50, Stufe 10 500, Stufe 20 1.000, Stufe 60 ~46.000 – steigt immer', r.grund);
   ok(!r.meineVert || r.meineVert[1] >= 50 * r.meineVert[0], 'deine Basis verteidigt mindestens mit der Grundverteidigung', r.meineVert);
-  ok(r.bot.hp >= 10000 && r.bot.thron >= 20000 && r.bot.kiste >= 30000, 'Mitspieler: gleiche Münz-Größen (Ertrag, Thron-Shop, Händler)', r.bot);
+  ok(r.bot.hp >= 10000 && r.bot.kiste >= 30000, 'Mitspieler: gleiche Münz-Größen (Ertrag, Händler)', r.bot);
   ok(!fe.length, 'keine Skript-Fehler', fe.slice(0, 3)); await b.close();
 })();

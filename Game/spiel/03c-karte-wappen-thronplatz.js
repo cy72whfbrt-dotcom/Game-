@@ -232,7 +232,7 @@ function drawThronePlaza(z, now) {
     const m = islandById[megaTempleId], x = toSX(m.x), y = toSY(m.y), R = Math.max(10, m.radius * z * 3.4);
     if (x < -R * 2 || y < -R * 2 || x > viewW + R * 2 || y > viewH + R * 2) return;
     setScreen(ctx); ctx.save();
-    const ruler = rulerOwner(), rc = ruler === 'player' ? '120,180,255' : ruler ? '255,120,100' : '255,214,120';
+    const ruler = thronHalter(), rc = ruler === 'player' ? '120,180,255' : ruler ? '255,120,100' : '255,214,120';
     if (z < 0.006) {                                      // far out: a golden beacon marks the centre
         const pulse = .6 + .4 * Math.sin(now / 600), gr = ctx.createRadialGradient(x, y, 2, x, y, 40 + 10 * pulse);
         gr.addColorStop(0, 'rgba(' + rc + ',.9)'); gr.addColorStop(.3, 'rgba(' + rc + ',.35)'); gr.addColorStop(1, 'rgba(' + rc + ',0)');
@@ -290,7 +290,7 @@ function drawThroneFx(z, now) {                      // over the Mega-Tempel: a 
     if (megaTempleId === undefined || z < 0.006 || !islandSeen(islandById[megaTempleId])) return;
     const m = islandById[megaTempleId], x = toSX(m.x), y = toSY(m.y), r = Math.max(12, m.radius * z * 2.3);
     if (x < -r * 6 || y < -r * 8 || x > viewW + r * 6 || y > viewH + r * 6) return;
-    const ruler = rulerOwner(), rc = ruler === 'player' ? '140,195,255' : ruler ? '255,130,110' : '255,220,140';
+    const ruler = thronHalter(), rc = ruler === 'player' ? '140,195,255' : ruler ? '255,130,110' : '255,220,140';
     setScreen(ctx); ctx.save(); ctx.globalCompositeOperation = 'lighter';
     if (ruler) {
         const pulse = .8 + .2 * Math.sin(now / 400), ph = r * 9, pw = r * .9;
@@ -363,19 +363,19 @@ function drawBaseSparks(vis, z, now) {            // over the towers
     liveAnimation = true;
   }
 }
-function drawTitleBadges(z, now) {                // the title's name over the titled capital
-  if (z < 0.004) return;
+function drawTitleBadges(z, now) {                // Titel-Abzeichen über dem Namensschild der Hauptstadt (Farbe je Titel, Bild ui_titel_*)
+  if (z < SCHILD_ZOOM) return;
   setScreen(ctx);
   for (const [id, t] of titledCapitals()) {
     const isl = islandById[id]; if (!isl || !islandSeen(isl)) continue;
-    const x = toSX(isl.x), y = toSY(isl.y) - Math.max(26, isl.radius * z * 2.6);
+    const sr = schildRect(isl, z), x = sr.x + sr.w / 2, y = sr.y - 9;
     if (x < -60 || x > viewW + 60 || y < -30 || y > viewH + 30) continue;
-    ctx.font = '700 11px Inter, system-ui, sans-serif';
-    const w = ctx.measureText(t.name).width + 28;
-    rr(ctx, x - w / 2, y - 10, w, 20, 10); ctx.fillStyle = t.good ? 'rgba(40,32,8,.92)' : 'rgba(40,8,14,.92)'; ctx.fill();
-    ctx.lineWidth = 1.3; ctx.strokeStyle = t.good ? '#e8c877' : '#e0605a'; ctx.stroke();
-    drawGlyph(ctx, t.good ? 'star' : 'losses', x - w / 2 + 11, y, 11, t.good ? '#f3d98a' : '#ff9d90');
-    ctx.fillStyle = t.good ? '#f6e7bd' : '#ffd0c9'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t.name, x - w / 2 + 20, y + .5);
+    ctx.font = '800 10.5px Inter, system-ui, sans-serif';
+    const w = ctx.measureText(t.name).width + 30, im = extraBild('ui_titel_' + (t.key === 'schatz' ? 'schatzmeister' : t.key));
+    rr(ctx, x - w / 2, y - 9, w, 18, 9); ctx.fillStyle = HERR_TITEL_FARBE[t.key] || '#555'; ctx.fill();
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.stroke();
+    if (im) ctx.drawImage(im, x - w / 2 + 3, y - 8, 16, 16);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t.name, x - w / 2 + 22, y + .5);
   }
 }
 function ring(x, y, R, w, color, dash, offset) {

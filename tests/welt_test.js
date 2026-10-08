@@ -30,24 +30,20 @@ pruefe('Flicken hin und zurück (' + gut + ' von 2000)', gut === 2000);
 pruefe('leere {} bleiben {}', (() => { const a = { x: {} }, b = { x: {}, y: {} }, c = JSON.parse(J(a)); flickenAnwenden(c, flickenBauen(a, b)); return J(c) === '{"x":{},"y":{}}'; })());
 pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, { d: { z: { s: { x: 1 } } } }) === false);
 
-// 3) Hauptbuch (10d3-welt-hauptbuch.js): keine Fehlalarme für Thron-Shop-Kisten, Splitter → Gems (alle Helden voll), Wochenketten-/Pass-Kisten (fr.kg)
+// 3) Hauptbuch (10d3-welt-hauptbuch.js): Splitter → Gems (alle Helden voll), Wochenketten-/Pass-Kisten (fr.kg)
 {
     const s10 = fs.readdirSync(path.join(G, 'spiel')).filter(f => f.startsWith('10d')).sort().map(f => fs.readFileSync(path.join(G, 'spiel', f), 'utf8')).join(''), stueck = (a, b) => { const i = s10.indexOf(a), j = s10.indexOf(b, i); if (i < 0 || j < 0) throw new Error('nicht gefunden: ' + a); return s10.slice(i, j); };
-    const code = stueck('    const kWert', '    function hbKisteDazu') + stueck('    const hbThronPreis', '    function hbFreiDazu') + stueck('    function hbGearNeu', '    // alle Neuerungen eines Profils');
+    const code = stueck('    const kWert', '    function hbKisteDazu') + stueck('    function hbGearNeu', '    // alle Neuerungen eines Profils');
     const nn = v => (typeof v === 'number' && Number.isFinite(v) ? v : 0), WERT = { a: 0 };
-    const H = new Function('nn', 'HEROES', 'HERO_MAXQ', 'hbHeldZeile', 'hbHeldenWert', 'hbE0f', 'HB_SLOTS', 'starGemCost', 'CRATE_GEM_COST', 'hbZahlen', 'fz', 'THRONE_OFFERS', 'STAR_PCT', 'ITEM_MAX_LEVEL',
-        code + '; return { hbThronKisten, hbSplitterGems, hbGearNeu };')(nn, [{ id: 'a', r: 1 }], 20, z => [z.own ? 1 : 0, z.q | 0, z.sh | 0, 0, 0, 0, 0], () => WERT.a, () => 10,
-        ['weapon', 'armor', 'shield', 'boots'], () => 50, 100, () => false, String, [{ id: 'crate', cost: 60 }, { id: 'royal', cost: 400 }], 5, 30);
+    const H = new Function('nn', 'HEROES', 'HERO_MAXQ', 'hbHeldZeile', 'hbHeldenWert', 'hbE0f', 'HB_SLOTS', 'starGemCost', 'CRATE_GEM_COST', 'hbZahlen', 'fz', 'STAR_PCT', 'ITEM_MAX_LEVEL',
+        code + '; return { hbSplitterGems, hbGearNeu };')(nn, [{ id: 'a', r: 1 }], 20, z => [z.own ? 1 : 0, z.q | 0, z.sh | 0, 0, 0, 0, 0], () => WERT.a, () => 10,
+        ['weapon', 'armor', 'shield', 'boots'], () => 50, 100, () => false, String, 5, 30);
     const hbLeer = () => ({ kN: 0, kG: 0, fr: { k: 0, kg: 0, sh: 0 }, gear: { weapon: [], armor: [], shield: [], boots: [] }, hs: { a: [1, 20, 0, 0, 0, 0, 0] }, shB: 0 });
     let hb = hbLeer();
     pruefe('Hauptbuch: Episches Teil ohne sichere Kiste und ohne Gems wird abgelehnt', H.hbGearNeu('u1', hb, {}, 'weapon', [3, 1, 0], 5) !== '');
     hb = hbLeer(); hb.fr.kg = 27;
     pruefe('Hauptbuch: Episches Teil aus Wochenkette/Pass (fr.kg) wird angenommen', H.hbGearNeu('u1', hb, {}, 'weapon', [3, 1, 0], 5) === '' && hb.fr.kg === 0 && hb.kG === 0);
-    hb = hbLeer(); H.hbThronKisten(hb, 900);
-    pruefe('Hauptbuch: bisheriger Spieler ohne thK – schon verdiente Thron-Punkte nur gemerkt, keine Kisten', hb.thK === 900 && hb.fr.k === 0 && hb.fr.kg === 0);
-    hb = hbLeer(); hb.thK = 0; H.hbThronKisten(hb, 400); H.hbThronKisten(hb, 400);
-    pruefe('Hauptbuch: 400 Thron-Punkte → Königliche Kiste (einmal gutgeschrieben)', hb.fr.kg === 27 && Math.abs(hb.fr.k - 400 / 60) < 1e-9 && hb.thK === 400);
-    pruefe('Hauptbuch: … und das Epische Teil daraus wird angenommen', H.hbGearNeu('u1', hb, {}, 'armor', [3, 1, 0], 5) === '');
+    pruefe('Hauptbuch: Thron-Shop-Kisten sind raus (Thron-Event 8.10.)', !/hbThronKisten|THRONE_OFFERS/.test(s10));
     hb = hbLeer(); WERT.a = 100; hb.shB = 95; hb.fr.sh = 2;   // Helden voll (Wert 100, Start 10): 5 unverbrauchte Splitter + 2 aus dem Spielraum
     pruefe('Hauptbuch: Splitter → Gems bei vollen Helden (20 je Splitter, verbraucht)', H.hbSplitterGems(hb, null, 100) === 100 && hb.fr.sh === 0 && hb.shB === 92);
     pruefe('Hauptbuch: … höchstens so viele, wie Splitter da sind', H.hbSplitterGems(hb, null, 1000) === 40 && hb.shB === 90);
@@ -60,18 +56,12 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     const S = new Function('levelRewardCoins', 'wirtK', 'wirtM', stueck('    const SR_FIX', '    function spielraumTag') + '; return { spielraumTeile, TR_STUNDE_MIN, FUND_TR_MIN };')(() => 0, wirtK, wirtM);
     const t = S.spielraumTeile('u1', { lvl: 1, lvlLog: [], ein: [], hp0: 0, initT: Date.now() - 2 * 3600000 });
     pruefe('Hauptbuch: fester Münz-Spielraum in Münzen × 1.000 (27.778 + 3 × 2.778 statt 65.000 vor dem 5.10.)', t.fix === 27778 + 3 * 2778 && t.lv === 0);
-    pruefe('Hauptbuch: Mindest-Truppen (Thron-Shop 1.000, Fund 100) × WIRTSCHAFT_KOSTEN, nie unter 1', S.TR_STUNDE_MIN === 1 && S.FUND_TR_MIN === 1);
-    // Thron-Shop zahlt wie Händler/Markt 2 Stunden Produktion (Alexander 6.10.): 3 freie Käufe = 3 × 2 Stunden ohne Fehlalarm
-    const mgMit = c => new Function('PASS_LVLS', 'passRewardAt', 'SR_STUNDE_MIN', 'nn', 'hourProduction', 'passNo', 'throneEarnedOf', 'saveBotState', 'THRONE_STUNDEN', 'QUEST_COIN_H', 'THRONE_MIN',
-        stueck('    let passMuenzH', '    function spielraumFrei') + '; return muenzGutscheine;')(0, null, 3, x => +x || 0, () => ({ coins: c }), () => 7, () => 0, () => {}, 1 / 1800 / (1 / 3600), [1, 2, 3], { coins: 20000, troops: 2000 });
-    const MG = mgMit(20000), dT = { pS: 7, pM: 0, tC: 0, aM: 24, aMt: Date.now() + 6e4 }, h12 = 20000 * 1.2;   // (Aufgaben-Topf leer – und füllt sich in der Testzeit nicht nach)
-    pruefe('Hauptbuch: 3 Thron-Käufe à 2 Stunden Münzen gedeckt (je Kauf 2 × Stundenproduktion)', MG('u1', 3 * 2 * h12, dT) === 3 * 2 * h12 && Math.abs(dT.tC - 3) < 1e-9);
-    pruefe('Hauptbuch: … ein 4. Kauf ohne Thron-Punkte nicht', MG('u1', 2 * h12, dT) < h12 * 1e-3);
-    // Thron-Shop mindestens 20.000 Münzen (7.10.): auch bei kleiner Produktion (1.000 / Std.) ist ein Kauf gedeckt – zwei nicht
-    const dK = { pS: 7, pM: 0, tC: 2, aM: 24, aMt: Date.now() + 6e4 }, MK = mgMit(1000);
-    pruefe('Hauptbuch: Thron-Kauf mind. 20.000 Münzen gedeckt, ein zweiter nicht', MK('u1', 20000, dK) === 20000 && Math.abs(dK.tC - 3) < 1e-6 && MK('u1', 20000, dK) < 1);
+    pruefe('Hauptbuch: Mindest-Truppen (Fund 100) × WIRTSCHAFT_KOSTEN, nie unter 1', S.TR_STUNDE_MIN === 1 && S.FUND_TR_MIN === 1);
+    const mgMit = c => new Function('PASS_LVLS', 'passRewardAt', 'SR_STUNDE_MIN', 'nn', 'hourProduction', 'passNo', 'saveBotState', 'QUEST_COIN_H',
+        stueck('    let passMuenzH', '    function spielraumFrei') + '; return muenzGutscheine;')(0, null, 3, x => +x || 0, () => ({ coins: c }), () => 7, () => {}, [1, 2, 3]);
+    const MG = mgMit(20000), h12 = 20000 * 1.2;
     // Tagesaufgaben (7.10.): 6 Aufgaben je 1/2/3 Stunden Münzen = 12 Stunden am Tag, der Topf hält höchstens 2 Tage und füllt sich gleichmäßig nach
-    const dA = { pS: 7, pM: 0, tC: 5 };
+    const dA = { pS: 7, pM: 0 };
     pruefe('Hauptbuch: Aufgaben-Münzen – 2 Tage (24 Stunden) gedeckt, mehr nicht', MG('u1', 24 * h12, dA) === 24 * h12 && MG('u1', h12, dA) < h12 * 1e-3);
     dA.aMt -= 864e5 / 2;
     pruefe('Hauptbuch: … nach einem halben Tag wieder 6 Stunden', Math.abs(MG('u1', 10 * h12, dA) - 6 * h12) < h12 * 1e-3);
@@ -143,16 +133,7 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Burg fair: Handy meldet nichts über dem Hauptbuch (kein Fehlalarm)', ids.every(id => (handy.levels[id] || 0) <= st[id][0]) && Object.keys(handy.fo).every(k => handy.fo[k] <= (welt.hb.fo[k] | 0)) && !handy.builds.length && !handy.foRun);
     const alt = new Function('saison', stueck(s10, 'const BURG_ALT_BIS', '\n') + '\nreturn burgAlt;'), t = Date.UTC(2026, 9, 10);
     pruefe('Burg fair: alte Burg-Bauzeiten gelten bis 14.10. – nach dem Reset mit Burg fair nicht mehr', alt({ nr: 1 })(t) && !alt({ nr: 2, burgFair: 2 })(t) && /const alt = id === 'keep' && burgAlt\(now\)/.test(s10));
-    // Thron-Punkte (jeder Reset): das Hauptbuch erlaubt die Edelsteine aus dem Abholfach – nie mehr, als er an Punkten haben kann
-    const thron = (E, pass) => new Function('throneEarnedOf', 'nn', 'PASS_LVLS', 'passRewardAt', 'PASS_EPOCH', 'PASS_LEN', 'SAISON_TP_MAX', 'SAISON_TP_JE_GEM',
-        stueck(s10, 'function hbPassTp', 'WELT.saisonKonto') + 'return hbThronReset;')(() => E, v => Number.isFinite(+v) ? +v : 0, 1, (L, prem) => prem && pass ? [{ k: 'tp', n: pass }] : [{ k: 'gems', n: 1 }], Date.UTC(2026, 9, 1), 864e5 * 56, 20000, 10);
-    const hbT = { gIn: 0 }, jetzt = Date.UTC(2026, 9, 6);
-    thron(35000, 0)(null, hbT, { tp: 35000, earned: 35000 }, jetzt); const g1 = hbT.gIn;
-    thron(40000, 0)(null, hbT, { tp: 25000, earned: 40000 }, jetzt + 864e5); const g2 = hbT.gIn - g1;
-    const hbF = { gIn: 0 }; thron(30000, 0)(null, hbF, { tp: 1e9, earned: 30000 }, jetzt);
-    const hbP = { gIn: 0 }; thron(20000, 3000)(null, hbP, null, jetzt);   // (ohne Profil: Thron + Saison-Pass)
-    pruefe('Thron-Punkte: 35.000 → 1.500 Edelsteine erlaubt (Abholfach), danach 25.000 → 500; ein gefälschtes Profil bekommt nicht mehr, als er verdient hat',
-        g1 === 1500 && g2 === 500 && hbT.tpB === 20000 && hbF.gIn === 1000 && hbP.gIn === 300);
+    pruefe('Saison-Reset: keine Thron-Punkte-Kappe mehr (Thron-Shop raus, 8.10.)', !/hbThronReset|SAISON_TP_MAX/.test(s10));
     pruefe('Einmalige Ausnahme im Hauptbuch: Edelsteine 1.000, Holz/Stein/Eisen 0 (wie das Handy)', /if \(hb\) \{ hb\.gU = SAISON_AUSNAHME_GEMS; hb\.rU = \{ h: 0, s: 0, e: 0 \}/.test(s10) && /WELT\.saisonKonto\(id, f, B\)/.test(s9) && /if \(B\) saisonAusnahme\(\);/.test(s9));
     pruefe('Burg fair: saisonWelt für alle Mitspieler und echten Spieler, nur beim ersten Reset (saison.burgFair)', /if \(B > 0 && AUF\) burgFairWer\(b, B\)/.test(s9) && /B = burgFair === nr \? BURG_FAIR : 0/.test(s9) && /wirtAb, burgFair, last/.test(s9));
 }

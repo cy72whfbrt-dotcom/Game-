@@ -18,8 +18,6 @@
 // Gebäude/Forschung fallen auf das, was Burg/Labor dann erlauben (aufbau.js burgFair), ohne Erstattung. saison.burgFair = diese Saison.
 // Alexander 6.10.: einmalige Ausnahme (wegen des Fehlers, damit es fair bleibt) – derselbe Schritt setzt Edelsteine auf genau 1.000 und
 // Holz/Stein/Eisen auf 0 (saisonAusnahme; echte Spieler: Handy 01a-grundlagen.js + Hauptbuch 10d WELT.saisonKonto). Später nie wieder.
-// Thron-Punkte (Alexander 6.10., JEDER Reset): höchstens SAISON_TP_MAX gehen mit, der Rest 10 : 1 als Edelsteine ins Abholfach
-// (Mitspieler: gleich abgeholt; echte Spieler: ihr Handy beim Neuladen, das Hauptbuch erlaubt es – 10d saisonKonto).
 // Umstellung auf „pro Stunde“ (Alexander 5.10., 11b A): der ERSTE Reset danach rechnet beim Weltrechner die Münz-Töpfe des Hauptbuchs
 // × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR um (Münzen 6.10. in normalen Zahlen). saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt). Holz/Stein/Eisen bleiben bei jedem
 // Reset unverändert (Alexander 6.10.: sie sind wieder in RoK-Größe, ROH_FAKTOR).
@@ -154,8 +152,7 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
         if (b.ps) { b.ps.base = botPassScore(b); b.ps.f = 0; b.ps.p = 0; b.ps.prem = false; }   // Saison-Pass von vorn, auch Premium (Alexander 8.10.)
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
         if (B > 0 && AUF) burgFairWer(b, B);
-        if (!(botById[w] && botById[w].mensch) && b.tp > SAISON_TP_MAX) { const g = Math.floor((b.tp - SAISON_TP_MAX) / SAISON_TP_JE_GEM); b.tp = SAISON_TP_MAX;   // Thron-Punkte (echte Spieler: ihr Handy)
-            if (g > 0) evPreis(w, 'saison', 'Thron-Punkte aus Saison ' + saison.nr + ' umgetauscht', { gems: g }, 'tp' + saison.nr); } }
+    }
     capitalCache = null; ownVer++;
     saveGameNow(); flushBotState(); saveProgressionNow(); saveFields(); saveBarb(); saveArmies(); saveEv();
     requestRender();
@@ -187,7 +184,7 @@ function saisonKarte() {
     const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Edelsteine + Saison-Rahmen bis zum nächsten Saison-Ende';
     const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
-        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes · Thron-Punkte bis ' + fmtNum(SAISON_TP_MAX) + ' (der Rest ' + SAISON_TP_JE_GEM + ' : 1 als Edelsteine)</b>' +
+        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes</b>' +
         (S.burgFair ? '' : '<span>Einmalig</span><b>Ausnahme wegen eines Fehlers, für alle gleich: Burg höchstens Stufe ' + BURG_FAIR + ', Edelsteine genau ' + fmtNum(SAISON_AUSNAHME_GEMS) + ', Holz/Stein/Eisen 0</b>') +
         '<span>Neu</span><b>Basen, Truppen, Münzen (' + fmtNum(PLAYER_START_COINS) + ' zum Start), Stufe, Saison-Pass (auch Premium), Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }

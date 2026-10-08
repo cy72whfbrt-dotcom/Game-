@@ -23,7 +23,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.roh = [AUF.rohJeStunde ? 1 : 0, Math.round(rohGebStunde(25) / rohGebStunde(24) * 100) / 100];
     o.lager = [1, 4, 10, 25].map(L => [barbTroopsOf(L), lagerMuenzen(L)]);
     o.schild = [SHIELD_PRICES[2], SHIELD_PRICES[8], SHIELD_PRICES[24]];
-    o.thron = [throneAmount('player', 'coins') >= 20000, throneAmount('player', 'troops') >= 2000];
     o.gear = [itemPct({ rarity: 0, level: 1 }), salvagePoints({ rarity: 0, level: 1 })];
     o.truppen = [troopsPerTick(1) * 3600, troopsPerTick(10) * 3600];
     o.texte = [SKILL_DEFS.attackGold.name, SKILL_DEFS.defenseGold.name, HERO_FX_TXT.gold(5)];
@@ -45,7 +44,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.roh[1] === 1.33, 'Rohstoff-Gebäude: + 33 % je Stufe', r.roh);
   ok(JSON.stringify(r.lager.map(x => x[0])) === JSON.stringify([500, 1400, 12000, 2300000]) && r.lager[0][1] === 30000 && r.lager[2][1] === 106000 && r.lager[3][1] === 859000, 'Lager: 500 / 1.400 / 12.000 / 2,3 Mio. Krieger, feste Münzen 30K / 106K / 859K', r.lager);
   ok(JSON.stringify(r.schild) === '[80,300,700]', 'Schild: 80 / 300 / 700 Edelsteine', r.schild);
-  ok(r.thron[0] && r.thron[1], 'Thron-Shop: mind. 20.000 Münzen bzw. 2.000 Truppen', r.thron);
   ok(Math.abs(r.gear[0] - 1.05) < 1e-9 && r.gear[1] === 6, 'Ausrüstung grau 1 ≈ 1 %, Zerlegen 6 Punkte', r.gear);
   ok(r.truppen[0] === 15 && r.truppen[1] > 45, 'Truppen aus Basen: 15 / Std. auf Stufe 1, wächst mit der Stufe', r.truppen);
   ok(r.texte.every(t => !/Gold/.test(t) && /Münzen/.test(t)) && r.muenzTxt, '„Münzen“ statt „Gold“ in Fähigkeiten/Beute', r.texte);

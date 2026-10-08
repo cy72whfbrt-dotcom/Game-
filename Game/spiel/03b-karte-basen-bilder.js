@@ -43,13 +43,19 @@ function drawToreImNebel(view, z) {                                            /
     const tm = torMitte(isl); if (tm.x < view.l - m || tm.x > view.r + m || tm.y < view.t - m || tm.y > view.b + m) continue;
     drawTorBild(isl, false, z, true); }
 }
-const HEILIGTUM_BILD = { megaTemple: ['thron', .56, 64], tempel: ['tempel', .6, 30], waechtertempel: ['waechtertempel', .6, 30] };   // Bild, Fuß im Bild (y), kleinste Breite (px)
-function heiligtumBild(island, z) {                                            // (Bildschirm) Thron bzw. Wächter-Tempel an seinem Weltpunkt
+const HEILIGTUM_BILD = { megaTemple: ['thron_neu', .64, 64], tempel: ['tempel', .6, 30], waechtertempel: ['wachturm', .84, 30] };   // Bild, Fuß im Bild (y), kleinste Breite (px)
+function heiligtumBild(island, z) {                                            // (Bildschirm) Königsthron bzw. Wachturm an seinem Weltpunkt, außerhalb des Thron-Events mit Kuppel
   const art = island.type === 'megaTemple' ? 'megaTemple' : island.tempelArt, [n, ay, minPx] = HEILIGTUM_BILD[art], im = KB.img[n];
   const w = Math.max(HEILIGTUM_BREITE[island.type === 'megaTemple' ? 'megaTemple' : 'guardian'] * z, minPx), h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;
   ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
+  if (!thronKuppel(island.id)) return;
+  const ki = KB.img.kuppel, kw = w * 1.12, kh = kw * ki.height / ki.width;   // die Kuppel: fast durchsichtig, Rand auf dem Boden unter dem Gebäude
+  ctx.globalAlpha = .6; ctx.drawImage(kbBild('kuppel', kw * dpr), x - kw / 2, y + h * (1 - ay) * .55 - kh, kw, kh); ctx.globalAlpha = 1;
 }
+// Bilder außerhalb der Kartenliste (Herrscher-Skin, Krone, Titel-Abzeichen): einmal laden, danach neu zeichnen
+const EXTRA_BILD = {};
+function extraBild(n) { if (!EXTRA_BILD[n]) { const im = EXTRA_BILD[n] = new Image(); im.onload = () => requestRender(); im.src = 'bilder/' + n + '.webp'; } return EXTRA_BILD[n].complete && EXTRA_BILD[n].naturalWidth ? EXTRA_BILD[n] : null; }
 // Basen als KI-Bild (Alexander 7.10.): Stufe 1–100 gleichmäßig auf 15 Bilder, ALLE gleich groß (keine Größe nach Stufe); die Hauptstadt
 // über ihre Kartenstufe (burgKarte). Darunter das Namensschild bzw. bei freien die Stufen-Zahl (drawBasisSchilder). Mittlerer Zoom (wie RoK: Basen bleiben sichtbar): Basen
 // mit Besitzer nie kleiner als BASIS_MIN_PX, freie in echter Größe bis BASIS_KLEIN_PX; ganz weit (unter TOR_PUNKT_ZOOM) Übersicht wie bisher.
@@ -89,7 +95,11 @@ function drawBasisBild(island, ownerKey, z) {                                  /
   const nr = basisBildNr(baseLevelOf(island)), im = basisBild(nr); if (!im) return false;
   const h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return true;
-  ctx.drawImage(basisMip(nr, w * dpr), x - w / 2, y - h * .72, w, h);
+  const hr = rulerOwner(), sk = hr && (island.id === playerIslandId || isCapital(island.id)) && islandOwnerOf(island.id) === hr && extraBild('skin_koenigsburg');
+  if (sk) { const W = w * 1.15, H = W * sk.height / sk.width, kr = extraBild('ui_sym_krone');   // der Herrscher: Königsburg mit Goldschein, die Krone darüber
+    ctx.save(); ctx.shadowColor = 'rgba(255,210,90,.9)'; ctx.shadowBlur = Math.min(30, W * .12); ctx.drawImage(sk, x - W / 2, y - H * .72, W, H); ctx.restore();
+    if (kr) { const kw = W * .3; ctx.drawImage(kr, x - kw / 2, y - H * .72 - kw * .6, kw, kw * kr.height / kr.width); } }
+  else ctx.drawImage(basisMip(nr, w * dpr), x - w / 2, y - h * .72, w, h);
   if ((island.id === playerIslandId || isCapital(island.id)) && brennt(island.id)) drawBrand(x, y - h * .3, w / 64);   // eine geplünderte Hauptstadt brennt
   return true;
 }
@@ -112,10 +122,10 @@ function schildDaten(island) {                                                 /
            krone: island.id === playerIslandId && wer === 'player' };                // eigene Hauptstadt: Krone auf dem Wappen
 }
 // Rahmen als Ring ums Wappen (Merkliste 7): Saison- und Mitte-Rahmen als KI-Bild wie im Profil (Neuling trägt jeder: kein Ring)
-const RAHMEN_RING = { sz1: 'champion', sz2: 'grossadmiral', sz4: 'admiral', sz6: 'kapitaen', mgut: 'mitte' }, RING_BILD = {}, RING_WER = new Map();
+const RAHMEN_RING = { sz1: 'champion', sz2: 'grossadmiral', sz4: 'admiral', sz6: 'kapitaen', mgut: 'mitte', king: 'herrscher' }, RING_BILD = {}, RING_WER = new Map();
 function ringBild(fr) {                                                        // geladenes Bild oder null (lädt beim ersten Mal)
   const n = RAHMEN_RING[fr]; if (!n) return null;
-  if (!RING_BILD[fr]) { const im = RING_BILD[fr] = new Image(); im.onload = () => { SCHILD_MERK.clear(); requestRender(); }; im.src = 'bilder/ui_rahmen_' + n + '.webp'; }
+  if (!RING_BILD[fr]) { const im = RING_BILD[fr] = new Image(); im.onload = () => { SCHILD_MERK.clear(); requestRender(); }; im.src = n === 'herrscher' ? 'bilder/ui_herrscher_rahmen.webp' : 'bilder/ui_rahmen_' + n + '.webp'; }
   return RING_BILD[fr].complete && RING_BILD[fr].naturalWidth ? RING_BILD[fr] : null;
 }
 function rahmenAufKarte(who) {                                                 // angelegter Rahmen des Besitzers (je 2 s gemerkt – jedes Bild fragt danach)
@@ -287,7 +297,7 @@ function drawBrand(x, y, u) {                                                  /
 function bannerModel(island) {
   const owner = islandOwnerOf(island.id), isTemple = island.type === 'temple' || island.type === 'megaTemple';
   const scouted = scoutedIslands.has(island.id), level = anzeigeStufe(island.id);
-  const tName = island.type === 'megaTemple' ? 'Mega-Tempel' : island.guardian ? 'Wächter-Tempel' : 'Tempel';
+  const tName = island.type === 'megaTemple' ? 'Königsthron' : island.guardian ? 'Wachturm' : 'Tempel';
   const boss = bossAt(island.id);
   if (boss) return { kind: 'bot', glyph: 'attack', name: boss.name, troops: fmtCompact(boss.troops), def: null, level, temple: false, p: 4.8 };
   const tag = owner && typeof bundTagVon === 'function' ? bundTagVon(owner) : '';   // Bündnis-Kürzel: eigenes Chip vor dem Namen

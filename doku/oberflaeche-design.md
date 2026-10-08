@@ -62,8 +62,8 @@ Million Lords, Lords Mobile – „sieht aus wie ein Spiel, nicht wie eine Liste
 - Nur noch Wappen und Rahmen (Marsch-, Basis-, Ring-Skins raus). Rahmen = Titel + Ring in einem, nicht kaufbar: Saison-Rahmen
   (Platz 1–10, bis zum nächsten Saison-Ende) und Titel aus der Mitte (Herrscher „Herrscher der Meere“, gut = Gold, Straf =
   Rot). Früher Gekauftes bleibt. Weltrechner merkt Rahmen (`hbRahmen`). Test `aussehen_rahmen_test`.
-- Titel aus der Mitte: Herrscher verteilt gute Titel (Träger greift ihn seltener an) und Straf-Titel (−25 % Angriff),
-  Mitspieler als Herrscher alle 3 Min. nach Verhalten.
+- Titel: der Herrscher (Platz 1 Thron-Event) vergibt Feldherr/Burgvogt/Schatzmeister/Narr im Herrscher-Fenster;
+  Mitspieler als Herrscher nach Verhalten.
 
 ## Startseite und Ladebild
 - `index.php` dunkel/Gold im Spielstil, Felder ohne Autofill-Gelb, Regeln unter den Feldern, Auge-Knopf. KI-Titelbild

@@ -12,7 +12,7 @@ function passRewardAt(L, prem) {                          // what level L gives 
     if (!prem) return viertel ? [g('gems', 50), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 20)] : L % 4 === 0 ? [g('shards', 3)] :
         L % 3 === 0 ? [g('crate', 1)] : L % 2 === 0 ? [g('tr', 2)] : [g('coins', 3)];
     return viertel ? [g('gems', 150), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 30)] :
-        L % 4 === 0 ? [g('shards', 8)] : L % 6 === 0 ? [g('tp', 150)] : L % 3 === 0 ? [g('shield', 8)] : L % 2 === 0 ? [g('tr', 6)] : [g('coins', 12), g('gems', 10)];
+        L % 4 === 0 ? [g('shards', 8)] : L % 6 === 0 ? [g('eventMuenzen', 150)] : L % 3 === 0 ? [g('shield', 8)] : L % 2 === 0 ? [g('tr', 6)] : [g('coins', 12), g('gems', 10)];
 }
 const passMuenzen = (hp, n) => Math.max(wirtM(5000), Math.round(hp.coins)) * n;     // n Stunden Münzen (mindestens 5.000 je Stunde – wie beim Weltrechner)
 const passTruppen = (hp, n) => Math.max(wirtK(1000), Math.round(hp.troops)) * n;    // n Stunden Truppen (mindestens 1.000 je Stunde)
@@ -40,7 +40,7 @@ function passGive(who, r, aus, schl) {                    // one reward to anyon
     if (r.k === 'tr') { const t = passTruppen(hourProduction(who), n), base = b ? botCapitalOf(who) : rewardBaseId(); if (base === null || base === undefined) return '';
         if (b) islandTroops[base] = (islandTroops[base] || 0) + t; else eigeneTruppenDazu(base, t, 'pass', schl || {}); aus.push({ a: 'tr', n: t }); return '+' + fmtCompact(t) + ' Truppen'; }
     if (r.k === 'gems') { if (b) b.gems += n; else gems += n; aus.push({ a: 'gems', n }); return '+' + n + ' Edelsteine'; }
-    if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } aus.push({ a: 'tp', n }); return '+' + n + ' Thron-Punkte'; }
+    if (r.k === 'eventMuenzen') { if (b) beuteBot(who, 'eventMuenzen', n); else gibBelohnung('eventMuenzen', n); aus.push({ a: 'eventMuenzen', n }); return '+' + n + ' Event-Münzen'; }   // (statt der alten Thron-Punkte)
     if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) { aus.push({ a: 'sh', n, held: h.id }); return '+' + n + ' Splitter ' + h.name; } if (b) b.gems += n * 20; else gems += n * 20; aus.push({ a: 'gems', n: n * 20 }); return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
     if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } aus.push({ a: 'schild', n }); return 'Friedensschild ' + n + ' h'; }
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
@@ -70,7 +70,7 @@ function passKachel(r, hp) {                         // eine Belohnung als Kache
     const k = r.k, n = r.n || 1;
     if (k === 'coins') return beuteKachel({ a: 'coins', n: passMuenzen(hp, n) });
     if (k === 'tr') return beuteKachel({ a: 'tr', n: passTruppen(hp, n) });
-    if (k === 'gems' || k === 'tp') return beuteKachel({ a: k, n });
+    if (k === 'gems' || k === 'eventMuenzen') return beuteKachel({ a: k, n });
     if (k === 'shards') return beuteKachel({ a: 'sh', n });
     if (k === 'shield') return beuteKachel({ a: 'schild', n });
     if (k === 'crate') return beuteKachel({ a: 'kiste', k: 'aus', n });

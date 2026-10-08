@@ -121,7 +121,7 @@ function botUseShield(bot, why, needMs, now) {
 function botShieldNight(bot, now) {                     // bedtime: a careful person with something to lose switches one on
     const b = loadBotState()[bot.id], c = botClock(bot, now);
     if (c.hour < 22.5 || b.shieldNight === c.day) return false; b.shieldNight = c.day;                // one thought per evening
-    if (!botShieldUser(bot) || rulerOwner() === bot.id || botOwnedIslands[bot.id].size < 8) return false;
+    if (!botShieldUser(bot) || thronHalter() === bot.id || botOwnedIslands[bot.id].size < 8) return false;
     const sleepMs = (24 - c.hour + 7) * 3600000; if ((b.shieldUntil || 0) - now >= sleepMs * .8) return false;
     const own = botOwnedIslands[bot.id];
     const worried = botLosses(bot.id, 6 * 3600000, now).length > 0 || botMood(bot.id) < -.3 || pendingAttacks.some(a => a.attackerBotId !== bot.id && own.has(a.targetId));
@@ -132,7 +132,7 @@ const botCrisisCalm = {};                              // decided to ride it out
 
 function botShieldCrisis(bot, now, lost) {             // lost: [{id, str, at}] - neither holdable nor reinforceable in time
     const b = loadBotState()[bot.id], own = botOwnedIslands[bot.id], last = Math.max(...lost.map(t => t.at));
-    if (b.shieldUntil > last || rulerOwner() === bot.id || now < (botCrisisCalm[bot.id] || 0)) return false;
+    if (b.shieldUntil > last || thronHalter() === bot.id || now < (botCrisisCalm[bot.id] || 0)) return false;
     if (b.shieldWhy !== 'night' && now - (b.shieldAt || 0) < 8 * 3600000) return false;                // a crisis shield is rare, not every few hours
     const val = id => (islandLevels[id] || 1) * (islandById[id].type === 'tower' ? 1 : 4);
     let total = 0; for (const id of own) total += val(id);

@@ -68,5 +68,21 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 - Stand liegt im Spielstand auf dem Server (`openWaterAnleitung`), nie im Browser. Test `anleitung_test`.
 
 ## Offen
-- Bauherr: Punkte je Beschleuniger-Minute in `beschBenutzen` (06g, Team C) noch einhängen (`evPunkte('bau', wer, Minuten)`).
+- 11c Nr. 5: alte Event-Ranglisten/Wochen-Punkte beim Reset (prüfen, ob erledigt).
 - Helden-Tag beim Weltrechner: Ausrüstungs-Stufen zählen nur über Sterne (`hbSterne`), Kisten über neue Teile (`hbGearNeu`).
+
+## Thron-Event (Mitte, `06c-thron-mitte.js`, Test `thron_event_test`)
+- Sa 10 – So 22 Uhr (`thronFenster`, Ortszeit). Sonst Kuppel über Thron + 4 Wachtürmen (`thronKuppel`): Start (02b), Ankunft (04,
+  Truppen gehen heim), Armeen (09d), Mitspieler/Rally (03-angreifen, buendnis 03) sperren; Karte zeigt `karte_kuppel` (03b).
+- Alle 3 Min. Rangpunkte (`throneState.week`): Halter (`thronHalter`) 30, je Wachturm 15, Verstärkung beim verbündeten Halter 15.
+  Alle 10 Min. schießt jeder Wachturm außerhalb des Bündnisses des Halters 2 % (Krankenhaus wie überall). Kopfgeld auf den Halter.
+- Jedes Event startet bei 0, übrige Herrscher-Kisten verfallen. So 22 Uhr `thronAuswertung` (nur Weltrechner): `THRON_PREISE`
+  Platz 1/2/3/4–8, Teilnahme ab 500 – Münzen-Stunden + Gegenstände `b` [Art, Menge, Extra] über `evPreis` (Abholfach `src: 'thron'`,
+  Abholen ruft `gibBelohnung`; Holz direkt in den Topf; Hauptbuch-Felder em/s1/s2/besch).
+- Platz 1 = Herrscher eine Woche (`rulerOwner()` = `thronHerrscher()`): +25 % Ertrag, Skin `skin_koenigsburg` + Krone auf der Karte,
+  Rahmen `king` (ui_herrscher_rahmen), vergibt Titel (Feldherr +5 % Angriff, Burgvogt +5 % Verteidigung, Schatzmeister +10 % Ertrag,
+  Narr −5 % Marschtempo; Abzeichen über dem Namensschild, `drawTitleBadges`), verschenkt 2 epische / 5 große / 10 Kisten
+  (`herrKiste`, Befehl `thronKiste`; nicht an sich selbst; Mitspieler-Herrscher verschenken selbst, Bündnis zuerst).
+- Events-Fenster Chip „Thron“ (`evThronHtml`, grüner Punkt = läuft), Herrscher-Fenster `#herrPopup` (`renderHerr`). Thron-Shop und
+  Thron-Punkte als Währung sind weg; `earned`/`tpEarned` zählen nur noch für Saison-Rangliste und Erfolge. Pass gibt statt 150
+  Thron-Punkten 150 Event-Münzen.

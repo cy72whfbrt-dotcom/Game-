@@ -409,8 +409,8 @@ function botNoteFail(botId, targetId) { const b = loadBotState()[botId]; if (!b)
 
 function botVendetta(bot, now) { const v = loadBotState()[bot.id].vendetta; return v && now < v.until ? v : null; }
 
-function coalitionOn(now) {                                  // the throne held for 20 min: the others stop quarrelling and go for it
-    const r = rulerOwner(); return r && throneState.rulerSince && now - throneState.rulerSince > 20 * 60000 ? r : null;
+function coalitionOn(now) {                                  // im Thron-Event 20 Min. gehalten: die anderen hören auf zu streiten und gehen auf den Thron los
+    const r = thronHalter(); return r && thronLaeuft(now) && throneState.halterSeit && now - throneState.halterSeit > 20 * 60000 ? r : null;
 }
 
 function botMidPull(bot, target, ruler, now) {             // a fat Kopfgeld draws everyone to the ruler's bases
@@ -574,19 +574,16 @@ const botAct = {};                                          // botId → { next:
 
 function botActOf(botId) { return botAct[botId] || (botAct[botId] = { next: 0, plan: null }); }
 
-// A person plays to the title they wear: a Feldherr attacks more and bolder, a Feigling only goes for sure things,
-// a Burgherr can send more of each garrison out, a Verräter keeps more at home, a Schatzmeister builds more, a Bettler saves.
+// Jeder spielt nach seinem Titel: ein Feldherr greift öfter und kühner an, ein Burgvogt schickt mehr von jeder Besatzung los,
+// ein Schatzmeister baut mehr, ein Narr ist zögerlich.
 // ==============================================================================================================
 // 4) ANGREIFEN, SPÄHEN, SAMMELN – Stimmung und Titel, ein Befehl pro Zug, Wellen, der Kopf (botThink)
 // ==============================================================================================================
 const TITLE_PLAY = {
-    feldherr:  { margin: .85, tapMs: .7, commit: 1.15, hunt: 1.4 },
-    burgherr:  { commit: 1.15 },
-    verraeter: { commit: .75, risk: 0 },
-    herzog:    { tapMs: .8, commit: 1.1 },
-    narr:      { tapMs: 1.2, commit: .9 },
-    schatz:    { spend: 1.3, build: .7 },
-    bettler:   { spend: .7, build: .35 }
+    feldherr: { margin: .85, tapMs: .7, commit: 1.15, hunt: 1.4 },
+    burgvogt: { commit: 1.15 },
+    narr:     { tapMs: 1.2, commit: .9 },
+    schatz:   { spend: 1.3, build: .7 }
 };
 
 function botMood(botId) { const b = loadBotState()[botId], md = b && b.mood; return md ? md.v * Math.pow(.5, (Date.now() - md.at) / (20 * 60000)) : 0; }   // fades in ~20 min
@@ -706,7 +703,7 @@ function botHopeless(bot, target, st, atk) {        // known to be far too stron
 }
 
 function botThroneHold(bot) {                       // the ruler sends a big army from nearby into the throne while it is thin (stops once it holds ~2x their biggest base)
-    if (rulerOwner() !== bot.id || pendingSends.some(x => x.senderBotId === bot.id && !x.back && x.toId === megaTempleId)) return false;
+    if (thronHalter() !== bot.id || !thronLaeuft() || pendingSends.some(x => x.senderBotId === bot.id && !x.back && x.toId === megaTempleId)) return false;
     const m = islandById[megaTempleId], g = islandTroops[megaTempleId] || 0, thr = botThreatened(bot.id); let best = null;
     for (const id of botOwnedIslands[bot.id]) { if (id === megaTempleId || thr.has(id)) continue; const isl = islandById[id], n = Math.floor((islandTroops[id] || 0) * .6);
         if (n < Math.max(BOT_MIN_GARRISON_TO_ATTACK, g * .3) || (best && n <= best.n)) continue;
@@ -745,7 +742,7 @@ function botThink(bot) {
     if (Math.random() < .5 && botThroneHold(bot)) { botTapped(bot); saveBotState(); return; }   // just took the throne: fill it up before the next one comes
     if (AUF && Math.random() < .25 && AUF.botRohWunsch(bot.id) && botGatherField(bot)) { botTapped(bot); saveBotState(); return; }   // Holz/Stein/Eisen fehlen für die Burg: Sammler los (Paket D)
     if (Math.random() < .1 && (botBarbHunt(bot) || botDayBoss(bot))) { botTapped(bot); saveBotState(); return; }   // now and then a camp or a strike at the daily boss (that is this move's order)
-    const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: a hero only leads one, so he's a bonus, not part of the plan
+    const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = thronHalter(), thronEvent = thronLaeuft();   // several waves: a hero only leads one, so he's a bonus, not part of the plan
     const shielded = playerShielded(), now = Date.now(), shOwn = shieldedOwners(now);
     const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId)), thr = botThreatened(bot.id);
     for (const a of armies) if (a.who === bot.id && a.t != null) busy.add(a.t);                 // their own army out there is already on it
@@ -757,12 +754,13 @@ function botThink(bot) {
     const T = new Map(), sitM = new Map();                      // targetId → { target, d, sources: [{ id, have }] }
     const sitOf = (t, ow) => { let v = sitM.get(t.id); if (v === undefined) { v = botSituation(bot, st, t, ow, now); sitM.set(t.id, v); } return v; };   // (the same for every base looking at it)
     const okM = new Map(), okOf = t => { let v = okM.get(t.id); if (v === undefined) okM.set(t.id, v = !(owned.has(t.id) || (isCapital(t.id) && brennt(t.id)) || busy.has(t.id)   // eine brennende Hauptstadt gerade nicht (eben geplündert)
-        || (shOwn.has(islandOwnerOf(t.id)) && shieldCovers(t)) || bundFreund(bot.id, islandOwnerOf(t.id)))); return v; };   // anyone's Friedensschild · nie ein Bündnis-Mitglied
+        || (shOwn.has(islandOwnerOf(t.id)) && shieldCovers(t)) || bundFreund(bot.id, islandOwnerOf(t.id)) || thronKuppel(t.id, now))); return v; };   // anyone's Friedensschild · nie ein Bündnis-Mitglied · nie unter der Kuppel
     const pullM = new Map(), pullOf = t => { let v = pullM.get(t.id); if (v) return v;                // everything about a target that doesn't depend on where they look from (once per move, not per base)
         const ow = islandOwnerOf(t.id), grudge = botGrudgeOn(bot.id, ow);                          // revenge pulls them towards whoever hit them
         const k = (grudge ? 1 / (1 + grudge.n) : 1) * sitOf(t, ow) * (rally && rally.t === t.id ? .05 : 1)   // the planned big strike comes first
             * (bundZiel === t.id ? .1 : 1)                                                          // ein Bündnis-Signal „Angriff auf …“
             * (t.id === megaTempleId && ruler !== bot.id ? (ruler ? .1 : .015) : 1)                // the throne pulls - an empty one most of all (the crown is free)
+            * (t.guardian && thronEvent ? .3 : 1)                                                    // im Thron-Event: Wachtürme bringen Punkte
             * botMidPull(bot, t, ruler, now)                                                        // the Kopfgeld on the ruler
             * (isCapital(t.id) ? 1.6 : 1);                                                          // eine Hauptstadt fällt nie – nur Beute: weniger reizvoll als ein Turm
         pullM.set(t.id, v = { ow, grudge, k }); return v; };
@@ -1103,7 +1101,7 @@ function botVhCare(botId, b) {                            // Verteidigungs-Helde
     if (!Array.isArray(b.vh) || b.vh[0] !== soll[0] || b.vh[1] !== soll[1]) { b.vh = soll; vhMem = null; }
 }
 function botHeroLikes(bot) {                              // what their heroes should be good at: the moment first (the middle when they hold part of it, the ruler with a bounty on him), then their style
-    const r = rulerOwner(), mid = [...botOwnedIslands[bot.id] || []].some(id => midZoneIds.has(id));
+    const r = thronHalter(), mid = [...botOwnedIslands[bot.id] || []].some(id => midZoneIds.has(id));
     return [...(r && r !== bot.id && bountyGems() >= 300 ? ['rulerAtk'] : []), ...(mid ? ['midAtk', 'guardAtk', 'midLoss', 'templeAtk'] : []), ...(BOT_HERO_LIKES[bot.style] || [])];
 }
 
@@ -1166,7 +1164,6 @@ function botOnlinePlan(bot, now) {                                              
 }
 
 function botShop(bot) {                                  // gems and points spent the way a player would: heroes, stars, crates, gear
-    botThroneShop(bot.id);
     const b = loadBotState()[bot.id], slots = Object.keys(EQUIPMENT_DEFS);
     botPassCare(bot, b);                                 // Saison-Pass: premium (some), rewards as they climb
     botHeroCare(bot);                                    // shards → unlock, stars, skill points
@@ -1406,7 +1403,7 @@ function botUseShield(bot, why, needMs, now) {
 function botShieldNight(bot, now) {                     // bedtime: a careful person with something to lose switches one on
     const b = loadBotState()[bot.id], c = botClock(bot, now);
     if (c.hour < 22.5 || b.shieldNight === c.day) return false; b.shieldNight = c.day;                // one thought per evening
-    if (!botShieldUser(bot) || rulerOwner() === bot.id || botOwnedIslands[bot.id].size < 8) return false;
+    if (!botShieldUser(bot) || thronHalter() === bot.id || botOwnedIslands[bot.id].size < 8) return false;
     const sleepMs = (24 - c.hour + 7) * 3600000; if ((b.shieldUntil || 0) - now >= sleepMs * .8) return false;
     const own = botOwnedIslands[bot.id];
     const worried = botLosses(bot.id, 6 * 3600000, now).length > 0 || botMood(bot.id) < -.3 || pendingAttacks.some(a => a.attackerBotId !== bot.id && own.has(a.targetId));
@@ -1417,7 +1414,7 @@ const botCrisisCalm = {};                              // decided to ride it out
 
 function botShieldCrisis(bot, now, lost) {             // lost: [{id, str, at}] - neither holdable nor reinforceable in time
     const b = loadBotState()[bot.id], own = botOwnedIslands[bot.id], last = Math.max(...lost.map(t => t.at));
-    if (b.shieldUntil > last || rulerOwner() === bot.id || now < (botCrisisCalm[bot.id] || 0)) return false;
+    if (b.shieldUntil > last || thronHalter() === bot.id || now < (botCrisisCalm[bot.id] || 0)) return false;
     if (b.shieldWhy !== 'night' && now - (b.shieldAt || 0) < 8 * 3600000) return false;                // a crisis shield is rare, not every few hours
     const val = id => (islandLevels[id] || 1) * (islandById[id].type === 'tower' ? 1 : 4);
     let total = 0; for (const id of own) total += val(id);
@@ -1657,10 +1654,10 @@ function botLook(botId) {                            // → { frame, title }: Ra
     if (b.mensch) return rahmenVon(botId, b.lookFrame);   // echter Spieler: was er angelegt hat (nur Rahmen, die er hat – der Weltrechner hält sie gegen sein Hauptbuch)
     if (!b.lookMig) { const own = botOwnedIslands[botId], r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)), st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.filter(k => !BOT_MIN_AUSNAHME.includes(k)).map(k => b.city.levels[k] || 0));   // once: what they had by rank and deeds stays theirs
         const ach = { cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, emma10: (st.pvp || 0) >= 10, city5: cityMin >= 5, throne: !!st.ruled };
-        b.frames = [...new Set([...(b.frames || []), ...RAHMEN.filter(x => !x.frei && !x.buy && !x.platz && (x.ach ? ach[x.ach] || (b.achLook || []).includes(x.ach) : (x.rank || 0) <= r)).map(x => x.id)])]; b.lookMig = 1; saveBotState(); }
-    // sie tragen, was sie haben: einen Saison-Rahmen zuerst, dann den Thron-Rahmen, sonst einen ihrer drei besten (jeder hat seinen Liebling)
-    const own = RAHMEN.filter(x => rahmenHat(botId, x)), sz = own.find(x => x.platz), idn = parseInt(botId.slice(3), 10) || 0, alt = own.filter(x => !x.platz && x.id !== 'throne');
-    const pick = sz || own.find(x => x.id === 'throne') || alt[alt.length - 1 - Math.floor(mulberry32(idn * 31 + alt.length)() * Math.min(3, alt.length))];
+        b.frames = [...new Set([...(b.frames || []), ...RAHMEN.filter(x => !x.frei && !x.platz && (x.ach ? ach[x.ach] || (b.achLook || []).includes(x.ach) : (x.rank || 0) <= r)).map(x => x.id)])]; b.lookMig = 1; saveBotState(); }
+    // sie tragen, was sie haben: einen Saison-Rahmen zuerst, sonst einen ihrer drei besten (jeder hat seinen Liebling)
+    const own = RAHMEN.filter(x => rahmenHat(botId, x)), sz = own.find(x => x.platz), idn = parseInt(botId.slice(3), 10) || 0, alt = own.filter(x => !x.platz);
+    const pick = sz || alt[alt.length - 1 - Math.floor(mulberry32(idn * 31 + alt.length)() * Math.min(3, alt.length))];
     return rahmenVon(botId, pick ? pick.id : 'bronze');
 }
 // Erfolge: the same list as yours (ACHIEVEMENTS), counted from their own numbers - each one collected once for its gems, one at a time like a person tapping
@@ -1703,13 +1700,6 @@ function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return;
 
 // Kopfgeld: the prize lands where yours does - gems and coins
 function botBountyReward(botId, gems, coins) { const b = loadBotState()[botId]; if (!b) return; b.gems = (b.gems || 0) + gems; botCoins[botId] = (botCoins[botId] || 0) + coins; botStat(botId, 'bounty', gems); }
-
-function botThroneShop(botId) {                       // the others spend their points the way a player would
-    const b = loadBotState()[botId]; if (!b) return;
-    for (let n = 0; n < 5; n++) { const r = Math.random();
-        const id = r < .45 ? 'troops' : r < .7 ? 'coins' : r < .95 ? 'crate' : 'royal';   // (Gems gibt es im Thron-Shop nicht mehr)
-        const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
-}
 
 function botNeulingWeg(botId, gegner) {         // greift einen echten Spieler an (Basis, Armee, Feld, Rally): sein Anfängerschutz ist vorbei
     if (!window.WELT || !botId || botId === 'player' || !(gegner === 'player' || (gegner && botById[gegner] && botById[gegner].mensch))) return;

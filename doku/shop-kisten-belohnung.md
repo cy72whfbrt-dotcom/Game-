@@ -8,7 +8,7 @@ Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (
 ## Regeln
 - BELOHNUNG = BILD + ZAHL (Alexander 8.10., immer behalten): jede Belohnung/jeder Preis/jede Beute als Bild-Kachel
   (`ui_kachel_*` je Seltenheit, KI-Symbol `bilder/beute_*.webp`, Menge unten rechts) – nie nur Text „+120.000 Münzen“.
-  Gilt in Shop, Aufgaben, Erfolgen, Tagesbelohnung, Abholfach, Pass, Stufe, Kriegsherr, Event-Preisen, Thron-Shop,
+  Gilt in Shop, Aufgaben, Erfolgen, Tagesbelohnung, Abholfach, Pass, Stufe, Kriegsherr, Event-Preisen,
   Kampfbericht (Rohstoffe). Bilder schneiden: `werkzeuge/beute_bilder_schneiden.py`.
 - Jeder Kauf ab 500 Edelsteinen erst nach „Wirklich? N Edelsteine“ (zweiter Tipp nach > 450 ms, binnen 4 s,
   `gemsWirklich`, `gemsArmed`) – auch Beschleunigen, Forschung fertig, Premium-Pass, Schild 700, Teleport.
@@ -35,7 +35,7 @@ Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (
 - Legendär/Mythisch nur durch Zusammenlegen (3 → 1). Epische Helden-Kiste: Bündnis-Geschenk (siehe `buendnis.md`).
 - Öffnen: Belohnungs-Fenster mit KI-Kiste (`kiste_*_zu/offen.webp`), wackelt, geht auf, Strahlen, Kacheln nacheinander;
   Tipp = Endbild, „OK“ schließt. Test `belohnung_test`.
-- Aufgabe „Öffne 3 Kisten“ zählt jede Kiste (Shop, Helden, Abholfach, Pass, Thron-Shop, Belohnungen).
+- Aufgabe „Öffne 3 Kisten“ zählt jede Kiste (Shop, Helden, Abholfach, Pass, Belohnungen).
 
 ## Shop (ein Fenster, Schaufenster-Stil)
 - Reiter: Kisten · Event (nur Event-Münzen: Schild 8/24 Std 600/1.400, Teleporter 1.000, Beschleuniger, Schlüssel; Woche-Limit,
@@ -43,15 +43,13 @@ Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (
   ist) · Markt. Kein Thron-Reiter mehr. Oben Edelsteine + Event-Münzen. Gruppen mit Zwischenüberschrift (`.sort-kopf`), 3 Spalten. Waren als Karten in Seltenheitsfarbe, Preis-Knopf unten (Gold = Edelsteine, Navy =
   Thron-Punkte, zu wenig = grau mit roter Zahl). Am Handy alle Kisten ohne Scrollen. CSS-Block in spielseite/04.
 - Rucksack: Teleporter, Schilde u. a. Gegenstände (siehe `teleport-schild-rucksack.md`).
-- Thron-Shop (Thron-Punkte): Münzen/Truppen = 2 Std. eigener Ertrag (`THRONE_STUNDEN`), Kisten, keine Edelsteine, kein
-  Rahmen mehr. Hauptbuch rechnet je Kauf ebenso (`muenzGutscheine`, `truppenPruefen` „thron“).
 - Wandernder Händler (`haendler.js`, Welt-Teil `openWaterHaendler`): alle 2–4 Std. für 30–60 Min., 3–4 von 5 Waren
   (Splitter, blaue Kiste, Sammel-Beschleuniger, Schild 2 Std., Söldner), je 1× pro Spieler und Besuch, nur für Münzen
   (n Stunden eigener Ertrag). Befehl `haendler`, Ware als Nachricht `haendlerWare` ins Abholfach. Mitspieler kaufen auch.
 - Markt: siehe `stadt-burg-gebaeude.md`.
 
 ## Abholfach (Events → Abholen)
-- Preise, Geschenke, Event-Stufen, Händler-Waren, umgetauschte Thron-Punkte landen hier und müssen abgeholt werden.
+- Preise, Geschenke, Event-Stufen, Händler-Waren landen hier und müssen abgeholt werden.
   Quellen u. a. „Geschenk“ (Admin), „Wochen-Event“, „haendler“. Admin-Truppen kommen beim Abholen in die Hauptstadt.
 - Der rote Punkt am Events-Knopf öffnet zuerst „Abholen“, wenn dort etwas liegt.
 

@@ -23,7 +23,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const gate = islands.find(i => i.type === 'gate' && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && (islandsByLandmass[i.landmassId] || []).filter(t => t.type === 'tower' && !islandOwnerOf(t.id)).length >= 2);
       const turm = frei(i => i.type === 'tower' && i.landmassId === gate.landmassId), wt = frei(i => i.guardian), thron = islandById[megaTempleId];
       const r = t => bundRallyReiz(t, null, { x: t.x + 1000, y: t.y });
-      out.reiz = { turm: r(turm), thron: r(thron), waechter: r(wt), tor: r(gate), turmBesetzt: bundRallyReiz(turm, Z.id, { x: turm.x + 1000, y: turm.y }) };
+      const tfE = thronFenster; thronFenster = n => ({ start: n - 1000, end: n + 864e5 });   // im Thron-Event (sonst Kuppel)
+      out.reiz = { turm: r(turm), thron: r(thron), waechter: r(wt), tor: r(gate), turmBesetzt: bundRallyReiz(turm, Z.id, { x: turm.x + 1000, y: turm.y }) }; thronFenster = tfE;
       // 2) Rally-Plan auf das freie Tor: A und E haben je einen Turm in seiner Gegend, A allein zu schwach, zusammen stark genug
       const L = gate.landmassId, [tA, tE] = (islandsByLandmass[L] || []).filter(t => t.type === 'tower' && !islandOwnerOf(t.id));
       geben(A.id, tA.id, 100000); geben(E.id, tE.id, 200000);

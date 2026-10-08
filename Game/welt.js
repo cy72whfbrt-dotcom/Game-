@@ -93,7 +93,7 @@
         openWaterPendingAttacks(v, d) { for (const a of v || []) { if (d === 'c') { if (a.attackerBotId === ICH) a.attackerBotId = null; } else if (!a.attackerBotId) a.attackerBotId = ICH; } return v; },
         openWaterPendingSends(v, d) { for (const a of v || []) { if (d === 'c') { if (a.senderBotId === ICH) a.senderBotId = null; } else if (!a.senderBotId) a.senderBotId = ICH; } return v; },
         openWaterTitles(v, d) { if (!v) return v; const t = tausch(d); v.ruler = t(v.ruler); for (const k in v.by || {}) v.by[k] = t(v.by[k]); return v; },
-        openWaterThrone(v, d) { if (!v) return v; v.ruler = tausch(d)(v.ruler); schluesselTausch(v.week, d); return v; },
+        openWaterThrone(v, d) { if (!v) return v; const t = tausch(d); v.halter = t(v.halter); if (v.herr) v.herr.who = t(v.herr.who); for (const e of v.letzte || []) e[0] = t(e[0]); schluesselTausch(v.week, d); return v; },
         openWaterBounty(v, d) { if (v) v.ruler = tausch(d)(v.ruler); return v; },
         openWaterFields(v, d) { const t = tausch(d); for (const k in v || {}) if (v[k] && v[k].occ) v[k].occ.who = t(v[k].occ.who); return v; },
         openWaterFieldMarches(v, d) { const t = tausch(d); for (const m of v || []) m.who = t(m.who); return v; },
@@ -148,7 +148,7 @@
             if (k === 'openWaterBotCoins') continue;
             let v = P(teile[k]);
             if (UMRECHNEN[k] && v) v = UMRECHNEN[k](v, 'c');
-            if (k === 'openWaterThrone' && v) { const m = P(S.daten.openWaterThroneMein) || {}; v.pts = m.pts || 0; v.earned = m.earned || 0; }
+            if (k === 'openWaterThrone' && v) { const m = P(S.daten.openWaterThroneMein) || {}; v.earned = m.earned || 0; }
             S.roh(k, v === null ? teile[k] : J(v)); geaendert.add(k);
         }
         if ('openWaterBotOwnedIslands' in teile) {
@@ -190,7 +190,7 @@
             else if (k === 'openWaterBotOwnedIslands') { v = v || {}; v[ICH] = P(d.openWaterOwnedIslands) || []; }
             else if (k === 'openWaterBotState') { v = UMRECHNEN.openWaterBotState(v || {}, 'w'); v[ICH] = profilZuBot(meinProfil(), v[ICH]); v[ICH].capital = parseInt(d.openWaterPlayerIslandId, 10); }
             else if (k === 'openWaterBotCoins') { v = v || {}; v[ICH] = parseFloat(d.openWaterCoins) || 0; }
-            else if (k === 'openWaterThrone' && v) { delete v.pts; delete v.earned; v = UMRECHNEN[k](v, 'w'); }
+            else if (k === 'openWaterThrone' && v) { delete v.earned; v = UMRECHNEN[k](v, 'w'); }
             else if (k === 'openWaterPendingRetreats') {   // deine Rückzüge (die der anderen laufen als "Senden zurück")
                 v = (v || []).map(r => Object.assign({}, r, { owner: ICH }));
             }
@@ -229,11 +229,11 @@
             hs: P(d.openWaterHeroes2) || {}, shieldUntil: parseFloat(d.openWaterShield) || 0,
             fo: city.fo || {}, res: P(d.openWaterRes) || null,   // Paket D: Forschung, Rohstoffe (Burg-Stufe steht in city.levels.keep)
             neuBis: typeof neulingBis === 'function' ? neulingBis() : 0,
-            look: { frame: look.frame || null, frames: look.frames || [], titles: look.titles || [], throne: !!(look.bought && look.bought.throne) },   // (Rahmen: angelegt + was er schon hat)
+            look: { frame: look.frame || null, frames: look.frames || [], titles: look.titles || [] },   // (Rahmen: angelegt + was er schon hat)
             saison: parseInt(d.openWaterSaisonMein, 10) || 1,   // Welt-Saison dieses Spielstands (ein Profil von vor dem Reset zählt nicht)
-            stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, tp: thr.pts || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
+            stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
             gg: gegenstProfil(P(d.openWaterGegenst)),   // Event-Münzen, Schlüssel, Beschleuniger (Minuten) – Hauptbuch hbGegenst
-            crest: P(d.openWaterCrest)   // (tp: Thron-Punkte im Geldbeutel – nur für die Kappe beim Saison-Reset, 10d hbThronReset)
+            crest: P(d.openWaterCrest)
         };
     }
     // Mitspieler-Datensatz für einen echten Spieler: Kampfwerte aus seinem Profil, Welt-Felder (Hauptstadt, Groll …) bleiben.
@@ -243,11 +243,11 @@
     function profilZuBot(p, alt, id) {
         const b = profilZuBotRoh(p, alt);
         if (SYSTEM && id && typeof W.klemmen === 'function') { try { W.klemmen(id, b, p || {}, alt); } catch (e) { console.warn('Hauptbuch:', e); } }
-        else if (alt && alt.hbK) { b.hbK = 1; for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles', 'throneLook']) if (alt[k] !== undefined) b[k] = alt[k]; }
+        else if (alt && alt.hbK) { b.hbK = 1; for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles']) if (alt[k] !== undefined) b[k] = alt[k]; }
         return b;
     }
     function profilZuBotRoh(p, alt) {
-        const b = Object.assign({ lvl: 1, xp: 0, sp: 0, gems: 0, salvage: 0, tp: 0, pts: 0 }, alt || {});
+        const b = Object.assign({ lvl: 1, xp: 0, sp: 0, gems: 0, salvage: 0, pts: 0 }, alt || {});
         p = p || {};
         b.mensch = 1; b.v2 = 1; b.lookMig = 1;
         b.lvl = p.lvl || b.lvl || 1;
@@ -266,7 +266,7 @@
         b.shields = { 2: 0, 8: 0, 24: 0 }; b.shieldUntil = alt && alt.schildAlt && Math.abs(ps - alt.schildAlt) < 60000 ? 0 : ps;   // nur genau der gefallene Schild bleibt aus – ein neu eingeschalteter gilt (auch kürzer)
         b.neuBis = Math.max(0, Math.min(+p.neuBis || 0, jetzt + 48 * 3600000, alt && alt.neuBis !== undefined ? +alt.neuBis || 0 : Infinity));
         const lk = p.look || {};
-        b.frames = Array.isArray(lk.frames) ? lk.frames.slice(0, 60) : lk.frame ? [lk.frame] : []; b.titles = Array.isArray(lk.titles) ? lk.titles.slice(0, 60) : lk.title ? [lk.title] : []; b.throneLook = lk.throne ? 1 : 0;   // (altes Profil ohne Listen: der angelegte wie bisher; beim Weltrechner gegen das Hauptbuch geklemmt: hbRahmen)
+        b.frames = Array.isArray(lk.frames) ? lk.frames.slice(0, 60) : lk.frame ? [lk.frame] : []; b.titles = Array.isArray(lk.titles) ? lk.titles.slice(0, 60) : lk.title ? [lk.title] : [];   // (altes Profil ohne Listen: der angelegte wie bisher; beim Weltrechner gegen das Hauptbuch geklemmt: hbRahmen)
         b.lookFrame = lk.frame || null;
         const st = p.stats || {};
         b.stats = Object.assign({}, b.stats || {}, { caps: st.captures || 0, pvp: st.pvpWins || 0, defs: st.defends || 0, bosses: st.bosses || 0,
@@ -316,7 +316,7 @@
 
     // Thron: dein privater Teil (Thron-Punkte im Geldbeutel) wird abgespalten
     S.beimSetzen = function (k) {
-        if (k === 'openWaterThrone') { const v = P(S.daten[k]); if (v) S.privat('openWaterThroneMein', J({ pts: v.pts || 0, earned: v.earned || 0 })); }
+        if (k === 'openWaterThrone') { const v = P(S.daten[k]); if (v) S.privat('openWaterThroneMein', J({ earned: v.earned || 0 })); }
     };
 
     // ===================================================================================================
@@ -333,7 +333,7 @@
         const b = typeof botState !== 'undefined' && botState && botState[id];
         const sh = {}; if (b && b.hs) for (const h in b.hs) sh[h] = b.hs[h].sh || 0;
         const res = b && b.res ? { h: b.res.h || 0, s: b.res.s || 0, e: b.res.e || 0 } : null;   // Paket D: Holz, Stein, Eisen (null: noch keine – 3B: sonst kämen die Start-Rohstoffe doppelt an)
-        return { coins: (typeof botCoins !== 'undefined' && botCoins[id]) || 0, gems: b ? b.gems || 0 : 0, tp: b ? b.tp || 0 : 0, xp: b ? b.xpNeu || 0 : 0, wounded: b ? b.wounded || 0 : 0, sh, res, stats: b ? Object.assign({}, b.stats || {}) : {} };
+        return { coins: (typeof botCoins !== 'undefined' && botCoins[id]) || 0, gems: b ? b.gems || 0 : 0, tp: b ? (b.stats || {}).tpEarned || 0 : 0, xp: b ? b.xpNeu || 0 : 0, wounded: b ? b.wounded || 0 : 0, sh, res, stats: b ? Object.assign({}, b.stats || {}) : {} };
     }
     // (Weltrechner) was hat sich bei den anderen Menschen getan? → Nachrichten
     function deltasSammeln() {

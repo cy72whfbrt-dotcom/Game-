@@ -300,7 +300,7 @@ setTimeout(() => {                               // right after boot (everything
     if (window.WELT && !WELT.leiter && !SYSTEM && leaveAtBoot && Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) {
         // Zuschauer (die Welt rechnet der Server): die Begrüßung kommt SOFORT nach dem Ladebild. Was in der Abwesenheit
         // passiert ist (Münzen, Truppen, Berichte), kommt mit den ersten Pulsen – die Liste füllt sich dann live nach.
-        welcomeFrom = Object.assign({ live: { c0: leaveAtBoot.coins || 0, t0: leaveAtBoot.troops || 0, tp0: throneState.pts || 0 } }, leaveAtBoot);
+        welcomeFrom = Object.assign({ live: { c0: leaveAtBoot.coins || 0, t0: leaveAtBoot.troops || 0, tp0: throneState.earned || 0 } }, leaveAtBoot);
     }
     else if (window.WELT) { if (WELT.leiter && WELT.weltZeit && Date.now() - WELT.weltZeit > 60000) weltNachholen(WELT.weltZeit); }
     else if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
@@ -308,18 +308,18 @@ setTimeout(() => {                               // right after boot (everything
         const c0 = coins, t0 = empireSnapshot().troops;
         if (ticks > 0) produceTicks(ticks);
         const dc = coins - c0, dt = empireSnapshot().troops - t0;
-        const tp0 = throneState.pts || 0, nPts = Math.floor(away / THRONE_TICK_MS);        // the throne went on too: points and volleys for the time away
+        const tp0 = throneState.earned || 0, nPts = Math.floor(away / THRONE_TICK_MS);        // the throne went on too: points and volleys for the time away
         for (let i = 0; i < nPts; i++) throneAward(true, Date.now() - away + (i + 1) * THRONE_TICK_MS);
-        const vol = throneVolley(Math.floor(away / THRONE_FIRE_MS), true), dtp = (throneState.pts || 0) - tp0; saveThrone();
+        const vol = throneVolley(Math.floor(away / THRONE_FIRE_MS), true), dtp = (throneState.earned || 0) - tp0; saveThrone();
         if (dc > 0) warStat('offCoins', dc); if (dt > 0) warStat('offTroops', dt);
-        if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS, thronePts: dtp, throneHit: vol && rulerOwner() === 'player' ? vol : null } }, leaveAtBoot);
+        if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS, thronePts: dtp, throneHit: vol && thronHalter() === 'player' ? vol : null } }, leaveAtBoot);
     }
     saveLeave(); setInterval(saveLeave, 30000);
 }, 0);
 window.addEventListener('pagehide', saveLeave);
 let hiddenAt = 0, hiddenSnap = null, hiddenTp = 0;
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = empireSnapshot(); hiddenTp = throneState.pts || 0; saveLeave(); return; }
+    if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = empireSnapshot(); hiddenTp = throneState.earned || 0; saveLeave(); return; }
     if (hiddenAt && hiddenSnap && Date.now() - hiddenAt >= AWAY_MIN_MS) {              // the tab kept running: just show what happened since it was hidden
         const snap = hiddenSnap;
         if (window.WELT && !WELT.leiter && !SYSTEM) snap.live = { c0: snap.coins || 0, t0: snap.troops || 0, tp0: hiddenTp };   // Zuschauer: Liste füllt sich mit den Pulsen nach
@@ -331,7 +331,7 @@ function fmtAway(ms) { const m = Math.round(ms / 60000), d = Math.floor(m / 1440
     return d ? d + (d === 1 ? ' Tag' : ' Tage') + (hh ? ' ' + hh + ' Std.' : '') : hh ? hh + ' Std.' + (mm ? ' ' + mm + ' Min.' : '') : mm + ' Min.'; }
 function welcomeRows(from) {
     const rows = [], now = empireSnapshot(), log = combatLog.filter(e => e.at >= from.at);
-    const lv = from.live, pr = lv ? { coins: Math.max(0, coins - lv.c0), troops: Math.max(0, now.troops - lv.t0), capped: false, thronePts: Math.max(0, (throneState.pts || 0) - lv.tp0), throneHit: null } : from.produced;
+    const lv = from.live, pr = lv ? { coins: Math.max(0, coins - lv.c0), troops: Math.max(0, now.troops - lv.t0), capped: false, thronePts: Math.max(0, (throneState.earned || 0) - lv.tp0), throneHit: null } : from.produced;
     if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' Münzen · +' + fmtCompact(pr.troops) + ' Truppen']);
     if (pr && pr.thronePts > 0) rows.push(['crown', 'Am Thron', '+' + fmtNum(pr.thronePts) + ' Thron-Punkte']);
     if (pr && pr.throneHit) rows.push(['attack', 'Beschuss auf den Thron', fmtCompact(pr.throneHit.loss) + ' getroffen · ' + fmtCompact(pr.throneHit.w) + ' im Krankenhaus']);

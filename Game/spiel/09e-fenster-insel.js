@@ -27,7 +27,7 @@ let previewShownAt = 0; // guards against a stray click landing on the
 // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
 function isUiElement(target) {
   return !!(target && target.closest && target.closest(
-    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#rucksackPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
+    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#herrPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#rucksackPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
 }
 const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', rucksackPopup: 'rucksackBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
 function isPanelOpen(el) { return el.classList.contains('is-open'); }
@@ -52,7 +52,6 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeLevelUpModal()) return;
   if (closeDailyModal()) return;                                                  // the modals lie above the full-screen sheets and the town
   if (!document.getElementById('rewardModal').hidden) { document.getElementById('rewardModalBtn').click(); return; }
-  if (!document.getElementById('titleModal').hidden) { document.getElementById('titleModal').hidden = true; return; }
   if (!document.getElementById('lookSheet').hidden) return closeLookSheet();      // the full-screen sheets lie above everything else
   if (!document.getElementById('heroHall').hidden) return closeHeroHall();
   if (!barbSheetEl.hidden) return closeBarbSheet();
@@ -63,7 +62,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn'],['rucksackPopup','rucksackCloseBtn']])
+  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['herrPopup','herrCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn'],['rucksackPopup','rucksackCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -87,6 +86,7 @@ function closeAllPopups() {
     closePanel(shopPopup);
     closePanel(document.getElementById('rucksackPopup'));
     closePanel(document.getElementById('rulerPopup'));
+    closePanel(document.getElementById('herrPopup'));
     closePanel(document.getElementById('rankPopup'));
     if (!document.getElementById('lookSheet').hidden) closeLookSheet();
     if (!document.getElementById('heroHall').hidden) closeHeroHall();
