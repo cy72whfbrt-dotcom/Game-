@@ -8,8 +8,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
   await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof AUF !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});   // (unter Last länger warten, bis das Spiel steht)
   const v = await p.evaluate(() => {
+    for (const s of Object.values(loadBotState())) if (s && s.city) s.city.levels.heroes = Math.max(1, s.city.levels.heroes || 0);   // Helden erst mit Heldenhalle (Merkliste 21)
     const frei = x => Object.keys((loadBotState()[x.id] || {}).hs || {}).filter(id => heroOwned(x.id, id) && !heroBusy(x.id, id));
-    const A = BOT_DEFS.find(x => !x.mensch && botCapitalOf(x.id) != null && frei(x).length >= 4); if (!A) return { fehler: 'kein Mitspieler mit 4 Helden' };
+    let A = BOT_DEFS.find(x => !x.mensch && botCapitalOf(x.id) != null && frei(x).length >= 4);
+    if (!A) { A = BOT_DEFS.find(x => !x.mensch && botCapitalOf(x.id) != null && (loadBotState()[x.id] || {}).hs && BOT_DEFS.some(y => y.id !== x.id && !y.mensch && botCapitalOf(y.id) != null && !bundFreund(x.id, y.id) && routeFor(islandById[botCapitalOf(x.id)].landmassId, islandById[botCapitalOf(y.id)].landmassId, x.id)));   // (ohne Halle schalten Mitspieler keine Helden frei: 4 geben)
+      if (A) for (const h of HEROES.filter(h => !heroBusy(A.id, h.id)).slice(0, 4)) Object.assign(heroSt(A.id, h.id), { own: true, q: 4 }); }
+    if (!A || frei(A).length < 4) return { fehler: 'kein Mitspieler mit 4 Helden' };
     const [h1, h2, h3, h4] = frei(A), src = botCapitalOf(A.id); islandTroops[src] = 1e8; botCoins[A.id] = 1e15;   // (genug für die Maut)
     const Z = BOT_DEFS.find(x => x.id !== A.id && !x.mensch && botCapitalOf(x.id) != null && !bundFreund(A.id, x.id) && routeFor(islandById[src].landmassId, islandById[botCapitalOf(x.id)].landmassId, A.id));
     const ziel = botCapitalOf(Z.id); islandTroops[ziel] = 4e7; botCoins[Z.id] = 1e12;

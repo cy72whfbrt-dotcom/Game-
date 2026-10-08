@@ -23,7 +23,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const s0 = saison, leben = start => { saison = { nr: 2, start, ende: now + 50 * 864e5 }; dayBoss = null; return [dbossEnsure().max, drNeu({ start: now, end: now + 36e5 }).max]; };
     const anfang = leben(now - 36e5), spaeter = leben(now - 4 * 864e5); saison = { nr: 1, start: now - 36e5, ende: now + 50 * 864e5 }; dayBoss = null; const erste = [dbossEnsure().max];
     for (const k in islandTroops) delete islandTroops[k]; Object.assign(islandTroops, tr0); saison = s0; saisonSpeichern();
-    // 5) Tagesboss gestern nicht gefallen: alle, die getroffen haben, bekommen etwas Kleines – einmal
+    // 5) Tagesboss gestern nicht gefallen: kein Preis mehr (Merkliste 33 – die Belohnung gab es schon je Angriff)
     const X = BOT_DEFS.find(x => !x.mensch && loadBotState()[x.id]).id, gx = loadBotState()[X].gems || 0, ib0 = inboxList().filter(x => x.src === 'boss').length;
     dayBoss = { d: 'gestern', k: 'kraken', name: 'Testboss', x: 0, y: 0, lm: 0, hp: 100, max: 1000, dmg: { player: 50, [X]: 30 }, fell: 0 };
     dbossEnsure(); dbossEnsure();
@@ -58,8 +58,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(/Saison-Pass/.test(r.pass) && !/Saison-Pass \d/.test(r.pass) && !/(^|[^-])Saison \d/.test(r.pass), 'Pass heißt „Saison-Pass“ ohne Nummer (keine zweite Saison-Zahl)', r.pass.slice(0, 80));
   ok(r.anfang[0] === 1e5 && r.anfang[1] === 5e4, 'Erste 3 Tage einer neuen Saison: Tagesboss 100.000, Drache 50.000 Leben (Untergrenze nach 5.000 Start-Truppen)', r.anfang);
   ok(r.spaeter[0] === 28000 && r.spaeter[1] === 5600 && r.erste[0] === 28000, 'Danach (und in der allerersten Saison) wie immer: 50 Mio. / 10 Mio. × WIRTSCHAFT_KOSTEN (28.000 / 5.600)', { spaeter: r.spaeter, erste: r.erste });
-  ok(r.trost.length === 1 && r.trost[0][0] === 15 && r.trost[0][1] === 2 && r.trost[0][2] === -1 && r.ib === 1 && r.gx === 15, 'Tagesboss entkommen: alle, die getroffen haben, bekommen etwas Kleines wie beim Drachen – nur einmal', { trost: r.trost, neu: r.ib, mitspielerGems: r.gx });
-  ok(r.gefallen === 0, 'Gefallener Boss: kein Trostpreis (er hat schon nach Rang bezahlt)', r.gefallen);
+  ok(r.trost.length === 0 && r.ib === 0 && r.gx === 0, 'Tagesboss entkommen: kein Extra-Preis mehr (Merkliste 33: Belohnung je Angriff + „Boss fällt“)', { trost: r.trost, neu: r.ib, mitspielerGems: r.gx });
+  ok(r.gefallen === 0, 'Gefallener Boss: kein Trostpreis (er hat schon bezahlt)', r.gefallen);
   ok(r.schutzY > 47.9 && r.schutzY <= 48 && r.schutzIch > 47.9 && r.schutzIch <= 48, 'Reset: 48 Std. Anfängerschutz für alle echten Spieler – auch ohne Basis', { ohneBasis: r.schutzY, du: r.schutzIch });
   ok(r.lager.ich === 0 && r.lager.x === 0 && r.lager.gespeichert === 0 && r.lager.heute === 3 && r.lager.vor > 0 && r.lager.nach === 0, 'Reset: Lager-Fortschritt für alle wieder ab Stufe 1, alte Lager weg (Zähler von heute bleiben)', r.lager);
   ok(r.aerger[0] === 1 && r.aerger[1] === 0, 'Reset: der Ärger der Mitspieler (Hauptstadt/Truppen nach Lage) ist vergessen', r.aerger);

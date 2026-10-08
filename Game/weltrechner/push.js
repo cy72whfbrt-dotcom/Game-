@@ -120,6 +120,7 @@ const PRO_SPIELER_MS = 60000;     // höchstens 1 Benachrichtigung pro Minute un
 const SAMMELN_MS = 4000;          // kurz warten: eine Angriffswelle aus mehreren Basen wird EINE Nachricht
 const ABOS_MS = 60000;            // Abo-Liste höchstens jede Minute neu vom Server holen
 const ALT_MS = 10 * 60000;        // ältere Meldungen verfallen
+const SAMMEL_WAS = [['gold', 'Münzen'], ['gem', 'Edelsteine'], ['holz', 'Holz'], ['stein', 'Stein'], ['eisen', 'Eisen']];   // Feld-Art → Wort
 
 function minuten(ms) { const m = Math.floor(ms / 60000); return m < 1 ? 'weniger als 1 Minute' : m === 1 ? '1 Minute' : m + ' Minuten'; }
 // Aus den gesammelten Meldungen eines Spielers EINE Benachrichtigung bauen (kurz, deutsch, ohne Fachwörter)
@@ -138,8 +139,8 @@ function nachrichtBauen(liste, jetzt) {
     else if (aus.length) { const wer = [...new Set(aus.map(s => s.von))]; teile.push(aus.length + ' deiner Basen wurden ausgespäht (' + wer.slice(0, 3).join(', ') + (wer.length > 3 ? ' …' : '') + ') – rechne mit Angriffen.'); }
     const boss = liste.filter(e => e.art === 'boss'), sammler = liste.filter(e => e.art === 'sammler'), schild = liste.filter(e => e.art === 'schild');
     if (boss.length) teile.push(boss.map(b => b.von + ' ist erschienen (' + b.basis + ').').join(' '));
-    if (sammler.length) { const g = sammler.filter(x => x.was === 'gem').reduce((a, x) => a + x.menge, 0), c = sammler.filter(x => x.was !== 'gem').reduce((a, x) => a + x.menge, 0);
-        teile.push('Deine Sammler sind zurück: ' + [c ? '+' + Math.round(c).toLocaleString('de-DE') + ' Münzen' : '', g ? '+' + Math.round(g).toLocaleString('de-DE') + ' Edelsteine' : ''].filter(Boolean).join(', ') + '.'); }
+    if (sammler.length) { const sum = k => sammler.filter(x => (x.was || 'gold') === k).reduce((a, x) => a + x.menge, 0);   // je Feld-Art zusammen (Wörter wie FIELD_KINDS.what)
+        teile.push('Deine Sammler sind zurück: ' + SAMMEL_WAS.map(([k, w]) => { const n = Math.round(sum(k)); return n ? '+' + n.toLocaleString('de-DE') + ' ' + w : ''; }).filter(Boolean).join(', ') + '.'); }
     if (schild.length) teile.push('Dein Friedensschild läuft in ' + minuten(schild[0].bis - jetzt) + ' ab.');
     const invasion = liste.filter(e => e.art === 'invasion'), drache = liste.filter(e => e.art === 'drache');
     if (invasion.length) teile.push('Barbaren-Invasion beginnt in ' + minuten(Math.min(...invasion.map(e => e.ankunft)) - jetzt) + ' – stärke deine Basen!');

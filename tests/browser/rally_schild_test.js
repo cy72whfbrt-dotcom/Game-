@@ -28,6 +28,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       try { return orig.apply(this, arguments); } finally { window.WELT = w0; botById[A.id].mensch = botById[E.id].mensch = false; }
     };
     const r = { id: 'rs1', by: A.id, at: botCapitalOf(A.id), t: ziel, n0: 3e6, j: [{ w: E.id, f: botCapitalOf(E.id), n: 1e6, da: true }], aid: bundVon(A.id).id };
+    for (const br of bridges) { clearIslandOwner(br.gateId); botOwnedIslands[A.id].add(br.gateId); }   // (Weg frei: Märsche nur über eigene Pässe – alle Tore dem Anführer)
     bund.r.push(r); bundRallyLos(r);
     const a = pendingAttacks.find(x => x.rally && x.rally.id === 'rs1'); if (!a) return { fehler: 'keine Rally' };
     a.resolveAt = Date.now() + 300;

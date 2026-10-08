@@ -2,7 +2,7 @@
 // Nebel des Krieges: only explored islands are visible. Owning a base explores its island and
 // every island bridged to it; a scout sent into the fog explores the island it reaches.
 // The fog lifts in small sections (FOG_CELL squares): around every own base, and wherever a scout goes.
-const FOG_CELL = 4000, REVEAL_BASE = 7000, REVEAL_SCOUT = 8000;
+const FOG_CELL = 4000 * KARTE_MASSSTAB, REVEAL_BASE = 7000 * KARTE_MASSSTAB, REVEAL_SCOUT = 8000 * KARTE_MASSSTAB;
 var fogCells = null, fogLmCount = {}, cellLm = null, fogFx = [], fogMaskDirty = true, fogPrompt = null;
 function fogKey(cx, cy) { return cx + ',' + cy; }
 function fogLandCells() {                        // key → landmass id for every cell that touches land
@@ -54,7 +54,8 @@ function revealAround(x, y, r, fade) {
     if (changed) { fogMaskDirty = true; store.set('openWaterFogCells', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
     return changed;
 }
-function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, REVEAL_BASE, false); } }
+const sichtVon = (i, weit) => Math.max(weit, i.startSicht || 0);   // ein Startplatz sieht bis zum Gebirge seines Gebiets
+function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, sichtVon(i, REVEAL_BASE), false); } }
 function effectiveTroops(island) {
     const boss = bossAt(island.id); if (boss) return boss.troops;
     const owner = islandOwnerOf(island.id);
@@ -231,12 +232,12 @@ function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.text
 function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
 function updateHud() {
     const troops = totalTroops();
-    setText(coinCountEl, fmtCompact(Math.floor(coins)));
+    setText(coinCountEl, fmtHud(Math.floor(coins)));
     const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Edelsteine', tt = fmtNum(troops) + ' Truppen';
     if (coinCountEl.parentNode.title !== tc) coinCountEl.parentNode.title = tc;
-    setText(gemCountEl, fmtCompact(Math.floor(gems)));
+    setText(gemCountEl, fmtHud(Math.floor(gems)));
     if (gemCountEl.parentNode.title !== tg) gemCountEl.parentNode.title = tg;
-    setText(troopCountEl, fmtCompact(troops));
+    setText(troopCountEl, fmtHud(troops));
     if (troopCountEl.parentNode.title !== tt) troopCountEl.parentNode.title = tt;
     if (AUF) AUF.hud();                                                       // Holz, Stein, Eisen (aufbau.js)
     requestRender();   // HUD changes coincide with state changes -> the map may need a redraw
@@ -265,9 +266,9 @@ const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
   troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },
   defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3, max: 50 },
-  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 },
+  defenseGold: { icon: 'shield',    name: 'Verteidigung: Münzen', desc: 'Münzen für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 },
   attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
-  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 }
+  attackGold:  { icon: 'sell',      name: 'Angriff: Münzen',    desc: 'Münzen für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 }
 };   // (Gold je Truppe × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR wie alle Münzen außerhalb der Produktion: je Stufe ~0,17 Münzen je Kill)
 const EQUIPMENT_BASE_COST = 100;
 

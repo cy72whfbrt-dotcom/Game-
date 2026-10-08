@@ -22,7 +22,8 @@ function launchScout(targetId, explore, at) {
     const sourceId = nearestOwnedIslandTo(target);
     const home = islandById[sourceId];
     if (!home) return;
-    if (!spaeherWeg(home.landmassId, target.landmassId, 'player')) { flashHint('Ein geschlossenes Tor versperrt den Weg – dein Späher kommt nicht durch.', 3500); return; }
+    if (!explore) { const ow = islandOwnerOf(targetId); if (ow && ow !== 'player' && neulingAktiv(ow)) { flashHint(neulingBlockText(ow), 4000); return; } }   // Anfängerschutz: niemand späht Neulinge aus
+    if (!spaeherWeg(home.landmassId, target.landmassId, 'player')) { const g = wegGrund(home.landmassId, target.landmassId, 'player'); flashHint(g && /öffnet/.test(g) ? g : 'Ein geschlossenes Tor versperrt den Weg – dein Späher kommt nicht durch.', 3500); return; }
     sfx('scout');
 
     const durationSec = scoutSecs(home, target);   // the Späherturm makes scouts faster
@@ -42,7 +43,7 @@ function launchScout(targetId, explore, at) {
     questProgress('scout', 1);
     saveGame();
     saveProgression();
-    flashHint((explore ? 'Späher erkundet das Gebiet · ca. ' : 'Späher unterwegs zu ' + islandTitle(target) + ' · ca. ') + fmtClock(durationSec));
+    flashHint((explore ? 'Späher erkundet das Gebiet · ca. ' : 'Späher unterwegs: ' + ortName(target) + ' · ca. ') + fmtClock(durationSec));
     renderActiveMarches();
 }
 
@@ -135,8 +136,8 @@ function spaeherBlickHtml(s) {
         (s.wall !== undefined ? zeile('Mauer', 'Stufe ' + s.wall) : '') +
         (s.held ? zeile('Helden', s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') : '') +
         (s.vh !== undefined ? zeile('Verteidigungs-Held', s.vh && heroById(s.vh.id) ? escapeHtml(heroTag(Object.assign({}, s.vh, { id2: s.vh.h2 && s.vh.h2.id }))) : 'keiner') : '') +
-        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' Gold, ' + fmtCompact(schR) + ' je Rohstoff' : '')) : '') +
-        (R ? zeile('Gold', beute(R.c, R.schutz)) + (R.h !== undefined ? zeile('Holz', beute(R.h, schR)) + zeile('Stein', beute(R.s, schR)) + zeile('Eisen', beute(R.e, schR)) : '') : '') +
+        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' Münzen, ' + fmtCompact(schR) + ' je Rohstoff' : '')) : '') +
+        (R ? zeile('Münzen', beute(R.c, R.schutz)) + (R.h !== undefined ? zeile('Holz', beute(R.h, schR)) + zeile('Stein', beute(R.s, schR)) + zeile('Eisen', beute(R.e, schR)) : '') : '') +
         (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
         (A.fo ? zeile('Forschung', 'Angriff ' + (A.fo.atk | 0) + ' · Vert. ' + (A.fo.def | 0) + ' · Krankenhaus ' + (A.fo.laz | 0)) : '') + gear + '</div></details>';
 }
@@ -174,7 +175,7 @@ function resolveScout(scout) {
     if (ow && !vomWr && typeof verst !== 'undefined') eintrag.verst = verst.l.reduce((s, v) => s + (v.t === target.id ? v.n : 0), 0);   // Verstärkung (Botschaft): eigene Zeile im Bericht
     if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = Date.now();   // (wartet: der Bericht vom Weltrechner kommt gleich – sonst nach 10 Min. „kein Bericht“)
     addCombatLogEntry(eintrag); spaehWerteMem = null;
-    flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
+    flashHint(ortName(target, true) + ' gespäht – Bericht unter „Kampf“.', 3000);   // (Name wie im Fenster; die Zahlen stehen im Bericht, nicht im Hinweis)
 }
 
 function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee || 0 : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away (gemeinsam: rallyFlucht, jeder mit seinem)

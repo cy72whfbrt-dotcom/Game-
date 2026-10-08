@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Kartentest Zonen</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1c2416; overflow: hidden; touch-action: none; font-family: system-ui, sans-serif; }
+  #karte { position: fixed; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+  #leiste { position: fixed; left: 50%; top: max(8px, env(safe-area-inset-top)); transform: translateX(-50%);   /* oben: im eingebetteten Fenster kann unten außerhalb des Bildschirms liegen */ display: flex; gap: 6px;
+    background: rgba(20, 16, 10, .78); border: 1px solid #8a6a3a; border-radius: 12px; padding: 6px; }
+  #leiste button { font: 600 14px system-ui, sans-serif; color: #f3e2bd; background: #4a3720; border: 1px solid #a07c45; border-radius: 8px; padding: 8px 10px; min-width: 44px; }
+  #leiste button.an { background: #8a6326; color: #fff6dc; }
+  #info { position: fixed; left: 10px; top: calc(max(8px, env(safe-area-inset-top)) + 58px); color: #f3e2bd; background: rgba(20, 16, 10, .72); border: 1px solid #6b5230; border-radius: 8px; padding: 6px 10px; font: 12px/1.5 system-ui, sans-serif; pointer-events: none; }
+  #info i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; border: 2px solid #0c0f14; margin-right: 6px; vertical-align: -2px; }
+  #stufe { color: #e4c886; font-weight: 700; }
+  #info.kurz #legende { display: none; }
+</style>
+</head>
+<body>
+<canvas id="karte"></canvas>
+<div id="info"><div id="stufe"></div><div id="legende"></div></div>
+<div id="leiste">
+  <button data-zoom="nah">Nah</button><button data-zoom="mittel">Mittel</button><button data-zoom="weit">Weit</button><button data-zoom="ganz">Ganz weit</button>
+  <button id="tore">Tore zu</button>
+</div>
+<script>const KARTE_BILD_PFAD = '../../Game/bilder/';</script>
+<script src="../../Game/spiel/01a2-karte-zonen.js"></script>
+<script src="karte_dinge.js"></script>
+<script src="kartentest.js"></script>
+</body>
+</html>

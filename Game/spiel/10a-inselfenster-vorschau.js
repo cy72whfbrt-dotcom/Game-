@@ -32,6 +32,12 @@ function islandTitle(island) {
     for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === island.id) return 'Hauptstadt von ' + bot.name;
     return 'Turm #' + (island.id + 1);
 }
+// Name für Spieler statt „Turm #N“: „Deine Basis“ / „Basis von …“ / „Neutrale Basis“ (+ Ort, wenn nicht ohneOrt)
+function ortName(island, ohneOrt) {
+    const t = islandTitle(island); if (!/^Turm #/.test(t)) return t;
+    const ow = islandOwnerOf(island.id), n = ow === 'player' ? 'Deine Basis' : ow ? 'Basis von ' + ((botById[ow] || {}).name || 'Unbekannt') : 'Neutrale Basis';
+    return ohneOrt ? n : n + ' · ' + coordText(island.x, island.y);
+}
 
 function gateControlsHtml(gate) {
     const cfg = gateSettings(gate);
@@ -49,15 +55,14 @@ popupStats.addEventListener('click', e => {
     openIslandPopup(isl); requestRender();
 });
 popupStats.addEventListener('click', e => { const k = e.target.closest('[data-spaehen]'); if (k && !k.disabled && !scoutBtn.disabled) scoutBtn.click(); });   // die Kachel „Stärke unbekannt“ schickt den Späher
-function ringNotice(isl) {                         // whose ring is it: a title from the middle or a bought Ring-Skin
+function ringNotice(isl) {                         // whose ring is it: a title from the middle
     if (isl.type !== 'tower') return '';
     const o = islandOwnerOf(isl.id), st = o ? ringStatusByOwner().get(o) : null; if (!st) return '';
     const me = o === 'player', n = me ? '' : escapeHtml(botById[o].name), t = titleOf(o);
     const txt = st.k === 'ruler' ? (me ? 'Blutrot-goldener Ring: Du bist Herrscher der Meere – er bleibt, solange du den Mega-Tempel hältst.' : 'Blutrot-goldener Ring: ' + n + ' ist Herrscher der Meere.')
         : st.k === 'good' ? (me ? 'Goldring: Du trägst den Titel „' + t.name + '“ – solange du ihn behältst.' : 'Goldring: ' + n + ' trägt den Titel „' + t.name + '“ aus der Mitte.')
-        : st.k === 'bad' ? (me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.')
-        : (me ? 'Ring „' + st.name + '“ – wechseln unter „Aussehen“.' : 'Ring „' + st.name + '“.');
-    return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : st.k === 'skin' ? '' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
+        : me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.';
+    return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
 }
 function throneNotice(island) {                   // your own throne or Wächter-Tempel: points and fire at a glance
     if (island.type === 'megaTemple') { const sh = throneShooters().length;
@@ -88,7 +93,7 @@ const upgradeCostLabel = document.getElementById('upgradeCostLabel');
 // they are disabled, and what is visible without scouting (fog of
 // war) are exactly the old rules.
 // Koordinaten like in the big strategy games: X and Y from 0 to 1200 across the world, the Mega-Tempel at X 600 · Y 600
-function coordText(x, y) { const k = (GRID_HALF + .5) * HEX_SPACING, f = 1200 / (2 * k); return 'X ' + Math.round((x + k) * f) + ' · Y ' + Math.round((y + k) * f); }
+function coordText(x, y) { const k = FRAME_HALF, f = 1200 / (2 * k); return 'X ' + Math.round((x + k) * f) + ' · Y ' + Math.round((y + k) * f); }
 function renderPopup() {
     const island = islandById[popupIslandId];
     if (!island) return;
@@ -107,7 +112,7 @@ function renderPopup() {
     if (owner && !isBoss) { popupEmblem.dataset.profile = owner; popupEmblem.setAttribute('role', 'button'); popupEmblem.title = 'Profil ansehen'; }   // das Viereck antippen → Profil (mit Bündnis)
     else { delete popupEmblem.dataset.profile; popupEmblem.removeAttribute('role'); popupEmblem.removeAttribute('title'); }
     popupLevel.textContent = anzeigeStufe(island.id);
-    popupTitle.textContent = islandTitle(island);
+    popupTitle.textContent = ortName(island, true);
     popupActions.hidden = true;
     document.getElementById('cityBtn').style.display = 'none';
     document.getElementById('teleportBtn').style.display = 'none';
@@ -216,7 +221,7 @@ function inselMittig(island) {
 }
 
 // Angriff kompakt: Startbasis mit Truppen in der Auswahl, die Marschzeit EINMAL (im Knopf), Held + Zweitheld als zwei Chips
-let previewHeldAuf = 0;                                 // aufgeklappte Helden-Auswahl: 0 zu, 1 Held, 2 Zweitheld
+let previewHeldAuf = 0, previewHeldVor = -1;          // aufgeklappte Helden-Auswahl: 0 zu, 1 Held, 2 Zweitheld · previewHeldVor: Vorschau (previewShownAt), für die die zuletzt geschickten Helden schon gesetzt sind
 function apQuelleText(id, island, scouted) {            // „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
     return escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) + (scouted && angriffReicht(id, island) ? ' · reicht' : '');
 }
@@ -239,6 +244,8 @@ function renderAttackPreview(island, scouted) {
     const key = island.id + ':' + previewSourceId + ':' + scouted + ':' + atkPct;
     // Maut/Tor hinten in der Überzeile, keine Unterzeile (Startbasis + Marschzeit stehen EINMAL in der Auswahl darunter)
     popupOverline.innerHTML = 'Angriff vorbereiten<span id="previewToll"></span>'; popupSub.innerHTML = '';
+    if (previewHeldVor !== previewShownAt) { previewHeldVor = previewShownAt;   // Merkliste 18: frisch geöffnet ohne freien Helden → die zuletzt geschickten
+        if (!previewHero || !heroOwned('player', previewHero) || heroBusy('player', previewHero)) [previewHero, previewHero2] = heroLetzte(); }
     if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
         popupStats.dataset.preview = key; previewHeldAuf = 0;
         const quellen = angriffQuellen(island).slice(0, 40); if (!quellen.includes(previewSourceId)) quellen.unshift(previewSourceId);   // (die gewählte steht immer drin)

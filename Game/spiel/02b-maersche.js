@@ -2,7 +2,7 @@
 // Attacks and troop transfers now take real time to arrive, scaled
 // by the distance between the two towers - the "Geschwindigkeit"
 // skill (which also speeds up production) shortens the march.
-const BASE_ATTACK_SPEED = 300; // world units per second - slow enough that speed upgrades are felt
+const BASE_ATTACK_SPEED = 300 * KARTE_MASSSTAB; // world units per second - slow enough that speed upgrades are felt
 const MIN_ATTACK_SECONDS = 6;
 const MAX_ATTACK_SECONDS = 60;
 // A lost attack isn't one-sided: the defender takes real casualties
@@ -15,8 +15,8 @@ function attackSpeedMultiplier() {
     return 1 + Math.min(skills.speed || 0, SKILL_DEFS.speed.max) * 0.05;
 }
 function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (AUF ? AUF.spaeherTempo(botId || 'player') : 1); }   // (+ Forschung Späher)   // a scout's walk, Späherturm included - the same for everyone
-function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (über die Brücken, um die Berge – 01f)
-    const pts = source.landmassId === target.landmassId ? felsenWeg(source, target) : marchPath(source, target);
+function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (über die Pässe, marchPath)
+    const pts = marchPath(source, target);
     let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
     return distance;
 }
@@ -72,7 +72,7 @@ function addCombatLogEntry(entry) {
         for (let i = combatLog.length - 1; i >= 0; i--) if (gleich(combatLog[i])) combatLog.splice(i, 1);
     }
     entry.names = {};                                // names as they were then (a boss may camp there later)
-    for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = islandTitle(islandById[entry[k]]);
+    for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = entry.type === 'scout' && k === 'targetId' ? ortName(islandById[entry[k]], true) : islandTitle(islandById[entry[k]]);   // (Spähbericht: „Neutrale Basis“ wie im Fenster)
     let pos = 0; while (pos < combatLog.length && (combatLog[pos].at || 0) > entry.at) pos++;   // neueste zuerst, auch wenn Berichte spät ankommen
     combatLog.splice(pos, 0, entry);
     if (entry.type === 'ausgespaeht') {               // zu viele Späher-Meldungen: die ältesten dieser Art raus
@@ -105,13 +105,15 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     if (!attackerBotId && target.id === playerIslandId) return false;
     { const ow = islandOwnerOf(target.id); if (bundFreund(attackerBotId || 'player', ow)) { if (!attackerBotId) flashHint((botById[ow] || {}).name + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.', 3500); return false; } }   // Bündnis: gesperrt
     if (!attackerBotId && !islandSeen(target)) { flashHint('Dieses Ziel liegt im Nebel – schick zuerst einen Späher.', 3000); return false; }   // nichts im Nebel angreifen
+    if (target.type === 'gate' && passOpensAt(bridgeOfGate(target)) > Date.now()) { if (!attackerBotId) flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(target)) - Date.now()) + '.', 4000); return false; }   // (Pass mit Countdown: nicht angreifbar)
+    if (target.type === 'megaTemple' && Date.now() < thronOffenAb()) { if (!attackerBotId) flashHint('Der Thron zählt erst ab Tag ' + KARTE_ZONEN.thron.tag + ' – noch ' + fmtPassWait(thronOffenAb() - Date.now()) + '.', 4000); return false; }   // (für alle: Spieler, Mitspieler, Rally, Weltrechner)
     if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
     if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
     // (Hauptstädte kann man angreifen – Alexander 4.10. –, aber nie erobern: siehe resolveAttack / capitalHolds)
     const grp = naechsteGruppe;
-    if (!attackerBotId && !canReach(source.landmassId, target.landmassId, 'player')) {   // (wie beim Weltrechner)
-        flashHint('Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.', 5000); return false; }
+    if (!canReach(source.landmassId, target.landmassId, attackerBotId || 'player')) {   // (für alle gleich: Spieler, Mitspieler, Rally, Weltrechner – nur über offene, eigene Pässe)
+        if (!attackerBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.', 5000); return false; }   // (eine Meldung: der genaue Grund, sonst „Kein Weg …“)
     if (!marschPlatz(attackerBotId || 'player', grp, sourceId)) return false;   // alle Marsch-Plätze belegt (Burg-Stufe)
     if (!attackerBotId && !rechnet()) {                           // Zuschauer: der Weltrechner schickt die Truppen los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops, target.id)) return false;
@@ -119,7 +121,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         WELT.befehl('angriff', { src: sourceId, ziel: targetId, n: rawTroops, held: vHeld, held2: vHeld2, grp: grp || undefined });
         islandTroops[sourceId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('a', { sourceId, targetId, rawTroops, startedAt: t0, resolveAt: t0 + Math.max(3, travelDurationSeconds(source, target)) * 1000, attackerBotId: null, hero: vHeld, hero2: vHeld2, grp: grp || undefined }); }
-        updateHud(); flashHint('Angriff unterwegs zu ' + islandTitle(target) + '.');
+        updateHud(); flashHint('Angriff unterwegs: ' + ortName(target) + '.');
         dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); sfx('attack');
         return true;
     }
@@ -156,7 +158,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     updateHud();
     saveGame();
     saveProgression();
-    if (!attackerBotId) flashHint('Angriff unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
+    if (!attackerBotId) flashHint('Angriff unterwegs: ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
     if (!attackerBotId) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(attackerBotId);
     if (!attackerBotId) { questProgress('attack', 1); sfx('attack'); }
     else if (islandOwnerOf(target.id) === 'player') sfx('warn');      // someone marches on one of your bases
@@ -173,15 +175,15 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     const rawTroops = amount > 0 ? Math.min(Math.round(amount), available) : available;
     if (!source || !target || rawTroops <= 0) return;
     const grp = naechsteGruppe;
-    if (!senderBotId && !canReach(source.landmassId, target.landmassId, 'player')) {   // (wie beim Weltrechner: ein fremdes Tor dazwischen – vorher schickte das Handy los, der Weltrechner lehnte still ab)
-        flashHint('Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return; }
+    if (!canReach(source.landmassId, target.landmassId, senderBotId || 'player')) {   // (für alle gleich – vorher schickte das Handy los, der Weltrechner lehnte still ab)
+        if (!senderBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return; }
     if (!marschPlatz(senderBotId || 'player', grp)) return;          // Marsch-Plätze (Paket D)
     if (!senderBotId && !rechnet()) {                             // Zuschauer: der Weltrechner schickt sie los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return;
         WELT.befehl('senden', { von: fromId, nach: toId, n: rawTroops, grp: grp || undefined });
         islandTroops[fromId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('s', { fromId, toId, troops: rawTroops, startedAt: t0, resolveAt: t0 + travelDurationSeconds(source, target) * 1000, senderBotId: null, grp: grp || undefined }); } questProgress('send', 1); sfx('send'); updateHud();
-        flashHint('Truppen unterwegs zu ' + islandTitle(target) + '.'); return;
+        flashHint('Truppen unterwegs: ' + ortName(target) + '.'); return;
     }
     const hop = lastHop(source.landmassId, target.landmassId, senderBotId || 'player');
     if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return;
@@ -203,7 +205,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     saveGame();
     saveProgression();
     if (!senderBotId) {
-        flashHint('Truppen unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
+        flashHint('Truppen unterwegs: ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
         renderActiveMarches();
     }
 }

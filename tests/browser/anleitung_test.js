@@ -27,7 +27,10 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
       const zeilen = () => Math.round(el('anleitungText').getBoundingClientRect().height / parseFloat(getComputedStyle(el('anleitungText')).lineHeight)), xb = el('anleitungWeg').getBoundingClientRect(), xm = [(xb.left + xb.right) / 2, (xb.top + xb.bottom) / 2];
       o.start.zeile = { hoehe: Math.round(el('anleitung').getBoundingClientRect().height), zeilen: zeilen(), eine: ['anleitungSchritt', 'anleitungWeg'].every(id => mitte(el(id)) > rT.top && mitte(el(id)) < rT.bottom),   // Schritt · Text · × nebeneinander
         x44: [[-21, 0], [21, 0], [0, -21], [0, 21]].every(([dx, dy]) => el('anleitungWeg').contains(document.elementFromPoint(xm[0] + dx, xm[1] + dy))) };   // × sichtbar kleiner, Tippfläche 44 px
-      el('anleitungText').click(); o.start.zeile.auf = zeilen(); el('anleitungText').click(); o.start.zeile.wiederZu = zeilen();   // langer Text: antippen zeigt alles
+      const tx = el('anleitungText'), mc = el('mapControls').getBoundingClientRect(), lb = el('anleitung').getBoundingClientRect();
+      o.start.zeile.knopfAbstand = mc.width > 0 && mc.top < lb.bottom && mc.bottom > lb.top ? Math.round(mc.left - lb.right) : 99;   // Abstand zu den Kartenknöpfen rechts
+      o.start.zeile.alle = ANLEITUNG.map((s, i) => { tx.textContent = s.t; return { i, ok: !!s.ok, zeilen: zeilen(), ganz: tx.scrollHeight <= tx.clientHeight + 1, ellipse: getComputedStyle(tx).webkitLineClamp }; });   // jeder Schritt ganz lesbar, kein „…“
+      anleitungZeigen();
       // 2) Hauptstadt antippen: der erklärende Satz im Fenster, weiter zu Schritt 2 – noch immer keine tägliche Belohnung
       openIslandPopup(islandById[playerIslandId]); await bis(() => anleitung.schritt === 1);
       const sa = el('popupAnleitung'); o.haupt = { schritt: anleitung.schritt, text: el('anleitungText').textContent, satz: !sa.hidden && sa.getBoundingClientRect().height > 0 && /Hier stehen deine Truppen\. Mit ihnen greifst du an und sammelst\./.test(sa.textContent) };
@@ -90,17 +93,18 @@ const ANFANG = () => { window.__OW = { neu: true, nameGewaehlt: true }; window._
     if (r.fehler) { await ctx.close(); continue; }
     ok(r.start.schritt === 0 && r.start.sicht && r.start.text === 'Schritt 1/7', art + ': neuer Spieler sieht Schritt 1/7', r.start);
     ok(r.start.abholbar && r.start.daily && r.haupt.daily, art + ': tägliche Belohnung beim ersten Start nicht in Schritt 1/2', { start: r.start.daily, nachSchritt1: r.haupt.daily });
-    ok(r.start.zeile.eine && r.start.zeile.zeilen <= 2 && r.start.zeile.hoehe <= 56 && r.start.zeile.x44, art + ': Leiste kompakt: Schritt, Text und „×“ in einer Zeile, Text höchstens 2 Zeilen, ≤ 56 px hoch (× tippbar 44 px)', r.start.zeile);
-    if (art === 'Handy') ok(r.start.zeile.auf > 2 && r.start.zeile.wiederZu === r.start.zeile.zeilen, art + ': langer Text gekürzt – antippen zeigt alles, nochmal antippen kürzt wieder', r.start.zeile);
-    ok(r.start.puls === 'heim' && r.start.heim, art + ': Schritt 1: das Fadenkreuz (zur Hauptstadt) pulsiert', r.start);
+    ok(r.start.zeile.eine && r.start.zeile.zeilen <= 4 && r.start.zeile.hoehe <= 84 && r.start.zeile.x44, art + ': Leiste kompakt: Schritt, Text und „×“ in einer Zeile, Text höchstens 4 Zeilen, ≤ 84 px hoch (× tippbar 44 px)', r.start.zeile);
+    ok(r.start.zeile.alle.every(z => z.ganz && z.zeilen <= (z.ok ? 6 : 4) && (!z.ellipse || z.ellipse === 'none')), art + ': jeder Anleitungs-Text ganz lesbar (kein „…“, höchstens 4 Zeilen; Schritt mit „Verstanden“ bis 6)', r.start.zeile.alle);
+    ok(r.start.zeile.knopfAbstand >= 8, art + ': Leiste nicht dicht an den Kartenknöpfen rechts (≥ 8 px)', r.start.zeile.knopfAbstand);
+    ok(r.start.puls === 'heim' && r.start.heim, art + ': Schritt 1: der Kompass (zur Hauptstadt) pulsiert', r.start);
     ok(r.haupt.schritt === 1 && r.haupt.satz, art + ': Hauptstadt-Fenster erklärt sich („Hier stehen deine Truppen …“)', r.haupt);
     ok(/^Gut!/.test(r.haupt.text) && !/keine neutrale/.test(r.haupt.text), art + ': Schritt 2 beginnt positiv (Hauptstadt noch offen: „Gut! …“, kein Fehler-Satz)', r.haupt.text);
     ok(r.angriff.neutral && r.angriff.puls === 'angriff' && r.angriff.knopf && r.angriff.satzWeg, art + ': Schritt 2: bei einer neutralen Basis pulsiert „Angreifen“', r.angriff);
     ok(r.angriff.schritt === 2 && r.angriff.daily, art + ': nach dem ersten Angriff springt die tägliche Belohnung NICHT mitten in die Anleitung', r.angriff);
     ok(r.events.bereit > 0 && r.events.schritt === 5 && r.events.puls === 'abholen' && r.events.pulsKnopf > 0, art + ': Schritt 6: Events öffnen allein zählt nicht, „Abholen“ pulsiert', r.events);
     ok(r.events.abgeholt && r.events.nichtAbholbar, art + ': Schritt 6 zählt nach echtem Abholen', r.events);
-    ok(r.knoepfe.sicht && /Fadenkreuz/.test(r.knoepfe.text) && /Fahne/.test(r.knoepfe.text) && /Schwerter/.test(r.knoepfe.text) && r.knoepfe.ok && r.knoepfe.okUnten && r.knoepfe.puls, art + ': Schritt 7 erklärt die Knöpfe ohne Text, „Verstanden“ sichtbar (unter dem Text), Knöpfe pulsieren', r.knoepfe);
-    ok(/Würfel/.test(r.knoepfe.text) && /Rohstoffe/.test(r.knoepfe.text) && r.knoepfe.wurfelPuls, art + ': Schritt 7 erklärt den Würfel oben (Rohstoffe), er pulsiert mit', r.knoepfe);
+    ok(r.knoepfe.sicht && /Kompass/.test(r.knoepfe.text) && /Fahne/.test(r.knoepfe.text) && /Schild/.test(r.knoepfe.text) && r.knoepfe.ok && r.knoepfe.okUnten && r.knoepfe.puls, art + ': Schritt 7 erklärt die Knöpfe ohne Text, „Verstanden“ sichtbar (unter dem Text), Knöpfe pulsieren', r.knoepfe);
+    ok(/Holz, Stein, Eisen/.test(r.knoepfe.text) && /Stunde/.test(r.knoepfe.text) && r.knoepfe.wurfelPuls, art + ': Schritt 7 erklärt Holz/Stein/Eisen oben (Ertrag pro Stunde), sie pulsieren mit', r.knoepfe);
     ok(r.fertig.schritt === 7 && r.fertig.belohnt && r.fertig.geschenk === 1 && r.fertig.weg && r.fertig.puls === '' && r.fertig.gespeichert, art + ': fertig: einmal Belohnung ins Abholfach, nichts pulsiert mehr', r.fertig);
     ok(r.fertig.taeglich, art + ': nach der Anleitung wird die tägliche Belohnung angeboten', r.fertig);
     ok(r.nochmal.knopf && r.nochmal.schritt === 0 && r.nochmal.sicht && r.nochmal.profilZu, art + ': „Anleitung noch mal“ startet von vorn', r.nochmal);

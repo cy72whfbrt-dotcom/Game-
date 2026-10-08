@@ -38,8 +38,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.tore = { guardian: tore('guardian')[0], throne: tore('throne')[0], border: tore('border').reduce((a, t) => [Math.min(a[0], t[0]), Math.max(a[1], t[0])], [Infinity, 0]) };
     o.tempel = { mega: islands.find(i => i.type === 'megaTemple').neutralTroops, waechter: islands.find(i => i.type === 'temple' && i.guardian).neutralTroops,
       normal: islands.filter(i => i.type === 'temple' && !i.guardian).map(i => i.neutralTroops).reduce((a, t) => [Math.min(a[0], t), Math.max(a[1], t)], [Infinity, 0]) };
-    // 6b) Pass-Münzen: n Stunden Ertrag – frei 4, Premium 12 (nicht mehr „10 Münzen“)
-    o.pass = [2, 14].map(L => [passRewardAt(L, false), passRewardAt(L, true)]);
+    // 6b) Pass-Münzen: n Stunden Ertrag – frei 3, Premium 12 (+ 10 Edelsteine; 7.10. 100 Stufen, nicht mehr „10 Münzen“)
+    o.pass = [1, 7].map(L => [passRewardAt(L, false)[0], passRewardAt(L, true)[0]]);
     // 7) Mitspieler: dieselben Kosten und derselbe Rohstoff-Ertrag
     const X = BOT_DEFS.find(x => !x.mensch && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).id;
     o.bot = { k: JSON.stringify(AUF.stadtKosten('keep', 3)) === JSON.stringify(o.burg3), h: AUF.rohStunde(X).h, start: JSON.stringify(AUF.ROH_START) };
@@ -47,8 +47,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   console.log(JSON.stringify(r));
   ok(r.faktor === 1800, 'ROH_FAKTOR = 1.800', r.faktor);
-  ok(r.burg3.h === 13000 && r.burg3.s === 10000 && r.burg3.e === 6400 && r.burg3.c === 14000, 'Burg 3 → 4: 13.000 Holz, 10.000 Stein, 6.400 Eisen, 14.000 Münzen (6.10.: Münzen × 1.000)', r.burg3);
-  ok(r.burg9.h >= 2e5 && r.burg9.h <= 2.2e5, 'Burg 9 → 10: etwa 210.000 Holz', r.burg9);
+  ok(r.burg3.h === 3100 && r.burg3.s === 2500 && r.burg3.e === 1500 && r.burg3.c === 3400, 'Burg 3 → 4: 3.100 Holz, 2.500 Stein, 1.500 Eisen, 3.400 Münzen (7.10.: rokzahlen)', r.burg3);
+  ok(r.burg9.h >= 8.5e4 && r.burg9.h <= 9e4, 'Burg 9 → 10: etwa 88.000 Holz', r.burg9);
   ok(r.burgStunde >= 75 * .6 && r.burgStunde <= 75 * 1.4 * 1.3 + 1, 'Burg allein: etwa 75 Holz pro Stunde (× Landschaft)', r.burgStunde);
   const F = r.felder;
   ok(F.h8 === 4000 && F.h2 === Math.round(8000 * Math.sqrt(300) / 2), 'Holz-Feld außen 4.000, Ring 2 nur × √300 (' + F.h2 + ')', F);
@@ -61,14 +61,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.schleife[1] <= r.schleife[0], 'Markt: kaufen und verkaufen erzeugt keine Münzen', r.schleife);
   ok(r.start === 5000, 'Start-Truppen 5.000', r.start);
   const R = r.ringe;
-  ok(R.r8 && R.r8[0] >= 70 && R.r8[1] <= 100 && R.r2 && R.r2[1] <= 1000 && R.r2[0] >= 700, 'neutrale Basen: außen 70–100, Ring 2 höchstens 1.000', R);
-  ok(['r3', 'r4', 'r5', 'r6', 'r7'].every((k, i, a) => R[k] && R[k][1] <= 1000 && (i === 0 || R[a[i - 1]][1] >= R[k][1])), 'nach innen steigend', R);
+  ok(R.r7 && R.r7[0] >= 70 && R.r7[1] <= 100 && R.r2 && R.r2[1] <= 1000 && R.r2[0] >= 700, 'neutrale Basen: außen (Zone 1) 70–100, Zone 3 (Ring 2) höchstens 1.000', R);
+  ok(['r2', 'r5', 'r7'].every((k, i, a) => R[k] && R[k][1] <= 1000 && (i === 0 || R[a[i - 1]][1] >= R[k][1])), 'nach innen steigend (Zone 1 → 2 → 3)', R);
   ok(R.guardian && R.guardian[0] > 5000 - 1 && R.guardian[1] <= 2e4, 'Wächter-Türme 5.000–20.000 (mehr als die Start-Truppen)', R.guardian);
   ok(R.throne && R.throne[0] >= 5e4 && R.throne[1] <= 1.5e5, 'Thron-Türme 50.000–150.000', R.throne);
-  ok(r.pass.every(([f, p]) => f.k === 'coins' && f.n === 4 && p.k === 'coins' && p.n === 12), 'Pass-Münzen: 4 / 12 Stunden Ertrag', r.pass);
+  ok(r.pass.every(([f, p]) => f.k === 'coins' && f.n === 3 && p.k === 'coins' && p.n === 12), 'Pass-Münzen: 3 / 12 Stunden Ertrag', r.pass);
   const T = r.tore;
   ok(T.guardian && T.guardian[0] >= 3e4 && T.throne && T.throne[0] >= 150000 && T.throne[1] >= 50000 && T.border[0] >= 5000 && T.border[1] <= 20000, 'Tore: Wächter 30.000, Thron mind. 150.000 + 50.000, Grenze 5.000–20.000', T);
-  ok(r.tempel.mega >= 5e5 && r.tempel.waechter >= 6e4 && r.tempel.normal[0] > 100, 'Tempel: Mega 500.000, Wächter 60.000, normal über einer Basis', r.tempel);
+  ok(r.tempel.mega >= 5e5 && r.tempel.waechter >= 6e4 && r.tempel.normal[1] === 0, 'Tempel: Mega 500.000, Wächter 60.000 (Zonen wie RoK: nur Thron + die Tempel in Zone 4)', r.tempel);
   ok(r.bot.k && r.bot.h > 30 && r.bot.start === '{"h":3000,"s":2000,"e":500}', 'Mitspieler: gleiche Kosten, Ertrag, Start-Rohstoffe', r.bot);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
