@@ -121,6 +121,7 @@ if (rechnet()) {
         botOwnedIslands[bot.id].add(tower.id);
         islandLevels[tower.id] = 1;
         islandTroops[tower.id] = PLAYER_START_TROOPS;     // Start-Truppen wie jeder neue Spieler (Alexander 6.10.: Mitspieler gleich)
+        botCoins[bot.id] = PLAYER_START_COINS;            // und Start-Münzen (Alexander 8.10.)
         usedTowerIds.add(tower.id);
     });
     // more players than start places: the rest start on a free outer base, as far as possible from everyone else
@@ -138,7 +139,7 @@ if (rechnet()) {
                 if (dmin > bestD) { bestD = dmin; best = c; }
             }
             if (!best) break;
-            botOwnedIslands[bot.id].add(best.id); islandLevels[best.id] = 1; islandTroops[best.id] = PLAYER_START_TROOPS; usedTowerIds.add(best.id); taken.push(best);
+            botOwnedIslands[bot.id].add(best.id); islandLevels[best.id] = 1; islandTroops[best.id] = PLAYER_START_TROOPS; botCoins[bot.id] = PLAYER_START_COINS; usedTowerIds.add(best.id); taken.push(best);
         }
     }
 }

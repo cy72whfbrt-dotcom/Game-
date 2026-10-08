@@ -416,7 +416,6 @@ function drawRings(visible, z, now) {
     if (isl.id === playerIslandId && z >= 0.006) {                            // the capital: blue-gold double ring
       ring(x, y, Math.max(r * 1.55, 12), 2, 'rgba(228,200,134,.95)'); ring(x, y, Math.max(r * 1.8, 15), 1.2, 'rgba(140,192,255,.6)', [3, 4]);
     }
-    if (teleportMode && isOwned && isl.id !== playerIslandId && isl.type === 'tower') ring(x, y, S, 2, 'rgba(228,200,134,' + (.45 + .55 * pulse).toFixed(2) + ')', [4, 4]);
     const isSelectable = (attackTarget && isOwned && canReach(isl.landmassId, attackTarget.landmassId)) ||
                          (pendingSendFromId !== null && isOwned && isl.id !== pendingSendFromId);
     if (isSelectable) ring(x, y, S, 2, 'rgba(255,255,255,' + (.45 + .55 * pulse).toFixed(2) + ')', [4, 4]);

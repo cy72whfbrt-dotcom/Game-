@@ -194,8 +194,8 @@ function flicken_anwenden($obj, $p) {
 }
 // Befehle der Spieler an den Weltrechner: nur bekannte Arten, nur saubere Werte (keine Texte statt Zahlen, nichts
 // Unendliches, keine Riesenzahlen, nicht zu tief verschachtelt). Der Weltrechner prüft dann noch die Spielregeln.
-const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'hauptstadt', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten', 'bund', 'haendler', 'spaehen', 'vheld', 'teleport'];   // vheld: Verteidigungs-Helden in der Mauer · spaehen (3B): Erkundungs-Späher – der Weltrechner deckt danach den Nebel auf (mit blick: Späher zu einer fremden Basis – er schreibt den Spähbericht) · teleport: Hauptstadt an eine freie Stelle
-const BEFEHLE_BEZAHLT = ['ausbau', 'hauptstadt', 'schneller', 'truppen', 'teleport'];   // hat das Handy schon bezahlt (wie BEZAHLT in welt.js)
+const BEFEHL_ARTEN = ['angriff', 'senden', 'zurueck', 'schneller', 'ausbau', 'truppen', 'tor', 'titel', 'feld', 'feldHeim', 'lager', 'armee', 'beitreten', 'bund', 'haendler', 'spaehen', 'vheld', 'teleport'];   // vheld: Verteidigungs-Helden in der Mauer · spaehen (3B): Erkundungs-Späher – der Weltrechner deckt danach den Nebel auf (mit blick: Späher zu einer fremden Basis – er schreibt den Spähbericht) · teleport: Hauptstadt an eine freie Stelle
+const BEFEHLE_BEZAHLT = ['ausbau', 'schneller', 'truppen', 'teleport'];   // hat das Handy schon bezahlt (wie BEZAHLT in welt.js)
 const BEFEHL_MENGEN = ['n', 'stufe', 'anteil', 'tr'];   // müssen echte Zahlen ≥ 0 sein
 function befehl_ok($b) {
     if (!is_array($b) || !in_array($b['art'] ?? null, BEFEHL_ARTEN, true)) return false;

@@ -1,4 +1,4 @@
-// Teil 08d-gebaeude-wirkung.js: Wirkung der Gebäude (Labor, Schmiede, Lazarett), Stadt-Leiste, Hauptstadt verlegen
+// Teil 08d-gebaeude-wirkung.js: Wirkung der Gebäude (Labor, Schmiede, Lazarett), Stadt-Leiste, Hauptstadt teleportieren
 // ---- building effects ----
 function academyLevel() { return loadCity().levels.academy || 0; }
 function forgeLevel() { return loadCity().levels.forge || 0; }
@@ -130,30 +130,13 @@ function stadtKopf() {                          // Unterkante der Bauarbeiter-Ze
     if (u > 0 && u !== stadtKopfU) { stadtKopfU = u; document.body.style.setProperty('--stadt-kopf', u + 'px'); }
 }
 var stadtKopfU = 0;
-// Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
-var teleportMode = false, teleportBis = 0;   // (bleibt nur 20 s scharf – danach kostet ein Tipp auf eine Basis keine Gems mehr aus Versehen)
+// Hauptstadt-Fenster: „Teleportieren“ führt wie der Teleporter im Rucksack zur Auswahl auf der Karte (Verlegen in einen eigenen Turm
+// für 50 Edelsteine gibt es nicht mehr – Alexander 8.10.). TELEPORT_GEMS: nur noch das Verlegen der Mitspieler (bots/05, Bündnis).
 const TELEPORT_GEMS = 50;
 document.getElementById('teleportBtn').addEventListener('click', () => {
-    if (gems < TELEPORT_GEMS) { flashHint('Zum Verlegen brauchst du ' + TELEPORT_GEMS + ' Edelsteine.', 3000); return; }
-    if (![...ownedIslands].some(id => id !== playerIslandId && islandById[id] && islandById[id].type === 'tower')) { flashHint('Du brauchst noch einen zweiten Turm, um die Hauptstadt zu verlegen – Tempel und Tore zählen nicht.', 3500); return; }
-    closeIslandPopup(); teleportMode = true; teleportBis = Date.now() + 20000; requestRender();
-    flashHint('Tippe einen deiner Türme an – die Hauptstadt zieht dorthin (' + TELEPORT_GEMS + ' Edelsteine). Woanders tippen bricht ab.', 5000);
+    closeAllPopups(); if (!cityView.hidden) closeCity(); recenterOnHome(true);
+    flashHint('Tippe auf eine freie Stelle der Karte, dann „Teleportieren“ – das kostet ' + (teleImRucksack() ? '1 Teleporter' : fmtNum(TP_GEMS) + ' Edelsteine') + '.', 5000);
 });
-function teleportCapital(toId) {
-    const from = playerIslandId, to = islandById[toId];
-    if (!to || !ownedIslands.has(toId) || toId === from || to.type !== 'tower' || gems < TELEPORT_GEMS) return false;   // a tower - never a gate, a temple or the throne
-    if (window.WELT && pendingAttacks.some(a => a.targetId === toId)) { flashHint('Dorthin geht es gerade nicht: ein Angriff läuft auf diese Basis.', 3000); return null; }   // (der Weltrechner lehnt es genauso ab – sonst wären die Gems weg)
-    gems -= TELEPORT_GEMS;
-    islandTroops[toId] = (islandTroops[toId] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0;   // the garrison moves along
-    playerIslandId = toId; store.set('openWaterPlayerIslandId', playerIslandId); statBump('teleports');
-    alsBefehl('hauptstadt', { insel: toId });
-    revealAround(to.x, to.y, REVEAL_BASE, true);
-    flushBannerSprites();
-    saveGame(); saveProgression(); updateHud();
-    spawnBattleFx(toId, true, 'Hauptstadt', 'hierher verlegt');
-    flashHint('Die Hauptstadt ist umgezogen – deine Truppen sind mitgekommen.', 3500);
-    return true;
-}
 // Teleportieren (Alexander 7.10., Merkliste 33): die Hauptstadt an eine freie Stelle der Karte – die Basis selbst zieht um (Truppen,
 // Stufe, Stadt bleiben). Platz wie für eine Basis (nicht im Gebirge, nicht auf Toren, Feldern, Lagern, Tempeln, nicht in der Thron-Mitte),
 // nur in Gebiete, die von der Hauptstadt über offene Pässe erreichbar sind (TELEPORT_NUR_OFFEN). Kostet 1 Teleporter aus dem Rucksack (im Shop

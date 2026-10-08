@@ -243,7 +243,7 @@ if (islandById[playerIslandId] && islandById[playerIslandId].type !== 'tower') {
     if (best !== null) { playerIslandId = best; store.set('openWaterPlayerIslandId', playerIslandId); }
 }
 
-let coins = parseFloat(store.get('openWaterCoins')) || 0;   // parseFloat: huge sums are stored as "1e+22"
+let coins = store.get('openWaterCoins') === null ? PLAYER_START_COINS : parseFloat(store.get('openWaterCoins')) || 0;   // neuer Spielstand: Start-Münzen · parseFloat: huge sums are stored as "1e+22"
 let gems = parseFloat(store.get('openWaterGems')) || 0;
 
 let bonusGrantedAtBoot = false;   // persisted by saveGame() at the end of boot

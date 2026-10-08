@@ -35,7 +35,7 @@ function heroStats(who, id, s) {                    // Angriff, Verteidigung (fe
     const h = heroById(id); s = s || heroSt(who, id); if (!h || !s) return { atk: 0, def: 0, spd: 0, gef: 0 };
     const t = HERO_TIER[h.r], m = t.st * (1 + s.q / 4 * .15), L = heroLead(who);
     return { atk: Math.round(h.base[0] * m), def: Math.round(h.base[1] * m), spd: Math.round(h.base[2] * m),
-             gef: Math.round(5e4 * t.st * (1 + s.q * .15) * levelRewardTroops(L.lvl) / 2e6 * (1 + L.hall * HERO_HALL_GEF / 100)) };
+             gef: Math.round(5e4 * t.st * (1 + s.q * .15) * stufenTruppenMass(L.lvl) / 2e6 * (1 + L.hall * HERO_HALL_GEF / 100)) };
 }
 function heroPower(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own) return 0; return Math.round((4 + s.q) * HERO_TIER[h.r].st * 2500 + s.sk.reduce((a, v) => a + v, 0) * 1200); }
 // what every skill does: [the fx it raises, the kind of fight it needs]

@@ -442,7 +442,7 @@ if (window.WELT) {
             const heute = todayKey(); if (!d.fund || d.fund.t !== heute) d.fund = { t: heute, n: 0 };   // höchstens 300 am Tag (Alexander 5.10.: ~7 Std. ohne Pause – gegen ein Skript rund um die Uhr; überlebt Neustarts)
             if (d.fund.n >= 300) { if (d.fund.n === 300) warnen(who, 'truppen', 'Über 300 Funde auf der Karte an einem Tag – abgelehnt.', b.n); d.fund.n = 301; saveBotState(); return 0; }
             d.fund.n++; saveBotState();
-            erlaubt = Math.max(FUND_TR_MIN, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + FUND_TR_MIN;
+            erlaubt = Math.max(FUND_TR_MIN, niceRound(stufenTruppenMass(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + FUND_TR_MIN;
         } else if (q === 'pass') {                     // Saison-Pass: jede Stufe (Reihe) zahlt einmal je Saison ihre Truppen-Stunden – und nur so weit, wie man in der Zeit kommen kann
             const s = passNo(now), l = b.l, pr = b.p === 1 ? 1 : 0, ok = Number.isInteger(l) && l >= 1 && l <= PASS_LVLS && (b.s === s || b.s === s - 1);
             const r = ok ? passRewardAt(l, !!pr).find(x => x.k === 'tr') : null;
@@ -883,7 +883,7 @@ if (window.WELT) {
     WELT.kontoMuenzen = who => { const m = wacheSehen(who); return m.init ? m.c.u + m.c.vor : 0; };   // (noch nie gesehen: jetzt ansehen – nie ungeprüft das Profil; ohne Mitspieler-Datensatz hat er keine Münzen in der Welt)
     WELT.hauptbuch = who => hbDa(who);                // (für Tests und die Admin-Ansicht)
     // Neue Welt-Saison (09f-saison.js saisonNeu): sein Konto passend zurücksetzen – Stufe 1 (EP neu, Stufen-Truppen/-Gems wieder ab
-    // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen 0, keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
+    // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen PLAYER_START_COINS (wie sein Handy), keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
     // Helden, Schild, Gems und Rohstoffe (Konten, Topf des Ausgegebenen – ein laufender Bau ist schon bezahlt). Sein altes Profil
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
     // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – die Münz-Töpfe des Ausgegebenen (Münzen, Admin-Münzen) werden
@@ -908,7 +908,7 @@ if (window.WELT) {
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
-        if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; delete d.pTr; }   // (pTr: sein Saison-Pass fängt neu an – Truppen-Stufen wieder abholbar)
+        if (d) { d.u = PLAYER_START_COINS; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; delete d.pTr; }   // (pTr: sein Saison-Pass fängt neu an – Truppen-Stufen wieder abholbar)
         if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; hb.passF = 0; hb.passAb = Date.now(); }
         if (f > 0 && f < 1) {
             if (hb) hb.cA = Math.floor(nn(hb.cA) * f);   // (Holz/Stein/Eisen bleiben – auch ihre Töpfe rU/rA, 6.10.)
@@ -1134,15 +1134,6 @@ if (window.WELT) {
             if (zuOft(m, 'ausbau', 60, 10000)) { warnen(who, 'ausbau', 'Ausbau über 60-mal in 10 s – der Rest verfällt.'); return; }
             const x = { b, bis: Date.now() + WACHE_WARTEN_MS }; m.warte.ausbau.push(x); wacheAbarbeiten(who);
             if (m.warte.ausbau.includes(x)) { x.wartet = true; return 'wartet'; }   // (noch nicht entschieden: welt.js quittiert ihn noch nicht)
-        },
-        hauptstadt(who, b) {
-            if (!inselOk(b.insel)) return;
-            const to = islandById[b.insel], bs = loadBotState()[who]; if (!to || to.type !== 'tower' || !gehoert(b.insel, who) || !bs) return;
-            if (zuOft(wm(who), 'hauptstadt', 20, 3600000)) { warnen(who, 'hauptstadt', 'Hauptstadt über 20-mal in einer Stunde verlegt – abgelehnt.'); return; }
-            if (pendingAttacks.some(a => a.targetId === b.insel)) return;   // nicht in eine Basis, auf die gerade ein Angriff läuft (wie bei den Mitspielern)
-            const hb = hbDa(who); if (hb && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
-            const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
-            bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender(); befehlBezahlt(b);
         },
         teleport(who, b) {                            // Hauptstadt an eine freie Stelle (08d tpPruefen) – nur echte Spieler
             const bs = loadBotState()[who]; if (!bs || !bs.mensch || typeof b.x !== 'number' || typeof b.y !== 'number') return;

@@ -75,7 +75,7 @@
     // wie das, was das Handy dafür bezahlt hat (Münzen, Gems). Absturz, Akku leer, Neuladen vor dem Senden: nach dem Laden geht er
     // mit derselben Nummer nochmal raus (der Server legt ihn nie doppelt ab). Bezahlte Befehle bis 50 Min. (der Server behält
     // erledigte Befehle 1 Std. – länger nie, sonst könnte ein schon erledigter neu angelegt werden), alle anderen 5 Min.
-    const BEZAHLT = ['ausbau', 'hauptstadt', 'schneller', 'truppen', 'teleport'];   // (wie BEFEHLE_BEZAHLT in server.php)
+    const BEZAHLT = ['ausbau', 'schneller', 'truppen', 'teleport'];   // (wie BEFEHLE_BEZAHLT in server.php)
     const befehlFrisch = b => Date.now() - (b.at || 0) < (BEZAHLT.includes(b.art) ? 50 : 5) * 60000;
     W.ausgang = (() => { if (SYSTEM) return []; try { const a = JSON.parse(S.daten.openWaterBefehlAus || '[]');
         return Array.isArray(a) ? a.filter(b => b && typeof b.cid === 'string' && typeof b.art === 'string' && befehlFrisch(b)).slice(-200) : []; } catch (e) { return []; } })();

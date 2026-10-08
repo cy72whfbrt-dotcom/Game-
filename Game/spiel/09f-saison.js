@@ -9,8 +9,8 @@
 // Ende: die besten 10 nach Macht (wie die Rangliste) bekommen Gems ins Abholfach und einen Saison-Rahmen bis zum
 // nächsten Saison-Ende (05a RAHMEN: Platz 1 · 2–3 · 4–5 · 6–10, aus last.top – Alexander 6.10.).
 // Bleibt: die ganze Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, alles Gekaufte.
-// Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (0 wie ein neuer Spieler), Stufe (→ 1,
-// damit alle Fähigkeitspunkte), Saison-Pass (Punkte, Stufen – Premium bleibt; Erfolge bleiben), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
+// Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (PLAYER_START_COINS wie ein neuer Spieler), Stufe (→ 1,
+// damit alle Fähigkeitspunkte), Saison-Pass (Punkte, Stufen, Premium – Alexander 8.10.; Erfolge bleiben), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 // Burg fair (Alexander 6.10. A): der ERSTE Reset danach setzt EINMAL jede Burg über Stufe BURG_FAIR auf BURG_FAIR (bis 5.10. galt die alte,
@@ -62,7 +62,7 @@ function saisonTakt() {                               // (nur wer rechnet) Termi
     saisonNeu(now);
 }
 setInterval(saisonTakt, 5000);
-const saisonBaldText = ende => { const t = Math.max(1, Math.round((ende - Date.now()) / 864e5)); return 'In ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Edelsteine und einen Titel für immer.'; };   // (nach der echten Restzeit – die Nachricht kann später gelesen werden)
+const saisonBaldText = ende => { const t = Math.max(1, Math.round((ende - Date.now()) / 864e5)); return 'In ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe, Saison-Pass (auch Premium) und Bündnisse fangen neu an. Die besten 10 bekommen Edelsteine und einen Titel für immer.'; };   // (nach der echten Restzeit – die Nachricht kann später gelesen werden)
 function saisonAnkuendigen() {
     if (window.WELT) { for (const id in WELT.menschen) { const uid = parseInt(id.slice(1), 10); if (uid > 0) WELT.nachricht(uid, { art: 'saisonBald', nr: saison.nr, ende: saison.ende }, 'saisonBald|' + saison.nr); } }
     else afterSplash(() => flashHint(saisonBaldText(saison.ende), 12000, true));
@@ -151,10 +151,10 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     // 48 Std. Anfängerschutz für alle echten Spieler – auch die, die beim Reset keine Basis hatten (die Nachricht „saison“ schickt ihn mit)
     for (const w of wer) if (w !== 'player' && botById[w] && botById[w].mensch) bs[w].neuBis = now + NEULING_MS;
     if (wer.includes('player')) store.set('openWaterSaisonSchutz', String(now + NEULING_MS));   // (Vorschau: dein Anfängerschutz – übernimmt das Laden)
-    // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, keine Münzen, keine Verwundeten, keine alten Pläne
+    // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, Start-Münzen, keine Verwundeten, keine alten Pläne
     for (const w of wer) { if (w === 'player') continue; const b = bs[w];
-        b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
-        if (b.ps) { b.ps.base = botPassScore(b); b.ps.f = 0; b.ps.p = 0; }   // Saison-Pass von vorn (Premium bleibt)
+        b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = PLAYER_START_COINS;
+        if (b.ps) { b.ps.base = botPassScore(b); b.ps.f = 0; b.ps.p = 0; b.ps.prem = false; }   // Saison-Pass von vorn, auch Premium (Alexander 8.10.)
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
         if (B > 0 && AUF) burgFairWer(b, B);
         if (!(botById[w] && botById[w].mensch) && b.tp > SAISON_TP_MAX) { const g = Math.floor((b.tp - SAISON_TP_MAX) / SAISON_TP_JE_GEM); b.tp = SAISON_TP_MAX;   // Thron-Punkte (echte Spieler: ihr Handy)
@@ -192,7 +192,7 @@ function saisonKarte() {
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
         '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes · Thron-Punkte bis ' + fmtNum(SAISON_TP_MAX) + ' (der Rest ' + SAISON_TP_JE_GEM + ' : 1 als Edelsteine)</b>' +
         (S.burgFair ? '' : '<span>Einmalig</span><b>Ausnahme wegen eines Fehlers, für alle gleich: Burg höchstens Stufe ' + BURG_FAIR + ', Edelsteine genau ' + fmtNum(SAISON_AUSNAHME_GEMS) + ', Holz/Stein/Eisen 0</b>') +
-        '<span>Neu</span><b>Basen, Truppen, Münzen, Stufe, Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
+        '<span>Neu</span><b>Basen, Truppen, Münzen (' + fmtNum(PLAYER_START_COINS) + ' zum Start), Stufe, Saison-Pass (auch Premium), Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }
 // ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
 if (window.WELT && !SYSTEM) {

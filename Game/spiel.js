@@ -53,18 +53,19 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // Spiel irgendetwas liest. openWaterSaisonMein = die Saison, in der dieser Spielstand ist (geht im Profil mit – ein Profil von
 // vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09f-saison.js), danach lädt die
 // Seite neu. Bleibt: Stadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes, Abholfach.
-// Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
-// alte Befehle, Saison-Pass (Punkte und abgeholte Stufen – gekauftes Premium bleibt; Erfolge bleiben). (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
+// Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ PLAYER_START_COINS wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
+// alte Befehle, Saison-Pass (Punkte, abgeholte Stufen und Premium – Alexander 8.10.; Erfolge bleiben). (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
 // Burg fair (Alexander 6.10. A): der erste Reset danach setzt jede Burg über Stufe BURG_FAIR auf BURG_FAIR (saison.burgFair = diese Saison,
 // sonst openWaterSaisonBurg aus der Nachricht) – Gebäude, Forschung, Bauten passt aufbau.js beim Laden an (openWaterBurgFair, burgFair).
 // Alexander 6.10.: einmalige Ausnahme (wegen des Fehlers, damit es fair bleibt) – im selben Schritt Edelsteine auf genau 1.000 und
-// Holz/Stein/Eisen auf 0 (Münzen sind beim Reset immer 0). Bei späteren Resets nicht.
+// Holz/Stein/Eisen auf 0 (Münzen sind beim Reset immer PLAYER_START_COINS). Bei späteren Resets nicht.
 // Thron-Punkte (Alexander 6.10., jeder Reset): höchstens 20.000 gehen mit, der Rest wird 10 : 1 zu Edelsteinen – ins Abholfach.
 // Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
 var saisonNeuGeladen = 0, saisonZurueckGeladen = 0, saisonBurgGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen · Burg: aufbau.js)
 const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000, SAISON_TP_MAX = 20000, SAISON_TP_JE_GEM = 10;
+const PLAYER_START_COINS = 10000;   // neue Spieler, Mitspieler und jede neue Saison (Alexander 8.10.; Truppen: PLAYER_START_TROOPS, 01c)
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis', 'openWaterPass', 'openWaterSaisonRang'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
     let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, fairNr = 0;
@@ -91,11 +92,11 @@ if (!SYSTEM) {
         try { vorher.w = (JSON.parse(store.get('openWaterCity')) || {}).wounded || 0; } catch (e) {}
         store.set('openWaterSaisonVorher', JSON.stringify(vorher));   // (für ein Zurückspielen der Sicherung von vor dem Reset)
         store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
-        store.set('openWaterCoins', '0');
+        store.set('openWaterCoins', String(PLAYER_START_COINS));
         try { const st = JSON.parse(store.get('openWaterStats')) || {}, t = JSON.parse(store.get('openWaterThrone')) || {};   // Ranglisten zählen ab jetzt (09f rangSaison)
             store.set('openWaterSaisonRang', JSON.stringify([st.captures || 0, Math.floor(Math.max(t.earned || 0, (t.week || {}).player || 0))])); } catch (e) {}
-        try { const ps = JSON.parse(store.get('openWaterPass')); if (ps && ps.s && typeof ps.s === 'object') {   // Saison-Pass von vorn (Premium bleibt gekauft)
-            for (const k in ps.s) ps.s[k] = { xp: 0, prem: !!(ps.s[k] || {}).prem, f: [], p: [] }; store.set('openWaterPass', JSON.stringify(ps)); } } catch (e) {}
+        try { const ps = JSON.parse(store.get('openWaterPass')); if (ps && ps.s && typeof ps.s === 'object') {   // Saison-Pass von vorn, auch Premium (Alexander 8.10.)
+            for (const k in ps.s) ps.s[k] = { xp: 0, prem: false, f: [], p: [] }; store.set('openWaterPass', JSON.stringify(ps)); } } catch (e) {}
         const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
         for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
         try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
@@ -862,7 +863,7 @@ if (islandById[playerIslandId] && islandById[playerIslandId].type !== 'tower') {
     if (best !== null) { playerIslandId = best; store.set('openWaterPlayerIslandId', playerIslandId); }
 }
 
-let coins = parseFloat(store.get('openWaterCoins')) || 0;   // parseFloat: huge sums are stored as "1e+22"
+let coins = store.get('openWaterCoins') === null ? PLAYER_START_COINS : parseFloat(store.get('openWaterCoins')) || 0;   // neuer Spielstand: Start-Münzen · parseFloat: huge sums are stored as "1e+22"
 let gems = parseFloat(store.get('openWaterGems')) || 0;
 
 let bonusGrantedAtBoot = false;   // persisted by saveGame() at the end of boot
@@ -1022,6 +1023,7 @@ if (rechnet()) {
         botOwnedIslands[bot.id].add(tower.id);
         islandLevels[tower.id] = 1;
         islandTroops[tower.id] = PLAYER_START_TROOPS;     // Start-Truppen wie jeder neue Spieler (Alexander 6.10.: Mitspieler gleich)
+        botCoins[bot.id] = PLAYER_START_COINS;            // und Start-Münzen (Alexander 8.10.)
         usedTowerIds.add(tower.id);
     });
     // more players than start places: the rest start on a free outer base, as far as possible from everyone else
@@ -1039,7 +1041,7 @@ if (rechnet()) {
                 if (dmin > bestD) { bestD = dmin; best = c; }
             }
             if (!best) break;
-            botOwnedIslands[bot.id].add(best.id); islandLevels[best.id] = 1; islandTroops[best.id] = PLAYER_START_TROOPS; usedTowerIds.add(best.id); taken.push(best);
+            botOwnedIslands[bot.id].add(best.id); islandLevels[best.id] = 1; islandTroops[best.id] = PLAYER_START_TROOPS; botCoins[bot.id] = PLAYER_START_COINS; usedTowerIds.add(best.id); taken.push(best);
         }
     }
 }
@@ -1549,16 +1551,20 @@ let playerLvl = parseInt(store.get('openWaterLevel'), 10) || 1;
 function xpNeededForLevel(level) {
     return Math.round(50 * Math.pow(1.3, Math.min(level, 400) - 1));
 }
-// Level rewards: small at the start, 2 Mio. troops at level 30, then linear growth – × WIRTSCHAFT_KOSTEN (5.10.: heute 1.100 bei Stufe 30).
-// Nie unter STUFE_LOHN_MIN (6.10.: „+1 Münze, +1 Truppe“ sah kaputt aus – 10 ist etwa eine Stunde Ertrag einer Basis); Münzen
-// × MUENZ_FAKTOR (mindestens 10.000, Stufe 30: 250.000)
-const STUFE_LOHN_MIN = 10;
+// Stufen-Belohnung Truppen (Alexander 8.10.: „freuen, aber nicht zu viel“): ein Tag Truppen-Ertrag einer Basis dieser Stufe
+// (troopsPerTick, wächst wie die Produktion) – Stufe 2: 410 (≈ 8 % der 5.000 Start-Truppen), Stufe 10: 1.300, Stufe 30: 21.000.
+// Münzen: nie unter STUFE_LOHN_MIN × MUENZ_FAKTOR (mindestens 10.000, Stufe 30: 250.000).
+// stufenTruppenMass: das Größenmaß für Helden-Gefolge (08c) und Funde (09a) – die alte Stufen-Belohnung (× WIRTSCHAFT_KOSTEN, Stufe 30: 1.100).
+const STUFE_LOHN_MIN = 10, STUFE_TRUPPEN_STD = 24;
 function niceRound(n) {
     if (n < 100) return Math.round(n);
     const p = Math.pow(10, Math.floor(Math.log10(n)) - 1);
     return Math.round(n / p) * p;
 }
 function levelRewardTroops(level) {
+    return niceRound(STUFE_TRUPPEN_STD * troopsPerTick(level) / WIRTSCHAFT_ERTRAG);
+}
+function stufenTruppenMass(level) {
     return niceRound(Math.max(STUFE_LOHN_MIN, wirtK(level <= 30 ? 2000000 * Math.pow(level / 30, 3) : 2000000 + (level - 30) * 100000)));
 }
 function levelRewardCoins(level) {
@@ -3979,7 +3985,6 @@ function drawRings(visible, z, now) {
     if (isl.id === playerIslandId && z >= 0.006) {                            // the capital: blue-gold double ring
       ring(x, y, Math.max(r * 1.55, 12), 2, 'rgba(228,200,134,.95)'); ring(x, y, Math.max(r * 1.8, 15), 1.2, 'rgba(140,192,255,.6)', [3, 4]);
     }
-    if (teleportMode && isOwned && isl.id !== playerIslandId && isl.type === 'tower') ring(x, y, S, 2, 'rgba(228,200,134,' + (.45 + .55 * pulse).toFixed(2) + ')', [4, 4]);
     const isSelectable = (attackTarget && isOwned && canReach(isl.landmassId, attackTarget.landmassId)) ||
                          (pendingSendFromId !== null && isOwned && isl.id !== pendingSendFromId);
     if (isSelectable) ring(x, y, S, 2, 'rgba(255,255,255,' + (.45 + .55 * pulse).toFixed(2) + ')', [4, 4]);
@@ -9547,7 +9552,7 @@ function heroStats(who, id, s) {                    // Angriff, Verteidigung (fe
     const h = heroById(id); s = s || heroSt(who, id); if (!h || !s) return { atk: 0, def: 0, spd: 0, gef: 0 };
     const t = HERO_TIER[h.r], m = t.st * (1 + s.q / 4 * .15), L = heroLead(who);
     return { atk: Math.round(h.base[0] * m), def: Math.round(h.base[1] * m), spd: Math.round(h.base[2] * m),
-             gef: Math.round(5e4 * t.st * (1 + s.q * .15) * levelRewardTroops(L.lvl) / 2e6 * (1 + L.hall * HERO_HALL_GEF / 100)) };
+             gef: Math.round(5e4 * t.st * (1 + s.q * .15) * stufenTruppenMass(L.lvl) / 2e6 * (1 + L.hall * HERO_HALL_GEF / 100)) };
 }
 function heroPower(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own) return 0; return Math.round((4 + s.q) * HERO_TIER[h.r].st * 2500 + s.sk.reduce((a, v) => a + v, 0) * 1200); }
 // what every skill does: [the fx it raises, the kind of fight it needs]
@@ -9962,30 +9967,13 @@ function stadtKopf() {                          // Unterkante der Bauarbeiter-Ze
     if (u > 0 && u !== stadtKopfU) { stadtKopfU = u; document.body.style.setProperty('--stadt-kopf', u + 'px'); }
 }
 var stadtKopfU = 0;
-// Hauptstadt verlegen (teleport): pick one of your own bases, the capital status and its garrison move there.
-var teleportMode = false, teleportBis = 0;   // (bleibt nur 20 s scharf – danach kostet ein Tipp auf eine Basis keine Gems mehr aus Versehen)
+// Hauptstadt-Fenster: „Teleportieren“ führt wie der Teleporter im Rucksack zur Auswahl auf der Karte (Verlegen in einen eigenen Turm
+// für 50 Edelsteine gibt es nicht mehr – Alexander 8.10.). TELEPORT_GEMS: nur noch das Verlegen der Mitspieler (bots/05, Bündnis).
 const TELEPORT_GEMS = 50;
 document.getElementById('teleportBtn').addEventListener('click', () => {
-    if (gems < TELEPORT_GEMS) { flashHint('Zum Verlegen brauchst du ' + TELEPORT_GEMS + ' Edelsteine.', 3000); return; }
-    if (![...ownedIslands].some(id => id !== playerIslandId && islandById[id] && islandById[id].type === 'tower')) { flashHint('Du brauchst noch einen zweiten Turm, um die Hauptstadt zu verlegen – Tempel und Tore zählen nicht.', 3500); return; }
-    closeIslandPopup(); teleportMode = true; teleportBis = Date.now() + 20000; requestRender();
-    flashHint('Tippe einen deiner Türme an – die Hauptstadt zieht dorthin (' + TELEPORT_GEMS + ' Edelsteine). Woanders tippen bricht ab.', 5000);
+    closeAllPopups(); if (!cityView.hidden) closeCity(); recenterOnHome(true);
+    flashHint('Tippe auf eine freie Stelle der Karte, dann „Teleportieren“ – das kostet ' + (teleImRucksack() ? '1 Teleporter' : fmtNum(TP_GEMS) + ' Edelsteine') + '.', 5000);
 });
-function teleportCapital(toId) {
-    const from = playerIslandId, to = islandById[toId];
-    if (!to || !ownedIslands.has(toId) || toId === from || to.type !== 'tower' || gems < TELEPORT_GEMS) return false;   // a tower - never a gate, a temple or the throne
-    if (window.WELT && pendingAttacks.some(a => a.targetId === toId)) { flashHint('Dorthin geht es gerade nicht: ein Angriff läuft auf diese Basis.', 3000); return null; }   // (der Weltrechner lehnt es genauso ab – sonst wären die Gems weg)
-    gems -= TELEPORT_GEMS;
-    islandTroops[toId] = (islandTroops[toId] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0;   // the garrison moves along
-    playerIslandId = toId; store.set('openWaterPlayerIslandId', playerIslandId); statBump('teleports');
-    alsBefehl('hauptstadt', { insel: toId });
-    revealAround(to.x, to.y, REVEAL_BASE, true);
-    flushBannerSprites();
-    saveGame(); saveProgression(); updateHud();
-    spawnBattleFx(toId, true, 'Hauptstadt', 'hierher verlegt');
-    flashHint('Die Hauptstadt ist umgezogen – deine Truppen sind mitgekommen.', 3500);
-    return true;
-}
 // Teleportieren (Alexander 7.10., Merkliste 33): die Hauptstadt an eine freie Stelle der Karte – die Basis selbst zieht um (Truppen,
 // Stufe, Stadt bleiben). Platz wie für eine Basis (nicht im Gebirge, nicht auf Toren, Feldern, Lagern, Tempeln, nicht in der Thron-Mitte),
 // nur in Gebiete, die von der Hauptstadt über offene Pässe erreichbar sind (TELEPORT_NUR_OFFEN). Kostet 1 Teleporter aus dem Rucksack (im Shop
@@ -10299,7 +10287,7 @@ let pickups = [], pickupFx = [], nextPickupAt = Date.now() + 8000;
 function pickupAmount(kind) {
     const L = Math.max(playerLvl, 1);
     if (kind === 'gem') return 1 + Math.floor(Math.random() * 3);
-    if (kind === 'troops') return Math.max(wirtK(100), niceRound(levelRewardTroops(Math.max(L, 2)) * 0.05));   // (Stufen-Belohnung und Mindestwert × WIRTSCHAFT_KOSTEN)
+    if (kind === 'troops') return Math.max(wirtK(100), niceRound(stufenTruppenMass(Math.max(L, 2)) * 0.05));   // (Stufen-Belohnung und Mindestwert × WIRTSCHAFT_KOSTEN)
     return Math.max(wirtM(200), niceRound(levelRewardCoins(L) * 0.1));   // (Münzen: wirtM)
 }
 function pickupScreenPos(p) { return { x: p.x * mapState.zoom + mapState.offsetX, y: p.y * mapState.zoom + mapState.offsetY }; }
@@ -12125,7 +12113,6 @@ document.getElementById('uiScrimTop').addEventListener('click', closeTopmostPane
 // Panels are exclusive: opening one closes the others first, so no
 // hidden panel keeps live state (e.g. an open attack preview) underneath.
 function closeAllPopups() {
-    if (teleportMode) { teleportMode = false; requestRender(); }   // ein anderes Fenster: Verlegen ist abgebrochen
     closePanel(popup);
     { const bp = document.getElementById('bundPopup'); if (bp && isPanelOpen(bp)) document.getElementById('bundCloseBtn').click(); }   // (Bündnis, buendnis.js)
     popupStats.dataset.preview = '';
@@ -12286,8 +12273,8 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // Ende: die besten 10 nach Macht (wie die Rangliste) bekommen Gems ins Abholfach und einen Saison-Rahmen bis zum
 // nächsten Saison-Ende (05a RAHMEN: Platz 1 · 2–3 · 4–5 · 6–10, aus last.top – Alexander 6.10.).
 // Bleibt: die ganze Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, alles Gekaufte.
-// Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (0 wie ein neuer Spieler), Stufe (→ 1,
-// damit alle Fähigkeitspunkte), Saison-Pass (Punkte, Stufen – Premium bleibt; Erfolge bleiben), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
+// Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (PLAYER_START_COINS wie ein neuer Spieler), Stufe (→ 1,
+// damit alle Fähigkeitspunkte), Saison-Pass (Punkte, Stufen, Premium – Alexander 8.10.; Erfolge bleiben), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 // Burg fair (Alexander 6.10. A): der ERSTE Reset danach setzt EINMAL jede Burg über Stufe BURG_FAIR auf BURG_FAIR (bis 5.10. galt die alte,
@@ -12339,7 +12326,7 @@ function saisonTakt() {                               // (nur wer rechnet) Termi
     saisonNeu(now);
 }
 setInterval(saisonTakt, 5000);
-const saisonBaldText = ende => { const t = Math.max(1, Math.round((ende - Date.now()) / 864e5)); return 'In ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe und Bündnisse fangen neu an. Die besten 10 bekommen Edelsteine und einen Titel für immer.'; };   // (nach der echten Restzeit – die Nachricht kann später gelesen werden)
+const saisonBaldText = ende => { const t = Math.max(1, Math.round((ende - Date.now()) / 864e5)); return 'In ' + t + (t === 1 ? ' Tag' : ' Tagen') + ' beginnt eine neue Welt-Saison (' + evWann(ende) + ' Uhr). Deine Hauptstadt mit Burg, Gebäuden, Forschung, Helden, Ausrüstung, Edelsteine und Rohstoffen bleibt – Basen, Truppen, Münzen, Stufe, Saison-Pass (auch Premium) und Bündnisse fangen neu an. Die besten 10 bekommen Edelsteine und einen Titel für immer.'; };   // (nach der echten Restzeit – die Nachricht kann später gelesen werden)
 function saisonAnkuendigen() {
     if (window.WELT) { for (const id in WELT.menschen) { const uid = parseInt(id.slice(1), 10); if (uid > 0) WELT.nachricht(uid, { art: 'saisonBald', nr: saison.nr, ende: saison.ende }, 'saisonBald|' + saison.nr); } }
     else afterSplash(() => flashHint(saisonBaldText(saison.ende), 12000, true));
@@ -12428,10 +12415,10 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     // 48 Std. Anfängerschutz für alle echten Spieler – auch die, die beim Reset keine Basis hatten (die Nachricht „saison“ schickt ihn mit)
     for (const w of wer) if (w !== 'player' && botById[w] && botById[w].mensch) bs[w].neuBis = now + NEULING_MS;
     if (wer.includes('player')) store.set('openWaterSaisonSchutz', String(now + NEULING_MS));   // (Vorschau: dein Anfängerschutz – übernimmt das Laden)
-    // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, keine Münzen, keine Verwundeten, keine alten Pläne
+    // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, Start-Münzen, keine Verwundeten, keine alten Pläne
     for (const w of wer) { if (w === 'player') continue; const b = bs[w];
-        b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
-        if (b.ps) { b.ps.base = botPassScore(b); b.ps.f = 0; b.ps.p = 0; }   // Saison-Pass von vorn (Premium bleibt)
+        b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = PLAYER_START_COINS;
+        if (b.ps) { b.ps.base = botPassScore(b); b.ps.f = 0; b.ps.p = 0; b.ps.prem = false; }   // Saison-Pass von vorn, auch Premium (Alexander 8.10.)
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
         if (B > 0 && AUF) burgFairWer(b, B);
         if (!(botById[w] && botById[w].mensch) && b.tp > SAISON_TP_MAX) { const g = Math.floor((b.tp - SAISON_TP_MAX) / SAISON_TP_JE_GEM); b.tp = SAISON_TP_MAX;   // Thron-Punkte (echte Spieler: ihr Handy)
@@ -12469,7 +12456,7 @@ function saisonKarte() {
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
         '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes · Thron-Punkte bis ' + fmtNum(SAISON_TP_MAX) + ' (der Rest ' + SAISON_TP_JE_GEM + ' : 1 als Edelsteine)</b>' +
         (S.burgFair ? '' : '<span>Einmalig</span><b>Ausnahme wegen eines Fehlers, für alle gleich: Burg höchstens Stufe ' + BURG_FAIR + ', Edelsteine genau ' + fmtNum(SAISON_AUSNAHME_GEMS) + ', Holz/Stein/Eisen 0</b>') +
-        '<span>Neu</span><b>Basen, Truppen, Münzen, Stufe, Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
+        '<span>Neu</span><b>Basen, Truppen, Münzen (' + fmtNum(PLAYER_START_COINS) + ' zum Start), Stufe, Saison-Pass (auch Premium), Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }
 // ---- (Handy) Nachrichten vom Weltrechner: Ankündigung, neue Saison ----
 if (window.WELT && !SYSTEM) {
@@ -12509,8 +12496,7 @@ if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison 
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))
     el.textContent = fmtNum({ CRATE_GEM_COST, MULTI_ATTACK_GEM_COST, RECALL_GEM_COST }[el.dataset.const]);
-document.querySelector('#teleportBtn .act-t').textContent = 'Verlegen';   // Zweit-Knopf: kurzer Name + Preis (die Erklärung sagt der Hinweis beim Antippen)
-document.querySelector('#teleportBtn .act-s').innerHTML = icon('gem', 'icon--gem') + fmtNum(TELEPORT_GEMS);
+document.querySelector('#teleportBtn .act-t').textContent = 'Teleportieren';   // Zweit-Knopf: kurzer Name + Preis (der Preis kommt beim Öffnen – 1 Teleporter oder Edelsteine)
 document.getElementById('shopOdds').innerHTML = RARITY_DEFS.map((rd, i) => RARITY_DROP_WEIGHTS[i] > 0 ?
     '<span class="chip chip--rar" data-r="' + rd.key + '">' + rd.label + ' ' + RARITY_DROP_WEIGHTS[i].toLocaleString('de-DE') + ' %</span>' : '').join('') +
     '<span class="chip chip--rar">' + RARITY_DEFS[4].label + ' + ' + RARITY_DEFS[5].label + ': nur durch Zusammenlegen</span>';
@@ -12643,7 +12629,7 @@ function renderPopup() {
             (island.id === playerIslandId ? sep + 'Heimat' : '');
 
         popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt' + (brennt(island.id) ? ' · brennt' : '') : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
-        if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
+        if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; document.querySelector('#teleportBtn .act-s').innerHTML = tpPreisHtml(); }
         document.getElementById('cityBtn').classList.toggle('act--haupt', island.id === playerIslandId);   // ein Haupt-Knopf: Stadt betreten (Hauptstadt) bzw. Aufwerten
         upgradeBtn.classList.toggle('act--haupt', island.id !== playerIslandId);
         liveHtml(popupStats, '<div class="stat-grid">' +
@@ -13188,15 +13174,6 @@ function fogPromptHit(sx, sy) {                   // → 'go' (the button), 'off
 function handleTap(screenX, screenY) {
     if (feldRing) { feldRingZu(); return; }                                 // daneben tippen schließt das Feld-Menü
     const blattOffen = !!armySheet || !document.getElementById('markerSheet').hidden || !!fieldSheetId || !!barbView || isPanelOpen(popup);
-    if (teleportMode && Date.now() > teleportBis) { teleportMode = false; requestRender(); }
-    if (teleportMode) {
-        teleportMode = false; requestRender();
-        const isl = pickIslandAtScreen(screenX, screenY);
-        if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type === 'tower') { if (teleportCapital(isl.id) === false) flashHint('Verlegen geht gerade nicht (genug Edelsteine? frei?).', 2500); }
-        else if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId) flashHint('Die Hauptstadt kann nur in einen Turm ziehen – nicht in Tempel, Tore oder den Thron.', 3500);
-        else flashHint('Verlegen abgebrochen.', 2000);
-        return;
-    }
     if (!multiAttackMode && armyHandleTap(screenX, screenY)) return;       // armies in the field: place, select, give orders
     if (markerMode) {                                                        // placing a Wegmarke
         setMarkerMode(false); const w = screenToWorld(screenX, screenY);
@@ -14037,7 +14014,7 @@ if (window.WELT) {
             const heute = todayKey(); if (!d.fund || d.fund.t !== heute) d.fund = { t: heute, n: 0 };   // höchstens 300 am Tag (Alexander 5.10.: ~7 Std. ohne Pause – gegen ein Skript rund um die Uhr; überlebt Neustarts)
             if (d.fund.n >= 300) { if (d.fund.n === 300) warnen(who, 'truppen', 'Über 300 Funde auf der Karte an einem Tag – abgelehnt.', b.n); d.fund.n = 301; saveBotState(); return 0; }
             d.fund.n++; saveBotState();
-            erlaubt = Math.max(FUND_TR_MIN, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + FUND_TR_MIN;
+            erlaubt = Math.max(FUND_TR_MIN, niceRound(stufenTruppenMass(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + FUND_TR_MIN;
         } else if (q === 'pass') {                     // Saison-Pass: jede Stufe (Reihe) zahlt einmal je Saison ihre Truppen-Stunden – und nur so weit, wie man in der Zeit kommen kann
             const s = passNo(now), l = b.l, pr = b.p === 1 ? 1 : 0, ok = Number.isInteger(l) && l >= 1 && l <= PASS_LVLS && (b.s === s || b.s === s - 1);
             const r = ok ? passRewardAt(l, !!pr).find(x => x.k === 'tr') : null;
@@ -14478,7 +14455,7 @@ if (window.WELT) {
     WELT.kontoMuenzen = who => { const m = wacheSehen(who); return m.init ? m.c.u + m.c.vor : 0; };   // (noch nie gesehen: jetzt ansehen – nie ungeprüft das Profil; ohne Mitspieler-Datensatz hat er keine Münzen in der Welt)
     WELT.hauptbuch = who => hbDa(who);                // (für Tests und die Admin-Ansicht)
     // Neue Welt-Saison (09f-saison.js saisonNeu): sein Konto passend zurücksetzen – Stufe 1 (EP neu, Stufen-Truppen/-Gems wieder ab
-    // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen 0, keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
+    // Stufe 1, Fähigkeiten 0 ohne Rücksetz-Gems), Münzen PLAYER_START_COINS (wie sein Handy), keine Verwundeten, Nebel neu. Bleibt: Stadt, Forschung, Ausrüstung,
     // Helden, Schild, Gems und Rohstoffe (Konten, Topf des Ausgegebenen – ein laufender Bau ist schon bezahlt). Sein altes Profil
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
     // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – die Münz-Töpfe des Ausgegebenen (Münzen, Admin-Münzen) werden
@@ -14503,7 +14480,7 @@ if (window.WELT) {
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
-        if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; delete d.pTr; }   // (pTr: sein Saison-Pass fängt neu an – Truppen-Stufen wieder abholbar)
+        if (d) { d.u = PLAYER_START_COINS; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; delete d.pTr; }   // (pTr: sein Saison-Pass fängt neu an – Truppen-Stufen wieder abholbar)
         if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; hb.passF = 0; hb.passAb = Date.now(); }
         if (f > 0 && f < 1) {
             if (hb) hb.cA = Math.floor(nn(hb.cA) * f);   // (Holz/Stein/Eisen bleiben – auch ihre Töpfe rU/rA, 6.10.)
@@ -14729,15 +14706,6 @@ if (window.WELT) {
             if (zuOft(m, 'ausbau', 60, 10000)) { warnen(who, 'ausbau', 'Ausbau über 60-mal in 10 s – der Rest verfällt.'); return; }
             const x = { b, bis: Date.now() + WACHE_WARTEN_MS }; m.warte.ausbau.push(x); wacheAbarbeiten(who);
             if (m.warte.ausbau.includes(x)) { x.wartet = true; return 'wartet'; }   // (noch nicht entschieden: welt.js quittiert ihn noch nicht)
-        },
-        hauptstadt(who, b) {
-            if (!inselOk(b.insel)) return;
-            const to = islandById[b.insel], bs = loadBotState()[who]; if (!to || to.type !== 'tower' || !gehoert(b.insel, who) || !bs) return;
-            if (zuOft(wm(who), 'hauptstadt', 20, 3600000)) { warnen(who, 'hauptstadt', 'Hauptstadt über 20-mal in einer Stunde verlegt – abgelehnt.'); return; }
-            if (pendingAttacks.some(a => a.targetId === b.insel)) return;   // nicht in eine Basis, auf die gerade ein Angriff läuft (wie bei den Mitspielern)
-            const hb = hbDa(who); if (hb && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
-            const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
-            bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender(); befehlBezahlt(b);
         },
         teleport(who, b) {                            // Hauptstadt an eine freie Stelle (08d tpPruefen) – nur echte Spieler
             const bs = loadBotState()[who]; if (!bs || !bs.mensch || typeof b.x !== 'number' || typeof b.y !== 'number') return;

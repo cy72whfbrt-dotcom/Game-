@@ -214,16 +214,20 @@ let playerLvl = parseInt(store.get('openWaterLevel'), 10) || 1;
 function xpNeededForLevel(level) {
     return Math.round(50 * Math.pow(1.3, Math.min(level, 400) - 1));
 }
-// Level rewards: small at the start, 2 Mio. troops at level 30, then linear growth – × WIRTSCHAFT_KOSTEN (5.10.: heute 1.100 bei Stufe 30).
-// Nie unter STUFE_LOHN_MIN (6.10.: „+1 Münze, +1 Truppe“ sah kaputt aus – 10 ist etwa eine Stunde Ertrag einer Basis); Münzen
-// × MUENZ_FAKTOR (mindestens 10.000, Stufe 30: 250.000)
-const STUFE_LOHN_MIN = 10;
+// Stufen-Belohnung Truppen (Alexander 8.10.: „freuen, aber nicht zu viel“): ein Tag Truppen-Ertrag einer Basis dieser Stufe
+// (troopsPerTick, wächst wie die Produktion) – Stufe 2: 410 (≈ 8 % der 5.000 Start-Truppen), Stufe 10: 1.300, Stufe 30: 21.000.
+// Münzen: nie unter STUFE_LOHN_MIN × MUENZ_FAKTOR (mindestens 10.000, Stufe 30: 250.000).
+// stufenTruppenMass: das Größenmaß für Helden-Gefolge (08c) und Funde (09a) – die alte Stufen-Belohnung (× WIRTSCHAFT_KOSTEN, Stufe 30: 1.100).
+const STUFE_LOHN_MIN = 10, STUFE_TRUPPEN_STD = 24;
 function niceRound(n) {
     if (n < 100) return Math.round(n);
     const p = Math.pow(10, Math.floor(Math.log10(n)) - 1);
     return Math.round(n / p) * p;
 }
 function levelRewardTroops(level) {
+    return niceRound(STUFE_TRUPPEN_STD * troopsPerTick(level) / WIRTSCHAFT_ERTRAG);
+}
+function stufenTruppenMass(level) {
     return niceRound(Math.max(STUFE_LOHN_MIN, wirtK(level <= 30 ? 2000000 * Math.pow(level / 30, 3) : 2000000 + (level - 30) * 100000)));
 }
 function levelRewardCoins(level) {

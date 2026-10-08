@@ -3,8 +3,7 @@
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))
     el.textContent = fmtNum({ CRATE_GEM_COST, MULTI_ATTACK_GEM_COST, RECALL_GEM_COST }[el.dataset.const]);
-document.querySelector('#teleportBtn .act-t').textContent = 'Verlegen';   // Zweit-Knopf: kurzer Name + Preis (die Erklärung sagt der Hinweis beim Antippen)
-document.querySelector('#teleportBtn .act-s').innerHTML = icon('gem', 'icon--gem') + fmtNum(TELEPORT_GEMS);
+document.querySelector('#teleportBtn .act-t').textContent = 'Teleportieren';   // Zweit-Knopf: kurzer Name + Preis (der Preis kommt beim Öffnen – 1 Teleporter oder Edelsteine)
 document.getElementById('shopOdds').innerHTML = RARITY_DEFS.map((rd, i) => RARITY_DROP_WEIGHTS[i] > 0 ?
     '<span class="chip chip--rar" data-r="' + rd.key + '">' + rd.label + ' ' + RARITY_DROP_WEIGHTS[i].toLocaleString('de-DE') + ' %</span>' : '').join('') +
     '<span class="chip chip--rar">' + RARITY_DEFS[4].label + ' + ' + RARITY_DEFS[5].label + ': nur durch Zusammenlegen</span>';
@@ -137,7 +136,7 @@ function renderPopup() {
             (island.id === playerIslandId ? sep + 'Heimat' : '');
 
         popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt' + (brennt(island.id) ? ' · brennt' : '') : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
-        if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; }
+        if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; document.querySelector('#teleportBtn .act-s').innerHTML = tpPreisHtml(); }
         document.getElementById('cityBtn').classList.toggle('act--haupt', island.id === playerIslandId);   // ein Haupt-Knopf: Stadt betreten (Hauptstadt) bzw. Aufwerten
         upgradeBtn.classList.toggle('act--haupt', island.id !== playerIslandId);
         liveHtml(popupStats, '<div class="stat-grid">' +

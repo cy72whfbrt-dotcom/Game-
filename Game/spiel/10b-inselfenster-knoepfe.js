@@ -246,15 +246,6 @@ function fogPromptHit(sx, sy) {                   // → 'go' (the button), 'off
 function handleTap(screenX, screenY) {
     if (feldRing) { feldRingZu(); return; }                                 // daneben tippen schließt das Feld-Menü
     const blattOffen = !!armySheet || !document.getElementById('markerSheet').hidden || !!fieldSheetId || !!barbView || isPanelOpen(popup);
-    if (teleportMode && Date.now() > teleportBis) { teleportMode = false; requestRender(); }
-    if (teleportMode) {
-        teleportMode = false; requestRender();
-        const isl = pickIslandAtScreen(screenX, screenY);
-        if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId && isl.type === 'tower') { if (teleportCapital(isl.id) === false) flashHint('Verlegen geht gerade nicht (genug Edelsteine? frei?).', 2500); }
-        else if (isl && ownedIslands.has(isl.id) && isl.id !== playerIslandId) flashHint('Die Hauptstadt kann nur in einen Turm ziehen – nicht in Tempel, Tore oder den Thron.', 3500);
-        else flashHint('Verlegen abgebrochen.', 2000);
-        return;
-    }
     if (!multiAttackMode && armyHandleTap(screenX, screenY)) return;       // armies in the field: place, select, give orders
     if (markerMode) {                                                        // placing a Wegmarke
         setMarkerMode(false); const w = screenToWorld(screenX, screenY);

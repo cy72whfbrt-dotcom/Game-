@@ -73,7 +73,6 @@ document.getElementById('uiScrimTop').addEventListener('click', closeTopmostPane
 // Panels are exclusive: opening one closes the others first, so no
 // hidden panel keeps live state (e.g. an open attack preview) underneath.
 function closeAllPopups() {
-    if (teleportMode) { teleportMode = false; requestRender(); }   // ein anderes Fenster: Verlegen ist abgebrochen
     closePanel(popup);
     { const bp = document.getElementById('bundPopup'); if (bp && isPanelOpen(bp)) document.getElementById('bundCloseBtn').click(); }   // (Bündnis, buendnis.js)
     popupStats.dataset.preview = '';
