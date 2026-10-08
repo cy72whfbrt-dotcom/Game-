@@ -61,4 +61,4 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - Schlüssel 1 (normal) / 2 (episch) öffnen Ausrüstungs- und Helden-Kisten; ohne Schlüssel 100 / 500 Edelsteine; episch: sicher
   1 Lila spätestens nach 20 Versuchen. Beschleuniger 1/5/15 Min, 1/3/8/24 Std – gelten für Bauen, Forschen, Heilen (nicht Truppen).
 - Schlüssel 1/2 und Beschleuniger gibt es auch als Event-Belohnung. Wochenkette (7 Tage Aufgaben) fliegt raus.
-- Marsch-Plätze: nicht mehr über Burg-Stufe (heute 2 + (Burg−1)/6), sondern als Labor-Forschung (Stufen offen).
+- Marsch-Plätze: nicht mehr über Burg-Stufe, sondern Labor-Forschung: 2 von Anfang an, Platz 3 ab Labor 5, 4 ab 10, 5 ab 16, 6 ab 22.
