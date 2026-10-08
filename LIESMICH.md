@@ -1007,8 +1007,12 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   d.u = Start-Münzen), Start-Truppen bleiben 5.000. (2) **Verlegen in einen eigenen Turm (50 Edelsteine) ist raus** –
   nur noch Teleport (500 Edelsteine oder 1 Teleporter, 1 gratis am Start). Der Knopf im Hauptstadt-Fenster heißt
   „Teleportieren“ (Preis: 1 Teleporter oder 500) und führt wie der Rucksack-Teleporter zur Auswahl auf der Karte.
-  Weltrechner-Befehl `hauptstadt` und der Server-Filter dafür sind weg. Mitspieler verlegen ihre Hauptstadt weiter wie
-  bisher (bots/05, Bündnis „gemeinsam vorrücken“, `TELEPORT_GEMS`). (3) Neue Saison setzt auch das **gekaufte Premium**
+  Weltrechner-Befehl `hauptstadt` und der Server-Filter dafür sind weg. **Mitspieler teleportieren genauso:** 500
+  Edelsteine (bzw. der Gratis-Teleport im Anfängerschutz), dieselben Prüfungen (`tpPruefen`: freie Stelle, nur über offene
+  Pässe, kein Marsch an der Hauptstadt), die Hauptstadt zieht mit ihren Truppen an eine freie Stelle neben dem gewählten
+  eigenen Turm (bots/05 `botTeleportCapital`/`botTpOrt`, auch Bündnis „gemeinsam vorrücken“; im Weltrechner direkt im Takt).
+  Zu wenig Edelsteine: kein Umzug. `TELEPORT_GEMS` (50) ist weg; beim Einkaufen lassen Mitspieler wie bisher einen Rest von
+  50 Edelsteinen übrig (`BOT_GEMS_REST`, bots/04). (3) Neue Saison setzt auch das **gekaufte Premium**
   des Saison-Passes zurück (Handy 01a, Mitspieler 09f). (4) **Stufen-Belohnung Truppen** = 1 Tag Truppen-Ertrag einer
   Basis dieser Stufe (`levelRewardTroops` = 24 × `troopsPerTick`): Stufe 2: 10 → 410, 5: 10 → 620, 10: 41 → 1.300,
   20: 330 → 5.100, 30: 1.100 → 21.000, 40: 1.700 → 84.000, 50: 2.200 → 340.000. Helden-Gefolge und Funde rechnen weiter mit

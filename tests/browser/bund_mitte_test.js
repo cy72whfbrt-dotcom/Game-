@@ -54,12 +54,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         .sort((x, y) => Math.hypot(x.x - tp.x, x.y - tp.y) - Math.hypot(y.x - tp.x, y.y - tp.y))[0];
       geben(A.id, nah.id, 5000);
       const st = loadBotState()[A.id]; st.gems = 400; st.capMovedAt = 0; st.neuBis = 0; localStorage.setItem('openWaterWorldStart', String(Date.now() - 864e6));   // (Pässe offen)
-      const c0 = islandById[botCapitalOf(A.id)];
+      const c0 = islandById[botCapitalOf(A.id)], an = m => m && [m.sourceId, m.targetId, m.fromId, m.toId, m.homeId].includes(c0.id);
+      for (const d of BOT_DEFS) botNextAt[d.id] = Date.now() + 1e9;   // (keiner zieht nebenher – ein Marsch an der Hauptstadt verbietet den Teleport)
+      for (const l of [pendingAttacks, pendingSends, pendingRetreats, fieldMarches, barbMarches]) for (let i = l.length - 1; i >= 0; i--) if (an(l[i])) l.splice(i, 1);
       out.vor = { cap: c0.id, dVor: Math.hypot(c0.x - tp.x, c0.y - tp.y), nah: nah.id };
       stub('botOnline', bot => bot.id === A.id); stub('bundOp', () => 'Test'); stub('verstPruefen', () => {});
       const rnd = Math.random, log0 = a.log.length; Math.random = () => .1;
       try { bundMitspielerRunde(Date.now()); out.vor.arm = { gleich: c0.x === c0.ort0[0] && c0.y === c0.ort0[1], gems: st.gems, log: a.log.length === log0 };
-        st.gems = 1000; bundMitspielerRunde(Date.now()); } finally { Math.random = rnd; }
+        st.gems = 1000; out.vor.marsch = tpMarschDa(c0.id); bundMitspielerRunde(Date.now()); } finally { Math.random = rnd; }
       out.vor.nachher = botCapitalOf(A.id); out.vor.log = (a.log[0] || {}).t; out.vor.gems = 1000 - st.gems;
       out.vor.dNah = Math.hypot(c0.x - nah.x, c0.y - nah.y); out.vor.grenze = BASE_SPACING * 3.5;
       inselOrt = {}; inselOrtAnwenden();
