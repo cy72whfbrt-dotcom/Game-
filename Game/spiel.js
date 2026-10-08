@@ -6926,8 +6926,43 @@ var BEUTE_ART = {
     gems: { b: 'beute_edelsteine', t: 'Edelsteine' }, coins: { b: 'beute_muenzen', t: 'Münzen', r: 1 }, holz: { b: 'beute_holz', t: 'Holz', r: 1 },
     stein: { b: 'beute_stein', t: 'Stein', r: 1 }, eisen: { b: 'beute_eisen', t: 'Eisen', r: 1 }, tr: { b: 'beute_truppen', t: 'Truppen', r: 2 },
     sh: { b: 'beute_splitter', t: 'Helden-Splitter', r: 3 }, tp: { b: 'beute_thron', t: 'Thron-Punkte', r: 4 }, schild: { b: 'beute_schild', t: 'Friedensschild', r: 2 },
-    punkte: { b: 'beute_punkte', t: 'Fähigkeitspunkte', r: 2 }, tele: { b: 'ui_sym_verlegen', t: 'Teleporter', r: 3 }, rahmen: { b: 'ui_sym_krone', t: 'Rahmen', r: 4 }, item: { t: 'Ausrüstung', r: 0 }, kiste: { t: 'Kiste', r: 0 }
+    punkte: { b: 'beute_punkte', t: 'Fähigkeitspunkte', r: 2 }, tele: { b: 'ui_sym_verlegen', t: 'Teleporter', r: 3 }, rahmen: { b: 'ui_sym_krone', t: 'Rahmen', r: 4 }, item: { t: 'Ausrüstung', r: 0 }, kiste: { t: 'Kiste', r: 0 },
+    eventMuenzen: { b: 'beute_eventmuenze', t: 'Event-Münzen', r: 3 }, schluessel1: { b: 'beute_schluessel', t: 'Schlüssel', r: 2 },
+    schluessel2: { b: 'beute_schluessel_episch', t: 'Epischer Schlüssel', r: 3 }, besch: { b: 'beute_beschleuniger_klein', t: 'Beschleuniger', r: 1 }
 };
+// ===== GEGENSTÄNDE (Events/Shop, 8.10.): Event-Münzen, Schlüssel 1 (normal) / 2 (episch), Beschleuniger je Dauer =====
+// Beschleuniger gelten für Bauen, Forschen und Heilen – nicht für Truppen. Alles in EINEM Spielstand-Eintrag (openWaterGegenst).
+var BESCH_MIN = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '3h': 180, '8h': 480, '24h': 1440 };
+var BESCH_DAUERN = Object.keys(BESCH_MIN);
+const beschText = d => BESCH_MIN[d] < 60 ? BESCH_MIN[d] + ' Min' : BESCH_MIN[d] / 60 + ' Std';
+const beschR = d => BESCH_MIN[d] <= 15 ? 1 : BESCH_MIN[d] <= 180 ? 2 : 3;          // Bronze (grün) · Silber (blau) · Gold (lila)
+const beschBild = d => 'beute_beschleuniger_' + (BESCH_MIN[d] <= 15 ? 'klein' : BESCH_MIN[d] <= 180 ? 'mittel' : 'gross');
+// Preise im Shop (Kisten-/Tempo-/Event-Reiter, 06g) – das Hauptbuch (10d3 hbGegenst) rechnet mit denselben: [Edelsteine, Event-Münzen, Woche-Limit Event-Shop]
+var BESCH_PREIS = { '1m': [5, 10, 20], '5m': [20, 40, 20], '15m': [50, 100, 10], '1h': [150, 300, 10], '3h': [400, 800, 5], '8h': [1000, 2000, 3], '24h': [2800, 5500, 1] };
+var SCHLUESSEL_PREIS = { 1: [100, 200, 10], 2: [500, 1000, 3] };
+var eventMuenzen = 0, schluessel1 = 0, schluessel2 = 0, besch = {};
+function gegenstLaden() {
+    let g = null; try { g = JSON.parse(store.get('openWaterGegenst')); } catch (e) { g = null; }
+    g = g && typeof g === 'object' ? g : {}; const z = v => Math.max(0, Math.floor(+v || 0));
+    eventMuenzen = z(g.em); schluessel1 = z(g.s1); schluessel2 = z(g.s2); besch = {};
+    for (const d of BESCH_DAUERN) besch[d] = z(g.besch && g.besch[d]);
+}
+function gegenstSpeichern() { store.set('openWaterGegenst', JSON.stringify({ em: eventMuenzen, s1: schluessel1, s2: schluessel2, besch })); }
+gegenstLaden();
+const beschMinuten = () => BESCH_DAUERN.reduce((a, d) => a + besch[d] * BESCH_MIN[d], 0);   // alle Beschleuniger zusammen in Minuten
+// Gutschreiben (alle Teams rufen nur das auf): art 'eventMuenzen' | 'schluessel1' | 'schluessel2' | 'besch' (extra.dauer '1m'…'24h') | 'gems' | 'coins'.
+// → die Belohnung als Kachel-Angabe für beuteKachel/beuteFenster (null: unbekannt oder nichts)
+function gibBelohnung(art, menge, extra) {
+    const n = Math.floor(+menge || 0); if (!(n > 0)) return null;
+    if (art === 'eventMuenzen') eventMuenzen += n;
+    else if (art === 'schluessel1') schluessel1 += n;
+    else if (art === 'schluessel2') schluessel2 += n;
+    else if (art === 'besch') { const d = extra && (typeof extra === 'string' ? extra : extra.dauer); if (!BESCH_MIN[d]) return null; besch[d] += n; gegenstSpeichern(); return { a: 'besch', n, dauer: d }; }
+    else if (art === 'gems') { gems += n; saveGame(); updateHud(); return { a: 'gems', n }; }
+    else if (art === 'coins') { coins += n; saveGame(); updateHud(); return { a: 'coins', n }; }
+    else return null;
+    gegenstSpeichern(); return { a: art, n };
+}
 var BEUTE_SLOT = { weapon: 'beute_waffe', armor: 'beute_ruestung', shield: 'beute_rundschild', boots: 'beute_stiefel' };
 var KISTE_BILD = { aus: 'kiste_ausruestung', held: 'kiste_held', gross: 'kiste_gross', episch: 'kiste_episch', royal: 'kiste_royal' };
 var KISTE_NAME = { aus: 'Ausrüstungskiste', held: 'Heldenkiste', gross: 'Große Kiste', episch: 'Epische Kiste', royal: 'Königliche Kiste' };
@@ -6936,6 +6971,7 @@ function beuteR(b) {                                // Seltenheit der Kachel: ei
     if (b.r >= 0) return Math.min(5, b.r | 0);
     if (b.a === 'sh' && b.held && typeof heroById === 'function' && heroById(b.held)) return heroById(b.held).r;
     if (b.a === 'gems') return b.n >= 500 ? 4 : b.n >= 100 ? 3 : 2;
+    if (b.a === 'besch' && BESCH_MIN[b.dauer]) return beschR(b.dauer);
     const d = BEUTE_ART[b.a]; return d && d.r >= 0 ? d.r : 0;
 }
 function beuteName(b) {
@@ -6943,11 +6979,13 @@ function beuteName(b) {
     if (b.a === 'kiste') return KISTE_NAME[b.k || 'aus'] + (b.min ? ' (mind. ' + RARITY_DEFS[b.r].label + ')' : '');
     if (b.a === 'sh' && b.held && typeof heroById === 'function' && heroById(b.held)) return 'Splitter ' + heroById(b.held).name;
     if (b.a === 'schild') return 'Friedensschild ' + b.n + ' Std.';
+    if (b.a === 'besch' && BESCH_MIN[b.dauer]) return 'Beschleuniger ' + beschText(b.dauer);
     return (BEUTE_ART[b.a] || { t: '' }).t;
 }
 function beuteBild(b) {
     if (b.a === 'item') return BEUTE_SLOT[b.slot] || 'beute_waffe';
     if (b.a === 'kiste') return KISTE_BILD[b.k || 'aus'] + '_zu';
+    if (b.a === 'besch' && BESCH_MIN[b.dauer]) return beschBild(b.dauer);
     return (BEUTE_ART[b.a] || BEUTE_ART.gems).b;
 }
 function beuteMenge(b) {                            // unten rechts: Anzahl (Schild: Stunden); ein einzelnes Teil/eine Kiste ohne Zahl; ohneZahl: steht daneben
@@ -6961,12 +6999,12 @@ function beuteKachel(b, tag) {                      // tag: 'li' in Listen (Tage
     tag = tag || 'span'; const r = beuteR(b), m = beuteMenge(b), name = beuteName(b);
     const held = b.a === 'sh' && b.held && typeof heroImg === 'function' ? heroImg(b.held, 'bk-held') : '';
     return '<' + tag + ' class="bk" data-r="' + (RARITY_DEFS[r] || RARITY_DEFS[0]).key + '" data-beute="' + b.a + '"' + (b.minus ? ' data-minus' : '') + ' title="' + escapeHtml(name + (m ? ' · ' + m : '')) + '">' +
-        '<img src="bilder/' + beuteBild(b) + '.webp" alt="' + escapeHtml(name) + '" draggable="false">' + held + (m ? '<b>' + m + '</b>' : '') + '</' + tag + '>';
+        '<img src="bilder/' + beuteBild(b) + '.webp" alt="' + escapeHtml(name) + '" draggable="false">' + held + (b.a === 'besch' && BESCH_MIN[b.dauer] ? '<i class="bk-zeit">' + beschText(b.dauer) + '</i>' : '') + (m ? '<b>' + m + '</b>' : '') + '</' + tag + '>';
 }
 function beuteZusammen(liste) {                     // gleiche Sachen in eine Kachel (10 Kisten: „3 × Episch Waffe“)
     const out = [], idx = {};
     for (const b of liste) { if (!b || !(b.n > 0 || b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen')) continue;
-        const k = [b.a, beuteR(b), b.slot || '', b.held || '', b.k || '', b.a === 'schild' ? b.n : '', b.minus ? 1 : ''].join('|');
+        const k = [b.a, beuteR(b), b.slot || '', b.held || '', b.k || '', b.dauer || '', b.a === 'schild' ? b.n : '', b.minus ? 1 : ''].join('|');
         if (idx[k] !== undefined && b.a !== 'schild') { out[idx[k]].n = (out[idx[k]].n || 1) + (b.n || 1); continue; }
         idx[k] = out.length; out.push(Object.assign({}, b, { n: b.n || 1 })); }
     return out;
@@ -13894,6 +13932,12 @@ if (window.WELT) {
         const hb = hbDa(who);                          // 3B: sichere Helden-Splitter fürs Hauptbuch
         if (hb && e.sh && typeof e.sh === 'object') for (const h in e.sh) if (zahlOk(e.sh[h], 1e6)) hb.shB += e.sh[h];
     }
+    // Gegenstände aus Preisen/Geschenken (05e gibBelohnung): em Event-Münzen, s1/s2 Schlüssel, besch { '1h': n, … } – sicher geschickt (hbGegenst)
+    function hbGegenstDazu(hb, e) {
+        const ein = hb.ggIn || (hb.ggIn = {});
+        for (const k of ['em', 's1', 's2']) if (zahlOk(e[k], 1e9)) ein[k] = nn(ein[k]) + e[k];
+        if (e.besch && typeof e.besch === 'object') for (const d of BESCH_DAUERN) if (zahlOk(e.besch[d], 1e6)) ein.bm = nn(ein.bm) + e.besch[d] * BESCH_MIN[d];
+    }
     // (3B) andere Nachrichten des Weltrechners an ihn: Preise (Gems, Splitter, Kisten), Bündnis-Geschenke, Startschild
     function wacheNachricht(who, e) {
         const hb = hbDa(who); if (!hb) return;
@@ -13901,6 +13945,7 @@ if (window.WELT) {
             if (zahlOk(e.gems, 1e7)) hb.gIn += e.gems;                         // liegt im Abholfach – kommt später in seinem Profil an
             if (zahlOk(e.sh, 1e6)) hb.shB += e.sh;
             if (Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 5) hbKisteDazu(hb, e.crate);
+            hbGegenstDazu(hb, e);
         }
         if (e.art === 'evPreis' && (zahlOk(e.coins, 1e15) || zahlOk(e.tr, 1e15))) { const d = wd(who); if (d) { if (zahlOk(e.coins, 1e15)) d.gC = nn(d.gC) + e.coins; if (zahlOk(e.tr, 1e15)) d.gTr = nn(d.gTr) + e.tr; } }   // Event-Leisten (Merkliste 33): Münzen/Truppen aus dem Abholfach – wie ein Geschenk gutgeschrieben (Abholen: Münzen im Profil, Truppen als Befehl „geschenk“)
         if (e.art === 'startschild' && zahlOk(e.bis, 1e15)) hb.schild = Math.max(nn(hb.schild), e.bis);
@@ -14200,7 +14245,8 @@ if (window.WELT) {
         g: 25 + questGemsTag() + 150 / 7,             // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42), Wochenkette (150 / 7 Tage)
         k: 3 + 1 + 3 / 7 + 1 / 7,                     // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, Wochenkette (3), epische Tageskiste
         kg: (3 * 27 + 27) / 7,                        // davon „mind. Episch“ (Wochenkette, Tag 7) als sicherer Kisten-Wert (Episch = 27)
-        sh: HERO_SHARDS_DAY + HERO_SHARDS_CHAIN / 7   // Splitter: Aufgaben-Bonus, Wochenkette
+        sh: HERO_SHARDS_DAY + HERO_SHARDS_CHAIN / 7,  // Splitter: Aufgaben-Bonus, Wochenkette
+        em: 1000, s1: 4.5, s2: 1.5, bm: 1000          // Gegenstände (05e): Event-Münzen (Woche höchstens 4.750), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740)
     };
     const HB_ONLINE_STUNDE_G = 40;                    // Karten-Funde: 1–3 Gems, alle 20–45 s einer, 15 % davon Gems – nur solange er online ist
     const HB_KAPPE_TAGE = 14;                         // so viele Tage Spielraum sammeln sich höchstens an
@@ -14283,6 +14329,7 @@ if (window.WELT) {
         const heute = todayKey(); if (!hb.gOn || hb.gOn.t !== heute) hb.gOn = { t: heute, n: 0 };   // Karten-Funde höchstens ~7 Std. am Tag (wie die Truppen-Funde: 300 am Tag – gegen ein Skript rund um die Uhr)
         const onG = on ? Math.max(0, Math.min(HB_ONLINE_STUNDE_G * Math.min(dt, 600000) / 36e5, 7 * HB_ONLINE_STUNDE_G - hb.gOn.n)) : 0; hb.gOn.n += onG;
         dazu('g', HB_TAG.g * t + onG, HB_KAPPE_TAGE * (HB_TAG.g + 8 * HB_ONLINE_STUNDE_G));   // Karten-Funde nur für die Zeit, die er wirklich da war (online kommt alle 5 Min. ein Profil – nie die Tage dazwischen)
+        for (const k of ['em', 's1', 's2', 'bm']) dazu(k, HB_TAG[k] * t, HB_KAPPE_TAGE * HB_TAG[k]);
         dazu('k', HB_TAG.k * t, HB_KAPPE_TAGE * HB_TAG.k); dazu('kg', HB_TAG.kg * t, HB_KAPPE_TAGE * HB_TAG.kg); dazu('sh', HB_TAG.sh * t, HB_KAPPE_TAGE * HB_TAG.sh);
         const L = hbStufe(who), alter = hb.t0 ? (now - hb.t0) / TAG : 999;
         const ach = HB_ACH() * Math.min(1, alter / 30 + (L - 1) / 100);                   // Erfolge: nach und nach (30 Tage bzw. Stufe 100)
@@ -14311,6 +14358,36 @@ if (window.WELT) {
         }
         return true;
     }
+    // fehlende Bau-/Forschungszeit (ms): zuerst aus benutzten Beschleunigern (hb.bMin, Minuten), der Rest kostet Gems → [Gems, Beschleuniger-Minuten]
+    function hbTempo(hb, fehlt) {
+        let min = fehlt > 0 ? Math.ceil(fehlt / 60000) : 0; const bx = Math.min(min, Math.floor(nn(hb.bMin))); min -= bx;
+        return [min * CITY_GEMS_PER_MIN, bx];
+    }
+    // Gegenstände (05e, Profil gg: Event-Münzen em, Schlüssel s1/s2, Beschleuniger-Minuten bm). Weniger = benutzt: Schlüssel öffnen Kisten
+    // (Ausrüstung oder Helden – beides gutgeschrieben), Beschleuniger kürzen Bauten/Forschung (hb.bMin), Event-Münzen zählen halb als
+    // ausgegebene Gems (Event-Shop ≈ 2× Edelstein-Preis: so bezahlt das Hauptbuch Schild, Teleporter und Schlüssel daraus).
+    // Mehr = geschickt (hb.ggIn aus Nachrichten) → Spielraum (hb.fr) → mit Gems gekauft; der Rest ist auffällig und zählt nicht.
+    const HB_G_JE_BM = Math.min(...BESCH_DAUERN.map(d => BESCH_PREIS[d][0] / BESCH_MIN[d]));   // Gems je Beschleuniger-Minute (bester Shop-Preis)
+    const HB_GG = { em: 0, s1: SCHLUESSEL_PREIS[1][0], s2: SCHLUESSEL_PREIS[2][0], bm: HB_G_JE_BM }, HB_GG_NAME = { em: 'Event-Münzen', s1: 'Schlüssel', s2: 'Epische Schlüssel', bm: 'Beschleuniger-Minuten' };
+    function hbGegenst(who, hb, p, m, now) {
+        const q = p && p.gg; if (!q || typeof q !== 'object') return;
+        const gg = hb.gg; if (!gg) { hb.gg = { em: nn(q.em), s1: nn(q.s1), s2: nn(q.s2), bm: nn(q.bm) }; return; }   // erstes Mal: gilt, was er hat
+        const ein = hb.ggIn || (hb.ggIn = {}), f = hb.fr, heldSh = c => (HERO_CHESTS.find(x => x.id === c) || { sh: 0 }).sh;
+        for (const k in HB_GG) {
+            const d = nn(q[k]) - nn(gg[k]); if (!(d < 0)) continue; const n = -d; gg[k] = nn(q[k]);
+            if (k === 's1') { f.k = nn(f.k) + n; f.sh = nn(f.sh) + n * heldSh('hc1'); }
+            else if (k === 's2') { f.k = nn(f.k) + n; f.kg = nn(f.kg) + n * kWert(3); f.sh = nn(f.sh) + n * heldSh('hcE'); }
+            else if (k === 'em') hb.gA = nn(hb.gA) + n / 2;
+            else hb.bMin = nn(hb.bMin) + n;
+        }
+        for (const k in HB_GG) {
+            let d = nn(q[k]) - nn(gg[k]); if (!(d > 0)) { hbGut(hb, 'gg:' + k); continue; } const roh = d;
+            for (const t of [ein, f]) { const x = Math.min(d, nn(t[k])); t[k] = nn(t[k]) - x; d -= x; }
+            if (d > 0 && HB_GG[k] > 0 && hbZahlen(who, hb, m, { g: d * HB_GG[k] })) d = 0;
+            if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d); }
+            else { gg[k] = nn(q[k]); hbGut(hb, 'gg:' + k); }
+        }
+    }
     // abgelehnt: erst nach 2 Min. (immer noch im Profil) eine Auffälligkeit – einmal
     function hbWarte(who, hb, key, now, text, wert) {
         const w = hb.w || (hb.w = {}); wm(who).hbOffen = 1;
@@ -14327,10 +14404,11 @@ if (window.WELT) {
         // des letzten Baus dieses Bauarbeiters (hb.bu – 1 bzw. 2 Bauarbeiter). Vorher zählte Leerlauf mit (10 Tage still = 10 Tage Bauzeit gratis).
         const pl = (hb.b2 ? 2 : 1), bu = hb.bu || (hb.bu = [0, 0]), i = pl > 1 && bu[1] < bu[0] ? 1 : 0, start = Math.max(T, nn((hb.ruhe || {})[id]), nn(bu[i]));
         const hk = 'bau:' + id + ':' + (L + 1), hilfe = Math.min(nn((hb.hilfe || {})[hk]), zeit * 1000), need = zeit * 1000 - hilfe, fehlt = need - (now - start) - 60000;   // (Bündnis-Hilfe macht den Bau kürzer)
-        const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
+        const [g, bx] = hbTempo(hb, fehlt);
         const k = Object.assign({}, alt ? burgKostenAlt(L) : AUF ? AUF.stadtKosten(id, L) : { c: cityCost(id, L) }); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
-        hb.st[id] = [L + 1, g ? now : Math.min(now, start + need)];   // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
+        hb.bMin = nn(hb.bMin) - bx;
+        hb.st[id] = [L + 1, g || bx ? now : Math.min(now, start + need)];   // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
         bu[i] = hb.st[id][1];                                          // (dieser Bauarbeiter ist ab da wieder frei)
         if (hb.hilfe) delete hb.hilfe[hk];
         evPunkte('bau', who, 2 + L + 1);                               // Wochen-Event „Bauherr“: auch die Stadt (wie bei Mitspielern)
@@ -14341,10 +14419,11 @@ if (window.WELT) {
         if (L > d.max || (hb.st.academy || [0])[0] < AUF.foAkaFuer(d, L)) return 'nein';
         if (d.vor && !((hb.fo[d.vor] | 0) >= 1)) return 'nein';
         const hk = 'fo:' + d.id + ':' + L, need = AUF.foZeitRoh(d, L) * 1000 - Math.min(nn((hb.hilfe || {})[hk]), AUF.foZeitRoh(d, L) * 1000), T = Math.max(nn(hb.foT), nn(hb.foRuhe)), fehlt = need - (now - T) - 60000;   // (Bündnis-Hilfe macht die Forschung kürzer · nie vor dem letzten Profil mit freiem Labor)
-        const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
+        const [g, bx] = hbTempo(hb, fehlt);
         const k = Object.assign({}, AUF.foKosten(d, L)); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
-        hb.fo[d.id] = L; hb.foT = g ? now : Math.min(now, T + need);    // eine Forschung gleichzeitig: die nächste zählt ab da
+        hb.bMin = nn(hb.bMin) - bx;
+        hb.fo[d.id] = L; hb.foT = g || bx ? now : Math.min(now, T + need);    // eine Forschung gleichzeitig: die nächste zählt ab da
         if (hb.hilfe) delete hb.hilfe[hk];
         return 'ok';
     }
@@ -14384,6 +14463,7 @@ if (window.WELT) {
     function hbPruefen(who, hb, p, m, now, schildAlt) {
         const mm = wm(who); mm.hbOffen = 0; mm.hbPrT = now;
         hbFreiDazu(who, hb, now);
+        hbGegenst(who, hb, p, m, now);                 // (vor den Bauten: benutzte Beschleuniger kürzen deren Bauzeit)
         const pl = (p.city && p.city.levels) || {}, will = id => Math.min(hbMax(id), Math.floor(nn(pl[id])));
         for (let runde = 0, weiter = true; weiter && runde < 80; runde++) { weiter = false;
             for (const id of hbBauten()) if (will(id) > hb.st[id][0] && hbStadtSchritt(who, hb, m, id, now) === 'ok') weiter = true; }

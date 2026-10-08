@@ -212,6 +212,11 @@
     // ===================================================================================================
     // 2) Profil: was die anderen von dir brauchen (Kampfwerte, Aussehen) – und daraus ein Mitspieler-Datensatz
     // ===================================================================================================
+    function gegenstProfil(g) {                       // (fehlt: null – ein altes Handy zählt im Hauptbuch nicht)
+        if (!g || typeof g !== 'object') return null; const z = v => Math.max(0, Math.floor(+v || 0)), M = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '3h': 180, '8h': 480, '24h': 1440 };
+        let bm = 0; for (const k in M) bm += z(g.besch && g.besch[k]) * M[k];
+        return { em: z(g.em), s1: z(g.s1), s2: z(g.s2), bm };
+    }
     function meinProfil() {
         const d = S.daten, inv = P(d.openWaterInventory) || {}, eq = P(d.openWaterEquippedItems) || {}, city = P(d.openWaterCity) || {}, look = P(d.openWaterLook) || {};
         const gear = {};
@@ -227,6 +232,7 @@
             look: { frame: look.frame || null, frames: look.frames || [], titles: look.titles || [], throne: !!(look.bought && look.bought.throne) },   // (Rahmen: angelegt + was er schon hat)
             saison: parseInt(d.openWaterSaisonMein, 10) || 1,   // Welt-Saison dieses Spielstands (ein Profil von vor dem Reset zählt nicht)
             stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, tp: thr.pts || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
+            gg: gegenstProfil(P(d.openWaterGegenst)),   // Event-Münzen, Schlüssel, Beschleuniger (Minuten) – Hauptbuch hbGegenst
             crest: P(d.openWaterCrest)   // (tp: Thron-Punkte im Geldbeutel – nur für die Kappe beim Saison-Reset, 10d hbThronReset)
         };
     }

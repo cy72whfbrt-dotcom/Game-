@@ -117,6 +117,12 @@
         const hb = hbDa(who);                          // 3B: sichere Helden-Splitter fürs Hauptbuch
         if (hb && e.sh && typeof e.sh === 'object') for (const h in e.sh) if (zahlOk(e.sh[h], 1e6)) hb.shB += e.sh[h];
     }
+    // Gegenstände aus Preisen/Geschenken (05e gibBelohnung): em Event-Münzen, s1/s2 Schlüssel, besch { '1h': n, … } – sicher geschickt (hbGegenst)
+    function hbGegenstDazu(hb, e) {
+        const ein = hb.ggIn || (hb.ggIn = {});
+        for (const k of ['em', 's1', 's2']) if (zahlOk(e[k], 1e9)) ein[k] = nn(ein[k]) + e[k];
+        if (e.besch && typeof e.besch === 'object') for (const d of BESCH_DAUERN) if (zahlOk(e.besch[d], 1e6)) ein.bm = nn(ein.bm) + e.besch[d] * BESCH_MIN[d];
+    }
     // (3B) andere Nachrichten des Weltrechners an ihn: Preise (Gems, Splitter, Kisten), Bündnis-Geschenke, Startschild
     function wacheNachricht(who, e) {
         const hb = hbDa(who); if (!hb) return;
@@ -124,6 +130,7 @@
             if (zahlOk(e.gems, 1e7)) hb.gIn += e.gems;                         // liegt im Abholfach – kommt später in seinem Profil an
             if (zahlOk(e.sh, 1e6)) hb.shB += e.sh;
             if (Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 5) hbKisteDazu(hb, e.crate);
+            hbGegenstDazu(hb, e);
         }
         if (e.art === 'evPreis' && (zahlOk(e.coins, 1e15) || zahlOk(e.tr, 1e15))) { const d = wd(who); if (d) { if (zahlOk(e.coins, 1e15)) d.gC = nn(d.gC) + e.coins; if (zahlOk(e.tr, 1e15)) d.gTr = nn(d.gTr) + e.tr; } }   // Event-Leisten (Merkliste 33): Münzen/Truppen aus dem Abholfach – wie ein Geschenk gutgeschrieben (Abholen: Münzen im Profil, Truppen als Befehl „geschenk“)
         if (e.art === 'startschild' && zahlOk(e.bis, 1e15)) hb.schild = Math.max(nn(hb.schild), e.bis);

@@ -12,6 +12,7 @@
 .bk > img.bk-held{left:5%;top:5%;width:40%;height:40%;border-radius:50%;object-fit:cover;border:1.5px solid #f6e7bf;background:#1b2638;filter:none}
 .bk > b{position:absolute;right:7%;bottom:5%;font:800 calc(var(--bk,60px) * .22)/1 var(--font-ui);color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap;
   text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 1px #000,-1px 0 1px #000,0 -1px 1px #000}
+.bk > i.bk-zeit{position:absolute;left:6%;top:5%;font:800 calc(var(--bk,60px) * .17)/1 var(--font-ui);font-style:normal;color:#ffe7a8;white-space:nowrap;text-shadow:0 0 2px #000,0 1px 2px #000}   /* Beschleuniger: Dauer oben links */
 .bk-raster{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 .bk-klein{--bk:40px;gap:4px} .bk-mini{--bk:32px;gap:3px;justify-content:flex-start}
 .bk-mit{display:flex;flex-direction:column;align-items:center;gap:3px;width:calc(var(--bk,60px) + 16px)}
