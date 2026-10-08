@@ -69,4 +69,4 @@ Leere Zustände mit Symbol + Satz + einem Gold-Knopf (`leerHtml`). Hinweise unte
 
 ## Offen (Merkliste)
 - 11c Nr. 5: alte Event-Ranglisten/Wochen-Punkte beim Reset (prüfen, ob erledigt); Nr. 28: Invasionsleiste „0 P.“.
-- Test-Ansicht Thron-Event (Vorschlag, noch nicht im Spiel): `werkzeuge/thronevent/thronevent.html?a=woche|wochenende|shop|karte|herrscher` – echtes Events-Fenster mit Chip „Thron“ (Punkt = läuft), Shop-Reiter „Event“, Karte mit Kuppel je Turm/Thron. Stil + Symbole aus `Game/spiel.php` per `werkzeuge/thronevent/stil_holen.sh`.
+- Test-Ansicht Thron-Event (Vorschlag, noch nicht im Spiel): `werkzeuge/thronevent/thronevent.html?a=woche|wochenende|shop|karte|herrscher` – echtes Events-Fenster mit Chip „Thron“ (Punkt = läuft), Shop-Reiter „Event“, Karte mit fast durchsichtiger, pulsierender Kuppel je Turm/Thron (`karte_kuppel.webp`, nur Rand + Runen), am Wochenende fliegen Turm-Geschosse mit Einschlag zum Thron; Shop-Kisten mit „1×/10× öffnen“; Herrscher: Skin/Rahmen automatisch angelegt, Herrscher-Burg mit Krone + Goldschein neben normaler Burg. Stil + Symbole aus `Game/spiel.php` per `werkzeuge/thronevent/stil_holen.sh`.

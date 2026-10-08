@@ -244,9 +244,9 @@ const SHOPK = [['Ausrüstungs-Kiste', 'kiste_ausruestung_zu', 'blau', S1, 4, 100
 const kistenSicht = '<div class="lb-gap">Shop · Kisten</div><div class="sk-liste">' + SHOPK.map(([n, bild, r, sl, hab, gem, ver, inh]) =>
   '<div class="sk" data-r="' + r + '"><div class="sk-bild">' + '<img src="' + B + bild + '.webp" alt="">' + '</div><div class="sk-txt"><b>' + n + '</b><small>' + inh + '</small>' +
   (r === 'lila' ? '<div class="sk-sicher"><span>Sicher 1 Lila in <b>' + ver + '/20</b> Versuchen</span><i style="width:' + (ver / 20 * 100) + '%"></i></div>' : '') +
-  '<div class="sk-kn"><button class="btn btn--primary btn--sm" type="button">' + kachel(sl, r) + '<span>Öffnen · ' + hab + '</span></button>' +
-  '<button class="btn btn--sm" type="button"><img src="' + B + 'ui_edelstein.webp" alt=""><span>' + gem + '</span></button></div>' +
-  (gem >= 500 ? '<small class="sk-frag">Fragt vorher „Wirklich?“</small>' : '') + '</div></div>').join('') + '</div>';
+  '<div class="sk-kn">' + [1, 10].map(anz => '<button class="btn' + (anz === 1 ? ' btn--primary' : '') + ' btn--sm" type="button"><span>' + anz + '× öffnen</span>' +
+    (hab >= anz ? kachel(sl, r, anz) : '<img src="' + B + 'ui_edelstein.webp" alt=""><span>' + (gem * anz).toLocaleString('de-DE') + '</span>') + '</button>').join('') + '</div>' +
+  (gem * 10 >= 500 ? '<small class="sk-frag">Ab 500 Edelsteinen fragt es „Wirklich?“</small>' : '') + '</div></div>').join('') + '</div>';
 document.getElementById('eventBody').innerHTML = A === 'kisten' ? kistenSicht : A === 'lager' ? lager : rangSicht ? rlKopf + rlInhalt : kopf + punkte + kisten + rang + thron;
 </script>
 </body>

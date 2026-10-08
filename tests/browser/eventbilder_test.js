@@ -1,4 +1,4 @@
-// Test-Dateien Thron-/Wochen-Event: alle Bilder laden, keine Platzhalter mehr, Shop-Reiter Kisten + Event (Fotos in den Arbeitsordner)
+// Test-Dateien Thron-/Wochen-Event: alle Bilder laden, keine Platzhalter mehr, Shop-Reiter Kisten (1×/10× öffnen) + Event, Turm-Geschosse, Herrscher-Burg (Fotos in den Arbeitsordner)
 const { chromium } = require('playwright');
 const http = require('http'), fs = require('fs'), path = require('path');
 const D = path.resolve(__dirname, '../..'), OUT = process.argv[3] || '.';
@@ -14,13 +14,18 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
     await p.goto('http://127.0.0.1:' + srv.address().port + '/werkzeuge/' + datei + '/' + datei + '.html?a=' + a); await p.waitForTimeout(700);
     const r = await p.evaluate(() => ({ kaputt: [...document.images].filter(i => !i.naturalWidth).map(i => i.src.split('/').pop()),
       platzh: document.querySelectorAll('.platzh, .hinweis').length, thronReiter: [...document.querySelectorAll('#shopTabs .tab')].some(t => /Thron/.test(t.textContent)),
-      reiter: (document.querySelector('#shopTabs .tab.active') || {}).textContent, ware: document.querySelectorAll('.is-open .ware').length }));
+      reiter: (document.querySelector('#shopTabs .tab.active') || {}).textContent, ware: document.querySelectorAll('.is-open .ware').length,
+      oeffnen: document.querySelectorAll('.is-open .oeffnen').length, bahn: document.querySelectorAll('#k2 .bahn img').length, schuss: document.querySelectorAll('.schuss').length,
+      angelegt: !!document.querySelector('.is-open .angelegt'), herrBurg: !!document.querySelector('.burg.herrscher .krone') }));
     const w = datei + '?a=' + a;
     if (r.kaputt.length) fehler.push(w + ': Bild fehlt ' + r.kaputt.join(','));
     if (r.platzh) fehler.push(w + ': noch Platzhalter');
     if (r.thronReiter) fehler.push(w + ': Thron-Reiter noch da');
     if (a === 'shop' && (!/Event/.test(r.reiter) || r.ware < 10)) fehler.push(w + ': Event-Reiter falsch');
     if (a === 'shopkisten' && (!/Kisten/.test(r.reiter) || r.ware < 10)) fehler.push(w + ': Kisten-Reiter falsch');
+    if (a === 'shopkisten' && r.oeffnen < 8) fehler.push(w + ': je Kiste 1×/10× öffnen fehlt');
+    if (a === 'karte' && (r.bahn < 3 || r.schuss)) fehler.push(w + ': Turm-Geschosse fehlen');
+    if (a === 'herrscher' && (!r.angelegt || !r.herrBurg)) fehler.push(w + ': Herrscher-Skin automatisch/Burg mit Krone fehlt');
     await p.screenshot({ path: path.join(OUT, datei + '_' + a.replace(/\W/g, '_') + '.png'), fullPage: true });
   }
   const bes = await p.evaluate(() => [...document.images].map(i => i.src).filter(s => /beute_beschleuniger\.webp/.test(s)).length);

@@ -45,14 +45,24 @@
   .ware-preis.zwei { height: 34px; } .ware-preis.zwei + .ware-preis.zwei { margin-top: 0; }
   .ware .zeit { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); font: 800 12px/1 var(--font-ui); color: #fff; text-shadow: 0 1px 2px #000, 0 0 3px #000; white-space: nowrap; }
   .ware-bild { position: relative; }
+  .waren--2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ware-preis.oeffnen { font-size: 13px; gap: 4px; } .ware-preis.oeffnen + .ware-preis.oeffnen, .wirklich + .ware-preis.oeffnen { margin-top: 4px; }
+  .ware .wirklich { display: block; text-align: center; font: 600 10px/1.4 var(--font-ui); color: #ffb37a; padding-bottom: 4px; }
   /* Karte: Thron in der Mitte, 4 Türme – jeder mit eigener Kuppel */
   .karten { display: grid; gap: 10px; }
   .karte { position: relative; aspect-ratio: 1.25; border-radius: 10px; overflow: hidden; background: url(../../Game/bilder/karte_boden_mitte.webp) center/cover; border: 1px solid var(--line-2); }
   .karte > img { position: absolute; transform: translate(-50%, -50%); }
   .karte .thron { left: 50%; top: 50%; width: 34%; }
   .karte .turm { width: 15%; }
-  .karte .kuppel { pointer-events: none; }
-  .karte .schuss { position: absolute; height: 3px; background: linear-gradient(90deg, #ffb35c, #ff5a2c); transform-origin: 0 50%; border-radius: 2px; box-shadow: 0 0 6px #ff7a3c; }
+  .karte .kuppel { pointer-events: none; animation: kuppelPuls 2.6s ease-in-out infinite; }
+  @keyframes kuppelPuls { 0%, 100% { opacity: .8; filter: drop-shadow(0 0 2px #6cb8ff); } 50% { opacity: 1; filter: drop-shadow(0 0 7px #8fd0ff); } }
+  /* Turm-Schuss: Geschoss fliegt die Linie entlang, Einschlag am Thron */
+  .karte .bahn { position: absolute; height: 0; transform-origin: 0 50%; }
+  .karte .bahn img { position: absolute; left: 0; top: -9px; width: 26px; height: 18px; animation: flug 1.4s linear infinite; animation-delay: var(--v); filter: drop-shadow(0 0 4px #ff8a3c); }
+  @keyframes flug { 0% { left: 0; opacity: 0; } 10% { opacity: 1; } 88% { opacity: 1; } 100% { left: calc(100% - 13px); opacity: 0; } }
+  .karte .einschlag { position: absolute; width: 16%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, #fff6c8 0, #ffb347 25%, rgba(255,90,30,.7) 45%, transparent 70%); animation: knall 1.4s ease-out infinite; animation-delay: var(--v); }
+  @keyframes knall { 0%, 82% { opacity: 0; transform: translate(-50%, -50%) scale(.2); } 90% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.3); } }
   .karte > b { position: absolute; left: 6px; bottom: 6px; font: 700 11px var(--font-ui); background: rgba(0,0,0,.65); padding: 2px 6px; border-radius: 6px; }
   /* Herrscher */
   .herr { display: flex; gap: 10px; align-items: center; }
@@ -67,6 +77,17 @@
   .abz { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px 1px 3px; border-radius: 9px; font: 800 10px/16px var(--font-ui); color: #fff; text-shadow: 0 1px 1px #000; border: 1px solid rgba(255,255,255,.55); }
   .abz img { width: 14px; height: 14px; }
   .abz.feldherr { background: #b3332b; } .abz.burgvogt { background: #2f5fa8; } .abz.schatz { background: #b88a1c; } .abz.narr { background: #7b3fa0; }
+  .angelegt { display: flex; gap: 8px; align-items: center; margin-top: 10px; padding: 7px 9px; border-radius: 8px; background: rgba(255,200,80,.12); border: 1px solid rgba(255,210,110,.5); font: 500 var(--fs-12)/1.3 var(--font-ui); color: var(--tx-2); }
+  .angelegt .haken { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border-radius: 50%; background: #3f9b48; color: #fff; font-weight: 800; }
+  .angelegt b { flex: none; padding: 2px 8px; border-radius: 6px; background: #3f9b48; color: #fff; font: 700 11px var(--font-ui); }
+  .burgen { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 8px; border-radius: 10px; background: url(../../Game/bilder/karte_boden_mitte.webp) center/cover; }
+  .burg { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .burg > span { position: relative; display: grid; place-items: center; width: 100%; height: 110px; }
+  .burg > span > img { width: 92px; }
+  .burg.herrscher > span > img:not(.krone) { width: 112px; filter: drop-shadow(0 0 8px #ffd25a) drop-shadow(0 0 16px rgba(255,190,60,.8)); }
+  .burg.herrscher > span::before { content: ''; position: absolute; inset: 10% 5% 0; border-radius: 50%; background: radial-gradient(circle, rgba(255,215,100,.55), transparent 65%); animation: kuppelPuls 2.6s ease-in-out infinite; }
+  .burg .krone { position: absolute; top: -6px; left: 50%; width: 34px; transform: translateX(-50%); z-index: 1; filter: drop-shadow(0 0 6px #ffd25a); }
+  .burg > b { font: 700 11.5px var(--font-ui); color: #fff; background: rgba(0,0,0,.6); padding: 1px 8px; border-radius: 6px; } .burg.herrscher > b { color: var(--gold-100); border: 1px solid #e8b84a; }
   .schild > b { font: 700 12px var(--font-ui); color: #fff; background: rgba(0,0,0,.55); padding: 1px 8px; border-radius: 6px; }
 </style>
 </head>
@@ -138,6 +159,12 @@
       <div class="bild"><img src="../../Game/bilder/ui_wappen.webp" alt="" style="inset:20%;width:60%;height:60%"><img src="../../Game/bilder/ui_herrscher_rahmen.webp" alt="" style="inset:-14%;width:128%;height:128%"></div>
       <div><b style="font:700 16px var(--font-display);color:var(--gold-100)">Seewolf</b><br><small style="color:var(--tx-3)">Herrscher bis Sa 10:00 · Skin „Königsburg“</small></div>
       <img src="../../Game/bilder/skin_koenigsburg.webp" alt="" style="width:72px;margin-left:auto">
+    </div>
+    <div class="angelegt"><span class="haken">✓</span><span>Skin und Rahmen werden automatisch angelegt, solange du Herrscher bist.</span><b>Angelegt</b></div>
+    <div class="sect"><h4>So sieht man dich auf der Karte</h4></div>
+    <div class="burgen">
+      <div class="burg"><span><img src="../../Game/bilder/basis_05.webp" alt=""></span><b>Normale Burg</b></div>
+      <div class="burg herrscher"><span><img class="krone" src="../../Game/bilder/ui_sym_krone.webp" alt=""><img src="../../Game/bilder/skin_koenigsburg.webp" alt=""></span><b>Herrscher Seewolf</b></div>
     </div>
     <div class="sect"><h4>Titel vergeben</h4></div>
     <div class="titel"><img src="../../Game/bilder/ui_titel_feldherr.webp" alt=""><div>Feldherr<small>+5 % Angriff</small></div><span class="wer">Morgana</span></div>
@@ -211,8 +238,11 @@ const ware = (b, r, name, unter, knoepfe, zeit, leer) => '<div class="ware ware-
 // Beschleuniger: Dauer, Edelsteine, Event-Münzen, Woche gekauft/Limit (gilt für Bauen, Forschen, Heilen)
 const TEMPO = [['1 Min', 5, 10, '3/20'], ['5 Min', 20, 40, '0/20'], ['15 Min', 50, 100, '0/10'], ['1 Std', 150, 300, '1/10'], ['3 Std', 400, 800, '0/5'], ['8 Std', 1000, 2000, '2/3'], ['24 Std', 2800, 5500, '0/1']];
 const KISTEN = [['kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', S2, 500, '2 Schlüssel · sicher Lila in 20'], ['kiste_episch_zu', 'lila', 'Epische Ausrüstung', S2, 500, '0 Schlüssel'], ['kiste_held_zu', 'blau', 'Helden-Kiste', S1, 100, '5 Schlüssel'], ['kiste_ausruestung_zu', 'blau', 'Ausrüstungs-Kiste', S1, 100, '5 Schlüssel']];
+// Je Kiste „1× öffnen“ und „10× öffnen“: mit Schlüssel, solange genug da sind, sonst Edelsteine; ab 500 Edelsteinen „Wirklich?“
+const oeffnen = (anz, s, hab, g) => '<button type="button" class="ware-preis zwei oeffnen">' + anz + '× öffnen ' + (hab >= anz ? '<img src="' + B + s + '.webp" alt=""><b>' + anz + '</b>'
+  : icon('gem') + '<b>' + zahl(g * anz) + '</b>') + '</button>' + (hab < anz && g * anz >= 500 ? '<small class="wirklich">fragt „Wirklich?“</small>' : '');
 const kistenReiter = '<div class="sect"><h4>Kisten öffnen</h4><span class="sect-aside">mit Schlüssel oder Edelsteinen</span></div>' +
-  '<div class="waren waren--3">' + KISTEN.map(([b, r, name, s, g, unter]) => ware(b, r, name, unter, preis(s, '1×') + preis('g', g))).join('') + '</div>' +
+  '<div class="waren waren--2">' + KISTEN.map(([b, r, name, s, g, unter]) => ware(b, r, name, unter, oeffnen(1, s, +unter.split(' ')[0], g) + oeffnen(10, s, +unter.split(' ')[0], g))).join('') + '</div>' +
   '<div class="sect"><h4>Schlüssel</h4></div><div class="waren waren--3">' +
   ware(S1, 'blau', 'Schlüssel', 'Woche 1/10', preis('g', 100) + preis('m', 200)) + ware(S2, 'lila', 'Epischer Schlüssel', 'Woche 0/3', preis('g', 500) + preis('m', 1000)) + '</div>' +
   '<div class="sect"><h4>Beschleuniger</h4><span class="sect-aside">Bauen · Forschen · Heilen</span></div><div class="waren waren--3">' +
@@ -234,11 +264,13 @@ document.getElementById('shopInhalt').innerHTML = kistenAnsicht ? kistenReiter :
 const TUERME = [[16, 20], [84, 20], [16, 80], [84, 80]];
 for (const id of ['k1', 'k2']) {
   const k = document.getElementById(id), woche = id === 'k1'; let h = '';
-  if (!woche) h += TUERME.map(([x, y], i) => { const dx = 50 - x, dy = (50 - y) * 0.8, l = Math.hypot(dx, dy) * 0.62;
-    return i === 3 ? '' : '<i class="schuss" style="left:' + x + '%;top:' + y + '%;width:' + l + '%;transform:rotate(' + Math.atan2(dy, dx) + 'rad)"></i>'; }).join('');
+  // Türme schießen: Geschoss (Feuerpfeil/Stein) fliegt zur Mitte, am Thron ein Einschlag
+  if (!woche) h += TUERME.map(([x, y], i) => { const dx = 50 - x, dy = (50 - y) * 0.8, l = Math.hypot(dx, dy) * 0.62, v = '--v:' + (-i * 0.45) + 's';
+    return i === 3 ? '' : '<i class="bahn" style="left:' + x + '%;top:' + y + '%;width:' + l + '%;transform:rotate(' + Math.atan2(dy, dx) + 'rad);' + v + '"><img src="' + B + (i === 1 ? 'marsch_geschoss_stein' : 'marsch_geschoss_pfeil_feuer') + '.webp" alt=""></i>' +
+      '<i class="einschlag" style="left:' + (x + (50 - x) * 0.62) + '%;top:' + (y + (50 - y) * 0.62) + '%;' + v + '"></i>'; }).join('');
   h += '<img class="thron" src="' + B + 'karte_thron_neu.webp" alt="">';
   h += TUERME.map(([x, y]) => '<img class="turm" src="' + B + 'karte_wachturm.webp" style="left:' + x + '%;top:' + y + '%" alt="">').join('');
-  if (woche) h += '<img class="kuppel" src="' + B + 'karte_kuppel.webp" style="left:50%;top:47%;width:42%" alt="">' + TUERME.map(([x, y]) => '<img class="kuppel" src="' + B + 'karte_kuppel.webp" style="left:' + x + '%;top:' + (y - 2) + '%;width:20%" alt="">').join('');
+  if (woche) h += '<img class="kuppel" src="' + B + 'karte_kuppel.webp" style="left:50%;top:46%;width:48%" alt="">' + TUERME.map(([x, y]) => '<img class="kuppel" src="' + B + 'karte_kuppel.webp" style="left:' + x + '%;top:' + (y - 1) + '%;width:22%" alt="">').join('');
   k.insertAdjacentHTML('afterbegin', h);
 }
 </script>
