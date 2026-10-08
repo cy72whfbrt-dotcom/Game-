@@ -9992,8 +9992,7 @@ function stadtKopf() {                          // Unterkante der Bauarbeiter-Ze
 }
 var stadtKopfU = 0;
 // Hauptstadt-Fenster: „Teleportieren“ führt wie der Teleporter im Rucksack zur Auswahl auf der Karte (Verlegen in einen eigenen Turm
-// für 50 Edelsteine gibt es nicht mehr – Alexander 8.10.). TELEPORT_GEMS: nur noch das Verlegen der Mitspieler (bots/05, Bündnis).
-const TELEPORT_GEMS = 50;
+// für 50 Edelsteine gibt es nicht mehr – Alexander 8.10., auch nicht für Mitspieler: die teleportieren genauso, bots/05 botTeleportCapital).
 document.getElementById('teleportBtn').addEventListener('click', () => {
     closeAllPopups(); if (!cityView.hidden) closeCity(); recenterOnHome(true);
     flashHint('Tippe auf eine freie Stelle der Karte, dann „Teleportieren“ – das kostet ' + (teleImRucksack() ? '1 Teleporter' : fmtNum(TP_GEMS) + ' Edelsteine') + '.', 5000);
@@ -10002,7 +10001,8 @@ document.getElementById('teleportBtn').addEventListener('click', () => {
 // Stufe, Stadt bleiben). Platz wie für eine Basis (nicht im Gebirge, nicht auf Toren, Feldern, Lagern, Tempeln, nicht in der Thron-Mitte),
 // nur in Gebiete, die von der Hauptstadt über offene Pässe erreichbar sind (TELEPORT_NUR_OFFEN). Kostet 1 Teleporter aus dem Rucksack (im Shop
 // 500 Edelsteine), sonst 500 Edelsteine; neue Spieler (Anfängerschutz) haben 1 Teleporter gratis, keine Abklingzeit; nicht, solange ein Marsch an der Hauptstadt hängt. Der Weltrechner entscheidet
-// (Befehl teleport), verlegte Basen stehen im Welt-Teil openWaterInselOrt { id: [x, y, Gebiet] } – Mitspieler teleportieren nicht.
+// (Befehl teleport), verlegte Basen stehen im Welt-Teil openWaterInselOrt { id: [x, y, Gebiet] }. Mitspieler
+// teleportieren nach denselben Regeln (bots/05 botTeleportCapital, im Weltrechner direkt im Takt).
 const TP_GEMS = 500, TELEPORT_NUR_OFFEN = true, TP_ABSTAND = BASE_SPACING * .5;
 let inselOrt = {};
 for (const isl of islands) isl.ort0 = [isl.x, isl.y, isl.landmassId];

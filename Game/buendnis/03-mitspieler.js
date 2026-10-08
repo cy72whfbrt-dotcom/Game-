@@ -118,12 +118,12 @@ function bundMitspielerRunde(now) {                              // alle 15 s: g
             const ja = !bundEinzelgaenger(bot) && nah && a.mit.length < BUND.MAX;
             bundOp(bot.id, { op: 'einladungAntwort', aid: a.id, ja }); if (ja) { bundBotGetippt(bot, now); break; } }
     }
-    // h) gemeinsam vorrücken: ein Mitspieler verlegt seine Hauptstadt (wie du: auf einen EIGENEN Turm, 50 Gems) auf den Turm, der dem
+    // h) gemeinsam vorrücken: ein Mitspieler teleportiert seine Hauptstadt (wie du: 500 Gems, tpPruefen – botTeleportCapital) neben den Turm, der dem
     //    Treffpunkt des Bündnisses am nächsten ist. Der liegt ein Stück näher am Thron als die Mitglieder (Alexander 4.10.: nach und nach
     //    in die Mitte) – ist hinten viel Ärger (Basen der Mitglieder angegriffen, Hilferufe), liegt er dort: dann geht es zurück, um zu
     //    helfen (Alexander 6.10.: „alles im Fokus, nach vorne oder auch zurück“). Nur wenn es merklich näher ist, nicht öfter als sonst.
     for (const bot of bots.filter(b => bundVon(b.id) && botOnline(b, now) && Math.random() < .15).slice(0, 4)) {
-        const a = bundVon(bot.id), st = loadBotState()[bot.id]; if (!a || !st || (st.gems || 0) < TELEPORT_GEMS || now - (st.capMovedAt || 0) < BOT_CAP_COOLDOWN) continue;
+        const a = bundVon(bot.id), st = loadBotState()[bot.id]; if (!a || !st || !botTpBezahlbar(bot.id) || now - (st.capMovedAt || 0) < BOT_CAP_COOLDOWN) continue;
         const z = bundTreffpunkt(a, bot.id, now); if (!z) continue;
         const cap = islandById[botCapitalOf(bot.id)]; if (!cap) continue; const dJetzt = Math.hypot(cap.x - z.x, cap.y - z.y);
         let best = null;

@@ -41,7 +41,7 @@ function botPassCare(bot, b) {
     if (!b.ps || b.ps.s !== n) { if (b.ps) { b.ps.at = 0; botPassPay(bot.id, b); }             // the old season: what they reached is still paid out, then a fresh pass
         b.ps = { s: n, base: botPassScore(b), f: 0, p: 0, prem: false, want: mulberry32((parseInt(bot.id.slice(3), 10) || 0) * 53 + n * 7)() < .35 }; }
     b.ps.at = now + 60000;
-    if (!b.ps.prem && b.ps.want && b.gems >= PASS_PREMIUM * 1.5 && b.gems - PASS_PREMIUM >= TELEPORT_GEMS) { b.gems -= PASS_PREMIUM; b.ps.prem = true; }
+    if (!b.ps.prem && b.ps.want && b.gems >= PASS_PREMIUM * 1.5 && b.gems - PASS_PREMIUM >= BOT_GEMS_REST) { b.gems -= PASS_PREMIUM; b.ps.prem = true; }
     botPassPay(bot.id, b);
 }
 function botPassPay(botId, b) { const ps = b.ps, L = Math.min(PASS_LVLS, Math.floor(Math.max(0, botPassScore(b) - ps.base) / PASS_STEP));
