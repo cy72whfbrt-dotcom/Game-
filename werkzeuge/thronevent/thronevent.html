@@ -266,9 +266,12 @@ const tempoReiter = '<div class="sect"><h4>Beschleuniger</h4><span class="sect-a
 const lim = l => { const [a, b] = l.split('/'); return [a === b ? 'ausverkauft' : 'Woche ' + l, a === b]; };
 const evWare = (b, r, name, l, m, zeit) => { const [t, leer] = lim(l); return ware(b, r, name, t, preis('m', m, leer), zeit, leer); };
 const eventReiter = '<div class="ev-guthaben"><img src="' + B + EM + '.webp" alt=""><span><b>2.450</b><br><small style="margin:0;text-align:left">Event-Münzen</small></span><small>' + icon('hourglass') + ' füllt auf in<br><b>3 T 14:20:05</b> (Mo)</small></div>' +
+  // Event-Shop nur diese Gruppen (Alexander 8.10.): keine Kisten, keine Skins; Preise ≈ 2× Edelstein-Preis, Woche gekauft/Limit
+  gruppe('Friedensschild', [evWare('beute_schild', 'blau', 'Friedensschild', '0/2', 600, '8 Std'), evWare('beute_schild', 'lila', 'Friedensschild', '0/1', 1400, '24 Std')]) +
+  gruppe('Teleporter', [evWare('ui_sym_verlegen', 'lila', 'Teleporter', '0/1', 1000)]) +
   gruppe('Beschleuniger', TEMPO.map(([z, g, m, l]) => evWare(BE(z), tempoR(z), 'Beschleuniger', l, m, z))) +
-  gruppe('Schlüssel', [evWare(S1, 'blau', 'Schlüssel', '1/10', 200), evWare(S2, 'lila', 'Epischer Schlüssel', '0/3', 1000)]) +
-  gruppe('Kisten', [evWare('kiste_held_zu', 'blau', 'Helden-Kiste', '0/5', 250), evWare('kiste_episch_zu', 'lila', 'Epische Ausrüstung', '0/2', 1200), evWare('kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', '0/2', 1500)]);
+  gruppe('Splitter', [evWare('beute_splitter', 'lila', 'Helden-Splitter ×10', '0/5', 400)]) +
+  gruppe('Schlüssel', [evWare(S1, 'blau', 'Schlüssel', '1/10', 200), evWare(S2, 'lila', 'Epischer Schlüssel', '0/3', 1000)]);
 const reiter = { shopkisten: ['reiterKisten', kistenReiter], shoptempo: ['reiterTempo', tempoReiter] }[A] || ['reiterEvent', eventReiter];
 document.getElementById(reiter[0]).classList.add('active');
 document.getElementById('shopInhalt').innerHTML = reiter[1];
