@@ -48,7 +48,6 @@ Markt, Marsch-Plätze, `burgFair`), `Game/spiel/08a-stadt-bauen.js` (`burgZeitTa
   Betreten „‹ Wischen – mehr Gebäude ›“.
 - Übergang Karte ↔ Stadt: Kamera fliegt nah (`CITY_NAH`), Karte taucht ein, Stadt blendet darüber (`stadtBlende`), dünne
   Wolken; zurück umgekehrt. In der Stadt bleiben obere Leiste und untere Knopf-Leiste („Stadt“ heißt dort „Karte“).
-- Offen: Merkliste 11c Nr. 22 (außerhalb der Mauer nur echte Außenkarte, Blick enger), Nr. 9 (Gebäude-Fenster seitlich
   verschiebbar).
 
 ## Burg fair beim Reset (einmalig, 6.10.)

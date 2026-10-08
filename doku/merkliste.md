@@ -12,7 +12,6 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - **11c Nr. 15** Spähbericht und Kampfbericht: Helden-Plätze einheitlich (leer = ein Platz mit „?“ und einem Satz).
 - **11c Nr. 17** eigene Hauptstadt auf der Karte hervorheben (Tore sind schon KI-Bilder, auch im Nebel).
 - **11c Nr. 19** Schloss-Symbol an angreifbarem Grenztor; Hinweis „Keine deiner Basen grenzt …“ liegt über dem Inhalt.
-- **11c Nr. 22** Stadt: außerhalb der Mauer nur die echte Außenkarte, Blick enger.
 - **11c Nr. 26** Zahlen (später): Produktion Spätspiel aufgebläht, Friedensschild gegen Edelstein-Einkommen prüfen.
 - **11c Nr. 27** Karte: Ecken ganz weit leicht dunkel, senkrechte Ketten weit schmaler, Leistung ganz weit.
 - **11c Nr. 31** Namensschild-Skins als KI-Bilder (später).
