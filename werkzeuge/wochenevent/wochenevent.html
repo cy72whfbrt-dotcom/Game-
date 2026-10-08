@@ -23,12 +23,13 @@
   .p5-chip.active small { color: inherit; opacity: .75; }
   #goalsTabs .p5-chip { padding: 0 9px; }
   /* Tag-Leiste Mo–Fr: heute hervorgehoben, sonst grau („vorbei“/„morgen“) */
-  .tage { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; }
-  .tage div { padding: 5px 2px; border-radius: 6px; background: rgba(255,255,255,.04); border: 1px solid var(--line-1); text-align: center; font: 600 9.5px/1.2 var(--font-ui); color: var(--tx-3); opacity: .6; }
+  .tage { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 3px; }
+  .tage a { text-decoration: none; }
+  .tage > * { padding: 5px 2px; border-radius: 6px; background: rgba(255,255,255,.04); border: 1px solid var(--line-1); text-align: center; font: 600 9.5px/1.2 var(--font-ui); color: var(--tx-3); opacity: .6; }
   .tage b { display: block; font-size: 11.5px; color: var(--tx-2); }
   .tage .icon { width: 16px; height: 16px; display: block; margin: 2px auto; }
-  .tage div.jetzt { opacity: 1; border-color: var(--gold-300); background: rgba(214,170,90,.16); color: var(--gold-100); }
-  .tage div.jetzt b { color: var(--gold-100); }
+  .tage > .jetzt { opacity: 1; border-color: var(--gold-300); background: rgba(214,170,90,.16); color: var(--gold-100); }
+  .tage > .jetzt b { color: var(--gold-100); }
   /* So gibt es heute Punkte */
   .pkt { display: flex; flex-direction: column; gap: 4px; }
   .pkt div { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; background: rgba(255,255,255,.04); border: 1px solid var(--line-1); font: 500 var(--fs-12)/1.3 var(--font-ui); color: var(--tx-2); }
@@ -48,6 +49,49 @@
   .rband img { width: 22px; height: 22px; }
   .rband span { margin-left: auto; font-size: 11px; font-weight: 600; }
   .thron-satz { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; background: rgba(90,160,255,.1); border: 1px solid rgba(150,210,255,.35); font: 500 var(--fs-12)/1.3 var(--font-ui); color: var(--tx-2); }
+  /* 6. Feld „Rangliste“ hinter Fr: Pokal, immer golden umrandet */
+  .tage > .t-rang { opacity: 1; border-color: rgba(214,170,90,.55); background: linear-gradient(180deg, rgba(214,170,90,.22), rgba(90,60,20,.25)); color: var(--gold-100); }
+  .tage .t-rang img { width: 18px; height: 18px; display: block; margin: 1px auto 2px; filter: drop-shadow(0 0 4px rgba(255,200,90,.6)); }
+  .tage > .t-rang.jetzt { border-color: var(--gold-100); box-shadow: 0 0 8px rgba(255,200,90,.45) inset; }
+  /* Rangliste: Countdown, Umschalter, Podest, Liste, eigener Platz */
+  .rl-uhr { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px; border-radius: 8px; background: rgba(0,0,0,.3); border: 1px solid var(--line-1); font: 600 11px var(--font-ui); color: var(--tx-2); }
+  .rl-uhr b { font: 700 13px var(--font-display); color: var(--gold-100); letter-spacing: .5px; }
+  .rl-um { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 3px; border-radius: 10px; background: rgba(0,0,0,.35); border: 1px solid var(--line-1); }
+  .rl-um a { padding: 6px; border-radius: 8px; text-align: center; font: 700 12px var(--font-ui); color: var(--tx-3); text-decoration: none; }
+  .rl-um a.on { color: #2a1c06; background: linear-gradient(180deg, #f6dc8a, #c99a3a); box-shadow: 0 1px 3px #000; }
+  .podest { display: grid; grid-template-columns: 1fr 1.22fr 1fr; align-items: end; gap: 6px; padding: 14px 4px 0; background: radial-gradient(ellipse at 50% 30%, rgba(255,210,110,.18), transparent 70%); }
+  .pod { display: flex; flex-direction: column; align-items: center; min-width: 0; text-align: center; }
+  .pod .wp { position: relative; width: 62px; height: 62px; }
+  .pod.g .wp { width: 82px; height: 82px; }
+  .pod .wp > img { position: absolute; inset: 9%; width: 82%; height: 82%; object-fit: contain; }
+  .pod .wp > .lb { inset: -14% -18% auto; width: 136%; height: 90%; opacity: .95; }
+  .pod .wp i { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); min-width: 22px; height: 22px; border-radius: 11px; display: grid; place-items: center; font: 800 12px var(--font-display); font-style: normal; color: #1b1205; box-shadow: 0 1px 3px #000; }
+  .pod .wp { border-radius: 50%; }
+  .pod.g .wp { box-shadow: 0 0 0 3px #f2cf6a, 0 0 18px rgba(255,205,90,.7); }
+  .pod.s .wp { box-shadow: 0 0 0 3px #cfd8e0, 0 0 10px rgba(210,225,240,.45); }
+  .pod.b .wp { box-shadow: 0 0 0 3px #c98447, 0 0 10px rgba(210,130,70,.45); }
+  .pod.g i { background: linear-gradient(#ffe9a0, #d4a23a); } .pod.s i { background: linear-gradient(#f2f6fa, #a8b3bd); } .pod.b i { background: linear-gradient(#f0b37a, #a3612c); }
+  .pod .nm { margin-top: 10px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 12.5px var(--font-ui); color: #fff; }
+  .pod.g .nm { font-size: 14px; color: var(--gold-100); }
+  .pod .bd { font: 600 10px var(--font-ui); color: var(--tx-3); }
+  .pod .pt { font: 700 12px var(--font-display); color: var(--gold-100); }
+  .pod .sockel { width: 100%; margin-top: 4px; border-radius: 6px 6px 0 0; display: grid; place-items: center; font: 800 20px var(--font-display); color: rgba(0,0,0,.45); }
+  .pod.g .sockel { height: 46px; background: linear-gradient(#f2cf6a, #8a6416); }
+  .pod.s .sockel { height: 32px; background: linear-gradient(#d3dbe2, #6b747c); }
+  .pod.b .sockel { height: 24px; background: linear-gradient(#d08a4f, #6e3b16); }
+  .rl { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+  .rl li { display: grid; grid-template-columns: 28px 26px minmax(0, 1fr) auto; align-items: center; gap: 7px; height: 34px; padding: 0 10px 0 6px; border-radius: 8px; background: rgba(255,255,255,.035); border: 1px solid var(--line-1); }
+  .rl li:nth-child(odd) { background: rgba(255,255,255,.06); }
+  .rl em { font: 700 13px var(--font-display); font-style: normal; color: var(--tx-3); text-align: center; }
+  .rl li > img { width: 24px; height: 24px; object-fit: contain; }
+  .rl span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 600 12.5px var(--font-ui); color: var(--tx-1, #eee); }
+  .rl small { margin-left: 4px; font: 700 10px var(--font-ui); color: #8fb7e8; }
+  .rl b { font: 700 12.5px var(--font-display); color: var(--gold-100); text-align: right; font-variant-numeric: tabular-nums; }
+  .rl li.me { background: linear-gradient(90deg, rgba(92,219,106,.25), rgba(92,219,106,.08)); border-color: #5cdb6a; }
+  .rl-ich { position: sticky; bottom: -1px; z-index: 2; margin-top: 6px; padding: 6px 0 4px; background: linear-gradient(rgba(10,12,18,0), #0c0f16 35%); }
+  .rl-ich li.me { background: linear-gradient(90deg, #1f4a27, #14251a); }
+  .rl-ich li { height: 40px; box-shadow: 0 -2px 10px rgba(0,0,0,.6); }
+  .rl-ich em { color: #9ff0a8; }
   .platzh { outline: 2px dashed #ff8d82; outline-offset: -2px; }
 </style>
 </head>
@@ -135,7 +179,8 @@ const meinPlatz = TOP.findIndex(x => x[0] === 'Du') + 1;
 const preise = RAENGE.map(([k, name, bild, zusatz, L]) => '<div class="rang"><div class="rband ' + k + '"><img src="' + B + bild + '.webp" alt="">' + name + (zusatz ? '<span>' + zusatz + '</span>' : '') + '</div><div class="bk-raster">' +
   L.map(([b, r, z, p]) => kachel(b, r, z, p)).join('') + '</div></div>').join('');
 
-const tage = '<div class="tage">' + EVENTS.map((e, i) => '<div' + (i === heute ? ' class="jetzt"' : '') + '><b>' + e.k + '</b>' + icon(e.ic) + e.name + '<br>' + (i === heute ? 'heute' : i < heute ? 'vorbei' : i === heute + 1 ? 'morgen' : e.k) + '</div>').join('') + '</div>';
+const tage = '<div class="tage">' + EVENTS.map((e, i) => '<a href="?a=' + TAGE[i] + '"' + (i === heute && !rangSicht ? ' class="jetzt"' : '') + '><b>' + e.k + '</b>' + icon(e.ic) + e.name + '<br>' + (i === heute ? 'heute' : i < heute ? 'vorbei' : i === heute + 1 ? 'morgen' : e.k) + '</a>').join('') +
+  '<a href="?a=rang" class="t-rang' + (rangSicht ? ' jetzt' : '') + '"><b>Woche</b><img src="' + B + 'ui_sym_pokal.webp" alt="">Rangliste<br>Fr 20:00</a></div>';
 const kopf = '<div class="barb-card ev-card is-tour"><div class="barb-ct"><b>' + icon(EV.ic) + ' ' + EV.k + ' · ' + EV.name + '</b><small>Nur heute · endet in <b>' + ['13:42:05', '09:15:40', '05:02:11', '17:30:58', '08:11:27'][heute] + '</b></small></div>' + tage +
   '<div class="meine"><div><b>' + zahl(tagPkt) + '</b>Punkte heute</div><div><b>' + zahl(wochePkt) + '</b>Woche · Platz ' + meinPlatz + '</div></div></div>';
 const punkte = '<div class="lb-gap">So gibt es heute Punkte</div><div class="pkt">' + EV.pkt.map(([ic, t, p]) => '<div>' + icon(ic) + '<span>' + t + '</span>' + (p ? '<b>' + p + (/P\./.test(p) ? '' : ' P.') + '</b>' : '') + '</div>').join('') + '</div>';
@@ -150,7 +195,25 @@ const lager = '<div class="barb-card ev-card"><div class="barb-ct"><b>' + icon('
   '<div class="thron-satz">' + icon('coin') + '<span>Jedes besiegte Lager gibt <b>feste Münzen</b> nach Stufe – sonst keine Beute. Getötete Truppen zählen <b>nicht</b> für den Krieger-Tag.</span></div></div>' +
   '<div class="lb-gap">Münzen je Lager-Stufe</div><div class="evl-zeilen">' + LAGER.map(([st, m]) => '<div class="evl-z is-' + (st <= LG ? 'ok' : st === LG + 1 ? 'bald' : 'zu') + '"><b>Stufe ' + st + '</b><div class="bk-raster bk-mini">' + kachel('beute_muenzen', st <= 5 ? 'gruen' : st <= 10 ? 'blau' : st <= 18 ? 'lila' : 'gold', m) + '</div><span class="evl-st">' +
     (st <= LG ? '<img src="' + B + 'ui_sym_haken.webp" alt=""><small>besiegt</small>' : st === LG + 1 ? '<small>offen</small>' : icon('lock')) + '</span></div>').join('') + '</div>';
-document.getElementById('eventBody').innerHTML = A === 'lager' ? lager : rangSicht ? kopf + rang + thron : kopf + punkte + kisten + rang + thron;
+// Rangliste-Ansicht (6. Feld): Podest Top 3, Liste 4–50, eigener Platz fest unten; Umschalter „Belohnungen“ (?b=1)
+const NAMEN = ['Seewolf', 'Morgana', 'Ragnar', 'Eisenfaust', 'Krähe', 'Valeria', 'Sturmbrecher', 'Ottokar', 'Lysandra', 'Grimbart', 'Thorvald', 'Elara', 'Falkenherz', 'Brunhild', 'Kaelen', 'Sigrun', 'Dornfels', 'Isolde', 'Wolfram', 'Fenja',
+  'Hagen', 'Mirabel', 'Rabenschwinge', 'Ulfric', 'Selene', 'Gunther', 'Aldric', 'Nimue', 'Kunibert', 'Freya', 'Leuenhart', 'Ysolde', 'Bjarne', 'Cassia', 'Roderich', 'Talia', 'Du', 'Eckhard', 'Saskia', 'Wendelin',
+  'Ragna', 'Konstantin', 'Edda', 'Meinhard', 'Liora', 'Gerold', 'Ilvy', 'Hartmut', 'Oriana', 'Balduin'];
+const BUND = ['NORD', 'ROT', 'SEE', 'EIS', 'NORD', 'ROT', 'WOLF', '', 'SEE', 'EIS', 'WOLF', 'NORD', ''];
+const WOCHE = NAMEN.map((n, i) => [n, n === 'Du' ? 12480 : Math.round(61200 * 0.957 ** i / 10) * 10, n === 'Du' ? 'NORD' : BUND[i % BUND.length]]);
+const wappen = i => '<img src="' + B + 'ui_wappen.webp" alt="" style="filter:hue-rotate(' + (i * 47 % 360) + 'deg)">';
+const kuerzel = b => b ? '<small>[' + b + ']</small>' : '';
+const zeile = ([n, p, b], i) => '<li' + (n === 'Du' ? ' class="me"' : '') + '><em>' + (i + 1) + '</em>' + wappen(i) + '<span>' + n + kuerzel(b) + '</span><b>' + zahl(p) + '</b></li>';
+const pod = (i, kl) => { const [n, p, b] = WOCHE[i];
+  return '<div class="pod ' + kl + '"><div class="wp">' + (i === 0 ? '<img class="lb" src="' + B + 'ui_lorbeer.webp" alt="">' : '') + wappen(i) + '<i>' + (i + 1) + '</i></div><div class="nm">' + n + '</div><div class="bd">' + (b ? '[' + b + ']' : '–') + '</div><div class="pt">' + zahl(p) + '</div><div class="sockel">' + (i + 1) + '</div></div>'; };
+const ichI = WOCHE.findIndex(x => x[0] === 'Du'), belohnSicht = new URLSearchParams(location.search).get('b') === '1';
+const rlKopf = '<div class="barb-card ev-card is-tour"><div class="barb-ct"><b>' + icon('rank') + ' Wochen-Rangliste</b><small>Mo–Fr zusammen</small></div>' + tage +
+  '<div class="rl-uhr">' + icon('hourglass') + '<span>Auswertung Fr 20:00 in</span><b>2T 08:11:27</b></div>' +
+  '<div class="rl-um"><a href="?a=rang"' + (belohnSicht ? '' : ' class="on"') + '>Rangliste</a><a href="?a=rang&b=1"' + (belohnSicht ? ' class="on"' : '') + '>Belohnungen</a></div></div>';
+const rlInhalt = belohnSicht ? '<div class="lb-gap">Preise nach Platz · Freitag 20 Uhr im Abholfach</div>' + preise :
+  '<div class="podest">' + pod(1, 's') + pod(0, 'g') + pod(2, 'b') + '</div><ol class="rl">' + WOCHE.slice(3).map((x, i) => zeile(x, i + 3)).join('') + '</ol>' +
+  '<div class="rl-ich"><ol class="rl">' + zeile(WOCHE[ichI], ichI) + '</ol></div>';
+document.getElementById('eventBody').innerHTML = A === 'lager' ? lager : rangSicht ? rlKopf + rlInhalt : kopf + punkte + kisten + rang + thron;
 </script>
 </body>
 </html>
