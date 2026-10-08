@@ -168,8 +168,8 @@ function renderPopup() {
         liveHtml(popupStats, (haupt ? bwWerte([['ui_sym_macht', fmtCompact(powerOf(whoProfile('player'))), 'Macht'], ['beute_truppen', fmtTile(troopsHere), 'Truppen hier'],
                 ['ui_sym_friedensschild', sh > Date.now() ? fmtClock((sh - Date.now()) / 1000) : 'aus', 'Schutz (Friedensschild/Anfängerschutz)']])
             : bwWerte([['beute_truppen', fmtTile(troopsHere), 'Truppen hier'], ['ui_sym_schild', fmtTile(effectiveDefense(island)), 'Verteidigung'],
-                ['beute_muenzen', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())) + '/Std.', 'Münzen pro Stunde', 'is-good'],
-                ['ui_sym_aufstieg', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())) + '/Std.', 'Truppen pro Stunde', 'is-good']])) +
+                ['ui_res_muenzen', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())) + '/Std.', 'Münzen pro Stunde', 'is-good'],
+                ['ui_res_truppen', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())) + '/Std.', 'Truppen pro Stunde', 'is-good']])) +
             (island.type === 'gate' ? gateControlsHtml(island) : '') +
             (isTemple ? templeBonusLine(island) : '') + throneNotice(island) + midNotice(island) + ringNotice(island));
         liveHtml(upgradeCostLabel, level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level)));
@@ -191,8 +191,8 @@ function renderPopup() {
     } else {
         const scouted = scoutedIslands.has(island.id), shieldOw = ownerBot && shieldCovers(island) && ownerShielded(ownerBot.id) ? ownerBot : null;
         if (popupView === 'preview' && shieldOw) popupView = 'menu';
-        subH = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? '<span class="psub-who">' + whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
-            (botBestRarity(ownerBot.id) >= 0 ? ' · <b style="color:' + RARITY_DEFS[botBestRarity(ownerBot.id)].color + ';font-weight:600">' + RARITY_DEFS[botBestRarity(ownerBot.id)].label + '</b>' : '') + '</span>' : 'Unbesetzt') +
+        subH = (ownerBot || bossAt(island.id) ? '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' : '') + (bossAt(island.id) ? 'Boss' : ownerBot ? '<span class="psub-who">' + whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
+            (botBestRarity(ownerBot.id) >= 0 ? ' · <b style="color:' + RARITY_DEFS[botBestRarity(ownerBot.id)].color + ';font-weight:600">' + RARITY_DEFS[botBestRarity(ownerBot.id)].label + '</b>' : '') + '</span>' : '') +   // („unbesetzt“ steht schon in der Überzeile)
             (scouted && popupView === 'preview' ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');   // (im Menü steht „gespäht“ schon bei den Werten)
 
         if (popupView === 'preview') {
@@ -263,7 +263,7 @@ function apQuelleText(id, island, scouted) {            // „Turm #23633 · 16,
 function apHeldChip(el, id, oben, unten) {             // eine Held-Karte: Bild (Hauptheld groß), Name, darunter klein Sterne/Hinweis
     if (!el) return;
     const h = heroById(id); el.style.setProperty('--hc', h ? RARITY_DEFS[h.r].color : 'var(--line-1)');
-    liveHtml(el, (h ? heroImg(id, '', el.classList.contains('ap-hchip--gross')) : '<span class="ap-hchip-leer">' + icon('plus') + '</span>') + '<span class="ap-hchip-t"><b>' + oben + '</b><small>' + unten + '</small></span>');
+    liveHtml(el, (h ? heroImg(id, '', el.classList.contains('ap-hchip--gross')) : el.classList.contains('ap-hchip--gross') ? '<span class="ap-hchip-leer">' + icon('plus') + '</span>' : '') + '<span class="ap-hchip-t"><b>' + oben + '</b><small>' + unten + '</small></span>');
 }
 
 // Attack preview. Built ONCE per (target, source, scouted, bonus); later
@@ -297,9 +297,9 @@ function renderAttackPreview(island, scouted) {
                 '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b>' + (scouted ? '<small data-foe="sub"></small>' :
                     '<button type="button" class="ap-spaehen" data-spaehen>' + icon('scout') + '<span>Spähen</span></button>') + '</div>' +   // ungespäht: gleich Späher schicken
             '</div>' +
-            (scouted ? '<div class="ap-bal" title="Kräfteverhältnis"><div class="balance" data-preview="balance"><i></i><b></b></div><span class="balance-note" data-preview="verdict"></span></div>' : '') + '</div></div>' +
-            (helden ? '<div class="ap-held-wahl"><div class="seg hero-seg chips-quer" data-preview="hero" hidden>' + helden + '</div><div class="seg hero-seg hero-seg2 chips-quer" data-preview="hero2" hidden></div>' +
-                '<small class="ap-herofx" data-preview="herofx"></small></div>' : '') +
+            (scouted ? '<div class="ap-bal" title="Kräfteverhältnis"><div class="balance" data-preview="balance"><i></i><b></b></div><span class="balance-note" data-preview="verdict"></span></div>' : '') + '</div>' +
+            (helden ? '<div class="ap-held-wahl"><div class="seg hero-seg" data-preview="hero" hidden>' + helden + '</div><div class="seg hero-seg hero-seg2" data-preview="hero2" hidden></div></div>' : '') + '</div>' +   // offen: statt Startbasis/Angriff/Abwehr neben dem Bild
+            (helden ? '<small class="ap-herofx" data-preview="herofx"></small>' : '') +
             (scouted ? '<div class="notice" data-preview="alter" hidden></div>' : '') +
             '<div class="ap-truppen"><div class="ap-regler"><span class="ap-kachel"><img src="bilder/beute_truppen.webp" alt="Truppen"></span><span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"><span class="ap-max" data-preview="max"></span></span></div>' +
                 '<input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +   // Schieber ganze Breite (Daumen)
@@ -428,7 +428,7 @@ function patchAttackPreview() {
     if (chip2 && !seg2) { chip2.hidden = true; if (previewHeldAuf === 2) previewHeldAuf = 0; } else if (chip2) chip2.hidden = false;
     apHeldChip(chip1, previewHero, previewHero ? heroById(previewHero).name : 'Kein Held', previewHero ? icon('star') + heroStarNum(heroSt('player', previewHero).q) : 'Held wählen');
     if (chip2 && seg2) { const p2 = previewHero2 && heroPairOf(previewHero, previewHero2);
-        apHeldChip(chip2, previewHero2, previewHero2 ? heroById(previewHero2).name : 'Wählen', p2 ? 'Paar +' + HERO_PAIR_BONUS + ' %' : 'Zweitheld · ' + Math.round(HERO_ZWEIT * 100) + ' %'); }
+        apHeldChip(chip2, previewHero2, previewHero2 ? heroById(previewHero2).name : '+ Zweitheld', p2 ? 'Paar +' + HERO_PAIR_BONUS + ' %' : previewHero2 ? 'Zweitheld · ' + Math.round(HERO_ZWEIT * 100) + ' %' : Math.round(HERO_ZWEIT * 100) + ' %'); }
     for (const [el, n] of [[chip1, 1], [chip2, 2]]) if (el) { el.classList.toggle('on', previewHeldAuf === n); el.setAttribute('aria-expanded', previewHeldAuf === n); }
     const hl1 = popupStats.querySelector('[data-preview="hero"]'), hl2 = popupStats.querySelector('[data-preview="hero2"]');
     if (hl1) hl1.hidden = previewHeldAuf !== 1; if (hl2) hl2.hidden = previewHeldAuf !== 2;

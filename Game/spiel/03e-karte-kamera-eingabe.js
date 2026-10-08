@@ -470,7 +470,8 @@ function positionIslandPopover() {        // desktop only: anchor the 360px card
   const nav = document.getElementById('cornerButtons').getBoundingClientRect();   // über der Leiste enden, wenn die Karte darüber liegt
   const unten = nav.height && left < nav.right && left + W > nav.left ? nav.top - 10 : viewH - 14;
   popup.style.setProperty('--amax', Math.round(unten - 72) + 'px');
-  const top = Math.max(72, Math.min(unten - h, sy - 60));
+  const mb = document.getElementById('midBar'), mr = mb && mb.offsetParent ? mb.getBoundingClientRect() : null;   // die Event-Leiste oben bleibt frei
+  const top = Math.max(mr && left < mr.right && left + W > mr.left ? mr.bottom + 8 : 72, Math.min(unten - h, sy - 60));
   popup.classList.toggle('is-left', flip);
   popup.style.setProperty('--ax', Math.round(left) + 'px');
   popup.style.setProperty('--ay', Math.round(top) + 'px');

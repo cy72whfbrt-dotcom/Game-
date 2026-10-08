@@ -266,15 +266,15 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .ap-oben .ap-kopf{position:static;padding-bottom:0;border-bottom:0;background:none}
 .ap-oben .versus{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px}
 #popupStats .ap-oben .force small,#popupStats .ap-oben .force--foe small[data-foe="sub"]{white-space:normal;overflow:visible;text-overflow:clip;font-size:10px;line-height:1.2}
-.ap-oben .ap-bal{min-width:0;gap:6px} .ap-oben .ap-bal .balance{min-width:40px} .ap-oben .ap-bal .balance-note{flex:none;font-size:10px;gap:3px}
+.ap-oben .ap-bal{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;min-width:0;gap:6px;padding-right:4px} .ap-oben .ap-bal .balance{min-width:30px} .ap-oben .ap-bal .balance-note{font-size:10px;gap:3px;margin:0}
 #islandPopup .ap-oben .from-sel{font-size:12px;padding-left:6px;padding-right:22px}
 .panel--island:has(.ap-oben){max-height:calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space) - 40px)}   /* Angriff: alles ohne Scrollen sichtbar; darüber Platz für einen Hinweis (2 Zeilen) */
-@media (max-width:899px){ body:has(#islandPopup.is-open) .toast{-webkit-line-clamp:2} }
+@media (max-width:899px){ body:has(#islandPopup.is-open) .toast.toast{display:-webkit-box;-webkit-line-clamp:2;max-height:calc(2.7em + 16px);overflow:clip;overflow-clip-margin:content-box} }   /* bei offenem Fenster: höchstens 2 ganze Zeilen, dann „…“ */
 @media (max-width:899px) and (max-height:700px){ .panel--island:has(.ap-oben) :is(.ap-leiste,.ap-herofx,#popupOverline){display:none}
   .panel--island:has(.ap-oben) .ptitle{font-size:15px;margin:0} #popupStats:has(.ap-oben){gap:4px} .panel--island:has(.ap-oben) .pfoot{padding-top:6px;padding-bottom:6px}
   .ap-oben .force{padding-top:4px!important;padding-bottom:4px!important}
   .panel--island:has(.ap-oben) .pbody{padding-top:6px;padding-bottom:4px} .panel--island:has(.ap-oben) .phead{padding-bottom:6px} .ap-truppen .slider{margin-top:0;margin-bottom:0} }   /* kleines Handy: Zeit steht im Knopf, Truppen im Feld, Kraft bei „Angriff“, Helden-Wirkung beim Draufzeigen */
-@media (max-width:380px){ .ap-oben{grid-template-columns:76px minmax(0,1fr)} .ap-hchip.ap-hchip--gross{width:76px;height:94px} .ap-hchip.ap-hchip--klein{width:76px} }
+@media (max-width:380px){ .ap-oben{grid-template-columns:76px minmax(0,1fr)} .ap-oben .ap-hchip.ap-hchip--gross{width:76px;height:94px} .ap-oben .ap-hchip.ap-hchip--klein{width:76px} }
 .ap-held{display:flex;flex-direction:column;gap:4px}
 .ap-hchip.ap-hchip--gross{flex:none;width:96px;height:118px;padding:0;flex-direction:column;justify-content:flex-end;align-items:stretch;overflow:hidden;
   border:3px solid transparent;border-image:url(bilder/ui_kachel_gold.webp) 30 fill / 3px stretch;background:#0f1217}
@@ -287,7 +287,11 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .ap-hchip--klein .hero-pic{width:24px;height:24px}
 .ap-hchip--klein .ap-hchip-leer{position:static;width:24px;flex:none} .ap-hchip--klein .ap-hchip-leer .icon{width:16px;height:16px}
 .ap-hchip--klein .ap-hchip-t b,.ap-hchip--klein .ap-hchip-t small{white-space:normal;font-size:10px;line-height:1.15}
-.ap-held-wahl{display:flex;flex-direction:column;gap:4px}
+.ap-oben > .ap-held{grid-row:1} .ap-oben > .ap-kopf,.ap-oben > .ap-held-wahl{grid-column:2;grid-row:1;min-width:0}
+.ap-oben--ohne > .ap-kopf{grid-column:1}
+.ap-oben:has(.hero-seg:not([hidden])) > .ap-kopf,.ap-held-wahl:not(:has(.hero-seg:not([hidden]))){display:none}   /* Helden-Auswahl offen: sie steht neben dem Bild, Regler bleiben sichtbar */
+.ap-held-wahl .seg.hero-seg{display:flex;flex-wrap:wrap;gap:4px;margin:0;max-height:160px;overflow-y:auto}
+.ap-held-wahl .seg.hero-seg > button{flex:none;min-width:max-content;padding:0 10px} .ap-held-wahl .hero-seg2-l{display:none}   /* („Zweitheld · 50 %“ steht in der Kachel) */
 #islandPopup .hero-seg button,#islandPopup .ap-truppen .seg button{min-height:44px;height:44px} .ap-truppen .slider{height:28px}
 #islandPopup .from-sel{height:44px} #islandPopup .ap-spaehen{min-height:44px}
 .ap-truppen{gap:4px}
