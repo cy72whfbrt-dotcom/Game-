@@ -2160,6 +2160,77 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .feld-ring .fr-ic{width:34px;height:34px;background:var(--b) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
 .feld-ring .cr-btn small{font-size:11px;text-align:center}   /* „Hierher teleportieren?“ über dem Preis: 2 Zeilen, schmal */
 .feld-ring .cr-btn small .icon{width:12px;height:12px;vertical-align:-2px}
+/* ---------------- Basis-, Angriffs- und Grenztor-Fenster (8.10.): Werte als Bild + Zahl, runde Knöpfe, nichts überlappt ---------------- */
+#islandPopup .ptitle{white-space:normal!important;overflow-wrap:anywhere}   /* „Hauptstadt von …“: lieber zwei Zeilen als abgeschnitten */
+.emblem--bild{width:56px;height:56px;background:rgba(0,0,0,.3)} .emblem--bild > svg.icon{display:none}
+.emblem--bild .bw-bild{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 4px rgba(0,0,0,.55))}
+.bw-werte{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 16px;padding:4px 0}
+.bw-wert{display:inline-flex;align-items:center;gap:5px;min-width:0}
+.bw-wert img{width:26px;height:26px;flex:none;object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.6))}
+.bw-wert b{font:600 16px/1.2 Georgia,serif;color:#eee6d4;white-space:nowrap;font-variant-numeric:tabular-nums}
+.bw-wert.is-good b{color:var(--good)} .bw-wert.is-enemy b{color:#ff8d7e}
+.tor-hinweis{min-height:40px;align-items:center;background:#1c212a;border:0;border-left:3px solid #d24c40;color:#c0b7a3;font-size:14px}
+.tor-hinweis img{width:20px;height:20px;flex:none;object-fit:contain}
+/* runde Knöpfe: Symbol im goldenen Ring (ui_rund), kurzes Wort darunter, Preis klein */
+#popupActions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 2px}
+#popupActions > .act[style*="inline-block"],#popupActions > .act.act--haupt[style*="inline-block"]{display:flex!important}
+#popupActions:not(.mehr-auf) > .act.act--mehr{display:none!important}
+#popupActions > .act,#popupActions > .act.act--haupt{flex:0 0 calc((100% - 8px) / 5);max-width:76px;min-width:0;min-height:44px;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;
+  padding:0;border:0;border-radius:0;background:none;box-shadow:none;color:#c0b7a3}
+#popupActions > .act > .act-ic,#popupActions > .act.act--haupt > .act-ic{width:52px;height:52px;flex:none;border:0;border-radius:50%;
+  background:var(--sym,none) center/28px 28px no-repeat,url(bilder/ui_rund.webp) center/100% 100% no-repeat}
+#popupActions > .act:not(:disabled):active > .act-ic{background:var(--sym,none) center/28px 28px no-repeat,url(bilder/ui_rund_an.webp) center/100% 100% no-repeat}
+#popupActions > .act > .act-ic > svg.icon{display:none}
+#popupActions > #mehrBtn > .act-ic > svg.icon{display:block;width:24px;height:24px;color:var(--gold-200)}
+#popupActions > .act > .act-t,#popupActions > .act.act--haupt > .act-t{max-width:100%;font:500 11px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;color:#c0b7a3;white-space:nowrap;overflow:visible}
+#popupActions > .act > .act-s,#popupActions > .act.act--haupt > .act-s{max-width:100%;justify-content:center;flex-wrap:wrap;font-size:10px;line-height:1.2;color:var(--tx-3);white-space:normal;text-align:center}
+#popupActions > .act.act--haupt > .act-s.is-bad,#popupActions > .act > .act-s.is-bad{color:#ff8d7e}
+#cityBtn > .act-s,#sendBtn > .act-s,#titleBtn > .act-s{display:none}
+#popupActions > .act:disabled{background:none} #popupActions > .act:disabled > .act-ic{filter:grayscale(1) brightness(.6)} #popupActions > .act:disabled > .act-t{color:var(--tx-4)}
+#cityBtn{--sym:url(bilder/ui_sym_burg.webp)} #teleportBtn{--sym:url(bilder/ui_sym_verlegen.webp)} #schildBtn{--sym:url(bilder/ui_sym_friedensschild.webp)} #truppenBtn{--sym:url(bilder/beute_truppen.webp)}
+#upgradeBtn{--sym:url(bilder/ui_sym_aufstieg.webp)} #sendBtn{--sym:url(bilder/ui_sym_senden.webp)} #recallBtn{--sym:url(bilder/ui_sym_sammeln.webp)} #multiAttackBtn{--sym:url(bilder/ui_sym_schwert.webp)}
+#titleBtn{--sym:url(bilder/ui_sym_krone.webp)} #scoutBtn{--sym:url(bilder/ui_sym_spaeher.webp)} #attackBtn{--sym:url(bilder/ui_sym_schwert.webp)}
+/* fremde Basis: Spähen + Angreifen als runde Knöpfe nebeneinander; grau = geht nicht (antippen sagt warum) */
+.panel--island.fuss-rund .pfoot{justify-content:center;gap:28px;padding-top:6px}
+.panel--island.fuss-rund .pfoot > .btn{flex:0 0 76px;height:auto;min-height:44px;flex-direction:column;gap:2px;padding:0!important;border-image:none;background:none;box-shadow:none;
+  font:500 12px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;color:#c0b7a3;text-shadow:none}
+.panel--island.fuss-rund .pfoot > .btn > svg.icon{display:none}
+.panel--island.fuss-rund .pfoot > .btn::before{content:"";position:static;display:block;width:52px;height:52px;border-radius:50%;inset:auto;
+  background:var(--sym,none) center/28px 28px no-repeat,url(bilder/ui_rund.webp) center/100% 100% no-repeat}
+.panel--island.fuss-rund .pfoot > .btn:not(:disabled):active::before{background:var(--sym,none) center/28px 28px no-repeat,url(bilder/ui_rund_an.webp) center/100% 100% no-repeat}
+.panel--island.fuss-rund .pfoot > .btn:is(:disabled,.is-grau)::before{filter:grayscale(1) brightness(.6)} .panel--island.fuss-rund .pfoot > .btn:is(:disabled,.is-grau){color:#8b8373}
+/* Angriff vorbereiten: Hauptheld groß, Zweitheld klein darunter | Startbasis, Angriff gegen Abwehr, Kräfte-Balken – dann Truppen, Leiste, goldener Knopf */
+.ap-oben{display:grid;grid-template-columns:96px minmax(0,1fr);gap:8px;align-items:start} .ap-oben--ohne{grid-template-columns:minmax(0,1fr)}
+.ap-oben .ap-kopf{position:static;padding-bottom:0;border-bottom:0;background:none}
+.ap-oben .versus{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px}
+.ap-held{display:flex;flex-direction:column;gap:4px}
+.ap-hchip.ap-hchip--gross{flex:none;width:96px;height:118px;padding:0;flex-direction:column;justify-content:flex-end;align-items:stretch;overflow:hidden;
+  border:3px solid transparent;border-image:url(bilder/ui_kachel_gold.webp) 30 fill / 3px stretch;background:#0f1217}
+.ap-hchip.ap-hchip--gross::after{display:none}
+.ap-hchip--gross .hero-pic{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;border:0;border-radius:0}
+.ap-hchip--gross .ap-hchip-t{position:relative;padding:12px 4px 3px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.85));align-items:center;text-align:center}
+.ap-hchip-leer{position:absolute;inset:0;display:grid;place-items:center;color:var(--gold-200)} .ap-hchip-leer .icon{width:26px;height:26px}
+.ap-hchip.ap-hchip--klein{flex:none;width:96px;min-height:44px;padding:2px 4px;gap:4px}
+.ap-hchip.ap-hchip--klein::after{display:none}
+.ap-hchip--klein .hero-pic{width:24px;height:24px}
+.ap-hchip--klein .ap-hchip-leer{position:static;width:24px;flex:none} .ap-hchip--klein .ap-hchip-leer .icon{width:16px;height:16px}
+.ap-hchip--klein .ap-hchip-t b,.ap-hchip--klein .ap-hchip-t small{white-space:normal;font-size:10px;line-height:1.15}
+.ap-held-wahl{display:flex;flex-direction:column;gap:4px}
+#islandPopup .hero-seg button,#islandPopup .ap-truppen .seg button{min-height:44px;height:44px}
+#islandPopup .from-sel{height:44px} #islandPopup .ap-spaehen{min-height:44px}
+.ap-truppen{gap:4px}
+.ap-truppen .ap-regler{justify-content:flex-start;gap:8px}
+.ap-kachel{width:44px;height:44px;flex:none;display:grid;place-items:center;border:3px solid transparent;border-image:url(bilder/ui_kachel_gold.webp) 30 fill / 3px stretch}
+.ap-kachel img{width:32px;height:32px;object-fit:contain}
+.ap-truppen .val{align-items:center;gap:6px} .ap-truppen .troop-in{height:44px} .ap-max{font:600 15px/1 Georgia,serif;color:var(--tx-3);white-space:nowrap}
+.ap-truppen .seg{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:0}
+.ap-leiste{display:flex;justify-content:space-around;gap:8px;padding:4px 0}
+.ap-leiste span{display:inline-flex;align-items:center;gap:5px;min-width:0} .ap-leiste img{width:22px;height:22px;object-fit:contain;flex:none}
+.ap-leiste b{font:600 15px/1.2 Georgia,serif;color:#eee6d4;white-space:nowrap}
+#attackBtn.btn--gold:not(:disabled){border-image:url(bilder/ui_band_gold.webp) 30 70 30 70 fill / 8px 22px 8px 22px stretch;color:#1a1206;text-shadow:0 1px 0 rgba(255,236,190,.5);
+  font:700 15px/1 Georgia,serif;letter-spacing:0;text-transform:none;padding:0 20px!important;min-height:52px}
+#islandPopup .pfoot > #backBtn{flex:0 0 48px;min-width:48px;padding:0!important} #islandPopup .pfoot > #backBtn > span{display:none} #islandPopup .pfoot > #backBtn > .icon{display:block}
+#attackBtn.btn--gold > svg.icon{display:none}
     </style>
 </head>
 <body>
