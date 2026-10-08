@@ -173,6 +173,7 @@ function drawBattleFx(now) {       // screen space (setScreen active)
         if (sx < -200 || sy < -200 || sx > viewW + 200 || sy > viewH + 200 || !isCellOpen(f.x, f.y)) continue;
         const hot = f.good ? '255,214,120' : '255,110,80';
         ctx.save();
+        if (f.tp) { tpFxZeichnen(f, ms, sx, sy); ctx.restore(); continue; }   // Teleport: Lichtsäule (08d2)
         // 1) two blades sweep in and clash (0-380 ms)
         if (ms < 520) {
             const k = Math.min(1, ms / 300), ease = 1 - Math.pow(1 - k, 3), fade = ms < 380 ? 1 : 1 - (ms - 380) / 140;

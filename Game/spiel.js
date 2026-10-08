@@ -6695,19 +6695,20 @@ const kampflogUmbauen = (function () {
     const ic = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"></use></svg>';
     const zl = (a, b, kl, src) => '<div class="logLine' + (kl || '') + '"><span>' + a + (src ? '<small class="logSrc">' + src + '</small>' : '') + '</span><span>' + b + '</span></div>';
     const el = h => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
-    const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b><small>' + t + '</small></span></span></div>';
+    const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b>' + (t ? '<small>' + t + '</small>' : '') + '</span></span></div>';
     const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Spieler-Stufe –') + '</div><div class="logGearItems">' +
         [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" title="' + n + ' – leer">' + ic(i) + '</span></span>').join('') +
         '</div><div class="logGearMeta">Fähigkeit Angriff – · Verteidigung –</div></div>';
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
 
     // ein Fenster auf den immer gleichen Aufbau bringen
+    const heldZeile = (mit, angr) => mit ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'kein Verteidigungs-Held in der Mauer');   // gleich in Kampf- und Spähbericht
     function normal(box, angr, roh, schutz, flucht) {                    // flucht: die Geflohenen DIESES Spielers (sonst 0)
         const lines = () => [...box.querySelectorAll(':scope > .logLine, :scope > .logSum, :scope > .logCasualty')];
         const truppen = lines().find(l => textOf(l).startsWith('Truppen'));
         if (truppen) truppen.firstElementChild.firstChild.textContent = 'Truppen';
         const mitHeld = !!box.querySelector('.logGear .logHero:not(.kl-keinheld)');
-        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', mitHeld ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'kein Verteidigungs-Held in der Mauer'));
+        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', heldZeile(mitHeld, angr));
         const sum = box.querySelector(':scope > .logSum');
         if (!lines().some(l => textOf(l).startsWith('Grundverteidigung')) && sum) sum.insertAdjacentHTML('beforebegin', zl('Grundverteidigung', '0', ' kl-null', 'zählt nur beim Besitzer der Basis'));
         const cas = lines().filter(l => l.classList.contains('logCasualty'));
@@ -6721,7 +6722,7 @@ const kampflogUmbauen = (function () {
         if (!hs) { hs = el('<div class="logGearHeroes"></div>'); const meta = gear.querySelector('.logGearMeta'); meta ? gear.insertBefore(hs, meta) : gear.appendChild(hs); }
         const helden = hs.querySelectorAll('.logHero');
         if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)'));
-        if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', 'Zweitheld · Werte und passive Fähigkeiten zu 50 %'));
+        if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', ''));
         hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselbe Reihenfolge, leere Zeilen („Fähigkeit –“) fallen weg
             const L = [...h.querySelectorAll(':scope > .logLine')].map(l => { const r = [textOf(l), l.lastElementChild.textContent.trim()]; l.remove(); return r; });
             const fest = ['Angriff', 'Verteidigung', 'Gefolge', 'Tempo'], rest = L.filter(l => !fest.includes(l[0]));
@@ -6798,7 +6799,8 @@ const kampflogUmbauen = (function () {
     }
     function spaehHeld(s) {                                                   // Verteidigungs-Held aus der Mauer: eine Karte, nur seine echten Werte
         const vhd = s.vh && heroById(s.vh.id) ? s.vh : null, kopf = '<div class="logGearHead">Verteidigungs-Held</div>';
-        if (!vhd) return '<div class="logGear">' + kopf + zl('In der Mauer', 'keiner', ' kl-null', s.vh !== undefined ? 'oder gerade unterwegs' : 'älterer Bericht – neu spähen') + '</div>';
+        if (!vhd) return '<div class="logGear">' + kopf + '<div class="logGearHeroes">' + leerHeld('Kein Hauptheld', s.vh !== undefined ? 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)' : 'älterer Bericht – neu spähen') +
+            leerHeld('Kein Zweitheld', '') + '</div></div>';                // dieselben leeren „?“-Plätze wie im Kampfbericht
         const g = el(kampfGearHtml({ items: [], hx: vhd, heroOnly: 1 }));
         g.insertAdjacentHTML('afterbegin', kopf);
         g.querySelectorAll('.logHero').forEach((h, i) => { if (!i) h.style.borderTop = '0';   // (die Linie zieht schon der Kasten)
@@ -6827,7 +6829,7 @@ const kampflogUmbauen = (function () {
         const vert = teile ? teile.filter((q, i) => !i || q[1]).map((q, i) => zl(escapeHtml(q[0]), (i ? (q[1] < 0 ? '−' : '+') : '') + fmt(Math.abs(q[1])), i ? (q[1] < 0 ? ' buff malus' : ' buff') : '', escapeHtml(q[2] || ''))).join('')   // (Teile mit 0 fallen weg)
             : zl('Grundverteidigung', fmt(e.defense), '', s ? 'gesamt – älterer Bericht ohne Aufteilung, neu spähen' : 'gesamt');
         const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
-            zl('Truppen', fmt(e.troops)) + (e.verst > 0 ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + vert +
+            zl('Truppen', fmt(e.troops)) + (s ? heldZeile(s.vh && heroById(s.vh.id)) : '') + (e.verst > 0 ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + vert +
             '<div class="logSum"><span>Verteidigung gesamt</span><span>' + fmt(spaehGesamt(e)) + '</span></div>' +
             (s ? spaehHerr(s) + spaehHeld(s) + block('Basis', spaehBasis(s)) + block('Rohstoffe', spaehRoh(s)) : '') + '</div>');
         const sum = d.querySelector('summary').outerHTML;
@@ -8745,6 +8747,7 @@ function drawBattleFx(now) {       // screen space (setScreen active)
         if (sx < -200 || sy < -200 || sx > viewW + 200 || sy > viewH + 200 || !isCellOpen(f.x, f.y)) continue;
         const hot = f.good ? '255,214,120' : '255,110,80';
         ctx.save();
+        if (f.tp) { tpFxZeichnen(f, ms, sx, sy); ctx.restore(); continue; }   // Teleport: Lichtsäule (08d2)
         // 1) two blades sweep in and clash (0-380 ms)
         if (ms < 520) {
             const k = Math.min(1, ms / 300), ease = 1 - Math.pow(1 - k, 3), fade = ms < 380 ? 1 : 1 - (ms - 380) / 140;
@@ -10035,10 +10038,63 @@ function teleportOrt(x, y) {                     // (Spieler) Tipp auf „Telepo
     gems -= k; if (gratis) store.set('openWaterTpGratis', '1'); if (tele) store.set('openWaterTeleporter', String(teleVorrat() - 1));   // (gekaufter Teleporter: der Weltrechner bucht die 500 beim Kauf ausgegebenen Gems – wie beim Bezahlen hier)
     statBump('teleports'); saveGame(); saveProgression(); updateHud();
     if (alsBefehl('teleport', { x: Math.round(x), y: Math.round(y), gratis })) { flashHint('Die Hauptstadt zieht um …', 3000); return true; }   // (Zuschauer: der Weltrechner verlegt sie)
+    const alt = islandById[playerIslandId], ax = alt.x, ay = alt.y;
     tpVerlegen('player', x, y);
-    spawnBattleFx(playerIslandId, true, 'Hauptstadt', 'hierher teleportiert');
+    teleportFx(playerIslandId, ax, ay);
     flashHint('Die Hauptstadt ist hierher teleportiert – deine Truppen sind mitgekommen.', 3500);
     return true;
+}
+// Teleport-Effekt (FX_MS): goldene Lichtsäule von oben auf den neuen Platz, Staub/Funken am Boden, die alte Stelle verblasst;
+// das Band „Hauptstadt – hierher teleportiert“ steht die ganze Zeit. Ruhig gezeichnet (kaum Bewegung, spart Akku).
+// Bild: bilder/karte_lichtsaeule.webp (Alexanders KI-Bild) – fehlt es, ui_strahlen.webp als Ersatz.
+const TP_SAEULE = { bild: null, ersatz: false };
+function tpSaeuleBild() {
+    if (TP_SAEULE.laedt) return TP_SAEULE.bild; TP_SAEULE.laedt = true;
+    const im = new Image();
+    im.onload = () => { TP_SAEULE.bild = im; requestRender(); };
+    im.onerror = () => { if (TP_SAEULE.ersatz) return; TP_SAEULE.ersatz = true; im.src = 'bilder/ui_strahlen.webp'; };
+    im.src = 'bilder/karte_lichtsaeule.webp';
+    return null;
+}
+function teleportFx(cap, ax, ay) {
+    const isl = islandById[cap]; if (!isl) return;
+    sfx('move'); tpSaeuleBild();
+    const funken = []; for (let i = 0; i < 10; i++) funken.push({ a: i / 10 * Math.PI * 2 + Math.random() * .4, d: 18 + Math.random() * 26 });
+    battleFx.push({ tp: 1, x: isl.x, y: isl.y, ax, ay, good: true, label: 'Hauptstadt', sub: 'hierher teleportiert', born: performance.now(), funken, stack: 0 });
+    if (battleFx.length > 12) battleFx.shift();
+    requestRender();
+}
+function tpFxZeichnen(f, ms, sx, sy) {           // (aus drawBattleFx, Bildschirm-Koordinaten)
+    const s = mzS(), k = ms / FX_MS, rein = Math.min(1, ms / 300), raus = k > .8 ? 1 - (k - .8) / .2 : 1;
+    const ox = f.ax * mapState.zoom + mapState.offsetX, oy = f.ay * mapState.zoom + mapState.offsetY;
+    if (ms < 1200) {                               // alte Stelle: Schimmer, der verblasst
+        const a = 1 - ms / 1200, R = 34 * s, g = ctx.createRadialGradient(ox, oy, 0, ox, oy, R);
+        g.addColorStop(0, 'rgba(255,226,150,' + .55 * a + ')'); g.addColorStop(1, 'rgba(255,226,150,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(ox, oy, R, R * .55, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    const a = rein * raus, im = tpSaeuleBild();
+    if (im && !TP_SAEULE.ersatz) {                 // KI-Bild: Bodenkreis (unten, ~88 % der Höhe) auf den Platz, Säule kommt von oben herab
+        const w = 120 * s, h = w * im.height / im.width, oben = sy - h * .88, sicht = Math.min(1, ms / 260);
+        ctx.globalAlpha = a; ctx.drawImage(im, 0, im.height * (1 - sicht), im.width, im.height * sicht, sx - w / 2, oben + h * (1 - sicht), w, h * sicht);
+        ctx.globalCompositeOperation = 'lighter';
+    } else {                                       // Ersatz: Lichtband + ui_strahlen
+        const w = 70 * s, oben = Math.max(0, sy - 320 * s), h = (sy - oben) * Math.min(1, ms / 260);
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * .9;
+        const g = ctx.createLinearGradient(sx - w / 2, 0, sx + w / 2, 0);
+        g.addColorStop(0, 'rgba(255,200,90,0)'); g.addColorStop(.5, 'rgba(255,236,170,.85)'); g.addColorStop(1, 'rgba(255,200,90,0)');
+        ctx.fillStyle = g; ctx.fillRect(sx - w / 2, oben, w, h);
+        if (im) ctx.drawImage(im, sx - w * .9, sy - w * 1.2, w * 1.8, w * 1.8);
+    }
+    ctx.globalAlpha = a;                           // Boden: Lichtkreis, Staub, Funken
+    const R = 46 * s, g2 = ctx.createRadialGradient(sx, sy, 0, sx, sy, R);
+    g2.addColorStop(0, 'rgba(255,240,190,.8)'); g2.addColorStop(1, 'rgba(255,200,90,0)');
+    ctx.fillStyle = g2; ctx.beginPath(); ctx.ellipse(sx, sy, R, R * .5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    for (const p of f.funken) { const px = sx + Math.cos(p.a) * p.d * s, py = sy + Math.sin(p.a) * p.d * s * .45 - k * 10 * s;
+        ctx.fillStyle = 'rgba(255,230,160,' + a * .9 + ')'; ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
+        ctx.fillStyle = 'rgba(150,130,100,' + a * .25 + ')'; ctx.beginPath(); ctx.arc(px, py + 4 * s, 7 * s, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mzErgebnisBand(f, ms > FX_MS - 150 ? (FX_MS - ms) / 150 : 1, 1, sx, sy + 215 * s);   // Band unter der Basis (nicht auf der Säule, nicht unter der Leiste): von Anfang bis Ende lesbar
 }
 inselOrtLaden();
 document.getElementById('cityCloseBtn').addEventListener('click', closeCity);

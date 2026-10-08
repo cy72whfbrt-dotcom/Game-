@@ -359,19 +359,20 @@ const kampflogUmbauen = (function () {
     const ic = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"></use></svg>';
     const zl = (a, b, kl, src) => '<div class="logLine' + (kl || '') + '"><span>' + a + (src ? '<small class="logSrc">' + src + '</small>' : '') + '</span><span>' + b + '</span></div>';
     const el = h => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
-    const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b><small>' + t + '</small></span></span></div>';
+    const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b>' + (t ? '<small>' + t + '</small>' : '') + '</span></span></div>';
     const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Spieler-Stufe –') + '</div><div class="logGearItems">' +
         [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" title="' + n + ' – leer">' + ic(i) + '</span></span>').join('') +
         '</div><div class="logGearMeta">Fähigkeit Angriff – · Verteidigung –</div></div>';
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
 
     // ein Fenster auf den immer gleichen Aufbau bringen
+    const heldZeile = (mit, angr) => mit ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'kein Verteidigungs-Held in der Mauer');   // gleich in Kampf- und Spähbericht
     function normal(box, angr, roh, schutz, flucht) {                    // flucht: die Geflohenen DIESES Spielers (sonst 0)
         const lines = () => [...box.querySelectorAll(':scope > .logLine, :scope > .logSum, :scope > .logCasualty')];
         const truppen = lines().find(l => textOf(l).startsWith('Truppen'));
         if (truppen) truppen.firstElementChild.firstChild.textContent = 'Truppen';
         const mitHeld = !!box.querySelector('.logGear .logHero:not(.kl-keinheld)');
-        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', mitHeld ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'kein Verteidigungs-Held in der Mauer'));
+        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', heldZeile(mitHeld, angr));
         const sum = box.querySelector(':scope > .logSum');
         if (!lines().some(l => textOf(l).startsWith('Grundverteidigung')) && sum) sum.insertAdjacentHTML('beforebegin', zl('Grundverteidigung', '0', ' kl-null', 'zählt nur beim Besitzer der Basis'));
         const cas = lines().filter(l => l.classList.contains('logCasualty'));
@@ -385,7 +386,7 @@ const kampflogUmbauen = (function () {
         if (!hs) { hs = el('<div class="logGearHeroes"></div>'); const meta = gear.querySelector('.logGearMeta'); meta ? gear.insertBefore(hs, meta) : gear.appendChild(hs); }
         const helden = hs.querySelectorAll('.logHero');
         if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)'));
-        if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', 'Zweitheld · Werte und passive Fähigkeiten zu 50 %'));
+        if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', ''));
         hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselbe Reihenfolge, leere Zeilen („Fähigkeit –“) fallen weg
             const L = [...h.querySelectorAll(':scope > .logLine')].map(l => { const r = [textOf(l), l.lastElementChild.textContent.trim()]; l.remove(); return r; });
             const fest = ['Angriff', 'Verteidigung', 'Gefolge', 'Tempo'], rest = L.filter(l => !fest.includes(l[0]));
@@ -462,7 +463,8 @@ const kampflogUmbauen = (function () {
     }
     function spaehHeld(s) {                                                   // Verteidigungs-Held aus der Mauer: eine Karte, nur seine echten Werte
         const vhd = s.vh && heroById(s.vh.id) ? s.vh : null, kopf = '<div class="logGearHead">Verteidigungs-Held</div>';
-        if (!vhd) return '<div class="logGear">' + kopf + zl('In der Mauer', 'keiner', ' kl-null', s.vh !== undefined ? 'oder gerade unterwegs' : 'älterer Bericht – neu spähen') + '</div>';
+        if (!vhd) return '<div class="logGear">' + kopf + '<div class="logGearHeroes">' + leerHeld('Kein Hauptheld', s.vh !== undefined ? 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)' : 'älterer Bericht – neu spähen') +
+            leerHeld('Kein Zweitheld', '') + '</div></div>';                // dieselben leeren „?“-Plätze wie im Kampfbericht
         const g = el(kampfGearHtml({ items: [], hx: vhd, heroOnly: 1 }));
         g.insertAdjacentHTML('afterbegin', kopf);
         g.querySelectorAll('.logHero').forEach((h, i) => { if (!i) h.style.borderTop = '0';   // (die Linie zieht schon der Kasten)
@@ -491,7 +493,7 @@ const kampflogUmbauen = (function () {
         const vert = teile ? teile.filter((q, i) => !i || q[1]).map((q, i) => zl(escapeHtml(q[0]), (i ? (q[1] < 0 ? '−' : '+') : '') + fmt(Math.abs(q[1])), i ? (q[1] < 0 ? ' buff malus' : ' buff') : '', escapeHtml(q[2] || ''))).join('')   // (Teile mit 0 fallen weg)
             : zl('Grundverteidigung', fmt(e.defense), '', s ? 'gesamt – älterer Bericht ohne Aufteilung, neu spähen' : 'gesamt');
         const box = el('<div class="logSide"><div class="logSideLabel">Gespäht · ' + escapeHtml(name) + '</div>' +
-            zl('Truppen', fmt(e.troops)) + (e.verst > 0 ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + vert +
+            zl('Truppen', fmt(e.troops)) + (s ? heldZeile(s.vh && heroById(s.vh.id)) : '') + (e.verst > 0 ? zl('Verstärkung', fmt(e.verst), '', 'Bündnis-Truppen in der Basis – verteidigen mit') : '') + vert +
             '<div class="logSum"><span>Verteidigung gesamt</span><span>' + fmt(spaehGesamt(e)) + '</span></div>' +
             (s ? spaehHerr(s) + spaehHeld(s) + block('Basis', spaehBasis(s)) + block('Rohstoffe', spaehRoh(s)) : '') + '</div>');
         const sum = d.querySelector('summary').outerHTML;
