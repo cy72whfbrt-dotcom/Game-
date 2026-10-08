@@ -35,7 +35,7 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - Drache/Kriegsherr-Angriffe auf Basen nehmen von Verteidigungs-Helden nur Angriff + Gefolge.
 - Münzen/Rohstoffe im Profil auf 1 Billiarde gedeckelt (Truppen 1e30) – bei Bedarf anheben.
 - Hauptbuch: Edelsteine statt Splitter noch nicht geprüft (Thron-Shop-Kisten kennt es) (nur mögliche Fehlalarme im Admin).
-- Hauptbuch zählt keine Bauarbeiter-Plätze (gefälschtes Handy könnte mehrere Gebäude gleichzeitig bauen, voll bezahlt).
+- **WICHTIG (später, Alexander 8.10.)** Hauptbuch zählt keine Bauarbeiter-Plätze (gefälschtes Handy könnte mehrere Gebäude gleichzeitig bauen, voll bezahlt).
 - Auf dem Server liegen `baukunst.js`/`klein/baukunst.js` noch (beim nächsten Aufräumen löschen, mit Alexanders Ja).
 - Code-Kommentare verweisen auf „LIESMICH 11b A“ / „11c Punkt 30“ – gemeint ist jetzt `archiv.md` (beim nächsten Anfassen
   der Datei auf `doku/…` umstellen).
