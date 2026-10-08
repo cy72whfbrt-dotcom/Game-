@@ -21,7 +21,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `add` → Game/spiel/01c-basen-spielstand.js:55
 - `add` → Game/spiel/03a-karte-hintergrund.js:268
 - `add` → Game/spiel/06c-thron-mitte.js:60
-- `addBotXp` → Game/bots/04-stand-stadt.js:211
+- `addBotXp` → Game/bots/04-stand-stadt.js:226
 - `addCombatLogEntry` → Game/spiel/02b-maersche.js:65
 - `addInventoryItem` → Game/spiel/02a-shop-stufen.js:74
 - `addMat` → Game/baukunst/04-vielfalt-stile.js:232
@@ -333,10 +333,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botArmyRally` → Game/bots/06-aussehen-felder-barbaren.js:99
 - `botArmyRethink` → Game/bots/06-aussehen-felder-barbaren.js:127
 - `botArmyStep` → Game/bots/06-aussehen-felder-barbaren.js:189
-- `botAtkFactor` → Game/bots/04-stand-stadt.js:197
+- `botAtkFactor` → Game/bots/04-stand-stadt.js:212
 - `botBarbBase` → Game/bots/06-aussehen-felder-barbaren.js:282
 - `botBarbHunt` → Game/bots/06-aussehen-felder-barbaren.js:287
-- `botBestRarity` → Game/bots/04-stand-stadt.js:205
+- `botBestRarity` → Game/bots/04-stand-stadt.js:220
 - `botBld` → Game/bots/04-stand-stadt.js:76
 - `botBountyReward` → Game/bots/06-aussehen-felder-barbaren.js:55
 - `botBurgWert` → Game/aufbau.js:465
@@ -344,16 +344,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botCanCross` → Game/bots/01-spieler.js:116
 - `botCapitalMoveOk` → Game/bots/05-verteidigen-takt.js:165
 - `botCapitalNotice` → Game/bots/05-verteidigen-takt.js:213
-- `botCapitalOf` → Game/bots/04-stand-stadt.js:338
+- `botCapitalOf` → Game/bots/04-stand-stadt.js:353
 - `botCapitalPlan` → Game/bots/05-verteidigen-takt.js:172
 - `botCapLocal` → Game/bots/05-verteidigen-takt.js:159
-- `botCityBuild` → Game/bots/04-stand-stadt.js:92
+- `botCityBuild` → Game/bots/04-stand-stadt.js:106
 - `botCityFinish` → Game/bots/04-stand-stadt.js:78
 - `botClaimGoals` → Game/bots/06-aussehen-felder-barbaren.js:28
 - `botClock` → Game/bots/05-verteidigen-takt.js:98
 - `botConquests` → Game/bots/06-aussehen-felder-barbaren.js:272
 - `botConsiderCapital` → Game/bots/05-verteidigen-takt.js:222
-- `botConsiderUpgrade` → Game/bots/04-stand-stadt.js:271
+- `botConsiderUpgrade` → Game/bots/04-stand-stadt.js:286
 - `botDayBoss` → Game/bots/06-aussehen-felder-barbaren.js:332
 - `botDefend` → Game/bots/05-verteidigen-takt.js:34
 - `botDrache` → Game/bots/06-aussehen-felder-barbaren.js:324
@@ -362,27 +362,28 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botForschung` → Game/aufbau.js:443
 - `botFreeSlots` → Game/bots/03-angreifen.js:38
 - `botFrei` → Game/bots/02-kampf-karte.js:329
-- `botGather` → Game/bots/04-stand-stadt.js:311
+- `botGather` → Game/bots/04-stand-stadt.js:326
 - `botGatherField` → Game/bots/06-aussehen-felder-barbaren.js:78
-- `botGatherHeroes` → Game/bots/04-stand-stadt.js:136
-- `botGearPct` → Game/bots/04-stand-stadt.js:182
+- `botGatherHeroes` → Game/bots/04-stand-stadt.js:150
+- `botGearPct` → Game/bots/04-stand-stadt.js:197
+- `botGemsFrei` → Game/bots/04-stand-stadt.js:97
 - `botGoalVal` → Game/bots/06-aussehen-felder-barbaren.js:27
-- `botGoldRate` → Game/bots/04-stand-stadt.js:195
+- `botGoldRate` → Game/bots/04-stand-stadt.js:210
 - `botGrudge` → Game/bots/02-kampf-karte.js:225
 - `botGrudgeOn` → Game/bots/02-kampf-karte.js:239
 - `botHandy` → Game/bots/05-verteidigen-takt.js:264
 - `botHandyLage` → Game/bots/05-verteidigen-takt.js:253
-- `botHeal` → Game/bots/04-stand-stadt.js:126
-- `botHeroAtk` → Game/bots/04-stand-stadt.js:142
-- `botHeroCare` → Game/bots/04-stand-stadt.js:147
-- `botHeroLikes` → Game/bots/04-stand-stadt.js:174
+- `botHeal` → Game/bots/04-stand-stadt.js:140
+- `botHeroAtk` → Game/bots/04-stand-stadt.js:156
+- `botHeroCare` → Game/bots/04-stand-stadt.js:161
+- `botHeroLikes` → Game/bots/04-stand-stadt.js:189
 - `botHopeless` → Game/bots/03-angreifen.js:122
-- `botHospitalCapacity` → Game/bots/04-stand-stadt.js:117
-- `botHospitalPct` → Game/bots/04-stand-stadt.js:115
-- `botHospitalTake` → Game/bots/04-stand-stadt.js:119
+- `botHospitalCapacity` → Game/bots/04-stand-stadt.js:131
+- `botHospitalPct` → Game/bots/04-stand-stadt.js:129
+- `botHospitalTake` → Game/bots/04-stand-stadt.js:133
 - `botIntel` → Game/bots/02-kampf-karte.js:423
 - `botInvasion` → Game/bots/06-aussehen-felder-barbaren.js:304
-- `botItem` → Game/bots/04-stand-stadt.js:180
+- `botItem` → Game/bots/04-stand-stadt.js:195
 - `botKeepsShield` → Game/bots/05-verteidigen-takt.js:239
 - `botKennt` → Game/bots/03-angreifen.js:147
 - `botLastSeen` → Game/bots/02-kampf-karte.js:380
@@ -391,35 +392,35 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botLook` → Game/bots/06-aussehen-felder-barbaren.js:5
 - `botLosses` → Game/bots/05-verteidigen-takt.js:13
 - `botLoyal` → Game/bots/02-kampf-karte.js:382
-- `botMarchMult` → Game/bots/04-stand-stadt.js:203
+- `botMarchMult` → Game/bots/04-stand-stadt.js:218
 - `botMarginFor` → Game/bots/02-kampf-karte.js:412
 - `botMarkt` → Game/aufbau.js:456
 - `botMidPull` → Game/bots/02-kampf-karte.js:292
 - `botMigrateV2` → Game/bots/04-stand-stadt.js:34
 - `botMood` → Game/bots/03-angreifen.js:17
 - `botMoodAdd` → Game/bots/03-angreifen.js:19
-- `botMults` → Game/bots/04-stand-stadt.js:184
+- `botMults` → Game/bots/04-stand-stadt.js:199
 - `botNeulingBis` → Game/spiel/06d-schild-produktion.js:38
 - `botNeulingWeg` → Game/bots/06-aussehen-felder-barbaren.js:64
 - `botNoteFail` → Game/bots/02-kampf-karte.js:282
 - `botNoteLoss` → Game/bots/05-verteidigen-takt.js:10
 - `botNoteTooStrong` → Game/bots/02-kampf-karte.js:377
-- `botOnline` → Game/bots/04-stand-stadt.js:223
-- `botOnlinePlan` → Game/bots/04-stand-stadt.js:229
+- `botOnline` → Game/bots/04-stand-stadt.js:238
+- `botOnlinePlan` → Game/bots/04-stand-stadt.js:244
 - `botPassCare` → Game/bots/06-aussehen-felder-barbaren.js:39
 - `botPassInfo` → Game/bots/06-aussehen-felder-barbaren.js:37
 - `botPassPay` → Game/bots/06-aussehen-felder-barbaren.js:47
 - `botPassScore` → Game/bots/06-aussehen-felder-barbaren.js:36
-- `botPickHero` → Game/bots/04-stand-stadt.js:135
+- `botPickHero` → Game/bots/04-stand-stadt.js:149
 - `botPlanStep` → Game/bots/03-angreifen.js:40
 - `botPoolFor` → Game/bots/02-kampf-karte.js:342
-- `botRally` → Game/bots/04-stand-stadt.js:295
+- `botRally` → Game/bots/04-stand-stadt.js:310
 - `botRespawn` → Game/bots/05-verteidigen-takt.js:316
 - `botRespects` → Game/bots/02-kampf-karte.js:384
 - `botRevengeLaunched` → Game/bots/02-kampf-karte.js:244
 - `botRohWunsch` → Game/aufbau.js:471
 - `botRulerTitles` → Game/bots/05-verteidigen-takt.js:294
-- `botSampleSources` → Game/bots/04-stand-stadt.js:350
+- `botSampleSources` → Game/bots/04-stand-stadt.js:365
 - `botSchaetzAngriff` → Game/bots/05-verteidigen-takt.js:27
 - `botSchaetzArmee` → Game/bots/05-verteidigen-takt.js:32
 - `botschaftGeschenk` → Game/aufbau.js:245
@@ -431,10 +432,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botShieldCrisis` → Game/bots/05-verteidigen-takt.js:133
 - `botShieldNight` → Game/bots/05-verteidigen-takt.js:121
 - `botShieldUser` → Game/bots/05-verteidigen-takt.js:96
-- `botShop` → Game/bots/04-stand-stadt.js:237
+- `botShop` → Game/bots/04-stand-stadt.js:252
 - `botSitCtx` → Game/bots/02-kampf-karte.js:387
 - `botSituation` → Game/bots/02-kampf-karte.js:392
 - `botSortGroups` → Game/bots/01-spieler.js:104
+- `botSpart` → Game/bots/04-stand-stadt.js:89
+- `botSparZiel` → Game/bots/04-stand-stadt.js:91
 - `botSpendSkills` → Game/bots/04-stand-stadt.js:57
 - `botStadtFix` → Game/aufbau.js:435
 - `botStat` → Game/bots/06-aussehen-felder-barbaren.js:52
@@ -446,13 +449,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botThreatened` → Game/bots/02-kampf-karte.js:361
 - `botThroneHold` → Game/bots/03-angreifen.js:133
 - `botThroneShop` → Game/bots/06-aussehen-felder-barbaren.js:57
-- `botTickMs` → Game/bots/04-stand-stadt.js:201
+- `botTickMs` → Game/bots/04-stand-stadt.js:216
 - `botTooStrong` → Game/bots/02-kampf-karte.js:372
 - `botTpBezahlbar` → Game/bots/05-verteidigen-takt.js:195
 - `botTpOrt` → Game/bots/05-verteidigen-takt.js:196
 - `botUseShield` → Game/bots/05-verteidigen-takt.js:100
 - `botVendetta` → Game/bots/02-kampf-karte.js:286
-- `botVhCare` → Game/bots/04-stand-stadt.js:170
+- `botVhCare` → Game/bots/04-stand-stadt.js:185
 - `bountyCheck` → Game/spiel/06c-thron-mitte.js:198
 - `bountyGems` → Game/spiel/06c-thron-mitte.js:188
 - `bountyGrow` → Game/spiel/06c-thron-mitte.js:189
@@ -2538,7 +2541,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weich` → Game/ladebildschirm.js:217
 - `weich` → Game/spiel/03a-karte-hintergrund.js:78
 - `weich` → Game/spiel/08a-stadt-bauen.js:205
-- `weight` → Game/bots/04-stand-stadt.js:278
+- `weight` → Game/bots/04-stand-stadt.js:293
 - `welcomeListHtml` → Game/spiel/06d-schild-produktion.js:402
 - `welcomeNachziehen` → Game/spiel/06d-schild-produktion.js:405
 - `welcomeRows` → Game/spiel/06d-schild-produktion.js:365
@@ -3131,35 +3134,38 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveBotState` :73
 - `botBld` :76 — ---- a bot's city ----
 - `botCityFinish` :78 — a build is done when its time is up - online or not, like yours
-- `botCityBuild` :92 — one builder (two once bought): start the next building if the coins are there
-- `botHospitalPct` :115 — ---- the bot's Krankenhaus ----
-- `botHospitalCapacity` :117
-- `botHospitalTake` :119
-- `botHeal` :126 — heals everyone at once for coins, like your Krankenhaus - when it can afford it
-- `botPickHero` :135
-- `botGatherHeroes` :136 — Sammel-Helden (Fenn, Otto, Pia …): der erste freie, dazu sein Partner oder ein …
-- `botHeroAtk` :142
-- `botHeroCare` :147 — like a player in the Heldenhalle: the day's shards, unlock, quarter stars, poin…
-- `botVhCare` :170 — Verteidigungs-Helden in der Mauer: ihr bester Held (ab Mauer 5 dazu der zweitbe…
-- `botHeroLikes` :174 — what their heroes should be good at: the moment first (the middle when they hol…
-- `botItem` :180 — ---- the bot's gear: one worn item per slot, spares for combining, points for l…
-- `botGearPct` :182
-- `botMults` :184
-- `botGoldRate` :195
-- `botAtkFactor` :197 — what the bot expects its next attack to hit with (skill, its best free hero, ti…
-- `botTickMs` :201
-- `botMarchMult` :203
-- `botBestRarity` :205
-- `addBotXp` :211
-- `botOnline` :223 — Online in sessions, like people: everyone has their own day (asleep for about 7…
-- `botOnlinePlan` :229 — ihr gewohnter Tag (ohne Handy-Meldung)
-- `botShop` :237 — gems and points spent the way a player would: heroes, stars, crates, gear
-- `botConsiderUpgrade` :271
-- `weight` :278
-- `botRally` :295 — Big targets (gates, temples, Wächter, the throne) need more than one garrison: …
-- `botGather` :311
-- `botCapitalOf` :338 — each bot's main base: its strongest tower at first - later moved like yours (bo…
-- `botSampleSources` :350 — a person looks at their big armies and a few others, not at all 500 bases
+- `botSpart` :89 — (fest je Spieler: nicht alle gleich)
+- `botSparZiel` :91
+- `botGemsFrei` :97 — was sie ausgeben mögen (ohne das Gesparte)
+- `botCityBuild` :106 — one builder (two once bought): start the next building if the coins are there
+- `botHospitalPct` :129 — ---- the bot's Krankenhaus ----
+- `botHospitalCapacity` :131
+- `botHospitalTake` :133
+- `botHeal` :140 — heals everyone at once for coins, like your Krankenhaus - when it can afford it
+- `botPickHero` :149
+- `botGatherHeroes` :150 — Sammel-Helden (Fenn, Otto, Pia …): der erste freie, dazu sein Partner oder ein …
+- `botHeroAtk` :156
+- `botHeroCare` :161 — like a player in the Heldenhalle: the day's shards, unlock, quarter stars, poin…
+- `botVhCare` :185 — Verteidigungs-Helden in der Mauer: ihr bester Held (ab Mauer 5 dazu der zweitbe…
+- `botHeroLikes` :189 — what their heroes should be good at: the moment first (the middle when they hol…
+- `botItem` :195 — ---- the bot's gear: one worn item per slot, spares for combining, points for l…
+- `botGearPct` :197
+- `botMults` :199
+- `botGoldRate` :210
+- `botAtkFactor` :212 — what the bot expects its next attack to hit with (skill, its best free hero, ti…
+- `botTickMs` :216
+- `botMarchMult` :218
+- `botBestRarity` :220
+- `addBotXp` :226
+- `botOnline` :238 — Online in sessions, like people: everyone has their own day (asleep for about 7…
+- `botOnlinePlan` :244 — ihr gewohnter Tag (ohne Handy-Meldung)
+- `botShop` :252 — gems and points spent the way a player would: heroes, stars, crates, gear
+- `botConsiderUpgrade` :286
+- `weight` :293
+- `botRally` :310 — Big targets (gates, temples, Wächter, the throne) need more than one garrison: …
+- `botGather` :326
+- `botCapitalOf` :353 — each bot's main base: its strongest tower at first - later moved like yours (bo…
+- `botSampleSources` :365 — a person looks at their big armies and a few others, not at all 500 bases
 
 ### Game/bots/05-verteidigen-takt.js — Mitspieler: Verteidigen, Friedensschild, Hauptstadt teleportieren, Titel, Takt
 - `botNoteLoss` :10
