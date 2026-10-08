@@ -126,6 +126,14 @@ Alles Wichtige steht in `LIESMICH.md` – jede Änderung wird dort eingetragen.
 - Zahlen (Kosten, Erträge, Gegner) immer aus Spieler-Sicht prüfen, bevor sie live gehen: „Burg 4 kostet 7 Holz“ ist ein Fehler,
   auch wenn die Tests grün sind. Vergleich mit RoK-Größen.
 
+## Tempo-Regeln (Alexander 8.10., gelten sofort)
+- **A Doku kurz:** LIESMICH = aktueller Stand (Ziel ≤ 300 Zeilen); Altes ins Archiv (`LIESMICH_ARCHIV.md`), nur bei Bedarf lesen.
+  Agenten lesen KARTE.md nur per `grep`, nie ganz.
+- **B Volle Testreihe nur einmal am Ende** (Endprüfer/letztes Zusammenführen vor dem Hochladen). Programmierer und
+  Zusammenführer zwischendurch nur betroffene Tests (`tests/alle_tests.sh <namen>`).
+- **C Große Pakete:** lieber 2–3 Agenten mit großen, getrennten Aufgaben als viele kleine; einmal am Ende zusammenführen.
+- **D Nichts doppelt bauen:** Testdateien zeigen nur Aussehen; Regeln/Zahlen kommen immer aus dem Spiel.
+
 ## Regeln von Alexander
 - Code zuerst auf GitHub (Branch `claude/neues-projekt-8agldl`), **vor jedem Hochladen Alexander fragen**
   (`./hochladen.sh`, nur nach seinem Ja). Nach jedem Hochladen: `werkzeuge/nach_hochladen.sh` (Live-Server, nur lesend →
