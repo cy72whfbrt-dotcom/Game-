@@ -82,11 +82,11 @@ let b;
     const ok = fieldSend('player', playerIslandId, fs[0].id, 1000); return { ok, maersche: fieldMarches.filter(m => m.who === 'player').length }; }).catch(e => 'FEHLER ' + e.message);
   // Kiste öffnen + Held
   wo = 'kiste'; out.kiste = await ev(() => { const it = openCrate(); return it ? RARITY_DEFS[it.rarity].label + ' ' + it.slot : 'keine'; }).catch(e => 'FEHLER ' + e.message);
-  // Events: Drache + Invasion (Test-Zeiten), Wochen-Event
+  // Events: Wochen-Event
   await p.waitForTimeout(5000); wo = 'events';
-  out.events = await ev(() => ({ drache: !!drAktiv(), invasion: !!invAktiv(), woche: woOn(), thema: woThemaAm(Date.now()).name, chip: document.getElementById('midBar').innerText.replace(/\n/g, ' ').slice(0, 80) }));
-  wo = 'drache-angriff'; out.dracheAngriff = await ev(async () => { openGoals('drache'); await new Promise(r => setTimeout(r, 500)); const k = [...document.querySelectorAll('#goalsPopup button')].find(x => /angreif/i.test(x.textContent) && !x.disabled); if (!k) return 'kein Knopf'; const hp = evState.dr.hp; k.click(); await new Promise(r => setTimeout(r, 800)); return { knopf: k.textContent.trim().slice(0, 30), vorher: Math.round(hp), sheet: (document.getElementById('armySheet').hidden ? 'zu' : document.getElementById('armySheet').innerText.slice(0, 80)) }; }).catch(e => 'FEHLER ' + e.message);
-  await pruef('drache'); await p.screenshot({ path: path.join(OUT, 'z_drache.png') });
+  out.events = await ev(() => ({ woche: woOn(), heute: (woHeute() || {}).name || 'frei', chip: document.getElementById('midBar').innerText.replace(/\n/g, ' ').slice(0, 80) }));
+  wo = 'wochen-event'; out.wochenEvent = await ev(async () => { openGoals('tour'); await new Promise(r => setTimeout(r, 500)); return { tage: document.querySelectorAll('#eventBody .wo-tage > button').length, kisten: document.querySelectorAll('#eventBody .evl-k').length }; }).catch(e => 'FEHLER ' + e.message);
+  await pruef('woche'); await p.screenshot({ path: path.join(OUT, 'z_woche.png') });
   // Anleitung als neuer Spieler
   wo = 'anleitung'; await ev(() => { document.querySelectorAll('.panel.is-open').forEach(x => closePanel(x)); document.getElementById('armySheet').hidden = true; anleitung.schritt = 0; }); await p.waitForTimeout(1500);
   out.anleitung = await ev(() => document.getElementById('anleitungText').textContent);

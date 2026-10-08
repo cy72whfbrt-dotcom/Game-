@@ -40,7 +40,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
     const ps = passOf(passNo(Date.now())); ps.xp = 20 * PASS_STEP; ps.f = [1, 2]; ps.prem = true; passSave();
     playerStats.captures = 50; store.set('openWaterStats', JSON.stringify(playerStats)); throneState.earned = 9000; saveThrone();
     bx.ps = { s: passNo(Date.now()), base: botPassScore(bx) - 10 * PASS_STEP, f: 10, p: 0, prem: true, at: Date.now() + 1e9 }; bx.stats = Object.assign(bx.stats || {}, { caps: 40 }); saveBotState();
-    woSt().pts.player = 50; saveEv();
+    woSt().tp = { player: [50, 0, 0, 0, 0] }; saveEv();
     saveGameNow(); saveProgressionNow();
     saisonTakt(); saison.ende = Date.now() + 2 * 864e5; saison.bald = 0; saisonSpeichern();   // nur noch 2 Tage: Ankündigung + Countdown
     const L = k => localStorage.getItem(k);
@@ -50,7 +50,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   });
   ok(v.nr === 1 && v.bund && v.ich, 'Saison 1 läuft, Bündnis gegründet (du bist dabei)', { nr: v.nr, bund: v.bund, ich: v.ich });
   await p.waitForFunction(() => saison.bald === 1 && /Neue Saison in/.test(document.getElementById('midBar').innerText), null, { timeout: 19500, polling: 250 }).catch(() => {});
-  const cd = await p.evaluate(() => { const chip = document.getElementById('midBar').innerText; openGoals('boss'); const ev = document.getElementById('eventBody').innerText; closePanel(goalsPopup);
+  const cd = await p.evaluate(() => { const chip = document.getElementById('midBar').innerText; openGoals('lager'); const ev = document.getElementById('eventBody').innerText; closePanel(goalsPopup);
     return { chip, ev: ev.slice(0, 200), bald: saison.bald }; });
   ok(/Neue Saison in/.test(cd.chip) && /\d+ T \d+ h/.test(cd.chip), 'Countdown oben unter dem HUD (letzte 3 Tage)', cd.chip);
   ok(/Welt-Saison 1/.test(cd.ev) && /Neue Saison in/.test(cd.ev) && /Bleibt/.test(cd.ev), 'Countdown im Events-Fenster', cd.ev);
@@ -58,7 +58,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   // 1b) Sicherung mit fälligem Reset zurückgespielt (server.php saison_anhalten: halt) – kein neuer Reset, bis der Admin-Knopf kommt
   const h = await p.evaluate(async () => { const alt = saison.ende; saison.ende = Date.now() - 1000; saison.halt = { seit: Date.now(), grund: 'sicherung' }; saisonSpeichern();
     saisonTakt(); await new Promise(r => setTimeout(r, 6000)); saisonTakt();
-    openGoals('boss'); const ev = document.getElementById('eventBody').innerText; closePanel(goalsPopup);
+    openGoals('lager'); const ev = document.getElementById('eventBody').innerText; closePanel(goalsPopup);
     const r = { nr: saison.nr, halt: !!saison.halt, bitte: !!localStorage.getItem('openWaterSaisonNeu'), ev: /Termin folgt/.test(ev) }; saison.ende = alt; saisonSpeichern(); return r; });
   ok(h.nr === 1 && h.halt && !h.bitte && h.ev, 'Sicherung zurückgespielt (Termin vorbei): Reset angehalten – keine neue Saison von selbst', h);
   // 2) die neue Saison (wie der Admin-Knopf, auch aus dem angehaltenen Zustand) – die Seite lädt neu und übernimmt den Reset
@@ -83,7 +83,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
         fo: bx.city.fo, bau: (bx.city.builds || []).map(x => x.id + x.to), foRun: bx.city.foRun || null, gear: JSON.stringify(bx.gear) === JSON.stringify(V.bot.gear), gems: bx.gems, tp: bx.tp, res: bx.res, titel: [...(bx.sTitel || []), ...(bx.titles || [])], look: botLook(V.X).title, rahmen: botLook(V.X).frame,
         hs: Object.entries(bx.hs).every(([k, x]) => V.bot.hs[k] && V.bot.hs[k][0] === x.own && V.bot.hs[k][1] === x.q), truppen: tr[bx.capital] },
       pass: (x => x && [x.xp, x.f.length, x.p.length, x.prem])((J(N.pass) || { s: {} }).s[passNo(Date.now())]), botPass: bx.ps && [bx.ps.f, bx.ps.p, bx.ps.prem],
-      rang: [rangSaison('player', 0), rangSaison('player', 1), rangSaison(V.X, 0), conquestsOf('player'), throneEarnedOf('player')], wo: Object.keys(((J(N.ev) || {}).wo || {}).pts || {}).length,
+      rang: [rangSaison('player', 0), rangSaison('player', 1), rangSaison(V.X, 0), conquestsOf('player'), throneEarnedOf('player')], wo: Object.keys(((J(N.ev) || {}).wo || {}).tp || {}).length,
       capsInnen: Object.values(bo).filter(l => l.length === 1).map(l => islandById[l[0]]).filter(i => i && !i.startSlot && landmasses[i.landmassId].zone !== 1).length,
       schutz: (+N.schutz - N.at) / 36e5, botSchutz: (bx.neuBis - N.at) / 36e5, anderer, ohne, chip: document.getElementById('midBar').innerText };
   }, v.vor);

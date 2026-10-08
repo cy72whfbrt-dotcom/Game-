@@ -282,8 +282,8 @@ document.getElementById('eventBody').addEventListener('click', e => {
     closePanel(goalsPopup); flyTo(t.x, t.y, { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .2 }); openBarbSheet(v);
 });
 // Chips im Fenster: grüner Punkt = läuft gerade, grau = läuft nicht (darunter, wann es wieder losgeht)
-function evChipStatus() {
-    const an = { tour: woOn(), lager: true }, ab = { tour: woOn() ? '' : 'Mo' };
+function evChipStatus() {                            // (läuft schon beim Laden – vor diesem Teil noch nichts)
+    let an; try { an = { tour: woOn(), lager: true }; } catch (e) { return; } const ab = { tour: an.tour ? '' : 'Mo' };
     for (const k in an) { const b = goalsPopup.querySelector('[data-gtab="' + k + '"]'); if (!b) continue;
         const st = b.querySelector('.ev-st'), sm = b.querySelector('small'); if (st) st.classList.toggle('an', an[k]); if (sm) { setText(sm, ab[k] || ''); sm.hidden = !ab[k]; } }
 }

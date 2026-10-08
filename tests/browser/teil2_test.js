@@ -23,9 +23,8 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
   // Feld sammeln über das Feld-Fenster
   wo = 'feld'; out.feld = await ev(async () => { const h = islandById[playerIslandId]; const f = resFields.filter(f => !(fieldState[f.id] && fieldState[f.id].occ)).sort((a, c) => Math.hypot(a.x - h.x, a.y - h.y) - Math.hypot(c.x - h.x, c.y - h.y))[0]; if (!f) return 'kein Feld';
     const ok = fieldSend('player', playerIslandId, f.id, 1e6); await new Promise(r => setTimeout(r, 300)); return { feld: f.kind || f.type || f.id, ok, maersche: fieldMarches.filter(m => m.who === 'player').length }; }).catch(e => 'FEHLER ' + e.message);
-  // Drache, Invasion, Tagesboss, Lager über das Karten-Fenster
-  await p.waitForTimeout(62000);   // Invasion beginnt 1 Min. nach dem Laden
-  for (const v of [{ kind: 'drache' }, { kind: 'boss' }, { kind: 'camp' }]) {
+  // Tagesboss (donnerstags), Lager über das Karten-Fenster
+  for (const v of [{ kind: 'boss' }, { kind: 'camp' }]) {
     wo = 'barb/' + v.kind;
     out[v.kind] = await ev(async v => { if (v.kind === 'camp') { const c = barbNearest(); if (!c) return 'kein Lager'; v.id = c.id; } if (v.kind === 'boss' && !dbossOnMap()) return 'kein Tagesboss gerade';
       openBarbSheet(v); await new Promise(r => setTimeout(r, 500)); const sh = document.getElementById('barbSheet'); const txt = sh.innerText.split('\n').filter(Boolean).slice(0, 3).join(' / ');
@@ -34,11 +33,9 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
       return { txt: txt.slice(0, 90), marsch: (typeof barbMarches !== 'undefined' ? barbMarches : []).length - vor }; }, v).catch(e => 'FEHLER ' + e.message);
     await pruef(wo); await p.screenshot({ path: path.join(OUT, 'y_' + v.kind + '.png') }); await ev(() => { try { closeBarbSheet(); } catch (e) {} });
   }
-  wo = 'invasion'; out.invasion = await ev(async () => { const I = invAktiv(); if (!I) return 'keine'; const a = I.armies[0]; if (!a) return 'keine Armee'; openBarbSheet({ kind: 'inv', id: a.id }); await new Promise(r => setTimeout(r, 500)); const sh = document.getElementById('barbSheet'); return { armeen: I.armies.length, txt: sh.innerText.split('\n').filter(Boolean).slice(0, 3).join(' / ').slice(0, 90) }; }).catch(e => 'FEHLER ' + e.message);
-  await pruef('invasion'); await ev(() => { try { closeBarbSheet(); } catch (e) {} });
   // 60 s laufen lassen: kommen Märsche an, rechnen Mitspieler?
   wo = 'laufen'; await p.waitForTimeout(60000);
-  out.danach = await ev(() => ({ drHp: Math.round(evState.dr.hp), drMeinSchaden: Math.round((evState.dr.dmg || {}).player || 0), feldBesetzt: Object.values(fieldState).filter(s => s && s.occ && s.occ.who === 'player').length, berichte: combatLog.slice(0, 4).map(e => (e.type || '') + ':' + (e.title || e.badge || '')) }));
+  out.danach = await ev(() => ({ feldBesetzt: Object.values(fieldState).filter(s => s && s.occ && s.occ.who === 'player').length, berichte: combatLog.slice(0, 4).map(e => (e.type || '') + ':' + (e.title || e.badge || '')) }));
   console.log(JSON.stringify(out, null, 1));
   console.log('Text-Auffälligkeiten:', texte.length ? [...new Set(texte)].slice(0, 30) : 'keine');
   console.log('Fehler:', fehler.length ? [...new Set(fehler)].slice(0, 20) : 'keine'); await b.close(); srv.close();

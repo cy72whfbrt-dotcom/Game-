@@ -17,13 +17,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       // 1) obere Leiste: 100 Mrd. Truppen (Münzen/Gems auch groß) – alle drei Werte ganz
       coins = 1e13; gems = 1e7; islandTroops[playerIslandId] = 1e11; updateHud(); await warte(300);
       const leiste = [...document.querySelectorAll('.hud .res b')].slice(0, 3).map(e => [e.textContent, ganz(e)]);
-      // 2) Saison-Hinweis: ohne Fenster ganz lesbar (kein „…“), mit offenem Fenster (Events → Boss & Lager) am Handy versteckt
-      //    Andere Ansagen (Drache erscheint, Testmodus-Hinweis …) ersetzen jeden Hinweis (der neueste gilt) – während der Szene still.
+      // 2) Saison-Hinweis: ohne Fenster ganz lesbar (kein „…“), mit offenem Fenster (Events → Lager) am Handy versteckt
+      //    Andere Ansagen (Testmodus-Hinweis …) ersetzen jeden Hinweis (der neueste gilt) – während der Szene still.
       const h = document.getElementById('hint'), handy = matchMedia('(max-width:899px) and (min-height:501px)').matches, hinweis = flashHint;
       window.flashHint = () => {};
       hinweis(saisonBaldText(Date.now() + 3 * 864e5), 9000, true); await warte(300);
       const lang = { klasse: h.classList.contains('toast--lang'), ganz: h.scrollHeight <= h.clientHeight + 1, preise: /besten 10/.test(h.textContent), sichtbar: getComputedStyle(h).display !== 'none' };
-      openGoals('boss'); await warte(500);
+      openGoals('lager'); await warte(500);
       const mitFenster = getComputedStyle(h).display;
       hinweis('Kurzer Hinweis', 3000); await warte(100);
       const kurz = { klasse: h.classList.contains('toast--lang'), sichtbar: getComputedStyle(h).display !== 'none' };

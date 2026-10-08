@@ -7,7 +7,8 @@ const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 (async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
-  const p = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));
+  const ctx = await b.newContext({ ...devices['iPhone 13'] }); await ctx.clock.install({ time: new Date(2026, 9, 15, 10).getTime() });   // ein Donnerstag (Tagesboss nur donnerstags)
+  const p = await ctx.newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
   await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof saisonTakt === 'function' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
   const r = await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
@@ -18,9 +19,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     saison.halt = { seit: now, grund: 'sicherung' }; const halt = saisonKarte(); delete saison.halt; const normal = saisonKarte();
     // 3) der Pass heißt „Saison-Pass“ (ohne Nummer – keine zweite Saison-Zahl neben der Welt-Saison)
     openGoals('pass'); const pass = (document.getElementById('passPane') || {}).innerText || ''; closePanel(goalsPopup);
-    // 4) Tagesboss und Drache: erste 3 Tage einer neuen Saison weniger Leben (alle Mitspieler ohne Truppen → die Untergrenze zählt)
+    // 4) Tagesboss: erste 3 Tage einer neuen Saison weniger Leben (alle Mitspieler ohne Truppen → die Untergrenze zählt)
     const tr0 = Object.assign({}, islandTroops); for (const bd of BOT_DEFS) for (const id of botOwnedIslands[bd.id] || []) islandTroops[id] = 0;
-    const s0 = saison, leben = start => { saison = { nr: 2, start, ende: now + 50 * 864e5 }; dayBoss = null; return [dbossEnsure().max, drNeu({ start: now, end: now + 36e5 }).max]; };
+    const s0 = saison, leben = start => { saison = { nr: 2, start, ende: now + 50 * 864e5 }; dayBoss = null; return [dbossEnsure().max]; };
     const anfang = leben(now - 36e5), spaeter = leben(now - 4 * 864e5); saison = { nr: 1, start: now - 36e5, ende: now + 50 * 864e5 }; dayBoss = null; const erste = [dbossEnsure().max];
     for (const k in islandTroops) delete islandTroops[k]; Object.assign(islandTroops, tr0); saison = s0; saisonSpeichern();
     // 5) Tagesboss gestern nicht gefallen: kein Preis mehr (Merkliste 33 – die Belohnung gab es schon je Angriff)
@@ -56,9 +57,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.bald[0] === 'In 1 Tag beg' && r.bald[1] === 'In 2 Tagen b' && r.bald[2] === 'In 3 Tagen b', 'Ankündigung nach echter Restzeit (1 Tag, 2 Tage, 3 Tage)', r.bald);
   ok(r.halt && !r.haltDatum && r.normal, 'Angehalten: „Neustart: vom Admin“ statt des alten Datums (sonst das Datum)', { halt: r.halt, datum: r.haltDatum, normal: r.normal });
   ok(/Saison-Pass/.test(r.pass) && !/Saison-Pass \d/.test(r.pass) && !/(^|[^-])Saison \d/.test(r.pass), 'Pass heißt „Saison-Pass“ ohne Nummer (keine zweite Saison-Zahl)', r.pass.slice(0, 80));
-  ok(r.anfang[0] === 1e5 && r.anfang[1] === 5e4, 'Erste 3 Tage einer neuen Saison: Tagesboss 100.000, Drache 50.000 Leben (Untergrenze nach 5.000 Start-Truppen)', r.anfang);
-  ok(r.spaeter[0] === 28000 && r.spaeter[1] === 5600 && r.erste[0] === 28000, 'Danach (und in der allerersten Saison) wie immer: 50 Mio. / 10 Mio. × WIRTSCHAFT_KOSTEN (28.000 / 5.600)', { spaeter: r.spaeter, erste: r.erste });
-  ok(r.trost.length === 0 && r.ib === 0 && r.gx === 0, 'Tagesboss entkommen: kein Extra-Preis mehr (Merkliste 33: Belohnung je Angriff + „Boss fällt“)', { trost: r.trost, neu: r.ib, mitspielerGems: r.gx });
+  ok(r.anfang[0] === 1e5, 'Erste 3 Tage einer neuen Saison: Tagesboss 100.000 Leben (Untergrenze nach 5.000 Start-Truppen)', r.anfang);
+  ok(r.spaeter[0] === 28000 && r.erste[0] === 28000, 'Danach (und in der allerersten Saison) wie immer: 50 Mio. × WIRTSCHAFT_KOSTEN (28.000)', { spaeter: r.spaeter, erste: r.erste });
+  ok(r.trost.length === 0 && r.ib === 0 && r.gx === 0, 'Tagesboss entkommen: kein Extra-Preis (Belohnung nur im Wochen-Event)', { trost: r.trost, neu: r.ib, mitspielerGems: r.gx });
   ok(r.gefallen === 0, 'Gefallener Boss: kein Trostpreis (er hat schon bezahlt)', r.gefallen);
   ok(r.schutzY > 47.9 && r.schutzY <= 48 && r.schutzIch > 47.9 && r.schutzIch <= 48, 'Reset: 48 Std. Anfängerschutz für alle echten Spieler – auch ohne Basis', { ohneBasis: r.schutzY, du: r.schutzIch });
   ok(r.lager.ich === 0 && r.lager.x === 0 && r.lager.gespeichert === 0 && r.lager.heute === 3 && r.lager.vor > 0 && r.lager.nach === 0, 'Reset: Lager-Fortschritt für alle wieder ab Stufe 1, alte Lager weg (Zähler von heute bleiben)', r.lager);

@@ -1,6 +1,6 @@
 // Mitspieler sparen wie echte Spieler (Alexander 8.10.): Kisten erst aus dem, was über dem Spar-Ziel liegt (botSparZiel:
 // Teleport ab 8 Basen, Premium-Pass solange die Saison noch ≥ 7 Tage läuft, 2. Baumeister). (a) Tagesaufgaben geben die
-// Edelsteine wie bei dir (alle 6: questGemsTag, 7. Tag + 150 Wochenkette); (b) mit 10 Basen spart er auf 500 und teleportiert;
+// Edelsteine wie bei dir (alle 6: questGemsTag); (b) mit 10 Basen spart er auf 500 und teleportiert;
 // (c) Premium-Pass wird angespart und gekauft; (d) Sterne/Schilde bleiben dringend (nur Rücklage 50).
 const { chromium, devices } = require('playwright'), path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 300) : ''));
@@ -20,7 +20,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const A = BOT_DEFS.find(d => !d.mensch && d.style === 'builder'), sa = loadBotState()[A.id];
       sa.gems = 0; sa.hsDay = 'alt'; sa.hsDays = 0; sa.hcDay = todayKey(); botHeroCare(A); const tag1 = sa.gems;
       sa.gems = 0; sa.hsDay = 'alt'; sa.hsDays = 6; botHeroCare(A); const tag7 = sa.gems;
-      out.a = { tag1, tag7, soll: questGemsTag(), kette: CHAIN_REWARD.gems };
+      out.a = { tag1, tag7, soll: questGemsTag() };
       // (b) 10 Basen: spart auf 500 (keine Kiste darunter), dann Teleport
       const gut = i => i.type === 'tower' && i.id !== megaTempleId && !bossAt(i.id) && !ownedIslands.has(i.id);
       const Y = BOT_DEFS.find(d => !d.mensch && botSpart(d, 'tp') && (!d.mensch && d.style === 'veteran')) || BOT_DEFS.find(d => !d.mensch && botSpart(d, 'tp'));
@@ -57,7 +57,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   console.log(JSON.stringify(r));
   ok(!r.fehlt, 'Gebiet gefunden', r.fehlt);
-  ok(r.a && r.a.tag1 === r.a.soll && r.a.soll === 42 && r.a.tag7 === r.a.soll + r.a.kette && r.a.kette === 150, '(a) Tagesaufgaben: 42 Edelsteine wie bei dir, am 7. Tag + 150 Wochenkette', r.a);
+  ok(r.a && r.a.tag1 === r.a.soll && r.a.soll === 42 && r.a.tag7 === r.a.soll, '(a) Tagesaufgaben: 42 Edelsteine wie bei dir, auch am 7. Tag (keine Wochenkette mehr)', r.a);
   ok(r.zielTp === 500, '(b) mit 10 Basen: Spar-Ziel 500 (Teleport)', r.zielTp);
   ok(r.b && r.b.gems >= 500 && !r.b.kisteUnter && r.b.bezahlbar && r.b.tage <= 14, '(b) spart auf 500, keine Kiste darunter', r.b);
   ok(r.b && r.b.tp && r.b.tp.tp && r.b.tp.nah && r.b.tp.bezahlt === 500, '(b) danach Teleport für 500 (neben den eigenen Turm)', r.b && r.b.tp);
