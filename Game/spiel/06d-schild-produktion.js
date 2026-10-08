@@ -143,7 +143,17 @@ shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sin
     for (const el of shopPopup.querySelectorAll('[data-sinfo-box="' + k + '"]')) { el.hidden = !auf; if (auf) el.scrollIntoView({ block: 'nearest' }); } });
 function heroChestOpen(who, c) {                    // the same chest for you and the others: n draws of c.sh shards
     if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
-    const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;
+    const got = []; for (let i = 0; i < c.n; i++) {
+        if (c.teile) { got.push(...heroChestTeile(who, c)); continue; }
+        const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push({ id: h.id, n: c.sh }); }
+    return got;                                     // [{ id, n }] je Held
+}
+function heroChestTeile(who, c) {                   // Heldenkiste: c.sh Splitter auf 2–3 verschiedene Helden (gewöhnlichere öfter, 5 Sterne fallen raus)
+    const pool = HEROES.filter(h => { const s = heroSt(who, h.id); return s && !(s.own && s.q >= HERO_MAXQ) && h.r >= c.minR; });
+    const k = Math.min(pool.length, c.sh, 2 + (Math.random() < .5 ? 1 : 0)), wahl = [];
+    while (wahl.length < k) { const tot = pool.reduce((a, h) => a + 5 - h.r, 0); let r = Math.random() * tot, i = 0;
+        while (i < pool.length - 1 && (r -= 5 - pool[i].r) >= 0) i++; wahl.push(pool.splice(i, 1)[0]); }
+    return wahl.map((h, i) => { const n = Math.floor(c.sh / k) + (i < c.sh % k ? 1 : 0); heroGrantShards(who, n, h.id); return { id: h.id, n }; });
 }
 function heroChestKauf(c, n, bt) {                   // n Heldenkisten auf einmal (Edelsteine genau n-mal) – dieselbe Kiste wie bisher, nur öfter
     if (gems < c.gems * n) { flashHint('Zu wenig Edelsteine – ' + (n > 1 ? n + '× ' : 'die ') + c.name + ' kostet ' + fmtNum(c.gems * n) + '.', 3000); return; }
@@ -152,7 +162,7 @@ function heroChestKauf(c, n, bt) {                   // n Heldenkisten auf einma
     const got = []; let anz = 0;
     for (; anz < n && gems >= c.gems && heroChestPool(c.minR).length; anz++) { gems -= c.gems; got.push(...heroChestOpen('player', c)); questProgress('crate', 1); }   // (zählt für „Öffne … Kisten“)
     updateHud(); saveGame(); renderShop();
-    const k = HCHEST_ART[c.id] || 'held', beute = got.map(h => ({ a: 'sh', n: c.sh, held: h.id }));
+    const k = HCHEST_ART[c.id] || 'held', beute = got.map(g => ({ a: 'sh', n: g.n, held: g.id }));
     // (keine Liste mehr unten im Shop – das Belohnungs-Fenster mit Animation zeigt alles, Alexander 7.10.)
     beuteFenster(c.name, beute, { kiste: k, n: anz, unter: anz > 1 ? anz + ' Kisten geöffnet' : '' });
 }

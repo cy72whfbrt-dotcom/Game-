@@ -970,7 +970,7 @@ const HERO_TIER = { 1: { a: 15, p: 5, st: 1 }, 2: { a: 20, p: 8, st: 1.6 }, 3: {
 const HERO_UNLOCK = { 1: 10, 2: 20, 3: 40, 4: 80 }, HERO_START_SHARDS = { 1: 10, 2: 8, 3: 6, 4: 4 };   // shards to unlock · everyone's starter shards
 const HERO_MAXQ = 20, HERO_RAGE = 25, HERO_RESET_GEMS = 200, HERO_HALL_GEF = 3;
 const HERO_SHARDS_WANDER = 25, HERO_SHARDS_DAY = 5, HERO_SHARDS_CHAIN = 30;   // where shards come from (and the hero chests in the shop)
-const HERO_CHESTS = [{ id: 'hc1', name: 'Heldenkiste', gems: 150, sh: 6, n: 1, minR: 1, txt: '6 Splitter' }, { id: 'hc3', name: 'Große Kiste', gems: 500, sh: 8, n: 3, minR: 1, txt: '3 × 8 Splitter' },
+const HERO_CHESTS = [{ id: 'hc1', name: 'Heldenkiste', gems: 150, sh: 6, n: 1, minR: 1, teile: 1, txt: '6 Splitter · 2–3 Helden' }, { id: 'hc3', name: 'Große Kiste', gems: 500, sh: 8, n: 3, minR: 1, txt: '3 × 8 Splitter' },
     { id: 'hcE', name: 'Epische Kiste', gems: 1200, sh: 30, n: 1, minR: 3, txt: '30 Splitter · Episch+' }];   // gems per shard: 25 / 21 / 40 (only Episch or Legendär)                // 5 stars in quarters · rage per fight · reset price · +3 % Gefolge per hall level
 const botById = {};
 for (const bot of BOT_DEFS) botById[bot.id] = bot;
@@ -2197,6 +2197,11 @@ function resolveScout(scout) {
 function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee || 0 : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away (gemeinsam: rallyFlucht, jeder mit seinem)
 function retreatSecs(attack, from, to, botId) { return travelDurationSeconds(from, to, botId) / (1 + (attack.hx ? attack.hx.ret : 0) / 100); }   // Rückweg, Feldküche: faster home
 function retreatSurvivorsPreview(attack) { return Math.floor(attack.rawTroops * retreatPct(attack) / 100); }
+function heimWellen(attack, target, n) {              // die Überlebenden gehen heim: zusammengelegte Wellen jede zu IHRER Basis (attack.quellen, Summe genau n)
+    const t0 = Date.now();
+    for (const [von, k] of kampfHeimTeile(attack, n)) { const b = islandById[von] || islandById[attack.sourceId];
+        pendingRetreats.push({ fromId: target.id, toId: b.id, troops: k, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, b) * 1000 }); }
+}
 function resolveAttack(attack) {
     const source = islandById[attack.sourceId];
     const target = islandById[attack.targetId];
@@ -2243,7 +2248,7 @@ function resolveAttack(attack) {
         islandTroops[target.id] = 0; defenderCasualties = originalEnemyTroops;
         woundedAdded = hospitalTake(sentLoss, hosp); warStat('fallen', sentLoss - woundedAdded); warStat('kills', originalEnemyTroops);
         killGold = Math.round(originalEnemyTroops * rewardRate); inboxAdd({ src: 'fight', coins: killGold }); retreatSurvivors = remaining;
-        if (remaining > 0) { const t0 = Date.now(); pendingRetreats.push({ fromId: target.id, toId: source.id, troops: remaining, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source) * 1000 }); }
+        heimWellen(attack, target, remaining);
     } else if (won) {
         // Capturing a base doesn't reset it to level 1 - it costs
         // the previous owner one level of upgrades, same as losing
@@ -2294,17 +2299,7 @@ function resolveAttack(attack) {
         retreatSurvivors = retreatSurvivorsPreview(attack);
         woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors, hosp);   // Krankenhaus (+ a hero's Feldlazarett): part of the fallen are only wounded
         warStat('fallen', attack.rawTroops - retreatSurvivors - woundedAdded);
-        if (retreatSurvivors > 0) {
-            const durationSec = retreatSecs(attack, target, source);
-            const startedAt = Date.now();
-            pendingRetreats.push({
-                fromId: target.id,
-                toId: source.id,
-                troops: retreatSurvivors,
-                startedAt,
-                resolveAt: startedAt + durationSec * 1000
-            });
-        }
+        heimWellen(attack, target, retreatSurvivors);
     }
     const vs = vk ? verstNachKampf(target.id, vk, won) : null; delete attack._vk; delete attack._vkOwner;   // jeder trägt seinen Anteil
     if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, atkWeg * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
@@ -7943,7 +7938,17 @@ shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sin
     for (const el of shopPopup.querySelectorAll('[data-sinfo-box="' + k + '"]')) { el.hidden = !auf; if (auf) el.scrollIntoView({ block: 'nearest' }); } });
 function heroChestOpen(who, c) {                    // the same chest for you and the others: n draws of c.sh shards
     if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
-    const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;
+    const got = []; for (let i = 0; i < c.n; i++) {
+        if (c.teile) { got.push(...heroChestTeile(who, c)); continue; }
+        const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push({ id: h.id, n: c.sh }); }
+    return got;                                     // [{ id, n }] je Held
+}
+function heroChestTeile(who, c) {                   // Heldenkiste: c.sh Splitter auf 2–3 verschiedene Helden (gewöhnlichere öfter, 5 Sterne fallen raus)
+    const pool = HEROES.filter(h => { const s = heroSt(who, h.id); return s && !(s.own && s.q >= HERO_MAXQ) && h.r >= c.minR; });
+    const k = Math.min(pool.length, c.sh, 2 + (Math.random() < .5 ? 1 : 0)), wahl = [];
+    while (wahl.length < k) { const tot = pool.reduce((a, h) => a + 5 - h.r, 0); let r = Math.random() * tot, i = 0;
+        while (i < pool.length - 1 && (r -= 5 - pool[i].r) >= 0) i++; wahl.push(pool.splice(i, 1)[0]); }
+    return wahl.map((h, i) => { const n = Math.floor(c.sh / k) + (i < c.sh % k ? 1 : 0); heroGrantShards(who, n, h.id); return { id: h.id, n }; });
 }
 function heroChestKauf(c, n, bt) {                   // n Heldenkisten auf einmal (Edelsteine genau n-mal) – dieselbe Kiste wie bisher, nur öfter
     if (gems < c.gems * n) { flashHint('Zu wenig Edelsteine – ' + (n > 1 ? n + '× ' : 'die ') + c.name + ' kostet ' + fmtNum(c.gems * n) + '.', 3000); return; }
@@ -7952,7 +7957,7 @@ function heroChestKauf(c, n, bt) {                   // n Heldenkisten auf einma
     const got = []; let anz = 0;
     for (; anz < n && gems >= c.gems && heroChestPool(c.minR).length; anz++) { gems -= c.gems; got.push(...heroChestOpen('player', c)); questProgress('crate', 1); }   // (zählt für „Öffne … Kisten“)
     updateHud(); saveGame(); renderShop();
-    const k = HCHEST_ART[c.id] || 'held', beute = got.map(h => ({ a: 'sh', n: c.sh, held: h.id }));
+    const k = HCHEST_ART[c.id] || 'held', beute = got.map(g => ({ a: 'sh', n: g.n, held: g.id }));
     // (keine Liste mehr unten im Shop – das Belohnungs-Fenster mit Animation zeigt alles, Alexander 7.10.)
     beuteFenster(c.name, beute, { kiste: k, n: anz, unter: anz > 1 ? anz + ' Kisten geöffnet' : '' });
 }

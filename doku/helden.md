@@ -42,4 +42,4 @@
 - Heldenhalle: Reiter „Helden | Paare“, gesperrte Helden kleiner unter „N gesperrt“; genug Splitter → Karte golden oben mit
   „Freischalten“; Stern als „Stern N · k von 4 Vierteln“ + Balken. Kampf- und Spähbericht zeigen beide Helden.
 - Offen (Merkliste 11c Nr. 20): Helden-Fenster neu wie RoK/Call of Dragons (Designer).
-- Heldenkisten: siehe `shop-kisten-belohnung.md` (Splitter auf mehrere Helden verteilen: offen, Merkliste 11c Nr. 6).
+- Heldenkisten: siehe `shop-kisten-belohnung.md` (Heldenkiste: 6 Splitter auf 2–3 verschiedene Helden, `heroChestTeile`).

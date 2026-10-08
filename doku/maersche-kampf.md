@@ -33,7 +33,8 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
   („… gehört schon dir – N Truppen verstärken die Besatzung“). Fiel die Ziel-Basis vor der Ankunft einer Sendung:
   sichtbarer Rückmarsch + Meldung.
 - Ein Ziel, ein Kampf (`kampfDazu`): Wellen desselben Angreifers oder eines Bündnis-Mitglieds gehen in den laufenden
-  Kampf (Kampf mind. noch 2,5 s). Fremde warten vor dem Ziel und kämpfen danach gegen den neuen Besitzer.
+  Kampf (Kampf mind. noch 2,5 s). Eigene Wellen aus mehreren Basen merkt `quellen`: die Überlebenden gehen jede zu IHRER
+  Basis heim (`kampfHeimTeile`; Spieler-Vorschau `heimWellen` in `resolveAttack`). Fremde warten vor dem Ziel und kämpfen danach gegen den neuen Besitzer.
 - Jeder für sich (Alexander 5.10., verbindlich): jeder bringt höchstens 2 Helden (Haupt + Zweit), seine Truppen und
   seine Werte (Fähigkeit, Titel, Forschung, Schild) – alles zählt NUR für seine Truppen. Verluste nach Truppenzahl,
   Verwundete in das EIGENE Krankenhaus (mit eigenem Held), Gold für Kills mit eigenem Satz, Erfahrung/Wochen-Punkte

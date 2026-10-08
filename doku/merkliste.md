@@ -5,7 +5,6 @@ mit allen Punkten in `archiv.md`, Abschnitte 11, 11b, 11c, 12, 12a). Nummern „
 Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, aber nicht als erledigt markiert.
 
 ## Offen (bauen, wenn Alexander es sagt)
-- **11c Nr. 6b** Heldenkiste (normale, 6 Splitter): auf 2–3 Helden verteilen, nach Seltenheit gewichtet (Große Kiste macht es schon).
 - **11c Nr. 10** Angriffs-Fenster wirkt wie ein Formular → neu mit Designer + Vorbildern (RoK „Marsch aufstellen“).
   (Grundform 6.10. eingebaut – Alexander fragen, ob es jetzt passt.)
 - **11c Nr. 11** Fenster „Deine Basis“ wirkt wie Tabelle → Bild der Basis, Name, wenige Werte als Symbol-Zeile, runde
@@ -31,7 +30,6 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - 11c Nr. 20 Helden-Fenster neu wie RoK – gebaut 7.10. (Heldenhalle neu, KI-Bilder), Alexander zeigen.
 
 ## Bekannte Reste im Code (klein)
-- Vorschau-Kampf des Spielers (`resolveAttack`, 02c): zusammengelegte Wellen gehen zur ersten Basis heim.
 - Drache/Kriegsherr-Angriffe auf Basen nehmen von Verteidigungs-Helden nur Angriff + Gefolge.
 - Münzen/Rohstoffe im Profil auf 1 Billiarde gedeckelt (Truppen 1e30) – bei Bedarf anheben.
 - Hauptbuch: Edelsteine statt Splitter noch nicht geprüft (Thron-Shop-Kisten kennt es) (nur mögliche Fehlalarme im Admin).

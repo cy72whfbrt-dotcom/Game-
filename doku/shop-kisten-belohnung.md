@@ -18,7 +18,8 @@ Thron-Shop, Markt. Wichtigste Dateien: `Game/spiel/02a-shop-stufen.js` (`CRATE_G
 ## Kisten
 - Ausrüstungskiste 150 Edelsteine (`CRATE_GEM_COST`). Aus gekauften/freien Kisten höchstens Episch
   (`RARITY_DROP_WEIGHTS`); Legendär/Mythisch nur durch Zusammenlegen (3 → 1). Nirgends eine Legendär-Kiste als Preis.
-- Heldenkisten 150 / 500 / 1.200 Edelsteine (`HERO_CHESTS`), die ganze Karte kauft.
+- Heldenkisten 150 / 500 / 1.200 Edelsteine (`HERO_CHESTS`), die ganze Karte kauft. Heldenkiste (hc1, `teile`): 6 Splitter auf
+  2–3 verschiedene Helden (`heroChestTeile`, gewöhnlichere öfter, 5 Sterne fallen raus), im Fenster je Held eine Kachel.
 - Shop-Knöpfe „1ד und „10ד (weniger Edelsteine: „N×“ mit dem Rest; ruft nur `openCrate`/`heroChestOpen` N-mal);
   Große/Epische Kiste einzeln (Bündnis-Geschenk ab 500 Edelsteinen, siehe `buendnis.md`).
 - Öffnen: Belohnungs-Fenster mit KI-Kiste (`kiste_*_zu/offen.webp`), wackelt, geht auf, Strahlen, Kacheln nacheinander;
@@ -47,5 +48,4 @@ Thron-Shop, Markt. Wichtigste Dateien: `Game/spiel/02a-shop-stufen.js` (`CRATE_G
 - Stufen-Belohnung: siehe `wirtschaft-zahlen.md`; startet beim Weltrechner bei SEINER Stufe (nie der vom Handy).
 
 ## Offen (Merkliste)
-- 11c Nr. 6: Heldenkiste – Splitter auf mehrere Helden verteilen.
 - 11c Nr. 31: Namensschild-Skins als KI-Bilder (später).

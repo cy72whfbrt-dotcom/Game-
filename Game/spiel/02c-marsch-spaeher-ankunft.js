@@ -181,6 +181,11 @@ function resolveScout(scout) {
 function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee || 0 : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away (gemeinsam: rallyFlucht, jeder mit seinem)
 function retreatSecs(attack, from, to, botId) { return travelDurationSeconds(from, to, botId) / (1 + (attack.hx ? attack.hx.ret : 0) / 100); }   // Rückweg, Feldküche: faster home
 function retreatSurvivorsPreview(attack) { return Math.floor(attack.rawTroops * retreatPct(attack) / 100); }
+function heimWellen(attack, target, n) {              // die Überlebenden gehen heim: zusammengelegte Wellen jede zu IHRER Basis (attack.quellen, Summe genau n)
+    const t0 = Date.now();
+    for (const [von, k] of kampfHeimTeile(attack, n)) { const b = islandById[von] || islandById[attack.sourceId];
+        pendingRetreats.push({ fromId: target.id, toId: b.id, troops: k, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, b) * 1000 }); }
+}
 function resolveAttack(attack) {
     const source = islandById[attack.sourceId];
     const target = islandById[attack.targetId];
@@ -227,7 +232,7 @@ function resolveAttack(attack) {
         islandTroops[target.id] = 0; defenderCasualties = originalEnemyTroops;
         woundedAdded = hospitalTake(sentLoss, hosp); warStat('fallen', sentLoss - woundedAdded); warStat('kills', originalEnemyTroops);
         killGold = Math.round(originalEnemyTroops * rewardRate); inboxAdd({ src: 'fight', coins: killGold }); retreatSurvivors = remaining;
-        if (remaining > 0) { const t0 = Date.now(); pendingRetreats.push({ fromId: target.id, toId: source.id, troops: remaining, startedAt: t0, resolveAt: t0 + retreatSecs(attack, target, source) * 1000 }); }
+        heimWellen(attack, target, remaining);
     } else if (won) {
         // Capturing a base doesn't reset it to level 1 - it costs
         // the previous owner one level of upgrades, same as losing
@@ -278,17 +283,7 @@ function resolveAttack(attack) {
         retreatSurvivors = retreatSurvivorsPreview(attack);
         woundedAdded = hospitalTake(attack.rawTroops - retreatSurvivors, hosp);   // Krankenhaus (+ a hero's Feldlazarett): part of the fallen are only wounded
         warStat('fallen', attack.rawTroops - retreatSurvivors - woundedAdded);
-        if (retreatSurvivors > 0) {
-            const durationSec = retreatSecs(attack, target, source);
-            const startedAt = Date.now();
-            pendingRetreats.push({
-                fromId: target.id,
-                toId: source.id,
-                troops: retreatSurvivors,
-                startedAt,
-                resolveAt: startedAt + durationSec * 1000
-            });
-        }
+        heimWellen(attack, target, retreatSurvivors);
     }
     const vs = vk ? verstNachKampf(target.id, vk, won) : null; delete attack._vk; delete attack._vkOwner;   // jeder trägt seinen Anteil
     if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, atkWeg * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
