@@ -696,7 +696,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `dismissTutorialHint` → Game/spiel/09a-funde-felder.js:107
 - `dockLuecke` → Game/spiel/01a-grundlagen.js:28
 - `drAktiv` → Game/spiel/09c-events-drache.js:228
-- `drauf` → Game/spiel/03f-marsch-bilder.js:383
+- `drauf` → Game/spiel/03f-marsch-bilder.js:390
 - `drAuszahlen` → Game/spiel/09c-events-drache.js:254
 - `drawArmies` → Game/spiel/09d-armeen-wegmarken.js:163
 - `drawArmyCamps` → Game/spiel/09d-armeen-wegmarken.js:174
@@ -720,8 +720,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawHeimWappen` → Game/spiel/06e-nebel-zeichnen.js:239
 - `drawMap` → Game/spiel/03d-maersche-tagnacht.js:75
 - `drawMapBattles` → Game/spiel/07a-schlachten.js:87
-- `drawMarchButtons` → Game/spiel/03f-marsch-bilder.js:296
-- `drawMarchChips` → Game/spiel/03f-marsch-bilder.js:206
+- `drawMarchButtons` → Game/spiel/03f-marsch-bilder.js:303
+- `drawMarchChips` → Game/spiel/03f-marsch-bilder.js:207
 - `drawMarchLine` → Game/spiel/03c-wappen-thronplatz.js:461
 - `drawMarchTokens` → Game/spiel/03f-marsch-bilder.js:169
 - `drawMarkers` → Game/spiel/09d-armeen-wegmarken.js:328
@@ -745,7 +745,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawWorldFrame` → Game/spiel/06e-nebel-zeichnen.js:3
 - `drDraw` → Game/spiel/09c-events-drache.js:351
 - `drin` → Game/spiel/03a-karte-hintergrund.js:186
-- `drin` → Game/spiel/03f-marsch-bilder.js:338
+- `drin` → Game/spiel/03f-marsch-bilder.js:345
 - `drK` → Game/spiel/09c-events-drache.js:307
 - `drLeiste` → Game/spiel/09c-events-drache.js:222
 - `drNeu` → Game/spiel/09c-events-drache.js:230
@@ -831,7 +831,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `extraHtml` → Game/aufbau.js:373
 - `fade` → Game/spiel/10c-start-einstellungen.js:121
 - `fArt` → Game/spiel/09a-funde-felder.js:158
-- `fehler` → Game/spiel/03f-marsch-bilder.js:324
+- `fehler` → Game/spiel/03f-marsch-bilder.js:331
 - `fehler` → Game/weltrechner/start.js:160
 - `fehlgeschlagen` → Game/speichern.js:141
 - `feld` → Game/buendnis/04-fenster-karte-welt.js:150
@@ -839,7 +839,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:89
 - `feldBericht` → Game/spiel/09a-funde-felder.js:253
 - `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:220
-- `feldKampfBild` → Game/spiel/03f-marsch-bilder.js:497
+- `feldKampfBild` → Game/spiel/03f-marsch-bilder.js:504
 - `feldMult` → Game/spiel/09a-funde-felder.js:171
 - `feldRingAuf` → Game/spiel/09d-armeen-wegmarken.js:345
 - `feldRingFrame` → Game/spiel/09d-armeen-wegmarken.js:355
@@ -879,8 +879,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `finishMapBattle` → Game/spiel/07a-schlachten.js:26
 - `finishSplash` → Game/spiel/10c-start-einstellungen.js:190
 - `first` → Game/spiel/10c-start-einstellungen.js:137
-- `flaeche` → Game/spiel/03f-marsch-bilder.js:321
-- `flaeche` → Game/spiel/03f-marsch-bilder.js:380
+- `flaeche` → Game/spiel/03f-marsch-bilder.js:328
+- `flaeche` → Game/spiel/03f-marsch-bilder.js:387
 - `flashHint` → Game/spiel/06d-schild-produktion.js:443
 - `flicken_anwenden` → Game/server/02-sicherheit-datenlecks.php:104
 - `flicken_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:182
@@ -941,7 +941,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `frameIslandInView` → Game/spiel/03e-kamera-eingabe.js:479
 - `free` → Game/spiel/01c-basen-spielstand.js:46
 - `freezeCamera` → Game/spiel/03e-kamera-eingabe.js:250
-- `frei` → Game/spiel/03f-marsch-bilder.js:229
+- `frei` → Game/spiel/03f-marsch-bilder.js:231
 - `freierStartplatz` → Game/spiel/01c-basen-spielstand.js:160
 - `freiText` → Game/aufbau.js:302
 - `fremd_kuerzen` → Game/server/02-sicherheit-datenlecks.php:155
@@ -1171,7 +1171,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hintFrei` → Game/spiel/06d-schild-produktion.js:436
 - `hintFrisch` → Game/spiel/06d-schild-produktion.js:442
 - `hinweis` → Game/benachrichtigung.js:17
-- `hJetzt` → Game/spiel/03f-marsch-bilder.js:410
+- `hJetzt` → Game/spiel/03f-marsch-bilder.js:417
 - `holen` → Game/weltrechner/start.js:179
 - `homeAgain` → Game/bots/02-kampf-karte.js:75
 - `horn` → Game/spiel/10c-start-einstellungen.js:71
@@ -1351,7 +1351,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `marchKeyOf` → Game/spiel/02b-maersche.js:214
 - `marchPath` → Game/spiel/03c-wappen-thronplatz.js:443
 - `marchPointAt` → Game/spiel/03c-wappen-thronplatz.js:476
-- `marchTapAt` → Game/spiel/03f-marsch-bilder.js:337
+- `marchTapAt` → Game/spiel/03f-marsch-bilder.js:344
 - `markerAt` → Game/spiel/09d-armeen-wegmarken.js:301
 - `markers` → Game/spiel/09d-armeen-wegmarken.js:298
 - `marktGebuehr` → Game/aufbau.js:253
@@ -1443,42 +1443,42 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzBild` → Game/spiel/03f-marsch-bilder.js:15
 - `mzBildAn` → Game/spiel/03f-marsch-bilder.js:66
 - `mzChip` → Game/spiel/03f-marsch-bilder.js:73
-- `mzEigenerMarsch` → Game/spiel/03f-marsch-bilder.js:292
-- `mzErgebnisBand` → Game/spiel/03f-marsch-bilder.js:518
-- `mzFrei` → Game/spiel/03f-marsch-bilder.js:205
-- `mzGeschosse` → Game/spiel/03f-marsch-bilder.js:475
+- `mzEigenerMarsch` → Game/spiel/03f-marsch-bilder.js:299
+- `mzErgebnisBand` → Game/spiel/03f-marsch-bilder.js:525
+- `mzFrei` → Game/spiel/03f-marsch-bilder.js:206
+- `mzGeschosse` → Game/spiel/03f-marsch-bilder.js:482
 - `mzImBild` → Game/spiel/03f-marsch-bilder.js:35
 - `mzInfo` → Game/spiel/03f-marsch-bilder.js:123
-- `mzInfoZeigen` → Game/spiel/03f-marsch-bilder.js:332
-- `mzKampf` → Game/spiel/03f-marsch-bilder.js:392
-- `mzKampfFern` → Game/spiel/03f-marsch-bilder.js:510
-- `mzKampfTeile` → Game/spiel/03f-marsch-bilder.js:356
-- `mzKleinFlaeche` → Game/spiel/03f-marsch-bilder.js:369
-- `mzKleinPlatz` → Game/spiel/03f-marsch-bilder.js:370
-- `mzKnopfOrte` → Game/spiel/03f-marsch-bilder.js:320
+- `mzInfoZeigen` → Game/spiel/03f-marsch-bilder.js:339
+- `mzKampf` → Game/spiel/03f-marsch-bilder.js:399
+- `mzKampfFern` → Game/spiel/03f-marsch-bilder.js:517
+- `mzKampfTeile` → Game/spiel/03f-marsch-bilder.js:363
+- `mzKleinFlaeche` → Game/spiel/03f-marsch-bilder.js:376
+- `mzKleinPlatz` → Game/spiel/03f-marsch-bilder.js:377
+- `mzKnopfOrte` → Game/spiel/03f-marsch-bilder.js:327
 - `mzKopf` → Game/spiel/03f-marsch-bilder.js:46
 - `mzKopfText` → Game/spiel/03f-marsch-bilder.js:195
 - `mzLeistenLesen` → Game/spiel/03f-marsch-bilder.js:31
 - `mzLinie` → Game/spiel/03f-marsch-bilder.js:147
 - `mzMarschVon` → Game/spiel/03f-marsch-bilder.js:119
 - `mzMerk` → Game/spiel/03f-marsch-bilder.js:39
-- `mzMiniKoepfe` → Game/spiel/03f-marsch-bilder.js:273
+- `mzMiniKoepfe` → Game/spiel/03f-marsch-bilder.js:280
 - `mzName` → Game/spiel/03f-marsch-bilder.js:24
 - `mzPfeile` → Game/spiel/03f-marsch-bilder.js:99
-- `mzPlaetze` → Game/spiel/03f-marsch-bilder.js:375
+- `mzPlaetze` → Game/spiel/03f-marsch-bilder.js:382
 - `mzRadius` → Game/spiel/03f-marsch-bilder.js:143
-- `mzRallyRing` → Game/spiel/03f-marsch-bilder.js:533
+- `mzRallyRing` → Game/spiel/03f-marsch-bilder.js:540
 - `mzS` → Game/spiel/03f-marsch-bilder.js:21
 - `mzSanduhr` → Game/spiel/03f-marsch-bilder.js:93
 - `mzSechseck` → Game/spiel/03f-marsch-bilder.js:45
 - `mzSeite` → Game/spiel/03f-marsch-bilder.js:23
-- `mzSelKey` → Game/spiel/03f-marsch-bilder.js:291
+- `mzSelKey` → Game/spiel/03f-marsch-bilder.js:298
 - `mzStrich` → Game/spiel/03f-marsch-bilder.js:112
 - `mzStufe` → Game/spiel/03f-marsch-bilder.js:22
 - `mzTrittBei` → Game/spiel/03f-marsch-bilder.js:136
 - `mzTruppBild` → Game/spiel/03f-marsch-bilder.js:161
-- `mzVerstAnBasen` → Game/spiel/03f-marsch-bilder.js:261
-- `mzWarnung` → Game/spiel/03f-marsch-bilder.js:278
+- `mzVerstAnBasen` → Game/spiel/03f-marsch-bilder.js:268
+- `mzWarnung` → Game/spiel/03f-marsch-bilder.js:285
 - `mzWartetBeiMir` → Game/spiel/03f-marsch-bilder.js:140
 - `nachrichtBauen` → Game/weltrechner/push.js:127
 - `naechsterRang` → Game/spiel/05a-aussehen-profil.js:102
@@ -1630,6 +1630,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `powerOf` → Game/spiel/05c-erfolge-rangliste.js:181
 - `preiseFaerben` → Game/spiel/06d-schild-produktion.js:166
 - `privaterSchluessel` → Game/weltrechner/push.js:48
+- `probe` → Game/spiel/03f-marsch-bilder.js:235
 - `prodGanz` → Game/spiel/06d-schild-produktion.js:235
 - `produceTicks` → Game/spiel/06d-schild-produktion.js:262
 - `productionTickMs` → Game/spiel/04-kampf.js:291
@@ -1864,7 +1865,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveTitles` → Game/spiel/04-kampf.js:23
 - `saveWander` → Game/spiel/07b-kriegsherr.js:48
 - `schedule` → Game/spiel/10c-start-einstellungen.js:108
-- `schieb` → Game/spiel/03f-marsch-bilder.js:327
+- `schieb` → Game/spiel/03f-marsch-bilder.js:334
 - `schild` → Game/spiel/03c-wappen-thronplatz.js:153
 - `schildBild` → Game/spiel/03b-gebaeude-3d.js:121
 - `schildDaten` → Game/spiel/03b-gebaeude-3d.js:104
@@ -3302,35 +3303,36 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzTruppBild` :161
 - `drawMarchTokens` :169 — vor den Namensschildern: Linie und Trupp (Kopf und Chip danach: drawMarchChips)
 - `mzKopfText` :195 — Chip am Sechseck: Truppen · Restzeit (fremd unbekannt: „?“)
-- `mzFrei` :205
-- `drawMarchChips` :206 — nach den Namensschildern: Sechseck-Kopf, Namensband, Chip (nie übereinander)
-- `frei` :229
-- `mzVerstAnBasen` :261 — Verstärker (Botschaft) in einer Basis, die du kennst: je ein Mini-Sechseck mit …
-- `mzMiniKoepfe` :273 — Rally: bis zu 4 Mitglieder als Mini-Sechseck (ohne Anführer), sonst „+6“
-- `mzWarnung` :278 — Feind auf dich zu: rotes Warn-Dreieck an deiner Basis, auf der Seite, von der e…
-- `mzSelKey` :291
-- `mzEigenerMarsch` :292 — → [Liste, Marsch] (für Zurück/Schneller wie bisher)
-- `drawMarchButtons` :296
-- `mzKnopfOrte` :320 — Bogen über der Armee – passt er nicht (Bildrand, Kopfleiste, Zoom-Knöpfe): Reih…
-- `flaeche` :321 — (Knopf + Text darunter)
-- `fehler` :324
-- `schieb` :327 — ganze Reihe/Spalte ins Bild schieben (Abstände bleiben)
-- `mzInfoZeigen` :332 — Kurzinfo ohne Fenster: wer, Held, Truppen, Ziel, Restzeit
-- `marchTapAt` :337 — → true, wenn der Tipp einer Armee oder ihren Knöpfen galt
-- `drin` :338
-- `mzKampfTeile` :356 — Kampf: Kreis + Säule am Ziel, Armeen im Halbkreis, Verteidiger mit Verstärkern,…
-- `mzKleinFlaeche` :369
-- `mzKleinPlatz` :370 — freier Platz für eine kleine Armee – sonst der am wenigsten verdeckte (im Bild)
-- `mzPlaetze` :375 — freie Plätze am nächsten zur Ankunftsseite: nicht auf einer anderen Basis, Kopf…
-- `flaeche` :380 — (Trupp, Kopf und Chip darüber)
-- `drauf` :383
-- `mzKampf` :392 — (Bildschirm) eine Schlacht nah: t = Ablauf 0 … MB_MS
-- `hJetzt` :410
-- `mzGeschosse` :475 — je Seite alle 400 ms 1–3 Pfeile/Steine im Bogen (450 ms, 30 px hoch), Einschlag…
-- `feldKampfBild` :497
-- `mzKampfFern` :510 — weit draußen: kleiner Kampf-Kreis mit gekreuzten Schwertern, pulst
-- `mzErgebnisBand` :518 — Sieg / Niederlage: kleines Band (KI-Bild) am Bildrand, weg vom Ziel – verdeckt …
-- `mzRallyRing` :533 — Rally sammelt: goldener Bodenring dreht (12°/s) am Sammelpunkt
+- `mzFrei` :206
+- `drawMarchChips` :207 — nach den Namensschildern: Sechseck-Kopf, Namensband, Chip (nie übereinander)
+- `frei` :231
+- `probe` :235
+- `mzVerstAnBasen` :268 — Verstärker (Botschaft) in einer Basis, die du kennst: je ein Mini-Sechseck mit …
+- `mzMiniKoepfe` :280 — Rally: bis zu 4 Mitglieder als Mini-Sechseck (ohne Anführer), sonst „+6“
+- `mzWarnung` :285 — Feind auf dich zu: rotes Warn-Dreieck an deiner Basis, auf der Seite, von der e…
+- `mzSelKey` :298
+- `mzEigenerMarsch` :299 — → [Liste, Marsch] (für Zurück/Schneller wie bisher)
+- `drawMarchButtons` :303
+- `mzKnopfOrte` :327 — Bogen über der Armee – passt er nicht (Bildrand, Kopfleiste, Zoom-Knöpfe): Reih…
+- `flaeche` :328 — (Knopf + Text darunter)
+- `fehler` :331
+- `schieb` :334 — ganze Reihe/Spalte ins Bild schieben (Abstände bleiben)
+- `mzInfoZeigen` :339 — Kurzinfo ohne Fenster: wer, Held, Truppen, Ziel, Restzeit
+- `marchTapAt` :344 — → true, wenn der Tipp einer Armee oder ihren Knöpfen galt
+- `drin` :345
+- `mzKampfTeile` :363 — Kampf: Kreis + Säule am Ziel, Armeen im Halbkreis, Verteidiger mit Verstärkern,…
+- `mzKleinFlaeche` :376
+- `mzKleinPlatz` :377 — freier Platz für eine kleine Armee – sonst der am wenigsten verdeckte (im Bild)
+- `mzPlaetze` :382 — freie Plätze am nächsten zur Ankunftsseite: nicht auf einer anderen Basis, Kopf…
+- `flaeche` :387 — (Trupp, Kopf und Chip darüber)
+- `drauf` :390
+- `mzKampf` :399 — (Bildschirm) eine Schlacht nah: t = Ablauf 0 … MB_MS
+- `hJetzt` :417
+- `mzGeschosse` :482 — je Seite alle 400 ms 1–3 Pfeile/Steine im Bogen (450 ms, 30 px hoch), Einschlag…
+- `feldKampfBild` :504
+- `mzKampfFern` :517 — weit draußen: kleiner Kampf-Kreis mit gekreuzten Schwertern, pulst
+- `mzErgebnisBand` :525 — Sieg / Niederlage: kleines Band (KI-Bild) am Bildrand, weg vom Ziel – verdeckt …
+- `mzRallyRing` :540 — Rally sammelt: goldener Bodenring dreht (12°/s) am Sammelpunkt
 
 ### Game/spiel/04-kampf.js — Titel (Mega-Tempel), Takt der Mitspieler, Ankunft und Kämpfe (kampfDazu, Warten…
 - `loadTitles` :16

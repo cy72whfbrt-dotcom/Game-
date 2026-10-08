@@ -197,6 +197,7 @@ function mzKopfText(I, secs) {                          // Chip am Sechseck: Tru
   if (I.beute) return zeit + ' · Beute';
   return I.n ? fmtCompact(I.n) + ' · ' + zeit : I.seite === 'eigen' ? zeit : '? · ' + zeit;
 }
+const mzPlatz = new Map(); let mzBildNr = 0;           // gewählter Ausweich-Platz je Marsch (vom letzten Bild)
 const MZ_STUFEN = [[0, 1, 0], [0, 0, 0], [1, 1, 0], [0, 1, 1], [1, 0, 0], [1, 1, 1], [1, 0, 1]];   // [klein, ganz im Bild, weit]
 const MZ_AUSWEICH = [];                                // Ausweich-Plätze (Spalten × Zeilen um den Trupp), die nächsten zuerst (eine Spalte ≈ 2 Zeilen breit)
 for (let ox = -3; ox <= 3; ox++) for (let oy = -5; oy <= 5; oy++) MZ_AUSWEICH.push([ox, oy]);
@@ -205,6 +206,7 @@ const MZ_NAH = MZ_AUSWEICH.filter(([ox, oy]) => Math.abs(ox) <= 1 && oy >= -2 &&
 function mzFrei(r, liste) { return !liste.some(q => overlap(r, q) > 0); }
 function drawMarchChips() {                             // nach den Namensschildern: Sechseck-Kopf, Namensband, Chip (nie übereinander)
   setScreen(ctx);
+  mzBildNr++; if (mzPlatz.size > 300) mzPlatz.clear();
   const st = mzStufe(), s = mzS(), belegt = mzKampfFlaechen.concat(mzLeisten, bannerHitRects);   // (Schlachten, Leisten, Namensschilder der Basen)
   if (!mzKampfFlaechen.length) for (const b of mapBattles) { const isl = islandById[b.targetId]; if (!isl || b.final) continue;   // (Schlacht im 1. Bild: Verteidiger, Tafel und Armeen-Ring frei halten – danach genau ihre Flächen)
     const bk = isl.type === 'tower' && basisKreis(isl, mapState.zoom), zw = Math.max(44, bk ? bk.r / .42 : isl.radius * mapState.zoom * 2), x = toSX(isl.x), y = toSY(isl.y) - (bk ? bk.dy : 0);
@@ -230,15 +232,20 @@ function drawMarchChips() {                             // nach den Namensschild
       const r0 = { x: (links ? xx - kw / 2 - 4 - cw : xx - kw / 2) - nw, y: yy - kh / 2, w: kw + 4 + cw + 2 * nw, h: kh + bandH + 2 };
       return (ganz ? mzImBild(r0) : xx > 0 && xx < viewW && yy > 0 && yy < viewH) && mzFrei(r0, belegt) ? r0 : null; };   // (ganz: auch der Chip im Bild)
     let pl = null;
-    for (const [klein, ganz, weit] of MZ_STUFEN) {     // erst groß nah am Trupp, dann klein nah, dann weiter weg (mit Strich zum Trupp)
-      const kw = kw0 * (klein ? .7 : 1), cw = klein ? 0 : cw0, bandH = klein || !name0 ? 0 : px + 5;
+    const probe = (klein, ganz, ox, oy, links) => { const kw = kw0 * (klein ? .7 : 1), cw = klein ? 0 : cw0, bandH = klein || !name0 ? 0 : px + 5;
+      const xx = m.x + ox * (kw + cw + 8), yy = m.kopfY - kw * 25 / 44 - 2 * s + oy * (kw * 50 / 44 + bandH + 6), r0 = frei(xx, yy, links, kw, cw, bandH, ganz);
+      return r0 && { x: xx, y: yy, links, r: r0, kw, chip: !klein, wahl: [klein, ganz, ox, oy, links] }; };
+    const k0 = mzSelKey(m), alt = mzPlatz.get(k0);     // (Gedränge: der Platz vom letzten Bild, solange er frei ist – spart Rechenzeit, nichts springt)
+    if (alt === 0 && mzBildNr % 30) continue;          // (hatte keinen Platz: erst in 30 Bildern wieder suchen)
+    if (alt && (alt[2] || alt[3] || alt[0]) && mzBildNr % 30) pl = probe(...alt);
+    for (const [klein, ganz, weit] of pl ? [] : MZ_STUFEN) {   // erst groß nah am Trupp, dann klein nah, dann weiter weg (mit Strich zum Trupp)
       for (const [ox, oy] of weit ? MZ_AUSWEICH : MZ_NAH) {
-        const xx = m.x + ox * (kw + cw + 8), yy = m.kopfY - kw * 25 / 44 - 2 * s + oy * (kw * 50 / 44 + bandH + 6);
-        for (const links of klein ? [false] : [false, true]) { const r0 = frei(xx, yy, links, kw, cw, bandH, ganz); if (r0) { pl = { x: xx, y: yy, links, r: r0, kw, chip: !klein }; break; } }
+        for (const links of klein ? [false] : [false, true]) { pl = probe(klein, ganz, ox, oy, links); if (pl) break; }
         if (pl) break;
       }
       if (pl) break;
     }
+    mzPlatz.set(k0, pl ? pl.wahl : 0);
     if (!pl) continue;                                 // (kein Platz im Bild: der Trupp allein)
     const { x, y, r, kw } = pl, kh = kw * 50 / 44, name = pl.chip ? name0 : '', bandH = name ? px + 5 : 0;
     belegt.push(r);
