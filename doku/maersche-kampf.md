@@ -85,6 +85,8 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
 - Spähbericht kompakt (Vorbild RoK): Truppen, Verstärkung, Verteidigung Teil für Teil, „Verteidigung gesamt“ als EINE Zahl
   (`spaehGesamt`), Herr, Verteidigungs-Held, Basis, Rohstoffe (gegen Rohstoff-Schutz). Alter oben („Gespäht vor …“, ab
   30 Min. gelb `SPAEH_ALT_MS`). Kopf „Spieler-Stufe N · Basis Stufe M“. Gespähte Abwehr nutzt `spaehWerte`.
+- Ohne (Verteidigungs-)Held zeigen Kampf- und Spähbericht gleich: zwei leere „?“-Plätze „Kein Hauptheld“/„Kein Zweitheld“
+  (ohne Zusatztext) und die Zeile „Held +0“ (mit Held „dabei“, `heldZeile`).
 - Fremde Werte (Helden, Ausrüstung, Fähigkeiten, Stadt) sieht man nur im Spähbericht (Server-Filter, `sicherheit-schummel.md`).
 - Bericht im Bündnis teilen: Knopf „Im Bündnis teilen“ (Mitspieler reagieren, siehe `mitspieler.md`).
 

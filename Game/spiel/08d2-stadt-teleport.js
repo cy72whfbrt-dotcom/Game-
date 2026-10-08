@@ -110,14 +110,19 @@ function tpFxZeichnen(f, ms, sx, sy) {           // (aus drawBattleFx, Bildschir
         g.addColorStop(0, 'rgba(255,226,150,' + .55 * a + ')'); g.addColorStop(1, 'rgba(255,226,150,0)');
         ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(ox, oy, R, R * .55, 0, 0, Math.PI * 2); ctx.fill();
     }
-    const a = rein * raus, w = 70 * s, oben = Math.max(0, sy - 320 * s), h = (sy - oben) * Math.min(1, ms / 260);   // Säule kommt von oben herab
-    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * .9;
-    const im = tpSaeuleBild();
-    if (im && !TP_SAEULE.ersatz) ctx.drawImage(im, sx - w / 2, oben, w, h);
-    else { const g = ctx.createLinearGradient(sx - w / 2, 0, sx + w / 2, 0);
+    const a = rein * raus, im = tpSaeuleBild();
+    if (im && !TP_SAEULE.ersatz) {                 // KI-Bild: Bodenkreis (unten, ~88 % der Höhe) auf den Platz, Säule kommt von oben herab
+        const w = 120 * s, h = w * im.height / im.width, oben = sy - h * .88, sicht = Math.min(1, ms / 260);
+        ctx.globalAlpha = a; ctx.drawImage(im, 0, im.height * (1 - sicht), im.width, im.height * sicht, sx - w / 2, oben + h * (1 - sicht), w, h * sicht);
+        ctx.globalCompositeOperation = 'lighter';
+    } else {                                       // Ersatz: Lichtband + ui_strahlen
+        const w = 70 * s, oben = Math.max(0, sy - 320 * s), h = (sy - oben) * Math.min(1, ms / 260);
+        ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * .9;
+        const g = ctx.createLinearGradient(sx - w / 2, 0, sx + w / 2, 0);
         g.addColorStop(0, 'rgba(255,200,90,0)'); g.addColorStop(.5, 'rgba(255,236,170,.85)'); g.addColorStop(1, 'rgba(255,200,90,0)');
         ctx.fillStyle = g; ctx.fillRect(sx - w / 2, oben, w, h);
-        if (im) ctx.drawImage(im, sx - w * .9, sy - w * 1.2, w * 1.8, w * 1.8); }
+        if (im) ctx.drawImage(im, sx - w * .9, sy - w * 1.2, w * 1.8, w * 1.8);
+    }
     ctx.globalAlpha = a;                           // Boden: Lichtkreis, Staub, Funken
     const R = 46 * s, g2 = ctx.createRadialGradient(sx, sy, 0, sx, sy, R);
     g2.addColorStop(0, 'rgba(255,240,190,.8)'); g2.addColorStop(1, 'rgba(255,200,90,0)');
@@ -127,7 +132,7 @@ function tpFxZeichnen(f, ms, sx, sy) {           // (aus drawBattleFx, Bildschir
         ctx.fillStyle = 'rgba(255,230,160,' + a * .9 + ')'; ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
         ctx.fillStyle = 'rgba(150,130,100,' + a * .25 + ')'; ctx.beginPath(); ctx.arc(px, py + 4 * s, 7 * s, 0, Math.PI * 2); ctx.fill(); }
     ctx.globalAlpha = 1; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    mzErgebnisBand(f, ms > FX_MS - 150 ? (FX_MS - ms) / 150 : 1, 1, sx, sy);   // Band: von Anfang bis Ende lesbar
+    mzErgebnisBand(f, ms > FX_MS - 150 ? (FX_MS - ms) / 150 : 1, 1, sx, sy + 215 * s);   // Band unter der Basis (nicht auf der Säule, nicht unter der Leiste): von Anfang bis Ende lesbar
 }
 inselOrtLaden();
 document.getElementById('cityCloseBtn').addEventListener('click', closeCity);

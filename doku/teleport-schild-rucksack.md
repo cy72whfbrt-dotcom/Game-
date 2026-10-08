@@ -17,7 +17,10 @@ Wie man seine Hauptstadt versetzt, sich schützt und was im Rucksack liegt. Wich
   im Hauptstadt-Fenster heißt „Teleportieren“ und führt zur Auswahl auf der Karte.
 - Weltrechner-Befehl `teleport` (Hauptbuch zieht Edelsteine/Teleporter ab, nur echte Spieler); Welt-Teil
   `openWaterInselOrt` (verlegte Basen – neue Saison: alle zurück). Mitspieler teleportieren genauso (siehe `mitspieler.md`).
-- Tests `teleport_test`, `rucksack_test`. Offen: Teleport-Animation (Merkliste 11c Nr. 34, später).
+- Effekt (`teleportFx`/`tpFxZeichnen`, 08d2, gezeichnet aus `drawBattleFx`): goldene Lichtsäule `bilder/karte_lichtsaeule.webp`
+  (Bodenkreis auf dem neuen Platz; fehlt das Bild: Lichtband + `ui_strahlen.webp`), Staub/Funken am Boden, alte Stelle verblasst;
+  `FX_MS` 2,6 s, Band „Hauptstadt – hierher teleportiert“ unter der Basis die ganze Zeit lesbar. Kaum Bewegung (Akku).
+- Tests `teleport_test` (mit Bilder-Ordner: Ablauf in 5 Bildern `teleport_fx_*`), `rucksack_test`.
 
 ## Rucksack (7.10.)
 - Eigener Knopf in der Leiste. Inhalt: Schilde (gekauft im Shop), Teleporter, Splitter je Held als Kacheln (Tipp öffnet den

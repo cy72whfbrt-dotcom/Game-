@@ -84,7 +84,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   if (bilder) { await p.evaluate(() => { flashHint('', 1); }); await p.waitForTimeout(400);
     for (const t of [150, 500, 1000, 1800, 2400]) {               // Ablauf in 5 Bildern (Zeit fest eingestellt)
       await p.evaluate(t => { const f = battleFx.find(q => q.tp); if (f) { f.born = performance.now() - t; if (!battleFx.includes(f)) battleFx.push(f); } else window.__fxWeg = 1; requestRender(); }, t);
-      await p.waitForTimeout(60); await p.screenshot({ path: path.join(bilder, 'teleport_fx_' + t + '.png') }); } }
+      await p.waitForTimeout(250); await p.screenshot({ path: path.join(bilder, 'teleport_fx_' + t + '.png') }); } }
   const t3 = await p.evaluate(() => { gems = 100; const c = islandById[playerIslandId], x = c.x, z = landmasses[c.landmassId]; let ziel = null;
     for (let dx = -40000; dx <= 40000 && !ziel; dx += 2500) for (let dy = -40000; dy <= 40000 && !ziel; dy += 2500) if (gebietAn(c.x + dx, c.y + dy) === z.id && !tpPruefen('player', c.x + dx, c.y + dy)) ziel = [c.x + dx, c.y + dy];
     const r = teleportOrt(ziel[0], ziel[1]); return { r, gleich: islandById[playerIslandId].x === x, gems }; });
