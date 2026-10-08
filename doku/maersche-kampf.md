@@ -41,6 +41,8 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-maersche.js` (`la
   `fight.quellen` je Basis).
 - EP: höchstens ¼ der eigenen Stufe pro Kampf und × (Gegner-Stärke / eigene Stärke), max. 1 (`kampfEp`).
 - Fehler mitten im Kampf: Verstärkung wird getrennt, Rally-Truppen gehen heim (`kampfAufraeumen`), nie doppelt.
+- Tests: `kampf_faelle_test` (alle 11 Fälle mit Truppen-Bilanz: geschickt = heim + Basis + gefallen + verwundet),
+  `gemeinsam_test`, `gemeinsam_heim_test`, `regel_test`, `rally_jeder_test`, `verst_kampf_test`.
 
 ## Beute (Alexander 4.10.)
 - Nur an der Hauptstadt: der Sieger nimmt 10 % von jedem Rohstoff (Münzen, Holz, Stein, Eisen) über dem Burg-Schutz
