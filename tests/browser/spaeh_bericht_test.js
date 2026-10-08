@@ -76,6 +76,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     try { resolveAttack({ sourceId: playerIslandId, targetId: w.T, rawTroops: 1, attackBonus: 0, atkTitle: 1, atkKraft: 1, startedAt: now - 1000, resolveAt: now, shieldLossReductionPct: 0, rewardGoldRate: 0 }); } catch (x) { out.A.kampfFehler = x.message; }
     const k = combatLog.find(x => x.type === 'attack' && x.targetId === w.T);
     out.A.kampf = k ? k.enemyDefense : null; out.A.kampfTeile = k ? k.defParts : null;
+    { const kr = k && reihe(k), G = kr ? [...kr.querySelectorAll('.logGear')].filter(g => g.querySelector('.tile')) : [];   // leere Ausrüstungs-Plätze: grau, „keine Ausrüstung angelegt“
+      const leer = kr ? [...kr.querySelectorAll('.logGear .tile.empty')] : [];
+      out.A.leerGear = { leer: leer.length, grau: leer.filter(t => t.querySelector('.kl-leer-ic') && /grayscale/.test(getComputedStyle(t).filter)).length,
+        alleLeer: G.filter(g => !g.querySelector('.tile:not(.empty)')).length, text: G.filter(g => !g.querySelector('.tile:not(.empty)') && /keine Ausrüstung angelegt/.test(g.textContent)).length }; }
     // B) Alter: 2 Std. alt → gelb „neu spähen?“, frisch → ohne
     e.at = Date.now() - 2 * 3600000; row = reihe(e);
     const chip = row && [...row.querySelectorAll('.lchip')].find(c => /gespäht vor/.test(c.textContent));
@@ -147,6 +151,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(A.striche === 0 && !A.leerZ, 'Spähbericht kompakt: keine „–“-Zeilen, kein Gefallen/Geflohen, keine leeren Heldenplätze', { striche: A.striche, text: (A.text || '').slice(0, 300) });
   ok(!A.ohneVh || (A.fragen === 2 && /Kein Hauptheld/.test(A.text) && /Kein Zweitheld/.test(A.text) && /\+0$/.test(A.heldZeile)), 'Spähbericht ohne Verteidigungs-Held: 2 leere „?“-Plätze wie im Kampfbericht, Zeile „Held +0“', { ohneVh: A.ohneVh, fragen: A.fragen, held: A.heldZeile });
   ok(!/zu 50 %/.test(A.text || ''), 'Bericht: kein verwirrender Zusatz „Zweitheld · Werte … zu 50 %“', (A.text || '').slice(0, 200));
+  ok(A.leerGear && A.leerGear.leer > 0 && A.leerGear.grau === A.leerGear.leer && A.leerGear.alleLeer > 0 && A.leerGear.text === A.leerGear.alleLeer, 'Kampfbericht: leere Ausrüstungs-Plätze grau, ganz leer → „keine Ausrüstung angelegt“', A.leerGear);
   ok(A.alter === 1 && A.seite && A.seiteAlter.length === 1 && A.seiteAlter[0] === 'vor 3 Min.' && A.seiteStriche === 0, 'Spähbericht: nur EIN Alter (läuft auch in der offenen Seite mit)', { alter: A.alter, seite: A.seite, seiteAlter: A.seiteAlter, striche: A.seiteStriche });
   ok(a.B && /gespäht vor 2 Std\./.test(a.B.chip || '') && /neu spähen/.test(a.B.chip || '') && a.B.gelb, 'Kampflog: „gespäht vor 2 Std. · neu spähen?“ gelb', a.B);
   ok(a.B && /vor 2 Std\./.test(a.B.angriff || '') && a.B.angriffGelb && /neu spähen/.test(a.B.menu || ''), 'Angriffsfenster + Basis-Fenster: Alter des Berichts, ab 30 Min. gelb', a.B);

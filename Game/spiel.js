@@ -6447,9 +6447,11 @@ function renderActiveMarches() {
 }
 
 // Stufe, Titel, die 4 Ausrüstungsteile, Helden, Fähigkeiten und Stadt einer Seite (Kampfbericht und Spähbericht)
+const LEER_STIL = 'filter:grayscale(1) brightness(.55)';                      // leerer Platz: Rahmen grau abgedunkelt (nicht wie angelegt)
+const LEER_IC = h => '<span class="kl-leer-ic" style="display:inline-flex;opacity:.35;filter:grayscale(1)">' + h + '</span>';   // leerer Ausrüstungs-Platz: Symbol grau
 function kampfGearHtml(g) { if (!g) return '';
     const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
-        return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
+        return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : ' style="' + LEER_STIL + '"') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + (rd ? icon(d.icon) : LEER_IC(icon(d.icon))) +
             (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
     const heroes = (g.hx ? [g.hx, ...(g.hx.h2 ? [g.hx.h2] : [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led (Haupt- und Zweitheld), his stars, whether the rage fired, every bonus
             return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero">' + heroImg(hd.id) + '<span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
@@ -6459,7 +6461,7 @@ function kampfGearHtml(g) { if (!g) return '';
     if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
     return '<div class="logGear"><div class="logGearHead">Spieler-Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
         '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
-        '<div class="logGearMeta">Fähigkeit Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; }
+        '<div class="logGearMeta">' + (g.items.some(it => RARITY_DEFS[it[1]]) ? '' : 'keine Ausrüstung angelegt<br>') + 'Fähigkeit Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; }
 const combatLogKey = e => e.at + '|' + e.type + '|' + (e.targetId ?? e.toId);
 // Re-renders the list while the panel is open: opened "Kampfdetails" stay open and the
 // rows the player is reading stay where they are when a new row is added on top.
@@ -6696,8 +6698,8 @@ const kampflogUmbauen = (function () {
     const el = h => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
     const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b>' + (t ? '<small>' + t + '</small>' : '') + '</span></span></div>';
     const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Spieler-Stufe –') + '</div><div class="logGearItems">' +
-        [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" title="' + n + ' – leer">' + ic(i) + '</span></span>').join('') +
-        '</div><div class="logGearMeta">Fähigkeit Angriff – · Verteidigung –</div></div>';
+        [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" style="' + LEER_STIL + '" title="' + n + ' – leer">' + LEER_IC(ic(i)) + '</span></span>').join('') +
+        '</div><div class="logGearMeta">keine Ausrüstung angelegt<br>Fähigkeit Angriff – · Verteidigung –</div></div>';
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
 
     // ein Fenster auf den immer gleichen Aufbau bringen
@@ -10063,6 +10065,21 @@ function teleportFx(cap, ax, ay) {
     if (battleFx.length > 12) battleFx.shift();
     requestRender();
 }
+function tpBandOrt(f, sx, sy, saeule) {        // → [x, sy] für mzErgebnisBand: Band (samt Unterzeile) auf keinem Basisschild, nicht auf der Säule, im Bild
+    const bw = Math.min(viewW >= 700 ? 300 : 230, viewW * .6), im = mzBild('marsch_band_sieg'), bh = im ? bw * im.height / im.width : 60, hb = bh + 22, z = mapState.zoom;
+    const an = document.getElementById('anleitung'), ar = an && !an.hidden ? an.getBoundingClientRect() : null;
+    const oben = 110, unten = Math.min(viewH - 70, ar && ar.height ? ar.top - 6 : viewH);   // (nicht unter der Leiste oben / unten, nicht unter der Anleitung)
+    const schilde = islands.filter(i => i.type === 'tower' && islandOwnerOf(i.id) && Math.abs(toSX(i.x) - sx) < viewW && Math.abs(toSY(i.y) - sy) < viewH).map(i => schildRect(i, z));
+    const xs = [sx, sx - bw * .6, sx + bw * .6].map(v => Math.max(bw / 2 + 4, Math.min(viewW - bw / 2 - 4, v))), ys = [];
+    for (let d = 0; d < 400; d += 12) ys.push(sy + 130 + d, sy - saeule - hb / 2 - 10 - d);   // erst unter der Basis, dann über der Säule, dann weiter weg
+    for (let d = 0; d < saeule; d += 12) ys.push(sy - 90 - d);              // zuletzt vor der Säule (nie auf einem Schild)
+    const rect = (x, y) => ({ x: x - bw / 2, y: y - bh / 2, w: bw, h: hb });
+    const passt = (x, y) => { const r = rect(x, y); return r.y >= oben && r.y + hb <= unten && !schilde.some(q => overlap(q, r) > 0); };
+    let wo = null; for (const y of ys) { for (const x of xs) if (passt(x, y)) { wo = [x, y]; break; } if (wo) break; }
+    wo = wo || [xs[0], sy + 130];
+    f.bandRect = rect(wo[0], wo[1]);
+    return [wo[0], wo[1] + 70 + bh / 2];                                   // (mzErgebnisBand setzt die Mitte 70 + bh/2 über sy)
+}
 function tpFxZeichnen(f, ms, sx, sy) {           // (aus drawBattleFx, Bildschirm-Koordinaten)
     const s = mzS(), k = ms / FX_MS, rein = Math.min(1, ms / 300), raus = k > .8 ? 1 - (k - .8) / .2 : 1;
     const ox = f.ax * mapState.zoom + mapState.offsetX, oy = f.ay * mapState.zoom + mapState.offsetY;
@@ -10093,7 +10110,8 @@ function tpFxZeichnen(f, ms, sx, sy) {           // (aus drawBattleFx, Bildschir
         ctx.fillStyle = 'rgba(255,230,160,' + a * .9 + ')'; ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
         ctx.fillStyle = 'rgba(150,130,100,' + a * .25 + ')'; ctx.beginPath(); ctx.arc(px, py + 4 * s, 7 * s, 0, Math.PI * 2); ctx.fill(); }
     ctx.globalAlpha = 1; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    mzErgebnisBand(f, ms > FX_MS - 150 ? (FX_MS - ms) / 150 : 1, 1, sx, sy + 215 * s);   // Band unter der Basis (nicht auf der Säule, nicht unter der Leiste): von Anfang bis Ende lesbar
+    const B = tpBandOrt(f, sx, sy, im && !TP_SAEULE.ersatz ? 120 * s * im.height / im.width * .88 : 200 * s);
+    mzErgebnisBand(f, ms > FX_MS - 150 ? (FX_MS - ms) / 150 : 1, 1, B[0], B[1]);   // Band: von Anfang bis Ende lesbar
 }
 inselOrtLaden();
 document.getElementById('cityCloseBtn').addEventListener('click', closeCity);

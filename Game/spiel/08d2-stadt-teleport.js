@@ -102,6 +102,21 @@ function teleportFx(cap, ax, ay) {
     if (battleFx.length > 12) battleFx.shift();
     requestRender();
 }
+function tpBandOrt(f, sx, sy, saeule) {        // → [x, sy] für mzErgebnisBand: Band (samt Unterzeile) auf keinem Basisschild, nicht auf der Säule, im Bild
+    const bw = Math.min(viewW >= 700 ? 300 : 230, viewW * .6), im = mzBild('marsch_band_sieg'), bh = im ? bw * im.height / im.width : 60, hb = bh + 22, z = mapState.zoom;
+    const an = document.getElementById('anleitung'), ar = an && !an.hidden ? an.getBoundingClientRect() : null;
+    const oben = 110, unten = Math.min(viewH - 70, ar && ar.height ? ar.top - 6 : viewH);   // (nicht unter der Leiste oben / unten, nicht unter der Anleitung)
+    const schilde = islands.filter(i => i.type === 'tower' && islandOwnerOf(i.id) && Math.abs(toSX(i.x) - sx) < viewW && Math.abs(toSY(i.y) - sy) < viewH).map(i => schildRect(i, z));
+    const xs = [sx, sx - bw * .6, sx + bw * .6].map(v => Math.max(bw / 2 + 4, Math.min(viewW - bw / 2 - 4, v))), ys = [];
+    for (let d = 0; d < 400; d += 12) ys.push(sy + 130 + d, sy - saeule - hb / 2 - 10 - d);   // erst unter der Basis, dann über der Säule, dann weiter weg
+    for (let d = 0; d < saeule; d += 12) ys.push(sy - 90 - d);              // zuletzt vor der Säule (nie auf einem Schild)
+    const rect = (x, y) => ({ x: x - bw / 2, y: y - bh / 2, w: bw, h: hb });
+    const passt = (x, y) => { const r = rect(x, y); return r.y >= oben && r.y + hb <= unten && !schilde.some(q => overlap(q, r) > 0); };
+    let wo = null; for (const y of ys) { for (const x of xs) if (passt(x, y)) { wo = [x, y]; break; } if (wo) break; }
+    wo = wo || [xs[0], sy + 130];
+    f.bandRect = rect(wo[0], wo[1]);
+    return [wo[0], wo[1] + 70 + bh / 2];                                   // (mzErgebnisBand setzt die Mitte 70 + bh/2 über sy)
+}
 function tpFxZeichnen(f, ms, sx, sy) {           // (aus drawBattleFx, Bildschirm-Koordinaten)
     const s = mzS(), k = ms / FX_MS, rein = Math.min(1, ms / 300), raus = k > .8 ? 1 - (k - .8) / .2 : 1;
     const ox = f.ax * mapState.zoom + mapState.offsetX, oy = f.ay * mapState.zoom + mapState.offsetY;
@@ -132,7 +147,8 @@ function tpFxZeichnen(f, ms, sx, sy) {           // (aus drawBattleFx, Bildschir
         ctx.fillStyle = 'rgba(255,230,160,' + a * .9 + ')'; ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
         ctx.fillStyle = 'rgba(150,130,100,' + a * .25 + ')'; ctx.beginPath(); ctx.arc(px, py + 4 * s, 7 * s, 0, Math.PI * 2); ctx.fill(); }
     ctx.globalAlpha = 1; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    mzErgebnisBand(f, ms > FX_MS - 150 ? (FX_MS - ms) / 150 : 1, 1, sx, sy + 215 * s);   // Band unter der Basis (nicht auf der Säule, nicht unter der Leiste): von Anfang bis Ende lesbar
+    const B = tpBandOrt(f, sx, sy, im && !TP_SAEULE.ersatz ? 120 * s * im.height / im.width * .88 : 200 * s);
+    mzErgebnisBand(f, ms > FX_MS - 150 ? (FX_MS - ms) / 150 : 1, 1, B[0], B[1]);   // Band: von Anfang bis Ende lesbar
 }
 inselOrtLaden();
 document.getElementById('cityCloseBtn').addEventListener('click', closeCity);

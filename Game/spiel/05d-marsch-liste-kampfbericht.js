@@ -112,9 +112,11 @@ function renderActiveMarches() {
 }
 
 // Stufe, Titel, die 4 Ausrüstungsteile, Helden, Fähigkeiten und Stadt einer Seite (Kampfbericht und Spähbericht)
+const LEER_STIL = 'filter:grayscale(1) brightness(.55)';                      // leerer Platz: Rahmen grau abgedunkelt (nicht wie angelegt)
+const LEER_IC = h => '<span class="kl-leer-ic" style="display:inline-flex;opacity:.35;filter:grayscale(1)">' + h + '</span>';   // leerer Ausrüstungs-Platz: Symbol grau
 function kampfGearHtml(g) { if (!g) return '';
     const tiles = g.items.map((it, i) => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]];
-        return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : '') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + icon(d.icon) +
+        return '<span class="gslot"><span class="tile' + (rd ? '' : ' empty') + '"' + (rd ? ' data-r="' + rd.key + '"' : ' style="' + LEER_STIL + '"') + ' title="' + d.name + (rd ? ' – ' + rd.label + ', Stufe ' + it[2] : ' – leer') + '">' + (rd ? icon(d.icon) : LEER_IC(icon(d.icon))) +
             (rd ? '<span class="lvl">' + it[2] + '</span>' + (it[3] ? '<span class="stars">' + icon('star').repeat(it[3]) + '</span>' : '') : '') + '</span></span>'; }).join('');
     const heroes = (g.hx ? [g.hx, ...(g.hx.h2 ? [g.hx.h2] : [])] : []).map(x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r];   // who led (Haupt- und Zweitheld), his stars, whether the rage fired, every bonus
             return '<div class="logHero" style="--hc:' + rd.color + '"><span class="ghero">' + heroImg(hd.id) + '<span><b>' + hd.name + ' <small>' + heroStarTxt(x.q) + ' · ' + rd.label + '</small></b>' +
@@ -124,7 +126,7 @@ function kampfGearHtml(g) { if (!g) return '';
     if (g.heroOnly) return '<div class="logGear"><div class="logGearHeroes">' + heroes + '</div></div>';
     return '<div class="logGear"><div class="logGearHead">Spieler-Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
         '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
-        '<div class="logGearMeta">Fähigkeit Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; }
+        '<div class="logGearMeta">' + (g.items.some(it => RARITY_DEFS[it[1]]) ? '' : 'keine Ausrüstung angelegt<br>') + 'Fähigkeit Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; }
 const combatLogKey = e => e.at + '|' + e.type + '|' + (e.targetId ?? e.toId);
 // Re-renders the list while the panel is open: opened "Kampfdetails" stay open and the
 // rows the player is reading stay where they are when a new row is added on top.
@@ -361,8 +363,8 @@ const kampflogUmbauen = (function () {
     const el = h => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
     const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b>' + (t ? '<small>' + t + '</small>' : '') + '</span></span></div>';
     const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Spieler-Stufe –') + '</div><div class="logGearItems">' +
-        [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" title="' + n + ' – leer">' + ic(i) + '</span></span>').join('') +
-        '</div><div class="logGearMeta">Fähigkeit Angriff – · Verteidigung –</div></div>';
+        [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" style="' + LEER_STIL + '" title="' + n + ' – leer">' + LEER_IC(ic(i)) + '</span></span>').join('') +
+        '</div><div class="logGearMeta">keine Ausrüstung angelegt<br>Fähigkeit Angriff – · Verteidigung –</div></div>';
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
 
     // ein Fenster auf den immer gleichen Aufbau bringen
