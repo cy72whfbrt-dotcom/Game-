@@ -62,3 +62,5 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
   1 Lila spätestens nach 20 Versuchen. Beschleuniger 1/5/15 Min, 1/3/8/24 Std – gelten für Bauen, Forschen, Heilen (nicht Truppen).
 - Schlüssel 1/2 und Beschleuniger gibt es auch als Event-Belohnung. Wochenkette (7 Tage Aufgaben) fliegt raus.
 - Marsch-Plätze: nicht mehr über Burg-Stufe, sondern Labor-Forschung: 2 von Anfang an, Platz 3 ab Labor 5, 4 ab 10, 5 ab 16, 6 ab 22.
+- Shop: neuer Reiter „Event“ (Event-Shop, Event-Münzen). Beschleuniger: Belohnung bei Events UND im Shop kaufbar für
+  Edelsteine oder Event-Münzen. Kisten-Reiter: öffnen mit Schlüssel oder Edelsteinen.
