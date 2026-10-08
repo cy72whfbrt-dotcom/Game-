@@ -65,13 +65,16 @@ function evPreis(who, src, title, p, schl, bis) {     // schl: fester Schlüssel
     // bis: Ende des Events (Invasion, Drache) bzw. des Tages (Tagesboss, Lager) – bis dahin nur im Event abholbar, danach im Abholfach
     const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
     const { coins, tr } = evStunden(who, p), k = schl != null ? src + '|' + schl : undefined;   // k: das Abholfach kennt die Stufe (Leiste im Event-Fenster)
+    let b = Array.isArray(p.b) && p.b.length ? p.b : undefined;   // b: Gegenstände [Art, Menge, Extra] (Thron-Event)
     if (!(bis > Date.now())) bis = undefined;
-    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k, bis }); if (titel) saisonTitelGeben(titel); return; }
+    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k, bis, b }); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
-    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
+    if (bd.mensch && window.WELT && b) { for (const [a, n] of b) if (a === 'holz' && AUF) AUF.rohDazu(who, { h: n }); b = b.filter(x => x[0] !== 'holz'); if (!b.length) b = undefined; }   // Holz gleich in seinen Topf (kommt mit dem nächsten Puls, das Hauptbuch kennt es)
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {}, b ? { b } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
     const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
     if (coins) botCoins[who] = (botCoins[who] || 0) + coins; if (tr) { const cap = botCapitalOf(who); if (cap !== null && cap !== undefined) islandTroops[cap] = (islandTroops[cap] || 0) + tr; }
+    for (const [a, n, e] of b || []) beuteBot(who, a, n, e);
     if (bs && titel) { bs.titles = [...new Set([...(bs.titles || []), titel])]; saveBotState(); }
 }
 function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
@@ -590,7 +593,7 @@ function evOffen() { return isPanelOpen(goalsPopup) && EV_TABS.includes(goalsTab
 function renderEvents() {
     evRenderAt = Date.now();
     const sk = saisonKarte(), oben = sk && saisonOben(Date.now()), sz = sk ? '<div class="ev-saison">' + sk + '</div>' : '';
-    liveHtml(document.getElementById('eventBody'), (oben ? sz : '') + (evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evTab === 'lager' ? evLagerHtml() : evBossHtml()) + (!oben && evTab === 'tour' ? sz : ''));
+    liveHtml(document.getElementById('eventBody'), (oben ? sz : '') + (evTab === 'tour' ? evTourHtml() : evTab === 'thron' ? evThronHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evTab === 'lager' ? evLagerHtml() : evBossHtml()) + (!oben && evTab === 'tour' ? sz : ''));
 }
 // Welt-Saison: nur in den letzten 3 Tagen (oder angehalten) oben in jedem Reiter – sonst unten im Wochen-Event (der Inhalt des Reiters geht vor)
 function saisonOben(now) { return !!(saison && (saison.halt || saison.ende - now <= SAISON_BALD_MS)); }

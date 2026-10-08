@@ -7,10 +7,10 @@ function botLook(botId) {                            // → { frame, title }: Ra
     if (b.mensch) return rahmenVon(botId, b.lookFrame);   // echter Spieler: was er angelegt hat (nur Rahmen, die er hat – der Weltrechner hält sie gegen sein Hauptbuch)
     if (!b.lookMig) { const own = botOwnedIslands[botId], r = Math.max(b.bestRank || 0, rankIndexFor(own ? own.size : 0)), st = b.stats || {}, cityMin = Math.min(...BOT_BUILDINGS.filter(k => !BOT_MIN_AUSNAHME.includes(k)).map(k => b.city.levels[k] || 0));   // once: what they had by rank and deeds stays theirs
         const ach = { cap100: (st.caps || 0) >= 100, cap1000: (st.caps || 0) >= 1000, def25: (st.defs || 0) >= 25, boss1: (st.bosses || 0) >= 1, emma10: (st.pvp || 0) >= 10, city5: cityMin >= 5, throne: !!st.ruled };
-        b.frames = [...new Set([...(b.frames || []), ...RAHMEN.filter(x => !x.frei && !x.buy && !x.platz && (x.ach ? ach[x.ach] || (b.achLook || []).includes(x.ach) : (x.rank || 0) <= r)).map(x => x.id)])]; b.lookMig = 1; saveBotState(); }
-    // sie tragen, was sie haben: einen Saison-Rahmen zuerst, dann den Thron-Rahmen, sonst einen ihrer drei besten (jeder hat seinen Liebling)
-    const own = RAHMEN.filter(x => rahmenHat(botId, x)), sz = own.find(x => x.platz), idn = parseInt(botId.slice(3), 10) || 0, alt = own.filter(x => !x.platz && x.id !== 'throne');
-    const pick = sz || own.find(x => x.id === 'throne') || alt[alt.length - 1 - Math.floor(mulberry32(idn * 31 + alt.length)() * Math.min(3, alt.length))];
+        b.frames = [...new Set([...(b.frames || []), ...RAHMEN.filter(x => !x.frei && !x.platz && (x.ach ? ach[x.ach] || (b.achLook || []).includes(x.ach) : (x.rank || 0) <= r)).map(x => x.id)])]; b.lookMig = 1; saveBotState(); }
+    // sie tragen, was sie haben: einen Saison-Rahmen zuerst, sonst einen ihrer drei besten (jeder hat seinen Liebling)
+    const own = RAHMEN.filter(x => rahmenHat(botId, x)), sz = own.find(x => x.platz), idn = parseInt(botId.slice(3), 10) || 0, alt = own.filter(x => !x.platz);
+    const pick = sz || alt[alt.length - 1 - Math.floor(mulberry32(idn * 31 + alt.length)() * Math.min(3, alt.length))];
     return rahmenVon(botId, pick ? pick.id : 'bronze');
 }
 // Erfolge: the same list as yours (ACHIEVEMENTS), counted from their own numbers - each one collected once for its gems, one at a time like a person tapping
@@ -53,13 +53,6 @@ function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return;
 
 // Kopfgeld: the prize lands where yours does - gems and coins
 function botBountyReward(botId, gems, coins) { const b = loadBotState()[botId]; if (!b) return; b.gems = (b.gems || 0) + gems; botCoins[botId] = (botCoins[botId] || 0) + coins; botStat(botId, 'bounty', gems); }
-
-function botThroneShop(botId) {                       // the others spend their points the way a player would
-    const b = loadBotState()[botId]; if (!b) return;
-    for (let n = 0; n < 5; n++) { const r = Math.random();
-        const id = r < .45 ? 'troops' : r < .7 ? 'coins' : r < .95 ? 'crate' : 'royal';   // (Gems gibt es im Thron-Shop nicht mehr)
-        const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
-}
 
 function botNeulingWeg(botId, gegner) {         // greift einen echten Spieler an (Basis, Armee, Feld, Rally): sein Anfängerschutz ist vorbei
     if (!window.WELT || !botId || botId === 'player' || !(gegner === 'player' || (gegner && botById[gegner] && botById[gegner].mensch))) return;

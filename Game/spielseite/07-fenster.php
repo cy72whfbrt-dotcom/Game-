@@ -21,6 +21,34 @@
 #combatLogList > .logRow{cursor:pointer}
 /* Events (Blick 6.10.): am Handy passen alle 4 Ereignis-Chips (kurze Namen), Welt-Saison linksbündig, Preise gut lesbar */
 @media (max-width:480px){ #goalsTabs{gap:6px;padding-inline:12px} #goalsTabs .p5-chip{padding:0 12px} }
+/* Thron-Event (06c): Chip mit Punkt (grün = läuft) und Startzeit, Ablauf, Kuppel-Satz, Rang-Bänder, Herrscher-Fenster */
+.p5-chip .ev-st{width:7px;height:7px;border-radius:50%;background:#5b6070;flex:none}
+.p5-chip .ev-st.an{background:#5cdb6a;box-shadow:0 0 6px #5cdb6a}
+.p5-chip small{font:600 9.5px/1 var(--font-ui);color:var(--tx-3);white-space:nowrap} .p5-chip small:empty{display:none}
+.thron-ablauf{display:grid;grid-template-columns:5fr 1.3fr 2.6fr;gap:3px;margin:6px 0}
+.thron-ablauf div{padding:5px 4px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--line-1);text-align:center;font:600 10.5px/1.2 var(--font-ui);color:var(--tx-3)}
+.thron-ablauf b{display:block;color:var(--tx-2);font-size:11px} .thron-ablauf div.jetzt{border-color:var(--gold-300);background:rgba(214,170,90,.14)} .thron-ablauf div.jetzt b{color:var(--gold-100)}
+.kuppel-satz{display:flex;gap:8px;align-items:center;padding:6px 8px;margin:6px 0;border-radius:8px;background:rgba(90,160,255,.1);border:1px solid rgba(150,210,255,.35);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.thron-karte > .btn{width:100%;margin-top:8px}
+.thron-herr-zeile{display:flex;align-items:center;gap:10px;width:100%;margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,200,80,.12);border:1px solid rgba(255,210,110,.5);color:var(--tx-1);font:600 var(--fs-13)/1.25 var(--font-ui);text-align:left;cursor:pointer}
+.thron-herr-zeile img{width:28px;height:28px} .thron-herr-zeile small{display:block;color:var(--tx-3);font-size:11px}
+.rang{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.rband{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:6px 16px 16px 6px;font:800 13px var(--font-ui);color:#fff;text-shadow:0 1px 2px #000}
+.rband.p1{background:linear-gradient(90deg,#b8861f,#f2cf6a 60%,transparent)} .rband.p2{background:linear-gradient(90deg,#7d8790,#d3dbe2 60%,transparent)}
+.rband.p3{background:linear-gradient(90deg,#8a4f22,#d08a4f 60%,transparent)} .rband.p4{background:linear-gradient(90deg,#3d5a86,#6f93c8 60%,transparent)}
+.rband.p5{background:linear-gradient(90deg,#4a4033,#7a6a52 60%,transparent)} .rband img{width:22px;height:22px} .rband span{margin-left:auto;font-size:11px;font-weight:600}
+.herr-kopf{display:flex;gap:12px;align-items:center} .herr-kopf b{font:700 16px var(--font-display);color:var(--gold-100)} .herr-kopf small{display:block;color:var(--tx-3);font:500 11.5px/1.3 var(--font-ui)}
+.herr-bild{position:relative;width:64px;height:64px;flex:none;border-radius:50%;background:#1b2638;box-shadow:0 0 14px 4px rgba(255,210,90,.8)}
+.herr-bild img{position:absolute;inset:18%;width:64%;height:64%;border-radius:50%} .herr-bild .herr-rahmen{inset:-14%;width:128%;height:128%;border-radius:0}
+.herr-skin{width:72px;margin-left:auto;filter:drop-shadow(0 0 6px #ffd25a)}
+.herr-angelegt{display:flex;gap:8px;align-items:center;margin-top:10px;padding:7px 9px;border-radius:8px;background:rgba(255,200,80,.12);border:1px solid rgba(255,210,110,.5);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.herr-angelegt .haken{display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:#3f9b48;color:#fff;font-weight:800}
+.herr-angelegt b{flex:none;margin-left:auto;padding:2px 8px;border-radius:6px;background:#3f9b48;color:#fff;font:700 11px var(--font-ui)}
+.herr-titel{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line-1);font:600 var(--fs-13) var(--font-ui)}
+.herr-titel img{width:30px;height:30px} .herr-titel small{display:block;color:#8fd67a;font-size:11px} .herr-titel small.boese{color:#ff8d82}
+.herr-titel .wer{font-size:12px;color:var(--tx-2)} .herr-titel select,.herr-an select{max-width:150px;height:32px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:rgba(0,0,0,.35);color:var(--tx-1);font:600 var(--fs-12) var(--font-ui)}
+.herr-kisten{display:grid;grid-template-columns:repeat(3,1fr);gap:8px} .herr-kiste{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.herr-kiste small{font:500 10.5px/1.25 var(--font-ui);color:var(--tx-3)} .herr-an{display:flex;align-items:center;gap:8px;margin-top:10px;font:600 var(--fs-13) var(--font-ui);color:var(--tx-2)}
 /* Events/Bündnis (Gesamt-Blick 6.10.): Bild-Banner je Ereignis mit Titel + Uhr darauf, lange Erklärungen hinter „i“, leere Zustände mit Bild + Knopf */
 .ev-banner{position:relative;flex:none;height:96px;margin:0 0 10px;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line-2);background:#100b08}
 .ev-banner .ev-bild{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -308,6 +336,17 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   <div class="pbody" id="rulerBody"></div>
 </section>
 
+<!-- ============ HERRSCHER (Thron-Event, 06c renderHerr) ============ -->
+<section id="herrPopup" class="panel panel--sheet" role="dialog" aria-labelledby="herrTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-crown"/></svg></div>
+    <div class="phead-text"><div class="overline">Eine Woche lang</div><h3 id="herrTitle" class="ptitle">Herrscher</h3><div class="psub" id="herrSub"></div></div>
+    <button id="herrCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="pbody" id="herrBody"></div>
+</section>
+
 <!-- ============ BÜNDNIS (Dock, buendnis.js) ============ -->
 <section id="bundPopup" class="panel panel--sheet" role="dialog" aria-labelledby="bundTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
@@ -366,6 +405,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button class="p5-chip" type="button" role="tab" data-gtab="reward" data-ggrp-von="abholen" hidden><span>Belohnung</span><span class="badge" data-gbadge="reward" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="pass" data-ggrp-von="pass" hidden><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><span>Woche</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="thron" data-ggrp-von="ereignisse" hidden><i class="ev-st" data-ev-st="thron"></i><span>Thron</span><small data-ev-ab="thron">Sa 10</small><span class="badge" data-gbadge="thron" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="inv" data-ggrp-von="ereignisse" hidden><span>Invasion</span><span class="badge" data-gbadge="inv" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="drache" data-ggrp-von="ereignisse" hidden><span>Drache</span><span class="badge" data-gbadge="drache" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span>Boss</span><span class="badge" data-gbadge="boss" style="display:none">!</span></button>

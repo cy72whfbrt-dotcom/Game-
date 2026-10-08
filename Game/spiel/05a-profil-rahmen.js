@@ -9,7 +9,7 @@ const RAHMEN = [
     { id: 'diamond', name: 'Diamantherzog', t: 'duke', rank: 4 }, { id: 'master', name: 'Meister der Meere', t: 'master', rank: 5 }, { id: 'legend', name: 'Legende', t: 'legend', rank: 6 },
     { id: 'conq', name: 'Eroberer', t: 'conq', ach: 'cap100' }, { id: 'warlord', name: 'Kriegsherr', t: 'warlord', ach: 'cap1000' }, { id: 'wall', name: 'Standhaft', t: 'wall', ach: 'def25' },
     { id: 'emma', name: 'Gefürchtet', t: 'emma', ach: 'emma10' }, { id: 'slayer', name: 'Bezwinger', t: 'slayer', ach: 'boss1' }, { id: 'builder', name: 'Baumeister', t: 'builder', ach: 'city5' },
-    { id: 'king', name: 'Herrscher der Meere', t: 'king', ach: 'throne' }, { id: 'throne', name: 'Thronhüter', t: 'keeper', buy: 'throne' },
+    { id: 'king', name: 'Herrscher der Meere', t: 'king', ach: 'throne' },
     { id: 'saison', name: 'Saisonkrone' },                                  // gab es bis 7.10. im Saison-Pass – wer sie hat, behält sie
     // Saison-Rahmen: die besten 10 am Ende einer Welt-Saison – nur bis zum nächsten Saison-Ende (dann bekommen ihn die neuen)
     { id: 'sz1', name: 'Saison-Champion', platz: [1, 1] }, { id: 'sz2', name: 'Saison-Großadmiral', platz: [2, 3] },
@@ -22,9 +22,9 @@ function saisonPlatz(who) { const t = typeof saison !== 'undefined' && saison &&
 function rahmenHat(who, r) {                         // hat who den Rahmen r? (Saison-Rahmen: nur, solange die Welt ihn so führt)
     if (!r) return false; if (r.frei) return true;
     if (r.platz) { const pl = saisonPlatz(who); return pl >= r.platz[0] && pl <= r.platz[1]; }
-    if (who === 'player') return (look.frames || []).includes(r.id) || !!(r.t && (look.titles || []).includes(r.t)) || (r.buy === 'throne' && !!(look.bought && look.bought.throne)) || (!look.lookMig && lookOldUnlocked(r));
+    if (who === 'player') return (look.frames || []).includes(r.id) || !!(r.t && (look.titles || []).includes(r.t)) || (!look.lookMig && lookOldUnlocked(r));
     const b = loadBotState()[who]; if (!b) return false;
-    return (b.frames || []).includes(r.id) || !!(r.t && (b.titles || []).includes(r.t)) || (r.buy === 'throne' && !!b.throneLook);
+    return (b.frames || []).includes(r.id) || !!(r.t && (b.titles || []).includes(r.t));
 }
 // Mitte geht vor: der Herrscher trägt „Herrscher der Meere“, ein Titel aus der Mitte seinen eigenen Rahmen (gut: Gold, Straf-Titel: Rot) – kommen und gehen
 function rahmenVon(who, gewaehlt) {                  // → { frame, title } – gewaehlt: der angelegte Rahmen (fehlt er oder ist er weg: Standard)
@@ -42,7 +42,6 @@ function rankIndexFor(bases) { let r = 0; RANK_TIERS.forEach((t, i) => { if (bas
 function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
 function lookOldUnlocked(x) {                       // the old rule (rank / Erfolg) - only to carry an old save over
     if (x.platz) return false;
-    if (x.buy) return !!(look.bought && look.bought[x.buy]);
     if (x.ach) { try { return achLookKept(x.ach) || !!(achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal)); } catch (e) { return false; } }
     return (x.rank || 0) <= bestRank();
 }

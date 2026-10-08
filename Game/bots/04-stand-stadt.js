@@ -187,7 +187,7 @@ function botVhCare(botId, b) {                            // Verteidigungs-Helde
     if (!Array.isArray(b.vh) || b.vh[0] !== soll[0] || b.vh[1] !== soll[1]) { b.vh = soll; vhMem = null; }
 }
 function botHeroLikes(bot) {                              // what their heroes should be good at: the moment first (the middle when they hold part of it, the ruler with a bounty on him), then their style
-    const r = rulerOwner(), mid = [...botOwnedIslands[bot.id] || []].some(id => midZoneIds.has(id));
+    const r = thronHalter(), mid = [...botOwnedIslands[bot.id] || []].some(id => midZoneIds.has(id));
     return [...(r && r !== bot.id && bountyGems() >= 300 ? ['rulerAtk'] : []), ...(mid ? ['midAtk', 'guardAtk', 'midLoss', 'templeAtk'] : []), ...(BOT_HERO_LIKES[bot.style] || [])];
 }
 
@@ -250,7 +250,6 @@ function botOnlinePlan(bot, now) {                                              
 }
 
 function botShop(bot) {                                  // gems and points spent the way a player would: heroes, stars, crates, gear
-    botThroneShop(bot.id);
     const b = loadBotState()[bot.id], slots = Object.keys(EQUIPMENT_DEFS);
     botPassCare(bot, b);                                 // Saison-Pass: premium (some), rewards as they climb
     botHeroCare(bot);                                    // shards → unlock, stars, skill points

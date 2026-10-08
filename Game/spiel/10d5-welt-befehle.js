@@ -123,6 +123,10 @@
             if (b.wem && (!wem || !botById[wem] || wem === who)) return;   // (sich selbst keinen Titel)
             giveTitle(b.key, wem);
         },
+        thronKiste(who, b) {                          // der Herrscher verschenkt eine Kiste (06c herrKiste prüft: Herrscher, noch da, nicht an sich selbst)
+            const an = kennungOk(b.wem) ? lokalId(b.wem) : null;
+            herrKiste(who, typeof b.art === 'string' ? b.art : '', an);   // (keine mehr da / kein Herrscher mehr: ein Wettlauf, kein Schummeln)
+        },
         feld(who, b) {
             const f = (typeof b.feld === 'number' || typeof b.feld === 'string') ? resFields.find(x => x.id === b.feld) : null;
             if (!f || !inselOk(b.home) || !gehoert(b.home, who)) return;

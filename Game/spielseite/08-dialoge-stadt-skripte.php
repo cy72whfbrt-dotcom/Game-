@@ -44,17 +44,6 @@
 </div>
 
 <!-- ============ REWARD MODAL (boss etc.) ============ -->
-<div id="titleModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="titleModalTitle" hidden>
-  <div class="lvlup-card title-card">
-    <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-temple"/></svg></div>
-    <div class="lvlup-over">Mega-Tempel</div>
-    <h2 id="titleModalTitle" class="lvlup-title">Titel</h2>
-    <div id="titleModalSub" class="lvlup-sub"></div>
-    <div class="lvlup-rule"></div>
-    <div id="titleList" class="title-list"></div>
-    <button id="titleModalBtn" class="btn btn--primary" type="button"><svg class="icon"><use href="#i-check"/></svg><span>Fertig</span></button>
-  </div>
-</div>
 <div id="rewardModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="rewardModalTitle" hidden>
   <div class="lvlup-card">
     <div class="lvlup-badge"><svg class="icon" style="width:34px;height:34px;color:var(--gold-100)"><use href="#i-attack"/></svg></div>

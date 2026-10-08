@@ -308,19 +308,19 @@ function renderRankings() {
     else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
         medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
         for (const e of people) { const x = by[e.who]; e.val = rangSaison(e.who, 1, bs);
-            e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ troops: 'Truppen', coins: 'Münzen', attack: 'Angriff', defense: 'Abwehr' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
+            e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ coins: 'Ertrag', attack: 'Angriff', defense: 'Abwehr', speed: 'Marschtempo' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
         const tr = e => e.who === ruler ? 0 : by[e.who] ? (by[e.who].good ? 1 : 2) : 3;
         list = people.filter(e => tr(e) < 3).sort((a, b) => tr(a) - tr(b) || b.val - a.val || gleich(a, b));
-        empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
+        empty = ruler ? '' : 'Noch kein Herrscher – Platz 1 im Thron-Event (Sa 10 – So 22 Uhr) verteilt die Titel.';
     } else { for (const e of people) { e.val = rangSaison(e.who, 1, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
-        empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
+        empty = 'Noch hat niemand Thron-Punkte geholt. Halte im Thron-Event den Thron oder einen Wachturm.'; }
     if (rankTab !== 'titles' && rankTab !== 'burg') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl || gleich(a, b));
     const lim = RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player');
     document.getElementById('rankTitle').textContent = tab.t;
     document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts
     for (const b of document.querySelectorAll('#rankTabs [data-rtab]')) { const on = b.dataset.rtab === rankTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     liveHtml(document.getElementById('rankBody'),
-        (rankTab === 'week' ? '<details class="lb-info"><summary>' + icon('info') + 'So gibt es Thron-Punkte</summary><p class="mail-intro">Fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart.</p></details>' : '') +   // (Erklärung zum Aufklappen: die Liste geht vor)
+        (rankTab === 'week' ? '<details class="lb-info"><summary>' + icon('info') + 'So gibt es Thron-Punkte</summary><p class="mail-intro">Im Thron-Event (Sa 10 – So 22 Uhr): +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wachturm. Hier zählt alles in dieser Saison; die Event-Rangliste startet jedes Wochenende bei 0.</p></details>' : '') +   // (Erklärung zum Aufklappen: die Liste geht vor)
         (top.length ? top.map((e, i) => rankRowHtml(e, i + 1, medals)).join('') + (list.length > lim ? '<div class="lb-gap">Top ' + lim + ' von ' + fmtNum(list.length) + '</div>' : '')
         : '<div class="empty-state lb-leer">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<span><b>Noch leer</b>' + empty + '</span></div>'));   // (kompakt oben statt mitten im leeren Fenster)
     const foot = document.getElementById('rankFoot');

@@ -11,7 +11,7 @@ const HEROES = [
     { id: 'aldric', name: 'Aldric', title: 'Meister der Belagerung', role: 'Tore & Tempel', r: 3, icon: 'castle', color: '#5b4a8a', c2: '#2b2b2b', hair: '#3a2a1a', g: 'weapon', base: [7, 2, 0],
       sk: [['Rammbock', 'Verteidigung von Tor oder Tempel −{v} % für diesen Angriff.', 'siegeDef'], ['Belagerer', '+{v} % Angriff gegen Tore und Tempel.', 'siegeAtk'], ['Pioniere', '−{v} % Maut an fremden Toren.', 'toll'], ['Mauerbrecher', 'Die Verteidigung einer Basis zählt {v} % weniger.', 'defCut']] },
     { id: 'kasimir', name: 'Kasimir', title: 'Gestürzter König', role: 'Thron', r: 3, icon: 'crown', color: '#6a2f5b', c2: '#2a1a2a', hair: '#2a1a1a', g: 'weapon', base: [6, 3, 0],
-      sk: [['Königsruf', 'Im Kampf um die Mitte: +{v} % Angriff.', 'midAtk'], ['Thronsturm', '+{v} % Angriff gegen die Wächter-Tempel.', 'guardAtk'], ['Rache am Thron', '+{v} % Angriff gegen den Herrscher.', 'rulerAtk'], ['Altes Wissen', '{v} % weniger Verluste im Kampf um die Mitte.', 'midLoss']] },
+      sk: [['Königsruf', 'Im Kampf um die Mitte: +{v} % Angriff.', 'midAtk'], ['Thronsturm', '+{v} % Angriff gegen die Wachtürme.', 'guardAtk'], ['Rache am Thron', '+{v} % Angriff gegen den Herrscher.', 'rulerAtk'], ['Altes Wissen', '{v} % weniger Verluste im Kampf um die Mitte.', 'midLoss']] },
     { id: 'yrsa', name: 'Yrsa', title: 'Tempelwächterin', role: 'Tempel', r: 3, icon: 'temple', color: '#4a6a4a', c2: '#2a3a2a', hair: '#b0602a', g: 'shield', base: [3, 7, 0],
       sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Münzen aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
     { id: 'ida', name: 'Ida', title: 'Pfadfinderin', role: 'Tempo', r: 2, icon: 'boots', color: '#2f7a6a', c2: '#1f3a2f', hair: '#7a3a1a', g: 'weapon', base: [2, 2, 8],
@@ -156,8 +156,8 @@ function islandOwnerOf(islandId) {
 // (if anyone) owns it - neutral islands use their fixed generated
 // stats, an owned island uses its real garrison and level.
 // ===== HERRSCHER DER MEERE =====
-// Whoever holds the Mega-Tempel on the Thron-Insel rules: a crown on every nameplate,
-// +25 % coins and troops on all bases, and the title "Herrscher der Meere".
+// Platz 1 des letzten Thron-Events (06c) herrscht eine Woche: Krone auf jedem Namensschild, Königsburg-Skin,
+// +25 % Münzen und Truppen auf allen Basen, vergibt die Titel. Wer gerade den Thron hält: thronHalter() (06c).
 const RULER_BONUS = 1.25;
 const megaTempleId = (islands.find(i => i.type === 'megaTemple') || {}).id;
-function rulerOwner() { return megaTempleId === undefined ? null : islandOwnerOf(megaTempleId); }
+function rulerOwner() { return thronHerrscher(); }

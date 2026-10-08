@@ -5,7 +5,7 @@
 var BEUTE_ART = {
     gems: { b: 'beute_edelsteine', t: 'Edelsteine' }, coins: { b: 'beute_muenzen', t: 'Münzen', r: 1 }, holz: { b: 'beute_holz', t: 'Holz', r: 1 },
     stein: { b: 'beute_stein', t: 'Stein', r: 1 }, eisen: { b: 'beute_eisen', t: 'Eisen', r: 1 }, tr: { b: 'beute_truppen', t: 'Truppen', r: 2 },
-    sh: { b: 'beute_splitter', t: 'Helden-Splitter', r: 3 }, tp: { b: 'beute_thron', t: 'Thron-Punkte', r: 4 }, schild: { b: 'beute_schild', t: 'Friedensschild', r: 2 },
+    sh: { b: 'beute_splitter', t: 'Helden-Splitter', r: 3 }, schild: { b: 'beute_schild', t: 'Friedensschild', r: 2 },
     punkte: { b: 'beute_punkte', t: 'Fähigkeitspunkte', r: 2 }, tele: { b: 'ui_sym_verlegen', t: 'Teleporter', r: 3 }, rahmen: { b: 'ui_sym_krone', t: 'Rahmen', r: 4 }, item: { t: 'Ausrüstung', r: 0 }, kiste: { t: 'Kiste', r: 0 }
 };
 var BEUTE_SLOT = { weapon: 'beute_waffe', armor: 'beute_ruestung', shield: 'beute_rundschild', boots: 'beute_stiefel' };

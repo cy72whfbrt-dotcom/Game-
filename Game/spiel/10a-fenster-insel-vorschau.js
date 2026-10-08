@@ -24,8 +24,8 @@ updateHudPlayer();
 // regular towers keep the numbering players already know.
 function islandTitle(island) {
     const boss = bossAt(island.id); if (boss) return boss.name;
-    if (island.type === 'megaTemple') return 'Mega-Tempel';
-    if (island.guardian) return 'Wächter-Tempel';
+    if (island.type === 'megaTemple') return 'Königsthron';
+    if (island.guardian) return 'Wachturm';
     if (island.type === 'temple') return 'Tempel';
     if (island.type === 'gate') return island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor';
     if (island.id === playerIslandId) return 'Hauptstadt';
@@ -64,11 +64,12 @@ function ringNotice(isl) {                         // whose ring is it: a title 
         : me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.';
     return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
 }
-function throneNotice(island) {                   // your own throne or Wächter-Tempel: points and fire at a glance
+function throneNotice(island) {                   // dein Thron oder Wachturm: Punkte und Beschuss auf einen Blick (nur im Thron-Event)
+    if (!thronLaeuft()) return '';
     if (island.type === 'megaTemple') { const sh = throneShooters().length;
         return '<div class="notice ' + (sh ? 'notice--warn' : 'notice--gold') + '">' + icon('crown') + '<span>+' + throneIncome('player') + ' Thron-Punkte alle 3 Min. · ' +
-            (sh ? sh + (sh === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b> (je ' + THRONE_FIRE_PCT + ' % der Truppen hier)' : 'alle Wächter-Tempel gehören dir – kein Beschuss') + '</span></div>'; }
-    if (island.guardian) return '<div class="notice notice--gold">' + icon('crown') + '<span>+' + THRONE_PTS_GUARD + ' Thron-Punkte alle 3 Min. ' + (rulerOwner() === 'player' ? 'Dieser Tempel feuert nicht auf deinen Thron.' : 'Hältst du den Thron, feuert er nicht auf dich.') + '</span></div>';
+            (sh ? sh + (sh === 1 ? ' Wachturm schießt' : ' Wachtürme schießen') + ' in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b> (je ' + THRONE_FIRE_PCT + ' % der Truppen hier)' : 'kein Wachturm schießt auf dich') + '</span></div>'; }
+    if (island.guardian) return '<div class="notice notice--gold">' + icon('crown') + '<span>+' + THRONE_PTS_GUARD + ' Thron-Punkte alle 3 Min. Er schießt nie auf dein Bündnis.</span></div>';
     return '';
 }
 function templeBonusLine(island) {
@@ -212,8 +213,9 @@ function renderPopup() {
                 (keinNachbar ? '<div class="notice notice--warn tor-hinweis">' + icon('info') + '<span>Keine deiner Basen grenzt an ' + (island.type === 'gate' ? 'dieses Tor' : 'dieses Gebiet') + '.</span></div>' : '') + midNotice(island) + ringNotice(island) +
                 (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Fällt nie · Sieg = ' + Math.round(HAUPT_BEUTE * 100) + ' % Beute über dem Schutz' + (brennt(island.id) ? ' · brennt gerade' : '') + '</span></div>' : '') +
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Verschlossen – wer das Tor erobert, kommt durch und bestimmt die Maut.</span></div>' : '') +
-                (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
-                (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
+                (thronKuppel(island.id) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + thronKuppelText() + '</span></div>' : '') +
+                (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (rulerOwner() ? escapeHtml(fieldWhoName(rulerOwner())) + (rulerOwner() === 'player' ? ' bist' : ' ist') + ' Herrscher und verteilt die Titel.' : 'Noch kein Herrscher.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Herrscher</button></div>' : '') +
+                (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Königsthron: im Thron-Event (Sa 10 – So 22 Uhr) alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte für den Halter. Die Wachtürme schießen alle 10 Min. darauf. Platz 1 am Ende wird eine Woche Herrscher.' : island.guardian ? 'Wachturm: 3-facher Tempel-Bonus und im Thron-Event alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht zum Bündnis des Halters, schießt er alle 10 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
                 (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
                 (scoutEnRoute && scouted ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +

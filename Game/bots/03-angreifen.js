@@ -1,17 +1,14 @@
 // Teil 03-angreifen.js: Mitspieler: Angreifen, Spähen, Sammeln, der Kopf (botThink)
-// A person plays to the title they wear: a Feldherr attacks more and bolder, a Feigling only goes for sure things,
-// a Burgherr can send more of each garrison out, a Verräter keeps more at home, a Schatzmeister builds more, a Bettler saves.
+// Jeder spielt nach seinem Titel: ein Feldherr greift öfter und kühner an, ein Burgvogt schickt mehr von jeder Besatzung los,
+// ein Schatzmeister baut mehr, ein Narr ist zögerlich.
 // ==============================================================================================================
 // 4) ANGREIFEN, SPÄHEN, SAMMELN – Stimmung und Titel, ein Befehl pro Zug, Wellen, der Kopf (botThink)
 // ==============================================================================================================
 const TITLE_PLAY = {
-    feldherr:  { margin: .85, tapMs: .7, commit: 1.15, hunt: 1.4 },
-    burgherr:  { commit: 1.15 },
-    verraeter: { commit: .75, risk: 0 },
-    herzog:    { tapMs: .8, commit: 1.1 },
-    narr:      { tapMs: 1.2, commit: .9 },
-    schatz:    { spend: 1.3, build: .7 },
-    bettler:   { spend: .7, build: .35 }
+    feldherr: { margin: .85, tapMs: .7, commit: 1.15, hunt: 1.4 },
+    burgvogt: { commit: 1.15 },
+    narr:     { tapMs: 1.2, commit: .9 },
+    schatz:   { spend: 1.3, build: .7 }
 };
 
 function botMood(botId) { const b = loadBotState()[botId], md = b && b.mood; return md ? md.v * Math.pow(.5, (Date.now() - md.at) / (20 * 60000)) : 0; }   // fades in ~20 min
@@ -131,7 +128,7 @@ function botHopeless(bot, target, st, atk) {        // known to be far too stron
 }
 
 function botThroneHold(bot) {                       // the ruler sends a big army from nearby into the throne while it is thin (stops once it holds ~2x their biggest base)
-    if (rulerOwner() !== bot.id || pendingSends.some(x => x.senderBotId === bot.id && !x.back && x.toId === megaTempleId)) return false;
+    if (thronHalter() !== bot.id || !thronLaeuft() || pendingSends.some(x => x.senderBotId === bot.id && !x.back && x.toId === megaTempleId)) return false;
     const m = islandById[megaTempleId], g = islandTroops[megaTempleId] || 0, thr = botThreatened(bot.id); let best = null;
     for (const id of botOwnedIslands[bot.id]) { if (id === megaTempleId || thr.has(id)) continue; const isl = islandById[id], n = Math.floor((islandTroops[id] || 0) * .6);
         if (n < Math.max(BOT_MIN_GARRISON_TO_ATTACK, g * .3) || (best && n <= best.n)) continue;
@@ -172,7 +169,7 @@ function botThink(bot) {
     if (invAktiv() && Math.random() < .5 && botInvasion(bot)) { botTapped(bot); saveBotState(); return; }   // Barbaren-Invasion: sich verteidigen, den Nachbarn helfen
     if (drAktiv() && Math.random() < .3 && botDrache(bot)) { botTapped(bot); saveBotState(); return; }      // der Drache am Sonntagabend
     if (Math.random() < .1 && (botBarbHunt(bot) || botDayBoss(bot))) { botTapped(bot); saveBotState(); return; }   // now and then a camp or a strike at the daily boss (that is this move's order)
-    const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: a hero only leads one, so he's a bonus, not part of the plan
+    const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = thronHalter(), thronEvent = thronLaeuft();   // several waves: a hero only leads one, so he's a bonus, not part of the plan
     const shielded = playerShielded(), now = Date.now(), shOwn = shieldedOwners(now);
     const busy = new Set(pendingAttacks.filter(a => a.attackerBotId === bot.id).map(a => a.targetId)), thr = botThreatened(bot.id);
     for (const a of armies) if (a.who === bot.id && a.t != null) busy.add(a.t);                 // their own army out there is already on it
@@ -184,12 +181,13 @@ function botThink(bot) {
     const T = new Map(), sitM = new Map();                      // targetId → { target, d, sources: [{ id, have }] }
     const sitOf = (t, ow) => { let v = sitM.get(t.id); if (v === undefined) { v = botSituation(bot, st, t, ow, now); sitM.set(t.id, v); } return v; };   // (the same for every base looking at it)
     const okM = new Map(), okOf = t => { let v = okM.get(t.id); if (v === undefined) okM.set(t.id, v = !(owned.has(t.id) || (isCapital(t.id) && brennt(t.id)) || busy.has(t.id)   // eine brennende Hauptstadt gerade nicht (eben geplündert)
-        || (shOwn.has(islandOwnerOf(t.id)) && shieldCovers(t)) || bundFreund(bot.id, islandOwnerOf(t.id)))); return v; };   // anyone's Friedensschild · nie ein Bündnis-Mitglied
+        || (shOwn.has(islandOwnerOf(t.id)) && shieldCovers(t)) || bundFreund(bot.id, islandOwnerOf(t.id)) || thronKuppel(t.id, now))); return v; };   // anyone's Friedensschild · nie ein Bündnis-Mitglied · nie unter der Kuppel
     const pullM = new Map(), pullOf = t => { let v = pullM.get(t.id); if (v) return v;                // everything about a target that doesn't depend on where they look from (once per move, not per base)
         const ow = islandOwnerOf(t.id), grudge = botGrudgeOn(bot.id, ow);                          // revenge pulls them towards whoever hit them
         const k = (grudge ? 1 / (1 + grudge.n) : 1) * sitOf(t, ow) * (rally && rally.t === t.id ? .05 : 1)   // the planned big strike comes first
             * (bundZiel === t.id ? .1 : 1)                                                          // ein Bündnis-Signal „Angriff auf …“
             * (t.id === megaTempleId && ruler !== bot.id ? (ruler ? .1 : .015) : 1)                // the throne pulls - an empty one most of all (the crown is free)
+            * (t.guardian && thronEvent ? .3 : 1)                                                    // im Thron-Event: Wachtürme bringen Punkte
             * botMidPull(bot, t, ruler, now)                                                        // the Kopfgeld on the ruler
             * (isCapital(t.id) ? 1.6 : 1);                                                          // eine Hauptstadt fällt nie – nur Beute: weniger reizvoll als ein Turm
         pullM.set(t.id, v = { ow, grudge, k }); return v; };

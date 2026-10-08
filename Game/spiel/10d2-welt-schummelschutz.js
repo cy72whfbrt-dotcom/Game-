@@ -26,9 +26,9 @@
     const wacheMem = {};
     const konto = () => ({ u: 0, vor: 0, vorT: 0 });   // u: so viel kann er höchstens haben · vor: gerade ausgegeben (sein Handy zeigt schon weniger)
     const wm = who => wacheMem[who] || (wacheMem[who] = { init: false, zeiten: {}, warte: { ausbau: [], truppen: [] }, c: konto(), w: konto(), g: konto(), rk: null, sr: [], ein: [], flug: [], lvlLog: [], lvl: 1, rEin: [], rsr: [] });
-    function wd(who) {   // lv: bis zu welcher Stufe die Stufen-Truppen bezahlt sind, tk: Thron-Truppen gekauft, gTr/gC: Admin-Geschenke (Truppen/Münzen)
+    function wd(who) {   // lv: bis zu welcher Stufe die Stufen-Truppen bezahlt sind, gTr/gC: Admin-Geschenke (Truppen/Münzen)
         const b = loadBotState()[who]; if (!b) return null;
-        if (!b.wache || typeof b.wache !== 'object') b.wache = { lv: 0, tk: 0, gTr: 0, gC: 0 };
+        if (!b.wache || typeof b.wache !== 'object') b.wache = { lv: 0, gTr: 0, gC: 0 };
         return b.wache;
     }
     function zuOft(m, art, max, ms) {    // mehr als max-mal in ms? (dann zählt dieser nicht mit)
@@ -51,7 +51,7 @@
     // Nachrichten als unterwegs, bis danach zwei Profile von ihm kamen (m.flug, je Minute zusammengefasst).
     // EP kommen nur vom Weltrechner (Kämpfe): daraus folgt die höchste Stufe, die er haben kann (m.lvl).
     // Spielraum pro Stunde: Stufen-Münzen der letzten Stunde (+ nächste Stufe) und ein paar Stunden-Einnahmen (Saison-Pass zahlt
-    // „eine Stunde Produktion“, Thron-Shop THRONE_STUNDEN Stunden). Die Stunden-Einnahme ist GEMESSEN (was der Weltrechner ihm in der
+    // „eine Stunde Produktion“). Die Stunden-Einnahme ist GEMESSEN (was der Weltrechner ihm in der
     // letzten Stunde schickte) – nie aus seinen jetzigen Basis-Stufen, sonst würde ein erschlichener Ausbau den Spielraum
     // gleich weiter vergrößern. Am Anfang (noch keine Stunde gemessen) gilt die Produktion beim ersten Sehen (m.hp0).
     const FLUG_MS = 10000, FLUG_MAX_MS = 48 * 3600000;
@@ -76,21 +76,20 @@
         const d = spielraumTag(who); if (d && n - a > 0) { d.srN = nn(d.srN) + n - a; saveBotState(); }
     }
     // Münzen, die auf einmal kommen dürfen: Saison-Pass (je Saison höchstens die Münz-Stufen beider Reihen), Tagesaufgaben (je Tag
-    // ihre Münz-Stunden – der Topf füllt sich gleichmäßig nach, höchstens 2 Tage, weil sein Tag nicht der des Servers ist) und Thron-Shop
-    // (so viele Käufe, wie seine Thron-Punkte hergeben – die zählt der Weltrechner selbst). Gemessen in Stunden Ertrag.
+    // ihre Münz-Stunden – der Topf füllt sich gleichmäßig nach, höchstens 2 Tage, weil sein Tag nicht der des Servers ist). Gemessen in
+    // Stunden Ertrag.
     let passMuenzH = null;
     const AUF_MUENZ_H = 2 * QUEST_COIN_H.reduce((a, x) => a + x, 0);   // 6 Aufgaben: je 2 leicht/mittel/schwer
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
         if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) for (const r of passRewardAt(L, pr)) if (r.k === 'coins') passMuenzH += r.n || 1; }
         const now = Date.now(), h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni)
-        const thH = Math.max(THRONE_STUNDEN, THRONE_MIN.coins / h);   // Stunden je Thron-Kauf (mind. THRONE_MIN Münzen, 7.10.)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
         d.aM = Math.max(0, nn(d.aM) - AUF_MUENZ_H * Math.max(0, now - nn(d.aMt)) / 864e5); d.aMt = now;
-        const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
-        const use = Math.min(mehr, (passRest + aufRest + thronRest * thH) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
-        let r = use / h; const ausPass = Math.min(r, passRest); r -= ausPass; const ausAuf = Math.min(r, aufRest); r -= ausAuf;
-        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; d.tC = nn(d.tC) + r / thH; saveBotState();
+        const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM);
+        const use = Math.min(mehr, (passRest + aufRest) * h); if (!(use > 0)) return 0;
+        let r = use / h; const ausPass = Math.min(r, passRest); r -= ausPass; const ausAuf = Math.min(r, aufRest);
+        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; saveBotState();
         return use;
     }
     function spielraumFrei(who, m) {
@@ -316,11 +315,6 @@
             erlaubt = 0; for (let l = ab + 1; l <= hoch; l++) erlaubt += levelRewardTroops(l);
             if (hoch > d.lv) { d.lv = hoch; saveBotState(); }
             if (b.bis > hoch) warnen(who, 'truppen', 'Stufen-Belohnung bis Stufe ' + b.bis + ', mit seinen EP geht höchstens Stufe ' + m.lvl + '.', b.bis - m.lvl);
-        } else if (q === 'thron') {                    // Thron-Shop: THRONE_STUNDEN Stunden Truppenproduktion (Alexander 6.10.), je 200 Thron-Punkte
-            const kaeufe = Math.floor(throneEarnedOf(who) / 200) + 5;
-            if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
-            d.tk++; saveBotState();
-            erlaubt = 3 * Math.max(THRONE_MIN.troops, hourProduction(who).troops * THRONE_STUNDEN) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders (mind. THRONE_MIN wie im Shop)
         } else if (q === 'heil') {                     // Krankenhaus: höchstens so viele, wie verwundet sind
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;

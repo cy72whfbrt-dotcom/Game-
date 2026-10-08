@@ -1226,7 +1226,7 @@ function bundRallyFuer(w, z, now) {
 // Reiz eines Rally-Ziels (kleiner = lieber): der Thron, Tempel und Tore vor Türmen, innen vor außen, nah vor fern. Neutral geht
 // nur die Mitte: Tore, Tempel (auch die Wächter-Tempel) und der freie Thron – freie Türme nimmt jeder allein (Alexander 6.10.)
 function bundRallyReiz(t, ow, A) {
-    if (!ow && t.type === 'tower') return null;
+    if (!ow && t.type === 'tower' || thronKuppel(t.id)) return null;                    // (unter der Kuppel: außerhalb des Thron-Events)
     const art = t.id === megaTempleId ? .2 : t.type === 'temple' ? (t.guardian ? .35 : .5) : t.type === 'gate' ? .6 : 1;
     return art * (botById[ow] && botById[ow].mensch ? .7 : 1) * (1 + landmasses[t.landmassId].ring * .15) * Math.hypot(t.x - A.x, t.y - A.y);
 }

@@ -1,13 +1,13 @@
 // Teil 10d6-welt-nachrichten-start.js: Nachrichten vom Weltrechner, Kampfbericht, Willkommen, Start (im Block „if (window.WELT)“ aus 10d1 – nur zusammengesetzt gültig)
 
-    // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Krankenhaus, Splitter, Zahlen
+    // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte (gesamt), Krankenhaus, Splitter, Zahlen
     const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires', drache: 'drache', inv: 'inv',
         lager: 'lager', qb: 'qb', qd: 'qd', qi: 'qi', invPkt: 'invPkt', qHilfe: 'qHilfe', qVerst: 'qVerst', qRally: 'qRally' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an; die q…: für Tagesaufgaben und Saison-Pass, QUEST_STAT)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;
         if (e.coins) coins = Math.max(0, coins + e.coins);
         if (e.gems) gems = Math.max(0, gems + e.gems);
-        if (e.tp) { throneState.pts = Math.max(0, (throneState.pts || 0) + e.tp); if (e.tp > 0) throneState.earned = (throneState.earned || 0) + e.tp; saveThrone(); }
+        if (e.tp > 0) { throneState.earned = (throneState.earned || 0) + e.tp; saveThrone(); }   // Thron-Punkte (Saison-Rangliste, Erfolge)
         if (e.xp > 0) addXp(e.xp);
         if (e.wounded) { const c = loadCity(); c.wounded = Math.max(0, (c.wounded || 0) + e.wounded); saveCity(); }
         if (e.sh) { const hs = loadHeroes(); for (const h in e.sh) if (hs[h]) hs[h].sh = Math.max(0, (hs[h].sh || 0) + e.sh[h]); saveHeroes(); }
@@ -46,7 +46,9 @@
         const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
         if (k && inboxList().some(x => x.k === k)) return;                     // (dieselbe Stufe nie zweimal im Fach)
         const bis = typeof e.bis === 'number' && e.bis > Date.now() ? Math.min(e.bis, Date.now() + 864e5) : undefined;   // (Event-Stufe: bis zum Ende nur im Event abholbar, höchstens einen Tag)
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k, bis }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
+        const B_ART = ['eventMuenzen', 'schluessel1', 'schluessel2', 'besch', 'holz'], b = (Array.isArray(e.b) ? e.b : []).slice(0, 8)   // Gegenstände (Thron-Event): nur bekannte Arten
+            .filter(x => Array.isArray(x) && B_ART.includes(x[0]) && z(x[1], 1e9) > 0).map(([a, n, x]) => a === 'besch' ? [a, z(n, 1e9), { dauer: x && BESCH_TXT[x.dauer] ? x.dauer : '1h' }] : [a, z(n, 1e9)]);
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k, bis, b: b.length ? b : undefined }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;

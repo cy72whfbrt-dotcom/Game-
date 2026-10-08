@@ -60,11 +60,10 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // sonst openWaterSaisonBurg aus der Nachricht) – Gebäude, Forschung, Bauten passt aufbau.js beim Laden an (openWaterBurgFair, burgFair).
 // Alexander 6.10.: einmalige Ausnahme (wegen des Fehlers, damit es fair bleibt) – im selben Schritt Edelsteine auf genau 1.000 und
 // Holz/Stein/Eisen auf 0 (Münzen sind beim Reset immer PLAYER_START_COINS). Bei späteren Resets nicht.
-// Thron-Punkte (Alexander 6.10., jeder Reset): höchstens 20.000 gehen mit, der Rest wird 10 : 1 zu Edelsteinen – ins Abholfach.
 // Zurückgespielte Sicherung (Alexander 5.10.): ist die Saison der Welt älter als die dieses Spielstands, holt er sich den Stand von
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
 var saisonNeuGeladen = 0, saisonZurueckGeladen = 0, saisonBurgGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen · Burg: aufbau.js)
-const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000, SAISON_TP_MAX = 20000, SAISON_TP_JE_GEM = 10;
+const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000;
 const PLAYER_START_COINS = 10000;   // neue Spieler, Mitspieler und jede neue Saison (Alexander 8.10.; Truppen: PLAYER_START_TROOPS, 01c)
 const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis', 'openWaterPass', 'openWaterSaisonRang'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
@@ -94,7 +93,7 @@ if (!SYSTEM) {
         store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
         store.set('openWaterCoins', String(PLAYER_START_COINS));
         try { const st = JSON.parse(store.get('openWaterStats')) || {}, t = JSON.parse(store.get('openWaterThrone')) || {};   // Ranglisten zählen ab jetzt (09f rangSaison)
-            store.set('openWaterSaisonRang', JSON.stringify([st.captures || 0, Math.floor(Math.max(t.earned || 0, (t.week || {}).player || 0))])); } catch (e) {}
+            store.set('openWaterSaisonRang', JSON.stringify([st.captures || 0, Math.floor(t.earned || 0)])); } catch (e) {}
         try { const ps = JSON.parse(store.get('openWaterPass')); if (ps && ps.s && typeof ps.s === 'object') {   // Saison-Pass von vorn, auch Premium (Alexander 8.10.)
             for (const k in ps.s) ps.s[k] = { xp: 0, prem: false, f: [], p: [] }; store.set('openWaterPass', JSON.stringify(ps)); } } catch (e) {}
         const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
@@ -108,10 +107,6 @@ if (!SYSTEM) {
             for (const k of ['h', 's', 'e']) r[k] = 0; store.set('openWaterRes', JSON.stringify(r));
             store.set('openWaterSaisonVorher', JSON.stringify(vorher));
         }
-        try { const t = JSON.parse(store.get('openWaterThrone'));   // Thron-Punkte: höchstens 20.000, der Rest 10 : 1 als Edelsteine ins Abholfach
-            if (t && t.pts > SAISON_TP_MAX) { const g = Math.floor((t.pts - SAISON_TP_MAX) / SAISON_TP_JE_GEM); t.pts = SAISON_TP_MAX; store.set('openWaterThrone', JSON.stringify(t));
-                let L = null; try { L = JSON.parse(store.get('openWaterInbox')); } catch (e) {} if (!Array.isArray(L)) L = [];
-                const t0 = Date.now(); if (g > 0) { L.unshift({ src: 'saison', title: 'Thron-Punkte aus Saison ' + mein + ' umgetauscht', gems: g, coins: 0, sh: 0, crate: -1, tr: 0, n: 1, id: t0.toString(36) + 'tp', at: t0 }); store.set('openWaterInbox', JSON.stringify(L)); } } } catch (e) {}
         if (window.WELT) { WELT.befehle.length = 0; WELT.ausgang = []; }   // (welt.js hat die alten Befehle schon gelesen – sie gehören zur alten Welt)
         store.set('openWaterSaisonMein', String(neu)); saisonNeuGeladen = neu;
     }
@@ -913,7 +908,7 @@ const HEROES = [
     { id: 'aldric', name: 'Aldric', title: 'Meister der Belagerung', role: 'Tore & Tempel', r: 3, icon: 'castle', color: '#5b4a8a', c2: '#2b2b2b', hair: '#3a2a1a', g: 'weapon', base: [7, 2, 0],
       sk: [['Rammbock', 'Verteidigung von Tor oder Tempel −{v} % für diesen Angriff.', 'siegeDef'], ['Belagerer', '+{v} % Angriff gegen Tore und Tempel.', 'siegeAtk'], ['Pioniere', '−{v} % Maut an fremden Toren.', 'toll'], ['Mauerbrecher', 'Die Verteidigung einer Basis zählt {v} % weniger.', 'defCut']] },
     { id: 'kasimir', name: 'Kasimir', title: 'Gestürzter König', role: 'Thron', r: 3, icon: 'crown', color: '#6a2f5b', c2: '#2a1a2a', hair: '#2a1a1a', g: 'weapon', base: [6, 3, 0],
-      sk: [['Königsruf', 'Im Kampf um die Mitte: +{v} % Angriff.', 'midAtk'], ['Thronsturm', '+{v} % Angriff gegen die Wächter-Tempel.', 'guardAtk'], ['Rache am Thron', '+{v} % Angriff gegen den Herrscher.', 'rulerAtk'], ['Altes Wissen', '{v} % weniger Verluste im Kampf um die Mitte.', 'midLoss']] },
+      sk: [['Königsruf', 'Im Kampf um die Mitte: +{v} % Angriff.', 'midAtk'], ['Thronsturm', '+{v} % Angriff gegen die Wachtürme.', 'guardAtk'], ['Rache am Thron', '+{v} % Angriff gegen den Herrscher.', 'rulerAtk'], ['Altes Wissen', '{v} % weniger Verluste im Kampf um die Mitte.', 'midLoss']] },
     { id: 'yrsa', name: 'Yrsa', title: 'Tempelwächterin', role: 'Tempel', r: 3, icon: 'temple', color: '#4a6a4a', c2: '#2a3a2a', hair: '#b0602a', g: 'shield', base: [3, 7, 0],
       sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Münzen aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
     { id: 'ida', name: 'Ida', title: 'Pfadfinderin', role: 'Tempo', r: 2, icon: 'boots', color: '#2f7a6a', c2: '#1f3a2f', hair: '#7a3a1a', g: 'weapon', base: [2, 2, 8],
@@ -1058,11 +1053,11 @@ function islandOwnerOf(islandId) {
 // (if anyone) owns it - neutral islands use their fixed generated
 // stats, an owned island uses its real garrison and level.
 // ===== HERRSCHER DER MEERE =====
-// Whoever holds the Mega-Tempel on the Thron-Insel rules: a crown on every nameplate,
-// +25 % coins and troops on all bases, and the title "Herrscher der Meere".
+// Platz 1 des letzten Thron-Events (06c) herrscht eine Woche: Krone auf jedem Namensschild, Königsburg-Skin,
+// +25 % Münzen und Truppen auf allen Basen, vergibt die Titel. Wer gerade den Thron hält: thronHalter() (06c).
 const RULER_BONUS = 1.25;
 const megaTempleId = (islands.find(i => i.type === 'megaTemple') || {}).id;
-function rulerOwner() { return megaTempleId === undefined ? null : islandOwnerOf(megaTempleId); }
+function rulerOwner() { return thronHerrscher(); }
 // Nebel des Krieges: only explored islands are visible. Owning a base explores its island and
 // every island bridged to it; a scout sent into the fog explores the island it reaches.
 // The fog lifts in small sections (FOG_CELL squares): around every own base, and wherever a scout goes.
@@ -1662,7 +1657,7 @@ function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (
 }
 function travelDurationSeconds(source, target, botId) {   // everyone gets their own speed skill + Akademie, never under 3 s
     const distance = marschStrecke(source, target);
-    const bt = typeof bundTempo === 'function' ? bundTempo(botId || 'player', target) : 1;      // Bündnis-Gebiet: 10 % schneller
+    const bt = (typeof bundTempo === 'function' ? bundTempo(botId || 'player', target) : 1) * titleMult(botId || 'player', 'speed');   // Bündnis-Gebiet: 10 % schneller · Narr: 5 % langsamer
     if (botId) return Math.max(3, Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED)) / botMarchMult(botId) / bt);   // their speed skill + Akademie, like yours
     const base = Math.min(MAX_ATTACK_SECONDS, Math.max(MIN_ATTACK_SECONDS, distance / BASE_ATTACK_SPEED));   // clamp first, so the speed skill and the Akademie also shorten long marches
     return Math.max(3, base / (attackSpeedMultiplier() * (1 + academyLevel() * 0.02) * (AUF ? AUF.marschTempo('player') : 1)) / bt);   // (+ Forschung Marschtempo)
@@ -1747,6 +1742,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     if (!attackerBotId && !islandSeen(target)) { flashHint('Dieses Ziel liegt im Nebel – schick zuerst einen Späher.', 3000); return false; }   // nichts im Nebel angreifen
     if (target.type === 'gate' && passOpensAt(bridgeOfGate(target)) > Date.now()) { if (!attackerBotId) flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(target)) - Date.now()) + '.', 4000); return false; }   // (Pass mit Countdown: nicht angreifbar)
     if (target.type === 'megaTemple' && Date.now() < thronOffenAb()) { if (!attackerBotId) flashHint('Der Thron zählt erst ab Tag ' + KARTE_ZONEN.thron.tag + ' – noch ' + fmtPassWait(thronOffenAb() - Date.now()) + '.', 4000); return false; }   // (für alle: Spieler, Mitspieler, Rally, Weltrechner)
+    if (thronKuppel(target.id)) { if (!attackerBotId) flashHint(thronKuppelText(), 4000); return false; }   // Kuppel über Thron und Wachtürmen (außer im Thron-Event)
     if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
     if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
@@ -2426,7 +2422,7 @@ for (const lm of landmasses) {
 // zeichnet nie: lädt nie ein Bild). Bis alle da sind (oder wenn eins fehlt) und weit draußen: Farbflächen, Gebirge als Bänder.
 // Die Bilder liegen fest in der Welt: bei jedem Zoom dieselben Stücke in derselben Weltgröße (Alexander 7.10.).
 const KB_DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
-  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'thron', 'tempel', 'waechtertempel',
+  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'thron_neu', 'tempel', 'wachturm', 'kuppel',
   'feld_holz', 'feld_stein', 'feld_eisen', 'feld_gold', 'feld_edelstein', 'barbaren', 'schild'];
 const FELD_BREITE = 9000, BARB_BREITE = 5500;       // Felder und Barbaren-Lager als Bild (Welt-Breite; Lager so breit wie die Basen, BASIS_BREITE)
 function stufenZahl(x, y, n, barb, rand) {           // (Bildschirm) die Stufe als kleine Zahl an Feld oder Lager
@@ -3055,13 +3051,19 @@ function drawToreImNebel(view, z) {                                            /
     const tm = torMitte(isl); if (tm.x < view.l - m || tm.x > view.r + m || tm.y < view.t - m || tm.y > view.b + m) continue;
     drawTorBild(isl, false, z, true); }
 }
-const HEILIGTUM_BILD = { megaTemple: ['thron', .56, 64], tempel: ['tempel', .6, 30], waechtertempel: ['waechtertempel', .6, 30] };   // Bild, Fuß im Bild (y), kleinste Breite (px)
-function heiligtumBild(island, z) {                                            // (Bildschirm) Thron bzw. Wächter-Tempel an seinem Weltpunkt
+const HEILIGTUM_BILD = { megaTemple: ['thron_neu', .64, 64], tempel: ['tempel', .6, 30], waechtertempel: ['wachturm', .84, 30] };   // Bild, Fuß im Bild (y), kleinste Breite (px)
+function heiligtumBild(island, z) {                                            // (Bildschirm) Königsthron bzw. Wachturm an seinem Weltpunkt, außerhalb des Thron-Events mit Kuppel
   const art = island.type === 'megaTemple' ? 'megaTemple' : island.tempelArt, [n, ay, minPx] = HEILIGTUM_BILD[art], im = KB.img[n];
   const w = Math.max(HEILIGTUM_BREITE[island.type === 'megaTemple' ? 'megaTemple' : 'guardian'] * z, minPx), h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;
   ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
+  if (!thronKuppel(island.id)) return;
+  const ki = KB.img.kuppel, kw = w * 1.12, kh = kw * ki.height / ki.width;   // die Kuppel: fast durchsichtig, Rand auf dem Boden unter dem Gebäude
+  ctx.globalAlpha = .9; ctx.drawImage(kbBild('kuppel', kw * dpr), x - kw / 2, y + h * (1 - ay) * .55 - kh, kw, kh); ctx.globalAlpha = 1;
 }
+// Bilder außerhalb der Kartenliste (Herrscher-Skin, Krone, Titel-Abzeichen): einmal laden, danach neu zeichnen
+const EXTRA_BILD = {};
+function extraBild(n) { if (!EXTRA_BILD[n]) { const im = EXTRA_BILD[n] = new Image(); im.onload = () => requestRender(); im.src = 'bilder/' + n + '.webp'; } return EXTRA_BILD[n].complete && EXTRA_BILD[n].naturalWidth ? EXTRA_BILD[n] : null; }
 // Basen als KI-Bild (Alexander 7.10.): Stufe 1–100 gleichmäßig auf 15 Bilder, ALLE gleich groß (keine Größe nach Stufe); die Hauptstadt
 // über ihre Kartenstufe (burgKarte). Darunter das Namensschild bzw. bei freien die Stufen-Zahl (drawBasisSchilder). Mittlerer Zoom (wie RoK: Basen bleiben sichtbar): Basen
 // mit Besitzer nie kleiner als BASIS_MIN_PX, freie in echter Größe bis BASIS_KLEIN_PX; ganz weit (unter TOR_PUNKT_ZOOM) Übersicht wie bisher.
@@ -3101,7 +3103,11 @@ function drawBasisBild(island, ownerKey, z) {                                  /
   const nr = basisBildNr(baseLevelOf(island)), im = basisBild(nr); if (!im) return false;
   const h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return true;
-  ctx.drawImage(basisMip(nr, w * dpr), x - w / 2, y - h * .72, w, h);
+  const hr = rulerOwner(), sk = hr && (island.id === playerIslandId || isCapital(island.id)) && islandOwnerOf(island.id) === hr && extraBild('skin_koenigsburg');
+  if (sk) { const W = w * 1.15, H = W * sk.height / sk.width, kr = extraBild('ui_sym_krone');   // der Herrscher: Königsburg mit Goldschein, die Krone darüber
+    ctx.save(); ctx.shadowColor = 'rgba(255,210,90,.9)'; ctx.shadowBlur = Math.min(30, W * .12); ctx.drawImage(sk, x - W / 2, y - H * .72, W, H); ctx.restore();
+    if (kr) { const kw = W * .3; ctx.drawImage(kr, x - kw / 2, y - H * .72 - kw * .6, kw, kw * kr.height / kr.width); } }
+  else ctx.drawImage(basisMip(nr, w * dpr), x - w / 2, y - h * .72, w, h);
   if ((island.id === playerIslandId || isCapital(island.id)) && brennt(island.id)) drawBrand(x, y - h * .3, w / 64);   // eine geplünderte Hauptstadt brennt
   return true;
 }
@@ -3124,10 +3130,10 @@ function schildDaten(island) {                                                 /
            krone: island.id === playerIslandId && wer === 'player' };                // eigene Hauptstadt: Krone auf dem Wappen
 }
 // Rahmen als Ring ums Wappen (Merkliste 7): Saison- und Mitte-Rahmen als KI-Bild wie im Profil (Neuling trägt jeder: kein Ring)
-const RAHMEN_RING = { sz1: 'champion', sz2: 'grossadmiral', sz4: 'admiral', sz6: 'kapitaen', mgut: 'mitte' }, RING_BILD = {}, RING_WER = new Map();
+const RAHMEN_RING = { sz1: 'champion', sz2: 'grossadmiral', sz4: 'admiral', sz6: 'kapitaen', mgut: 'mitte', king: 'herrscher' }, RING_BILD = {}, RING_WER = new Map();
 function ringBild(fr) {                                                        // geladenes Bild oder null (lädt beim ersten Mal)
   const n = RAHMEN_RING[fr]; if (!n) return null;
-  if (!RING_BILD[fr]) { const im = RING_BILD[fr] = new Image(); im.onload = () => { SCHILD_MERK.clear(); requestRender(); }; im.src = 'bilder/ui_rahmen_' + n + '.webp'; }
+  if (!RING_BILD[fr]) { const im = RING_BILD[fr] = new Image(); im.onload = () => { SCHILD_MERK.clear(); requestRender(); }; im.src = n === 'herrscher' ? 'bilder/ui_herrscher_rahmen.webp' : 'bilder/ui_rahmen_' + n + '.webp'; }
   return RING_BILD[fr].complete && RING_BILD[fr].naturalWidth ? RING_BILD[fr] : null;
 }
 function rahmenAufKarte(who) {                                                 // angelegter Rahmen des Besitzers (je 2 s gemerkt – jedes Bild fragt danach)
@@ -3299,7 +3305,7 @@ function drawBrand(x, y, u) {                                                  /
 function bannerModel(island) {
   const owner = islandOwnerOf(island.id), isTemple = island.type === 'temple' || island.type === 'megaTemple';
   const scouted = scoutedIslands.has(island.id), level = anzeigeStufe(island.id);
-  const tName = island.type === 'megaTemple' ? 'Mega-Tempel' : island.guardian ? 'Wächter-Tempel' : 'Tempel';
+  const tName = island.type === 'megaTemple' ? 'Königsthron' : island.guardian ? 'Wachturm' : 'Tempel';
   const boss = bossAt(island.id);
   if (boss) return { kind: 'bot', glyph: 'attack', name: boss.name, troops: fmtCompact(boss.troops), def: null, level, temple: false, p: 4.8 };
   const tag = owner && typeof bundTagVon === 'function' ? bundTagVon(owner) : '';   // Bündnis-Kürzel: eigenes Chip vor dem Namen
@@ -3563,7 +3569,7 @@ function drawThronePlaza(z, now) {
     const m = islandById[megaTempleId], x = toSX(m.x), y = toSY(m.y), R = Math.max(10, m.radius * z * 3.4);
     if (x < -R * 2 || y < -R * 2 || x > viewW + R * 2 || y > viewH + R * 2) return;
     setScreen(ctx); ctx.save();
-    const ruler = rulerOwner(), rc = ruler === 'player' ? '120,180,255' : ruler ? '255,120,100' : '255,214,120';
+    const ruler = thronHalter(), rc = ruler === 'player' ? '120,180,255' : ruler ? '255,120,100' : '255,214,120';
     if (z < 0.006) {                                      // far out: a golden beacon marks the centre
         const pulse = .6 + .4 * Math.sin(now / 600), gr = ctx.createRadialGradient(x, y, 2, x, y, 40 + 10 * pulse);
         gr.addColorStop(0, 'rgba(' + rc + ',.9)'); gr.addColorStop(.3, 'rgba(' + rc + ',.35)'); gr.addColorStop(1, 'rgba(' + rc + ',0)');
@@ -3621,7 +3627,7 @@ function drawThroneFx(z, now) {                      // over the Mega-Tempel: a 
     if (megaTempleId === undefined || z < 0.006 || !islandSeen(islandById[megaTempleId])) return;
     const m = islandById[megaTempleId], x = toSX(m.x), y = toSY(m.y), r = Math.max(12, m.radius * z * 2.3);
     if (x < -r * 6 || y < -r * 8 || x > viewW + r * 6 || y > viewH + r * 6) return;
-    const ruler = rulerOwner(), rc = ruler === 'player' ? '140,195,255' : ruler ? '255,130,110' : '255,220,140';
+    const ruler = thronHalter(), rc = ruler === 'player' ? '140,195,255' : ruler ? '255,130,110' : '255,220,140';
     setScreen(ctx); ctx.save(); ctx.globalCompositeOperation = 'lighter';
     if (ruler) {
         const pulse = .8 + .2 * Math.sin(now / 400), ph = r * 9, pw = r * .9;
@@ -3694,19 +3700,19 @@ function drawBaseSparks(vis, z, now) {            // over the towers
     liveAnimation = true;
   }
 }
-function drawTitleBadges(z, now) {                // the title's name over the titled capital
-  if (z < 0.004) return;
+function drawTitleBadges(z, now) {                // Titel-Abzeichen über dem Namensschild der Hauptstadt (Farbe je Titel, Bild ui_titel_*)
+  if (z < SCHILD_ZOOM) return;
   setScreen(ctx);
   for (const [id, t] of titledCapitals()) {
     const isl = islandById[id]; if (!isl || !islandSeen(isl)) continue;
-    const x = toSX(isl.x), y = toSY(isl.y) - Math.max(26, isl.radius * z * 2.6);
+    const sr = schildRect(isl, z), x = sr.x + sr.w / 2, y = sr.y - 9;
     if (x < -60 || x > viewW + 60 || y < -30 || y > viewH + 30) continue;
-    ctx.font = '700 11px Inter, system-ui, sans-serif';
-    const w = ctx.measureText(t.name).width + 28;
-    rr(ctx, x - w / 2, y - 10, w, 20, 10); ctx.fillStyle = t.good ? 'rgba(40,32,8,.92)' : 'rgba(40,8,14,.92)'; ctx.fill();
-    ctx.lineWidth = 1.3; ctx.strokeStyle = t.good ? '#e8c877' : '#e0605a'; ctx.stroke();
-    drawGlyph(ctx, t.good ? 'star' : 'losses', x - w / 2 + 11, y, 11, t.good ? '#f3d98a' : '#ff9d90');
-    ctx.fillStyle = t.good ? '#f6e7bd' : '#ffd0c9'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t.name, x - w / 2 + 20, y + .5);
+    ctx.font = '800 10.5px Inter, system-ui, sans-serif';
+    const w = ctx.measureText(t.name).width + 30, im = extraBild('ui_titel_' + (t.key === 'schatz' ? 'schatzmeister' : t.key));
+    rr(ctx, x - w / 2, y - 9, w, 18, 9); ctx.fillStyle = HERR_TITEL_FARBE[t.key] || '#555'; ctx.fill();
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.stroke();
+    if (im) ctx.drawImage(im, x - w / 2 + 3, y - 8, 16, 16);
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t.name, x - w / 2 + 22, y + .5);
   }
 }
 function ring(x, y, R, w, color, dash, offset) {
@@ -5083,18 +5089,14 @@ function mzRallyRing(x, y, r) {
   const R = Math.max(30, r * 1.4) * mzS();
   ctx.save(); ctx.translate(x, y); ctx.scale(1, .42); ctx.rotate(performance.now() / 1000 * 12 * Math.PI / 180); ctx.drawImage(im, -R, -R * im.height / im.width * 2, 2 * R, R * im.height / im.width * 4); ctx.restore();
 }
-// ===== TITLES (Mega-Tempel) =====
-// Whoever holds the Mega-Tempel hands out titles: 4 buffs for friends, 4 penalties for rivals (±25 %).
-// A new holder starts with a clean slate. Bots that hold it hand them out too - you may get the Narr.
+// ===== TITEL (Herrscher, Alexander 8.10.) =====
+// Der Herrscher (Platz 1 des Thron-Events) vergibt Titel: 3 gute, einen Narr. Ein neuer Herrscher fängt ohne Titel an.
+// Mitspieler als Herrscher vergeben sie auch – du kannst der Narr werden. Abzeichen über dem Namen: Farbe je Titel (06c HERR_TITEL_FARBE).
 var TITLES = [
-    { key: 'herzog',    name: 'Herzog',        good: true,  kind: 'troops',  v: .25, desc: '+25 % Truppenproduktion' },
-    { key: 'schatz',    name: 'Schatzmeister', good: true,  kind: 'coins',   v: .25, desc: '+25 % Münzen' },
-    { key: 'feldherr',  name: 'Feldherr',      good: true,  kind: 'attack',  v: .25, desc: '+25 % Angriffsstärke' },
-    { key: 'burgherr',  name: 'Burgherr',      good: true,  kind: 'defense', v: .25, desc: '+25 % Verteidigung' },
-    { key: 'narr',      name: 'Narr',          good: false, kind: 'troops',  v: -.25, desc: '−25 % Truppenproduktion' },
-    { key: 'bettler',   name: 'Bettler',       good: false, kind: 'coins',   v: -.25, desc: '−25 % Münzen' },
-    { key: 'feigling',  name: 'Feigling',      good: false, kind: 'attack',  v: -.25, desc: '−25 % Angriffsstärke' },
-    { key: 'verraeter', name: 'Verräter',      good: false, kind: 'defense', v: -.25, desc: '−25 % Verteidigung' }
+    { key: 'feldherr', name: 'Feldherr',      good: true,  kind: 'attack',  v: .05, desc: '+5 % Angriff' },
+    { key: 'burgvogt', name: 'Burgvogt',      good: true,  kind: 'defense', v: .05, desc: '+5 % Verteidigung' },
+    { key: 'schatz',   name: 'Schatzmeister', good: true,  kind: 'coins',   v: .10, desc: '+10 % Ertrag' },
+    { key: 'narr',     name: 'Narr',          good: false, kind: 'speed',   v: -.05, desc: '−5 % Marschtempo' }
 ];
 var titleState = null, titleVer = 0, ringMemo = null;
 function loadTitles() {
@@ -5137,28 +5139,8 @@ function giveTitle(key, who) {                   // who: 'player' | bot id | nul
     if (who) t.by[key] = who; else delete t.by[key];
     saveTitles();
 }
-const titleModal = document.getElementById('titleModal');
-function renderTitleModal() {
-    const t = loadTitles(), mine = t.ruler === 'player';
-    const who = w => w === 'player' ? (profileName.value || 'Du') : w ? botById[w].name : '–';
-    document.getElementById('titleModalSub').textContent = mine ? 'Du hältst den Mega-Tempel. Ein guter Titel ist Respekt: wer ihn trägt, greift dich deutlich seltener an. Ein Straf-Titel schwächt – und die anderen gehen eher auf ihn los.'
-        : t.ruler ? botById[t.ruler].name + ' hält den Mega-Tempel und verteilt die Titel.' : 'Niemand hält den Mega-Tempel – erobere ihn, um Titel zu vergeben.';
-    const opts = cur => '<option value="">– niemand –</option>' + BOT_DEFS.filter(b => botOwnedIslands[b.id].size).map(b => '<option value="' + b.id + '"' + (cur === b.id ? ' selected' : '') + '>' + escapeHtml(b.name) + '</option>').join('');
-    document.getElementById('titleList').innerHTML = TITLES.map(x => '<div class="title-row ' + (x.good ? 'is-good' : 'is-bad') + '"><div><b>' + x.name + '</b><small>' + x.desc + '</small></div>' +
-        (mine ? '<select data-title="' + x.key + '">' + opts(t.by[x.key]) + '</select>' : '<span class="holder' + (t.by[x.key] === 'player' ? ' is-me' : '') + '">' + escapeHtml(who(t.by[x.key])) + '</span>') + '</div>').join('');
-}
-document.getElementById('titleBtn').addEventListener('click', () => { closeIslandPopup(); renderTitleModal(); titleModal.hidden = false; });
-document.getElementById('popupStats').addEventListener('click', e => { if (!e.target.closest('[data-view-titles]')) return; closeIslandPopup(); renderTitleModal(); titleModal.hidden = false; });   // anyone may look who wears what
-document.getElementById('titleModalBtn').addEventListener('click', () => { titleModal.hidden = true; });
-document.getElementById('titleList').addEventListener('change', e => {
-    const sel = e.target.closest('select[data-title]'); if (!sel || loadTitles().ruler !== 'player') return;
-    giveTitle(sel.dataset.title, sel.value || null);
-    alsBefehl('titel', { key: sel.dataset.title, wem: neutralId(sel.value || null) });
-    const x = TITLES.find(q => q.key === sel.dataset.title);
-    if (sel.value && !x.good) botGrudge(sel.value, 'player', 1);                  // nobody likes being made the Narr - they remember who did it
-    if (sel.value) flashHint(botById[sel.value].name + ' ist jetzt ' + x.name + ' (' + x.desc + ').', 3000);
-    renderTitleModal();
-});
+document.getElementById('titleBtn').addEventListener('click', () => { closeIslandPopup(); openHerr(); });   // Titel: im Herrscher-Fenster (06c)
+document.getElementById('popupStats').addEventListener('click', e => { if (!e.target.closest('[data-view-titles]')) return; closeIslandPopup(); openHerr(); });   // jeder darf schauen, wer was trägt
 setTimeout(runBotTick, BOT_TICK_MS);
 
 // Checks every second whether any in-flight attack or troop transfer
@@ -5190,6 +5172,10 @@ setInterval(() => {
                     fmtNum(a.rawTroops) + ' Truppen zurück' + (back !== null && back !== undefined ? ' in ' + islandTitle(islandById[back]) : '') + '.', 4500);
                     spawnBattleFx(a.targetId, false, 'Schild hält', 'Dein Angriff prallt ab'); updateHud(); saveGame(); saveProgression(); }
                 renderActiveMarches(); continue;
+            }
+            if (tow !== atkr && thronKuppel(a.targetId, now)) {                      // das Thron-Event ist vorbei: die Kuppel ist wieder zu, die Truppen gehen heim
+                welleHeim(a, atkr, a.targetId); heroWutZurueck(atkr, a.hx); pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+                if (atkr === 'player') flashHint(thronKuppelText(), 4500); renderActiveMarches(); continue;
             }
             if (islandOwnerOf(a.targetId) === (a.attackerBotId || 'player')) {   // the base is already ours (an earlier wave took it): they simply move in
                 heroWutZurueck(atkr, a.hx); islandTroops[a.targetId] = (islandTroops[a.targetId] || 0) + (a.rally ? bundRallyHeim(a, a.rawTroops, a.targetId, true) : a.rawTroops);   // (Rally: nur der Anteil des Starters zieht ein)
@@ -5464,7 +5450,7 @@ const RAHMEN = [
     { id: 'diamond', name: 'Diamantherzog', t: 'duke', rank: 4 }, { id: 'master', name: 'Meister der Meere', t: 'master', rank: 5 }, { id: 'legend', name: 'Legende', t: 'legend', rank: 6 },
     { id: 'conq', name: 'Eroberer', t: 'conq', ach: 'cap100' }, { id: 'warlord', name: 'Kriegsherr', t: 'warlord', ach: 'cap1000' }, { id: 'wall', name: 'Standhaft', t: 'wall', ach: 'def25' },
     { id: 'emma', name: 'Gefürchtet', t: 'emma', ach: 'emma10' }, { id: 'slayer', name: 'Bezwinger', t: 'slayer', ach: 'boss1' }, { id: 'builder', name: 'Baumeister', t: 'builder', ach: 'city5' },
-    { id: 'king', name: 'Herrscher der Meere', t: 'king', ach: 'throne' }, { id: 'throne', name: 'Thronhüter', t: 'keeper', buy: 'throne' },
+    { id: 'king', name: 'Herrscher der Meere', t: 'king', ach: 'throne' },
     { id: 'saison', name: 'Saisonkrone' },                                  // gab es bis 7.10. im Saison-Pass – wer sie hat, behält sie
     // Saison-Rahmen: die besten 10 am Ende einer Welt-Saison – nur bis zum nächsten Saison-Ende (dann bekommen ihn die neuen)
     { id: 'sz1', name: 'Saison-Champion', platz: [1, 1] }, { id: 'sz2', name: 'Saison-Großadmiral', platz: [2, 3] },
@@ -5477,9 +5463,9 @@ function saisonPlatz(who) { const t = typeof saison !== 'undefined' && saison &&
 function rahmenHat(who, r) {                         // hat who den Rahmen r? (Saison-Rahmen: nur, solange die Welt ihn so führt)
     if (!r) return false; if (r.frei) return true;
     if (r.platz) { const pl = saisonPlatz(who); return pl >= r.platz[0] && pl <= r.platz[1]; }
-    if (who === 'player') return (look.frames || []).includes(r.id) || !!(r.t && (look.titles || []).includes(r.t)) || (r.buy === 'throne' && !!(look.bought && look.bought.throne)) || (!look.lookMig && lookOldUnlocked(r));
+    if (who === 'player') return (look.frames || []).includes(r.id) || !!(r.t && (look.titles || []).includes(r.t)) || (!look.lookMig && lookOldUnlocked(r));
     const b = loadBotState()[who]; if (!b) return false;
-    return (b.frames || []).includes(r.id) || !!(r.t && (b.titles || []).includes(r.t)) || (r.buy === 'throne' && !!b.throneLook);
+    return (b.frames || []).includes(r.id) || !!(r.t && (b.titles || []).includes(r.t));
 }
 // Mitte geht vor: der Herrscher trägt „Herrscher der Meere“, ein Titel aus der Mitte seinen eigenen Rahmen (gut: Gold, Straf-Titel: Rot) – kommen und gehen
 function rahmenVon(who, gewaehlt) {                  // → { frame, title } – gewaehlt: der angelegte Rahmen (fehlt er oder ist er weg: Standard)
@@ -5497,7 +5483,6 @@ function rankIndexFor(bases) { let r = 0; RANK_TIERS.forEach((t, i) => { if (bas
 function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
 function lookOldUnlocked(x) {                       // the old rule (rank / Erfolg) - only to carry an old save over
     if (x.platz) return false;
-    if (x.buy) return !!(look.bought && look.bought[x.buy]);
     if (x.ach) { try { return achLookKept(x.ach) || !!(achClaimed[x.ach] || ACHIEVEMENTS.find(a => a.id === x.ach && a.val() >= a.goal)); } catch (e) { return false; } }
     return (x.rank || 0) <= bestRank();
 }
@@ -6295,19 +6280,19 @@ function renderRankings() {
     else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
         medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
         for (const e of people) { const x = by[e.who]; e.val = rangSaison(e.who, 1, bs);
-            e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ troops: 'Truppen', coins: 'Münzen', attack: 'Angriff', defense: 'Abwehr' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
+            e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ coins: 'Ertrag', attack: 'Angriff', defense: 'Abwehr', speed: 'Marschtempo' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
         const tr = e => e.who === ruler ? 0 : by[e.who] ? (by[e.who].good ? 1 : 2) : 3;
         list = people.filter(e => tr(e) < 3).sort((a, b) => tr(a) - tr(b) || b.val - a.val || gleich(a, b));
-        empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
+        empty = ruler ? '' : 'Noch kein Herrscher – Platz 1 im Thron-Event (Sa 10 – So 22 Uhr) verteilt die Titel.';
     } else { for (const e of people) { e.val = rangSaison(e.who, 1, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
-        empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
+        empty = 'Noch hat niemand Thron-Punkte geholt. Halte im Thron-Event den Thron oder einen Wachturm.'; }
     if (rankTab !== 'titles' && rankTab !== 'burg') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl || gleich(a, b));
     const lim = RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player');
     document.getElementById('rankTitle').textContent = tab.t;
     document.getElementById('rankSub').textContent = tab.sub;                     // one line what this list counts
     for (const b of document.querySelectorAll('#rankTabs [data-rtab]')) { const on = b.dataset.rtab === rankTab; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
     liveHtml(document.getElementById('rankBody'),
-        (rankTab === 'week' ? '<details class="lb-info"><summary>' + icon('info') + 'So gibt es Thron-Punkte</summary><p class="mail-intro">Fürs Halten der Mitte: +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wächter-Tempel. Du gibst sie im Shop unter „Thron“ aus – hier zählt alles je Verdiente, ohne Neustart.</p></details>' : '') +   // (Erklärung zum Aufklappen: die Liste geht vor)
+        (rankTab === 'week' ? '<details class="lb-info"><summary>' + icon('info') + 'So gibt es Thron-Punkte</summary><p class="mail-intro">Im Thron-Event (Sa 10 – So 22 Uhr): +' + THRONE_PTS_MEGA + ' alle 3 Min. für den Thron, +' + THRONE_PTS_GUARD + ' je Wachturm. Hier zählt alles in dieser Saison; die Event-Rangliste startet jedes Wochenende bei 0.</p></details>' : '') +   // (Erklärung zum Aufklappen: die Liste geht vor)
         (top.length ? top.map((e, i) => rankRowHtml(e, i + 1, medals)).join('') + (list.length > lim ? '<div class="lb-gap">Top ' + lim + ' von ' + fmtNum(list.length) + '</div>' : '')
         : '<div class="empty-state lb-leer">' + icon(rankTab === 'titles' ? 'crown' : 'points') + '<span><b>Noch leer</b>' + empty + '</span></div>'));   // (kompakt oben statt mitten im leeren Fenster)
     const foot = document.getElementById('rankFoot');
@@ -6558,8 +6543,8 @@ function renderCombatLog() {
             const dead = entry.hit - entry.wounded;
             const vdet = '<details><summary>Kampfdetails</summary><div class="logCompare"><div class="logSide">' +
                 '<div class="logSideLabel">Beschuss</div>' +
-                (entry.shotBy || []).map((s, i) => '<div class="logLine"><span>Wächter ' + (i + 1) + '</span><span>' + escapeHtml(s) + '</span></div>').join('') +
-                '<div class="logLine"><span>Je Wächter</span><span>' + THRONE_FIRE_PCT + ' %</span></div>' +
+                (entry.shotBy || []).map((s, i) => '<div class="logLine"><span>Wachturm ' + (i + 1) + '</span><span>' + escapeHtml(s) + '</span></div>').join('') +
+                '<div class="logLine"><span>Je Wachturm</span><span>' + THRONE_FIRE_PCT + ' %</span></div>' +
                 (entry.n > 1 ? '<div class="logLine"><span>Salven</span><span>' + entry.n + '</span></div>' : '') +
                 '</div><div class="logVsDivider">VS</div><div class="logSide"><div class="logSideLabel">Du · Thron</div>' +
                 (entry.n === 1 ? '<div class="logLine"><span>Truppen vorher</span><span>' + fmtD(entry.before) + '</span></div>' : '') +
@@ -6567,8 +6552,8 @@ function renderCombatLog() {
                 '<div class="logCasualty wounded"><span>Ins Krankenhaus</span><span>' + fmtD(entry.wounded) + '</span></div>' +
                 (dead > 0 ? '<div class="logCasualty"><span>Gefallen (kein Platz)</span><span>−' + fmtD(dead) + '</span></div>' : '') +
                 '<div class="logSum"><span>Noch im Thron</span><span>' + fmtD(entry.left) + '</span></div>' +
-                '</div></div><div class="logRetreat">Erobere die Wächter-Tempel, dann schweigen sie. Verwundete heilst du im Krankenhaus in deiner Stadt.</div></details>';
-            return karte(entry, 'loss', 'attack', ['loss', 'Beschuss'], T(entry.targetId), (entry.shotBy || []).length + ' Wächter-Tempel' + (entry.n > 1 ? ' · ' + entry.n + ' Salven' : ''), '',
+                '</div></div><div class="logRetreat">Erobere die Wachtürme, dann schweigen sie. Verwundete heilst du im Krankenhaus in deiner Stadt.</div></details>';
+            return karte(entry, 'loss', 'attack', ['loss', 'Beschuss'], T(entry.targetId), (entry.shotBy || []).length + ' Wachtürme' + (entry.n > 1 ? ' · ' + entry.n + ' Salven' : ''), '',
                 [['attack', chipN(entry.hit) + ' getroffen', 'schlecht'], ...verlustChips(dead, entry.wounded)], vdet);
         }
         if (entry.type === 'scout') {
@@ -6925,7 +6910,7 @@ battleLogCloseBtn.addEventListener('click', () => {
 var BEUTE_ART = {
     gems: { b: 'beute_edelsteine', t: 'Edelsteine' }, coins: { b: 'beute_muenzen', t: 'Münzen', r: 1 }, holz: { b: 'beute_holz', t: 'Holz', r: 1 },
     stein: { b: 'beute_stein', t: 'Stein', r: 1 }, eisen: { b: 'beute_eisen', t: 'Eisen', r: 1 }, tr: { b: 'beute_truppen', t: 'Truppen', r: 2 },
-    sh: { b: 'beute_splitter', t: 'Helden-Splitter', r: 3 }, tp: { b: 'beute_thron', t: 'Thron-Punkte', r: 4 }, schild: { b: 'beute_schild', t: 'Friedensschild', r: 2 },
+    sh: { b: 'beute_splitter', t: 'Helden-Splitter', r: 3 }, schild: { b: 'beute_schild', t: 'Friedensschild', r: 2 },
     punkte: { b: 'beute_punkte', t: 'Fähigkeitspunkte', r: 2 }, tele: { b: 'ui_sym_verlegen', t: 'Teleporter', r: 3 }, rahmen: { b: 'ui_sym_krone', t: 'Rahmen', r: 4 }, item: { t: 'Ausrüstung', r: 0 }, kiste: { t: 'Kiste', r: 0 }
 };
 var BEUTE_SLOT = { weapon: 'beute_waffe', armor: 'beute_ruestung', shield: 'beute_rundschild', boots: 'beute_stiefel' };
@@ -7129,7 +7114,7 @@ var QUEST_DEFS = {
     heilen: { icon: 'plus',         text: () => 'Heile Verwundete im Krankenhaus', steps: [1, 1, 1], geht: () => questStadtStufe('hospital') > 0 },
     markt: { icon: 'market',        text: n => n === 1 ? 'Tausche auf dem Markt' : 'Tausche ' + n + '-mal auf dem Markt', steps: [1, 1, 2], geht: () => questStadtStufe('market') > 0 },
     tempel: { icon: 'temple',       text: () => 'Erobere einen Tempel', steps: [0, 1, 1], geht: () => questTempelGeht() },
-    thron: { icon: 'crown',         text: n => 'Halte den Thron ' + n + ' Minuten', steps: [0, 5, 15], geht: () => thronOffenAb() < new Date().setHours(24, 0, 0, 0) },   // (erst ab Tag 7)
+    thron: { icon: 'crown',         text: n => 'Halte den Thron ' + n + ' Minuten', steps: [0, 5, 15], geht: () => thronOffenAb() < new Date().setHours(24, 0, 0, 0) && thronLaeuft(new Date().setHours(21, 0, 0, 0)) },   // (erst ab Tag 7, nur Sa/So im Thron-Event)
     invArmee: { icon: 'defense',    text: n => n === 1 ? 'Greife eine Barbaren-Armee an (Invasion)' : 'Greife ' + n + ' Barbaren-Armeen an (Invasion)', steps: [1, 2, 3], geht: () => questEvHeute('inv') },
     drache: { icon: 'event',        text: n => n === 1 ? 'Greife den Drachen an' : 'Greife den Drachen ' + n + '-mal an', steps: [1, 3, 5], geht: () => questEvHeute('dr') }
 };
@@ -7266,23 +7251,24 @@ const inboxFach = () => inboxList().filter(x => !(x.bis > Date.now()));   // das
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' }, lager: { ic: 'attack', t: 'Barbaren-Lager' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' }, thron: { ic: 'crown', t: 'Thron-Event' }, lager: { ic: 'attack', t: 'Barbaren-Lager' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
-    if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler)
+    if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0 || o.b && o.b.length)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler, b: Gegenstände [Art, Menge, Extra])
     const L = inboxList(), now = Date.now(), pile = inboxPiles(o) && L.find(x => x.src === o.src && inboxPiles(x));
     if (pile) { pile.coins = (pile.coins || 0) + o.coins; pile.gems = (pile.gems || 0) + o.gems; pile.sh = (pile.sh || 0) + (o.sh || 0); pile.n = (pile.n || 1) + 1; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));   // (shards pile up too)
     inboxSave(); updateGoalsBadge(); if (isPanelOpen(goalsPopup) && goalsTab === 'reward') renderInbox(); return o.coins || o.gems;
 }
 function inboxBeute(x) {                            // was im Fach liegt, als Kacheln (05e)
     return [{ a: 'gems', n: x.gems }, { a: 'coins', n: x.coins }, x.crate >= 0 && { a: 'kiste', k: kisteVonR(x.crate), r: x.crate, min: x.crate > 0 }, { a: 'sh', n: x.sh }, { a: 'tr', n: x.tr },
-        x.kiste >= 0 && { a: 'kiste', k: 'aus', r: x.kiste }, x.schild > 0 && { a: 'schild', n: x.schild }];
+        x.kiste >= 0 && { a: 'kiste', k: 'aus', r: x.kiste }, x.schild > 0 && { a: 'schild', n: x.schild }, ...(x.b || []).map(([a, n, e]) => ({ a, n, ...(e || {}) }))];
 }
 function inboxClaim(id, aus) {                      // into your coffers - returns what you got (aus: Belohnungs-Kacheln dazu)
     aus = aus || []; const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
     if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Edelsteine'); aus.push({ a: 'gems', n: x.gems }); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); aus.push({ a: 'coins', n: x.coins }); }
     if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) { got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); aus.push(itemBeute(it)); } }
     if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); questProgress('crate', 1); if (it && it.rarity !== undefined) { got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); aus.push(itemBeute(it)); } }
+    for (const [a, n, e] of x.b || []) { if (a === 'holz' && AUF) AUF.rohDazu('player', { h: n }); else gibBelohnung(a, n, e); got.push('+' + fmtCompact(n) + ' ' + ((BEUTE_ART[a] || {}).t || a)); aus.push({ a, n, ...(e || {}) }); }   // Gegenstände (Thron-Event)
     if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); aus.push({ a: 'schild', n: 2 }); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) { got.push(x.sh + ' Splitter ' + h.name); aus.push({ a: 'sh', n: x.sh, held: h.id }); } else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); aus.push({ a: 'gems', n: x.sh * 20 }); } }
     if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); aus.push({ a: 'tr', n: x.tr }); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox
@@ -7306,7 +7292,7 @@ function updateGoalsBadge(nAch) {
     if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
     const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxFach().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
     set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
-    const jetzt = evJetzt(), hol = ['tour', 'inv', 'drache', 'boss', 'lager'].filter(k => jetzt === k || evHolBereit(k));
+    const jetzt = evJetzt(), hol = ['tour', 'thron', 'inv', 'drache', 'boss', 'lager'].filter(k => jetzt === k || evHolBereit(k));
     for (const k of EV_TABS) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), hol.includes(k));   // „!“ am Ereignis, das gerade läuft oder eine Belohnung zum Abholen hat
     const g = k => goalsPopup.querySelector('[data-ggbadge="' + k + '"]');   // die 4 Reiter: Summe ihrer Unterreiter
     set(g('aufgaben'), nd + nAch); set(g('abholen'), nr); set(g('pass'), np); setShown(g('ereignisse'), hol.length > 0);
@@ -7349,7 +7335,7 @@ function renderQuestPanel() {
 }
 // ---- Events: one sheet, 4 Reiter - Aufgaben: Täglich (tasks + week chain), Erfolge · Abholen: Belohnung (Abholfach + 7-day login chest) ·
 // Pass · Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss, Barbaren-Lager (renderEvents); Unterreiter als Chips ----
-const EV_TABS = ['tour', 'inv', 'drache', 'boss', 'lager'];
+const EV_TABS = ['tour', 'thron', 'inv', 'drache', 'boss', 'lager'];
 const GOALS_GRP = { aufgaben: ['daily', 'ach'], abholen: ['reward'], pass: ['pass'], ereignisse: EV_TABS }, goalsGrpLetzt = {};
 const goalsGrpVon = t => Object.keys(GOALS_GRP).find(k => GOALS_GRP[k].includes(t));
 function showGoalsTab(t) {
@@ -7402,7 +7388,7 @@ function passRewardAt(L, prem) {                          // what level L gives 
     if (!prem) return viertel ? [g('gems', 50), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 20)] : L % 4 === 0 ? [g('shards', 3)] :
         L % 3 === 0 ? [g('crate', 1)] : L % 2 === 0 ? [g('tr', 2)] : [g('coins', 3)];
     return viertel ? [g('gems', 150), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 30)] :
-        L % 4 === 0 ? [g('shards', 8)] : L % 6 === 0 ? [g('tp', 150)] : L % 3 === 0 ? [g('shield', 8)] : L % 2 === 0 ? [g('tr', 6)] : [g('coins', 12), g('gems', 10)];
+        L % 4 === 0 ? [g('shards', 8)] : L % 6 === 0 ? [g('eventMuenzen', 150)] : L % 3 === 0 ? [g('shield', 8)] : L % 2 === 0 ? [g('tr', 6)] : [g('coins', 12), g('gems', 10)];
 }
 const passMuenzen = (hp, n) => Math.max(wirtM(5000), Math.round(hp.coins)) * n;     // n Stunden Münzen (mindestens 5.000 je Stunde – wie beim Weltrechner)
 const passTruppen = (hp, n) => Math.max(wirtK(1000), Math.round(hp.troops)) * n;    // n Stunden Truppen (mindestens 1.000 je Stunde)
@@ -7430,7 +7416,7 @@ function passGive(who, r, aus, schl) {                    // one reward to anyon
     if (r.k === 'tr') { const t = passTruppen(hourProduction(who), n), base = b ? botCapitalOf(who) : rewardBaseId(); if (base === null || base === undefined) return '';
         if (b) islandTroops[base] = (islandTroops[base] || 0) + t; else eigeneTruppenDazu(base, t, 'pass', schl || {}); aus.push({ a: 'tr', n: t }); return '+' + fmtCompact(t) + ' Truppen'; }
     if (r.k === 'gems') { if (b) b.gems += n; else gems += n; aus.push({ a: 'gems', n }); return '+' + n + ' Edelsteine'; }
-    if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } aus.push({ a: 'tp', n }); return '+' + n + ' Thron-Punkte'; }
+    if (r.k === 'eventMuenzen') { if (b) beuteBot(who, 'eventMuenzen', n); else gibBelohnung('eventMuenzen', n); aus.push({ a: 'eventMuenzen', n }); return '+' + n + ' Event-Münzen'; }   // (statt der alten Thron-Punkte)
     if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) { aus.push({ a: 'sh', n, held: h.id }); return '+' + n + ' Splitter ' + h.name; } if (b) b.gems += n * 20; else gems += n * 20; aus.push({ a: 'gems', n: n * 20 }); return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
     if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } aus.push({ a: 'schild', n }); return 'Friedensschild ' + n + ' h'; }
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
@@ -7460,7 +7446,7 @@ function passKachel(r, hp) {                         // eine Belohnung als Kache
     const k = r.k, n = r.n || 1;
     if (k === 'coins') return beuteKachel({ a: 'coins', n: passMuenzen(hp, n) });
     if (k === 'tr') return beuteKachel({ a: 'tr', n: passTruppen(hp, n) });
-    if (k === 'gems' || k === 'tp') return beuteKachel({ a: k, n });
+    if (k === 'gems' || k === 'eventMuenzen') return beuteKachel({ a: k, n });
     if (k === 'shards') return beuteKachel({ a: 'sh', n });
     if (k === 'shield') return beuteKachel({ a: 'schild', n });
     if (k === 'crate') return beuteKachel({ a: 'kiste', k: 'aus', n });
@@ -7628,29 +7614,49 @@ const shopOpenCrateBtn = document.getElementById('shopOpenCrateBtn');
 const shopToEquipBtn = document.getElementById('shopToEquipBtn');
 const shopCloseBtn = document.getElementById('shopCloseBtn');
 
-// ===== THRON-PUNKTE: the middle is always open to attack. Every few minutes whoever holds the Mega-Tempel gets
-// Thron-Punkte (each Wächter-Tempel a few too), and the 4 Wächter-Tempel fire on the holder's garrison unless he
-// holds them himself. The points buy things in the shop's "Thron" tab - for you and for everyone else alike.
-const THRONE_TICK_MS = 3 * 60000, THRONE_PTS_MEGA = 30, THRONE_PTS_VERST = 15, THRONE_PTS_GUARD = 10, THRONE_FIRE_MS = 3 * 60000, THRONE_FIRE_PCT = 1;   // 1 % per Wächter-Tempel; the hit are wounded, not killed
-const guardianTempleIds = islands.filter(i => i.guardian).map(i => i.id);
-const THRONE_OFFERS = [
-    { id: 'coins',  name: 'Münzen',              icon: 'coin',   cost: 150 },
-    { id: 'troops', name: 'Truppen',             icon: 'troops', cost: 200 },
-    { id: 'crate',  name: 'Ausrüstungskiste',    icon: 'shop',   cost: 60 },
-    { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 }
+// ===== THRON-EVENT (Alexander 8.10.): Sa 10 – So 22 Uhr Kampf um den Königsthron. Sonst liegt je eine Kuppel über dem Thron und den
+// 4 Wachtürmen – niemand kann sie angreifen. Im Event gibt es alle 3 Min. Rangpunkte: wer den Thron hält 30, je Wachturm 15, wer Truppen
+// als Verstärkung im Thron des Verbündeten hat 15. Alle 10 Min. schießt jeder Wachturm, der nicht zum Bündnis des Halters gehört, 2 % der
+// Truppen im Thron ab (Getroffene ins Krankenhaus, wie überall). Die Rangpunkte starten jedes Event bei 0; So 22 Uhr Auswertung (nur der
+// Weltrechner): Preise ins Abholfach, Platz 1 ist eine Woche Herrscher (Skin, Rahmen, Titel vergeben, Kisten verschicken).
+const THRONE_TICK_MS = 3 * 60000, THRONE_PTS_MEGA = 30, THRONE_PTS_VERST = 15, THRONE_PTS_GUARD = 15, THRONE_FIRE_MS = 10 * 60000, THRONE_FIRE_PCT = 2;
+const THRON_TAG = 6, THRON_AB_H = 10, THRON_BIS_H = 22, THRON_TEILNAHME = 500;
+const guardianTempleIds = islands.filter(i => i.guardian).map(i => i.id), kuppelIds = new Set([megaTempleId, ...guardianTempleIds]);
+// Preise nach Platz (Test-Datei werkzeuge/thronevent): mh = Stunden Münzen (evStunden), b = Gegenstände [Art, Menge, Extra] (gibBelohnung)
+const THRON_PREISE = [
+    { bis: 1, k: 'p1', name: 'Platz 1', bild: 'ui_rang_legende', zusatz: 'Herrscher', r: 'gold', mh: 12, b: [['eventMuenzen', 3000], ['holz', 600000], ['besch', 1, { dauer: '24h' }], ['schluessel2', 3]] },
+    { bis: 2, k: 'p2', name: 'Platz 2', bild: 'ui_rang_diamantherzog', r: 'lila', mh: 8, b: [['eventMuenzen', 2200], ['holz', 400000], ['besch', 1, { dauer: '24h' }], ['schluessel2', 2]] },
+    { bis: 3, k: 'p3', name: 'Platz 3', bild: 'ui_rang_goldfuerst', r: 'lila', mh: 6, b: [['eventMuenzen', 1700], ['holz', 300000], ['besch', 1, { dauer: '8h' }], ['schluessel2', 1]] },
+    { bis: 8, k: 'p4', name: 'Platz 4–8', bild: 'ui_rang_platingraf', r: 'blau', mh: 4, b: [['eventMuenzen', 1000], ['holz', 150000], ['besch', 1, { dauer: '8h' }], ['schluessel1', 5]] },
+    { bis: Infinity, ab: THRON_TEILNAHME, k: 'p5', name: 'Teilnahme', bild: 'ui_rang_neuling', zusatz: 'ab ' + THRON_TEILNAHME + ' Punkten', r: 'gruen', mh: 1, b: [['eventMuenzen', 300], ['besch', 1, { dauer: '1h' }], ['schluessel1', 1]] }
 ];
-var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || { pts: 0 };
-(() => { const now = Date.now(), ts = throneState;               // no points or volleys pile up while the game was closed
-    if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS;
-    ts.week = ts.week || {}; })();                                                // (ts.week: Thron-Punkte ever earned per person - no weekly reset any more, the old week stays in)
+const thronPreisFuer = (platz, pts) => THRON_PREISE.find(x => platz <= x.bis && !(pts < (x.ab || 0))) || null;
+// Kisten, die der Herrscher verschenkt (nicht an sich selbst; der Rest verfällt beim nächsten Thron-Event): crate = Seltenheit mindestens
+const HERR_KISTEN = { episch: { n: 2, crate: 3, name: 'Epische Kiste', r: 'lila' }, gross: { n: 5, crate: 2, name: 'Große Kiste', r: 'blau' }, aus: { n: 10, crate: 1, name: 'Kiste', r: 'gruen' } };
+const HERR_TITEL_FARBE = { feldherr: '#b3332b', burgvogt: '#2f5fa8', schatz: '#b88a1c', narr: '#7b3fa0' };
+function thronFenster(now) {                          // das laufende oder nächste Thron-Event { start, end } (Ortszeit wie alle Events)
+    const s = new Date(now); s.setDate(s.getDate() - (s.getDay() + 7 - THRON_TAG) % 7); s.setHours(THRON_AB_H, 0, 0, 0);
+    const e = new Date(s); e.setDate(e.getDate() + 1); e.setHours(THRON_BIS_H, 0, 0, 0);
+    if (e.getTime() <= now) { s.setDate(s.getDate() + 7); e.setDate(e.getDate() + 7); }
+    return { start: s.getTime(), end: e.getTime() };
+}
+function thronLaeuft(now) { now = now || Date.now(); return thronFenster(now).start <= now; }
+function thronKuppel(id, now) { return kuppelIds.has(id) && !thronLaeuft(now); }   // Thron und Wachtürme außerhalb des Events: nicht angreifbar
+function thronKuppelText() { return 'Über Thron und Wachtürmen liegt eine Kuppel – angreifen geht erst im Thron-Event (Sa 10 – So 22 Uhr), noch ' + fmtPassWait(thronFenster(Date.now()).start - Date.now()) + '.'; }
+function thronHalter() { return megaTempleId === undefined ? null : islandOwnerOf(megaTempleId); }
+var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || {};
+(() => { const now = Date.now(), ts = throneState; ts.week = ts.week || {}; delete ts.pts;   // (week: Rangpunkte des laufenden bzw. letzten Events)
+    if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS; })();
 function saveThrone() { store.set('openWaterThrone', JSON.stringify(throneState)); }
-function throneEarnedOf(who, bs) { const ts = throneState, w = (ts.week || {})[who] || 0;   // all Thron-Punkte ever earned (the ranking) - the larger of the tally and the old totals, so nobody loses any
-    return Math.floor(Math.max(w, who === 'player' ? ts.earned || 0 : (((bs || loadBotState())[who] || {}).stats || {}).tpEarned || 0)); }
-function throneHelfer() { const hd = rulerOwner();               // wer Verstärkung im Thron stehen hat (Bündnis, Botschaft) – nur beim verbündeten Halter (sonst geht sie gerade heim)
+function thronPunkte(who) { const ts = throneState; return ts.ev && ts.ev === thronFenster(Date.now()).start || ts.aus === ts.ev ? Math.floor((ts.week || {})[who] || 0) : 0; }
+function throneEarnedOf(who, bs) {                    // alle Thron-Punkte, die jemand je bekommen hat (Saison-Rangliste, Erfolge)
+    return Math.floor(who === 'player' ? throneState.earned || 0 : (((bs || loadBotState())[who] || {}).stats || {}).tpEarned || 0); }
+function throneHelfer() { const hd = thronHalter();   // wer Verstärkung im Thron stehen hat (Bündnis, Botschaft) – nur beim verbündeten Halter
     return typeof verst === 'undefined' || !hd ? new Set() : new Set(verst.l.filter(v => v.t === megaTempleId && v.n >= 1 && bundVerbuendet(v.w, hd)).map(v => v.w)); }
-function throneIncome(who) { return (rulerOwner() === who ? THRONE_PTS_MEGA : 0) + (throneHelfer().has(who) ? THRONE_PTS_VERST : 0) + guardianTempleIds.filter(g => islandOwnerOf(g) === who).length * THRONE_PTS_GUARD; }
-function throneShooters() { const hd = rulerOwner(); return hd ? guardianTempleIds.filter(g => islandOwnerOf(g) !== hd) : []; }
-function hourProduction(who) {                       // what an empire makes in an hour (the coin and troop offers pay this much)
+function throneIncome(who) { return (thronHalter() === who ? THRONE_PTS_MEGA : 0) + (throneHelfer().has(who) ? THRONE_PTS_VERST : 0) + guardianTempleIds.filter(g => islandOwnerOf(g) === who).length * THRONE_PTS_GUARD; }
+function throneShooters() { const hd = thronHalter();   // Wachtürme, die schießen: nie die eigenen oder die des Bündnisses (freie schießen auch)
+    return hd ? guardianTempleIds.filter(g => { const o = islandOwnerOf(g); return !(o && (o === hd || bundVerbuendet(o, hd))); }) : []; }
+function hourProduction(who) {                       // was ein Reich in einer Stunde erzeugt (Belohnungen „N Std.“)
     if (who === 'player') { const k = 3600000 / productionTickMs(); return { coins: totalCoinProductionPerTick() * k, troops: totalTroopProductionPerTick() * k }; }
     const own = botOwnedIslands[who]; if (!own) return { coins: 0, troops: 0 };
     const bm = botMults(who), rb = rulerOwner() === who ? RULER_BONUS : 1, k = 3600000 / botTickMs(who); let c = 0, t = 0;
@@ -7659,79 +7665,101 @@ function hourProduction(who) {                       // what an empire makes in 
         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) { const mult = templeBaseMult(isl) * templeHoldMultiplier(id) * shrineMult(who); c += TEMPLE_COIN_BONUS_PER_TICK * mult; t += TEMPLE_TROOP_BONUS_PER_TICK * mult; } }
     return { coins: c * k, troops: t * k };
 }
-// Münzen/Truppen wie Händler und Markt (Alexander 6.10.): Stunden-Produktion × Kosten ÷ Ertrag (= 2 Stunden), mindestens 20.000 Münzen
-// bzw. 2.000 Truppen (7.10.: vorher 10 Truppen für 200 Punkte)
-const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG, THRONE_MIN = { coins: 20000, troops: 2000 };
-function throneAmount(who, id) { const hp = hourProduction(who);
-    return id === 'coins' || id === 'troops' ? Math.max(THRONE_MIN[id], Math.round(hp[id] * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
-function throneGive(who, id, aus) {                   // hands one offer over; returns what it was, for the hint (aus: Belohnungs-Kacheln dazu, 05e)
-    aus = aus || []; const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
-    if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; aus.push({ a: 'coins', n }); return '+' + fmtCompact(n) + ' Münzen'; }
-    if (id === 'gems') { if (b) b.gems += n; else gems += n; aus.push({ a: 'gems', n }); return '+' + n + ' Edelsteine'; }
-    if (id === 'troops') { const to = b ? botCapitalOf(who) : rewardBaseId(); if (to === null || to === undefined) return '';
-        if (b) islandTroops[to] = (islandTroops[to] || 0) + n; else eigeneTruppenDazu(to, n, 'thron'); aus.push({ a: 'tr', n }); return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
-    if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
-        if (b) { b.spare[slot][r]++; return ''; }
-        addInventoryItem(slot, r, 1); aus.push({ a: 'item', slot, r }); sfx('crate'); questProgress('crate', 1); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
-    return '';
-}
-function throneBuy(id) {
-    const o = THRONE_OFFERS.find(x => x.id === id); if (!o) return;
-    if ((throneState.pts || 0) < o.cost) { flashHint('Zu wenig Thron-Punkte – das kostet ' + fmtNum(o.cost) + '.', 3000); return; }
-    const aus = []; throneState.pts -= o.cost; const what = throneGive('player', id, aus); saveThrone(); updateHud(); saveGame(); saveProgression();
-    if (aus.length) beuteFenster(o.name, aus, { kiste: id === 'crate' ? 'aus' : id === 'royal' ? 'royal' : null, unter: 'Thron-Shop' }); else flashHint('Gekauft: ' + what + '.', 3500);
-    sfx('coin'); renderShop();
-}
-var throneShots = [];                                  // volleys flying across the map (screen-space drawing below)
-function throneAward(silent, at) {                    // at: when this award happened (the time you were away is caught up afterwards)
-    const ts = throneState; ts.week = ts.week || {};
-    const got = {};
+var throneShots = [];                                  // Geschosse über der Karte (unten gezeichnet)
+function throneAward(silent, at) {                    // ein Takt Rangpunkte (at: wann – die Zeit, in der das Spiel zu war, wird nachgeholt)
+    if (!thronLaeuft(at)) return;
+    const ts = throneState, got = {};
     const add = (who, n) => { if (!who) return; got[who] = (got[who] || 0) + n; };
-    add(rulerOwner(), THRONE_PTS_MEGA); for (const g of guardianTempleIds) add(islandOwnerOf(g), THRONE_PTS_GUARD);
-    for (const w of throneHelfer()) add(w, THRONE_PTS_VERST);                    // jeder mit Verstärkung im Thron (Alexander 5.10.)
-    goalBump(rulerOwner(), 'throneMin', THRONE_TICK_MS / 60000);   // minutes on the throne (Erfolge)
-    bountyGrow();                                                                 // the Kopfgeld on the ruler grows
+    add(thronHalter(), THRONE_PTS_MEGA); for (const g of guardianTempleIds) add(islandOwnerOf(g), THRONE_PTS_GUARD);
+    for (const w of throneHelfer()) add(w, THRONE_PTS_VERST);
+    goalBump(thronHalter(), 'throneMin', THRONE_TICK_MS / 60000);   // Minuten auf dem Thron (Erfolge, Aufgabe)
+    bountyGrow();                                                                 // das Kopfgeld auf den Halter wächst
     for (const [who, n] of Object.entries(got)) {
-        if (who === 'player') { ts.pts = (ts.pts || 0) + n; ts.earned = (ts.earned || 0) + n; warStat('thronePts', n); }
-        else { const b = loadBotState()[who]; if (!b) continue; b.tp = (b.tp || 0) + n; b.stats = b.stats || {}; b.stats.tpEarned = (b.stats.tpEarned || 0) + n; }
+        if (who === 'player') { ts.earned = (ts.earned || 0) + n; warStat('thronePts', n); }
+        else { const b = loadBotState()[who]; if (!b) continue; b.stats = b.stats || {}; b.stats.tpEarned = (b.stats.tpEarned || 0) + n; }
         ts.week[who] = (ts.week[who] || 0) + n;
     }
-    if (got.player && !silent) flashHint('+' + got.player + ' Thron-Punkte – ' + (rulerOwner() === 'player' ? 'du hältst die Mitte' : guardianTempleIds.some(g => islandOwnerOf(g) === 'player') ? 'du hältst einen Wächter-Tempel' : 'deine Verstärkung steht im Thron') + '. Einlösen im Shop unter „Thron“.', 3500);
+    if (got.player && !silent) flashHint('+' + got.player + ' Thron-Punkte – ' + (thronHalter() === 'player' ? 'du hältst den Königsthron' : guardianTempleIds.some(g => islandOwnerOf(g) === 'player') ? 'du hältst einen Wachturm' : 'deine Verstärkung steht im Thron') + '.', 3500);
     saveBotState();
 }
-function throneVolley(times, silent) {                // times: several volleys at once (the time you were away)
+function throneVolley(times, silent) {                // times: mehrere Salven auf einmal (die Zeit, in der das Spiel zu war)
     times = times || 1;
-    const holder = rulerOwner(), shooters = throneShooters(); if (!holder || !shooters.length) return null;
+    const holder = thronHalter(), shooters = throneShooters(); if (!holder || !shooters.length || !thronLaeuft()) return null;
     const g0 = islandTroops[megaTempleId] || 0;
     const loss = Math.floor(g0 * (1 - Math.pow(1 - THRONE_FIRE_PCT / 100, shooters.length * times)));
     const m = islandById[megaTempleId];
-    if (!silent) { shooters.forEach((g, i) => throneShots.push({ from: islandById[g], to: m, delay: i * 140 })); requestRender(); }   // the clock starts at the first frame
+    if (!silent) { shooters.forEach((g, i) => throneShots.push({ from: islandById[g], to: m, delay: i * 140 })); requestRender(); }
     if (loss <= 0) return null;
     islandTroops[megaTempleId] = g0 - loss;
     let w = 0;
-    if (holder === 'player') { w = hospitalTake(loss, 100); warStat('fallen', loss - w);   // everyone hit is carried to the Krankenhaus, as far as there is room
+    if (holder === 'player') { w = hospitalTake(loss, 100); warStat('fallen', loss - w);   // die Getroffenen ins Krankenhaus, soweit Platz ist
         if (!silent) setTimeout(() => spawnBattleFx(megaTempleId, false, 'Beschuss', '−' + fmtCompact(loss) + ' Truppen'), 1100);
         const prev = combatLog[0], shotBy = shooters.map(g => { const o = islandOwnerOf(g); return o && o !== 'player' ? botById[o].name : 'unbesetzt'; });
-        if (prev && prev.type === 'volley' && Date.now() - prev.at < 30 * 60000) {          // one report for a run of volleys, not one every few minutes
+        if (prev && prev.type === 'volley' && Date.now() - prev.at < 30 * 60000) {          // ein Bericht für mehrere Salven
             Object.assign(prev, { n: prev.n + times, hit: prev.hit + loss, wounded: prev.wounded + w, left: g0 - loss, shotBy, at: Date.now() });
             store.set('openWaterCombatLog', JSON.stringify(combatLog)); refreshOpenCombatLog();
         } else addCombatLogEntry({ type: 'volley', targetId: megaTempleId, n: times, before: g0, hit: loss, wounded: w, left: g0 - loss, shotBy });
-        if (!silent) flashHint(shooters.length + (shooters.length === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' auf den Thron: ' + fmtCompact(loss) + ' Truppen getroffen' + (w ? ', ' + fmtCompact(w) + ' davon ins Krankenhaus.' : ' – kein Platz im Krankenhaus.') + ' Erobere die Wächter-Tempel, dann schweigen sie.', 4500); }
+        if (!silent) flashHint(shooters.length + (shooters.length === 1 ? ' Wachturm schießt' : ' Wachtürme schießen') + ' auf den Thron: ' + fmtCompact(loss) + ' Truppen getroffen' + (w ? ', ' + fmtCompact(w) + ' davon ins Krankenhaus.' : ' – kein Platz im Krankenhaus.') + ' Erobere die Wachtürme, dann schweigen sie.', 4500); }
     else botHospitalTake(holder, loss, 100);
     saveGame();
     return { loss, w };
 }
+function thronBeginn(ts, start, now) {                // ein neues Thron-Event: Rangpunkte bei 0, Kuppeln weg, übrige Herrscher-Kisten verfallen
+    ts.ev = start; ts.week = {}; ts.kisten = null; ts.nextPts = now + THRONE_TICK_MS; ts.nextFire = now + THRONE_FIRE_MS; ts.halterSeit = now; ts.coTold = false;
+    afterSplash(() => flashHint('Das Thron-Event beginnt: die Kuppeln sind weg – erobere Thron und Wachtürme bis So 22 Uhr!', 5000));
+}
+function thronAuswertung(ts, now) {                   // So 22 Uhr: Preise nach Platz, Platz 1 wird eine Woche Herrscher
+    const rk = evRang(ts.week); ts.aus = ts.ev; ts.letzte = rk.slice(0, 10).map(([w, p]) => [w, Math.floor(p)]);
+    rk.forEach(([who, p], i) => { const pr = thronPreisFuer(i + 1, p); if (pr) evPreis(who, 'thron', 'Thron-Event · ' + (pr.ab ? 'Teilnahme' : 'Platz ' + (i + 1)), pr, ts.ev); });
+    const h = rk[0] && rk[0][0];
+    ts.herr = h ? { who: h, seit: now, bis: thronFenster(now).end } : null;   // bis zur nächsten Auswertung
+    ts.kisten = h ? Object.fromEntries(Object.entries(HERR_KISTEN).map(([k, x]) => [k, x.n])) : null; ts.kn = 0;
+    const me = rk.findIndex(e => e[0] === 'player') + 1;
+    if (me) afterSplash(() => flashHint('Thron-Event vorbei: du bist ' + (me === 1 ? 'Herrscher für eine Woche!' : 'auf Platz ' + me + '.') + ' Dein Preis liegt unter Events → Belohnung.', 6000));
+}
+function thronHerrscher(now) {                        // der Herrscher (Platz 1 des letzten Thron-Events) – eine Woche lang
+    const h = typeof throneState !== 'undefined' && throneState && throneState.herr;
+    return h && h.bis > (now || Date.now()) && (h.who === 'player' || botById[h.who]) ? h.who : null;
+}
+function herrKiste(von, art, an) {                    // der Herrscher verschenkt eine Kiste (Weltrechner bzw. Vorschau) → true, wenn verschickt
+    const ts = throneState, x = HERR_KISTEN[art];
+    if (!x || !von || thronHerrscher() !== von || !an || an === von || !(an === 'player' || botById[an]) || !ts.kisten || !(ts.kisten[art] > 0)) return false;
+    ts.kisten[art]--; ts.kn = (ts.kn || 0) + 1;
+    evPreis(an, 'thron', x.name + ' vom Herrscher ' + (von === 'player' ? profileName.value || 'Du' : botById[von].name), { crate: x.crate }, ts.ev + '|k' + ts.kn);
+    saveThrone(); return true;
+}
+function herrKisteBot(now) {                          // ein Mitspieler als Herrscher: verschenkt seine Kisten nach und nach (Bündnis zuerst, dann die Stärksten)
+    const h = thronHerrscher(now), ts = throneState; if (!h || h === 'player' || botById[h].mensch || !ts.kisten || Math.random() > .2) return;
+    const art = ['episch', 'gross', 'aus'].find(k => ts.kisten[k] > 0); if (!art) return;
+    const wer = ['player', ...BOT_DEFS.map(b => b.id)].filter(w => w !== h && (w === 'player' ? ownedIslands.size : (botOwnedIslands[w] || new Set()).size));
+    const an = wer.filter(w => bundVerbuendet(w, h)).sort(() => Math.random() - .5)[0] || wer.sort((a, b) => thronPunkte(b) - thronPunkte(a))[0];
+    if (an) herrKiste(h, art, an);
+}
+function herrKisteSenden(art, an) {                   // dein Knopf im Herrscher-Fenster
+    if (!an) { flashHint('Wähle zuerst, wer die Kiste bekommt.', 2500); return; }
+    if (rechnet()) { if (!herrKiste('player', art, an)) { flashHint('Diese Kiste hast du nicht mehr.', 2500); return; } }
+    else { const k = throneState.kisten; if (!(k && k[art] > 0)) { flashHint('Diese Kiste hast du nicht mehr.', 2500); return; }
+        alsBefehl('thronKiste', { art, wem: neutralId(an) }); k[art]--; }                // (Zuschauer: gleich zeigen, der Weltrechner verschickt)
+    flashHint(HERR_KISTEN[art].name + ' an ' + fieldWhoName(an) + ' verschickt.', 3000); sfx('coin'); renderHerr();
+}
 function throneTick() {
     const now = Date.now(), ts = throneState; let dirty = false;
     if (!rechnet()) { throneUhren(now, ts); midAnzeige(now); return; }
-    const r = rulerOwner(); if ((ts.ruler || null) !== (r || null)) { ts.ruler = r || null; ts.rulerSince = now; ts.coTold = false; dirty = true; }
-    bountyCheck(r); midAnzeige(now);                                              // Kopfgeld to whoever took the throne; the chip under the HUD
-    if (!ts.coTold && coalitionOn(now)) { ts.coTold = true; dirty = true;                  // everyone else turns on the throne
-        flashHint(r === 'player' ? 'Du hältst den Thron schon lange – die anderen verbünden sich gegen dich. Rechne mit Angriffen von allen Seiten!'
-            : 'Die anderen verbünden sich gegen ' + botById[r].name + ' – der Thron wird von allen Seiten angegriffen.', 6000); }
-    for (let n = 0; ts.nextPts <= now; n++) { ts.nextPts += THRONE_TICK_MS; dirty = true; if (n < 3) throneAward(); }   // a throttled background tab catches up a little, not for hours
-    for (let n = 0; ts.nextFire <= now; n++) { ts.nextFire += THRONE_FIRE_MS; dirty = true; if (n < 3) throneVolley(); }
-    if (dirty) { saveThrone(); if (isPanelOpen(shopPopup)) renderShop(); }
+    const f = thronFenster(now), an = f.start <= now;
+    if (an && ts.ev !== f.start) { thronBeginn(ts, f.start, now); dirty = true; }
+    else if (!an && ts.ev && ts.aus !== ts.ev) { thronAuswertung(ts, now); dirty = true; }
+    const r = thronHalter(); if ((ts.halter || null) !== (r || null)) { ts.halter = r || null; ts.halterSeit = now; ts.coTold = false; dirty = true; }
+    if (an) {
+        bountyCheck(r);                                                            // das Kopfgeld an den, der den Thron genommen hat
+        if (!ts.coTold && coalitionOn(now)) { ts.coTold = true; dirty = true;      // alle anderen gehen auf den Thron los
+            flashHint(r === 'player' ? 'Du hältst den Thron schon lange – die anderen verbünden sich gegen dich. Rechne mit Angriffen von allen Seiten!'
+                : 'Die anderen verbünden sich gegen ' + botById[r].name + ' – der Thron wird von allen Seiten angegriffen.', 6000); }
+        for (let n = 0; ts.nextPts <= now; n++) { ts.nextPts += THRONE_TICK_MS; dirty = true; if (n < 3) throneAward(); }   // ein gedrosselter Hintergrund-Tab holt etwas nach, nicht stundenlang
+        for (let n = 0; ts.nextFire <= now; n++) { ts.nextFire += THRONE_FIRE_MS; dirty = true; if (n < 3) throneVolley(); }
+    }
+    herrKisteBot(now);
+    midAnzeige(now);
+    if (dirty) saveThrone();
     throneUhren(now, ts);
 }
 function throneUhren(now, ts) {
@@ -7740,11 +7768,11 @@ function throneUhren(now, ts) {
     for (const el of document.querySelectorAll('[data-throne-fire]')) el.textContent = clock(ts.nextFire - now);
 }
 setInterval(throneTick, 1000);
-function drawThroneShots(now) {                        // glowing shots on an arc from each Wächter-Tempel to the throne
+function drawThroneShots(now) {                        // leuchtende Geschosse im Bogen von jedem Wachturm zum Thron
     if (!throneShots || !throneShots.length) return;
     const z = mapState.zoom, DUR = 1100;
     for (const s of throneShots.slice()) {
-        s.el = (s.el === undefined ? -s.delay : s.el + Math.min(50, now - s.last)); s.last = now;   // per frame, so a slow frame never skips the flight
+        s.el = (s.el === undefined ? -s.delay : s.el + Math.min(50, now - s.last)); s.last = now;   // je Bild, damit ein langsames Bild den Flug nie überspringt
         const t = s.el / DUR; if (t > 1.5) { throneShots.splice(throneShots.indexOf(s), 1); continue; }
         liveAnimation = true; if (t < 0) continue;
         if (!isCellOpen(s.to.x, s.to.y)) continue;                                // der Thron liegt im Nebel
@@ -7754,49 +7782,93 @@ function drawThroneShots(now) {                        // glowing shots on an ar
             const sc = Math.max(1, Math.min(1.6, z / .008));
             const [x, y] = at(t), gr = ctx.createRadialGradient(x, y, 0, x, y, 22 * sc);
             gr.addColorStop(0, 'rgba(255,190,90,.8)'); gr.addColorStop(.45, 'rgba(255,110,30,.35)'); gr.addColorStop(1, 'rgba(255,80,20,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, 22 * sc, 0, Math.PI * 2); ctx.fill();
-            for (let k = 9; k >= 0; k--) { const q = Math.max(0, t - k * .02), [px, py] = at(q), r = (k ? 5 - k * .42 : 6.5) * sc;   // a burning tail, then the white-hot core
+            for (let k = 9; k >= 0; k--) { const q = Math.max(0, t - k * .02), [px, py] = at(q), r = (k ? 5 - k * .42 : 6.5) * sc;   // ein brennender Schweif, dann der weißglühende Kern
                 ctx.beginPath(); ctx.arc(px, py, r, 0, Math.PI * 2); ctx.fillStyle = k ? 'rgba(255,' + (150 - k * 8) + ',50,' + (.85 - k * .08) + ')' : '#fff4d6'; ctx.fill(); }
-        } else {                                         // impact: a quick ring at the throne
+        } else {                                         // Einschlag: ein schneller Ring am Thron
             const q = (t - 1) / .5, fl = ctx.createRadialGradient(bx, by, 0, bx, by, 30 * (1 - q * .4));
             fl.addColorStop(0, 'rgba(255,220,150,' + (.7 * (1 - q)) + ')'); fl.addColorStop(1, 'rgba(255,110,30,0)'); ctx.fillStyle = fl; ctx.beginPath(); ctx.arc(bx, by, 30, 0, Math.PI * 2); ctx.fill();
             ctx.beginPath(); ctx.arc(bx, by, 8 + 34 * q, 0, Math.PI * 2); ctx.lineWidth = 3.5 * (1 - q); ctx.strokeStyle = 'rgba(255,160,70,' + (1 - q) + ')'; ctx.stroke();
         }
     }
 }
-function renderThroneShop() {
-    const el = document.getElementById('throneShop'); if (!el) return;
-    const ts = throneState, hd = rulerOwner(), sh = throneShooters(), inc = throneIncome('player'), bo = bountyOf(), auf = shopInfoAuf.has('thron');
-    const hdName = hd === 'player' ? '<span class="me">Du</span>' : hd ? whoLink(hd, botById[hd].name) : 'niemand';
-    liveHtml(el, '<button type="button" class="thron-zeile' + (auf ? ' on' : '') + '" data-sinfo="thron" aria-expanded="' + auf + '">' + icon('crown') + '<span>Mitte: <b>' + (hd === 'player' ? 'Du' : hd ? botById[hd].name : 'niemand') + '</b></span>' +
-            icon('hourglass') + '<b data-throne-pts>' + fmtClock((ts.nextPts - Date.now()) / 1000) + '</b>' + icon('info', 'tz-i') + '</button>' +   // eine Zeile – antippen klappt alles auf
-        '<div class="shop-info" data-sinfo-box="thron"' + (auf ? '' : ' hidden') + '><div class="throne-status">' +
-            '<div class="ts-row">' + icon('crown') + '<span>Die Mitte hält</span><b>' + hdName + '</b></div>' +
-            '<div class="ts-row">' + icon('hourglass') + '<span>Nächste Thron-Punkte</span><b data-throne-pts>' + fmtClock((ts.nextPts - Date.now()) / 1000) + '</b></div>' +
-            '<div class="ts-row">' + icon('attack') + '<span>Beschuss' + (hd ? ' · ' + sh.length + ' Wächter' : '') + '</span><b' + (hd === 'player' && sh.length ? ' class="warn"' : '') + ' data-throne-fire>' + fmtClock((ts.nextFire - Date.now()) / 1000) + '</b></div>' +
-            '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
-            (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Edelsteine · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
-        '</div><p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, wer dort Verstärkung stehen hat ' + THRONE_PTS_VERST + ', jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
-            '<p class="mail-intro">Die Thron-Punkte-Rangliste steht unter Profil → Rangliste.</p></div>' +
-        '<div class="waren waren--2">' +
-        THRONE_OFFERS.map(o => { const n = throneAmount('player', o.id);   // Waren als Karten wie die Kisten
-            const sub = o.id === 'coins' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ertrag' : o.id === 'troops' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ausbildung'
-                : o.id === 'gems' ? 'für Kisten und Helden' : o.id === 'crate' ? '1 Teil · Grau bis Episch' : o.id === 'royal' ? 'mindestens Lila' : 'gibt es nur hier';
-            const k = o.id === 'crate' ? 'aus' : o.id === 'royal' ? 'royal' : null;
-            const bild = k ? kisteBild(k) : '<img class="kiste-bild" src="bilder/' + (BEUTE_ART[o.id === 'troops' ? 'tr' : o.id] || BEUTE_ART.gems).b + '.webp" alt="" draggable="false">';   // KI-Bilder (05e)
-            return '<div class="ware ware--klein" data-r="' + (k ? KISTE_R[k] : 'navy') + '">' + (o.id === 'royal' ? '<span class="band">Mind. Lila</span>' : '') + '<span class="ware-bild">' + bild + '</span>' +
-                '<span class="ware-txt"><b class="ware-name">' + o.name + '</b><small>' + sub + '</small></span>' +
-                '<button type="button" class="ware-preis thron" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button></div>'; }).join('') + '</div>');
+// ---- Events-Fenster, Chip „Thron“: Ablauf, Rangliste (live bzw. letztes Wochenende), Preise nach Platz, Herrscher ----
+const thronKachel = (bild, r, txt) => '<span class="bk" data-r="' + r + '"><img src="bilder/' + bild + '.webp" alt="" draggable="false">' + (txt ? '<b>' + txt + '</b>' : '') + '</span>';
+const BESCH_TXT = { '1m': '1 Min', '5m': '5 Min', '15m': '15 Min', '1h': '1 Std', '3h': '3 Std', '8h': '8 Std', '24h': '24 Std' };
+const beschBild = d => 'beute_beschleuniger_' + (/m$/.test(d) ? 'klein' : d === '1h' || d === '3h' ? 'mittel' : 'gross');
+function thronPreisKacheln(p) {                       // ein Preis als Kacheln (Bild + Zahl)
+    const B = { eventMuenzen: 'beute_eventmuenze', holz: 'beute_holz', schluessel1: 'beute_schluessel', schluessel2: 'beute_schluessel_episch' };
+    return thronKachel(B.eventMuenzen, p.r, fmtNum(p.b[0][1])) + thronKachel('beute_muenzen', p.r, p.mh + ' Std.') +
+        p.b.slice(1).map(([a, n, x]) => a === 'besch' ? thronKachel(beschBild(x.dauer), p.r, BESCH_TXT[x.dauer]) : thronKachel(B[a], p.r, a === 'holz' ? fmtCompact(n) : fmtNum(n))).join('');
 }
-const shopInfoAuf = new Set();                      // Shop: offene Erklärungen hinter „i“ (Thron baut sie bei jedem Takt neu – darum gemerkt)
-let shopTab = 'gems';
-function showShopTab(t) {
-    shopTab = t;
-    for (const b of document.querySelectorAll('#shopTabs [data-stab]')) { const on = b.dataset.stab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
-    for (const pn of document.querySelectorAll('#shopPopup [data-spane]')) pn.hidden = pn.dataset.spane !== t;
-    renderShop();
+function evThronHtml() {
+    const now = Date.now(), f = thronFenster(now), an = f.start <= now, ts = throneState, hd = thronHalter(), h = thronHerrscher(now);
+    const live = an && ts.ev === f.start, list = live ? evRang(ts.week) : (ts.letzte || []), mi = list.findIndex(e => e[0] === 'player'), inc = throneIncome('player');
+    const ablauf = '<div class="thron-ablauf"><div' + (an ? '' : ' class="jetzt"') + '><b>Mo – Fr</b>Wochen-Event</div><div><b>Fr</b>Auswertung</div><div' + (an ? ' class="jetzt"' : '') + '><b>Sa 10 – So 22</b>Thron-Event</div></div>';
+    return '<div class="barb-card ev-card is-tour thron-karte"><div class="barb-ct"><b>' + icon('crown') + ' Kampf um den Königsthron</b><small>' + (an ? 'Läuft · endet in ' + evUhr(f.end) : 'Beginnt ' + evWann(f.start) + ' · in ' + evUhr(f.start)) + '</small></div>' + ablauf +
+        (an ? '<div class="field-lines"><span>Dein Platz</span><b>' + (mi >= 0 ? (mi + 1) + ' · ' + fmtNum(list[mi][1]) + ' Punkte' : '– · 0 Punkte') + '</b><span>Du hältst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere einen Turm') + '</b>' +
+            '<span>Thron hält</span><b>' + (hd ? escapeHtml(fieldWhoName(hd)) : 'niemand') + '</b><span>Nächste Punkte</span><b data-throne-pts>' + fmtClock(Math.max(0, ts.nextPts - now) / 1000) + '</b></div>'
+            : '<div class="kuppel-satz">' + icon('shield') + '<span>Bis Samstag 10 Uhr liegt über dem Thron und über jedem Wachturm eine Kuppel – niemand kann angreifen.</span></div>') +
+        '<button class="btn btn--primary" type="button" data-thron-go><span>Zum Königsthron</span></button></div>' +
+        (h ? '<button type="button" class="thron-herr-zeile" data-herr-auf>' + '<img src="bilder/ui_sym_krone.webp" alt=""><span>Herrscher: <b>' + escapeHtml(h === 'player' ? profileName.value || 'Du' : botById[h].name) + '</b><small>bis ' + evWann(ts.herr.bis) + '</small></span>' + '</button>' : '') +
+        '<div class="lb-gap">' + (live ? 'Live · Top 10' : 'Letztes Wochenende · Top 10') + '</div>' + (list.length ? evRangHtml(list, p => fmtNum(Math.floor(p)) + ' P.') : '<div class="inbox-empty">Noch keine Punkte.</div>') +
+        '<div class="lb-gap">Preise nach Platz · am Ende im Abholfach</div>' +
+        THRON_PREISE.map(p => '<div class="rang"><div class="rband ' + p.k + '"><img src="bilder/' + p.bild + '.webp" alt="">' + p.name + (p.zusatz ? '<span>' + p.zusatz + '</span>' : '') + '</div><div class="bk-raster">' + thronPreisKacheln(p) + '</div></div>').join('') +
+        '<details class="lb-info ev-info"><summary>' + icon('info') + '<span>So gibt es Punkte</span></summary><div class="tour-rules">' +
+            '<span>' + icon('hourglass') + '<span><b>Sa 10 – So 22 Uhr Thron-Event.</b> Sonst liegt je eine Kuppel über Thron und Wachtürmen.</span></span>' +
+            '<span>' + icon('crown') + '<span><b>Königsthron:</b> ' + THRONE_PTS_MEGA + ' Punkte alle 3 Min. für den Halter, Verbündete mit Truppen darin ' + THRONE_PTS_VERST + '.</span></span>' +
+            '<span>' + icon('flag') + '<span><b>4 Wachtürme:</b> je ' + THRONE_PTS_GUARD + ' Punkte alle 3 Min. Wachtürme darf man verstärken.</span></span>' +
+            '<span>' + icon('attack') + '<span>Wachtürme schießen alle 10 Min. ' + THRONE_FIRE_PCT + ' % auf den Thron – nie auf das eigene Bündnis.</span></span>' +
+            '<span>' + icon('rank') + '<span>Punkte starten jedes Wochenende bei 0. Platz 1 wird <b>Herrscher</b> für 1 Woche.</span></span></div></details>';
 }
-document.getElementById('shopTabs').addEventListener('click', e => { const b = e.target.closest('[data-stab]'); if (b) showShopTab(b.dataset.stab); });
-document.getElementById('throneShop').addEventListener('click', e => { const b = e.target.closest('[data-throne-buy]'); if (b && !b.disabled) throneBuy(b.dataset.throneBuy); });
+document.getElementById('eventBody').addEventListener('click', e => {
+    if (e.target.closest('[data-herr-auf]')) { openHerr(); return; }
+    if (!e.target.closest('[data-thron-go]')) return;
+    const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650);
+});
+// ---- Herrscher-Fenster: wer herrscht, Skin + Rahmen (automatisch), Titel, Kisten verschicken ----
+const herrPopup = document.getElementById('herrPopup');
+let herrAn = '';
+function openHerr() { closeAllPopups(); renderHerr(); openPanel(herrPopup); }
+function renderHerr() {
+    const h = thronHerrscher(), ts = throneState, ich = h === 'player', t = loadTitles(), el = document.getElementById('herrBody'); if (!el) return;
+    const name = w => w === 'player' ? profileName.value || 'Du' : w && botById[w] ? botById[w].name : '–';
+    const leute = ['player', ...BOT_DEFS.map(b => b.id)].filter(w => w !== h && (w === 'player' ? ownedIslands.size : (botOwnedIslands[w] || new Set()).size));
+    const opts = cur => '<option value="">– niemand –</option>' + leute.map(w => '<option value="' + w + '"' + (cur === w ? ' selected' : '') + '>' + escapeHtml(name(w)) + '</option>').join('');
+    setText(document.getElementById('herrSub'), h ? 'bis ' + evWann(ts.herr.bis) : 'noch niemand');
+    el.innerHTML = !h ? '<div class="inbox-empty">Noch kein Herrscher – wer beim Thron-Event (Sa 10 – So 22 Uhr) Platz 1 holt, herrscht eine Woche.</div>' :
+        '<div class="herr-kopf"><span class="herr-bild"><img src="' + crestDataUrl(96, h) + '" alt=""><img class="herr-rahmen" src="bilder/ui_herrscher_rahmen.webp" alt=""></span>' +
+            '<div><b>' + escapeHtml(name(h)) + '</b><small>Herrscher bis ' + evWann(ts.herr.bis) + ' · Skin „Königsburg“ · +' + Math.round((RULER_BONUS - 1) * 100) + ' % Münzen und Truppen</small></div>' +
+            '<img class="herr-skin" src="bilder/skin_koenigsburg.webp" alt=""></div>' +
+        '<div class="herr-angelegt"><span class="haken">✓</span><span>Skin und Rahmen werden automatisch angelegt, solange ' + (ich ? 'du' : 'der Herrscher') + ' herrscht.</span><b>Angelegt</b></div>' +
+        '<div class="sect"><h4>Titel</h4><span class="sect-aside">' + (ich ? 'vergibst du' : 'vergibt der Herrscher') + '</span></div>' +
+        TITLES.map(x => '<div class="herr-titel"><img src="bilder/ui_titel_' + (x.key === 'schatz' ? 'schatzmeister' : x.key) + '.webp" alt=""><div>' + x.name + '<small' + (x.good ? '' : ' class="boese"') + '>' + x.desc + '</small></div>' +
+            (ich ? '<select data-herr-titel="' + x.key + '">' + opts(t.by[x.key]) + '</select>' : '<span class="wer">' + escapeHtml(t.by[x.key] ? name(t.by[x.key]) : '–') + '</span>') + '</div>').join('') +
+        '<div class="sect"><h4>Kisten verschicken</h4><span class="sect-aside">nicht an sich selbst · Rest verfällt Sa 10 Uhr</span></div>' +
+        '<div class="herr-kisten">' + Object.entries(HERR_KISTEN).map(([k, x]) => { const n = (ts.kisten || {})[k] || 0;
+            return '<div class="herr-kiste"><span class="bk" data-r="' + x.r + '"><img src="bilder/' + (k === 'aus' ? 'kiste_ausruestung_zu' : 'kiste_' + k + '_zu') + '.webp" alt=""><b>' + n + '/' + x.n + '</b></span>' +
+                '<small>' + x.name + '<br>1 Ausrüstung, mind. ' + RARITY_DEFS[x.crate].label + '</small>' + (ich ? '<button class="btn btn--primary btn--sm" type="button" data-herr-kiste="' + k + '"' + (n ? '' : ' disabled') + '><span>Schicken</span></button>' : '') + '</div>'; }).join('') + '</div>' +
+        (ich ? '<label class="herr-an">An <select data-herr-an>' + opts(herrAn) + '</select></label>' : '');
+}
+herrPopup.addEventListener('change', e => {
+    const an = e.target.closest('[data-herr-an]'); if (an) { herrAn = an.value; return; }
+    const sel = e.target.closest('[data-herr-titel]'); if (!sel || thronHerrscher() !== 'player') return;
+    giveTitle(sel.dataset.herrTitel, sel.value || null); alsBefehl('titel', { key: sel.dataset.herrTitel, wem: neutralId(sel.value || null) });
+    const x = TITLES.find(q => q.key === sel.dataset.herrTitel); if (sel.value && !x.good && sel.value !== 'player') botGrudge(sel.value, 'player', 1);   // niemand wird gern Narr – das merkt man sich
+    if (sel.value) flashHint(fieldWhoName(sel.value) + ' ist jetzt ' + x.name + ' (' + x.desc + ').', 3000);
+    renderHerr();
+});
+herrPopup.addEventListener('click', e => { const b = e.target.closest('[data-herr-kiste]'); if (b && !b.disabled) herrKisteSenden(b.dataset.herrKiste, herrAn); });
+document.getElementById('herrCloseBtn').addEventListener('click', () => closePanel(herrPopup));
+// VORLÄUFIG bis Team C (05e) gibBelohnung und die Kacheln für Event-Münzen, Schlüssel, Beschleuniger anlegt – beim Zusammenführen löschen
+var gibBelohnung = typeof gibBelohnung === 'function' ? gibBelohnung : function (art, menge, extra) { const g = gibBelohnung.vorl = gibBelohnung.vorl || {}, k = art + (extra && extra.dauer ? ':' + extra.dauer : ''); g[k] = (g[k] || 0) + menge; return true; };
+for (const [k, v] of Object.entries({ eventMuenzen: { b: 'beute_eventmuenze', t: 'Event-Münzen', r: 3 }, schluessel1: { b: 'beute_schluessel', t: 'Schlüssel', r: 2 }, schluessel2: { b: 'beute_schluessel_episch', t: 'Epischer Schlüssel', r: 3 }, besch: { b: 'beute_beschleuniger_mittel', t: 'Beschleuniger', r: 2 } })) if (!BEUTE_ART[k]) BEUTE_ART[k] = v;
+// Gegenstände für einen Mitspieler (Preise, Pass): Event-Münzen, Schlüssel, Beschleuniger, Holz
+function beuteBot(who, art, n, extra) {
+    const b = loadBotState()[who]; if (!b || !(n > 0)) return;
+    if (art === 'holz') { if (AUF) AUF.rohDazu(who, { h: n }); return; }
+    if (art === 'besch') { const d = extra && BESCH_TXT[extra.dauer] ? extra.dauer : '1h'; b.besch = b.besch || {}; b.besch[d] = (b.besch[d] || 0) + n; return; }
+    if (art === 'eventMuenzen' || art === 'schluessel1' || art === 'schluessel2') b[art] = (b[art] || 0) + n;
+}
 
 // ===== DIE MITTE: Thron, Wächter-Tempel und Tore
 // Punkte für Kämpfe gibt es nur noch im Wochen-Event (Krieger-Woche): 1 je 1.000 besiegte (× WIRTSCHAFT_KOSTEN: heute je 0,56 – die
@@ -7808,15 +7880,15 @@ function midFight(tid, aWho, aKills, dWho, dKills, aTeile, dTeile) {     // nach
     const geben = (wer, n, teile) => { if (Array.isArray(teile) && teile.length) { for (const [w, f] of teile) if (f > 0) evPunkte('krieg', w, n * f / WO_KILL_PER); } else evPunkte('krieg', wer, n / WO_KILL_PER); };
     geben(aWho, aKills, aTeile); geben(dWho, dKills, dTeile);
 }
-// ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
-// Whoever takes the Mega-Tempel from him collects all of it.
+// ===== KOPFGELD AUF DEN HALTER: wer im Thron-Event den Thron hält, auf den wächst ein Kopfgeld (Edelsteine + Münzen, alle 3 Min. mit den
+// Thron-Punkten). Wer ihm den Thron abnimmt, kassiert alles.
 const BOUNTY_GEMS = 3, BOUNTY_GEMS_MAX = 1000, BOUNTY_COIN_H = .1, BOUNTY_COIN_MAX_H = 24;
 var bountyState = (() => { try { return JSON.parse(store.get('openWaterBounty')) || null; } catch (e) { return null; } })() || { ruler: null, gems: 0, coins: 0 };
 function saveBounty() { store.set('openWaterBounty', JSON.stringify(bountyState)); }
-function bountyOf() { const r = rulerOwner(); return r && bountyState.ruler === r ? { who: r, gems: Math.floor(bountyState.gems || 0), coins: Math.floor(bountyState.coins || 0) } : null; }
-function bountyGems() { const b = bountyState; return b.ruler && b.ruler === rulerOwner() ? b.gems || 0 : 0; }   // (the others ask this for every target - no allocation)
+function bountyOf() { const r = thronHalter(); return r && bountyState.ruler === r ? { who: r, gems: Math.floor(bountyState.gems || 0), coins: Math.floor(bountyState.coins || 0) } : null; }
+function bountyGems() { const b = bountyState; return b.ruler && b.ruler === thronHalter() ? b.gems || 0 : 0; }   // (the others ask this for every target - no allocation)
 function bountyGrow() {
-    const r = rulerOwner(); bountyCheck(r); if (!r) return;
+    const r = thronHalter(); bountyCheck(r); if (!r) return;
     const b = bountyState, hc = hourProduction(r).coins;
     b.gems = Math.min(BOUNTY_GEMS_MAX, (b.gems || 0) + BOUNTY_GEMS); b.coins = Math.min(Math.max(wirtM(1e4), hc * BOUNTY_COIN_MAX_H), (b.coins || 0) + Math.max(wirtM(500), hc * BOUNTY_COIN_H)); saveBounty();   // (Mindestwerte in Münzen: wirtM)
 }
@@ -7842,6 +7914,8 @@ function renderMidBar() {
     const now = Date.now(), b = bountyOf(), chips = [];   // [Dringlichkeit, html]
     if (woOn(now)) { const th = woThemaAm(now), W = evState.wo || {}, rk = W.key === woWin(now).key ? evRang(W.pts) : [], pl = rk.findIndex(e => e[0] === 'player') + 1;   // Wochen-Event (Mo–Fr)
         chips.push([9, '<button type="button" class="mb-chip is-tour" data-mb="woche">' + icon(th.ic) + '<span>Wochen-Event · ' + th.name + '</span><b class="mb-platz' + (pl ? '' : ' is-leer') + '">Platz ' + (pl || '–') + '</b></button>']); }   // (Platz immer belegt: der Chip springt nicht, wenn der Rang kommt)
+    if (thronLaeuft(now)) { const p = thronPunkte('player');                     // Thron-Event (Sa 10 – So 22)
+        chips.push([8, '<button type="button" class="mb-chip is-tour" data-mb="thron">' + icon('crown') + '<span>Thron-Event</span><b>' + fmtNum(p) + ' P.</b></button>']); }
     if (b && b.gems >= 5) chips.push([b.who === 'player' ? 1 : 7, '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
         '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>']);
     chips.push(...evChips(now));                                                        // Invasion, Drache (Events)
@@ -7856,11 +7930,15 @@ midBar.addEventListener('click', e => { const c = e.target.closest('[data-mb]');
     if (c.dataset.mb === 'mehr') { midBarAuf = !midBarAuf; renderMidBar(); return; }
     midBarAuf = false;
     if (c.dataset.mb === 'woche') { openGoals('tour'); return; }
+    if (c.dataset.mb === 'thron') { openGoals('thron'); return; }
     if (c.dataset.mb.startsWith('ev-')) { openGoals(c.dataset.mb.slice(3)); return; }
     const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650); });
 function midAnzeige(now) {                            // jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event im Events-Fenster
     renderMidBar();
-    if (evOffen() && goalsTab === 'tour' && now % 5000 < 1000) renderEvents();
+    if (evOffen() && (goalsTab === 'tour' || goalsTab === 'thron') && now % 5000 < 1000) renderEvents();
+    const st = goalsPopup.querySelector('[data-ev-st="thron"]'), an = thronLaeuft(now); if (st) st.classList.toggle('an', an);   // Chip „Thron“: grün = läuft
+    setText(goalsPopup.querySelector('[data-ev-ab="thron"]'), an ? '' : 'Sa 10');
+    if (isPanelOpen(herrPopup) && now % 5000 < 1000 && !herrPopup.contains(document.activeElement)) renderHerr();
 }
 function midNotice(island) {                          // das Kopfgeld auf dem Mega-Tempel
     const b = bountyOf(); let h = '';
@@ -8054,8 +8132,6 @@ function renderShop() {
     if (hdTab.hidden === hdHier) hdTab.hidden = !hdHier;
     if (shopTab === 'hd' && !hdHier) { showShopTab('gems'); return; }
     if (shopTab === 'shield') renderShieldState(); else if (shopTab === 'gems') renderHeroChests();
-    const tc = document.getElementById('shopThroneCount'); setText(tc, fmtHud(throneState.pts || 0)); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
-    if (shopTab === 'throne') renderThroneShop();
     if (shopTab === 'hd' && typeof hdRender === 'function') hdRender();
     if (shopTab === 'markt' && AUF) liveHtml(document.getElementById('shopMarkt'), AUF.marktHtml());
     setText(shopGemCount, fmtHud(Math.floor(gems)));
@@ -8213,7 +8289,7 @@ setTimeout(() => {                               // right after boot (everything
     if (window.WELT && !WELT.leiter && !SYSTEM && leaveAtBoot && Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) {
         // Zuschauer (die Welt rechnet der Server): die Begrüßung kommt SOFORT nach dem Ladebild. Was in der Abwesenheit
         // passiert ist (Münzen, Truppen, Berichte), kommt mit den ersten Pulsen – die Liste füllt sich dann live nach.
-        welcomeFrom = Object.assign({ live: { c0: leaveAtBoot.coins || 0, t0: leaveAtBoot.troops || 0, tp0: throneState.pts || 0 } }, leaveAtBoot);
+        welcomeFrom = Object.assign({ live: { c0: leaveAtBoot.coins || 0, t0: leaveAtBoot.troops || 0, tp0: throneState.earned || 0 } }, leaveAtBoot);
     }
     else if (window.WELT) { if (WELT.leiter && WELT.weltZeit && Date.now() - WELT.weltZeit > 60000) weltNachholen(WELT.weltZeit); }
     else if (leaveAtBoot && Date.now() - leaveAtBoot.at > 60000) {
@@ -8221,18 +8297,18 @@ setTimeout(() => {                               // right after boot (everything
         const c0 = coins, t0 = empireSnapshot().troops;
         if (ticks > 0) produceTicks(ticks);
         const dc = coins - c0, dt = empireSnapshot().troops - t0;
-        const tp0 = throneState.pts || 0, nPts = Math.floor(away / THRONE_TICK_MS);        // the throne went on too: points and volleys for the time away
+        const tp0 = throneState.earned || 0, nPts = Math.floor(away / THRONE_TICK_MS);        // the throne went on too: points and volleys for the time away
         for (let i = 0; i < nPts; i++) throneAward(true, Date.now() - away + (i + 1) * THRONE_TICK_MS);
-        const vol = throneVolley(Math.floor(away / THRONE_FIRE_MS), true), dtp = (throneState.pts || 0) - tp0; saveThrone();
+        const vol = throneVolley(Math.floor(away / THRONE_FIRE_MS), true), dtp = (throneState.earned || 0) - tp0; saveThrone();
         if (dc > 0) warStat('offCoins', dc); if (dt > 0) warStat('offTroops', dt);
-        if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS, thronePts: dtp, throneHit: vol && rulerOwner() === 'player' ? vol : null } }, leaveAtBoot);
+        if (Date.now() - leaveAtBoot.at >= AWAY_MIN_MS) welcomeFrom = Object.assign({ produced: { coins: dc, troops: dt, capped: Date.now() - leaveAtBoot.at > AWAY_PRODUCE_MAX_MS, thronePts: dtp, throneHit: vol && thronHalter() === 'player' ? vol : null } }, leaveAtBoot);
     }
     saveLeave(); setInterval(saveLeave, 30000);
 }, 0);
 window.addEventListener('pagehide', saveLeave);
 let hiddenAt = 0, hiddenSnap = null, hiddenTp = 0;
 document.addEventListener('visibilitychange', () => {
-    if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = empireSnapshot(); hiddenTp = throneState.pts || 0; saveLeave(); return; }
+    if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = empireSnapshot(); hiddenTp = throneState.earned || 0; saveLeave(); return; }
     if (hiddenAt && hiddenSnap && Date.now() - hiddenAt >= AWAY_MIN_MS) {              // the tab kept running: just show what happened since it was hidden
         const snap = hiddenSnap;
         if (window.WELT && !WELT.leiter && !SYSTEM) snap.live = { c0: snap.coins || 0, t0: snap.troops || 0, tp0: hiddenTp };   // Zuschauer: Liste füllt sich mit den Pulsen nach
@@ -8244,7 +8320,7 @@ function fmtAway(ms) { const m = Math.round(ms / 60000), d = Math.floor(m / 1440
     return d ? d + (d === 1 ? ' Tag' : ' Tage') + (hh ? ' ' + hh + ' Std.' : '') : hh ? hh + ' Std.' + (mm ? ' ' + mm + ' Min.' : '') : mm + ' Min.'; }
 function welcomeRows(from) {
     const rows = [], now = empireSnapshot(), log = combatLog.filter(e => e.at >= from.at);
-    const lv = from.live, pr = lv ? { coins: Math.max(0, coins - lv.c0), troops: Math.max(0, now.troops - lv.t0), capped: false, thronePts: Math.max(0, (throneState.pts || 0) - lv.tp0), throneHit: null } : from.produced;
+    const lv = from.live, pr = lv ? { coins: Math.max(0, coins - lv.c0), troops: Math.max(0, now.troops - lv.t0), capped: false, thronePts: Math.max(0, (throneState.earned || 0) - lv.tp0), throneHit: null } : from.produced;
     if (pr && (pr.coins > 0 || pr.troops > 0)) rows.push(['coin', 'Produktion' + (pr.capped ? ' (8 Std.)' : ''), '+' + fmtCompact(pr.coins) + ' Münzen · +' + fmtCompact(pr.troops) + ' Truppen']);
     if (pr && pr.thronePts > 0) rows.push(['crown', 'Am Thron', '+' + fmtNum(pr.thronePts) + ' Thron-Punkte']);
     if (pr && pr.throneHit) rows.push(['attack', 'Beschuss auf den Thron', fmtCompact(pr.throneHit.loss) + ' getroffen · ' + fmtCompact(pr.throneHit.w) + ' im Krankenhaus']);
@@ -9358,7 +9434,7 @@ function renderLookTop() {                            // what you wear now + wha
     const el = document.getElementById('lkTop'); if (!el || document.getElementById('lookSheet').hidden) return;
     liveHtml(el, '<span class="frame-ring lk-me" data-frame="' + playerFrame() + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
         '<span class="lk-me-t"><b>' + escapeHtml(profileName.value || 'Du') + '</b><small>' + escapeHtml(playerTitle()) + '</small></span>' +
-        '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtHud(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>');
+        '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtHud(Math.floor(gems)) + '</b></span></span>');
 }
 function renderLookSheet(live) {                     // live = jede Sekunde aus liveTick: der Wappen-Editor bleibt, wie er ist
     const sh = document.getElementById('lookSheet'); if (!sh || sh.hidden) return;
@@ -11186,13 +11262,16 @@ function evPreis(who, src, title, p, schl, bis) {     // schl: fester Schlüssel
     // bis: Ende des Events (Invasion, Drache) bzw. des Tages (Tagesboss, Lager) – bis dahin nur im Event abholbar, danach im Abholfach
     const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
     const { coins, tr } = evStunden(who, p), k = schl != null ? src + '|' + schl : undefined;   // k: das Abholfach kennt die Stufe (Leiste im Event-Fenster)
+    let b = Array.isArray(p.b) && p.b.length ? p.b : undefined;   // b: Gegenstände [Art, Menge, Extra] (Thron-Event)
     if (!(bis > Date.now())) bis = undefined;
-    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k, bis }); if (titel) saisonTitelGeben(titel); return; }
+    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k, bis, b }); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
-    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
+    if (bd.mensch && window.WELT && b) { for (const [a, n] of b) if (a === 'holz' && AUF) AUF.rohDazu(who, { h: n }); b = b.filter(x => x[0] !== 'holz'); if (!b.length) b = undefined; }   // Holz gleich in seinen Topf (kommt mit dem nächsten Puls, das Hauptbuch kennt es)
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {}, b ? { b } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
     const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
     if (coins) botCoins[who] = (botCoins[who] || 0) + coins; if (tr) { const cap = botCapitalOf(who); if (cap !== null && cap !== undefined) islandTroops[cap] = (islandTroops[cap] || 0) + tr; }
+    for (const [a, n, e] of b || []) beuteBot(who, a, n, e);
     if (bs && titel) { bs.titles = [...new Set([...(bs.titles || []), titel])]; saveBotState(); }
 }
 function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
@@ -11711,7 +11790,7 @@ function evOffen() { return isPanelOpen(goalsPopup) && EV_TABS.includes(goalsTab
 function renderEvents() {
     evRenderAt = Date.now();
     const sk = saisonKarte(), oben = sk && saisonOben(Date.now()), sz = sk ? '<div class="ev-saison">' + sk + '</div>' : '';
-    liveHtml(document.getElementById('eventBody'), (oben ? sz : '') + (evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evTab === 'lager' ? evLagerHtml() : evBossHtml()) + (!oben && evTab === 'tour' ? sz : ''));
+    liveHtml(document.getElementById('eventBody'), (oben ? sz : '') + (evTab === 'tour' ? evTourHtml() : evTab === 'thron' ? evThronHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evTab === 'lager' ? evLagerHtml() : evBossHtml()) + (!oben && evTab === 'tour' ? sz : ''));
 }
 // Welt-Saison: nur in den letzten 3 Tagen (oder angehalten) oben in jedem Reiter – sonst unten im Wochen-Event (der Inhalt des Reiters geht vor)
 function saisonOben(now) { return !!(saison && (saison.halt || saison.ende - now <= SAISON_BALD_MS)); }
@@ -11804,6 +11883,7 @@ function armyMove(a, t) {                                                    // 
     if (t.kind === 'base' && islandOwnerOf(t.id) === who) t.kind = 'home';
     if (t.kind === 'base' && isCapital(t.id)) return 'capital';
     if (t.kind === 'base' && t.id === megaTempleId && now < thronOffenAb()) return 'thron';   // der Thron erst ab Tag 7 – auch für Armeen
+    if (t.kind === 'base' && thronKuppel(t.id, now)) return 'kuppel';                                  // Kuppel außerhalb des Thron-Events
     if (t.kind === 'base' && baseShieldedFor(t.id, who)) return 'shield';
     if (t.kind === 'army') { const b = armyById(t.id); if (b && armyWho(b) !== who && ownerShielded(armyWho(b))) return 'shield'; }
     if (bundFreund(who, t.kind === 'base' ? islandOwnerOf(t.id) : t.kind === 'army' && armyById(t.id) ? armyWho(armyById(t.id)) : null)) return 'bund';   // Bündnis-Mitglieder greifen sich nicht an
@@ -11820,6 +11900,7 @@ function armyOrder(a, t) {
     const why = !rechnet() ? (WELT.befehl('armee', { op: 'ziehen', id: a.id, ziel: t }), '') : armyMove(a, t);
     if (why === 'shield') flashHint(shieldBlockText(t.kind === 'army' ? armyWho(armyById(t.id)) : islandOwnerOf(t.id)), 4000);
     if (why === 'capital') flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(t.id)] || {}).name + ' – eine Hauptstadt greifst du von einer Basis aus an (Angreifen), nicht mit einer Armee.', 4000);
+    if (why === 'kuppel') flashHint(thronKuppelText(), 3500);
     if (why === 'thron') flashHint('Der Thron zählt erst ab Tag ' + KARTE_ZONEN.thron.tag + ' – noch ' + fmtPassWait(thronOffenAb() - Date.now()) + '.', 3500);
     if (why === 'route') flashHint(noRouteHint(a.lm, t.lm), 3500);
     if (why === 'bund') flashHint('Das gehört einem Bündnis-Mitglied – Mitglieder greifen sich nicht an.', 3500);
@@ -12149,7 +12230,7 @@ let previewShownAt = 0; // guards against a stray click landing on the
 // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
 function isUiElement(target) {
   return !!(target && target.closest && target.closest(
-    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#rucksackPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
+    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#herrPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#rucksackPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
 }
 const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', rucksackPopup: 'rucksackBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
 function isPanelOpen(el) { return el.classList.contains('is-open'); }
@@ -12174,7 +12255,6 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeLevelUpModal()) return;
   if (closeDailyModal()) return;                                                  // the modals lie above the full-screen sheets and the town
   if (!document.getElementById('rewardModal').hidden) { document.getElementById('rewardModalBtn').click(); return; }
-  if (!document.getElementById('titleModal').hidden) { document.getElementById('titleModal').hidden = true; return; }
   if (!document.getElementById('lookSheet').hidden) return closeLookSheet();      // the full-screen sheets lie above everything else
   if (!document.getElementById('heroHall').hidden) return closeHeroHall();
   if (!barbSheetEl.hidden) return closeBarbSheet();
@@ -12185,7 +12265,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn'],['rucksackPopup','rucksackCloseBtn']])
+  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['herrPopup','herrCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn'],['rucksackPopup','rucksackCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -12209,6 +12289,7 @@ function closeAllPopups() {
     closePanel(shopPopup);
     closePanel(document.getElementById('rucksackPopup'));
     closePanel(document.getElementById('rulerPopup'));
+    closePanel(document.getElementById('herrPopup'));
     closePanel(document.getElementById('rankPopup'));
     if (!document.getElementById('lookSheet').hidden) closeLookSheet();
     if (!document.getElementById('heroHall').hidden) closeHeroHall();
@@ -12364,8 +12445,6 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // Gebäude/Forschung fallen auf das, was Burg/Labor dann erlauben (aufbau.js burgFair), ohne Erstattung. saison.burgFair = diese Saison.
 // Alexander 6.10.: einmalige Ausnahme (wegen des Fehlers, damit es fair bleibt) – derselbe Schritt setzt Edelsteine auf genau 1.000 und
 // Holz/Stein/Eisen auf 0 (saisonAusnahme; echte Spieler: Handy 01a-grundlagen.js + Hauptbuch 10d WELT.saisonKonto). Später nie wieder.
-// Thron-Punkte (Alexander 6.10., JEDER Reset): höchstens SAISON_TP_MAX gehen mit, der Rest 10 : 1 als Edelsteine ins Abholfach
-// (Mitspieler: gleich abgeholt; echte Spieler: ihr Handy beim Neuladen, das Hauptbuch erlaubt es – 10d saisonKonto).
 // Umstellung auf „pro Stunde“ (Alexander 5.10., 11b A): der ERSTE Reset danach rechnet beim Weltrechner die Münz-Töpfe des Hauptbuchs
 // × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR um (Münzen 6.10. in normalen Zahlen). saison.wirtAb = die erste Saison mit der neuen Wirtschaft (fehlt: noch alt). Holz/Stein/Eisen bleiben bei jedem
 // Reset unverändert (Alexander 6.10.: sie sind wieder in RoK-Größe, ROH_FAKTOR).
@@ -12503,8 +12582,7 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
         if (b.ps) { b.ps.base = botPassScore(b); b.ps.f = 0; b.ps.p = 0; b.ps.prem = false; }   // Saison-Pass von vorn, auch Premium (Alexander 8.10.)
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
         if (B > 0 && AUF) burgFairWer(b, B);
-        if (!(botById[w] && botById[w].mensch) && b.tp > SAISON_TP_MAX) { const g = Math.floor((b.tp - SAISON_TP_MAX) / SAISON_TP_JE_GEM); b.tp = SAISON_TP_MAX;   // Thron-Punkte (echte Spieler: ihr Handy)
-            if (g > 0) evPreis(w, 'saison', 'Thron-Punkte aus Saison ' + saison.nr + ' umgetauscht', { gems: g }, 'tp' + saison.nr); } }
+    }
     capitalCache = null; ownVer++;
     saveGameNow(); flushBotState(); saveProgressionNow(); saveFields(); saveBarb(); saveArmies(); saveEv();
     requestRender();
@@ -12599,8 +12677,8 @@ updateHudPlayer();
 // regular towers keep the numbering players already know.
 function islandTitle(island) {
     const boss = bossAt(island.id); if (boss) return boss.name;
-    if (island.type === 'megaTemple') return 'Mega-Tempel';
-    if (island.guardian) return 'Wächter-Tempel';
+    if (island.type === 'megaTemple') return 'Königsthron';
+    if (island.guardian) return 'Wachturm';
     if (island.type === 'temple') return 'Tempel';
     if (island.type === 'gate') return island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor';
     if (island.id === playerIslandId) return 'Hauptstadt';
@@ -12639,11 +12717,12 @@ function ringNotice(isl) {                         // whose ring is it: a title 
         : me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.';
     return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
 }
-function throneNotice(island) {                   // your own throne or Wächter-Tempel: points and fire at a glance
+function throneNotice(island) {                   // dein Thron oder Wachturm: Punkte und Beschuss auf einen Blick (nur im Thron-Event)
+    if (!thronLaeuft()) return '';
     if (island.type === 'megaTemple') { const sh = throneShooters().length;
         return '<div class="notice ' + (sh ? 'notice--warn' : 'notice--gold') + '">' + icon('crown') + '<span>+' + throneIncome('player') + ' Thron-Punkte alle 3 Min. · ' +
-            (sh ? sh + (sh === 1 ? ' Wächter-Tempel feuert' : ' Wächter-Tempel feuern') + ' in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b> (je ' + THRONE_FIRE_PCT + ' % der Truppen hier)' : 'alle Wächter-Tempel gehören dir – kein Beschuss') + '</span></div>'; }
-    if (island.guardian) return '<div class="notice notice--gold">' + icon('crown') + '<span>+' + THRONE_PTS_GUARD + ' Thron-Punkte alle 3 Min. ' + (rulerOwner() === 'player' ? 'Dieser Tempel feuert nicht auf deinen Thron.' : 'Hältst du den Thron, feuert er nicht auf dich.') + '</span></div>';
+            (sh ? sh + (sh === 1 ? ' Wachturm schießt' : ' Wachtürme schießen') + ' in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b> (je ' + THRONE_FIRE_PCT + ' % der Truppen hier)' : 'kein Wachturm schießt auf dich') + '</span></div>'; }
+    if (island.guardian) return '<div class="notice notice--gold">' + icon('crown') + '<span>+' + THRONE_PTS_GUARD + ' Thron-Punkte alle 3 Min. Er schießt nie auf dein Bündnis.</span></div>';
     return '';
 }
 function templeBonusLine(island) {
@@ -12787,8 +12866,9 @@ function renderPopup() {
                 (keinNachbar ? '<div class="notice notice--warn tor-hinweis">' + icon('info') + '<span>Keine deiner Basen grenzt an ' + (island.type === 'gate' ? 'dieses Tor' : 'dieses Gebiet') + '.</span></div>' : '') + midNotice(island) + ringNotice(island) +
                 (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Fällt nie · Sieg = ' + Math.round(HAUPT_BEUTE * 100) + ' % Beute über dem Schutz' + (brennt(island.id) ? ' · brennt gerade' : '') + '</span></div>' : '') +
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Verschlossen – wer das Tor erobert, kommt durch und bestimmt die Maut.</span></div>' : '') +
-                (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
-                (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
+                (thronKuppel(island.id) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + thronKuppelText() + '</span></div>' : '') +
+                (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (rulerOwner() ? escapeHtml(fieldWhoName(rulerOwner())) + (rulerOwner() === 'player' ? ' bist' : ' ist') + ' Herrscher und verteilt die Titel.' : 'Noch kein Herrscher.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Herrscher</button></div>' : '') +
+                (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Königsthron: im Thron-Event (Sa 10 – So 22 Uhr) alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte für den Halter. Die Wachtürme schießen alle 10 Min. darauf. Platz 1 am Ende wird eine Woche Herrscher.' : island.guardian ? 'Wachturm: 3-facher Tempel-Bonus und im Thron-Event alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht zum Bündnis des Halters, schießt er alle 10 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
                 (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
                 (scoutEnRoute && scouted ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
@@ -13633,7 +13713,7 @@ document.addEventListener('contextmenu', e => { if (!feldErlaubt(e.target)) e.pr
 // gerade sichtbaren Fenster neu gerechnet. liveHtml schreibt davon nur, was sich wirklich geändert hat (kein Flackern,
 // Knöpfe bleiben antippbar, die Scroll-Position bleibt), die Restzeiten (uhrHtml) zählen von selbst herunter.
 // Läuft eine Restzeit ab (z. B. der Friedensschild), stellt das Fenster beim nächsten Schritt um.
-let liveZuletzt = 0, liveWartet = 0, liveTitelVer = -1, liveRangAt = 0, liveSkillSig = '', liveGemeldet = false;
+let liveZuletzt = 0, liveWartet = 0, liveRangAt = 0, liveSkillSig = '', liveGemeldet = false;
 function liveBald() {                                  // neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
     if (liveWartet) return;
     liveWartet = setTimeout(() => { liveWartet = 0; liveTick(); }, Math.max(0, liveZuletzt + 1000 - Date.now()));
@@ -13657,12 +13737,11 @@ function liveTick() {
     if (isPanelOpen(goalsPopup) && goalsTab === 'reward') teil(renderInbox);                              // Events → Belohnung
     if (isPanelOpen(rankPopup) && liveZuletzt - liveRangAt >= 5000) { liveRangAt = liveZuletzt; teil(renderRankings); }   // Rangliste: alle 5 s reicht
     teil(heroHallLive);                                                                                     // Helden
-    if (offen('lookSheet')) teil(() => renderLookSheet(true));                                             // Aussehen: Gems / Thron-Punkte
+    if (offen('lookSheet')) teil(() => renderLookSheet(true));                                             // Aussehen: Gems
     if (fieldSheetId !== null && fieldById[fieldSheetId] && offen('fieldSheet')) teil(() => openFieldSheet(fieldById[fieldSheetId]));
     if (offen('barbSheet')) teil(barbSheetRefresh);
     if (armySheet && offen('armySheet')) teil(renderArmySheet);
     if (multiAttackMode) teil(updateMultiAttackBar);
-    if (offen('titleModal') && titleVer !== liveTitelVer && !document.getElementById('titleList').contains(document.activeElement)) { liveTitelVer = titleVer; teil(renderTitleModal); }   // (nie mitten in einer Auswahl)
     teil(() => { if (liveUhren()) liveBald(); });     // alle Restzeiten weiter; ist eine abgelaufen, gleich noch einmal
 }
 setInterval(liveTick, 1000);
@@ -13803,9 +13882,9 @@ if (window.WELT) {
     const wacheMem = {};
     const konto = () => ({ u: 0, vor: 0, vorT: 0 });   // u: so viel kann er höchstens haben · vor: gerade ausgegeben (sein Handy zeigt schon weniger)
     const wm = who => wacheMem[who] || (wacheMem[who] = { init: false, zeiten: {}, warte: { ausbau: [], truppen: [] }, c: konto(), w: konto(), g: konto(), rk: null, sr: [], ein: [], flug: [], lvlLog: [], lvl: 1, rEin: [], rsr: [] });
-    function wd(who) {   // lv: bis zu welcher Stufe die Stufen-Truppen bezahlt sind, tk: Thron-Truppen gekauft, gTr/gC: Admin-Geschenke (Truppen/Münzen)
+    function wd(who) {   // lv: bis zu welcher Stufe die Stufen-Truppen bezahlt sind, gTr/gC: Admin-Geschenke (Truppen/Münzen)
         const b = loadBotState()[who]; if (!b) return null;
-        if (!b.wache || typeof b.wache !== 'object') b.wache = { lv: 0, tk: 0, gTr: 0, gC: 0 };
+        if (!b.wache || typeof b.wache !== 'object') b.wache = { lv: 0, gTr: 0, gC: 0 };
         return b.wache;
     }
     function zuOft(m, art, max, ms) {    // mehr als max-mal in ms? (dann zählt dieser nicht mit)
@@ -13828,7 +13907,7 @@ if (window.WELT) {
     // Nachrichten als unterwegs, bis danach zwei Profile von ihm kamen (m.flug, je Minute zusammengefasst).
     // EP kommen nur vom Weltrechner (Kämpfe): daraus folgt die höchste Stufe, die er haben kann (m.lvl).
     // Spielraum pro Stunde: Stufen-Münzen der letzten Stunde (+ nächste Stufe) und ein paar Stunden-Einnahmen (Saison-Pass zahlt
-    // „eine Stunde Produktion“, Thron-Shop THRONE_STUNDEN Stunden). Die Stunden-Einnahme ist GEMESSEN (was der Weltrechner ihm in der
+    // „eine Stunde Produktion“). Die Stunden-Einnahme ist GEMESSEN (was der Weltrechner ihm in der
     // letzten Stunde schickte) – nie aus seinen jetzigen Basis-Stufen, sonst würde ein erschlichener Ausbau den Spielraum
     // gleich weiter vergrößern. Am Anfang (noch keine Stunde gemessen) gilt die Produktion beim ersten Sehen (m.hp0).
     const FLUG_MS = 10000, FLUG_MAX_MS = 48 * 3600000;
@@ -13853,21 +13932,20 @@ if (window.WELT) {
         const d = spielraumTag(who); if (d && n - a > 0) { d.srN = nn(d.srN) + n - a; saveBotState(); }
     }
     // Münzen, die auf einmal kommen dürfen: Saison-Pass (je Saison höchstens die Münz-Stufen beider Reihen), Tagesaufgaben (je Tag
-    // ihre Münz-Stunden – der Topf füllt sich gleichmäßig nach, höchstens 2 Tage, weil sein Tag nicht der des Servers ist) und Thron-Shop
-    // (so viele Käufe, wie seine Thron-Punkte hergeben – die zählt der Weltrechner selbst). Gemessen in Stunden Ertrag.
+    // ihre Münz-Stunden – der Topf füllt sich gleichmäßig nach, höchstens 2 Tage, weil sein Tag nicht der des Servers ist). Gemessen in
+    // Stunden Ertrag.
     let passMuenzH = null;
     const AUF_MUENZ_H = 2 * QUEST_COIN_H.reduce((a, x) => a + x, 0);   // 6 Aufgaben: je 2 leicht/mittel/schwer
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
         if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) for (const r of passRewardAt(L, pr)) if (r.k === 'coins') passMuenzH += r.n || 1; }
         const now = Date.now(), h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni)
-        const thH = Math.max(THRONE_STUNDEN, THRONE_MIN.coins / h);   // Stunden je Thron-Kauf (mind. THRONE_MIN Münzen, 7.10.)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
         d.aM = Math.max(0, nn(d.aM) - AUF_MUENZ_H * Math.max(0, now - nn(d.aMt)) / 864e5); d.aMt = now;
-        const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
-        const use = Math.min(mehr, (passRest + aufRest + thronRest * thH) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
-        let r = use / h; const ausPass = Math.min(r, passRest); r -= ausPass; const ausAuf = Math.min(r, aufRest); r -= ausAuf;
-        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; d.tC = nn(d.tC) + r / thH; saveBotState();
+        const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM);
+        const use = Math.min(mehr, (passRest + aufRest) * h); if (!(use > 0)) return 0;
+        let r = use / h; const ausPass = Math.min(r, passRest); r -= ausPass; const ausAuf = Math.min(r, aufRest);
+        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; saveBotState();
         return use;
     }
     function spielraumFrei(who, m) {
@@ -14093,11 +14171,6 @@ if (window.WELT) {
             erlaubt = 0; for (let l = ab + 1; l <= hoch; l++) erlaubt += levelRewardTroops(l);
             if (hoch > d.lv) { d.lv = hoch; saveBotState(); }
             if (b.bis > hoch) warnen(who, 'truppen', 'Stufen-Belohnung bis Stufe ' + b.bis + ', mit seinen EP geht höchstens Stufe ' + m.lvl + '.', b.bis - m.lvl);
-        } else if (q === 'thron') {                    // Thron-Shop: THRONE_STUNDEN Stunden Truppenproduktion (Alexander 6.10.), je 200 Thron-Punkte
-            const kaeufe = Math.floor(throneEarnedOf(who) / 200) + 5;
-            if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
-            d.tk++; saveBotState();
-            erlaubt = 3 * Math.max(THRONE_MIN.troops, hourProduction(who).troops * THRONE_STUNDEN) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders (mind. THRONE_MIN wie im Shop)
         } else if (q === 'heil') {                     // Krankenhaus: höchstens so viele, wie verwundet sind
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
@@ -14267,16 +14340,7 @@ if (window.WELT) {
     }
     // Spielraum wächst mit der Zeit (je Quelle die Tages-Grenze), dazu Erfolge, Stufen-Gems und der Saison-Pass
     function hbKontenMerken(hb, m, now) { m.hbMerkT = now; hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; saveBotState(); }   // (für einen Neustart)
-    // Thron-Shop (06c-thron-mitte.js THRONE_OFFERS): jede Ausrüstungskiste 60 Punkte, jede Königliche (mind. Episch) 400. Großzügig: seine
-    // Thron-Punkte (zählt der Weltrechner selbst) zählen für beides – sonst gibt eine gekaufte Kiste einen falschen Alarm
-    const hbThronPreis = (id, sonst) => { const o = typeof THRONE_OFFERS !== 'undefined' && THRONE_OFFERS.find(x => x.id === id); return o && o.cost > 0 ? o.cost : sonst; };
-    function hbThronKisten(hb, E) {
-        if (hb.thK === undefined) { hb.thK = nn(E); return; }   // (bisherige Spieler: erst merken – die schon verdienten Punkte sind keine neuen Kisten)
-        const d = nn(E) - nn(hb.thK); if (!(d > 0)) return; hb.thK = nn(E);
-        hb.fr.k = nn(hb.fr.k) + d / hbThronPreis('crate', 60); hb.fr.kg = nn(hb.fr.kg) + kWert(3) * d / hbThronPreis('royal', 400);
-    }
     function hbFreiDazu(who, hb, now) {
-        try { hbThronKisten(hb, throneEarnedOf(who)); } catch (e) {}   // (bei jedem Profil – eine gerade gekaufte Kiste soll nicht 5 Min. warten)
         const dt =Math.min(HB_KAPPE_TAGE * TAG, now - nn(hb.frT)); if (dt < 300000) return; hb.frT = now;   // (in 5-Minuten-Schritten: das Hauptbuch ändert sich nicht bei jedem Profil)
         const f = hb.fr, on = !!(WELT.menschen[who] && WELT.menschen[who].online), t = dt / TAG;
         const dazu = (k, v, kappe) => { const vorher = nn(f[k]); f[k] = Math.max(vorher, Math.min(vorher + v, kappe)); };
@@ -14486,7 +14550,7 @@ if (window.WELT) {
     }
     // (welt.js profilZuBot, nur beim Weltrechner) ein Profil kommt an → Hauptbuch prüfen, Mitspieler-Datensatz klemmen
     function hbKlemmen(who, b, p, alt) {
-        if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles', 'throneLook', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
+        if (!AUF) { if (alt && alt.hbK) for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles', 'hbK']) if (alt[k] !== undefined) b[k] = alt[k]; return; }   // (aufbau.js noch nicht geladen: die Welt-Werte bleiben)
         const now = Date.now();
         let hb = alt && alt.hb && alt.hb.v === HB_V ? alt.hb : b.hb && b.hb.v === HB_V ? b.hb : null;
         if (!hb) {
@@ -14495,7 +14559,7 @@ if (window.WELT) {
             // dem Profil), zählt er als neu – sonst brächte ein gefälschtes Profil seine Werte in die Welt
             const frisch = !(alt && alt.city) || (!alt.zProfil && (!alt.mensch || !!alt.hbRoh));   // (nach dem Zurückspielen: angleichen wie bisher)
             hb = hbNeu(who, now, p, frisch); if (frisch) hb.lk = { f: [], t: [], th: 0 };   // (ganz neu: keine alten Rahmen)
-            if (frisch) { b.wache = Object.assign({ lv: 0, tk: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 };
+            if (frisch) { b.wache = Object.assign({ lv: 0, gTr: 0, gC: 0 }, b.wache || {}, { u: 0, w: 0, lm: 1 }); hb.gU = 0; hb.rU = AUF ? Object.assign({}, AUF.ROH_START) : { h: 0, s: 0, e: 0 };
                 if (alt) alt.wache = b.wache; delete wacheMem[who]; }   // (wacheSehen liest den Eintrag in der Welt – und darf sich vorher nicht schon am Profil geeicht haben)
         }
         b.hb = hb; if (alt && alt !== b) alt.hb = hb;
@@ -14519,9 +14583,9 @@ if (window.WELT) {
     // Gemerkt wird erst am ersten Profil mit look.frames (nach dem Neustart kommen zuerst alte Profile ohne die Listen – sonst blieben
     // gekaufte Rahmen für immer leer); bis dahin wie vorher der angelegte (welt.js profilZuBotRoh)
     function hbRahmen(hb, b, p) {
-        if (!hb.lk && Array.isArray(((p || {}).look || {}).frames)) hb.lk = { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60), th: b.throneLook ? 1 : 0 };
+        if (!hb.lk && Array.isArray(((p || {}).look || {}).frames)) hb.lk = { f: (b.frames || []).slice(0, 60), t: (b.titles || []).slice(0, 60) };
         if (!hb.lk) return;
-        b.frames = (b.frames || []).filter(x => x === 'saison' || hb.lk.f.includes(x)); b.titles = (b.titles || []).filter(x => hb.lk.t.includes(x)); if (!hb.lk.th) b.throneLook = 0;
+        b.frames = (b.frames || []).filter(x => x === 'saison' || hb.lk.f.includes(x)); b.titles = (b.titles || []).filter(x => hb.lk.t.includes(x));
     }
     // Nach dem Zurückspielen einer Sicherung (server.php: ow_welt_info.zurueck) ist die Welt – mit dem Hauptbuch – wieder alt, die
     // Spielstände der Spieler nicht (was sie seitdem verdient und gebaut haben, behalten sie). Damit beides zusammenpasst, gleicht der
@@ -14556,23 +14620,11 @@ if (window.WELT) {
     // zählt nicht mehr (welt.js: erst das Profil der neuen Saison) – so gibt es keine Fehlalarme, wenn sein Handy später kommt.
     // f < 1: erster Reset nach der Umstellung auf „pro Stunde“ – die Münz-Töpfe des Ausgegebenen (Münzen, Admin-Münzen) werden
     // umgerechnet (abgerundet). Holz/Stein/Eisen bleiben unverändert wie am Handy (6.10.: wieder RoK-Größe).
-    // Thron-Punkte (Alexander 6.10., jeder Reset): sein Handy behält höchstens SAISON_TP_MAX, der Rest kommt 10 : 1 als Edelsteine ins
-    // Abholfach (01a-grundlagen.js) – das Hauptbuch zählt sie als sicher geschickt (hb.gIn), aber nur so viele, wie er haben kann:
-    // was er nach dem letzten Reset behalten durfte (hb.tpB) + was der Weltrechner ihm seitdem gab (Thron, throneEarnedOf) + der
-    // Saison-Pass; mit Profil höchstens seine Punkte darin (+ was danach noch kam). B: einmalige Ausnahme (Alexander 6.10.) –
-    // Edelsteine genau SAISON_AUSNAHME_GEMS, Holz/Stein/Eisen 0, die Töpfe des Ausgegebenen leer (Abholfach hb.gIn bleibt).
-    function hbPassTp() { let n = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) for (const r of passRewardAt(L, prem)) if (r.k === 'tp') n += r.n || 1; return n; }
-    function hbThronReset(who, hb, p, now) {
-        const E = throneEarnedOf(who), pass = hbPassTp() * (Math.floor(Math.max(0, now - Math.max(PASS_EPOCH, nn(hb.tpT))) / PASS_LEN) + 1);
-        let hoch = (hb.tpE === undefined ? E : nn(hb.tpB) + Math.max(0, E - nn(hb.tpE))) + pass;
-        if (p && p.tp != null) hoch = Math.min(hoch, nn(p.tp) + Math.max(0, E - nn(p.earned)) + 500);
-        const g = Math.floor(Math.max(0, hoch - SAISON_TP_MAX) / SAISON_TP_JE_GEM); if (g > 0) hb.gIn = nn(hb.gIn) + g;
-        hb.tpB = Math.min(hoch, SAISON_TP_MAX); hb.tpE = E; hb.tpT = now;
-    }
+    // B: einmalige Ausnahme (Alexander 6.10.) – Edelsteine genau SAISON_AUSNAHME_GEMS, Holz/Stein/Eisen 0, die Töpfe des Ausgegebenen
+    // leer (Abholfach hb.gIn bleibt).
     WELT.saisonKonto = function (who, f, B) {
         const b = loadBotState()[who]; if (!b) return;
         const m = wacheMem[who], hb = hbDa(who), d = wd(who), x = WELT.menschen[who];
-        if (hb) try { hbThronReset(who, hb, (m && m.prof) || (x && x.profil) || null, Date.now()); } catch (e) { console.warn('Saison:', e); }
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
@@ -14828,6 +14880,10 @@ if (window.WELT) {
             if (b.wem && (!wem || !botById[wem] || wem === who)) return;   // (sich selbst keinen Titel)
             giveTitle(b.key, wem);
         },
+        thronKiste(who, b) {                          // der Herrscher verschenkt eine Kiste (06c herrKiste prüft: Herrscher, noch da, nicht an sich selbst)
+            const an = kennungOk(b.wem) ? lokalId(b.wem) : null;
+            herrKiste(who, typeof b.art === 'string' ? b.art : '', an);   // (keine mehr da / kein Herrscher mehr: ein Wettlauf, kein Schummeln)
+        },
         feld(who, b) {
             const f = (typeof b.feld === 'number' || typeof b.feld === 'string') ? resFields.find(x => x.id === b.feld) : null;
             if (!f || !inselOk(b.home) || !gehoert(b.home, who)) return;
@@ -14964,14 +15020,14 @@ if (window.WELT) {
         warnen, zuOft: (who, art, max, ms) => zuOft(wm(who), art, max, ms)
     };
 
-    // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Krankenhaus, Splitter, Zahlen
+    // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte (gesamt), Krankenhaus, Splitter, Zahlen
     const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires', drache: 'drache', inv: 'inv',
         lager: 'lager', qb: 'qb', qd: 'qd', qi: 'qi', invPkt: 'invPkt', qHilfe: 'qHilfe', qVerst: 'qVerst', qRally: 'qRally' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an; die q…: für Tagesaufgaben und Saison-Pass, QUEST_STAT)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;
         if (e.coins) coins = Math.max(0, coins + e.coins);
         if (e.gems) gems = Math.max(0, gems + e.gems);
-        if (e.tp) { throneState.pts = Math.max(0, (throneState.pts || 0) + e.tp); if (e.tp > 0) throneState.earned = (throneState.earned || 0) + e.tp; saveThrone(); }
+        if (e.tp > 0) { throneState.earned = (throneState.earned || 0) + e.tp; saveThrone(); }   // Thron-Punkte (Saison-Rangliste, Erfolge)
         if (e.xp > 0) addXp(e.xp);
         if (e.wounded) { const c = loadCity(); c.wounded = Math.max(0, (c.wounded || 0) + e.wounded); saveCity(); }
         if (e.sh) { const hs = loadHeroes(); for (const h in e.sh) if (hs[h]) hs[h].sh = Math.max(0, (hs[h].sh || 0) + e.sh[h]); saveHeroes(); }
@@ -15010,7 +15066,9 @@ if (window.WELT) {
         const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
         if (k && inboxList().some(x => x.k === k)) return;                     // (dieselbe Stufe nie zweimal im Fach)
         const bis = typeof e.bis === 'number' && e.bis > Date.now() ? Math.min(e.bis, Date.now() + 864e5) : undefined;   // (Event-Stufe: bis zum Ende nur im Event abholbar, höchstens einen Tag)
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k, bis }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
+        const B_ART = ['eventMuenzen', 'schluessel1', 'schluessel2', 'besch', 'holz'], b = (Array.isArray(e.b) ? e.b : []).slice(0, 8)   // Gegenstände (Thron-Event): nur bekannte Arten
+            .filter(x => Array.isArray(x) && B_ART.includes(x[0]) && z(x[1], 1e9) > 0).map(([a, n, x]) => a === 'besch' ? [a, z(n, 1e9), { dauer: x && BESCH_TXT[x.dauer] ? x.dauer : '1h' }] : [a, z(n, 1e9)]);
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k, bis, b: b.length ? b : undefined }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;
