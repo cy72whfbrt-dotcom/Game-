@@ -217,7 +217,10 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .pl-ok.is-lock{background:rgba(0,0,0,.55);color:var(--tx-3)}
 @media (max-width:899px) and (min-height:501px){   /* Handy: Pass enger, damit die Premium-Reihe ganz im Fenster steht (Spieltest 7.10.) */
   .pass-hero{padding:8px 10px;gap:5px} .pass-lvl{width:42px;height:42px} .pass-lvl b{font-size:17px}
-  .pl{padding-bottom:4px} .pl-spalte,.pl-namen{gap:3px} .pl-spalte::before{top:calc(var(--plz) + 16px)} .pass-prem{padding:8px} }
+  .pl{padding-bottom:4px} .pl-spalte,.pl-namen{gap:3px} .pl-spalte::before{top:calc(var(--plz) + 16px)} .pass-prem{padding:8px}
+  #goalsPopup.panel--sheet:has([data-gpane="pass"]:not([hidden])){--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd))} }   /* Pass: bis unter das HUD (wie der Shop) – kurze Handys (Foto 8.10.: Premium-Reihe halb weg) */
+@media (max-width:899px) and (min-height:501px) and (max-height:700px){   /* ganz kurze Handys (SE): Pass-Kacheln kleiner, die Premium-Reihe bleibt ganz im Fenster */
+  .pl{--plz:66px} .pl-zelle{--bk:40px;padding:4px 3px} .pl-zelle.is-zwei{--bk:26px} #goalsPopup .pbody:has(#passPane){gap:8px} }
 .pass-how-l{display:grid;gap:2px;margin-top:8px;padding:4px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.18)}
 .pass-how-l div{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .pass-how-l div:last-child{border-bottom:0}
 .pass-how-l .icon{width:14px;height:14px;color:var(--gold-300);flex:none} .pass-how-l b{margin-left:auto;color:var(--gold-100);font-variant-numeric:tabular-nums}

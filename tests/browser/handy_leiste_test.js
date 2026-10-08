@@ -1,7 +1,7 @@
 // Spieler-Durchsicht 6.10. (Bereiche A + J), Handy 390×844 und Desktop 1440×900 / 1280×720:
 // Gebäude-Fenster endet über der Leiste (Bauen-Knopf frei), unter festen Fußknöpfen (Burg „Bauen“, Held „Aufwerten“) schaut kein Inhalt
 // hervor, am Ende ist alles über dem Fußknopf; eigene Basis: steht frei (nicht unter Anleitung, Fenster oder Leiste), alle Knöpfe im
-// Fenster; Anleitung: „Schritt 1/7“ links neben dem Text, Text ganz, höchstens 4 Zeilen (≤ 84 px; Spieltest 7.10.: vorher nach 2 Zeilen „…“); HUD: Holz/Stein/Eisen am Desktop, Handy „Rohstoffe“;
+// Fenster; Anleitung: „Schritt 1/7“ links neben dem Text, Text ganz, höchstens 4 Zeilen (≤ 84 px; Spieltest 7.10.: vorher nach 2 Zeilen „…“); HUD: Holz/Stein/Eisen am Desktop, Handy „Rohstoffe“; Leiste mit allen 6 Knöpfen (Rucksack, Foto 8.10.);
 // ganz rausgezoomt ruhiger Nebel statt Wolken-Brei, die Gebiete schimmern durch, Wappen an der Hauptstadt; Umlaute in Versalien
 // (Reiter, Überzeilen) nicht abgeschnitten. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
 const { chromium, devices } = require('playwright');
@@ -27,10 +27,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const roh = document.getElementById('hudRoh');   // (Alexander 7.10.: Holz/Stein/Eisen als Kapseln in der EINEN Werte-Reihe, kein Rohstoff-Knopf mehr)
       const zahlen = [...roh.querySelectorAll('[data-roh] b')].map(x => x.getBoundingClientRect()).filter(r => r.width > 0 && r.right <= innerWidth);
       return { sicht: !a.hidden, nebenText: (n.top + n.bottom) / 2 > t.getBoundingClientRect().top && (n.top + n.bottom) / 2 < t.getBoundingClientRect().bottom && n.right <= t.getBoundingClientRect().left, zeilen, hoehe: Math.round(a.getBoundingClientRect().height),
-        mini: zahlen.length === 3 };
+        mini: zahlen.length === 3, dock: ['cityNavBtn', 'bundBtn', 'battleLogBtn', 'goalsBtn', 'rucksackBtn', 'shopBtn'].filter(id => { const r = document.getElementById(id).getBoundingClientRect(); return r.width > 20 && r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight; }).length };
     });
     ok(anl.sicht && anl.nebenText && anl.zeilen <= 4 && anl.hoehe <= 84, art + ': Anleitung – „Schritt“ links neben dem Text, Text ganz, höchstens 4 Zeilen, ≤ 84 px hoch', anl);   // (Entscheidung Projektleiter 6.10.: eine Zeile statt Überzeile)
     ok(anl.mini, art + ': Holz/Stein/Eisen im HUD zu sehen', anl);
+    ok(anl.dock === 6, art + ': Leiste während Anleitung Schritt 1 mit allen 6 Knöpfen (auch Rucksack)', anl.dock);
     await bild('hud');
     // 2) Nebel ganz draußen: ruhige Fläche (kaum Helligkeits-Unterschiede), nah: Wolken
     const nebel = await ev(async () => {
