@@ -197,6 +197,7 @@ function bandZeigen(e) { if (e.eigen) effekte.push(Object.assign({ t0: jetzt }, 
 function kampfEnde(k) {
   kaempfe.splice(kaempfe.indexOf(k), 1);
   const z = k.z, n = k.teile.length, mehr = n > 1 ? ` · ${n} Armeen` : '', eigen = k.teile.some(a => a.seite === 'eigen' || a.rally) || z.seite === 'eigen';
+  if (k.teile.some(meins)) for (const a of k.teile) a.warMit = true;   // (Verbündete aus deinem Kampf: ihren Heimweg siehst du)
   const e = ergebnis(k); k.sieg = e.sieg; k.aV = e.aV; k.dV = e.dV;   // (das Ergebnis zählt, wie das Spiel es rechnet – die Wellen waren nur die Anzeige)
   const f = (k.d0 - k.dV) / k.d0;
   if (!k.sieg) {                                       // abgewehrt: Verteidiger verliert min(Besatzung, Angriff), Angreifer: 20 % fliehen heim
@@ -353,7 +354,7 @@ function schritt(dt) {
     const z = a.ziel;
     if (a.phase === 'hin' && jetzt - a.t0 >= a.dauer) {
       if (a.beitritt) { const r = a.beitritt; r.rally.mitglieder.push({ name: a.name, held: a.held, truppen: a.truppen }); r.truppen += a.truppen; r.truppen0 = r.truppen; armeen.splice(armeen.indexOf(a), 1); continue; }
-      if (a.art === 'spaeher') { effekte.push({ art: 'licht', t0: jetzt, ziel: z }); heimwaerts(a); continue; }
+      if (a.art === 'spaeher') { effekte.push({ art: 'licht', t0: jetzt, ziel: z }); if (meins(a)) z.gespaeht = true; heimwaerts(a); continue; }   // (dein Späher: Verstärker dort jetzt bekannt)
       if (a.art === 'sammeln') { feldAnkunft(a); continue; }
       if (a.ohneKampf) { heimwaerts(a); continue; }
       if (a.art === 'verst') { const v = { name: a.name, held: a.held, seite: a.seite, kuerzel: a.kuerzel, truppen: a.truppen };   // steht jetzt in der Basis (Botschaft)
@@ -381,6 +382,17 @@ function stufeJetzt() { const z = cam.z, k = W >= 700 ? 1.5 : 1; return z >= .01
 const MASS = { nah: { trupp: 56, kopf: 44, linie: 3, pfeil: 18 }, mittel: { trupp: 36, kopf: 32, linie: 2, pfeil: 14 }, weit: { punkt: 8, kopf: 20, linie: 1.5 }, 'ganz weit': { punkt: 6, linie: 1 } };
 const P = p => ({ x: sx(p.x), y: sy(p.y) });
 const zuMir = a => (a.seite === 'feind' || a.seite === 'barb') && a.ziel === basis('eigen') && a.phase === 'hin';
+// Nebel wie im Spiel (03d drawMap, server/03 marsch_teil): fremde Märsche siehst du nur, wenn sie auf DEINE Basis zielen; Bündnis-
+// Mitglieder nur, wenn sie zu dir kommen (Rally-Beitritt), mit dir kämpfen oder heimgehen. Fremde Truppenzahl und Helden: unbekannt
+// („?“, Fahne statt Held), bis ein Angriff auf deine Basis kämpft – in deinem Kampf (auch gemeinsam) siehst du alle Zahlen.
+// Verstärker in einer fremden Basis nur nach einem Späher. „Nebel aus“ zeigt alles (Testansicht).
+let nebel = true;
+const meins = a => a.seite === 'eigen';
+const mitMir = a => a.kampf && (a.kampf.teile.some(meins) || a.kampf.z === basis('eigen'));
+const versteckt = a => nebel && !(meins(a) || a.ziel === basis('eigen') || a.beitritt || mitMir(a) || (a.seite === 'bund' && a.phase === 'rueck' && a.warMit));
+const bekannt = a => !nebel || meins(a) || a.beitritt || mitMir(a) || a.warMit;
+const kampfSichtbar = k => !nebel || k.teile.some(meins) || k.z === basis('eigen');
+const verstSichtbar = z => !nebel || z.gespaeht || z === basis('eigen');
 const sichtbar = (a, st) => st !== 'ganz weit' || a.seite === 'eigen' || zuMir(a);
 function farbeVon(a) { return FARBE[a.rally && a.art === 'rally' ? 'rally' : a.seite]; }
 
@@ -440,6 +452,7 @@ function chip(text, x, y, px, farbe = '#eee6d4', grund = 'rgba(10,12,16,.82)', l
   g.fillStyle = farbe; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText(text, x0 + 5, y + h / 2 + .5); return w;
 }
 function kopf(a, x, y, w, st, ohneText) {               // Sechseck (Mitte x, y) + Namensband + Lebensbalken (+ Chip bei Nah); → Treffer-Fläche
+  if (!bekannt(a) && a.held) a = { ...a, held: null };  // (fremder Held unbekannt: Fahne mit Kürzel)
   const s = S(), k = kopfBild(a, w), h = w * 50 / 44;
   g.drawImage(k, x - w / 2 - 2, y - h / 2 - 2, k.w, k.h);
   if (a.zurueck) bildAn('marsch_zeichen_zurueck', x + w * .42, y - h * .38, 14 * s);
@@ -451,7 +464,7 @@ function kopf(a, x, y, w, st, ohneText) {               // Sechseck (Mitte x, y)
   balken(x, yy, (st === 'nah' ? 36 : 28) * s, (st === 'nah' ? 5 : 4) * s, anteil, farbeVon(a).haupt);
   const zeit = a.phase === 'kampf' ? '⚔ ' + uhr(rest(a)) : a.phase === 'wartet' ? '⌛ wartet' : '⌛ ' + uhr(rest(a));
   if (a.art !== 'spaeher') {                           // Chip am Sechseck: Truppen · Restzeit (wie beim Rally, auch im Kampf und beim Warten)
-    const txt = a.beute ? zeit + ' · Beute' : fmtCompact(jetztT) + ' · ' + zeit;
+    const txt = a.beute ? zeit + ' · Beute' : (bekannt(a) ? fmtCompact(jetztT) : '?') + ' · ' + zeit;
     const px = Math.round((st === 'nah' ? 12 : 11) * s); g.font = `700 ${px}px Inter, system-ui, sans-serif`;
     const lx = x - w / 2 - 4 - g.measureText(txt).width - 10, cx = a.kampf && Math.cos(a.winkel) < -.2 && lx > 4 ? lx : x + w / 2 + 4;   // (links vom Ziel: Chip nach links, nichts überdeckt)
     const cw = chip(txt, cx, y - 8 * s, px, a.phase === 'wartet' ? '#ffd678' : '#fff6dc', 'rgba(10,12,16,.86)', true, 700);
@@ -538,7 +551,7 @@ function kampfZeichnen(k, st) {
   balken(z.x, vy + m.kopf * s * 50 / 44 / 2 + (lagerBand ? 20 : 4) * s, (st === 'nah' ? 36 : 28) * s, (st === 'nah' ? 5 : 4) * s, 1 - kampfStand(k, 'd') / k.d0, FARBE[k.z.seite].haupt);
   // Besatzung am Sechseck (sinkt im Kampf), Verstärker daneben je mit Sechseck; Tafel über dem Verteidiger: beide Seiten zusammen
   const dRest = k.d0 - kampfStand(k, 'd'), aRest = k.a0 - kampfStand(k, 'a'), px = Math.round((st === 'nah' ? 12 : 11) * s);
-  const vp = verstKoepfe(k.z, st, k);
+  const vp = verstSichtbar(k.z) ? verstKoepfe(k.z, st, k) : [];
   chip(fmtCompact(k.g0 - verstVerlust(k, k.g0)) + ' · ⚔ ' + uhr(k.dauer - t), z.x + m.kopf * s / 2 + 4, vy - 8 * s, px, FARBE[k.z.seite].hell, 'rgba(10,12,16,.86)', true, 700);
   g.font = `700 ${px}px Inter, system-ui, sans-serif`;
   const links = (k.teile.length > 1 ? k.teile.length + ' Armeen · ' : '') + fmtCompact(aRest), rechts = fmtCompact(dRest), lw = g.measureText(links).width, rw = g.measureText(rechts).width;
@@ -659,13 +672,14 @@ function malen() {
   if (nacht) { g.fillStyle = 'rgba(8,16,44,.5)'; g.fillRect(0, 0, W, HT); }
   if (!KB.fertig) return;
   for (const a of armeen) if (a.phase === 'sammelt' && a.art === 'rally') rallyPlatz(a, st);
-  for (const a of armeen) linie(a, st);
-  for (const a of armeen) zielRing(a, st);
+  const zu = armeen.filter(a => !versteckt(a)); for (const a of armeen) if (versteckt(a)) a.flaeche = a.ringFlaeche = null;
+  for (const a of zu) linie(a, st);
+  for (const a of zu) zielRing(a, st);
   for (const b of D.basen) if (b.brennt > jetzt && st !== 'ganz weit') { const w = zielBreite(b); brandZeichnen(sx(b.x), sy(b.y) - w * .3, w / 64); }
-  for (const k of kaempfe) kampfZeichnen(k, st);
-  for (const b of D.basen) if (b.verst && b.verst.length && !kaempfe.some(k => k.z === b)) verstKoepfe(b, st, null);
+  for (const k of kaempfe) if (kampfSichtbar(k)) kampfZeichnen(k, st); else k.flaeche = null;
+  for (const b of D.basen) if (b.verst && b.verst.length && verstSichtbar(b) && !kaempfe.some(k => k.z === b)) verstKoepfe(b, st, null);
   warnung(st);
-  for (const a of [...armeen].sort((x, y) => pos(x).y - pos(y).y)) armeeZeichnen(a, st);
+  for (const a of zu.sort((x, y) => pos(x).y - pos(y).y)) armeeZeichnen(a, st);
   for (const e of effekte) effektZeichnen(e, st);
 }
 
@@ -691,7 +705,8 @@ zeichnen = function () {
 const drin = (f, x, y) => f && x >= f.x && x <= f.x + f.w && y >= f.y && y <= f.y + f.h;
 function karteInfo(titel, zeilen) { $('karte-info-text').innerHTML = `<h3>${titel}</h3>` + zeilen.map(z => `<div>${z}</div>`).join(''); $('karte-info').classList.add('offen'); }
 function infoArmee(a) {
-  karteInfo(a.name, [`Held: ${a.held ? a.held[0].toUpperCase() + a.held.slice(1) : '–'}`, `Truppen: ${fmtCompact(a.truppen - teilVerlust(a))}`,
+  const b = bekannt(a);
+  karteInfo(a.name, [`Held: ${!b ? '?' : a.held ? a.held[0].toUpperCase() + a.held.slice(1) : '–'}`, `Truppen: ${b ? fmtCompact(a.truppen - teilVerlust(a)) : '? (Nebel)'}`,
     `Ziel: ${a.ziel.name || 'Rally-Platz'}`, a.phase === 'wartet' ? 'Wartet, bis der Kampf entschieden ist' : `${a.phase === 'rueck' ? 'Heimweg' : a.phase === 'kampf' ? 'Kampf läuft' : 'Restzeit'}: ⌛ ${uhr(rest(a))}`]);
 }
 const KNOPF = {
@@ -753,6 +768,7 @@ document.querySelectorAll('#mehr [data-erg]').forEach(b => b.addEventListener('c
 document.querySelectorAll('#mehr [data-dazu]').forEach(b => b.addEventListener('click', () => { DAZU[b.dataset.dazu](); zustandText = b.textContent; }));
 $('gedraenge').addEventListener('click', () => { gedraenge(); $('bps').style.display = 'block'; zustandText = 'Gedränge'; });
 $('nacht').addEventListener('click', e => { nacht = !nacht; e.target.textContent = nacht ? 'Nacht an' : 'Nacht aus'; e.target.classList.toggle('an', nacht); });
+$('nebel').addEventListener('click', e => { nebel = !nebel; e.target.textContent = nebel ? 'Nebel an' : 'Nebel aus'; e.target.classList.toggle('an', nebel); });
 $('held').addEventListener('click', e => { heldAn = !heldAn; e.target.textContent = heldAn ? 'Held an' : 'Held aus'; });
 function lage() {                                      // Infozeile, Bilder/s und „Mehr“ unter die Leiste
   const u = $('leiste').getBoundingClientRect().bottom + 8;
@@ -776,6 +792,6 @@ function bild(t) {
 ZUSTAND.marsch(); seite = 'feind'; ZUSTAND.marsch(); seite = 'eigen'; zustandText = 'Marsch';
 lage(); zoomStufe('nah', D.mitte.x, D.mitte.y - 4000); zoomText();
 requestAnimationFrame(bild);
-window.MT = { armeen, kaempfe, effekte, ZUSTAND, DAZU, ERGEBNIS, dreiAngriffe, zuruecksetzen, D, tippen, waehlen, get bps() { return bps; }, get jetzt() { return jetzt; }, set tempo(v) { tempo = v; },
+window.MT = { set nebel(v) { nebel = v; }, versteckt, bekannt, armeen, kaempfe, effekte, ZUSTAND, DAZU, ERGEBNIS, dreiAngriffe, zuruecksetzen, D, tippen, waehlen, get bps() { return bps; }, get jetzt() { return jetzt; }, set tempo(v) { tempo = v; },
   bereit: () => KB.fertig && !bilderOffen, stufe: stufeJetzt, flaeche: a => a.flaeche, gedraenge: () => $('gedraenge').click() };
 })();

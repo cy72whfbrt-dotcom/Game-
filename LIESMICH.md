@@ -1050,6 +1050,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Schutz als Beute; Turm erobert: wird deiner, Überlebende bleiben als Besatzung (keine Beute); Lager sofort entschieden (Sieg:
   Münzen ins Abholfach, Niederlage: alle Truppen weg). Ziel inzwischen eigen/Bündnis: einziehen bzw. heim. Armeen im Halbkreis
   unter dem Ziel (nie auf anderen Basen), Hinweis = Tafel, Band 60 % breit. Knöpfe „Ergebnis wie im Spiel“ im Mehr-Menü.
+  Gruppe 2 (Nebel wie `drawMap`/`marsch_teil`): fremde Märsche nur, wenn sie auf deine Basis zielen; Verbündete nur beim Beitritt,
+  in deinem Kampf und auf dem Heimweg danach; fremde Truppen/Helden „?“ (Fahne), bis sie bei dir kämpfen; Verstärker in fremden
+  Basen erst nach deinem Späher; Kämpfe zwischen anderen unsichtbar. Knopf „Nebel an/aus“ (aus = Testansicht).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

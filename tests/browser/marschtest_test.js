@@ -49,6 +49,10 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       await p.mouse.click(ff[0].x + ff[0].w / 2, ff[0].y + 18);
       const kf = await p.$$eval('#knoepfe button', bs => bs.map(b => b.dataset.knopf));
       ok(kf.join() === 'info,angreifen,spaehen' && ff[1] === 'eigen', `${name} ${art}: Feind auf dich zu, Antippen zeigt Info/Angreifen/Spähen`, [kf, ff[1]]);
+      await p.click('[data-knopf="info"]', { force: true });
+      const fi = await p.$eval('#karte-info', e => e.textContent);
+      ok(/Held: \?/.test(fi) && /Truppen: \? \(Nebel\)/.test(fi), `${name} ${art}: Nebel: fremder Angreifer – Held und Truppen unbekannt`, fi);
+      await p.mouse.click(ff[0].x + ff[0].w / 2, ff[0].y + 18);
       await p.click('[data-knopf="spaehen"]', { force: true });
       ok(await p.evaluate(() => MT.armeen.some(a => a.art === 'spaeher' && a.seite === 'eigen')), `${name} ${art}: Spähen schickt einen Späher los`);
       await p.click('#mehr-knopf'); await p.click('#seite'); await p.click('#seite'); await p.click('#mehr-knopf');
@@ -100,6 +104,10 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       ok(await bis(() => MT.kaempfe[0] && MT.kaempfe[0].teile.some(a => a.seite === 'bund')), `${name} ${art}: + Verbündeter tritt dem Kampf bei`);
       const vb2 = await p.evaluate(() => ({ a0: MT.kaempfe[0].a0, wartet: MT.armeen.filter(a => a.phase === 'wartet').length, w: MT.kaempfe[0].teile.map(a => a.winkel) }));
       ok(vb2.a0 === vor + 2.9e6 && vb2.wartet === 0 && Math.abs(vb2.w[0] - vb2.w[1]) > .5, `${name} ${art}: Summe steigt um 2,9 Mio., niemand wartet, zwei getrennte Plätze`, [vor, vb2]);
+      // Nebel: Märsche zwischen anderen unsichtbar; „Nebel aus“ zeigt sie
+      await leer(); await p.evaluate(() => { MT.DAZU.dritter(); });
+      const nb = await p.evaluate(() => { const a = MT.armeen[0], v1 = MT.versteckt(a); MT.nebel = false; const v2 = MT.versteckt(a); MT.nebel = true; return [v1, v2]; });
+      ok(nb[0] === true && nb[1] === false, `${name} ${art}: Nebel: fremder Marsch zu Kevin unsichtbar, ohne Nebel sichtbar`, nb);
       // Ergebnis wie resolveAttack/barbFight: Hauptstadt geplündert + brennt; Turm erobert (Überlebende bleiben, keine Beute); Lager sofort
       await leer(); await p.evaluate(() => { MT.ERGEBNIS.turm(); MT.tempo = 3; });
       ok(await bis(() => MT.D.basen.find(b => b.id === 'turm').seite === 'eigen', null, 30000), `${name} ${art}: Turm erobert → gehört dir`);
