@@ -1,5 +1,5 @@
-// Shop als Schaufenster (Alexander 6.10., design_shop.md) – Handy 390×844 + Desktop: Kisten als Karten mit gezeichneter Truhe und EIGENEM
-// Preis-Knopf (volle Breite, ≥ 44 px), Epische Kiste groß über beide Spalten (Desktop: alles in einer Reihe), alle ohne Scrollen
+// Shop als Schaufenster (Alexander 6.10., design_shop.md) – Handy 390×844 + Desktop: Kisten als Karten mit KI-Bild der Truhe und EIGENEM
+// Preis-Knopf (volle Breite, ≥ 44 px; unter 500 daneben „10ד), Epische Kiste groß über beide Spalten (Desktop: alles in einer Reihe), alle ohne Scrollen
 // sichtbar, kein fester Unten-Knopf, Erklärung/Chancen hinter „i“ (Thron: eine Zeile, bleibt offen beim Neuzeichnen), Hinweis nie
 // über einem Preis-Knopf. Kauf: Ausrüstungskiste/Heldenkiste (150) mit einem Tipp, Große Kiste (500) erst nach „Wirklich?“ –
 // Edelsteine genau einmal abgezogen. Bilder (alle Reiter) in den Arbeitsordner (process.argv[3]), wenn angegeben.
@@ -27,8 +27,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         sicht: knoepfe.every(k => { const q = k.getBoundingClientRect(); return q.top >= pr.top - 1 && q.bottom <= pr.bottom + 1; }), scroll: pb.scrollTop,
         einZeilig: [...document.querySelectorAll('[data-spane="gems"] .ware-txt small')].every(s => s.getBoundingClientRect().height < 22),
         keinFuss: !document.getElementById('shopFoot') && !document.querySelector('#shopPopup .pfoot'),
-        truhen: karten.filter(k => { const sv = k.querySelector('.ware-bild svg'); return sv && sv.getBoundingClientRect().height >= 70; }).length,
-        breitKnopf: knoepfe.every(k => k.getBoundingClientRect().width >= k.closest('.ware').getBoundingClientRect().width - 4),
+        truhen: karten.filter(k => { const sv = k.querySelector('.ware-bild img.kiste-bild'); return sv && sv.complete && sv.naturalWidth > 0 && sv.getBoundingClientRect().height >= 70; }).length,
+        breitKnopf: knoepfe.every(k => (k.closest('.ware-preise') || k).getBoundingClientRect().width >= k.closest('.ware').getBoundingClientRect().width - 4), mehr: [...document.querySelectorAll('#shopPopup [data-mehr]')].map(k => k.dataset.mehr).join(),
         gross: !!karten[0] && karten[0].classList.contains('ware--gross') && !!karten[0].querySelector('[data-hchest="hcE"]') && /Bester Wert/i.test(karten[0].textContent),
         grossBreit: karten[0].getBoundingClientRect().width >= 2 * karten[1].getBoundingClientRect().width,
         eineReihe: Math.abs(karten[0].getBoundingClientRect().top - karten[1].getBoundingClientRect().top) < 2 };
@@ -45,12 +45,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       window.questProgress = () => {};   // (eine fertige Aufgabe „Öffne Kisten“ schenkt sonst Edelsteine mitten in die Rechnung)
       try {
         const g0 = gems, inv0 = Object.keys(inventory).length; document.getElementById('shopOpenCrateBtn').click(); await warte(50);
-        o.aus = { weg: g0 - gems, teil: Object.keys(inventory).length - inv0, ergebnis: document.getElementById('shopCrateResult').style.display === 'block' };
+        o.aus = { weg: g0 - gems, teil: Object.keys(inventory).length - inv0, ergebnis: !!document.getElementById('beuteFenster') && !document.getElementById('beuteFenster').hidden && document.getElementById('shopCrateResult').style.display !== 'block' };   // (Belohnungs-Fenster, keine Liste mehr unten im Shop)
         const g1 = gems; document.querySelector('[data-hchest="hc1"]').click(); await warte(50); o.held = { weg: g1 - gems };
         const g2 = gems, gross = () => document.querySelector('[data-hchest="hc3"]');
         gross().click(); await warte(50); o.gross = { erst: g2 - gems, frage: /Wirklich/.test(gross().textContent) && gross().classList.contains('is-armed') };
         T += 100; gross().click(); await warte(50); o.gross.doppel = g2 - gems;
-        T += 600; gross().click(); await warte(50); o.gross.dann = g2 - gems; o.gross.ergebnis = !document.getElementById('shopHeroResult').hidden;
+        T += 600; gross().click(); await warte(50); o.gross.dann = g2 - gems; o.gross.ergebnis = !!document.getElementById('beuteFenster') && !document.getElementById('beuteFenster').hidden && document.getElementById('shopHeroResult').hidden;
         T += 600; o.gross.wieder = /^[\d.]+$/.test(gross().textContent.trim()); gross().click(); await warte(50); o.gross.neuFrage = g2 - gems;
         gemsArmAus();
       } finally { Date.now = echt; window.questProgress = qp; }
@@ -69,8 +69,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     }).catch(e => ({ fehler: e.message }));
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
-    ok(r.kisten.n === 4 && r.kisten.aus && r.kisten.preis === '150' && r.kisten.h44 && r.kisten.breitKnopf, art + ': 4 Kisten-Karten, jede mit eigenem Preis-Knopf über die volle Breite (Ausrüstungskiste 150, ≥ 44 px)', r.kisten);
-    ok(r.kisten.truhen === 4, art + ': jede Kiste mit gezeichneter Truhe (≥ 70 px)', r.kisten);
+    ok(r.kisten.n === 6 && r.kisten.aus && r.kisten.preis === '150' && r.kisten.h44 && r.kisten.breitKnopf && r.kisten.mehr === 'hc1,aus', art + ': 4 Kisten-Karten, Preis-Leiste über die volle Breite (Ausrüstungskiste 150, ≥ 44 px), „10ד nur bei Kisten unter 500', r.kisten);
+    ok(r.kisten.truhen === 4, art + ': jede Kiste mit KI-Bild der Truhe (≥ 70 px)', r.kisten);
     ok(r.kisten.gross && r.kisten.grossBreit && (art === 'Handy' ? !r.kisten.eineReihe : r.kisten.eineReihe), art + ': Epische Kiste groß (doppelt breit, „Bester Wert“)' + (art === 'Handy' ? ', darunter 2 Spalten' : ', alle in einer Reihe'), r.kisten);
     ok(r.kisten.sicht && r.kisten.scroll === 0 && r.kisten.einZeilig, art + ': alle Kisten ohne Scrollen sichtbar, Inhalt in einer Zeile', r.kisten);
     ok(r.kisten.keinFuss, art + ': kein fester Unten-Knopf („Kiste öffnen“) mehr', r.kisten);

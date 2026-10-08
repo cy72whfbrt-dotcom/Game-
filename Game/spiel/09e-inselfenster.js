@@ -27,9 +27,9 @@ let previewShownAt = 0; // guards against a stray click landing on the
 // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
 function isUiElement(target) {
   return !!(target && target.closest && target.closest(
-    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
+    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#rucksackPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
 }
-const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
+const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', rucksackPopup: 'rucksackBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
 function isPanelOpen(el) { return el.classList.contains('is-open'); }
 function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); syncPanelState(); }
 function closePanel(el) { el.classList.remove('is-open'); syncPanelState(); }
@@ -63,7 +63,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn'],['rucksackPopup','rucksackCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -86,6 +86,7 @@ function closeAllPopups() {
     clearInterval(battleLogRefreshTimer);
     closePanel(document.getElementById('goalsPopup'));
     closePanel(shopPopup);
+    closePanel(document.getElementById('rucksackPopup'));
     closePanel(document.getElementById('rulerPopup'));
     closePanel(document.getElementById('rankPopup'));
     if (!document.getElementById('lookSheet').hidden) closeLookSheet();
@@ -100,6 +101,7 @@ function closeAllPopups() {
 }
 
 function openIslandPopup(island) {
+    if (island && island.type === 'gate' && passOpensAt(bridgeOfGate(island)) > Date.now()) { flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(island)) - Date.now()) + '.', 3500); return; }   // (Pass mit Countdown: nur der Hinweis)
     if (island && !islandSeen(island) && islandOwnerOf(island.id) !== 'player') { flashHint('Dieses Gebiet liegt im Nebel – schick zuerst einen Späher.', 3000); return; }
     closeAllPopups();
     popupIslandId = island.id;
@@ -157,7 +159,7 @@ function updateMultiAttackBar() {
 function startMultiAttack(sourceId) {
     multiAttackMode = true;
     multiAttackSourceId = sourceId;
-    multiAttackTargets = []; multiAttackShare = 1; multiAttackHero = null; multiAttackHero2 = null;
+    multiAttackTargets = []; multiAttackShare = 1; [multiAttackHero, multiAttackHero2] = heroLetzte();
     multiAttackBar.style.display = 'flex';
     document.body.classList.add('is-multi');
     updateMultiAttackBar();
@@ -204,7 +206,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
         let troopsForThis = perTarget;
         if (remainder > 0) { troopsForThis++; remainder--; }
         nextAttackHero = ok === 0 ? multiAttackHero : null; nextAttackHero2 = ok === 0 ? multiAttackHero2 : null;   // the heroes lead the first wave that goes out
-        if (launchAttack(sourceId, targetId, null, troopsForThis)) ok++;
+        if (launchAttack(sourceId, targetId, null, troopsForThis)) { if (!ok) heroLetzteMerken(multiAttackHero, multiAttackHero2); ok++; }
         else { failed.push(targetId); why.add(baseShieldedFor(targetId, 'player') ? 'Friedensschild' : isCapital(targetId) ? 'inzwischen eine Hauptstadt' : 'Tor oder Maut'); }
         nextAttackHero = null; nextAttackHero2 = null;
     }

@@ -5,7 +5,7 @@
 // Each player flies their own coat of arms (owner colour stays the field), capitals can wear the game's skins,
 // and a per-base seed turns and mirrors the layout. Tier and owner stay readable.
 (function () {
-  const T = THREE, M = OW.M;
+  const T = THREE;
   // the game's four skins (SKIN_DEFS in index.html): stone and roof colours for the player's capital
   const SKINS = OW.SKINS = {
     winter:   { name: 'Winterburg',    stone: 0xdfe6ee, roof: 0xe9f1fa, trim: 0x9fb4cc },
@@ -85,7 +85,7 @@
     const d = P + 1.1 * S, cx = Math.cos(a) * d, cz = Math.sin(a) * d; grp.position.set(cx, 0, cz); grp.rotation.y = -a + Math.PI / 2;   // local +z points away from the base
     const H = Math.max(3.2, Math.min(top * .6, 9 + tier * .6));
     const wallTo = (len, h) => K.wall(grp, 0, -.2, 0, -len, h, .55 * S, stone, { cap: M.cap(), merlons: tier >= 2, size: .32 * S, mh: .38 * S });
-    let rad = 1.3 * S, props = [];
+    let rad = 1.3 * S;
     if (tier === 0) {                               // the camp: a second tent and a wooden look-out
       K.gable(grp, 1.9 * S, 1.8 * S, 1.3 * S, cloth, -.9 * S, 0, 0, { ry: .4 });
       for (const [x, z] of [[-.4, -.4], [.4, -.4], [-.4, .4], [.4, .4]]) K.cyl(grp, .07, .09, 2.6 * S, M.wood(), .9 * S + x * S, 0, z * S, { seg: 5 });

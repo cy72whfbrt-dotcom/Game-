@@ -39,19 +39,10 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mb-chip::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
 .res{position:relative;flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;justify-content:center;gap:var(--ab-1);padding:0 var(--ab-1)}
 .res > .icon{width:16px;height:16px}
-/* der Rohstoff-Knopf: rund, oben rechts (Tippfläche 44 px) */
-.hud > .res--roh{flex:none;width:var(--hud-h);height:var(--hud-h);padding:0;justify-content:center;border-radius:50%;
-  background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.hud > .res--roh .roh-mini b{min-width:0;font-size:var(--fs-13)}
-@media (max-width:899px) and (min-height:501px){   /* Handy: Beschriftung unter dem runden Knopf (wie „Du“ unter dem Wappen, rechtsbündig – sonst ragt sie aus dem Bild) – antippen öffnet Holz/Stein/Eisen */
-  .hud > .res--roh::after{content:"Rohstoffe";position:absolute;top:calc(100% + 4px);right:-2px;pointer-events:none;
-    font:600 10px/1 var(--font-ui);color:var(--gold-100);white-space:nowrap;text-shadow:0 1px 2px #000} }
-@media (min-width:900px) and (min-height:501px){ .hud > .res--roh .roh-mini{display:flex} }   /* Desktop: Holz · Stein · Eisen immer im HUD */
-.hud > .res--roh::before{content:"";position:absolute;inset:-7px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
 /* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .hud-werte,.res--roh,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .hud-werte,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
 
 /* avatar ring (profile header + desktop HUD). --progress (0-100) is written by renderProfile */
 .avatar-ring{--progress:0;position:relative;flex:none;width:48px;height:48px;border-radius:50%;padding:2px;
@@ -72,10 +63,10 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
    NAVIGATION  #cornerButtons  (phone = bottom dock)
    ===================================================================== */
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-bd));
-  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
+  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(6,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
-/* Leiste: 5 runde Knöpfe mit festen Plätzen (Karte/Stadt · Bündnis · Kampf · Events · Shop); das Profil öffnet das Spielerbild im HUD */
+/* Leiste: 6 runde Knöpfe mit festen Plätzen (Karte/Stadt · Bündnis · Kampf · Events · Rucksack · Shop); das Profil öffnet das Spielerbild im HUD */
 .nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;color:var(--tx-2);transition:color var(--dur-1)}
 .nav-btn > .icon{width:var(--k-rund);height:var(--k-rund);padding:13px;border-radius:50%;border:1px solid var(--line-2);color:var(--gold-200);
   background:radial-gradient(circle at 50% 30%,#232833,#0e1116);box-shadow:var(--sh-1);transition:border-color var(--dur-1),box-shadow var(--dur-1)}
@@ -111,10 +102,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .troop-in{width:9.5em;max-width:46vw;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:700 var(--fs-13)/1 var(--font-ui);text-align:right;font-variant-numeric:tabular-nums}
 .troop-in.is-bad{border-color:#e0685c;box-shadow:0 0 0 2px rgba(224,104,92,.25)} @media (pointer:coarse){ .troop-in{height:36px} }
 .troop-in:focus{outline:none;border-color:var(--gold-300);box-shadow:0 0 0 2px rgba(214,170,90,.25)}
-.look-title .icon{width:10px;height:10px}
-.look-titles{display:flex;flex-wrap:wrap;gap:6px}
-.look-title{display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
-.look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
 .pfoot[hidden]{display:none} #profileTabs.tabs{grid-template-columns:repeat(5,minmax(min-content,1fr))} #shopTabs.tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
 .pill--throne .icon{color:#f2c75c} .psub .pill + .pill{margin-left:6px}
 .throne-status{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;
@@ -208,33 +195,29 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .pass-prem > span,.pass-old > span{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px} .pass-prem b,.pass-old b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
 .pass-prem small,.pass-old small{font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3);font-variant-numeric:tabular-nums} .pass-prem .btn{flex:none;gap:4px}
 .pass-all{width:100%;justify-content:center}
-.pass-track{display:grid;gap:6px;position:relative}
-.pass-head{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:6px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3);text-align:center}
-.pass-head span{display:inline-flex;align-items:center;justify-content:center;gap:4px} .pass-head .icon{width:11px;height:11px} .pass-head span:last-child{color:#8ff5e6}
-.pass-row{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:6px;align-items:stretch;position:relative}
-.pass-row::before{content:"";position:absolute;left:50%;top:-6px;bottom:0;width:4px;margin-left:-2px;background:rgba(255,255,255,.08);z-index:0}
-.pass-row.is-on::before{background:linear-gradient(180deg,var(--gold-300),var(--gold-500))}
-.pass-row:first-child::before{top:50%}
-.pass-node{align-self:center;justify-self:center;position:relative;z-index:1;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:800 var(--fs-12)/1 var(--font-ui);color:var(--tx-3);background:#1c1f27;border:2px solid var(--line-2)}
-.pass-row.is-on .pass-node{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420)}
-.pass-row.is-next .pass-node{border-color:var(--gold-300);color:var(--gold-100);box-shadow:0 0 0 3px rgba(242,210,122,.15)}
-.pass-cell{position:relative;display:flex;align-items:center;gap:8px;min-height:50px;padding:6px 8px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.025);text-align:left;color:var(--tx-2)}
-.pass-cell.is-p{background:linear-gradient(100deg,rgba(91,63,196,.12),rgba(31,138,138,.08));border-color:rgba(143,245,230,.18)}
-.pass-cell.is-lock{opacity:.55} .pass-cell.is-closed{opacity:.5}
-.pass-cell.is-ready{border-color:var(--gold-200);background:radial-gradient(120% 140% at 0% 50%,rgba(242,199,92,.22),transparent 70%),rgba(0,0,0,.2);box-shadow:0 0 10px rgba(242,210,122,.28);cursor:pointer;animation:pass-glow 1.6s ease-in-out infinite alternate}
-@keyframes pass-glow{from{box-shadow:0 0 4px rgba(242,210,122,.2)}to{box-shadow:0 0 12px rgba(242,210,122,.45)}}
-.pass-cell.is-got{opacity:.6}
-.pass-cell.is-special:not(.is-got){border-color:rgba(143,245,230,.55)}
-.pc-ic{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--tile-bg,rgba(0,0,0,.25));border:1px solid var(--line-2)}
-.pc-ic .icon{width:16px;height:16px;color:var(--gold-200)} .pc-ic .ico-coin{color:var(--res-coin)} .pc-ic .ico-gem{color:var(--res-gem)} .pc-ic .ico-tp{color:#f2c75c} .pc-ic .ico-shard{color:#d6a6ff} .pc-ic .ico-royal{color:#ffb04a}
-.pc-ic.is-look{width:32px;height:32px;border:0;background:none}
-.pc-frame{display:block;width:30px;height:30px;border-radius:50%;padding:3px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))} .pc-frame img{display:block;width:100%;height:100%;border-radius:50%}
-.pc-flag{position:relative;width:30px;height:22px;display:block} .pc-flag::before{content:"";position:absolute;left:3px;top:1px;width:2px;height:21px;background:#d9d2c0;border-radius:1px}
-.pc-flag::after{content:"";position:absolute;left:5px;top:2px;width:20px;height:12px;background:var(--c);clip-path:polygon(0 0,100% 0,78% 50%,100% 100%,0 100%);box-shadow:0 0 8px var(--t)}
-.pc-t{min-width:0;display:flex;flex-direction:column;gap:2px} .pc-t b{font:700 var(--fs-13)/1.1 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pc-t small{font:500 10px/1.15 var(--font-ui);color:var(--tx-3);overflow:hidden;text-overflow:ellipsis}
-.pc-ok{position:absolute;top:4px;right:5px;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pc-ok .icon{width:10px;height:10px}
-.pc-ok.is-lock{background:rgba(0,0,0,.45);color:var(--tx-3)}
+/* Pass-Leiste (7.10.): waagrecht wischen, je Stufe eine Spalte (oben Premium, Mitte Stufe, unten Frei), Belohnungs-Kacheln wie überall */
+.pl{--plz:86px;position:relative;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;padding:2px 2px 10px;scrollbar-width:thin}
+.pl-namen{position:sticky;left:0;z-index:3;flex:none;width:20px;display:grid;grid-template-rows:var(--plz) 30px var(--plz);gap:6px;background:linear-gradient(90deg,#11141b 75%,transparent)}
+.pl-namen span{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:flex-end;padding-bottom:4px;gap:4px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
+.pl-namen span.is-p{color:#8ff5e6} .pl-namen .icon{width:11px;height:11px;transform:rotate(90deg)}
+.pl-spalte{position:relative;flex:none;width:70px;display:grid;grid-template-rows:var(--plz) 30px var(--plz);gap:6px}
+.pl-spalte::before{content:"";position:absolute;left:-4px;right:0;top:calc(var(--plz) + 19px);height:4px;background:rgba(255,255,255,.08);z-index:0}
+.pl-spalte.is-on::before{background:linear-gradient(90deg,var(--gold-500),var(--gold-300))}
+.pl-knoten{align-self:center;justify-self:center;position:relative;z-index:1;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:800 var(--fs-12)/1 var(--font-ui);color:var(--tx-3);background:#1c1f27;border:2px solid var(--line-2);font-variant-numeric:tabular-nums}
+.pl-spalte.is-on .pl-knoten{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420)}
+.pl-spalte.is-next .pl-knoten{border-color:var(--gold-300);color:var(--gold-100);box-shadow:0 0 0 3px rgba(242,210,122,.18)}
+.pl-spalte.is-viertel .pl-knoten{width:34px;height:34px;border-width:3px}
+.pl-zelle{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;border:1px solid var(--line-1);border-radius:10px;background:rgba(255,255,255,.03);color:inherit;--bk:54px;cursor:default}
+.pl-zelle.is-zwei{--bk:36px}
+.pl-zelle.is-p{background:linear-gradient(180deg,rgba(91,63,196,.16),rgba(31,138,138,.08))}
+.pl-zelle.is-lock{opacity:.6} .pl-zelle.is-closed{opacity:.5} .pl-zelle.is-got{opacity:.5}
+.pl-zelle.is-ready{cursor:pointer;animation:pass-glow 1.6s ease-in-out infinite alternate}
+@keyframes pass-glow{from{filter:drop-shadow(0 0 2px rgba(242,210,122,.25))}to{filter:drop-shadow(0 0 7px rgba(242,210,122,.6))}}
+.pl-ok{position:absolute;top:5px;right:5px;z-index:2;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pl-ok .icon{width:10px;height:10px}
+.pl-ok.is-lock{background:rgba(0,0,0,.55);color:var(--tx-3)}
+@media (max-width:899px) and (min-height:501px){   /* Handy: Pass enger, damit die Premium-Reihe ganz im Fenster steht (Spieltest 7.10.) */
+  .pass-hero{padding:8px 10px;gap:5px} .pass-lvl{width:42px;height:42px} .pass-lvl b{font-size:17px}
+  .pl{padding-bottom:4px} .pl-spalte,.pl-namen{gap:3px} .pl-spalte::before{top:calc(var(--plz) + 16px)} .pass-prem{padding:8px} }
 .pass-how-l{display:grid;gap:2px;margin-top:8px;padding:4px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.18)}
 .pass-how-l div{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .pass-how-l div:last-child{border-bottom:0}
 .pass-how-l .icon{width:14px;height:14px;color:var(--gold-300);flex:none} .pass-how-l b{margin-left:auto;color:var(--gold-100);font-variant-numeric:tabular-nums}
@@ -245,7 +228,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-bd) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
   background:var(--glass-strong,#141820);border:1px solid var(--line-3);box-shadow:var(--sh-2);font-family:var(--font-ui);display:flex;flex-direction:column;gap:8px}
 .marker-sheet[hidden]{display:none}
-.field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right}
+.field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right} .field-fort{grid-column:1/-1;display:grid;gap:3px} .field-fort small{text-align:right;font-variant-numeric:tabular-nums}
 .field-sheet .marker-head b{display:inline-flex;align-items:center;gap:6px} .field-sheet .marker-head .icon{width:16px;height:16px} .field-sheet .btn{justify-content:center}
 .barb-sheet{max-height:calc(100vh - var(--dock-h) - var(--safe-bd) - 120px);overflow-y:auto} .field-lines small{color:var(--tx-3);font-weight:500}
 .barb-lv{padding:2px 7px;border-radius:999px;border:1px solid var(--bc);color:var(--bc);font:700 var(--fs-11)/1.2 var(--font-ui)}
@@ -312,26 +295,27 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
-.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 58px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text höchstens 2 Zeilen, ≤ 56 px), Knöpfe darunter */
+.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 66px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
+  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text ganz, höchstens 4 Zeilen), Knöpfe darunter; rechts 10 px Luft zu den Kartenknöpfen */
   background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .anleitung[hidden]{display:none}
 .anleitung-n{width:min-content;font:700 10px/1.15 var(--font-ui);color:var(--gold-200);text-align:center}   /* „Schritt“ über „1/7“: schmal */
-.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1);cursor:pointer}
-.anleitung:not(.is-auf):not(.is-frage):not(.is-ok) .anleitung-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}   /* langer Text: „…“, antippen zeigt alles */
+.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}   /* immer ganz lesbar, kein „…“ (Spieltest 7.10.) */
 #anleitungWeg{position:relative;width:32px;height:32px;align-self:center} #anleitungWeg::before{content:"";position:absolute;inset:-7px}   /* (sichtbar 32 px, Tippfläche 44 px – ab der Innenkante: 1 px Rand dazu) */
 /* Handy: mit offenem Basis-Fenster oben unter dem HUD statt direkt über dem Fenster – dort steht die Basis (inselMittig) */
-@media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important} }
+@media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important}
+  body:has(#islandPopup.is-open):has(#anleitung:not([hidden])) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--anl-h,64px) + 8px)} }   /* der Hinweis (z. B. „Der Drache ist erschienen“) dann darunter, nie hinter der Anleitung (--anl-h: 06b) */
 .anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
 .anleitung-ok{grid-column:1/-1;justify-self:end}
-body.has-sheet .anleitung{display:none}
+body.has-sheet .anleitung:not(.is-events){display:none}   /* (Schritt 6 „Abholen“ bleibt im Events-Fenster sichtbar: 06b) */
+body:has(#feldRing:not([hidden])) .anleitung{display:none}   /* (Feld-Menü auf der Karte offen: Anleitung kurz weg) */
 /* Anleitung: der nächste nötige Knopf pulsiert (06b anleitungZeigen setzt body[data-anl-puls]) */
 @keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
 body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapControls button,#hudRoh),
 body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
 body[data-anl-puls="stadt"] #cityNavBtn > .icon,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
 body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn > .icon,
-body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
+body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus3],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
   {animation:anl-puls 1.4s ease-out infinite}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
@@ -395,6 +379,8 @@ body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96
 .overline{font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .overline b{color:var(--gold-200);font-weight:600}
 .ptitle{display:block;margin:3px 0 2px;font:600 var(--fs-17)/1.15 var(--font-display);letter-spacing:var(--track-display);color:var(--gold-100);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptitle:not(.ptitle--input){white-space:normal;overflow-wrap:break-word}   /* langer Titel („Hauptstadt von Yusuf_T“) bricht in die 2. Zeile statt „…“ */
+.panel:has(#attackBtn.mit-zeit) .ptitle{white-space:nowrap}   /* Angriff vorbereiten: kompakt, eine Zeile (Handy ≤ 55 % hoch) */
 .ptitle--input{width:100%;min-width:0;padding:1px 4px;margin-left:-4px;background:transparent;border:1px solid transparent;border-radius:var(--r-xs);outline:none}
 .ptitle--input:hover{border-color:var(--line-1)}
 .ptitle--input:focus{border-color:var(--line-3);background:rgba(0,0,0,.25);box-shadow:none}

@@ -18,7 +18,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const s = await ev(() => ({ welcome: !document.getElementById('welcomeModal').hidden, daily: !document.getElementById('dailyModal').hidden, anl: !document.getElementById('anleitung').hidden, schritt: anleitung.schritt, wf: !!welcomeFrom }));
   ok(!s.welcome && !s.wf && !s.daily && s.anl && s.schritt === 0, 'Erster Start: nur Anleitung Schritt 1 (kein „Willkommen zurück“, Tagesbelohnung erst später)', s);
   const d = await ev(() => { anleitung.schritt = ANLEITUNG.length; showDailyModal();
-    const o = { rows: [...document.querySelectorAll('#dailyModalRewards li')].map(li => li.innerText.replace(/\s+/g, ' ')), tage: document.querySelectorAll('#dailyModalDays .daily-day').length, heute: !!document.querySelector('#dailyModalDays .is-today') };
+    const o = { rows: [...document.querySelectorAll('#dailyModalRewards li')].map(li => li.title || li.innerText.replace(/\s+/g, ' ')), tage: document.querySelectorAll('#dailyModalDays .daily-day').length, heute: !!document.querySelector('#dailyModalDays .is-today') };
     return o; });
   await bild('daily');
   ok(d.rows.length >= 1 && /kiste/i.test(d.rows[0]) && d.tage === 7 && d.heute, 'Tagesbelohnung zeigt, was es heute gibt (Kiste ×1) und die Woche mit „heute“', d);
@@ -53,7 +53,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(!/Welt-Saison/.test(e.inv) && !/Welt-Saison/.test(e.boss) && /Welt-Saison/.test(e.tour) && e.tourSaisonUnten, 'Welt-Saison nicht mehr oben in jedem Reiter: nur unten im Wochen-Event', { inv: e.inv.slice(0, 40), tour: e.tourSaisonUnten });
   ok(/^\s*Welt-Saison/.test(e.invBald), 'Letzte 3 Tage: Welt-Saison mit Countdown oben in jedem Reiter', e.invBald.slice(0, 40));
   ok(e.links === 'left', 'Welt-Saison: Texte linksbündig', e.links);
-  ok(e.chips.length === 4 && e.chips.every(c => c[1] >= 0 && c[2] <= e.chipsRand && c[2] <= e.breite), 'Handy 390 px: alle 4 Ereignis-Chips ganz im Bild', e.chips);
+  ok(e.chips.length === 5 && e.chips.every(c => c[1] >= 0 && c[2] <= e.chipsRand && c[2] <= e.breite), 'Handy 390 px: alle 5 Ereignis-Chips (mit Lager, Merkliste 33) ganz im Bild', e.chips);
   ok(/Saison-Pass/.test(e.pass) && !/Saison-Pass \d/.test(e.pass), 'Pass ohne eigene Saison-Nummer („Saison-Pass“, nicht „Saison-Pass 10“)', e.pass);
   ok(e.leerText.trim() === 'Gerade nichts zum Abholen.' && e.leer < 60, 'Abholen leer: eine Zeile', { t: e.leerText, h: e.leer });
   // G) Rangliste
@@ -72,6 +72,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(g.macht.every(v => Number.isFinite(v) && v >= 0), 'Macht in der Rangliste aus echten Werten (keine NaN)', g.macht.slice(0, 6));
   // I) Heldenhalle
   const h = await ev(async () => {
+    { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); }   // Helden erst mit Heldenhalle (Merkliste 21)
     const warte = ms => new Promise(f => setTimeout(f, ms)), H = loadHeroes(), z = HEROES.find(x => !H[x.id].own && x.r === 1);
     H[z.id].sh = HERO_UNLOCK[z.r]; const zu1 = HEROES.find(x => !H[x.id].own && x.id !== z.id); if (zu1) H[zu1.id].sh = 0; saveHeroes();   /* (einer bleibt gesperrt) */ openHeroHall(); await warte(200);
     const karte = document.querySelector('#heroHall .hh-cards:not(.hh-cards--zu) [data-hh="' + z.id + '"]');

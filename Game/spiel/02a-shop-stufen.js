@@ -23,12 +23,14 @@ const ITEM_MAX_LEVEL = 20;
 const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen (seit 2.10. auch kein Preis mehr mit „mind. Legendär“)
 const CRATE_GEM_COST = 150;  // (5.10. Alexander: vorher 30, davor 5 – Gold-Ausrüstung kam zu schnell)
 const COMBINE_COUNT = 3;
-const RARITY_PCT_PER_SCORE = 0.15;
+const RARITY_PCT_PER_SCORE = 0.15, ITEM_GRUND = 6;   // %-Wirkung = (Wert + 6) × 0,15 → grau Stufe 1 = 1 % (7.10.: vorher 0,15 %)
 const RARITY_FLAT_PER_SCORE = 0.3;
 
 function itemScore(item) {
     return item.rarity * ITEM_MAX_LEVEL + item.level;
 }
+const itemPct = item => (itemScore(item) + ITEM_GRUND) * RARITY_PCT_PER_SCORE;   // Grundwert in % (ohne Sterne)
+const salvagePoints = item => 5 + itemScore(item);   // Zerlegen: grau 1 = 6 Punkte (= eine Aufwertung, 7.10.)
 function itemLevelUpCost(item) {
     return item.level * 5;
 }
@@ -53,7 +55,7 @@ let upgradePoints = parseInt(store.get('openWaterUpgradePoints'), 10) || 0;
 function equippedItemBonusPct(slot) {
     const id = equippedItems[slot];
     const item = id ? inventory[id] : null;
-    return item ? itemScore(item) * RARITY_PCT_PER_SCORE * (1 + (item.stars || 0) * STAR_PCT / 100) : 0;
+    return item ? itemPct(item) * (1 + (item.stars || 0) * STAR_PCT / 100) : 0;
 }
 
 function pickRandomSlot() {
@@ -130,6 +132,7 @@ function autoCombineAll() {
         }
     }
     if (totalCombines > 0) {
+        questProgress('zusammen', totalCombines);
         saveGame();
         saveProgression();
         updateHud();
@@ -142,7 +145,7 @@ function starRefund(item) { let g = 0; for (let s = 0; s < (item.stars || 0); s+
 function salvageItem(itemId) {
     const item = inventory[itemId];
     if (!item || equippedItems[item.slot] === itemId) return 0;
-    const points = itemScore(item);
+    const points = salvagePoints(item);
     upgradePoints += points; gems += starRefund(item);   // the gems paid for its stars come back
     delete inventory[itemId];
     saveGame();
@@ -157,7 +160,7 @@ function salvageItems(itemIds) {
     for (const id of itemIds) {
         const item = inventory[id];
         if (!item || equippedItems[item.slot] === id) continue;
-        total += itemScore(item); gems += starRefund(item);
+        total += salvagePoints(item); gems += starRefund(item);
         delete inventory[id];
     }
     if (total > 0) {
@@ -175,7 +178,7 @@ function levelUpItem(itemId) {
     if (upgradePoints < cost) return false;
     upgradePoints -= cost;
     item.level += 1;
-    saveProgression();
+    saveProgression(); questProgress('schmiede', 1);
     return true;
 }
 function equipInventoryItem(itemId) {

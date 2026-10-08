@@ -13,23 +13,6 @@ function botLook(botId) {                            // → { frame, title }: Ra
     const pick = sz || own.find(x => x.id === 'throne') || alt[alt.length - 1 - Math.floor(mulberry32(idn * 31 + alt.length)() * Math.min(3, alt.length))];
     return rahmenVon(botId, pick ? pick.id : 'bronze');
 }
-// Marsch-Skins: 6 in 10 have a favourite, bought once they can spare it - like the player in the Aussehen sheet (Rahmen gibt es nicht mehr zu kaufen)
-function botLookFav(botId) { const r = mulberry32((parseInt(botId.slice(3), 10) || 0) * 389 + 71), ms = MARCH_SKINS.filter(m => m.gems || m.tp);
-    return { march: r() < .6 ? ms[Math.floor(r() * ms.length)] : null }; }
-function botLookShop(bot, b) {
-    const fav = botLookFav(bot.id), can = p => b.gems >= p * 2 && b.gems - p >= TELEPORT_GEMS;
-    if (fav.march && fav.march.gems && !(b.marchs || []).includes(fav.march.id) && can(fav.march.gems)) { b.gems -= fav.march.gems; b.marchs = [...(b.marchs || []), fav.march.id]; b.march = fav.march.id; }
-}
-
-// Baukunst: like you, everyone builds in one style of their own (picked once, the same on every device) and 1 in 3 set their capital in water
-const botBaustilMem = {};
-function botBaustil(botId) {
-    const pm = window.WELT && WELT.menschen[botId]; if (pm && pm.profil && pm.profil.baustil) return pm.profil.baustil;   // echter Spieler: sein Baustil
-    if (botBaustilMem[botId]) return botBaustilMem[botId];
-    const r = mulberry32((parseInt(String(botId).replace(/\D/g, ''), 10) || 7) * 97 + 11), keys = Object.keys(BAUSTILE);
-    return botBaustilMem[botId] = { style: keys[Math.floor(r() * keys.length)], cap: r() < .33 ? 'wasser' : 'huegel' };
-}
-
 // Erfolge: the same list as yours (ACHIEVEMENTS), counted from their own numbers - each one collected once for its gems, one at a time like a person tapping
 const BOT_GOAL_VAL = {
     captures: (b, st) => st.caps, empire: (b, st, id) => (botOwnedIslands[id] || new Set()).size, defends: (b, st) => st.defs, pvp: (b, st) => st.pvp, bosses: (b, st) => st.bosses,
@@ -62,8 +45,8 @@ function botPassCare(bot, b) {
     botPassPay(bot.id, b);
 }
 function botPassPay(botId, b) { const ps = b.ps, L = Math.min(PASS_LVLS, Math.floor(Math.max(0, botPassScore(b) - ps.base) / PASS_STEP));
-    while (ps.f < L) passGive(botId, passRewardAt(++ps.f, 0));
-    if (ps.prem) while (ps.p < L) passGive(botId, passRewardAt(++ps.p, 1));
+    while (ps.f < L) for (const r of passRewardAt(++ps.f, 0)) passGive(botId, r);
+    if (ps.prem) while (ps.p < L) for (const r of passRewardAt(++ps.p, 1)) passGive(botId, r);
 }
 
 function botStat(botId, k, n) { const b = loadBotState()[botId]; if (!b) return; b.stats = b.stats || {}; b.stats[k] = (b.stats[k] || 0) + (n || 1); saveBotState(); }
@@ -73,10 +56,6 @@ function botBountyReward(botId, gems, coins) { const b = loadBotState()[botId]; 
 
 function botThroneShop(botId) {                       // the others spend their points the way a player would
     const b = loadBotState()[botId]; if (!b) return;
-    const fav = botRingFav(botId);                        // a favourite ring from the Thron-Shop comes first, once they can spare the points
-    if (fav && fav.tp && !(b.rings || []).includes(fav.id) && b.tp >= fav.tp * 1.2 && Math.random() < .5) { b.tp -= fav.tp; throneGive(botId, 'ring_' + fav.id); }
-    const fm = botLookFav(botId).march;                   // a Marsch-Skin from the Thron-Shop the same way
-    if (fm && fm.tp && !(b.marchs || []).includes(fm.id) && b.tp >= fm.tp * 1.2 && Math.random() < .5) { b.tp -= fm.tp; b.marchs = [...(b.marchs || []), fm.id]; b.march = fm.id; }
     for (let n = 0; n < 5; n++) { const r = Math.random();
         const id = r < .45 ? 'troops' : r < .7 ? 'coins' : r < .95 ? 'crate' : 'royal';   // (Gems gibt es im Thron-Shop nicht mehr)
         const o = THRONE_OFFERS.find(x => x.id === id); if (!(b.tp >= o.cost)) break; b.tp -= o.cost; throneGive(botId, id); }
@@ -347,7 +326,7 @@ function botDrache(bot) {                                 // ein paar Schläge �
     const due = Math.min(DR_HITS, Math.ceil(DR_HITS * (Date.now() - D.start) / (D.end - D.start)) + 1);
     if ((D.hits[bot.id] || 0) >= due || barbOut(bot.id, 'd')) return false;
     const base = botBarbBase(bot); if (base === null) return false;
-    const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < wirtK(1000)) return false;
+    const have = islandTroops[base] || 0, n = Math.min(have, Math.max(Math.floor(have * (.15 + Math.random() * .2)), Math.ceil(evTruppenAlle(bot.id) * DR_ANTEIL * 1.05))); if (n < wirtK(1000)) return false;   // (mind. 10 % aller Truppen – sonst zählt der Treffer nicht, wie bei dir)
     return barbSend(bot.id, base, 'd', null, n, heroPickBest(bot.id, null, null, n));
 }
 function botDayBoss(bot) {                                // the daily boss: a few strikes a day with a share of their biggest free base

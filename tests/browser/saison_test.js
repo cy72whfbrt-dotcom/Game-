@@ -36,6 +36,11 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
     by.city.levels.keep = 6; by.city.levels.academy = 5; by.city.fo = { w_prod: 3 }; by.hb = { v: 1, st: { keep: [6, T], academy: [5, T], lumber: [6, T], wall: [3, T] }, fo: { w_prod: 3, x_nebel: 1 } }; saveBotState();
     botNextAt[X] = Date.now() + 1e9;   // (bis zum Neuladen kauft und baut er nichts – so lässt sich vergleichen)
     if (bundVon(X)) bundOp(X, { op: 'verlassen' }); bundOp(X, { op: 'gruenden', name: 'Saisontest', tag: 'STT', offen: true }); if (!bundVon('player')) { bundRein(bundVon(X), 'player'); bundSpeichern(); }
+    // Saison-Pass (Stufe 20, Premium), Ranglisten (Eroberungen, Thron-Punkte), Wochen-Event – alles fängt neu an
+    const ps = passOf(passNo(Date.now())); ps.xp = 20 * PASS_STEP; ps.f = [1, 2]; ps.prem = true; passSave();
+    playerStats.captures = 50; store.set('openWaterStats', JSON.stringify(playerStats)); throneState.earned = 9000; saveThrone();
+    bx.ps = { s: passNo(Date.now()), base: botPassScore(bx) - 10 * PASS_STEP, f: 10, p: 0, prem: true, at: Date.now() + 1e9 }; bx.stats = Object.assign(bx.stats || {}, { caps: 40 }); saveBotState();
+    woSt().pts.player = 50; saveEv();
     saveGameNow(); saveProgressionNow();
     saisonTakt(); saison.ende = Date.now() + 2 * 864e5; saison.bald = 0; saisonSpeichern();   // nur noch 2 Tage: Ankündigung + Countdown
     const L = k => localStorage.getItem(k);
@@ -59,7 +64,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   // 2) die neue Saison (wie der Admin-Knopf, auch aus dem angehaltenen Zustand) – die Seite lädt neu und übernimmt den Reset
   await p.addInitScript(() => document.addEventListener('DOMContentLoaded', () => { try { const L = k => localStorage.getItem(k);
     window.__nach = { coins: L('openWaterCoins'), lvl: L('openWaterLevel'), sp: L('openWaterSkillPoints'), skills: L('openWaterSkills'), own: L('openWaterOwnedIslands'), troops: L('openWaterIslandTroops'), bund: L('openWaterBuendnisse'),
-      botOwn: L('openWaterBotOwnedIslands'), botState: L('openWaterBotState'), schutz: L('openWaterNeulingBis'), res: L('openWaterRes'), at: Date.now(), botCoins: L('openWaterBotCoins'), log: L('openWaterCombatLog'), fog: L('openWaterFogCells'), city: L('openWaterCity'), gems: L('openWaterGems'), thron: L('openWaterThrone') }; } catch (e) {} }));
+      botOwn: L('openWaterBotOwnedIslands'), pass: L('openWaterPass'), ev: L('openWaterEvents'), botState: L('openWaterBotState'), schutz: L('openWaterNeulingBis'), res: L('openWaterRes'), at: Date.now(), botCoins: L('openWaterBotCoins'), log: L('openWaterCombatLog'), fog: L('openWaterFogCells'), city: L('openWaterCity'), gems: L('openWaterGems'), thron: L('openWaterThrone') }; } catch (e) {} }));
   const resVor = await p.evaluate(X => Object.assign({}, loadBotState()[X].res), v.X);   // (er produziert weiter – unter Last mehr: Stand direkt vor dem Neustart)
   await Promise.all([p.waitForNavigation({ timeout: 30000 }), p.evaluate(() => saisonJetzt())]);
   await p.waitForTimeout(9000);
@@ -68,7 +73,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
     const own = J(N.own) || [], tr = J(N.troops) || {}, bo = J(N.botOwn) || {}, bc = J(N.botCoins) || {}, bx = (J(N.botState) || {})[V.X] || {}, c = loadCity(), cap = playerIslandId, isl = islandById[cap];
     const anderer = BOT_DEFS.filter(x => (bo[x.id] || []).length > 1).length, ohne = Object.values(bo).filter(l => l.length === 1).length;
     const inbox = inboxList().find(x => x.src === 'saison' && !/Thron-Punkte/.test(x.title || ''));
-    return { coins: N.coins, lvl: N.lvl, sp: N.sp, skills: J(N.skills), ownN: own.length, capNeu: cap !== V.cap0, rand: isl && isl.type === 'tower' && landmasses[isl.landmassId].tier === 'outer', zweite: islandOwnerOf(V.zweite),
+    return { coins: N.coins, lvl: N.lvl, sp: N.sp, skills: J(N.skills), ownN: own.length, capNeu: cap !== V.cap0, rand: isl && isl.type === 'tower' && (isl.startSlot || landmasses[isl.landmassId].zone === 1), zweite: islandOwnerOf(V.zweite),
       truppen: tr[cap], bund: Object.keys((J(N.bund) || {}).b || {}).length, log: N.log, fog: (J(N.fog) || []).filter(k => k === V.fogAlt || k === V.fogZweite).length, weit: Math.hypot(isl.x - islandById[V.cap0].x, isl.y - islandById[V.cap0].y) > 2 * REVEAL_BASE,
       keep: c.levels.keep, aca: c.levels.academy, forge: c.levels.forge, lumber: c.levels.lumber, fo: c.fo, bau: c.builds.length, foRun: c.foRun, wounded: c.wounded, gems, roh: AUF.rohVon('player'),
       hinweis: saisonBurgGeladen, nGems: N.gems, nRes: J(N.res), tp: (J(N.thron) || {}).pts, tpPost: (x => x && [x.gems, x.title])(inboxList().find(x => x.src === 'saison' && /Thron-Punkte/.test(x.title || ''))), karte: /Burg höchstens/.test(saisonKarte()), y: (({ city, hb }) => ({ keep: city.levels.keep, aca: city.levels.academy, fo: city.fo, st: hb && hb.st, hfo: hb && hb.fo }))((J(N.botState) || {})[V.Y] || {}),
@@ -77,6 +82,9 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
       bot: { lvl: bx.lvl, skills: Object.values(bx.skills).reduce((a, x) => a + x, 0), coins: bc[V.X], basen: (bo[V.X] || []).length, keep: bx.city.levels.keep, aca: bx.city.levels.academy, lumber: bx.city.levels.lumber, wall: bx.city.levels.wall,
         fo: bx.city.fo, bau: (bx.city.builds || []).map(x => x.id + x.to), foRun: bx.city.foRun || null, gear: JSON.stringify(bx.gear) === JSON.stringify(V.bot.gear), gems: bx.gems, tp: bx.tp, res: bx.res, titel: [...(bx.sTitel || []), ...(bx.titles || [])], look: botLook(V.X).title, rahmen: botLook(V.X).frame,
         hs: Object.entries(bx.hs).every(([k, x]) => V.bot.hs[k] && V.bot.hs[k][0] === x.own && V.bot.hs[k][1] === x.q), truppen: tr[bx.capital] },
+      pass: (x => x && [x.xp, x.f.length, x.p.length, x.prem])((J(N.pass) || { s: {} }).s[passNo(Date.now())]), botPass: bx.ps && [bx.ps.f, bx.ps.p, bx.ps.prem],
+      rang: [rangSaison('player', 0), rangSaison('player', 1), rangSaison(V.X, 0), conquestsOf('player'), throneEarnedOf('player')], wo: Object.keys(((J(N.ev) || {}).wo || {}).pts || {}).length,
+      capsInnen: Object.values(bo).filter(l => l.length === 1).map(l => islandById[l[0]]).filter(i => i && !i.startSlot && landmasses[i.landmassId].zone !== 1).length,
       schutz: (+N.schutz - N.at) / 36e5, botSchutz: (bx.neuBis - N.at) / 36e5, anderer, ohne, chip: document.getElementById('midBar').innerText };
   }, v.vor);
   console.log(JSON.stringify(n));
@@ -92,7 +100,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   const Y = n.y; ok(Y.keep === 4 && Y.aca === 4 && JSON.stringify(Y.fo) === '{"w_prod":2}' && Y.st && JSON.stringify([Y.st.keep[0], Y.st.academy[0], Y.st.lumber[0], Y.st.wall[0]]) === '[4,4,4,3]' && JSON.stringify(Y.hfo) === '{"w_prod":2}',
     'Burg fair beim echten Spieler: Welt-Stadt und Hauptbuch (Burg 6 → 4, Labor 4, Holzfäller 4, Mauer 3 bleibt, Forschung passend) – wie sein Handy, also kein Fehlalarm', Y);
   ok(n.inv && n.eq && n.hel, 'Ausrüstung und Helden bleiben', { inv: n.inv, eq: n.eq, hel: n.hel });
-  ok(n.nGems === '1000' && n.nRes && n.nRes.h === 0 && n.nRes.s === 0 && n.nRes.e === 0, 'Einmalige Ausnahme (Alexander 6.10.): Edelsteine genau 1.000 (vorher 12.345), Holz/Stein/Eisen 0', { gems: n.nGems, res: n.nRes });
+  ok(n.nGems === '1000' && n.nRes && n.nRes.h <= 5 && n.nRes.s === 0 && n.nRes.e === 0, 'Einmalige Ausnahme (Alexander 6.10.): Edelsteine genau 1.000 (vorher 12.345), Holz/Stein/Eisen 0 (Holz ≤ 5: der Holzfäller arbeitet bis zum Auslesen weiter)', { gems: n.nGems, res: n.nRes });
   ok(n.tp === 20000 && n.tpPost && n.tpPost[0] === 1500 && /Saison 1/.test(n.tpPost[1]), 'Thron-Punkte: 35.000 → 20.000, 1.500 Edelsteine im Abholfach („Thron-Punkte aus Saison 1 umgetauscht“)', { tp: n.tp, post: n.tpPost });
   const ab = await p.evaluate(() => { const x = inboxList().find(y => y.src === 'saison' && /Thron-Punkte/.test(y.title || '')), g0 = gems; inboxClaim(x.id); return gems - g0; });
   ok(ab === 1500, 'Abholen: Edelsteine + 1.500', ab);
@@ -109,6 +117,11 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(B.gear && B.hs && ['h', 's', 'e'].every(k => B.res[k] === 0) && resVor.h >= 4444, 'Mitspieler: Ausrüstung, Helden bleiben, Holz/Stein/Eisen 0 (einmalige Ausnahme)', { B, resVor });
   ok(B.tp === 20000, 'Mitspieler: Thron-Punkte 35.000 → 20.000', B.tp);
   ok(B.gems === 1000 + 2000 + 1500 && (B.titel || []).includes('s1p2') && B.look === 'Saison-Großadmiral' && B.rahmen === 'sz2', 'Mitspieler Platz 2: Edelsteine 1.000 (Ausnahme) + 2.000 Preis + 1.500 aus Thron-Punkten (gleich abgeholt) + Rahmen „Saison-Großadmiral“ (Platz 2–3)', { gems: B.gems, titel: B.titel, look: B.look, rahmen: B.rahmen });
+  ok(n.pass && n.pass[0] === 0 && n.pass[1] === 0 && n.pass[2] === 0 && n.pass[3] === true, 'Saison-Pass von vorn (Punkte, abgeholte Stufen), Premium bleibt gekauft', n.pass);
+  ok(n.botPass && n.botPass[0] === 0 && n.botPass[1] === 0 && n.botPass[2] === true, 'Mitspieler: Saison-Pass von vorn, Premium bleibt', n.botPass);
+  ok(n.rang[0] === 0 && n.rang[1] === 0 && n.rang[2] === 0 && n.rang[3] === 50 && n.rang[4] >= 9000, 'Ranglisten Eroberungen/Thron-Punkte zählen ab dem Reset (Erfolge behalten 50 / 9.000)', n.rang);
+  ok(n.wo === 0, 'Wochen-Event: Punkte der alten Welt weg', n.wo);
+  ok(n.capsInnen === 0, 'alle Hauptstädte auf Startplätzen oder in Zone 1 (nie weiter innen)', n.capsInnen);
   ok(n.anderer === 0 && n.ohne >= 100, 'alle Reiche auf eine Hauptstadt zurückgesetzt', { mehr: n.anderer, eine: n.ohne });
   ok(!/Neue Saison in/.test(n.chip), 'Countdown oben erst wieder in den letzten 3 Tagen', n.chip);
   ok(n.schutz > 47 && n.schutz <= 48 && n.botSchutz > 47 && n.botSchutz <= 48, '48 Std. Anfängerschutz nach dem Reset (du und Mitspieler)', { du: n.schutz, mitspieler: n.botSchutz });
@@ -142,7 +155,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   await p.waitForNavigation({ timeout: 30000 }).catch(() => {}); await p.waitForTimeout(500);
   const z3 = await p.evaluate(() => ({ gems: window.__nach.gems, keep: (JSON.parse(window.__nach.city || '{}').levels || {}).keep, lvl: window.__nach.lvl, coins: window.__nach.coins, mein: localStorage.getItem('openWaterSaisonMein'), res: JSON.parse(window.__nach.res || '{}') }));
   ok(z3.lvl === '1' && z3.coins === '0' && z3.mein === '2', 'Rückfall: nach dem Neuladen Stufe 1, 0 Münzen, Saison 2', z3);
-  ok(z3.res.h === 0 && z3.res.s === 0 && z3.res.e === 0 && z3.gems === '1000', 'Rückfall ohne Nachricht: Ausnahme trotzdem (die Welt sagt: saison.burgFair = 2) – Holz/Stein/Eisen 0, Edelsteine 1.000', { vor: z.res, nach: z3.res, gems: z3.gems });
+  ok(z3.res.h <= 5 && z3.res.s === 0 && z3.res.e === 0 && z3.gems === '1000', 'Rückfall ohne Nachricht: Ausnahme trotzdem (die Welt sagt: saison.burgFair = 2) – Holz/Stein/Eisen 0, Edelsteine 1.000', { vor: z.res, nach: z3.res, gems: z3.gems });
   ok(z3.keep === 4, 'Rückfall ohne Nachricht: Burg fair trotzdem (die Welt sagt: saison.burgFair = 2) – Burg 7 → 4', z3.keep);
   // 4) noch ein Reset: Burg fair war schon – Burgen über 4 (inzwischen gebaut) bleiben, für dich, Mitspieler und das Hauptbuch
   await p.waitForFunction(() => typeof AUF !== 'undefined' && typeof saisonJetzt === 'function' && saison && saison.nr === 2 && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});

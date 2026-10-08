@@ -63,6 +63,7 @@ function armyMove(a, t) {                                                    // 
     const who = armyWho(a), now = Date.now(); armyHalt(a, now);
     if (t.kind === 'base' && islandOwnerOf(t.id) === who) t.kind = 'home';
     if (t.kind === 'base' && isCapital(t.id)) return 'capital';
+    if (t.kind === 'base' && t.id === megaTempleId && now < thronOffenAb()) return 'thron';   // der Thron erst ab Tag 7 – auch für Armeen
     if (t.kind === 'base' && baseShieldedFor(t.id, who)) return 'shield';
     if (t.kind === 'army') { const b = armyById(t.id); if (b && armyWho(b) !== who && ownerShielded(armyWho(b))) return 'shield'; }
     if (bundFreund(who, t.kind === 'base' ? islandOwnerOf(t.id) : t.kind === 'army' && armyById(t.id) ? armyWho(armyById(t.id)) : null)) return 'bund';   // Bündnis-Mitglieder greifen sich nicht an
@@ -79,6 +80,7 @@ function armyOrder(a, t) {
     const why = !rechnet() ? (WELT.befehl('armee', { op: 'ziehen', id: a.id, ziel: t }), '') : armyMove(a, t);
     if (why === 'shield') flashHint(shieldBlockText(t.kind === 'army' ? armyWho(armyById(t.id)) : islandOwnerOf(t.id)), 4000);
     if (why === 'capital') flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(t.id)] || {}).name + ' – eine Hauptstadt greifst du von einer Basis aus an (Angreifen), nicht mit einer Armee.', 4000);
+    if (why === 'thron') flashHint('Der Thron zählt erst ab Tag ' + KARTE_ZONEN.thron.tag + ' – noch ' + fmtPassWait(thronOffenAb() - Date.now()) + '.', 3500);
     if (why === 'route') flashHint(noRouteHint(a.lm, t.lm), 3500);
     if (why === 'bund') flashHint('Das gehört einem Bündnis-Mitglied – Mitglieder greifen sich nicht an.', 3500);
     if (why) return false;
@@ -235,7 +237,7 @@ function renderArmySheet() {
                 '<button class="btn btn--primary btn--sm" type="button" data-ago' + (sum < 1 ? ' disabled' : '') + '>' + icon('send') + '<span>' + (s.mode === 'new' ? 'Aufstellen' : 'Schicken') + ' · ' + fmtCompact(sum) + ' Truppen</span></button>'
               : '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>'));
     } else {
-        const now = Date.now(), inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
+        const inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
         const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + uhrHtml(a.mv.resolveAt, 'marsch') : 'lagert';
         liveHtml(el, head('Armee im Feld') +
             '<div class="field-lines"><span>Truppen</span><b>' + fmtTile(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
@@ -338,6 +340,40 @@ function drawMarkers() {                                                     // 
         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(m.text, x + 25, y - 22.5);
     }
 }
+// ===== FREIES FELD (Merkliste 33): Tipp auf freies Land → runde Knöpfe: Teleportieren · Markierung · Truppen hierher =====
+let feldRing = null;                                                        // { x, y, lm } die angetippte Stelle (Welt)
+function feldRingAuf(sx, sy) {                                              // → true, wenn dort freies Land ist
+    const w = screenToWorld(sx, sy), lm = landmassAtWorld(w.x, w.y); if (!lm) return false;
+    const el = document.getElementById('feldRing');
+    const kn = [['tp', 'ui_sym_verlegen', 'Teleportieren', tpPreisHtml()], ['mark', 'ui_k_nadel', 'Markierung', ''], ['arm', 'ui_armee', 'Truppen hierher', '']];
+    feldRing = { x: w.x, y: w.y, lm: lm.id };
+    el.innerHTML = kn.map(([p, b, t, z], i) => '<button type="button" class="cr-btn" data-fring="' + p + '" style="--x:' + (i - 1) * 84 + 'px;--y:' + (i === 1 ? -92 : -58) + 'px;--d:' + i * 40 + 'ms"><span class="fr-ic" style="--b:url(bilder/' + b + '.webp)"></span><small>' + t + (z ? ' ' + z : '') + '</small></button>').join('');
+    el.hidden = false; feldRingFrame(); requestRender(); return true;
+}
+function tpPreisHtml() { return teleImRucksack() ? '1 Teleporter' : icon('gem') + fmtNum(TP_GEMS); }   // ein Teleporter im Rucksack (auch der gratis) geht vor Edelsteinen
+function feldRingZu() { if (!feldRing) return; feldRing = null; document.getElementById('feldRing').hidden = true; if (gemsArmed('teleport')) gemsArmAus(); requestRender(); }
+function feldRingFrame() {                                                  // (jedes Bild) die Knöpfe folgen der Stelle, dort eine Nadel
+    if (!feldRing) return;
+    const z = mapState.zoom, x = feldRing.x * z + mapState.offsetX, y = feldRing.y * z + mapState.offsetY, el = document.getElementById('feldRing');
+    el.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)';
+    setScreen(ctx); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, y, 9, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#f3d27a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 16, 6.5, 0, 0, Math.PI * 2); ctx.stroke();
+}
+document.getElementById('feldRing').addEventListener('click', e => {
+    const b = e.target.closest('[data-fring]'); if (!b || !feldRing) return; e.stopPropagation();
+    const { x, y, lm } = feldRing, was = b.dataset.fring;
+    if (was === 'tp') {
+        const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return; }
+        const k = teleImRucksack() ? 0 : TP_GEMS; if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine – oder 1 Teleporter aus dem Rucksack.', 3000); return; }
+        if (!gemsWirklich('teleport', k, b, true, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren?<br>' + tpPreisHtml(); return; }   // (immer bestätigen, offen bis daneben getippt wird – feldRingZu)
+        if (teleportOrt(x, y)) feldRingZu(); return;
+    }
+    feldRingZu();
+    if (was === 'mark') { openMarkerSheet({ id: null, x, y, text: MARKER_PRESETS[0], col: MARKER_COLORS[0] }); return; }
+    if (myArmies().length >= ARMY_MAX) { flashHint('Höchstens ' + ARMY_MAX + ' Armeen gleichzeitig im Feld.', 3000); return; }   // (wie der Armee-Knopf: dort sammeln sich die Truppen)
+    if ((islandsByLandmass[lm] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.5)) { flashHint('Dort geht es nicht – tippe auf freies Land mit etwas Abstand zu den Basen.', 3000); return; }
+    closeIslandPopup(); openArmySheet({ mode: 'new', x, y, lm });
+});
 function screenToWorld(screenX, screenY) {
     return {
         x: (screenX - mapState.offsetX) / mapState.zoom,

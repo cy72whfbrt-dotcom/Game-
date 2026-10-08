@@ -428,23 +428,14 @@ if (typeof THREE !== 'undefined') try {
     const pm = new T.PMREMGenerator(renderer); const rt = pm.fromEquirectangular(t); pm.dispose(); t.dispose(); return rt.texture;
   }
 
-  // ---------- capital plinth and water castle ----------
-  function buildPlinth(p, rad, style, owner) {
+  // ---------- capital plinth ----------
+  function buildPlinth(p, rad) {
     const g = new T.Group(); p.add(g); const h = 1.2;
     K.cyl(g, rad + .3, rad + .9, h, M.cap(), 0, 0, 0, { seg: 40, uv: .3 });
     const top = K.cyl(g, rad + .15, rad + .15, .06, M.grass(), 0, h, 0, { seg: 40 }); top.receiveShadow = true;
     K.torus(g, rad + .3, .09, M.gold(), 0, h, 0, { seg: 48 });
     K.stairs(g, 3.2, 5, h / 5, .45, M.cap(), 0, 0, rad + .9 + 5 * .45, { ry: 0 });
     for (const s of [-1, 1]) { K.box(g, .5, h + .4, .5, M.cap(), s * 1.85, 0, rad + 1.2); K.flameAt(g, s * 1.85, h + .4, rad + 1.2, { size: .16, power: 8 }); }
-    if (style === 'wasser') {
-      K.water(g, { ring: [rad + 1.0, rad + 3.6], y: .02 });
-      const rim = new T.Mesh(new T.RingGeometry(rad + 3.6, rad + 4.1, 48), M.cap()); rim.rotation.x = -Math.PI / 2; rim.position.y = .08; rim.receiveShadow = true; g.add(rim);
-      for (const a of [Math.PI / 2, -Math.PI / 2 + .0001]) { // two little arched bridges
-        const bx = Math.cos(a) * (rad + 2.3), bz = Math.sin(a) * (rad + 2.3), b = new T.Group(); b.position.set(bx, 0, bz); b.rotation.y = -a + Math.PI / 2; g.add(b);
-        const s = new T.Shape(); s.moveTo(-1.6, 0); s.lineTo(-1.6, .9); s.quadraticCurveTo(0, 1.6, 1.6, .9); s.lineTo(1.6, 0); s.lineTo(1.0, 0); s.quadraticCurveTo(0, 1.0, -1.0, 0); s.closePath();
-        const bg = new T.ExtrudeGeometry(s, { depth: 1.8, bevelEnabled: false }); bg.translate(0, 0, -.9); K.worldUV(bg, .3); const bm = new T.Mesh(bg, M.cap()); bm.rotation.y = Math.PI / 2; bm.castShadow = bm.receiveShadow = true; b.add(bm); }
-      for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2 + Math.PI / 4; K.waterfall(g, Math.cos(a) * (rad + .95), h - .05, Math.sin(a) * (rad + .95), 1.1, h - .02, { ry: -a + Math.PI / 2 }); }
-    }
     g.userData.h = h; return g;
   }
 
@@ -478,7 +469,7 @@ if (typeof THREE !== 'undefined') try {
     while (tScene.children.length > 2) tScene.remove(tScene.children[2]); tScene.add(tSun);
     const g = new T.Group(); tScene.add(g); let info;
     S.scoped(() => { const def = OW.models[c.model]; const meta = (def.meta && def.meta(c)) || {}; const holder = new T.Group(); g.add(holder); let lift = 0;
-      if (c.capital) { const pl = buildPlinth(holder, (meta.plotR || 7) * 1.12, c.capStyle, c.owner); lift = pl.userData.h; }
+      if (c.capital) { const pl = buildPlinth(holder, (meta.plotR || 7) * 1.12); lift = pl.userData.h; }
       const inner = new T.Group(); inner.position.y = lift; holder.add(inner); const { group } = buildModel(c, inner); if (c.capital) inner.scale.setScalar(1.12);
       info = { top: (group.userData.top || 10) + lift, rad: (group.userData.radius || 6) * (c.capital ? 1.12 : 1) + (c.capital ? 1 : 0), lift };
       if ((c.state === 'brand' || c.state === 'qualm' || c.state === 'russ') && OW.fire) OW.fire.build(g, group, info, c.state); });
@@ -748,7 +739,7 @@ if (typeof THREE !== 'undefined') try {
   const defOf = (t) => { for (let i = t; i >= 0; i--) if (OW.TIERS[i]) return OW.TIERS[i]; return OW.TIERS[0]; };
   OW.models.basis = {
     label: 'Basis',
-    meta: (c) => { const t = tierOf(c.level), d = defOf(t); return { tier: t, plotR: d.plotR, islandR: d.islandR + (c.capital ? 2 : 0) + (c.capital && c.capStyle === 'wasser' ? 3 : 0) }; },
+    meta: (c) => { const t = tierOf(c.level), d = defOf(t); return { tier: t, plotR: d.plotR, islandR: d.islandR + (c.capital ? 2 : 0) }; },
     build: (ctx) => { const t = tierOf(ctx.level); const g = defOf(t).build(ctx); g.userData.tier = t; return g; }
   };
 })();
@@ -812,7 +803,7 @@ if (typeof THREE !== 'undefined') try {
       for (const [x, z] of pos) column(g, x, base, z, hc, .26, M.marble(), M.cap());
       // entablature + roof by rarity: bronze · silver · gold stepped pyramid
       K.box(g, ww + .2, .55, ww + .2, M.cap(), 0, base + hc, 0);
-      const band = K.box(g, ww + .26, .16, ww + .26, M[sz.roof](), 0, base + hc + .2, 0);
+      K.box(g, ww + .26, .16, ww + .26, M[sz.roof](), 0, base + hc + .2, 0);
       const rb = base + hc + .55; let apex;
       if (sz.roof === 'gold') { for (let i = 0; i < 3; i++) K.box(g, ww - i * 1.3, .45, ww - i * 1.3, i % 2 ? M.cap() : M.gold(), 0, rb + i * .45, 0); K.pyramid(g, ww - 3.6, ww - 3.6, 1.6, M.gold(), 0, rb + 1.35, 0); apex = rb + 2.95; }
       else { K.pyramid(g, ww + .5, ww + .5, sz.roof === 'silver' ? 2.4 : 2.0, M[sz.roof](), 0, rb, 0); apex = rb + (sz.roof === 'silver' ? 2.4 : 2.0); }
@@ -933,7 +924,7 @@ if (typeof THREE !== 'undefined') try {
         if (i < 2) { const nw = TER[i + 1][0], mid = (w + nw) / 4; for (const [x, z, ry] of [[0, mid, 0], [0, -mid, 0], [mid, 0, Math.PI / 2], [-mid, 0, Math.PI / 2]]) K.water(g, { rect: [w * .42, .7], x, y: y + h + .02, z, ry });
           for (let k = 0; k < 4; k++) { const a = k / 4 * Math.PI * 2 + Math.PI / 4, d = w / 2 * .92 * Math.SQRT1_2 * 1.02; K.waterfall(g, Math.cos(a) * d, y + h + .02, Math.sin(a) * d, 1.3, h + .05, { ry: -a + Math.PI / 2 }); } }
         // grand stairs on all four sides
-        for (let s = 0; s < 4; s++) { const a = s * Math.PI / 2; const st = K.stairs(g, 3.2 - i * .3, 5, h / 5, .4, M.cap(), Math.sin(a) * (w / 2 + 2), y, Math.cos(a) * (w / 2 + 2), { ry: a }); }
+        for (let s = 0; s < 4; s++) { const a = s * Math.PI / 2; K.stairs(g, 3.2 - i * .3, 5, h / 5, .4, M.cap(), Math.sin(a) * (w / 2 + 2), y, Math.cos(a) * (w / 2 + 2), { ry: a }); }
         y += h; });
       // drum colonnade, gold dome, lantern
       const rc = 4.2, hc = 4.8;
@@ -984,7 +975,7 @@ if (typeof THREE !== 'undefined') try {
       else { const bm = grade === 'thron' ? M.marble() : M.field(); const sh = new T.Shape(), hl = BL / 2;
         sh.moveTo(-hl, -1.2); sh.lineTo(-hl, deckY); sh.quadraticCurveTo(0, deckY + .7, hl, deckY); sh.lineTo(hl, -1.2); sh.lineTo(hl - 1.1, -1.2); sh.quadraticCurveTo(0, deckY - .2, -hl + 1.1, -1.2); sh.closePath();
         const geo = new T.ExtrudeGeometry(sh, { depth: 3.2, bevelEnabled: false }); geo.translate(0, 0, -1.6); geo.rotateY(Math.PI / 2); K.worldUV(geo, .3); K.put(g, geo, bm);
-        for (const s of [-1, 1]) { const par = K.box(g, .3, .55, BL, grade === 'thron' ? M.marble() : M.field(), s * 1.45, deckY + .2, 0); if (grade === 'thron') K.box(g, .36, .1, BL, M.gold(), s * 1.45, deckY + .75, 0); }
+        for (const s of [-1, 1]) { K.box(g, .3, .55, BL, grade === 'thron' ? M.marble() : M.field(), s * 1.45, deckY + .2, 0); if (grade === 'thron') K.box(g, .36, .1, BL, M.gold(), s * 1.45, deckY + .75, 0); }
         if (grade === 'thron') for (const z of [-RIV, 0, RIV]) for (const s of [-1, 1]) K.lantern(g, s * 1.45, deckY + .75, z, { h: 1.1 }); }
       // lit path when the gate is open and owned
       if (open && !v.houseOnly) { const path = new T.Mesh(new T.PlaneGeometry(1.1, BL + 6), new T.MeshBasicMaterial({ color: 0xffc977, transparent: true, opacity: .35, blending: T.AdditiveBlending, depthWrite: false, map: OW.TEX.soft() }));
@@ -1144,7 +1135,7 @@ if (typeof THREE !== 'undefined') try {
 // Each player flies their own coat of arms (owner colour stays the field), capitals can wear the game's skins,
 // and a per-base seed turns and mirrors the layout. Tier and owner stay readable.
 (function () {
-  const T = THREE, M = OW.M;
+  const T = THREE;
   // the game's four skins (SKIN_DEFS in index.html): stone and roof colours for the player's capital
   const SKINS = OW.SKINS = {
     winter:   { name: 'Winterburg',    stone: 0xdfe6ee, roof: 0xe9f1fa, trim: 0x9fb4cc },
@@ -1224,7 +1215,7 @@ if (typeof THREE !== 'undefined') try {
     const d = P + 1.1 * S, cx = Math.cos(a) * d, cz = Math.sin(a) * d; grp.position.set(cx, 0, cz); grp.rotation.y = -a + Math.PI / 2;   // local +z points away from the base
     const H = Math.max(3.2, Math.min(top * .6, 9 + tier * .6));
     const wallTo = (len, h) => K.wall(grp, 0, -.2, 0, -len, h, .55 * S, stone, { cap: M.cap(), merlons: tier >= 2, size: .32 * S, mh: .38 * S });
-    let rad = 1.3 * S, props = [];
+    let rad = 1.3 * S;
     if (tier === 0) {                               // the camp: a second tent and a wooden look-out
       K.gable(grp, 1.9 * S, 1.8 * S, 1.3 * S, cloth, -.9 * S, 0, 0, { ry: .4 });
       for (const [x, z] of [[-.4, -.4], [.4, -.4], [-.4, .4], [.4, .4]]) K.cyl(grp, .07, .09, 2.6 * S, M.wood(), .9 * S + x * S, 0, z * S, { seg: 5 });
@@ -3153,7 +3144,7 @@ if (typeof THREE !== 'undefined') try {
     for (let k = n - 1; k >= 0; k--) pts.push([-xs[k + 1], ys[k]], [-xs[k], ys[k]]);
     pts.push([s, 0]);
     const geo = new T.ExtrudeGeometry(new T.Shape(pts.map(([a, b]) => new T.Vector2(a, b))), { depth: th, bevelEnabled: false }); geo.translate(0, 0, -th / 2); K.worldUV(geo, .3);
-    const g = K.put(p, geo, m, x, y, z, { ry });
+    K.put(p, geo, m, x, y, z, { ry });
     return { top, ys, xs };
   }
   // a boat hull lofted from cross sections: length along x (bow +x), waterline at y = 0
@@ -3303,7 +3294,7 @@ if (typeof THREE !== 'undefined') try {
     for (const a of [128.5 * D, 140.5 * D]) { const [x, z] = P(a, 8.3); Bt.box(HS(), .72, 1.9, .72, x, Y0 - .02, z, -a); Bt.box(M.cap(), .86, .12, .86, x, Y0 + 1.88, z, -a); lantern(x, Y0 + 2.0, z, .08); }
     { const [x, z] = P(134.5 * D, 9.2); K.stairs(g, 1.5, 3, (Y0 - .16) / 3, .24, PAVE(), x, .16, z, { ry: PI / 2 - 134.5 * D }); }
     arc(8.12, -150 * D, -20 * D, 6.5 * D, (a, len, ry, da) => {
-      const [x, z] = P(a, 8.12), [xo, zo] = P(a, 8.32);
+      const [x, z] = P(a, 8.12);
       Bt.box(HS(), len, 2.3, .76, x, Y0 - .02, z, ry); Bt.box(M.cap(), len + .02, .12, .94, x, Y0 + 2.28, z, ry);
       for (const f of [-.25, .25]) { const [x3, z3] = P(a + f * da, 8.32); Bt.box(M.cap(), .44, .46, .3, x3, Y0 + 2.4, z3, ry); } });
     // a flat-topped wall tower on the curtain

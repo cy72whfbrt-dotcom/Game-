@@ -12,12 +12,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.faktoren = [WIRTSCHAFT_ERTRAG === 1 / 3600, K === 1 / 1800, MUENZ_FAKTOR === 1000];
     // Kosten: alte Formel × 1/1800 × 1.000 (Münzen), Basis aufwerten gerundet und nie unter 1.000
     o.aufwerten = [upgradeCostRoh(1), upgradeCostRoh(50), Math.max(1000, niceRoundW(Math.round(120 * Math.pow(1.27, 49) * M)))];
-    const bk = 5000 * Math.pow(1.6, 9) * Math.pow(1.25, 0), burg = AUF.stadtKosten('keep', 10);
-    o.burg = [burg.c === nm(bk * 2), burg.h === niceRound(Math.round(bk)), burg.e === niceRound(Math.round(bk * .5)), burg];   // (Holz/Stein/Eisen in RoK-Größe, 6.10.)
+    const bk = 1000 * Math.pow(1.75, 9), burg = AUF.stadtKosten('keep', 10);
+    o.burg = [burg.c === nm(bk * 2), burg.h === niceRound(Math.round(bk)), burg.e === niceRound(Math.round(bk * .5)), burg];   // (Holz/Stein/Eisen in RoK-Größe, 7.10.: 1.000 × 1,75 je Stufe)
     o.schutz = [AUF.burgSchutzStufe(1), AUF.burgSchutzStufe(10), AUF.burgSchutzStufe(25)];
     const atk = AUF.FORSCHUNG.find(d => d.id === 'm_atk'), fk = AUF.foKosten(atk, 1);
     o.forschKosten = [fk.c === nm(3000 * Math.pow(1.6, atk.aka - 1)) && fk.h === niceRound(Math.round(1500 * Math.pow(1.6, atk.aka - 1))), fk];
-    o.gebaeude = [cityCost('wall', 5) === nm(500 * Math.pow(1.9, 5)), AUF.stadtKosten('wall', 5).h === niceRound(Math.round(300 * Math.pow(1.75, 5) * .5))];
+    o.gebaeude = [cityCost('wall', 5) === nm(.6 * 1000 * Math.pow(1.75, 4)), AUF.stadtKosten('wall', 5).h === niceRound(Math.round(.3 * 1000 * Math.pow(1.75, 4) * .5))];   // (30 % der Burg gleicher Stufe)
     o.kiste = [CRATE_GEM_COST, (document.querySelector('[data-const="CRATE_GEM_COST"]') || {}).textContent];
     o.bund = BUND.KOSTEN;
     o.belohnung = [levelRewardTroops(30), levelRewardCoins(30), levelRewardTroops(2)];
@@ -31,7 +31,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       return [...d.querySelectorAll('[data-mk-menge]')].map(b => +b.dataset.mkMenge).concat([AUF.marktLimit('player')]); })();
     // Gegner auf der Karte: neutral × 1/1800, die Thron-Tore nie unter 150.000 + 50.000
     const tore = islands.filter(i => i.type === 'gate' && i.gateKind === 'throne'), mega = islands.find(i => i.type === 'megaTemple');
-    const rand = islands.filter(i => i.type === 'tower' && !i.startSlot && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring === 8);
+    const rand = islands.filter(i => i.type === 'tower' && !i.startSlot && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].zone === 1);   // (Zone 1 = außen)
     o.schutzRoh = [AUF.burgSchutzRoh('player', 1), AUF.burgSchutz('player', 1)];
     o.thronTor = [tore.length > 0, tore.every(t => t.neutralTroops >= 150000 && t.neutralDefense >= 50000)];
     o.mega = [mega.neutralTroops, mega.neutralDefense];
@@ -63,7 +63,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.bund === 20000, 'Bündnis gründen: 30.000 × 1.000 ÷ 1.800 auf 10.000 gerundet = 20.000 Münzen', r.bund);
   ok(r.belohnung[0] === 1100 && r.belohnung[1] === 250000 && r.belohnung[2] === 10, 'Stufen-Belohnung Stufe 30: Truppen ÷ 1.800, Münzen × 1.000 ÷ 1.800, Truppen nie unter 10', r.belohnung);
   ok(r.ep, 'EP: ein besiegter Krieger zählt wie vorher 1.800 (Stufen gleich schnell)');
-  ok(r.lager[0] === 1 && r.lager[1] === 570, 'Barbaren-Lager Stufe 1 / 10 ÷ 1800', r.lager);
+  ok(r.lager[0] === 500 && r.lager[1] === 12000, 'Barbaren-Lager Stufe 1 / 10: 500 / 12.000 Krieger (7.10.)', r.lager);
   ok(r.krankenhaus[0] === 556 && r.krankenhaus[1] > 10000, 'Krankenhaus-Platz ÷ 1800', r.krankenhaus);
   ok(r.erfolge[0] === 56000 && r.erfolge[1] === 6 && r.erfolge[2] === 556 && /Nimm 56\.000 Münzen/.test(r.erfolge[3]) && /Heil 556 /.test(r.erfolge[4]), 'Erfolge Zöllner (Münzen × 1.000 ÷ 1.800)/Feldscher/Heiler (÷ 1.800, wie der Krankenhaus-Platz)', r.erfolge);
   ok(r.markt.length === 5 && r.markt.slice(0, 4).join() === '1000,10000,100000,1000000' && r.markt[4] >= 27778 && r.markt[0] * 5000 / 1800 <= r.markt[4], 'Markt: Mengen 1.000 … 1 Mio. – die kleinste passt ins kleinste Tageslimit (27.778)', r.markt);

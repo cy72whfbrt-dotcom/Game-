@@ -8,6 +8,7 @@
 // D) Weltrechner (WELT nachgebaut): echter Spieler bzw. Mitspieler späht einen echten Spieler aus → Bericht an ihn + Push;
 //    das Handy zeigt den Eintrag im Kampflog; Push-Text und Einstellung
 // E) Viele Späher: je Späher und Basis höchstens 1 Meldung in 30 Min., höchstens 10 „ausgespäht“ im Kampflog (Kampfberichte bleiben)
+// F) Desktop: Bericht-Fenster unter dem HUD (ganz im Bild, Rahmen ui_rahmen), keine leeren Heldenzeilen „Fähigkeit –“
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const fmtZ = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.');   // wie fmtNum (Tausender-Punkte)
@@ -119,11 +120,17 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   a.F = await p.evaluate(T => { closeAllPopups(); battleLogBtn.click(); const e = combatLog.find(x => x.type === 'scout' && x.targetId === T && x.spy);
     const row = e && [...combatLogListEl.children][combatLog.indexOf(e)], sm = row && row.querySelector('summary'); if (!sm) return null; sm.click();
     const ks = document.querySelector('.kl-seite'), f = ks.firstElementChild, r = f.getBoundingClientRect(), bg = getComputedStyle(ks).backgroundColor;
-    const out = { offen: !ks.hidden, breite: Math.round(r.width), links: Math.round(r.left), bg, fensterBg: getComputedStyle(f).backgroundColor };
+    const out = { offen: !ks.hidden, breite: Math.round(r.width), links: Math.round(r.left), bg, fensterBg: getComputedStyle(f).backgroundColor,
+      oben: Math.round(r.top), unten: Math.round(r.bottom), hud: Math.round(document.querySelector('.hud-werte').getBoundingClientRect().bottom), rahmen: /ui_rahmen/.test(getComputedStyle(f).borderImageSource),
+      rollt: getComputedStyle(document.getElementById('klInhalt')).overflowY,
+      leer: [...document.querySelectorAll('.logHero')].reduce((n, h) => n + [...h.querySelectorAll('.logLine')].filter(l => l.lastElementChild.textContent.trim() === '–').length, 0),
+      helden: document.querySelectorAll('.logHero').length };
     ks.dispatchEvent(new MouseEvent('click', { bubbles: true })); out.zu = ks.hidden; return out; }, a.w.T);
   await p.setViewportSize({ width: 390, height: 844 });
   console.log(JSON.stringify(a).slice(0, 1500));
   ok(a.F && a.F.offen && a.F.breite <= 600 && a.F.links > 300 && /rgba\(.*0\.6/.test(a.F.bg) && a.F.zu, 'Desktop: Bericht als Fenster (max. 600 px, Karte dahinter abgedunkelt), Klick daneben schließt', a.F);
+  ok(a.F && a.F.oben >= a.F.hud && a.F.unten <= 900 && a.F.rahmen && a.F.rollt === 'auto', 'Desktop: Bericht-Fenster unter der Rohstoffleiste, ganz im Bild, Rahmen wie die anderen Fenster, Inhalt rollt darin', a.F);
+  ok(a.F && a.F.helden > 0 && a.F.leer === 0, 'Kampf-/Spähbericht: keine leeren Heldenzeilen („Fähigkeit –“, „Tempo –“)', a.F);
   const A = a.A || {};
   ok(A.gear && Object.values(A.gear).filter(g => g && g[0] === 4 && g[1] === 10).length === 4, 'Spähbericht: alle 4 Teile Stufe 10 im Bericht', A.gear);
   ok(A.voll === 4 && A.leer === 0, 'Spähbericht zeigt 4 Ausrüstungsteile (keine leeren Plätze)', { voll: A.voll, leer: A.leer });

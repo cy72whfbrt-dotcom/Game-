@@ -21,7 +21,7 @@ const lokalId = id => (window.WELT && id === WELT.ich) ? 'player' : id;
 // Bündnisse (buendnis.js, wird nach spiel.js geladen): sind a und b im selben Bündnis? – Mitglieder greifen sich nicht an
 function bundFreund(a, b) { return typeof bundVerbuendet === 'function' && bundVerbuendet(a, b); }
 // Truppen, die dir geschenkt werden (Stufe, Thron-Shop, Krankenhaus, Funde, Admin): beim Zuschauer macht es der Weltrechner.
-// q = woher (stufe/thron/heil/fund/geschenk) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
+// q = woher (stufe/thron/heil/fund/geschenk/pass/aufgabe) – der Weltrechner prüft danach, wie viele es höchstens sein dürfen (Schummel-Schutz).
 function eigeneTruppenDazu(base, n, q, mehr) { if (base === null || base === undefined || !(n > 0)) return; islandTroops[base] = (islandTroops[base] || 0) + n; alsBefehl('truppen', Object.assign({ n, q }, mehr || {})); }
 // iPhone Home-Bildschirm-App: iOS macht die Seite um die Statusleiste zu kurz (unten bleibt ein schwarzer Streifen).
 // Die Lücke wird gemessen, und die Leiste unten rutscht genau so weit runter (CSS-Wert --dock-off).
@@ -54,7 +54,7 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // vor dem Reset zählt beim Weltrechner nicht). openWaterSaisonNeu setzt die Nachricht „saison“ (09f-saison.js), danach lädt die
 // Seite neu. Bleibt: Stadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, Gekauftes, Abholfach.
 // Weg: Stufe (→ 1, damit alle Fähigkeitspunkte), Münzen (→ 0 wie ein neuer Spieler), Verwundete, Kampfberichte, Nebel, Späher,
-// alte Befehle. (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
+// alte Befehle, Saison-Pass (Punkte und abgeholte Stufen – gekauftes Premium bleibt; Erfolge bleiben). (Basen, Truppen, Bündnis, Märsche stehen in der Welt – die setzt der Weltrechner zurück.)
 // Anfängerschutz (Alexander 5.10.): nach dem Reset 48 Std. wie ein neuer Spieler – die Zeit kommt vom Weltrechner (openWaterSaisonSchutz).
 // Burg fair (Alexander 6.10. A): der erste Reset danach setzt jede Burg über Stufe BURG_FAIR auf BURG_FAIR (saison.burgFair = diese Saison,
 // sonst openWaterSaisonBurg aus der Nachricht) – Gebäude, Forschung, Bauten passt aufbau.js beim Laden an (openWaterBurgFair, burgFair).
@@ -65,7 +65,7 @@ if (!SYSTEM && store.get('openWaterReset') !== RESET_VERSION) {   // (nie beim W
 // vor dem Reset zurück (openWaterSaisonVorher, beim Reset gemerkt) – die Welt (Server) ist maßgeblich, das Handy folgt nur.
 var saisonNeuGeladen = 0, saisonZurueckGeladen = 0, saisonBurgGeladen = 0;  // (09f-saison.js: Hinweis nach dem Neuladen · Burg: aufbau.js)
 const BURG_FAIR = 4, SAISON_AUSNAHME_GEMS = 1000, SAISON_TP_MAX = 20000, SAISON_TP_JE_GEM = 10;
-const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis'];   // (was der Reset ändert und das Zurückspielen wiederholt)
+const SAISON_PRIVAT = ['openWaterLevel', 'openWaterXp', 'openWaterSkills', 'openWaterSkillPoints', 'openWaterCoins', 'openWaterNeulingBis', 'openWaterPass', 'openWaterSaisonRang'];   // (was der Reset ändert und das Zurückspielen wiederholt)
 if (!SYSTEM) {
     let mein = parseInt(store.get('openWaterSaisonMein'), 10) || 0, nrW = 0, fairNr = 0;
     const neu = parseInt(store.get('openWaterSaisonNeu'), 10) || 0;
@@ -92,6 +92,10 @@ if (!SYSTEM) {
         store.set('openWaterSaisonVorher', JSON.stringify(vorher));   // (für ein Zurückspielen der Sicherung von vor dem Reset)
         store.set('openWaterLevel', '1'); store.set('openWaterXp', '0'); store.set('openWaterSkills', '{}'); store.set('openWaterSkillPoints', '0');
         store.set('openWaterCoins', '0');
+        try { const st = JSON.parse(store.get('openWaterStats')) || {}, t = JSON.parse(store.get('openWaterThrone')) || {};   // Ranglisten zählen ab jetzt (09f rangSaison)
+            store.set('openWaterSaisonRang', JSON.stringify([st.captures || 0, Math.floor(Math.max(t.earned || 0, (t.week || {}).player || 0))])); } catch (e) {}
+        try { const ps = JSON.parse(store.get('openWaterPass')); if (ps && ps.s && typeof ps.s === 'object') {   // Saison-Pass von vorn (Premium bleibt gekauft)
+            for (const k in ps.s) ps.s[k] = { xp: 0, prem: !!(ps.s[k] || {}).prem, f: [], p: [] }; store.set('openWaterPass', JSON.stringify(ps)); } } catch (e) {}
         const schutz = parseFloat(store.get('openWaterSaisonSchutz')) || 0; if (schutz > Date.now()) store.set('openWaterNeulingBis', String(schutz));   // 48 Std. Anfängerschutz
         for (const k of ['openWaterCombatLog', 'openWaterFogCells', 'openWaterExplored', 'openWaterScoutedIslands', 'openWaterPendingScouts', 'openWaterCarryTroops', 'openWaterBefehlAus']) store.remove(k);
         try { const c = JSON.parse(store.get('openWaterCity')); if (c && typeof c === 'object') { c.wounded = 0; store.set('openWaterCity', JSON.stringify(c)); } } catch (e) {}
@@ -128,6 +132,11 @@ function fmtCompact(n) {
   if (a < 1e15 * .99995) return NF_C.format(n);
   for (const [v, u] of [[1e24, 'Quadr.'], [1e21, 'Trd.'], [1e18, 'Trill.'], [1e15, 'Brd.']])   // beyond "Bio.": Billiarde, Trillion, Trilliarde … (unit chosen on the rounded value)
     if (a >= v * .99995 || v === 1e15) return (a / v >= 1000 ? NF.format(Math.round(n / v)) : NF.format(Math.round(n / v * 10) / 10)) + ' ' + u;
+}
+function fmtHud(n) {                      // HUD-Reihe (6 Kapseln auf 390 px): kurz – 950 · 5,4K · 12,6K · 126K · 1,2M · 100Mrd · 10Bio
+  const a = Math.abs(n), k = (v, u) => (v < 100 ? NF.format(Math.floor(v * 10) / 10) : NF.format(Math.floor(v))) + u;
+  if (a < 1e3) return fmtExact(n);
+  for (const [v, u] of [[1e15, 'Brd'], [1e12, 'Bio'], [1e9, 'Mrd'], [1e6, 'M'], [1e3, 'K']]) if (a >= v) return a >= v * 1e4 ? fmtCompact(n) : k(n / v, u);
 }
 const fmtTile = fmtNum;   // stat tiles: same rule as everywhere
 function setBtnLabel(btn, text) { const l = btn.querySelector('.lbl') || btn; if (l.textContent !== text) l.textContent = text; }   // (nur bei einer Änderung: offene Fenster ziehen jede Sekunde nach)
@@ -171,7 +180,6 @@ function liveUhren(root) {                          // → true, wenn eine Uhr g
 function statTile(label, iconName, valueHtml, cls) {
   return '<div class="stat"><span class="stat-l">' + icon(iconName) + label + '</span><b class="stat-v' + (cls ? ' ' + cls : '') + '">' + valueHtml + '</b></div>';
 }
-const UNK = '<span class="unk">' + icon('scout') + 'Erst spähen</span>';
 const logBadge = (kind, text) => '<span class="lbadge lbadge--' + kind + '">' + text + '</span>';
 function logBalance(atk, def, atkLabel, defLabel, youDefend) {          // who was stronger, as a bar (like the attack preview) - your side is always green
     const a = Math.max(0, atk || 0), d = Math.max(0, def || 0), pct = a + d > 0 ? Math.round(a / (a + d) * 100) : 50;
@@ -224,7 +232,22 @@ function glyph(name) {                     // parse the sprite symbol once
     o: p.hasAttribute('opacity') ? +p.getAttribute('opacity') : 1
   }));
 }
-function drawGlyph(g, name, cx, cy, size, color) {
+// Karten-Symbole als KI-Bild (Alexander 7.10., dieselben wie in den Fenstern, 05z): gibt es ein Bild, malt drawGlyph es statt der Linien
+// (Wappen-Zeichen bleiben Linien: vektor = true). Lädt beim ersten Mal, dann neu zeichnen.
+const GLYPH_BILD = { coin: 'res_muenzen', gem: 'res_edelstein', troops: 'res_truppen', wood: 'res_holz', stone: 'res_stein', iron: 'res_eisen',
+  scout: 'sym_spaeher', attack: 'sym_schwert', hourglass: 'sym_zeit', lock: 'sym_schloss', star: 'sym_stern', losses: 'sym_verluste',
+  defense: 'sym_turm', tower: 'sym_turm', flag: 'k_fahne', crown: 'k_krone', castle: 'sym_burg', shield: 'sym_friedensschild', weapon: 'sym_waffe', recall: 'sym_rueckzug',
+  beute: 'k_beute', rund: 'rund', drache: 'karte_drache',
+  send: 'sym_senden', temple: 'sym_tempelbonus', market: 'sym_markt', sell: 'sym_handeln' };   // (nur Bild: Fund-Beutel, runder Knopf-Grund)
+const GLYPH_IMG = {};
+function glyphBild(name) {
+  const n = GLYPH_BILD[name]; if (!n || typeof Image === 'undefined') return null;
+  let im = GLYPH_IMG[n]; if (!im) { im = GLYPH_IMG[n] = new Image(); im.onload = () => requestRender(); im.src = 'bilder/ui_' + n + '.webp'; }
+  return im.complete && im.naturalWidth ? im : null;
+}
+function drawGlyph(g, name, cx, cy, size, color, vektor) {
+  const im = !vektor && glyphBild(name);
+  if (im) { const k = size * 1.2 / Math.max(im.naturalWidth, im.naturalHeight), w = im.naturalWidth * k, h = im.naturalHeight * k; g.drawImage(im, cx - w / 2, cy - h / 2, w, h); return; }
   const L = glyph(name); if (!L) return;
   const k = size / 24;
   g.save(); g.translate(cx - size / 2, cy - size / 2); g.scale(k, k);
@@ -268,21 +291,21 @@ let zoomAnchor = null; // { screenX, screenY, worldX, worldY }
 // bounds minZoom (updateZoomBounds).
 const TERRITORY_VIEW_ZOOM = 0.018;
 
-// Layout: a honeycomb - the important central landmass (the hub) at
-// the middle of a hex grid, with rings of same-size landmasses
-// radiating outward around it (like Million Lord: lots of islands
-// packed tightly edge to edge). Every hex-ADJACENT pair of
-// landmasses gets its own short "mini bridge", not just hub-to-
-// outer - so expanding means hopping from island to island outward
-// through whichever neighbors you've bridged/captured, not
-// attacking anything anywhere. Spacing found via a search against
-// the actual coastline generator for the tightest hex packing with
-// zero overlap.
-const GRID_N = 17;         // square world: 17 × 17 regions (Paket C, vorher 15 × 15 – Messwerte in LIESMICH 23), the Thron-Insel in the middle, the 8 regions around it form the ring
-const HEX_SPACING = 56120; // distance between orthogonally adjacent cell centres (tightest packing with zero overlap)
-const GRID_HALF = (GRID_N - 1) / 2;
-const RIVER_HALF = 1500;   // one big square continent: its regions are split by mountain chains (half width; früher Flüsse) – nur durch die Tore
-const FRAME_HALF = (GRID_HALF + .5) * HEX_SPACING + 9000;   // the square map border (world units from the centre)
+// gebiete: { id, zone 1–4 (5 = Mitte), name, boden, kern: Mittelpunkt, rand: Grenzen-Ids (−id−1 = rückwärts) – der Umriss ist der Ring daraus }
+// grenzen: { id, a, b (−1 = Kartenrand), punkte } · paesse: { id, a, b, grenze, x, y, senk (Grenze läuft senkrecht), stufe 1–5 }
+// tempel: { gebiet, x, y, art tempel|waechtertempel } – je Zone-4-Gebiet einer · startplaetze: { x, y, gebiet } – je Zone-1-Gebiet gleich viele
+// felder: { x, y, gebiet, art holz|stein|eisen|gold|edelstein, stufe } – Rohstoff-Felder, Stufe steigt nach innen
+// oeffnen: Stufe → Tag, an dem die Pässe aufgehen (von außen nach innen); thron.tag: ab dann zählt der Thron
+const KARTE_ZONEN = {"welt":{"halb":850000},"thron":{"x":0,"y":0,"tag":7},"tempel":[{"gebiet":1,"x":187000,"y":107667,"art":"tempel"},{"gebiet":2,"x":-107667,"y":198333,"art":"waechtertempel"},{"gebiet":3,"x":-164333,"y":-187000,"art":"tempel"},{"gebiet":4,"x":164333,"y":-164333,"art":"waechtertempel"}],"startplaetze":[{"x":543577,"y":-487337,"gebiet":27},{"x":333668,"y":675039,"gebiet":20},{"x":164691,"y":612861,"gebiet":20},{"x":190369,"y":785110,"gebiet":20},{"x":694424,"y":-37484,"gebiet":28},{"x":-601563,"y":-354449,"gebiet":24},{"x":-608204,"y":381841,"gebiet":22},{"x":459789,"y":-705740,"gebiet":27},{"x":653349,"y":-592249,"gebiet":27},{"x":438094,"y":-787080,"gebiet":26},{"x":204176,"y":-797753,"gebiet":26},{"x":-377134,"y":679631,"gebiet":21},{"x":-769769,"y":-623148,"gebiet":24},{"x":572028,"y":-759559,"gebiet":27},{"x":-784153,"y":340258,"gebiet":22},{"x":-402872,"y":-757296,"gebiet":25},{"x":-672232,"y":297736,"gebiet":22},{"x":81931,"y":699545,"gebiet":20},{"x":645365,"y":-88456,"gebiet":28},{"x":747753,"y":405796,"gebiet":19},{"x":760970,"y":-798375,"gebiet":27},{"x":-231784,"y":-751911,"gebiet":25},{"x":765893,"y":512628,"gebiet":19},{"x":-149199,"y":-791848,"gebiet":25},{"x":-734665,"y":670760,"gebiet":22},{"x":63027,"y":-633355,"gebiet":26},{"x":-303697,"y":-647905,"gebiet":25},{"x":-108106,"y":612916,"gebiet":21},{"x":-743562,"y":-398053,"gebiet":24},{"x":683942,"y":586449,"gebiet":19},{"x":64998,"y":-703396,"gebiet":26},{"x":266368,"y":731844,"gebiet":20},{"x":-287998,"y":650161,"gebiet":21},{"x":-545759,"y":557051,"gebiet":22},{"x":509554,"y":-624023,"gebiet":27},{"x":-771302,"y":177522,"gebiet":23},{"x":-776295,"y":558462,"gebiet":22},{"x":640515,"y":404818,"gebiet":19},{"x":420724,"y":587644,"gebiet":19},{"x":490819,"y":-558241,"gebiet":27},{"x":-664182,"y":-417989,"gebiet":24},{"x":-455343,"y":-549270,"gebiet":24},{"x":-81791,"y":-715796,"gebiet":25},{"x":148500,"y":-651884,"gebiet":26},{"x":-194846,"y":678046,"gebiet":21},{"x":-117817,"y":-630658,"gebiet":25},{"x":-679989,"y":-142033,"gebiet":23},{"x":526175,"y":-706953,"gebiet":27},{"x":-786203,"y":7316,"gebiet":23},{"x":752813,"y":-144393,"gebiet":28},{"x":530355,"y":459242,"gebiet":19},{"x":581327,"y":-676775,"gebiet":27},{"x":742359,"y":118467,"gebiet":28},{"x":-641403,"y":-770024,"gebiet":24},{"x":-746961,"y":467797,"gebiet":22},{"x":290041,"y":-618027,"gebiet":26},{"x":691683,"y":242861,"gebiet":19},{"x":-663735,"y":754911,"gebiet":22},{"x":727452,"y":-357821,"gebiet":27},{"x":556810,"y":753789,"gebiet":19},{"x":-652839,"y":-273304,"gebiet":24},{"x":641049,"y":660037,"gebiet":19},{"x":666247,"y":-202129,"gebiet":28},{"x":686870,"y":783096,"gebiet":19},{"x":-505392,"y":-797764,"gebiet":25},{"x":104930,"y":775627,"gebiet":20},{"x":-559168,"y":-688838,"gebiet":24},{"x":-498460,"y":614539,"gebiet":22},{"x":-389739,"y":798938,"gebiet":21},{"x":-696440,"y":-343073,"gebiet":24},{"x":-798129,"y":636288,"gebiet":22},{"x":-693241,"y":-660253,"gebiet":24},{"x":256195,"y":-726449,"gebiet":26},{"x":429004,"y":751020,"gebiet":20},{"x":316663,"y":-739590,"gebiet":26},{"x":801489,"y":73597,"gebiet":28},{"x":762602,"y":-234826,"gebiet":28},{"x":-97575,"y":676308,"gebiet":21},{"x":-203648,"y":790949,"gebiet":21},{"x":-692030,"y":32334,"gebiet":23},{"x":-749649,"y":-122305,"gebiet":23},{"x":-715695,"y":108885,"gebiet":23},{"x":-143461,"y":788873,"gebiet":21},{"x":74040,"y":601904,"gebiet":20},{"x":252912,"y":613649,"gebiet":20},{"x":13925,"y":660453,"gebiet":20},{"x":312018,"y":-558910,"gebiet":26},{"x":725981,"y":33970,"gebiet":28},{"x":-253266,"y":-689435,"gebiet":25},{"x":-632969,"y":45819,"gebiet":23},{"x":-404253,"y":618767,"gebiet":21},{"x":-181703,"y":-674803,"gebiet":25},{"x":-288736,"y":738641,"gebiet":21},{"x":-620962,"y":-34122,"gebiet":23},{"x":-362688,"y":-694985,"gebiet":25},{"x":59889,"y":-795556,"gebiet":26},{"x":-791208,"y":-225093,"gebiet":23},{"x":-559822,"y":8935,"gebiet":23},{"x":776552,"y":-60649,"gebiet":28},{"x":597501,"y":-242350,"gebiet":28}],"felder":[{"x":-764020,"y":-189340,"gebiet":23,"art":"holz","stufe":1},{"x":-169918,"y":396617,"gebiet":6,"art":"stein","stufe":5},{"x":502057,"y":-395627,"gebiet":27,"art":"gold","stufe":1},{"x":751959,"y":-570895,"gebiet":27,"art":"holz","stufe":2},{"x":217935,"y":318951,"gebiet":5,"art":"holz","stufe":6},{"x":94226,"y":-802269,"gebiet":26,"art":"stein","stufe":1},{"x":621036,"y":234808,"gebiet":19,"art":"gold","stufe":2},{"x":763618,"y":-480190,"gebiet":27,"art":"eisen","stufe":2},{"x":427568,"y":-558988,"gebiet":27,"art":"holz","stufe":1},{"x":-547202,"y":618378,"gebiet":22,"art":"holz","stufe":2},{"x":538573,"y":-641831,"gebiet":27,"art":"gold","stufe":1},{"x":791040,"y":589119,"gebiet":19,"art":"stein","stufe":2},{"x":714033,"y":-412166,"gebiet":27,"art":"holz","stufe":1},{"x":735046,"y":714034,"gebiet":19,"art":"stein","stufe":2},{"x":-431952,"y":-278831,"gebiet":15,"art":"holz","stufe":4},{"x":698378,"y":425847,"gebiet":19,"art":"stein","stufe":2},{"x":-479956,"y":-378872,"gebiet":15,"art":"stein","stufe":3},{"x":-722133,"y":402735,"gebiet":22,"art":"holz","stufe":1},{"x":111964,"y":333620,"gebiet":5,"art":"stein","stufe":5},{"x":-32196,"y":-343421,"gebiet":8,"art":"holz","stufe":6},{"x":766631,"y":433166,"gebiet":19,"art":"holz","stufe":2},{"x":66328,"y":632222,"gebiet":20,"art":"holz","stufe":1},{"x":-774748,"y":454177,"gebiet":22,"art":"eisen","stufe":1},{"x":-356195,"y":-83468,"gebiet":7,"art":"stein","stufe":5},{"x":602411,"y":484613,"gebiet":19,"art":"edelstein","stufe":1},{"x":424755,"y":-348107,"gebiet":18,"art":"holz","stufe":3},{"x":-121694,"y":-779696,"gebiet":25,"art":"holz","stufe":2},{"x":-276133,"y":492124,"gebiet":13,"art":"holz","stufe":4},{"x":-192393,"y":105397,"gebiet":2,"art":"holz","stufe":7},{"x":532497,"y":156091,"gebiet":11,"art":"eisen","stufe":3},{"x":118160,"y":201466,"gebiet":1,"art":"holz","stufe":8},{"x":-115571,"y":693924,"gebiet":21,"art":"holz","stufe":1},{"x":186317,"y":693748,"gebiet":20,"art":"holz","stufe":2},{"x":253378,"y":-699676,"gebiet":26,"art":"stein","stufe":2},{"x":249465,"y":803599,"gebiet":20,"art":"stein","stufe":1},{"x":714546,"y":567297,"gebiet":19,"art":"gold","stufe":2},{"x":236587,"y":-315694,"gebiet":9,"art":"stein","stufe":5},{"x":-768755,"y":731753,"gebiet":22,"art":"stein","stufe":1},{"x":86032,"y":-227843,"gebiet":4,"art":"edelstein","stufe":7},{"x":387033,"y":-505947,"gebiet":27,"art":"stein","stufe":1},{"x":519911,"y":-458284,"gebiet":27,"art":"eisen","stufe":2},{"x":-743639,"y":-695761,"gebiet":24,"art":"eisen","stufe":2},{"x":-730597,"y":-138931,"gebiet":23,"art":"eisen","stufe":2},{"x":262110,"y":-775584,"gebiet":26,"art":"holz","stufe":1},{"x":310729,"y":99782,"gebiet":10,"art":"gold","stufe":6},{"x":-423662,"y":403050,"gebiet":13,"art":"edelstein","stufe":4},{"x":-509158,"y":-676151,"gebiet":24,"art":"stein","stufe":2},{"x":449017,"y":-479693,"gebiet":27,"art":"gold","stufe":1},{"x":-629055,"y":297303,"gebiet":22,"art":"stein","stufe":1},{"x":-38540,"y":-550392,"gebiet":16,"art":"holz","stufe":4},{"x":499614,"y":681581,"gebiet":19,"art":"gold","stufe":2},{"x":563646,"y":-736450,"gebiet":27,"art":"holz","stufe":1},{"x":-504668,"y":170792,"gebiet":14,"art":"holz","stufe":3},{"x":-323757,"y":26895,"gebiet":7,"art":"holz","stufe":6},{"x":-560888,"y":-431919,"gebiet":24,"art":"stein","stufe":1},{"x":607164,"y":421008,"gebiet":19,"art":"gold","stufe":1},{"x":-426759,"y":529617,"gebiet":13,"art":"gold","stufe":3},{"x":-32626,"y":-681073,"gebiet":25,"art":"eisen","stufe":1},{"x":-184772,"y":770363,"gebiet":21,"art":"eisen","stufe":2},{"x":550557,"y":-138990,"gebiet":18,"art":"edelstein","stufe":3},{"x":114696,"y":-419796,"gebiet":17,"art":"stein","stufe":3},{"x":-310478,"y":125883,"gebiet":7,"art":"gold","stufe":6},{"x":-457288,"y":761798,"gebiet":21,"art":"stein","stufe":1},{"x":667225,"y":-563465,"gebiet":27,"art":"holz","stufe":2},{"x":708303,"y":103300,"gebiet":28,"art":"eisen","stufe":2},{"x":276360,"y":278949,"gebiet":5,"art":"holz","stufe":6},{"x":-765137,"y":287180,"gebiet":22,"art":"gold","stufe":2},{"x":316841,"y":-660962,"gebiet":26,"art":"eisen","stufe":2},{"x":798711,"y":266936,"gebiet":19,"art":"holz","stufe":1},{"x":406203,"y":24660,"gebiet":10,"art":"eisen","stufe":6},{"x":421179,"y":413207,"gebiet":11,"art":"stein","stufe":4},{"x":12372,"y":500308,"gebiet":12,"art":"eisen","stufe":3},{"x":-108478,"y":-325403,"gebiet":8,"art":"gold","stufe":6},{"x":546350,"y":777974,"gebiet":19,"art":"gold","stufe":2},{"x":-194030,"y":-727244,"gebiet":25,"art":"eisen","stufe":1},{"x":-658817,"y":142982,"gebiet":23,"art":"stein","stufe":1},{"x":78951,"y":-371822,"gebiet":9,"art":"gold","stufe":6},{"x":-518771,"y":-586649,"gebiet":24,"art":"gold","stufe":2},{"x":-252568,"y":667516,"gebiet":21,"art":"stein","stufe":1},{"x":666211,"y":-236594,"gebiet":28,"art":"stein","stufe":1},{"x":-659150,"y":-641840,"gebiet":24,"art":"eisen","stufe":1},{"x":584407,"y":130764,"gebiet":11,"art":"stein","stufe":4},{"x":570747,"y":323177,"gebiet":19,"art":"holz","stufe":1},{"x":-752874,"y":618463,"gebiet":22,"art":"eisen","stufe":1},{"x":650769,"y":684782,"gebiet":19,"art":"eisen","stufe":2},{"x":340026,"y":-86374,"gebiet":10,"art":"edelstein","stufe":5},{"x":428995,"y":295680,"gebiet":11,"art":"holz","stufe":4},{"x":-735267,"y":526516,"gebiet":22,"art":"gold","stufe":2},{"x":-148139,"y":-632544,"gebiet":25,"art":"eisen","stufe":2},{"x":545619,"y":-522420,"gebiet":27,"art":"stein","stufe":2},{"x":-455563,"y":702666,"gebiet":21,"art":"stein","stufe":1},{"x":-595122,"y":-512568,"gebiet":24,"art":"stein","stufe":2},{"x":-605055,"y":-625186,"gebiet":24,"art":"stein","stufe":1},{"x":149766,"y":-732494,"gebiet":26,"art":"stein","stufe":1},{"x":595385,"y":-350406,"gebiet":27,"art":"gold","stufe":2},{"x":478510,"y":265530,"gebiet":11,"art":"holz","stufe":3},{"x":789013,"y":-367760,"gebiet":27,"art":"holz","stufe":2},{"x":-786723,"y":387723,"gebiet":22,"art":"gold","stufe":2},{"x":106492,"y":-303921,"gebiet":9,"art":"gold","stufe":6},{"x":44806,"y":450523,"gebiet":12,"art":"edelstein","stufe":4},{"x":-272987,"y":-653652,"gebiet":25,"art":"holz","stufe":1},{"x":127186,"y":680650,"gebiet":20,"art":"stein","stufe":2},{"x":514881,"y":-192360,"gebiet":18,"art":"stein","stufe":3},{"x":-247789,"y":195340,"gebiet":6,"art":"holz","stufe":5},{"x":-727642,"y":-331060,"gebiet":24,"art":"holz","stufe":2},{"x":-769686,"y":-32350,"gebiet":23,"art":"edelstein","stufe":1},{"x":-776168,"y":-97160,"gebiet":23,"art":"eisen","stufe":1},{"x":55264,"y":342041,"gebiet":5,"art":"eisen","stufe":5},{"x":-203714,"y":-656614,"gebiet":25,"art":"holz","stufe":1},{"x":440199,"y":559216,"gebiet":19,"art":"stein","stufe":2},{"x":-186871,"y":-235766,"gebiet":3,"art":"edelstein","stufe":7},{"x":-230660,"y":798936,"gebiet":21,"art":"holz","stufe":1},{"x":-229613,"y":346381,"gebiet":6,"art":"gold","stufe":6},{"x":-778259,"y":-737481,"gebiet":24,"art":"edelstein","stufe":1},{"x":658035,"y":-473117,"gebiet":27,"art":"stein","stufe":1},{"x":764487,"y":635894,"gebiet":19,"art":"stein","stufe":1},{"x":475621,"y":180384,"gebiet":11,"art":"stein","stufe":4},{"x":-588214,"y":-266472,"gebiet":24,"art":"holz","stufe":2},{"x":312246,"y":239180,"gebiet":5,"art":"edelstein","stufe":5},{"x":-404010,"y":455199,"gebiet":13,"art":"gold","stufe":4},{"x":476379,"y":-612699,"gebiet":27,"art":"holz","stufe":2},{"x":-546229,"y":-13006,"gebiet":23,"art":"holz","stufe":2},{"x":130468,"y":-683674,"gebiet":26,"art":"gold","stufe":1},{"x":-671689,"y":-697399,"gebiet":24,"art":"holz","stufe":2},{"x":621150,"y":635764,"gebiet":19,"art":"gold","stufe":2},{"x":521409,"y":432336,"gebiet":19,"art":"eisen","stufe":1},{"x":-191905,"y":-125406,"gebiet":3,"art":"eisen","stufe":8},{"x":-587246,"y":541038,"gebiet":22,"art":"holz","stufe":1},{"x":-594018,"y":41430,"gebiet":23,"art":"gold","stufe":1},{"x":-606796,"y":347877,"gebiet":22,"art":"stein","stufe":2},{"x":472765,"y":43839,"gebiet":11,"art":"stein","stufe":4},{"x":-346498,"y":497462,"gebiet":13,"art":"gold","stufe":4},{"x":-679649,"y":-758962,"gebiet":24,"art":"edelstein","stufe":1},{"x":243998,"y":440463,"gebiet":12,"art":"stein","stufe":4},{"x":60942,"y":727057,"gebiet":20,"art":"holz","stufe":1},{"x":678258,"y":-102013,"gebiet":28,"art":"gold","stufe":2},{"x":-742965,"y":-439406,"gebiet":24,"art":"eisen","stufe":1},{"x":645424,"y":-626150,"gebiet":27,"art":"holz","stufe":2},{"x":678549,"y":356515,"gebiet":19,"art":"eisen","stufe":1},{"x":-786073,"y":-536688,"gebiet":24,"art":"stein","stufe":2},{"x":-703746,"y":580318,"gebiet":22,"art":"stein","stufe":2},{"x":-107656,"y":254486,"gebiet":2,"art":"eisen","stufe":8},{"x":688832,"y":292870,"gebiet":19,"art":"stein","stufe":1},{"x":296760,"y":707053,"gebiet":20,"art":"holz","stufe":2},{"x":599080,"y":-513168,"gebiet":27,"art":"holz","stufe":1},{"x":-525219,"y":-726664,"gebiet":24,"art":"holz","stufe":1},{"x":-486259,"y":-321913,"gebiet":15,"art":"gold","stufe":4},{"x":-173740,"y":-520804,"gebiet":16,"art":"stein","stufe":4},{"x":152131,"y":-492891,"gebiet":17,"art":"edelstein","stufe":4},{"x":289463,"y":387962,"gebiet":12,"art":"eisen","stufe":4},{"x":-441857,"y":-671778,"gebiet":24,"art":"eisen","stufe":1},{"x":393469,"y":728667,"gebiet":20,"art":"gold","stufe":2},{"x":-615070,"y":461962,"gebiet":22,"art":"gold","stufe":1},{"x":-194199,"y":-394400,"gebiet":8,"art":"eisen","stufe":5},{"x":-486822,"y":-260883,"gebiet":15,"art":"gold","stufe":4},{"x":-92528,"y":-537861,"gebiet":16,"art":"holz","stufe":4},{"x":-638753,"y":-323904,"gebiet":24,"art":"stein","stufe":1},{"x":724522,"y":-713662,"gebiet":27,"art":"stein","stufe":2},{"x":662212,"y":512525,"gebiet":19,"art":"stein","stufe":1},{"x":572515,"y":691334,"gebiet":19,"art":"gold","stufe":2},{"x":-96405,"y":-679371,"gebiet":25,"art":"edelstein","stufe":1},{"x":676778,"y":-154060,"gebiet":28,"art":"holz","stufe":1},{"x":-413946,"y":212964,"gebiet":14,"art":"eisen","stufe":3},{"x":531626,"y":628236,"gebiet":19,"art":"holz","stufe":2},{"x":-321135,"y":801760,"gebiet":21,"art":"holz","stufe":2},{"x":415593,"y":-617876,"gebiet":27,"art":"holz","stufe":2},{"x":779159,"y":2623,"gebiet":28,"art":"edelstein","stufe":1},{"x":670884,"y":-768067,"gebiet":27,"art":"stein","stufe":2},{"x":754750,"y":-178550,"gebiet":28,"art":"eisen","stufe":2},{"x":147649,"y":776872,"gebiet":20,"art":"eisen","stufe":1},{"x":433685,"y":616842,"gebiet":19,"art":"stein","stufe":1},{"x":-714660,"y":747491,"gebiet":22,"art":"stein","stufe":1},{"x":-72498,"y":739430,"gebiet":21,"art":"stein","stufe":1},{"x":-502941,"y":258244,"gebiet":14,"art":"holz","stufe":4},{"x":-702121,"y":804196,"gebiet":22,"art":"stein","stufe":2},{"x":-627977,"y":-377116,"gebiet":24,"art":"stein","stufe":1},{"x":609939,"y":58235,"gebiet":11,"art":"holz","stufe":4},{"x":187843,"y":-450070,"gebiet":17,"art":"gold","stufe":3},{"x":517479,"y":-575640,"gebiet":27,"art":"stein","stufe":2},{"x":-324676,"y":-138648,"gebiet":7,"art":"eisen","stufe":6},{"x":636759,"y":-694079,"gebiet":27,"art":"stein","stufe":2},{"x":-108509,"y":-159902,"gebiet":3,"art":"holz","stufe":7},{"x":-52082,"y":230369,"gebiet":2,"art":"gold","stufe":7},{"x":-575268,"y":728243,"gebiet":22,"art":"gold","stufe":2},{"x":-439,"y":-786323,"gebiet":26,"art":"holz","stufe":1},{"x":539566,"y":-333340,"gebiet":27,"art":"stein","stufe":1},{"x":-471850,"y":-88503,"gebiet":15,"art":"stein","stufe":4},{"x":408595,"y":-91422,"gebiet":10,"art":"eisen","stufe":5},{"x":-652528,"y":-563705,"gebiet":24,"art":"holz","stufe":1},{"x":-637585,"y":-55855,"gebiet":23,"art":"stein","stufe":1},{"x":239128,"y":-61011,"gebiet":4,"art":"holz","stufe":8},{"x":730382,"y":-27774,"gebiet":28,"art":"gold","stufe":2},{"x":382890,"y":72105,"gebiet":10,"art":"gold","stufe":5},{"x":202980,"y":-738700,"gebiet":26,"art":"stein","stufe":1},{"x":-581449,"y":-128277,"gebiet":23,"art":"holz","stufe":2},{"x":208752,"y":748550,"gebiet":20,"art":"stein","stufe":1},{"x":-329679,"y":-250878,"gebiet":8,"art":"gold","stufe":5},{"x":682311,"y":48923,"gebiet":28,"art":"eisen","stufe":1},{"x":760039,"y":140732,"gebiet":28,"art":"stein","stufe":2},{"x":751462,"y":-760582,"gebiet":27,"art":"edelstein","stufe":1},{"x":-504189,"y":-487455,"gebiet":24,"art":"stein","stufe":2},{"x":-501600,"y":359672,"gebiet":14,"art":"stein","stufe":3},{"x":-73087,"y":-472321,"gebiet":16,"art":"holz","stufe":4},{"x":293691,"y":468000,"gebiet":12,"art":"holz","stufe":3},{"x":-50873,"y":790817,"gebiet":21,"art":"stein","stufe":2},{"x":-353185,"y":716931,"gebiet":21,"art":"stein","stufe":1},{"x":-654298,"y":681472,"gebiet":22,"art":"eisen","stufe":2},{"x":-637890,"y":522400,"gebiet":22,"art":"gold","stufe":1},{"x":-366803,"y":-425845,"gebiet":16,"art":"gold","stufe":4},{"x":108022,"y":451883,"gebiet":12,"art":"eisen","stufe":4},{"x":753519,"y":-77690,"gebiet":28,"art":"stein","stufe":1},{"x":-720629,"y":-73126,"gebiet":23,"art":"holz","stufe":1},{"x":79863,"y":-547746,"gebiet":17,"art":"stein","stufe":4},{"x":334921,"y":-4438,"gebiet":10,"art":"stein","stufe":5},{"x":-269671,"y":-380189,"gebiet":8,"art":"holz","stufe":5},{"x":227433,"y":-168947,"gebiet":4,"art":"stein","stufe":7},{"x":764749,"y":-320510,"gebiet":27,"art":"eisen","stufe":1},{"x":-194850,"y":513389,"gebiet":13,"art":"holz","stufe":4},{"x":301406,"y":575285,"gebiet":20,"art":"stein","stufe":1},{"x":307958,"y":629428,"gebiet":20,"art":"edelstein","stufe":1},{"x":-175336,"y":632153,"gebiet":21,"art":"stein","stufe":1},{"x":-209710,"y":593127,"gebiet":21,"art":"holz","stufe":2},{"x":-468331,"y":-203104,"gebiet":15,"art":"stein","stufe":3},{"x":-619989,"y":-708342,"gebiet":24,"art":"stein","stufe":2},{"x":231101,"y":55578,"gebiet":1,"art":"eisen","stufe":8},{"x":-618646,"y":-450548,"gebiet":24,"art":"stein","stufe":1},{"x":396689,"y":-220358,"gebiet":10,"art":"stein","stufe":5},{"x":-165059,"y":330024,"gebiet":6,"art":"stein","stufe":6},{"x":-312181,"y":-491693,"gebiet":16,"art":"holz","stufe":3},{"x":-671877,"y":443566,"gebiet":22,"art":"stein","stufe":1},{"x":106932,"y":515896,"gebiet":12,"art":"holz","stufe":3},{"x":-720391,"y":-486489,"gebiet":24,"art":"gold","stufe":1},{"x":70159,"y":228252,"gebiet":1,"art":"eisen","stufe":8},{"x":-281115,"y":-289897,"gebiet":8,"art":"edelstein","stufe":6},{"x":-315012,"y":549395,"gebiet":13,"art":"stein","stufe":3},{"x":191243,"y":472312,"gebiet":12,"art":"eisen","stufe":3},{"x":-417962,"y":156831,"gebiet":14,"art":"eisen","stufe":4},{"x":48726,"y":-751829,"gebiet":26,"art":"stein","stufe":1},{"x":792060,"y":521404,"gebiet":19,"art":"eisen","stufe":2},{"x":156175,"y":-797754,"gebiet":26,"art":"stein","stufe":1},{"x":-483096,"y":-627435,"gebiet":24,"art":"eisen","stufe":1},{"x":-9954,"y":629644,"gebiet":20,"art":"holz","stufe":2},{"x":428538,"y":350282,"gebiet":11,"art":"eisen","stufe":4},{"x":-261613,"y":-719673,"gebiet":25,"art":"eisen","stufe":2},{"x":-402275,"y":-802585,"gebiet":25,"art":"stein","stufe":2},{"x":-781764,"y":51227,"gebiet":23,"art":"holz","stufe":2},{"x":-620839,"y":790840,"gebiet":22,"art":"holz","stufe":2},{"x":706527,"y":-627570,"gebiet":27,"art":"gold","stufe":2},{"x":798440,"y":778775,"gebiet":19,"art":"eisen","stufe":1},{"x":-262604,"y":741268,"gebiet":21,"art":"eisen","stufe":1},{"x":139159,"y":628950,"gebiet":20,"art":"stein","stufe":1},{"x":553517,"y":-63288,"gebiet":18,"art":"stein","stufe":3},{"x":452319,"y":783171,"gebiet":20,"art":"stein","stufe":2},{"x":213303,"y":-528632,"gebiet":17,"art":"holz","stufe":3},{"x":424696,"y":207584,"gebiet":11,"art":"gold","stufe":3},{"x":-601912,"y":-202719,"gebiet":24,"art":"stein","stufe":1},{"x":-190866,"y":717178,"gebiet":21,"art":"eisen","stufe":2},{"x":510035,"y":503631,"gebiet":19,"art":"edelstein","stufe":2},{"x":-318292,"y":310282,"gebiet":6,"art":"gold","stufe":6},{"x":669026,"y":-326762,"gebiet":27,"art":"holz","stufe":2},{"x":-202756,"y":-337650,"gebiet":8,"art":"holz","stufe":5},{"x":446732,"y":-299728,"gebiet":18,"art":"gold","stufe":3},{"x":-664571,"y":-499467,"gebiet":24,"art":"stein","stufe":1},{"x":223858,"y":630810,"gebiet":20,"art":"holz","stufe":1},{"x":-549586,"y":-541726,"gebiet":24,"art":"stein","stufe":2},{"x":416724,"y":-438554,"gebiet":27,"art":"gold","stufe":1},{"x":788725,"y":-653109,"gebiet":27,"art":"eisen","stufe":2},{"x":-474348,"y":43406,"gebiet":14,"art":"holz","stufe":3},{"x":-703962,"y":354001,"gebiet":22,"art":"holz","stufe":1},{"x":82819,"y":-653476,"gebiet":26,"art":"holz","stufe":1},{"x":-731085,"y":80752,"gebiet":23,"art":"stein","stufe":2},{"x":-138396,"y":499140,"gebiet":13,"art":"stein","stufe":3},{"x":307840,"y":45740,"gebiet":10,"art":"stein","stufe":6},{"x":778181,"y":381002,"gebiet":19,"art":"edelstein","stufe":2},{"x":-309868,"y":676861,"gebiet":21,"art":"gold","stufe":2},{"x":626995,"y":553084,"gebiet":19,"art":"holz","stufe":1},{"x":675024,"y":200037,"gebiet":19,"art":"stein","stufe":2},{"x":381533,"y":-799420,"gebiet":26,"art":"holz","stufe":1},{"x":-127006,"y":-496479,"gebiet":16,"art":"holz","stufe":3},{"x":-732826,"y":-623945,"gebiet":24,"art":"gold","stufe":1},{"x":635442,"y":305203,"gebiet":19,"art":"eisen","stufe":2},{"x":798947,"y":-210816,"gebiet":28,"art":"stein","stufe":1},{"x":-242898,"y":-20209,"gebiet":3,"art":"eisen","stufe":7},{"x":647084,"y":-391193,"gebiet":27,"art":"eisen","stufe":1},{"x":556520,"y":375048,"gebiet":19,"art":"gold","stufe":2},{"x":-708759,"y":-6741,"gebiet":23,"art":"holz","stufe":2},{"x":243753,"y":494399,"gebiet":12,"art":"gold","stufe":3},{"x":-756354,"y":-786003,"gebiet":24,"art":"holz","stufe":1},{"x":315787,"y":-535124,"gebiet":26,"art":"gold","stufe":2},{"x":-179960,"y":159588,"gebiet":2,"art":"edelstein","stufe":7},{"x":354273,"y":791235,"gebiet":20,"art":"stein","stufe":1},{"x":-138700,"y":-573425,"gebiet":16,"art":"stein","stufe":4},{"x":-664107,"y":-229760,"gebiet":24,"art":"stein","stufe":2},{"x":215038,"y":-114158,"gebiet":4,"art":"holz","stufe":8},{"x":-109250,"y":-212235,"gebiet":3,"art":"holz","stufe":7},{"x":-358438,"y":417326,"gebiet":13,"art":"stein","stufe":4},{"x":727183,"y":241334,"gebiet":19,"art":"holz","stufe":2},{"x":306671,"y":-303509,"gebiet":9,"art":"stein","stufe":5},{"x":203722,"y":-658128,"gebiet":26,"art":"holz","stufe":2},{"x":46766,"y":-181395,"gebiet":4,"art":"gold","stufe":7},{"x":-794522,"y":-363207,"gebiet":24,"art":"stein","stufe":2},{"x":732788,"y":502776,"gebiet":19,"art":"eisen","stufe":2},{"x":558064,"y":84897,"gebiet":11,"art":"holz","stufe":3},{"x":803836,"y":-523883,"gebiet":27,"art":"holz","stufe":2},{"x":-650951,"y":733644,"gebiet":22,"art":"holz","stufe":1},{"x":285536,"y":-474501,"gebiet":17,"art":"holz","stufe":4},{"x":6507,"y":-379776,"gebiet":8,"art":"gold","stufe":6},{"x":-491702,"y":475540,"gebiet":13,"art":"stein","stufe":4},{"x":-450237,"y":-574881,"gebiet":24,"art":"edelstein","stufe":1},{"x":-85431,"y":374610,"gebiet":6,"art":"stein","stufe":6},{"x":-141317,"y":590424,"gebiet":21,"art":"stein","stufe":1},{"x":671709,"y":-22642,"gebiet":28,"art":"eisen","stufe":2},{"x":64747,"y":780035,"gebiet":20,"art":"stein","stufe":2},{"x":-718335,"y":149134,"gebiet":23,"art":"holz","stufe":1},{"x":59297,"y":-455840,"gebiet":17,"art":"holz","stufe":3},{"x":-784263,"y":130250,"gebiet":23,"art":"edelstein","stufe":1},{"x":-305778,"y":-787374,"gebiet":25,"art":"holz","stufe":1},{"x":306316,"y":-412617,"gebiet":17,"art":"stein","stufe":4},{"x":-247435,"y":259548,"gebiet":6,"art":"stein","stufe":6},{"x":-583903,"y":413000,"gebiet":22,"art":"stein","stufe":2},{"x":-717382,"y":262935,"gebiet":22,"art":"stein","stufe":2},{"x":592848,"y":-439782,"gebiet":27,"art":"holz","stufe":1},{"x":-616838,"y":96212,"gebiet":23,"art":"stein","stufe":1},{"x":-611686,"y":616082,"gebiet":22,"art":"edelstein","stufe":1},{"x":399158,"y":-29102,"gebiet":10,"art":"holz","stufe":5},{"x":-380461,"y":-134653,"gebiet":7,"art":"holz","stufe":6},{"x":575718,"y":595329,"gebiet":19,"art":"eisen","stufe":1},{"x":766201,"y":65059,"gebiet":28,"art":"gold","stufe":2},{"x":-312131,"y":224788,"gebiet":6,"art":"stein","stufe":5},{"x":-147647,"y":-691085,"gebiet":25,"art":"stein","stufe":2},{"x":479176,"y":111597,"gebiet":11,"art":"holz","stufe":3},{"x":-305524,"y":-437214,"gebiet":16,"art":"edelstein","stufe":4},{"x":623865,"y":783401,"gebiet":19,"art":"edelstein","stufe":1},{"x":801069,"y":204163,"gebiet":28,"art":"eisen","stufe":2},{"x":254894,"y":-615915,"gebiet":26,"art":"gold","stufe":2},{"x":487577,"y":-672937,"gebiet":27,"art":"eisen","stufe":2},{"x":477138,"y":327424,"gebiet":11,"art":"eisen","stufe":4},{"x":-122038,"y":-386845,"gebiet":8,"art":"holz","stufe":5},{"x":-389036,"y":765984,"gebiet":21,"art":"stein","stufe":2},{"x":-449832,"y":272796,"gebiet":14,"art":"stein","stufe":3},{"x":-518289,"y":572339,"gebiet":22,"art":"gold","stufe":1},{"x":357360,"y":211888,"gebiet":5,"art":"holz","stufe":6},{"x":140804,"y":141500,"gebiet":1,"art":"stein","stufe":8},{"x":712365,"y":662842,"gebiet":19,"art":"eisen","stufe":1},{"x":602525,"y":-801363,"gebiet":27,"art":"holz","stufe":2},{"x":-258368,"y":-467451,"gebiet":16,"art":"stein","stufe":4},{"x":-628880,"y":216585,"gebiet":22,"art":"stein","stufe":2},{"x":-561937,"y":-74054,"gebiet":23,"art":"gold","stufe":2},{"x":-227906,"y":-528435,"gebiet":16,"art":"gold","stufe":4},{"x":15406,"y":762023,"gebiet":20,"art":"edelstein","stufe":1},{"x":-285081,"y":353409,"gebiet":6,"art":"stein","stufe":6},{"x":-730001,"y":-277955,"gebiet":24,"art":"holz","stufe":1},{"x":-568289,"y":-662119,"gebiet":24,"art":"gold","stufe":1},{"x":-243603,"y":-79308,"gebiet":3,"art":"eisen","stufe":8},{"x":-480458,"y":-776359,"gebiet":25,"art":"holz","stufe":2},{"x":5875,"y":-297914,"gebiet":8,"art":"stein","stufe":6},{"x":331524,"y":-783562,"gebiet":26,"art":"stein","stufe":2},{"x":-314193,"y":-695289,"gebiet":25,"art":"edelstein","stufe":1},{"x":109277,"y":-180516,"gebiet":4,"art":"gold","stufe":7},{"x":556200,"y":211408,"gebiet":11,"art":"stein","stufe":3},{"x":-398476,"y":660207,"gebiet":21,"art":"gold","stufe":2},{"x":-601330,"y":682774,"gebiet":22,"art":"eisen","stufe":2},{"x":420839,"y":-685760,"gebiet":27,"art":"eisen","stufe":2},{"x":-64358,"y":-733407,"gebiet":25,"art":"eisen","stufe":1},{"x":-278197,"y":-552220,"gebiet":16,"art":"stein","stufe":3},{"x":-315494,"y":-602409,"gebiet":25,"art":"holz","stufe":1},{"x":-696441,"y":-392329,"gebiet":24,"art":"stein","stufe":2},{"x":-792741,"y":578290,"gebiet":22,"art":"gold","stufe":2},{"x":-800417,"y":675172,"gebiet":22,"art":"gold","stufe":2},{"x":-48182,"y":-201501,"gebiet":3,"art":"edelstein","stufe":8},{"x":577596,"y":-584398,"gebiet":27,"art":"eisen","stufe":2},{"x":-700064,"y":-181310,"gebiet":23,"art":"holz","stufe":2},{"x":511710,"y":-245234,"gebiet":18,"art":"holz","stufe":3},{"x":165975,"y":-313433,"gebiet":9,"art":"eisen","stufe":6},{"x":174470,"y":29029,"gebiet":1,"art":"gold","stufe":7},{"x":195471,"y":572450,"gebiet":20,"art":"holz","stufe":1},{"x":-705259,"y":649216,"gebiet":22,"art":"gold","stufe":1},{"x":-417908,"y":-616213,"gebiet":24,"art":"stein","stufe":1},{"x":155775,"y":302607,"gebiet":5,"art":"edelstein","stufe":6},{"x":486519,"y":-742938,"gebiet":27,"art":"edelstein","stufe":2},{"x":-705425,"y":-579610,"gebiet":24,"art":"eisen","stufe":1},{"x":613827,"y":726276,"gebiet":19,"art":"gold","stufe":2},{"x":322134,"y":-192193,"gebiet":10,"art":"holz","stufe":5},{"x":727828,"y":801480,"gebiet":19,"art":"stein","stufe":1},{"x":757613,"y":319828,"gebiet":19,"art":"edelstein","stufe":2},{"x":803021,"y":-769374,"gebiet":27,"art":"stein","stufe":1},{"x":-445726,"y":-445226,"gebiet":16,"art":"stein","stufe":4},{"x":617376,"y":359966,"gebiet":19,"art":"eisen","stufe":2},{"x":-393799,"y":347538,"gebiet":13,"art":"gold","stufe":4},{"x":6283,"y":701809,"gebiet":20,"art":"holz","stufe":1},{"x":187961,"y":181803,"gebiet":1,"art":"gold","stufe":7},{"x":409087,"y":-157987,"gebiet":10,"art":"stein","stufe":6},{"x":-361547,"y":-29371,"gebiet":7,"art":"stein","stufe":6},{"x":186090,"y":-46221,"gebiet":4,"art":"holz","stufe":8},{"x":-17183,"y":174473,"gebiet":2,"art":"eisen","stufe":7},{"x":-346841,"y":-747018,"gebiet":25,"art":"holz","stufe":1},{"x":-790060,"y":804418,"gebiet":22,"art":"eisen","stufe":2},{"x":-383702,"y":-192756,"gebiet":7,"art":"holz","stufe":6},{"x":153714,"y":-553082,"gebiet":17,"art":"gold","stufe":4},{"x":-243107,"y":85542,"gebiet":2,"art":"stein","stufe":7},{"x":-290781,"y":624542,"gebiet":21,"art":"holz","stufe":2},{"x":-779453,"y":-588666,"gebiet":24,"art":"stein","stufe":2},{"x":486934,"y":595578,"gebiet":19,"art":"gold","stufe":1},{"x":238628,"y":-403128,"gebiet":17,"art":"gold","stufe":3},{"x":540472,"y":-787757,"gebiet":27,"art":"stein","stufe":2},{"x":-113350,"y":790088,"gebiet":21,"art":"gold","stufe":2},{"x":-225539,"y":-190473,"gebiet":3,"art":"holz","stufe":7},{"x":494985,"y":-100850,"gebiet":18,"art":"gold","stufe":4},{"x":353495,"y":657513,"gebiet":20,"art":"stein","stufe":1},{"x":-546210,"y":-797473,"gebiet":25,"art":"stein","stufe":2},{"x":-482130,"y":120006,"gebiet":14,"art":"holz","stufe":3},{"x":-274444,"y":404641,"gebiet":6,"art":"holz","stufe":5},{"x":-799751,"y":511228,"gebiet":22,"art":"eisen","stufe":1},{"x":-60158,"y":-289086,"gebiet":8,"art":"edelstein","stufe":6},{"x":654879,"y":150983,"gebiet":19,"art":"eisen","stufe":1},{"x":-373706,"y":-478013,"gebiet":16,"art":"stein","stufe":4},{"x":-367813,"y":119908,"gebiet":7,"art":"holz","stufe":6},{"x":229834,"y":136226,"gebiet":1,"art":"eisen","stufe":7},{"x":780236,"y":-717002,"gebiet":27,"art":"stein","stufe":1},{"x":-656992,"y":-149331,"gebiet":23,"art":"stein","stufe":2},{"x":239742,"y":703232,"gebiet":20,"art":"eisen","stufe":2},{"x":-406742,"y":-540832,"gebiet":24,"art":"gold","stufe":2},{"x":-676921,"y":58654,"gebiet":23,"art":"edelstein","stufe":1},{"x":-791904,"y":217462,"gebiet":23,"art":"holz","stufe":2},{"x":-127098,"y":142786,"gebiet":2,"art":"gold","stufe":7},{"x":192826,"y":416095,"gebiet":12,"art":"stein","stufe":3},{"x":219085,"y":-228570,"gebiet":4,"art":"stein","stufe":7},{"x":-253832,"y":-801240,"gebiet":25,"art":"stein","stufe":2},{"x":798403,"y":697729,"gebiet":19,"art":"stein","stufe":2},{"x":-186495,"y":-797481,"gebiet":25,"art":"holz","stufe":2},{"x":-523366,"y":307532,"gebiet":14,"art":"gold","stufe":3},{"x":717876,"y":-225868,"gebiet":28,"art":"holz","stufe":1},{"x":-434306,"y":-349,"gebiet":14,"art":"eisen","stufe":3},{"x":-86625,"y":519985,"gebiet":13,"art":"stein","stufe":3},{"x":232372,"y":226902,"gebiet":5,"art":"stein","stufe":5},{"x":601481,"y":-210823,"gebiet":28,"art":"holz","stufe":1},{"x":673061,"y":614029,"gebiet":19,"art":"eisen","stufe":2},{"x":-672064,"y":-98083,"gebiet":23,"art":"stein","stufe":1},{"x":714770,"y":-525332,"gebiet":27,"art":"gold","stufe":2},{"x":151893,"y":-86674,"gebiet":4,"art":"stein","stufe":8},{"x":-526317,"y":666420,"gebiet":22,"art":"stein","stufe":2},{"x":-186725,"y":-15597,"gebiet":3,"art":"eisen","stufe":7},{"x":-791773,"y":-260052,"gebiet":23,"art":"stein","stufe":1},{"x":662674,"y":744554,"gebiet":19,"art":"gold","stufe":2},{"x":-415894,"y":-332982,"gebiet":15,"art":"eisen","stufe":3},{"x":364899,"y":345782,"gebiet":11,"art":"gold","stufe":3},{"x":-795655,"y":-659841,"gebiet":24,"art":"stein","stufe":2},{"x":-370091,"y":615431,"gebiet":21,"art":"stein","stufe":2},{"x":-576207,"y":-367392,"gebiet":24,"art":"stein","stufe":1},{"x":559094,"y":536070,"gebiet":19,"art":"holz","stufe":2},{"x":786024,"y":-127098,"gebiet":28,"art":"eisen","stufe":1},{"x":484772,"y":-47986,"gebiet":18,"art":"edelstein","stufe":4},{"x":373840,"y":127135,"gebiet":10,"art":"stein","stufe":6},{"x":387654,"y":565753,"gebiet":19,"art":"gold","stufe":2},{"x":790279,"y":-422730,"gebiet":27,"art":"holz","stufe":1},{"x":100149,"y":-489455,"gebiet":17,"art":"eisen","stufe":4},{"x":376854,"y":-579990,"gebiet":27,"art":"gold","stufe":1},{"x":-77563,"y":-629721,"gebiet":25,"art":"gold","stufe":1},{"x":314659,"y":-598165,"gebiet":26,"art":"gold","stufe":2},{"x":-476289,"y":-140859,"gebiet":15,"art":"gold","stufe":4},{"x":-493836,"y":-538419,"gebiet":24,"art":"holz","stufe":2},{"x":-54173,"y":-404716,"gebiet":8,"art":"eisen","stufe":6},{"x":-554565,"y":492457,"gebiet":22,"art":"eisen","stufe":1},{"x":-109626,"y":325215,"gebiet":6,"art":"gold","stufe":6},{"x":18933,"y":-708207,"gebiet":26,"art":"holz","stufe":1},{"x":-800476,"y":-480906,"gebiet":24,"art":"stein","stufe":1},{"x":348478,"y":-138683,"gebiet":10,"art":"eisen","stufe":5},{"x":338590,"y":295174,"gebiet":5,"art":"gold","stufe":5},{"x":-523518,"y":-213791,"gebiet":15,"art":"edelstein","stufe":3},{"x":24203,"y":386409,"gebiet":5,"art":"stein","stufe":6},{"x":-804660,"y":-154404,"gebiet":23,"art":"holz","stufe":2},{"x":-22726,"y":-497453,"gebiet":16,"art":"stein","stufe":4},{"x":-172815,"y":-66833,"gebiet":3,"art":"gold","stufe":8},{"x":619299,"y":-301945,"gebiet":27,"art":"gold","stufe":1},{"x":671902,"y":804034,"gebiet":19,"art":"gold","stufe":1},{"x":27623,"y":589133,"gebiet":20,"art":"gold","stufe":2},{"x":-471844,"y":215401,"gebiet":14,"art":"gold","stufe":3},{"x":248368,"y":571962,"gebiet":20,"art":"holz","stufe":1},{"x":-640287,"y":393081,"gebiet":22,"art":"edelstein","stufe":2},{"x":96341,"y":-723407,"gebiet":26,"art":"eisen","stufe":1},{"x":-304500,"y":-340997,"gebiet":8,"art":"holz","stufe":5},{"x":281782,"y":188392,"gebiet":5,"art":"gold","stufe":5},{"x":730486,"y":-128205,"gebiet":28,"art":"holz","stufe":1},{"x":801944,"y":-54908,"gebiet":28,"art":"stein","stufe":1},{"x":-717554,"y":471894,"gebiet":22,"art":"gold","stufe":2},{"x":-274070,"y":-225245,"gebiet":8,"art":"gold","stufe":6},{"x":-115572,"y":640197,"gebiet":21,"art":"eisen","stufe":2},{"x":-797622,"y":-415704,"gebiet":24,"art":"eisen","stufe":2},{"x":368715,"y":-743987,"gebiet":26,"art":"holz","stufe":1},{"x":135435,"y":-629830,"gebiet":26,"art":"eisen","stufe":2},{"x":288661,"y":767130,"gebiet":20,"art":"edelstein","stufe":1},{"x":-68214,"y":158387,"gebiet":2,"art":"gold","stufe":8},{"x":-121458,"y":419319,"gebiet":6,"art":"edelstein","stufe":5},{"x":-758761,"y":338967,"gebiet":22,"art":"stein","stufe":1},{"x":-29023,"y":-152563,"gebiet":3,"art":"stein","stufe":7},{"x":33550,"y":-628084,"gebiet":26,"art":"holz","stufe":1},{"x":491842,"y":-513802,"gebiet":27,"art":"holz","stufe":1},{"x":553616,"y":-388102,"gebiet":27,"art":"stein","stufe":1},{"x":-629660,"y":-2161,"gebiet":23,"art":"holz","stufe":1},{"x":-355637,"y":-367965,"gebiet":16,"art":"holz","stufe":3},{"x":149079,"y":74493,"gebiet":1,"art":"eisen","stufe":7},{"x":106792,"y":576779,"gebiet":20,"art":"edelstein","stufe":2},{"x":-373615,"y":543364,"gebiet":13,"art":"holz","stufe":3},{"x":-527731,"y":408555,"gebiet":14,"art":"stein","stufe":4},{"x":-13624,"y":276381,"gebiet":2,"art":"holz","stufe":8},{"x":590273,"y":-635960,"gebiet":27,"art":"eisen","stufe":2},{"x":-650602,"y":577863,"gebiet":22,"art":"gold","stufe":2},{"x":803447,"y":-601348,"gebiet":27,"art":"stein","stufe":2},{"x":-222075,"y":407862,"gebiet":6,"art":"eisen","stufe":5},{"x":-536645,"y":214047,"gebiet":14,"art":"stein","stufe":4},{"x":435972,"y":504895,"gebiet":19,"art":"gold","stufe":2},{"x":263670,"y":-266177,"gebiet":9,"art":"stein","stufe":6},{"x":338212,"y":740570,"gebiet":20,"art":"gold","stufe":1},{"x":711031,"y":-804189,"gebiet":27,"art":"gold","stufe":2},{"x":-201863,"y":288280,"gebiet":6,"art":"holz","stufe":6},{"x":156468,"y":-214959,"gebiet":4,"art":"gold","stufe":8},{"x":191555,"y":264603,"gebiet":5,"art":"gold","stufe":6},{"x":-433061,"y":613364,"gebiet":21,"art":"gold","stufe":2},{"x":459658,"y":-243549,"gebiet":18,"art":"edelstein","stufe":4},{"x":529797,"y":725932,"gebiet":19,"art":"holz","stufe":2},{"x":305359,"y":-716907,"gebiet":26,"art":"holz","stufe":2},{"x":-582518,"y":-748997,"gebiet":24,"art":"edelstein","stufe":2},{"x":615451,"y":-748127,"gebiet":27,"art":"eisen","stufe":2},{"x":397760,"y":460126,"gebiet":11,"art":"eisen","stufe":4},{"x":-314028,"y":449508,"gebiet":13,"art":"holz","stufe":4},{"x":599548,"y":-29127,"gebiet":18,"art":"stein","stufe":4},{"x":39976,"y":184436,"gebiet":1,"art":"stein","stufe":8},{"x":460386,"y":-798681,"gebiet":26,"art":"holz","stufe":2},{"x":-671402,"y":-445180,"gebiet":24,"art":"gold","stufe":1},{"x":-597412,"y":-570667,"gebiet":24,"art":"eisen","stufe":1},{"x":-440151,"y":88865,"gebiet":14,"art":"gold","stufe":3},{"x":113522,"y":737178,"gebiet":20,"art":"stein","stufe":2},{"x":48113,"y":275715,"gebiet":1,"art":"stein","stufe":7},{"x":-161473,"y":55995,"gebiet":2,"art":"stein","stufe":7},{"x":711250,"y":-471794,"gebiet":27,"art":"holz","stufe":2},{"x":273368,"y":330956,"gebiet":5,"art":"gold","stufe":6},{"x":-346170,"y":-649398,"gebiet":25,"art":"holz","stufe":2},{"x":654779,"y":455048,"gebiet":19,"art":"stein","stufe":1},{"x":-31050,"y":581464,"gebiet":20,"art":"holz","stufe":2},{"x":-247302,"y":-133554,"gebiet":3,"art":"holz","stufe":8},{"x":-138672,"y":743493,"gebiet":21,"art":"gold","stufe":1},{"x":-677069,"y":-287808,"gebiet":24,"art":"stein","stufe":2},{"x":345990,"y":484104,"gebiet":12,"art":"stein","stufe":4},{"x":800151,"y":104651,"gebiet":28,"art":"holz","stufe":1},{"x":-333793,"y":78905,"gebiet":7,"art":"edelstein","stufe":5},{"x":-23715,"y":-628179,"gebiet":25,"art":"stein","stufe":2},{"x":-727304,"y":696450,"gebiet":22,"art":"edelstein","stufe":2},{"x":-663217,"y":256847,"gebiet":22,"art":"eisen","stufe":2},{"x":804772,"y":470833,"gebiet":19,"art":"eisen","stufe":1},{"x":28839,"y":-232186,"gebiet":4,"art":"eisen","stufe":7}],"zonen":4,"oeffnen":{"1":1,"2":2,"3":3,"4":4,"5":5},"gebiete":[{"id":0,"zone":5,"name":"Mitte","boden":"innen","rand":[39,50,-46,-41],"kern":[0,0]},{"id":1,"zone":4,"name":"4","boden":"mitte","rand":[44,46,56,-60,-46],"kern":[187000,107667]},{"id":2,"zone":4,"name":"4","boden":"mitte","rand":[49,52,58,68,-60,-51],"kern":[-107667,198333]},{"id":3,"zone":4,"name":"4","boden":"mitte","rand":[33,38,-50,-40,-35],"kern":[-164333,-187000]},{"id":4,"zone":4,"name":"4","boden":"mitte","rand":[29,34,40,44,-37,-31],"kern":[164333,-164333]},{"id":5,"zone":3,"name":"3","boden":"sand","rand":[55,63,70,-73,-70,68,-57],"kern":[277667,243667]},{"id":6,"zone":3,"name":"3","boden":"sand","rand":[57,62,67,-70,-59],"kern":[-221000,323000]},{"id":7,"zone":3,"name":"3","boden":"sand","rand":[31,42,-58,-53,-39,-33],"kern":[-357000,-153000]},{"id":8,"zone":3,"name":"3","boden":"sand","rand":[15,24,32,-34,-30,-19,-17],"kern":[-232333,-345667]},{"id":9,"zone":3,"name":"3","boden":"sand","rand":[17,23,25,-31,-19],"kern":[107667,-334333]},{"id":10,"zone":3,"name":"3","boden":"sand","rand":[25,36,46,55,-52,-27],"kern":[357000,-187000]},{"id":11,"zone":2,"name":"2","boden":"mitte","rand":[47,51,63,71,-55,-49],"kern":[527000,107667]},{"id":12,"zone":2,"name":"2","boden":"mitte","rand":[70,73,79,-77,-76,-72],"kern":[289000,436333]},{"id":13,"zone":2,"name":"2","boden":"mitte","rand":[66,74,-79,-74,-73,-68],"kern":[-391000,447667]},{"id":14,"zone":2,"name":"2","boden":"mitte","rand":[41,43,61,-67,-63,-43],"kern":[-470333,187000]},{"id":15,"zone":2,"name":"2","boden":"mitte","rand":[13,37,-42,-32,-25,-15],"kern":[-459000,-311667]},{"id":16,"zone":2,"name":"2","boden":"mitte","rand":[7,11,14,-16,-11,-9],"kern":[-323000,-470333]},{"id":17,"zone":2,"name":"2","boden":"mitte","rand":[9,12,19,-18,-17,-11],"kern":[164333,-481667]},{"id":18,"zone":2,"name":"2","boden":"mitte","rand":[19,23,26,-48,-36,-21],"kern":[515667,-164333]},{"id":19,"zone":1,"name":"1","boden":"aussen","rand":[53,65,-78,-76,-55],"kern":[595000,572333]},{"id":20,"zone":1,"name":"1","boden":"aussen","rand":[76,80,83,-78],"kern":[221000,685667]},{"id":21,"zone":1,"name":"1","boden":"aussen","rand":[78,81,82,-81,-80],"kern":[-209667,697000]},{"id":22,"zone":1,"name":"1","boden":"aussen","rand":[60,64,-82,-75,-62],"kern":[-651667,572333]},{"id":23,"zone":1,"name":"1","boden":"aussen","rand":[21,37,43,60,-23],"kern":[-685667,-28333]},{"id":24,"zone":1,"name":"1","boden":"aussen","rand":[0,21,-14,-12,-3],"kern":[-617667,-572333]},{"id":25,"zone":1,"name":"1","boden":"aussen","rand":[1,4,7,-3],"kern":[-289000,-719667]},{"id":26,"zone":1,"name":"1","boden":"aussen","rand":[3,6,-10,-9,-5],"kern":[232333,-708333]},{"id":27,"zone":1,"name":"1","boden":"aussen","rand":[5,27,-21,-13,-7],"kern":[595000,-595000]},{"id":28,"zone":1,"name":"1","boden":"aussen","rand":[27,35,48,53,-29],"kern":[719667,-141667]}],"grenzen":[{"id":0,"a":24,"b":-1,"punkte":[[-646000,-850000],[-657333,-850000],[-668667,-850000],[-680000,-850000],[-691333,-850000],[-702667,-850000],[-714000,-850000],[-725333,-850000],[-736667,-850000],[-748000,-850000],[-759333,-850000],[-770667,-850000],[-782000,-850000],[-793333,-850000],[-804667,-850000],[-816000,-850000],[-827333,-850000],[-838667,-850000],[-850000,-850000],[-850000,-838667],[-850000,-827333],[-850000,-816000],[-850000,-804667],[-850000,-793333],[-850000,-782000],[-850000,-770667],[-850000,-759333],[-850000,-748000],[-850000,-736667],[-850000,-725333],[-850000,-714000],[-850000,-702667],[-850000,-691333],[-850000,-680000],[-850000,-668667],[-850000,-657333],[-850000,-646000],[-850000,-634667],[-850000,-623333],[-850000,-612000],[-850000,-600667],[-850000,-589333],[-850000,-578000],[-850000,-566667],[-850000,-555333],[-850000,-544000],[-850000,-532667],[-850000,-521333],[-850000,-510000],[-850000,-498667],[-850000,-487333],[-850000,-476000],[-850000,-464667],[-850000,-453333],[-850000,-442000],[-850000,-430667],[-850000,-419333],[-850000,-408000],[-850000,-396667],[-850000,-385333],[-850000,-374000],[-850000,-362667]]},{"id":1,"a":25,"b":-1,"punkte":[[-646000,-850000],[-634667,-850000],[-623333,-850000],[-612000,-850000],[-600667,-850000],[-589333,-850000],[-578000,-850000],[-566667,-850000],[-555333,-850000],[-544000,-850000],[-532667,-850000],[-521333,-850000],[-510000,-850000],[-498667,-850000],[-487333,-850000],[-476000,-850000],[-464667,-850000],[-453333,-850000],[-442000,-850000],[-430667,-850000],[-419333,-850000],[-408000,-850000],[-396667,-850000],[-385333,-850000],[-374000,-850000],[-362667,-850000],[-351333,-850000],[-340000,-850000],[-328667,-850000],[-317333,-850000],[-306000,-850000],[-294667,-850000],[-283333,-850000],[-272000,-850000],[-260667,-850000],[-249333,-850000],[-238000,-850000],[-226667,-850000],[-215333,-850000],[-204000,-850000],[-192667,-850000],[-181333,-850000],[-170000,-850000],[-158667,-850000],[-147333,-850000],[-136000,-850000],[-124667,-850000],[-113333,-850000],[-102000,-850000]]},{"id":2,"a":24,"b":25,"punkte":[[-646000,-850000],[-644678,-847313],[-643346,-844631],[-642000,-841956],[-640643,-839287],[-639280,-836620],[-637917,-833953],[-636555,-831287],[-635184,-828625],[-633784,-825978],[-632330,-823360],[-630797,-820788],[-629166,-818276],[-627429,-815837],[-625586,-813478],[-623653,-811190],[-621654,-808961],[-619608,-806775],[-617528,-804620],[-615426,-802488],[-613305,-800373],[-611165,-798278],[-609000,-796209],[-606796,-794182],[-604541,-792212],[-602222,-790318],[-599830,-788518],[-597362,-786822],[-594825,-785232],[-592231,-783737],[-589595,-782316],[-586931,-780948],[-584250,-779615],[-581554,-778312],[-578840,-777045],[-576102,-775833],[-573333,-774694],[-570529,-773643],[-567694,-772679],[-564834,-771790],[-561961,-770948],[-559082,-770122],[-556209,-769279],[-553350,-768389],[-550510,-767438],[-547690,-766430],[-544883,-765387],[-542075,-764348],[-539249,-763358],[-536394,-762454],[-533507,-761658],[-530593,-760973],[-527656,-760385],[-524706,-759872],[-521749,-759399],[-518792,-758929],[-515840,-758426],[-512899,-757836],[-509978,-756564],[-507083,-754543],[-504219,-752024],[-501385,-749264],[-498572,-746504],[-495765,-743944],[-492950,-741730],[-490116,-739950],[-487262,-738648],[-484393,-737844],[-481515,-737538],[-478640,-737534],[-475776,-737534],[-472933,-737534],[-470120,-737534],[-467340,-737534],[-464592,-737534],[-461869,-737534],[-459161,-737534],[-456460,-737534],[-453763,-737534],[-451071,-737534],[-448385,-737534],[-445707,-737534],[-443037,-737534],[-440370,-737534],[-437703,-737534],[-435036,-737534],[-432373,-737534],[-429723,-737525],[-427100,-737108],[-424520,-736017],[-422000,-734209],[-419550,-731672],[-417176,-728435],[-414874,-724587],[-412637,-720282],[-410446,-715757],[-408288,-711323],[-406153,-707363],[-404036,-704329],[-401938,-702167],[-399865,-700006],[-397827,-697812],[-395846,-695566],[-393940,-693257],[-392125,-690876],[-390414,-688419],[-388809,-685892],[-387300,-683305],[-385870,-680674],[-384497,-678013],[-383164,-675332],[-381865,-672633],[-380610,-669915],[-379421,-667166],[-378331,-664377],[-377370,-661541],[-376558,-658659],[-375897,-655738],[-375378,-652789],[-374981,-649821],[-374683,-646842],[-374464,-643856],[-374306,-640865],[-374195,-637873],[-374123,-634879],[-374077,-631885],[-374046,-628891],[-374027,-625896],[-374015,-622901],[-374008,-619907],[-374004,-616912],[-374001,-613918],[-373999,-610923],[-373997,-607929],[-373994,-604934],[-373987,-601939],[-373977,-598945],[-373960,-595950],[-373935,-592956],[-373892,-589961],[-373825,-586968],[-373727,-583975],[-373586,-580984],[-373391,-577996],[-373124,-575013],[-372750,-572042],[-372258,-569088],[-371631,-566161],[-370859,-563268],[-369941,-560418],[-368891,-557615],[-367736,-554852],[-366509,-552121],[-365241,-549407],[-363957,-546702],[-362667,-544000]]},{"id":3,"a":26,"b":-1,"punkte":[[-102000,-850000],[-90667,-850000],[-79333,-850000],[-68000,-850000],[-56667,-850000],[-45333,-850000],[-34000,-850000],[-22667,-850000],[-11333,-850000],[0,-850000],[11333,-850000],[22667,-850000],[34000,-850000],[45333,-850000],[56667,-850000],[68000,-850000],[79333,-850000],[90667,-850000],[102000,-850000],[113333,-850000],[124667,-850000],[136000,-850000],[147333,-850000],[158667,-850000],[170000,-850000],[181333,-850000],[192667,-850000],[204000,-850000],[215333,-850000],[226667,-850000],[238000,-850000],[249333,-850000],[260667,-850000],[272000,-850000],[283333,-850000],[294667,-850000],[306000,-850000],[317333,-850000],[328667,-850000],[340000,-850000],[351333,-850000],[362667,-850000],[374000,-850000],[385333,-850000],[396667,-850000],[408000,-850000],[419333,-850000],[430667,-850000],[442000,-850000],[453333,-850000],[464667,-850000],[476000,-850000],[487333,-850000],[498667,-850000],[510000,-850000],[521333,-850000]]},{"id":4,"a":25,"b":26,"punkte":[[-102000,-850000],[-101505,-847053],[-100962,-844114],[-100330,-841193],[-99566,-838304],[-98633,-835466],[-97502,-832702],[-96160,-830033],[-94617,-827475],[-92896,-825032],[-91031,-822697],[-89071,-820441],[-87048,-818241],[-84984,-816080],[-82897,-813941],[-80796,-811815],[-78688,-809696],[-76578,-807580],[-74465,-805466],[-72352,-803353],[-70239,-801239],[-68126,-799126],[-66013,-797013],[-63900,-794899],[-61786,-792786],[-59674,-790672],[-57563,-788556],[-55454,-786438],[-53309,-784315],[-50159,-782181],[-45994,-780029],[-41291,-777848],[-36451,-775625],[-31800,-773346],[-27589,-771000],[-23992,-768576],[-21118,-766082],[-19024,-763531],[-17733,-760944],[-17235,-758342],[-17226,-755749],[-17226,-753184],[-17226,-750667],[-17226,-748205],[-17226,-745797],[-17226,-743429],[-17226,-741075],[-17226,-738704],[-17226,-736291],[-17226,-733821],[-17226,-731292],[-17226,-728710],[-17226,-726088],[-17226,-723441],[-17226,-720782],[-17226,-718120],[-17226,-715459],[-17226,-712797],[-17222,-710132],[-16829,-707459],[-15763,-704778],[-14021,-702090],[-11644,-699397],[-8719,-696698],[-5382,-693988],[-1823,-691256],[1708,-688492],[4914,-685684],[7468,-682831],[9041,-679935],[9671,-677006],[10120,-674052],[10446,-671081],[10664,-668101],[10771,-665114],[10784,-662126],[10709,-659138],[10541,-656155],[10271,-653179],[9887,-650216],[9375,-647272],[8727,-644355],[7943,-641471],[7044,-638621],[6068,-635796],[5069,-632979],[4105,-630151],[3223,-627295],[2458,-624407],[1821,-621487],[1323,-618540],[938,-615576],[646,-612602],[424,-609622],[253,-606639],[117,-603653],[0,-600667]]},{"id":5,"a":27,"b":-1,"punkte":[[521333,-850000],[532667,-850000],[544000,-850000],[555333,-850000],[566667,-850000],[578000,-850000],[589333,-850000],[600667,-850000],[612000,-850000],[623333,-850000],[634667,-850000],[646000,-850000],[657333,-850000],[668667,-850000],[680000,-850000],[691333,-850000],[702667,-850000],[714000,-850000],[725333,-850000],[736667,-850000],[748000,-850000],[759333,-850000],[770667,-850000],[782000,-850000],[793333,-850000],[804667,-850000],[816000,-850000],[827333,-850000],[838667,-850000],[850000,-850000],[850000,-838667],[850000,-827333],[850000,-816000],[850000,-804667],[850000,-793333],[850000,-782000],[850000,-770667],[850000,-759333],[850000,-748000],[850000,-736667],[850000,-725333],[850000,-714000],[850000,-702667],[850000,-691333],[850000,-680000],[850000,-668667],[850000,-657333],[850000,-646000],[850000,-634667],[850000,-623333],[850000,-612000],[850000,-600667],[850000,-589333],[850000,-578000],[850000,-566667],[850000,-555333],[850000,-544000],[850000,-532667],[850000,-521333],[850000,-510000],[850000,-498667],[850000,-487333],[850000,-476000],[850000,-464667],[850000,-453333],[850000,-442000],[850000,-430667],[850000,-419333],[850000,-408000],[850000,-396667],[850000,-385333],[850000,-374000],[850000,-362667],[850000,-351333],[850000,-340000],[850000,-328667],[850000,-317333],[850000,-306000],[850000,-294667]]},{"id":6,"a":26,"b":27,"punkte":[[521333,-850000],[520836,-847039],[520291,-844087],[519656,-841152],[518888,-838250],[517951,-835399],[516818,-832620],[515482,-829933],[513958,-827347],[512279,-824858],[510502,-822438],[508687,-820046],[506883,-817647],[505128,-815210],[503449,-812722],[501852,-810179],[500326,-807594],[498843,-804983],[497366,-802370],[495850,-799778],[494259,-797232],[492570,-794750],[490777,-792343],[488882,-790014],[486896,-787763],[484831,-785584],[482692,-783477],[480482,-781445],[478192,-779504],[475821,-777662],[473373,-775925],[470856,-774289],[468286,-772738],[465682,-771243],[463068,-769766],[460467,-768266],[457900,-766710],[455382,-765074],[452924,-763350],[450520,-761551],[448148,-759711],[445781,-757864],[443391,-756047],[440955,-754292],[438464,-752617],[435918,-751026],[433329,-749506],[430716,-748026],[428104,-746546],[425517,-745023],[422976,-743424],[420499,-741728],[418094,-739932],[415761,-738042],[413493,-736075],[411277,-734049],[408966,-731983],[405341,-729890],[400563,-727782],[395142,-725667],[389522,-723547],[384078,-721425],[379115,-719303],[374871,-717180],[371511,-715057],[369132,-712933],[367761,-710809],[367352,-708684],[367352,-706555],[367352,-704419],[367352,-702272],[367352,-700104],[367352,-697905],[367352,-695657],[367352,-693344],[367352,-690959],[367352,-688498],[367352,-685966],[367352,-683374],[367352,-680737],[367352,-678069],[367352,-675381],[367352,-672677],[367352,-669952],[367352,-667199],[367352,-664407],[367306,-661570],[366785,-658691],[365708,-655776],[364144,-652836],[362195,-649881],[359975,-646917],[357600,-643952],[355184,-640991],[352845,-638041],[350709,-635108],[348933,-632199],[347724,-629321],[346781,-626470],[345786,-623638],[344790,-620805],[343851,-617954],[343017,-615070],[342322,-612150],[341783,-609198],[341406,-606220],[341188,-603227],[341128,-600225],[341224,-597225],[341482,-594233],[341910,-591262],[342499,-588318],[343239,-585409],[344111,-582536],[345073,-579692],[346074,-576861],[347053,-574023],[347957,-571160],[348745,-568263],[349399,-565333],[349920,-562377],[350321,-559402],[350621,-556415],[350836,-553421],[350982,-550422],[351069,-547421],[351099,-544418],[351078,-541416],[351007,-538415],[350882,-535415],[350692,-532419],[350424,-529429],[350056,-526449],[349561,-523488],[348938,-520551],[348183,-517645],[347309,-514773],[346347,-511929],[345346,-509099],[344363,-506262],[343452,-503401],[342654,-500507],[341988,-497580],[341453,-494626],[341038,-491653],[340724,-488668],[340492,-485675],[340324,-482677],[340207,-479677],[340133,-476675],[340081,-473674],[340045,-470671],[340020,-467669],[340000,-464667]]},{"id":7,"a":16,"b":25,"punkte":[[0,-600667],[-2990,-600667],[-5979,-600667],[-8969,-600667],[-11958,-600667],[-14948,-600667],[-17938,-600667],[-20927,-600667],[-23917,-600667],[-26907,-600667],[-29896,-600667],[-32886,-600667],[-35875,-600667],[-38865,-600667],[-41855,-600667],[-44844,-600667],[-47834,-600667],[-50823,-600667],[-53813,-600667],[-56803,-600667],[-59792,-600667],[-62782,-600667],[-65772,-600667],[-68761,-600667],[-71751,-600667],[-74740,-600667],[-77730,-600667],[-80720,-600667],[-83709,-600667],[-86699,-600667],[-89688,-600667],[-92678,-600667],[-95668,-600667],[-98657,-600667],[-101647,-600667],[-104637,-600667],[-107626,-600667],[-110616,-600667],[-113605,-600667],[-116595,-600667],[-119585,-600667],[-122574,-600667],[-125564,-600667],[-128553,-600667],[-131543,-600666],[-134533,-600666],[-137522,-600665],[-140512,-600664],[-143502,-600664],[-146491,-600663],[-149481,-600662],[-152470,-600662],[-155460,-600662],[-158450,-600661],[-161439,-600661],[-164429,-600661],[-167418,-600661],[-170408,-600661],[-173398,-600661],[-176387,-600661],[-179377,-600661],[-182367,-600661],[-185356,-600661],[-188346,-600661],[-191335,-600661],[-194325,-600661],[-197315,-600661],[-200304,-600661],[-203293,-600661],[-206282,-600661],[-209270,-600661],[-212256,-600661],[-215240,-600661],[-218218,-600640],[-221185,-600553],[-224135,-600354],[-227062,-599982],[-229959,-599380],[-232821,-598503],[-235651,-597346],[-238459,-595960],[-241263,-594457],[-244076,-592998],[-246908,-591775],[-249760,-590861],[-252627,-590014],[-255501,-589190],[-258373,-588361],[-261235,-587496],[-264078,-586574],[-266900,-585588],[-269702,-584546],[-272494,-583476],[-275288,-582412],[-278096,-581387],[-280926,-580424],[-283777,-579524],[-286643,-578673],[-289516,-577846],[-292386,-577009],[-295243,-576130],[-298078,-575180],[-300882,-574146],[-303653,-573025],[-306393,-571829],[-309110,-570581],[-311812,-569303],[-314508,-568010],[-317200,-566710],[-319888,-565400],[-322568,-564076],[-325241,-562737],[-327908,-561386],[-330573,-560031],[-333241,-558683],[-335916,-557348],[-338596,-556024],[-341279,-554704],[-343960,-553380],[-346635,-552045],[-349303,-550698],[-351969,-549343],[-354635,-547991],[-357306,-546649],[-359984,-545320],[-362667,-544000]]},{"id":8,"a":16,"b":26,"punkte":[[0,-600667],[3091,-600667],[6182,-600667],[9273,-600667],[12364,-600667],[15455,-600667],[18545,-600667],[21636,-600667],[24727,-600667],[27818,-600667],[30909,-600667],[34000,-600667]]},{"id":9,"a":17,"b":26,"punkte":[[34000,-600667],[36989,-600667],[39977,-600667],[42966,-600667],[45954,-600667],[48943,-600667],[51931,-600667],[54920,-600667],[57908,-600667],[60897,-600667],[63885,-600667],[66874,-600667],[69862,-600667],[72851,-600667],[75839,-600667],[78828,-600667],[81816,-600667],[84805,-600667],[87793,-600667],[90782,-600667],[93770,-600667],[96759,-600667],[99747,-600667],[102736,-600667],[105724,-600666],[108713,-600666],[111701,-600666],[114690,-600665],[117678,-600663],[120667,-600660],[123655,-600653],[126644,-600642],[129632,-600625],[132620,-600598],[135609,-600555],[138596,-600486],[141583,-600385],[144568,-600241],[147549,-600041],[150525,-599754],[153491,-598844],[156438,-597185],[159362,-594993],[162253,-592488],[165111,-589893],[167936,-587419],[170742,-585237],[173544,-583469],[176358,-582178],[179191,-581380],[182043,-581063],[184910,-581054],[187782,-581054],[190651,-581054],[193505,-581054],[196337,-581054],[199137,-581054],[201903,-581054],[204638,-581054],[207347,-581054],[210039,-581054],[212718,-581054],[215379,-581054],[218014,-581054],[220610,-581054],[223155,-581054],[225640,-581054],[228066,-581054],[230446,-581054],[232803,-581053],[235164,-580644],[237557,-579455],[240002,-577460],[242506,-574709],[245061,-571315],[247649,-567434],[250251,-563257],[252844,-559001],[255405,-554916],[257914,-551298],[260357,-548514],[262727,-546624],[265027,-544715],[267263,-542732],[269452,-540698],[271609,-538630],[273747,-536541],[275872,-534441],[277991,-532333],[280107,-530223],[282221,-528111],[284335,-525998],[286448,-523885],[288561,-521771],[290674,-519658],[292786,-517543],[294896,-515427],[297002,-513307],[299101,-511179],[301186,-509038],[303245,-506872],[305264,-504669],[307227,-502416],[309114,-500100],[310910,-497712],[312607,-495252],[314208,-492729],[315735,-490160],[317222,-487568],[318712,-484977],[320259,-482420],[321908,-479929],[323695,-477534],[325639,-475266],[327744,-473148],[330001,-471191],[332385,-469392],[334868,-467730],[337417,-466170],[340000,-464667]]},{"id":10,"a":16,"b":17,"punkte":[[34000,-600667],[32713,-597970],[31431,-595272],[30167,-592565],[28942,-589840],[27788,-587084],[26739,-584287],[25820,-581445],[25047,-578560],[24420,-575639],[23925,-572693],[23551,-569729],[23261,-566753],[23042,-563772],[22888,-560788],[22788,-557802],[22727,-554815],[22695,-551828],[22679,-548840],[22671,-545853],[22668,-542865],[22667,-539877],[22667,-536889],[22667,-533902],[22667,-530914],[22667,-527926],[22667,-524939],[22667,-521951],[22667,-518963],[22667,-515975],[22667,-512988],[22667,-510000],[22667,-507012],[22667,-504025],[22667,-501037],[22667,-498049],[22667,-495061],[22667,-492074],[22667,-489086],[22667,-486098],[22667,-483111],[22667,-480123],[22666,-477135],[22664,-474147],[22659,-471160],[22646,-468172],[22619,-465185],[22567,-462198],[22475,-459212],[22329,-456228],[22111,-453247],[21809,-450271],[21409,-447307],[20914,-444361],[20286,-441440],[19513,-438555],[18595,-435713],[17545,-432916],[16391,-430160],[15167,-427435],[13902,-424728],[12620,-422030],[11333,-419333]]},{"id":11,"a":16,"b":24,"punkte":[[-362667,-544000],[-364636,-541764],[-366675,-539591],[-368825,-537529],[-371097,-535603],[-373475,-533808],[-375924,-532110],[-378406,-530462],[-380889,-528751],[-383346,-525942],[-385762,-522039],[-388136,-517487],[-390484,-512701],[-392830,-508032],[-395200,-503760],[-397615,-500087],[-400086,-497143],[-402611,-494999],[-405178,-493680],[-407770,-493181],[-410364,-493174],[-412935,-493174],[-415462,-493174],[-417927,-493174],[-420321,-493174],[-422643,-493174],[-424900,-493174],[-427105,-493174],[-429271,-493174],[-431411,-493174],[-433536,-493174],[-435651,-493174],[-437761,-493174],[-439870,-493174],[-441978,-493174],[-444085,-493174],[-446192,-493174],[-448300,-493174],[-450407,-493172],[-452514,-492623],[-454621,-491066],[-456728,-488478],[-458835,-484903],[-460942,-480451],[-463047,-475303],[-465151,-469704],[-467250,-463970],[-469342,-458480],[-471418,-453677],[-473467,-450073],[-475476,-447764],[-477426,-445512],[-479300,-443195],[-481081,-440807],[-482763,-438348],[-484351,-435826],[-485863,-433259],[-487333,-430667]]},{"id":12,"a":17,"b":27,"punkte":[[340000,-464667],[341489,-462043],[343023,-459445],[344634,-456894],[346344,-454410],[348160,-452001],[350076,-449672],[352083,-447419],[354169,-445240],[356330,-443135],[358569,-441113],[360885,-439180],[363280,-437346],[365752,-435617],[368290,-433988],[370878,-432438],[373493,-430934],[376109,-429430],[378697,-427880],[381220,-426225],[383645,-424432],[385942,-422478],[388088,-420360],[390070,-418087],[391891,-415684],[393572,-413179],[395148,-410607],[396667,-408000]]},{"id":13,"a":15,"b":24,"punkte":[[-487333,-430667],[-489947,-429184],[-492535,-427657],[-495077,-426055],[-497555,-424356],[-499961,-422556],[-502294,-420663],[-504562,-418692],[-506778,-416663],[-508956,-414592],[-511105,-412492],[-513234,-410372],[-515346,-408234],[-517435,-406073],[-519491,-403882],[-521501,-401648],[-523445,-399357],[-525304,-396997],[-527056,-394556],[-528699,-392040],[-530242,-389462],[-531704,-386837],[-533111,-384182],[-534488,-381511],[-535855,-378835],[-537222,-376159],[-538590,-373483],[-539951,-370804],[-541300,-368118],[-542632,-365425],[-543949,-362724],[-545254,-360017],[-546549,-357305],[-547823,-354584],[-549056,-351843],[-550216,-349072],[-551271,-346259],[-552192,-343399],[-552967,-340497],[-553594,-337559],[-554087,-334595],[-554462,-331613],[-554729,-328620],[-554923,-325621],[-555063,-322620],[-555160,-319616],[-555227,-316612],[-555270,-313608],[-555295,-310603],[-555311,-307598],[-555321,-304593],[-555327,-301588],[-555330,-298583],[-555332,-295578],[-555332,-292573],[-555333,-289568],[-555333,-286563],[-555333,-283558],[-555333,-280553],[-555333,-277548],[-555333,-274543],[-555333,-271538],[-555333,-268533],[-555333,-265528],[-555332,-262523],[-555331,-259518],[-555330,-256513],[-555327,-253508],[-555320,-250503],[-555310,-247498],[-555293,-244493],[-555266,-241488],[-555223,-238483],[-555155,-235479],[-555054,-232476],[-554910,-229474],[-554710,-226476],[-554437,-223484],[-554065,-220502],[-553571,-217538],[-552949,-214599],[-552195,-211690],[-551322,-208815],[-550361,-205968],[-549359,-203135],[-548375,-200296],[-547462,-197433],[-546662,-194537],[-545994,-191608],[-545458,-188652],[-545041,-185676],[-544726,-182688],[-544493,-179693],[-544325,-176693],[-544208,-173690],[-544133,-170686],[-544081,-167681],[-544045,-164676],[-544020,-161672],[-544000,-158667]]},{"id":14,"a":15,"b":16,"punkte":[[-487333,-430667],[-484738,-429199],[-482167,-427692],[-479636,-426116],[-477160,-424456],[-474740,-422717],[-472365,-420915],[-470013,-419083],[-467659,-417185],[-465275,-414214],[-462841,-410218],[-460348,-405642],[-457802,-400841],[-455222,-396101],[-452626,-391659],[-450038,-387722],[-447481,-384466],[-444973,-382033],[-442530,-380516],[-440159,-379945],[-437859,-379938],[-435621,-379938],[-433433,-379938],[-431279,-379938],[-429145,-379938],[-427024,-379938],[-424910,-379938],[-422799,-379938],[-420690,-379938],[-418581,-379938],[-416473,-379938],[-414365,-379938],[-412257,-379938],[-410149,-379938],[-408041,-379938],[-405933,-379938],[-403825,-379938],[-401717,-379938],[-399609,-379934],[-397501,-379368],[-395393,-377790],[-393285,-375179],[-391178,-371580],[-389070,-367106],[-386964,-361939],[-384859,-356327],[-382759,-350586],[-380666,-345098],[-378590,-340310],[-376540,-336734],[-374530,-334437],[-372579,-332184],[-370704,-329867],[-368921,-327478],[-367239,-325017],[-365651,-322495],[-364138,-319926],[-362667,-317333]]},{"id":15,"a":8,"b":16,"punkte":[[11333,-419333],[8345,-419450],[5358,-419586],[2372,-419757],[-609,-419980],[-3585,-420273],[-6551,-420658],[-9499,-421157],[-12421,-421794],[-15311,-422561],[-18168,-423444],[-20998,-424410],[-23816,-425410],[-26642,-426387],[-29493,-427290],[-32377,-428080],[-35293,-428741],[-38235,-429279],[-41193,-429709],[-44163,-430055],[-47140,-430343],[-50120,-430596],[-53100,-430838],[-56079,-431097],[-59054,-431406],[-62019,-431788],[-64971,-432265],[-67902,-432856],[-70804,-433573],[-73674,-434410],[-76515,-435345],[-79337,-436334],[-82159,-437323],[-85000,-438256],[-87871,-439090],[-90775,-439800],[-93708,-440381],[-96662,-440840],[-99631,-441194],[-102610,-441462],[-105594,-441655],[-108580,-441805],[-111568,-441931],[-114556,-442048],[-117544,-442169],[-120531,-442311],[-123516,-442503],[-126495,-442757],[-129466,-443092],[-132424,-443528],[-135362,-444082],[-138272,-444765],[-141150,-445508],[-143998,-446181],[-146826,-446663],[-149655,-446855],[-152506,-446710],[-155394,-446248],[-158324,-445557],[-161289,-444770],[-164274,-444039],[-167260,-443505],[-170227,-443267],[-173158,-443260],[-176048,-443260],[-178900,-443260],[-181729,-443260],[-184557,-443260],[-187403,-443260],[-190279,-443260],[-193187,-443260],[-196121,-443260],[-199075,-443260],[-202043,-443260],[-205018,-443260],[-207997,-443260],[-210978,-443260],[-213957,-443260],[-216933,-443260],[-219901,-443260],[-222856,-443260],[-225791,-443260],[-228697,-443161],[-231563,-442838],[-234383,-442215],[-237158,-441228],[-239896,-439844],[-242606,-438075],[-245297,-435979],[-247971,-433656],[-250624,-431243],[-253245,-428911],[-255821,-426884],[-258342,-425241],[-260802,-423541],[-263205,-421761],[-265570,-419931],[-267926,-418090],[-270303,-416275],[-272722,-414517],[-275196,-412838],[-277725,-411242],[-280296,-409715],[-282890,-408228],[-285484,-406739],[-288049,-405202],[-290549,-403562],[-292953,-401785],[-295233,-399851],[-297363,-397755],[-299332,-395507],[-301143,-393128],[-302813,-390648],[-304376,-388099],[-305875,-385512],[-307358,-382915],[-308876,-380339],[-310466,-377806],[-312148,-375334],[-313931,-372934],[-315806,-370605],[-317757,-368339],[-319763,-366121],[-321803,-363935],[-323856,-361761],[-325901,-359579],[-327914,-357368],[-329875,-355110],[-331763,-352791],[-333560,-350402],[-335258,-347941],[-336862,-345417],[-338390,-342847],[-339878,-340253],[-341369,-337661],[-342916,-335102],[-344566,-332608],[-346353,-330212],[-348297,-327942],[-350404,-325821],[-352661,-323863],[-355047,-322062],[-357532,-320399],[-360082,-318838],[-362667,-317333]]},{"id":16,"a":8,"b":17,"punkte":[[11333,-419333],[14299,-418859],[17259,-418344],[20205,-417757],[23128,-417069],[26020,-416258],[28872,-415316],[31680,-414252],[34449,-413088],[37188,-411855],[39909,-410583],[42623,-409294],[45333,-408000]]},{"id":17,"a":9,"b":17,"punkte":[[45333,-408000],[48332,-407883],[51331,-407746],[54327,-407574],[57320,-407349],[60306,-407053],[63282,-406664],[66241,-406159],[69173,-405517],[72071,-404738],[74935,-403839],[77767,-402847],[80583,-401806],[83397,-400763],[86225,-399759],[89075,-398815],[91943,-397931],[94825,-397092],[97710,-396266],[100590,-395419],[103453,-394520],[106291,-393543],[109097,-392476],[111868,-391323],[114609,-390100],[117330,-388759],[120039,-386539],[122744,-383528],[125445,-380063],[128141,-376432],[130830,-372882],[133511,-369620],[136187,-366812],[138864,-364575],[141545,-362979],[144232,-362045],[146925,-361752],[149618,-361752],[152308,-361752],[154991,-361752],[157668,-361752],[160344,-361752],[163023,-361752],[165709,-361752],[168403,-361752],[171104,-361752],[173809,-361752],[176522,-361752],[179247,-361752],[181995,-361752],[184780,-361752],[187609,-361752],[190484,-361752],[193400,-361752],[196347,-361752],[199315,-361725],[202297,-361369],[205288,-360641],[208283,-359613],[211281,-358367],[214280,-356984],[217279,-355546],[220278,-354130],[223275,-352810],[226270,-351659],[229260,-350741],[232239,-350144],[235203,-349673],[238144,-349079],[241056,-348354],[243934,-347505],[246783,-346561],[249615,-345567],[252448,-344578],[255302,-343650],[258188,-342825],[261106,-342129],[264053,-341563],[267021,-341120],[270003,-340783],[272994,-340532],[275990,-340353],[278989,-340234],[281989,-340150],[284990,-340093],[287991,-340055],[290993,-340032],[293994,-340018],[296996,-340010],[299997,-340005],[302999,-340002],[306000,-340000]]},{"id":18,"a":8,"b":9,"punkte":[[45333,-408000],[45333,-405027],[45333,-402054],[45333,-399081],[45333,-396107],[45332,-393134],[45329,-390161],[45325,-387188],[45320,-384215],[45314,-381242],[45309,-378268],[45303,-375295],[45299,-372322],[45295,-369349],[45292,-366376],[45291,-363403],[45291,-360430],[45291,-357456],[45291,-354483],[45291,-351510],[45291,-348537],[45291,-345564],[45291,-342591],[45291,-339618],[45291,-336644],[45291,-333671],[45291,-330698],[45291,-327726],[45291,-324754],[45291,-321783],[45291,-318815],[45291,-315851],[45291,-312895],[45291,-309952],[45291,-307027],[45231,-304129],[45007,-301264],[44544,-298430],[43786,-295621],[42717,-292818],[41381,-290003],[39871,-287161],[38322,-284286],[36888,-281380],[35724,-278448],[34967,-275499],[34640,-272541],[34421,-269576],[34251,-266608],[34116,-263638],[34000,-260667]]},{"id":19,"a":17,"b":18,"punkte":[[396667,-408000],[393949,-403514],[391236,-399597],[388531,-395439],[385831,-391333],[383134,-387526],[380436,-384217],[377739,-381551],[375047,-379629],[372370,-378505],[369724,-378183],[367122,-378183],[364578,-378183],[362101,-378183],[359677,-378183],[357285,-378183],[354895,-378183],[352480,-378183],[350019,-378183],[347499,-378183],[344924,-378183],[342307,-378183],[339670,-378183],[337038,-378183],[334435,-378183],[331882,-378183],[329396,-378183],[326988,-378183],[324660,-378183],[322410,-378044],[320236,-377145],[318139,-375331],[316123,-372556],[314197,-368838],[312372,-364266],[310654,-359004],[309035,-353310],[307495,-347540],[306000,-340000]]},{"id":20,"a":18,"b":27,"punkte":[[396667,-408000],[399373,-406668],[402075,-405326],[404769,-403971],[407458,-402603],[410144,-401230],[412830,-399858],[415516,-398486],[418197,-397103],[420863,-395690],[423497,-394222],[426085,-392672],[428609,-391021],[431057,-389259],[433425,-387391],[435726,-385440],[437973,-383428],[440185,-381377],[442583,-379308],[446600,-377242],[451997,-375199],[458207,-373206],[464718,-371285],[471076,-369455],[476895,-367725],[481869,-366093],[485777,-364544],[488496,-363046],[490002,-361560],[490381,-360045],[490381,-358463],[490381,-356780],[490381,-354995],[490381,-353113],[490381,-351150],[490381,-349124],[490381,-347053],[490381,-344951],[490381,-342829],[490381,-340686],[490381,-338523],[490381,-336330],[490381,-334096],[490381,-331808],[490381,-329453],[490381,-327023],[490381,-324521],[490381,-321955],[490528,-319347],[491462,-316721],[493262,-314101],[495897,-311508],[499305,-308961],[503381,-306470],[507964,-304035],[512820,-301641],[517630,-299266],[521988,-296875],[525420,-294443],[527495,-291953],[529105,-289403],[530626,-286798],[532076,-284153],[533479,-281483],[534861,-278802],[536242,-276120],[537634,-273444],[539045,-270778],[540481,-268125],[541954,-265493],[543491,-262898],[545124,-260363],[546890,-257918],[548809,-255593],[550881,-253402],[553073,-251331],[555333,-249333]]},{"id":21,"a":23,"b":24,"punkte":[[-850000,-362667],[-847038,-362169],[-844085,-361623],[-841150,-360987],[-838247,-360217],[-835397,-359276],[-832620,-358133],[-829941,-356779],[-827374,-355221],[-824927,-353480],[-822585,-351601],[-820321,-349628],[-818114,-347591],[-815947,-345512],[-813805,-343406],[-811683,-341280],[-809582,-339135],[-807508,-336962],[-805476,-334751],[-803501,-332489],[-801602,-330162],[-799795,-327764],[-798089,-325292],[-796480,-322757],[-794949,-320173],[-793465,-317562],[-791987,-314947],[-790473,-312353],[-788890,-309801],[-787223,-307303],[-785474,-304862],[-783662,-302467],[-781816,-300098],[-779973,-297727],[-778169,-295325],[-776433,-292874],[-774785,-290364],[-773222,-287799],[-771719,-285199],[-770243,-282583],[-768755,-279975],[-767218,-277394],[-765606,-274860],[-763910,-272382],[-762136,-269802],[-760306,-265723],[-758455,-260317],[-756624,-254142],[-754846,-247696],[-753145,-241419],[-751530,-235683],[-749989,-230784],[-748499,-226928],[-747020,-224225],[-745515,-222688],[-743945,-222242],[-742285,-222242],[-740512,-222242],[-738635,-222242],[-736666,-222242],[-734614,-222242],[-732489,-222242],[-730292,-222242],[-728021,-222242],[-725672,-222242],[-723240,-222242],[-720734,-222242],[-718171,-222242],[-715571,-222242],[-712956,-222242],[-710350,-222242],[-707774,-222242],[-705244,-222242],[-702769,-222242],[-700345,-222181],[-697953,-221496],[-695560,-219993],[-693128,-217667],[-690626,-214596],[-688036,-210944],[-685357,-206943],[-682600,-202872],[-679785,-199025],[-676932,-195700],[-674059,-193190],[-671180,-191789],[-668308,-190911],[-665451,-189986],[-662613,-189004],[-659792,-187973],[-656977,-186925],[-654154,-185901],[-651307,-184944],[-648429,-184087],[-645520,-183342],[-642586,-182702],[-639634,-182149],[-636672,-181653],[-633706,-181181],[-630742,-180699],[-627785,-180174],[-624842,-179574],[-621922,-178872],[-619031,-178058],[-616171,-177140],[-613335,-176151],[-610507,-175140],[-607667,-174162],[-604801,-173266],[-601901,-172485],[-598968,-171836],[-596011,-171314],[-593036,-170899],[-590052,-170564],[-587062,-170284],[-584069,-170032],[-581076,-169785],[-578084,-169518],[-575097,-169203],[-572121,-168800],[-569161,-168292],[-566226,-167658],[-563326,-166881],[-560468,-165960],[-557655,-164908],[-554885,-163750],[-552145,-162520],[-549423,-161249],[-546710,-159961],[-544000,-158667]]},{"id":22,"a":23,"b":-1,"punkte":[[-850000,-362667],[-850000,-351333],[-850000,-340000],[-850000,-328667],[-850000,-317333],[-850000,-306000],[-850000,-294667],[-850000,-283333],[-850000,-272000],[-850000,-260667],[-850000,-249333],[-850000,-238000],[-850000,-226667],[-850000,-215333],[-850000,-204000],[-850000,-192667],[-850000,-181333],[-850000,-170000],[-850000,-158667],[-850000,-147333],[-850000,-136000],[-850000,-124667],[-850000,-113333],[-850000,-102000],[-850000,-90667],[-850000,-79333],[-850000,-68000],[-850000,-56667],[-850000,-45333],[-850000,-34000],[-850000,-22667],[-850000,-11333],[-850000,0],[-850000,11333],[-850000,22667],[-850000,34000],[-850000,45333],[-850000,56667],[-850000,68000],[-850000,79333],[-850000,90667],[-850000,102000],[-850000,113333],[-850000,124667],[-850000,136000],[-850000,147333],[-850000,158667],[-850000,170000],[-850000,181333],[-850000,192667],[-850000,204000],[-850000,215333],[-850000,226667],[-850000,238000],[-850000,249333]]},{"id":23,"a":9,"b":18,"punkte":[[306000,-340000],[308949,-339531],[311892,-339024],[314822,-338449],[317732,-337781],[320615,-337005],[323467,-336121],[326289,-335146],[329092,-334117],[331891,-333077],[334701,-332064],[337529,-331106],[340377,-330209],[343240,-329359],[346109,-328533],[348976,-327698],[351830,-326821],[354662,-325875],[357464,-324843],[360233,-323724],[362968,-322528],[365678,-321274],[368369,-319979],[371045,-318653],[373702,-317291],[376330,-315872],[378906,-314362],[381407,-312732],[383806,-310955],[386075,-309016],[388192,-306913],[390148,-304658],[391946,-302276],[393606,-299794],[395164,-297247],[396667,-294667]]},{"id":24,"a":8,"b":15,"punkte":[[-362667,-317333],[-363162,-314382],[-363706,-311440],[-364339,-308516],[-365104,-305623],[-366039,-302782],[-367174,-300015],[-368518,-297343],[-370065,-294783],[-371790,-292338],[-373655,-289999],[-375612,-287735],[-377626,-285522],[-379667,-283333],[-381707,-281145],[-383721,-278931],[-385678,-276668],[-387544,-274329],[-389268,-271884],[-390815,-269323],[-392160,-266652],[-393294,-263884],[-394229,-261043],[-394994,-258151],[-395628,-255227],[-396171,-252284],[-396667,-249333]]},{"id":25,"a":9,"b":10,"punkte":[[396667,-294667],[394057,-293190],[391471,-291674],[388927,-290087],[386437,-288417],[384004,-286665],[381616,-284852],[379252,-282917],[376883,-279835],[374484,-275733],[372032,-271077],[369520,-266247],[366957,-261534],[364360,-257172],[361750,-253349],[359149,-250223],[356580,-247921],[354063,-246525],[351612,-246059],[349235,-246059],[346929,-246059],[344688,-246059],[342492,-246059],[340328,-246059],[338184,-246059],[336052,-246059],[333926,-246059],[331803,-246059],[329682,-246059],[327562,-246059],[325441,-246059],[323321,-246059],[321201,-246059],[319081,-246059],[316961,-246059],[314841,-246059],[312720,-246059],[310600,-246014],[308480,-245223],[306360,-243398],[304239,-240533],[302117,-236689],[299994,-232000],[297867,-226671],[295731,-220976],[293582,-215265],[291407,-209964],[289194,-205570],[286930,-202646],[284601,-200757],[282200,-198962],[279727,-197267],[277191,-195669],[274608,-194146],[272000,-192667]]},{"id":26,"a":10,"b":18,"punkte":[[396667,-294667],[399265,-293153],[401830,-291583],[404327,-289908],[406724,-288094],[408991,-286119],[411103,-283981],[413050,-281690],[414832,-279269],[416466,-276744],[417974,-274142],[419398,-271494],[420767,-268816],[422100,-266120],[423401,-263408],[424658,-260677],[425855,-257918],[426973,-255126],[428000,-252300],[428943,-249444],[429818,-246567],[430656,-243679],[431491,-240789],[432353,-237908],[433267,-235043],[434242,-232198],[435267,-229371],[436312,-226551],[437333,-223722],[438282,-220869],[439123,-217982],[439833,-215060],[440410,-212110],[440865,-209137],[441214,-206151],[441518,-203155],[442108,-200154],[442991,-197150],[444099,-194145],[445359,-191140],[446693,-188135],[448023,-185131],[449268,-182130],[450342,-179134],[451163,-176147],[451664,-173175],[451809,-170225],[451809,-167303],[451809,-164414],[451809,-161557],[451809,-158718],[451809,-155880],[451809,-153023],[451809,-150135],[451809,-147215],[451809,-144265],[451809,-141293],[451809,-138306],[451809,-135310],[451809,-132308],[451809,-129303],[451809,-126297],[451809,-123290],[451809,-120283],[451809,-117276],[451817,-114268],[451881,-111261],[451997,-108253],[452154,-105246],[452338,-102238],[452537,-99231],[452738,-96223],[452929,-93216],[453096,-90208],[453228,-87201],[453311,-84193],[453333,-81186],[453333,-78178],[453333,-75171],[453333,-72163],[453333,-69156],[453333,-66148],[453333,-63141],[453333,-60133],[453332,-57126],[453331,-54119],[453328,-51111],[453324,-48104],[453317,-45096],[453304,-42089],[453281,-39081],[453246,-36074],[453193,-33067],[453115,-30061],[452999,-27055],[452825,-24053],[452585,-21055],[452260,-18066],[451832,-15090],[451283,-12134],[450602,-9205],[449789,-6310],[448868,-3447],[447877,-608],[446871,2226],[445903,5074],[445017,7947],[444236,10851],[443563,13782],[442983,16733],[442472,19697],[442000,22667]]},{"id":27,"a":27,"b":28,"punkte":[[850000,-294667],[847035,-294195],[844077,-293685],[841132,-293106],[838207,-292433],[835309,-291650],[832443,-290758],[829607,-289776],[826789,-288740],[823976,-287694],[821151,-286678],[818306,-285719],[815442,-284821],[812563,-283972],[809677,-283147],[806792,-282314],[803919,-281444],[801064,-280519],[798229,-279532],[795410,-278501],[792595,-277457],[789768,-276448],[786913,-275520],[784023,-274708],[781100,-274030],[778148,-273486],[775177,-273062],[772193,-272741],[769201,-272503],[766204,-272332],[763204,-272215],[760203,-272139],[757202,-272084],[754200,-272050],[751198,-272030],[748196,-272022],[745194,-272020],[742192,-272021],[739191,-272024],[736189,-272027],[733187,-272030],[730185,-272032],[727183,-272032],[724181,-272032],[721179,-272032],[718177,-272032],[715175,-272032],[712173,-272032],[709171,-272032],[706169,-272032],[703167,-272032],[700165,-272032],[697164,-272032],[694162,-272032],[691160,-272032],[688159,-272032],[685159,-272032],[682162,-272032],[679168,-272032],[676181,-272032],[673205,-272032],[670246,-272038],[667311,-272132],[664407,-272397],[661533,-272904],[658677,-273696],[655815,-274763],[652921,-276016],[649979,-277285],[646995,-278345],[643997,-278978],[641023,-279043],[638099,-278511],[635221,-277658],[632364,-276738],[629502,-275831],[626619,-274998],[623706,-274273],[620767,-273668],[617805,-273176],[614829,-272783],[611844,-272471],[608853,-272207],[605862,-271961],[602870,-271709],[599882,-271426],[596899,-271087],[593928,-270664],[590974,-270130],[588048,-269459],[585161,-268636],[582321,-267663],[579533,-266551],[576793,-265324],[574098,-264003],[571446,-262597],[568845,-261099],[566313,-259488],[563877,-257736],[561562,-255826],[559382,-253765],[557321,-251583],[555333,-249333]]},{"id":28,"a":28,"b":-1,"punkte":[[850000,-294667],[850000,-283333],[850000,-272000],[850000,-260667],[850000,-249333],[850000,-238000],[850000,-226667],[850000,-215333],[850000,-204000],[850000,-192667],[850000,-181333],[850000,-170000],[850000,-158667],[850000,-147333],[850000,-136000],[850000,-124667],[850000,-113333],[850000,-102000],[850000,-90667],[850000,-79333],[850000,-68000],[850000,-56667],[850000,-45333],[850000,-34000],[850000,-22667],[850000,-11333],[850000,0],[850000,11333],[850000,22667],[850000,34000],[850000,45333],[850000,56667],[850000,68000],[850000,79333],[850000,90667],[850000,102000],[850000,113333],[850000,124667],[850000,136000],[850000,147333],[850000,158667],[850000,170000],[850000,181333],[850000,192667],[850000,204000],[850000,215333],[850000,226667],[850000,238000],[850000,249333]]},{"id":29,"a":4,"b":8,"punkte":[[34000,-260667],[31034,-260192],[28074,-259678],[25129,-259091],[22205,-258402],[19313,-257591],[16462,-256650],[13653,-255586],[10884,-254422],[8145,-253189],[5424,-251917],[2711,-250628],[0,-249333]]},{"id":30,"a":4,"b":9,"punkte":[[34000,-260667],[36985,-260667],[39969,-260667],[42954,-260667],[45938,-260667],[48923,-260667],[51907,-260667],[54892,-260667],[57876,-260667],[60861,-260667],[63846,-260667],[66830,-260667],[69815,-260667],[72799,-260667],[75784,-260667],[78768,-260667],[81753,-260667],[84737,-260667],[87722,-260667],[90707,-260667],[93691,-260667],[96676,-260667],[99660,-260667],[102645,-260667],[105629,-260667],[108614,-260667],[111598,-260667],[114583,-260667],[117568,-260666],[120552,-260666],[123537,-260666],[126521,-260666],[129506,-260666],[132490,-260665],[135475,-260665],[138459,-260665],[141444,-260665],[144429,-260665],[147413,-260665],[150398,-260665],[153382,-260665],[156367,-260665],[159351,-260665],[162336,-260665],[165320,-260665],[168305,-260665],[171290,-260665],[174274,-260665],[177259,-260665],[180243,-260665],[183228,-260665],[186212,-260665],[189197,-260665],[192181,-260665],[195165,-260665],[198148,-260665],[201129,-260655],[204106,-260612],[207079,-260509],[210040,-260301],[212983,-259937],[215900,-259364],[218782,-258537],[221621,-257439],[224414,-256103],[227165,-254626],[229882,-253172],[232576,-251867],[235252,-250545],[237907,-249182],[240529,-247756],[243098,-246239],[245592,-244600],[247981,-242812],[250238,-240862],[252342,-238748],[254281,-236481],[256058,-234085],[257687,-231585],[259197,-229010],[260614,-226384],[261974,-223727],[263294,-221050],[264576,-218356],[265808,-215637],[266965,-212886],[268019,-210095],[268951,-207260],[269754,-204386],[270435,-201481],[271018,-198554],[271528,-195614],[272000,-192667]]},{"id":31,"a":7,"b":15,"punkte":[[-396667,-249333],[-398900,-247361],[-401067,-245318],[-403117,-243158],[-405019,-240867],[-406770,-238458],[-408391,-235959],[-409914,-233399],[-411373,-230802],[-412793,-228182],[-414184,-225548],[-415552,-222901],[-416895,-220242],[-418216,-217572],[-419521,-214893],[-420826,-212209],[-422371,-209520],[-424080,-206819],[-425753,-204098],[-427241,-201345],[-428450,-198550],[-429352,-195709],[-429965,-192827],[-430342,-189911],[-430546,-186970],[-430636,-184013],[-430661,-181046],[-430662,-178073],[-430662,-175096],[-430662,-172119],[-430662,-169140],[-430662,-166161],[-430662,-163182],[-430662,-160203],[-430662,-157224],[-430662,-154245],[-430662,-151266],[-430662,-148286],[-430662,-145307],[-430662,-142328],[-430662,-139349],[-430662,-136370],[-430662,-133390],[-430662,-130411],[-430662,-127432],[-430662,-124454],[-430657,-121475],[-430637,-118498],[-430583,-115523],[-430471,-112552],[-430267,-109587],[-429932,-106634],[-429424,-103697],[-428706,-100786],[-427778,-97908],[-426695,-95063],[-425577,-92245],[-424563,-89437],[-423590,-86621],[-422695,-83780],[-421915,-80905],[-421266,-77997],[-420748,-75064],[-420346,-72113],[-420041,-69149],[-419815,-66179],[-419652,-63205],[-419536,-60228],[-419464,-57249],[-419414,-54271],[-419378,-51292],[-419353,-48312],[-419333,-45333]]},{"id":32,"a":7,"b":8,"punkte":[[-396667,-249333],[-393735,-248841],[-390812,-248301],[-387906,-247674],[-385032,-246917],[-382208,-245993],[-379456,-244873],[-376798,-243476],[-374249,-240641],[-371813,-236371],[-369484,-231201],[-367236,-225634],[-365046,-220100],[-362895,-214950],[-360766,-210455],[-358651,-206812],[-356543,-204142],[-354438,-202498],[-352335,-201863],[-350232,-201850],[-348130,-201850],[-346028,-201850],[-343926,-201850],[-341824,-201850],[-339722,-201850],[-337620,-201850],[-335518,-201850],[-333416,-201850],[-331314,-201850],[-329211,-201850],[-327109,-201850],[-325007,-201850],[-322905,-201850],[-320803,-201850],[-318701,-201850],[-316599,-201850],[-314497,-201850],[-312395,-201850],[-310293,-201382],[-308191,-199915],[-306088,-197419],[-303986,-193933],[-301882,-189562],[-299777,-184479],[-297667,-178928],[-295549,-173220],[-293415,-167738],[-291257,-162939],[-289060,-159345],[-286812,-157213],[-284500,-155345],[-282117,-153568],[-279663,-151891],[-277147,-150309],[-274586,-148800],[-272000,-147333]]},{"id":33,"a":3,"b":8,"punkte":[[0,-249333],[-2994,-249450],[-5987,-249587],[-8979,-249758],[-11967,-249982],[-14948,-250277],[-17919,-250664],[-20873,-251165],[-23801,-251804],[-26696,-252575],[-29558,-253461],[-32393,-254431],[-35217,-255434],[-38049,-256412],[-40906,-257315],[-43797,-258103],[-46720,-258762],[-49668,-259296],[-52633,-259723],[-55609,-260067],[-58592,-260353],[-61578,-260606],[-64564,-260849],[-67549,-261108],[-70529,-261421],[-73500,-261808],[-76457,-262293],[-79392,-262894],[-82297,-263623],[-85169,-264477],[-88008,-265433],[-90824,-266456],[-93634,-267497],[-96452,-268515],[-99288,-269481],[-102145,-270385],[-105017,-271239],[-107897,-272065],[-110776,-272894],[-113646,-273771],[-116500,-274944],[-119333,-276354],[-122149,-277827],[-124958,-279204],[-127778,-280364],[-130622,-281240],[-133500,-281827],[-136413,-282166],[-139355,-282324],[-142317,-282374],[-145295,-282378],[-148281,-282378],[-151273,-282378],[-154268,-282378],[-157264,-282378],[-160260,-282378],[-163256,-282378],[-166250,-282378],[-169242,-282378],[-172228,-282378],[-175204,-282378],[-178164,-282378],[-181102,-282378],[-184006,-282378],[-186868,-282378],[-189685,-282378],[-192457,-282378],[-195193,-282378],[-197904,-282378],[-200596,-282366],[-203271,-282038],[-205922,-281198],[-208538,-279789],[-211102,-277781],[-213595,-275172],[-216010,-272010],[-218345,-268400],[-220602,-264517],[-222785,-260614],[-224897,-257018],[-226934,-254137],[-228888,-251859],[-230744,-249507],[-232486,-247070],[-234121,-244559],[-235656,-241986],[-237111,-239367],[-238512,-236718],[-239885,-234055],[-241248,-231386],[-242611,-228718],[-243974,-226050],[-245331,-223378],[-246676,-220700],[-248004,-218014],[-249318,-215321],[-250622,-212624],[-251918,-209922],[-253200,-207214],[-254452,-204492],[-255653,-201746],[-256779,-198970],[-257819,-196160],[-258772,-193320],[-259655,-190457],[-260494,-187580],[-261322,-184700],[-262172,-181827],[-263071,-178969],[-264030,-176130],[-265045,-173311],[-266089,-170502],[-267122,-167690],[-268102,-164859],[-268991,-161998],[-269771,-159105],[-270443,-156185],[-271020,-153245],[-271529,-150292],[-272000,-147333]]},{"id":34,"a":3,"b":4,"punkte":[[0,-249333],[0,-246351],[0,-243368],[0,-240386],[0,-237404],[0,-234421],[0,-231439],[0,-228456],[0,-225474],[0,-222491],[0,-219509],[0,-216526],[0,-213544],[0,-210561],[0,-207579],[0,-204596],[0,-201614],[0,-198632],[0,-195649],[0,-192667],[0,-189684],[0,-186702],[0,-183719],[0,-180737],[0,-177754],[0,-174772],[0,-171789],[0,-168807],[0,-165825],[0,-162842],[0,-159860],[0,-156877],[0,-153895],[0,-150912],[0,-147930],[0,-144947],[0,-141965],[0,-138982],[0,-136000]]},{"id":35,"a":18,"b":28,"punkte":[[555333,-249333],[555805,-246386],[556316,-243446],[556898,-240519],[557579,-237613],[558382,-234739],[559313,-231904],[560365,-229112],[561517,-226359],[562739,-223637],[564001,-220932],[565282,-218236],[566568,-215543],[567857,-212851],[569143,-210158],[570420,-207460],[571671,-204751],[572873,-202019],[574003,-199257],[575048,-196461],[576006,-193635],[576892,-190785],[577730,-187920],[578575,-185052],[579994,-182189],[582060,-179340],[584541,-176511],[587208,-173705],[589845,-170915],[592272,-168129],[594356,-165334],[596018,-162521],[597224,-159685],[597968,-156830],[598261,-153964],[598267,-151094],[598267,-148230],[598267,-145380],[598267,-142552],[598267,-139745],[598267,-136955],[598267,-134169],[598267,-131375],[598267,-128561],[598267,-125726],[598267,-122871],[598267,-120005],[598267,-117135],[598267,-114271],[598267,-111421],[598267,-108592],[598267,-105785],[598267,-102995],[598268,-100209],[598506,-97415],[599198,-94602],[600351,-91767],[601928,-88913],[603863,-86046],[606075,-83176],[608471,-80312],[610943,-77462],[613356,-74632],[615529,-71825],[617220,-69035],[618339,-66249],[619389,-63455],[620386,-60643],[621320,-57808],[622192,-54954],[623024,-52087],[623842,-49217],[624679,-46352],[625561,-43501],[626504,-40669],[627506,-37858],[628543,-35059],[629575,-32259],[630556,-29441],[631445,-26592],[632212,-23708],[632849,-20792],[633347,-17849],[633730,-14889],[634022,-11919],[634244,-8943],[634414,-5964],[634550,-2982],[634667,0]]},{"id":36,"a":4,"b":10,"punkte":[[272000,-192667],[272020,-189682],[272045,-186698],[272080,-183714],[272131,-180730],[272204,-177746],[272320,-174764],[272484,-171785],[272712,-168809],[273018,-165841],[273423,-162885],[273945,-159947],[274613,-157035],[275657,-154156],[277009,-151310],[278470,-148489],[279858,-145677],[281043,-142852],[281957,-140002],[282594,-137117],[282991,-134201],[283206,-131259],[283302,-128299],[283327,-125329],[283327,-122353],[283327,-119372],[283327,-116390],[283327,-113406],[283327,-110422],[283327,-107438],[283327,-104454],[283327,-101469],[283327,-98485],[283327,-95501],[283327,-92516],[283327,-89532],[283327,-86547],[283327,-83563],[283327,-80579],[283327,-77594],[283327,-74610],[283327,-71625],[283327,-68641],[283327,-65657],[283328,-62672],[283328,-59688],[283329,-56703],[283330,-53719],[283331,-50735],[283331,-47750],[283332,-44766],[283333,-41781],[283333,-38797],[283333,-35813],[283333,-32828],[283333,-29844],[283333,-26860],[283333,-23875],[283333,-20891],[283333,-17906],[283333,-14922],[283333,-11938],[283333,-8953],[283333,-5969],[283333,-2984],[283333,0]]},{"id":37,"a":15,"b":23,"punkte":[[-544000,-158667],[-541894,-156556],[-539845,-154350],[-537442,-151994],[-534846,-149478],[-532289,-146829],[-529893,-144086],[-527717,-141289],[-525803,-138464],[-524195,-135634],[-522934,-132810],[-522050,-130000],[-521544,-127202],[-521376,-124409],[-521376,-121605],[-521376,-118775],[-521376,-115913],[-521376,-113017],[-521376,-110093],[-521376,-107148],[-521376,-104190],[-521376,-101223],[-521376,-98252],[-521376,-95280],[-521376,-92309],[-521376,-89341],[-521376,-86379],[-521376,-83429],[-521376,-80497],[-521376,-77591],[-521376,-74716],[-521376,-71874],[-521373,-69056],[-521199,-66245],[-520702,-63422],[-519860,-60573],[-518701,-57690],[-517300,-54775],[-515768,-51835],[-514222,-48878],[-512778,-45910],[-511546,-42936],[-510631,-39959],[-510134,-36980],[-510000,-34000]]},{"id":38,"a":3,"b":7,"punkte":[[-272000,-147333],[-273299,-144613],[-274592,-141890],[-275867,-139158],[-277100,-136408],[-278260,-133626],[-279313,-130802],[-280230,-127932],[-280999,-125018],[-281621,-122069],[-282108,-119095],[-282479,-116103],[-282747,-113101],[-282950,-110092],[-283097,-107081],[-283194,-104068],[-283252,-101055],[-283283,-98040],[-283296,-95026],[-283301,-92012],[-283300,-88997],[-283299,-85983],[-283297,-82968],[-283296,-79954],[-283296,-76940],[-283296,-73925],[-283296,-70911],[-283296,-67896],[-283296,-64882],[-283296,-61867],[-283296,-58853],[-283296,-55839],[-283296,-52824],[-283296,-49810],[-283296,-46796],[-283296,-43782],[-283296,-40769],[-283296,-37757],[-283296,-34748],[-283296,-31745],[-283296,-28751],[-283296,-25772],[-283282,-22815],[-283152,-19887],[-282820,-16993],[-282215,-14129],[-281295,-11284],[-280072,-8439],[-278616,-5575],[-277051,-2679],[-275533,250],[-274222,3207],[-273270,6187],[-272796,9181],[-272540,12185],[-272360,15194],[-272238,18206],[-272153,21219],[-272095,24233],[-272056,27247],[-272032,30261],[-272019,33276],[-272010,36290],[-272005,39304],[-272002,42319],[-272000,45333]]},{"id":39,"a":0,"b":3,"punkte":[[0,-136000],[-2702,-134710],[-5407,-133425],[-8120,-132158],[-10852,-130931],[-13614,-129776],[-16418,-128726],[-19267,-127808],[-22160,-127036],[-25088,-126409],[-28041,-125917],[-31012,-125543],[-33995,-125276],[-36983,-125080],[-39974,-124940],[-42966,-124841],[-45960,-124773],[-48954,-124729],[-51949,-124700],[-54943,-124678],[-57938,-124658],[-60932,-124637],[-63926,-124610],[-66921,-124567],[-69914,-124465],[-72908,-123691],[-75899,-122166],[-78888,-120066],[-81871,-117560],[-84843,-114844],[-87800,-112113],[-90732,-109561],[-93630,-107366],[-96486,-105686],[-99296,-104628],[-102062,-104245],[-104794,-104244],[-107500,-104244],[-110187,-104244],[-112854,-104244],[-115492,-104244],[-118083,-104244],[-120596,-104244],[-123008,-104244],[-125290,-104244],[-127419,-104244],[-129384,-104244],[-131184,-104244],[-132835,-104244],[-134362,-104244],[-135796,-104244],[-137167,-104244],[-138494,-104244],[-139784,-104244],[-141024,-104215],[-142187,-103360],[-143243,-101240],[-144167,-97806],[-144944,-93096],[-145575,-87242],[-146071,-80469],[-146445,-73106],[-146715,-65582],[-146912,-58424],[-147051,-52260],[-147146,-47813],[-147207,-44799],[-147237,-41804],[-147239,-38810],[-147220,-35815],[-147175,-32821],[-147100,-29828],[-146987,-26835],[-146811,-23846],[-146567,-20862],[-146237,-17886],[-145804,-14924],[-145250,-11982],[-144565,-9067],[-143751,-6186],[-142830,-3337],[-141842,-510],[-140841,2312],[-139879,5148],[-138999,8010],[-138224,10901],[-137555,13820],[-136979,16758],[-136470,19709],[-136000,22667]]},{"id":40,"a":0,"b":4,"punkte":[[0,-136000],[2965,-136472],[5923,-136981],[8869,-137559],[11794,-138231],[14693,-139009],[17561,-139893],[20404,-140858],[23233,-141862],[26067,-142851],[28924,-143771],[31814,-144582],[34737,-145260],[37689,-145800],[40662,-146210],[43649,-146503],[46645,-146691],[49645,-146784],[52647,-146784],[55647,-146680],[58642,-146479],[61770,-146170],[66521,-145740],[72694,-145171],[79612,-144453],[86703,-143582],[93501,-142569],[99644,-141438],[104861,-140220],[108970,-138944],[111870,-137629],[113544,-136278],[114062,-134882],[114062,-133422],[114062,-131874],[114062,-130219],[114062,-128448],[114062,-126570],[114062,-124597],[114062,-122538],[114062,-120399],[114062,-118177],[114062,-115863],[114062,-113447],[114062,-110913],[114062,-108273],[114062,-105544],[114062,-102748],[114062,-99908],[114062,-97041],[114062,-94164],[114098,-91290],[114577,-88429],[115624,-85587],[117229,-82767],[119357,-79962],[121926,-77159],[124803,-74346],[127806,-71513],[130724,-68659],[133329,-65785],[135388,-62901],[136664,-60015],[137513,-57136],[138411,-54272],[139369,-51427],[140379,-48600],[141410,-45781],[142414,-42952],[143335,-40095],[144113,-37197],[144702,-34256],[145065,-31278],[145183,-28281],[145047,-25285],[144660,-22310],[144037,-19376],[143203,-16494],[142197,-13666],[141062,-10888],[139843,-8145],[138578,-5422],[137292,-2710],[136000,0]]},{"id":41,"a":14,"b":15,"punkte":[[-419333,-45333],[-422301,-42001],[-425268,-41286],[-428235,-40650],[-431202,-40139],[-434168,-39797],[-437133,-39664],[-440096,-39664],[-443055,-39664],[-446006,-39664],[-448946,-39664],[-451869,-39664],[-454767,-39664],[-457632,-39664],[-460463,-39664],[-463269,-39664],[-466064,-39664],[-468870,-39664],[-471702,-39664],[-474567,-39664],[-477464,-39664],[-480387,-39664],[-483327,-39664],[-486279,-39664],[-489237,-39664],[-492200,-39663],[-495165,-39532],[-498132,-39191],[-501099,-38682],[-504066,-38047],[-507033,-37334],[-510000,-34000]]},{"id":42,"a":7,"b":14,"punkte":[[-419333,-45333],[-417240,-43183],[-415264,-40927],[-413499,-38504],[-412009,-35904],[-410807,-33158],[-409859,-30313],[-409106,-27410],[-408484,-24474],[-407932,-21525],[-407401,-18571],[-406843,-15623],[-406222,-12687],[-405506,-9773],[-404683,-6887],[-403760,-4032],[-402770,-1199],[-401761,1627],[-400789,4466],[-399901,7332],[-399131,10233],[-398488,13165],[-397943,16124],[-397507,19100],[-397187,22087],[-396967,25080],[-396827,28077],[-396744,31076],[-396700,34076],[-396679,37076],[-396670,40077],[-396667,43078],[-396666,46079],[-396666,49080],[-396666,52080],[-396666,55081],[-396666,58082],[-396666,61083],[-396666,64084],[-396666,67085],[-396666,70086],[-396666,73087],[-396666,76087],[-396666,79088],[-396666,82089],[-396666,85090],[-396666,88091],[-396666,91092],[-396666,94093],[-396666,97093],[-396666,100094],[-396666,103094],[-396658,106094],[-396629,109093],[-396558,112089],[-396417,115079],[-396168,118062],[-395770,121030],[-395182,123979],[-394382,126900],[-393384,129788],[-392267,132643],[-391180,135476],[-390177,138304],[-389213,141146],[-388331,144014],[-387555,146912],[-386885,149836],[-386308,152781],[-385798,155738],[-385326,158702],[-384853,161665],[-384339,164622],[-383752,167564],[-383063,170485],[-382252,173373],[-381310,176222],[-380247,179028],[-379084,181794],[-377852,184530],[-376581,187248],[-375293,189959],[-374000,192667]]},{"id":43,"a":14,"b":23,"punkte":[[-510000,-34000],[-511289,-31300],[-512573,-28598],[-513840,-25888],[-515069,-23161],[-516230,-20404],[-517292,-17608],[-518233,-14769],[-519045,-11890],[-519735,-8980],[-520323,-6047],[-520837,-3100],[-521309,-146],[-521779,2809],[-522285,5757],[-522857,8693],[-523520,11610],[-524289,14501],[-525163,17361],[-526122,20195],[-527125,23013],[-528121,25834],[-529062,28673],[-529911,31542],[-530651,34439],[-531288,37362],[-531840,40302],[-532336,43252],[-532806,46206],[-533284,49159],[-533804,52105],[-534399,55037],[-535097,57946],[-535910,60825],[-536829,63672],[-537830,66491],[-538873,69295],[-539915,72099],[-540916,74918],[-541856,77758],[-542736,80618],[-543570,83490],[-544389,86368],[-545223,89241],[-546100,92101],[-547038,94941],[-548036,97762],[-549075,100567],[-550120,103370],[-551125,106188],[-552049,109033],[-552865,111911],[-553567,114819],[-554167,117750],[-554691,120695],[-555171,123648],[-555641,126602],[-556134,129553],[-556683,132493],[-557314,135417],[-558049,138316],[-558893,141186],[-559830,144027],[-560825,146848],[-561829,149666],[-562792,152498],[-563671,155357],[-564446,158246],[-565113,161162],[-565689,164097],[-566197,167046],[-566667,170000]]},{"id":44,"a":1,"b":4,"punkte":[[136000,0],[139007,0],[142014,0],[145020,0],[148027,0],[151034,0],[154041,0],[157048,0],[160054,0],[163061,0],[166068,0],[169075,0],[172082,0],[175088,0],[178095,0],[181102,0],[184109,0],[187116,0],[190122,0],[193129,0],[196136,0],[199143,0],[202150,0],[205156,0],[208163,0],[211170,0],[214177,0],[217184,0],[220190,0],[223197,0],[226204,0],[229211,0],[232218,0],[235224,0],[238231,0],[241238,0],[244245,0],[247252,0],[250259,0],[253265,0],[256272,0],[259279,0],[262286,0],[265293,0],[268299,0],[271306,0],[274313,0],[277320,0],[280327,0],[283333,0]]},{"id":45,"a":0,"b":1,"punkte":[[136000,0],[135529,2962],[135020,5917],[134443,8860],[133772,11782],[132995,14678],[132113,17544],[131149,20383],[130146,23210],[129158,26041],[128236,28894],[127422,31780],[126738,34699],[126184,37645],[125749,40612],[125416,43592],[125163,46580],[124972,49573],[124782,52568],[123958,55564],[122441,58561],[120390,61557],[117970,64552],[115349,67544],[112693,70529],[110183,73502],[107997,76455],[106299,79374],[105222,82242],[104849,85036],[104849,87737],[104849,90336],[104849,92837],[104849,95264],[104849,97653],[104849,100047],[104849,102474],[104849,104953],[104849,107487],[104849,110064],[104849,112669],[104849,115280],[104849,117873],[104849,120427],[104849,122918],[104849,125336],[104849,127682],[104849,129960],[104814,132183],[104171,134365],[102650,136517],[100205,138648],[96861,140759],[92703,142845],[87884,144895],[82616,146889],[77174,148796],[71902,150581],[67227,152197],[63684,153600],[60915,154751],[58046,155619],[55101,156185],[52117,156462],[49119,156461],[46133,156195],[43178,155690],[40265,154980],[37394,154115],[34553,153156],[31722,152168],[28879,151213],[26012,150334],[23116,149559],[20193,148890],[17250,148313],[14295,147804],[11333,147333]]},{"id":46,"a":1,"b":10,"punkte":[[283333,0],[283216,3014],[283078,6027],[282904,9037],[282678,12045],[282378,15045],[281983,18035],[281472,21007],[280829,23954],[280046,26866],[279147,29745],[278166,32597],[277155,35439],[276175,38291],[275277,41170],[274497,44083],[273854,47030],[273347,50003],[272957,52993],[272665,55995],[272449,59003],[272293,62015],[272181,65029],[272101,68043],[272044,71059],[271993,74074],[271941,77090],[271877,80105],[271795,83120],[271675,86134],[271502,89145],[271264,92151],[270942,95149],[270517,98135],[269972,101100],[269293,104038],[268482,106942],[267559,109814],[266567,112661],[265557,115503],[264585,118358],[263695,121240],[262910,124151],[262234,127090],[261653,130049],[261140,133021],[260667,136000]]},{"id":47,"a":11,"b":18,"punkte":[[634667,0],[631649,0],[628632,0],[625615,0],[622598,0],[619580,0],[616563,0],[613546,0],[610529,0],[607511,0],[604494,0],[601477,0],[598459,0],[595442,2],[592425,6],[589408,12],[586390,18],[583373,25],[580356,32],[577339,39],[574321,45],[571304,50],[568287,53],[565269,54],[562252,54],[559235,54],[556218,54],[553200,54],[550183,54],[547166,54],[544149,54],[541131,54],[538114,54],[535097,54],[532080,54],[529064,54],[526049,54],[523036,54],[520028,54],[517028,54],[514040,54],[511072,54],[508131,73],[505223,234],[502349,627],[499499,1318],[496657,2335],[493802,3647],[490921,5170],[488010,6780],[485071,8334],[482112,9690],[479139,10716],[476159,11310],[473179,11785],[470206,12300],[467247,12885],[464309,13572],[461403,14382],[458538,15324],[455715,16390],[452933,17557],[450182,18795],[447448,20072],[444723,21367],[442000,22667]]},{"id":48,"a":11,"b":28,"punkte":[[634667,0],[635137,2956],[635645,5907],[636221,8844],[636889,11762],[637665,14653],[638544,17514],[639505,20348],[640506,23170],[641493,25996],[642413,28844],[643225,31725],[643905,34640],[644449,37582],[644864,40546],[645161,43524],[645353,46511],[645451,49503],[645451,52497],[645353,55489],[645161,58476],[644864,61454],[644449,64418],[643905,67360],[643225,70275],[642413,73156],[641493,76004],[640506,78830],[639505,81652],[638544,84486],[637665,87347],[636889,90238],[636221,93156],[635645,96093],[635137,99044],[634667,102000]]},{"id":49,"a":2,"b":3,"punkte":[[-136000,22667],[-139017,22669],[-142034,22672],[-145051,22703],[-148068,23052],[-151084,23737],[-154101,24683],[-157118,25811],[-160134,27039],[-163150,28284],[-166164,29464],[-169176,30495],[-172182,31298],[-175178,31799],[-178160,31954],[-181120,31954],[-184051,31954],[-186948,31954],[-189815,31954],[-192662,31954],[-195509,31954],[-198375,31954],[-201271,31954],[-204200,31954],[-207158,31954],[-210137,31954],[-213129,31954],[-216130,31954],[-219136,31954],[-222143,31954],[-225149,31954],[-228151,31954],[-231146,31954],[-234129,31975],[-237093,32154],[-240030,32556],[-242935,33238],[-245806,34240],[-248655,35571],[-251497,37181],[-254353,38960],[-257235,40749],[-260148,42361],[-263087,43612],[-266048,44347],[-269021,44859],[-272000,45333]]},{"id":50,"a":0,"b":2,"punkte":[[-136000,22667],[-135998,25675],[-135995,28683],[-135990,31691],[-135981,34699],[-135968,37708],[-135944,40716],[-135906,43724],[-135848,46731],[-135764,49738],[-135643,52744],[-135463,55747],[-135207,58744],[-134862,61732],[-134406,64705],[-133820,67654],[-133086,70706],[-132198,75035],[-131163,80388],[-129999,86199],[-128727,92001],[-127366,97427],[-125915,102196],[-124360,106115],[-122671,109081],[-120808,111077],[-118744,112165],[-116499,112468],[-114104,112468],[-111601,112468],[-109027,112468],[-106410,112468],[-103768,112468],[-101110,112468],[-98439,112468],[-95756,112468],[-93063,112468],[-90365,112468],[-87667,112468],[-84973,112468],[-82286,112468],[-79603,112468],[-76921,112468],[-74234,112468],[-71539,112468],[-68837,112468],[-66129,112529],[-63416,113120],[-60696,114361],[-57960,116239],[-55197,118684],[-52395,121562],[-49547,124682],[-46653,127809],[-43721,130690],[-40761,133073],[-37783,134721],[-34794,135426],[-31800,135709],[-28802,135962],[-25804,136209],[-22808,136476],[-19816,136791],[-16835,137193],[-13870,137700],[-10930,138334],[-8025,139110],[-5162,140031],[-2344,141084],[431,142243],[3175,143474],[5901,144747],[8619,146037],[11333,147333]]},{"id":51,"a":10,"b":11,"punkte":[[442000,22667],[441529,25623],[441021,28573],[440444,31511],[439774,34428],[438995,37318],[438107,40176],[437129,43006],[436096,45816],[435010,48622],[433376,51438],[431258,54274],[428884,57130],[426427,60001],[424021,62879],[421785,65755],[419823,68620],[418228,71468],[417070,74293],[416382,77099],[416152,79894],[416152,82692],[416152,85504],[416152,88339],[416152,91194],[416152,94065],[416152,96943],[416152,99819],[416152,102685],[416152,105533],[416152,108360],[416152,111171],[416152,113977],[416152,116793],[416152,119633],[416152,122505],[416152,125407],[416152,128334],[416152,131277],[416140,134230],[415871,137187],[415250,140141],[414293,143087],[413012,146019],[411423,148928],[409548,151808],[407444,154657],[405223,157483],[403061,160303],[401198,163135],[399907,165994],[399133,168887],[398495,171812],[397995,174764],[397608,177732],[397314,180711],[397091,183696],[396920,186685],[396783,189675],[396667,192667]]},{"id":52,"a":2,"b":7,"punkte":[[-272000,45333],[-272000,48375],[-272000,51416],[-272000,54458],[-272000,57499],[-272000,60541],[-272000,63582],[-271999,66623],[-271998,69665],[-271996,72706],[-271992,75748],[-271986,78789],[-271974,81831],[-271954,84872],[-271922,87913],[-271875,90954],[-271802,93995],[-271688,97034],[-271524,100071],[-271296,103104],[-270985,106129],[-270572,109142],[-270037,112135],[-269365,115101],[-268558,118033],[-267634,120930],[-266635,123803],[-265616,126669],[-264632,129546],[-263729,132450],[-262934,135385],[-262249,138349],[-261661,141332],[-261144,144330],[-260667,147333]]},{"id":53,"a":19,"b":28,"punkte":[[634667,102000],[637632,102498],[640589,103045],[643528,103682],[646434,104453],[649288,105397],[652067,106542],[654749,107900],[657318,109461],[659766,111207],[662111,113089],[664377,115066],[666587,117105],[668760,119184],[670911,121285],[673049,123400],[675181,125521],[677309,127645],[679436,129771],[681563,131897],[683690,134023],[685816,136149],[687942,138276],[690069,140402],[692195,142677],[694322,146351],[696448,151237],[698574,156804],[700701,162592],[702827,168212],[704954,173347],[707080,177749],[709206,181241],[711333,183715],[713459,185138],[715586,185545],[717712,185545],[719838,185545],[721965,185545],[724091,185545],[726217,185545],[728344,185545],[730470,185545],[732597,185545],[734723,185545],[736849,185545],[738976,185545],[741102,185545],[743229,185545],[745355,185545],[747482,185545],[749609,185545],[751736,185545],[753866,185545],[755999,185645],[758140,186590],[760294,188575],[762474,191590],[764691,195545],[766960,200270],[769294,205515],[771701,210958],[774185,216214],[776738,220858],[779347,224434],[781998,226487],[784677,227854],[787375,229182],[790090,230476],[792827,231721],[795596,232893],[798406,233962],[801260,234908],[804154,235723],[807080,236414],[810029,237003],[812992,237519],[815961,237994],[818930,238469],[821893,238983],[824842,239570],[827769,240258],[830664,241069],[833520,242011],[836332,243075],[839104,244240],[841846,245474],[844570,246747],[847286,248038],[850000,249333]]},{"id":54,"a":11,"b":19,"punkte":[[634667,102000],[634550,104998],[634412,107995],[634240,110990],[634015,113982],[633716,116967],[633323,119941],[632810,122897],[632152,125824],[631344,128713],[630390,131558],[629310,134357],[628128,137115],[626883,139844],[625604,142558],[624308,145264],[623002,147965],[621685,150661],[620352,153349],[619004,156029],[617647,158705],[616289,161380],[614940,164060],[613603,166746],[612277,169437],[610953,172130],[609621,174818],[608278,177501],[606922,180177],[605561,182851],[604207,185529],[602865,188212],[601535,190901],[600211,193594],[598883,196284],[597544,198969],[596192,201647],[594829,204320],[593463,206992],[592099,209664],[590734,212335],[589355,215000],[587941,217646],[586463,220257],[584900,222818],[583244,225320],[581502,227762],[579694,230156],[577851,232523],[576011,234893],[574210,237293],[572479,239743],[570838,242255],[569295,244828],[567831,247446],[566423,250095],[565046,252761],[563680,255432],[562314,258104],[560945,260773],[559576,263443],[558211,266115],[556845,268786],[555386,271451],[552924,274099],[549514,276715],[545522,279281],[541297,281787],[537163,284233],[533391,286630],[530192,288999],[527699,291368],[525969,293764],[524986,296211],[524683,298718],[524683,301285],[524683,303904],[524683,306557],[524683,309234],[524683,311926],[524683,314632],[524683,317358],[524683,320110],[524683,322896],[524683,325715],[524683,328564],[524683,331434],[524683,334314],[524683,337195],[524683,340065],[524683,342914],[524683,345734],[524683,348520],[524658,351275],[524275,354005],[523378,356719],[521933,359425],[519952,362127],[517487,364825],[514628,367516],[511511,370200],[508315,372876],[505277,375551],[502679,378228],[500849,380912],[499519,383601],[498194,386293],[496867,388984],[495528,391668],[494175,394346],[492812,397020],[491447,399691],[490082,402363],[488717,405035],[487336,407698],[485920,410343],[484435,412950],[482860,415504],[481181,417990],[479397,420401],[477517,422739],[475560,425013],[473547,427237],[471500,429431],[469440,431612],[467389,433802],[465370,436021],[463404,438287],[461513,440615],[459713,443015],[458012,445486],[456407,448020],[454876,450601],[453385,453204],[451887,455804],[450329,458368],[448667,460865],[446866,463263],[444905,465532],[442782,467649],[440508,469604],[438106,471400],[435606,473057],[433039,474611],[430438,476106],[427834,477596],[425251,479123],[422711,480719],[420225,482398],[417795,484157],[415408,485975],[413043,487821],[410672,489659],[408265,491450],[405800,493160],[403274,494779],[400693,496308],[398069,497762],[395416,499164],[392749,500538],[390077,501902],[387405,503267],[384734,504632],[382059,505993],[379379,507341],[376692,508675],[374000,510000]]},{"id":55,"a":5,"b":10,"punkte":[[260667,136000],[263652,136478],[266630,136996],[269594,137587],[272535,138360],[275444,140101],[278313,142759],[281137,146003],[283922,149510],[286676,152989],[289413,156201],[292140,158968],[294862,161166],[297579,162723],[300289,163611],[302990,163854],[305686,163854],[308381,163854],[311081,163854],[313786,163854],[316497,163854],[319210,163854],[321919,163854],[324622,163854],[327319,163854],[330014,163854],[332711,163854],[335414,163854],[338123,163854],[340836,163854],[343547,163854],[346253,163854],[348952,163854],[351647,163854],[354343,163959],[357045,164649],[359754,166009],[362471,168025],[365193,170638],[367921,173745],[370657,177189],[373412,180760],[376196,184188],[379021,187152],[381889,189308],[384798,190384],[387740,191079],[390704,191671],[393682,192189],[396667,192667]]},{"id":56,"a":1,"b":5,"punkte":[[260667,136000],[260170,138955],[259626,141901],[258992,144829],[258225,147725],[257287,150570],[256150,153340],[254802,156014],[253251,158577],[251520,161022],[249649,163361],[247682,165621],[245652,167825],[243582,169991],[241489,172135],[239382,174266],[237269,176390],[235153,178511],[233035,180630],[230917,182749],[228798,184868],[226679,186987],[224560,189105],[222440,191222],[220318,193337],[218191,195447],[216055,197548],[213903,199633],[211724,201690],[209506,203704],[207234,205657],[204896,207591],[202483,210366],[199996,213923],[197442,217891],[194833,221973],[192190,225940],[189530,229599],[186862,232786],[184194,235371],[181528,237261],[178862,238409],[176194,238811],[173527,238812],[170865,238812],[168219,238812],[165606,238812],[163040,238812],[160539,238812],[158116,238812],[155768,238812],[153488,238812],[151264,238812],[149081,238812],[146925,238812],[144787,238812],[142659,238812],[140536,238812],[138416,238812],[136296,238812],[134177,238812],[132057,238842],[129935,239566],[127809,241312],[125675,244089],[123526,247837],[121352,252417],[119139,257616],[116875,263141],[114545,268626],[112141,273642],[109663,277711],[107117,280325],[104517,281822],[101879,283243],[99219,284622],[96552,285986],[93883,287348],[91215,288712],[88546,290073],[85871,291423],[83188,292757],[80498,294076],[77801,295382],[75100,296678],[72391,297959],[69669,299210],[66920,300403],[64135,301506],[61304,302486],[58427,303320],[55510,304004],[52564,304546],[49598,304963],[46618,305278],[43631,305510],[40640,305677],[37646,305794],[34651,305867],[31655,305919],[28659,305955],[25663,305980],[22667,306000]]},{"id":57,"a":6,"b":7,"punkte":[[-260667,147333],[-263633,148841],[-266590,151212],[-269529,154271],[-272436,157764],[-275292,161424],[-278075,164982],[-280766,168177],[-283355,170794],[-285846,172682],[-288270,173778],[-290666,174113],[-293071,174113],[-295515,174113],[-298015,174113],[-300573,174113],[-303184,174113],[-305834,174113],[-308511,174113],[-311205,174113],[-313914,174113],[-316641,174113],[-319392,174113],[-322176,174113],[-324994,174113],[-327843,174113],[-330716,174113],[-333603,174113],[-336493,174113],[-339378,174113],[-342248,174149],[-345098,174561],[-347928,175460],[-350747,176856],[-353570,178715],[-356411,180950],[-359282,183419],[-362185,185942],[-365115,188322],[-368066,190360],[-371030,191868],[-374000,192667]]},{"id":58,"a":2,"b":6,"punkte":[[-260667,147333],[-258054,148816],[-255467,150341],[-252926,151943],[-250449,153641],[-248044,155440],[-245711,157333],[-243444,159302],[-241227,161330],[-239049,163398],[-236896,165493],[-234757,167602],[-232626,169719],[-230498,171839],[-228373,173962],[-226248,176086],[-224124,178210],[-222000,180334],[-219876,182458],[-217752,184582],[-215628,186706],[-213504,188830],[-211380,190954],[-209256,193078],[-207132,195203],[-205010,197329],[-202891,199458],[-200777,201592],[-198558,203736],[-195185,205898],[-190831,208089],[-185976,210322],[-181020,212611],[-176285,214969],[-172014,217403],[-168373,219910],[-165475,222474],[-163388,225074],[-162154,227688],[-161775,230293],[-161775,232865],[-161775,235384],[-161775,237836],[-161775,240214],[-161775,242520],[-161775,244762],[-161775,246960],[-161775,249127],[-161775,251274],[-161775,253410],[-161775,255539],[-161775,257665],[-161775,259788],[-161775,261907],[-161775,264021],[-161775,266124],[-161775,268207],[-161775,270260],[-161696,272266],[-160790,274206],[-158801,276059],[-155693,277802],[-151500,279438],[-146334,280974],[-140393,282427],[-133972,283818],[-127457,285168],[-121324,286487],[-116140,287774],[-112545,289016],[-109781,290191],[-106983,291282],[-104150,292283],[-101291,293201],[-98412,294060],[-95526,294891],[-92641,295728],[-89767,296602],[-86911,297532],[-84075,298522],[-81255,299557],[-78438,300601],[-75608,301608],[-72750,302531],[-69856,303337],[-66929,304007],[-63974,304543],[-61000,304960],[-58013,305275],[-55018,305508],[-52019,305676],[-49018,305792],[-46015,305867],[-43011,305919],[-40008,305955],[-37004,305980],[-34000,306000]]},{"id":59,"a":1,"b":2,"punkte":[[11333,147333],[11333,150352],[11333,153371],[11333,156389],[11333,159408],[11333,162426],[11340,165445],[11420,168463],[11576,171482],[11791,174501],[12046,177519],[12324,180538],[12607,183556],[12877,186575],[13115,189594],[13304,192612],[13426,195631],[13463,198649],[13463,201668],[13463,204686],[13463,207703],[13463,210720],[13463,213734],[13463,216743],[13463,219744],[13463,222732],[13463,225701],[13463,228642],[13463,231550],[13463,234425],[13463,237276],[13463,240123],[13463,242984],[13463,245874],[13463,248798],[13463,251753],[13519,254731],[13894,257727],[14587,260734],[15535,263746],[16661,266761],[17882,269778],[19116,272796],[20280,275814],[21290,278833],[22072,281851],[22549,284870],[22660,287888],[22663,290907],[22665,293926],[22666,296944],[22666,299963],[22667,302981],[22667,306000]]},{"id":60,"a":22,"b":23,"punkte":[[-566667,170000],[-569664,170002],[-572662,170005],[-575659,170010],[-578656,170018],[-581654,170031],[-584651,170055],[-587648,170093],[-590645,170150],[-593641,170232],[-596636,170350],[-599629,170529],[-602615,170778],[-605594,171114],[-608558,171555],[-611501,172118],[-614415,172814],[-617296,173642],[-620142,174580],[-622963,175594],[-625774,176635],[-628590,177661],[-631424,178638],[-634277,179555],[-637148,180417],[-640028,181247],[-642909,182074],[-645782,182928],[-648639,183835],[-651474,184806],[-654289,185887],[-657089,187709],[-659889,190208],[-662700,193076],[-665531,196066],[-668384,198989],[-671254,201703],[-674134,204097],[-677013,206074],[-679881,207551],[-682730,208465],[-685549,208783],[-688335,208784],[-691087,208784],[-693812,208784],[-696517,208784],[-699208,208784],[-701883,208784],[-704536,208784],[-707155,208784],[-709728,208784],[-712238,208784],[-714687,208784],[-717085,208784],[-719452,208784],[-721818,208784],[-724209,208784],[-726648,208784],[-729148,208784],[-731706,208784],[-734316,208813],[-736965,209414],[-739637,210799],[-742325,212942],[-745028,215764],[-747749,219137],[-750496,222878],[-753275,226753],[-756089,230488],[-758932,233792],[-761798,236362],[-764676,237898],[-767556,238730],[-770429,239585],[-773287,240488],[-776125,241453],[-778944,242470],[-781755,243511],[-784572,244535],[-787412,245493],[-790284,246348],[-793191,247075],[-796128,247669],[-799088,248138],[-802064,248497],[-805050,248760],[-808042,248944],[-811036,249076],[-814032,249168],[-817029,249231],[-820026,249273],[-823023,249297],[-826021,249312],[-829018,249321],[-832015,249327],[-835013,249330],[-838010,249332],[-841008,249333],[-844005,249333],[-847003,249333],[-850000,249333]]},{"id":61,"a":14,"b":22,"punkte":[[-566667,170000],[-566667,173013],[-566667,176027],[-566667,179040],[-566667,182054],[-566667,185067],[-566667,188081],[-566667,191094],[-566667,194107],[-566667,197121],[-566667,200134],[-566667,203148],[-566667,206161],[-566667,209174],[-566667,212188],[-566667,215201],[-566667,218215],[-566667,221228],[-566667,224242],[-566667,227255],[-566667,230268],[-566667,233282],[-566667,236295],[-566667,239309],[-566667,242322],[-566667,245335],[-566667,248349],[-566667,251362],[-566667,254376],[-566667,257389],[-566667,260403],[-566667,263416],[-566667,266429],[-566667,269443],[-566667,272456],[-566667,275470],[-566667,278483],[-566667,281497],[-566666,284510],[-566666,287523],[-566666,290537],[-566666,293550],[-566666,296564],[-566666,299577],[-566666,302590],[-566666,305604],[-566666,308617],[-566666,311631],[-566666,314644],[-566666,317658],[-566666,320671],[-566666,323684],[-566666,326698],[-566666,329711],[-566666,332725],[-566666,335738],[-566666,338751],[-566666,341765],[-566666,344778],[-566666,347792],[-566666,350805],[-566657,353817],[-566629,356829],[-566565,359839],[-566441,362845],[-566223,365846],[-565872,368836],[-565343,371809],[-564619,374756],[-563710,377673],[-562685,380555],[-561675,383409],[-560666,386248],[-559670,389092],[-558739,391958],[-557907,394854],[-557187,397780],[-556571,400729],[-556034,403694],[-555545,406668],[-555072,409644],[-554579,412616],[-554033,415580],[-553404,418526],[-552669,421448],[-551819,424339],[-550866,427197],[-549840,430031],[-548782,432852],[-547733,435677],[-546719,438515],[-545747,441367],[-544798,444227],[-543834,447082],[-542799,449911],[-541628,452687],[-540260,455369],[-538656,457917],[-536818,460301],[-534794,462533],[-532667,464667]]},{"id":62,"a":6,"b":14,"punkte":[[-374000,192667],[-373882,195679],[-373745,198690],[-373571,201699],[-373345,204705],[-373045,207704],[-372651,210692],[-372141,213663],[-371499,216608],[-370717,219519],[-369818,222396],[-368838,225247],[-367828,228087],[-366848,230937],[-365950,233815],[-365168,236726],[-364525,239671],[-364015,242641],[-363621,245630],[-363322,248629],[-363095,251634],[-362922,254643],[-362784,257655],[-362667,260667]]},{"id":63,"a":5,"b":11,"punkte":[[396667,192667],[396647,195679],[396621,198690],[396585,201702],[396533,204714],[396457,207725],[396340,210734],[396171,213741],[395936,216744],[395617,219739],[395197,222720],[394655,225682],[393978,228617],[393166,231517],[392237,234381],[391225,237218],[390179,240043],[389143,242871],[388153,245715],[387223,248580],[386350,251463],[385511,254355],[384677,257249],[383812,260135],[382886,263000],[381877,265838],[380779,268642],[379599,271413],[378357,274157],[377078,276884],[375779,279602],[374471,282315],[373155,285024],[371826,287727],[370480,290422],[369120,293109],[367751,295792],[366380,298473],[365011,301156],[363637,303836],[362240,306505],[360797,309149],[359280,311750],[357667,314293],[355947,316765],[354117,319157],[352187,321468],[350168,323703],[348064,325859],[345888,327941],[343639,329943],[341313,331856],[338908,333668],[336426,335375],[333880,336983],[331286,338513],[328667,340000]]},{"id":64,"a":22,"b":-1,"punkte":[[-850000,249333],[-850000,260667],[-850000,272000],[-850000,283333],[-850000,294667],[-850000,306000],[-850000,317333],[-850000,328667],[-850000,340000],[-850000,351333],[-850000,362667],[-850000,374000],[-850000,385333],[-850000,396667],[-850000,408000],[-850000,419333],[-850000,430667],[-850000,442000],[-850000,453333],[-850000,464667],[-850000,476000],[-850000,487333],[-850000,498667],[-850000,510000],[-850000,521333],[-850000,532667],[-850000,544000],[-850000,555333],[-850000,566667],[-850000,578000],[-850000,589333],[-850000,600667],[-850000,612000],[-850000,623333],[-850000,634667],[-850000,646000],[-850000,657333],[-850000,668667],[-850000,680000],[-850000,691333],[-850000,702667],[-850000,714000],[-850000,725333],[-850000,736667],[-850000,748000],[-850000,759333],[-850000,770667],[-850000,782000],[-850000,793333],[-850000,804667],[-850000,816000],[-850000,827333],[-850000,838667],[-850000,850000],[-838667,850000],[-827333,850000],[-816000,850000],[-804667,850000],[-793333,850000],[-782000,850000],[-770667,850000],[-759333,850000]]},{"id":65,"a":19,"b":-1,"punkte":[[850000,249333],[850000,260667],[850000,272000],[850000,283333],[850000,294667],[850000,306000],[850000,317333],[850000,328667],[850000,340000],[850000,351333],[850000,362667],[850000,374000],[850000,385333],[850000,396667],[850000,408000],[850000,419333],[850000,430667],[850000,442000],[850000,453333],[850000,464667],[850000,476000],[850000,487333],[850000,498667],[850000,510000],[850000,521333],[850000,532667],[850000,544000],[850000,555333],[850000,566667],[850000,578000],[850000,589333],[850000,600667],[850000,612000],[850000,623333],[850000,634667],[850000,646000],[850000,657333],[850000,668667],[850000,680000],[850000,691333],[850000,702667],[850000,714000],[850000,725333],[850000,736667],[850000,748000],[850000,759333],[850000,770667],[850000,782000],[850000,793333],[850000,804667],[850000,816000],[850000,827333],[850000,838667],[850000,850000],[838667,850000],[827333,850000],[816000,850000],[804667,850000],[793333,850000],[782000,850000],[770667,850000],[759333,850000],[748000,850000],[736667,850000],[725333,850000],[714000,850000],[702667,850000],[691333,850000],[680000,850000],[668667,850000],[657333,850000],[646000,850000],[634667,850000],[623333,850000],[612000,850000],[600667,850000],[589333,850000],[578000,850000],[566667,850000],[555333,850000]]},{"id":66,"a":13,"b":14,"punkte":[[-362667,260667],[-365622,261163],[-368569,261707],[-371498,262342],[-374394,263109],[-377239,264047],[-380010,265186],[-382683,266537],[-385243,268093],[-387682,269834],[-390005,271727],[-392232,273731],[-394375,275826],[-396436,278000],[-398414,280252],[-400297,282582],[-402078,284992],[-403754,287476],[-405331,290024],[-406838,292615],[-408313,295224],[-409796,297828],[-411325,300405],[-412927,302937],[-414614,305414],[-416444,307836],[-419268,310215],[-422972,312576],[-427112,314948],[-431316,317361],[-435307,319830],[-438884,322359],[-441913,324942],[-444313,327567],[-446034,330219],[-447060,332884],[-447409,335552],[-447410,338220],[-447410,340886],[-447410,343553],[-447410,346222],[-447410,348890],[-447410,351548],[-447410,354184],[-447410,356782],[-447410,359329],[-447410,361816],[-447410,364246],[-447410,366630],[-447410,368993],[-447410,371362],[-447410,373767],[-447410,376230],[-447410,378753],[-447410,381332],[-447437,383953],[-448028,386603],[-449403,389267],[-451539,391936],[-454373,394604],[-457794,397270],[-461649,399937],[-465733,402606],[-469806,405274],[-473591,407934],[-476783,410571],[-479029,413171],[-480614,415716],[-482299,418193],[-484090,420596],[-485975,422925],[-487939,425188],[-489961,427400],[-492023,429575],[-494112,431723],[-496216,433857],[-498328,435983],[-500445,438105],[-502564,440224],[-504686,442341],[-506812,444453],[-508946,446557],[-511094,448646],[-513269,450708],[-515480,452730],[-517744,454694],[-520071,456581],[-522471,458375],[-524943,460068],[-527479,461666],[-530060,463188],[-532667,464667]]},{"id":67,"a":6,"b":13,"punkte":[[-362667,260667],[-361378,263366],[-360094,266068],[-358828,268779],[-357602,271507],[-356447,274266],[-355396,277067],[-354475,279912],[-353697,282800],[-353060,285722],[-352549,288669],[-352146,291633],[-351830,294608],[-351562,297587],[-351315,300569],[-351065,303550],[-350789,306528],[-350461,309502],[-350055,312465],[-349540,315412],[-348897,318333],[-348125,321223],[-347234,324079],[-346250,326904],[-345216,329710],[-344176,332515],[-343172,335333],[-342226,338171],[-341341,341029],[-340500,343900],[-339676,346775],[-338834,349646],[-337943,352501],[-336977,355332],[-335924,358132],[-334784,360898],[-333574,363634],[-332316,366348],[-331031,369049],[-329735,371745],[-328432,374438],[-327118,377125],[-325790,379806],[-324445,382478],[-323089,385144],[-321727,387808],[-320367,390472],[-319006,393136],[-317633,395794],[-316229,398435],[-314767,401045],[-313223,403607],[-311577,406105],[-309819,408525],[-307962,410870],[-306022,413146],[-304018,415367],[-301968,417546],[-299887,419716],[-297784,422709],[-295664,426596],[-293522,430933],[-291353,435345],[-289145,439530],[-286884,443258],[-284559,446375],[-282159,448799],[-279685,450507],[-277142,451526],[-274544,451918],[-271906,451928],[-269241,451928],[-266560,451928],[-263864,451928],[-261150,451928],[-258411,451928],[-255640,451928],[-252836,451928],[-250000,451928],[-247142,451928],[-244270,451928],[-241395,451928],[-238526,451928],[-235672,451928],[-232838,451928],[-230023,451928],[-227217,451928],[-224408,451928],[-221577,451930],[-218714,452173],[-215817,452845],[-212889,453915],[-209937,455307],[-206968,456917],[-203987,458620],[-201002,460299],[-198013,461832],[-195022,463100],[-192031,463985],[-189040,464377],[-186050,464309],[-183062,464159],[-180079,463939],[-177104,463635],[-174140,463228],[-171196,462702],[-168278,462044],[-165393,461254],[-162542,460351],[-159715,459373],[-156895,458373],[-154064,457409],[-151205,456528],[-148314,455762],[-145392,455121],[-142445,454607],[-139481,454203],[-136507,453875],[-133529,453600],[-130548,453351],[-127567,453104],[-124587,452836],[-121612,452522],[-118648,452122],[-115699,451619],[-112773,450998],[-109877,450251],[-107014,449387],[-104178,448434],[-101358,447438],[-98532,446455],[-95685,445538],[-92806,444727],[-89895,444041],[-86957,443480],[-84001,443029],[-81031,442667],[-78055,442370],[-75074,442113],[-72093,441873],[-69112,441616],[-66136,441315],[-63167,440949],[-60212,440492],[-57275,439923],[-54366,439230],[-51489,438411],[-48644,437489],[-45820,436501],[-43001,435501],[-40168,434540],[-37309,433662],[-34420,432888],[-31504,432220],[-28569,431644],[-25621,431137],[-22667,430667]]},{"id":68,"a":2,"b":5,"punkte":[[-34000,306000],[-31018,306000],[-28035,306000],[-25053,306000],[-22070,306000],[-19088,306000],[-16105,306000],[-13123,306000],[-10140,306000],[-7158,306000],[-4175,306000],[-1193,306000],[1789,306000],[4772,306000],[7754,306000],[10737,306000],[13719,306000],[16702,306000],[19684,306000],[22667,306000]]},{"id":69,"a":5,"b":6,"punkte":[[-34000,306000],[-33999,309000],[-33986,312000],[-33960,314999],[-33924,317999],[-33881,320999],[-33834,323999],[-33786,326998],[-33740,329998],[-33699,332998],[-33666,335998],[-33644,338998],[-33636,341997],[-33636,344997],[-33636,347997],[-33636,350997],[-33636,353996],[-33636,356996],[-33636,359996],[-33636,362995],[-33636,365994],[-33636,368992],[-33636,371987],[-33636,374978],[-33636,377963],[-33636,380935],[-33636,383890],[-33636,386818],[-33636,389714],[-33636,392576],[-33636,395411],[-33621,398238],[-33376,401076],[-32791,403941],[-31867,406839],[-30655,409770],[-29247,412728],[-27748,415702],[-26270,418687],[-24922,421678],[-23807,424673],[-23024,427669],[-22667,430667]]},{"id":70,"a":5,"b":12,"punkte":[[328667,340000],[325964,341295],[323260,342586],[320550,343867],[317827,345119],[315081,346319],[312304,347445],[309494,348485],[306653,349439],[303789,350322],[300912,351161],[298032,351989],[295158,352840],[292299,353738],[289460,354697],[286640,355711],[283830,356752],[281015,357780],[278178,358748],[275311,359616],[272409,360362],[269477,360979],[266522,361477],[263551,361875],[260571,362188],[257586,362453],[254599,362699],[251612,362950],[248629,363229],[245651,363563],[242683,363976],[239731,364495],[236805,365142],[233911,365920],[231049,366811],[228215,367784],[225391,368788],[222558,369766],[219700,370667],[216808,371478],[213884,372540],[210935,373853],[207968,375309],[204991,376833],[202008,378364],[199022,379839],[196035,381194],[193049,382363],[190069,383275],[187097,383863],[184141,384079],[181206,384080],[178301,384080],[175430,384080],[172591,384080],[169774,384080],[166964,384080],[164145,384080],[161308,384080],[158450,384080],[155577,384080],[152697,384080],[149817,384080],[146947,384080],[144095,384080],[141265,384080],[138455,384080],[135656,384080],[132856,384080],[130041,384094],[127206,384426],[124349,385217],[121476,386457],[118595,388107],[115715,390108],[112846,392392],[109995,394871],[107166,397425],[104356,399887],[101558,402030],[98757,403568],[95942,404599],[93106,405565],[90248,406467],[87374,407318],[84493,408144],[81614,408975],[78745,409840],[75893,410761],[73062,411743],[70247,412773],[67439,413819],[64620,414837],[61778,415786],[58904,416634],[55999,417370],[53070,418001],[50124,418549],[47167,419041],[44208,419512],[41250,419995],[38300,420523],[35365,421127],[32452,421833],[29569,422650],[26717,423569],[23887,424556],[21064,425564],[18230,426536],[15367,427423],[12472,428195],[9544,428834],[6589,429336],[3617,429723],[635,430018],[-2353,430242],[-5345,430413],[-8339,430550],[-11333,430667]]},{"id":71,"a":11,"b":12,"punkte":[[328667,340000],[329163,342957],[329707,345905],[330342,348835],[331107,351733],[332042,354580],[333172,357356],[334504,360040],[336024,362624],[337697,365111],[339534,367528],[342190,369916],[345501,372313],[349076,374748],[352614,377237],[355897,379785],[358781,382385],[361175,385025],[363026,387692],[364313,390377],[365048,393076],[365280,395793],[365280,398533],[365280,401306],[365280,404112],[365280,406951],[365280,409813],[365280,412691],[365280,415572],[365280,418449],[365280,421312],[365280,424155],[365280,426978],[365280,429789],[365280,432604],[365280,435437],[365280,438302],[365280,441202],[365280,444134],[365280,447090],[365297,450065],[365577,453050],[366168,456041],[367012,459036],[368037,462032],[369168,465029],[370328,468027],[371443,471025],[372440,474023],[373245,477021],[373788,480019],[373996,483017],[373998,486015],[373999,489013],[374000,492011],[374000,495010],[374000,498008],[374000,501006],[374000,504004],[374000,507002],[374000,510000]]},{"id":72,"a":5,"b":13,"punkte":[[-22667,430667],[-19833,430667],[-17000,430667],[-14167,430667],[-11333,430667]]},{"id":73,"a":12,"b":13,"punkte":[[-11333,430667],[-11805,433616],[-12317,436560],[-12958,439489],[-14487,442397],[-16914,445274],[-19951,448111],[-23304,450905],[-26692,453660],[-29871,456385],[-32648,459091],[-34890,461787],[-36516,464479],[-37493,467165],[-37832,469844],[-37833,472514],[-37833,475179],[-37833,477842],[-37833,480509],[-37833,483181],[-37833,485859],[-37833,488540],[-37833,491219],[-37833,493892],[-37833,496558],[-37833,499222],[-37833,501886],[-37833,504555],[-37833,507231],[-37833,509911],[-37833,512591],[-37833,515268],[-37833,517937],[-37844,520601],[-38267,523264],[-39338,525931],[-41064,528604],[-43410,531282],[-46296,533962],[-49604,536641],[-53177,539314],[-56814,541980],[-60261,544644],[-63216,547308],[-65331,549977],[-66681,552653],[-68000,555333]]},{"id":74,"a":13,"b":22,"punkte":[[-532667,464667],[-532195,467616],[-531684,470559],[-531101,473488],[-530418,476395],[-529615,479271],[-528682,482108],[-527626,484901],[-526468,487654],[-525236,490375],[-523954,493072],[-522637,495753],[-521285,498416],[-519884,501054],[-518409,503651],[-516842,506194],[-515171,508669],[-513394,511069],[-511522,513395],[-509570,515656],[-507559,517864],[-505504,520032],[-503421,522172],[-501317,524292],[-499194,526393],[-497050,528472],[-494877,530521],[-492663,532526],[-490395,534469],[-488061,536332],[-485654,538100],[-483176,539767],[-480634,541336],[-478052,542837],[-475452,544307],[-472857,545785],[-470288,547308],[-467762,548902],[-465290,550578],[-462869,552327],[-460484,554124],[-458105,555930],[-455696,557696],[-453213,559356],[-450637,560865],[-447960,562188],[-445194,563310],[-442356,564238],[-439469,564999],[-436549,565630],[-433612,566172],[-430667,566667]]},{"id":75,"a":12,"b":19,"punkte":[[374000,510000],[371034,510475],[368074,510989],[365129,511576],[362205,512265],[359313,513076],[356462,514017],[353653,515081],[350884,516245],[348145,517478],[345424,518750],[342711,520039],[340000,521333]]},{"id":76,"a":12,"b":20,"punkte":[[340000,521333],[337012,521450],[334026,521586],[331041,521757],[328060,521980],[325085,522273],[322120,522657],[319172,523156],[316251,523793],[313361,524559],[310505,525442],[307675,526407],[304858,527406],[302032,528383],[299181,529283],[296297,530069],[293379,530723],[290436,531245],[287475,531651],[284501,531957],[281520,532184],[278535,532348],[275547,532464],[272559,532536],[269569,532587],[266580,532622],[263590,532647],[260600,532667],[257611,532687],[254621,532712],[251631,532748],[248642,532800],[245653,532874],[242666,532990],[239681,533157],[236700,533388],[233727,533699],[230766,534110],[227824,534639],[224909,535299],[222026,536090],[219176,536994],[216351,537971],[213532,538970],[210702,539931],[207844,540808],[204952,541572],[202030,542344],[199082,543116],[196116,543837],[193140,544496],[190157,545092],[187172,545623],[184184,546088],[181195,546482],[178206,546791],[175217,547002],[172227,547095],[169238,547098],[166249,547098],[163262,547098],[160277,547098],[157297,547098],[154324,547098],[151364,547098],[148422,547098],[145508,547098],[142626,547098],[139776,547098],[136951,547098],[134133,547098],[131302,547098],[128443,547098],[125551,547098],[122628,547098],[119679,547098],[116713,547099],[113736,547287],[110754,547779],[107768,548523],[104780,549453],[101791,550501],[98802,551593],[95812,552660],[92822,553634],[89833,554445],[86843,555027],[83853,555312],[80863,555331],[77873,555332],[74884,555333],[71894,555333],[68904,555333],[65914,555333],[62925,555333],[59935,555333],[56945,555333],[53955,555333],[50965,555333],[47976,555333],[44986,555333],[41996,555333],[39006,555333],[36017,555333],[33027,555333],[30037,555333],[27047,555333],[24057,555333],[21068,555333],[18078,555333],[15088,555333],[12098,555333],[9109,555333],[6119,555333],[3129,555333],[139,555333],[-2851,555333],[-5840,555333],[-8830,555333],[-11820,555333],[-14810,555333],[-17800,555333],[-20789,555333],[-23779,555333],[-26769,555333],[-29759,555333],[-32748,555333],[-35738,555333],[-38728,555333],[-41718,555333],[-44708,555333],[-47697,555333],[-50687,555333],[-53677,555333],[-56667,555333]]},{"id":77,"a":19,"b":20,"punkte":[[340000,521333],[340000,524338],[340000,527343],[340001,530348],[340002,533352],[340003,536357],[340006,539362],[340012,542367],[340022,545371],[340037,548376],[340061,551381],[340103,554385],[340167,557389],[340262,560392],[340396,563394],[340583,566393],[340846,569386],[341211,572369],[341686,575335],[342288,578278],[343024,581191],[343887,584068],[344852,586913],[345881,589736],[346926,592553],[347945,595380],[348912,598225],[349821,601089],[350689,603965],[351547,606845],[352435,609715],[353400,612561],[354484,615362],[355723,618098],[357139,620748],[358732,623295],[360489,625732],[362376,628069],[364353,630332],[366391,632539],[368468,634711],[370568,636860],[372681,638996],[374800,641127],[376923,643253],[379047,645379],[381171,647504],[383296,649629],[385420,651903],[387545,655478],[389670,660139],[391794,665386],[393919,670787],[396044,675984],[398169,680684],[400295,684670],[402423,687791],[404554,689969],[406693,691196],[408845,691536],[411020,691536],[413232,691536],[415496,691536],[417823,691536],[420222,691536],[422694,691536],[425230,691536],[427815,691536],[430426,691536],[433041,691536],[435634,691536],[438180,691536],[440664,691536],[443076,691536],[445414,691536],[447688,691536],[449908,691536],[452091,691536],[454247,691619],[456387,692434],[458519,694187],[460647,696900],[462772,700526],[464894,704947],[467012,709976],[469122,715359],[471218,720772],[473287,725829],[475317,730073],[477288,732990],[479183,735322],[480985,737726],[482685,740202],[484289,742742],[485817,745330],[487299,747943],[488779,750559],[490298,753151],[491887,755701],[493560,758196],[495314,760635],[497131,763029],[498978,765399],[500820,767773],[502620,770179],[504345,772639],[505974,775163],[507512,777744],[508973,780370],[510380,783025],[511758,785695],[513125,788371],[514494,791046],[515865,793719],[517236,796393],[518603,799069],[519971,801744],[521354,804412],[522774,807059],[524263,809669],[525843,812225],[527526,814713],[529316,817127],[531200,819466],[533162,821742],[535179,823969],[537230,826165],[539293,828349],[541346,830543],[543367,832767],[545333,835039],[547224,837373],[549024,839779],[550722,842257],[552324,844798],[553851,847387],[555333,850000]]},{"id":78,"a":13,"b":21,"punkte":[[-68000,555333],[-70970,554861],[-73933,554350],[-76883,553771],[-79813,553098],[-82717,552318],[-85590,551432],[-88437,550465],[-91271,549461],[-94112,548475],[-96977,547563],[-99877,546770],[-102813,546125],[-105779,545642],[-108768,545321],[-111769,545160],[-114775,545156],[-117777,545310],[-120766,545624],[-123734,546101],[-126672,546739],[-129573,547526],[-132440,548433],[-135282,549415],[-138118,550414],[-140968,551371],[-143847,552238],[-146759,552984],[-149702,553599],[-152669,554086],[-155653,554458],[-158647,554726],[-161648,554923],[-164651,555066],[-167656,555169],[-170662,555244],[-173668,555301],[-176675,555350],[-179681,555404],[-182687,555471],[-185693,555561],[-188697,555728],[-191699,556332],[-194695,557356],[-197682,558686],[-200655,560198],[-203607,561763],[-206530,563250],[-209420,564537],[-212279,565534],[-215118,566196],[-217955,566537],[-220810,566619],[-223694,566619],[-226612,566619],[-229560,566619],[-232529,566619],[-235515,566619],[-238509,566619],[-241510,566619],[-244513,566619],[-247517,566619],[-250521,566619],[-253526,566619],[-256529,566619],[-259530,566619],[-262526,566619],[-265513,566619],[-268487,566619],[-271440,566619],[-274365,566619],[-277257,566639],[-280117,566836],[-282957,567310],[-285793,568110],[-288646,569233],[-291529,570623],[-294445,572172],[-297392,573749],[-300361,575212],[-303346,576427],[-306341,577260],[-309342,577609],[-312346,577741],[-315351,577834],[-318357,577898],[-321364,577939],[-324371,577964],[-327378,577979],[-330385,577988],[-333391,577994],[-336398,577997],[-339405,577998],[-342412,577999],[-345419,578000],[-348426,578000],[-351433,578000],[-354440,578000],[-357447,578000],[-360454,577999],[-363460,577998],[-366467,577997],[-369474,577994],[-372481,577988],[-375488,577978],[-378495,577962],[-381502,577938],[-384508,577895],[-387514,577829],[-390520,577733],[-393523,577596],[-396524,577404],[-399519,577139],[-402503,576765],[-405469,576276],[-408410,575653],[-411316,574883],[-414178,573965],[-416995,572913],[-419769,571755],[-422512,570524],[-425237,569252],[-427953,567962],[-430667,566667]]},{"id":79,"a":12,"b":21,"punkte":[[-68000,555333],[-65167,555333],[-62333,555333],[-59500,555333],[-56667,555333]]},{"id":80,"a":20,"b":21,"punkte":[[-56667,555333],[-57960,558042],[-59247,560753],[-60517,563473],[-61746,566211],[-62903,568980],[-63954,571790],[-64872,574647],[-65643,577547],[-66267,580482],[-66755,583443],[-67127,586421],[-67385,589412],[-67566,592407],[-67684,595406],[-67747,598407],[-67762,601408],[-67731,604409],[-67639,607409],[-67485,610407],[-67260,613399],[-66949,616384],[-66533,619356],[-65996,622308],[-65325,625233],[-64519,628123],[-63595,630979],[-62588,633806],[-61545,636620],[-60512,639438],[-59471,642272],[-57896,645126],[-55831,647998],[-53477,650881],[-50998,653767],[-48544,656646],[-46252,659510],[-44250,662353],[-42644,665174],[-41501,667979],[-40841,670781],[-40637,673593],[-40637,676425],[-40637,679279],[-40637,682151],[-40637,685034],[-40637,687920],[-40637,690799],[-40637,693662],[-40637,696506],[-40637,699330],[-40637,702144],[-40637,704960],[-40637,707797],[-40637,710662],[-40637,713559],[-40637,716484],[-40637,719429],[-40637,722387],[-40637,725351],[-40616,728315],[-40335,731273],[-39720,734218],[-38762,737143],[-37453,740041],[-35799,742908],[-33838,745750],[-31667,748579],[-29443,751412],[-27382,754269],[-25728,757157],[-24729,760079],[-24178,763029],[-23748,765999],[-23422,768982],[-23180,771973],[-23005,774970],[-22888,777969],[-22809,780969],[-22755,783970],[-22720,786971],[-22697,789972],[-22684,792974],[-22676,795975],[-22672,798976],[-22669,801978],[-22668,804979],[-22667,807981],[-22667,810982],[-22667,813983],[-22667,816985],[-22667,819986],[-22667,822988],[-22667,825989],[-22667,828990],[-22667,831992],[-22667,834993],[-22667,837994],[-22667,840996],[-22667,843997],[-22667,846999],[-22667,850000]]},{"id":81,"a":21,"b":22,"punkte":[[-430667,566667],[-432148,569278],[-433673,571864],[-435274,574404],[-436971,576880],[-438768,579285],[-440658,581617],[-442623,583887],[-444641,586110],[-446692,588303],[-448754,590485],[-450804,592679],[-452820,594904],[-454781,597177],[-456665,599515],[-458453,601925],[-460137,604411],[-461716,606964],[-463205,609571],[-464626,612216],[-466007,614882],[-467374,617555],[-468739,620229],[-470106,622903],[-471470,625578],[-472824,628257],[-474164,630944],[-475493,633636],[-476818,636331],[-478149,639022],[-479492,641707],[-480846,644387],[-482207,647063],[-483563,649742],[-484906,652427],[-486233,655121],[-487546,657821],[-488848,660526],[-490138,663237],[-491406,665959],[-492629,668701],[-493777,671475],[-494821,674289],[-495739,677147],[-496526,680044],[-497195,682970],[-497767,685917],[-498273,688877],[-498746,691842],[-499222,694806],[-499736,697764],[-500328,700708],[-501018,703630],[-501817,706524],[-502719,709387],[-503699,712225],[-504712,715052],[-505705,717885],[-506631,720741],[-507456,723628],[-508169,726544],[-508854,729483],[-510202,732438],[-512218,735401],[-514716,738365],[-517515,741327],[-520437,744278],[-523296,747211],[-525910,750117],[-528106,752985],[-529743,755810],[-530729,758592],[-531031,761338],[-531031,764057],[-531031,766758],[-531031,769441],[-531031,772102],[-531031,774730],[-531031,777309],[-531031,779825],[-531031,782268],[-531031,784628],[-531031,786919],[-531031,789152],[-531031,791342],[-531031,793501],[-531031,795637],[-531031,797754],[-531031,799850],[-531031,801911],[-531031,803920],[-531107,805852],[-532003,807676],[-533988,809359],[-537116,810874],[-541371,812209],[-546653,813374],[-552766,814396],[-559409,815318],[-566182,816184],[-572579,817041],[-578001,817925],[-581759,818861],[-584592,819853],[-587410,820889],[-590225,821933],[-593054,822941],[-595910,823866],[-598801,824676],[-601725,825354],[-604676,825905],[-607645,826346],[-610626,826700],[-613614,826993],[-616606,827248],[-619599,827490],[-622590,827750],[-625576,828058],[-628555,828437],[-631519,828911],[-634462,829499],[-637378,830214],[-640260,831052],[-643113,831988],[-645946,832980],[-648780,833973],[-651632,834911],[-654514,835750],[-657430,836463],[-660374,837045],[-663341,837503],[-666323,837854],[-669314,838114],[-672311,838293],[-675310,838419],[-678312,838508],[-681313,838569],[-684316,838608],[-687318,838633],[-690320,838647],[-693323,838656],[-696325,838661],[-699328,838664],[-702330,838666],[-705333,838669],[-708335,838672],[-711337,838677],[-714340,838685],[-717342,838700],[-720345,838726],[-723347,838767],[-726349,838830],[-729349,838925],[-732348,839067],[-735343,839290],[-738327,839612],[-741294,840067],[-744226,840702],[-747097,841571],[-749865,842723],[-752482,844186],[-754916,845938],[-757179,847909],[-759333,850000]]},{"id":82,"a":21,"b":-1,"punkte":[[-759333,850000],[-748000,850000],[-736667,850000],[-725333,850000],[-714000,850000],[-702667,850000],[-691333,850000],[-680000,850000],[-668667,850000],[-657333,850000],[-646000,850000],[-634667,850000],[-623333,850000],[-612000,850000],[-600667,850000],[-589333,850000],[-578000,850000],[-566667,850000],[-555333,850000],[-544000,850000],[-532667,850000],[-521333,850000],[-510000,850000],[-498667,850000],[-487333,850000],[-476000,850000],[-464667,850000],[-453333,850000],[-442000,850000],[-430667,850000],[-419333,850000],[-408000,850000],[-396667,850000],[-385333,850000],[-374000,850000],[-362667,850000],[-351333,850000],[-340000,850000],[-328667,850000],[-317333,850000],[-306000,850000],[-294667,850000],[-283333,850000],[-272000,850000],[-260667,850000],[-249333,850000],[-238000,850000],[-226667,850000],[-215333,850000],[-204000,850000],[-192667,850000],[-181333,850000],[-170000,850000],[-158667,850000],[-147333,850000],[-136000,850000],[-124667,850000],[-113333,850000],[-102000,850000],[-90667,850000],[-79333,850000],[-68000,850000],[-56667,850000],[-45333,850000],[-34000,850000],[-22667,850000]]},{"id":83,"a":20,"b":-1,"punkte":[[-22667,850000],[-11333,850000],[0,850000],[11333,850000],[22667,850000],[34000,850000],[45333,850000],[56667,850000],[68000,850000],[79333,850000],[90667,850000],[102000,850000],[113333,850000],[124667,850000],[136000,850000],[147333,850000],[158667,850000],[170000,850000],[181333,850000],[192667,850000],[204000,850000],[215333,850000],[226667,850000],[238000,850000],[249333,850000],[260667,850000],[272000,850000],[283333,850000],[294667,850000],[306000,850000],[317333,850000],[328667,850000],[340000,850000],[351333,850000],[362667,850000],[374000,850000],[385333,850000],[396667,850000],[408000,850000],[419333,850000],[430667,850000],[442000,850000],[453333,850000],[464667,850000],[476000,850000],[487333,850000],[498667,850000],[510000,850000],[521333,850000],[532667,850000],[544000,850000],[555333,850000]]}],"paesse":[{"id":0,"a":19,"b":20,"grenze":77,"x":431025,"y":691536,"senk":false,"stufe":1},{"id":1,"a":20,"b":21,"grenze":80,"x":-40637,"y":700212,"senk":true,"stufe":1},{"id":2,"a":21,"b":22,"grenze":81,"x":-531031,"y":785251,"senk":true,"stufe":1},{"id":3,"a":22,"b":23,"grenze":60,"x":-710679,"y":208784,"senk":false,"stufe":1},{"id":4,"a":23,"b":24,"grenze":21,"x":-725026,"y":-222242,"senk":false,"stufe":1},{"id":5,"a":24,"b":25,"grenze":2,"x":-455174,"y":-737534,"senk":false,"stufe":1},{"id":6,"a":25,"b":26,"grenze":4,"x":-17226,"y":-735005,"senk":true,"stufe":1},{"id":7,"a":26,"b":27,"grenze":6,"x":367352,"y":-687796,"senk":true,"stufe":1},{"id":8,"a":27,"b":28,"grenze":27,"x":699257,"y":-272032,"senk":false,"stufe":1},{"id":9,"a":19,"b":28,"grenze":53,"x":735212,"y":185545,"senk":false,"stufe":1},{"id":10,"a":11,"b":12,"grenze":71,"x":365280,"y":422323,"senk":true,"stufe":2},{"id":11,"a":12,"b":13,"grenze":73,"x":-37833,"y":495048,"senk":true,"stufe":2},{"id":12,"a":13,"b":14,"grenze":66,"x":-447410,"y":360287,"senk":true,"stufe":2},{"id":13,"a":14,"b":15,"grenze":41,"x":-464675,"y":-39664,"senk":false,"stufe":2},{"id":14,"a":15,"b":16,"grenze":14,"x":-419606,"y":-379938,"senk":false,"stufe":2},{"id":15,"a":16,"b":17,"grenze":10,"x":22667,"y":-508615,"senk":true,"stufe":2},{"id":16,"a":17,"b":18,"grenze":19,"x":347115,"y":-378183,"senk":false,"stufe":2},{"id":17,"a":11,"b":18,"grenze":47,"x":537667,"y":54,"senk":false,"stufe":2},{"id":18,"a":5,"b":6,"grenze":69,"x":-33636,"y":369995,"senk":true,"stufe":3},{"id":19,"a":6,"b":7,"grenze":57,"x":-314690,"y":174113,"senk":false,"stufe":3},{"id":20,"a":7,"b":8,"grenze":32,"x":-332183,"y":-201850,"senk":false,"stufe":3},{"id":21,"a":8,"b":9,"grenze":18,"x":45291,"y":-335000,"senk":true,"stufe":3},{"id":22,"a":9,"b":10,"grenze":25,"x":331062,"y":-246059,"senk":false,"stufe":3},{"id":23,"a":5,"b":10,"grenze":55,"x":327724,"y":163854,"senk":false,"stufe":3},{"id":24,"a":1,"b":2,"grenze":59,"x":13463,"y":226207,"senk":true,"stufe":4},{"id":25,"a":2,"b":3,"grenze":49,"x":-204805,"y":31954,"senk":false,"stufe":4},{"id":26,"a":3,"b":4,"grenze":34,"x":0,"y":-191333,"senk":true,"stufe":4},{"id":27,"a":1,"b":4,"grenze":44,"x":209000,"y":0,"senk":false,"stufe":4},{"id":28,"a":11,"b":19,"grenze":54,"x":524683,"y":323820,"senk":true,"stufe":2},{"id":29,"a":12,"b":20,"grenze":76,"x":143882,"y":547098,"senk":false,"stufe":2},{"id":30,"a":13,"b":21,"grenze":78,"x":-248118,"y":566619,"senk":false,"stufe":2},{"id":31,"a":14,"b":22,"grenze":61,"x":-566666,"y":321000,"senk":true,"stufe":2},{"id":32,"a":15,"b":23,"grenze":37,"x":-521376,"y":-96850,"senk":true,"stufe":2},{"id":33,"a":16,"b":24,"grenze":11,"x":-430398,"y":-493174,"senk":false,"stufe":2},{"id":34,"a":16,"b":25,"grenze":7,"x":-187000,"y":-600661,"senk":false,"stufe":2},{"id":35,"a":17,"b":26,"grenze":9,"x":208863,"y":-581054,"senk":false,"stufe":2},{"id":36,"a":18,"b":27,"grenze":20,"x":490381,"y":-342559,"senk":true,"stufe":2},{"id":37,"a":18,"b":28,"grenze":35,"x":598267,"y":-126976,"senk":true,"stufe":2},{"id":38,"a":10,"b":11,"grenze":51,"x":416152,"y":106654,"senk":true,"stufe":3},{"id":39,"a":5,"b":12,"grenze":70,"x":157308,"y":384080,"senk":false,"stufe":3},{"id":40,"a":6,"b":13,"grenze":67,"x":-248398,"y":451928,"senk":false,"stufe":3},{"id":41,"a":7,"b":14,"grenze":42,"x":-396666,"y":74069,"senk":true,"stufe":3},{"id":42,"a":7,"b":15,"grenze":31,"x":-430662,"y":-152506,"senk":true,"stufe":3},{"id":43,"a":8,"b":16,"grenze":15,"x":-197812,"y":-443260,"senk":false,"stufe":3},{"id":44,"a":9,"b":17,"grenze":17,"x":171948,"y":-361752,"senk":false,"stufe":3},{"id":45,"a":10,"b":18,"grenze":26,"x":451809,"y":-143662,"senk":true,"stufe":3},{"id":46,"a":1,"b":5,"grenze":56,"x":152595,"y":238812,"senk":false,"stufe":4},{"id":47,"a":2,"b":6,"grenze":58,"x":-161775,"y":251856,"senk":true,"stufe":4},{"id":48,"a":3,"b":7,"grenze":38,"x":-283296,"y":-52281,"senk":true,"stufe":4},{"id":49,"a":3,"b":8,"grenze":33,"x":-173445,"y":-282378,"senk":false,"stufe":4},{"id":50,"a":4,"b":9,"grenze":30,"x":170000,"y":-260665,"senk":false,"stufe":4},{"id":51,"a":4,"b":10,"grenze":36,"x":283327,"y":-96981,"senk":true,"stufe":4},{"id":52,"a":0,"b":1,"grenze":45,"x":104849,"y":108397,"senk":true,"stufe":5},{"id":53,"a":0,"b":2,"grenze":50,"x":-92418,"y":112468,"senk":false,"stufe":5},{"id":54,"a":0,"b":3,"grenze":39,"x":-126182,"y":-104244,"senk":false,"stufe":5},{"id":55,"a":0,"b":4,"grenze":40,"x":114062,"y":-117455,"senk":true,"stufe":5}]};
+// Weltkarte wie das RoK-Königreich (LIESMICH 11c Punkt 30): Zone 1 außen (Start) … Zone 4 (Wächter-Tempel), in der Mitte der
+// Thron – große Gebiete, zwischen ihnen Gebirge, durch das man nur an den Pässen kommt. Gebiete, Grenzen, Pässe, Tempel und
+// Startplätze kommen aus KARTE_ZONEN (01a2, erzeugt von werkzeuge/kartentest/karte_erzeugen.js). Kein Wasser.
+const GRID_N = 29;         // Kennung der Karte für den Weltrechner (start.js vergleicht sie mit der Welt): 29 Gebiete
+const HEX_SPACING = 56120; // Längenmaß (früher die Breite einer Region): Basen-Abstände, Freiräume
+const FRAME_HALF = KARTE_ZONEN.welt.halb;                   // der quadratische Kartenrand (Welt-Einheiten von der Mitte)
+const KARTE_MASSSTAB = 1.8;  // die Karte ist größer als die 17 × 17-Karte: Basen-Abstand, Sicht, Gebiets-Verbund und Marschtempo wachsen mit (gleiches Spielgefühl)
+const ZONE_MITTE = 5;
+const ZONE_RING = { 1: 7, 2: 5, 3: 2, 4: 1, 5: 0 };       // Stärke wie die Ringe vorher: Zone 1 = außen (leicht) … Zone 4 = Wächter, Mitte = Thron
 // Bases are scattered freely across a landmass (rejection-sampled,
 // not a rigid grid) - only constraint is a minimum distance from
 // every other base and the temple, so nothing ends up crowded.
@@ -337,19 +360,9 @@ function mulberry32(seed) {
 }
 const rand = mulberry32(1337);
 
-// Ray-casting point-in-polygon test, used to keep towers from being
-// placed off the edge of a landmass's organic (non-square) coastline.
-// Liegt (x, y) auf dem Land? Reine Rechnung (die geglättete Küste in feine Stücke zerlegt) – gibt in jedem Browser und
-// auf dem Server genau dasselbe Ergebnis (früher über die Zeichenfläche: je nach Browser minimal anders, auf dem Server gar nicht).
-function aufLand(lm, x, y) {
-    if (!lm.feinKueste) { const P = lm.shape, n = P.length, out = [], mid = (a, b) => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
-        let m0 = mid(P[n - 1], P[0]);
-        for (let i = 0; i < n; i++) { const c = P[i], m1 = mid(P[i], P[(i + 1) % n]);
-            for (let k = 0; k < 12; k++) { const t = k / 12, u = 1 - t; out.push({ x: u * u * m0.x + 2 * u * t * c.x + t * t * m1.x, y: u * u * m0.y + 2 * u * t * c.y + t * t * m1.y }); }
-            m0 = m1; }
-        lm.feinKueste = out; }
-    return pointInPolygon(x, y, lm.feinKueste);
-}
+// Liegt (x, y) im Gebiet lm? Reine Rechnung über seinen Umriss (die Grenzen aus KARTE_ZONEN) – in jedem Browser und beim
+// Weltrechner genau gleich.
+function aufLand(lm, x, y) { return pointInPolygon(x, y, lm.shape); }
 function pointInPolygon(px, py, poly) {
     let inside = false;
     for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
@@ -362,33 +375,12 @@ function pointInPolygon(px, py, poly) {
     return inside;
 }
 
-// The point on a landmass's coastline that faces exactly toward
-// some other point, i.e. where the straight line between the two
-// landmass centers crosses the coastline - not just "whichever
-// shape point happens to be closest", which could sit off to the
-// side and make the bridge cut across at a crooked angle. Works
-// directly off generateRegionShape()'s own parametrization: its
-// points are sampled at uniformly increasing angles around the
-// landmass's center, so the point at any bearing is a straight
-// interpolation between the two samples that bracket it.
-function polygonPointAtAngle(lm, angle) {
-    const n = lm.shape.length;
-    const step = (Math.PI * 2) / n;
-    const norm = ((angle % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-    const idx = norm / step;
-    const i0 = Math.floor(idx) % n;
-    const i1 = (i0 + 1) % n;
-    const t = idx - Math.floor(idx);
-    const p0 = lm.shape[i0], p1 = lm.shape[i1];
-    return { x: p0.x + (p1.x - p0.x) * t, y: p0.y + (p1.y - p0.y) * t };
-}
-
 // Game balance - exponential, so a base keeps mattering from the first
 // hundred troops up to the trillions (level 100 ≈ 0,9 Bio. defence).
 // Costs grow a bit faster than income, so every level takes longer.
 const MAX_BASE_LEVEL = 100;
 const BASE_DEFENSE = 100, DEFENSE_GROWTH = 1.26;
-const BASE_COINS = 10, BASE_TROOPS = 5, PRODUCTION_GROWTH = 1.15;
+const BASE_COINS = 10, BASE_TROOPS = 15, PRODUCTION_GROWTH = 1.15;   // Truppen 7.10.: 15 je Std. auf Stufe 1 (vorher 5 – „nicht zu langsam, nicht zu schnell“), alle gleich (Mitspieler auch)
 const UPGRADE_BASE_COST = 120, UPGRADE_COST_GROWTH = 1.27;
 
 // The level-based defense every base gets, with no equipment/
@@ -420,154 +412,97 @@ function upgradeCost(level) {                    // Wochen-Event „Bauherr“: 
     return Math.round(upgradeCostRoh(level) * r);
 }
 
-// The big islands themselves - just background land, drawn as one
-// organic coastline each, no ownership state of their own. Landmass
-// 0 is always the centre (Thron-Insel); the others sit on a square
-// 9 × 9 grid around it.
-// A region of the continent: a square cell whose edges follow the river centre lines between the cells
-// (shared by both neighbours, so the banks match) - sampled at uniform angles,
-// so polygonPointAtAngle works on it. The continent's outer edge is a gently wavy coast.
-function riverOffset(vertical, line, t) {       // meander of the river line `line` (between cells) at position t along it
-    const k = line * 2.37 + (vertical ? 0 : 11.3);
-    return 1400 * Math.sin(t / 6100 + k) + 700 * Math.sin(t / 2300 + k * 1.9) + 300 * Math.sin(t / 900 + k * 3.7);
+// Die Gebiete (landmasses): Umriss = Ring aus ihren Grenzen, Mittelpunkt = Kern (Tempel, Thron, sonst am weitesten von den Grenzen).
+// Landmasse 0 ist die Mitte (Thron), dann Zone 4 … Zone 1. ring/tier wie vorher (Stärke der Neutralen, Tore, Mitspieler).
+function gebietUmriss(g) {
+    const out = []; for (const r of g.rand) { const p = KARTE_ZONEN.grenzen[r < 0 ? -r - 1 : r].punkte; out.push(...(r < 0 ? [...p].reverse() : p).slice(out.length ? 1 : 0)); }
+    return out.slice(0, -1).map(([x, y]) => ({ x, y }));
 }
-// Grenzlinie `line` (zwischen den Zellen, ±(GRID_HALF + .5) = Kartenrand) an der Stelle t: senkrecht → x, waagrecht → y
-// (heute ein Gebirgszug – LIESMICH 11c Punkt 25; am Rand schlängelt sie sich stärker)
-function grenzLinie(vertical, line, t) { return line * HEX_SPACING + riverOffset(vertical, line, t) * (Math.abs(line) > GRID_HALF ? 1.6 : 1); }
-// Abstand eines Weltpunkts zur nächsten Grenzlinie (dort steht das Gebirge)
-function grenzAbstand(x, y) {
-    const q = Math.round(x / HEX_SPACING - .5) + .5, r = Math.round(y / HEX_SPACING - .5) + .5;
-    return Math.min(Math.abs(x - grenzLinie(true, q, y)), Math.abs(y - grenzLinie(false, r, x)));
+const landmasses = KARTE_ZONEN.gebiete.map(g => {
+    const z = g.zone, shape = gebietUmriss(g), [x, y] = g.kern;
+    let shapeMaxR = 0; for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
+    return { id: g.id, zone: z, name: g.name, ring: ZONE_RING[z], x, y, shape, shapeMaxR, isCenter: z === ZONE_MITTE, tier: z === ZONE_MITTE ? 'throne' : z === 4 ? 'guardian' : 'outer',
+             corner: false, bio: z === 3 ? 'sand' : 'green', boden: g.boden };
+});
+// Gebirge: Abstand eines Weltpunkts zur nächsten Grenze zwischen zwei Gebieten (Raster zum Finden; die Punkte liegen 3.000 auseinander)
+const GRENZ_RASTER = 20000, grenzRaster = new Map();
+for (const g of KARTE_ZONEN.grenzen) if (g.b !== -1) for (const [x, y] of g.punkte) { const k = Math.floor(x / GRENZ_RASTER) + ',' + Math.floor(y / GRENZ_RASTER); (grenzRaster.get(k) || grenzRaster.set(k, []).get(k)).push(x, y); }
+function grenzAbstand(x, y) {                   // (höchstens 2 Rasterfelder weit gesucht: 40.000 reicht für jede Frage „steht es im Gebirge?“)
+    const gx = Math.floor(x / GRENZ_RASTER), gy = Math.floor(y / GRENZ_RASTER); let m = 2 * GRENZ_RASTER;
+    for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) { const p = grenzRaster.get((gx + i) + ',' + (gy + j)); if (p) for (let k = 0; k < p.length; k += 2) m = Math.min(m, Math.hypot(p[k] - x, p[k + 1] - y)); }
+    return m;
 }
-// Ring unter einem Weltpunkt (über die geschlängelten Grenzen; außerhalb der Karte GRID_HALF + 1)
-function ringAn(x, y) {
-    let q = Math.round(x / HEX_SPACING), r = Math.round(y / HEX_SPACING);
-    if (x > grenzLinie(true, q + .5, y)) q++; else if (x < grenzLinie(true, q - .5, y)) q--;
-    if (y > grenzLinie(false, r + .5, x)) r++; else if (y < grenzLinie(false, r - .5, x)) r--;
-    return Math.min(GRID_HALF + 1, Math.max(Math.abs(q), Math.abs(r)));
+function grenzAbstandWeit(x, y) {               // wie grenzAbstand, aber ohne Grenze für die Weite (alle Grenzpunkte – nur selten gebraucht)
+    let m = Infinity; for (const p of grenzRaster.values()) for (let k = 0; k < p.length; k += 2) m = Math.min(m, Math.hypot(p[k] - x, p[k + 1] - y));
+    return m;
 }
-function generateRegionShape(q, r) {
-    const S = HEX_SPACING, cx = q * S, cy = r * S, N = 120, out = [];
-    const edge = (side, t) => {                  // world coordinate of one bank at position t along it
-        const vertical = side === 0 || side === 2, line = side === 0 ? q + .5 : side === 2 ? q - .5 : side === 1 ? r + .5 : r - .5;
-        const outer = Math.abs(line) > GRID_HALF, base = grenzLinie(vertical, line, t);
-        const sign = side === 0 || side === 1 ? -1 : 1;             // right / bottom bank sits left / above the river line
-        return base + sign * (outer ? 0 : RIVER_HALF);
-    };
-    for (let i = 0; i < N; i++) {
-        const th = i / N * Math.PI * 2, dx = Math.cos(th), dy = Math.sin(th);
-        let best = Infinity;
-        for (let side = 0; side < 4; side++) {
-            const vertical = side === 0 || side === 2, d = vertical ? dx : dy;
-            if ((side === 0 || side === 1) ? d <= 1e-6 : d >= -1e-6) continue;
-            let tt = S * .5;
-            for (let it = 0; it < 4; it++) {                         // the bank moves with t: a few fixed-point steps
-                const along = vertical ? cy + dy * tt : cx + dx * tt;
-                tt = ((edge(side, along)) - (vertical ? cx : cy)) / d;
-            }
-            if (tt > 0) best = Math.min(best, tt);
-        }
-        out.push({ x: cx + dx * best, y: cy + dy * best });
+function gebietAn(x, y) {                       // das Gebiet unter einem Weltpunkt (undefined: außerhalb der Karte)
+    for (const lm of landmasses) if (Math.abs(lm.x - x) <= lm.shapeMaxR && Math.abs(lm.y - y) <= lm.shapeMaxR && pointInPolygon(x, y, lm.shape)) return lm.id;
+}
+
+// Brücken (heute Pässe): der EINZIGE Weg von einem Gebiet ins andere – je Pass eine, quer durch das Gebirge (Enden je PASS_TIEFE
+// vor und hinter dem Tor, im Gebiet a bzw. b). Das Tor steht genau auf der Grenze (br.pass), offen ab dem Tag seiner Stufe.
+const PASS_TIEFE = 16000;
+const bridges = KARTE_ZONEN.paesse.map(p => {
+    const e1 = p.senk ? [p.x - PASS_TIEFE, p.y] : [p.x, p.y - PASS_TIEFE], e2 = p.senk ? [p.x + PASS_TIEFE, p.y] : [p.x, p.y + PASS_TIEFE];
+    const [A, B] = pointInPolygon(e1[0], e1[1], landmasses[p.a].shape) ? [e1, e2] : [e2, e1];
+    return { a: p.a, b: p.b, x1: A[0], y1: A[1], x2: B[0], y2: B[1], pass: p };
+});
+// Wege in einem Gebiet: nie durchs Gebirge. Gerade Strecke, wenn sie überall WEG_FREI vom Gebirge bleibt; sonst über ein grobes
+// Wegnetz des Gebiets (Gitterpunkte, die frei liegen; einmal je Gebiet gebaut, kürzester Weg, danach gestrafft).
+const WEG_FREI = 6000, WEG_NETZ = 26000;
+function wegFrei(a, b) {                         // bleibt die Strecke a → b überall WEG_FREI vom Gebirge (und auf der Karte)?
+    const L = Math.hypot(b.x - a.x, b.y - a.y), n = Math.max(1, Math.ceil(L / 4000));
+    for (let i = 0; i <= n; i++) { const x = a.x + (b.x - a.x) * i / n, y = a.y + (b.y - a.y) * i / n;
+        if (Math.abs(x) > FRAME_HALF || Math.abs(y) > FRAME_HALF || grenzAbstand(x, y) < WEG_FREI) return false; }
+    return true;
+}
+const wegNetze = {};
+function wegNetz(lmId) {                         // → [{ x, y, nb: [Index] }] frei liegende Gitterpunkte des Gebiets, verbunden, wo der Weg frei ist
+    if (wegNetze[lmId]) return wegNetze[lmId];
+    const lm = landmasses[lmId], k = [];
+    for (let x = Math.floor((lm.x - lm.shapeMaxR) / WEG_NETZ) * WEG_NETZ; x <= lm.x + lm.shapeMaxR; x += WEG_NETZ)
+        for (let y = Math.floor((lm.y - lm.shapeMaxR) / WEG_NETZ) * WEG_NETZ; y <= lm.y + lm.shapeMaxR; y += WEG_NETZ)
+            if (grenzAbstand(x, y) >= WEG_FREI * 2 && Math.abs(x) < FRAME_HALF && Math.abs(y) < FRAME_HALF && pointInPolygon(x, y, lm.shape)) k.push({ x, y, nb: [] });
+    for (let i = 0; i < k.length; i++) for (let j = i + 1; j < k.length; j++)
+        if (Math.hypot(k[i].x - k[j].x, k[i].y - k[j].y) <= WEG_NETZ * 1.5 && wegFrei(k[i], k[j])) { k[i].nb.push(j); k[j].nb.push(i); }
+    return (wegNetze[lmId] = k);
+}
+function gebietWeg(a, b, lmId) {                 // a → b im Gebiet lmId: [a, …, b]
+    if (wegFrei(a, b)) return [a, b];
+    const K = wegNetz(lmId), nah = p => K.map((q, i) => [i, Math.hypot(q.x - p.x, q.y - p.y)]).filter(([i, d]) => d < WEG_NETZ * 3 && wegFrei(p, K[i])).sort((u, v) => u[1] - v[1]).slice(0, 4);
+    const von = nah(a), zu = new Map(nah(b));
+    if (!von.length || !zu.size) return [a, b];
+    const dist = new Map(von.map(([i, d]) => [i, d])), prev = new Map(), offen = von.map(([i]) => i), fertig = new Set(); let ende = -1, best = Infinity;
+    while (offen.length) {
+        offen.sort((u, v) => dist.get(u) - dist.get(v)); const c = offen.shift(); if (fertig.has(c)) continue; fertig.add(c);
+        if (dist.get(c) >= best) break;
+        if (zu.has(c) && dist.get(c) + zu.get(c) < best) { best = dist.get(c) + zu.get(c); ende = c; }
+        for (const n of K[c].nb) { const d = dist.get(c) + Math.hypot(K[n].x - K[c].x, K[n].y - K[c].y); if (!dist.has(n) || d < dist.get(n)) { dist.set(n, d); prev.set(n, c); offen.push(n); } }
     }
+    if (ende < 0) return [a, b];
+    const roh = [b]; for (let c = ende; c !== undefined; c = prev.get(c)) roh.unshift({ x: K[c].x, y: K[c].y }); roh.unshift(a);
+    const out = [a];                                     // straffen: vom letzten Punkt so weit wie frei sichtbar
+    for (let i = 0; i < roh.length - 1;) { let j = roh.length - 1; while (j > i + 1 && !wegFrei(roh[i], roh[j])) j--; out.push(roh[j]); i = j; }
     return out;
 }
-
-// Landscape: snow in the north, grassland in the middle band, desert in the south (the border steps a little per column);
-// the ring around the middle is stone, the regions right next to it stay green.
-// Paket C: dazu Eis ganz im Norden (oberste Reihe), zwei Vulkan-Gebiete nahe der Mitte (west und ost, je 5 Regionen)
-// und Sumpf in den Flussniederungen des grünen Mittelstreifens (außen, verstreut).
-// Seit der Karte wie RoK (LIESMICH 11c Punkt 25) nicht mehr zu sehen: gilt nur noch für Rohstoffe, Felder, Berge und das Stadtbild.
-// Die Karte malt den Boden nach Ringen (lm.boden): außen grün → Mitte Sand.
-const BODEN_RING = r => r <= 1 ? 'sand' : r <= 3 ? 'innen' : r <= 5 ? 'mitte' : 'aussen';
-const VULKANE = [[-4, 0], [4, 1]];
-function regionBiome(q, r) {
-    const ring = Math.max(Math.abs(q), Math.abs(r)); if (ring <= 2) return 'green';
-    if (ring <= 5 && VULKANE.some(([vq, vr]) => Math.abs(q - vq) + Math.abs(r - vr) <= 1)) return 'volcano';
-    const h = Math.sin(q * 12.9898 + 78.233) * 43758.5453, wob = Math.round((h - Math.floor(h)) * 2 - 1), y = r + wob * .6;
-    if (y <= -GRID_HALF + .6) return 'ice';
-    if (y <= -2.6) return 'snow';
-    if (y >= 2.6) return 'sand';
-    const n = Math.sin(q * 39.346 + r * 11.135 + 4.17) * 24634.6345, nass = n - Math.floor(n);   // feuchte Niederung?
-    return ring >= 4 && Math.abs(y) < 2 && nass > .6 ? 'swamp' : 'green';
-}
-// Temples: the Mega-Tempel in the middle, a Wächter-Tempel in each of the 4 corners of the ring, and 24 normal temples on two
-// clean squares around the middle (ring 3: corners + side middles, ring 5: corners, side middles and two more per side).
-function regionHasTemple(lm) {
-    if (lm.isCenter || lm.corner) return true;
-    const aq = Math.abs(lm.q), ar = Math.abs(lm.r);
-    return (lm.ring === 3 && ((aq === 3 && ar === 3) || lm.q === 0 || lm.r === 0)) || (lm.ring === 5 && ((aq === 5 && ar === 5) || lm.q === 0 || lm.r === 0 || aq === 3 || ar === 3));
-}
-const landmasses = [];
-{
-    let lmId = 0;
-    // World layout (square map): the Thron-Insel (Mega-Tempel) in the middle cell, the 4 Wächter-Inseln
-    // north / east / south / west of it, every other cell an outer island where the player and bots start.
-    const cells = [];
-    for (let r = -GRID_HALF; r <= GRID_HALF; r++) for (let q = -GRID_HALF; q <= GRID_HALF; q++) cells.push({ q, r, d: Math.max(Math.abs(q), Math.abs(r)) });
-    cells.sort((u, v) => u.d - v.d || u.r - v.r || u.q - v.q);                      // landmass 0 = the centre, then the guardians
-    for (const cell of cells) {
-        const isC = cell.d === 0, tier = isC ? 'throne' : cell.d === 1 ? 'guardian' : 'outer';
-        const radius = HEX_SPACING * .4;                                             // (tower spacing scales with it)
-        const x = cell.q * HEX_SPACING, y = cell.r * HEX_SPACING;
-        const shape = generateRegionShape(cell.q, cell.r);
-        let shapeMaxR = 0;
-        for (const p of shape) shapeMaxR = Math.max(shapeMaxR, Math.hypot(p.x - x, p.y - y));
-        const corner = cell.d === 1 && Math.abs(cell.q) === 1 && Math.abs(cell.r) === 1;
-        landmasses.push({ id: lmId, q: cell.q, r: cell.r, ring: cell.d, x, y, radius, shape, shapeMaxR, isCenter: isC, tier, corner, bio: regionBiome(cell.q, cell.r), boden: BODEN_RING(cell.d) });
-        lmId++;
-    }
-}
-
-// Bridges: the ONLY way to cross from one landmass to a different
-// one - every hex-ADJACENT pair of landmasses gets its own short
-// bridge (not just hub-to-outer), so the honeycomb is a proper mesh
-// you expand outward through island by island. Anchored exactly on
-// the straight line between the two landmass centers (see
-// polygonPointAtAngle), so the bridge always crosses the water
-// directly instead of angling off toward whatever shape point
-// happened to be closest. Some coastline pairs land almost flush
-// against each other (a near-zero gap) - stretched out to a
-// minimum visible length here so the bridge always reads as a
-// short straight line instead of collapsing into a round blob
-// where its two line-cap ends overlap.
-const MIN_BRIDGE_VISUAL_LENGTH = 700;
-const bridges = [];
-for (let i = 0; i < landmasses.length; i++) {
-    for (let j = i + 1; j < landmasses.length; j++) {
-        const a = landmasses[i], b = landmasses[j];
-        const dq = a.q - b.q, dr = a.r - b.r;
-        const isAdjacent = Math.abs(dq) + Math.abs(dr) === 1;                          // north / south / east / west neighbours
-        if (!isAdjacent) continue;
-        const angleAtoB = Math.atan2(b.y - a.y, b.x - a.x);
-        let p1 = polygonPointAtAngle(a, angleAtoB);
-        let p2 = polygonPointAtAngle(b, angleAtoB + Math.PI);
-        const dx = p2.x - p1.x, dy = p2.y - p1.y;
-        const dist = Math.hypot(dx, dy);
-        if (dist > 0 && dist < MIN_BRIDGE_VISUAL_LENGTH) {
-            const ux = dx / dist, uy = dy / dist;
-            const extra = (MIN_BRIDGE_VISUAL_LENGTH - dist) / 2;
-            p1 = { x: p1.x - ux * extra, y: p1.y - uy * extra };
-            p2 = { x: p2.x + ux * extra, y: p2.y + uy * extra };
-        }
-        bridges.push({ a: a.id, b: b.id, x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
-    }
-}
+function bridgeOfGate(gate) { return bridges.find(br => br.gateId === gate.id) || null; }
 function bridgeBetween(a, b) {
     return bridges.find(br => (br.a === a && br.b === b) || (br.a === b && br.b === a)) || null;
 }
-// Pässe: die Brücken zu den Wächter-Inseln und zur Thron-Insel öffnen erst 3 Tage nach dem Welt-Start (Alexander 6.10.: „dann haben
-// alle genug Zeit“) – bis dahin für alle zu, Spieler wie Mitspieler. Der Welt-Start kommt bei jedem Saison-Reset neu (saisonWelt).
-const PASS_OPEN_DAYS = { guardian: 3, throne: 3 };        // Tage ab Welt-Start (0 = Timer aus)
+// Pässe öffnen von außen nach innen (Alexander 7.10.): Zone 1 untereinander ab Tag 1, in Zone 2 ab Tag 2 … zur Mitte ab Tag 5
+// (KARTE_ZONEN.oeffnen) – bis dahin für alle zu, Spieler wie Mitspieler. Der Welt-Start kommt bei jedem Saison-Reset neu (saisonWelt).
 function worldStartAt() {
     let t = parseInt(store.get('openWaterWorldStart'), 10);
     if (!t) { t = Date.now(); store.set('openWaterWorldStart', String(t)); }
     return t;
 }
 function passOpensAt(br) {
-    const ta = landmasses[br.a].tier, tb = landmasses[br.b].tier;
-    const inner = ta === 'throne' || tb === 'throne' ? 'throne' : ta === 'guardian' || tb === 'guardian' ? 'guardian' : null;
-    return inner ? worldStartAt() + PASS_OPEN_DAYS[inner] * 86400000 : 0;
+    const tag = KARTE_ZONEN.oeffnen[br.pass.stufe] || 1;
+    return tag > 1 ? worldStartAt() + (tag - 1) * 86400000 : 0;
 }
+// Der Thron (Mega-Tempel in der Mitte) zählt erst ab Tag 7 (Alexander 7.10.: KARTE_ZONEN.thron.tag) – vorher kann ihn niemand angreifen
+function thronOffenAb() { return worldStartAt() + (KARTE_ZONEN.thron.tag - 1) * 86400000; }
 function landmassesConnected(a, b) {
     if (a === b) return true;
     const br = bridgeBetween(a, b);
@@ -575,26 +510,50 @@ function landmassesConnected(a, b) {
 }
 // Long marches: troops may cross any number of regions as long as every gate on the way belongs to them;
 // only the last crossing (into the target's region) may be someone else's gate (toll / shut as usual).
-// → the chain of landmass ids from a to b, or null. BFS over the regions, cheap enough per call.
-function routeFor(a, b, payer) {
+// → the chain of landmass ids from a to b, or null. Kürzester Weg (Dijkstra über die 29 Gebiete, Länge über die Pässe),
+// je Lage (Besitz, offene Pässe) kurz zwischengespeichert. alle: jeden Pass nehmen (nur die Lage der Linie, wenn kein Weg geht).
+const WEG_MERK = new Map();
+const offenePaesse = () => { const t = Date.now(); let n = 0; for (const br of bridges) if (t >= passOpensAt(br)) n++; return n; };
+function routeFor(a, b, payer, alle) {
     if (a === b) return [a];
-    if (landmassesConnected(a, b)) return [a, b];
-    const prev = { [a]: -1 }, queue = [a];
-    while (queue.length) {
-        const cur = queue.shift();
-        for (const nb of reachableLandmassIds[cur] || []) {
-            if (nb === cur || prev[nb] !== undefined || !landmassesConnected(cur, nb)) continue;
-            const gate = gateOnRoute(cur, nb), free = !gate || islandOwnerOf(gate.id) === payer || bundFreund(islandOwnerOf(gate.id), payer);   // (Tore des eigenen Bündnisses sind frei)
-            if (nb === b) { const out = [b]; for (let x = cur; x !== -1; x = prev[x]) out.unshift(x); return out; }
-            if (!free) continue;                    // a foreign gate ends the march there
-            prev[nb] = cur; queue.push(nb);
+    const key = a + '>' + b + '|' + payer + '|' + (alle ? 1 : 0) + '|' + ownVer + '|' + offenePaesse(), m = WEG_MERK.get(key), jetzt = Date.now();
+    if (m && jetzt - m.t < 2000) return m.r;
+    const dist = { [a]: 0 }, prev = { [a]: -1 }, wo = { [a]: { x: landmasses[a].x, y: landmasses[a].y } }, offen = [a], fertig = new Set();
+    let r = null;
+    while (offen.length) {
+        offen.sort((u, v) => dist[u] - dist[v]); const cur = offen.shift(); if (fertig.has(cur)) continue; fertig.add(cur);
+        if (cur === b) { r = []; for (let x = b; x !== -1; x = prev[x]) r.unshift(x); break; }
+        for (const br of bridges) {
+            if (br.a !== cur && br.b !== cur) continue;
+            const nb = br.a === cur ? br.b : br.a; if (fertig.has(nb)) continue;
+            if (!alle) {
+                if (!landmassesConnected(cur, nb)) continue;
+                const gate = gateOnRoute(cur, nb), free = !gate || islandOwnerOf(gate.id) === payer || bundFreund(islandOwnerOf(gate.id), payer);   // (Tore des eigenen Bündnisses sind frei)
+                if (!free && (nb !== b || landmasses[b].zone === 5)) continue;    // a foreign gate ends the march there (in die Mitte nur über einen eigenen Pass)
+            }
+            const e1 = br.a === cur ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, e2 = br.a === cur ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 };
+            const d = dist[cur] + Math.hypot(e1.x - wo[cur].x, e1.y - wo[cur].y) + Math.hypot(e2.x - e1.x, e2.y - e1.y);
+            if (dist[nb] === undefined || d < dist[nb]) { dist[nb] = d; prev[nb] = cur; wo[nb] = e2; offen.push(nb); }
         }
+    }
+    if (WEG_MERK.size > 3000) WEG_MERK.clear();
+    WEG_MERK.set(key, { t: jetzt, r });
+    return r;
+}
+// Warum kommt man von a nicht nach b? → Text für den Hinweis (Pass noch zu / Pass gesperrt) oder null
+function wegGrund(a, b, payer) {
+    const r = routeFor(a, b, payer, true); if (!r) return 'Kein Weg dorthin.';
+    for (let i = 0; i + 1 < r.length; i++) {
+        const br = bridgeBetween(r[i], r[i + 1]), auf = passOpensAt(br) - Date.now();
+        if (auf > 0) return 'Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(auf) + '.';
+        const gate = gateOnRoute(r[i], r[i + 1]), ow = gate && islandOwnerOf(gate.id);
+        if (gate && (i + 2 < r.length || landmasses[b].zone === 5) && ow !== payer && !bundFreund(ow, payer)) return 'Pass gesperrt – ' + (ow ? 'das Tor gehört ' + ((botById[ow] || {}).name || 'jemand anderem') : 'das Tor ist unbesetzt') + '. Erobere zuerst das Tor.';
     }
     return null;
 }
 function canReach(a, b, payer) { return !!routeFor(a, b, payer || 'player'); }
 // Kommt ein Späher von a nach b? Ein geschlossenes fremdes Tor lässt ihn nicht durch (offene Tore schon).
-// false nur, wenn genau ein geschlossenes Tor den Weg versperrt – sonst wie bisher.
+// Ein noch nicht offener Pass ebenso (Zonen wie RoK).
 function spaeherWeg(a, b, who) {
     if (a === b) return true;
     const suche = streng => { const seen = new Set([a]), q = [a];
@@ -603,7 +562,7 @@ function spaeherWeg(a, b, who) {
                 if (streng) { const g = gateOnRoute(cur, nb); if (g && islandOwnerOf(g.id) !== who && !bundFreund(islandOwnerOf(g.id), who) && gateSettings(g).closed) continue; }
                 if (nb === b) return true; seen.add(nb); q.push(nb); } }
         return false; };
-    return suche(true) || !suche(false);
+    return suche(true);                         // (ein Pass mit Countdown lässt auch Späher nicht durch)
 }
 function lastHop(a, b, payer) { const r = routeFor(a, b, payer); return r && r.length > 1 ? [r[r.length - 2], r[r.length - 1]] : [a, b]; }
 function gateOnRoute(fromLm, toLm) {            // the gate base guarding the bridge between two regions (or null)
@@ -668,7 +627,7 @@ const islands = [];
 let playerIslandId = null;
 
 let id = 0;
-// Tore first (the bases keep clear of them): a capturable gate on the outer bank of every bridge.
+// Tore first (the bases keep clear of them): a capturable gate in every pass (genau auf der Grenze, br.pass).
 // Whoever owns a gate crosses its bridge for free and collects the toll everyone else pays. Unowned gates are shut.
 // Truppen in festen Zahlen (Alexander 6.10., Z4: 5.000 Start-Truppen): die Grenz-Tore 5.000–20.000 (deutlich über den Basen), die Wächter-Tore über
 // den stärksten Wächter-Türmen, die Thron-Tore darüber – nie unter THRON_TOR_MIN (sonst nähme man den Thron am ersten Tag)
@@ -683,39 +642,40 @@ const gateSpots = bridges.map(br => {
     const bl = Math.hypot(ox - ex, oy - ey) || 1, key = Math.max(1, Math.min(4, Math.ceil((Math.min(A.ring, B.ring) - 1) / 1.5)));
     const st0 = kind === 'border' ? Object.assign({ toll: 0.1 }, BORDER_GATE[key]) : GATE_STATS[kind], mn = kind === 'throne' ? THRON_TOR_MIN : { troops: 1, def: 1 };
     const st = Object.assign({}, st0, { troops: Math.max(st0.troops, mn.troops), def: Math.max(st0.def, mn.def) });
-    return { br, kind, st, lm: outerA ? br.a : br.b, x: ex - (ox - ex) / bl * 900, y: ey - (oy - ey) / bl * 900, ex, ey };
+    return { br, kind, st, lm: outerA ? br.a : br.b, x: br.pass.x, y: br.pass.y, ex: ex - (ox - ex) / bl * 900, ey: ey - (oy - ey) / bl * 900 };   // (ex/ey: wo der Weg aus dem Pass ins Gebiet kommt)
 });
-// Start places: 4 per region on the outermost two rings (player and bot capitals go there, the rest stays empty land).
-const START_SLOT_OFFS = [[-.24, -.2], [.24, -.2], [-.24, .26], [.24, .26]];
-const startSlots = [];
-for (const lm of landmasses) if (lm.tier === 'outer' && lm.ring >= GRID_HALF - 1) for (const [sx, sy] of START_SLOT_OFFS) startSlots.push({ lm: lm.id, x: lm.x + sx * HEX_SPACING, y: lm.y + sy * HEX_SPACING });
-const BASE_SPACING = HEX_SPACING * .083;                   // one distance between neighbouring bases everywhere (about 95 per region)
+// Startplätze (KARTE_ZONEN): je Zone-1-Gebiet gleich viele – Hauptstädte von Spielern und Mitspielern ziehen dort ein.
+const startSlots = KARTE_ZONEN.startplaetze.map(p => ({ lm: p.gebiet, x: p.x, y: p.y }));
+const BASE_SPACING = HEX_SPACING * .083 * KARTE_MASSSTAB;  // one distance between neighbouring bases everywhere (größere Karte: etwa so viele Basen wie vorher)
+const KETTE_FREI = 16000;                                  // so weit bleiben Basen vom Gebirge an der Grenze weg (dort stehen die Ketten)
+const HEILIGTUM_BREITE = { megaTemple: 80000, guardian: 38000 };   // Thron und Wächter-Tempel als Bild (Welt-Breite, 03b) – Basen bleiben davor
 const segDistW = (px, py, ax, ay, bx, by) => { const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy || 1, t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L)); return Math.hypot(px - ax - dx * t, py - ay - dy * t); };
 for (const lm of landmasses) {
-    const isMega = lm.isCenter, hasTemple = regionHasTemple(lm), tierStats = TIER_STATS[lm.tier];
+    const isMega = lm.isCenter, hasTemple = lm.isCenter || lm.tier === 'guardian', tierStats = TIER_STATS[lm.tier];
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const p of lm.shape) { minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y); }
     // Keep clear: the temple, every gate on this region's banks with its road to the bridge, and the start places.
-    const templeClear = !hasTemple ? 0 : HEX_SPACING * (isMega ? .19 : lm.corner ? .15 : .12);
+    const templeClear = !hasTemple ? 0 : HEILIGTUM_BREITE[isMega ? 'megaTemple' : 'guardian'] * .55;
     const myGates = gateSpots.filter(gsp => gsp.lm === lm.id || (gsp.br.a === lm.id || gsp.br.b === lm.id));
-    const mySlots = startSlots.filter(sl => sl.lm === lm.id);
+    const mySlots = startSlots.filter(sl => sl.lm === lm.id), myFelder = KARTE_ZONEN.felder.filter(f => f.gebiet === lm.id);
     const d = BASE_SPACING, inset = d * .45, grid = new Map(), mine = [];
-    const safe = 7700 + inset;                                 // the banks meander at most ±3.8k: deeper inside than this is land for sure
-    const inside = (x, y) => (x > minX + safe && x < maxX - safe && y > minY + safe && y < maxY - safe) ||
-        (pointInPolygon(x, y, lm.shape) && pointInPolygon(x + inset, y, lm.shape) && pointInPolygon(x - inset, y, lm.shape) && pointInPolygon(x, y + inset, lm.shape) && pointInPolygon(x, y - inset, lm.shape));
+    // Im Gebiet: weit genug vom Gebirge und vom Kartenrand. (Die Saat liegt sicher im Gebiet, jeder neue Punkt nur bis 1,25 · d daneben –
+    // über das Gebirge (2 · KETTE_FREI breit) kommt so keiner ins Nachbargebiet.)
+    const inside = (x, y) => Math.abs(x) < FRAME_HALF - inset - 3000 && Math.abs(y) < FRAME_HALF - inset - 3000 && grenzAbstand(x, y) >= KETTE_FREI + inset;
     const free = (x, y) => {                                   // cheapest checks first
         const gx = Math.floor(x / d), gy = Math.floor(y / d);
         for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const m of grid.get((gx + i) + ',' + (gy + j)) || []) if (Math.hypot(m.x - x, m.y - y) < d) return false;
         if (templeClear && Math.hypot(x - lm.x, y - lm.y) < templeClear) return false;
         for (const gsp of myGates) if (Math.hypot(x - gsp.x, y - gsp.y) < d * 1.1 || segDistW(x, y, gsp.x, gsp.y, gsp.ex, gsp.ey) < d * .7) return false;
         for (const sl of mySlots) if (Math.hypot(x - sl.x, y - sl.y) < d * 1.1) return false;
+        for (const f of myFelder) if (Math.hypot(x - f.x, y - f.y) < d * .9) return false;                 // (die Felder aus KARTE_ZONEN stehen frei)
         return inside(x, y);
     };
     const add = p => { mine.push(p); const k = Math.floor(p.x / d) + ',' + Math.floor(p.y / d); (grid.get(k) || grid.set(k, []).get(k)).push(p); };
     // Even spread without gaps (Poisson-disc): start near the middle, grow outwards until the region is full.
     const active = [];
     const seed = () => { let best = null, bd = Infinity;
-        for (let t = 0; t < 400; t++) { const x = minX + rand() * (maxX - minX), y = minY + rand() * (maxY - minY), dd = Math.hypot(x - lm.x, y - lm.y); if (dd < bd && free(x, y)) { bd = dd; best = { x, y }; } }
+        for (let t = 0; t < 400; t++) { const x = minX + rand() * (maxX - minX), y = minY + rand() * (maxY - minY), dd = Math.hypot(x - lm.x, y - lm.y); if (dd < bd && free(x, y) && pointInPolygon(x, y, lm.shape)) { bd = dd; best = { x, y }; } }
         if (best) { add(best); active.push(best); } return best; };
     if (seed()) while (true) {
         if (!active.length && !seed()) break;
@@ -732,27 +692,21 @@ for (const lm of landmasses) {
     });
     if (hasTemple) islands.push({
         id: id++, landmassId: lm.id, x: lm.x, y: lm.y,
-        radius: ISLAND_RADIUS * (isMega ? 1.6 : lm.tier === 'guardian' ? 1.45 : 1.3),
-        type: isMega ? 'megaTemple' : 'temple',
+        radius: ISLAND_RADIUS * (isMega ? 1.6 : lm.tier === 'guardian' ? 1.45 : 1.3), bildR: HEILIGTUM_BREITE[isMega ? 'megaTemple' : 'guardian'] * .35,   // (bildR: so weit tippt man ihn auf seinem Bild an)
+        type: isMega ? 'megaTemple' : 'temple', tempelArt: isMega ? null : (KARTE_ZONEN.tempel.find(t => t.gebiet === lm.id) || {}).art,
         guardian: lm.tier === 'guardian',
         neutralTroops: tierStats ? tierStats.temple[0] : Math.round(Math.floor(TEMPLE_TROOPS_MIN + rand() * (TEMPLE_TROOPS_MAX - TEMPLE_TROOPS_MIN)) * ringTruppen(lm) / 100),
         neutralDefense: tierStats ? tierStats.temple[1] : Math.round(Math.floor(TEMPLE_DEFENSE_MIN + rand() * (TEMPLE_DEFENSE_MAX - TEMPLE_DEFENSE_MIN)) * ringTruppen(lm) / 100),
         neutralLevel: tierStats ? tierStats.templeLevel : 1
     });
 }
-// Start places as bases: 64 of them, spread evenly round the edge (player + bots take them, the rest stay empty land).
-{
-    const order = startSlots.slice().sort((u, v) => Math.atan2(u.y, u.x) - Math.atan2(v.y, v.x));
-    const want = 64, step = order.length / want;
-    for (let k = 0; k < want && k * step < order.length; k++) {
-        const sl = order[Math.floor(k * step)], lm = landmasses[sl.lm];
-        islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true,
-            neutralTroops: 0, neutralDefense: 1, neutralLevel: 1 });   // (Startplätze: leer – hier ziehen neue Hauptstädte ein)
-    }
-}
+// Startplätze als Basen (Spieler + Mitspieler ziehen dort ein, die übrigen bleiben leeres Land). startSicht: so weit sieht man von dort
+// aus (01e/10d) – mindestens bis zum nächsten Gebirge des eigenen Gebiets (Alexander 7.10.: Startsicht im eigenen Gebiet)
+for (const sl of startSlots) islands.push({ id: id++, landmassId: sl.lm, x: sl.x, y: sl.y, radius: ISLAND_RADIUS, type: 'tower', startSlot: true, startSicht: Math.min(120000, grenzAbstandWeit(sl.x, sl.y) + 8000),
+    neutralTroops: 0, neutralDefense: 1, neutralLevel: 1 });   // (Startplätze: leer – hier ziehen neue Hauptstädte ein)
 for (const gsp of gateSpots) {
     gsp.br.gateId = id;
-    islands.push({ id: id++, ends: [[gsp.br.x1, gsp.br.y1], [gsp.br.x2, gsp.br.y2]], landmassId: gsp.lm, x: gsp.x, y: gsp.y, radius: ISLAND_RADIUS * 1.25,
+    islands.push({ id: id++, ends: [[gsp.br.x1, gsp.br.y1], [gsp.br.x2, gsp.br.y2]], pass: gsp.br.pass, landmassId: gsp.lm, x: gsp.x, y: gsp.y, radius: ISLAND_RADIUS * 1.25,
                    type: 'gate', gateKind: gsp.kind, toll: gsp.st.toll, neutralTroops: gsp.st.troops, neutralDefense: gsp.st.def, neutralLevel: gsp.st.level });
 }
 const islandById = {};
@@ -764,7 +718,7 @@ if (SYSTEM && store.get('openWaterKarte') !== KARTE_KENNUNG) store.set('openWate
 // The map was rebuilt (Thron-Insel + Wächter-Inseln): old base ids no longer match, so every
 // map-bound part of an old save is cleared once. Coins, gems, gear, skills and level stay,
 // and the player's whole army moves to the new home base.
-const WORLD_VERSION = '7';   // 7: Karte 17 × 17 (Paket C) – welt.js setzt dieselbe Zahl (WELT_VERSION)
+const WORLD_VERSION = '9';   // 9: Felder, Pässe und Startplätze wie der Kartentest (8: Zonen wie RoK, 7: 17 × 17, Paket C) – welt.js setzt dieselbe Zahl (WELT_VERSION)
 if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
     let carry = 0;
     try {
@@ -773,10 +727,15 @@ if (store.get('openWaterWorldVersion') !== WORLD_VERSION) {
         for (const a of JSON.parse(store.get('openWaterPendingAttacks')) || []) if (!a.attackerBotId) carry += a.rawTroops || 0;
         for (const a of JSON.parse(store.get('openWaterPendingSends')) || []) if (!a.senderBotId) carry += a.troops || a.rawTroops || 0;
         for (const a of JSON.parse(store.get('openWaterPendingRetreats')) || []) carry += a.troops || 0;
+        for (const a of (JSON.parse(store.get('openWaterArmies')) || {}).armies || []) if (a.who === 'player' || !a.who) carry += a.troops || 0;   // (Armeen im Feld und Sammler: ihre Truppen kommen mit)
+        for (const a of JSON.parse(store.get('openWaterFieldMarches')) || []) if (a.who === 'player') carry += a.troops || 0;
+        for (const st of Object.values(JSON.parse(store.get('openWaterFields')) || {})) if (st && st.occ && st.occ.who === 'player') carry += st.occ.troops || 0;
     } catch (e) {}
     ['openWaterPlayerIslandId', 'openWaterOwnedIslands', 'openWaterIslandLevels', 'openWaterIslandTroops', 'openWaterBotOwnedIslands',
      'openWaterBotCoins', 'openWaterNeutralTroopOverrides', 'openWaterScoutedIslands', 'openWaterPendingAttacks', 'openWaterPendingSends',
-     'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterShieldStock', 'openWaterWander', 'openWaterWanderNext'].forEach(k => store.remove(k));
+     'openWaterPendingScouts', 'openWaterPendingRetreats', 'openWaterTempleHoldSince', 'openWaterExplored', 'openWaterFogCells', 'openWaterWorldStart', 'openWaterBotState', 'openWaterTitles', 'openWaterGateCfg', 'openWaterShield', 'openWaterShieldStock', 'openWaterWander', 'openWaterWanderNext',
+     'openWaterArmies', 'openWaterFields', 'openWaterFieldMarches', 'openWaterBarb', 'openWaterBarbMarches', 'openWaterBarbWho', 'openWaterEvents', 'openWaterDayBoss',
+     'openWaterBrand', 'openWaterHauptVor', 'openWaterVerstaerkung', 'openWaterMarkers', 'openWaterKarte'].forEach(k => store.remove(k));
     if (carry > 0) store.set('openWaterCarryTroops', String(Math.round(carry)));
     store.set('openWaterWorldVersion', WORLD_VERSION);
 }
@@ -798,6 +757,13 @@ for (const idStr of Object.keys(neutralTroopOverrides)) {
     if (isl) isl.neutralTroops = neutralTroopOverrides[idStr];
 }
 
+// Die Startplätze reihum je Zone-1-Gebiet (1. Platz jedes Gebiets, dann der 2. …): wer vorn nimmt, verteilt sich gleichmäßig
+function startplaetzeReihum() {
+    const je = {}; for (const i of islands) if (i.startSlot) (je[i.landmassId] = je[i.landmassId] || []).push(i);
+    const lms = Object.keys(je).sort((u, v) => Math.atan2(landmasses[u].y, landmasses[u].x) - Math.atan2(landmasses[v].y, landmasses[v].x)), out = [];
+    for (let k = 0; out.length < islands.length && lms.some(l => je[l][k]); k++) for (const l of lms) if (je[l][k]) out.push(je[l][k]);
+    return out;
+}
 function centerIsland() {
     // Player's home base: a regular tower near the middle of the southernmost outer landmass,
     // as far from the Thron-Insel as the bots start.
@@ -806,7 +772,7 @@ function centerIsland() {
 }
 
 // Startplatz für einen neuen Spieler in der EINEN Welt (gibt { insel, aus } zurück; aus = Mitspieler, dem sie gehörte):
-// 1. eine freie Basis am äußeren Rand, auf der Landmasse mit den wenigsten Besitzern
+// 1. ein freier Startplatz in Zone 1, im Gebiet mit den wenigsten Besitzern (dann eine freie Basis in Zone 1, dann weiter innen)
 // 2. Rand voll: irgendeine freie Basis (nie in der Mitte oder bei den Wächter-Tempeln)
 // 3. Karte voll: eine Randbasis vom größten Mitspieler-Reich (nie von einem echten Spieler, nie eine Hauptstadt) – wie bei den Mitspielern
 // besitz: { besitzer: [Basen] } – beim Weltrechner die lebenden Daten, sonst aus dem Speicher
@@ -818,7 +784,11 @@ function freierStartplatz(besitz) {
     for (const id of wem.keys()) { const i = islandById[id]; if (i) proLm[i.landmassId] = (proLm[i.landmassId] || 0) + 1; }
     const besterOrt = liste => { const min = Math.min(...liste.map(i => proLm[i.landmassId] || 0)), beste = liste.filter(i => (proLm[i.landmassId] || 0) === min); return beste.find(i => i.startSlot) || beste[Math.floor(Math.random() * beste.length)]; };
     const turm = i => { if (i.type !== 'tower') return false; try { return !bossAt(i.id); } catch (e) { return true; } };   // (beim Laden gibt es den Besitz noch nicht – dann prüft es der Weltrechner)
-    let frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier === 'outer');
+    let frei = islands.filter(i => i.startSlot && turm(i) && !wem.has(i.id));                       // zuerst die Startplätze in Zone 1
+    if (frei.length) return { insel: besterOrt(frei) };
+    frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].zone === 1);
+    if (frei.length) return { insel: besterOrt(frei) };
+    frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier === 'outer');
     if (frei.length) return { insel: besterOrt(frei) };
     frei = islands.filter(i => turm(i) && !wem.has(i.id) && landmasses[i.landmassId].tier !== 'throne' && landmasses[i.landmassId].tier !== 'guardian');
     if (frei.length) return { insel: besterOrt(frei) };
@@ -944,7 +914,7 @@ const HEROES = [
     { id: 'kasimir', name: 'Kasimir', title: 'Gestürzter König', role: 'Thron', r: 3, icon: 'crown', color: '#6a2f5b', c2: '#2a1a2a', hair: '#2a1a1a', g: 'weapon', base: [6, 3, 0],
       sk: [['Königsruf', 'Im Kampf um die Mitte: +{v} % Angriff.', 'midAtk'], ['Thronsturm', '+{v} % Angriff gegen die Wächter-Tempel.', 'guardAtk'], ['Rache am Thron', '+{v} % Angriff gegen den Herrscher.', 'rulerAtk'], ['Altes Wissen', '{v} % weniger Verluste im Kampf um die Mitte.', 'midLoss']] },
     { id: 'yrsa', name: 'Yrsa', title: 'Tempelwächterin', role: 'Tempel', r: 3, icon: 'temple', color: '#4a6a4a', c2: '#2a3a2a', hair: '#b0602a', g: 'shield', base: [3, 7, 0],
-      sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Gold aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
+      sk: [['Heilige Mauer', 'Greift sie einen Tempel an: {v} % weniger Verluste.', 'templeLoss'], ['Tempelgold', '+{v} % Münzen aus Kämpfen um Tempel.', 'templeGold'], ['Pilgerin', '+{v} % Angriff gegen Tempel.', 'templeAtk'], ['Segen', '+{v} % Verwundete statt Gefallene bei Tempelkämpfen.', 'templeHosp']] },
     { id: 'ida', name: 'Ida', title: 'Pfadfinderin', role: 'Tempo', r: 2, icon: 'boots', color: '#2f7a6a', c2: '#1f3a2f', hair: '#7a3a1a', g: 'weapon', base: [2, 2, 8],
       sk: [['Eilmarsch', 'Ihre Armee marschiert {v} % schneller.', 'spd'], ['Kartenkunde', '+{v} % Marschtempo.', 'spd'], ['Leichtfuß', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Rückweg', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'bernhard', name: 'Bernhard', title: 'Feldscher', role: 'Krankenhaus', r: 2, icon: 'plus', color: '#3d6b9b', c2: '#2a2a3a', hair: '#555', g: 'shield', base: [0, 6, 0],
@@ -952,11 +922,11 @@ const HEROES = [
     { id: 'mira', name: 'Mira', title: 'Späherin', role: 'Späher', r: 2, icon: 'scout', color: '#6b7a2f', c2: '#2f3a1f', hair: '#1a1a1a', g: 'weapon', base: [2, 3, 4],
       sk: [['Adlerauge', '+{v} % Angriff gegen eine Basis, die du vorher ausgespäht hast.', 'scoutAtk'], ['Leise Sohlen', '+{v} % Marschtempo.', 'spd'], ['Spurlos', 'Die anderen bemerken ihren Angriff {v} % später.', 'late'], ['Fährtenleserin', '+{v} % Angriff gegen Armeen im Feld.', 'fieldAtk']] },
     { id: 'nora', name: 'Nora', title: 'Jägerin', role: 'Feldkampf', r: 2, icon: 'troops', color: '#4a5a8a', c2: '#20283a', hair: '#6a2a2a', g: 'weapon', base: [6, 2, 4],
-      sk: [['Hinterhalt', 'Gegen Armeen im Feld: +{v} % Angriff.', 'fieldAtk'], ['Pirsch', '+{v} % Marschtempo im Feld.', 'fieldSpd'], ['Beute', '+{v} % Gold aus Kämpfen im Feld.', 'fieldGold'], ['Zäh', '{v} % weniger Verluste im Feld.', 'fieldLoss']] },
+      sk: [['Hinterhalt', 'Gegen Armeen im Feld: +{v} % Angriff.', 'fieldAtk'], ['Pirsch', '+{v} % Marschtempo im Feld.', 'fieldSpd'], ['Beute', '+{v} % Münzen aus Kämpfen im Feld.', 'fieldGold'], ['Zäh', '{v} % weniger Verluste im Feld.', 'fieldLoss']] },
     { id: 'fenn', name: 'Fenn', title: 'Goldsucher', role: 'Felder', r: 2, icon: 'coin', color: '#7a6a4a', c2: '#3a3020', hair: '#a07a3a', g: 'none', base: [2, 3, 3],
       sk: [['Goldrausch', 'Im Kampf um ein Feld: +{v} % Angriff.', 'resAtk'], ['Spürnase', 'Seine Sammler sind {v} % schneller.', 'gatherSpd'], ['Packesel', '+{v} % Traglast seiner Sammler.', 'carry'], ['Lagerwache', 'Seine Sammler verteidigen mit +{v} %.', 'gatherDef']] },
-    { id: 'otto', name: 'Otto', title: 'Händler', role: 'Gold', r: 1, icon: 'sell', color: '#8a7a2e', c2: '#3a2f1f', hair: '#8a6a3a', g: 'none', base: [3, 2, 0],
-      sk: [['Beutezug', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Feilschen', '+{v} % Gold aus Kämpfen.', 'gold'], ['Lastträger', '+{v} % Traglast seiner Sammler.', 'carry'], ['Sparsam', '−{v} % Maut an fremden Toren.', 'toll']] },
+    { id: 'otto', name: 'Otto', title: 'Händler', role: 'Münzen', r: 1, icon: 'sell', color: '#8a7a2e', c2: '#3a2f1f', hair: '#8a6a3a', g: 'none', base: [3, 2, 0],
+      sk: [['Beutezug', 'Dieser Kampf bringt +{v} % Münzen.', 'gold'], ['Feilschen', '+{v} % Münzen aus Kämpfen.', 'gold'], ['Lastträger', '+{v} % Traglast seiner Sammler.', 'carry'], ['Sparsam', '−{v} % Maut an fremden Toren.', 'toll']] },
     { id: 'greta', name: 'Greta', title: 'Kräuterfrau', role: 'Krankenhaus', r: 1, icon: 'plus', color: '#8a4a5b', c2: '#3a2030', hair: '#c0c0a0', g: 'none', base: [0, 6, 0],
       sk: [['Kräutersud', '+{v} % der Gefallenen kommen ins Krankenhaus.', 'hosp'], ['Salben', '{v} % weniger Verluste.', 'loss'], ['Hausmittel', 'Verliert sie, fliehen {v} % mehr Truppen zurück.', 'flee'], ['Wegzehrung', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'hagen', name: 'Hagen', title: 'Söldner', role: 'Angriff', r: 1, icon: 'weapon', color: '#5a5a5a', c2: '#2a2a2a', hair: '#3a3a3a', g: 'weapon', base: [8, 0, 2],
@@ -976,10 +946,10 @@ const HEROES = [
       sk: [['Fährmannslist', 'Greift sie über eine Brücke an: Verteidigung des Ziels −{v} %.', 'bridgeDef'], ['Strömung', '+{v} % Marschtempo.', 'spd'], ['Fährgeld', '−{v} % Maut an fremden Toren.', 'toll'], ['Zurück ans Ufer', 'Rückzüge sind {v} % schneller.', 'ret']] },
     { id: 'bruno', name: 'Bruno', title: 'Bärenringer', role: 'Angriff', r: 2, icon: 'weapon', color: '#6a4a2a', c2: '#2a1e14', hair: '#4a2a1a', g: 'weapon', base: [7, 3, 1],
       story: 'Auf jedem Jahrmarkt rang er mit Bären, bis Hagen ihn zum Söldner machte. Seitdem prügeln sich die beiden durch jede Hafenkneipe – meistens Seite an Seite.',
-      sk: [['Bärenkraft', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Ringer', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Dickes Fell', '{v} % weniger Verluste.', 'loss'], ['Zechpreller', '+{v} % Gold aus Kämpfen.', 'gold']] },
+      sk: [['Bärenkraft', 'In diesem Kampf +{v} % Angriff.', 'atk'], ['Ringer', '+{v} % Angriff gegen neutrale Basen.', 'neutralAtk'], ['Dickes Fell', '{v} % weniger Verluste.', 'loss'], ['Zechpreller', '+{v} % Münzen aus Kämpfen.', 'gold']] },
     { id: 'pia', name: 'Pia', title: 'Perlentaucherin', role: 'Sammeln', r: 1, icon: 'coin', color: '#3a7a8a', c2: '#183038', hair: '#2a2a3a', g: 'none', base: [2, 2, 3],
       story: 'Sie taucht nach Perlen, wo andere nur Wasser sehen. Mit Fenn teilt sie jeden Fund – er sucht im Fels, sie im Meer.',
-      sk: [['Großer Fang', 'Dieser Kampf bringt +{v} % Gold.', 'gold'], ['Flinke Hände', 'Ihre Sammler sind {v} % schneller.', 'gatherSpd'], ['Tiefe Taschen', '+{v} % Traglast ihrer Sammler.', 'carry'], ['Strandwache', 'Ihre Sammler verteidigen mit +{v} %.', 'gatherDef']] }
+      sk: [['Großer Fang', 'Dieser Kampf bringt +{v} % Münzen.', 'gold'], ['Flinke Hände', 'Ihre Sammler sind {v} % schneller.', 'gatherSpd'], ['Tiefe Taschen', '+{v} % Traglast ihrer Sammler.', 'carry'], ['Strandwache', 'Ihre Sammler verteidigen mit +{v} %.', 'gatherDef']] }
 ];
 // Paket E: zwei Helden pro Marsch. Der Zweitheld gibt seine Werte und passiven Fähigkeiten zu 50 % (die Wut-Fähigkeit zündet nur
 // beim Haupthelden), ein passendes Paar gibt +10 % auf alle Heldenwerte des Marsches. Jeder Held steht in höchstens einem Paar.
@@ -1038,18 +1008,16 @@ for (const bot of BOT_DEFS) if (!botCoins[bot.id]) botCoins[bot.id] = 0;
 // Nur der Weltrechner verteilt (Handys bekommen den Besitz von ihm), und nur an Mitspieler, die noch nie
 // eine Basis hatten: wer ausgeschieden ist, kommt über botRespawn zurück (Wartezeit, Schild …), auch nach einem Neustart.
 if (rechnet()) {
-    // every bot starts on one of the start places round the edge, spread out, never on the player's
+    // every bot starts on one of the start places in Zone 1 – reihum je Gebiet (gleich viele je Gebiet), never on the player's
     const usedTowerIds = new Set([playerIslandId]);
     for (const bot of BOT_DEFS) for (const id of botOwnedIslands[bot.id]) usedTowerIds.add(id);
     for (const id of ownedIslands) usedTowerIds.add(id);
-    const home = islandById[playerIslandId], slots = islands.filter(i => i.startSlot && !usedTowerIds.has(i.id) && i.landmassId !== home.landmassId)
-        .sort((u, v) => Math.atan2(u.y, u.x) - Math.atan2(v.y, v.x));
-    const stepB = Math.max(1, slots.length / BOT_DEFS.length);
+    const home = islandById[playerIslandId], slots = startplaetzeReihum().filter(i => !usedTowerIds.has(i.id));
     let stand = {}; try { stand = JSON.parse(store.get('openWaterBotState')) || {}; } catch (e) {}
     const raus = bot => !!((botBesitzRoh && Array.isArray(botBesitzRoh[bot.id])) || (stand[bot.id] && stand[bot.id].outAt));   // hatte schon Basen (ausgeschieden)
     BOT_DEFS.forEach((bot, i) => {
         if (bot.mensch || botOwnedIslands[bot.id].size > 0 || raus(bot)) return;      // echte Spieler bekommen ihren Platz vom Weltrechner
-        const tower = slots[Math.floor(i * stepB) % slots.length];
+        const tower = slots[i % slots.length];
         if (!tower || usedTowerIds.has(tower.id)) return;
         botOwnedIslands[bot.id].add(tower.id);
         islandLevels[tower.id] = 1;
@@ -1061,7 +1029,7 @@ if (rechnet()) {
     if (late.length) {
         const taken = [...usedTowerIds].map(id => islandById[id]).filter(Boolean);
         for (const bot of BOT_DEFS) { let k = 0; for (const id of botOwnedIslands[bot.id]) { if (k++ % 25 === 0) taken.push(islandById[id]); } }   // a sample of every empire is enough
-        const pool = islands.filter(i => i.type === 'tower' && !usedTowerIds.has(i.id) && !islandOwnerOf(i.id) && landmasses[i.landmassId].tier === 'outer' && landmasses[i.landmassId].ring >= GRID_HALF - 2 && i.landmassId !== home.landmassId);
+        const pool = islands.filter(i => i.type === 'tower' && !usedTowerIds.has(i.id) && !islandOwnerOf(i.id) && landmasses[i.landmassId].zone <= 2 && i.landmassId !== home.landmassId);
         const rnd = mulberry32(4242);
         for (const bot of late) {
             let best = null, bestD = -1;
@@ -1096,7 +1064,7 @@ function rulerOwner() { return megaTempleId === undefined ? null : islandOwnerOf
 // Nebel des Krieges: only explored islands are visible. Owning a base explores its island and
 // every island bridged to it; a scout sent into the fog explores the island it reaches.
 // The fog lifts in small sections (FOG_CELL squares): around every own base, and wherever a scout goes.
-const FOG_CELL = 4000, REVEAL_BASE = 7000, REVEAL_SCOUT = 8000;
+const FOG_CELL = 4000 * KARTE_MASSSTAB, REVEAL_BASE = 7000 * KARTE_MASSSTAB, REVEAL_SCOUT = 8000 * KARTE_MASSSTAB;
 var fogCells = null, fogLmCount = {}, cellLm = null, fogFx = [], fogMaskDirty = true, fogPrompt = null;
 function fogKey(cx, cy) { return cx + ',' + cy; }
 function fogLandCells() {                        // key → landmass id for every cell that touches land
@@ -1148,7 +1116,8 @@ function revealAround(x, y, r, fade) {
     if (changed) { fogMaskDirty = true; store.set('openWaterFogCells', JSON.stringify([...set])); if (typeof requestRender === 'function') requestRender(); }
     return changed;
 }
-function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, REVEAL_BASE, false); } }
+const sichtVon = (i, weit) => Math.max(weit, i.startSicht || 0);   // ein Startplatz sieht bis zum Gebirge seines Gebiets
+function exploreOwned() { for (const id of ownedIslands) { const i = islandById[id]; if (i) revealAround(i.x, i.y, sichtVon(i, REVEAL_BASE), false); } }
 function effectiveTroops(island) {
     const boss = bossAt(island.id); if (boss) return boss.troops;
     const owner = islandOwnerOf(island.id);
@@ -1325,12 +1294,12 @@ function setText(el, v) { v = String(v); if (el && el.textContent !== v) el.text
 function setShown(el, on) { const d = on ? 'block' : 'none'; if (el && el.style.display !== d) el.style.display = d; }
 function updateHud() {
     const troops = totalTroops();
-    setText(coinCountEl, fmtCompact(Math.floor(coins)));
+    setText(coinCountEl, fmtHud(Math.floor(coins)));
     const tc = fmtNum(Math.floor(coins)) + ' Münzen', tg = fmtNum(Math.floor(gems)) + ' Edelsteine', tt = fmtNum(troops) + ' Truppen';
     if (coinCountEl.parentNode.title !== tc) coinCountEl.parentNode.title = tc;
-    setText(gemCountEl, fmtCompact(Math.floor(gems)));
+    setText(gemCountEl, fmtHud(Math.floor(gems)));
     if (gemCountEl.parentNode.title !== tg) gemCountEl.parentNode.title = tg;
-    setText(troopCountEl, fmtCompact(troops));
+    setText(troopCountEl, fmtHud(troops));
     if (troopCountEl.parentNode.title !== tt) troopCountEl.parentNode.title = tt;
     if (AUF) AUF.hud();                                                       // Holz, Stein, Eisen (aufbau.js)
     requestRender();   // HUD changes coincide with state changes -> the map may need a redraw
@@ -1359,322 +1328,12 @@ const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
   troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },
   defense:     { icon: 'defense',   name: 'Verteidigung',       desc: 'jede Basis verteidigt mit mehr Truppen', defPct: 3, max: 50 },
-  defenseGold: { icon: 'shield',    name: 'Verteidigung: Gold', desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 },
+  defenseGold: { icon: 'shield',    name: 'Verteidigung: Münzen', desc: 'Münzen für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 },
   attack:      { icon: 'attack',    name: 'Angriff',            desc: 'mehr Truppen bei jedem Angriff', atkPct: 3, max: 50 },
-  attackGold:  { icon: 'sell',      name: 'Angriff: Gold',      desc: 'Gold für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 }
+  attackGold:  { icon: 'sell',      name: 'Angriff: Münzen',    desc: 'Münzen für getötete Truppen', rate: 0.3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR, max: 50 }
 };   // (Gold je Truppe × WIRTSCHAFT_KOSTEN × MUENZ_FAKTOR wie alle Münzen außerhalb der Produktion: je Stufe ~0,17 Münzen je Kill)
 const EQUIPMENT_BASE_COST = 100;
 
-// Alexander 5.10.: „Karte bleibt wie jetzt, dazu einige Berge/Felsen; Märsche laufen drumherum (Wege etwas länger, Basen dahinter
-// etwas geschützter)“ – Design-Vorgabe Variante A „Berge in den Lücken“: Berge nur in freien Flächen, nie auf Basen, Bändern
-// (Nachbar-Verbindungen), Brücken, Toren, Feldern oder Startplätzen; nur lange Märsche quer über die Region gehen außen herum.
-// Die Berge kommen aus einem eigenen Zufall (wie die Felder) – auf jedem Handy und beim Weltrechner gleich. Jeder Bergstock hat
-// eine konvexe Hülle (Hindernis); zwischen ihnen bleibt immer ein Durchgang, und jede Basis erreicht jede andere Basis ihrer
-// Region mit höchstens 1,6 × Luftlinie (sonst wird der Bergstock verworfen).
-// Weg um die Berge: kürzester Weg über die Hüllen-Ecken (Sichtbarkeits-Graph, Dijkstra), Ecken als Bogen abgerundet und in Punkte
-// zerlegt → marchPath/marchPointAt/pathSoFar laufen darauf; die Marschdauer ist die Länge dieses Wegs (marschStrecke).
-// Schalter WELT_FELSEN = false: keine Berge, alle Märsche wie vorher (Luftlinie über die Brücken).
-const WELT_FELSEN = true;
-const FELS_ABSTAND = { basis: 1400, gross: 3000, band: 900, bruecke: 2000, kueste: 700, feld: 1200, berg: 2200 };   // frei um die Hülle (Welt-Einheiten)
-const FELS_RAND = 500, FELS_ECKE = 300, FELS_BOGEN = 700, FELS_UMWEG_MAX = 1.6;   // Hülle um die Gipfel · Wegpunkte davor · Bogen-Radius
-const FELS_OHNE = { volcano: 1, swamp: 1 };          // Vulkan und Sumpf haben schon ihre Krater/Tümpel: keine Berge
-let felsenDaten = null;                              // { liste, proLm: { lmId: [Bergstock] }, baender: { lmId: [[ax, ay, bx, by]] } }
-function felsenListe() {                             // alle Bergstöcke (einmal berechnet; beim Laden, bevor Felder/Basen da sind: noch keine)
-    if (!WELT_FELSEN) return [];
-    if (felsenDaten) return felsenDaten.liste;
-    let felder, basen;
-    try { felder = resFields; basen = islandsByLandmass; } catch (e) { return []; }
-    const liste = [], proLm = {}, baender = {}, r = mulberry32(60617);
-    for (const lm of landmasses) {
-        const hier = proLm[lm.id] = [], eigene = basen[lm.id] || [];
-        const band = baender[lm.id] = [];                                     // alle möglichen Gebiets-Bänder: Nachbarbasen bis zum Verbindungsabstand
-        const nachX = eigene.slice().sort((p, q) => p.x - q.x);
-        for (let i = 0; i < nachX.length; i++) for (let j = i + 1; j < nachX.length && nachX[j].x - nachX[i].x <= TERRITORY_CONNECT_MAX_DIST; j++) { const A = nachX[i], B = nachX[j];
-            if (Math.hypot(A.x - B.x, A.y - B.y) <= TERRITORY_CONNECT_MAX_DIST) band.push([A.x, A.y, B.x, B.y]); }
-        for (const g of gateSpots) if (g.lm === lm.id) band.push([g.x, g.y, g.ex, g.ey]);   // der Weg vom Tor auf die Brücke
-        if (lm.tier === 'throne' || FELS_OHNE[lm.bio]) continue;
-        const want = eigene.length < 8 ? Math.floor(r() * 2) : 2 + Math.floor(r() * 2), enden = [];   // kleine Regionen 0–1, sonst 2–3 (passen nicht alle: 1–3)
-        for (const br of bridges) { if (br.a === lm.id || br.b === lm.id) enden.push([br.x1, br.y1], [br.x2, br.y2]); }
-        const meineFelder = felder.filter(f => f.landmassId === lm.id);
-        for (let k = 0, tries = 0; k < want && tries < 240; tries++) {
-            const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .75, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .75;
-            if (eigene.some(i => Math.abs(i.x - x) < 3200 && Math.abs(i.y - y) < 3200 && Math.hypot(i.x - x, i.y - y) < i.radius + FELS_ABSTAND.basis + 1200)) continue;   // (schnell: zu nah an einer Basis)
-            if (!aufLand(lm, x, y) || band.some(q => pointToSegmentDistance(x, y, q[0], q[1], q[2], q[3]) < FELS_ABSTAND.band + 800)) continue;   // (schnell: Wasser oder Band)
-            const b = felsBergstock(x, y, r, tries < 50 ? 0 : tries < 110 ? 1 : 2);   // (findet sich lange kein Platz: kleinerer Stock)
-            if (!felsPasst(lm, b, eigene, band, enden, meineFelder, hier)) continue;
-            hier.push(b);
-            if (!felsErreichbar(eigene, b, hier)) { hier.pop(); continue; }
-            b.id = liste.length; b.lm = lm.id; liste.push(b); k++;
-        }
-    }
-    felsenDaten = { liste, proLm, baender };
-    return liste;
-}
-function felsBergstock(x, y, r, stufe) {             // 3–7 Gipfel in zwei versetzten Reihen entlang einer leicht gebogenen Linie: in der Mitte der höchste,
-    const n = 3 + Math.floor(r() * (5 - stufe * 2)), ang = (r() - .5) * Math.PI * .5, bieg = (r() - .5) * .5, ca = Math.cos(ang), sa = Math.sin(ang);   // dazu Hülle und Wegpunkte
-    const gipfel = [], w0 = [2200, 1800, 1400][stufe] + r() * 400, haupt = Math.floor(n / 2 + (r() - .5)); let t = 0;
-    for (let i = 0; i < n; i++) { const s = Math.max(.55, 1 - .17 * Math.abs(i - haupt) + (r() - .5) * .2), w = Math.max(1000, Math.min(2800, w0 * s));
-        gipfel.push({ t, v: (i % 2 ? 1 : -1) * w0 * (.12 + r() * .2), w, h: w * (.55 + r() * .25), off: w * (.1 + r() * .1) }); t += w * (.5 + r() * .15); }
-    const mitte = t / 2;
-    for (const g of gipfel) { const u = g.t - mitte, v = bieg * u * u / Math.max(1, mitte) * .5 + g.v; g.x = x + u * ca - v * sa; g.y = y + u * sa + v * ca; }
-    const ymin = Math.min(...gipfel.map(g => g.y)), ymax = Math.max(...gipfel.map(g => g.y));
-    for (const g of gipfel) { const f = ymax > ymin ? (ymax - g.y) / (ymax - ymin) : .5; g.w *= .85 + f * .3; g.h *= .85 + f * .3; }   // hinten größer, vorne kleiner
-    gipfel.sort((p, q) => p.y - q.y);
-    const pts = [];                                  // Grundriss jedes Gipfels (mit Spitze nach oben) + Rand
-    for (const g of gipfel) for (let i = 0; i < 8; i++) { const th = i / 8 * Math.PI * 2, rx = g.w / 2 + FELS_RAND, ry = (Math.sin(th) < 0 ? g.h * .8 : g.w * .25) + FELS_RAND;
-        pts.push({ x: g.x + Math.cos(th) * rx, y: g.y + Math.sin(th) * ry }); }
-    const poly = felsHuelle(pts), cx = poly.reduce((s, p) => s + p.x, 0) / poly.length, cy = poly.reduce((s, p) => s + p.y, 0) / poly.length;
-    const bb = { l: Math.min(...poly.map(p => p.x)), r: Math.max(...poly.map(p => p.x)), t: Math.min(...poly.map(p => p.y)), b: Math.max(...poly.map(p => p.y)) };
-    const ecken = poly.map(p => { const dx = p.x - cx, dy = p.y - cy, d = Math.hypot(dx, dy) || 1; return { x: p.x + dx / d * FELS_ECKE, y: p.y + dy / d * FELS_ECKE }; });
-    return { x, y, gipfel, poly, bb, ecken, saat: Math.floor(r() * 1e9) };
-}
-function felsHuelle(pts) {                           // konvexe Hülle (gegen den Uhrzeigersinn)
-    pts = pts.slice().sort((p, q) => p.x - q.x || p.y - q.y);
-    const kreuz = (o, p, q) => (p.x - o.x) * (q.y - o.y) - (p.y - o.y) * (q.x - o.x), unten = [], oben = [];
-    for (const p of pts) { while (unten.length >= 2 && kreuz(unten[unten.length - 2], unten[unten.length - 1], p) <= 0) unten.pop(); unten.push(p); }
-    for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (oben.length >= 2 && kreuz(oben[oben.length - 2], oben[oben.length - 1], p) <= 0) oben.pop(); oben.push(p); }
-    return unten.slice(0, -1).concat(oben.slice(0, -1));
-}
-function felsAbstand(poly, x, y) {                   // Abstand eines Punkts zur Hülle (0 = drin)
-    if (pointInPolygon(x, y, poly)) return 0;
-    let d = Infinity;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) d = Math.min(d, pointToSegmentDistance(x, y, poly[j].x, poly[j].y, poly[i].x, poly[i].y));
-    return d;
-}
-function felsAbstandStrecke(f, ax, ay, bx, by) {     // Abstand einer Strecke zur Hülle (0 = berührt)
-    if (felsKreuzt(f, ax, ay, bx, by)) return 0;
-    let d = Math.min(felsAbstand(f.poly, ax, ay), felsAbstand(f.poly, bx, by));
-    for (const p of f.poly) d = Math.min(d, pointToSegmentDistance(p.x, p.y, ax, ay, bx, by));
-    return d;
-}
-function felsPasst(lm, b, basen, band, enden, felder, andere) {
-    const A = FELS_ABSTAND, P = b.poly, weit = (l, t, r, u, m) => r < b.bb.l - m || l > b.bb.r + m || u < b.bb.t - m || t > b.bb.b + m;
-    for (const i of basen) { const m = i.radius + (i.startSlot || i.type !== 'tower' ? A.gross : A.basis);   // Startplätze, Tempel, Tore: mehr Platz
-        if (!weit(i.x, i.y, i.x, i.y, m) && felsAbstand(P, i.x, i.y) < m) return false; }
-    for (const [ax, ay, bx, by] of band) if (!weit(Math.min(ax, bx), Math.min(ay, by), Math.max(ax, bx), Math.max(ay, by), A.band) && felsAbstandStrecke(b, ax, ay, bx, by) < A.band) return false;
-    for (const [x, y] of enden) if (felsAbstand(P, x, y) < A.bruecke) return false;
-    for (const f of felder) if (felsAbstand(P, f.x, f.y) < f.radius + A.feld) return false;
-    for (const o of andere) if (o.poly.some(p => felsAbstand(P, p.x, p.y) < A.berg) || P.some(p => felsAbstand(o.poly, p.x, p.y) < A.berg)) return false;
-    const tief = HEX_SPACING / 2 - 7700 - A.kueste;   // (das Ufer schlängelt sich höchstens ±3,8k: tiefer drin ist sicher Land)
-    for (const p of P) { const dx = p.x - b.x, dy = p.y - b.y, d = Math.hypot(dx, dy) || 1, x = p.x + dx / d * A.kueste, y = p.y + dy / d * A.kueste;   // ganz auf dem Land, mit Abstand zur Küste
-        if (Math.abs(x - lm.x) < tief && Math.abs(y - lm.y) < tief) continue;
-        if (!aufLand(lm, x, y)) return false; }
-    return true;
-}
-function felsErreichbar(basen, b, fs) {              // keine Basis eingemauert: jeder Weg, den der neue Bergstock schneidet, höchstens 1,6 × Luftlinie
-    const umfang = felsLaenge(b.poly.concat([b.poly[0]])), sicher = umfang / 2 / (FELS_UMWEG_MAX - 1);   // so weit auseinander: halb herum reicht immer
-    for (let i = 0; i < basen.length; i++) for (let j = i + 1; j < basen.length; j++) { const A = basen[i], B = basen[j];
-        if (Math.hypot(A.x - B.x, A.y - B.y) > sicher || !felsKreuzt(b, A.x, A.y, B.x, B.y)) continue;
-        const w = felsWegUm(A, B, fs); if (!w) return false;
-        if (felsLaenge(w) > FELS_UMWEG_MAX * Math.hypot(A.x - B.x, A.y - B.y)) return false; }
-    return true;
-}
-function felsKreuzt(f, ax, ay, bx, by) {             // geht die Strecke a→b durch die Hülle?
-    const bb = f.bb;
-    if (Math.max(ax, bx) < bb.l || Math.min(ax, bx) > bb.r || Math.max(ay, by) < bb.t || Math.min(ay, by) > bb.b) return false;
-    const P = f.poly, n = P.length, kreuz = (ox, oy, px, py, qx, qy) => (px - ox) * (qy - oy) - (py - oy) * (qx - ox);
-    for (let i = 0, j = n - 1; i < n; j = i++) {
-        const d1 = kreuz(ax, ay, bx, by, P[j].x, P[j].y), d2 = kreuz(ax, ay, bx, by, P[i].x, P[i].y);
-        const d3 = kreuz(P[j].x, P[j].y, P[i].x, P[i].y, ax, ay), d4 = kreuz(P[j].x, P[j].y, P[i].x, P[i].y, bx, by);
-        if (((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))) return true;
-    }
-    return pointInPolygon((ax + bx) / 2, (ay + by) / 2, P) || pointInPolygon(ax, ay, P) || pointInPolygon(bx, by, P);
-}
-const felsLaenge = w => { let s = 0; for (let i = 1; i < w.length; i++) s += Math.hypot(w[i].x - w[i - 1].x, w[i].y - w[i - 1].y); return s; };
-const felsLmAn = (() => { const m = {}; let fertig = false; return (x, y) => {   // Region unter einem Punkt (Raster der Regionen; Berge liegen innen)
-    if (!fertig) { for (const lm of landmasses) m[lm.q + ',' + lm.r] = lm.id; fertig = true; }
-    return m[Math.round(x / HEX_SPACING) + ',' + Math.round(y / HEX_SPACING)]; }; })();
-function felsenBei(x, y) { felsenListe(); const id = felsLmAn(x, y); return felsenDaten && id !== undefined ? felsenDaten.proLm[id] || [] : []; }
-// Liegt (x, y) auf einem Bergstock (mit Rand)? Für Lager, Tagesboss und Wälder, die ihren Platz selbst suchen.
-function felsAuf(x, y, rand) { if (!WELT_FELSEN) return false; for (const f of felsenBei(x, y)) if (felsAbstand(f.poly, x, y) < (rand || 0)) return true; return false; }
-function felsWegUm(a, b, fs) {                       // kürzester Weg a → b um die Hüllen fs (Ecken-Graph, Dijkstra) → Ecken-Punkte, oder null
-    const knoten = [{ x: a.x, y: a.y }, { x: b.x, y: b.y }];
-    for (const f of fs) for (const e of f.ecken) knoten.push(e);
-    const n = knoten.length, dist = new Array(n).fill(Infinity), vor = new Array(n).fill(-1), fertig = new Array(n).fill(false);
-    dist[0] = 0;
-    for (;;) {
-        let u = -1; for (let i = 0; i < n; i++) if (!fertig[i] && dist[i] < Infinity && (u < 0 || dist[i] < dist[u])) u = i;
-        if (u < 0 || u === 1) break;
-        fertig[u] = true;
-        for (let v = 0; v < n; v++) { if (fertig[v]) continue;
-            const d = dist[u] + Math.hypot(knoten[v].x - knoten[u].x, knoten[v].y - knoten[u].y);
-            if (d < dist[v] && !fs.some(f => felsKreuzt(f, knoten[u].x, knoten[u].y, knoten[v].x, knoten[v].y))) { dist[v] = d; vor[v] = u; } }
-    }
-    if (vor[1] < 0) return null;
-    const weg = []; for (let i = 1; i >= 0; i = vor[i]) weg.unshift({ x: knoten[i].x, y: knoten[i].y });
-    return weg;
-}
-function felsBogen(weg) {                            // Ecken als Bogen (quadratische Kurve), in Punkte alle ~150 Einheiten zerlegt
-    if (weg.length < 3) return weg;
-    const out = [weg[0]];
-    for (let i = 1; i < weg.length - 1; i++) {
-        const p = weg[i - 1], c = weg[i], q = weg[i + 1], l1 = Math.hypot(c.x - p.x, c.y - p.y) || 1, l2 = Math.hypot(q.x - c.x, q.y - c.y) || 1;
-        const R = Math.min(FELS_BOGEN, l1 / 2, l2 / 2), A = { x: c.x - (c.x - p.x) / l1 * R, y: c.y - (c.y - p.y) / l1 * R }, B = { x: c.x + (q.x - c.x) / l2 * R, y: c.y + (q.y - c.y) / l2 * R };
-        const k = Math.max(2, Math.ceil(2 * R / 150));
-        for (let s = 0; s <= k; s++) { const t = s / k, u = 1 - t; out.push({ x: u * u * A.x + 2 * u * t * c.x + t * t * B.x, y: u * u * A.y + 2 * u * t * c.y + t * t * B.y }); }
-    }
-    out.push(weg[weg.length - 1]);
-    return out;
-}
-const felsWegMem = new Map();                        // Umwege, schon gerechnet (höchstens 20.000 – dann von vorn; nie vorab für alle Paare)
-function felsenWeg(a, b) {                           // a → b um die Berge herum: [a, Bogen-Punkte …, b]
-    const gerade = [{ x: a.x, y: a.y }, { x: b.x, y: b.y }];
-    if (!WELT_FELSEN) return gerade;
-    let fs = felsenBei(a.x, a.y); const fb = felsenBei(b.x, b.y);
-    if (fb !== fs) fs = fs.concat(fb.filter(f => !fs.includes(f)));
-    fs = fs.filter(f => !pointInPolygon(a.x, a.y, f.poly) && !pointInPolygon(b.x, b.y, f.poly));   // (steht etwas auf einem Berg: der Berg zählt nicht)
-    if (!fs.some(f => felsKreuzt(f, a.x, a.y, b.x, b.y))) return gerade;
-    const key = Math.round(a.x) + ',' + Math.round(a.y) + '>' + Math.round(b.x) + ',' + Math.round(b.y);
-    let weg = felsWegMem.get(key);
-    if (!weg) { weg = felsBogen(felsWegUm(a, b, fs) || gerade); weg[0] = gerade[0]; weg[weg.length - 1] = gerade[1];
-        if (felsWegMem.size >= 20000) felsWegMem.clear();
-        felsWegMem.set(key, weg); }
-    return weg.map(p => ({ x: p.x, y: p.y }));
-}
-function felsenPfad(pts) {                           // jede Strecke eines Marschwegs um die Berge herum
-    if (!WELT_FELSEN || pts.length < 2) return pts;
-    const out = [pts[0]];
-    for (let i = 1; i < pts.length; i++) { const w = felsenWeg(pts[i - 1], pts[i]); for (let k = 1; k < w.length; k++) out.push(w[k]); }
-    return out;
-}
-
-// ===== Zeichnen (im Kachel-Bild, Welt-Koordinaten – wie Wälder): Low-Poly wie die Berge im Stadtbild, Licht oben links, keine Verläufe =====
-// Farben je Landschaft: Licht, Schatten, Grat-Kante, Kappe (Schnee auf den 1–2 höchsten, Wüste: Tafelberge ohne Kappe)
-const FELS_FARBE = {
-    green: ['#9a8a72', '#5e5242', 'rgba(30,24,16,.55)', '#eef2f5'],
-    sand:  ['#c48a55', '#8a5a34', 'rgba(60,34,14,.5)', null],
-    snow:  ['#e9eef3', '#8fa0b0', 'rgba(50,66,82,.5)', null],
-    ice:   ['#e9eef3', '#87a9c3', 'rgba(50,66,82,.5)', null],
-    stone: ['#8e8f8c', '#55575a', 'rgba(24,24,26,.6)', null]
-};
-const felsMisch = (a, b, t) => '#' + [1, 3, 5].map(i => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
-const FELS_TOENE = {};                               // 5 Flächen-Töne je Landschaft: hell (oben links) · licht · mittel (vorne) · dunkel (rechts) · tief (hinten rechts)
-for (const k in FELS_FARBE) { const [L, S] = FELS_FARBE[k]; FELS_TOENE[k] = [felsMisch(L, '#ffffff', .16), L, felsMisch(L, S, .45), S, felsMisch(S, '#000000', .22)]; }
-function felsFacetten(d, x, y, w, h, off, rnd, tafel, kappe) {   // ein Gipfel (oder Felsbrocken) aus 5 Flächen; Fuß-Mitte (x, y)
-    const hw = w / 2, j = () => (rnd() - .5) * w * .1, P = (px, py) => ({ x: px + j(), y: py + j() });
-    const B0 = P(x - hw, y - h * .05), B1 = P(x - hw * .5, y + w * .16), B2 = P(x + hw * .1, y + w * .22), B3 = P(x + hw * .6, y + w * .14), B4 = P(x + hw, y - h * .04);
-    const S = { x: x - off, y: y - h }, SL = P(x - hw * .62, y - h * (.4 + rnd() * .15)), SR = P(x + hw * .55, y - h * (.42 + rnd() * .16)), K = P(x - off * .3 + hw * .06, y - h * .36);
-    const S1 = tafel ? { x: S.x - w * .14, y: S.y + h * .16 } : S, S2 = tafel ? { x: S.x + w * .16, y: S.y + h * .16 } : S;   // Wüste: Spitze abgeflacht
-    const flaeche = (p, ...q) => { p.moveTo(q[0].x, q[0].y); for (let i = 1; i < q.length; i++) p.lineTo(q[i].x, q[i].y); p.closePath(); };
-    d.boden.moveTo(x + w * .12 + hw * 1.05, y + w * .12); d.boden.ellipse(x + w * .12, y + w * .12, hw * 1.05, w * .24, 0, 0, Math.PI * 2);
-    flaeche(d.ton[0], SL, S1, S2, K); flaeche(d.ton[1], B0, SL, K, B1); flaeche(d.ton[2], B1, K, B2);
-    flaeche(d.ton[3], S2, SR, B3, B2, K); flaeche(d.ton[4], SR, B4, B3);
-    d.kante.moveTo(B0.x, B0.y); d.kante.lineTo(SL.x, SL.y); d.kante.lineTo(S1.x, S1.y); d.kante.lineTo(S2.x, S2.y); d.kante.lineTo(SR.x, SR.y); d.kante.lineTo(B4.x, B4.y);
-    d.kante.moveTo(S2.x, S2.y); d.kante.lineTo(K.x, K.y); d.kante.lineTo(B2.x, B2.y);
-    d.sil.moveTo(B0.x, B0.y); for (const q of [SL, S1, S2, SR, B4, B3, B2, B1]) d.sil.lineTo(q.x, q.y); d.sil.closePath();
-    if (kappe) { const m = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });   // Schneekappe: oberes Drittel, unten gezackt
-        const a = m(S, SL, .55), b = m(S, SR, .5), c = m(S, K, .6);
-        flaeche(d.kappe, S, b, { x: (b.x + c.x) / 2, y: (b.y + c.y) / 2 - h * .06 }, c, { x: (a.x + c.x) / 2, y: (a.y + c.y) / 2 - h * .05 }, a); }
-}
-function felsBild(lm) {                              // die Pfade einer Region (einmal gebaut): ≤ 14 fill/stroke je Region und Kachel, egal wie viele Gipfel
-    if (lm.felsBild !== undefined) return lm.felsBild;
-    if (FELS_OHNE[lm.bio] && !lm.stone) return (lm.felsBild = null);
-    felsenListe();
-    const fs = felsenDaten.liste.filter(f => f.lm === lm.id), P = () => new Path2D();
-    const d = { boden: P(), ton: [P(), P(), P(), P(), P()], kante: P(), sil: P(), kappe: P(), geroell: P(), baum: P(), baumL: P(), fels: null };
-    const tafel = lm.bio === 'sand' && !lm.stone, schnee = (FELS_FARBE[lm.stone ? 'stone' : lm.bio] || FELS_FARBE.green)[3];
-    const blob = (p, x, y, rx, ry, rnd, k) => { for (let i = 0; i <= k; i++) { const t = i / k * Math.PI * 2, f = .78 + rnd() * .3, px = x + Math.cos(t) * rx * f, py = y + Math.sin(t) * ry * f; i ? p.lineTo(px, py) : p.moveTo(px, py); } p.closePath(); };
-    d.stuecke = fs.map(felsStuecke).flat().sort((p, q) => p.y - q.y);   // Bild-Stücke (KI-Bilder), hinten zuerst
-    for (const f of fs) {
-        const rnd = mulberry32(f.saat);
-        const hoechste = f.gipfel.slice().sort((p, q) => q.h - p.h).slice(0, 1 + (rnd() < .5 ? 1 : 0));
-        for (const g of f.gipfel) felsFacetten(d, g.x, g.y, g.w, g.h, g.off, rnd, tafel, !tafel && !!schnee && g.w > 1300 && hoechste.includes(g));   // hinten zuerst (nach y sortiert)
-        const fuss = f.gipfel.slice().sort((p, q) => q.y - p.y);
-        for (let i = 0, n = 4 + Math.floor(rnd() * 7); i < n; i++) { const g = fuss[Math.floor(rnd() * Math.min(3, fuss.length))], rr = 60 + rnd() * 80;   // Geröll am Fuß
-            blob(d.geroell, g.x + (rnd() - .5) * g.w * 1.2, g.y + g.w * (.2 + rnd() * .16), rr, rr * .7, rnd, 5); }
-        if ((lm.bio === 'green' || lm.bio === 'snow') && !lm.stone) for (let i = 0, n = 1 + Math.floor(rnd() * 2); i < n; i++) {   // 1–2 Baumgruppen am Fuß
-            const g = fuss[Math.floor(rnd() * fuss.length)], bx = g.x + (rnd() < .5 ? -1 : 1) * g.w * (.55 + rnd() * .3), by = g.y + g.w * .25;
-            for (let k = 0; k < 4; k++) { const x = bx + (rnd() - .5) * 500, y = by + (rnd() - .5) * 260, rr = 100 + rnd() * 90;
-                d.baum.moveTo(x + rr, y); d.baum.arc(x, y, rr, 0, Math.PI * 2); d.baumL.moveTo(x - .12 * rr + .74 * rr, y - .18 * rr); d.baumL.arc(x - .12 * rr, y - .18 * rr, .74 * rr, 0, Math.PI * 2); } }
-    }
-    {   // Einzelfelsen (nur nah sichtbar, kein Hindernis): Wiese/Schnee 2–5 Gruppen; Wüste/Stein 10–16 – sie ersetzen dort die alten runden Häufchen
-        const rnd = mulberry32(lm.id * 4243 + 17), bas = islandsByLandmass[lm.id] || [], band = felsenDaten.baender[lm.id] || [], viel = lm.stone || lm.bio === 'sand';
-        const e = d.fels = { boden: P(), ton: [P(), P(), P(), P(), P()], kante: P(), sil: P(), kappe: null };
-        for (let i = 0, ok = 0, want = viel ? 10 + Math.floor(rnd() * 7) : 2 + Math.floor(rnd() * 4); i < want * 12 && ok < want; i++) {
-            const a = rnd() * Math.PI * 2, r0 = Math.sqrt(rnd()) * lm.shapeMaxR * .85, x = lm.x + Math.cos(a) * r0, y = lm.y + Math.sin(a) * r0;
-            if (!aufLand(lm, x, y) || bas.some(b => Math.abs(b.x - x) < 3000 && Math.abs(b.y - y) < 3000 && Math.hypot(b.x - x, b.y - y) < b.radius + 800) || felsAuf(x, y, 600)
-                || band.some(s => pointToSegmentDistance(x, y, s[0], s[1], s[2], s[3]) < 500)) continue;   // (Deko, kein Hindernis: nur nicht auf Basis oder Band)
-            ok++;
-            const n = 2 + Math.floor(rnd() * 3), br = [];
-            for (let k = 0; k < n; k++) { const s = (k ? 380 : 560) + rnd() * 300; br.push([x + (rnd() - .5) * 1100, y + (rnd() - .5) * 500, s]); }
-            br.sort((p, q) => p[1] - q[1]);
-            for (const [bx, by, s] of br) felsFacetten(e, bx, by, s, s * (.5 + rnd() * .3), s * (.05 + rnd() * .12), rnd, false, false);
-        }
-    }
-    return (lm.felsBild = d);
-}
-function felsFlaechen(g, d, t, kante, kw) {          // Bodenschatten + 5 Flächen-Töne (+ Grat-Kante)
-    g.fillStyle = 'rgba(0,0,0,.18)'; g.fill(d.boden);
-    for (let i = 4; i >= 0; i--) { g.fillStyle = t[i]; g.fill(d.ton[i]); }
-    if (kante) { g.lineJoin = 'round'; g.strokeStyle = kante; g.lineWidth = kw; g.stroke(d.kante); }
-}
-// ===== Bergstöcke als KI-Bilder (Durchlauf „Karte wie RoK“, nur Aussehen: Hülle, Wege, Marschzeiten bleiben) =====
-// Je Bergstock 1–3 Bild-Stücke nebeneinander entlang der Gipfel-Linie, der Fuß deckt die Hülle; Bild und Spiegelung fest aus
-// der Saat. Getönt je Landschaft (einmal vorab, kein ctx.filter) und je Größe eine halbierte Stufe (scharf auch weit weg).
-// Geladen wird erst beim ersten Zeichnen (der Weltrechner zeichnet nie); bis dahin die Low-Poly-Gipfel von oben.
-const FELS_BILDER = ['bilder/fels_1.webp', 'bilder/fels_2.webp'];
-const FELS_TOENUNG = {                               // [Mischart, Farbe, Stärke] je Landschaft (Wiese: Bild wie es ist)
-    sand:  [['saturation', '#808080', .45], ['multiply', '#e8b878', .55]],
-    snow:  [['saturation', '#808080', .7], ['screen', '#c4d4e4', .5]],
-    ice:   [['saturation', '#808080', .7], ['screen', '#c4d4e4', .5]],
-    stone: [['saturation', '#808080', .85], ['multiply', '#b4b4b4', .3]]
-};
-const felsBilder = { img: null, fertig: 0, stufen: {} };
-function felsBilderLaden() {                         // einmal; danach die Kacheln neu (dann mit Bildern)
-    if (felsBilder.img || (window.WELT && WELT.leiter) || typeof Image === 'undefined') return;
-    felsBilder.img = FELS_BILDER.map(src => { const i = new Image();
-        i.onload = () => { if (++felsBilder.fertig === FELS_BILDER.length) { BG.valid = false; requestRender(); } };   // (Übersicht weit weg bleibt: Berge dort nur Punkte)
-        i.src = src; return i; });
-}
-function felsStuecke(f) {                            // Bild-Stücke eines Bergstocks: { v: Bild, sp: gespiegelt, x: Mitte, y: Fuß, w: Breite } (Welt)
-    const rnd = mulberry32(f.saat ^ 0x5bd1e995), W = f.bb.r - f.bb.l, H = f.bb.b - f.bb.t;
-    const gs = f.gipfel.slice().sort((p, q) => p.t - q.t), k = Math.max(1, Math.min(3, gs.length, Math.round(W / (H * 1.7)))), v0 = Math.floor(rnd() * 2), out = [];
-    for (let i = 0; i < k; i++) {
-        const teil = gs.slice(Math.round(i * gs.length / k), Math.round((i + 1) * gs.length / k));
-        const l = Math.min(...teil.map(g => g.x - g.w / 2)) - FELS_RAND, r = Math.max(...teil.map(g => g.x + g.w / 2)) + FELS_RAND;
-        const fuss = Math.max(...teil.map(g => g.y + g.w * .25)) + FELS_RAND;
-        out.push({ v: (v0 + i) % 2, sp: rnd() < .5, x: (l + r) / 2, y: fuss, w: (r - l) * 1.12 * (.92 + rnd() * .16) });
-    }
-    return out;
-}
-function felsStufe(v, ton, px) {                     // getöntes Bild v in der kleinsten Stufe, die noch ≥ px Geräte-Pixel breit ist
-    const key = v + ton, st = felsBilder.stufen[key] || (felsBilder.stufen[key] = []);
-    if (!st.length) { const img = felsBilder.img[v], c = document.createElement('canvas'), x = c.getContext('2d');
-        c.width = img.naturalWidth; c.height = img.naturalHeight; x.drawImage(img, 0, 0);
-        for (const [art, farbe, a] of FELS_TOENUNG[ton] || []) { x.globalCompositeOperation = art; x.globalAlpha = a; x.fillStyle = farbe; x.fillRect(0, 0, c.width, c.height); }
-        if (FELS_TOENUNG[ton]) { x.globalCompositeOperation = 'destination-in'; x.globalAlpha = 1; x.drawImage(img, 0, 0); }
-        st.push(c); }
-    while (st[st.length - 1].width / 2 >= Math.max(8, px)) { const a = st[st.length - 1], c = document.createElement('canvas'), x = c.getContext('2d');
-        c.width = Math.round(a.width / 2); c.height = Math.round(a.height / 2); x.imageSmoothingQuality = 'high'; x.drawImage(a, 0, 0, c.width, c.height); st.push(c); }
-    let i = st.length - 1; while (i > 0 && st[i].width < px) i--;
-    return st[i];
-}
-function felsStueckeMalen(g, d, ton) {               // alle Bild-Stücke einer Region (Kachel in Welt-Koordinaten)
-    const s = Math.abs(g.getTransform().a) || 1;     // Geräte-Pixel je Welt-Einheit
-    for (const p of d.stuecke) { const c = felsStufe(p.v, ton, p.w * s), h = p.w * c.height / c.width;
-        if (p.sp) { g.save(); g.translate(p.x, 0); g.scale(-1, 1); g.drawImage(c, -p.w / 2, p.y - h, p.w, h); g.restore(); }
-        else g.drawImage(c, p.x - p.w / 2, p.y - h, p.w, h); }
-}
-function felsenMalen(g, lm, zd, zl) {                // in paintBackground: zd = Zoom der Kachel (Übersicht: 0 = weit, 1 = alles), zl = Maßstab der Kachel
-    if (!WELT_FELSEN) return;
-    const d = felsBild(lm); if (!d) return;
-    const k = lm.stone ? 'stone' : FELS_FARBE[lm.bio] ? lm.bio : 'green', f = FELS_FARBE[k], t = FELS_TOENE[k];
-    const gipfelA = Math.min(1, Math.max(0, (Math.max(zd, zl) - 0.0042) / 0.002)), feinA = Math.min(1, Math.max(0, (zd - 0.016) / 0.006));
-    felsBilderLaden();
-    if (felsBilder.fertig === FELS_BILDER.length && zd >= KARTE_BILD_ZOOM) {   // Bilder da: Bergstöcke als Bild (ganz draußen nur die Silhouette)
-        felsStueckeMalen(g, d, lm.boden === 'innen' || lm.boden === 'sand' ? 'sand' : 'green');   // (getönt nach dem Boden-Ring; die kleinen Low-Poly-Einzelfelsen fallen weg: Stilbruch)
-        return; }
-    if (gipfelA < 1) { g.globalAlpha = 1 - gipfelA; g.fillStyle = f[1]; g.fill(d.sil); }   // weit weg (Gipfel < 6 px): nur die dunkle Silhouette
-    if (gipfelA > 0) { g.globalAlpha = gipfelA;
-        if (feinA > 0) { g.globalAlpha = gipfelA * feinA; g.fillStyle = '#284d22'; g.fill(d.baum); g.fillStyle = '#35652c'; g.fill(d.baumL); g.globalAlpha = gipfelA; }
-        felsFlaechen(g, d, t, null);
-        if (feinA > 0) { g.globalAlpha = gipfelA * feinA;
-            if (f[3]) { g.fillStyle = f[3]; g.fill(d.kappe); }
-            g.fillStyle = t[3]; g.fill(d.geroell);
-            g.lineJoin = 'round'; g.strokeStyle = f[2]; g.lineWidth = 30; g.stroke(d.kante);
-            felsFlaechen(g, d.fels, t, f[2], 18); } }
-    g.globalAlpha = 1;
-}
 // ===== Shop: gem-bought crates, rarity items, combine, salvage =====
 // A second, separate equipment layer on top of the existing coin-
 // upgraded weapon/armor/shield/boots levels above - gem crates drop
@@ -1699,12 +1358,14 @@ const ITEM_MAX_LEVEL = 20;
 const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen (seit 2.10. auch kein Preis mehr mit „mind. Legendär“)
 const CRATE_GEM_COST = 150;  // (5.10. Alexander: vorher 30, davor 5 – Gold-Ausrüstung kam zu schnell)
 const COMBINE_COUNT = 3;
-const RARITY_PCT_PER_SCORE = 0.15;
+const RARITY_PCT_PER_SCORE = 0.15, ITEM_GRUND = 6;   // %-Wirkung = (Wert + 6) × 0,15 → grau Stufe 1 = 1 % (7.10.: vorher 0,15 %)
 const RARITY_FLAT_PER_SCORE = 0.3;
 
 function itemScore(item) {
     return item.rarity * ITEM_MAX_LEVEL + item.level;
 }
+const itemPct = item => (itemScore(item) + ITEM_GRUND) * RARITY_PCT_PER_SCORE;   // Grundwert in % (ohne Sterne)
+const salvagePoints = item => 5 + itemScore(item);   // Zerlegen: grau 1 = 6 Punkte (= eine Aufwertung, 7.10.)
 function itemLevelUpCost(item) {
     return item.level * 5;
 }
@@ -1729,7 +1390,7 @@ let upgradePoints = parseInt(store.get('openWaterUpgradePoints'), 10) || 0;
 function equippedItemBonusPct(slot) {
     const id = equippedItems[slot];
     const item = id ? inventory[id] : null;
-    return item ? itemScore(item) * RARITY_PCT_PER_SCORE * (1 + (item.stars || 0) * STAR_PCT / 100) : 0;
+    return item ? itemPct(item) * (1 + (item.stars || 0) * STAR_PCT / 100) : 0;
 }
 
 function pickRandomSlot() {
@@ -1806,6 +1467,7 @@ function autoCombineAll() {
         }
     }
     if (totalCombines > 0) {
+        questProgress('zusammen', totalCombines);
         saveGame();
         saveProgression();
         updateHud();
@@ -1818,7 +1480,7 @@ function starRefund(item) { let g = 0; for (let s = 0; s < (item.stars || 0); s+
 function salvageItem(itemId) {
     const item = inventory[itemId];
     if (!item || equippedItems[item.slot] === itemId) return 0;
-    const points = itemScore(item);
+    const points = salvagePoints(item);
     upgradePoints += points; gems += starRefund(item);   // the gems paid for its stars come back
     delete inventory[itemId];
     saveGame();
@@ -1833,7 +1495,7 @@ function salvageItems(itemIds) {
     for (const id of itemIds) {
         const item = inventory[id];
         if (!item || equippedItems[item.slot] === id) continue;
-        total += itemScore(item); gems += starRefund(item);
+        total += salvagePoints(item); gems += starRefund(item);
         delete inventory[id];
     }
     if (total > 0) {
@@ -1851,7 +1513,7 @@ function levelUpItem(itemId) {
     if (upgradePoints < cost) return false;
     upgradePoints -= cost;
     item.level += 1;
-    saveProgression();
+    saveProgression(); questProgress('schmiede', 1);
     return true;
 }
 function equipInventoryItem(itemId) {
@@ -1974,7 +1636,7 @@ function equipmentUpgradeCost(level) {
 // Attacks and troop transfers now take real time to arrive, scaled
 // by the distance between the two towers - the "Geschwindigkeit"
 // skill (which also speeds up production) shortens the march.
-const BASE_ATTACK_SPEED = 300; // world units per second - slow enough that speed upgrades are felt
+const BASE_ATTACK_SPEED = 300 * KARTE_MASSSTAB; // world units per second - slow enough that speed upgrades are felt
 const MIN_ATTACK_SECONDS = 6;
 const MAX_ATTACK_SECONDS = 60;
 // A lost attack isn't one-sided: the defender takes real casualties
@@ -1987,8 +1649,8 @@ function attackSpeedMultiplier() {
     return 1 + Math.min(skills.speed || 0, SKILL_DEFS.speed.max) * 0.05;
 }
 function scoutSecs(from, to, botId) { return travelDurationSeconds(from, to, botId) / (AUF ? AUF.spaeherTempo(botId || 'player') : 1); }   // (+ Forschung Späher)   // a scout's walk, Späherturm included - the same for everyone
-function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (über die Brücken, um die Berge – 01f)
-    const pts = source.landmassId === target.landmassId ? felsenWeg(source, target) : marchPath(source, target);
+function marschStrecke(source, target) {          // der Weg in Welt-Einheiten (über die Pässe, marchPath)
+    const pts = marchPath(source, target);
     let distance = 0; for (let i = 1; i < pts.length; i++) distance += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
     return distance;
 }
@@ -2044,7 +1706,7 @@ function addCombatLogEntry(entry) {
         for (let i = combatLog.length - 1; i >= 0; i--) if (gleich(combatLog[i])) combatLog.splice(i, 1);
     }
     entry.names = {};                                // names as they were then (a boss may camp there later)
-    for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = islandTitle(islandById[entry[k]]);
+    for (const k of ['targetId', 'sourceId', 'toId', 'fromId']) if (entry[k] !== undefined && islandById[entry[k]]) entry.names[entry[k]] = entry.type === 'scout' && k === 'targetId' ? ortName(islandById[entry[k]], true) : islandTitle(islandById[entry[k]]);   // (Spähbericht: „Neutrale Basis“ wie im Fenster)
     let pos = 0; while (pos < combatLog.length && (combatLog[pos].at || 0) > entry.at) pos++;   // neueste zuerst, auch wenn Berichte spät ankommen
     combatLog.splice(pos, 0, entry);
     if (entry.type === 'ausgespaeht') {               // zu viele Späher-Meldungen: die ältesten dieser Art raus
@@ -2077,13 +1739,15 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     if (!attackerBotId && target.id === playerIslandId) return false;
     { const ow = islandOwnerOf(target.id); if (bundFreund(attackerBotId || 'player', ow)) { if (!attackerBotId) flashHint((botById[ow] || {}).name + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.', 3500); return false; } }   // Bündnis: gesperrt
     if (!attackerBotId && !islandSeen(target)) { flashHint('Dieses Ziel liegt im Nebel – schick zuerst einen Späher.', 3000); return false; }   // nichts im Nebel angreifen
+    if (target.type === 'gate' && passOpensAt(bridgeOfGate(target)) > Date.now()) { if (!attackerBotId) flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(target)) - Date.now()) + '.', 4000); return false; }   // (Pass mit Countdown: nicht angreifbar)
+    if (target.type === 'megaTemple' && Date.now() < thronOffenAb()) { if (!attackerBotId) flashHint('Der Thron zählt erst ab Tag ' + KARTE_ZONEN.thron.tag + ' – noch ' + fmtPassWait(thronOffenAb() - Date.now()) + '.', 4000); return false; }   // (für alle: Spieler, Mitspieler, Rally, Weltrechner)
     if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
     if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
     // (Hauptstädte kann man angreifen – Alexander 4.10. –, aber nie erobern: siehe resolveAttack / capitalHolds)
     const grp = naechsteGruppe;
-    if (!attackerBotId && !canReach(source.landmassId, target.landmassId, 'player')) {   // (wie beim Weltrechner)
-        flashHint('Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.', 5000); return false; }
+    if (!canReach(source.landmassId, target.landmassId, attackerBotId || 'player')) {   // (für alle gleich: Spieler, Mitspieler, Rally, Weltrechner – nur über offene, eigene Pässe)
+        if (!attackerBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere zuerst das Tor.', 5000); return false; }   // (eine Meldung: der genaue Grund, sonst „Kein Weg …“)
     if (!marschPlatz(attackerBotId || 'player', grp, sourceId)) return false;   // alle Marsch-Plätze belegt (Burg-Stufe)
     if (!attackerBotId && !rechnet()) {                           // Zuschauer: der Weltrechner schickt die Truppen los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops, target.id)) return false;
@@ -2091,7 +1755,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
         WELT.befehl('angriff', { src: sourceId, ziel: targetId, n: rawTroops, held: vHeld, held2: vHeld2, grp: grp || undefined });
         islandTroops[sourceId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('a', { sourceId, targetId, rawTroops, startedAt: t0, resolveAt: t0 + Math.max(3, travelDurationSeconds(source, target)) * 1000, attackerBotId: null, hero: vHeld, hero2: vHeld2, grp: grp || undefined }); }
-        updateHud(); flashHint('Angriff unterwegs zu ' + islandTitle(target) + '.');
+        updateHud(); flashHint('Angriff unterwegs: ' + ortName(target) + '.');
         dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); questProgress('attack', 1); sfx('attack');
         return true;
     }
@@ -2128,7 +1792,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     updateHud();
     saveGame();
     saveProgression();
-    if (!attackerBotId) flashHint('Angriff unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
+    if (!attackerBotId) flashHint('Angriff unterwegs: ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
     if (!attackerBotId) dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else botDropShield(attackerBotId);
     if (!attackerBotId) { questProgress('attack', 1); sfx('attack'); }
     else if (islandOwnerOf(target.id) === 'player') sfx('warn');      // someone marches on one of your bases
@@ -2145,15 +1809,15 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     const rawTroops = amount > 0 ? Math.min(Math.round(amount), available) : available;
     if (!source || !target || rawTroops <= 0) return;
     const grp = naechsteGruppe;
-    if (!senderBotId && !canReach(source.landmassId, target.landmassId, 'player')) {   // (wie beim Weltrechner: ein fremdes Tor dazwischen – vorher schickte das Handy los, der Weltrechner lehnte still ab)
-        flashHint('Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return; }
+    if (!canReach(source.landmassId, target.landmassId, senderBotId || 'player')) {   // (für alle gleich – vorher schickte das Handy los, der Weltrechner lehnte still ab)
+        if (!senderBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return; }
     if (!marschPlatz(senderBotId || 'player', grp)) return;          // Marsch-Plätze (Paket D)
     if (!senderBotId && !rechnet()) {                             // Zuschauer: der Weltrechner schickt sie los
         const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return;
         WELT.befehl('senden', { von: fromId, nach: toId, n: rawTroops, grp: grp || undefined });
         islandTroops[fromId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('s', { fromId, toId, troops: rawTroops, startedAt: t0, resolveAt: t0 + travelDurationSeconds(source, target) * 1000, senderBotId: null, grp: grp || undefined }); } questProgress('send', 1); sfx('send'); updateHud();
-        flashHint('Truppen unterwegs zu ' + islandTitle(target) + '.'); return;
+        flashHint('Truppen unterwegs: ' + ortName(target) + '.'); return;
     }
     const hop = lastHop(source.landmassId, target.landmassId, senderBotId || 'player');
     if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return;
@@ -2175,7 +1839,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
     saveGame();
     saveProgression();
     if (!senderBotId) {
-        flashHint('Truppen unterwegs zu ' + islandTitle(target) + ' · ca. ' + fmtClock(durationSec));
+        flashHint('Truppen unterwegs: ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
         renderActiveMarches();
     }
 }
@@ -2368,7 +2032,8 @@ function launchScout(targetId, explore, at) {
     const sourceId = nearestOwnedIslandTo(target);
     const home = islandById[sourceId];
     if (!home) return;
-    if (!spaeherWeg(home.landmassId, target.landmassId, 'player')) { flashHint('Ein geschlossenes Tor versperrt den Weg – dein Späher kommt nicht durch.', 3500); return; }
+    if (!explore) { const ow = islandOwnerOf(targetId); if (ow && ow !== 'player' && neulingAktiv(ow)) { flashHint(neulingBlockText(ow), 4000); return; } }   // Anfängerschutz: niemand späht Neulinge aus
+    if (!spaeherWeg(home.landmassId, target.landmassId, 'player')) { const g = wegGrund(home.landmassId, target.landmassId, 'player'); flashHint(g && /öffnet/.test(g) ? g : 'Ein geschlossenes Tor versperrt den Weg – dein Späher kommt nicht durch.', 3500); return; }
     sfx('scout');
 
     const durationSec = scoutSecs(home, target);   // the Späherturm makes scouts faster
@@ -2388,7 +2053,7 @@ function launchScout(targetId, explore, at) {
     questProgress('scout', 1);
     saveGame();
     saveProgression();
-    flashHint((explore ? 'Späher erkundet das Gebiet · ca. ' : 'Späher unterwegs zu ' + islandTitle(target) + ' · ca. ') + fmtClock(durationSec));
+    flashHint((explore ? 'Späher erkundet das Gebiet · ca. ' : 'Späher unterwegs: ' + ortName(target) + ' · ca. ') + fmtClock(durationSec));
     renderActiveMarches();
 }
 
@@ -2481,8 +2146,8 @@ function spaeherBlickHtml(s) {
         (s.wall !== undefined ? zeile('Mauer', 'Stufe ' + s.wall) : '') +
         (s.held ? zeile('Helden', s.held.length ? s.held.map(h => escapeHtml(h[0]) + stern(h[1])).join(', ') : 'keine') : '') +
         (s.vh !== undefined ? zeile('Verteidigungs-Held', s.vh && heroById(s.vh.id) ? escapeHtml(heroTag(Object.assign({}, s.vh, { id2: s.vh.h2 && s.vh.h2.id }))) : 'keiner') : '') +
-        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' Gold, ' + fmtCompact(schR) + ' je Rohstoff' : '')) : '') +
-        (R ? zeile('Gold', beute(R.c, R.schutz)) + (R.h !== undefined ? zeile('Holz', beute(R.h, schR)) + zeile('Stein', beute(R.s, schR)) + zeile('Eisen', beute(R.e, schR)) : '') : '') +
+        (A.burg ? zeile('Burg', 'Stufe ' + A.burg + (R ? ' · schützt ' + fmtCompact(R.schutz) + ' Münzen, ' + fmtCompact(schR) + ' je Rohstoff' : '')) : '') +
+        (R ? zeile('Münzen', beute(R.c, R.schutz)) + (R.h !== undefined ? zeile('Holz', beute(R.h, schR)) + zeile('Stein', beute(R.s, schR)) + zeile('Eisen', beute(R.e, schR)) : '') : '') +
         (s.sk ? zeile('Fähigkeiten', 'Angriff ' + s.sk.attack + ' · Vert. ' + s.sk.defense + ' · Truppen ' + s.sk.troops) : '') +
         (A.fo ? zeile('Forschung', 'Angriff ' + (A.fo.atk | 0) + ' · Vert. ' + (A.fo.def | 0) + ' · Krankenhaus ' + (A.fo.laz | 0)) : '') + gear + '</div></details>';
 }
@@ -2520,7 +2185,7 @@ function resolveScout(scout) {
     if (ow && !vomWr && typeof verst !== 'undefined') eintrag.verst = verst.l.reduce((s, v) => s + (v.t === target.id ? v.n : 0), 0);   // Verstärkung (Botschaft): eigene Zeile im Bericht
     if (post && post.bis > Date.now()) spaehEinsetzen(eintrag, post.r); else if (vomWr) eintrag.wartet = Date.now();   // (wartet: der Bericht vom Weltrechner kommt gleich – sonst nach 10 Min. „kein Bericht“)
     addCombatLogEntry(eintrag); spaehWerteMem = null;
-    flashHint(islandTitle(target) + ' gespäht – Bericht im Kampflog.', 3000);   // (die Zahlen stehen im Kampflog, nicht im Hinweis)
+    flashHint(ortName(target, true) + ' gespäht – Bericht unter „Kampf“.', 3000);   // (Name wie im Fenster; die Zahlen stehen im Bericht, nicht im Hinweis)
 }
 
 function retreatPct(attack) { return Math.min(60, RETREAT_RECOVERY_PCT + (attack.hx ? attack.hx.flee || 0 : 0)); }   // a hero (Standhaft, Leichtfuß …): more of a beaten army gets away (gemeinsam: rallyFlucht, jeder mit seinem)
@@ -2743,26 +2408,32 @@ const WORLD = (() => { let l = Infinity, t = Infinity, r = -Infinity, b = -Infin
   l = Math.min(l, -FRAME_HALF); t = Math.min(t, -FRAME_HALF); r = Math.max(r, FRAME_HALF); b = Math.max(b, FRAME_HALF);   // the map border fits too
   return { l, t, r, b, w: r - l, h: b - t, cx: (l + r) / 2, cy: (t + b) / 2, radius: Math.hypot(r - l, b - t) / 2 }; })();
 
-// Landmass paths: smoothed edge (quadratic curves through edge midpoints), world units – fürs Stadtbild (08e) und den Nebel
+// Landmass paths: der Umriss (die Grenzen aus KARTE_ZONEN), world units – für Boden, Stadtbild (08e) und den Nebel
 for (const lm of landmasses) {
-  const P = lm.shape, n = P.length, p = new Path2D();
-  const mid = (a, b) => [(a.x + b.x) / 2, (a.y + b.y) / 2];
-  let m = mid(P[n - 1], P[0]); p.moveTo(m[0], m[1]);
-  for (let i = 0; i < n; i++) { const c = P[i]; m = mid(P[i], P[(i + 1) % n]); p.quadraticCurveTo(c.x, c.y, m[0], m[1]); }
+  const p = new Path2D();
+  lm.shape.forEach((q, i) => i ? p.lineTo(q.x, q.y) : p.moveTo(q.x, q.y));
   p.closePath();
   lm.path = p;
   lm.bbox = { l: lm.x - lm.shapeMaxR, t: lm.y - lm.shapeMaxR, r: lm.x + lm.shapeMaxR, b: lm.y + lm.shapeMaxR };
-  lm.stone = lm.tier === 'throne' || lm.tier === 'guardian';                    // the middle and the 4 Wächter regions (Berge aus 01f: grau, mehr Einzelfelsen)
   let forest = null;                                                             // Bäume fürs Stadtbild (08e), erst bei Bedarf gebaut
   Object.defineProperty(lm, 'forest', { get: () => forest || (forest = buildForest(lm)), configurable: true });
 }
 
-// ===== Weltkarte wie RoK (LIESMICH 11c Punkt 25): kein Wasser – Boden nach Ringen (außen grün → Mitte Sand), Gebirgsketten auf
-// allen Gebietsgrenzen, Pass-Tore in den Lücken (03b), Gipfel-Knoten an den Ecken, Bergstöcke und Wälder – alles aus den
-// KI-Bildern Game/bilder/karte_*.webp. Geladen erst beim ersten Zeichnen (der Weltrechner zeichnet nie: lädt nie ein Bild).
-// Bis alle da sind (oder wenn eins fehlt) und weit draußen: Farbflächen, Gebirge als Bänder, die gezeichneten Berge aus 01f.
+// ===== Weltkarte wie RoK (LIESMICH 11c Punkt 25/30): kein Wasser – Boden je Zone, Gebirgsketten auf allen Grenzen zwischen zwei
+// Gebieten (KARTE_ZONEN.grenzen), Pass-Tore in den Lücken (03b), Gipfel-Knoten an den Ecken – alles aus den KI-Bildern
+// Game/bilder/karte_*.webp (wie die Karten-Testdatei werkzeuge/kartentest). Geladen erst beim ersten Zeichnen (der Weltrechner
+// zeichnet nie: lädt nie ein Bild). Bis alle da sind (oder wenn eins fehlt) und weit draußen: Farbflächen, Gebirge als Bänder.
+// Die Bilder liegen fest in der Welt: bei jedem Zoom dieselben Stücke in derselben Weltgröße (Alexander 7.10.).
 const KB_DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
-  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'wald1', 'wald2'];   // (Bergstöcke: fels_1/2.webp, 01f)
+  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'thron', 'tempel', 'waechtertempel',
+  'feld_holz', 'feld_stein', 'feld_eisen', 'feld_gold', 'feld_edelstein', 'barbaren', 'schild'];
+const FELD_BREITE = 9000, BARB_BREITE = 5500;       // Felder und Barbaren-Lager als Bild (Welt-Breite; Lager so breit wie die Basen, BASIS_BREITE)
+function stufenZahl(x, y, n, barb, rand) {           // (Bildschirm) die Stufe als kleine Zahl an Feld oder Lager
+  const t = String(n); ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const b = Math.max(16, ctx.measureText(t).width + 8);
+  ctx.fillStyle = barb ? 'rgba(120,24,18,.92)' : 'rgba(16,14,10,.85)'; ctx.beginPath(); ctx.roundRect(x - b / 2, y - 8, b, 16, 8); ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = rand || (barb ? '#f0a080' : '#d9b46a'); ctx.stroke(); ctx.fillStyle = '#fff3d6'; ctx.fillText(t, x, y + .5);
+}
 const KB = { img: {}, mip: {}, muster: {}, offen: -1, fertig: false };
 function karteBilder() {                             // true, sobald alle Bilder geladen sind (beim ersten Aufruf geht das Laden los)
   if (KB.offen < 0) { KB.offen = KB_DATEIEN.length;
@@ -2771,14 +2442,8 @@ function karteBilder() {                             // true, sobald alle Bilder
       im.onload = () => ende(im.naturalWidth > 0); im.onerror = () => ende(false); im.src = 'bilder/karte_' + n + '.webp'; } }
   return KB.fertig;
 }
-function karteSkala(z) { return 1 + .5 * Math.max(0, Math.min(1, (0.03 - z) / 0.018)); }   // mittlerer Zoom: Ketten, Knoten, Tore bis 1,5× (sonst wirken sie dünn), nah 1×
-function kbVariante(n) {                             // „name~warm“: in den inneren Ringen warm getönt (kein grünes Moos auf Ocker)
-  const im = KB.img[n.split('~')[0]], c = document.createElement('canvas'), x = c.getContext('2d');
-  c.width = im.width; c.height = im.height; x.drawImage(im, 0, 0); x.globalCompositeOperation = 'source-atop'; x.fillStyle = 'rgba(214,170,104,.32)'; x.fillRect(0, 0, c.width, c.height);
-  return c;
-}
 function kbBild(n, px) {                             // Bild n, so oft halbiert, wie es noch ≥ px breit bleibt (verkleinert flimmert es sonst)
-  const m = KB.mip[n] || (KB.mip[n] = [n.includes('~') ? kbVariante(n) : KB.img[n]]);
+  const m = KB.mip[n] || (KB.mip[n] = [KB.img[n]]);
   let i = 0;
   while (i < 6 && m[i].width >= 2 * px && m[i].width > 8) {
     if (!m[i + 1]) { const c = document.createElement('canvas'); c.width = m[i].width >> 1; c.height = m[i].height >> 1;
@@ -2786,24 +2451,27 @@ function kbBild(n, px) {                             // Bild n, so oft halbiert,
     i++; }
   return m[i];
 }
-// Maße (Welt-Einheiten, Burg ≈ 1.000; Vorgabe Designer): Achse = wo im Bild die Gratlinie liegt (Bilder vorab gerade geschert)
-const KARTE_MASS = { boden: 7000, quer: 12500, hoch: 12500, knoten: 11000, tor: 12500, wald: [2600, 3400], abstand: .42 };
-const RAND_AUSSEN = 3200;                            // Kartenrand: die Kette steht nach außen versetzt (die Basen reichen dort bis nah an die Linie)
-const KETTE_GERADE = { quer: 22000, hoch: 30000 };   // so weit vor/nach einem Tor läuft die Kette gerade (die Hälfte ganz gerade)
-const TOR_SENK = { hoch: 18000, achse: .539, weg: .488 };   // Tor in einer Nord-Süd-Kette (Bild 12/13): Höhe in der Welt, Kettenachse (x) und Weg (y) im Bild
-const KETTE_REIHEN = { quer: [[-1500, .5, .85], [0, 0, 1], [1300, .25, .8]], hoch: [[-1300, 0, 1], [0, .5, .9], [1300, .25, .85]] };   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe – ein breiter Gebirgszug
+// Maße (Welt-Einheiten, Burg ≈ 1.000; wie die Karten-Testdatei): die Gebiete sind groß – Gebirge, Knoten und Tore doppelt so breit wie früher
+const KARTE_MASS = { boden: 7000, quer: 25000, hoch: 25000, knoten: 22000, tor: 25000, abstand: .42 };
+const TOR_SENK = { hoch: 36000, achse: .539, weg: .488 };   // Tor in einer Nord-Süd-Kette (Bild 12/13): Höhe in der Welt, Kettenachse (x) und Weg (y) im Bild
+const KETTE_REIHEN = [[-3000, .5, .85], [0, 0, 1], [2600, .25, .8]];   // je Reihe: Abstand quer zur Grenze, Versatz (Stück), Größe – ein breiter Gebirgszug
+const KETTE_SCHER = .4;                              // Stücke folgen schrägen Grenzen nur bis zu dieser Scherung (stärker wirkt der Fels zerrissen)
 const KETTE_ACHSE = { kette_quer1: .63, kette_quer2: .616, kette_hoch1: .512, kette_hoch2: .485, tor_zu: .553, tor_offen: .553, kette_knoten: .6 };
 const KARTE_BILD_ZOOM = 0.0025, BODEN_BILD_ZOOM = 0.006;   // darunter (ganz draußen): nur Farbflächen + Bänder (schont das Handy) · Boden-Kacheln erst ab hier (weiter draußen wäre es ein Punkte-Raster)
-const BODEN_ARTEN = ['aussen', 'mitte', 'innen', 'sand'], BODEN_BIS_RING = { mitte: 5, innen: 3, sand: 1 };
-const BODEN_FARBE = { aussen: [114, 140, 44], mitte: [140, 142, 60], innen: [186, 138, 80], sand: [207, 176, 131] };   // weit draußen (Mittel der Bilder, etwas ruhiger)
+// Boden je Zone: Lagen [Art, Deckkraft] über dem Gras (aussen); „ton…“ ist eine Farbschicht – Nachbar-Ringe sehen deutlich anders aus
+const BODEN_ZONE = { 1: [], 2: [['mitte', 1]], 3: [['sand', 1], ['ton3', .24]], 4: [['mitte', 1], ['innen', .35], ['ton4', .3]], 5: [['innen', 1]] };
+const BODEN_ARTEN = ['aussen', 'mitte', 'sand', 'innen', 'ton3', 'ton4'];
+const BODEN_FARBE = { aussen: [114, 140, 44], mitte: [140, 142, 60], innen: [186, 138, 80], sand: [207, 176, 131], ton3: [110, 88, 58], ton4: [34, 44, 22] };   // weit draußen (Mittel der Bilder)
 
-// Boden-Masken: für jede innere Bodenart, wie stark sie an einer Stelle liegt (0…255, über die geschlängelten Grenzen,
-// an der Grenze weich auf ±1.500 überblendet – die Kette deckt die Naht). Einmal gebaut, 640 × 640 über die ganze Karte.
+// Boden-Masken: für jede Bodenart, wie stark sie an einer Stelle liegt (0…255, je Gebiet nach seiner Zone, an der Grenze weich
+// überblendet – die Kette deckt die Naht). Einmal gebaut, 640 × 640 über die ganze Karte (die Gebiete einmal in eine Fläche gemalt).
 let BM = null;
 function bodenMasken() {
   if (BM) return BM;
-  const n = 640, R = FRAME_HALF + 20000, k = n / (2 * R), ring = new Uint8Array(n * n);
-  for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) ring[j * n + i] = ringAn(-R + (i + .5) / k, -R + (j + .5) / k);
+  const n = 640, R = FRAME_HALF + 20000, k = n / (2 * R), zone = new Uint8Array(n * n), zc = document.createElement('canvas'); zc.width = zc.height = n;
+  const zg = zc.getContext('2d'); zg.setTransform(k, 0, 0, k, R * k, R * k);
+  for (const lm of landmasses) { zg.fillStyle = 'rgb(' + lm.zone + ',0,0)'; zg.fill(lm.path); zg.lineWidth = 4 / k; zg.strokeStyle = zg.fillStyle; zg.stroke(lm.path); }
+  const zd = zg.getImageData(0, 0, n, n).data; for (let p = 0; p < n * n; p++) zone[p] = zd[p * 4] || 1;
   const weich = a => { const b = new Float32Array(n * n);                         // Kastenfilter ±1 px, zweimal, waagrecht und senkrecht
     for (let pass = 0; pass < 2; pass++) {
       for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { let s = 0, c = 0; for (let d = -1; d <= 1; d++) { const x = i + d; if (x >= 0 && x < n) { s += a[j * n + x]; c++; } } b[j * n + i] = s / c; }
@@ -2812,8 +2480,8 @@ function bodenMasken() {
   BM = { n, R, k, w: {}, maske: {}, farbe: document.createElement('canvas') };
   const fc = BM.farbe; fc.width = fc.height = n; const fd = fc.getContext('2d').createImageData(n, n), F = BODEN_FARBE;
   for (let p = 0; p < n * n; p++) { fd.data[p * 4] = F.aussen[0]; fd.data[p * 4 + 1] = F.aussen[1]; fd.data[p * 4 + 2] = F.aussen[2]; fd.data[p * 4 + 3] = 255; }
-  for (const art of ['mitte', 'innen', 'sand']) {
-    const a = new Float32Array(n * n); for (let p = 0; p < n * n; p++) a[p] = ring[p] <= BODEN_BIS_RING[art] ? 1 : 0;
+  for (const art of BODEN_ARTEN.slice(1)) {
+    const a = new Float32Array(n * n); for (let p = 0; p < n * n; p++) { const l = BODEN_ZONE[zone[p]].find(q => q[0] === art); a[p] = l ? l[1] : 0; }
     weich(a);
     const w = BM.w[art] = new Uint8Array(n * n), c = BM.maske[art] = document.createElement('canvas'); c.width = c.height = n;
     const md = c.getContext('2d').createImageData(n, n);
@@ -2832,15 +2500,17 @@ function bodenAnteil(art, l, t, r, b) {              // [kleinster, größter] A
   return [lo, hi];
 }
 const BODEN_LAGEN = [[0, 1, 1], [37, 1.618, .42], [-61, 2.414, .3]];   // je Lage: Drehung, Größe, Deckkraft (mehrere schiefe Lagen: kein Raster, keine Naht)
+const BODEN_GROESSE = { sand: 2.2 };                 // Sand mit Steinplatten größer gekachelt (sonst weit nur eine flache Fläche)
 function bodenMuster(art, z, lage) {                 // Muster der Bodenkachel in passender Größe (Welt-verankert, setTransform im Weltmaß); lage: Index in BODEN_LAGEN
-  const c = kbBild('boden_' + art, KARTE_MASS.boden * z * dpr), key = art + c.width + ':' + (lage || 0), [dr, gr] = BODEN_LAGEN[lage || 0];
+  const b = KARTE_MASS.boden * (BODEN_GROESSE[art] || 1), c = kbBild('boden_' + art, b * z * dpr), key = art + c.width + ':' + (lage || 0), [dr, gr] = BODEN_LAGEN[lage || 0];
   let p = KB.muster[key];
-  if (!p) { p = KB.muster[key] = ctx.createPattern(c, 'repeat'); p.setTransform(new DOMMatrix().rotate(dr).scale(KARTE_MASS.boden * gr / c.width)); }
+  if (!p) { p = KB.muster[key] = ctx.createPattern(c, 'repeat'); p.setTransform(new DOMMatrix().rotate(dr).scale(b * gr / c.width)); }
   return p;
 }
-function bodenFuellen(x, art, z, l, t, w, h) {      // Kachel + darüber dieselbe Kachel gedreht und größer, durchscheinend (karger Boden mit Steinplatten: noch eine Lage)
+function bodenFuellen(x, art, z, l, t, w, h, a = 1) { // Kachel + darüber dieselbe Kachel gedreht und größer, durchscheinend (karger Boden mit Steinplatten: noch eine Lage); „ton…“: Farbe; a: Deckkraft
+  if (art.startsWith('ton')) { x.globalAlpha = a; x.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; x.fillRect(l, t, w, h); x.globalAlpha = 1; return; }
   const n = art === 'innen' || art === 'sand' ? 3 : 2;
-  for (let i = 0; i < n; i++) { x.globalAlpha = BODEN_LAGEN[i][2]; x.fillStyle = bodenMuster(art, z, i); x.fillRect(l, t, w, h); }
+  for (let i = 0; i < n; i++) { x.globalAlpha = BODEN_LAGEN[i][2] * a; x.fillStyle = bodenMuster(art, z, i); x.fillRect(l, t, w, h); }
   x.globalAlpha = 1;
 }
 // Boden in den Ausschnitt (Weltrechteck cl, ct, W, H) einer Kachel T; bild = Kacheln aus den Bildern, sonst die Farbfläche
@@ -2864,75 +2534,43 @@ function paintBoden(g, T, cl, ct, W, H, clip, bild) {
   }
 }
 
-// ===== Gelände-Bilder: Ketten, Knoten, Wald (die Bergstöcke malt 01f) – EINE Liste, nach Fuß-y sortiert (vorne verdeckt hinten), Raster zum Finden =====
+// ===== Gelände-Bilder: Ketten und Knoten – EINE Liste, nach Fuß-y sortiert (vorne verdeckt hinten), Raster zum Finden =====
 // Objekt: { n: Bild, x, y: Anker (Welt), w, h, ax, ay: Anker im Bild (0…1), sx/sy: Scherung (folgt dem Schwung der Grenze), fuss, bb }
 let KO = null;
-const KO_ZELLE = 20000;
+const KO_ZELLE = 25000;
+const grenzLaengen = pts => { const s = [0]; for (let i = 1; i < pts.length; i++) s.push(s[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1])); return s; };
+function grenzPunktBei(pts, s, d) { d = Math.max(0, Math.min(s[s.length - 1], d)); let i = 1; while (i < pts.length - 1 && s[i] < d) i++;
+  const t = (d - s[i - 1]) / ((s[i] - s[i - 1]) || 1); return [pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * t, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * t]; }
 function karteObjekte() {
   if (KO) return KO;
-  const liste = [], S = HEX_SPACING, M = KARTE_MASS, ende = (GRID_HALF + .5) * S, rnd = mulberry32(90917);
-  const neu = (n, x, y, w, ax, ay, sx, sy, fuss, f = 1, gross = !n.startsWith('wald')) => { const im = KB.img[n.split('~')[0]], h = w * im.height / im.width;   // f = -1: gespiegelt; gross: mittel größer (karteSkala)
+  const liste = [], M = KARTE_MASS, rnd = mulberry32(90917), innen = KARTE_ZONEN.grenzen.filter(g => g.b !== -1);
+  const neu = (n, x, y, w, ax, ay, sx, sy, fuss, f = 1) => { const im = KB.img[n], h = w * im.height / im.width;   // f = -1: gespiegelt
     const xs = [], ys = []; for (const u of [-ax * w, (1 - ax) * w]) for (const v of [-ay * h, (1 - ay) * h]) { xs.push(x + f * u + sx * v); ys.push(y + v + sy * f * u); }
-    liste.push({ n, x, y, w, h, ax, ay, sx, sy, f, fuss, gross, bb: { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) } }); };
-  const warm = (n, x, y) => ringAn(x, y) <= BODEN_BIS_RING.innen ? n + '~warm' : n;
-  const linien = []; for (let k = -GRID_HALF - 1; k <= GRID_HALF; k++) linien.push(k + .5);
-  const nahFelder = resFields.filter(q => { const S2 = HEX_SPACING / 2, dx = Math.abs(((q.x % S) + S) % S - S2), dy = Math.abs(((q.y % S) + S) % S - S2); return dx < 9000 || dy < 9000; });   // Felder nah an einer Grenzlinie
-  // Gipfel-Knoten, wo Ketten zusammenstoßen (auch am Rand: dort laufen die Ketten in den Knoten)
-  const knoten = {};
-  for (const lv of linien) for (const lh of linien) { let x = lv * S, y = lh * S;
-    for (let it = 0; it < 4; it++) { x = grenzLinie(true, lv, y); y = grenzLinie(false, lh, x); }
-    if (Math.abs(lv) > GRID_HALF) x += Math.sign(lv) * RAND_AUSSEN; if (Math.abs(lh) > GRID_HALF) y += Math.sign(lh) * RAND_AUSSEN;   // (Kartenrand: nach außen)
-    knoten[lv + ',' + lh] = { x, y };
-    let kg = M.knoten * (.92 + rnd() * .16); const f = rnd() < .5 ? -1 : 1;
-    const fd = nahFelder.reduce((m, q) => Math.min(m, Math.hypot(q.x - x, q.y - y) - q.radius), Infinity);   // ein Feld an der Kreuzung (Lage = Spiellogik): Gipfel kleiner bzw. weg
-    if (fd < kg * .22 + 400) continue; if (fd < kg * .45 + 400) kg *= .55;
-    neu(warm('kette_knoten', x, y), x, y, kg, .5, KETTE_ACHSE.kette_knoten, 0, 0, y, f); }
-  // Ketten: Stücke entlang jeder Grenze, Lücke an jedem Tor (Brückenmitte) und an den Knoten
-  const tore = bridges.map(br => ({ x: (br.x1 + br.x2) / 2, y: (br.y1 + br.y2) / 2, senk: Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1) }));
-  for (const senk of [true, false]) for (const L of linien) {
-    const sperren = linien.map(l2 => { const k = knoten[senk ? L + ',' + l2 : l2 + ',' + L]; return [senk ? k.y : k.x, M.knoten * .2]; });
-    const hier = tore.filter(t => t.senk === senk && Math.abs((senk ? t.x : t.y) - grenzLinie(senk, L, senk ? t.y : t.x)) < S * .3).map(t => senk ? t.y : t.x);
-    for (const t of hier) sperren.push([t, senk ? TOR_SENK.hoch * .3 : 3000]);   // (die Nachbarstücke laufen hinter die Torfelsen bzw. die Kettenenden im Tor-Bild)
-    // Vor und nach jedem Tor läuft die Kette gerade auf das Tor zu, weich zurück in den Schwung der Grenze – kein Versatz.
-    // Waagrechte Grenze: das Quer-Tor-Bild; senkrechte Grenze: das Tor-Bild für Nord-Süd-Ketten (Mauer entlang der Kette, Weg West–Ost, 03b).
-    const linie = t => { let p = grenzLinie(senk, L, t); for (const g of hier) { const u = Math.abs(t - g) / KETTE_GERADE[senk ? 'hoch' : 'quer']; if (u < 1) {
-      const w = u < .5 ? 1 : 1 - (u - .5) / .5, s = w * w * (3 - 2 * w); p += (grenzLinie(senk, L, g) - p) * s; } } return p; };
+    liste.push({ n, x, y, w, h, ax, ay, sx, sy, f, fuss, bb: { l: Math.min(...xs), r: Math.max(...xs), t: Math.min(...ys), b: Math.max(...ys) } }); };
+  // Gipfel-Knoten, wo Grenzen zusammenstoßen
+  const knoten = [];
+  for (const g of innen) for (const q of [g.punkte[0], g.punkte[g.punkte.length - 1]]) if (!knoten.some(k => Math.hypot(k[0] - q[0], k[1] - q[1]) < 5000)) knoten.push(q);
+  for (const [x, y] of knoten) neu('kette_knoten', x, y, M.knoten * (.92 + rnd() * .16), .5, KETTE_ACHSE.kette_knoten, 0, 0, y, rnd() < .5 ? -1 : 1);
+  // Ketten: Stücke entlang jeder Grenze, Lücke an den Knoten und an jedem Pass (dort steht das Tor, 03b – die Grenze läuft dort gerade)
+  for (const g of innen) {
+    const pts = g.punkte, s = grenzLaengen(pts), len = s[s.length - 1], sperren = [[0, M.knoten * .2], [len, M.knoten * .2]];
+    for (const p of KARTE_ZONEN.paesse) if (p.grenze === g.id) { let bd = 0, be = Infinity; pts.forEach((q, i) => { const e = Math.hypot(q[0] - p.x, q[1] - p.y); if (e < be) { be = e; bd = s[i]; } });
+      sperren.push([bd, p.senk ? TOR_SENK.hoch * .42 : M.tor * .45]); }
     sperren.sort((a, b) => a[0] - b[0]);
-    const len = senk ? M.hoch : M.quer, schritt = len * M.abstand;
+    const schritt = M.quer * M.abstand;
     for (let i = 0; i + 1 < sperren.length; i++) {
-      const a = sperren[i][0] + sperren[i][1], b = sperren[i + 1][0] - sperren[i + 1][1]; if (b <= a || a > ende || b < -ende) continue;
+      const a = sperren[i][0] + sperren[i][1], b = sperren[i + 1][0] - sperren[i + 1][1]; if (b <= a) continue;
       const anz = Math.max(1, Math.round((b - a) / schritt));
-      for (const [ab, ph, gs] of KETTE_REIHEN[senk ? 'hoch' : 'quer']) for (let s = 0; s < anz - (ph ? 1 : 0); s++) {   // zwei Reihen: ein breiter Gebirgszug
-        const t = a + (s + .5 + ph) * (b - a) / anz, n = (senk ? 'kette_hoch' : 'kette_quer') + (rnd() < .5 ? 1 : 2), f = rnd() < .5 ? -1 : 1;
-        const p = linie(t) + ab + (Math.abs(L) > GRID_HALF ? Math.sign(L) * RAND_AUSSEN : 0), x = senk ? p : t, y = senk ? t : p;
-        let gr = len * gs * (.92 + rnd() * .16);
-        // ein Feld (Rohstoff) liegt nah an der Grenze (Lage = Spiellogik): dort das Stück weglassen bzw. kleiner, damit nichts im Berg liegt
-        const im = KB.img[n], bw = senk ? gr * im.width / im.height : gr, bh = senk ? gr : gr * im.height / im.width;   // sichtbarer Fels ≈ mittlere 70 % der Breite, über dem Fuß
-        const deckt = k => nahFelder.some(q => { const m = q.radius + 600; return Math.abs(q.x - x) < bw * .35 * k + m && q.y > y - bh * (senk ? .5 : .62) * k - m && q.y < y + bh * (senk ? .5 : .3) * k + m; });
-        if (deckt(1)) continue;                                                   // (Fels deckte das Feld: das Stück weglassen – das Feld steht dann frei am Rand der Kette)
-        const steig = Math.max(-.5, Math.min(.5, (linie(t + gr / 2) - linie(t - gr / 2)) / gr)), amTor = senk && hier.some(g => Math.abs(g - t) < len);   // (am Pass nicht vergrößern: die Lücke bleibt frei)
-        if (senk) neu(warm(n, p, t), p, t, gr * KB.img[n].width / KB.img[n].height, KETTE_ACHSE[n], .5, steig, 0, t + gr * .3, f, !amTor);
-        else neu(warm(n, t, p), t, p, gr, .5, KETTE_ACHSE[n], 0, steig, p, f);
-      } } }
-  // Wald am Fuß der Ketten (wie RoK: dichte Nadelwälder an den Pässen und Bergen) – nicht auf Basen, Feldern, Toren, Knoten
-  const frei = (x, y, w) => { const id = felsLmAn(x, y); if (id === undefined) return false;
-    return !(islandsByLandmass[id] || []).some(b => Math.hypot(b.x - x, b.y - y) < b.radius + w * .5) && !resFields.some(f => f.landmassId === id && Math.hypot(f.x - x, f.y - y) < f.radius + w * .5)
-      && !tore.some(t => Math.hypot(t.x - x, t.y - y) < M.tor * .6) && !Object.values(knoten).some(k => Math.hypot(k.x - x, k.y - y) < M.knoten * .55) && ringAn(x, y) > BODEN_BIS_RING.innen; };
-  for (const senk of [true, false]) for (const L of linien) for (let t = -ende + 6000; t < ende - 6000; t += 7000) {
-    if (rnd() < .45) continue;
-    const s = rnd() < .5 ? -1 : 1, w = M.wald[0] * (.8 + rnd() * .3), q = grenzLinie(senk, L, t) + s * (senk ? 2900 : s < 0 ? 2600 : 2300), x = senk ? q : t, y = senk ? t : q;
-    if (frei(x, y, w)) neu(rnd() < .55 ? 'wald1' : 'wald2', x, y, w, .5, .78, 0, 0, y, rnd() < .5 ? -1 : 1); }
-  // Wälder: lockere Gruppen auf freier Wiese – nicht auf Basen, Feldern, Wegen (Bändern), Bergen, nicht an der Kette
-  for (const lm of landmasses) {
-    const r2 = mulberry32(lm.id * 7919 + 41), bases = islandsByLandmass[lm.id] || [], band = (felsenDaten && felsenDaten.baender[lm.id]) || [];
-    const felder = resFields.filter(f => f.landmassId === lm.id), wald = [], want = { aussen: 9, mitte: 6, innen: 3, sand: 0 }[lm.boden];
-    for (let i = 0; i < 400 && wald.length < want; i++) {
-      const x = lm.x + (r2() - .5) * S * .9, y = lm.y + (r2() - .5) * S * .9, w = M.wald[0] + r2() * (M.wald[1] - M.wald[0]);
-      if (Math.abs(x - grenzLinie(true, Math.round(x / S - .5) + .5, y)) < 3200 || Math.abs(y - grenzLinie(false, Math.round(y / S - .5) + .5, x)) < 3200) continue;
-      if (bases.some(b => Math.abs(b.x - x) < 2600 && Math.abs(b.y - y) < 2600 && Math.hypot(b.x - x, b.y - y) < b.radius + w * .5)) continue;
-      if (felder.some(f => Math.hypot(f.x - x, f.y - y) < f.radius + w * .5) || felsAuf(x, y, w * .6) || wald.some(o => Math.hypot(o[0] - x, o[1] - y) < 4000)) continue;
-      if (band.some(s => pointToSegmentDistance(x, y, s[0], s[1], s[2], s[3]) < w * .4)) continue;
-      wald.push([x, y]); neu(r2() < .55 ? 'wald1' : 'wald2', x, y, w, .5, .78, 0, 0, y, r2() < .5 ? -1 : 1); } }
+      for (const [ab, ph, gs] of KETTE_REIHEN) for (let k = 0; k < anz - (ph ? 1 : 0); k++) {
+        const d = a + (k + .5 + ph) * (b - a) / anz, gr = M.quer * gs * (.92 + rnd() * .16);
+        const p = grenzPunktBei(pts, s, d), p0 = grenzPunktBei(pts, s, d - gr / 2), p1 = grenzPunktBei(pts, s, d + gr / 2), tx = p1[0] - p0[0], ty = p1[1] - p0[1];
+        const senk = Math.abs(ty) > Math.abs(tx), n = (senk ? 'kette_hoch' : 'kette_quer') + (rnd() < .5 ? 1 : 2), f = rnd() < .5 ? -1 : 1;
+        let nx = -ty, ny = tx; const nl = Math.hypot(nx, ny) || 1; nx /= nl; ny /= nl; if (senk ? nx < 0 : ny < 0) { nx = -nx; ny = -ny; }
+        const x = p[0] + nx * ab, y = p[1] + ny * ab, im = KB.img[n];
+        if (senk) neu(n, x, y, gr * im.width / im.height, KETTE_ACHSE[n], .5, Math.max(-KETTE_SCHER, Math.min(KETTE_SCHER, tx / ty)), 0, y + gr * .3, f);
+        else neu(n, x, y, gr, .5, KETTE_ACHSE[n], 0, Math.max(-KETTE_SCHER, Math.min(KETTE_SCHER, ty / tx)), y, f);
+      } }
+  }
   liste.sort((a, b) => a.fuss - b.fuss);
   const zellen = new Map();
   liste.forEach((o, i) => { o.ord = i;
@@ -2941,35 +2579,61 @@ function karteObjekte() {
   return (KO = { liste, zellen });
 }
 function paintGelaende(g, T, v) {                    // die Gelände-Bilder im Weltrechteck v in die Kachel T (Reihenfolge der Liste)
-  const K = karteObjekte(), k0 = dpr * T.z, E = -T.l * k0, F = -T.t * k0, hier = new Set(), sk = karteSkala(T.z);
-  const drin = o => { const s = o.gross ? sk : 1; return o.x + (o.bb.r - o.x) * s > v.l && o.x + (o.bb.l - o.x) * s < v.r && o.y + (o.bb.b - o.y) * s > v.t && o.y + (o.bb.t - o.y) * s < v.b; };
+  const K = karteObjekte(), k = dpr * T.z, E = -T.l * k, F = -T.t * k, hier = new Set();
+  const drin = o => o.bb.r > v.l && o.bb.l < v.r && o.bb.b > v.t && o.bb.t < v.b;
   for (let cx = Math.floor(v.l / KO_ZELLE); cx <= Math.floor(v.r / KO_ZELLE); cx++) for (let cy = Math.floor(v.t / KO_ZELLE); cy <= Math.floor(v.b / KO_ZELLE); cy++)
     for (const o of K.zellen.get(cx + ',' + cy) || []) if (drin(o)) hier.add(o);
   for (const o of [...hier].sort((a, b) => a.ord - b.ord)) {
-    const k = o.gross ? k0 * sk : k0, px = o.w * k; if (px < 2) continue;   // (größer um den Anker: der Fuß bleibt auf der Linie)
-    g.setTransform(k * o.f, k * o.sy * o.f, k * o.sx, k, k0 * o.x + E, k0 * o.y + F);
+    const px = o.w * k; if (px < 2) continue;
+    g.setTransform(k * o.f, k * o.sy * o.f, k * o.sx, k, k * o.x + E, k * o.y + F);
     g.drawImage(kbBild(o.n, px), -o.ax * o.w, -o.ay * o.h, o.w, o.h);
   }
+}
+// ===== Übersicht ganz weit (wie die Karten-Testdatei werkzeuge/kartentest): einmal die ganze Karte als Bild – Boden je Zone, weich in
+// der Zonenfarbe getönt (Nachbarn hell/dunkel), Gebirge aus den Ketten-Bildern (2,4 × so breit, damit es von weitem ein Felsband ist) =====
+const ZONEN_FARBE = { 1: [[104, 150, 70], [80, 124, 58]], 2: [[64, 138, 116], [50, 116, 98]], 3: [[196, 164, 104], [176, 146, 92]],
+  4: [[64, 106, 150], [52, 90, 132]], 5: [[150, 108, 56], [150, 108, 56]] };
+const ZONEN_TOENUNG = { 1: .35, 2: .45, 3: .3, 4: .55, 5: .25 };
+const PASS_FARBE = { 1: '#5cbf62', 2: '#3fc2a4', 3: '#e2c069', 4: '#4f9ef2', 5: '#e8a640' };   // je Stufe (Zone, in die der Pass führt) – Punkte ganz weit
+const UEB_KETTE = 2.4;
+let KUE = null;
+function karteUebersicht() {                         // → Zeichenfläche über das Weltquadrat ±FRAME_HALF (erst mit allen Bildern fertig, dann einmal)
+  if (KUE) return KUE;
+  const H = FRAME_HALF, n = Math.min(innerWidth, innerHeight) < 600 ? 2048 : 3072, k = n / (2 * H), c = document.createElement('canvas'); c.width = c.height = n;
+  const g = c.getContext('2d'), bild = karteBilder(), welt = () => g.setTransform(k, 0, 0, k, H * k, H * k);
+  welt();
+  for (const lm of landmasses) { const farbe = ZONEN_FARBE[lm.zone][lm.id % 2];
+    g.save(); g.clip(lm.path);
+    if (bild) { for (const [art, a] of [['aussen', 1], ...BODEN_ZONE[lm.zone]]) bodenFuellen(g, art, k / dpr, -H, -H, 2 * H, 2 * H, a);
+      g.fillStyle = 'rgba(' + farbe + ',' + ZONEN_TOENUNG[lm.zone] + ')'; g.fillRect(-H, -H, 2 * H, 2 * H); }
+    else { g.fillStyle = 'rgb(' + farbe + ')'; g.fillRect(-H, -H, 2 * H, 2 * H); }
+    g.restore(); }
+  if (bild) {
+    g.lineJoin = 'round'; g.strokeStyle = 'rgba(58,52,40,.8)'; g.lineWidth = KARTE_MASS.quer * .48; g.stroke(gebirgsPfad());
+    const kk = k * UEB_KETTE;
+    for (const o of karteObjekte().liste) { g.setTransform(kk * o.f, kk * o.sy * o.f, kk * o.sx, kk, k * o.x + H * k, k * o.y + H * k); g.drawImage(kbBild(o.n, o.w * kk), -o.ax * o.w, -o.ay * o.h, o.w, o.h); }
+    welt();
+  } else paintBaender(g, 1 / k);
+  g.strokeStyle = 'rgba(232,190,110,.8)'; g.lineWidth = 2 / k; g.stroke(landmasses[0].path);
+  if (bild) KUE = c;
+  return c;
 }
 // Weit draußen / ohne Bilder: Gebirge als Band entlang jeder Grenze (Weltmaß, nie dünner als ein paar Pixel)
 let gebirgsPfadMem = null;
 function gebirgsPfad() {
   if (gebirgsPfadMem) return gebirgsPfadMem;
-  const p = new Path2D(), ende = (GRID_HALF + .5) * HEX_SPACING;
-  for (let k = -GRID_HALF - 1; k <= GRID_HALF; k++) for (const senk of [true, false]) { const L = k + .5;
-    for (let t = -ende - 4000, erst = true; t <= ende + 4000; t += 1500, erst = false) { const q = grenzLinie(senk, L, t);
-      if (erst) senk ? p.moveTo(q, t) : p.moveTo(t, q); else senk ? p.lineTo(q, t) : p.lineTo(t, q); } }
+  const p = new Path2D();
+  for (const g of KARTE_ZONEN.grenzen) if (g.b !== -1) g.punkte.forEach(([x, y], i) => i ? p.lineTo(x, y) : p.moveTo(x, y));
   return (gebirgsPfadMem = p);
 }
 function paintBaender(g, zl, nebel) {                // (Weltmaß gesetzt) dunkles Band, oben eine Lichtkante; nebel: kräftiger grau-braun (unter dem Nebel nie bläulich)
-  const p = gebirgsPfad(), w = Math.max(2400, 3 / zl);
+  const p = gebirgsPfad(), w = Math.max(8400, 3 / zl);
   g.lineJoin = 'round'; g.lineCap = 'round';
   g.strokeStyle = '#2e2b24'; g.lineWidth = w * 1.25; g.stroke(p);
   g.strokeStyle = nebel ? '#6a6456' : '#5e5a4e'; g.lineWidth = w; g.stroke(p);
   g.strokeStyle = 'rgba(156,151,132,.55)'; g.lineWidth = w * .35; g.stroke(p);
   g.lineCap = 'butt';
 }
-
 function buildForest(lm) {                           // (Stadtbild: wo um die Stadt herum Bäume stehen)
   const rnd = mulberry32(lm.id * 991 + 7), bases = islandsByLandmass[lm.id] || [];
   const dark = new Path2D(), mid = new Path2D(), lit = new Path2D();
@@ -2980,7 +2644,6 @@ function buildForest(lm) {                           // (Stadtbild: wo um die St
     const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * lm.shapeMaxR;
     const fx = lm.x + Math.cos(a) * d, fy = lm.y + Math.sin(a) * d, cnt = 3 + (rnd() * 5 | 0), spread = 380 + rnd() * 420;
     if (bases.some(b => Math.abs(b.x - fx) < 1600 && Math.abs(b.y - fy) < 1900 && (Math.hypot(b.x - fx, b.y - fy) < b.radius + 550 || (fy > b.y && fy < b.y + 1900)))) continue;   // cheap test first
-    if (felsAuf(fx, fy, 400 + spread)) continue;                                  // kein Wald an den Bergen (01f)
     const deep = fx > sb.l + 9000 && fx < sb.r - 9000 && fy > sb.t + 9000 && fy < sb.b - 9000;   // far from every bank: no coast test needed
     if (!deep && (!pointInPolygon(fx, fy, lm.shape) || edgeDist(fx, fy) < 700)) continue;
     const trees = [];
@@ -3204,18 +2867,17 @@ function paintBackground(T, clip, noTerritory) {  // T = tile {c, g, z, l, t}; c
   if (clip) { g.setTransform(1, 0, 0, 1, 0, 0); g.beginPath(); g.rect(clip.x, clip.y, clip.w, clip.h); g.clip(); }
   const cl = clip ? T.l + clip.x / dpr / z : T.l, ct = clip ? T.t + clip.y / dpr / z : T.t;
   const W = (clip ? clip.w : w) / dpr / z, H = (clip ? clip.h : h) / dpr / z;
-  const view = { l: cl - ISLAND_RADIUS * 2, t: ct - ISLAND_RADIUS * 2, r: cl + W + ISLAND_RADIUS * 2, b: ct + H + ISLAND_RADIUS * 2 };
   const world = () => g.setTransform(dpr * z, 0, 0, dpr * z, -T.l * z * dpr, -T.t * z * dpr);
+  // ganz weit: die Übersicht (wie die Karten-Testdatei) – fertiges Bild, nur ausgeschnitten
+  if ((T.part || z < KARTE_BILD_ZOOM) && karteBilder()) { world(); g.imageSmoothingEnabled = true; g.drawImage(karteUebersicht(), -FRAME_HALF, -FRAME_HALF, 2 * FRAME_HALF, 2 * FRAME_HALF);
+    if (!noTerritory) drawTerritoriesInto(g, layer, z, T.l, T.t, w, h, clip);
+    g.restore(); return; }
   // 1 Boden nach Ringen – nah aus den Bildern, weit draußen (und solange sie laden) die Farbfläche
-  const bild = !T.part && z >= KARTE_BILD_ZOOM && karteBilder(), zd = T.part ? 0 : z;
+  const bild = !T.part && z >= KARTE_BILD_ZOOM && karteBilder();
   paintBoden(g, T, cl, ct, W, H, clip, bild && z >= BODEN_BILD_ZOOM);
-  // 2 Bergstöcke (01f), dann Ketten, Knoten, Wald als Bilder – oder weit draußen die Gebirgs-Bänder
+  // 2 Ketten, Knoten, Wald als Bilder – oder weit draußen die Gebirgs-Bänder
   world();
-  if (!T.part && z >= KARTE_BILD_ZOOM) for (const lm of landmasses) {         // (ganz draußen keine Bergstöcke: sonst eine Tapete aus Flecken)
-    if (lm.bbox.r < view.l || lm.bbox.l > view.r || lm.bbox.b < view.t || lm.bbox.t > view.b) continue;
-    felsenMalen(g, lm, zd, zl);
-  }
-  const rand = KARTE_MASS.quer * karteSkala(z);                                    // (Bilder ragen so weit über ihren Anker hinaus)
+  const rand = KARTE_MASS.quer;                                                     // (Bilder ragen so weit über ihren Anker hinaus)
   if (bild) paintGelaende(g, T, { l: cl - rand, t: ct - rand, r: cl + W + rand, b: ct + H + rand });
   else { world(); paintBaender(g, zl); }
   // 3 territory (cached geometry, see below)
@@ -3409,9 +3071,9 @@ const ROOF = { neutral: '#8a5a3c', player: '#3f86d8', bot: '#c9423a' };
 
 function towerTier(level) { return level >= 80 ? 4 : level >= 50 ? 3 : level >= 25 ? 2 : level >= 10 ? 1 : 0; }
 
-function paintTowerTier(g, ownerKey, detail, home, tier, skin) {
+function paintTowerTier(g, ownerKey, detail, home, tier) {
   const K = isoKit(g, ISO_OY), own = ownerKey !== 'neutral' ? BAND[ownerKey] : null;
-  const stone = skin && skin.stone ? skin.stone[1] : STONE, roof = skin && skin.roof ? skin.roof[1] : (home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral);
+  const stone = STONE, roof = home ? '#d9a93f' : ROOF[ownerKey] || ROOF.neutral;
   g.lineJoin = 'round';
   if (tier === 0) {                                          // Lager: palisade, a wooden hall and a tent
     K.shadow(24, 13);
@@ -3598,40 +3260,52 @@ function paintMegaTemple(g, ownerKey, detail) {           // Haupttempel in real
 // Sprite cache: key = kind|owner|home|half-octave size bucket|dpr. Sprite box covers x −31…31, y −48…24
 const BUILDING_SPRITES = new Map();
 function buildingSprite(kind, ownerKey, home, sizePx, tier) {
-  const bucket = Math.pow(2, Math.round(Math.log2(sizePx) * 2) / 2), skin = home && ownerKey === 'player' ? activeSkin() : null;
-  const key = kind + '|' + ownerKey + '|' + (home ? 1 : 0) + '|' + bucket + '|' + dpr + '|' + (tier || 0) + '|' + (skin ? skin.id : '');
+  const bucket = Math.pow(2, Math.round(Math.log2(sizePx) * 2) / 2);
+  const key = kind + '|' + ownerKey + '|' + (home ? 1 : 0) + '|' + bucket + '|' + dpr + '|' + (tier || 0);
   let s = BUILDING_SPRITES.get(key); if (s) return s;
   const u = bucket / 64, c = document.createElement('canvas');
   c.width = Math.ceil(62 * u * dpr) + 2; c.height = Math.ceil(72 * u * dpr) + 2;
   const g = c.getContext('2d'); g.setTransform(u * dpr, 0, 0, u * dpr, 31 * u * dpr + 1, 48 * u * dpr + 1); g.lineJoin = 'round';
   const detail = bucket >= 28;
-  if (kind === 'tower') paintTowerTier(g, ownerKey, detail, home, tier ?? 1, skin); else if (kind === 'temple') paintTemple(g, ownerKey, detail); else if (kind === 'guardian') paintGuardianTemple(g, ownerKey, detail);
+  if (kind === 'tower') paintTowerTier(g, ownerKey, detail, home, tier ?? 1); else if (kind === 'temple') paintTemple(g, ownerKey, detail); else if (kind === 'guardian') paintGuardianTemple(g, ownerKey, detail);
   else if (kind === 'gate' || kind === 'gateShut') paintGateIso(g, ownerKey, detail, kind === 'gate'); else paintMegaTemple(g, ownerKey, detail);
   BUILDING_SPRITES.set(key, s = { c, bucket }); return s;
 }
-// Pass-Tor auf der Karte: steht genau auf der Grenzlinie (die Kette läuft dort gerade auf das Tor zu, 03a karteObjekte)
+// Pass-Tor auf der Karte: steht genau auf der Grenze im Pass (KARTE_ZONEN.paesse – die Grenze läuft dort gerade, 03a karteObjekte)
 // → { x, y, r: Abstand Mitte–Schild, senk: Grenze läuft senkrecht } oder null
 const TOR_PUNKT_ZOOM = 0.0015;                                                  // noch weiter draußen keine Tor-Punkte (Handy: über 500 Punkte wären nur Rauschen)
 function torMitte(island) {
   if (island.type !== 'gate' || !karteBilder()) return null;
   if (island.torMitte) return island.torMitte;
-  const [[x1, y1], [x2, y2]] = island.ends, im = KB.img.tor_zu, S = HEX_SPACING, senk = Math.abs(x2 - x1) > Math.abs(y2 - y1);
-  let x = (x1 + x2) / 2, y = (y1 + y2) / 2;
-  if (senk) x = grenzLinie(true, Math.round(x / S - .5) + .5, y); else y = grenzLinie(false, Math.round(y / S - .5) + .5, x);
+  const p = island.pass, im = KB.img.tor_zu, x = p.x, y = p.y, senk = p.senk;
   return (island.torMitte = { x, y, senk, r: senk ? TOR_SENK.hoch * .07 : KARTE_MASS.tor * im.height / im.width * (1 - KETTE_ACHSE.tor_zu) * .9 });   // (senkrecht: Schild knapp unter dem Weg)
 }
 // (Bildschirm) Pass-Tor offen/zu; dunkel: noch im Nebel. Waagrechte Grenze: das Pass-Tor-Bild (Mauer in Kettenrichtung).
 // Senkrechte Grenze: das Tor-Bild für Nord-Süd-Ketten, Weg genau auf dem Torpunkt, Kettenachse auf der Grenzlinie.
 function drawTorBild(island, open, z, dunkel) {
-  const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z * karteSkala(z), mx = toSX(tm.x), my = toSY(tm.y);
-  if (w < 16) { if (dunkel || z < TOR_PUNKT_ZOOM) return; ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
+  const tm = torMitte(island), n = open ? 'tor_offen' : 'tor_zu', w = KARTE_MASS.tor * z, mx = toSX(tm.x), my = toSY(tm.y);   // (fest in der Welt wie die Kette)
+  if (w < 16) { if (dunkel || z < KARTE_BILD_ZOOM) return;                       // (ganz weit: die Pass-Punkte in Zonenfarbe, drawUebersichtZeichen)
+    ctx.beginPath(); ctx.arc(mx, my, 2.5, 0, Math.PI * 2); ctx.fillStyle = open ? '#d4ad66' : '#d24c40'; ctx.fill();   // weit draußen: Punkt (offen gold, zu rot)
     ctx.lineWidth = 1.5; ctx.strokeStyle = '#0f1217'; ctx.stroke(); return; }
   if (mx + w < 0 || mx - w > viewW || my + w < 0 || my - w > viewH) return;
-  if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z, ws = hs * KB.img[ns].width / KB.img[ns].height, im = kbBild(ns, ws * dpr);   // (nicht vergrößert: Felsen so groß wie die Kette daneben)
-    if (z >= 0.006) { ctx.drawImage(im, mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
-    const a = TOR_SENK.achse - .2, b = TOR_SENK.achse + .2;                    // weiter draußen nur die Kette mit Mauer, ohne die Weg-Stummel
-    ctx.drawImage(im, a * im.width, 0, (b - a) * im.width, im.height, mx - ws * .2, my - hs * TOR_SENK.weg, ws * .4, hs); return; }
+  if (tm.senk) { const ns = open ? 'tor_senk_offen' : 'tor_senk_zu', hs = TOR_SENK.hoch * z, ws = hs * KB.img[ns].width / KB.img[ns].height;
+    ctx.drawImage(kbBild(ns, ws * dpr), mx - ws * TOR_SENK.achse, my - hs * TOR_SENK.weg, ws, hs); return; }
   const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
+}
+// Ganz weit (wie die Karten-Testdatei): Pass-Punkte in der Farbe ihrer Stufe (noch zu: blass), die Zonen-Nummern und Thron und
+// Tempel – auch unter dem Nebel (das Ziel aller ist immer zu sehen, wie RoK)
+function drawUebersichtZeichen(z) {
+  if (z >= KARTE_BILD_ZOOM || !karteBilder()) return;
+  setScreen(ctx); const jetzt = Date.now(), r = viewW < 600 ? 6 : 5;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 ' + (viewW < 600 ? 11 : 14) + 'px Georgia, serif'; ctx.lineJoin = 'round';
+  for (const lm of landmasses) { if (lm.zone === ZONE_MITTE) continue; const t = lm.tier === 'guardian', x = toSX(lm.x), y = toSY(lm.y) + (t ? Math.max(HEILIGTUM_BREITE.guardian * z, 30) * .55 : 0);
+    if (x < -20 || y < -20 || x > viewW + 20 || y > viewH + 20) continue;
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(lm.name, x, y); ctx.fillStyle = '#e4c886'; ctx.fillText(lm.name, x, y); }
+  for (const isl of islands) if (isl.bildR && !islandSeen(isl)) heiligtumBild(isl, z);
+  for (const br of bridges) { const x = toSX(br.pass.x), y = toSY(br.pass.y); if (x < -10 || y < -10 || x > viewW + 10 || y > viewH + 10) continue;
+    ctx.globalAlpha = passOpensAt(br) > jetzt ? .45 : 1; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[br.pass.stufe]; ctx.fill();
+    ctx.lineWidth = 2; ctx.strokeStyle = '#0c0f14'; ctx.stroke(); }
+  ctx.globalAlpha = 1;
 }
 function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
   if (!karteBilder() || KARTE_MASS.tor * z < 16) return;
@@ -3641,11 +3315,133 @@ function drawToreImNebel(view, z) {                                            /
     const tm = torMitte(isl); if (tm.x < view.l - m || tm.x > view.r + m || tm.y < view.t - m || tm.y > view.b + m) continue;
     drawTorBild(isl, false, z, true); }
 }
+const HEILIGTUM_BILD = { megaTemple: ['thron', .56, 64], tempel: ['tempel', .6, 30], waechtertempel: ['waechtertempel', .6, 30] };   // Bild, Fuß im Bild (y), kleinste Breite (px)
+function heiligtumBild(island, z) {                                            // (Bildschirm) Thron bzw. Wächter-Tempel an seinem Weltpunkt
+  const art = island.type === 'megaTemple' ? 'megaTemple' : island.tempelArt, [n, ay, minPx] = HEILIGTUM_BILD[art], im = KB.img[n];
+  const w = Math.max(HEILIGTUM_BREITE[island.type === 'megaTemple' ? 'megaTemple' : 'guardian'] * z, minPx), h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
+  if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;
+  ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
+}
+// Basen als KI-Bild (Alexander 7.10.): Stufe 1–100 gleichmäßig auf 15 Bilder, ALLE gleich groß (keine Größe nach Stufe); die Hauptstadt
+// über ihre Kartenstufe (burgKarte). Darunter das Namensschild (drawBasisSchilder). Mittlerer Zoom (wie RoK: Basen bleiben sichtbar): Basen
+// mit Besitzer nie kleiner als BASIS_MIN_PX, freie in echter Größe bis BASIS_KLEIN_PX; ganz weit (unter TOR_PUNKT_ZOOM) Übersicht wie bisher.
+const BASIS_BREITE = 5500, BASIS_MIN_PX = 22, BASIS_KLEIN_PX = 10;
+const BASIS_BILD = { img: [], mip: [], offen: -1 };
+const basisBildNr = L => Math.max(1, Math.min(15, Math.ceil(Math.max(1, L) * 15 / 100)));
+function basisBild(nr) {                                                       // das Bild nr (1–15), lädt beim ersten Mal alle 15
+  if (BASIS_BILD.offen < 0) { BASIS_BILD.offen = 15;
+    for (let i = 1; i <= 15; i++) { const im = new Image(); im.onload = () => { if (im.naturalWidth) { BASIS_BILD.img[i] = im; requestRender(); } };
+      im.src = 'bilder/basis_' + String(i).padStart(2, '0') + '.webp'; } }
+  return BASIS_BILD.img[nr] || null;
+}
+function basisMip(nr, px) {                                                    // Bild nr, so oft halbiert, wie es noch ≥ px breit bleibt (klein flimmert es sonst, schont das Handy)
+  const m = BASIS_BILD.mip[nr] || (BASIS_BILD.mip[nr] = [BASIS_BILD.img[nr]]);
+  let i = 0;
+  while (i < 4 && m[i].width >= 2 * px) {
+    if (!m[i + 1]) { const c = document.createElement('canvas'); c.width = m[i].width >> 1; c.height = m[i].height >> 1;
+      const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(m[i], 0, 0, c.width, c.height); m[i + 1] = c; }
+    i++; }
+  return m[i];
+}
+function basisBreite(island, z) {                                              // Breite des Basis-Bilds in px, 0 = kein Bild
+  const w = BASIS_BREITE * z; if (w >= BASIS_MIN_PX) return w;
+  if (z < TOR_PUNKT_ZOOM) return 0;
+  return islandOwnerOf(island.id) ? BASIS_MIN_PX : w >= BASIS_KLEIN_PX ? w : 0;
+}
+function basisKreis(isl, z) {                                                 // Basis als Bild: Mitte (dy über dem Fußpunkt) und Halbmesser für Ringe/Kuppel – sonst null
+  const w = isl.type === 'tower' ? basisBreite(isl, z) : 0, im = w && basisBild(basisBildNr(baseLevelOf(isl)));
+  return im ? { dy: w * im.height / im.width * .22, r: w * .42 } : null;
+}
+function drawBasisBild(island, ownerKey, z) {                                  // (Bildschirm) → true, wenn das Bild gezeichnet ist
+  const w = basisBreite(island, z); if (!w) return false;
+  const nr = basisBildNr(baseLevelOf(island)), im = basisBild(nr); if (!im) return false;
+  const h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
+  if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return true;
+  ctx.drawImage(basisMip(nr, w * dpr), x - w / 2, y - h * .72, w, h);
+  if ((island.id === playerIslandId || isCapital(island.id)) && brennt(island.id)) drawBrand(x, y - h * .3, w / 64);   // eine geplünderte Hauptstadt brennt
+  return true;
+}
+// Namensschild unter jeder Basis (Alexander 7.10., wie im alten Spiel): 70 % so breit wie das Basis-Bild, mittig direkt darunter
+// (Unterkante Basis = Oberkante Schild). Auf jeder Zoomstufe mit Basis-Bild (Alexander 7.10.: nichts springt), weit nur die Stufe. Im runden Feld das Wappen
+// des Besitzers (frei: ein heller Wimpel), im Balken Stufe und Truppen – eigene und Bündnis die echte Zahl (sofern das Handy sie hat), fremde und
+// freie „?“ bis gespäht (wie die Fahnen, bannerModel). Text und Strich in der Besitzer-Farbe. Passt die Zahl nicht: nur die Stufe.
+// Ein Schild wird je Größe (8-px-Stufen) einmal gemalt und gemerkt.
+const SCHILD_ANTEIL = .7, SCHILD_MIN = 90, SCHILD_ZAHL = 96, SCHILD_ZOOM = BASIS_MIN_PX / BASIS_BREITE;   // (Truppen-Zahl erst ab 96 px Breite)
+const SCHILD_FARBE = { player: '#8cc0ff', ally: '#86e09a', bot: '#ff8d82', neutral: '#eadfc4' };
+const SCHILD_MERK = new Map();
+function schildRect(island, z) {                                               // (Bildschirm) wo das Schild einer Basis steht
+  const w = BASIS_BREITE * z, im = basisBild(basisBildNr(baseLevelOf(island))), h = im ? w * im.height / im.width : w;
+  const W = Math.max(SCHILD_MIN, Math.floor(SCHILD_ANTEIL * w / 8) * 8), H = W * 159 / 512; return { x: toSX(island.x) - W / 2, y: toSY(island.y) + h * .17, w: W, h: H };   // (das Bild hat unten einen leeren Rand)
+}
+function schildDaten(island) {                                                 // → { art, wer, stufe, truppen }
+  const m = bannerModel(island), wer = islandOwnerOf(island.id);
+  const truppen = m.kind === 'ally' && islandTroops[island.id] !== undefined ? fmtCompact(islandTroops[island.id]) : m.troops;
+  return { art: m.kind === 'player' || m.kind === 'ally' || m.kind === 'bot' ? m.kind : 'neutral', wer, stufe: anzeigeStufe(island.id), truppen };
+}
+// Rahmen als Ring ums Wappen (Merkliste 7): Saison- und Mitte-Rahmen als KI-Bild wie im Profil (Neuling trägt jeder: kein Ring)
+const RAHMEN_RING = { sz1: 'champion', sz2: 'grossadmiral', sz4: 'admiral', sz6: 'kapitaen', mgut: 'mitte' }, RING_BILD = {}, RING_WER = new Map();
+function ringBild(fr) {                                                        // geladenes Bild oder null (lädt beim ersten Mal)
+  const n = RAHMEN_RING[fr]; if (!n) return null;
+  if (!RING_BILD[fr]) { const im = RING_BILD[fr] = new Image(); im.onload = () => { SCHILD_MERK.clear(); requestRender(); }; im.src = 'bilder/ui_rahmen_' + n + '.webp'; }
+  return RING_BILD[fr].complete && RING_BILD[fr].naturalWidth ? RING_BILD[fr] : null;
+}
+function rahmenAufKarte(who) {                                                 // angelegter Rahmen des Besitzers (je 2 s gemerkt – jedes Bild fragt danach)
+  const now = Date.now(), m = RING_WER.get(who); if (m && now - m.t < 2000) return m.fr;
+  let fr = null; try { fr = who === 'player' ? playerFrame() : botLook(who).frame; } catch (e) {}
+  RING_WER.set(who, { fr, t: now }); return fr;
+}
+function schildBild(d, W, mitZahl) {                                           // das fertige Schild, W px breit (Leinwand × dpr)
+  const cr = d.wer ? crestFor(d.wer) : null, ring = d.wer ? ringBild(rahmenAufKarte(d.wer)) : null, fahne = !cr && glyphBild('flag');
+  const key = d.art + '|' + d.stufe + '|' + (mitZahl ? d.truppen : '') + '|' + (cr ? crestKeyOf(cr) : fahne ? 'f' : '') + '|' + (ring ? ring.src : '') + '|' + W + '|' + dpr;
+  let c = SCHILD_MERK.get(key); if (c) return c;
+  const H = W * 159 / 512, k = W / 512, farbe = SCHILD_FARBE[d.art];
+  c = document.createElement('canvas'); c.width = Math.ceil(W * dpr); c.height = Math.ceil(H * dpr);
+  const g = c.getContext('2d'); g.scale(dpr, dpr); g.drawImage(KB.img.schild, 0, 0, W, H);
+  if (cr) drawCrest(g, 82 * k, 79 * k, 76 * k, cr);                           // im runden Feld
+  else if (fahne) drawGlyph(g, 'flag', 84 * k, 79 * k, 70 * k);                // frei: der helle Wimpel statt eines leeren Felds
+  if (ring) g.drawImage(ring, 12 * k, 9 * k, 140 * k, 140 * k);                 // der Rahmen ums Wappen
+  const x0 = 168 * k, x1 = 462 * k, ym = 79 * k, fs = Math.max(8, Math.min(14, Math.round(W * .1)));   // (klein: die Schrift passt in den Balken)   // der Balken innen
+  g.textBaseline = 'middle'; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
+  const lang = 'Stufe ' + d.stufe, t = mitZahl ? g.measureText(d.truppen).width + fs + 6 : 0;   // erst „Stufe 12“, wird es eng nur „12“
+  const st = g.measureText(lang).width + t <= x1 - x0 ? lang : String(d.stufe), zahl = mitZahl && g.measureText(st).width + t <= x1 - x0;
+  g.textAlign = zahl ? 'left' : 'center'; g.fillStyle = farbe; g.fillText(st, zahl ? x0 : (x0 + x1) / 2, ym + .5);
+  if (zahl) { g.textAlign = 'right'; g.fillStyle = '#f3e6c4'; g.fillText(d.truppen, x1, ym + .5);
+    drawGlyph(g, 'troops', x1 - g.measureText(d.truppen).width - fs * .55 - 2, ym, fs - 1, '#d9c9a0'); }
+  if (W >= SCHILD_ZAHL) { g.strokeStyle = farbe; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x0, 106 * k); g.lineTo(x1, 106 * k); g.stroke(); }   // der Besitzer auf einen Blick (klein: nur die Schriftfarbe)
+  if (SCHILD_MERK.size > 400) SCHILD_MERK.clear(); SCHILD_MERK.set(key, c); return c;
+}
+// Dichte Karte: Schilde nie übereinander. Der Reihe nach (eigene, Bündnis, fremde, freie) – stößt eins an ein schon gesetztes, erst kleiner
+// (SCHILD_KLEIN, nur mit Besitzer), sonst weg; ein freies auch, wenn es eine andere Basis zudeckt. → [{ isl, r, d }] (auch die Tipp-Flächen, layoutBanners)
+const SCHILD_KLEIN = 64, SCHILD_RANG = { player: 0, ally: 1, bot: 2, neutral: 3 };
+function basisSchilde(vis, z) {
+  if (z < SCHILD_ZOOM || !KB.img.schild) return [];
+  const sicht = r => r.x + r.w >= 0 && r.x <= viewW && r.y + r.h >= 0 && r.y <= viewH;
+  const alle = vis.filter(i => i.type === 'tower').map(isl => ({ isl, r: schildRect(isl, z), d: schildDaten(isl) })).filter(s => sicht(s.r))
+    .sort((a, b) => SCHILD_RANG[a.d.art] - SCHILD_RANG[b.d.art] || (b.isl.id === playerIslandId) - (a.isl.id === playerIslandId));
+  const w = BASIS_BREITE * z, h = w * 1.06;                                      // (die Basis-Bilder sind etwa so hoch wie breit)
+  const burgen = alle.map(s => ({ id: s.isl.id, x: toSX(s.isl.x) - w * .35, y: toSY(s.isl.y) - h * .6, w: w * .7, h: h * .7 }));
+  const gesetzt = [], frei = r => !gesetzt.some(s => overlap(r, s.r) > 0);
+  for (const s of alle) {
+    let r = s.r;
+    if (!frei(r) && s.d.art !== 'neutral') { const W = Math.max(SCHILD_KLEIN, Math.floor(r.w * .7 / 8) * 8); r = { x: r.x + (r.w - W) / 2, y: r.y, w: W, h: W * 159 / 512 }; }
+    if (!frei(r)) continue;
+    if (s.d.art === 'neutral' && burgen.some(b => b.id !== s.isl.id && overlap(r, b) > .2 * r.w * r.h)) continue;
+    gesetzt.push({ isl: s.isl, r, d: s.d });
+  }
+  return gesetzt;
+}
+function drawBasisSchilder(vis, z) {                                          // nach allen Basen: die Schilde liegen obenauf
+  const rs = basisSchilde(vis, z); if (!rs.length) return;
+  setScreen(ctx);
+  for (const { r, d } of rs) ctx.drawImage(schildBild(d, r.w, r.w >= SCHILD_ZAHL), Math.round(r.x * dpr) / dpr, Math.round(r.y * dpr) / dpr, r.w, r.h);
+}
+const basisGroesse = z => 1 + Math.max(0, Math.min(1, (0.04 - z) / 0.03));   // Basen bei mittlerem Zoom bis doppelt so groß (wie RoK: die Burg bleibt gut erkennbar), nah wie gehabt
 function drawBuilding(island, ownerKey, z) {                                   // screen space (setScreen active)
   const kind = island.type === 'megaTemple' ? 'mega' : island.guardian ? 'guardian' : island.type === 'temple' ? 'temple' : 'tower';
   const home = island.id === playerIslandId, cap = home || isCapital(island.id);
   const tier = island.type === 'tower' ? towerTier(baseLevelOf(island)) : 1;
-  const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
+  const size = 2 * island.radius * z * 1.5 * (cap ? 1.3 : 1) * (island.type === 'tower' ? [1.15, 1, 1.05, 1.15, 1.25][tier] * basisGroesse(z) : island.type === 'megaTemple' ? 2.3 : 1.2), x = toSX(island.x), y = toSY(island.y);   // 3D sprites fill less of their box: drawn 1.5× larger
+  if (island.bildR && KB.fertig) { heiligtumBild(island, z); return; }        // Thron und Wächter-Tempel: das KI-Bild (fest in der Welt, ganz weit nie winzig)
   if (island.type === 'gate') {                                                // gates: the gatehouse, an owner pennant on top
     if (torMitte(island)) { drawTorBild(island, ownerKey !== 'neutral' && !gateSettings(island).closed, z); return; }   // Karte wie RoK: das Pass-Tor (Bild) in der Kette, offen/zu wie heute
     if (size < 8) { ctx.fillStyle = '#b8b2a6'; ctx.fillRect(x - 3, y - 3, 6, 6); return; }
@@ -3659,6 +3455,7 @@ function drawBuilding(island, ownerKey, z) {                                   /
     for (const [gx, gy] of spots) if (!bkDraw(bk, gx, gy)) ctx.drawImage(sp.c, gx - 31 * u - 1 / dpr, gy - (48 + ISO_OY) * u - 1 / dpr, sp.c.width / dpr * k, sp.c.height / dpr * k);
     return;
   }
+  if (kind === 'tower' && drawBasisBild(island, ownerKey, z)) return;          // Basen als KI-Bild (Stufe → Bild, alle gleich groß)
   if (kind === 'tower' && ownerKey !== 'player' && z < TOR_PUNKT_ZOOM && karteBilder()) return;   // ganz draußen: keine Punkt-Tapete fremder und freier Basen (wie RoK nur Zonen, Tempel, eigenes Gebiet)
   if (kind === 'tower' && ownerKey === 'neutral' && size < 30 && karteBilder()) {   // Karte wie RoK: freie Basen von weitem nur ein leiser Fleck, keine Symbol-Tapete (Alexander)
     ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, size * .07), 0, Math.PI * 2); ctx.fillStyle = 'rgba(40,30,18,.3)'; ctx.fill(); return; }
@@ -3701,16 +3498,12 @@ function drawBrand(x, y, u) {                                                  /
 
 // ===== BAUKUNST: the bases in 3D (baukunst.js), each model rendered once into a sprite (OW.game, lazy + cached) =====
 // Until a sprite is ready, and without three.js or WebGL (offline), the drawn sprites above stay. Owner colour only on roofs
-// and flags, every owner builds in their own style with their coat of arms on the flags; the level shows in the material.
-const BAUSTILE = { klassisch: 'Klassisch', nordisch: 'Nordisch', suedlich: 'Südländisch', morgenland: 'Morgenland', fernost: 'Fernost' };
+// and flags, the style comes from the region (Baustil-Wahl gibt es nicht mehr, Alexander 7.10.), the coat of arms on the flags; the level shows in the material.
+const BAUSTILE = ['klassisch', 'nordisch', 'suedlich', 'morgenland', 'fernost'];
 const BK_K = ISLAND_RADIUS * .12, BK_SCALE = { mega: 2.2, tempel: 1.6, waechter: 1.6 }, BK_ELEM = ['nebel', 'gezeiten', 'fels', 'sonne'], BK_GRADE = { throne: 'thron', guardian: 'waechter' };
-function loadBaustil() { let v; try { v = JSON.parse(store.get('openWaterBaustil')); } catch (e) {} v = Object.assign({ style: 'klassisch', cap: 'huegel' }, v || {}); if (!BAUSTILE[v.style]) v.style = 'klassisch'; if (v.cap !== 'wasser') v.cap = 'huegel'; if (!Array.isArray(v.own)) v.own = [...new Set(['klassisch', v.style])]; return v; }   // own: the Basis-Skins you have (the style picked before stays yours)
-let baustilMem = null;                                                          // [raw, value]: the map asks for every base in every frame - parse only when it changed
-function baustilOf(owner) { if (owner !== 'player') return owner ? botBaustil(owner) : null; const raw = store.get('openWaterBaustil'); if (!baustilMem || baustilMem[0] !== raw) baustilMem = [raw, loadBaustil()]; return baustilMem[1]; }   // (read only: the sheet changes loadBaustil()'s own copy)
-function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => { BK_PREVIEW.forEach(f => f()); requestRender(); }; return G; }
-const BK_PREVIEW = new Set();                                                  // open previews that wait for a sprite
+function bk3d() { const G = window.OW && OW.game; if (!G || G.off) return null; if (!G.onReady) G.onReady = () => requestRender(); return G; }
 let bkGuards = null;
-function bkModel(island, ownerKey, open, style) {                                // → [cache id, model config]; style: try another one (keep sheet)
+function bkModel(island, ownerKey, open) {                                       // → [cache id, model config]
   if (island.type === 'gate') { const gr = BK_GRADE[island.gateKind] || 'grenz'; return ['t|' + ownerKey + '|' + gr + '|' + (open ? 1 : 0), { model: 'tor', owner: ownerKey, variant: { grade: gr, open, houseOnly: true } }]; }
   if (island.type === 'megaTemple') return ['m|' + ownerKey, { model: 'mega', owner: ownerKey }];
   const o = islandOwnerOf(island.id);
@@ -3719,11 +3512,11 @@ function bkModel(island, ownerKey, open, style) {                               
   if (island.type === 'temple') { const held = templeHoldSince[island.id] ? Date.now() - templeHoldSince[island.id] : -1, sz = !o ? 'klein' : held >= TEMPLE_HOLD_STREAK_MS ? 'gross' : 'mittel';   // the longer it is held, the bigger
     return ['p|' + ownerKey + '|' + sz, { model: 'tempel', owner: ownerKey, variant: { size: sz, bonus: 'gems' } }]; }
   const lv = baseLevelOf(island), step = lv >= 100 ? 100 : Math.max(1, Math.floor(lv / 10) * 10 + (lv % 10 >= 5 ? 5 : 0));   // a new design every 10 levels, small additions at every 5
-  const home = island.id === playerIslandId, cap = home || isCapital(island.id), b0 = baustilOf(o) || { style: Object.keys(BAUSTILE)[island.landmassId % 5], cap: 'huegel' }, bs = style ? { style, cap: b0.cap } : b0;   // free land: the style of its region
+  const home = island.id === playerIslandId, cap = home || isCapital(island.id), style = BAUSTILE[island.landmassId % 5];   // the style of its region
   const seed = o === 'player' ? 7 : o ? (parseInt(String(o).replace(/\D/g, ''), 10) || 7) * 13 + 5 : 1 + island.id % 4, cr = o ? crestFor(o) : null;
-  const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null, skin = home ? (activeSkin() || {}).id || '' : '';
-  return ['b|' + step + '|' + ownerKey + '|' + (cap ? bs.cap : '') + '|' + bs.style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : '') + '|' + skin,
-          { model: 'basis', level: step, owner: ownerKey, capital: cap, capStyle: bs.cap, style: bs.style, seed, crest, skin }];
+  const crest = cr ? { div: cr.div, t: [1, 0, 2][cr.ink] || 0 } : null;
+  return ['b|' + step + '|' + ownerKey + '|' + (cap ? 'huegel' : '') + '|' + style + '|' + seed + '|' + (crest ? crest.div + '.' + crest.t : ''),
+          { model: 'basis', level: step, owner: ownerKey, capital: cap, style, seed, crest }];
 }
 const BK_LAST = new Map();                                                       // island → id of the 3D sprite drawn last
 function bkSprite(island, ownerKey, open, z) {                                   // → { s: sprite, W: width in px } or null
@@ -3732,14 +3525,6 @@ function bkSprite(island, ownerKey, open, z) {                                  
   let s = G.get(id, c, need <= 140 ? 128 : need <= 300 ? 256 : 512);
   if (s) BK_LAST.set(island.id, id); else { const o = BK_LAST.get(island.id); s = o && G.peek(o) || null; }   // new look (upgrade, +5 step) still rendering: the old 3D sprite stays, not the big drawn one
   return s ? { s, W: 2 * s.v * k } : null;                                     // W from the sprite's own frame: an old sprite keeps its size
-}
-function bkPreviews() {                                                          // the keep sheet's style cards: your capital in each style
-  const cvs = [...document.querySelectorAll('[data-bk-prev]')]; if (!cvs.length) { BK_PREVIEW.delete(bkPreviews); return; }
-  const G = bk3d(), isl = islandById[playerIslandId]; let waiting = false;
-  for (const cv of cvs) { const g = cv.getContext('2d'), [id, c] = bkModel(isl, 'player', false, cv.dataset.bkPrev), s = G && G.get(id, c, 256); g.clearRect(0, 0, cv.width, cv.height);
-    if (s) { const w = s.px * .6; g.drawImage(s.c, (s.px - w) / 2, Math.max(0, s.px * s.ay - w * .82), w, w, (cv.width - cv.height) / 2, 0, cv.height, cv.height); }   // cut out the building
-    else { waiting = !!G; g.save(); g.setTransform(1.6, 0, 0, 1.6, cv.width / 2, cv.height * .72); paintTowerTier(g, 'player', true, true, towerTier(islandLevels[playerIslandId] || 1), activeSkin()); g.restore(); } }
-  if (waiting) BK_PREVIEW.add(bkPreviews); else BK_PREVIEW.delete(bkPreviews);
 }
 function bkDraw(b, x, y) { if (!b) return false; ctx.drawImage(b.s.c, x - b.W / 2, y - b.W * b.s.ay, b.W, b.W); return true; }   // (x, y) = the ground centre
 
@@ -3752,11 +3537,11 @@ function bannerModel(island) {
   const tag = owner && typeof bundTagVon === 'function' ? bundTagVon(owner) : '';   // Bündnis-Kürzel: eigenes Chip vor dem Namen
   if (owner === 'player') {                                                       // eigene Basen: Name nur an der Hauptstadt (Farbe + Wappen reichen), dafür ohne Vorrang
     const cap = island.id === playerIslandId;
-    return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : cap ? 'castle' : 'crest:player:' + crestKey(),
+    return { kind: 'player', glyph: isTemple ? 'temple' : island.type === 'gate' ? 'lock' : 'crest:player:' + crestKey(),
              name: cap ? 'Hauptstadt' : '', tag: '', cap, troops: fmtCompact(islandTroops[island.id] || 0), def: null, level, temple: isTemple, p: cap || isTemple ? 4 : 3.5 };
   }
   if (owner) { const cap = botCapitalOf(owner) === island.id;
-    return { kind: bundFreund('player', owner) ? 'ally' : 'bot', glyph: isTemple ? 'temple' : cap ? 'castle' : 'crest:' + owner, name: botById[owner].name, tag, cap,
+    return { kind: bundFreund('player', owner) ? 'ally' : 'bot', glyph: isTemple ? 'temple' : 'crest:' + owner, name: botById[owner].name, tag, cap,
              troops: scouted ? fmtCompact(islandTroops[island.id] || 0) : '?', def: null, level, temple: isTemple, p: cap || isTemple ? 3.2 : 3 }; }
   if (island.type === 'gate') return { kind: 'neutral', glyph: 'lock', name: island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor',
            troops: scouted ? fmtCompact(island.neutralTroops) : '?', def: scouted ? fmtCompact(island.neutralDefense) : null, level, temple: false, p: 2.5 };
@@ -3809,7 +3594,7 @@ function drawCrest(g, x, y, s, c) {
     g.restore();
     const sym = CREST_SYMBOLS[c.sym], ink = CREST_INK[c.ink];
     if (sym === 'crown') { const cw = s * .42; g.save(); g.translate(x, y + cw * .3); g.fillStyle = ink; g.beginPath(); g.moveTo(-cw / 2, 0); g.lineTo(-cw / 2, -cw * .34); g.lineTo(-cw / 4, -cw * .16); g.lineTo(0, -cw * .62); g.lineTo(cw / 4, -cw * .16); g.lineTo(cw / 2, -cw * .34); g.lineTo(cw / 2, 0); g.closePath(); g.fill(); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.55)'; g.stroke(); g.restore(); }
-    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink);
+    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink, true);   // (Wappen-Zeichen: Linien)
     crestPath(g, x, y, s, shape); g.lineWidth = Math.max(1, s * .05); g.strokeStyle = '#d8b56c'; g.stroke();
     crestPath(g, x, y, s * 1.04, shape); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.7)'; g.stroke();
 }
@@ -3916,7 +3701,7 @@ function bannerSprite(tierKey, m) {
   return s;
 }
 const DOWN = { A: 'B', B: 'K', K: 'C', C: 'C', N: 'N' };
-function tierFor(z) { return z >= 0.06 ? 'A' : z >= 0.026 ? 'B' : 'C'; }
+function tierFor(z) { const q = z / maxZoom; return q >= .75 ? 'A' : q >= .45 ? 'B' : 'C'; }   // (im Verhältnis zum größten Zoom – der hängt von der Bildschirmbreite ab)
 let bannerHitRects = [];
 function overlap(a, b) { return Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); }
 
@@ -3928,9 +3713,14 @@ function senkSchildX(tm, w, z) { const k = TOR_SENK.hoch * .13 * z, x = toSX(tm.
 function layoutBanners(visible, z, selectedId) {  // places every nameplate (sets bannerHitRects) → items for paintBanners()
   bannerHitRects = [];
   const towers = towerRects = visible.map(isl => { const s = 2 * isl.radius * z; return { id: isl.id, x: toSX(isl.x) - s / 2, y: toSY(isl.y) - s * 0.65, w: s, h: s }; });
-  if (z < TERRITORY_VIEW_ZOOM) return [];
+  const schild = isl => isl.type === 'tower' && z >= SCHILD_ZOOM && !!KB.img.schild;   // Basen tragen ihr Namensschild – Fahne nur noch beim Antippen
+  const schilde = basisSchilde(visible, z).map(s => Object.assign({ id: s.isl.id }, s.r));   // (nur die gezeigten: verdeckte sind weggelassen)
+  bannerHitRects.push(...schilde);                                                // (Schild antippen öffnet die Basis, Funde und Märsche weichen aus)
+  const hw = heimWappenRect(z); if (hw) bannerHitRects.push(hw);                 // das Wappen an der Hauptstadt ebenso (Funde nicht halb dahinter)
+  if (z < Math.min(TERRITORY_VIEW_ZOOM, maxZoom * .25)) return [];
+  for (const q of schilde) towers.push({ id: -1, x: q.x, y: q.y, w: q.w, h: q.h });
   const base = tierFor(z);
-  let items = visible.map(isl => {
+  let items = visible.filter(isl => !schild(isl) || isl.id === selectedId).map(isl => {
     const m = bannerModel(isl);
     let p = m.p; if (isl.id === selectedId) p = 5;
     let tier = base;
@@ -3943,7 +3733,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const placed = [];
   for (const it of items) {
     const tm = torMitte(it.isl);                                                   // Pass-Tor (Karten-Bild): das Schild direkt unter das Tor
-    const r = tm ? tm.r * z * karteSkala(z) : it.isl.radius * z * (it.isl.type === 'megaTemple' ? 1.8 : it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
+    const r = tm ? tm.r * z : it.isl.bildR ? Math.max(it.isl.bildR * z, 14) : it.isl.radius * z * (it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
     let best = null;
     for (let t = it.tier; ; t = DOWN[t]) {
       const sp = bannerSprite(t, it.m), w = sp.w, h = sp.h;
@@ -4102,8 +3892,8 @@ function drawBaseSparks(vis, z, now) {            // over the towers
     const t = titled.get(isl.id), x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25);
     if (x < -r * 5 || x > viewW + r * 5 || y < -r * 6 || y > viewH + r * 5) continue;
     const shOw = islandOwnerOf(isl.id);
-    if (shOwn.has(shOw) && shieldCovers(isl)) { const r = isl.radius * z;                                               // Friedensschild: a pale dome over every base of its owner
-      const R = Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id);
+    if (shOwn.has(shOw) && shieldCovers(isl)) { const bk = basisKreis(isl, z), r = isl.radius * z;                     // Friedensschild: a pale dome over every base of its owner
+      const R = bk ? bk.r * 1.15 : Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id), y = bk ? toSY(isl.y) - bk.dy + R * .2 : toSY(isl.y);   // (Bild: die Kuppel mittig darüber)
       const gd = ctx.createRadialGradient(x, y - R * .2, R * .3, x, y - R * .2, R);
       gd.addColorStop(0, 'rgba(210,235,255,.12)'); gd.addColorStop(.7, 'rgba(190,225,255,' + (.28 * ph).toFixed(2) + ')'); gd.addColorStop(1, 'rgba(230,245,255,' + (.6 * ph).toFixed(2) + ')');
       ctx.fillStyle = gd; ctx.beginPath(); ctx.arc(x, y - R * .2, R, 0, Math.PI * 2); ctx.fill();
@@ -4160,7 +3950,9 @@ function drawRings(visible, z, now) {
   const pulse = .5 + .5 * Math.sin(now / 280);
   const attackTarget = pendingAttackTargetId !== null ? islandById[pendingAttackTargetId] : null;
   for (const isl of visible) {
-    const x = toSX(isl.x), y = toSY(isl.y), r = isl.radius * z, S = Math.max(r * 1.28 + 3, 12);
+    let x = toSX(isl.x), y = toSY(isl.y), r = isl.radius * z;
+    const bk = basisKreis(isl, z); if (bk) { y -= bk.dy; r = bk.r; }   // Basis als Bild: Ringe mittig um das Bild (Bildmitte, nicht Fußpunkt), passend groß
+    const S = Math.max(r * 1.28 + 3, 12);
     const isOwned = ownedIslands.has(isl.id);
     const isTemple = isl.type === 'temple' || isl.type === 'megaTemple';
     if (isTemple && z >= 0.006) {
@@ -4169,11 +3961,9 @@ function drawRings(visible, z, now) {
         ctx.moveTo(x + Math.cos(a) * r * 1.44, y + Math.sin(a) * r * 1.44); ctx.lineTo(x + Math.cos(a) * r * 1.52, y + Math.sin(a) * r * 1.52); }
         ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke(); }
     }
-    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base: a title from the middle or a bought Ring-Skin (see ringStatusByOwner)
+    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base with a title from the middle (see ringStatusByOwner)
       const o = islandOwnerOf(isl.id), st = o ? rankOf.get(o) : null;
-      if (st && st.k === 'skin') {                                                  // a bought Ring-Skin: one plain thin ring - quiet, so the title rings stand out
-        const R1 = Math.max(r * 1.35, 21); ring(x, y, R1, 3.6, 'rgba(10,8,4,.45)'); ring(x, y, R1, 1.8, st.c0);
-      } else if (st) {                                                                // a title from the middle: bold double ring with notches + a badge (crown, or skull for a penalty)
+      if (st) {                                                                       // bold double ring with notches + a badge (crown, or skull for a penalty)
         const R1 = Math.max(r * 1.35, 21), R2 = R1 + Math.max(r * .28, 5), W = 3.4;
         ring(x, y, R1, W + 2.5, 'rgba(10,8,4,.55)'); ring(x, y, R1, W, st.c0);          // dark underlay so the ring reads on grass and territory
         ring(x, y, R2, 3, 'rgba(10,8,4,.35)'); ring(x, y, R2, 1.4, st.c1);
@@ -4214,20 +4004,26 @@ function drawRings(visible, z, now) {
 const MARCH_STYLE = { attack: ['#ff8d82', [7, 6], 'attack'], incoming: ['#ff8d82', [7, 6], 'bot'], send: ['#8cc0ff', [7, 6], 'send'],
                       scout: ['#e4c886', [3, 6], 'scout'], retreat: ['#f2a066', [5, 5], 'recall'], enemyScout: ['#ff9f7a', [3, 6], 'scout'] };
 let marchTokens = [], liveAnimation = false;
-function marchPath(source, target) {             // source → over every bridge on the route → target
-  const path = [{ x: source.x, y: source.y }];
-  if (source.landmassId !== target.landmassId) {
-    const route = routeFor(source.landmassId, target.landmassId, islandOwnerOf(source.id) || 'player') || [source.landmassId, target.landmassId];
-    for (let i = 0; i < route.length - 1; i++) {
-      const br = bridgeBetween(route[i], route[i + 1]); if (!br) continue;
-      const sA = br.a === route[i];
-      path.push(sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 });
-    }
+const MARSCH_WEG_MERK = new Map();
+function marchPath(source, target) {             // source → over every pass on the route → target: nie durchs Gebirge (in jedem Gebiet gebietWeg, 01b)
+  const payer = islandOwnerOf(source.id) || 'player', key = source.id + '>' + target.id + '|' + payer + '|' + ownVer + '|' + offenePaesse() + '|' + source.x + ',' + source.y + '|' + target.x + ',' + target.y;
+  const m = MARSCH_WEG_MERK.get(key); if (m && Date.now() - m.t < 2000) return m.p;
+  const sL = source.landmassId ?? gebietAn(source.x, source.y), tL = target.landmassId ?? gebietAn(target.x, target.y);
+  const route = sL === undefined || tL === undefined || sL === tL ? [sL] : routeFor(sL, tL, payer) || routeFor(sL, tL, payer, true) || [sL];
+  const path = [{ x: source.x, y: source.y }]; let lm = sL;
+  const bis = (p, l) => { const w = l === undefined ? [path[path.length - 1], p] : gebietWeg(path[path.length - 1], p, l); for (let k = 1; k < w.length; k++) path.push(w[k]); };
+  for (let i = 0; i < route.length - 1; i++) {
+    const br = bridgeBetween(route[i], route[i + 1]); if (!br) continue;
+    const sA = br.a === route[i];
+    bis(sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, lm);
+    path.push({ x: br.pass.x, y: br.pass.y }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 }); lm = route[i + 1];   // (durch den Pass)
   }
-  path.push({ x: target.x, y: target.y });
-  return felsenPfad(path);                       // um die Berge herum (01f; Schalter aus: unverändert)
+  bis({ x: target.x, y: target.y }, lm);
+  if (MARSCH_WEG_MERK.size > 3000) MARSCH_WEG_MERK.clear();
+  MARSCH_WEG_MERK.set(key, { t: Date.now(), p: path });
+  return path;
 }
-function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (their Marsch-Skin); yours by default
+function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (its flag); yours by default
   if (!source || !target) return;
   if (!startedAt) startedAt = resolveAt - MIN_ATTACK_SECONDS * 1000;
   const total = resolveAt - startedAt, progress = total > 0 ? Math.min(1, Math.max(0, (now - startedAt) / total)) : 1;
@@ -4244,34 +4040,23 @@ function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOver
   // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
   const own = type !== 'incoming' && type !== 'enemyScout'; if (who === undefined) who = own ? 'player' : null;
   marchTokens.push({ pts, seg, tot, progress, r: (source.radius || 0) * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
-                    who, sk: who && glyphName !== 'scout' ? marchSkinOf(who) : null });
+                    who, fahne: !!who && glyphName !== 'scout' });
 }
 function marchPointAt(m, d) {                   // screen point at path distance d
   for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;
     return { x: m.pts[i].x + (m.pts[i + 1].x - m.pts[i].x) * t, y: m.pts[i].y + (m.pts[i + 1].y - m.pts[i].y) * t }; } d -= m.seg[i]; }
   return m.pts[0];
 }
-// Marsch-Skins on the map: a trail behind the column and a small flag with the owner's crest (one cached bitmap per owner + skin)
+// Märsche on the map: a small flag with the owner's crest (one cached bitmap per owner)
 var marchFlagCache = new Map();
-function marchFlag(g, x, y, sk, who) {                   // (x, y) = the token's centre; the pole stands on its upper right
-  const cr = crestFor(who), key = (who || '') + '|' + sk.id + '|' + crestKeyOf(cr); let c = marchFlagCache.get(key);
+function marchFlag(g, x, y, who) {                   // (x, y) = the token's centre; the pole stands on its upper right
+  const cr = crestFor(who), key = (who || '') + '|' + crestKeyOf(cr); let c = marchFlagCache.get(key);
   if (!c) { c = document.createElement('canvas'); c.width = 72; c.height = 84; const q = c.getContext('2d'); q.scale(3, 3);
     q.strokeStyle = '#2a241b'; q.lineWidth = 1.4; q.beginPath(); q.moveTo(2, 27); q.lineTo(2, 1.5); q.stroke();
-    q.fillStyle = sk.flag; q.beginPath(); q.moveTo(2.5, 2); q.lineTo(20, 2); q.lineTo(17, 8.5); q.lineTo(20, 15); q.lineTo(2.5, 15); q.closePath(); q.fill();
+    q.fillStyle = '#e9dfc6'; q.beginPath(); q.moveTo(2.5, 2); q.lineTo(20, 2); q.lineTo(17, 8.5); q.lineTo(20, 15); q.lineTo(2.5, 15); q.closePath(); q.fill();
     q.lineWidth = .8; q.strokeStyle = 'rgba(10,8,4,.7)'; q.stroke(); drawCrest(q, 10, 8.6, 10, cr);
     if (marchFlagCache.size > 200) marchFlagCache.clear(); marchFlagCache.set(key, c); }
   g.drawImage(c, x + 3, y - 26, 24, 28);
-}
-function marchTrail(g, at, d0, sk, t, k) {               // at(d) → point on the path; d0 = where the trail starts (behind the token)
-  if (!sk || !sk.trail) return; g.save(); g.fillStyle = sk.trail; g.strokeStyle = sk.trail; g.lineWidth = 1.1 * k;
-  for (let i = 0; i < 10; i++) { const ph = (t / 45) % 7, d = d0 - (i * 7 + ph) * k; if (d < 0) break;
-    const p = at(d), q = at(d + 2), dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1, w = Math.sin(i * 2.3 + t / 260) * 2.2 * k;
-    const x = p.x - dy / l * w, y = p.y + dx / l * w, f = 1 - (i + ph / 7) / 10; g.globalAlpha = Math.max(0, f) * (sk.fx === 'smoke' ? .45 : .85);
-    if (sk.fx === 'spark') { const r = (1 + f * 1.6) * k; g.beginPath(); g.moveTo(x - r, y); g.lineTo(x + r, y); g.moveTo(x, y - r); g.lineTo(x, y + r); g.stroke(); }
-    else if (sk.fx === 'leaf') { g.beginPath(); g.ellipse(x, y, 1.9 * k, 1 * k, i + t / 400, 0, Math.PI * 2); g.fill(); }
-    else if (sk.fx === 'ember') { const r = (.7 + f) * k; g.fillRect(x - r, y - r - (1 - f) * 3 * k, r * 2, r * 2); }
-    else { g.beginPath(); g.arc(x, y, (sk.fx === 'smoke' ? 1.6 + (1 - f) * 2.6 : .9 + f * 1.1) * k, 0, Math.PI * 2); g.fill(); } }
-  g.restore();
 }
 function drawMarchColumn(m, t) {                  // a short column of soldiers (pairs) trailing the token along its path
   const k = Math.max(1, Math.min(2, mapState.zoom / 0.02)), n = 8, gap = 8.5 * k;
@@ -4305,12 +4090,11 @@ function drawMarchTokens() {                      // drawn BEFORE the nameplates
     const p = marchPointAt(m, d); m.x = p.x; m.y = p.y; m.d = d;
   }
   const cols = mapState.zoom >= 0.006, t = performance.now();
-  for (const m of marchTokens) if (m.sk && m.sk.trail) { const k = Math.max(1, Math.min(2, mapState.zoom / 0.02)); marchTrail(ctx, d => marchPointAt(m, d), m.d - (cols && m.glyph !== 'scout' ? 38 * k : 9), m.sk, t, k); }   // the skin's trail behind the column
   for (const m of marchTokens) if (cols && m.glyph !== 'scout') drawMarchColumn(m, t);
   for (const m of marchTokens) {
     ctx.beginPath(); ctx.arc(m.x, m.y, 7.5, 0, Math.PI * 2); ctx.fillStyle = '#141820'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = m.col; ctx.stroke();
     drawGlyph(ctx, m.glyph, m.x, m.y, 10, m.col);
-    if (m.sk && cols) marchFlag(ctx, m.x, m.y, m.sk, m.who);                  // the flag with the owner's crest
+    if (m.fahne && cols) marchFlag(ctx, m.x, m.y, m.who);                  // the flag with the owner's crest
   }
 }
 const CHIP_SLOTS = [0, -20, 20, -40, 40, -60, 60].flatMap(dy => [[1, dy], [-1, dy]])          // beside the cluster, then above / below;
@@ -4490,6 +4274,7 @@ function drawMap() {
   drawToreImNebel(view, z);                                                      // (unerforschte Pass-Tore: Lücke in der Kette nicht leer, Nebel darüber)
   drawFog(view, now);
   drawWorldFrame();                                                            // Nebel des Krieges over unexplored islands
+  drawUebersichtZeichen(z);                                                      // ganz weit: Pass-Punkte, Zonen-Nummern, Thron und Tempel (wie die Karten-Testdatei)
   const vis = visibleIslands(viewPad);
   drawRings(vis, z, now);                                                        // 5
   for (const a of pendingAttacks) { if (a.attackerBotId && islandOwnerOf(a.targetId) !== 'player') continue;         // fog of war (unchanged)
@@ -4513,6 +4298,7 @@ function drawMap() {
   for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
   drawThroneFx(z, now);
   drawBaseSparks(vis, z, now);
+  drawBasisSchilder(vis, z);                                                                                           // Namensschilder der Basen: über Kuppel und Funken (immer lesbar)
   drawWander(now);                                                                                                     // the Kriegsherr and his host
   drawNacht(vis, z, viewPad);                                                                                          // Paket C: Abendrot, Nacht, Lichter
   if (typeof drawHaendler === 'function') drawHaendler();                                                              // Paket C: der Karren des wandernden Händlers (haendler.js)
@@ -4532,6 +4318,7 @@ function drawMap() {
   drawMapBattles(now);                                                                                                 // fights playing out at the bases
   drawThroneShots(now);                                                                                                // the Wächter-Tempel firing on the throne
   drawMarkers();                                                                                                       // your own Wegmarken
+  feldRingFrame();                                                                                                     // Tipp auf freies Feld: Nadel + Knöpfe
   if (typeof bundKarteOben === 'function') bundKarteOben(z, now);                                                      // Bündnis: Signale und Rally-Fahnen
   drawBattleFx(now);                                                                                                   // 13 battle flashes + "Sieg!"
   if (shake) { mapState.offsetX -= shake.x; mapState.offsetY -= shake.y; }
@@ -4558,8 +4345,8 @@ let cameraFlight = null;         // { path(e) → {x, y, z} centre, end, z1, ins
 const clampZoom = z => Math.min(maxZoom, Math.max(minZoom, z));
 
 function updateZoomBounds() {    // call at boot (after WORLD exists) and on every resize
-  minZoom = Math.max(0.0004, Math.min(TERRITORY_VIEW_ZOOM * 0.5, viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));
-  maxZoom = CAM.MAX_ZOOM;
+  minZoom = Math.max(0.0002, Math.min(viewW / (WORLD.w * CAM.FIT_MARGIN), viewH / (WORLD.h * CAM.FIT_MARGIN)));   // die ganze Karte (die Zonen-Karte ist groß: auch auf dem Handy), nie kleiner (sonst rechnet die Kamera-Grenze ins Leere)
+  maxZoom = Math.min(CAM.MAX_ZOOM, viewW / 3 / BASIS_BREITE);   // ganz nah: eine Basis füllt höchstens ein Drittel der Breite (Alexander 7.10.: sonst riesig und unscharf)
   mapState.zoom = clampZoom(mapState.zoom); mapState.targetZoom = clampZoom(mapState.targetZoom);
 }
 // Camera clamp (v2): the view centre is kept in a region R(z), and the clamp is the nearest point of R - history-free,
@@ -4742,7 +4529,8 @@ window.recenterOnHome = recenterOnHome;
 function updateCamera(dt, now) {
   let animating = false;
   if (cameraFlight) {
-    const f = cameraFlight, k = Math.min(1, (now - f.t0) / f.dur), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+    const f = cameraFlight, k = Math.max(0, Math.min(1, (now - f.t0) / f.dur)),   // (das Bild kann vor dem Start des Flugs liegen: nie unter 0 – sonst Zoom 0, Kamera NaN)
+    e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     const p = k >= 1 ? { x: f.end.x, y: f.end.y, z: f.z1 } : f.path(e), z = k >= 1 ? f.z1 : clampZoom(p.z);   // the last frame lands exactly
     mapState.zoom = mapState.targetZoom = z; mapState.offsetX = viewW / 2 - p.x * z; mapState.offsetY = viewH / 2 - p.y * z;
     clampCamera(f.ins);                                                              // every frame in R(z): land stays in view
@@ -4907,7 +4695,7 @@ function pickIslandAtScreen(sx, sy) {
   for (const isl of islands) {                                                        // nearest base, min 22 CSS px hit radius
     if (!islandSeen(isl)) continue;
     const tm = torMitte(isl), d = Math.hypot((tm ? tm.x : isl.x) - w.x, (tm ? tm.y : isl.y) - w.y);   // (ein Pass-Tor tippt man auf sein Bild)
-    if (d <= Math.max(tm ? tm.r : isl.radius, 22 / z) && d < bd) { bd = d; best = isl; }
+    if (d <= Math.max(tm ? tm.r : isl.bildR || isl.radius, 22 / z) && d < bd) { bd = d; best = isl; }
   }
   return best;
 }
@@ -5106,21 +4894,18 @@ function loadTitles() {
     return titleState;
 }
 function saveTitles() { titleVer++; store.set('openWaterTitles', JSON.stringify(titleState)); requestRender(); }
-// The ring round someone's bases - nothing by level any more: a title from the middle while it holds (good = gold, penalty = red,
-// the ruler himself blood-red and gold), otherwise a bought Ring-Skin. The title ring wins. owner → ring style { k, name, c0, c1, n, spin, pulse, dash }
+// The ring round someone's bases - only a title from the middle while it holds (good = gold, penalty = red,
+// the ruler himself blood-red and gold); Ring-Skins gibt es nicht mehr (Alexander 7.10.). owner → ring style { k, c0, c1, n, spin, pulse, dash }
 const RING_TITLE = { ruler: { k: 'ruler', c0: 'rgba(235,60,50,.95)', c1: 'rgba(255,208,90,.7)', n: 24, spin: 1, pulse: 1, dash: 'rgba(255,214,110,.9)' },
                      good:  { k: 'good',  c0: 'rgba(255,208,90,.95)', c1: 'rgba(255,208,90,.5)', n: 24, pulse: 1 },
                      bad:   { k: 'bad',   c0: 'rgba(225,48,48,.95)', c1: 'rgba(150,20,30,.6)', n: 16, pulse: 1 } };
-var ringVer = 0;                                  // bumped whenever anyone buys or puts on a Ring-Skin
 function ringStatusByOwner() {
     const t = loadTitles(), ruler = rulerOwner() || null;          // (loadTitles first: a new ruler wipes the titles)
-    if (ringMemo && ringMemo.ver === titleVer && ringMemo.rv === ringVer && ringMemo.ruler === ruler) return ringMemo.map;
-    const map = new Map(), bs = loadBotState();
-    const ps = ringSkinOf('player'); if (ps) map.set('player', ps);
-    for (const id in bs) { const sk = ringSkinOf(id); if (sk) map.set(id, sk); }
+    if (ringMemo && ringMemo.ver === titleVer && ringMemo.ruler === ruler) return ringMemo.map;
+    const map = new Map();
     for (const x of TITLES) if (t.by[x.key]) map.set(t.by[x.key], x.good ? RING_TITLE.good : RING_TITLE.bad);
     if (ruler) map.set(ruler, RING_TITLE.ruler);
-    ringMemo = { ver: titleVer, rv: ringVer, ruler, map }; return map;
+    ringMemo = { ver: titleVer, ruler, map }; return map;
 }
 function titleMult(who, kind) {
     const t = loadTitles(); let m = 1;
@@ -5384,7 +5169,7 @@ function skillBonusText(def, level) {
     if (def.atkPct) return '+' + fmtNum(level * def.atkPct) + ' % Truppen';
     if (def.defPct) return '+' + fmtNum(level * def.defPct) + ' % Truppen';
     if (def.flat) return '+' + fmtNum(level * def.flat) + (def.unit || '');
-    if (def.rate) return '+' + fmtNum(Math.round(level * def.rate * 1000)) + ' Gold je 1.000 Kills';   // (Münzen × MUENZ_FAKTOR: Stufe 1 = 167)
+    if (def.rate) return '+' + fmtNum(Math.round(level * def.rate * 1000)) + ' Münzen je 1.000 Kills';   // (Münzen × MUENZ_FAKTOR: Stufe 1 = 167)
     if (def.msPerLevel) { const l = Math.min(level, def.max || level); return '+' + fmtNum(Math.round(1000 / (1000 - l * def.msPerLevel) * 100 - 100)) + ' % Produktion, +' + fmtNum(l * 5) + ' % Marschtempo' + (def.max && level >= def.max ? ' (max.)' : ''); }
     return '';
 }
@@ -5469,7 +5254,7 @@ const RAHMEN = [
     { id: 'conq', name: 'Eroberer', t: 'conq', ach: 'cap100' }, { id: 'warlord', name: 'Kriegsherr', t: 'warlord', ach: 'cap1000' }, { id: 'wall', name: 'Standhaft', t: 'wall', ach: 'def25' },
     { id: 'emma', name: 'Gefürchtet', t: 'emma', ach: 'emma10' }, { id: 'slayer', name: 'Bezwinger', t: 'slayer', ach: 'boss1' }, { id: 'builder', name: 'Baumeister', t: 'builder', ach: 'city5' },
     { id: 'king', name: 'Herrscher der Meere', t: 'king', ach: 'throne' }, { id: 'throne', name: 'Thronhüter', t: 'keeper', buy: 'throne' },
-    { id: 'saison', name: 'Saisonkrone', buy: 'pass' },                     // Saison-Pass (Premium, Stufe 40)
+    { id: 'saison', name: 'Saisonkrone' },                                  // gab es bis 7.10. im Saison-Pass – wer sie hat, behält sie
     // Saison-Rahmen: die besten 10 am Ende einer Welt-Saison – nur bis zum nächsten Saison-Ende (dann bekommen ihn die neuen)
     { id: 'sz1', name: 'Saison-Champion', platz: [1, 1] }, { id: 'sz2', name: 'Saison-Großadmiral', platz: [2, 3] },
     { id: 'sz4', name: 'Saison-Admiral', platz: [4, 5] }, { id: 'sz6', name: 'Saison-Kapitän', platz: [6, 10] }
@@ -5496,60 +5281,7 @@ function saisonTitel(id) { const m = /^s(\d{1,4})p(\d{1,2})$/.exec(String(id || 
     return { id: m[0], name: pl === 1 ? 'Champion Saison ' + n : 'Saison ' + n + ' · Platz ' + pl, saison: n, platz: pl }; }
 const saisonRahmenFuer = pl => RAHMEN.find(r => r.platz && pl >= r.platz[0] && pl <= r.platz[1]) || null;
 function saisonTitelGeben(id) { if (!saisonTitel(id)) return; look.titles = [...new Set([...(look.titles || []), id])]; const r = saisonRahmenFuer(saisonTitel(id).platz); if (r) look.frame = r.id; saveLook(); try { renderLook(); } catch (e) {} }   // (der Saison-Rahmen gleich angelegt)
-// Marsch-Skins: how your columns look on the map - flag colour (with your crest on it) and a trail behind them
-const MARCH_SKINS = [
-    { id: 'standard', name: 'Standard', gems: 0, flag: '#e9dfc6' },
-    { id: 'purpur', name: 'Purpur', gems: 400, flag: '#9a2f55' },
-    { id: 'meer', name: 'Meeresgischt', gems: 800, flag: '#2f7fb8', trail: '#c8f2ff', fx: 'foam' },
-    { id: 'wald', name: 'Waldläufer', gems: 800, flag: '#3f7a3a', trail: '#a6dc6a', fx: 'leaf' },
-    { id: 'glut', name: 'Glutmarsch', gems: 1500, flag: '#b8441c', trail: '#ffa23a', fx: 'ember' },
-    { id: 'gold', name: 'Goldzug', tp: 2000, flag: '#d8a93a', trail: '#ffe38a', fx: 'spark' },
-    { id: 'schatten', name: 'Schattenzug', tp: 3500, flag: '#3a2a55', trail: '#b98cf0', fx: 'smoke' },
-    { id: 'saison', name: 'Saisonzug', buy: 'pass', flag: '#1f8a8a', trail: '#8ff5e6', fx: 'spark' }   // only from the Saison-Pass (premium, level 20)
-];
-// Basis-Skins: the Baustil of all your bases (baukunst.js) - Klassisch is free, the style you chose before stays yours
-const BAUSTIL_PRICE = { klassisch: { gems: 0 }, nordisch: { gems: 400 }, suedlich: { gems: 400 }, morgenland: { gems: 700 }, fernost: { tp: 1500 } };
 let look = (() => { try { return JSON.parse(store.get('openWaterLook')) || {}; } catch (e) { return {}; } })();
-// Ring-Skins: a ring round all your bases, only to buy - with Gems (Händler) or Thron-Punkte (Thron-Shop). A title from the middle goes over it.
-const RING_SKINS = [
-    { id: 'bronze', name: 'Bronze', gems: 300, c0: '#d6965f', c1: 'rgba(214,150,96,.45)' },
-    { id: 'silver', name: 'Silber', gems: 600, c0: '#dee6f0', c1: 'rgba(222,230,240,.45)' },
-    { id: 'jade', name: 'Jade', gems: 1000, c0: '#4fd39a', c1: 'rgba(150,240,200,.5)', n: 12 },
-    { id: 'midnight', name: 'Mitternacht', gems: 1500, c0: '#7d86ff', c1: 'rgba(200,180,255,.55)', n: 16 },
-    { id: 'star', name: 'Sternenlicht', tp: 2500, c0: '#eaf4ff', c1: 'rgba(130,185,255,.7)', n: 20, spin: 1 },
-    { id: 'ember', name: 'Glut', tp: 4000, c0: '#ff8a3a', c1: 'rgba(255,200,90,.6)', n: 20, pulse: 1 }
-];
-for (const r of RING_SKINS) r.k = 'skin';
-const ringSkinDef = id => RING_SKINS.find(r => r.id === id) || null;
-function ringSkinsOf(who) { if (who === 'player') return look.rings || []; const b = loadBotState()[who]; return (b && b.rings) || []; }
-function ringSkinOf(who) { const id = who === 'player' ? look.ring : (loadBotState()[who] || {}).ring; return id && ringSkinsOf(who).includes(id) ? ringSkinDef(id) : null; }
-function ringGive(who, id) {                     // someone gets a Ring-Skin and puts it on
-    if (who === 'player') { look.rings = [...new Set([...(look.rings || []), id])]; look.ring = id; store.set('openWaterLook', JSON.stringify(look)); }
-    else { const b = loadBotState()[who]; if (!b) return; b.rings = [...new Set([...(b.rings || []), id])]; b.ring = id; saveBotState(); }
-    ringVer++; requestRender();
-}
-if (!look.ringMig) { let L = 0; for (const id of ownedIslands) L = Math.max(L, islandLevels[id] || 1);   // rings no longer come with the level: what you wore stays yours as a skin
-    look.rings = [...new Set([...(look.rings || []), ...(L >= 10 ? ['bronze'] : []), ...(L >= 25 ? ['silver'] : [])])]; look.ringMig = 1; store.set('openWaterLook', JSON.stringify(look)); }
-function ringCardsHtml(list, pick) {             // pick: choose / buy (the Aussehen sheet), else buy only
-    const own = ringSkinsOf('player'), cur = ringSkinOf('player');
-    return '<div class="ring-grid">' + (pick ? '<button type="button" class="ring-card' + (cur ? '' : ' on') + '" data-ring=""><i class="ring-prev is-none"></i><b>Kein Ring</b><small>' + (cur ? 'Anlegen' : icon('check') + 'Angelegt') + '</small></button>' : '') +
-        list.map(r => { const has = own.includes(r.id), on = cur && cur.id === r.id;
-            return '<button type="button" class="ring-card' + (on ? ' on' : '') + (has ? '' : ' is-shop') + '" data-ring="' + r.id + '"><i class="ring-prev" style="--c:' + r.c0 + ';--c2:' + r.c1 + '"></i><b>' + r.name + '</b><small>' +
-                (on ? icon('check') + 'Angelegt' : has ? (pick ? 'Anlegen' : 'Gehört dir') : lkPrice(r)) + '</small></button>'; }).join('') + '</div>';
-}
-document.addEventListener('click', e => {
-    const b = e.target.closest('[data-ring]'); if (!b) return;
-    const id = b.dataset.ring, r = ringSkinDef(id), inShop = !!b.closest('#shopPopup');
-    if (!id) { look.ring = ''; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); }
-    else if (ringSkinsOf('player').includes(id)) { if (inShop) return; look.ring = id; store.set('openWaterLook', JSON.stringify(look)); ringVer++; requestRender(); flashHint('Ring „' + r.name + '“ angelegt' + (titleOf('player') || rulerOwner() === 'player' ? ' – solange du einen Titel trägst, siehst du den Titel-Ring.' : '.'), 3000); }
-    else if (r.tp) { throneBuy('ring_' + id); if (!ringSkinsOf('player').includes(id)) return; }
-    else { if (gems < r.gems) { flashHint('Zu wenig Edelsteine – Ring „' + r.name + '“ kostet ' + fmtNum(r.gems) + '.', 2500); return; }
-        if (!gemsWirklich('ring:' + id, r.gems, b)) return;
-        gems -= r.gems; ringGive('player', id); updateHud(); saveGame(); sfx('coin'); flashHint('Ring „' + r.name + '“ gekauft und angelegt.', 2500); }
-    if (isPanelOpen(shopPopup)) renderShop();
-    if (cityOpenId === '_keep') renderKeepSheet();
-    renderLookSheet();
-});
 function rankIndexFor(bases) { let r = 0; RANK_TIERS.forEach((t, i) => { if (bases >= t.min) r = i; }); return r; }
 function bestRank() { const r = rankIndexFor(ownedIslands.size); if (!(look.best >= r)) { look.best = r; store.set('openWaterLook', JSON.stringify(look)); } return look.best; }
 function lookOldUnlocked(x) {                       // the old rule (rank / Erfolg) - only to carry an old save over
@@ -5565,13 +5297,13 @@ function lookMigrate() {                            // once: everything unlocked
 function saveLook() { store.set('openWaterLook', JSON.stringify(look)); }
 function playerFrame() { return rahmenVon('player', look.frame).frame; }
 function playerTitle() { return rahmenVon('player', look.frame).title; }
-function marchSkinOf(who) { const id = who === 'player' ? look.march : who ? (loadBotState()[who] || {}).march : ''; return MARCH_SKINS.find(m => m.id === id) || MARCH_SKINS[0]; }
 function renderLook() {                             // the profile header and its "Aussehen" line; choosing happens in the Aussehen sheet
     const fr = playerFrame();
     document.getElementById('pAvatarRing').dataset.frame = fr;
+    const hr = document.querySelector('#hudPlayer .avatar-ring'); if (hr) hr.dataset.frame = fr;   // HUD-Wappen: derselbe Ring
     document.getElementById('profileTitle').textContent = playerTitle();
     const cur = document.getElementById('lookNow');     // die eine Aussehen-Karte im Profil (Wappen + was du trägst)
-    if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen · ' + BAUSTILE[loadBaustil().style] + ' · Marsch ' + marchSkinOf('player').name + '</small>';
+    if (cur) cur.innerHTML = '<b>Aussehen · ' + escapeHtml(playerTitle()) + '</b><small>Wappen · Rahmen</small>';
     renderLookSheet();
 }
 function currentRank() {
@@ -5792,7 +5524,7 @@ function renderChestEquipment() {
         chestSelectionLabel.textContent = chestFlashMessage;
     } else if (selected.length > 0) {
         chestSelectionLabel.style.display = 'block';
-        const selPoints = selected.reduce((sum, it) => sum + itemScore(it), 0);
+        const selPoints = selected.reduce((sum, it) => sum + salvagePoints(it), 0);
         chestSelectionLabel.innerHTML = '<b>' + selected.length + '</b> gewählt · +' +
             fmtNum(selPoints) + (selPoints === 1 ? ' Punkt' : ' Punkte');
     } else {
@@ -5853,7 +5585,7 @@ function renderChestItemPopup() {
     const fmt1 = v => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const starF = 1 + (item.stars || 0) * STAR_PCT / 100;                   // forge stars multiply the item's effect
     const bonusText = sc => def.pct !== undefined
-        ? '+' + fmt1(Math.min(item.slot === 'shield' ? 90 : Infinity, sc * RARITY_PCT_PER_SCORE * starF)) + ' % ' + def.desc
+        ? '+' + fmt1(Math.min(item.slot === 'shield' ? 90 : Infinity, (sc + ITEM_GRUND) * RARITY_PCT_PER_SCORE * starF)) + ' % ' + def.desc
         : '+' + fmt1(sc * RARITY_FLAT_PER_SCORE * starF) + ' ' + def.desc;
 
     chestItemIconBig.dataset.r = rd.key;
@@ -5865,11 +5597,11 @@ function renderChestItemPopup() {
     const maxed = item.level >= ITEM_MAX_LEVEL;
     chestItemStats.innerHTML =
         '<div><span>' + icon(def.icon) + 'Bonus</span><b class="up">' + bonusText(score) + '</b></div>' +
-        (item.stars ? '<div><span>' + icon(def.icon) + 'Grundwert</span><b>+' + fmt1(score * RARITY_PCT_PER_SCORE) + ' %</b></div>' +
-                      '<div><span>' + icon('star') + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (Grundwert ×' + fmt1(starF).replace(',0', '') + ')</span><b class="up">+' + fmt1(score * RARITY_PCT_PER_SCORE * (starF - 1)) + ' %</b></div>' : '') +
+        (item.stars ? '<div><span>' + icon(def.icon) + 'Grundwert</span><b>+' + fmt1(itemPct(item)) + ' %</b></div>' +
+                      '<div><span>' + icon('star') + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (Grundwert ×' + fmt1(starF).replace(',0', '') + ')</span><b class="up">+' + fmt1(itemPct(item) * (starF - 1)) + ' %</b></div>' : '') +
         (isEquipped ? '' : '<div><span>' + icon('info') + 'Status</span><b>wirkt, sobald ausgerüstet</b></div>') +
         (maxed ? '' : '<div><span>' + icon('upgrade') + 'Nächste Stufe</span><b>' + bonusText(itemScore({ ...item, level: item.level + 1 })) + '</b></div>') +
-        '<div><span>' + icon('points') + 'Verkaufswert</span><b>' + fmtNum(score) + (score === 1 ? ' Punkt' : ' Punkte') + '</b></div>';
+        '<div><span>' + icon('points') + 'Verkaufswert</span><b>' + fmtNum(salvagePoints(item)) + ' Punkte' + '</b></div>';
 
     setBtnLabel(chestItemUpgradeBtn, maxed ? 'Max. Stufe' : 'Verbessern');
     const upgradeCostEl = chestItemUpgradeBtn.querySelector('.cost');
@@ -5943,14 +5675,15 @@ function resetSkills() {
     flashHint('Fähigkeiten zurückgesetzt: ' + fmtNum(spent) + ' Fähigkeitspunkte sind wieder frei.', 3500);
 }
 // Gems-Käufe ab 500 (und Helden-Zurücksetzen): erst „Wirklich? N Gems“, erst der zweite Tipp (nach >450 ms, binnen 4 s) zahlt – wie resetSkills
+// bisZu: ohne Uhr offen, bis der Aufrufer gemsArmAus() ruft (Teleport-Ring: daneben tippen)
 const GEMS_WIRKLICH = 500;
 let gemsArm = null;
-function gemsWirklich(key, cost, btn, immer) {      // → true: jetzt zahlen
+function gemsWirklich(key, cost, btn, immer, bisZu) {      // → true: jetzt zahlen
     if (!immer && cost < GEMS_WIRKLICH) return true;
     const now = Date.now();
-    if (gemsArm && gemsArm.key === key && now - gemsArm.at < 4000) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
+    if (gemsArm && gemsArm.key === key && (gemsArm.bisZu ? gemsArm.btn === btn && btn.isConnected : now - gemsArm.at < 4000)) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
     gemsArmAus(); const t = btn && (btn.querySelector('.lbl') || btn.querySelector('small') || btn);
-    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, timer: setTimeout(gemsArmAus, 4000) };
+    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, bisZu: !!bisZu, timer: bisZu ? 0 : setTimeout(gemsArmAus, 4000) };
     if (t) { btn.classList.add('is-armed'); t.innerHTML = 'Wirklich? ' + icon('gem') + fmtNum(cost); }
     return false;
 }
@@ -6055,7 +5788,7 @@ function warStat(k, n, foe) {
     const keys = Object.keys(warDays).sort(); while (keys.length > 8) delete warDays[keys.shift()];
     store.set('openWaterWarDays', JSON.stringify(warDays));
 }
-function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); passBump(k, n); }
+function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); passBump(k, n); questStat(k, n); }
 function goalBump(who, k, n) { if (!who) return; if (who === 'player') { try { statBump(k, n); } catch (e) {} } else if (botById[who]) botStat(who, k, n); }   // a counter for the Erfolge - yours or anyone else's
 const achStat = k => playerStats[k] || 0;
 const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.filter(b => !['embassy', 'market'].includes(b.id)).map(b => c.levels[b.id] || 0)); };   // (the newer Lager doesn't count: nothing earned is lost)
@@ -6154,11 +5887,15 @@ if (store.get('openWaterAchLook') === null) {                            // (the
 const goalsPopup = document.getElementById('goalsPopup'); var goalsTab = 'daily', achReadyN = 0;   // Ziele: the daily tasks and the Erfolge in one sheet
 let achKnown = null, achTimer = null;
 function achCheckSoon() { clearTimeout(achTimer); achTimer = setTimeout(achCheck, 400); }
+function achFensterOffen() {                                                 // Handy: ein offenes Fenster füllt den Schirm – der Erfolgs-Hinweis kommt erst danach (nicht über Heldenkarten/Gebäudekopf)
+    if (uiLayout() === 'desktop') return false;
+    return !document.getElementById('heroHall').hidden || !document.getElementById('citySheet').hidden || document.body.classList.contains('has-panel');
+}
 function achCheck() {                                                        // newly reached ones are announced once
     if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
     const ready = achClaimable();
     if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Edelsteine unter „Events“ ab.', 4500); sfx('crown'); }
+    if (!achFensterOffen() && !hintFrisch()) for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg: ' + a.name + ' – ' + a.gems + ' Edelsteine unter „Events“', 4500); sfx('crown'); }   // (frischer Hinweis wie „Truppen geheilt“: der Erfolg kommt eine Runde später)
     updateGoalsBadge(ready.length);
     if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
 }
@@ -6188,10 +5925,10 @@ function claimAch(a) {
 }
 document.getElementById('achList').addEventListener('click', e => {
     if (e.target.closest('[data-ach-all]')) { const l = achClaimable(), n = l.reduce((s, a) => s + claimAch(a), 0); if (!n) return;
-        saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für ' + l.length + ' Erfolge.', 2500); renderAchievements(); achCheck(); return; }
+        saveProgression(); updateHud(); sfx('gem'); beuteFenster('Erfolge', [{ a: 'gems', n }], { unter: l.length + ' Erfolge abgeholt' }); renderAchievements(); achCheck(); return; }
     const b = e.target.closest('[data-ach]'); if (!b || b.disabled) return;
     const a = ACHIEVEMENTS.find(q => q.id === b.dataset.ach), n = claimAch(a); if (!n) return;
-    saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für „' + a.name + '“.', 2500);
+    saveProgression(); updateHud(); sfx('gem'); beuteFenster('Erfolg', [{ a: 'gems', n }], { unter: a.name });
     renderAchievements(); achCheck();
 });
 document.getElementById('achList').addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ach-done')) achOpenDone = e.target.open; }, true);
@@ -6260,7 +5997,7 @@ function openRulerProfile(who) {
     document.getElementById('rulerBody').innerHTML =
         '<div class="rp-stats"><div class="rp-stat"><small>Macht</small><b>' + fmtCompact(powerOf(pr)) + '</b></div><div class="rp-stat"><small>Basen</small><b>' + fmtNum(pr.bases) + '</b></div>' +
         '<div class="rp-stat"><small>Stufe</small><b>' + pr.lvl + '</b></div><div class="rp-stat"><small>Tempel</small><b>' + (rulerOwner() === who ? 'Herrscher' : pr.temple ? escapeHtml(pr.temple.name) : '–') + '</b></div></div>' +
-        (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now()) + '</span></div>' : '') +
+        (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (neulingVon(who) >= ownerShieldUntil(who) ? 'Anfängerschutz – noch ' + fmtHours(neulingVon(who) - Date.now()) + ' (oder bis 100.000 Truppen)' : (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now())) + '</span></div>' : '') +
         (verdeckt ? '' : passChip(who)) + (last ? '<div class="rp-last">' + last + '</div>' : '') +
         (verdeckt ? verdecktHtml :
         '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
@@ -6311,10 +6048,10 @@ function escapeHtml(str) {                         // auch Anführungszeichen: s
 const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
 let rankTab = 'power';
 const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
-    caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
+    caps: { t: 'Eroberungen', sub: 'Eroberte Basen in dieser Saison', unit: 'erobert' },
     burg: { t: 'Hauptstadt', sub: 'Burg-Stufe, dann Forschung', unit: 'Burg-Stufe' },
     titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
-    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };
+    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · in dieser Saison verdient', unit: 'Thron-P.' } };
 function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
 function foPunkte(who, bs) {                             // alle erforschten Stufen – von anderen nur die Summe (rechnet der Weltrechner, foP)
     if (!AUF) return 0; if (who !== 'player' && fremdGeheim()) { const b = (bs || loadBotState())[who]; return b && Number.isFinite(b.foP) ? b.foP : 0; }
@@ -6341,17 +6078,17 @@ function renderRankings() {
     const macht = e => { if (e.macht === undefined) { const pr = whoProfile(e.who); e.macht = pr ? powerOf(pr) : 0; } return e.macht; };
     const gleich = (a, b) => macht(b) - macht(a) || (a.who === 'player') - (b.who === 'player');   // Gleichstand: erst Macht, sonst du hinter den anderen (nie bevorzugt)
     if (rankTab === 'power') { for (const e of people) { const pr = whoProfile(e.who); e.val = pr ? powerOf(pr) : 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); }
-    else if (rankTab === 'caps') { for (const e of people) { e.val = conquestsOf(e.who); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
+    else if (rankTab === 'caps') { for (const e of people) { e.val = rangSaison(e.who, 0); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
     else if (rankTab === 'burg') { for (const e of people) { e.val = AUF ? AUF.burgStufe(e.who) : 1; e.fo = foPunkte(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· Forschung ' + fmtNum(e.fo) + '</i>'; }
         list = people.slice().sort((a, b) => b.val - a.val || b.fo - a.fo || b.lvl - a.lvl || gleich(a, b)); }
     else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
         medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
-        for (const e of people) { const x = by[e.who]; e.val = throneEarnedOf(e.who, bs);
+        for (const e of people) { const x = by[e.who]; e.val = rangSaison(e.who, 1, bs);
             e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ troops: 'Truppen', coins: 'Münzen', attack: 'Angriff', defense: 'Abwehr' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
         const tr = e => e.who === ruler ? 0 : by[e.who] ? (by[e.who].good ? 1 : 2) : 3;
         list = people.filter(e => tr(e) < 3).sort((a, b) => tr(a) - tr(b) || b.val - a.val || gleich(a, b));
         empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
-    } else { for (const e of people) { e.val = throneEarnedOf(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
+    } else { for (const e of people) { e.val = rangSaison(e.who, 1, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
         empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
     if (rankTab !== 'titles' && rankTab !== 'burg') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl || gleich(a, b));
     const lim = RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player');
@@ -6561,7 +6298,7 @@ function renderCombatLog() {
             const K = FIELD_KINDS[entry.fieldKind] || FIELD_KINDS.gold;
             return karte(entry, entry.won ? 'win' : 'loss', K.icon, [entry.won ? 'win' : 'loss', entry.won ? 'Feld gehalten' : 'Feld verloren'], K.name, fieldHeroLine(entry).replace(/^ · /, ''),
                 logBalance(entry.atk, entry.def, icon('attack') + escapeHtml(entry.attacker) + ' ' + fmtM(entry.atk), fmtM(entry.def) + ' ' + escapeHtml(entry.defender) + icon('defense'), entry.attacker !== 'Du'),
-                [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Gold', 'gut']], fieldHeroDet(entry));
+                [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Münzen', 'gut']], fieldHeroDet(entry));
         }
         if (entry.type === 'barb' || entry.type === 'dboss') {    // out in the open against a camp or the boss: your side vs. theirs, losses, rewards
             const boss = entry.type === 'dboss', tr = entry.troops, gef = entry.gef || 0, bon = tr !== undefined ? entry.atk - tr - gef : 0;
@@ -6580,7 +6317,7 @@ function renderCombatLog() {
                     '<div class="logSum' + (entry.won ? '' : ' advantage') + '"><span>Gesamt</span><span>' + fmtD(entry.def) + '</span></div>' +
                     '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.kill) + '</span></div>' + (!entry.won ? '<div class="logLine"><span>Noch im Lager</span><span>' + fmtD(entry.left) + '</span></div>' : '') + '</div>';
             const rew = boss ? (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen nach Schaden</div>' : '') + (entry.capped ? '<div class="logRetreat">Höchstens 5 % Leben pro Angriff.</div>' : '')
-                : (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen' + (entry.kGold ? ' (davon ' + fmtBig(entry.kGold) + ' Angriff: Gold)' : '') + '</div>' : '') +
+                : (entry.gold ? '<div class="logGold">Beute: +' + fmtBig(entry.gold) + ' Münzen' + (entry.kGold ? ' (davon ' + fmtBig(entry.kGold) + ' Angriff: Münzen)' : '') + '</div>' : '') +
                   (entry.crate ? '<div class="logGold">Kiste: ' + escapeHtml(entry.crate) + '</div>' : '') + (entry.sh ? '<div class="logGold">' + escapeHtml(entry.sh) + '</div>' : '') +
                   (entry.n !== undefined ? '<div class="logRetreat">' + (entry.up ? 'Stufe ' + entry.open + ' freigeschaltet · ' : entry.open ? 'Freigeschaltet bis Stufe ' + entry.open + ' · ' : '') + entry.n + ' / ' + barbTagMax() + ' heute</div>' : '');
             const det = tr === undefined ? fieldHeroDet(entry) : '<details><summary>Kampfdetails</summary>' +
@@ -6588,7 +6325,7 @@ function renderCombatLog() {
                 (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
                 (entry.hx ? gearHtml({ items: [], lvl: playerLvl, hx: entry.hx, skills: [], city: [], heroOnly: 1 }) : '') + '</details>';
             const von = (entry.sourceId !== undefined ? 'von ' + T(entry.sourceId) : '') + fieldHeroLine(entry), verl = verlustChips((entry.loss || 0) - (entry.wounded || 0), entry.wounded);
-            const extra = [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Gold', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']];
+            const extra = [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Münzen', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']];
             if (boss) return karte(entry, 'win', 'crown', ['win', 'Tagesboss'], escapeHtml(entry.name), von.replace(/^ · /, ''), '',
                 [['attack', chipN(entry.dmg) + ' Schaden', 'gut'], ['crown', 'noch ' + chipN(entry.left) + ' Leben'], entry.rank && ['rank', 'Platz ' + entry.rank + ' von ' + entry.of], ...verl, ...extra], det);
             return karte(entry, entry.won ? 'win' : 'loss', 'attack', [entry.won ? 'win' : 'loss', entry.won ? 'Besiegt' : 'Abgewehrt'], 'Barbaren-Lager · Stufe ' + entry.L, von.replace(/^ · /, ''),
@@ -6602,7 +6339,7 @@ function renderCombatLog() {
             const side = (n, own) => n === 'Du' ? (own ? 'Deine Armee' : 'deine Armee') : (own ? 'Die Armee von ' : 'die Armee von ') + escapeHtml(n);
             return karte(entry, entry.won ? 'win' : 'loss', 'troops', [entry.won ? 'win' : 'loss', entry.won ? 'Armee siegt' : 'Armee geschlagen'], 'Kampf im Feld', side(entry.attacker, true) + ' gegen ' + side(entry.defender, false) + fieldHeroLine(entry),
                 logBalance(entry.atk, entry.def, icon('attack') + fmtM(entry.atk), fmtM(entry.def) + icon('defense'), entry.attacker !== 'Du'),
-                [...verlustChips(0, entry.wounded), entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Gold', 'gut']], fieldHeroDet(entry));
+                [...verlustChips(0, entry.wounded), entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Münzen', 'gut']], fieldHeroDet(entry));
         }
         if (entry.type === 'volley') {
             const dead = entry.hit - entry.wounded;
@@ -6668,14 +6405,14 @@ function renderCombatLog() {
                 (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
                 (entry.atkWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.botName) + ' bringt ' + fmtNum(entry.atkWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
                 (entry.atkFled ? '<div class="logRetreat">' + fmtNum(entry.atkFled) + ' Truppen von ' + escapeHtml(entry.botName) + ' fliehen zurück</div>' : '') +
-                (entry.defGold ? '<div class="logGold">Verteidigung: Gold +' + fmtBig(entry.defGold) + ' Münzen</div>' : '') +
+                (entry.defGold ? '<div class="logGold">Verteidigung: Münzen +' + fmtBig(entry.defGold) + ' Münzen</div>' : '') +
                 '</details>';
             const bbar = logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' ' + (entry.rolle === 'helfer' ? escapeHtml(entry.defName || '?') : 'Du') + icon('defense'), true);
             if (entry.rolle === 'helfer') { const mh = entry.meine || {};   // deine Verstärkung bei einem Bündnis-Mitglied hat mitverteidigt
                 return karte(entry, entry.won ? 'loss' : 'win', 'defense', [entry.won ? 'loss' : 'win', 'Verstärkung'], T(entry.targetId), escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten'), bbar,
                     [['troops', 'deine ' + chipN(mh.n) + ' Truppen'], ...verlustChips(mh.fallen, mh.wounded)], bdet); }
             const wer = escapeHtml(entry.botName) + (angreiferZeilen(entry, gearHtml) ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
-            const bchips = [...verlustChips(Math.max(0, fallen - (entry.wounded || 0)), entry.wounded), ...beuteChips(entry, false), entry.defGold > 0 && ['coin', '+' + chipN(entry.defGold) + ' Gold', 'gut']];
+            const bchips = [...verlustChips(Math.max(0, fallen - (entry.wounded || 0)), entry.wounded), ...beuteChips(entry, false), entry.defGold > 0 && ['coin', '+' + chipN(entry.defGold) + ' Münzen', 'gut']];
             return entry.capitalHolds
                 ? karte(entry, 'loss', 'bot', ['loss', 'Geplündert'], T(entry.targetId), wer + ' hat die Garnison geschlagen – die Stadt hält', bbar, bchips, bdet)
                 : entry.won
@@ -6720,7 +6457,7 @@ function renderCombatLog() {
                     gearHtml(entry.defGear) +
                 '</div>' +
             '</div>' +
-            (entry.killGold ? '<div class="logGold">Angriff: Gold +' + fmtBig(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Gold +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
+            (entry.killGold ? '<div class="logGold">Angriff: Münzen +' + fmtBig(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Münzen +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
             (!entry.won && (ich ? ich.fled : entry.retreatSurvivors) ? '<div class="logRetreat">' + fmtNum(ich ? ich.fled : entry.retreatSurvivors) + (ich ? ' deiner' : '') + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
             ((ich ? ich.wounded : entry.wounded) ? '<div class="logRetreat logWounded">' + fmtNum(ich ? ich.wounded : entry.wounded) + (ich ? ' deiner' : '') + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
             (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
@@ -6731,12 +6468,12 @@ function renderCombatLog() {
             logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')),
             [...(entry.rolle === 'mit' || ich ? verlustChips(meine.fallen, meine.wounded) : verlustChips(entry.attackerCasualties, entry.wounded)),
                 entry.won ? ['troops', chipN(ichUeb ? ich.rest : entry.remaining) + ' übrig'] : (ichUeb ? ich.fled : entry.retreatSurvivors) > 0 && ['recall', chipN(ichUeb ? ich.fled : entry.retreatSurvivors) + ' fliehen heim'],
-                ...beuteChips(entry, true), entry.killGold > 0 && ['coin', '+' + chipN(entry.killGold) + ' Gold für Kills', 'gut']], details);
+                ...beuteChips(entry, true), entry.killGold > 0 && ['coin', '+' + chipN(entry.killGold) + ' Münzen für Kills', 'gut']], details);
     })(entry); } catch (err) { console.warn('Kampfbericht', err); return logRowHtml('loss', 'info', 'Kampfbericht', 'Dieser Bericht kann nicht angezeigt werden.', ''); }
     }).join('');
     [...combatLogListEl.children].forEach((row, i) => { const e = combatLog[i]; if (!e) return; row.dataset.key = combatLogKey(e);
         const isl = islandById[e.targetId ?? e.toId], lt = row.querySelector(':scope > .lt'); if (!isl || !lt) return;   // wo war das? Koordinaten + „Zeigen“ auf der Karte
-        lt.insertAdjacentHTML('beforeend', '<small class="logOrt">' + coordText(isl.x, isl.y) + ' <button type="button" class="btn btn--ghost btn--sm" data-logzeigen="' + isl.id + '">Zeigen</button>' + (typeof bundTeilenKnopf === 'function' ? bundTeilenKnopf(e) : '') + '</small>'); });   // (+ im Bündnis teilen)
+        lt.insertAdjacentHTML('beforeend', '<small class="logOrt">' + coordText(isl.x, isl.y) + ' <button type="button" class="btn btn--secondary btn--sm" data-logzeigen="' + isl.id + '">Zeigen</button>' + (typeof bundTeilenKnopf === 'function' ? bundTeilenKnopf(e) : '') + '</small>'); });   // (+ im Bündnis teilen)
     try { kampflogUmbauen(); } catch (err) { console.warn('Kampfbericht', err); }   // neuer Aufbau: ein Fenster je Spieler
 }
 
@@ -6774,17 +6511,17 @@ const kampflogUmbauen = (function () {
         const helden = hs.querySelectorAll('.logHero');
         if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)'));
         if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', 'Zweitheld · Werte und passive Fähigkeiten zu 50 %'));
-        hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselben 7 Zeilen
+        hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselbe Reihenfolge, leere Zeilen („Fähigkeit –“) fallen weg
             const L = [...h.querySelectorAll(':scope > .logLine')].map(l => { const r = [textOf(l), l.lastElementChild.textContent.trim()]; l.remove(); return r; });
             const fest = ['Angriff', 'Verteidigung', 'Gefolge', 'Tempo'], rest = L.filter(l => !fest.includes(l[0]));
-            while (rest.length < 3) rest.push(['Fähigkeit', '–']);
-            h.insertAdjacentHTML('beforeend', [...fest.map(n => L.find(l => l[0] === n) || [n, '–']), ...rest.slice(0, 3)].map(([a, b]) => zl(a, b, b === '–' ? ' kl-null' : ' buff')).join(''));
+            h.insertAdjacentHTML('beforeend', [...fest.map(n => L.find(l => l[0] === n) || [n, '–']), ...rest.slice(0, 3)].filter(([, b]) => b && b !== '–').map(([a, b]) => zl(a, b, ' buff')).join(''));
         });
         box.querySelectorAll(':scope > .kl-rss').forEach(x => x.remove());
-        box.insertAdjacentHTML('beforeend', '<div class="kl-rss"><div class="logGearHead">Rohstoffe</div>' +
-            [['g', 'Gold'], ['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].map(([k, n]) => { const v = roh[k] || 0;
-                return zl(n, (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v)), v > 0 ? ' buff' : v < 0 ? ' buff malus' : ''); }).join('') +
-            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' Gold · ' + fmt(schutz * ROH_JE_MUENZE) + ' je Rohstoff</small>', '') : '') + '</div>');
+        const ROH = [['g', 'Münzen', 'coins'], ['h', 'Holz', 'holz'], ['s', 'Stein', 'stein'], ['e', 'Eisen', 'eisen']], kacheln = beuteRaster(ROH.map(([k, , a]) => ({ a, n: Math.abs(roh[k] || 0), minus: roh[k] < 0 })));   // Beute/Verlust als Kacheln (05e), die Zeilen bleiben für Vorleser
+        box.insertAdjacentHTML('beforeend', '<div class="kl-rss' + (kacheln ? ' bk-an' : '') + '"><div class="logGearHead">Rohstoffe</div>' + kacheln + '<div class="kl-rss-zeilen">' +
+            ROH.map(([k, n]) => { const v = roh[k] || 0;
+                return zl(n, (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v)), v > 0 ? ' buff' : v < 0 ? ' buff malus' : ''); }).join('') + '</div>' +
+            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' Münzen · ' + fmt(schutz * ROH_JE_MUENZE) + ' je Rohstoff</small>', '') : '') + '</div>');
         return box;
     }
     const rohTeil = (beute, anteil, vz) => ({ g: vz * Math.round(beute.g * anteil), h: vz * Math.round(beute.h * anteil), s: vz * Math.round(beute.s * anteil), e: vz * Math.round(beute.e * anteil) });
@@ -6867,8 +6604,10 @@ const kampflogUmbauen = (function () {
     }
     function spaehRoh(s) {                                                    // was er hat – und was davon an der Hauptstadt zu holen ist
         const R = (s.auf || {}).roh; if (!R) return '';
-        const z = (n, v) => v === undefined ? '' : zl(n, fmtCompact(v), v > R.schutz ? ' buff' : ' kl-null', v > R.schutz ? fmtCompact(Math.floor((v - R.schutz) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt' : 'alles von der Burg geschützt');
-        return z('Gold', R.c) + z('Holz', R.h) + z('Stein', R.s) + z('Eisen', R.e) + (R.schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(R.schutz) + ' je Rohstoff</small>', '') : '');
+        const sR = R.schutzR || R.schutz * ROH_JE_MUENZE;               // Holz/Stein/Eisen: eigener (größerer) Schutz – nicht der Münzen-Schutz
+        const z = (n, v, sch) => v === undefined ? '' : zl(n, fmtCompact(v), v > sch ? ' buff' : ' kl-null', v > sch ? fmtCompact(Math.floor((v - sch) * HAUPT_BEUTE)) + ' zu holen an der Hauptstadt' : 'alles von der Burg geschützt');
+        return z('Münzen', R.c, R.schutz) + z('Holz', R.h, sR) + z('Stein', R.s, sR) + z('Eisen', R.e, sR) +
+            (R.schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(niceRound(R.schutz)) + ' Münzen · ' + fmt(niceRound(sR)) + ' je Rohstoff</small>', '') : '');
     }
     function spaeh(row, e) {
         const d = row.querySelector('details'); if (!d) return;
@@ -6911,20 +6650,14 @@ const kampflogUmbauen = (function () {
     const seite = el('<div class="kl-seite" hidden><div class="kl-fenster"><div class="kl-kopf"><div class="emblem emblem--gold">' + ic('battlelog') + '</div><div class="kl-txt"><div class="overline" id="klArt">Kampfdetails</div><h3 id="klTitel">Bericht</h3></div>' +
         '<button class="btn-x" type="button" aria-label="Zurück" data-klzu>' + ic('close') + '</button></div>' +
         '<div style="max-width:560px;margin:0 auto"><button type="button" class="btn btn--ghost btn--sm kl-zurueck" data-klzu>' + ic('back') + 'Zurück zum Kampflog</button></div><div class="logList" id="klInhalt"></div></div></div>');
-    document.body.appendChild(seite);
-    const breit = window.matchMedia('(min-width: 760px)'), fenster = seite.firstChild;
-    function fensterArt() {
-        seite.style.background = breit.matches ? 'rgba(5,6,8,.62)' : '';
-        fenster.style.cssText = breit.matches ? 'max-width:600px;margin:28px auto;padding:14px 16px 20px;background:var(--ink-1);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:0 18px 50px #000c' : '';
-    }
-    breit.addEventListener('change', fensterArt); fensterArt();
+    document.body.appendChild(seite);   // (Desktop: Fenster unter dem HUD, Inhalt rollt darin – 03 .kl-fenster)
     function oeffnen(row, art) {
         const k = row.cloneNode(true), d = k.querySelector('details'); if (d) d.open = true;
         const inh = seite.querySelector('#klInhalt'); inh.innerHTML = ''; inh.appendChild(k);
         const b = row.querySelector('.lt b'), t = b ? b.cloneNode(true) : null; if (t && t.querySelector('.lbadge')) t.querySelector('.lbadge').remove();
         seite.querySelector('#klTitel').textContent = t ? t.textContent.trim() : 'Bericht';
         seite.querySelector('#klArt').textContent = art || 'Kampfdetails';
-        seite.hidden = false; seite.scrollTop = 0;
+        seite.hidden = false; seite.scrollTop = 0; inh.scrollTop = 0;
     }
     seite.addEventListener('click', ev => { if (ev.target === seite || ev.target.closest('[data-klzu]')) { ev.preventDefault(); seite.hidden = true; } else if (ev.target.closest('.who-link, [data-profile]')) seite.hidden = true; });   // (Name antippen: das Profil soll nicht unsichtbar dahinter aufgehen)
     combatLogListEl.addEventListener('click', ev => { const s = ev.target.closest('summary'); if (!s || !combatLogListEl.contains(s)) return;
@@ -6971,6 +6704,103 @@ battleLogCloseBtn.addEventListener('click', () => {
     closePanel(battleLogPopup);
     clearInterval(battleLogRefreshTimer);
 });
+// ===== BELOHNUNGEN: eine Kachel je Sache – Kachel-Bild nach Seltenheit (ui_kachel_*), Symbol aus bilder/beute_*.webp, Menge unten rechts =====
+// Eine Belohnung b: { a: Art (BEUTE_ART), n: Menge, r: Seltenheit 0–5 (sonst nach Art/Menge), slot: Ausrüstungs-Platz (a 'item'), held: Helden-ID (a 'sh'),
+// k: Kisten-Art (a 'kiste': aus|held|gross|episch|royal), min: „mind.“ Seltenheit, ohneZahl: Menge steht schon daneben, minus: verloren (Kampfbericht) }. Nur Anzeige – wer etwas gibt, gibt es wie bisher und meldet hier nur, WAS es war.
+var BEUTE_ART = {
+    gems: { b: 'beute_edelsteine', t: 'Edelsteine' }, coins: { b: 'beute_muenzen', t: 'Münzen', r: 1 }, holz: { b: 'beute_holz', t: 'Holz', r: 1 },
+    stein: { b: 'beute_stein', t: 'Stein', r: 1 }, eisen: { b: 'beute_eisen', t: 'Eisen', r: 1 }, tr: { b: 'beute_truppen', t: 'Truppen', r: 2 },
+    sh: { b: 'beute_splitter', t: 'Helden-Splitter', r: 3 }, tp: { b: 'beute_thron', t: 'Thron-Punkte', r: 4 }, schild: { b: 'beute_schild', t: 'Friedensschild', r: 2 },
+    punkte: { b: 'beute_punkte', t: 'Fähigkeitspunkte', r: 2 }, tele: { b: 'ui_sym_verlegen', t: 'Teleporter', r: 3 }, rahmen: { b: 'ui_sym_krone', t: 'Rahmen', r: 4 }, item: { t: 'Ausrüstung', r: 0 }, kiste: { t: 'Kiste', r: 0 }
+};
+var BEUTE_SLOT = { weapon: 'beute_waffe', armor: 'beute_ruestung', shield: 'beute_rundschild', boots: 'beute_stiefel' };
+var KISTE_BILD = { aus: 'kiste_ausruestung', held: 'kiste_held', gross: 'kiste_gross', episch: 'kiste_episch', royal: 'kiste_royal' };
+var KISTE_NAME = { aus: 'Ausrüstungskiste', held: 'Heldenkiste', gross: 'Große Kiste', episch: 'Epische Kiste', royal: 'Königliche Kiste' };
+const kisteVonR = r => r >= 3 ? 'royal' : 'aus';   // Kiste „mind. <Seltenheit>“ (Preise, Abholfach): ab Episch die Königliche
+function beuteR(b) {                                // Seltenheit der Kachel: eigene, sonst je Art (Edelsteine nach Menge)
+    if (b.r >= 0) return Math.min(5, b.r | 0);
+    if (b.a === 'sh' && b.held && typeof heroById === 'function' && heroById(b.held)) return heroById(b.held).r;
+    if (b.a === 'gems') return b.n >= 500 ? 4 : b.n >= 100 ? 3 : 2;
+    const d = BEUTE_ART[b.a]; return d && d.r >= 0 ? d.r : 0;
+}
+function beuteName(b) {
+    if (b.a === 'item') return (RARITY_DEFS[beuteR(b)] || RARITY_DEFS[0]).label + ' ' + ((EQUIPMENT_DEFS[b.slot] || {}).name || 'Ausrüstung');
+    if (b.a === 'kiste') return KISTE_NAME[b.k || 'aus'] + (b.min ? ' (mind. ' + RARITY_DEFS[b.r].label + ')' : '');
+    if (b.a === 'sh' && b.held && typeof heroById === 'function' && heroById(b.held)) return 'Splitter ' + heroById(b.held).name;
+    if (b.a === 'schild') return 'Friedensschild ' + b.n + ' Std.';
+    return (BEUTE_ART[b.a] || { t: '' }).t;
+}
+function beuteBild(b) {
+    if (b.a === 'item') return BEUTE_SLOT[b.slot] || 'beute_waffe';
+    if (b.a === 'kiste') return KISTE_BILD[b.k || 'aus'] + '_zu';
+    return (BEUTE_ART[b.a] || BEUTE_ART.gems).b;
+}
+function beuteMenge(b) {                            // unten rechts: Anzahl (Schild: Stunden); ein einzelnes Teil/eine Kiste ohne Zahl; ohneZahl: steht daneben
+    if (b.ohneZahl) return '';
+    if (b.minus) return '−' + (b.n >= 1e4 ? fmtCompact(b.n) : fmtNum(b.n));
+    if (b.a === 'schild') return b.n + ' h';
+    if ((b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen') && !(b.n > 1)) return '';
+    return b.n >= 1e4 ? fmtCompact(b.n) : fmtNum(b.n || 1);
+}
+function beuteKachel(b, tag) {                      // tag: 'li' in Listen (Tages-, Stufen-, Boss-Fenster), sonst span
+    tag = tag || 'span'; const r = beuteR(b), m = beuteMenge(b), name = beuteName(b);
+    const held = b.a === 'sh' && b.held && typeof heroImg === 'function' ? heroImg(b.held, 'bk-held') : '';
+    return '<' + tag + ' class="bk" data-r="' + (RARITY_DEFS[r] || RARITY_DEFS[0]).key + '" data-beute="' + b.a + '"' + (b.minus ? ' data-minus' : '') + ' title="' + escapeHtml(name + (m ? ' · ' + m : '')) + '">' +
+        '<img src="bilder/' + beuteBild(b) + '.webp" alt="' + escapeHtml(name) + '" draggable="false">' + held + (m ? '<b>' + m + '</b>' : '') + '</' + tag + '>';
+}
+function beuteZusammen(liste) {                     // gleiche Sachen in eine Kachel (10 Kisten: „3 × Episch Waffe“)
+    const out = [], idx = {};
+    for (const b of liste) { if (!b || !(b.n > 0 || b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen')) continue;
+        const k = [b.a, beuteR(b), b.slot || '', b.held || '', b.k || '', b.a === 'schild' ? b.n : '', b.minus ? 1 : ''].join('|');
+        if (idx[k] !== undefined && b.a !== 'schild') { out[idx[k]].n = (out[idx[k]].n || 1) + (b.n || 1); continue; }
+        idx[k] = out.length; out.push(Object.assign({}, b, { n: b.n || 1 })); }
+    return out;
+}
+function beuteRaster(liste, cls, mitNamen) {        // Reihe von Kacheln; mitNamen: Name klein darunter (Belohnungs-Fenster)
+    const L = beuteZusammen(liste); if (!L.length) return '';
+    return '<div class="bk-raster' + (cls ? ' ' + cls : '') + '">' + L.map((b, i) => mitNamen ? '<span class="bk-mit" style="--i:' + i + '">' + beuteKachel(b) + '<small>' + escapeHtml(beuteName(b)) + '</small></span>' : beuteKachel(b)).join('') + '</div>';
+}
+function itemBeute(it) { return { a: 'item', slot: it.slot, r: it.rarity }; }   // ein Ausrüstungs-Teil als Kachel
+function beuteLis(liste, el) {                      // Kacheln als <li> in die Listen der Fenster (Tag, Stufe, Kriegsherr) – kommen nacheinander
+    el.innerHTML = beuteZusammen(liste).map(b => beuteKachel(b, 'li')).join('');
+    [...el.children].forEach((li, i) => { li.style.animationDelay = (120 + i * 110) + 'ms'; });
+}
+
+// ---- Belohnungs-Fenster: über allem, mit Kiste (Animation) oder ohne; ein Tipp überspringt die Animation, „OK“ schließt ----
+let beuteFensterTimer = [];
+function beuteFenster(titel, liste, opt) {          // opt: { kiste: Kisten-Art, unter: Zeile unter dem Titel, n: so viele Kisten auf einmal }
+    opt = opt || {}; const L = beuteZusammen(liste); if (!L.length) return;
+    let f = document.getElementById('beuteFenster');
+    if (!f) {
+        f = document.createElement('div'); f.id = 'beuteFenster'; f.className = 'bf'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-modal', 'true'); f.setAttribute('aria-labelledby', 'bfTitel');
+        f.innerHTML = '<div class="bf-karte"><div class="bf-band"><h2 id="bfTitel"></h2></div><div class="bf-unter"></div><div class="bf-buehne"><i class="bf-strahlen"></i><img class="bf-kiste" alt="" draggable="false"><b class="bf-anzahl"></b></div>' +
+            '<div class="bf-inhalt"></div><button type="button" class="btn btn--primary bf-ok"><span>OK</span></button></div>';
+        document.body.appendChild(f);
+        f.addEventListener('click', e => { if (e.target.closest('.bf-ok') || e.target === f) { beuteFensterZu(); return; } if (!f.classList.contains('is-fertig')) beuteFensterFertig(); });
+    }
+    beuteFensterTimer.forEach(clearTimeout); beuteFensterTimer = [];
+    const k = opt.kiste && KISTE_BILD[opt.kiste], kiste = f.querySelector('.bf-kiste');
+    f.querySelector('#bfTitel').textContent = titel;
+    setText(f.querySelector('.bf-unter'), opt.unter || ''); f.querySelector('.bf-unter').hidden = !opt.unter;
+    setText(f.querySelector('.bf-anzahl'), opt.n > 1 ? opt.n + '×' : '');
+    f.querySelector('.bf-inhalt').innerHTML = beuteRaster(L, L.length > 8 ? 'bk-viele' : '', true);
+    f.classList.toggle('mit-kiste', !!k); f.classList.remove('is-wackeln', 'is-auf', 'is-fertig');
+    if (k) { kiste.src = 'bilder/' + k + '_zu.webp'; kiste.dataset.auf = 'bilder/' + k + '_offen.webp'; }
+    f.hidden = false; f.querySelector('.bf-ok').focus({ preventScroll: true });
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { beuteFensterFertig(); return; }
+    if (k) { void f.offsetWidth; f.classList.add('is-wackeln');   // wackeln → aufgehen (Strahlen) → Kacheln nacheinander
+        beuteFensterTimer.push(setTimeout(() => { kiste.src = kiste.dataset.auf; f.classList.remove('is-wackeln'); f.classList.add('is-auf'); }, 700));
+        beuteFensterTimer.push(setTimeout(beuteFensterFertig, 700 + 260 + L.length * 90 + 400)); }
+    else { f.classList.add('is-auf'); beuteFensterTimer.push(setTimeout(beuteFensterFertig, 260 + L.length * 90 + 400)); }
+}
+function beuteFensterFertig() {                     // Endbild: Kiste offen, alle Kacheln da
+    const f = document.getElementById('beuteFenster'); if (!f) return;
+    beuteFensterTimer.forEach(clearTimeout); beuteFensterTimer = [];
+    const kiste = f.querySelector('.bf-kiste'); if (f.classList.contains('mit-kiste') && kiste.dataset.auf) kiste.src = kiste.dataset.auf;
+    f.classList.remove('is-wackeln'); f.classList.add('is-auf', 'is-fertig');
+}
+function beuteFensterZu() { const f = document.getElementById('beuteFenster'); if (!f || f.hidden) return false; beuteFensterTimer.forEach(clearTimeout); beuteFensterTimer = []; f.hidden = true; return true; }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && beuteFensterZu()) e.stopPropagation(); }, true);
 // ===== AUFGABEN (daily quests) + TÄGLICHE BELOHNUNG =====
 
 // (VIP ist seit 2.10. ganz raus – Alexander)
@@ -7029,11 +6859,7 @@ function claimDaily() {
     saveGame(); saveProgression(); updateHud(); updateGoalsBadge(); anleitungAbgeholt();
     return { day, gems: r.gems, items };
 }
-function itemRewardRow(item) {
-    const rd = RARITY_DEFS[item.rarity], def = EQUIPMENT_DEFS[item.slot];
-    return '<li style="border-color:' + rd.color + '66">' + '<svg class="icon" style="color:' + rd.color + '"><use href="#i-' + def.icon + '"/></svg>' +
-        '<span>' + def.name + '</span><b style="color:' + rd.color + '">' + rd.label + '</b></li>';
-}
+function dailyBeute(r) { return [{ a: 'kiste', k: r.epic ? 'royal' : 'aus', n: r.crates, r: r.epic ? 3 : 0, min: !!r.epic }, { a: 'gems', n: r.gems }]; }
 const dailyModal = document.getElementById('dailyModal');
 function showDailyModal() {
     if (!dailyClaimable()) return;
@@ -7042,10 +6868,7 @@ function showDailyModal() {
     document.getElementById('dailyModalSub').textContent = day > 1 ? day + ' Tage in Folge – weiter so!' : 'Jeden Tag vorbeischauen lohnt sich.';
     document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
     document.getElementById('dailyModalLabel').textContent = 'Heute';
-    document.getElementById('dailyModalRewards').innerHTML =
-        '<li>' + icon('shop', 'ico-coin') + '<span>' + (r.epic ? 'Epische Kiste (mind. Episch)' : r.crates === 1 ? 'Ausrüstungskiste' : 'Ausrüstungskisten') + '</span><b>×' + r.crates + '</b></li>' +
-        (r.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Edelsteine</span><b>+' + r.gems + '</b></li>' : '');
-    [...document.getElementById('dailyModalRewards').children].forEach((li, i) => { li.style.animationDelay = (150 + i * 110) + 'ms'; });
+    beuteLis(dailyBeute(r), document.getElementById('dailyModalRewards'));
     const btn = document.getElementById('dailyModalBtn');
     btn.dataset.state = 'claim'; btn.querySelector('span').textContent = 'Abholen';
     dailyModal.hidden = false;
@@ -7063,14 +6886,13 @@ document.getElementById('dailyModalBtn').addEventListener('click', () => {
     if (!res) { closeDailyModal(); return; }
     document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
     document.getElementById('dailyModalLabel').textContent = 'Erhalten';
-    const list = document.getElementById('dailyModalRewards');
-    list.innerHTML = res.items.map(itemRewardRow).join('') + (res.gems ? '<li>' + icon('gem', 'ico-gem') + '<span>Edelsteine</span><b>+' + res.gems + '</b></li>' : '');
-    [...list.children].forEach((li, i) => { li.style.animationDelay = (80 + i * 120) + 'ms'; });
+    beuteLis([...res.items.map(itemBeute), { a: 'gems', n: res.gems }], document.getElementById('dailyModalRewards'));
     btn.dataset.state = 'done'; btn.querySelector('span').textContent = 'Weiter';
 });
 dailyModal.addEventListener('click', e => { if (e.target === dailyModal) closeDailyModal(); });
 
-// ---- daily quests: 3 random tasks per day, gems each, bonus crate for all 3 ----
+// ---- daily quests: 6 random tasks per day (7.10.: vorher 3) – 2 leicht, 2 mittel, 2 schwer; je Edelsteine + Münzen, Bonus bei 3 (Truppen) und bei allen 6 (Kiste) ----
+// steps: Ziel je Stufe (0 = auf dieser Stufe nicht), geht: nur würfeln, was heute geht
 var QUEST_DEFS = {
     capture: { icon: 'flag',        text: n => 'Erobere ' + n + ' Basen',             steps: [3, 5, 8] },
     attack:  { icon: 'attack',      text: n => 'Starte ' + n + ' Angriffe',            steps: [5, 10, 15] },
@@ -7080,8 +6902,31 @@ var QUEST_DEFS = {
     send:    { icon: 'send',        text: n => 'Schicke ' + n + '-mal Truppen',        steps: [2, 4, 6] },
     crate:   { icon: 'shop',        text: n => 'Öffne ' + n + (n === 1 ? ' Kiste' : ' Kisten'), steps: [1, 2, 3] },   // (jede Kiste: Shop, Helden-Kiste, Abholfach, Pass, Thron-Shop, Belohnungen)
     bau:     { icon: 'castle',      text: n => n === 1 ? 'Starte einen Bau in der Stadt' : 'Starte ' + n + ' Bauten in der Stadt', steps: [1, 1, 2], geht: () => questStadtGeht('bau') },
-    forschung: { icon: 'flask',     text: () => 'Starte eine Forschung im Labor', steps: [1, 1, 1], geht: () => questStadtGeht('forschung') }
+    forschung: { icon: 'flask',     text: () => 'Starte eine Forschung im Labor', steps: [1, 1, 1], geht: () => questStadtGeht('forschung') },
+    barbLager: { icon: 'attack',    text: n => n === 1 ? 'Besiege ein Barbaren-Lager' : 'Besiege ' + n + ' Barbaren-Lager', steps: [2, 5, 10] },
+    tagesboss: { icon: 'star',      text: n => n === 1 ? 'Greife den Tagesboss an' : 'Greife den Tagesboss ' + n + '-mal an', steps: [1, 3, 5] },
+    sammeln: { icon: 'wood',        text: n => n === 1 ? 'Schicke Sammler auf ein Feld' : 'Schicke ' + n + '-mal Sammler auf Felder', steps: [1, 3, 5] },
+    bundHilfe: { icon: 'bund',      text: n => n === 1 ? 'Hilf einmal im Bündnis (Bau-Hilfe)' : 'Hilf ' + n + '-mal im Bündnis (Bau-Hilfe)', steps: [1, 3, 5], geht: () => questBundGeht() },
+    verstaerkung: { icon: 'send',   text: n => n === 1 ? 'Schicke Verstärkung an ein Bündnis-Mitglied' : 'Schicke ' + n + '-mal Verstärkung an Bündnis-Mitglieder', steps: [1, 1, 2], geht: () => questBundGeht() },
+    rally: { icon: 'multiattack',   text: () => 'Mach bei einer Rally mit', steps: [1, 1, 1], geht: () => questBundGeht() },
+    schmiede: { icon: 'weapon',     text: n => n === 1 ? 'Verbessere einen Gegenstand' : 'Verbessere ' + n + '-mal Gegenstände', steps: [1, 2, 3] },   // (Stufe oder Stern)
+    zusammen: { icon: 'combine',    text: n => n === 1 ? 'Lege 3 Gegenstände zusammen' : 'Lege ' + n + '-mal 3 Gegenstände zusammen', steps: [1, 1, 2] },
+    heilen: { icon: 'plus',         text: () => 'Heile Verwundete im Krankenhaus', steps: [1, 1, 1], geht: () => questStadtStufe('hospital') > 0 },
+    markt: { icon: 'market',        text: n => n === 1 ? 'Tausche auf dem Markt' : 'Tausche ' + n + '-mal auf dem Markt', steps: [1, 1, 2], geht: () => questStadtStufe('market') > 0 },
+    tempel: { icon: 'temple',       text: () => 'Erobere einen Tempel', steps: [0, 1, 1], geht: () => questTempelGeht() },
+    thron: { icon: 'crown',         text: n => 'Halte den Thron ' + n + ' Minuten', steps: [0, 5, 15], geht: () => thronOffenAb() < new Date().setHours(24, 0, 0, 0) },   // (erst ab Tag 7)
+    invArmee: { icon: 'defense',    text: n => n === 1 ? 'Greife eine Barbaren-Armee an (Invasion)' : 'Greife ' + n + ' Barbaren-Armeen an (Invasion)', steps: [1, 2, 3], geht: () => questEvHeute('inv') },
+    drache: { icon: 'event',        text: n => n === 1 ? 'Greife den Drachen an' : 'Greife den Drachen ' + n + '-mal an', steps: [1, 3, 5], geht: () => questEvHeute('dr') }
 };
+// Zähler (statBump, auch vom Weltrechner) → Aufgabe; eine Zahl: so viel zählt jedes Mal (Heilen: einmal, egal wie viele)
+var QUEST_STAT = { lager: 'barbLager', qb: 'tagesboss', qd: 'drache', qi: 'invArmee', qHilfe: 'bundHilfe', qVerst: 'verstaerkung', qRally: 'rally', temples: 'tempel', throneMin: 'thron', healed: ['heilen', 1] };
+function questStat(k, n) { const q = QUEST_STAT[k]; if (q) questProgress(Array.isArray(q) ? q[0] : q, Array.isArray(q) ? q[1] : n || 1); }
+const questStadtStufe = id => { try { return loadCity().levels[id] || 0; } catch (e) { return 0; } };
+function questBundGeht() { try { const a = bundIch(); return !!a && a.mit.length > 1; } catch (e) { return false; } }   // (nur mit Bündnis und mindestens einem Mitglied)
+function questEvHeute(k) { try { const p = evPlanVon(k), nacht = new Date().setHours(24, 0, 0, 0); return !!p && p.start < nacht && p.end > Date.now(); } catch (e) { return false; } }   // Invasion/Drache: nur an ihrem Tag
+// Tempel (alle in Zone 4): nur, wenn heute ein Pass in ein Tempel-Gebiet aufgeht (Zone 4 ab Tag 4, KARTE_ZONEN.oeffnen) – vorher kommt niemand hin
+function questTempelGeht() { const nacht = new Date().setHours(24, 0, 0, 0); return islands.some(i => i.type === 'temple' && bridges.some(br => (br.a === i.landmassId || br.b === i.landmassId) && passOpensAt(br) < nacht)); }
+const questBereit = () => !!AUF && typeof bundIch === 'function';   // (beim Skript-Start sind aufbau.js und buendnis.js noch nicht da)
 // Bau/Forschung nur als Aufgabe, wenn es heute noch geht (Bauarbeiter bzw. Labor vor Mitternacht frei, etwas zu bauen/erforschen da)
 function questStadtGeht(art) {
     try {
@@ -7093,33 +6938,40 @@ function questStadtGeht(art) {
             return !cityBuildOf(c, id) && (id === 'keep' ? L < AUF.BURG_MAX : L < AUF.stadtCap('player', id) && !(!L && AUF.BAU_AB_BURG[id] > B)); });
     } catch (e) { return true; }
 }
-var QUEST_GEMS = [5, 10, 15];
-var QUEST_BONUS = { crates: 1, gems: 10 };
+var QUEST_TIER = [0, 0, 1, 1, 2, 2];                  // 6 am Tag: 2 leicht, 2 mittel, 2 schwer
+var QUEST_GEMS = [3, 5, 8], QUEST_COIN_H = [1, 2, 3];  // je Stufe: Edelsteine + so viele Stunden Münzen
+var QUEST_BONUS3 = { n: 3, tr: 2 };                    // Bonus bei 3 erledigt: 2 Stunden Truppen
+var QUEST_BONUS = { crates: 1, gems: 10 };             // Bonus bei allen 6 (+ Helden-Splitter)
+const questGemsTag = () => QUEST_TIER.reduce((a, st) => a + QUEST_GEMS[st], 0) + QUEST_BONUS.gems;   // Edelsteine am Tag (Hauptbuch: 42)
 var questState = null;
+const questGeht = k => { const d = QUEST_DEFS[k]; try { return !d.geht || !!d.geht(); } catch (e) { return false; } };
+function questNeu(type, st) { return { type, st, target: QUEST_DEFS[type].steps[st], progress: 0, gems: QUEST_GEMS[st], h: QUEST_COIN_H[st], claimed: false }; }
+function questAuffuellen(q) {                          // bis 6: je Platz eine Art, die heute geht und auf dieser Stufe vorkommt (Zufall, keine doppelt)
+    const frei = Object.keys(QUEST_DEFS).filter(k => questGeht(k) && !q.list.some(x => x.type === k)).sort(() => Math.random() - 0.5);
+    for (let i = q.list.length; i < QUEST_TIER.length; i++) { const st = QUEST_TIER[i], j = frei.findIndex(k => QUEST_DEFS[k].steps[st] > 0); if (j < 0) break; q.list.push(questNeu(frei.splice(j, 1)[0], st)); }
+}
 function loadQuests() {
     const today = todayKey();
     if (!questState) { try { questState = JSON.parse(store.get('openWaterQuests')) || null; } catch (e) { questState = null; } }
     if (!questState || questState.date !== today || !Array.isArray(questState.list)) {
-        const types = Object.keys(QUEST_DEFS).filter(t => !QUEST_DEFS[t].geht || QUEST_DEFS[t].geht()).sort(() => Math.random() - 0.5).slice(0, 3);
-        questState = { date: today, bonusClaimed: false, geprueft: AUF ? 1 : 0, list: types.map((type, i) => {
-            const tier = i;                                  // one easy, one medium, one hard
-            return { type, target: QUEST_DEFS[type].steps[tier], progress: 0, gems: QUEST_GEMS[tier], claimed: false };
-        }) };
-        saveQuests();
+        questState = { date: today, bonusClaimed: false, bonus3: false, geprueft: questBereit() ? 1 : 0, frueh: questBereit() ? 0 : 1, list: [] };
+        questAuffuellen(questState); saveQuests();
     }
-    // Liste beim Skript-Start gewürfelt (aufbau.js noch nicht da, geht() sagte ja): einmal nachprüfen, sonst Tagesbonus unmöglich
-    if (AUF && !questState.geprueft) {
+    // Liste beim Skript-Start gewürfelt (aufbau.js/buendnis.js noch nicht da): einmal nachprüfen – ganz neu, solange nichts getan ist
+    // (sonst kämen Bündnis-Aufgaben nie), sonst nur, was heute nicht geht, tauschen (Stufe bleibt) – sonst ist der Tagesbonus unmöglich
+    if (questBereit() && !questState.geprueft) {
         questState.geprueft = 1;
+        if (questState.frueh && questState.list.every(t => !t.claimed && !t.progress)) { questState.list = []; questAuffuellen(questState); }
         questState.list.forEach((t, i) => {
-            const def = QUEST_DEFS[t.type];
-            if (!def || t.claimed || t.progress > 0 || !def.geht || def.geht()) return;   // (Fortschritt bleibt)
-            const frei = Object.keys(QUEST_DEFS).filter(k => !questState.list.some(x => x.type === k) && (!QUEST_DEFS[k].geht || QUEST_DEFS[k].geht()));
+            if (t.claimed || t.progress > 0 || (QUEST_DEFS[t.type] && questGeht(t.type))) return;   // (Fortschritt bleibt)
+            const st = t.st !== undefined ? t.st : i, frei = Object.keys(QUEST_DEFS).filter(k => !questState.list.some(x => x.type === k) && questGeht(k) && QUEST_DEFS[k].steps[st] > 0);
             if (!frei.length) return;
             const neu = frei[Math.floor(Math.random() * frei.length)];
-            t.type = neu; t.target = QUEST_DEFS[neu].steps[i];             // (Index = Stufe: leicht, mittel, schwer)
+            t.type = neu; t.target = QUEST_DEFS[neu].steps[st];
         });
         saveQuests();
     }
+    if (questState.list.length < QUEST_TIER.length) { questAuffuellen(questState); saveQuests(); }   // (eine Liste von vorher mit 3 Aufgaben: bis 6 auffüllen)
     return questState;
 }
 function saveQuests() { store.set('openWaterQuests', JSON.stringify(questState)); }
@@ -7141,9 +6993,19 @@ function claimQuest(i) {
     const q = loadQuests(), t = q.list[i];
     if (!t || t.claimed || t.progress < t.target) return;
     t.claimed = true; passBump('quest'); anleitungAbgeholt();
-    gems += t.gems;
+    const c = t.h > 0 ? passMuenzen(hourProduction('player'), t.h) : 0; gems += t.gems; coins += c;   // (Münzen: so viel, wie dein Reich in t.h Stunden macht – der Weltrechner kennt den Topf)
     saveQuests(); saveGame(); updateHud();
-    flashHint('+' + t.gems + ' Edelsteine', 1800);
+    beuteFenster('Aufgabe erledigt', [{ a: 'gems', n: t.gems }, { a: 'coins', n: c }], { unter: QUEST_DEFS[t.type].text(t.target) });
+    renderQuestPanel(); updateGoalsBadge();
+}
+const questFertigN = q => q.list.filter(t => t.claimed).length;
+const questBonus3Bereit = q => !q.bonus3 && questFertigN(q) >= QUEST_BONUS3.n;
+function claimQuestBonus3() {                          // 3 Aufgaben abgeholt: Truppen in die Hauptstadt (der Weltrechner prüft: einmal am Tag)
+    const q = loadQuests(), b = rewardBaseId(); if (!questBonus3Bereit(q)) return;
+    if (b === null) { flashHint('Truppen brauchen eine eigene Basis – erst dann abholbar.', 3000); return; }
+    const n = passTruppen(hourProduction('player'), QUEST_BONUS3.tr); q.bonus3 = true; eigeneTruppenDazu(b, n, 'aufgabe'); anleitungAbgeholt();
+    saveQuests(); saveGame(); updateHud(); sfx('coin');
+    beuteFenster('Bonus: 3 erledigt', [{ a: 'tr', n }], { unter: fmtCompact(n) + ' Truppen in ' + islandTitle(islandById[b]) });
     renderQuestPanel(); updateGoalsBadge();
 }
 // ---- the week chain: every day with ALL tasks done is a link; 7 in a row = the big chest ----
@@ -7162,7 +7024,7 @@ function claimChain() {
     gems += CHAIN_REWARD.gems; questChain.streak = Math.max(0, questChain.streak - 7); store.set('openWaterQuestChain', JSON.stringify(questChain));   // (ein 8. Tag zählt schon für die nächste Kette)
     const shH = heroGrantShards('player', HERO_SHARDS_CHAIN); if (!shH) gems += HERO_SHARDS_CHAIN * 20;   // (alle Helden voll: Gems statt Splitter, wie im Abholfach)
     saveGame(); saveProgression(); updateHud(); sfx('crate'); anleitungAbgeholt();
-    flashHint('Große Kiste: ' + items.map(it => RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name).join(', ') + ' + ' + CHAIN_REWARD.gems + ' Edelsteine' + (shH ? ' + ' + HERO_SHARDS_CHAIN + ' Splitter ' + shH.name : ''), 5000);
+    beuteFenster('Große Kiste', [...items.map(itemBeute), { a: 'gems', n: CHAIN_REWARD.gems + (shH ? 0 : HERO_SHARDS_CHAIN * 20) }, shH && { a: 'sh', n: HERO_SHARDS_CHAIN, held: shH.id }], { kiste: 'royal', unter: 'Wochenkette: 7 Tage geschafft' });
     renderQuestPanel(); updateGoalsBadge();
 }
 function claimQuestBonus() {
@@ -7173,13 +7035,12 @@ function claimQuestBonus() {
     for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
     gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY); if (!shH) gems += HERO_SHARDS_DAY * 20;   // (alle Helden voll)
     saveQuests(); saveGame(); saveProgression(); updateHud();
-    const it = items[0];
-    flashHint('Bonus: ' + RARITY_DEFS[it.rarity].label + ' ' + EQUIPMENT_DEFS[it.slot].name + ' + ' + QUEST_BONUS.gems + ' Edelsteine' + (shH ? ' + ' + HERO_SHARDS_DAY + ' Splitter ' + shH.name : ''), 3000);
+    beuteFenster('Bonus: alle ' + q.list.length + ' erledigt', [...items.map(itemBeute), { a: 'gems', n: QUEST_BONUS.gems + (shH ? 0 : HERO_SHARDS_DAY * 20) }, shH && { a: 'sh', n: HERO_SHARDS_DAY, held: shH.id }], { kiste: 'aus' });
     renderQuestPanel(); updateGoalsBadge();
 }
 function dailyGoalCount() {                                      // Events → Täglich: tasks, the bonus and the week chain
     const q = loadQuests();
-    return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
+    return q.list.filter(t => !t.claimed && t.progress >= t.target).length + (questBonus3Bereit(q) ? 1 : 0) + (!q.bonusClaimed && q.list.every(t => t.claimed) ? 1 : 0) + (chainStreak() >= 7 ? 1 : 0);
 }
 // ---- Abholfach: prizes and spoils are sent here and collected by hand (Wochen-Event, Invasion, Drache, Tagesboss, Kriegsherr, Kopfgeld, Kampfbeute) ----
 var inboxState = null;
@@ -7189,7 +7050,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
-const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' } };
+const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, boss: { ic: 'star', t: 'Tagesboss' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, inv: { ic: 'defense', t: 'Barbaren-Invasion' }, drache: { ic: 'star', t: 'Drache' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' }, lager: { ic: 'attack', t: 'Barbaren-Lager' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
     if (!(o.gems > 0 || o.coins > 0 || o.sh > 0 || o.crate >= 0 || o.tr > 0 || o.kiste >= 0 || o.schild > 0)) return 0;   // (kiste: genau diese Seltenheit, schild: Friedensschild Std. – Händler)
@@ -7197,37 +7058,42 @@ function inboxAdd(o) {                              // o: { src, title?, gems, c
     if (pile) { pile.coins = (pile.coins || 0) + o.coins; pile.gems = (pile.gems || 0) + o.gems; pile.sh = (pile.sh || 0) + (o.sh || 0); pile.n = (pile.n || 1) + 1; pile.at = now; } else L.unshift(Object.assign(o, { id: now.toString(36) + Math.floor(Math.random() * 1e6).toString(36), at: now }));   // (shards pile up too)
     inboxSave(); updateGoalsBadge(); if (isPanelOpen(goalsPopup) && goalsTab === 'reward') renderInbox(); return o.coins || o.gems;
 }
-function inboxWhat(x) { return [x.gems ? '+' + fmtNum(x.gems) + ' Edelsteine' : '', x.coins ? '+' + fmtCompact(x.coins) + ' Münzen' : '', x.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[x.crate].label + ')' : '', x.sh ? x.sh + ' Helden-Splitter' : '', x.tr ? '+' + fmtCompact(x.tr) + ' Truppen' : '', x.kiste >= 0 ? 'Kiste (' + RARITY_DEFS[x.kiste].label + ')' : '', x.schild ? 'Friedensschild ' + x.schild + ' h' : ''].filter(Boolean).join(' · '); }
-function inboxClaim(id) {                           // into your coffers - returns what you got
-    const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
-    if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Edelsteine'); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); }
-    if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
-    if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); questProgress('crate', 1); if (it && it.rarity !== undefined) got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); }
-    if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); }
-    if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) got.push(x.sh + ' Splitter ' + h.name); else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); } }
-    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox
+function inboxBeute(x) {                            // was im Fach liegt, als Kacheln (05e)
+    return [{ a: 'gems', n: x.gems }, { a: 'coins', n: x.coins }, x.crate >= 0 && { a: 'kiste', k: kisteVonR(x.crate), r: x.crate, min: x.crate > 0 }, { a: 'sh', n: x.sh }, { a: 'tr', n: x.tr },
+        x.kiste >= 0 && { a: 'kiste', k: 'aus', r: x.kiste }, x.schild > 0 && { a: 'schild', n: x.schild }];
+}
+function inboxClaim(id, aus) {                      // into your coffers - returns what you got (aus: Belohnungs-Kacheln dazu)
+    aus = aus || []; const L = inboxList(), i = L.findIndex(x => x.id === id); if (i < 0) return ''; const x = L.splice(i, 1)[0], got = [];
+    if (x.gems) { gems += x.gems; got.push('+' + fmtNum(x.gems) + ' Edelsteine'); aus.push({ a: 'gems', n: x.gems }); } if (x.coins) { coins += x.coins; got.push('+' + fmtCompact(x.coins) + ' Münzen'); aus.push({ a: 'coins', n: x.coins }); }
+    if (x.crate >= 0) { const it = grantFreeCrate(x.crate); if (it && it.rarity !== undefined) { got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); aus.push(itemBeute(it)); } }
+    if (x.kiste >= 0 && x.kiste <= 2) { const it = addInventoryItem(pickRandomSlot(), x.kiste, 1); questProgress('crate', 1); if (it && it.rarity !== undefined) { got.push(EQUIPMENT_DEFS[it.slot].name + ' (' + RARITY_DEFS[it.rarity].label + ')'); aus.push(itemBeute(it)); } }
+    if (x.schild === 2) { const st = shieldStock(); st[2] = (st[2] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); got.push('Friedensschild 2 h'); aus.push({ a: 'schild', n: 2 }); }
+    if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) { got.push(x.sh + ' Splitter ' + h.name); aus.push({ a: 'sh', n: x.sh, held: h.id }); } else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); aus.push({ a: 'gems', n: x.sh * 20 }); } }
+    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); aus.push({ a: 'tr', n: x.tr }); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0 })); }   // no base right now: only the troops stay in the inbox
     inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
 }
 function renderInbox() {
-    const L = inboxList(), now = Date.now(), el = document.getElementById('inboxList'); if (!el) return;
+    const L = inboxList(), el = document.getElementById('inboxList'); if (!el) return;
     setText(document.getElementById('inboxAside'), L.length ? L.length + ' bereit' : '');
     liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
-        return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b><small>' + inboxWhat(x) + '</small><small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
+        return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b>' + beuteRaster(inboxBeute(x), 'bk-mini') + '<small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
             '<button class="btn btn--primary btn--sm" type="button" data-inbox="' + x.id + '"><span>Abholen</span></button></div>'; }).join('') + (L.length > 1 ? '<button class="btn btn--secondary btn--sm inbox-all" type="button" data-inbox-all><span>Alle abholen · ' + L.length + '</span></button>' : '')
         : '<div class="inbox-empty">' + (dailyClaimable() ? 'Deine tägliche Belohnung wartet unten.' : 'Gerade nichts zum Abholen.') + '</div>');   // (eine Zeile – Preise und Beute landen hier von selbst)
 }
 goalsPopup.addEventListener('click', e => {
     const one = e.target.closest('[data-inbox]'), all = e.target.closest('[data-inbox-all]'); if (!one && !all) return;
-    const txt = all ? inboxList().map(x => x.id).map(inboxClaim).filter(Boolean).join(', ') : inboxClaim(one.dataset.inbox);
-    if (txt) { sfx('coin'); flashHint('Abgeholt: ' + txt + '.', 4500); } renderInbox(); updateGoalsBadge();
+    const aus = [], kiste = (all ? inboxList() : inboxList().filter(x => x.id === one.dataset.inbox)).find(x => x.crate >= 0 || x.kiste >= 0);
+    const txt = all ? inboxList().map(x => x.id).map(id => inboxClaim(id, aus)).filter(Boolean).join(', ') : inboxClaim(one.dataset.inbox, aus);
+    if (txt) { sfx('coin'); if (aus.length) beuteFenster('Abgeholt', aus, { kiste: kiste ? (kiste.crate >= 0 ? kisteVonR(kiste.crate) : 'aus') : null }); else flashHint('Abgeholt: ' + txt + '.', 4500); } renderInbox(); updateGoalsBadge();
 });
 function updateGoalsBadge(nAch) {
     if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
     const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxList().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
     set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
-    const jetzt = evJetzt(); for (const k of ['inv', 'drache']) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), jetzt === k);   // „!“ am Ereignis, das gerade läuft
+    const jetzt = evJetzt(), hol = ['tour', 'inv', 'drache', 'boss', 'lager'].filter(k => jetzt === k || evHolBereit(k));
+    for (const k of EV_TABS) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), hol.includes(k));   // „!“ am Ereignis, das gerade läuft oder eine Belohnung zum Abholen hat
     const g = k => goalsPopup.querySelector('[data-ggbadge="' + k + '"]');   // die 4 Reiter: Summe ihrer Unterreiter
-    set(g('aufgaben'), nd + nAch); set(g('abholen'), nr); set(g('pass'), np); setShown(g('ereignisse'), jetzt === 'inv' || jetzt === 'drache');
+    set(g('aufgaben'), nd + nAch); set(g('abholen'), nr); set(g('pass'), np); setShown(g('ereignisse'), hol.length > 0);
 }
 function renderQuestPanel() {
     const q = loadQuests();
@@ -7245,24 +7111,29 @@ function renderQuestPanel() {
         '<span class="chain-chest' + (full ? ' on' : '') + '">' + icon('shop') + '</span></div>' +
         '<div class="daily-row"><div class="daily-txt"><b>' + (full ? 'Große Kiste bereit!' : k + ' von 7 Tagen') + '</b><small>' + (full ? CHAIN_REWARD.crates + ' Kisten (mind. episch) + ' + CHAIN_REWARD.gems + ' Edelsteine' : 'Schaffe jeden Tag alle Aufgaben – ein verpasster Tag bricht die Kette.') + '</small></div>' +
         (full ? '<button class="btn btn--primary btn--sm" type="button" data-chain>' + icon('shop') + '<span>Abholen</span></button>' : '') + '</div>'; }
+    const hp = hourProduction('player');
     let html = q.list.map((t, i) => {
         const def = QUEST_DEFS[t.type], done = t.progress >= t.target;
         return '<div class="quest' + (t.claimed ? ' is-claimed' : done ? ' is-done' : '') + '">' + icon(def.icon) +
             '<div class="quest-main"><b>' + def.text(t.target) + '</b><div class="quest-bar"><i style="--p:' + Math.round(t.progress / t.target * 100) + '%"></i><span>' + t.progress + ' / ' + t.target + '</span></div></div>' +
-            '<div class="quest-side"><span class="quest-rew">' + icon('gem') + t.gems + '</span>' +
+            '<div class="quest-side"><span class="quest-rew">' + beuteKachel({ a: 'gems', n: t.gems }) + (t.h > 0 ? beuteKachel({ a: 'coins', n: passMuenzen(hp, t.h) }) : '') + '</span>' +
             (t.claimed ? '<span class="quest-ok">Abgeholt</span>' : done ? '<button class="btn btn--primary btn--sm" type="button" data-quest="' + i + '"><span>Abholen</span></button>' : '') +
             '</div></div>';
     }).join('');
-    const allClaimed = q.list.every(t => t.claimed), doneCount = q.list.filter(t => t.claimed).length;
+    const allClaimed = q.list.every(t => t.claimed), doneCount = questFertigN(q), alle = q.list.length, n3 = QUEST_BONUS3.n, b3 = questBonus3Bereit(q);
+    html += '<div class="quest' + (q.bonus3 ? ' is-claimed' : b3 ? ' is-done' : '') + '">' + icon('troops') +
+        '<div class="quest-main"><b>Bonus: ' + n3 + ' erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(Math.min(n3, doneCount) / n3 * 100) + '%"></i><span>' + Math.min(n3, doneCount) + ' / ' + n3 + '</span></div></div>' +
+        '<div class="quest-side"><span class="quest-rew is-gold">' + beuteKachel({ a: 'tr', n: passTruppen(hp, QUEST_BONUS3.tr) }) + '</span>' +
+        (q.bonus3 ? '<span class="quest-ok">Abgeholt</span>' : b3 ? '<button class="btn btn--primary btn--sm" type="button" data-bonus3><span>Abholen</span></button>' : '') + '</div></div>';
     html += '<div class="quest' + (q.bonusClaimed ? ' is-claimed' : allClaimed ? ' is-done' : '') + '">' + icon('star') +
-        '<div class="quest-main"><b>Bonus: alle erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(doneCount / 3 * 100) + '%"></i><span>' + doneCount + ' / 3</span></div></div>' +
-        '<div class="quest-side"><span class="quest-rew is-gold">' + icon('shop') + 'Kiste + ' + QUEST_BONUS.gems + icon('gem') + '</span>' +
+        '<div class="quest-main"><b>Bonus: alle ' + alle + ' erledigt</b><div class="quest-bar"><i style="--p:' + Math.round(doneCount / alle * 100) + '%"></i><span>' + doneCount + ' / ' + alle + '</span></div></div>' +
+        '<div class="quest-side"><span class="quest-rew is-gold">' + beuteKachel({ a: 'kiste', k: 'aus', n: QUEST_BONUS.crates }) + beuteKachel({ a: 'gems', n: QUEST_BONUS.gems }) + beuteKachel({ a: 'sh', n: HERO_SHARDS_DAY }) + '</span>' +
         (q.bonusClaimed ? '<span class="quest-ok">Abgeholt</span>' : allClaimed ? '<button class="btn btn--primary btn--sm" type="button" data-bonus><span>Abholen</span></button>' : '') + '</div></div>';
     document.getElementById('questList').innerHTML = html;
 }
 // ---- Events: one sheet, 4 Reiter - Aufgaben: Täglich (tasks + week chain), Erfolge · Abholen: Belohnung (Abholfach + 7-day login chest) ·
-// Pass · Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager (renderEvents); Unterreiter als Chips ----
-const EV_TABS = ['tour', 'inv', 'drache', 'boss'];
+// Pass · Ereignisse: Wochen-Event, Invasion, Drache, Tagesboss, Barbaren-Lager (renderEvents); Unterreiter als Chips ----
+const EV_TABS = ['tour', 'inv', 'drache', 'boss', 'lager'];
 const GOALS_GRP = { aufgaben: ['daily', 'ach'], abholen: ['reward'], pass: ['pass'], ereignisse: EV_TABS }, goalsGrpLetzt = {};
 const goalsGrpVon = t => Object.keys(GOALS_GRP).find(k => GOALS_GRP[k].includes(t));
 function showGoalsTab(t) {
@@ -7277,7 +7148,7 @@ function showGoalsTab(t) {
     goalsPopup.querySelector('.pbody').scrollTop = 0; if (t === 'pass') requestAnimationFrame(passScroll); updateGoalsBadge();
 }
 function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.claimed).length, na = ACHIEVEMENTS.filter(a => achClaimed[a.id]).length;
-    liveHtml(document.getElementById('goalsSub'), '<span class="pill">' + icon('flag') + '<b>' + nd + ' / 3</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'); }
+    liveHtml(document.getElementById('goalsSub'), '<span class="pill">' + icon('flag') + '<b>' + nd + ' / ' + q.list.length + '</b><small>heute</small></span><span class="pill">' + icon('star') + '<b>' + na + ' / ' + ACHIEVEMENTS.length + '</b><small>Erfolge</small></span>'); }
 function openGoals(tab) {
     closeAllPopups(); if (barbView) closeBarbSheet(); renderGoalsSub();
     const nd = dailyGoalCount(), na = achClaimable().length;
@@ -7292,6 +7163,7 @@ goalsPopup.addEventListener('click', e => {
     const b = e.target.closest('button'); if (b && b.hasAttribute('data-daily')) return showDailyModal();   // Belohnung: the quick-claim window does the rest
     if (!b || !e.target.closest('[data-gpane="daily"]')) return;
     if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
+    else if (b.hasAttribute('data-bonus3')) claimQuestBonus3();
     else if (b.hasAttribute('data-bonus')) claimQuestBonus();
     else if (b.hasAttribute('data-chain')) claimChain();
     renderGoalsSub();
@@ -7301,18 +7173,24 @@ setInterval(() => {                 // day rollover while the game stays open
     updateGoalsBadge();
 }, 60000);
 updateGoalsBadge();
-// ===== SAISON-PASS: 28 days on one calendar for everyone, 40 levels of 300 points, a free row and a premium row (Gems, never money). Points come from what you do anyway =====
-var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 40, PASS_STEP = 300, PASS_PREMIUM = 1000, PASS_OWNED_GEMS = 150;   // (Skin schon da: 150 Gems – vorher 1000, dann brachte der Premium-Pass mehr Gems zurück, als er kostet)
-var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2, bau: 15, forschung: 15 };   // what each deed is worth (bau/forschung: in der Stadt gestartet)
-var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
-var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle drei Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
-    ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15]];
-function passRewardAt(L, prem) {                          // what level L gives in each row (Münzen: n Stunden Ertrag – 6.10. 4/12 statt 1/3, „10 Münzen“ sah kaputt aus)
-    if (!prem) return L % 10 === 0 ? { k: 'royal', n: 1 } : L % 5 === 0 ? { k: 'gems', n: 50 } : L % 4 === 0 ? { k: 'shards', n: 5 } : L % 3 === 0 ? { k: 'crate', n: 2 } : L % 2 === 0 ? { k: 'coins', n: 4 } : { k: 'gems', n: 15 };
-    return L === 20 ? { k: 'march', id: 'saison' } : L === 40 ? { k: 'frame', id: 'saison' } : L % 10 === 0 ? { k: 'gems', n: 200 } : L % 5 === 0 ? { k: 'royal', n: 1 } : L % 4 === 0 ? { k: 'shards', n: 15 } :
-        L % 6 === 0 ? { k: 'tp', n: 150 } : L % 3 === 0 ? { k: 'shield', n: 8 } : L % 2 === 0 ? { k: 'coins', n: 12 } : { k: 'gems', n: 40 };
+// ===== SAISON-PASS: 28 days on one calendar for everyone, 100 levels of 150 points (7.10., vorher 40 × 300), a free row and a premium row (Gems, never money) – jede Stufe gibt in beiden Reihen etwas. Points come from what you do anyway =====
+var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 100, PASS_STEP = 150, PASS_PREMIUM = 1000;   // (keine Rahmen mehr im Pass – Alexander 7.10.: Stufe 100 gibt Edelsteine)
+var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2, bau: 15, forschung: 15,
+    lager: 5, qb: 10, qd: 10, invPkt: 1 };   // what each deed is worth (bau/forschung: in der Stadt gestartet · lager: Lager besiegt · qb/qd: Angriff auf Tagesboss/Drache · invPkt: Invasions-Punkte)
+var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15, lager: 5, qb: 10, qd: 10, invPkt: 1 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
+var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle sechs Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
+    ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15],
+    ['attack', 'Barbaren-Lager besiegt', 5], ['star', 'Angriff auf den Tagesboss', 10], ['star', 'Angriff auf den Drachen', 10], ['defense', 'Invasions-Punkt', 1]];
+function passRewardAt(L, prem) {                          // what level L gives in each row – eine Liste (coins/tr: n Stunden Ertrag); die erste passende Regel gilt
+    const g = (k, n) => ({ k, n }), viertel = L % 25 === 0;
+    if (!prem) return viertel ? [g('gems', 50), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 20)] : L % 4 === 0 ? [g('shards', 3)] :
+        L % 3 === 0 ? [g('crate', 1)] : L % 2 === 0 ? [g('tr', 2)] : [g('coins', 3)];
+    return viertel ? [g('gems', 150), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 30)] :
+        L % 4 === 0 ? [g('shards', 8)] : L % 6 === 0 ? [g('tp', 150)] : L % 3 === 0 ? [g('shield', 8)] : L % 2 === 0 ? [g('tr', 6)] : [g('coins', 12), g('gems', 10)];
 }
-var passState = null, passArm = 0, passTimer = null;
+const passMuenzen = (hp, n) => Math.max(wirtM(5000), Math.round(hp.coins)) * n;     // n Stunden Münzen (mindestens 5.000 je Stunde – wie beim Weltrechner)
+const passTruppen = (hp, n) => Math.max(wirtK(1000), Math.round(hp.troops)) * n;    // n Stunden Truppen (mindestens 1.000 je Stunde)
+var passState = null, passTimer = null;
 function passLoad() { if (!passState) { try { passState = JSON.parse(store.get('openWaterPass')); } catch (e) {} if (!passState || typeof passState !== 'object' || !passState.s) passState = { s: {} }; } return passState; }
 function passSave() { store.set('openWaterPass', JSON.stringify(passLoad())); }
 function passNo(t) { return Math.floor((t - PASS_EPOCH) / PASS_LEN) + 1; }             // Saison-Pass N, the same for everyone (die Nummer zeigt das Spiel nicht: neben „Welt-Saison 1“ verwirrte „Saison-Pass 10“)
@@ -7330,50 +7208,47 @@ function passXp(v) {
     if (L1 > L0) { flashHint('Saison-Pass: Stufe ' + L1 + ' erreicht – hol dir die Belohnung unter „Events“.', 3500); updateGoalsBadge(); }
     if (isPanelOpen(goalsPopup) && goalsTab === 'pass') passRenderSoon();
 }
-function passGive(who, r) {                               // one reward to anyone (you or the others) - returns the text for the hint
-    const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
-    if (r.k === 'coins') { const c = Math.max(wirtM(5000), Math.round(hourProduction(who).coins)) * n; if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; return '+' + fmtCompact(c) + ' Münzen'; }
-    if (r.k === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
-    if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } return '+' + n + ' Thron-Punkte'; }
-    if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) return '+' + n + ' Splitter ' + h.name; if (b) b.gems += n * 20; else gems += n * 20; return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
-    if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } return 'Friedensschild ' + n + ' h'; }
+function passGive(who, r, aus, schl) {                    // one reward to anyone (you or the others) - returns the text for the hint (aus: Belohnungs-Kacheln dazu, schl: { s, l, p } für Truppen – der Weltrechner prüft)
+    aus = aus || []; const b = who === 'player' ? null : loadBotState()[who]; if (who !== 'player' && !b) return ''; const n = r.n || 1;
+    if (r.k === 'coins') { const c = passMuenzen(hourProduction(who), n); if (b) botCoins[who] = (botCoins[who] || 0) + c; else coins += c; aus.push({ a: 'coins', n: c }); return '+' + fmtCompact(c) + ' Münzen'; }
+    if (r.k === 'tr') { const t = passTruppen(hourProduction(who), n), base = b ? botCapitalOf(who) : rewardBaseId(); if (base === null || base === undefined) return '';
+        if (b) islandTroops[base] = (islandTroops[base] || 0) + t; else eigeneTruppenDazu(base, t, 'pass', schl || {}); aus.push({ a: 'tr', n: t }); return '+' + fmtCompact(t) + ' Truppen'; }
+    if (r.k === 'gems') { if (b) b.gems += n; else gems += n; aus.push({ a: 'gems', n }); return '+' + n + ' Edelsteine'; }
+    if (r.k === 'tp') { if (b) b.tp = (b.tp || 0) + n; else { throneState.pts = (throneState.pts || 0) + n; saveThrone(); } aus.push({ a: 'tp', n }); return '+' + n + ' Thron-Punkte'; }
+    if (r.k === 'shards') { const h = heroGrantShards(who, n); if (h) { aus.push({ a: 'sh', n, held: h.id }); return '+' + n + ' Splitter ' + h.name; } if (b) b.gems += n * 20; else gems += n * 20; aus.push({ a: 'gems', n: n * 20 }); return '+' + n * 20 + ' Edelsteine (alle Helden voll)'; }
+    if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } aus.push({ a: 'schild', n }); return 'Friedensschild ' + n + ' h'; }
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
-            if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
-    if (r.k === 'frame' || r.k === 'march') { const d = lkDef(r.k, r.id), key = r.k + 's', has = ((b ? b[key] : look[key]) || []).includes(r.id);
-        if (has) { if (b) b.gems += PASS_OWNED_GEMS; else gems += PASS_OWNED_GEMS; return '+' + PASS_OWNED_GEMS + ' Edelsteine („' + d.name + '“ hast du schon)'; }   // a later season: gems instead
-        if (b) { b[key] = [...(b[key] || []), r.id]; if (r.k === 'march') b.march = r.id; }
-        else { look[key] = [...new Set([...(look[key] || []), r.id])]; look[r.k] = r.id; saveLook(); renderLook(); }
-        return (r.k === 'frame' ? 'Rahmen' : 'Marsch-Skin') + ' „' + d.name + '“ – schon angelegt'; }
+            if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); aus.push({ a: 'item', slot, r: rr }); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
     return '';
 }
 function passClaim(list) {                                // [[season, level, premium], …] → hand out, one hint
-    const got = [];
+    const got = [], aus = []; let kiste = null, ohneBasis = false;
     for (const [n, l, pr] of list) { const x = passLoad().s[n]; if (!x || !passOpen(n) || l > passLvl(x) || (pr && !x.prem)) continue; const arr = pr ? x.p : x.f; if (arr.includes(l)) continue;
-        arr.push(l); got.push(passGive('player', passRewardAt(l, pr)) || 'Belohnung'); }
-    if (!got.length) return; passSave(); saveGame(); saveProgression(); updateHud(); sfx('crate'); anleitungAbgeholt();
-    flashHint(got.length > 3 ? got.length + ' Belohnungen abgeholt: ' + got.slice(0, 2).join(' · ') + ' …' : got.join(' · '), 4000);
+        const rs = passRewardAt(l, pr); if (rs.some(r => r.k === 'tr') && rewardBaseId() === null) { ohneBasis = true; continue; }   // Truppen brauchen eine Basis – die Stufe wartet
+        arr.push(l); for (const r of rs) { if (r.k === 'royal' || (r.k === 'crate' && !kiste)) kiste = r.k === 'royal' ? 'royal' : 'aus'; got.push(passGive('player', r, aus, { s: n, l, p: pr ? 1 : 0 }) || 'Belohnung'); } }
+    if (!got.length) { if (ohneBasis) flashHint('Truppen brauchen eine eigene Basis – erst dann abholbar.', 3000); return; }
+    passSave(); saveGame(); saveProgression(); updateHud(); sfx('crate'); anleitungAbgeholt();
+    if (aus.length) beuteFenster('Saison-Pass', aus, { kiste, unter: got.length > 1 ? got.length + ' Belohnungen abgeholt' : '' });
+    else flashHint(got.join(' · '), 4000);
     renderPass(); updateGoalsBadge();
 }
-function passBuy() {
+function passBuy(btn) {
     const x = passOf(passNo(Date.now())); if (x.prem) return;
     if (gems < PASS_PREMIUM) { flashHint('Zu wenig Edelsteine – Premium kostet ' + fmtNum(PASS_PREMIUM) + '.', 2500); return; }
-    if (Date.now() - passArm > 4000) { passArm = Date.now(); renderPass(); return; }            // tap twice: 1000 Gems are a lot
-    gems -= PASS_PREMIUM; x.prem = true; passArm = 0; passSave(); saveGame(); updateHud(); sfx('coin');
+    if (!gemsWirklich('pass', PASS_PREMIUM, btn)) return;                                    // „Wirklich?“ – 1000 Gems sind viel
+    gems -= PASS_PREMIUM; x.prem = true; passSave(); saveGame(); updateHud(); sfx('coin');
     flashHint('Premium freigeschaltet – die zweite Reihe gehört dir, auch für erreichte Stufen.', 3500); renderPass(); updateGoalsBadge();
 }
-function passCellHtml(r, hp, got) {                            // icon + amount of one reward
-    const k = r.k, n = r.n || 1, row = (ic, b, s, cls) => '<span class="pc-ic' + (cls ? ' ' + cls : '') + '">' + ic + '</span><span class="pc-t"><b>' + b + '</b><small>' + s + '</small></span>';
-    if (k === 'coins') return row(icon('coin', 'ico-coin'), fmtCompact(Math.max(wirtM(5000), Math.round(hp.coins)) * n), 'Münzen');
-    if (k === 'gems') return row(icon('gem', 'ico-gem'), '+' + n, 'Edelsteine');
-    if (k === 'tp') return row(icon('crown', 'ico-tp'), '+' + n, 'Thron-Punkte');
-    if (k === 'shards') return row(icon('star', 'ico-shard'), '+' + n, 'Helden-Splitter');
-    if (k === 'shield') return row(icon('shield'), n + ' h', 'Friedensschild');
-    if (k === 'crate') return row(icon('shop'), n + '×', n === 1 ? 'Kiste' : 'Kisten');
-    if (k === 'royal') return row(icon('shop', 'ico-royal'), '1×', 'Königliche Kiste');
-    const d = lkDef(k, r.id), own = !got && lkHas(k, r.id);
-    if (k === 'frame') return row('<span class="frame-ring pc-frame" data-frame="' + r.id + '"><img alt="" src="' + crestDataUrl(28) + '"></span>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Rahmen', 'is-look');
-    return row('<i class="pc-flag" style="--c:' + d.flag + ';--t:' + d.trail + '"></i>', d.name, own ? 'Schon da: ' + fmtNum(PASS_OWNED_GEMS) + ' Edelsteine' : 'Marsch-Skin', 'is-look');
+function passKachel(r, hp) {                         // eine Belohnung als Kachel (05e) mit Menge – Münzen/Truppen: was dein Reich in n Stunden macht
+    const k = r.k, n = r.n || 1;
+    if (k === 'coins') return beuteKachel({ a: 'coins', n: passMuenzen(hp, n) });
+    if (k === 'tr') return beuteKachel({ a: 'tr', n: passTruppen(hp, n) });
+    if (k === 'gems' || k === 'tp') return beuteKachel({ a: k, n });
+    if (k === 'shards') return beuteKachel({ a: 'sh', n });
+    if (k === 'shield') return beuteKachel({ a: 'schild', n });
+    if (k === 'crate') return beuteKachel({ a: 'kiste', k: 'aus', n });
+    return beuteKachel({ a: 'kiste', k: 'royal', r: 3, n, min: 1 });
 }
 function passChip(who) { try { const x = who === 'player' ? passOf(passNo(Date.now())) : null, i = x ? { lvl: passLvl(x), prem: x.prem } : botPassInfo(who);   // the pass level in the profile
     return '<div class="rp-pass' + (i.prem ? ' is-prem' : '') + '">' + icon('crown') + '<span>Saison-Pass</span><b>Stufe ' + i.lvl + '</b>' + (i.prem ? '<em>Premium</em>' : '') + '</div>'; } catch (e) { return ''; } }
@@ -7385,31 +7260,35 @@ function passLeftTick() {                                 // the countdowns, onc
 function renderPass() {
     const el = document.getElementById('passPane'); if (!el || goalsTab !== 'pass') return;
     passPrune(); const n = passNo(Date.now()), x = passOf(n), L = passLvl(x), xp = x.xp || 0, max = L >= PASS_LVLS, into = max ? PASS_STEP : xp - L * PASS_STEP, hp = hourProduction('player');
-    const ready = passReady(n), old = passReady(n - 1), arm = Date.now() - passArm < 4000;
+    const ready = passReady(n), old = passReady(n - 1); if (gemsArmed('pass')) gemsArmAus();   // (neu gezeichnet: „Wirklich?“ von vorn)
     let h = '<div class="pass-hero' + (x.prem ? ' is-prem' : '') + '"><div class="pass-top"><span class="pass-lvl"><small>Stufe</small><b>' + L + '</b></span>' +
         '<span class="pass-ht"><b>Saison-Pass</b><small>Endet in <span id="passLeft"></span></small></span>' + (x.prem ? '<span class="pass-tag">' + icon('crown') + 'Premium</span>' : '') + '</div>' +
         '<div class="pass-bar"><i style="width:' + Math.round(into / PASS_STEP * 100) + '%"></i></div>' +
         '<div class="pass-bar-t"><span>' + (max ? 'Höchste Stufe erreicht' : fmtNum(into) + ' / ' + PASS_STEP + ' Punkte') + '</span><span>' + (max ? fmtNum(xp) + ' Punkte' : 'bis Stufe ' + (L + 1)) + '</span></div></div>';
-    if (!x.prem) h += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Königliche Kisten, Marsch-Skin „Saisonzug“ (Stufe 20) und Rahmen „Saisonkrone“ (Stufe 40) – auch für erreichte Stufen.</small></span>' +
-        '<button class="btn btn--primary btn--sm" type="button" data-pass-buy>' + (arm ? '<span>Sicher?</span>' : '') + icon('gem') + '<span>' + fmtNum(PASS_PREMIUM) + '</span></button></div>';
-    if (old.length) h += '<div class="pass-old">' + icon('hourglass') + '<span><b>Voriger Saison-Pass: ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
+    let unten = '';                                       // unter der Leiste: Premium kaufen, voriger Pass
+    if (!x.prem) unten += '<div class="pass-prem">' + icon('crown') + '<span><b>Premium-Reihe</b><small>Mehr Edelsteine, Truppen und Königliche Kisten – auch für erreichte Stufen.</small></span>' +
+        '<button class="btn btn--primary btn--sm" type="button" data-pass-buy><span class="lbl">' + icon('gem') + fmtNum(PASS_PREMIUM) + '</span></button></div>';
+    if (old.length) unten += '<div class="pass-old">' + icon('hourglass') + '<span><b>Voriger Saison-Pass: ' + old.length + (old.length === 1 ? ' Belohnung' : ' Belohnungen') + ' offen</b><small>Noch <span id="passOldLeft"></span> abholbar</small></span>' +
         '<button class="btn btn--primary btn--sm" type="button" data-pass-old><span>Abholen</span></button></div>';
     if (ready.length > 1) h += '<button class="btn btn--primary pass-all" type="button" data-pass-all>' + icon('check') + '<span>Alle abholen · ' + ready.length + '</span></button>';
-    h += '<div class="pass-track"><div class="pass-head"><span>Frei</span><span></span><span>' + (x.prem ? '' : icon('lock')) + 'Premium</span></div>';
-    for (let l = 1; l <= PASS_LVLS; l++) { const cell = pr => { const got = (pr ? x.p : x.f).includes(l), ok = l <= L && (!pr || x.prem), r = passRewardAt(l, pr);
-            return '<button type="button" class="pass-cell' + (pr ? ' is-p' : '') + (r.id ? ' is-special' : '') + (got ? ' is-got' : ok ? ' is-ready' : ' is-lock') + (pr && !x.prem ? ' is-closed' : '') + '"' + (ok && !got ? ' data-pass-l="' + l + '" data-pass-p="' + pr + '"' : '') + '>' +
-                passCellHtml(r, hp, got) + (got ? '<span class="pc-ok">' + icon('check') + '</span>' : pr && !x.prem ? '<span class="pc-ok is-lock">' + icon('lock') + '</span>' : '') + '</button>'; };
-        h += '<div class="pass-row' + (l <= L ? ' is-on' : '') + (l === L + 1 ? ' is-next' : '') + '" data-pass-row="' + l + '">' + cell(0) + '<span class="pass-node">' + l + '</span>' + cell(1) + '</div>'; }
-    h += '</div><details class="ach-done pass-how"><summary><span>So sammelst du Punkte</span><em>' + PASS_STEP + ' je Stufe</em>' + icon('upgrade') + '</summary><div class="pass-how-l">' +
+    // die Leiste (wie RoK): eine lange waagrechte Reihe, je Stufe eine Spalte – oben Premium, in der Mitte die Stufe, unten Frei; links bleiben die Namen stehen
+    h += '<div class="pl"><div class="pl-namen"><span class="is-p">' + (x.prem ? icon('crown') : icon('lock')) + 'Premium</span><span></span><span>Frei</span></div>';
+    for (let l = 1; l <= PASS_LVLS; l++) { const zelle = pr => { const got = (pr ? x.p : x.f).includes(l), ok = l <= L && (!pr || x.prem), rs = passRewardAt(l, pr);
+            return '<button type="button" class="pl-zelle' + (pr ? ' is-p' : '') + (rs.length > 1 ? ' is-zwei' : '') + (got ? ' is-got' : ok ? ' is-ready' : ' is-lock') + (pr && !x.prem ? ' is-closed' : '') + '"' +
+                (ok && !got ? ' data-pass-l="' + l + '" data-pass-p="' + pr + '"' : '') + '>' + rs.map(r => passKachel(r, hp)).join('') +
+                (got ? '<span class="pl-ok">' + icon('check') + '</span>' : pr && !x.prem ? '<span class="pl-ok is-lock">' + icon('lock') + '</span>' : '') + '</button>'; };
+        h += '<div class="pl-spalte' + (l <= L ? ' is-on' : '') + (l === L + 1 ? ' is-next' : '') + (l % 25 === 0 ? ' is-viertel' : '') + '" data-pass-row="' + l + '">' + zelle(1) + '<span class="pl-knoten">' + l + '</span>' + zelle(0) + '</div>'; }
+    h += '</div>' + unten + '<details class="ach-done pass-how"><summary><span>So sammelst du Punkte</span><em>' + PASS_STEP + ' je Stufe</em>' + icon('upgrade') + '</summary><div class="pass-how-l">' +
         PASS_HOW.map(([ic, t, v]) => '<div>' + icon(ic) + '<span>' + t + '</span><b>' + (typeof v === 'string' ? v : '+' + v) + '</b></div>').join('') + '</div></details>';
-    const pb = goalsPopup.querySelector('.pbody'), top = pb.scrollTop, how = el.querySelector('.pass-how'), wasOpen = !!(how && how.open); el.innerHTML = h; pb.scrollTop = top;
+    const pb = goalsPopup.querySelector('.pbody'), top = pb.scrollTop, alt = el.querySelector('.pl'), links = alt ? alt.scrollLeft : -1, how = el.querySelector('.pass-how'), wasOpen = !!(how && how.open);
+    el.innerHTML = h; pb.scrollTop = top; if (links >= 0) el.querySelector('.pl').scrollLeft = links;
     if (wasOpen) el.querySelector('.pass-how').open = true; passLeftTick();
 }
-function passScroll() { const L = passLvl(passOf(passNo(Date.now()))), pb = goalsPopup.querySelector('.pbody'), r = goalsPopup.querySelector('[data-pass-row="' + Math.max(1, L) + '"]');   // the level you're on in view
-    if (r && L > 3) pb.scrollTop = Math.max(0, pb.scrollTop + r.getBoundingClientRect().top - pb.getBoundingClientRect().top - pb.clientHeight / 2); }
+function passScroll() { const L = passLvl(passOf(passNo(Date.now()))), pl = goalsPopup.querySelector('.pl'), r = pl && pl.querySelector('[data-pass-row="' + Math.min(PASS_LVLS, L + 1) + '"]');   // die nächste Stufe in die Mitte der Leiste
+    if (r) pl.scrollLeft = Math.max(0, r.offsetLeft - pl.clientWidth / 2 + r.offsetWidth / 2); }
 document.getElementById('passPane').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.hasAttribute('data-pass-buy')) passBuy();
+    if (b.hasAttribute('data-pass-buy')) passBuy(b);
     else if (b.hasAttribute('data-pass-all')) passClaim(passReady(passNo(Date.now())));
     else if (b.hasAttribute('data-pass-old')) passClaim(passReady(passNo(Date.now()) - 1));
     else if (b.dataset.passL) passClaim([[passNo(Date.now()), +b.dataset.passL, +b.dataset.passP]]);
@@ -7432,7 +7311,7 @@ afterSplash(() => setTimeout(maybeShowDaily, 500));
 // nach Lage), puls (der nächste nötige Knopf pulsiert: body[data-anl-puls], Stil in 02), stadt (gilt in der Stadt), ok (Knopf „Verstanden“).
 const anleitungNeutral = id => !islandOwnerOf(id) && !bossAt(id) && islandById[id].type !== 'megaTemple';
 const ANLEITUNG = [
-    { t: 'Tippe auf deine Hauptstadt – die blaue Basis mit der Krone (das Fadenkreuz rechts bringt dich hin).', fertig: () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden
+    { t: 'Tippe auf deine Hauptstadt – die blaue Basis mit der Krone (der Kompass rechts bringt dich hin).', fertig: () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden
         || anleitungTat.attack || (anleitungInsel() && anleitungNeutral(popupIslandId)),   // schon bei einer neutralen Basis (oder angegriffen): gleich weiter zu Schritt 2
       tipp: () => anleitungInsel() && popupIslandId !== playerIslandId ? 'Das ist nicht deine Hauptstadt. Schließe das Fenster (×) und tippe die blaue Basis mit der Krone an.' : null, puls: () => 'heim' },
     { t: 'Greif eine neutrale Basis in deiner Nähe an: tippe eine Basis mit dem Schild „Neutral“ an.', fertig: () => anleitungTat.attack,
@@ -7452,7 +7331,7 @@ const ANLEITUNG = [
       puls: () => document.getElementById('fieldSheet').hidden ? '' : 'sammeln' },
     { t: 'Hol dir deine Belohnungen unter „Events“ (unten).', fertig: () => anleitungTat.abgeholt || (isPanelOpen(goalsPopup) && !eventsBereit()),   // (nichts abholbereit: dann reicht das Öffnen)
       tipp: () => isPanelOpen(goalsPopup) ? 'Tippe auf „Abholen“ – die Zahl an einem Reiter zeigt, wo noch etwas wartet.' : null, puls: () => isPanelOpen(goalsPopup) ? 'abholen' : 'events' },
-    { t: 'Knöpfe rechts: Fadenkreuz = zur Hauptstadt · Fahne = Wegmarke · Schwerter = Armee aufstellen · + und − = näher, weiter. Würfel oben = Rohstoffe (Holz, Stein, Eisen).', fertig: () => anleitungTat.knoepfe, puls: () => 'knoepfe', ok: true }
+    { t: 'Knöpfe rechts: Kompass = zur Hauptstadt · Fahne = Wegmarke · Schild = Armee aufstellen · Lupen = näher, weiter. Oben Holz, Stein, Eisen antippen = Ertrag pro Stunde.', fertig: () => anleitungTat.knoepfe, puls: () => 'knoepfe', ok: true }
 ];
 const anleitungTat = {};
 const anleitungAlleAusHaupt = () => popupView === 'preview' && previewSourceId === playerIslandId && (islandTroops[playerIslandId] || 0) > 0 && (previewAttackTroops || 0) >= (islandTroops[playerIslandId] || 0);   // nur ein Hinweis, keine Regel
@@ -7470,6 +7349,8 @@ function anleitungPuls(k) { if ((document.body.dataset.anlPuls || '') !== k) doc
 function anleitungFenster() {                             // Hauptstadt-Fenster: ein Satz, was es zeigt (solange die Anleitung läuft)
     const n = document.getElementById('popupAnleitung'); if (n) n.hidden = SYSTEM || anleitung.schritt >= ANLEITUNG.length || popupIslandId !== playerIslandId || popupView !== 'menu';
 }
+{ const a = document.getElementById('anleitung');           // ihre Höhe als --anl-h: steht sie oben (Handy, Basis-Fenster offen), kommt der Hinweis darunter (02)
+    if (a && window.ResizeObserver) new ResizeObserver(() => { if (a.offsetHeight) document.documentElement.style.setProperty('--anl-h', a.offsetHeight + 'px'); }).observe(a); }
 let anleitungUhr = 0, anleitungFrage = false;             // Frage: „Wirklich überspringen?“ steht gerade da
 function anleitungZeigen() {
     const el = document.getElementById('anleitung'); if (!el) return;
@@ -7477,7 +7358,7 @@ function anleitungZeigen() {
     if (document.getElementById('wkName') || ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal'].some(id => { const m = document.getElementById(id); return m && !m.hidden; })) { el.hidden = true; anleitungPuls(''); return; }   // erst Name/Begrüßung
     let weiter = false; try { weiter = !!ANLEITUNG[anleitung.schritt].fertig(); } catch (e) {}
     if (weiter) {
-        anleitung.schritt++; delete anleitungTat.abgeholt; sfx('upgrade'); el.classList.remove('is-auf');   // (Abholen zählt nur im Schritt, in dem es passiert)
+        anleitung.schritt++; delete anleitungTat.abgeholt; sfx('upgrade');   // (Abholen zählt nur im Schritt, in dem es passiert)
         if (anleitung.schritt >= ANLEITUNG.length) {
             const erstesMal = !anleitung.belohnt; anleitung.belohnt = true; anleitungSpeichern(); el.hidden = true; anleitungPuls(''); anleitungFenster();
             if (erstesMal) { inboxAdd({ src: 'gift', title: 'Anleitung geschafft', gems: 10, crate: 0 }); flashHint('Geschafft! Unter „Events“ → Abholfach wartet eine kleine Belohnung. Viel Spaß!', 6000); }
@@ -7495,15 +7376,20 @@ function anleitungZeigen() {
     let txt = null; try { txt = s.tipp && s.tipp(); } catch (e) {}
     setText(document.getElementById('anleitungSchritt'), 'Schritt ' + (anleitung.schritt + 1) + '/' + ANLEITUNG.length);
     setText(document.getElementById('anleitungText'), anleitungFrage ? 'Anleitung wirklich überspringen? Unter Profil → Einstellungen kannst du sie jederzeit noch mal starten.' : txt || s.t);
-    el.classList.toggle('is-frage', anleitungFrage); el.classList.toggle('is-ok', !anleitungFrage && !!s.ok);   // (mit Knöpfen darunter: Text ganz)
+    el.classList.toggle('is-frage', anleitungFrage); el.classList.toggle('is-ok', !anleitungFrage && !!s.ok);
     document.getElementById('anleitungFrage').hidden = !anleitungFrage; document.getElementById('anleitungOk').hidden = anleitungFrage || !s.ok; document.getElementById('anleitungWeg').hidden = anleitungFrage;
+    el.classList.toggle('is-events', anleitung.schritt === 5 && isPanelOpen(goalsPopup));   // Schritt 6 gilt im Events-Fenster: dort sichtbar bleiben (sonst blendet ein großes Fenster sie aus)
     const fenster = [...document.querySelectorAll('.panel.is-open, .marker-sheet:not([hidden]), #heroHall:not([hidden])')].map(f => f.getBoundingClientRect()).filter(r => r.height > 0).sort((x, y) => x.top - y.top)[0];
-    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
-    el.style.visibility = fenster && fenster.top < 150 ? 'hidden' : '';                  // kein Platz über dem Fenster: lieber gar nicht als auf den Knöpfen
+    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : ''; el.style.right = '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
+    const oben = Math.max(0, document.getElementById('hud').getBoundingClientRect().bottom), ctl = document.getElementById('mapControls').getBoundingClientRect();
+    let sicht = !fenster || fenster.top - 10 - el.offsetHeight >= oben;
+    if (!sicht && fenster.left - el.getBoundingClientRect().left >= 330) {                // Desktop: Fenster rechts – links daneben unten, vor den Kartenknöpfen
+        el.style.bottom = ''; el.style.right = Math.round(innerWidth - Math.min(fenster.left, ctl.width ? ctl.left : fenster.left) + 10) + 'px'; sicht = true;
+    }
+    el.style.visibility = sicht ? '' : 'hidden';                                          // kein Platz über oder neben dem Fenster: lieber gar nicht als auf den Knöpfen
 }
 function anleitungStarten() { anleitungZeigen(); if (!anleitungUhr && anleitung.schritt < ANLEITUNG.length) anleitungUhr = setInterval(anleitungZeigen, 1000); }
 document.getElementById('anleitungWeg').addEventListener('click', () => { anleitungFrage = true; anleitungZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
-document.getElementById('anleitungText').addEventListener('click', () => document.getElementById('anleitung').classList.toggle('is-auf'));   // langer Text: antippen zeigt alles
 document.getElementById('anleitungNein').addEventListener('click', () => { anleitungFrage = false; anleitungZeigen(); });
 document.getElementById('anleitungJa').addEventListener('click', () => {
     anleitungFrage = false; anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); anleitungZeigen(); setTimeout(maybeShowDaily, 1500);   // (übersprungen: die tägliche Belohnung kommt jetzt)
@@ -7535,10 +7421,8 @@ const THRONE_OFFERS = [
     { id: 'coins',  name: 'Münzen',              icon: 'coin',   cost: 150 },
     { id: 'troops', name: 'Truppen',             icon: 'troops', cost: 200 },
     { id: 'crate',  name: 'Ausrüstungskiste',    icon: 'shop',   cost: 60 },
-    { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 },
-    ...RING_SKINS.filter(r => r.tp).map(r => ({ id: 'ring_' + r.id, name: 'Ring „' + r.name + '“', icon: 'crown', cost: r.tp, once: true, ring: r.id }))
+    { id: 'royal',  name: 'Königliche Kiste',    icon: 'shop',   cost: 400 }
 ];
-const throneOwned = (who, o) => !!o.ring && ringSkinsOf(who).includes(o.ring);   // (Thronhüter + Thron-Rahmen gibt es nicht mehr – Rahmen nicht zu kaufen, Alexander 6.10.)
 var throneState = (() => { try { return JSON.parse(store.get('openWaterThrone')) || null; } catch (e) { return null; } })() || { pts: 0 };
 (() => { const now = Date.now(), ts = throneState;               // no points or volleys pile up while the game was closed
     if (!(ts.nextPts > now)) ts.nextPts = now + THRONE_TICK_MS; if (!(ts.nextFire > now)) ts.nextFire = now + THRONE_FIRE_MS;
@@ -7559,29 +7443,28 @@ function hourProduction(who) {                       // what an empire makes in 
         if (isl && (isl.type === 'temple' || isl.type === 'megaTemple')) { const mult = templeBaseMult(isl) * templeHoldMultiplier(id) * shrineMult(who); c += TEMPLE_COIN_BONUS_PER_TICK * mult; t += TEMPLE_TROOP_BONUS_PER_TICK * mult; } }
     return { coins: c * k, troops: t * k };
 }
-// Münzen/Truppen wie Händler und Markt (Alexander 6.10.): Stunden-Produktion × Kosten ÷ Ertrag (= 2 Stunden), Mindestwerte × WIRTSCHAFT_KOSTEN
-// (Münzen: wirtM)
-const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG;
+// Münzen/Truppen wie Händler und Markt (Alexander 6.10.): Stunden-Produktion × Kosten ÷ Ertrag (= 2 Stunden), mindestens 20.000 Münzen
+// bzw. 2.000 Truppen (7.10.: vorher 10 Truppen für 200 Punkte)
+const THRONE_STUNDEN = WIRTSCHAFT_KOSTEN / WIRTSCHAFT_ERTRAG, THRONE_MIN = { coins: 20000, troops: 2000 };
 function throneAmount(who, id) { const hp = hourProduction(who);
-    return id === 'coins' ? Math.max(wirtM(5000), Math.round(hp.coins * THRONE_STUNDEN)) : id === 'troops' ? Math.max(wirtK(1000), Math.round(hp.troops * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
-function throneGive(who, id) {                        // hands one offer over; returns what it was, for the hint
-    const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
-    if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; return '+' + fmtCompact(n) + ' Münzen'; }
-    if (id === 'gems') { if (b) b.gems += n; else gems += n; return '+' + n + ' Edelsteine'; }
+    return id === 'coins' || id === 'troops' ? Math.max(THRONE_MIN[id], Math.round(hp[id] * THRONE_STUNDEN)) : id === 'gems' ? 100 : 1; }
+function throneGive(who, id, aus) {                   // hands one offer over; returns what it was, for the hint (aus: Belohnungs-Kacheln dazu, 05e)
+    aus = aus || []; const n = throneAmount(who, id), b = who === 'player' ? null : loadBotState()[who];
+    if (id === 'coins') { if (b) botCoins[who] = (botCoins[who] || 0) + n; else coins += n; aus.push({ a: 'coins', n }); return '+' + fmtCompact(n) + ' Münzen'; }
+    if (id === 'gems') { if (b) b.gems += n; else gems += n; aus.push({ a: 'gems', n }); return '+' + n + ' Edelsteine'; }
     if (id === 'troops') { const to = b ? botCapitalOf(who) : rewardBaseId(); if (to === null || to === undefined) return '';
-        if (b) islandTroops[to] = (islandTroops[to] || 0) + n; else eigeneTruppenDazu(to, n, 'thron'); return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
+        if (b) islandTroops[to] = (islandTroops[to] || 0) + n; else eigeneTruppenDazu(to, n, 'thron'); aus.push({ a: 'tr', n }); return '+' + fmtCompact(n) + ' Truppen in ' + (b ? 'die Hauptstadt' : islandTitle(islandById[to])); }
     if (id === 'crate' || id === 'royal') { const r = id === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
         if (b) { b.spare[slot][r]++; return ''; }
-        addInventoryItem(slot, r, 1); sfx('crate'); questProgress('crate', 1); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
-    if (id.startsWith('ring_')) { const r = ringSkinDef(id.slice(5)); if (!r) return ''; ringGive(who, r.id); return 'Ring „' + r.name + '“ – schon angelegt'; }
+        addInventoryItem(slot, r, 1); aus.push({ a: 'item', slot, r }); sfx('crate'); questProgress('crate', 1); return RARITY_DEFS[r].label + ' ' + EQUIPMENT_DEFS[slot].name + ' im Inventar'; }
     return '';
 }
 function throneBuy(id) {
     const o = THRONE_OFFERS.find(x => x.id === id); if (!o) return;
-    if (o.once && throneOwned('player', o)) return;
     if ((throneState.pts || 0) < o.cost) { flashHint('Zu wenig Thron-Punkte – das kostet ' + fmtNum(o.cost) + '.', 3000); return; }
-    throneState.pts -= o.cost; const what = throneGive('player', id); saveThrone(); updateHud(); saveGame(); saveProgression();
-    flashHint('Gekauft: ' + what + '.', 3500); sfx('coin'); renderShop();
+    const aus = []; throneState.pts -= o.cost; const what = throneGive('player', id, aus); saveThrone(); updateHud(); saveGame(); saveProgression();
+    if (aus.length) beuteFenster(o.name, aus, { kiste: id === 'crate' ? 'aus' : id === 'royal' ? 'royal' : null, unter: 'Thron-Shop' }); else flashHint('Gekauft: ' + what + '.', 3500);
+    sfx('coin'); renderShop();
 }
 var throneShots = [];                                  // volleys flying across the map (screen-space drawing below)
 function throneAward(silent, at) {                    // at: when this award happened (the time you were away is caught up afterwards)
@@ -7677,21 +7560,16 @@ function renderThroneShop() {
             '<div class="ts-row">' + icon('points') + '<span>Du bekommst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere die Mitte') + '</b></div>' +
             (bo ? '<div class="ts-row">' + icon(bo.who === 'player' ? 'losses' : 'gem') + '<span>' + (bo.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b' + (bo.who === 'player' ? ' class="warn"' : '') + '>' + fmtNum(bo.gems) + ' Edelsteine · ' + fmtCompact(bo.coins) + '</b></div>' : '') +
         '</div><p class="mail-intro">Wer den Mega-Tempel hält, bekommt alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte, wer dort Verstärkung stehen hat ' + THRONE_PTS_VERST + ', jeder Wächter-Tempel bringt ' + THRONE_PTS_GUARD + '. Genauso oft feuern die Wächter-Tempel, die dem Herrscher nicht gehören, auf die Truppen im Mega-Tempel (je ' + THRONE_FIRE_PCT + ' %) – die Getroffenen kommen ins Krankenhaus, soweit Platz ist.</p>' +
-            '<p class="mail-intro">Thron-Rahmen, Titel und Ringe für Thron-Punkte gibt es unter Profil → Aussehen, die Thron-Punkte-Rangliste unter Profil → Rangliste.</p></div>' +
+            '<p class="mail-intro">Die Thron-Punkte-Rangliste steht unter Profil → Rangliste.</p></div>' +
         '<div class="waren waren--2">' +
-        THRONE_OFFERS.filter(o => !o.once).map(o => { const n = throneAmount('player', o.id);   // looks are bought in the Aussehen sheet; Waren als Karten wie die Kisten
+        THRONE_OFFERS.map(o => { const n = throneAmount('player', o.id);   // Waren als Karten wie die Kisten
             const sub = o.id === 'coins' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ertrag' : o.id === 'troops' ? fmtCompact(n) + ' · ' + fmtNum(THRONE_STUNDEN) + ' Std. Ausbildung'
                 : o.id === 'gems' ? 'für Kisten und Helden' : o.id === 'crate' ? '1 Teil · Grau bis Episch' : o.id === 'royal' ? 'mindestens Lila' : 'gibt es nur hier';
             const k = o.id === 'crate' ? 'aus' : o.id === 'royal' ? 'royal' : null;
-            const bild = k ? kisteBild(k, 't') : o.id === 'coins' ? muenzBild() : icon(o.icon, 'ico-' + o.icon);
-            return '<div class="ware ware--klein" data-r="' + (k ? KISTE_R[k] : 'navy') + '">' + (o.id === 'royal' ? '<span class="band">Mind. Lila</span>' : '') + '<span class="ware-bild' + (k || o.id === 'coins' ? '' : ' ware-bild--ic') + '">' + bild + '</span>' +
+            const bild = k ? kisteBild(k) : '<img class="kiste-bild" src="bilder/' + (BEUTE_ART[o.id === 'troops' ? 'tr' : o.id] || BEUTE_ART.gems).b + '.webp" alt="" draggable="false">';   // KI-Bilder (05e)
+            return '<div class="ware ware--klein" data-r="' + (k ? KISTE_R[k] : 'navy') + '">' + (o.id === 'royal' ? '<span class="band">Mind. Lila</span>' : '') + '<span class="ware-bild">' + bild + '</span>' +
                 '<span class="ware-txt"><b class="ware-name">' + o.name + '</b><small>' + sub + '</small></span>' +
                 '<button type="button" class="ware-preis thron" data-throne-buy="' + o.id + '"' + ((ts.pts || 0) < o.cost ? ' disabled' : '') + '>' + icon('crown') + '<b>' + fmtNum(o.cost) + '</b></button></div>'; }).join('') + '</div>');
-}
-function muenzBild() {                                // Münzstapel für die Thron-Karte „Münzen“
-    const m = (x, y) => '<ellipse cx="' + x + '" cy="' + (y + 4) + '" rx="22" ry="8" fill="#8a5d14"/><rect x="' + (x - 22) + '" y="' + y + '" width="44" height="4" fill="#a8761c"/><ellipse cx="' + x + '" cy="' + y + '" rx="22" ry="8" fill="url(#mbz)" stroke="#5a3b06" stroke-width="1"/><ellipse cx="' + x + '" cy="' + y + '" rx="13" ry="4.5" fill="none" stroke="#a8761c" stroke-width="1.5"/>';
-    return '<svg viewBox="0 0 120 100" aria-hidden="true"><defs><linearGradient id="mbz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0b8"/><stop offset="1" stop-color="#e2a93a"/></linearGradient></defs>' +
-        '<ellipse cx="60" cy="91" rx="44" ry="6" fill="#000" opacity=".5"/>' + m(42, 76) + m(42, 66) + m(42, 56) + m(78, 78) + m(78, 68) + m(60, 46) + m(60, 36) + kisteStern(98, 20, 6, .95) + kisteStern(20, 30, 3.5, .7) + '</svg>';
 }
 const shopInfoAuf = new Set();                      // Shop: offene Erklärungen hinter „i“ (Thron baut sie bei jedem Takt neu – darum gemerkt)
 let shopTab = 'gems';
@@ -7776,7 +7654,7 @@ function midNotice(island) {                          // das Kopfgeld auf dem Me
 }
 
 // ===== FRIEDENSSCHILD: nobody may attack the player's bases while it stands; attacking yourself drops it =====
-const SHIELD_PRICES = { 2: 40, 8: 120, 24: 300 };
+const SHIELD_PRICES = { 2: 80, 8: 300, 24: 700 };   // Edelsteine (7.10., RoK-näher: vorher 40/120/300) – 700 mit „Wirklich?“
 var shieldMemAt = 0, shieldMemV = 0;                                   // hot loops ask thousands of times - no storage read each time
 function shieldUntil() { const t = Date.now(); if (t - shieldMemAt > 500) { shieldMemV = parseInt(store.get('openWaterShield'), 10) || 0; shieldMemAt = t; } return shieldMemV; }
 function playerShielded() { return Date.now() < ownerShieldUntil('player'); }
@@ -7789,53 +7667,107 @@ function ownerShieldUntil(who) {
     if (who === 'player') return Math.max(shieldUntil(), neulingBis());
     const b = loadBotState()[who] || {}; return Math.max(b.shieldUntil || 0, botNeulingBis(who, b));   // auch ihr Anfängerschutz
 }
-// ANFÄNGERSCHUTZ (EINE Welt) – für echte Spieler UND Mitspieler gleich: 48 Std. unangreifbar (auch wenn sie selbst
-// Mitspieler, Lager oder Felder angreifen). Endet früher, sobald die Macht (Gesamtstärke) 50 Mio. erreicht oder sie
-// einen echten Spieler angreifen.
-const NEULING_MS = 48 * 3600000, NEULING_MACHT = 50e6;
+// ANFÄNGERSCHUTZ (EINE Welt) – für echte Spieler UND Mitspieler gleich: 48 Std. kann sie niemand angreifen und niemand
+// ausspähen (auch wenn sie selbst Mitspieler, Lager oder Felder angreifen). Endet früher, sobald sie 100.000 Truppen haben
+// (Gesamttruppen wie im HUD) oder einen echten Spieler angreifen (Alexander 7.10.).
+const NEULING_MS = 48 * 3600000, NEULING_TRUPPEN = 100000;
 const staerkeMem = {};
 function staerke(who) {                           // Macht wie in der Rangliste, höchstens einmal pro Minute neu gerechnet
     const m = staerkeMem[who], now = Date.now(); if (m && now - m.at < 60000) return m.v;
     let v = 0; try { v = powerOf(whoProfile(who)); } catch (e) { v = 0; }
     staerkeMem[who] = { v, at: now }; return v;
 }
+const truppenMem = {};
+function neulingTruppen(who) {                    // Gesamttruppen (whoTroops), höchstens einmal pro Sekunde neu gezählt
+    const m = truppenMem[who], now = Date.now(); if (m && now - m.at < 1000) return m.v;
+    let v = 0; try { v = whoTroops(who); } catch (e) { v = 0; }
+    truppenMem[who] = { v, at: now }; return v;
+}
 function neulingBis() {
-    if (!window.WELT) return 0; const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
-    if (staerke('player') >= NEULING_MACHT) { store.set('openWaterNeulingBis', '0'); afterSplash(() => flashHint('Dein Anfängerschutz ist vorbei – dein Reich hat 50 Mio. Macht erreicht.', 5000)); return 0; }
+    if (!window.WELT && store.get('openWaterNeulingBis') === null) store.set('openWaterNeulingBis', String(Date.now() + NEULING_MS));   // Vorschau ohne Server: derselbe Schutz ab dem ersten Start (Alexander 7.10.; Tests schalten ihn mit '0' ab)
+    const t = parseFloat(store.get('openWaterNeulingBis')) || 0; if (t <= Date.now()) return 0;
+    if (neulingTruppen('player') >= NEULING_TRUPPEN) { store.set('openWaterNeulingBis', '0'); afterSplash(() => flashHint('Dein Anfängerschutz ist vorbei – du hast 100.000 Truppen.', 5000)); return 0; }
     return t;
 }
 function botNeulingBis(who, b) {
     if (!window.WELT || !b) return 0;
     if (b.neuBis === undefined && !b.mensch) b.neuBis = worldStartAt() + NEULING_MS;   // Mitspieler der laufenden Welt: ab Weltstart
     const t = b.neuBis || 0; if (t <= Date.now()) return 0;
-    if (staerke(who) >= NEULING_MACHT) { b.neuBis = 0; saveBotState(); return 0; }   // (auch bei echten Spielern – nicht dem Handy überlassen)
+    if (neulingTruppen(who) >= NEULING_TRUPPEN) { b.neuBis = 0; saveBotState(); return 0; }   // (auch bei echten Spielern – nicht dem Handy überlassen)
     return t;
 }
+function neulingVon(who) { return !who ? 0 : who === 'player' ? neulingBis() : botNeulingBis(who, loadBotState()[who]); }
+function neulingAktiv(who, now) { return neulingVon(who) > (now || Date.now()); }   // Anfängerschutz: nicht angreifen, nicht ausspähen
+function neulingBlockText(who) { const n = who === 'player' ? 'Du bist' : ((botById[who] || {}).name || 'Dieser Spieler') + ' ist';
+    return 'Anfängerschutz – noch ' + fmtHours(neulingVon(who) - Date.now()) + ' (oder bis 100.000 Truppen): ' + n + ' neu und kann nicht angegriffen und nicht ausgespäht werden.'; }
 function neulingEnde(grund) { if (neulingBis() <= Date.now()) return; store.set('openWaterNeulingBis', '0'); if (grund) flashHint(grund, 4500); requestRender(); }
 function ownerShielded(who, now) { return !!who && (now || Date.now()) < ownerShieldUntil(who); }
 function shieldCovers(isl) { return !!isl && isl.type === 'tower'; }   // the shield covers the towers - never gates, temples or the throne (the middle stays open to everyone)
 function baseShieldedFor(id, by, now) { const ow = islandOwnerOf(id); return !!ow && ow !== by && shieldCovers(islandById[id]) && ownerShielded(ow, now); }   // by: 'player' | bot id
 function shieldedOwners(now) { const s = new Set(); if (now < ownerShieldUntil('player')) s.add('player'); for (const bot of BOT_DEFS) if (ownerShieldUntil(bot.id) > now) s.add(bot.id); return s; }
 function shieldBlockText(ow) { const n = (botById[ow] || {}).name || 'Dieser Spieler', b = ow !== 'player' && loadBotState()[ow];
-    if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return 'Anfängerschutz: ' + n + ' ist neu und noch ' + fmtHours(b.neuBis - Date.now()) + ' unangreifbar.';
+    if (b && botNeulingBis(ow, b) > Date.now() && botNeulingBis(ow, b) >= (b.shieldUntil || 0)) return neulingBlockText(ow);
     return 'Friedensschild: ' + n + ' ist noch ' + fmtHours(ownerShieldUntil(ow) - Date.now()) + ' unangreifbar.'; }
 function fmtHours(ms) { return fmtDHMS(ms / 1000); }
-function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const st = shieldStock(), now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
-    liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) : 'Kein Schild aktiv.') + '</span>');
-    liveHtml(document.getElementById('shieldUse'), !(st[2] || st[8] || st[24]) ? '<div class="empty-state lb-leer">' + icon('shield') + '<span><b>Kein Schild im Vorrat</b>Oben kaufen – dann hier einschalten, wann du willst.</span></div>' : [2, 8, 24].map(h => '<button type="button" class="btn btn--' + (st[h] ? 'primary' : 'secondary') + '" data-shield-use="' + h + '"' + (st[h] ? '' : ' disabled') + '><span>' + h + ' Std.</span><span class="cost">' + st[h] + '× im Vorrat</span></button>').join('')); }   // (leer: ein Satz statt drei grauer „0×“-Kästen)
-shopPopup.addEventListener('click', e => {                 // Shop → Schilde: kaufen (in den Vorrat) und einschalten – beides nur hier
-    const su = e.target.closest('[data-shield-use]');
-    if (su) { const h = +su.dataset.shieldUse, stock = shieldStock(); if (!stock[h]) return;
-        if (Math.max(Date.now(), shieldUntil()) + h * 3600000 > Date.now() + 8 * 86400000) { flashHint('Mehr als 8 Tage Friedensschild am Stück gehen nicht – erst, wenn er kürzer ist.', 3500); return; }   // (die Welt zählt höchstens 8 Tage)
-        stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
-        store.set('openWaterShield', String(Math.max(serverJetzt(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;   // (Server-Uhr: die Welt rechnet mit ihr – eine falsch gestellte Handy-Uhr kürzt sonst den Schild)
-        flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderShop(); requestRender(); return; }
+function renderShieldState() { const el = document.getElementById('shieldState'); if (!el) return; const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis();   // (die Restzeit zählt live)
+    liveHtml(el, icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
+    const st = shieldStock(), ns = st[2] + st[8] + st[24], nt = teleImRucksack(), kauf = shopPopup.querySelector('[data-tele-kauf] b');
+    if (kauf) setText(kauf, fmtNum(TP_GEMS));
+    setText(document.getElementById('shopRucksackN'), 'Im Rucksack: ' + ns + (ns === 1 ? ' Schild' : ' Schilde') + ' · ' + nt + ' Teleporter ›'); }
+shopPopup.addEventListener('click', e => {                 // Shop → Schilde/Teleporter: nur kaufen (in den Rucksack) – eingesetzt wird im Rucksack
+    if (e.target.closest('[data-zum-rucksack]')) { openRucksack(); return; }
+    const tk = e.target.closest('[data-tele-kauf]');
+    if (tk) { if (gems < TP_GEMS) { flashHint('Zu wenig Edelsteine – ein Teleporter kostet ' + fmtNum(TP_GEMS) + '.', 3000); return; }
+        if (!gemsWirklich('tele', TP_GEMS, tk)) return;
+        gems -= TP_GEMS; store.set('openWaterTeleporter', String(teleVorrat() + 1));   // (der Weltrechner zieht die Gems beim Benutzen aus dem Ausgegebenen – Befehl teleport)
+        updateHud(); saveGame(); renderShop(); flashHint('Teleporter liegt im Rucksack – dort „Benutzen“ oder auf ein freies Feld der Karte tippen.', 3500); return; }
     const bt = e.target.closest('[data-shield]'); if (!bt) return;
     const h = +bt.dataset.shield, cost = SHIELD_PRICES[h];
     if (gems < cost) { flashHint('Zu wenig Edelsteine – der Schild kostet ' + cost + '.', 3000); return; }
+    if (!gemsWirklich('schild:' + h, cost, bt)) return;
     gems -= cost; const stock = shieldStock(); stock[h]++; store.set('openWaterShieldStock', JSON.stringify(stock));
     updateHud(); saveGame(); renderShop();
-    flashHint('Schild (' + h + ' Std.) liegt im Vorrat – unten einschalten, wann du willst.', 3500); });
+    flashHint('Schild (' + h + ' Std.) liegt im Rucksack – dort einsetzen, wann du willst.', 3500); });
+// ===== RUCKSACK (Dock): Schilde einsetzen (die Zeit kommt zum laufenden Schild dazu), Teleporter benutzen (→ Karte), Splitter je Held (nur Anzeige) =====
+const rucksackPopup = document.getElementById('rucksackPopup');
+function teleVorrat() { return Math.max(0, parseInt(store.get('openWaterTeleporter'), 10) || 0); }   // gekaufte Teleporter
+function teleImRucksack() { return teleVorrat() + (tpGratis('player') ? 1 : 0); }                 // + der Gratis-Teleporter neuer Spieler (Anfängerschutz)
+function rkFach(b, name, txt, knopf) {               // eine Zeile: Kachel · Name + Text · Knopf
+    return '<div class="rk-fach ki-karte">' + beuteKachel(b) + '<span class="rk-txt"><b>' + name + '</b><small>' + txt + '</small></span>' + knopf + '</div>';
+}
+function renderRucksack() {
+    if (!isPanelOpen(rucksackPopup)) return;
+    const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis(), st = shieldStock(), nt = teleImRucksack(), gratis = tpGratis('player');
+    liveHtml(document.getElementById('rkSchildStand'), icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
+    const kaufen = (was, preis) => '<button type="button" class="btn btn--secondary rk-knopf" data-rk-kauf="' + was + '" aria-label="Kaufen für ' + fmtNum(preis) + ' Edelsteine"><span>Kaufen</span>' + icon('gem') + '<b class="rk-preis">' + fmtNum(preis) + '</b></button>';   // Preis wie im Shop
+    let h = '<div class="sect"><h4>Friedensschilde</h4><span class="sect-aside">Zeit kommt dazu</span></div><div class="rk-liste">' +
+        [2, 8, 24].map(n => rkFach({ a: 'schild', n }, 'Schild ' + n + ' Std.', st[n] + '× im Rucksack',
+            st[n] ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-schild="' + n + '"><span>Einsetzen</span></button>' : kaufen('schild', SHIELD_PRICES[n]))).join('') + '</div>';
+    h += '<div class="sect"><h4>Teleporter</h4><span class="sect-aside">Hauptstadt umziehen</span></div><div class="rk-liste">' +
+        rkFach({ a: 'tele', n: nt }, 'Teleporter', nt + '× im Rucksack' + (gratis ? ' (1 gratis für neue Spieler)' : ''),
+            nt ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-tele><span>Benutzen</span></button>' : kaufen('tele', TP_GEMS)) + '</div>';
+    const helden = HEROES.map(x => [x, heroSt('player', x.id)]).filter(([, s]) => s && s.sh > 0);
+    h += '<div class="sect"><h4>Helden-Splitter</h4><span class="sect-aside">Tipp → Held</span></div>' + (helden.length
+        ? '<div class="bk-raster rk-splitter">' + helden.map(([x, s]) => '<button type="button" class="bk-mit" data-rk-held="' + x.id + '" aria-label="' + escapeHtml(x.name) + ' öffnen">' + beuteKachel({ a: 'sh', n: s.sh, held: x.id }) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>'
+        : '<div class="empty-state lb-leer">' + icon('star') + '<span><b>Keine Splitter</b>Splitter gibt es aus Heldenkisten, Aufgaben und Events.</span></div>');
+    liveHtml(document.getElementById('rkInhalt'), h);
+}
+function openRucksack() { closeAllPopups(); openPanel(rucksackPopup); renderRucksack(); }
+document.getElementById('rucksackBtn').addEventListener('click', () => { if (isPanelOpen(rucksackPopup)) closePanel(rucksackPopup); else openRucksack(); });
+document.getElementById('rucksackCloseBtn').addEventListener('click', () => closePanel(rucksackPopup));
+rucksackPopup.addEventListener('click', e => {
+    const su = e.target.closest('[data-rk-schild]');
+    if (su) { const h = +su.dataset.rkSchild, stock = shieldStock(); if (!stock[h]) return;
+        if (Math.max(Date.now(), shieldUntil()) + h * 3600000 > Date.now() + 8 * 86400000) { flashHint('Mehr als 8 Tage Friedensschild am Stück gehen nicht – erst, wenn er kürzer ist.', 3500); return; }   // (die Welt zählt höchstens 8 Tage)
+        stock[h]--; store.set('openWaterShieldStock', JSON.stringify(stock)); statBump('shields');
+        store.set('openWaterShield', String(Math.max(serverJetzt(), shieldUntil()) + h * 3600000)); shieldMemAt = 0;   // dazu zum laufenden Schild (Server-Uhr: die Welt rechnet mit ihr – eine falsch gestellte Handy-Uhr kürzt sonst den Schild)
+        flashHint('Friedensschild aktiv – noch ' + fmtHours(shieldUntil() - Date.now()), 3000); renderRucksack(); requestRender(); return; }
+    if (e.target.closest('[data-rk-tele]')) { if (!teleImRucksack()) return;
+        closeAllPopups(); if (!cityView.hidden) closeCity(); recenterOnHome(true);
+        flashHint('Tippe auf eine freie Stelle der Karte, dann „Teleportieren“ – das kostet 1 Teleporter.', 5000); return; }
+    const k = e.target.closest('[data-rk-kauf]'); if (k) { openShop('shield'); return; }
+    const hd = e.target.closest('[data-rk-held]'); if (hd) { closePanel(rucksackPopup); openHeroHall(hd.dataset.rkHeld); }
+});
 function heroChestPool(minR) { return HEROES.filter(h => { const s = heroSt('player', h.id); return s && !(s.own && s.q >= HERO_MAXQ) && h.r >= minR; }); }
 function renderHeroChests() {                       // the odds per rarity follow your heroes: maxed ones drop out
     const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0);
@@ -7843,34 +7775,22 @@ function renderHeroChests() {                       // the odds per rarity follo
         return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + (tot ? Math.round(w / tot * 100) : 0) + ' %</span>'; }).join(''));
     liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.slice().reverse().map(c => { const k = HCHEST_ART[c.id] || 'held';   // die wertvollste groß zuerst
         return '<div class="ware' + (c.id === 'hcE' ? ' ware--gross glanz' : '') + '" data-r="' + KISTE_R[k] + '">' + (HCHEST_BAND[c.id] ? '<span class="band">' + HCHEST_BAND[c.id] + '</span>' : '') +
-            '<span class="ware-bild">' + kisteBild(k, 'k') + '</span><span class="ware-txt"><b class="ware-name">' + c.name + '</b><small>' + c.txt + '</small></span>' +
-            '<button type="button" class="ware-preis" data-hchest="' + c.id + '" aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '>' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></button></div>'; }).join(''));
+            '<span class="ware-bild">' + kisteBild(k) + '</span><span class="ware-txt"><b class="ware-name">' + c.name + '</b><small>' + c.txt + '</small></span>' +
+            (c.gems < GEMS_WIRKLICH ? '<span class="ware-preise">' : '') + '<button type="button" class="ware-preis" data-hchest="' + c.id + '"' + (c.gems < GEMS_WIRKLICH ? ' data-x="1×"' : '') + ' aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '>' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></button>' +
+            (c.gems < GEMS_WIRKLICH ? kistenMehrKnopf(c.id, c.gems) + '</span>' : '') + '</div>'; }).join(''));
 }
-// Gezeichnete Truhe für die Shop-Karten (SVG): Deckel, Kasten, Bänder, Schloss, Glanz, Sterne – das Leuchten macht die Karte
-const KISTE_ART = {                                  // Kasten oben/unten, Bänder hell/dunkel, Zeichen auf dem Schloss
-    aus: { k: ['#8a5a2e', '#3e2410'], b: ['#e3e7ec', '#6b7078'] }, held: { k: ['#8a5a2e', '#3e2410'], b: ['#a9d4ff', '#2c62b0'], z: 'krone' },
-    gross: { k: ['#9a6428', '#432410'], b: ['#f6e7bf', '#a27832'], z: 'stern' }, episch: { k: ['#7c4cc4', '#1e1033'], b: ['#f6e7bf', '#a27832'], z: 'stein' },
-    royal: { k: ['#2f5490', '#0d1a33'], b: ['#f6e7bf', '#a27832'], z: 'krone' } };
 const KISTE_R = { aus: 'grau', held: 'blau', gross: 'gold', episch: 'lila', royal: 'lila' };
 const HCHEST_ART = { hc1: 'held', hc3: 'gross', hcE: 'episch' }, HCHEST_BAND = { hcE: 'Bester Wert', hc1: 'Beliebt' };   // (Bänder nur Optik)
-function kisteStern(x, y, r, o) { const q = r * .28, p = r * .72;   // 4-Zack-Stern (Glanz)
-    return '<path d="M' + x + ' ' + (y - r) + 'l' + q + ' ' + p + ' ' + p + ' ' + q + ' ' + -p + ' ' + q + ' ' + -q + ' ' + p + ' ' + -q + ' ' + -p + ' ' + -p + ' ' + -q + 'z" fill="#fff" opacity="' + o + '"/>'; }
-function kisteBild(k, ort) {                         // ort: eigene Verlaufs-Namen je Reiter (gleich bei jedem Neuzeichnen – liveHtml tauscht nichts)
-    const a = KISTE_ART[k] || KISTE_ART.aus, n = 'kb' + (ort || 'k') + k;
-    const z = a.z === 'stein' ? '<path d="M60 42l6.5 7.5-6.5 8.5-6.5-8.5z" fill="#c99bff" stroke="#fff" stroke-width=".8"/><circle cx="58" cy="47" r="1.3" fill="#fff"/>'
-        : a.z === 'krone' ? '<path d="M53 55v-8l3.5 3 3.5-5 3.5 5 3.5-3v8z" fill="#2a1a05"/>' : a.z === 'stern' ? '<path d="M60 42l2.3 4.7 5.2.7-3.8 3.6.9 5.1-4.6-2.4-4.6 2.4.9-5.1-3.8-3.6 5.2-.7z" fill="#2a1a05"/>'
-        : '<path d="M60 45a3 3 0 0 1 1.6 5.5l1.1 4.5h-5.4l1.1-4.5A3 3 0 0 1 60 45z" fill="#1c1205"/>';
-    return '<svg viewBox="0 0 120 100" aria-hidden="true"><defs>' +
-        '<linearGradient id="' + n + 'k" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a.k[0] + '"/><stop offset="1" stop-color="' + a.k[1] + '"/></linearGradient>' +
-        '<linearGradient id="' + n + 'b" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="' + a.b[0] + '"/><stop offset="1" stop-color="' + a.b[1] + '"/></linearGradient></defs>' +
-        '<ellipse cx="60" cy="91" rx="44" ry="6" fill="#000" opacity=".5"/>' +
-        '<rect x="14" y="46" width="92" height="42" rx="4" fill="url(#' + n + 'k)" stroke="#0b0805" stroke-width="2"/>' +
-        '<path d="M14 48V34Q14 14 60 14Q106 14 106 34V48Z" fill="url(#' + n + 'k)" stroke="#0b0805" stroke-width="2"/>' +
-        '<path d="M14 62h92M14 75h92" stroke="#000" stroke-opacity=".22" stroke-width="1.2"/><path d="M20 34Q22 21 56 19" stroke="#fff" stroke-opacity=".3" stroke-width="4" fill="none" stroke-linecap="round"/>' +
-        '<g fill="url(#' + n + 'b)" stroke="#2a1a05" stroke-width="1"><path d="M30 17.5h8v70.5h-8zM82 17.5h8v70.5h-8z"/><rect x="12.5" y="43" width="95" height="7" rx="2"/><rect x="51" y="39" width="18" height="20" rx="3"/></g>' +
-        z + kisteStern(101, 14, 6, .95) + kisteStern(16, 24, 3.5, .7) + kisteStern(110, 40, 2.5, .6) + '</svg>';
+function kisteBild(k) { return '<img class="kiste-bild" src="bilder/' + (KISTE_BILD[k] || KISTE_BILD.aus) + '_zu.webp" alt="" draggable="false">'; }   // KI-Bild der Kiste (zu)
+// Mehrere auf einmal öffnen (wie RoK „10×“): höchstens 10, sonst so viele, wie die Edelsteine reichen – nur bei Kisten unter 500 (die großen bleiben einzeln: Bündnis-Geschenk je Kiste)
+const KISTE_MEHR = 10;
+const kistenMehrN = preis => Math.max(0, Math.min(KISTE_MEHR, Math.floor(gems / preis)));
+function kistenMehrKnopf(id, preis) {               // „10×“ (oder „N×“ mit dem Rest) neben dem Einzel-Knopf
+    const n = kistenMehrN(preis), m = n >= 2 ? n : KISTE_MEHR, rest = n >= 2 && n < KISTE_MEHR;   // rest: für 10× reicht es nicht – „max. N×“ sagt, warum es weniger sind
+    const was = rest ? 'Für ' + KISTE_MEHR + '× reichen deine Edelsteine nicht – ' + m + ' Kisten öffnen' : m + ' Kisten öffnen';
+    return '<button type="button" class="ware-preis" data-mehr="' + id + '" aria-label="' + was + '" title="' + was + '"' + (n < 2 ? ' disabled' : '') + '><span class="ware-x">' + (rest ? 'max. ' : '') + m + '×</span>' + icon('gem') + '<b>' + fmtNum(m * preis) + '</b></button>';
 }
-for (const el of document.querySelectorAll('[data-kiste-art]')) el.innerHTML = kisteBild(el.dataset.kisteArt, 'k');
+for (const el of document.querySelectorAll('[data-kiste-art]')) el.innerHTML = kisteBild(el.dataset.kisteArt);
 shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sinfo]'); if (!b) return;   // „i“: Erklärung/Chancen auf und zu
     const k = b.dataset.sinfo, auf = !shopInfoAuf.has(k); if (auf) shopInfoAuf.add(k); else shopInfoAuf.delete(k);
     b.setAttribute('aria-expanded', auf ? 'true' : 'false'); b.classList.toggle('on', auf);
@@ -7879,30 +7799,44 @@ function heroChestOpen(who, c) {                    // the same chest for you an
     if (c.gems >= 500) { if (who === 'player') alsBefehl('bund', { op: 'kiste', c: c.id }); else if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste'); }   // große Kiste: Geschenk fürs Bündnis
     const got = []; for (let i = 0; i < c.n; i++) { const h = heroGrantShards(who, c.sh, null, c.minR); if (h) got.push(h); } return got;
 }
-shopPopup.addEventListener('click', e => { const karte = e.target.closest('#heroChestOpts .ware'), bt = e.target.closest('[data-hchest]') || (karte && karte.querySelector('[data-hchest]')); if (!bt || bt.disabled) return;   // die ganze Karte ist der Knopf (Spieltest: Tipp aufs Bild lief ins Leere)
-    const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (!c) return;
-    if (gems < c.gems) { flashHint('Zu wenig Edelsteine – die ' + c.name + ' kostet ' + fmtNum(c.gems) + '.', 3000); return; }
+function heroChestKauf(c, n, bt) {                   // n Heldenkisten auf einmal (Edelsteine genau n-mal) – dieselbe Kiste wie bisher, nur öfter
+    if (gems < c.gems * n) { flashHint('Zu wenig Edelsteine – ' + (n > 1 ? n + '× ' : 'die ') + c.name + ' kostet ' + fmtNum(c.gems * n) + '.', 3000); return; }
     if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
-    if (!gemsWirklich('kiste:' + c.id, c.gems, bt)) return;
-    gems -= c.gems; const got = heroChestOpen('player', c); questProgress('crate', 1); updateHud(); saveGame(); renderShop();   // (zählt für „Öffne … Kisten“)
-    const res = document.getElementById('shopHeroResult');
-    res.innerHTML = '<b class="hchest-h">' + c.name + '</b>' + got.map(h => { const s = heroSt('player', h.id), need = s.own ? (s.q >= HERO_MAXQ ? 0 : heroStepCost(h, s.q)) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r];
-        return '<div class="hchest-row" style="--rc:' + rd.color + '">' + heroImg(h.id, 'hchest-pic') + '<span><b>' + h.name + '</b><small style="color:' + rd.color + '">' + rd.label + '</small></span><i>+' + c.sh + ' Splitter' + (need ? ' · ' + (s.sh >= need ? (s.own ? 'Aufwerten bereit' : 'Freischalten bereit') : s.sh + ' / ' + need) : '') + '</i></div>'; }).join('') +
-        '<button type="button" class="btn btn--primary btn--sm" data-hchest-hall>Zu den Helden</button>';
-    res.hidden = false; res.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); });
+    if (!gemsWirklich((n > 1 ? 'mehr:' : 'kiste:') + c.id, c.gems * n, bt)) return;
+    const got = []; let anz = 0;
+    for (; anz < n && gems >= c.gems && heroChestPool(c.minR).length; anz++) { gems -= c.gems; got.push(...heroChestOpen('player', c)); questProgress('crate', 1); }   // (zählt für „Öffne … Kisten“)
+    updateHud(); saveGame(); renderShop();
+    const k = HCHEST_ART[c.id] || 'held', beute = got.map(h => ({ a: 'sh', n: c.sh, held: h.id }));
+    // (keine Liste mehr unten im Shop – das Belohnungs-Fenster mit Animation zeigt alles, Alexander 7.10.)
+    beuteFenster(c.name, beute, { kiste: k, n: anz, unter: anz > 1 ? anz + ' Kisten geöffnet' : '' });
+}
+shopPopup.addEventListener('click', e => { if (e.target.closest('[data-mehr]')) return;   // (10×: eigener Knopf unten)
+    const karte = e.target.closest('#heroChestOpts .ware'), bt = e.target.closest('[data-hchest]') || (karte && karte.querySelector('[data-hchest]')); if (!bt || bt.disabled) return;   // die ganze Karte ist der Knopf (Spieltest: Tipp aufs Bild lief ins Leere)
+    const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (c) heroChestKauf(c, 1, bt); });
+shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-mehr]'); if (!bt || bt.disabled) return;
+    if (bt.dataset.mehr === 'aus') { ausKistenKauf(kistenMehrN(CRATE_GEM_COST), bt); return; }
+    const c = HERO_CHESTS.find(x => x.id === bt.dataset.mehr); if (c && c.gems < GEMS_WIRKLICH) heroChestKauf(c, kistenMehrN(c.gems), bt); });
 shopPopup.addEventListener('click', e => { if (e.target.closest('[data-hchest-hall]')) { closeAllPopups(); openHeroHall(); } });
+function preiseFaerben(root) {                         // Edelstein-Preise: reicht es nicht, steht der Preis rot (sonst hell) – überall dieselbe Regel
+    for (const b of root.querySelectorAll('.ware-preis:not(.thron)')) { const t = b.querySelector('b'), n = t ? parseInt(t.textContent.replace(/\D/g, ''), 10) : NaN;
+        b.classList.toggle('zu-teuer', n > 0 && n > Math.floor(gems)); }
+}
+let kopfVorab = null;
 function renderShop() {
+    if (!kopfVorab) kopfVorab = HEROES.map(h => { const i = new Image(); i.src = heroPic(h.id); return i; });   // Heldenköpfe vorab laden: in den Splitter-Kacheln nach dem Kistenöffnen nie ein leerer Kreis
     const hdTab = document.querySelector('#shopTabs [data-stab="hd"]'), hdHier = typeof hdDa === 'function' && !!hdDa();   // der Reiter „Händler“ nur, wenn einer da ist
     if (hdTab.hidden === hdHier) hdTab.hidden = !hdHier;
     if (shopTab === 'hd' && !hdHier) { showShopTab('gems'); return; }
     if (shopTab === 'shield') renderShieldState(); else if (shopTab === 'gems') renderHeroChests();
-    const tc = document.getElementById('shopThroneCount'); setText(tc, fmtCompact(throneState.pts || 0)); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
+    const tc = document.getElementById('shopThroneCount'); setText(tc, fmtHud(throneState.pts || 0)); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
     if (shopTab === 'throne') renderThroneShop();
     if (shopTab === 'hd' && typeof hdRender === 'function') hdRender();
     if (shopTab === 'markt' && AUF) liveHtml(document.getElementById('shopMarkt'), AUF.marktHtml());
-    setText(shopGemCount, fmtCompact(Math.floor(gems)));
+    setText(shopGemCount, fmtHud(Math.floor(gems)));
     shopGemCount.title = fmtNum(Math.floor(gems)) + ' Edelsteine';
     shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
+    const mehr = document.querySelector('#shopPopup [data-mehr="aus"]'); if (mehr && !gemsArmed('mehr:aus')) mehr.outerHTML = kistenMehrKnopf('aus', CRATE_GEM_COST);
+    preiseFaerben(document.getElementById('shopPopup'));
 }
 function openShop(tab) {                              // der EINE Shop (Dock); tab: gems | shield | throne | hd | markt
     closeAllPopups();
@@ -7913,10 +7847,11 @@ shopBtn.addEventListener('click', () => { if (isPanelOpen(shopPopup)) shopCloseB
 shopCloseBtn.addEventListener('click', () => {
     closePanel(shopPopup);
 });
-shopOpenCrateBtn.addEventListener('click', () => {
-    const item = openCrate();
+function ausKistenKauf(n, bt) {                     // n Ausrüstungskisten (openCrate n-mal: Edelsteine und Teile genau wie n einzelne Käufe)
+    if (n > 1 && !gemsWirklich('mehr:aus', CRATE_GEM_COST * n, bt)) return;
+    const items = []; for (let i = 0; i < n; i++) { const it = openCrate(); if (!it) break; items.push(it); }
     renderShop();
-    if (!item) {
+    if (!items.length) {
         shopCrateResult.style.display = 'block';
         delete shopCrateResult.dataset.r;
         shopCrateResult.innerHTML = '<div class="tile empty">' + icon('gem') + '</div>' +
@@ -7924,16 +7859,10 @@ shopOpenCrateBtn.addEventListener('click', () => {
         shopCrateResult.scrollIntoView({ block: 'nearest' });
         return;
     }
-    const rd = RARITY_DEFS[item.rarity];
-    const slotDef = EQUIPMENT_DEFS[item.slot];
-    shopCrateResult.style.display = 'block';
-    shopCrateResult.dataset.r = rd.key;
-    shopCrateResult.innerHTML =
-        '<div class="tile" data-r="' + rd.key + '">' + icon(slotDef.icon) + '<span class="lvl">' + item.level + '</span></div>' +
-        '<div><span class="overline rar-text" data-r="' + rd.key + '">' + rd.label + '</span><b>' + slotDef.name + '</b>' +
-        '<small>Stufe ' + item.level + ' · im Inventar</small></div>';
-    shopCrateResult.scrollIntoView({ block: 'nearest', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-});
+    const beute = items.map(it => ({ a: 'item', slot: it.slot, r: it.rarity }));
+    beuteFenster('Ausrüstungskiste', beute, { kiste: 'aus', n: items.length, unter: items.length > 1 ? items.length + ' Kisten geöffnet' : '' });
+}
+shopOpenCrateBtn.addEventListener('click', () => ausKistenKauf(1, shopOpenCrateBtn));
 shopToEquipBtn.addEventListener('click', () => {
     closePanel(shopPopup);
     renderProfile();
@@ -8137,8 +8066,9 @@ document.getElementById('welcomeOkBtn').addEventListener('click', () => { closeW
 document.getElementById('welcomeModal').addEventListener('click', e => { if (e.target.id === 'welcomeModal') { closeWelcome(); maybeShowDaily(); } });
 afterSplash(() => setTimeout(() => { if (welcomeFrom) showWelcome(); }, 700));
 
-// Center the view on the player's island at start
+// Center the view on the player's island at start – auf „mittel“: die eigene Burg gut erkennbar, die Nachbarn im Bild
 const startIsland = islandById[playerIslandId];
+mapState.zoom = mapState.targetZoom = 0.012;
 mapState.offsetX = window.innerWidth / 2 - startIsland.x * mapState.zoom;
 mapState.offsetY = window.innerHeight / 2 - startIsland.y * mapState.zoom;
 
@@ -8152,15 +8082,22 @@ let pendingSendFromId = null;
 
 const hintEl = document.getElementById('hint');
 const defaultHint = hintEl.textContent;
-let hintResetTimer = null;
+let hintResetTimer = null; var hintAm = 0;            // hintAm: wann der letzte Hinweis kam
 var splashQueue, splashFinished;   // no initialisers: afterSplash() already runs earlier in the script (hoisting)
 function afterSplash(fn) { if (splashFinished || SYSTEM) { if (!SYSTEM) fn(); return; }   // (Weltrechner: kein Ladebildschirm – Hinweise braucht er nicht)
      else (splashQueue || (splashQueue = [])).push(fn); }
 function splashDone() { splashFinished = true; const q = splashQueue || []; splashQueue = []; q.forEach(f => { try { f(); } catch (e) {} }); }
+function hintFrei() {                           // Desktop: liegt der Hinweis über einem offenen Fenster (z. B. Basis-Fenster unten rechts), oben unter das HUD
+    hintEl.classList.remove('toast--oben');
+    if (!hintEl.textContent || innerWidth < 900 || innerHeight <= 500) return;
+    const r = hintEl.getBoundingClientRect();
+    if ([...document.querySelectorAll('.panel.is-open')].some(p => { const q = p.getBoundingClientRect(); return q.width > 0 && r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top; })) hintEl.classList.add('toast--oben');
+}
+function hintFrisch() { return !!hintEl.textContent && hintEl.textContent !== defaultHint && Date.now() - hintAm < 2500; }   // ein Hinweis steht erst kurz: nichts drüberschreiben
 function flashHint(text, ms, lang) {                // lang: langer Hinweis – ganz lesbar (kein „…“), am Handy nicht über einem offenen Fenster
     clearTimeout(hintResetTimer);
     hintEl.classList.toggle('toast--lang', !!lang);
-    hintEl.textContent = text;
+    hintEl.textContent = text; hintFrei(); hintAm = Date.now();
     if (ms) hintResetTimer = setTimeout(() => { hintEl.textContent = defaultHint; hintEl.classList.remove('toast--lang'); }, ms);
 }
 // ===== FOG + PASSES (drawing) =====
@@ -8254,15 +8191,20 @@ function nebelLandPfade() {
         P.moveTo(lm.shape[0].x, lm.shape[0].y); for (const q of lm.shape) P.lineTo(q.x, q.y); P.closePath(); }
     return nebelLand;
 }
-let nebelWeltCv = null;                                 // die Weltübersicht unter dem Nebel (dunkel, Ringfarben, Gebirgs-Bänder) – EINMAL gemalt, danach nur verschoben/skaliert
+let nebelWeltCv = null;                                 // die Weltübersicht unter dem Nebel – EINMAL gemalt, danach nur verschoben/skaliert
 function nebelWelt() {
     if (nebelWeltCv) return nebelWeltCv;
+    if (karteBilder()) {                                // mit den Bildern: die Übersicht wie die Karten-Testdatei (03a), nur leicht verschleiert
+        const U = karteUebersicht(), c = document.createElement('canvas'); c.width = c.height = U.width;
+        const g = c.getContext('2d'); g.drawImage(U, 0, 0); g.fillStyle = 'rgba(16,20,28,.28)'; g.fillRect(0, 0, c.width, c.height);
+        c.R = FRAME_HALF; return (nebelWeltCv = c);
+    }
     const R = FRAME_HALF + 20000, n = 1536, k = n / (2 * R), c = document.createElement('canvas'); c.width = c.height = n;
     const g = c.getContext('2d'); g.fillStyle = '#1a2433'; g.fillRect(0, 0, n, n);
     g.setTransform(k, 0, 0, k, R * k, R * k);
     g.globalAlpha = .75; for (const [art, P] of Object.entries(nebelLandPfade())) { g.fillStyle = 'rgb(' + BODEN_FARBE[art] + ')'; g.fill(P); }
     g.globalAlpha = 1; paintBaender(g, k / 1.4, true);
-    c.R = R; return (nebelWeltCv = c);
+    c.R = R; return c;                                  // (ohne Bilder nur vorläufig: nicht merken)
 }
 function drawFog(view, now) {
     const z = mapState.zoom;
@@ -8305,7 +8247,7 @@ function drawFog(view, now) {
         ctx.lineJoin = 'round'; ctx.fillStyle = ctx.strokeStyle = 'rgba(228,200,134,.55)'; ctx.lineWidth = 6 / z;
         for (const t of TERR.player.values()) { ctx.fill(t.path); ctx.stroke(t.path); }
         const mitte = landmasses[0];                                                // die Mitte (Thron) ist immer zu sehen – das Ziel aller (wie RoK)
-        if (!isExplored(mitte.id)) { ctx.fillStyle = 'rgba(' + BODEN_FARBE.sand + ',.9)'; ctx.fill(mitte.path); }
+        if (!isExplored(mitte.id)) { ctx.fillStyle = 'rgba(' + BODEN_FARBE[mitte.boden] + ',.9)'; ctx.fill(mitte.path); }
         ctx.strokeStyle = '#d4ad66'; ctx.lineWidth = 3 / z; ctx.stroke(mitte.path);
         ctx.restore();
     }
@@ -8383,15 +8325,20 @@ function drawPasses(view, now) {                   // a gatehouse on every gated
         // Karten-Bilder: der Countdown nie über dem Schild mit der Stufe – waagrecht über dem Tor-Bild, senkrecht über dem Schild neben dem Weg
         const px = !tm ? mx : tm.senk ? senkSchildX(tm, w, z) + w / 2 : toSX(tm.x);
         const cy = !tm ? my - H * .15 + H * .42 + 13 : tm.senk ? toSY(tm.y + TOR_SENK.hoch * .05) - 13
-            : toSY(tm.y) - KARTE_MASS.tor * KB.img.tor_zu.height / KB.img.tor_zu.width * KETTE_ACHSE.tor_zu * karteSkala(z) * z - 4;
+            : toSY(tm.y) - KARTE_MASS.tor * KB.img.tor_zu.height / KB.img.tor_zu.width * KETTE_ACHSE.tor_zu * z - 4;
         ctx.fillStyle = 'rgba(14,12,10,.9)'; ctx.strokeStyle = 'rgba(228,200,134,.75)'; ctx.lineWidth = 1.2;
         ctx.beginPath(); ctx.roundRect ? ctx.roundRect(px - w / 2, cy - 10, w, 20, 10) : ctx.rect(px - w / 2, cy - 10, w, 20); ctx.fill(); ctx.stroke();
         drawGlyph(ctx, 'lock', px - w / 2 + 12, cy, 12, '#f0d69a');
         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(label, px - w / 2 + 22, cy + .5);
     }
 }
+const heimWappenSicht = z => Math.max(0, Math.min(1, (0.005 - z) / 0.002));
+function heimWappenRect(z) {                           // Tipp-Fläche des Wappens (öffnet die Hauptstadt; Funde dahinter werden nicht gezeigt) oder null
+    const heim = heimWappenSicht(z) > 0 && islandById[playerIslandId]; if (!heim) return null;
+    return { id: heim.id, x: heim.x * z + mapState.offsetX - 22, y: heim.y * z + mapState.offsetY - 22, w: 44, h: 44 };
+}
 function drawHeimWappen(z) {                           // ganz draußen (die Basis selbst ist nur noch ein Punkt): das eigene Wappen an der Hauptstadt, über allem
-    const k = Math.max(0, Math.min(1, (0.005 - z) / 0.002)), heim = k > 0 && islandById[playerIslandId]; if (!heim) return;
+    const k = heimWappenSicht(z), heim = k > 0 && islandById[playerIslandId]; if (!heim) return;
     setScreen(ctx);
     const hx = heim.x * z + mapState.offsetX, hy = heim.y * z + mapState.offsetY;
     ctx.save(); ctx.globalAlpha = k;
@@ -8894,10 +8841,7 @@ function defeatBoss(boss) {
     saveProgression(); saveGame(); updateHud();
     endWander(null);
     document.getElementById('rewardModalSub').textContent = boss.name + ' ist gefallen – die Beute liegt unter Events → Belohnung.';
-    const list = document.getElementById('rewardModalRewards'), rd = RARITY_DEFS[WANDER_CRATE];
-    list.innerHTML = '<li style="border-color:' + rd.color + '66">' + icon('shop') + '<span>Kiste</span><b style="color:' + rd.color + '">mind. ' + rd.label + '</b></li>' +
-        '<li>' + icon('gem', 'ico-gem') + '<span>Edelsteine</span><b>+' + rewardGems + '</b></li><li>' + icon('star') + '<span>Helden-Splitter</span><b>+' + shN + '</b></li>';
-    [...list.children].forEach((li, i) => { li.style.animationDelay = (200 + i * 120) + 'ms'; });
+    beuteLis([{ a: 'kiste', k: kisteVonR(WANDER_CRATE), r: WANDER_CRATE, min: true }, { a: 'gems', n: rewardGems }, { a: 'sh', n: shN }], document.getElementById('rewardModalRewards'));   // Kacheln wie RoK (05e)
     bossRewardPending = true;
     setTimeout(() => { bossRewardPending = false; document.getElementById('rewardModal').hidden = false; }, 9800);   // after the fight on the map
 }
@@ -9131,7 +9075,7 @@ function plunderMove(from, to, loot, roh) {         // Gold (und bei der Hauptst
         if (to === 'player') coins += loot; else if (to) botCoins[to] = (botCoins[to] || 0) + loot; }
     if (roh && AUF && (roh.h || roh.s || roh.e)) { AUF.rohDazu(from, { h: -roh.h, s: -roh.s, e: -roh.e }); if (to) AUF.rohDazu(to, roh); }
 }
-const beuteText = p => p ? [p.loot ? fmtCompact(p.loot) + ' Gold' : '', ...(p.roh ? [['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].filter(([x]) => p.roh[x] > 0).map(([x, n]) => fmtCompact(p.roh[x]) + ' ' + n) : [])].filter(Boolean).join(', ') : '';
+const beuteText = p => p ? [p.loot ? fmtCompact(p.loot) + ' Münzen' : '', ...(p.roh ? [['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].filter(([x]) => p.roh[x] > 0).map(([x, n]) => fmtCompact(p.roh[x]) + ' ' + n) : [])].filter(Boolean).join(', ') : '';
 // die Hauptstadt brennt nach einem verlorenen Kampf (nur zu sehen) – Welt-Teil openWaterBrand: { Basis: brennt bis }
 const BRAND_MS = 30 * 60000;
 var brand = (() => { try { const v = JSON.parse(store.get('openWaterBrand')); return v && typeof v === 'object' ? v : {}; } catch (e) { return {}; } })();
@@ -9165,19 +9109,30 @@ const cityBuildOf = (c, id) => c.builds.find(b => b.id === id) || null;
 function saveCity() { store.set('openWaterCity', JSON.stringify(cityState)); }
 const KEEP_DEF = { id: 'keep', name: 'Burg', icon: 'castle' };   // die Burg als „Gebäude“ (Bauarbeiter, Bauzeit) – Paket D
 function cityDef(id) { return id === 'keep' ? KEEP_DEF : CITY_BUILDINGS.find(b => b.id === id); }
+// Burg-Tempo (Alexander 7.10., rokzahlen): Bauzeit der Burg je Schritt L → L + 1 in Sekunden. Anfang schnell (1 → 2: 10 s,
+// Burg 10 am ersten Tag), ab 11 steil: Saison 1 ≈ Burg 16–18 (sehr aktiv), Burg 25 nach etwa 4 Saisons
+// (Funktionen statt Konstanten: loadCity kürzt Bauten evtl. schon beim Laden früherer Teile)
+function burgZeitTab(L) {
+    const T = 86400, Z = [10, 60, 300, 900, 1800, 3600, 7200, 14400, 28800, 43200,   // 1 → 2 … 10 → 11
+        T, 1.5 * T, 2 * T, 4 * T, 6 * T, 8 * T, 11 * T, 14 * T, 18 * T,                 // 11 → 12 … 19 → 20
+        22 * T, 27 * T, 32 * T, 38 * T, 45 * T];                                         // 20 → 21 … 24 → 25
+    return Z[Math.max(1, Math.min(Z.length, L | 0 || 1)) - 1];
+}
+// Grundwert der Burg-Kosten (Holz; Stein 0,8 ×, Eisen 0,5 ×, Münzen 2 × in wirtM): 1.000 · 1,75 je Stufe bis 10, danach × 1,6 – Burg 25 ≈ 110 Mio. Holz
+function burgBasis(L) { return 1000 * Math.pow(1.75, Math.min(Math.max(1, L), 10) - 1) * Math.pow(1.6, Math.max(0, L - 10)); }
+function stadtFaktor(L) { return L >= 25 ? Math.pow(1.15, L - 24) : 1; }   // (nur das Krankenhaus geht über 25: Burg 24 + 15 % je Stufe)
 function cityCost(id, level) {                    // coins to go from `level` to level + 1 (Münzen: wirtM)
-    if (id === 'keep') return niceRound(wirtM(2000 * Math.pow(1.85, level - 1)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
-    return niceRound(wirtM(500 * Math.pow(1.9, level)));
+    if (id === 'keep') return niceRound(wirtM(2 * burgBasis(level)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
+    return niceRound(wirtM(.6 * burgBasis(Math.min(24, level)) * stadtFaktor(level)));   // Gebäude: 30 % der Burg derselben Stufe
 }
 function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)
-    // fast at first (20 s … 1,5 h up to level 12), then +20 % per level, never more than 7 days - like the big strategy games
-    return id === 'keep' ? (AUF ? AUF.burgZeitRoh(level) : 60 * Math.pow(1.55, level - 1)) : Math.min(7 * 86400, level <= 12 ? 20 * Math.pow(1.6, level) : 20 * Math.pow(1.6, 12) * Math.pow(1.2, level - 12));   // die Burg: eigene, längere Zeiten
+    // Gebäude: 15 % der Burg-Zeit derselben Stufe (mind. 10 s; Krankenhaus über 25: + 10 % je Stufe), nie mehr als 7 Tage
+    return id === 'keep' ? burgZeitTab(level) : Math.min(7 * 86400, Math.max(10, .15 * burgZeitTab(Math.min(24, level)) * (level >= 25 ? Math.pow(1.1, level - 24) : 1)));
 }
 function cityTimeSec(id, level) {
     return Math.round(cityTimeRoh(id, level));
 }
 function cityClampBuild(b, now) {                 // a build started under the old, far too long times ends by the new rule at the latest
-    if (b && b.id === 'keep' && !AUF) return;        // (beim Laden fehlt aufbau.js noch: die Burg hat dort ihre lange Bauzeit 1–60 Tage – nicht auf die alte kürzen)
     if (b && b.endsAt - (b.startedAt || now) > cityTimeSec(b.id, b.to - 1) * 1000) b.endsAt = Math.min(b.endsAt, (b.startedAt || now) + cityTimeSec(b.id, b.to - 1) * 1000);
 }
 function fmtDuration(sec) {                       // Bauzeiten kurz: Einheiten, die 0 sind, fallen weg (1 T statt 1 T 0 h 0 m 0 s)
@@ -9269,13 +9224,13 @@ function cityShow() {
     document.getElementById('cityName').textContent = (profileName.value || 'Deine') + (profileName.value ? 's Hauptstadt' : ' Hauptstadt');
     cityView.hidden = false; stadtLeiste(true);
     cityOpenId = null; cityRingZu(); document.getElementById('citySheet').hidden = true;
-    updateCityBuilder();
+    updateCityBuilder(); cityWischZeigen();
     cancelAnimationFrame(cityRaf); cityRaf = requestAnimationFrame(cityFrame);
 }
 // Eintauchen wie bei RoK: die Kamera fliegt bis kurz vor die Hauptstadt (CITY_NAH × größter Zoom, die Basis noch klein),
 // die Karte taucht noch ein Stück weiter (nur ein CSS-Zoom des Karten-Bilds, höchstens CITY_TAUCH – sonst wird das flache
-// Basis-Symbol riesig und unscharf) und wird weich; schon bei ~40 % blendet die Stadt darüber und kommt von unten näher,
-// dünne Wolken am Rand decken die Kanten. Beim Verlassen umgekehrt: die Stadt fällt weg und blendet aus, die Karte kommt
+// Basis-Symbol riesig und unscharf) und wird weich; schon bei ~40 % blendet die Stadt darüber und setzt sich aus der Nähe,
+// dünne Wolken am Rand decken die Kanten. Beim Verlassen umgekehrt: die Stadt rückt näher und blendet aus, die Karte kommt
 // aus der Nähe zurück auf ihre Höhe.
 const CITY_TAUCH = 1.8, CITY_NAH = .4, CITY_TAUCH_MS = 700, CITY_BLENDE_AB = 280, CITY_BLENDE_MS = 320;
 function karteTauchen(von, bis, ms, isl) {
@@ -9291,6 +9246,7 @@ function stadtBlende(von, bis, dann) {                                       // 
     a.onfinish = () => { a.cancel(); if (dann) dann(); };
 }
 function openCity(dann) {                                                   // dann: läuft, sobald die Stadt da ist (z. B. die Burg öffnen) – nicht nach fester Zeit
+    if (typeof dann !== 'function') dann = null;
     if (!cityView.hidden && !cityBusy) { if (dann) dann(); return; }
     if (cityBusy || !cityView.hidden) return;
     closeAllPopups();
@@ -9302,8 +9258,8 @@ function openCity(dann) {                                                   // d
     setTimeout(() => { const tauch = karteTauchen(1, CITY_TAUCH, CITY_TAUCH_MS, home);   // 2) … dives on a little, getting soft …
         let offen = 2; const fertig = () => { if (--offen === 0) cityBusy = false; };   // frei erst, wenn die Wolken weg sind UND die Karte nicht mehr eintaucht
         cloudsRun(240, 0, .35, () => cloudsRun(300, .35, 0, fertig));      // (nur Wolken am Rand, nie ganz weiß – ab dem Tipp nach 1,1 s ganz weg)
-        setTimeout(() => { cityShow(); stadtBlende(0, 1); if (dann) dann();    // 3) … and the town fades in, coming up from below
-            if (cityCam) cityCam.anim = { from: .62, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
+        setTimeout(() => { cityShow(); stadtBlende(0, 1); if (dann) dann();    // 3) … and the town fades in, settling from close by
+            if (cityCam) cityCam.anim = { from: 1.18, t0: performance.now(), dur: 1100 }; else cityPendingAnim = true; }, CITY_BLENDE_AB);
         setTimeout(() => { if (tauch) tauch.cancel(); fertig(); }, CITY_TAUCH_MS); }, 560);
 }
 let cityPendingAnim = false;
@@ -9314,11 +9270,11 @@ function closeCity() {
     const home = islandById[playerIslandId], back = cityMapReturn || { zoom: mapState.zoom, x: (viewW / 2 - mapState.offsetX) / mapState.zoom, y: (viewH / 2 - mapState.offsetY) / mapState.zoom };
     cityMapReturn = null;
     if (home) flyTo(home.x, home.y, { zoom: maxZoom * CITY_NAH, instant: true });   // unter der Stadt liegt die Karte schon über der Hauptstadt
-    if (cityCam) cityCam.anim = { from: 1, to: .62, t0: performance.now(), dur: 650 };   // the town falls away …
+    if (cityCam) cityCam.anim = { from: 1, to: 1.18, t0: performance.now(), dur: 650 };   // the town draws close as it fades …
     const auf = karteTauchen(CITY_TAUCH, 1, 650, home);                      // … the map comes back up from close by …
     cloudsRun(300, 0, .35, () => cloudsRun(500, .35, 0));
     let offen = 2; const fertig = () => { if (--offen === 0) cityBusy = false; };   // frei erst, wenn die Stadt weg ist UND die Karte zurückfliegt (unter Last kann das Ausblenden länger dauern)
-    setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); cityLagenFrei(); requestRender(); fertig(); }), 120);
+    setTimeout(() => stadtBlende(1, 0, () => { cityView.hidden = true; stadtLeiste(false); cancelAnimationFrame(cityRaf); requestRender(); fertig(); }), 120);
     setTimeout(() => { if (auf) auf.cancel();
         flyTo(back.x, back.y, { zoom: back.zoom, ms: 900 });                // … and opens up again where it was
         fertig(); }, 650);
@@ -9361,77 +9317,47 @@ function renderCitySheetTimer() {
 // Rohstoff-Liste oben (aufbau.js): ein Tipp woanders hin (z. B. ein Fenster öffnen) schließt sie – sie bleibt nicht über dem Fenster stehen
 document.addEventListener('click', e => { const d = document.getElementById('rohDrop');
     if (d && !d.hidden && typeof rohUmschalten === 'function' && !e.target.closest('#hudRoh, #rohDrop')) rohUmschalten(false); }, true);
-// ===== DEINE BURG (tap the castle in the city): upgrade it, pick a skin, switch on a Friedensschild =====
-var SKIN_DEFS = {
-    standard: { id: 'standard', name: 'Standard', cost: 0, stone: null, roof: null },
-    winter:   { id: 'winter',   name: 'Winterburg',     cost: 200, stone: ['#f6f9fd', '#cfd9e5', '#8797ab'], roof: ['#ffffff', '#c8dbef', '#6f86a3'] },
-    wald:     { id: 'wald',     name: 'Waldfestung',    cost: 200, stone: ['#d9dcc3', '#a4aa86', '#63694b'], roof: ['#86b86f', '#3f7a3a', '#1f3d1c'] },
-    schatten: { id: 'schatten', name: 'Schattenfeste',  cost: 300, stone: ['#8a8698', '#5d5868', '#2e2b36'], roof: ['#a585cf', '#5b2c6f', '#2a1033'] },
-    gold:     { id: 'gold',     name: 'Goldene Feste',  cost: 500, stone: ['#f6e7c1', '#d6ba7f', '#8e6d35'], roof: ['#fff1b8', '#e2b54a', '#7a5414'] }
-};
-function loadSkins() { let v; try { v = JSON.parse(store.get('openWaterSkins')); } catch (e) {} return Object.assign({ own: ['standard'], active: 'standard' }, v || {}); }
-function activeSkin() { const v = loadSkins(), d = SKIN_DEFS[v.active]; return d && d.stone ? d : null; }
+// ===== DEINE BURG (tap the castle in the city): upgrade it, switch on a Friedensschild =====
 function shieldStock() { let v; try { v = JSON.parse(store.get('openWaterShieldStock')); } catch (e) {} return Object.assign({ 2: 0, 8: 0, 24: 0 }, v || {}); }
-function renderKeepSheet() { AUF.renderKeep(); const f = cityFehlt('keep'); if (f) setBtnLabel(document.getElementById('cityUpgradeBtn'), f); }   // die Burg-Stufe (aufbau.js)
-function cityFehlt(id) {                           // fehlt nur etwas zum Bezahlen: der Knopf sagt, was („Fehlt: 2.000 Holz“, mehreres: „Fehlt: Holz, Stein, Eisen“)
-    if (!AUF || cityBlocker(id)) return '';
+function renderKeepSheet() { AUF.renderKeep(); const f = cityFehlt('keep'); if (f) setBtnLabel(document.getElementById('cityUpgradeBtn'), f); cityWarteSetzen(f && 'keep'); }   // die Burg-Stufe (aufbau.js)
+function cityFehltListe(id) {                      // was zum Bezahlen fehlt: [[Menge, Name], …]
+    if (!AUF || cityBlocker(id)) return [];
     const c = loadCity(), k = AUF.stadtKosten(id, id === 'keep' ? AUF.burgStufe('player') : c.levels[id] || 0), r = AUF.rohVon('player') || {};
-    const f = (k.c > coins ? [[k.c - coins, 'Münzen']] : []).concat(['h', 's', 'e'].filter(x => k[x] > (r[x] || 0)).map(x => [k[x] - (r[x] || 0), AUF.ROH_DEF[x].name]));
+    return (k.c > coins ? [[k.c - coins, 'Münzen']] : []).concat(['h', 's', 'e'].filter(x => k[x] > (r[x] || 0)).map(x => [k[x] - (r[x] || 0), AUF.ROH_DEF[x].name]));
+}
+function cityFehlt(id) {                           // fehlt nur etwas zum Bezahlen: der Knopf sagt, was („Fehlt: 2.000 Holz“, mehreres: „Fehlt: Holz, Stein, Eisen“)
+    const f = cityFehltListe(id);
     return f.length > 1 ? 'Fehlt: ' + f.map(x => x[1]).join(', ') : f.length ? 'Fehlt: ' + fmtCompact(Math.ceil(f[0][0])) + ' ' + f[0][1] : '';
 }
-// ===== AUSSEHEN: every look in one place - Wappen, Rahmen (= Titel), Basis-Skin (+ Ring), Marsch-Skin. Basis und Marsch zu kaufen (Gems oder Thron-Punkte), Rahmen nicht (05a RAHMEN) =====
+function cityWarte(id) {                           // wann es reicht, beim jetzigen Ertrag pro Stunde („in ~7 Min.“; mehreres: das, was am längsten dauert) – nur Anzeige
+    const f = id ? cityFehltListe(id) : []; if (!f.length) return '';
+    const rs = AUF.rohStunde('player'), je = { Münzen: proStunde(totalCoinProductionPerTick()) };
+    for (const x of ['h', 's', 'e']) je[AUF.ROH_DEF[x].name] = rs[x];
+    const sec = f.reduce((m, x) => Math.max(m, je[x[1]] > 0 ? x[0] / je[x[1]] * 3600 : Infinity), 0);
+    if (!Number.isFinite(sec)) return '';           // (kein Ertrag: keine Zeit)
+    return 'in ~' + (sec < 3600 ? Math.max(1, Math.ceil(sec / 60)) + ' Min.' : sec < 172800 ? Math.ceil(sec / 3600) + ' Std.' : Math.ceil(sec / 86400) + ' Tagen');
+}
+function cityWarteSetzen(id) { setText(document.getElementById('cityUpWarte'), cityWarte(id)); }   // die kleine Zeile unter „Fehlt: …“
+// ===== AUSSEHEN: Wappen und Rahmen (= Titel, 05a RAHMEN) – nichts zu kaufen (Basis- und Marsch-Skins gibt es nicht mehr, Alexander 7.10.) =====
 var lkTab = 'frame';
-function lkPrice(d) { if (d.platz) return '<span class="lk-cost">' + icon('crown') + rahmenPlatzText(d) + '</span>'; if (d.buy === 'pass') return '<span class="lk-cost">' + icon('crown') + 'Saison-Pass</span>'; return d.tp ? '<span class="lk-cost' + ((throneState.pts || 0) < d.tp ? ' is-bad' : '') + '">' + icon('crown') + fmtNum(d.tp) + '</span>' : '<span class="lk-cost' + (gems < d.gems ? ' is-bad' : '') + '">' + icon('gem') + fmtNum(d.gems) + '</span>'; }
+function lkPrice(d) { return d.platz ? '<span class="lk-cost">' + icon('crown') + rahmenPlatzText(d) + '</span>' : ''; }   // woher ein Rahmen kommt
 function lkCard(kind, d, prev, has, on, label) {     // one look: preview, name, and Angelegt / Anlegen / price
     return '<button type="button" class="skin-card lk-card' + (on ? ' on' : '') + (has ? '' : ' is-shop') + '" data-lk="' + kind + ':' + d.id + '">' + prev + (label === false ? '' : '<b>' + (label || d.name) + '</b>') +
         '<small>' + (on ? icon('check') + 'Angelegt' : has ? 'Anlegen' : lkPrice(d)) + '</small></button>';
 }
-function lkDef(kind, id) {
-    if (kind === 'frame') return rahmenDef(id); if (kind === 'march') return MARCH_SKINS.find(m => m.id === id);
-    if (kind === 'style') return BAUSTILE[id] ? Object.assign({ id, name: BAUSTILE[id] }, BAUSTIL_PRICE[id]) : null;
-    if (kind === 'color') { const d = SKIN_DEFS[id]; return d ? { id, name: d.name, gems: d.cost } : null; } return null;
-}
-function lkHas(kind, id) { const d = lkDef(kind, id); if (!d) return false;
-    if (kind === 'frame') return rahmenHat('player', d); if (kind === 'march') return d.gems === 0 || (look.marchs || []).includes(id);
-    if (kind === 'style') return loadBaustil().own.includes(id); return loadSkins().own.includes(id); }
-function lkUse(kind, id) {                            // put on something you own
-    if (kind === 'frame' || kind === 'march') { look[kind] = id; saveLook(); }
-    else if (kind === 'style') { const v = loadBaustil(); v.style = id; store.set('openWaterBaustil', JSON.stringify(v)); }
-    else if (kind === 'color') { const sk = loadSkins(); sk.active = id; store.set('openWaterSkins', JSON.stringify(sk)); BUILDING_SPRITES.clear(); }
-    renderLook(); if (cityOpenId === '_keep') renderKeepSheet(); requestRender();
-}
-function lkBuy(kind, id, btn) {                       // Gems or Thron-Punkte; bought = put on at once (Rahmen: nur anlegen)
+function lkDef(kind, id) { return kind === 'frame' ? rahmenDef(id) : null; }
+function lkHas(kind, id) { const d = lkDef(kind, id); return !!d && rahmenHat('player', d); }
+function lkUse(kind, id) { look.frame = id; saveLook(); renderLook(); requestRender(); }   // anlegen, was du hast
+function lkBuy(kind, id) {                            // Rahmen gibt es nicht zu kaufen (Alexander 6.10.): nur der Hinweis, woher
     const d = lkDef(kind, id); if (!d) return;
     if (lkHas(kind, id)) { lkUse(kind, id); return; }
-    if (kind === 'frame') { flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500); return; }   // Rahmen nicht zu kaufen (Alexander 6.10.)
-    if (d.buy === 'pass') { flashHint('„' + d.name + '“ gibt es nur im Saison-Pass (Premium-Reihe) – unter „Events“.', 3000); return; }
-    const cost = d.tp || d.gems || 0;
-    if (d.tp ? (throneState.pts || 0) < cost : gems < cost) { flashHint('Zu wenig ' + (d.tp ? 'Thron-Punkte' : 'Edelsteine') + ' – „' + d.name + '“ kostet ' + fmtNum(cost) + '.', 2500); return; }
-    if (!d.tp && !gemsWirklich('lk:' + kind + ':' + id, cost, btn)) return;
-    if (d.tp) { throneState.pts -= cost; saveThrone(); } else gems -= cost;
-    if (kind === 'march') { look.marchs = [...new Set([...(look.marchs || []), id])]; saveLook(); }
-    else if (kind === 'style') { const v = loadBaustil(); v.own = [...new Set([...v.own, id])]; store.set('openWaterBaustil', JSON.stringify(v)); }
-    else { const sk = loadSkins(); sk.own = [...new Set([...sk.own, id])]; store.set('openWaterSkins', JSON.stringify(sk)); }
-    lkUse(kind, id);
-    updateHud(); saveGame(); sfx('coin'); flashHint('„' + d.name + '“ gekauft und angelegt.', 2500);
+    flashHint('„' + d.name + '“ ' + (d.platz ? 'bekommen am Saison-Ende die Spieler auf ' + rahmenPlatzText(d) + ' – bis zum nächsten Saison-Ende.' : 'gibt es nicht mehr – Rahmen gibt es am Saison-Ende und in der Mitte.'), 3500);
 }
 function renderLookTop() {                            // what you wear now + what you can pay with
     const el = document.getElementById('lkTop'); if (!el || document.getElementById('lookSheet').hidden) return;
     liveHtml(el, '<span class="frame-ring lk-me" data-frame="' + playerFrame() + '"><img alt="" src="' + crestDataUrl(48) + '"></span>' +
         '<span class="lk-me-t"><b>' + escapeHtml(profileName.value || 'Du') + '</b><small>' + escapeHtml(playerTitle()) + '</small></span>' +
-        '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtCompact(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>');
-}
-function lkMarchPrev() {                              // the march cards: a little column with your flag and the trail
-    for (const cv of document.querySelectorAll('[data-march-prev]')) { const g = cv.getContext('2d'), sk = MARCH_SKINS.find(m => m.id === cv.dataset.marchPrev), K = cv.width / 110, W = 110, y = 38;   // drawn on a 110 x 55 grid
-        g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); g.setTransform(K, 0, 0, K, 0, 0);
-        const tip = W - 22, at = d => ({ x: tip - 60 + d, y });
-        g.strokeStyle = 'rgba(228,200,134,.4)'; g.lineWidth = 1.5; g.setLineDash([5, 5]); g.beginPath(); g.moveTo(4, y); g.lineTo(W - 4, y); g.stroke(); g.setLineDash([]);
-        marchTrail(g, at, 60, sk, 900, 1);
-        for (let i = 0; i < 4; i++) { const x = tip - 13 - Math.floor(i / 2) * 8.5, yy = y + (i % 2 ? 3.4 : -3.4);
-            g.fillStyle = '#1a1d24'; g.fillRect(x - 1.7, yy - 3.4, 3.4, 6); g.fillStyle = '#ff8d82'; g.fillRect(x + .8, yy - 2.8, 1.8, 3.6);
-            g.fillStyle = '#aab2bc'; g.beginPath(); g.arc(x, yy - 4.7, 1.6, 0, Math.PI * 2); g.fill(); }
-        g.beginPath(); g.arc(tip, y, 7.5, 0, Math.PI * 2); g.fillStyle = '#141820'; g.fill(); g.lineWidth = 1.5; g.strokeStyle = '#ff8d82'; g.stroke(); drawGlyph(g, 'attack', tip, y, 10, '#ff8d82');
-        marchFlag(g, tip, y, sk, 'player'); }
+        '<span class="lk-pay"><span class="pill pill--gem">' + icon('gem') + '<b>' + fmtHud(Math.floor(gems)) + '</b></span><span class="pill pill--throne">' + icon('crown') + '<b>' + fmtCompact(throneState.pts || 0) + '</b></span></span>');
 }
 function renderLookSheet(live) {                     // live = jede Sekunde aus liveTick: der Wappen-Editor bleibt, wie er ist
     const sh = document.getElementById('lookSheet'); if (!sh || sh.hidden) return;
@@ -9450,22 +9376,7 @@ function renderLookSheet(live) {                     // live = jede Sekunde aus 
             '<div class="keep-h">Aus der Mitte</div><div class="lk-mid' + (rl ? ' is-ruler' : mt ? (mt.good ? ' is-good' : ' is-bad') : '') + '">' + ring(rl ? 'king' : mt ? (mt.good ? 'mgut' : 'mstraf') : 'bronze') + '<span><b>' + (rl ? 'Herrscher der Meere' : mt ? mt.name : 'Gerade keiner') + '</b><small>' +
                 (rl ? 'Solange du den Mega-Tempel hältst · geht vor' : mt ? mt.desc + ' · geht vor, bis zum nächsten Herrscher' : 'Den Rahmen aus der Mitte vergibt der Herrscher – er kommt und geht.') + '</small></span></div>' +
             '<small class="keep-note">Titel und Rahmen sind eins: so sehen dich alle in Profil und Rangliste. Rahmen gibt es nicht zu kaufen – Saison-Rahmen bekommen die besten 10 am Saison-Ende (bis zum nächsten), dazu die aus der Mitte.</small>'; }
-    else if (lkTab === 'base') { const bs = loadBaustil(), sk = loadSkins();
-        h = '<div class="keep-h">Baustil</div><div class="skin-grid lk-grid">' + Object.keys(BAUSTILE).map(k => lkCard('style', lkDef('style', k), '<canvas data-bk-prev="' + k + '" width="120" height="132"></canvas>', lkHas('style', k), bs.style === k)).join('') + '</div>' +
-            '<small class="keep-note">Gilt für alle deine Basen. Die Stufe zeigt der Stein, dich zeigen Dach und Fahne mit deinem Wappen.</small>' +
-            '<div class="keep-h">Hauptstadt</div><div class="keep-shields lk-cap">' + [['huegel', 'Auf Sockel'], ['wasser', 'Wasserschloss']].map(([k, n]) => '<button type="button" class="btn btn--' + (bs.cap === k ? 'primary' : 'secondary') + ' btn--sm" data-lk-cap="' + k + '">' + n + '</button>').join('') + '</div>' +
-            '<div class="keep-h">Farbe der Hauptstadt</div><div class="skin-grid lk-grid">' + Object.keys(SKIN_DEFS).map(k => lkCard('color', lkDef('color', k), '<canvas data-skin-prev="' + k + '" width="120" height="132"></canvas>', sk.own.includes(k), sk.active === k)).join('') + '</div>' +
-            '<div class="keep-h">Ring um deine Basen</div>' + ringCardsHtml(RING_SKINS, true) +
-            '<div class="ring-legend"><span><i style="--c:#ffd05a"></i>Gold · guter Titel</span><span><i style="--c:#e13030"></i>Rot · Straf-Titel</span><span><i class="blood" style="--c:#eb3c32"></i>Blutrot-Gold · Herrscher</span></div>' +
-            '<small class="keep-note">Ein Titel aus der Mitte geht vor, solange er gilt.' + ({ ruler: ' Du trägst gerade Blutrot-Gold.', good: ' Du trägst gerade Gold.', bad: ' Du trägst gerade Rot.' }[(ringStatusByOwner().get('player') || {}).k] || '') + '</small>'; }
-    else if (lkTab === 'march') { const cur = marchSkinOf('player').id;
-        h = '<div class="skin-grid lk-grid lk-grid--m">' + MARCH_SKINS.map(m => lkCard('march', m, '<canvas data-march-prev="' + m.id + '" width="308" height="154"></canvas>', lkHas('march', m.id), m.id === cur)).join('') + '</div>' +
-            '<small class="keep-note">So ziehen deine Truppen über die Karte: die Fahne mit deinem Wappen vorneweg, dahinter die Spur.</small>'; }
     if (!liveHtml(el, h) && live) return;                // live und nichts geändert: die Vorschau-Bilder bleiben stehen
-    if (lkTab === 'base') { bkPreviews(); const tier = towerTier(islandLevels[playerIslandId] || 1);
-        for (const cv of el.querySelectorAll('[data-skin-prev]')) { const g = cv.getContext('2d'), d = SKIN_DEFS[cv.dataset.skinPrev];
-            g.setTransform(1.75, 0, 0, 1.75, 60, 90); g.lineJoin = 'round'; paintTowerTier(g, 'player', true, true, tier, d.stone ? d : null); } }
-    if (lkTab === 'march') lkMarchPrev();
     sh.scrollTop = top;
 }
 function openLookSheet(tab) {                         // tab 'title': Titel = Rahmen (Alexander 6.10.) – Reiter „Rahmen“, zu den Saison-Rahmen rollen
@@ -9476,9 +9387,8 @@ function closeLookSheet() { document.getElementById('lookSheet').hidden = true; 
 document.getElementById('lookSheet').addEventListener('click', e => {
     if (e.target.closest('[data-lk-close]')) return closeLookSheet();
     const t = e.target.closest('[data-lk-tab]'); if (t) { lkTab = t.dataset.lkTab; renderLookSheet(); return; }
-    const cp = e.target.closest('[data-lk-cap]'); if (cp) { const v = loadBaustil(); v.cap = cp.dataset.lkCap; store.set('openWaterBaustil', JSON.stringify(v)); renderLookSheet(); requestRender(); return; }
     const c = e.target.closest('[data-lk]'); if (!c) return; const [kind, id] = c.dataset.lk.split(':');
-    lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id, c);
+    lkHas(kind, id) ? lkUse(kind, id) : lkBuy(kind, id);
 });
 setTimeout(lookMigrate, 0);                             // after the whole script: the old rank / Erfolg looks become owned
 // ===== Aussehen wie in den großen Aufbau-Spielen (Rise of Kingdoms, Alexander 4.10.): Gebäude antippen → runde Knöpfe
@@ -9491,20 +9401,14 @@ function cityNutz(id, lvl) {                       // die eigene Seite eines Geb
     if (!lvl) return null;
     return { forge: ['Schmieden', 'weapon'], hospital: ['Heilen', 'plus'], market: ['Handeln', 'market'], embassy: ['Verstärkung', 'bund'], wall: ['Helden', 'defense'] }[id] || null;   // (Mauer: die Verteidigungs-Helden)
 }
-function cityBildSpr(id, lvl) {                    // dasselbe Bild wie in der Stadt (noch nicht gebaut: das Gebäude der Stufe 1, ausgegraut – jedes sein eigenes)
-    if (id === 'keep') return citySprite('keep', Math.min(4, Math.floor((lvl || 1) / 5)));
-    const t = cityTierOf(lvl) || 1;
-    if (id === 'wall') return citySprite('gatehouse', t);
-    return citySprite(id, t, id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '');
-}
-function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben links im Fenster (nur neu gemalt, wenn sich die Stufe ändert)
-    const el = document.getElementById('cityBIcon'), s = cityBildSpr(id, lvl), zu = id !== 'keep' && !lvl, key = id + ':' + (id === 'keep' ? Math.floor((lvl || 1) / 5) : cityTierOf(lvl)) + ':' + s.c.width;
-    el.classList.toggle('is-zu', zu);
+function cityBildSetzen(id, lvl) {                 // das Gebäude-Bild oben links im Fenster: sein Ausschnitt aus dem Stadtbild (noch nicht gebaut: ausgegraut)
+    const el = document.getElementById('cityBIcon'), im = cityBild(), o = cityOrt(id === 'keep' ? '_keep' : id), key = id + ':' + (im ? 'bild' : 'leer');
+    el.classList.toggle('is-zu', id !== 'keep' && !lvl);
     if (el.dataset.bild === key && el.firstChild && el.firstChild.tagName === 'CANVAS') return;
     el.dataset.bild = key; el._lh = undefined;
     const N = 192, cv = document.createElement('canvas'); cv.width = cv.height = N;
-    const g = cv.getContext('2d'), f = Math.min(N / s.c.width, N / s.c.height) * 1.08, w = s.c.width * f, h = s.c.height * f;
-    g.imageSmoothingQuality = 'high'; g.drawImage(s.c, (N - w) / 2, Math.min(N - h, (N - h) / 2 + N * .04), w, h);
+    if (im && o) { const a = Math.max(o.w, o.h), x = Math.max(0, Math.min(CITY_BILD_W - a, o.x - a / 2)), y = Math.max(0, Math.min(CITY_BILD_H - a, o.y - a / 2));
+        const g = cv.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(im, x, y, a, a, 0, 0, N, N); }
     el.replaceChildren(cv);
 }
 function anfZeile(ok, ic, txt, val, geh) {         // eine Voraussetzung: Zeichen, Text, (hast / brauchst), Haken oder Kreuz – geh [Fenster, Knopf]: fehlt ein Gebäude, springt der Knopf dorthin
@@ -9512,10 +9416,10 @@ function anfZeile(ok, ic, txt, val, geh) {         // eine Voraussetzung: Zeiche
     return '<div class="anf' + (ok ? ' is-ok' : ' is-bad') + (zu ? ' is-geh' : '') + '">' + icon(n, k) + '<span>' + txt + '</span>' + (val ? '<b>' + val + '</b>' : '') +
         (zu ? '<button type="button" class="btn btn--secondary btn--sm anf-geh" data-anf-geh="' + geh[0] + '">' + geh[1] + icon('send') + '</button>' : '<i>' + icon(ok ? 'check' : 'close') + '</i>') + '</div>';
 }
-function anfKosten(k) {                            // Münzen und Rohstoffe: hast / brauchst
+function anfKosten(k) {                            // Münzen und Rohstoffe: hast / brauchst (beide gleich geschrieben: „998.912 / 1.900“, nie „998,9 Tsd. / 1.900“)
     if (!k) return ''; const r = AUF ? AUF.rohVon('player') || {} : {}, out = [];
-    if (k.c) out.push(anfZeile(coins >= k.c, ['coin', 'icon--coin'], 'Münzen', fmtCompact(Math.floor(coins)) + ' / ' + fmtCompact(k.c)));
-    if (AUF) for (const x of ['h', 's', 'e']) if (k[x]) out.push(anfZeile((r[x] || 0) >= k[x], [AUF.ROH_DEF[x].icon, 'roh-' + x], AUF.ROH_DEF[x].name, fmtCompact(Math.floor(r[x] || 0)) + ' / ' + fmtCompact(k[x])));
+    if (k.c) out.push(anfZeile(coins >= k.c, ['coin', 'icon--coin'], 'Münzen', fmtNum(Math.floor(coins)) + ' / ' + fmtNum(k.c)));
+    if (AUF) for (const x of ['h', 's', 'e']) if (k[x]) out.push(anfZeile((r[x] || 0) >= k[x], [AUF.ROH_DEF[x].icon, 'roh-' + x], AUF.ROH_DEF[x].name, fmtNum(Math.floor(r[x] || 0)) + ' / ' + fmtNum(k[x])));
     return out.join('');
 }
 function cityAnfHtml(id, lvl, k) {                 // Voraussetzungen für die nächste Stufe (Burg, Bauarbeiter, Münzen, Rohstoffe)
@@ -9539,14 +9443,21 @@ const cityStufeHtml = (lvl, max, von) => max ? 'Stufe ' + lvl + ' · höchste St
 function citySeite(id, lvl) {                      // Reiter oben (Aufwerten | Forschen …) und welche Teile das Fenster zeigt
     const sh = document.getElementById('citySheet'), tabs = document.getElementById('cityTabs'), n = id === '_keep' ? null : cityNutz(id, lvl);
     if (!n) cityPage = 'bau';
-    sh.classList.toggle('cs-keep', id === '_keep');                           // (Burg: Schild-Kasten nach unten)
+    sh.classList.toggle('cs-keep', id === '_keep');                           // (Burg: Schild-Kasten unter die Voraussetzungen)
     sh.classList.toggle('cs-nutz', !!n && cityPage === 'nutz'); sh.classList.toggle('cs-bau', !!n && cityPage === 'bau');
     tabs.hidden = !n;
-    if (n) liveHtml(tabs, '<button type="button" data-cpage="bau"' + (cityPage === 'bau' ? ' class="on"' : '') + '>' + icon('upgrade') + 'Aufwerten</button><button type="button" data-cpage="nutz"' + (cityPage === 'nutz' ? ' class="on"' : '') + '>' + icon(n[1]) + n[0] + '</button>');
+    if (n) liveHtml(tabs, '<button type="button" data-cpage="bau"' + (cityPage === 'bau' ? ' class="on"' : '') + '>' + icon('upgrade') + 'Aufwerten</button><button type="button" data-cpage="nutz"' + (cityPage === 'nutz' ? ' class="on"' : '') + '>' + icon(n[1]) + n[0] + (id === 'heroes' ? cityHeldenBadge() : '') + '</button>');
 }
 document.getElementById('citySheet').addEventListener('click', e => { const g = e.target.closest('[data-anf-geh]'); if (!g) return;   // „Zur Burg“: das fehlende Gebäude öffnen
     cityPage = 'bau'; cityOpenId = g.dataset.anfGeh; cityFocus(cityOpenId); renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; });
-document.getElementById('cityTabs').addEventListener('click', e => { const b = e.target.closest('[data-cpage]'); if (b) { cityPage = b.dataset.cpage; renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; } });
+document.getElementById('cityTabs').addEventListener('click', e => { const b = e.target.closest('[data-cpage]'); if (!b) return;
+    if (cityHeldenDirekt(cityOpenId, b.dataset.cpage)) return;
+    cityPage = b.dataset.cpage; renderCitySheet(); document.getElementById('citySheet').scrollTop = 0; });
+function cityHeldenDirekt(id, page) {             // Heldenhalle „Helden“ (Reiter oder runder Knopf): gleich die Helden – keine Seite, auf der nur „Helden öffnen“ steht
+    if (id !== 'heroes' || page !== 'nutz') return false;
+    cityPage = 'bau'; openHeroHall(); return true;
+}
+const cityHeldenBadge = () => { const up = HEROES.filter(h => heroCanDo('player', h.id)).length; return up ? '<em class="hh-badge">' + up + '</em>' : ''; };   // wie viele Helden etwas zu tun haben
 function renderCitySheet() {                       // (läuft auch jede Sekunde aus liveTick: geschrieben wird nur, was sich ändert)
     if (cityOpenId === 'keep') cityOpenId = '_keep';
     const id = cityOpenId; if (!id) return;
@@ -9570,7 +9481,9 @@ function renderCitySheet() {                       // (läuft auch jede Sekunde 
     liveHtml(note, nh);
     const cost = !max ? cityCost(id, lvl) : 0, kost = !max ? (AUF ? AUF.stadtKosten(id, lvl) : { c: cost }) : null;
     liveHtml(document.getElementById('cityBStats'), !max && !building ? cityAnfHtml(id, lvl, kost) : '');
-    setBtnLabel(up, max ? 'Höchste Stufe' : (!building && (cityBurgFehlt(id, lvl) || cityFehlt(id))) || (lvl ? 'Aufwerten' : 'Bauen'));
+    const fehlt = !max && !building && !cityBurgFehlt(id, lvl) && cityFehlt(id);
+    setBtnLabel(up, max ? 'Höchste Stufe' : (!building && (cityBurgFehlt(id, lvl) || fehlt)) || (lvl ? 'Aufwerten' : 'Bauen'));
+    cityWarteSetzen(fehlt && id);
     setText(document.getElementById('cityUpTime'), max ? '' : fmtDuration(cityTimeSec(id, lvl)));
     up.disabled = !!blocker || (AUF ? !AUF.kannZahlen('player', kost) : coins < cost);
     up.title = blocker || '';
@@ -9595,6 +9508,7 @@ function cityRingAuf(id) {
 function cityRingZu() { cityRingId = null; const el = document.getElementById('cityRing'); if (el && !el.hidden) el.hidden = true; }
 document.getElementById('cityRing').addEventListener('click', e => {
     const b = e.target.closest('[data-cring]'); if (!b || !cityRingId) return;
+    if (cityHeldenDirekt(cityRingId, b.dataset.cring)) return cityRingZu();
     cityPage = b.dataset.cring; cityOpenId = cityRingId; cityRingZu(); renderCitySheet(); document.getElementById('citySheet').scrollTop = 0;
 });
 // ===== HELDEN: shards → unlock → quarter stars → skill points. A hero only works in the fight he leads - for you and everyone else =====
@@ -9618,7 +9532,8 @@ function loadHeroes() {
 function saveHeroes() { store.set('openWaterHeroes2', JSON.stringify(heroState)); }
 function heroById(id) { return HEROES.find(h => h.id === id) || null; }
 function heroSt(who, id) { if (!heroById(id)) return null; if (who === 'player') return loadHeroes()[id]; const b = loadBotState()[who]; return b && b.hs ? b.hs[id] : null; }
-function heroOwned(who, id) { const s = heroSt(who, id); return !!(s && s.own); }
+function heroOwned(who, id) { const s = heroSt(who, id); return !!(s && s.own) && heroHalle(who); }
+function heroHalle(who) { try { return heroLead(who).hall > 0; } catch (e) { return false; } }   // Helden erst mit gebauter Heldenhalle (Splitter sammeln geht vorher)
 function heroSave(who) { if (who === 'player') saveHeroes(); else saveBotState(); }
 const heroPoints = s => Math.floor(s.q / 2);                                       // 1 point per half star: 10 at five stars
 const heroFree = s => Math.max(0, heroPoints(s) - s.sk.reduce((a, v) => a + v, 0));
@@ -9641,13 +9556,13 @@ const HERO_EFF = { atk: ['atk', 'fight'], loss: ['loss', 'fight'], hosp: ['hosp'
     strongAtk: ['atk', 'strong'], midAtk: ['atk', 'mid'], midLoss: ['loss', 'mid'], guardAtk: ['atk', 'guard'], rulerAtk: ['atk', 'ruler'], templeLoss: ['loss', 'temple'], templeGold: ['gold', 'temple'],
     templeAtk: ['atk', 'temple'], templeHosp: ['hosp', 'temple'], scoutAtk: ['atk', 'scouted'], neutralAtk: ['atk', 'neutral'], fieldAtk: ['atk', 'vsArmy'], fieldGold: ['gold', 'field'],
     fieldLoss: ['loss', 'field'], fieldDef: ['fdef', 'fdefending'], resAtk: ['atk', 'res'], gatherDef: ['fdef', 'gatherDef'], gatherSpd: ['gSpd', 'gather'], carry: ['carry', 'gather'], rage: [null, 'never'] };
-const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Krankenhaus', gold: v => '+' + v + ' % Gold',
+const HERO_FX_TXT = { atk: v => '+' + v + ' % Angriff', loss: v => '−' + v + ' % Verluste', def: v => 'Verteidigung −' + v + ' %', hosp: v => '+' + v + ' % ins Krankenhaus', gold: v => '+' + v + ' % Münzen',
     flee: v => '+' + v + ' % fliehen', ret: v => 'Rückzug +' + v + ' % Tempo', late: v => v + ' % später bemerkt', spd: v => '+' + v + ' % Tempo', toll: v => '−' + v + ' % Maut',
     fdef: v => '+' + v + ' % Verteidigung', gSpd: v => '+' + v + ' % Sammeln', carry: v => '+' + v + ' % Traglast' };
 function heroGefOf(hx, n) { return hx ? Math.min(hx.gef || 0, Math.max(0, n)) : 0; }   // Gefolge: never more than the troops the hero leads (no 1-troop marches with a big following)
 const HX0 = { atk: 0, loss: 0, def: 0, hosp: 0, gold: 0, flee: 0, ret: 0, late: 0, spd: 0, toll: 0, fdef: 0, gSpd: 0, carry: 0, gef: 0 };
 function heroFx(who, id, ctx, fired, s, mul) {      // → the hero's numbers for this fight or march, with a line for the report per value that counts (mul: der Zweitheld zählt halb)
-    const h = heroById(id); s = s || heroSt(who, id); if (!h || !s || !s.own) return null;
+    const h = heroById(id); s = s || heroSt(who, id); if (!h || !s || !s.own || !heroHalle(who)) return null;
     const st0 = heroStats(who, id, s), m = mul || 1, st = m === 1 ? st0 : { atk: Math.round(st0.atk * m), def: Math.round(st0.def * m), spd: Math.round(st0.spd * m), gef: Math.round(st0.gef * m) };
     const fx = Object.assign({ id, q: s.q, fired: !!fired, lines: [] }, HX0);
     if (ctx.fight) { fx.atk += st.atk; fx.loss += st.def; fx.gef = st.gef;
@@ -9679,9 +9594,9 @@ function heroDuo(who, fx, id2, ctx) {               // + der Zweitheld: Werte un
     return fx;
 }
 function heroZweitOk(who, id, id2) { return id && id2 && id2 !== id && heroOwned(who, id2) && !heroBusy(who, id2) ? id2 : null; }   // der Zweitheld: nur mit Hauptheld, eigener, freier Held
-function heroPeek(who, id, src, target, raw, id2) { const s = heroSt(who, id); if (!s || !s.own) return null; const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, heroWouldFire(s), s), id2, ctx); }
+function heroPeek(who, id, src, target, raw, id2) { const s = heroSt(who, id); if (!s || !heroOwned(who, id)) return null; const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, heroWouldFire(s), s), id2, ctx); }
 function heroLaunch(who, id, src, target, raw, id2) {   // the hero marches off: a full rage fires the active skill in this fight
-    const s = heroSt(who, id); if (!s || !s.own) return null;
+    const s = heroSt(who, id); if (!s || !heroOwned(who, id)) return null;
     const fired = heroWouldFire(s); if (fired) { s.rage = 0; heroSave(who); goalBump(who, 'heroFires'); }
     const ctx = heroBaseCtx(who, src, target, raw); return heroDuo(who, heroFx(who, id, ctx, fired, s), id2, ctx);
 }
@@ -9693,7 +9608,7 @@ function heroRageUp(who, id) { const h = heroById(id), s = heroSt(who, id); if (
     s.rage = Math.min(100, (s.rage || 0) + HERO_RAGE * (1 + fast / 100)); heroSave(who); }
 function heroFought(who, hx) { if (!hx || !hx.id) return; heroRageUp(who, hx.id); for (const e of hx.extra || []) heroRageUp(who, e.id); }   // every fight a hero leads fills his rage
 function heroFieldFx(who, id, ctx, id2) {           // a fight out in the open: fires (and refills) the rage right away (nur beim Haupthelden)
-    const s = id && heroSt(who, id); if (!s || !s.own) return null;
+    const s = id && heroSt(who, id); if (!s || !heroOwned(who, id)) return null;
     const fired = heroWouldFire(s); if (fired) { s.rage = 0; goalBump(who, 'heroFires'); }
     const c = Object.assign({ fight: 1, field: 1, vsArmy: 1 }, ctx, { fdefending: !!ctx.defending, gatherDef: !!(ctx.res && ctx.defending) });
     const fx = heroDuo(who, heroFx(who, id, c, fired, s), id2 && heroOwned(who, id2) ? id2 : null, c);
@@ -9727,15 +9642,15 @@ function heroGrantShards(who, n, id, minR) {        // n shards for one hero (a 
     let h = id && heroById(id); if (!h) { const w = pool.map(x => 5 - x.r), tot = w.reduce((a, v) => a + v, 0); let r = Math.random() * tot; h = pool[pool.length - 1]; for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r < 0) { h = pool[i]; break; } } }
     const s = heroSt(who, h.id); s.sh += n; heroSave(who); return h;
 }
-function heroDoUnlock(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || s.own || s.sh < HERO_UNLOCK[h.r]) return false; s.sh -= HERO_UNLOCK[h.r]; s.own = true; s.q = 0; heroSave(who); return true; }
-function heroDoStep(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !s.own || s.q >= HERO_MAXQ) return false; const c = heroStepCost(h, s.q); if (s.sh < c) return false; s.sh -= c; s.q++; heroSave(who); return true; }
+function heroDoUnlock(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || s.own || s.sh < HERO_UNLOCK[h.r] || !heroHalle(who)) return false; s.sh -= HERO_UNLOCK[h.r]; s.own = true; s.q = 0; heroSave(who); return true; }
+function heroDoStep(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !heroOwned(who, id) || s.q >= HERO_MAXQ) return false; const c = heroStepCost(h, s.q); if (s.sh < c) return false; s.sh -= c; s.q++; heroSave(who); return true; }
 function heroDoSwap(who, from, to, n) {              // übrige Splitter eines Helden mit 5 Sternen → Splitter für einen anderen (1:1, nicht für einen mit 5 Sternen)
     const a = heroSt(who, from), b = heroSt(who, to); n = Math.floor(n);
     if (!a || !b || from === to || !a.own || a.q < HERO_MAXQ || (b.own && b.q >= HERO_MAXQ) || !(n > 0) || n > a.sh) return false;
     a.sh -= n; b.sh += n; heroSave(who); return true;
 }
-function heroDoSkill(who, id, k) { const s = heroSt(who, id); if (!s || !s.own || !heroFree(s) || s.sk[k] >= 5) return false; s.sk[k]++; heroSave(who); return true; }
-function heroCanDo(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s) return false; return s.own ? heroFree(s) > 0 || (s.q < HERO_MAXQ && s.sh >= heroStepCost(h, s.q)) : s.sh >= HERO_UNLOCK[h.r]; }
+function heroDoSkill(who, id, k) { const s = heroSt(who, id); if (!s || !heroOwned(who, id) || !heroFree(s) || s.sk[k] >= 5) return false; s.sk[k]++; heroSave(who); return true; }
+function heroCanDo(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !heroHalle(who)) return false; return s.own ? heroFree(s) > 0 || (s.q < HERO_MAXQ && s.sh >= heroStepCost(h, s.q)) : s.sh >= HERO_UNLOCK[h.r]; }
 // ---- Verteidigungs-Helden (Mauer, 6.10.): in der Mauer eingetragen verteidigen sie JEDE eigene Basis – Hauptheld ab Mauer 1,
 // Zweitheld ab Mauer 5 (zu 50 %). Gleiche Rechnung wie beim Angriff (Angriff, Verluste, Krankenhaus, Gold, Gefolge – ohne Wut).
 // Wer gerade unterwegs ist (Angriff, Armee, Feld, Rally), verteidigt nicht; zurück → verteidigt wieder.
@@ -9781,154 +9696,31 @@ function vhBest(who, ohne) {                        // der beste eigene Held fü
 }
 function heroTag(hx) { if (!hx) return ''; const h = heroById(hx.id), h2 = hx.id2 && heroById(hx.id2); return h ? h.name + ' ' + heroStarTxt(hx.q) + (h2 ? ' & ' + h2.name + (hx.pair ? ' (Paar)' : '') : '') + (hx.fired ? ' · ' + hx.skill + ' gezündet' : '') : ''; }   // one line for the short reports
 var previewHero = null, nextAttackHero = null, previewHero2 = null, nextAttackHero2 = null;
+// ---- zuletzt geschickte Helden (Merkliste 18): stehen in der Stadt (Spielstand auf dem Server), jede Marsch-Auswahl beginnt mit ihnen ----
+const HERO_LETZTE_MAX = 6;
+function heroLetzteMerken(h1, h2) {                 // nach dem Losschicken: Haupt- und Zweitheld vorn in die Liste
+    if (!heroById(h1)) return; const c = loadCity(), alt = Array.isArray(c.lh) ? c.lh : [];
+    c.lh = [h1, h2].concat(alt).filter((x, i, l) => heroById(x) && l.indexOf(x) === i).slice(0, HERO_LETZTE_MAX); saveCity();
+}
+function heroLetzte() {                             // → [Haupt-, Zweitheld]: die ersten freien aus der Liste (der gerade Losgeschickte ist unterwegs)
+    let l = []; try { l = loadCity().lh || []; } catch (e) { l = []; }
+    const frei = l.filter(id => heroById(id) && heroOwned('player', id) && !heroBusy('player', id)), h1 = frei[0] || null;
+    return [h1, heroZweitOk('player', h1, frei[1] || null)];
+}
 // ---- the Heldenhalle screen: a grid of tall rarity cards → one hero with figure, stars, skills and values ----
 let hhCur = null;
 const hhStars = q => '<span class="hh-qstars">' + [0, 1, 2, 3, 4].map(k => '<i style="--f:' + (k < Math.floor(q / 4) ? 100 : k === Math.floor(q / 4) ? q % 4 * 25 : 0) + '%"></i>').join('') + '</span>';
-// ---- hero portraits: one painted SVG bust per hero from a few looks, turned once into a data URL (each <img> is its own document, so the ids never clash) ----
-const HERO_LOOK = {   // f woman · age 0-2 · sk skin · ey eyes · hs hair · bd beard · hat · arm armour · wp weapon behind · fr item in front · mk mark
-    brunhild: { f: 1, sk: '#f1d0b2', ey: '#4a86c0', hs: 'braids', hat: 'wing', arm: 'mail', wp: 'spear', fr: 'shield' },
-    ragna:    { f: 1, age: 1, sk: '#eccaa9', ey: '#2f98a8', hs: 'long', hat: 'crown', arm: 'robe', wp: 'trident', fr: 'pearls' },
-    sigrun:   { f: 1, sk: '#c68b5e', ey: '#5a3a1e', hs: 'pony', hat: 'band', arm: 'leather', wp: 'sword', mk: 'scar', br: 1 },
-    aldric:   { age: 1, sk: '#d9a982', ey: '#5a4632', hs: 'short', bd: 'full', hat: 'helm', arm: 'plate', wp: 'hammer' },
-    kasimir:  { age: 2, sk: '#dfb592', ey: '#4a3a5a', hs: 'long', bd: 'goatee', hat: 'broken', arm: 'royal', wp: 'scepter', gr: '#8a8a90' },
-    yrsa:     { f: 1, sk: '#e8c3a2', ey: '#3f9a52', hs: 'long', hat: 'hood', arm: 'robe', wp: 'staff', fr: 'gem', mk: 'rune' },
-    ida:      { f: 1, sk: '#f3d4b8', ey: '#5a9a4a', hs: 'pony', hat: 'feather', arm: 'leather', wp: 'walk', mk: 'freckles' },
-    bernhard: { age: 2, sk: '#e9c3a1', ey: '#4a5a7a', hs: 'fringe', bd: 'mous', arm: 'coat', mk: 'glasses', fr: 'cross', gr: '#b8b8b8' },
-    mira:     { f: 1, sk: '#8d5a3a', ey: '#c09040', hs: 'long', hat: 'hoodd', arm: 'leather', wp: 'bow' },
-    nora:     { f: 1, sk: '#ebc19e', ey: '#3a7a9a', hs: 'braids', hat: 'pelt', arm: 'fur', wp: 'spear2' },
-    fenn:     { sk: '#e3b48b', ey: '#4a8a5a', hs: 'messy', bd: 'stub', hat: 'bandana', arm: 'vest', wp: 'pick', fr: 'nugget', mk: 'freckles' },
-    otto:     { age: 1, fat: 1, sk: '#ecb793', ey: '#5a4a2a', hs: 'fringe', bd: 'walrus', hat: 'cap', arm: 'merchant', fr: 'coin' },
-    greta:    { f: 1, age: 2, sk: '#e7c5a9', ey: '#6a8a4a', hs: 'bun', hat: 'scarf', arm: 'shawl', fr: 'herbs', gr: '#d8d8cc' },
-    hagen:    { sk: '#c58c6c', ey: '#5a4632', hs: 'bald', bd: 'full', arm: 'mail', wp: 'axe', mk: 'patch', br: 1 },
-    wolfram:  { age: 2, sk: '#dcb090', ey: '#5a6a7a', hs: 'short', bd: 'full', hat: 'helm', arm: 'plate', wp: 'sword', mk: 'scar', br: 1 },
-    thora:    { f: 1, sk: '#e6be98', ey: '#3a7aa8', hs: 'braids', hat: 'band', arm: 'leather', wp: 'spear2', br: 1 },
-    eskil:    { age: 1, sk: '#e0b896', ey: '#7a5aa8', hs: 'long', bd: 'goatee', hat: 'hood', arm: 'robe', wp: 'hammer', fr: 'gem', mk: 'rune' },
-    lene:     { f: 1, sk: '#d8a47c', ey: '#2f8a8a', hs: 'bun', hat: 'scarf', arm: 'vest', wp: 'walk', mk: 'freckles' },
-    bruno:    { fat: 1, sk: '#d49a74', ey: '#4a3a2a', hs: 'messy', bd: 'walrus', hat: 'pelt', arm: 'fur', wp: 'axe' },
-    pia:      { f: 1, sk: '#a8704a', ey: '#2a7a9a', hs: 'pony', hat: 'bandana', arm: 'vest', fr: 'pearls' }
-};
-const heroPicCache = {};
-function heroPic(id) { return heroPicCache[id] || (heroPicCache[id] = 'data:image/svg+xml,' + encodeURIComponent(heroSvg(id))); }
-function heroImg(id, cls) { const h = heroById(id); return h ? '<img class="hero-pic' + (cls ? ' ' + cls : '') + '" src="' + heroPic(id) + '" alt="' + h.name + '" draggable="false">' : ''; }
-function heroSvg(id) {
-    const h = heroById(id), L = HERO_LOOK[id] || {}, rc = RARITY_DEFS[h.r].color, hx = c => c.length === 4 ? '#' + c[1] + c[1] + c[2] + c[2] + c[3] + c[3] : c, sd = (c, f) => shade(hx(c), f);
-    const f = L.f, w = f ? 12.6 : 13.6 + (L.fat ? 1.4 : 0), jw = f ? 7.6 : L.fat ? 12.5 : 10.4, cy = f ? 63 : 65, lx = 50 - w, rx = 50 + w, n = v => Math.round(v * 10) / 10;
-    const hair = hx(L.gr || h.hair), hd = sd(hair, .55), sk = L.sk, skd = sd(sk, .72), c1 = h.color, c2 = h.c2, gold = 'url(#gd)', metal = 'url(#mt)', ink = '#1c120c';
-    const P = (d, fl, x) => '<path d="' + d + '" fill="' + fl + '"' + (x || '') + '/>', S = (d, st, sw, x) => P(d, 'none', ' stroke="' + st + '" stroke-width="' + sw + '" stroke-linecap="round" stroke-linejoin="round"' + (x || '')),
-        C = (x, y, r, fl, e) => '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" fill="' + fl + '"' + (e || '') + '/>', E = (x, y, a, b, fl, e) => '<ellipse cx="' + x + '" cy="' + y + '" rx="' + a + '" ry="' + b + '" fill="' + fl + '"' + (e || '') + '/>',
-        op = o => ' opacity="' + o + '"', G = (id, st, a) => '<linearGradient id="' + id + '" ' + (a || 'x1="0" y1="0" x2="0" y2="1"') + '>' + st.map((c, i) => '<stop offset="' + i / (st.length - 1) + '" stop-color="' + c + '"/>').join('') + '</linearGradient>';
-    const face = 'M' + lx + ',42C' + lx + ',29 ' + n(50 - w * .55) + ',22.5 50,22.5C' + n(50 + w * .55) + ',22.5 ' + rx + ',29 ' + rx + ',42C' + rx + ',52 ' + n(50 + jw) + ',' + (cy - 5) + ' 50,' + cy + 'C' + n(50 - jw) + ',' + (cy - 5) + ' ' + lx + ',52 ' + lx + ',42Z';
-    const bw = L.fat ? 2 : 0, body = 'M2,101C4,86 ' + (18 - bw) + ',77 35,73.5Q50,78 65,73.5C' + (82 + bw) + ',77 96,86 98,101Z';
-    let o = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>' +
-        '<radialGradient id="bg" cx=".5" cy=".38" r=".75"><stop offset="0" stop-color="' + sd(rc, 1.25) + '"/><stop offset=".45" stop-color="' + sd(rc, .5) + '"/><stop offset="1" stop-color="#07080c"/></radialGradient>' +
-        '<radialGradient id="sk" cx=".4" cy=".36" r=".75"><stop offset="0" stop-color="' + sd(sk, 1.12) + '"/><stop offset=".55" stop-color="' + sk + '"/><stop offset="1" stop-color="' + skd + '"/></radialGradient>' +
-        G('hr', [sd(hair, 1.35), hair, hd]) + G('sh', [skd + '00', skd + '00', sd(sk, .45) + '88'], 'x1="0" y1="0" x2="1" y2=".2"') + G('ar', [sd(c1, 1.45), c1, sd(c1, .45)]) + G('cl', [sd(c2, 1.5), c2, sd(c2, .5)]) +
-        G('mt', ['#fbfdff', '#b9c2cc', '#59616b', '#a9b2bc'], 'x1="0" y1="0" x2=".4" y2="1"') + G('gd', ['#fff0b0', '#e6b440', '#8a5a14'], 'x1="0" y1="0" x2=".3" y2="1"') + G('wd', ['#9a6a3a', '#5a3a1e']) +
-        G('rim', [rc + '00', rc + '00', sd(rc, 1.6)], 'x1="0" y1="0" x2="1" y2=".3"') + G('vg', ['#0000', '#0000', '#000a']) +
-        '<clipPath id="fc"><path d="' + face + '"/></clipPath><pattern id="ml" width="2.4" height="2" patternUnits="userSpaceOnUse"><path d="M0,1a1.2,1 0 0 0 2.4,0" fill="none" stroke="#1a1d22" stroke-width=".45" opacity=".6"/></pattern></defs>' +
-        '<rect width="100" height="100" fill="url(#bg)"/>' + S('M8,6L40,50M92,4L60,50M50,0V40', sd(rc, 1.5), 6, op(.07)) + E(50, 40, 30, 30, sd(rc, 1.4), op(.18));
-    // weapon behind the shoulders
-    const wp = L.wp;
-    if (wp === 'sword') o += P('M83,80L81.5,14L84,6L86.5,14L85,80Z', metal) + S('M84,12V78', '#fff', .5, op(.7));
-    if (wp === 'spear' || wp === 'spear2') o += S('M84,100L86,18', 'url(#wd)', 2.6) + P('M86,4Q90.5,12 87.2,22L84.6,22Q82,12 86,4Z', metal) + (wp === 'spear2' ? S('M85.5,24L81,32M85.5,24L90,31', '#e8e2d0', .9) : P('M83.4,22h5v2.4h-5z', gold));
-    if (wp === 'trident') o += S('M84,100V20', gold, 2.6) + S('M77,22Q84,26 91,22M77,22V10M84,24V4M91,22V10', gold, 2) + P('M75.6,11L77,5L78.4,11ZM82.6,6L84,0L85.4,6ZM89.6,11L91,5L92.4,11Z', gold);
-    if (wp === 'hammer') o += S('M72,100L86,24', 'url(#wd)', 2.8) + P('M77,14L95,19L92.6,29L74.6,24Z', metal) + P('M83,19l5,1.3l-1.3,5l-5,-1.3z', sd(c1, 1.2));
-    if (wp === 'axe') o += S('M70,100L84,20', 'url(#wd)', 2.8) + P('M82,16C92,12 99,20 97,32C92,28 88,28 83,30Z', metal) + S('M83,17L81.6,31', '#2a2d33', 1.4);
-    if (wp === 'scepter') o += S('M82,100L85,26', gold, 2.2) + C(85.3, 21, 4.6, gold) + C(85.3, 21, 2.2, '#c02a3a') + C(84, 19.6, .9, '#fff', op(.8));
-    if (wp === 'staff') o += E(84, 14, 9, 9, '#8f8', op(.25)) + S('M82,100L84,20', 'url(#wd)', 2.6) + S('M84,21Q79,14 84,8Q89,14 84,21', 'url(#wd)', 1.6) + C(84, 14, 3, '#7af09a') + C(83, 13, 1, '#fff');
-    if (wp === 'walk') o += S('M85,100L83,14', 'url(#wd)', 2.4) + S('M83,18q4,1 5,5M83,18q3,4 1,8', '#d84a3a', 1.2);
-    if (wp === 'pick') o += S('M72,100L84,24', 'url(#wd)', 2.6) + P('M70,22Q84,12 99,26Q85,20 70,24Z', metal);
-    if (wp === 'bow') o += S('M16,96Q-2,50 22,8', 'url(#wd)', 2.8) + S('M16,96L22,8', '#e8e0c8', .5) + S('M78,76L86,18M82,76L91,20M86,78L95,24', 'url(#wd)', 1.2) + P('M84,20l2,-6l2,6l-2,-1.5zM89,22l2,-6l2,6l-2,-1.5zM93.4,26l2,-6l2,6l-2,-1.5z', '#e8e2d0');
-    // hair and hoods behind the head
-    const long = L.hs === 'long' || L.hs === 'braids', hood = L.hat === 'hood' || L.hat === 'hoodd', hc = L.hat === 'hoodd' ? '#2a3020' : c2;
-    if (long && !hood) o += P('M' + (lx - 3) + ',40C' + (lx - 6) + ',22 42,15 50,15C58,15 ' + (rx + 6) + ',22 ' + (rx + 3) + ',40C' + (rx + 4) + ',56 ' + (rx + (L.hs === 'long' ? 8 : 3)) + ',70 ' + (rx + 5) + ',' + (L.hs === 'long' ? 84 : 72) + 'L' + (lx - 5) + ',' + (L.hs === 'long' ? 84 : 72) + 'C' + (lx - (L.hs === 'long' ? 8 : 3)) + ',70 ' + (lx - 4) + ',56 ' + (lx - 3) + ',40Z', hd);
-    if (hood) o += P('M' + (lx - 9) + ',86C' + (lx - 12) + ',50 ' + (lx - 8) + ',14 50,12C' + (rx + 8) + ',14 ' + (rx + 12) + ',50 ' + (rx + 9) + ',86Z', 'url(#cl)') + (L.hs === 'long' ? P('M' + (lx - 1) + ',36C' + (lx - 4) + ',52 ' + (lx - 3) + ',66 ' + (lx + 2) + ',76L' + (lx + 6) + ',74C' + (lx + 2) + ',60 ' + (lx + 1) + ',46 ' + (lx + 3) + ',36Z', 'url(#hr)') : '');
-    if (L.hat === 'pelt') o += P('M' + (lx - 8) + ',84C' + (lx - 12) + ',50 ' + (lx - 6) + ',16 50,14C' + (rx + 6) + ',16 ' + (rx + 12) + ',50 ' + (rx + 8) + ',84Z', '#6a6258');
-    if (L.hs === 'pony') o += P('M' + (rx - 2) + ',26C' + (rx + 10) + ',24 ' + (rx + 12) + ',44 ' + (rx + 7) + ',60C' + (rx + 5) + ',50 ' + (rx + 3) + ',40 ' + (rx - 3) + ',34Z', 'url(#hr)');
-                // body: armour, robe or coat
-    o += P(body, 'url(#ar)'); const arm = L.arm;
-    if (arm === 'mail') o += P(body, 'url(#mt)', op(.9)) + P(body, 'url(#ml)') + P('M2,101C4,90 12,82 22,79L30,101Z', 'url(#ar)') + P('M98,101C96,90 88,82 78,79L70,101Z', 'url(#ar)') + (id === 'brunhild' ? P('M28,76Q50,86 72,76Q66,72 50,74Q34,72 28,76Z', '#d8cdb8') + S('M30,77q3,3 6,1M38,79q3,3 6,1M48,80q3,2 5,0M56,79q3,3 6,0M64,77q3,3 5,0', '#8a7a64', .6) : S('M24,78L70,101', '#4a3322', 4) + C(40, 85.5, 1.6, gold));
-    if (arm === 'plate') o += P('M2,101C3,86 12,78 26,76C34,76 38,82 36,92L30,101Z', metal) + P('M98,101C97,86 88,78 74,76C66,76 62,82 64,92L70,101Z', metal) + P('M40,78L60,78L58,101L42,101Z', 'url(#ar)') + S('M50,79V101', sd(c1, 1.5), .8) + C(22, 84, .9, '#333') + C(78, 84, .9, '#333');
-    if (arm === 'robe') o += P('M38,74L50,92L62,74L65,75L50,98L35,75Z', gold) + S('M8,92Q30,86 36,101M92,92Q70,86 64,101', sd(c1, .5), .8, op(.6));
-    if (arm === 'leather') o += P('M2,101C4,86 18,77 35,73.5L40,80Q22,84 14,101Z', 'url(#cl)') + P('M98,101C96,86 82,77 65,73.5L60,80Q78,84 86,101Z', 'url(#cl)') + S('M34,76L64,101', '#3a2616', 3.2) + P('M44,83h4.4v4h-4.4z', gold, ' transform="rotate(40 46 85)"');
-    if (arm === 'royal') o += P('M22,78Q50,92 78,78Q84,84 82,90Q50,102 18,90Q16,84 22,78Z', '#f4f0e6') + [28, 38, 50, 62, 72].map((x, i) => P('M' + x + ',' + (86 + (i % 2) * 3) + 'l.8,2.4h-1.6z', '#1a1a1a')).join('') + S('M34,92Q50,99 66,92', gold, 1.2) + C(50, 97, 2.2, gold);
-    if (arm === 'coat') o += P('M36,74L50,84L64,74L60,101L40,101Z', '#ece6da') + P('M36,74L46,90L42,101L28,101Z', sd(c1, .7)) + P('M64,74L54,90L58,101L72,101Z', sd(c1, .7)) + C(48, 94, .8, gold) + C(52, 94, .8, gold);
-    if (arm === 'fur') o += P('M4,101C6,86 16,76 34,72Q50,82 66,72C84,76 94,86 96,101Q88,90 80,94Q72,86 64,92Q56,86 50,92Q44,86 36,92Q28,86 20,94Q12,90 4,101Z', '#7a6a58') + S('M14,90l3,-4M24,86l2,-5M76,86l-2,-5M86,90l-3,-4M40,86l1,-5M60,86l-1,-5', '#b8a890', .8);
-    if (arm === 'vest') o += P('M38,74L50,82L62,74L60,101L40,101Z', '#e8dcc4') + P('M36,74L47,86L44,101L30,101Z', '#6a4a2a') + P('M64,74L53,86L56,101L70,101Z', '#6a4a2a') + P('M42,74Q50,82 58,74L54,80Q50,84 46,80Z', '#c04a2a');
-    if (arm === 'merchant') o += P('M4,101C6,84 20,74 36,72Q50,80 64,72C80,74 94,84 96,101Q84,86 70,84Q60,90 50,90Q40,90 30,84Q16,86 4,101Z', '#6a4a30') + S('M30,86Q50,100 70,86', gold, 1.4) + C(50, 94, 3, gold);
-    if (arm === 'shawl') o += P('M6,101C8,86 20,76 36,72Q50,80 64,72C80,76 92,86 94,101Q72,86 50,101Q28,86 6,101Z', '#6a5a3a') + S('M18,92l3,3M26,88l3,3M74,88l-3,3M82,92l-3,3', '#8a7a5a', .8);
-    o += S(body, 'url(#rim)', 1.4);
-    // neck, ears, face
-    o += P('M' + (50 - jw * .62) + ',56L' + (50 - jw * .6) + ',74Q50,79 ' + (50 + jw * .6) + ',74L' + (50 + jw * .62) + ',56Z', skd) + P('M' + (50 - jw * .6) + ',62Q50,70 ' + (50 + jw * .6) + ',62L' + (50 + jw * .6) + ',58L' + (50 - jw * .6) + ',58Z', sd(sk, .55), op(.6));
-    if (!hood && L.hat !== 'scarf' && L.hat !== 'pelt') o += E(lx + .3, 45, 2.4, 4.2, skd) + E(rx - .3, 45, 2.4, 4.2, skd) + E(lx + .6, 45, 1, 2.4, sd(sk, .5), op(.6));
-    const ey = 44, eL = 44.2, eR = 55.8, ang = L.br ? 1.2 : 0;
-    o += P(face, 'url(#sk)') + S(face, 'url(#rim)', .9, op(.8)) + '<g clip-path="url(#fc)">' + P(face, 'url(#sh)') + E(50, 25, 16, 5, sd(sk, .5), op(.3)) + E(43, 33, 5, 3, '#fff', op(.14)) + E(42.5, 52, 3.4, 2.2, '#e0706a', op(f ? .3 : .16)) + E(57.5, 52, 3.4, 2.2, '#e0706a', op(f ? .3 : .16)) +
-        (L.bd === 'stub' || L.bd === 'full' ? P('M' + lx + ',48Q50,58 ' + rx + ',48V70H' + lx + 'Z', hd, op(.28)) : '') + E(50, cy + 1, 9, 3, sd(sk, .5), op(.3)) + '</g>';
-    // eyes, brows, nose, mouth
-    [eL, eR].forEach((x, i) => { const s = i ? 1 : -1, almond = 'M' + (x - 3.1) + ',' + ey + 'Q' + x + ',' + (ey - 2.7) + ' ' + (x + 3.1) + ',' + ey + 'Q' + x + ',' + (ey + 2.1) + ' ' + (x - 3.1) + ',' + ey + 'Z';
-        if (L.mk === 'patch' && !i) { o += P('M' + (x - 3.8) + ',' + (ey - 3) + 'Q' + x + ',' + (ey - 4.2) + ' ' + (x + 3.8) + ',' + (ey - 3) + 'Q' + (x + 3.4) + ',' + (ey + 3.6) + ' ' + x + ',' + (ey + 3.2) + 'Q' + (x - 3.6) + ',' + (ey + 3) + ' ' + (x - 3.8) + ',' + (ey - 3) + 'Z', '#161616') + S('M' + (x - 3.4) + ',' + (ey - 2.6) + 'L' + (lx - 1) + ',' + (ey - 6) + 'M' + (x + 3.4) + ',' + (ey - 2.6) + 'L' + (rx + 1) + ',' + (ey - 7.5), '#161616', .7); return; }
-        o += '<clipPath id="e' + i + '"><path d="' + almond + '"/></clipPath>' + P(almond, '#f4ede4') + '<g clip-path="url(#e' + i + ')">' + C(x, ey - .1, 1.6, L.ey) + C(x, ey - .1, 1.6, 'none', ' stroke="' + sd(L.ey, .5) + '" stroke-width=".4"') + C(x, ey - .1, .78, '#0c0806') + C(x - .6, ey - .8, .5, '#fff') + P('M' + (x - 4) + ',' + (ey - 3) + 'H' + (x + 4) + 'V' + (ey - 1) + 'H' + (x - 4) + 'Z', sd(sk, .4), op(.35)) + '</g>' +
-            S('M' + (x - 3.3) + ',' + (ey + .2) + 'Q' + x + ',' + (ey - 2.9) + ' ' + (x + 3.3) + ',' + (ey + .1) + (f ? 'l' + s * .9 + ',-.9' : ''), ink, f ? 1.05 : .8) + S('M' + (x - 2.6) + ',' + (ey - 2) + 'Q' + x + ',' + (ey - 3.9) + ' ' + (x + 2.6) + ',' + (ey - 2), sd(sk, .5), .45, op(.55)) +
-            (L.age ? S('M' + (x - 2.4) + ',' + (ey + 2) + 'Q' + x + ',' + (ey + 3.1) + ' ' + (x + 2.4) + ',' + (ey + 2), sd(sk, .55), .4, op(.6)) + S('M' + (x + s * 3.8) + ',' + (ey - .8) + 'l' + s * 1.6 + ',-.8M' + (x + s * 3.8) + ',' + (ey + .4) + 'l' + s * 1.6 + ',.5', sd(sk, .55), .35, op(.6)) : '') +
-            S('M' + (x - s * 3.6) + ',' + (ey - 4.2 - (L.age > 1 ? 0 : .4)) + 'Q' + (x + s * .4) + ',' + (ey - 6.8) + ' ' + (x + s * 3.4) + ',' + (ey - 4.6 + ang), L.age > 1 ? hair : sd(hair, .7), f ? .9 : 1.5); });
-    o += S('M50.8,45.5L51,51', '#fff', 1.1, op(.2)) + S('M49.2,47Q48,51 47.3,52.2Q48.8,53.8 50,53.3Q51.2,53.8 52.7,52.2', sd(sk, .5), .75, op(.75)) + E(48.3, 52.6, .7, .4, sd(sk, .4), op(.6)) + E(51.7, 52.6, .7, .4, sd(sk, .4), op(.6));
-    const lip = f ? '#b8505a' : sd(sk, .72), my = 57.6;
-    o += P('M45.8,' + my + 'Q48,' + (my - 1.4) + ' 50,' + (my - .6) + 'Q52,' + (my - 1.4) + ' 54.2,' + my + 'Q50,' + (my + .5) + ' 45.8,' + my + 'Z', sd(lip, .85)) + P('M46.4,' + (my + .2) + 'Q50,' + (my + 3) + ' 53.6,' + (my + .2) + 'Q50,' + (my + .9) + ' 46.4,' + (my + .2) + 'Z', lip) + S('M45.8,' + my + 'Q50,' + (my + .6) + ' 54.2,' + my, sd(lip, .5), .6) + E(50, my + 1.9, 1.6, .5, '#fff', op(f ? .25 : .1));
-    if (L.age > 1) o += S('M45,50Q43.6,54 44.8,57.6M55,50Q56.4,54 55.2,57.6M44,33.5Q50,32.4 56,33.5M45,31Q50,30 55,31', sd(sk, .6), .45, op(.55));
-    if (L.mk === 'scar') o += S('M57.5,48L61,55', '#8a4a3a', .9, op(.8)) + S('M58,49.6l1.6,-.6M59,51.8l1.6,-.6M60,54l1.4,-.6', '#8a4a3a', .45);
-    if (L.mk === 'freckles') o += [[42, 49], [44, 50.4], [41.4, 51.2], [58, 49], [56, 50.4], [58.6, 51.2], [47.6, 48.2], [52.4, 48.2]].map(p => C(p[0], p[1], .4, sd(sk, .6), op(.8))).join('');
-    if (L.mk === 'rune') o += S('M50,33v4.4M48.2,34.4l1.8,1.8l1.8,-1.8', '#6af09a', .7) + C(50, 35, 3, '#6af09a', op(.15));
-    if (L.mk === 'glasses') o += C(eL, ey, 3.6, '#bfe4ff', op(.18)) + C(eR, ey, 3.6, '#bfe4ff', op(.18)) + C(eL, ey, 3.6, 'none', ' stroke="#b89a4a" stroke-width=".7"') + C(eR, ey, 3.6, 'none', ' stroke="#b89a4a" stroke-width=".7"') + S('M47.8,43.4Q50,42.2 52.2,43.4M' + (eL - 3.6) + ',43.4L' + (lx + .4) + ',42.6M' + (eR + 3.6) + ',43.4L' + (rx - .4) + ',42.6', '#b89a4a', .6);
-    // beards
-    const bd = L.bd, mus = 'M44.4,58.6Q46,54.4 50,55.8Q54,54.4 55.6,58.6Q53,56.8 50,57.2Q47,56.8 44.4,58.6Z';
-    if (bd === 'full') o += P('M' + lx + ',44C' + lx + ',58 42,' + (cy + 6) + ' 50,' + (cy + 7) + 'C58,' + (cy + 6) + ' ' + rx + ',58 ' + rx + ',44C' + (rx - 1.4) + ',52 57,53.6 55.6,57Q55,61.4 50,61.6Q45,61.4 44.4,57C43,53.6 ' + (lx + 1.4) + ',52 ' + lx + ',44Z', 'url(#hr)') + S('M44,62q2,4 3,6M50,63v6M56,62q-2,4 -3,6M' + (lx + 3) + ',54q2,5 5,8M' + (rx - 3) + ',54q-2,5 -5,8', hd, .5, op(.6)) + P(mus, 'url(#hr)');
-    if (bd === 'goatee') o += P(mus, 'url(#hr)') + P('M46.6,60.8Q50,62.4 53.4,60.8L52,' + (cy + 5) + 'Q50,' + (cy + 8) + ' 48,' + (cy + 5) + 'Z', 'url(#hr)');
-    if (bd === 'mous') o += P(mus, 'url(#hr)');
-    if (bd === 'walrus') o += P('M42,61Q43,54 50,55.2Q57,54 58,61Q55,57.6 50,58Q45,57.6 42,61Z', 'url(#hr)') + S('M46,57l-1,2M54,57l1,2M50,56.4v1.6', hd, .4);
-    // hair in front
-    const hs = L.hs, cap = 'M' + (lx - 1.4) + ',45C' + (lx - 2) + ',27 42,19.5 50,19.5C58,19.5 ' + (rx + 2) + ',27 ' + (rx + 1.4) + ',45';
-    if (hs === 'long' || hs === 'braids' || hs === 'pony' || hs === 'bun') o += P(cap + 'C' + (rx - .4) + ',36 ' + (rx - 4) + ',30 53,28.4Q47,31.6 ' + (lx + 2.6) + ',36C' + (lx + 1.4) + ',39 ' + (lx + .6) + ',42 ' + (lx - 1.4) + ',45Z', 'url(#hr)') + S('M50,20Q47,24 45,30M52,21Q56,24 60,28M46,21Q40,24 ' + (lx + 1) + ',34', hd, .5, op(.5)) +
-        (hs === 'long' && !hood ? P('M' + (lx - 1.4) + ',42C' + (lx - 3) + ',54 ' + (lx - 2) + ',64 ' + (lx + 2) + ',74L' + (lx + 4) + ',66C' + (lx + 1) + ',58 ' + (lx + .4) + ',50 ' + (lx + 1) + ',42Z', 'url(#hr)') + P('M' + (rx + 1.4) + ',42C' + (rx + 3) + ',54 ' + (rx + 2) + ',64 ' + (rx - 2) + ',74L' + (rx - 4) + ',66C' + (rx - 1) + ',58 ' + (rx - .4) + ',50 ' + (rx - 1) + ',42Z', 'url(#hr)') : '');
-    if (hs === 'braids') [lx - .5, rx + .5].forEach(x => { for (let k = 0; k < 6; k++) o += E(x, 48 + k * 5, 2.8 - k * .15, 3, 'url(#hr)') + S('M' + (x - 2) + ',' + (48 + k * 5) + 'q2,2 4,-.4', hd, .45); o += P('M' + (x - 1.6) + ',77l1.6,5l1.6,-5z', 'url(#hr)') + P('M' + (x - 2) + ',75.6h4v1.6h-4z', id === 'nora' ? '#6a4a2a' : gold); });
-    if (hs === 'short') o += P(cap + 'C' + rx + ',38 ' + (rx - 2) + ',31 56,30Q50,31.6 44,30C' + (lx + 2) + ',31 ' + lx + ',38 ' + (lx - 1.4) + ',45Z', 'url(#hr)');
-    if (hs === 'messy') o += P(cap + 'L' + (rx - 1) + ',38L' + (rx - 4) + ',34L57,34L55,30L51,33L47,29.6L44,33L41,31L' + (lx + 2) + ',36L' + (lx + 1) + ',40Z', 'url(#hr)');
-    if (hs === 'fringe') o += P('M' + (lx - 1.6) + ',47C' + (lx - 2.4) + ',38 ' + (lx - 1) + ',32 ' + (lx + 3) + ',29C' + (lx + 2) + ',34 ' + (lx + 1.4) + ',40 ' + (lx + 1) + ',46Z', 'url(#hr)') + P('M' + (rx + 1.6) + ',47C' + (rx + 2.4) + ',38 ' + (rx + 1) + ',32 ' + (rx - 3) + ',29C' + (rx - 2) + ',34 ' + (rx - 1.4) + ',40 ' + (rx - 1) + ',46Z', 'url(#hr)') + E(45, 26, 4, 2, '#fff', op(.18));
-    if (hs === 'bald') o += E(44, 27, 4.4, 2.4, '#fff', op(.2)) + P('M' + (lx - .4) + ',47C' + (lx - 1) + ',38 ' + (lx + 1) + ',33 ' + (lx + 3) + ',31L' + (lx + 2) + ',44Z', hd, op(.4)) + P('M' + (rx + .4) + ',47C' + (rx + 1) + ',38 ' + (rx - 1) + ',33 ' + (rx - 3) + ',31L' + (rx - 2) + ',44Z', hd, op(.4));
-    // headgear
-    const hat = L.hat, dome = 'M' + (lx - 2) + ',36C' + (lx - 2) + ',19 42,13 50,13C58,13 ' + (rx + 2) + ',19 ' + (rx + 2) + ',36Q50,31 ' + (lx - 2) + ',36Z';
-    if (hat === 'wing') o += [-1, 1].map(s => P('M' + (50 + s * (w + 1)) + ',30C' + (50 + s * (w + 9)) + ',28 ' + (50 + s * (w + 15)) + ',16 ' + (50 + s * (w + 13)) + ',3C' + (50 + s * (w + 10)) + ',12 ' + (50 + s * (w + 6)) + ',15 ' + (50 + s * (w - 1)) + ',20Z', '#f4f1ea') + S('M' + (50 + s * (w + 2)) + ',27q' + s * 6 + ',-3 ' + s * 9 + ',-14M' + (50 + s * (w + 1)) + ',23q' + s * 5 + ',-3 ' + s * 8 + ',-12', '#a8a498', .5)).join('') + P(dome, metal) + P('M' + (lx - 2.4) + ',36Q50,30.6 ' + (rx + 2.4) + ',36L' + (rx + 2.2) + ',32.6Q50,27 ' + (lx - 2.2) + ',32.6Z', gold) + S('M50,14V30', '#fff', .7, op(.6));
-    if (hat === 'helm') o += P(dome, metal) + P('M' + (lx - 9) + ',35Q50,27 ' + (rx + 9) + ',35Q' + (rx + 6) + ',39.4 50,37.6Q' + (lx - 6) + ',39.4 ' + (lx - 9) + ',35Z', metal) + S('M' + (lx - 8.6) + ',35.2Q50,39 ' + (rx + 8.6) + ',35.2', '#3a3f46', .6) + C(41, 31, .6, '#333') + C(50, 30, .6, '#333') + C(59, 31, .6, '#333') + S('M47,15Q44,22 44,29', '#fff', .8, op(.5));
-    if (hat === 'crown') o += P('M' + (lx + .4) + ',31L' + (lx - 1) + ',15L42,24L45.4,11L50,22L54.6,11L58,24L' + (rx + 1) + ',15L' + (rx - .4) + ',31Q50,28 ' + (lx + .4) + ',31Z', gold) + C(lx - 1, 14.4, 1.4, '#f4f0ff') + C(45.4, 10.4, 1.4, '#f4f0ff') + C(54.6, 10.4, 1.4, '#f4f0ff') + C(rx + 1, 14.4, 1.4, '#f4f0ff') + C(50, 26.4, 2, '#2fb0d0') + C(49.4, 25.8, .6, '#fff');
-    if (hat === 'broken') o += '<g transform="rotate(-9 50 26)">' + P('M' + (lx + 1) + ',31L' + lx + ',17L43,24L46,15L48,21L50,18L52.4,24L' + (rx + 1) + ',15L' + (rx - .4) + ',31Q50,28 ' + (lx + 1) + ',31Z', 'url(#gd)', op(.85)) + S('M48,21L50,18L52.4,24', '#5a3a10', .5) + C(44, 28.4, 1.3, '#8a2a4a') + C(56, 28.4, 1.3, '#8a2a4a') + '</g>';
-    if (hood) o += S('M' + (lx - 1) + ',66C' + (lx - 4) + ',40 ' + (lx - 1) + ',21 50,19.6C' + (rx + 1) + ',21 ' + (rx + 4) + ',40 ' + (rx + 1) + ',66', sd(hc, 1.3), 4.4) + S('M' + (lx - 3.2) + ',66C' + (lx - 6) + ',40 ' + (lx - 3) + ',18 50,16.8', sd(hc, .6), 1, op(.6)) +
-        (hat === 'hood' ? S('M' + (lx + 1) + ',33Q50,25 ' + (rx - 1) + ',33', gold, 1.2) + C(50, 28.4, 1.5, '#6af09a') : P('M' + lx + ',40Q50,26 ' + rx + ',40L' + rx + ',30Q50,20 ' + lx + ',30Z', '#000', op(.35)));
-    if (hat === 'band') o += S('M' + (lx - .6) + ',33Q50,26.6 ' + (rx + .6) + ',33', '#b8282a', 2) + P('M' + (rx + .4) + ',32q5,1 7,6q-4,-2 -7,-3z', '#b8282a');
-    if (hat === 'feather') o += P('M' + (rx - 1) + ',28C' + (rx + 8) + ',18 ' + (rx + 16) + ',10 ' + (rx + 20) + ',3C' + (rx + 14) + ',16 ' + (rx + 8) + ',24 ' + (rx + 1) + ',31Z', '#d84a3a') + S('M' + (rx) + ',29.4C' + (rx + 8) + ',20 ' + (rx + 14) + ',12 ' + (rx + 19) + ',4', '#f4e0c0', .5) +
-        P('M' + (lx - 3) + ',32C' + (lx - 1) + ',17 ' + (rx - 2) + ',13 ' + (rx + 3) + ',26Q' + (rx + 5) + ',32 ' + (rx + 3) + ',32Q50,26.6 ' + (lx - 3) + ',32Z', 'url(#ar)') + S('M' + (lx - 2.6) + ',32Q50,27 ' + (rx + 3) + ',32', '#3a2616', 1.6);
-    if (hat === 'pelt') o += P('M' + (lx - 3) + ',44C' + (lx - 5) + ',24 42,12 50,12C58,12 ' + (rx + 5) + ',24 ' + (rx + 3) + ',44Q' + (rx - 1) + ',32 50,30.6Q' + (lx + 1) + ',32 ' + (lx - 3) + ',44Z', '#7a7064') + P('M' + (lx - 1) + ',22L' + (lx - 2) + ',8L' + (lx + 7) + ',16ZM' + (rx + 1) + ',22L' + (rx + 2) + ',8L' + (rx - 7) + ',16Z', '#5a5248') + P('M42,26Q50,19 58,26Q55,33 50,34Q45,33 42,26Z', '#8a8072') + E(50, 32, 2, 1.3, '#1a1a1a') + E(44.4, 24.4, 1, .6, '#e8c040') + E(55.6, 24.4, 1, .6, '#e8c040') + S('M' + (lx - 2) + ',30q2,-3 4,-2M' + (rx + 2) + ',30q-2,-3 -4,-2M46,16q4,-2 8,0', '#b0a898', .6);
-    if (hat === 'scarf') o += P('M' + (lx - 2.4) + ',60C' + (lx - 5) + ',40 ' + (lx - 2) + ',15 50,15C' + (rx + 2) + ',15 ' + (rx + 5) + ',40 ' + (rx + 2.4) + ',60Q' + (rx - 2) + ',52 ' + (rx - 1) + ',42C' + (rx - 1) + ',32 ' + (rx - 5) + ',28 50,28C' + (lx + 5) + ',28 ' + (lx + 1) + ',32 ' + (lx + 1) + ',42Q' + (lx + 2) + ',52 ' + (lx - 2.4) + ',60Z', 'url(#ar)') +
-        P('M' + (lx + 1) + ',37C' + (lx + 2) + ',31 44,29 50,28.6C56,29 ' + (rx - 2) + ',31 ' + (rx - 1) + ',37Q50,30.6 ' + (lx + 1) + ',37Z', 'url(#hr)') + [[40, 21], [50, 18.6], [60, 21], [36, 30], [64, 30], [45, 24], [55, 24]].map(p => C(p[0], p[1], .9, '#f4e6c8', op(.7))).join('') + P('M' + (lx + 3) + ',60Q50,66 ' + (rx - 3) + ',60L' + (rx - 5) + ',70Q50,74 ' + (lx + 5) + ',70Z', 'url(#ar)');
-    if (hat === 'cap') o += P('M' + (lx - 4) + ',30C' + (lx - 6) + ',16 ' + (rx + 8) + ',10 ' + (rx + 7) + ',26Q' + (rx + 4) + ',31 ' + (rx + 1) + ',30Q50,26 ' + (lx - 4) + ',30Z', '#8e2c2c') + E(46, 19, 7, 3, '#fff', op(.15)) + S('M' + (lx - 3.6) + ',30Q50,25.4 ' + (rx + 1) + ',30', gold, 1.6) + P('M' + (rx - 2) + ',22c6,-10 12,-12 16,-12c-4,4 -8,10 -14,15z', '#f4efe2');
-    if (hat === 'bandana') o += P('M' + (lx - 1.6) + ',35C' + (lx - 1) + ',24 44,19.4 50,19.4C56,19.4 ' + (rx + 1) + ',24 ' + (rx + 1.6) + ',35Q50,29 ' + (lx - 1.6) + ',35Z', '#3a6a9a') + [[44, 25], [52, 23], [58, 28], [40, 31]].map(p => C(p[0], p[1], .8, '#e8f0ff', op(.8))).join('') + P('M' + (rx + 1) + ',33l6,2l-2,5z', '#3a6a9a');
-    // what the hero carries in front
-    const fr = L.fr;
-    if (fr === 'shield') o += C(16, 90, 19, 'url(#gd)') + C(16, 90, 16.6, 'url(#ar)') + S('M16,74V106M0,90H32', '#f0e6d0', 2.6, op(.8)) + C(16, 90, 5, metal) + C(14.6, 88.6, 1.4, '#fff', op(.8)) + C(16, 90, 19, 'none', ' stroke="url(#rim)" stroke-width="1"');
-    if (fr === 'pearls') o += [...Array(11)].map((_, i) => { const a = Math.PI * (.12 + i * .076); return C(n(50 - Math.cos(a) * 11), n(71 + Math.sin(a) * 7), 1.1, '#f6f2ff') + C(n(49.7 - Math.cos(a) * 11), n(70.6 + Math.sin(a) * 7), .35, '#fff'); }).join('') + P('M50,79l3,4l-3,4l-3,-4z', '#2fb0d0');
-    if (fr === 'gem') o += S('M40,74Q50,86 60,74', gold, .7) + C(50, 84, 6, '#6af09a', op(.25)) + P('M50,79l3.4,4.6l-3.4,4.6l-3.4,-4.6z', '#3ad07a') + P('M50,79l1.6,4.6l-1.6,1.2z', '#dfffe8', op(.7));
-    if (fr === 'cross') o += C(32, 88, 5.4, '#f4f0e8') + P('M31,84h2v3h3v2h-3v3h-2v-3h-3v-2h3z', '#c82a2a');
-    if (fr === 'coin') o += C(82, 88, 9.4, 'url(#gd)') + C(82, 88, 7, 'none', ' stroke="#8a5a14" stroke-width=".8"') + P('M78,91l-1,-6l2.6,2.4l2.4,-4l2.4,4l2.6,-2.4l-1,6z', '#8a5a14', op(.8)) + E(79, 84, 2.4, 1.2, '#fff', op(.5));
-    if (fr === 'herbs') o += S('M76,101L82,80M80,101L88,82M84,101L92,86', '#4a6a2a', 1) + [[82, 80], [88, 82], [92, 86], [79, 86], [86, 88], [90, 93]].map((p, i) => P('M' + p[0] + ',' + p[1] + 'q' + (i % 2 ? 4 : -4) + ',-2 ' + (i % 2 ? 2 : -2) + ',-6q-3,2 -2,6z', i % 3 ? '#6aa04a' : '#9ac86a')).join('') + C(88, 80, 1.2, '#c06ac0') + C(91, 84, 1, '#f0e060') + S('M77,96l6,1', '#c8a060', 1.4);
-    if (fr === 'nugget') o += P('M76,92l4,-6l7,-1l5,4l-1,6l-7,3l-6,-1z', 'url(#gd)') + P('M80,86l3,3l4,-4', '#fff8c0', op(.6));
-    return o + '<rect width="100" height="100" fill="url(#vg)"/></svg>';
-}
+// ---- Heldenbilder (KI-Bilder, werkzeuge/helden_bilder_schneiden.py): Figur bilder/held_<id>.webp (3:4) für große Karten, Kopf bilder/held_<id>_kopf.webp für Chips ----
+const heroPic = (id, gross) => 'bilder/held_' + id + (gross ? '' : '_kopf') + '.webp';
+function heroImg(id, cls, gross) { const h = heroById(id); return h ? '<img class="hero-pic' + (cls ? ' ' + cls : '') + '" src="' + heroPic(id, gross) + '" alt="' + h.name + '" draggable="false">' : ''; }
 var hhSeite = 'helden';                               // Reiter der Heldenhalle: Helden | Paare
 function hhGrid() {
     const H = loadHeroes(), list = HEROES.slice().sort((a, b) => (H[b.id].own - H[a.id].own) || b.r - a.r || H[b.id].q - H[a.id].q);
     const bereit = list.filter(h => !H[h.id].own && heroCanDo('player', h.id)), zu = list.filter(h => !H[h.id].own && !bereit.includes(h));   // genug Splitter: oben zum Freischalten
     const karte = h => { const s = H[h.id], need = s.own ? heroStepCost(h, s.q) : HERO_UNLOCK[h.r], rd = RARITY_DEFS[h.r], frei = !s.own && bereit.includes(h);
-        return '<button type="button" class="hh-card' + (s.own ? '' : frei ? ' is-ready' : ' is-locked') + '" data-hh="' + h.id + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
-            '<span class="hh-art">' + heroImg(h.id) + '</span>' + (heroCanDo('player', h.id) && !frei ? '<span class="hh-dot"></span>' : '') + (s.own || frei ? '' : '<span class="hh-lk">Gesperrt</span>') +
-            '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : frei ? '<span class="hh-frei" data-hh-frei="' + h.id + '">' + icon('plus') + 'Freischalten</span>'
+        return '<button type="button" class="hh-card' + (s.own ? '' : frei ? ' is-ready' : ' is-locked') + '" data-hh="' + h.id + '" data-r="' + rd.key + '" style="--rc:' + rd.color + ';--c:' + h.color + '">' +
+            '<span class="hh-art">' + heroImg(h.id, '', true) + '</span>' + (heroCanDo('player', h.id) && !frei ? '<span class="hh-dot"></span>' : '') + (s.own || frei ? '' : '<span class="hh-lk">Gesperrt</span>') +
+            '<span class="hh-foot"><b>' + h.name + '</b><small>' + h.role + '</small>' + (s.own ? hhStars(s.q) : frei ? '<span class="hh-frei" data-hh-frei="' + h.id + '">' + icon('plus') + 'Freischalten<em>' + need + ' Splitter</em></span>'
                 : '<span class="hh-frag"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></span><small>' + s.sh + ' / ' + need + '</small>') + '</span></button>'; };
     return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="seg hh-seiten">' + [['helden', 'Helden'], ['paare', 'Paare']].map(([k, t]) => '<button type="button" data-hh-seite="' + k + '"' + (hhSeite === k ? ' class="on"' : '') + '>' + t + '</button>').join('') + '</div>' +
@@ -9942,7 +9734,7 @@ function hhPairs() {                                  // Paket E: die passenden 
     return '<div class="hh-pairs"><h3>Paare</h3><p class="hh-hint">Ein Marsch kann zwei Helden haben: den Haupthelden und einen Zweithelden. Der Zweitheld gibt seine Werte und passiven Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) +
         ' %, die Wut-Fähigkeit zündet nur beim Haupthelden. Ziehen zwei Helden eines Paars zusammen los: +' + HERO_PAIR_BONUS + ' % auf alle Heldenwerte. Jeder Held kann nur in einem Marsch sein.</p>' +
         HERO_PAIRS.map(p => { const both = H[p.a].own && H[p.b].own, A = heroById(p.a), B = heroById(p.b);
-            return '<div class="hh-pair' + (both ? ' is-on' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + p.a + '" class="' + (H[p.a].own ? '' : 'is-locked') + '">' + heroImg(p.a) + '</button><button type="button" data-hh="' + p.b + '" class="' + (H[p.b].own ? '' : 'is-locked') + '">' + heroImg(p.b) + '</button></span>' +
+            return '<div class="hh-pair ki-karte' + (both ? ' is-on ki-karte--an' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + p.a + '" class="' + (H[p.a].own ? '' : 'is-locked') + '">' + heroImg(p.a) + '</button><button type="button" data-hh="' + p.b + '" class="' + (H[p.b].own ? '' : 'is-locked') + '">' + heroImg(p.b) + '</button></span>' +
                 '<span class="hh-pair-t"><b>' + p.name + '</b><small>' + A.name + ' & ' + B.name + (both ? ' · bereit' : ' · noch nicht beide freigeschaltet') + '</small><em>' + p.story + '</em></span></div>'; }).join('') + '</div>';
 }
 function hhHero(id) {
@@ -9953,23 +9745,28 @@ function hhHero(id) {
               '<div class="hh-qinfo"><span>Nächstes Viertel</span><b>' + s.sh + ' / ' + need + ' Splitter</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div>')
         : '<div class="hh-qinfo"><span>Freischalten</span><b>' + s.sh + ' / ' + need + '</b></div><div class="hh-bar"><i style="width:' + Math.min(100, Math.round(s.sh / need * 100)) + '%"></i></div><div class="hh-qinfo"><span>Startet danach mit 0 Sternen.</span></div>';
     const skills = h.sk.map((x, k) => { const lv = s.sk[k], max = heroSkillVal(h, k, 5);
-        return '<div class="hh-sk' + (s.own ? '' : ' is-locked') + '"><span class="hh-hx' + (k ? '' : ' act') + '" style="--sc:' + h.color + '">' + x[0][0] + '</span><div class="hh-skt"><b>' + x[0] + '</b><small>' + (k ? 'Passiv' : 'Aktiv · bei voller Wut') + ' · Stufe ' + lv + '/5</small>' +
+        return '<div class="hh-sk ki-karte' + (s.own ? '' : ' is-locked') + '"><span class="hh-hx' + (k ? '' : ' act') + '" data-r="' + rd.key + '">' + x[0][0] + '</span><div class="hh-skt"><b>' + x[0] + '</b><small>' + (k ? 'Passiv' : 'Aktiv · bei voller Wut') + ' · Stufe ' + lv + '/5</small>' +
             '<p>' + (lv ? x[1].replace('{v}', heroNum(heroSkillVal(h, k, lv))) : 'Stufe 1: ' + x[1].replace('{v}', heroNum(heroSkillVal(h, k, 1)))) + '</p>' + (lv < 5 ? '<p class="hh-max">Stufe 5: ' + x[1].replace('{v}', heroNum(max)) + '</p>' : '') +
             (s.own ? '<span class="hh-pips">' + [1, 2, 3, 4, 5].map(q => '<i' + (q <= lv ? ' class="on"' : '') + '></i>').join('') + '</span>' : '') + '</div>' +
             (s.own && lv < 5 ? '<button type="button" class="hh-plus" data-hh-sk="' + k + '"' + (free ? '' : ' disabled') + ' aria-label="' + x[0] + ' verbessern">+</button>' : '<span></span>') + '</div>'; }).join('');
+    const kacheln = h.sk.map((x, k) => '<span class="hh-skk' + (k ? '' : ' act') + (s.sk[k] ? '' : ' is-null') + '" data-r="' + rd.key + '" title="' + x[0] + '">' + x[0][0] + '<i>' + s.sk[k] + '</i></span>').join('');   // die 4 Fähigkeiten als Kacheln unter der Figur (wie RoK)
+    const wert = (ic, t, v) => '<div class="ki-karte"><span class="hh-vi">' + icon(ic) + '</span><span>' + t + '</span><b>' + v + '</b></div>';
     const spent = s.sk.reduce((a, v) => a + v, 0);
     return '<div class="hh-head"><button class="btn-x" type="button" data-hh-back aria-label="Zurück">' + icon('back') + '</button><h2>' + h.name + '</h2><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
-        '<div class="hh-hero" style="--glow:' + h.color + '88;--rc:' + rd.color + '">' +
-            '<div class="hh-stage"><div class="hh-id"><span class="hh-gem">' + rd.label + '</span><span class="hh-nm">' + h.name + '</span><span class="hh-ttl">' + h.title + ' · ' + h.role + '</span>' + hhStars(s.q) + '</div>' +
-                '<div class="hh-floor"></div>' + heroImg(id, 'hh-portrait' + (s.own ? '' : ' is-locked')) + '</div>' +
-            '<div class="hh-panel">' + (h.story ? '<div class="hh-blk"><h3>Geschichte</h3><p class="hh-story">' + h.story + '</p></div>' : '') + hhPartnerBlk(id) +
-                '<div class="hh-blk hh-top"><div><h3>Macht</h3><b class="hh-pow">' + (s.own ? fmtNum(heroPower('player', id)) : 'Gesperrt') + '</b></div><div class="hh-role">' + (busy ? '<em>unterwegs</em>' : s.own ? 'bereit' : '') + '</div></div>' +
+        '<div class="hh-hero" data-r="' + rd.key + '" style="--glow:' + h.color + '88;--rc:' + rd.color + '">' +
+            '<div class="hh-stage"><div class="hh-strahl"></div><div class="hh-floor"></div>' + heroImg(id, 'hh-portrait' + (s.own ? '' : ' is-locked'), true) +
+                '<div class="hh-id"><span class="hh-gem">' + rd.label + '</span><span class="hh-nm">' + h.name + '</span><span class="hh-ttl">' + h.title + ' · ' + h.role + '</span>' + hhStars(s.q) + '</div>' +
+                '<div class="hh-unten"><div class="hh-top">' + (s.own ? '<div><h3>Macht</h3><b class="hh-pow">' + fmtNum(heroPower('player', id)) + '</b></div>' : '<div></div>') +   // (gesperrt: keine Macht – der Kasten unten sagt „Freischalten“)
+                    '<div class="hh-role">' + (busy ? '<em>unterwegs</em>' : s.own ? 'bereit' : '') + '</div></div>' +
+                    '<div class="hh-skks">' + kacheln + '</div></div></div>' +
+            '<div class="hh-panel">' +
+                '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals">' + wert('attack', 'Angriff', '+' + st.atk + ' %') + wert('defense', 'Verteidigung', '+' + st.def + ' %') + wert('boots', 'Tempo', '+' + st.spd + ' %') + (st.gef > 0 ? wert('troops', 'Gefolge', '+' + fmtCompact(st.gef)) : '') + '</div>' +
+                    '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit (höchstens so viele, wie der Held anführt) – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
                 '<div class="hh-blk"><h3>Sterne</h3>' + hhStars(s.q) + stars + '</div>' +
-                (s.own ? '<div class="hh-blk"><h3>Wut</h3><div class="hh-qinfo"><span>' + (s.sk[0] ? (s.rage >= 100 ? 'Voll – ' + h.sk[0][0] + ' zündet im nächsten Kampf' : '+' + HERO_RAGE + ' % pro Kampf, den ' + h.name + ' führt') : 'Erst mit ' + h.sk[0][0] + ' auf Stufe 1') + '</span><b>' + Math.round(s.rage || 0) + ' %</b></div><div class="hh-bar hh-rage"><i style="width:' + Math.round(s.rage || 0) + '%"></i></div></div>' : '') +
                 '<div class="hh-blk"><div class="hh-skh"><h3>Fähigkeiten</h3>' + (s.own ? '<span class="hh-pts">' + free + (free === 1 ? ' Punkt' : ' Punkte') + ' frei</span>' : '<span class="hh-pts off">nach dem Freischalten</span>') + '</div><div class="hh-sklist">' + skills + '</div>' +
                     (s.own ? '<p class="hh-hint">Jeder halbe Stern gibt 1 Punkt – bei 5 Sternen 10. Das reicht für 2 Fähigkeiten auf Stufe 5. Bisher ' + heroPoints(s) + ' von 10.</p><button type="button" class="hh-reset" data-hh-reset' + (spent ? '' : ' disabled') + '>' + (gemsArmed('hhreset:' + id) ? 'Wirklich? ' + icon('gem') + HERO_RESET_GEMS : 'Fähigkeiten zurücksetzen · ' + icon('gem') + HERO_RESET_GEMS) + '</button>' : '') + '</div>' +
-                '<div class="hh-blk"><h3>Werte · wenn ' + h.name + ' mitkämpft</h3><div class="hh-vals"><div><span>Angriff</span><b>+' + st.atk + ' %</b></div><div><span>Verteidigung</span><b>+' + st.def + ' %</b></div><div><span>Tempo</span><b>+' + st.spd + ' %</b></div><div><span>Gefolge</span><b>+' + fmtCompact(st.gef) + '</b></div></div>' +
-                    '<p class="hh-hint">Verteidigung: weniger eigene Verluste. Gefolge: so viele Truppen kämpfen zusätzlich mit (höchstens so viele, wie der Held anführt) – wächst mit Sternen, deiner Stufe und der Heldenhalle.</p></div>' +
+                (s.own ? '<div class="hh-blk"><h3>Wut</h3><div class="hh-qinfo"><span>' + (s.sk[0] ? (s.rage >= 100 ? 'Voll – ' + h.sk[0][0] + ' zündet im nächsten Kampf' : '+' + HERO_RAGE + ' % pro Kampf, den ' + h.name + ' führt') : 'Erst mit ' + h.sk[0][0] + ' auf Stufe 1') + '</span><b>' + Math.round(s.rage || 0) + ' %</b></div><div class="hh-bar hh-rage"><i style="width:' + Math.round(s.rage || 0) + '%"></i></div></div>' : '') +
+                hhPartnerBlk(id) + (h.story ? '<div class="hh-blk"><h3>Geschichte</h3><p class="hh-story">' + h.story + '</p></div>' : '') +
             '</div></div>' +
         '<div class="hh-actions">' + (maxed ? '<button class="hh-go" type="button" disabled>5 Sterne erreicht</button>'
             : '<button class="hh-go" type="button" data-hh-up' + (s.sh >= need ? '' : ' disabled') + '><span class="hh-i">' + (s.own ? icon('star') : '+') + '</span>' + (s.own ? 'Aufwerten · ¼ Stern' + (s.q % 2 ? ' + 1 Fähigkeitspunkt' : '') : 'Freischalten') + '<small>' + s.sh + ' / ' + need + ' Splitter</small></button>') + '</div>';
@@ -9981,10 +9778,14 @@ function hhSwapHtml(id, s) {                          // übrige Splitter umtaus
 }
 function hhPartnerBlk(id) {                           // sein Paar: Partner, Bonus, gemeinsame Geschichte
     const pp = heroPartner(id); if (!pp) return ''; const o = heroById(pp.id), own = heroOwned('player', pp.id);
-    return '<div class="hh-blk"><h3>Paar · ' + pp.pair.name + '</h3><div class="hh-pair' + (own && heroOwned('player', id) ? ' is-on' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + pp.id + '" class="' + (own ? '' : 'is-locked') + '">' + heroImg(pp.id) + '</button></span>' +
+    return '<div class="hh-blk"><h3>Paar · ' + pp.pair.name + '</h3><div class="hh-pair ki-karte' + (own && heroOwned('player', id) ? ' is-on ki-karte--an' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + pp.id + '" class="' + (own ? '' : 'is-locked') + '">' + heroImg(pp.id) + '</button></span>' +
         '<span class="hh-pair-t"><b>mit ' + o.name + '</b><small>' + o.title + (own ? '' : ' · gesperrt') + ' · zusammen +' + HERO_PAIR_BONUS + ' %</small><em>' + pp.pair.story + '</em></span></div></div>';
 }
-function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (liveHtml(el, hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
+function hhOhneHalle() {                            // noch keine Heldenhalle: nur der Hinweis (Splitter sammeln geht schon)
+    return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
+        '<p class="hh-hint hh-ohne-halle">Baue die Heldenhalle in deiner Stadt – erst dann kannst du Helden freischalten, aufwerten und mitschicken. Splitter aus Heldenkisten, Bossen und Aufgaben sammelst du schon jetzt.</p>';
+}
+function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (liveHtml(el, !heroHalle('player') ? hhOhneHalle() : hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
 function heroHallLive() {                            // (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu zeichnen
     const el = document.getElementById('heroHall'); if (el.hidden) return;
     const sig = JSON.stringify(loadHeroes()) + '|' + hhCur + '|' + playerLvl + '|' + cityLevelSafe('heroes') + '|' + HEROES.map(h => heroBusy('player', h.id) ? 1 : 0).join('');
@@ -10070,8 +9871,8 @@ function cityVergleich(id, L) {                    // Gebäude-Fenster „Jetzt 
 }
 function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
-    if (id === 'heroes') { const up = HEROES.filter(h => heroCanDo('player', h.id)).length;   // the way into the hero screen
-        return (lvl ? '' : '<small class="keep-note">Deine Helden kannst du schon jetzt nutzen – die Halle gibt allen Helden Gefolge-Bonus.</small>') + '<button type="button" class="btn btn--' + (lvl ? 'primary' : 'secondary') + ' btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + (up ? '<em class="hh-badge">' + up + '</em>' : '') + '</button>'; }
+    if (id === 'heroes') return lvl ? '' : '<small class="keep-note">Baue die Heldenhalle – erst dann kannst du Helden freischalten, aufwerten und mitschicken.</small>' +   // gebaut: der Reiter „Helden“ öffnet sie (08b)
+        '<button type="button" class="btn btn--secondary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + cityHeldenBadge() + '</button>';
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
     if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
     if (id === 'forge' && lvl) {                   // pick a slot, then any piece you own in it - equipped or in the chest
@@ -10088,8 +9889,8 @@ function cityExtraHtml(id, lvl) {
     }
     if (id === 'hospital' && lvl) {
         const w = loadCity().wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
-        return '<div class="forge-list"><div class="forge-row">' + icon('plus') + '<span><b>Verwundete</b><small>' + fmtNum(w) + ' / ' + fmtCompact(hospitalCapacity()) + '</small></span>' +
-            (w > 0 ? '<button type="button" class="btn btn--primary btn--sm" data-heal' + (coins < cost ? ' disabled' : '') + '>Heilen · ' + fmtCompact(cost) + ' Münzen</button>' : '<em>leer</em>') + '</div></div>';
+        return '<div class="forge-list"><div class="forge-row heal-row">' + icon('plus') + '<span><b>Verwundete</b><small>' + fmtNum(w) + ' / ' + fmtCompact(hospitalCapacity()) + '</small></span>' +
+            (w > 0 ? '<button type="button" class="btn btn--primary btn--sm" data-heal' + (coins < cost ? ' disabled>Fehlt: ' + fmtCompact(Math.ceil(cost - coins)) : '>Heilen · ' + fmtCompact(cost)) + ' Münzen</button>' : '<em>leer</em>') + '</div></div>';   // (zu wenig: wie viel fehlt – wie beim Bauen)
     }
     return '';
 }
@@ -10138,7 +9939,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
     if (st) { const item = inventory[st.dataset.star]; if (!item) return;
         const s0 = item.stars || 0, cost = starGemCost(s0);
         if (s0 >= Math.min(STAR_MAX, forgeLevel()) || gems < cost) return;
-        gems -= cost; item.stars = s0 + 1; saveGame(); saveProgression(); updateHud();
+        gems -= cost; item.stars = s0 + 1; saveGame(); saveProgression(); updateHud(); questProgress('schmiede', 1);
         flashHint(EQUIPMENT_DEFS[item.slot].name + ' hat jetzt ' + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (+' + item.stars * STAR_PCT + ' % Wirkung).', 2500); renderCitySheet(); }
     else if (hl) { const c = loadCity(), w = c.wounded, cost = Math.ceil(w * HEAL_COIN_PER_TROOP);
         if (!w || coins < cost) return;
@@ -10146,7 +9947,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
         const base = rewardBaseId(); if (base !== null) eigeneTruppenDazu(base, w, 'heil');
         saveGame(); updateHud(); flashHint(fmtNum(w) + ' Truppen geheilt – sie sind in deiner Hauptstadt.', 3000); renderCitySheet(); }
 });
-document.getElementById('cityBtn').addEventListener('click', openCity);
+document.getElementById('cityBtn').addEventListener('click', () => openCity());   // nicht openCity direkt: sonst käme das Klick-Ereignis als „dann“ an
 document.getElementById('cityNavBtn').addEventListener('click', () => { if (!cityView.hidden) { closeAllPopups(); closeCity(); } else openCity(); });   // in der Stadt: zurück zur Karte (wie in Rise of Kingdoms)
 // Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) und die untere Knopf-Leiste – überall gleich (Alexander 4.10.)
 function stadtLeiste(an) {
@@ -10185,6 +9986,82 @@ function teleportCapital(toId) {
     flashHint('Die Hauptstadt ist umgezogen – deine Truppen sind mitgekommen.', 3500);
     return true;
 }
+// Teleportieren (Alexander 7.10., Merkliste 33): die Hauptstadt an eine freie Stelle der Karte – die Basis selbst zieht um (Truppen,
+// Stufe, Stadt bleiben). Platz wie für eine Basis (nicht im Gebirge, nicht auf Toren, Feldern, Lagern, Tempeln, nicht in der Thron-Mitte),
+// nur in Gebiete, die von der Hauptstadt über offene Pässe erreichbar sind (TELEPORT_NUR_OFFEN). Kostet 1 Teleporter aus dem Rucksack (im Shop
+// 500 Edelsteine), sonst 500 Edelsteine; neue Spieler (Anfängerschutz) haben 1 Teleporter gratis, keine Abklingzeit; nicht, solange ein Marsch an der Hauptstadt hängt. Der Weltrechner entscheidet
+// (Befehl teleport), verlegte Basen stehen im Welt-Teil openWaterInselOrt { id: [x, y, Gebiet] } – Mitspieler teleportieren nicht.
+const TP_GEMS = 500, TELEPORT_NUR_OFFEN = true, TP_ABSTAND = BASE_SPACING * .5;
+let inselOrt = {};
+for (const isl of islands) isl.ort0 = [isl.x, isl.y, isl.landmassId];
+function inselOrtLaden() { try { inselOrt = JSON.parse(store.get('openWaterInselOrt')) || {}; } catch (e) { inselOrt = {}; } inselOrtAnwenden(); }
+function inselOrtAnwenden() {                    // verlegte Basen an ihren Platz (und zurück, wenn der Eintrag fehlt – neue Saison)
+    let neu = false;
+    for (const isl of islands) {
+        const e = inselOrt[isl.id], o = e && isl.type === 'tower' && Number.isFinite(e[0]) && Number.isFinite(e[1]) && landmasses[e[2]] ? e : isl.ort0;
+        if (isl.x === o[0] && isl.y === o[1] && isl.landmassId === o[2]) continue;
+        if (isl.landmassId !== o[2]) { const alt = islandsByLandmass[isl.landmassId] || [], k = alt.indexOf(isl); if (k >= 0) alt.splice(k, 1); (islandsByLandmass[o[2]] = islandsByLandmass[o[2]] || []).push(isl); }
+        isl.x = o[0]; isl.y = o[1]; isl.landmassId = o[2]; neu = true;
+        if (!SYSTEM && ownedIslands.has(isl.id)) revealAround(isl.x, isl.y, REVEAL_BASE, true);   // (Handy: um die eigene Basis ist kein Nebel)
+        const lm = landmasses[o[2]]; if (lm.tier === 'guardian' || lm.tier === 'throne') midZoneIds.add(isl.id); else midZoneIds.delete(isl.id);
+    }
+    if (!neu) return;
+    TERR.player.clear(); TERR.enemy.clear(); ownVer++; capitalCache = null; BG.valid = false;   // Gebiets-Flächen und Boden neu (die Basis steht woanders)
+    if (typeof flushBannerSprites === 'function') flushBannerSprites();
+    requestRender();
+}
+function tpGebiete(vonLm) {                      // die Gebiete, die man von vonLm aus über (offene) Pässe erreicht
+    const da = new Set([vonLm]), q = [vonLm], now = Date.now();
+    while (q.length) { const a = q.shift();
+        for (const br of bridges) { const b = br.a === a ? br.b : br.b === a ? br.a : null;
+            if (b === null || da.has(b) || (TELEPORT_NUR_OFFEN && now < passOpensAt(br))) continue; da.add(b); q.push(b); } }
+    return da;
+}
+function tpMarschDa(cap) {                       // hängt ein Marsch an der Hauptstadt (hin, weg, Angriff darauf)?
+    const an = m => m && [m.sourceId, m.targetId, m.fromId, m.toId, m.homeId].includes(cap);
+    return pendingAttacks.some(an) || pendingSends.some(an) || pendingRetreats.some(an) || fieldMarches.some(an) || barbMarches.some(an) ||
+        armies.some(a => a.mv && a.mv.to && a.mv.to.id === cap);
+}
+function tpGratis(who) {                         // neue Spieler (Anfängerschutz): einmal gratis
+    if (who === 'player') return store.get('openWaterTpGratis') !== '1' && neulingBis() > Date.now();
+    const b = loadBotState()[who]; return !!b && !b.tpGratis && botNeulingBis(who, b) > Date.now();
+}
+function tpPruefen(who, x, y) {                  // → null (geht) oder der Grund für den Spieler
+    const cap = who === 'player' ? playerIslandId : botCapitalOf(who), c = islandById[cap];
+    if (!c || c.type !== 'tower' || !Number.isFinite(x) || !Number.isFinite(y)) return 'Du hast keine Hauptstadt, die umziehen kann.';
+    const lmId = gebietAn(x, y), lm = landmasses[lmId];
+    if (!lm || Math.abs(x) > FRAME_HALF - 8000 || Math.abs(y) > FRAME_HALF - 8000) return 'Dort ist kein Land.';
+    if (lm.tier === 'throne') return 'In die Thron-Mitte kann die Hauptstadt nicht ziehen.';
+    if (Math.hypot(c.x - x, c.y - y) < TP_ABSTAND) return 'Deine Hauptstadt steht schon hier.';   // (kein Umzug an dieselbe Stelle – Teleporter/Edelsteine wären weg)
+    if (grenzAbstand(x, y) < KETTE_FREI + BASE_SPACING * .45) return 'Zu nah am Gebirge – such dir einen Platz weiter drinnen.';
+    for (const i of islandsByLandmass[lmId] || []) { if (i.id === cap) continue;
+        const frei = i.bildR ? i.bildR / .35 * .55 : i.type === 'gate' ? BASE_SPACING * 1.1 : TP_ABSTAND;
+        if (Math.hypot(i.x - x, i.y - y) < frei) return 'Zu nah an einer anderen Basis – dort ist kein Platz.'; }
+    for (const g of gateSpots) if (g.lm === lmId && (Math.hypot(x - g.x, y - g.y) < BASE_SPACING * 1.1 || segDistW(x, y, g.x, g.y, g.ex, g.ey) < BASE_SPACING * .7)) return 'Zu nah am Pass – dort ist kein Platz.';
+    for (const f of resFields) if (Math.hypot(f.x - x, f.y - y) < f.radius + TP_ABSTAND * .6) return 'Dort liegt ein Feld – such dir einen freien Platz.';
+    for (const k of barbState.camps || []) if (Math.hypot(k.x - x, k.y - y) < TP_ABSTAND) return 'Dort lagern Barbaren – such dir einen freien Platz.';
+    if (!tpGebiete(c.landmassId).has(lmId)) return 'Dorthin führt noch kein offener Pass.';
+    if (tpMarschDa(cap)) return 'Erst wenn keine Märsche und kein Angriff mehr an deiner Hauptstadt hängen.';
+    return null;
+}
+function tpVerlegen(who, x, y) {                 // (geprüft, bezahlt) die Hauptstadt steht jetzt bei x, y
+    const cap = who === 'player' ? playerIslandId : botCapitalOf(who);
+    inselOrt[cap] = [Math.round(x), Math.round(y), gebietAn(x, y)]; store.set('openWaterInselOrt', JSON.stringify(inselOrt)); inselOrtAnwenden();
+    saveGame(); requestRender();
+}
+function teleportOrt(x, y) {                     // (Spieler) Tipp auf „Teleportieren“, schon bestätigt → true: unterwegs bzw. erledigt
+    const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return false; }
+    const gratis = tpGratis('player'), tele = !gratis && teleVorrat() > 0, k = gratis || tele ? 0 : TP_GEMS;   // zuerst der Gratis-Teleporter, dann gekaufte, sonst Edelsteine
+    if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine.', 3000); return false; }
+    gems -= k; if (gratis) store.set('openWaterTpGratis', '1'); if (tele) store.set('openWaterTeleporter', String(teleVorrat() - 1));   // (gekaufter Teleporter: der Weltrechner bucht die 500 beim Kauf ausgegebenen Gems – wie beim Bezahlen hier)
+    statBump('teleports'); saveGame(); saveProgression(); updateHud();
+    if (alsBefehl('teleport', { x: Math.round(x), y: Math.round(y), gratis })) { flashHint('Die Hauptstadt zieht um …', 3000); return true; }   // (Zuschauer: der Weltrechner verlegt sie)
+    tpVerlegen('player', x, y);
+    spawnBattleFx(playerIslandId, true, 'Hauptstadt', 'hierher teleportiert');
+    flashHint('Die Hauptstadt ist hierher teleportiert – deine Truppen sind mitgekommen.', 3500);
+    return true;
+}
+inselOrtLaden();
 document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
 document.getElementById('cityInfoBtn').addEventListener('click', e => { const s = document.getElementById('citySheet'); s.classList.toggle('zeig-info'); e.currentTarget.classList.toggle('on', s.classList.contains('zeig-info')); });   // Beschreibung nur auf Tipp (weniger Text)
 document.getElementById('citySheetClose').addEventListener('click', () => { cityOpenId = null; document.getElementById('citySheet').hidden = true; });
@@ -10196,513 +10073,61 @@ document.getElementById('citySpeedBtn').addEventListener('click', e => {
     if (!gemsWirklich('speed:' + id, cost, e.currentTarget)) return;
     gems -= cost; saveGame(); updateHud(); cityFinishBuild(true, id);
 });
-// ===== THE CITY, ISOMETRIC =====
-// Your capital like in the big mobile strategy games: a walled town seen from above at an angle, every building on
-// its own lot and growing with its level, the keep in the middle; outside the land of the world map around your capital
-// (woods where the map has forest, the coast where it has sea), people walking the streets. Drag to move, pinch or wheel to zoom, tap a building to open it.
-// World: 640 × 640 units (a tile is 10), the same isometric projection as the buildings on the map.
-const CW = 640, CC = 320;                                                   // world size and centre
-const CITY_WALL = { a: 150, b: 490 };                                       // the curtain wall (square, world units)
-// Die Stadt im Raster (Alexander 2.10.: „innen Base neu“): 12 Bauplätze rund um den Burgplatz (4 × 4, die Mitte ist die Burg),
-// Straßen dazwischen wie ein „#“, vorn das Tor mit der Hauptstraße. Draußen nur Landschaft (Alexander 6.10.: wie bei RoK
-// liegt die Stadt in der Weltkarte – keine Felder, Mühle oder Höfe): Wald, Küste und Meer wie auf der Karte, Berge, ein Fluss.
-const CITY_LOTS = {                                                          // building lots (ground centre, world units)
-    lumber: [206, 206], academy: [282, 206], heroes: [358, 206], quarry: [434, 206],
-    forge: [206, 282],
-    embassy: [206, 358],
-    hospital: [282, 434], market: [358, 434], mine: [434, 434],
-    wall: [320, 490]                                                         // Rohstoffe: in der Base (Alexander 4.10.)
+// ===== DIE STADT ALS BILD (Alexander 7.10.: „KI-Bilder statt Code“) =====
+// Die ganze Hauptstadt ist EIN gemaltes Bild (bilder/stadt_gross.webp, 1536 × 1024): Burg, Labor, Krankenhaus, Markt, Heldenhalle,
+// Botschaft, Schmiede, Holzfäller, Steinbruch, Eisenmine und die Mauer ringsum. Das Bild füllt den Bildschirm (Handy hoch: breiter
+// als der Bildschirm – wischen), Finger/Mausrad zoomen. Über jedem Gebäude ein Schild „Name / Stufe N“ (08f), Tippen öffnet es.
+const CITY_BILD_W = 1536, CITY_BILD_H = 1024;
+// Gebäude im Bild (Prozent): [Mitte x, Mitte y, Breite, Höhe, Schild y] – die Mitte trifft das Gebäude, das Schild sitzt darunter
+const CITY_ORTE = {
+    _keep:    [49, 21, 34, 36, 31],
+    academy:  [16, 18, 22, 24, 27],
+    forge:    [87, 24, 23, 21, 32],
+    hospital: [17, 45, 22, 23, 53],
+    wall:     [40, 43, 16, 14, 47],
+    heroes:   [70, 47, 17, 25, 57],
+    embassy:  [89, 50, 18, 25, 59],
+    market:   [43, 59, 22, 16, 66],
+    lumber:   [15, 73, 25, 18, 80],
+    quarry:   [40, 84, 29, 22, 86],
+    mine:     [85, 82, 23, 28, 86]
 };
-const CITY_DRAUSSEN = new Set();
-const CITY_KEEP_AT = [320, 320];
-const cIso = (x, y) => [(x - y) * .866, (x + y) * .5];                    // world → screen units (before zoom)
-let cityCam = null, cityPointers = new Map(), cityGesture = null, CITY_GROUND = null, CITY_WALLS = null, CITY_SPRITES = new Map();
-let CITY_BG_COL = '#4f8237';
-const CITY_BAKE = 2.5;                                                         // ground canvas pixels per screen unit
-const CITY_BOUNDS = { x0: -CW * .866 - 40, x1: CW * .866 + 40, y0: -130, y1: CW + 80 };   // screen units covered by the ground
-
-function cityTexture(seed, base, spots, n, size) {   // small tileable noise texture for grass / cobbles / fields
-    const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d'), r = mulberry32(seed);
-    g.fillStyle = base; g.fillRect(0, 0, size, size);
-    for (let i = 0; i < n; i++) { g.fillStyle = spots[Math.floor(r() * spots.length)]; const x = r() * size, y = r() * size, w = 1 + r() * 3;
-        for (const dx of [0, -size, size]) for (const dy of [0, -size, size]) g.fillRect(x + dx, y + dy, w, w * (.6 + r())); }
-    return c;
-}
-// a world-space polygon on the ground, drawn in screen units
-function cityGroundPoly(g, pts, fill, stroke, lw) {
-    g.beginPath(); pts.forEach((q, i) => { const [sx, sy] = cIso(q[0], q[1]); i ? g.lineTo(sx, sy) : g.moveTo(sx, sy); }); g.closePath();
-    if (fill) { g.fillStyle = fill; g.fill(); } if (stroke) { g.strokeStyle = stroke; g.lineWidth = lw || 1; g.stroke(); }
-}
-const cityRect = (x0, y0, x1, y1) => [[x0, y0], [x1, y0], [x1, y1], [x0, y1]];
-function cityStrip(g, pts, w, fill) {                                        // a street along world points: flat quads on the ground (iso-correct)
-    for (let i = 1; i < pts.length; i++) { const [x0, y0] = pts[i - 1], [x1, y1] = pts[i], L = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / L * w / 2, ny = (x1 - x0) / L * w / 2;
-        const ex = (x1 - x0) / L * w * .25, ey = (y1 - y0) / L * w * .25;    // a little overlap: no seams at the bends
-        cityGroundPoly(g, [[x0 + nx - ex, y0 + ny - ey], [x1 + nx + ex, y1 + ny + ey], [x1 - nx + ex, y1 - ny + ey], [x0 - nx - ex, y0 - ny - ey]], fill); }
-}
-// a small painter: iso kit on a scaled context, anchored at the ground point (ax, ay) of the canvas
-const CITY_INK = 'rgba(52,38,24,.42)';                                      // softer outlines than on the map: the town is seen up close
-function cityPainter(g, scale, ax, ay) { g.setTransform(scale, 0, 0, scale, ax, ay); g.lineJoin = 'round'; return isoKit(g, 0, CITY_INK); }
-function cityZiegel(K, a0, a1, b0, b1, n, col) {                            // Ziegel-Reihen: n Linien zwischen Traufe (a0→a1) und First (b0→b1)
-    const g = K.g; if (!g) return; g.save(); g.strokeStyle = col; g.lineWidth = .45;
-    for (let i = 1; i < n; i++) { const t = i / n; g.beginPath(); g.moveTo(a0[0] + (b0[0] - a0[0]) * t, a0[1] + (b0[1] - a0[1]) * t); g.lineTo(a1[0] + (b1[0] - a1[0]) * t, a1[1] + (b1[1] - a1[1]) * t); g.stroke(); }
-    g.restore();
-}
-function cityKante(K, p, q, col, w) { const g = K.g; if (!g) return; g.save(); g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.beginPath(); g.moveTo(p[0], p[1]); g.lineTo(q[0], q[1]); g.stroke(); g.restore(); }
-function cityGable(K, x0, x1, y0, y1, z, h, col) {                           // pitched roof, ridge along x
-    const yc = (y0 + y1) / 2, n = Math.max(3, Math.round(h / 1.8));
-    K.poly([K.P(x0, y1, z), K.P(x1, y1, z), K.P(x1, yc, z + h), K.P(x0, yc, z + h)], shade(col, .95));
-    K.poly([K.P(x1, y0, z), K.P(x1, y1, z), K.P(x1, yc, z + h)], shade(col, .7));
-    K.poly([K.P(x0, y0, z), K.P(x1, y0, z), K.P(x1, yc, z + h), K.P(x0, yc, z + h)], shade(col, 1.15), .6);   // back slope peeks over the ridge line
-    K.poly([K.P(x0, y1, z), K.P(x1, y1, z), K.P(x1, yc, z + h), K.P(x0, yc, z + h)], shade(col, .95));
-    cityZiegel(K, K.P(x0, y1, z), K.P(x1, y1, z), K.P(x0, yc, z + h), K.P(x1, yc, z + h), n, shade(col, .74));
-    cityKante(K, K.P(x0, yc, z + h), K.P(x1, yc, z + h), shade(col, 1.35), .9); cityKante(K, K.P(x0, y1, z), K.P(x1, y1, z), shade(col, .5), 1);
-}
-function cityGableY(K, x0, x1, y0, y1, z, h, col) {                          // pitched roof, ridge along y
-    const xc = (x0 + x1) / 2, n = Math.max(3, Math.round(h / 1.8));
-    K.poly([K.P(x0, y0, z), K.P(xc, y0, z + h), K.P(xc, y1, z + h), K.P(x0, y1, z)], shade(col, 1.12), .6);
-    K.poly([K.P(x1, y0, z), K.P(x1, y1, z), K.P(xc, y1, z + h), K.P(xc, y0, z + h)], shade(col, .72));
-    K.poly([K.P(x0, y1, z), K.P(x1, y1, z), K.P(xc, y1, z + h)], shade(col, .92));
-    cityZiegel(K, K.P(x0, y0, z), K.P(x0, y1, z), K.P(xc, y0, z + h), K.P(xc, y1, z + h), n, shade(col, .85));
-    cityZiegel(K, K.P(x1, y0, z), K.P(x1, y1, z), K.P(xc, y0, z + h), K.P(xc, y1, z + h), n, shade(col, .55));
-    cityKante(K, K.P(xc, y0, z + h), K.P(xc, y1, z + h), shade(col, 1.35), .9);
-}
-function cityWindows(K, x0, x1, y, z, n, lit) {                              // a row of windows on the front (y) face
-    for (let i = 0; i < n; i++) { const x = x0 + (x1 - x0) * (i + .5) / n, [a, b] = K.P(x, y, z);
-        K.poly([[a - 1, b], [a + 1, b - .6], [a + 1, b - 3.6], [a - 1, b - 3]], lit ? '#f2c46a' : '#2b2520', .4); }
-}
-function cityWindowsR(K, x, y0, y1, z, n) {                                   // on the right (x) face
-    for (let i = 0; i < n; i++) { const y = y0 + (y1 - y0) * (i + .5) / n, [a, b] = K.P(x, y, z);
-        K.poly([[a - 1, b - .6], [a + 1, b], [a + 1, b - 3], [a - 1, b - 3.6]], '#2b2520', .4); }
-}
-function cityDoor(K, x, y, h) { const [a, b] = K.P(x, y, 0); K.poly([[a - 2, b + 1], [a + 2, b + 1 - 1.2], [a + 2, b - h], [a, b - h - 1.4], [a - 2, b - h + 1.2]], '#3a2616', .6); }
-function cityBanner(K, x, y, z, col) { const [a, b] = K.P(x, y, z); K.poly([[a - 1.6, b], [a + 1.6, b - .9], [a + 1.6, b + 7], [a, b + 9], [a - 1.6, b + 8]], col, .5); }
-function cityPlinth(K, r, h, col) { K.box(-r, r, -r, r, 0, h, col || '#a89f8c', .8); }
-
-// tiers: 0 = empty lot, 1 = lvl 1-4, 2 = 5-14, 3 = 15+
-const cityTierOf = lvl => !lvl ? 0 : lvl >= 15 ? 3 : lvl >= 5 ? 2 : 1;
-const CITY_PAINT = {
-    plot(K) {                                                                // fenced building site
-        K.poly([K.P(-20, -20, 0), K.P(20, -20, 0), K.P(20, 20, 0), K.P(-20, 20, 0)], '#9c8058', .6);
-        for (let i = -20; i <= 20; i += 5) { K.box(i - .6, i + .6, 19.4, 20.6, 0, 3.5, '#6b4a2c', .4); K.box(19.4, 20.6, i - .6, i + .6, 0, 3.5, '#6b4a2c', .4); }
-        K.box(-20, 20, 19.7, 20.3, 2.4, 3, '#7d5834', .3); K.box(19.7, 20.3, -20, 20, 2.4, 3, '#7d5834', .3);
-        for (let i = 0; i < 3; i++) K.box(-12, 2, -8 + i * 3.2, -5.6 + i * 3.2, 0, 2.4, i % 2 ? '#a0783f' : '#8a6634', .4);   // timber
-        for (const [x, y] of [[8, -8], [11, -3], [6, -2]]) K.box(x, x + 4, y, y + 4, 0, 3, '#9d9585', .4);                   // stones
-        K.box(12, 13, 10, 11, 0, 12, '#6b4a2c', .4); K.box(8, 17, 10.4, 10.9, 9, 14, '#e6d8b4', .4);                         // sign
-    },
-    keep(K, t) {                                                             // deine Burg: Ringmauer mit Ecktürmen, Halle, Bergfried, Torhaus – wächst mit der Burg-Stufe (0–4)
-        const st = STONE, roof = '#3a78c8', gold = '#e2b043', w = 28, z0 = 4, wh = z0 + 12 + t * 2, h = z0 + 28 + t * 5;
-        K.box(-36, 36, -36, 36, 0, 2.2, '#9d9585', .7); K.box(-33, 33, -33, 33, 2.2, z0, '#b8b0a0', .6);          // Sockel in zwei Stufen
-        const turm = (x, y, big) => { const r = big ? 7 : 6, th = wh + 8 + (big ? 3 : 0); K.cyl(x, y, r, z0, th, st, .8); K.cyl(x, y, r + .9, th, th + 2, shade(st, 1.06), .6);
-            K.cone(x, y, r + 1.6, th + 2, 11 + t * 1.5, t >= 3 && big ? gold : roof); const [a, b] = K.P(x, y, th + 15 + t * 1.5); K.flag(a, b, BAND.player, true); };
-        K.box(-w, w, -w, -w + 3, z0, wh, shade(st, .92), .7); K.box(-w, -w + 3, -w, w, z0, wh, shade(st, .92), .7);   // hinten: Mauern + Turm
-        turm(-w, -w, false);
-        K.box(-24, -13, -10, 16, z0, z0 + 14, '#ebe4d4', .8); cityGableY(K, -25, -12, -11, 17, z0 + 14, 9, roof); cityWindows(K, -22, -15, 16, z0 + 10, 2, true);   // die Halle links
-        if (t >= 1) { K.box(6, 21, -24, -13, z0, z0 + 12, '#ebe4d4', .7); cityGable(K, 5, 22, -25, -12, z0 + 12, 7, roof); cityWindows(K, 8, 19, -13, z0 + 9, 3, true); }   // die Kapelle rechts
-        const dw = 9 + Math.min(t, 2);                                                                                  // der Bergfried
-        K.box(-dw, dw, -dw + 2, dw + 2, z0, h, st, .9); K.merlons(-dw, dw, -dw + 2, dw + 2, h, st, 4);
-        cityWindows(K, -dw + 3, dw - 3, dw + 2, h - 7, 3, true); cityWindows(K, -dw + 3, dw - 3, dw + 2, h - 17, 3, false); cityWindowsR(K, dw, -dw + 5, dw - 1, h - 7, 3);
-        cityBanner(K, -dw + 3.5, dw + 2.2, h - 21, '#2b5d9b'); cityBanner(K, dw - 3.5, dw + 2.2, h - 21, '#2b5d9b');
-        if (t >= 2) { const h2 = h + 9 + t * 2; K.box(-6, 6, -4, 8, h, h2, st, .8); K.merlons(-6, 6, -4, 8, h2, st, 3); K.pyramid(0, 2, 7.6, h2 + 1.8, 13, t >= 4 ? gold : roof); }
-        else K.pyramid(0, 2, dw + 1.4, h + 1.8, 13, roof);
-        if (t >= 3) { K.cyl(dw, -dw + 2, 3.4, h - 6, h + 8, st, .6); K.cone(dw, -dw + 2, 4.4, h + 8, 8, gold); }
-        turm(w, -w, false); turm(-w, w, false);
-        K.box(w - 3, w, -w, w, z0, wh, st, .7); K.box(-w, w, w - 3, w, z0, wh, st, .7); K.merlons(-w, w, -w, w, wh, st, 8);   // vorn: Mauern, Torhaus, großer Eckturm
-        K.box(-8, 8, w - 6, w + 3, z0, wh + 7, shade(st, 1.03), .8); K.merlons(-8, 8, w - 6, w + 3, wh + 7, st, 3);
-        const [gx, gy] = K.P(0, w + 3, z0); K.poly([[gx - 5, gy + 2.9], [gx + 5, gy - 2.9], [gx + 5, gy - 12], [gx, gy - 16], [gx - 5, gy - 9]], '#241810', .7);
-        for (const dx of [-2.5, 0, 2.5]) { const [p1, p2] = K.P(dx, w + 3.05, z0 + .5), [q1, q2] = K.P(dx, w + 3.05, z0 + 10.5 - Math.abs(dx)); cityKante(K, [p1, p2], [q1, q2], 'rgba(120,110,95,.75)', .6); }   // Fallgatter
-        cityBanner(K, -5.5, w + 3.2, wh + 4, '#2b5d9b'); cityBanner(K, 5.5, w + 3.2, wh + 4, '#2b5d9b');
-        turm(w, w, true);
-    },
-    academy(K, t) {
-        cityPlinth(K, 21, 2);
-        K.box(-16, 14, -11, 11, 2, 15, '#efe7d4', .8); cityGable(K, -17, 15, -12, 12, 15, 9, '#2f4f86'); cityWindows(K, -14, 12, 11, 12, 5, false);
-        for (const x of [-12, -6, 0, 6, 12]) K.cyl(x, 14, 1.3, 2, 14, '#f3ecdc', .5, true);
-        K.box(-16, 14, 13, 15, 14, 15.5, '#f3ecdc', .5);
-        if (t >= 2) { K.cyl(10, -4, 6.5, 15, 25, '#e6dcc6', .7); K.dome(10, -4, 7, 25, 9, '#6f9bd8'); }
-        if (t >= 3) { K.box(-20, -12, -18, -8, 2, 22, '#e6dcc6', .7); K.pyramid(-16, -13, 5, 22, 8, '#2f4f86'); cityBanner(K, -14, 11.2, 14, '#2f4f86'); cityBanner(K, 12, 11.2, 14, '#2f4f86'); }
-    },
-    forge(K, t) {
-        cityPlinth(K, 21, 2, '#8e8676');
-        K.box(-15, 13, -10, 10, 2, 13, '#d9ccb2', .8); cityGable(K, -16, 14, -11, 11, 13, 8, '#3c3c44'); cityWindows(K, -12, 10, 10, 10, 3, true);
-        K.box(-12, -6, -8, -2, 2, 30, '#6b6456', .7);                                                                   // chimney
-        const [fx, fy] = K.P(4, 10, 2); K.poly([[fx - 3, fy + 1.7], [fx + 3, fy - 1.7], [fx + 3, fy - 7], [fx - 3, fy - 3.6]], '#ff8c2a', .6);   // furnace glow
-        K.box(14, 18, 12, 15, 2, 5, '#3a3a40', .5); K.box(15, 17, 12.8, 14.2, 5, 6, '#2c2c30', .4);                      // anvil
-        if (t >= 2) { K.box(2, 18, -18, -8, 2, 10, '#cfc2a8', .7); cityGable(K, 1, 19, -19, -7, 10, 6, '#4a4a52'); }
-        if (t >= 3) { K.box(10, 15, -2, 3, 2, 26, '#6b6456', .7); cityBanner(K, -10, 10.2, 12, '#4a4a52'); }
-    },
-    hospital(K, t) {
-        cityPlinth(K, 21, 2);
-        K.box(-15, 13, -10, 10, 2, 13, '#fbf7ee', .8); cityGable(K, -16, 14, -11, 11, 13, 8, '#b33a2e'); cityWindows(K, -12, 10, 10, 9, 4, false);
-        const [cx, cy] = K.P(-1, 10, 11); g2Cross(K.poly, cx, cy);
-        K.pyramid(14, 14, 5, 2, 8, '#e8e2d2');
-        if (t >= 2) { K.pyramid(-15, 15, 5, 2, 8, '#e8e2d2'); K.box(-18, -8, -19, -12, 2, 9, '#f3eee2', .7); cityGable(K, -19, -7, -20, -11, 9, 5, '#b33a2e'); }
-        if (t >= 3) { for (const [x, y] of [[4, 17], [9, 17]]) { const [a, b] = K.P(x, y, 2); K.poly([[a - 2, b], [a, b - 1], [a + 2, b], [a, b + 1]], '#6aa84f', .3); } cityBanner(K, 12, 10.2, 12, '#c0392b'); }
-    },
-    heroes(K, t) {
-        cityPlinth(K, 21, 2);
-        K.box(-17, 15, -12, 8, 2, 16, '#efe6d2', .8); cityGable(K, -18, 16, -13, 9, 16, 12, '#7a2e2a'); cityWindows(K, -14, 12, 8, 13, 5, true);
-        if (t >= 2) { K.box(-6, 4, -6, 2, 16, 30, '#e6dcc6', .7); K.pyramid(-1, -2, 6, 30, 10, '#7a2e2a'); }
-        const on = Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3);   // a lit statue for every third of the heroes
-        [0, 1, 2].forEach(i => { const x = -10 + i * 10; K.box(x - 2, x + 2, 13, 17, 2, 5, '#8a7f68', .5); K.cyl(x, 15, 1.4, 5, 10, i < on ? '#d9b454' : '#9a927f', .4); });
-        cityBanner(K, -15, 8.2, 14, '#7a2e2a'); cityBanner(K, 13, 8.2, 14, '#7a2e2a'); if (t >= 3) cityBanner(K, -1, 2.2, 26, '#e4c886');
-    },
-    gatehouse(K, t) {                                                       // the gate in the front wall = the Mauer building
-        if (!t) { K.box(-14, -8, -4, 4, 0, 14, '#8a6440', .6); K.box(8, 14, -4, 4, 0, 14, '#8a6440', .6); K.box(-14, 14, -4, 4, 14, 17, '#6b4a2c', .6);
-            const [a, b] = K.P(0, 4, 0); K.poly([[a - 7, b + 4], [a + 7, b - 4], [a + 7, b - 16], [a - 7, b - 8]], '#5a3d24', .6); return; }
-        const s = STONE, h = [0, 20, 25, 28][t], roof = t >= 3 ? '#d9a93f' : t >= 2 ? '#2f5e9a' : '#8a3a2a';
-        K.box(-12, 12, -6, 6, 0, h, s, .8); K.merlons(-12, 12, -6, 6, h, s, 4);
-        const [a, b] = K.P(0, 6, 0); K.poly([[a - 6, b + 3.5], [a + 6, b - 3.5], [a + 6, b - 13], [a, b - 17], [a - 6, b - 9.5]], '#1b140e', .7);      // archway
-        K.poly([[a - 5, b - 9], [a + 5, b - 14.5], [a + 5, b - 12], [a - 5, b - 6.5]], 'rgba(60,54,44,.8)', .4);                                   // portcullis bar
-        for (const x of [-15, 15]) { K.cyl(x, 0, 7, 0, h + 6, s, .8); K.cone(x, 0, 8.5, h + 6, 10 + t * 2, roof); const [fa, fb] = K.P(x, 0, h + 16 + t * 2); K.flag(fa, fb, BAND.player, true); }
-        if (t >= 2) { cityBanner(K, -6, 6.2, h - 3, '#2b5d9b'); cityBanner(K, 6, 6.2, h - 3, '#2b5d9b'); }
-    },
-    lumber(K, t) {                                                          // Holzfäller: Hütte, Stämme, Sägebock, Bäume drumherum
-        K.box(-16, 0, -14, -2, 0, 9, '#9a7448', .7); cityGable(K, -17, 1, -15, -1, 9, 6, '#3f6b33'); cityDoor(K, -8, -2, 6); cityWindows(K, -14, -10, -2, 7, 1, false);
-        for (let i = 0; i < 2 + t; i++) for (let j = 0; j < 3 - (i % 2); j++) K.box(2 + j * 4.2 + (i % 2) * 2.1, 5.6 + j * 4.2 + (i % 2) * 2.1, 2, 16, i * 3, i * 3 + 3, j % 2 ? '#a0783f' : '#8a6634', .4);   // Stammstapel
-        K.box(-12, -2, 6, 8, 0, 4, '#6b4a2c', .4); K.box(-11, -10, 6, 8, 4, 6, '#6b4a2c', .3); K.box(-4, -3, 6, 8, 4, 6, '#6b4a2c', .3);   // Sägebock
-        for (const [x, y, h] of [[17, -14, 18], [12, -18, 14], [-19, 12, 16], [19, 15, 13]].slice(0, 2 + t)) { K.cyl(x, y, 1.1, 0, h * .45, '#5a3d24', .4); K.cone(x, y, 5, h * .35, h * .8, '#2f6a2a'); }
-    },
-    quarry(K, t) {                                                          // Steinbruch: grauer Fels, Quader, ein Holzkran
-        K.pyramid(-6, -6, 13, 0, 14 + t * 4, '#8f8a80'); K.pyramid(4, -12, 8, 0, 9 + t * 2, '#a39e93');
-        for (const [x, y] of [[8, 6], [13, 9], [10, 13], [3, 12]].slice(0, 2 + t)) K.box(x - 2.4, x + 2.4, y - 2.4, y + 2.4, 0, 4.2, '#bdb6a8', .5);
-        K.box(13, 14.2, -4, -2.8, 0, 22, '#6b4a2c', .4); K.box(5, 14.2, -3.9, -2.9, 20, 21.2, '#6b4a2c', .4);   // Kran
-        const [a, b] = K.P(6, -3.4, 20); K.poly([[a - .3, b], [a + .3, b], [a + .3, b + 10], [a - .3, b + 10]], '#3a2616', .2);
-        if (t >= 2) { K.box(-18, -10, 8, 16, 0, 6, '#9a7448', .5); cityGable(K, -19, -9, 7, 17, 6, 4, '#7a6a52'); }
-    },
-    mine(K, t) {                                                            // Eisenmine: dunkler Berg mit Stollen, Schienen und Lore
-        K.pyramid(-4, -6, 16, 0, 20 + t * 4, '#6e6a63'); K.pyramid(8, -14, 9, 0, 12 + t * 2, '#7d786f');
-        const [a, b] = K.P(-4, 8, 0); K.poly([[a - 5, b], [a + 5, b - 2.8], [a + 5, b - 11], [a, b - 14], [a - 5, b - 9]], '#1d1a17', .5);   // Stollen
-        K.box(-10, 2, 8.5, 9.5, 0, 12, '#6b4a2c', .4);
-        K.box(-6, -2, 9, 22, 0, .6, '#5a5550', .2); K.box(-5.6, -2.4, 15, 19, .6, 4.4, '#7a4a2a', .5); K.box(-5.4, -2.6, 15.2, 18.8, 4.4, 5.6, '#3b3b40', .3);   // Schienen, Lore mit Erz
-        if (t >= 2) { K.box(10, 18, 6, 14, 0, 7, '#9a7448', .5); cityGable(K, 9, 19, 5, 15, 7, 4, '#4a4a52'); cityWindows(K, 11, 17, 14, 5, 2, true); }
-    },
-    embassy(K, t) {                                                         // Botschaft: helles Haus mit Säulen und vielen Fahnen (das Bündnis)
-        cityPlinth(K, 21, 2, '#b8b0a0');
-        K.box(-15, 13, -10, 10, 2, 14, '#f1ead8', .8); cityGable(K, -16, 14, -11, 11, 14, 8, '#2e6b5a'); cityWindows(K, -12, 10, 10, 11, 4, false);
-        for (const x of [-10, -4, 2, 8]) K.cyl(x, 13, 1.2, 2, 13, '#f6f0e2', .5, true);
-        K.box(-15, 13, 12, 14, 13, 14.5, '#f6f0e2', .5);
-        const cols = ['#2e6b5a', '#c0392b', '#d9a93f', '#2f5e9a', '#7a2e8a'];
-        for (let i = 0; i < Math.min(5, 2 + t); i++) { const [a, b] = K.P(-16 + i * 7, 17, 2); K.poly([[a - .4, b], [a + .4, b - .3], [a + .4, b - 16], [a - .4, b - 15.7]], '#6b4a2c', .3); K.poly([[a + .4, b - 16], [a + 6, b - 17], [a + 6, b - 12], [a + .4, b - 11]], cols[i], .3); }
-        if (t >= 2) { K.cyl(10, -4, 5.5, 14, 22, '#e9e1cc', .7); K.dome(10, -4, 6, 22, 7, '#3f8a73'); }
-    },
-    market(K, t) {                                                          // Markt: Stände unter bunten Dächern, Säcke, Fässer, ein Kontor
-        K.poly([K.P(-21, -21, 0), K.P(21, -21, 0), K.P(21, 21, 0), K.P(-21, 21, 0)], '#c2b08c', .5);
-        K.box(-18, -2, -18, -4, 0, 11, '#e2d3b0', .7); cityGable(K, -19, -1, -19, -3, 11, 6, '#b5651d'); cityWindows(K, -15, -5, -4, 8, 2, false);
-        const st = [[8, -10, '#c0392b'], [12, 6, '#2f6fa8'], [-6, 10, '#d9a93f'], [-14, 4, '#6aa84f']].slice(0, 2 + Math.min(2, t));
-        for (const [x, y, col] of st) { for (const [dx, dy] of [[-4, -3], [4, -3], [-4, 3], [4, 3]]) K.box(x + dx - .4, x + dx + .4, y + dy - .4, y + dy + .4, 0, 7, '#6b4a2c', .3);
-            K.box(x - 4, x + 4, y - 3, y + 3, 0, 3, '#8a6440', .4); K.box(x - 2, x, y - 1, y + 1, 3, 4.5, '#e8c547', .3); cityGable(K, x - 5, x + 5, y - 4, y + 4, 7, 3, col); }
-        for (const [x, y] of [[16, 16], [18, 12], [-16, 16]]) K.cyl(x, y, 1.8, 0, 4, '#8a6440', .4);
-        if (t >= 3) { K.box(-2, 4, 14, 19, 0, 4, '#9c7e4c', .4); cityBanner(K, -10, -3.8, 9, '#b5651d'); }
-    },
-};
-function g2Cross(poly, x, y) { poly([[x - 1.2, y - 4], [x + 1.2, y - 4], [x + 1.2, y - 1.2], [x + 4, y - 1.2], [x + 4, y + 1.2], [x + 1.2, y + 1.2], [x + 1.2, y + 4], [x - 1.2, y + 4], [x - 1.2, y + 1.2], [x - 4, y + 1.2], [x - 4, y - 1.2], [x - 1.2, y - 1.2]], '#c0392b', .4); }
-
-// sprite cache: every building at its tier, painted once at a fixed resolution
-const CITY_SPR_SCALE = 5;
-function citySprite(kind, tier, extraKey) {
-    const key = kind + ':' + tier + ':' + (extraKey || '');
-    let s = CITY_SPRITES.get(key); if (s) return s;
-    const art = kind === 'ghost' ? extraKey : kind, w = 64, up = art === 'keep' ? 90 : 52, down = art === 'keep' ? 42 : 26;   // screen-unit box around the ground anchor
-    const c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
-    const g = c.getContext('2d'), K = cityPainter(g, CITY_SPR_SCALE, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE);
-    if (kind === 'ghost') cityGhost(g, K, extraKey, c, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE); else (CITY_PAINT[kind] || CITY_PAINT.plot)(K, tier);
-    s = { c, w, up, down }; CITY_SPRITES.set(key, s); return s;
+const cityOrt = id => { const o = CITY_ORTE[id]; return o && { x: o[0] / 100 * CITY_BILD_W, y: o[1] / 100 * CITY_BILD_H, w: o[2] / 100 * CITY_BILD_W, h: o[3] / 100 * CITY_BILD_H, sy: o[4] / 100 * CITY_BILD_H }; };
+let cityCam = null, cityPointers = new Map(), cityGesture = null;
+const CITY_BILD = { img: null, laedt: false };
+function cityBild() {                                                        // das Stadtbild – lädt beim ersten Mal
+    if (!CITY_BILD.laedt) { CITY_BILD.laedt = true; const im = new Image();
+        im.onload = () => { if (!im.naturalWidth) return; CITY_BILD.img = im; cityFrame.drawn = 0; if (cityOpenId && !document.getElementById('citySheet').hidden) renderCitySheet(); };
+        im.src = 'bilder/stadt_gross.webp'; }
+    return CITY_BILD.img;
 }
 
-// ein leerer Bauplatz: Grundmauern, ein paar Balken und Steine, darüber das Gebäude ganz blass – wie ein Plan, was hier entsteht
-function cityGhost(g, K, id, c, ax, ay) {
-    if (!CITY_DRAUSSEN.has(id)) for (const [x0, x1, y0, y1] of [[-19, 19, -19, -16.5], [-19, -16.5, -16.5, 19], [16.5, 19, -16.5, 19], [-16.5, 16.5, 16.5, 19]]) K.box(x0, x1, y0, y1, 0, 2.2, '#bdb29c', .4);
-    const o = document.createElement('canvas'); o.width = c.width; o.height = c.height;
-    const og = o.getContext('2d'); (CITY_PAINT[id] || CITY_PAINT.plot)(cityPainter(og, CITY_SPR_SCALE, ax, ay), 1);
-    og.setTransform(1, 0, 0, 1, 0, 0); og.globalCompositeOperation = 'source-atop'; og.fillStyle = 'rgba(236,228,210,.6)'; og.fillRect(0, 0, o.width, o.height);
-    g.save(); g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = .5; g.drawImage(o, 0, 0); g.restore();
-    g.setTransform(CITY_SPR_SCALE, 0, 0, CITY_SPR_SCALE, ax, ay);
-    K.box(9, 18, 13, 15.5, 0, 1.6, '#a0783f', .35); K.box(10, 17, 13.2, 15.3, 1.6, 3.1, '#8a6634', .35);   // Balken
-    K.box(-18, -13, 12, 17, 0, 3, '#a59d8c', .35); K.box(-17, -14, 12.6, 15.6, 3, 5, '#b8b0a0', .35);   // Steine
-}
-// ---- Landschaft je nach Gegend der Hauptstadt (Grün, Sand, Schnee, Sumpf, Vulkan) – die Stadt selbst ist immer gepflegt ----
-const CITY_PAL = {
-    green:   { land: '#5e9142', spots: ['#6a9d4b', '#54853a', '#74a853', '#4c7a34'], grass: '#6ba64b', gspots: ['#78b156', '#5f9842', '#83ba60', '#679f47'],
-               leaf: ['#2c6328', '#3b7a33', '#5a9a42'], pine: ['#1f4a26', '#2b5e31', '#3d7742'], rock: '#8e8a82', peak: '#f2f5f7', bank: '#b9a77a', pines: .4, wald: 1,
-               field: ['#e0bf52', '#c9a23c', '#a9bb4c', '#d6c96a'], water: ['#2a6694', '#3f8cc0', '#9fd2ee'], bg: '#5e9142' },
-    sand:    { palm: true, mesa: true, land: '#d2b97e', spots: ['#dcc58f', '#c7ad70', '#bfa864', '#b3a85e'], grass: '#86a84f', gspots: ['#92b35a', '#7a9c46', '#9cbb62', '#80a24b'],
-               leaf: ['#3f6a26', '#548a32', '#74a344'], pine: ['#3f5a26', '#52702f', '#6b8a3c'], rock: '#c2905e', peak: null, bank: '#e6d39c', pines: .55, wald: .6,
-               field: ['#d9b04a', '#c99c3a', '#b9ad5a', '#e0c56a'], water: ['#24708f', '#3a95b4', '#a6dcea'], bg: '#cdb378' },
-    snow:    { land: '#e4eaef', spots: ['#eef2f5', '#d6dee5', '#f7f9fb', '#cfd9e1'], grass: '#dfe7ec', gspots: ['#e9eef2', '#d3dce3', '#f3f6f8', '#cbd5dd'],
-               leaf: ['#3a5a4a', '#4c6e5d', '#6a8a7a'], pine: ['#284638', '#365a4a', '#4c7262'], rock: '#7e8792', peak: '#ffffff', bank: '#cdd7df', pines: .9, wald: 1, schnee: true,
-               field: ['#e9eef1', '#dbe3e8', '#f2f5f7', '#d3dce2'], water: ['#4f7fa3', '#6f9ebf', '#d2e8f4'], bg: '#e4eaef' },
-    swamp:   { land: '#577146', spots: ['#62804f', '#4c6640', '#6b8a55', '#465d3a'], grass: '#6c9150', gspots: ['#78a05a', '#628848', '#82aa62', '#6a8f4d'],
-               leaf: ['#2c4a28', '#3c6034', '#55803f'], pine: ['#223d26', '#2f5132', '#406a42'], rock: '#727065', peak: null, bank: '#7c7a52', pines: .25, wald: 1.1,
-               field: ['#9cab52', '#8a9a46', '#b0b862', '#7f9244'], water: ['#3a5a4c', '#4f7462', '#9fc0ae'], bg: '#577146' },
-    volcano: { land: '#625953', spots: ['#6d635c', '#574f4a', '#776b62', '#4e4743'], grass: '#6e8e4a', gspots: ['#799a54', '#638443', '#84a35e', '#6a8a48'],
-               leaf: ['#33462a', '#445c34', '#5e7a46'], pine: ['#2a3a26', '#384e32', '#4c6644'], rock: '#4f4743', peak: '#e0662e', bank: '#7a6a5e', pines: .5, wald: .5,
-               field: ['#a58f5c', '#93804e', '#b29d66', '#8a7848'], water: ['#2c5a78', '#3f7898', '#8fbcd4'], bg: '#625953' }
-};
-function cityBioVon(lm) { return lm.bio === 'ice' ? 'snow' : CITY_PAL[lm.bio] ? lm.bio : 'green'; }
-function cityBio() { const lm = landmasses[(islandById[playerIslandId] || {}).landmassId]; return lm ? cityBioVon(lm) : 'green'; }
-// Bäume, Büsche, Felsen: in Bildschirm-Einheiten um den Fußpunkt (a, b) gemalt – im Boden-Bild und als Deko-Bild gleich
-function cityTreeAt(g, a, b, r, pal, v) {             // ein Laubbaum: Krone aus Kugeln, oben links im Licht
-    g.fillStyle = 'rgba(20,30,10,.26)'; g.beginPath(); g.ellipse(a + r * .55, b + r * .08, r * 1.2, r * .46, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#5a3d24'; g.fillRect(a - r * .13, b - r * 1.05, r * .26, r * 1.05);
-    const L = pal.leaf, f = v ? .9 : 1;
-    for (const [dx, dy, rr, ci] of [[0, -1.5, 1, 0], [-.48, -1.72, .74, 1], [.45, -1.78, .7, 0], [.02, -2.22, .66, 1], [-.32, -2.2, .4, 2], [.1, -2.5, .3, 2], [-.6, -1.75, .3, 2]]) {
-        g.fillStyle = L[ci]; g.beginPath(); g.arc(a + dx * r, b + dy * r * f, rr * r, 0, Math.PI * 2); g.fill(); }
-    g.strokeStyle = 'rgba(15,35,12,.3)'; g.lineWidth = Math.max(.35, r * .07); g.beginPath(); g.arc(a, b - 1.5 * r * f, r, Math.PI * .08, Math.PI * .92); g.stroke();
-    if (pal.schnee) { g.fillStyle = 'rgba(255,255,255,.85)'; for (const [dx, dy, rr] of [[-.3, -2.55, .42], [.25, -2.45, .3]]) { g.beginPath(); g.ellipse(a + dx * r, b + dy * r, rr * r, rr * r * .45, 0, 0, Math.PI * 2); g.fill(); } }
-}
-function cityPineAt(g, a, b, h, pal) {                // eine Tanne: drei Kegel übereinander, links hell, rechts dunkel
-    g.fillStyle = 'rgba(20,30,10,.24)'; g.beginPath(); g.ellipse(a + h * .2, b + h * .03, h * .3, h * .11, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#4a3220'; g.fillRect(a - h * .035, b - h * .2, h * .07, h * .2);
-    const P = pal.pine;
-    for (let i = 0; i < 3; i++) { const y0 = b - h * (.14 + i * .23), w = h * (.3 - i * .075), top = y0 - h * (.44 - i * .06);
-        g.fillStyle = P[1]; g.beginPath(); g.moveTo(a - w, y0); g.lineTo(a, top); g.lineTo(a + w, y0); g.quadraticCurveTo(a, y0 + h * .06, a - w, y0); g.fill();
-        g.fillStyle = P[0]; g.beginPath(); g.moveTo(a, top); g.lineTo(a + w, y0); g.quadraticCurveTo(a + w * .5, y0 + h * .04, a + w * .05, y0 + h * .05); g.closePath(); g.fill();
-        g.fillStyle = P[2]; g.beginPath(); g.moveTo(a, top); g.lineTo(a - w * .6, y0 - h * .015); g.lineTo(a - w * .2, y0 - h * .03); g.closePath(); g.fill();
-        if (pal.schnee) { g.fillStyle = 'rgba(255,255,255,.9)'; g.beginPath(); g.moveTo(a, top); g.lineTo(a - w * .45, top + h * .2); g.lineTo(a + w * .3, top + h * .17); g.closePath(); g.fill(); } }
-}
-function cityPalmAt(g, a, b, h, pal) {                 // eine Palme: gebogener Stamm, sechs Wedel
-    g.fillStyle = 'rgba(20,30,10,.22)'; g.beginPath(); g.ellipse(a + h * .3, b + h * .02, h * .3, h * .1, 0, 0, Math.PI * 2); g.fill();
-    const tx = a + h * .16, ty = b - h; g.strokeStyle = '#8a6a44'; g.lineWidth = h * .07; g.lineCap = 'round'; g.beginPath(); g.moveTo(a, b); g.quadraticCurveTo(a + h * .02, b - h * .6, tx, ty); g.stroke();
-    g.strokeStyle = '#6b5032'; g.lineWidth = h * .015; for (let i = 1; i < 6; i++) { const t = i / 6, x = a + (tx - a) * t * t, y = b + (ty - b) * t; g.beginPath(); g.moveTo(x - h * .035, y); g.lineTo(x + h * .035, y - h * .01); g.stroke(); }
-    for (let i = 0; i < 6; i++) { const an = -Math.PI / 2 + (i - 2.5) * .62, L = h * (.42 + (i % 2) * .08), ex = tx + Math.cos(an) * L, ey = ty + Math.sin(an) * L * .55 + L * .32;
-        g.fillStyle = pal.leaf[i % 2 ? 1 : 2]; g.beginPath(); g.moveTo(tx, ty); g.quadraticCurveTo(tx + Math.cos(an) * L * .5 - Math.sin(an) * h * .08, ty + Math.sin(an) * L * .5 - h * .12, ex, ey);
-        g.quadraticCurveTo(tx + Math.cos(an) * L * .5 + Math.sin(an) * h * .05, ty + Math.sin(an) * L * .5 - h * .02, tx, ty); g.fill(); }
-    g.fillStyle = '#6b4a2c'; g.beginPath(); g.arc(tx, ty + h * .02, h * .045, 0, 7); g.fill();
-}
-function cityBushAt(g, a, b, r, pal) {
-    g.fillStyle = 'rgba(20,30,10,.22)'; g.beginPath(); g.ellipse(a + r * .4, b + r * .05, r * 1.2, r * .45, 0, 0, Math.PI * 2); g.fill();
-    for (const [dx, dy, rr, ci] of [[0, -.55, .8, 0], [-.55, -.45, .55, 1], [.5, -.5, .55, 0], [-.15, -.95, .5, 1], [-.35, -.95, .25, 2]]) { g.fillStyle = pal.leaf[ci]; g.beginPath(); g.arc(a + dx * r, b + dy * r, rr * r, 0, Math.PI * 2); g.fill(); }
-    if (pal.schnee) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.ellipse(a - r * .1, b - r * 1.2, r * .5, r * .2, 0, 0, Math.PI * 2); g.fill(); }
-}
-function cityRockAt(g, a, b, r, col) {                 // ein Felsbrocken: links hell, rechts dunkel
-    g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(a + r * .3, b + r * .1, r * 1.1, r * .4, 0, 0, Math.PI * 2); g.fill();
-    const pts = [[-1, 0], [-.85, -.6], [-.3, -1], [.35, -.85], [.95, -.35], [1, 0]];
-    g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(a + x * r, b + y * r) : g.moveTo(a + x * r, b + y * r)); g.closePath(); g.fillStyle = shade(col, .8); g.fill();
-    g.beginPath(); g.moveTo(a - r, b); g.lineTo(a - .85 * r, b - .6 * r); g.lineTo(a - .3 * r, b - r); g.lineTo(a + .05 * r, b - .5 * r); g.lineTo(a - .1 * r, b); g.closePath(); g.fillStyle = shade(col, 1.12); g.fill();
-    g.strokeStyle = 'rgba(40,34,28,.4)'; g.lineWidth = Math.max(.3, r * .06); g.beginPath(); pts.forEach(([x, y], i) => i ? g.lineTo(a + x * r, b + y * r) : g.moveTo(a + x * r, b + y * r)); g.stroke();
-}
-// ein Berg: Grundriss aus 7 Ecken, Spitze etwas versetzt, jede Seite nach dem Licht (oben links) schattiert, oben Schnee
-function cityMountain(g, K, cx, cy, r, h, pal, R) {
-    const n = 7, base = [], ax = cx + (R() - .5) * r * .35, ay = cy + (R() - .5) * r * .35;
-    for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + R() * .45, rr = r * (.78 + R() * .35); base.push([cx + Math.cos(a) * rr, cy + Math.sin(a) * rr]); }
-    const top = pal.mesa ? base.map(p => [ax + (p[0] - ax) * .45, ay + (p[1] - ay) * .45]) : null;
-    const A = K.P(ax, ay, h), faces = base.map((p, i) => [p, base[(i + 1) % n], i]).sort((f, q) => (f[0][0] + f[0][1] + f[1][0] + f[1][1]) - (q[0][0] + q[0][1] + q[1][0] + q[1][1]));
-    for (const [p, q, i] of faces) {
-        if (top) { const t1 = K.P(top[i][0], top[i][1], h), t2 = K.P(top[(i + 1) % n][0], top[(i + 1) % n][1], h), P1 = K.P(p[0], p[1], 0), P2 = K.P(q[0], q[1], 0);
-            const mx = (p[0] + q[0]) / 2 - ax, my = (p[1] + q[1]) / 2 - ay, L = Math.hypot(mx, my) || 1, lit = -(mx + my) / L / Math.SQRT2;
-            K.poly([P1, P2, t2, t1], shade(pal.rock, .74 + lit * .3), .35);
-            for (const f of [.33, .66]) cityKante(K, [P1[0] + (t1[0] - P1[0]) * f, P1[1] + (t1[1] - P1[1]) * f], [P2[0] + (t2[0] - P2[0]) * f, P2[1] + (t2[1] - P2[1]) * f], 'rgba(90,50,20,.25)', .8);
-            continue; }
-        const mx = (p[0] + q[0]) / 2 - ax, my = (p[1] + q[1]) / 2 - ay, L = Math.hypot(mx, my) || 1, lit = -(mx + my) / L / Math.SQRT2;   // +1 = zur Sonne
-        const P1 = K.P(p[0], p[1], 0), P2 = K.P(q[0], q[1], 0), col = shade(pal.rock, .74 + lit * .3);
-        K.poly([P1, P2, A], col, .35);
-        const M = [(P1[0] + P2[0]) / 2 + (R() - .5) * r * .3, (P1[1] + P2[1]) / 2];                                   // ein Grat in der Mitte der Seite
-        g.strokeStyle = 'rgba(255,255,255,' + (lit > 0 ? .1 : .04) + ')'; g.lineWidth = .7; g.beginPath(); g.moveTo(A[0], A[1]); g.lineTo(M[0], M[1]); g.stroke();
-        const low = (u, t) => [u[0] + (A[0] - u[0]) * t, u[1] + (A[1] - u[1]) * t];
-        if (!pal.schnee) K.poly([P1, P2, low(P2, .3), low(P1, .3)], shade(pal.land, .78 + lit * .22), .2);   // grüner Fuß
-        if (pal.peak) K.poly([low(P1, .68), low(P2, .68), A], shade(pal.peak, .86 + lit * .14), .25);   // Schnee (Vulkan: Glut)
-    }
-    if (top) K.poly(top.map(p => K.P(p[0], p[1], h)), shade(pal.rock, 1.1), .35);
-}
-function cityPaintGround() {
-    const B = CITY_BAKE, c = document.createElement('canvas'), bio = cityBio(), pal = CITY_PAL[bio], R = mulberry32(4242);
-    c.width = Math.ceil((CITY_BOUNDS.x1 - CITY_BOUNDS.x0) * B); c.height = Math.ceil((CITY_BOUNDS.y1 - CITY_BOUNDS.y0) * B);
-    const g = c.getContext('2d'); g.setTransform(B, 0, 0, B, -CITY_BOUNDS.x0 * B, -CITY_BOUNDS.y0 * B); g.lineJoin = 'round';
-    const pat = (seed, base, spots, n) => g.createPattern(cityTexture(seed, base, spots, n, 128), 'repeat');
-    CITY_BG_COL = pal.bg;
-    const land = pat(25, pal.land, pal.spots, 900), grass = pat(21, pal.grass, pal.gspots, 800);
-    const cob = pat(23, pal.schnee ? '#c4c0b8' : '#b8a88a', ['#c7b798', '#a39374', '#d1c3a4', '#948466'], 900);
-    const pave = pat(27, '#cfc4ab', ['#dad0b9', '#c1b59b', '#c8bca2', '#e0d7c2'], 600), dirt = pat(24, pal.schnee ? '#b8ad9a' : '#a68a5f', ['#b0946a', '#957a52', '#b89c72'], 600);
-    const K = isoKit(g, 0, 'rgba(40,32,24,.35)');
-    // 1) das Land überall, dazu große weiche Flecken (sonst sieht es aus wie ein Teppich)
-    g.fillStyle = land; g.fillRect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0);
-    for (let i = 0; i < 60; i++) { const [a, b] = cIso(-160 + R() * 960, -160 + R() * 960), r = 25 + R() * 70, hell = R() < .5;
-        const gr = g.createRadialGradient(a, b, 0, a, b, r * 1.6); gr.addColorStop(0, hell ? 'rgba(255,248,200,.12)' : 'rgba(10,30,0,.13)'); gr.addColorStop(1, 'rgba(0,0,0,0)');
-        g.fillStyle = gr; g.beginPath(); g.ellipse(a, b, r * 1.6, r, 0, 0, Math.PI * 2); g.fill(); }
-    // Dünen (Sand) bzw. sanfte Wellen im Gras, Büschel und Blüten
-    for (let i = 0; i < (bio === 'sand' ? 90 : 40); i++) { const [a, b] = cIso(-160 + R() * 960, -160 + R() * 960), w = 30 + R() * 60;
-        g.strokeStyle = R() < .5 ? 'rgba(255,245,210,' + (bio === 'sand' ? .28 : .1) + ')' : 'rgba(60,40,10,' + (bio === 'sand' ? .16 : .07) + ')'; g.lineWidth = 2 + R() * 3;
-        g.beginPath(); g.moveTo(a - w, b); g.quadraticCurveTo(a, b - w * (.15 + R() * .2), a + w, b + (R() - .5) * 8); g.stroke(); }
-    for (let i = 0; i < 1400; i++) { const [a, b] = cIso(-160 + R() * 960, -160 + R() * 960), r2 = R();
-        g.fillStyle = r2 < .45 ? shade(pal.spots[0], 1.12) : r2 < .9 ? shade(pal.spots[1], .82) : ['#f2e6a0', '#e8a0c0', '#ffffff', '#d0a0ff'][Math.floor(R() * 4)]; g.fillRect(a, b, r2 < .9 ? 1.6 + R() * 2 : 1, r2 < .9 ? .7 : 1); }
-    // 2) der Fluss rechts an der Stadt vorbei (Ufer, tiefes Wasser, helle Mitte, Glitzern)
-    const fluss = [[604, -190], [574, 30], [566, 170], [590, 320], [642, 452], [706, 566], [800, 700]].map(p => cIso(p[0], p[1]));
-    const zug = (w, col) => { g.beginPath(); fluss.forEach((p, i) => { if (!i) g.moveTo(p[0], p[1]); else if (i < fluss.length - 1) g.quadraticCurveTo(p[0], p[1], (p[0] + fluss[i + 1][0]) / 2, (p[1] + fluss[i + 1][1]) / 2); else g.lineTo(p[0], p[1]); });
-        g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round'; g.stroke(); };
-    zug(54, shade(pal.land, .82)); zug(46, pal.bank); zug(38, pal.water[0]); zug(28, pal.water[1]); zug(10, 'rgba(255,255,255,.12)');
-    for (let i = 0; i < 70; i++) { const k = Math.floor(R() * (fluss.length - 1)), t = R(), a = fluss[k][0] + (fluss[k + 1][0] - fluss[k][0]) * t + (R() - .5) * 22, b = fluss[k][1] + (fluss[k + 1][1] - fluss[k][1]) * t + (R() - .5) * 10;
-        g.fillStyle = 'rgba(255,255,255,' + (.25 + R() * .35) + ')'; g.fillRect(a, b, 2 + R() * 5, .7); }
-    // 3) die Weltkarte rund um die Hauptstadt: andere Regionen in ihrer Farbe, Meer mit Strand, wo die Karte Wasser hat
-    const aus = cityAussen();
-    for (const lm of aus.fremd) { g.save(); g.clip(aus.pfad(lm)); const fp = CITY_PAL[cityBioVon(lm)];
-        g.fillStyle = pat(25, fp.land, fp.spots, 900); g.fillRect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0); g.restore(); }
-    if (aus.nass) {
-        const meer = new Path2D(); meer.rect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0);
-        for (const lm of aus.lms) meer.addPath(aus.pfad(lm));
-        g.save(); g.clip(meer, 'evenodd');
-        g.fillStyle = pat(26, pal.water[0], [shade(pal.water[0], .9), shade(pal.water[0], 1.1), pal.water[1]], 700); g.fillRect(CITY_BOUNDS.x0, CITY_BOUNDS.y0, CITY_BOUNDS.x1 - CITY_BOUNDS.x0, CITY_BOUNDS.y1 - CITY_BOUNDS.y0);
-        g.lineJoin = 'round';
-        for (const [w, col] of [[26, pal.water[1]], [12, shade(pal.water[1], 1.2)], [6, pal.bank]]) for (const lm of aus.lms) { g.strokeStyle = col; g.lineWidth = w; g.stroke(aus.pfad(lm)); }
-        for (let i = 0; i < 160; i++) { const x = -170 + R() * 980, y = -170 + R() * 980; if (aus.land(x, y)) continue; const [a, b] = cIso(x, y);   // Wellen
-            g.fillStyle = 'rgba(255,255,255,' + (.18 + R() * .25) + ')'; g.fillRect(a, b, 3 + R() * 6, .8); }
-        g.restore();
-        cityGroundPoly(g, cityRect(105, 105, 545, 545), land);                // die Stadt steht immer auf festem Land
-    }
-    // 4) vor dem Tor ein kurzes Pflaster
-    cityStrip(g, [[320, 492], [320, 516]], 17, 'rgba(92,78,56,.85)'); cityStrip(g, [[320, 492], [320, 514]], 13.5, cob);
-    // 5) Berge hinten, Bäume (dicht, wo die Karte Wald hat), Felsen – nur auf Land, in Tiefen-Reihenfolge gemalt
-    const dinge = [];
-    for (const [x, y, r, h] of [[110, 6, 62, 92], [232, -34, 58, 80], [36, 92, 54, 72], [-36, 178, 50, 62], [334, -62, 52, 70], [-96, 292, 46, 54], [432, -104, 50, 62], [-130, 410, 40, 44]])
-        for (const [dx, dy, k] of [[0, 0, 1], [-r * .55, r * .25, .62], [r * .4, -r * .45, .7]]) { const mh = h * k * (.85 + R() * .3); if (aus.land(x + dx, y + dy)) dinge.push({ d: x + dx + y + dy, f: () => cityMountain(g, K, x + dx, y + dy, r * k, mh, pal, R) }); }
-    for (const [x, y, r, h] of [[166, 24, 30, 34], [60, 160, 26, 26], [-60, 262, 24, 24], [300, 10, 26, 28]]) if (aus.land(x, y)) dinge.push({ d: x + y, f: () => cityMountain(g, K, x, y, r, h, pal, R) });   // Hügel davor
-    const frei = (x, y) => !(x > 105 && x < 545 && y > 105 && y < 545) && !(x > 270 && x < 370 && y > 540 && y < 620) && !(x > 548 && x < 668 && y < 470) && !(x > 610 && x < 740 && y > 420 && y < 640) && aus.land(x, y);
-    for (let i = 0, n = Math.round(900 * pal.wald); i < n; i++) {
-        const x = -170 + R() * 980, y = -170 + R() * 980, zufall = R(), dicht = aus.wald(x, y) || x < 60 || y < 60;
-        if (!frei(x, y) || zufall > (dicht ? .85 : .16)) continue;
-        const [a, b] = cIso(x, y), pine = R() < pal.pines, r = 4.2 + R() * 2.4, hell = R() < .5;
-        dinge.push({ d: x + y, f: pine ? (pal.palm ? () => cityPalmAt(g, a, b, r * 4.4, pal) : () => cityPineAt(g, a, b, r * 4.2, pal)) : () => cityTreeAt(g, a, b, r, pal, hell) });
-    }
-    for (const [x, y, r] of [[490, 640, 24], [620, 600, 20], [590, 540, 18], [400, 740, 22]]) if (frei(x, y)) {   // vorn: ein paar Felsgruppen mit Palmen/Bäumen als Rand-Kulisse
-        dinge.push({ d: x + y, f: () => cityMountain(g, K, x, y, r, r * .9, pal, R) });
-        for (let i = 0; i < 4; i++) { const rx = x + (R() - .5) * r * 3.4, ry = y + (R() - .5) * r * 3.4, rr = 2.5 + R() * 3; if (!frei(rx, ry)) continue; const [a, b] = cIso(rx, ry); dinge.push({ d: rx + ry, f: () => cityRockAt(g, a, b, rr, pal.rock) }); }
-        for (let i = 0; i < 3; i++) { const tx = x + r * (1 + R()) * (i - 1), ty = y + r * (.6 + R() * .8), r2 = 4.4 + R() * 2; if (!frei(tx, ty)) continue; const [a, b] = cIso(tx, ty), hell = R() < .5;
-            dinge.push({ d: tx + ty, f: R() < pal.pines ? (pal.palm ? () => cityPalmAt(g, a, b, r2 * 4.4, pal) : () => cityPineAt(g, a, b, r2 * 4.2, pal)) : () => cityTreeAt(g, a, b, r2, pal, hell) }); } }
-    for (let i = 0; i < 50; i++) { const x = -60 + R() * 420, y = -100 + R() * 300, rr = 2 + R() * 3.5; if (x + y > 300 || !frei(x, y)) continue; const [a, b] = cIso(x, y); dinge.push({ d: x + y, f: () => cityRockAt(g, a, b, rr, pal.rock) }); }
-    dinge.sort((p, q) => p.d - q.d).forEach(t => t.f());
-    // 6) in der Mauer: gepflegter Rasen, Straßen wie ein „#“ mit Randsteinen, der Burgplatz, gepflasterte Bauplätze
-    cityGroundPoly(g, cityRect(CITY_WALL.a, CITY_WALL.a, CITY_WALL.b, CITY_WALL.b), grass);
-    for (let i = 0; i < 260; i++) { const [a, b] = cIso(158 + R() * 324, 158 + R() * 324); g.fillStyle = R() < .5 ? 'rgba(255,255,220,.16)' : 'rgba(20,50,10,.14)'; g.fillRect(a, b, 1.6 + R() * 2.4, .7); }   // Grasbüschel
-    const strassen = [[[244, 178], [244, 462]], [[396, 178], [396, 462]], [[178, 244], [462, 244]], [[178, 396], [462, 396]], [[320, 172], [320, 262]], [[172, 320], [262, 320]], [[378, 320], [468, 320]], [[320, 378], [320, 494]]];
-    for (const p of strassen) cityStrip(g, p, 17, 'rgba(92,78,56,.85)');
-    const kreis = (r, n) => { const pts = []; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; pts.push([CC + Math.cos(a) * r, CC + Math.sin(a) * r]); } return pts; };
-    cityGroundPoly(g, kreis(66, 44), 'rgba(92,78,56,.85)');
-    for (const p of strassen) cityStrip(g, p, 13.5, cob);
-    cityGroundPoly(g, kreis(64, 44), cob); cityGroundPoly(g, kreis(59, 44), pave); cityGroundPoly(g, kreis(53, 44), cob);   // der runde Burgplatz mit einem Ring heller Platten
-    for (let i = 0; i < 16; i++) { const a = i / 16 * Math.PI * 2, [p1, p2] = cIso(CC + Math.cos(a) * 59, CC + Math.sin(a) * 59), [q1, q2] = cIso(CC + Math.cos(a) * 53, CC + Math.sin(a) * 53);
-        g.strokeStyle = 'rgba(92,78,56,.45)'; g.lineWidth = .5; g.beginPath(); g.moveTo(p1, p2); g.lineTo(q1, q2); g.stroke(); }
-    const rasen = pat(28, shade(pal.grass, 1.06), pal.gspots.map(x => shade(x, 1.05)), 700);
-    for (const k of Object.keys(CITY_LOTS)) { if (k === 'wall' || CITY_DRAUSSEN.has(k)) continue; const [x, y] = CITY_LOTS[k];   // jeder Bauplatz: gepflegter Rasen mit Randsteinen
-        cityGroundPoly(g, cityRect(x - 25.5, y - 25.5, x + 25.5, y + 25.5), 'rgba(120,108,86,.9)'); cityGroundPoly(g, cityRect(x - 24, y - 24, x + 24, y + 24), rasen);
-        for (let i = 0; i < 30; i++) { const [a2, b2] = cIso(x - 22 + R() * 44, y - 22 + R() * 44); g.fillStyle = R() < .5 ? 'rgba(255,255,220,.18)' : 'rgba(20,50,10,.12)'; g.fillRect(a2, b2, 1.4 + R() * 2, .6); } }
-    // Blumenbeete im Rasenstreifen an der Mauer
-    const farben = pal.schnee ? ['#c0392b', '#ffffff'] : ['#e74c3c', '#f1c40f', '#ecf0f1', '#9b59b6', '#e67e22'];
-    for (const [x, y, w, d] of [[186, 158, 40, 8], [262, 158, 40, 8], [338, 158, 40, 8], [414, 158, 40, 8], [158, 186, 8, 40], [158, 262, 8, 40], [158, 338, 8, 40], [158, 414, 8, 40]]) {
-        cityGroundPoly(g, cityRect(x, y, x + w, y + d), '#6b4a2c'); for (let i = 0; i < w * d / 9; i++) { const [a, b] = cIso(x + 1 + R() * (w - 2), y + 1 + R() * (d - 2)); g.fillStyle = farben[Math.floor(R() * farben.length)]; g.beginPath(); g.arc(a, b, .9, 0, 7); g.fill(); } }
-    // 7) der Rand läuft weich in die Grundfarbe aus (kein hartes Rechteck, wenn die Stadt beim Öffnen von weit unten kommt)
-    const bx0 = CITY_BOUNDS.x0, bx1 = CITY_BOUNDS.x1, by0 = CITY_BOUNDS.y0, by1 = CITY_BOUNDS.y1, RB = 90, rgb = [1, 3, 5].map(i => parseInt(pal.bg.slice(i, i + 2), 16)).join(',');
-    for (const [x0, y0, x1, y1, rx, ry, rw, rh] of [[bx0, 0, bx0 + RB, 0, bx0, by0, RB, by1 - by0], [bx1, 0, bx1 - RB, 0, bx1 - RB, by0, RB, by1 - by0],
-        [0, by0, 0, by0 + RB, bx0, by0, bx1 - bx0, RB], [0, by1, 0, by1 - RB, bx0, by1 - RB, bx1 - bx0, RB]]) {
-        const lg = g.createLinearGradient(x0, y0, x1, y1); lg.addColorStop(0, 'rgba(' + rgb + ',1)'); lg.addColorStop(1, 'rgba(' + rgb + ',0)');
-        g.fillStyle = lg; g.fillRect(rx, ry, rw, rh); }
-    CITY_GROUND_BIO = cityGrundKey();
-    return CITY_GROUND = c;
-}
-let CITY_GROUND_BIO = '';
-const cityGrundKey = () => cityBio() + ':' + playerIslandId;                 // neu malen, wenn die Hauptstadt umzieht
-// Die Weltkarte um die Hauptstadt, ins Stadtbild gelegt: die Basis (Halbmesser ISLAND_RADIUS·1,3) füllt die Mauer (170 Einheiten
-// von der Mitte). Ein Stadt-Punkt (x, y) liegt auf der Karte bei Basis + ((x−y)·S, (x+y)·S) – „oben“ ist auf beiden oben.
-// So ist das Bild einer Karten-Form im Stadtbild einfach gestaucht: sx = (wx − hx)·0,866/S, sy = 320 + (wy − hy)·0,5/S.
-function cityAussen() {
-    const h = islandById[playerIslandId], S = ISLAND_RADIUS * 1.3 / 170;
-    if (!h) return { lms: [], fremd: [], nass: false, land: () => true, wald: () => false, pfad: null };
-    const welt = (x, y) => [h.x + (x - y) * S, h.y + (x + y - 2 * CC) * S], weit = 1000 * S;
-    const lms = landmasses.filter(lm => Math.abs(lm.x - h.x) < lm.shapeMaxR + weit && Math.abs(lm.y - h.y) < lm.shapeMaxR + weit);
-    const stadt = (x, y) => x > 105 && x < 545 && y > 105 && y < 545;
-    const lmAt = (x, y) => { const [wx, wy] = welt(x, y); return lms.find(lm => aufLand(lm, wx, wy)) || null; };
-    const M = new DOMMatrix([.866 / S, 0, 0, .5 / S, -h.x * .866 / S, cIso(CC, CC)[1] - h.y * .5 / S]), pfade = new Map();
-    const pfad = lm => { let p = pfade.get(lm); if (!p) { p = new Path2D(); p.addPath(lm.path, M); pfade.set(lm, p); } return p; };
-    const probe = document.createElement('canvas').getContext('2d'), heim = landmasses[h.landmassId];
-    let nass = false; for (let x = -170; x <= 810 && !nass; x += 70) for (let y = -170; y <= 810; y += 70) if (!stadt(x, y) && !lmAt(x, y)) { nass = true; break; }
-    return { lms, nass, pfad, fremd: lms.filter(lm => lm !== heim && cityBioVon(lm) !== cityBio()),
-        land: (x, y) => stadt(x, y) || !!lmAt(x, y),
-        wald: (x, y) => { const lm = lmAt(x, y); if (!lm || lm.stone) return false; const [wx, wy] = welt(x, y); return probe.isPointInPath(lm.forest[0], wx, wy); } };
-}
-// ---- Deko (eigene kleine Bilder, in Tiefen-Reihenfolge mit den Häusern): Brunnen, Bäume an der Mauer, Laternen, Statuen ----
-let CITY_DECO = null;
-function cityDeco() {
-    const bio = cityBio(); if (CITY_DECO && CITY_DECO.bio === bio) return CITY_DECO.list;
-    const pal = CITY_PAL[bio], R = mulberry32(99), out = [];
-    out.push({ at: [CC, 372], kind: 'fountain' }, { at: [266, 266], kind: 'tree', col: 'a' }, { at: [374, 266], kind: 'tree', col: 'b' }, { at: [266, 374], kind: 'statue' }, { at: [374, 374], kind: 'statue' });
-    for (const y of [418, 450, 482]) out.push({ at: [310, y], kind: 'lamp' }, { at: [330, y], kind: 'lamp' });
-    const strip = (fest, quer) => { for (let v = 182; v <= 460; v += 20) { if (Math.abs(v - 244) < 13 || Math.abs(v - 396) < 13 || Math.abs(v - 320) < (fest > 400 && !quer ? 24 : 13)) continue;
-        const kind = R() < pal.pines ? 'pine' : R() < .3 ? 'bush' : 'tree', o = (R() - .5) * 4; out.push({ at: quer ? [fest + o, v] : [v, fest + o], kind, col: R() < .5 ? 'a' : 'b' }); } };
-    strip(165, true); strip(165, false); strip(475, true); strip(475, false);
-    CITY_DECO = { bio, list: out }; return out;
-}
-function cityStaticSprite(kind, col) {
-    const bio = cityBio(), key = 's:' + kind + (col || '') + ':' + bio; let s = CITY_SPRITES.get(key); if (s) return s;
-    const pal = CITY_PAL[bio], w = 30, up = 50, down = 12, c = document.createElement('canvas'); c.width = w * 2 * CITY_SPR_SCALE; c.height = (up + down) * CITY_SPR_SCALE;
-    const g = c.getContext('2d'), K = cityPainter(g, CITY_SPR_SCALE, w * CITY_SPR_SCALE, up * CITY_SPR_SCALE);
-    if (kind === 'fountain') { K.cyl(0, 0, 10, 0, 3, '#c9c1ae', .6); K.cyl(0, 0, 8.6, 3, 3.3, pal.schnee ? '#cfe6f2' : '#4d9ad0', .3); K.cyl(0, 0, 1.8, 3, 10, '#d8d1c1', .5); K.cyl(0, 0, 4, 10, 11.2, '#c9c1ae', .5); K.cyl(0, 0, 1, 11.2, 14, '#d8d1c1', .4); }
-    else if (kind === 'tree') cityTreeAt(g, 0, 0, 5.4, pal, col === 'b');
-    else if (kind === 'pine') (pal.palm ? cityPalmAt : cityPineAt)(g, 0, 0, 22, pal);
-    else if (kind === 'bush') cityBushAt(g, 0, 0, 4.2, pal);
-    else if (kind === 'lamp') { K.box(-.5, .5, -.5, .5, 0, 12, '#3a3530', .3); K.box(-1.4, 1.4, -1.4, 1.4, 12, 14.6, '#f2d27a', .4); K.pyramid(0, 0, 1.8, 14.6, 2.2, '#3a3530'); }
-    else if (kind === 'statue') { K.box(-4, 4, -4, 4, 0, 5, '#bdb3a0', .6); K.box(-3, 3, -3, 3, 5, 6, '#a89f8c', .5); K.cyl(0, 0, 1.6, 6, 13, '#9a8a5a', .5); K.dome(0, 0, 1.3, 13, 2.4, '#b39a5a');
-        const [a, b] = K.P(0, 0, 11); K.poly([[a + 1, b], [a + 5, b - 6], [a + 5.6, b - 5.5], [a + 1.8, b + .5]], '#8a7a4a', .3); }
-    s = { c, w, up, down }; CITY_SPRITES.set(key, s); return s;
-}
-
-// ---- the curtain wall: its look follows the Mauer level (palisade → stone → high stone with blue, gold at 20+) ----
-function cityPaintWalls(lvl) {
-    const t = !lvl ? 0 : lvl >= 20 ? 3 : lvl >= 10 ? 2 : 1, key = 'walls' + t;
-    if (CITY_WALLS && CITY_WALLS.key === key) return CITY_WALLS;
-    const S = CITY_SPR_SCALE * .6, WB = { x0: -322, x1: 322, y0: 56, y1: 522 }, mk = () => { const c = document.createElement('canvas'); c.width = Math.ceil((WB.x1 - WB.x0) * S); c.height = Math.ceil((WB.y1 - WB.y0) * S);
-        const g = c.getContext('2d'); g.setTransform(S, 0, 0, S, -WB.x0 * S, -WB.y0 * S); g.lineJoin = 'round'; return { c, g }; };
-    const back = mk(), front = mk(), A = CITY_WALL.a, Bw = CITY_WALL.b;
-    const hgt = [9, 13, 17, 19][t], th = hgt + 7, col = t ? STONE : '#8a6440', roof = t >= 3 ? '#d9a93f' : t >= 2 ? '#2f5e9a' : '#8a3a2a';
-    const seg = (K, x0, y0, x1, y1) => {                                    // a straight run of wall (along x or y)
-        if (!t) { const n = Math.round(Math.hypot(x1 - x0, y1 - y0) / 3.3); for (let i = 0; i <= n; i++) { const x = x0 + (x1 - x0) * i / n, y = y0 + (y1 - y0) * i / n, hh = hgt + 1 + (i % 3 === 1 ? 1.4 : 0);   // Palisade: dicke Stämme mit Spitzen
-            K.cyl(x, y, 1.85, 0, hh, i % 2 ? '#a07650' : '#8f6a44', .3, true); K.cone(x, y, 1.9, hh, 3, '#6b4a2c'); } return; }
-        const along = x0 === x1 ? 'y' : 'x', a0 = Math.min(along === 'x' ? x0 : y0, along === 'x' ? x1 : y1), a1 = Math.max(along === 'x' ? x0 : y0, along === 'x' ? x1 : y1);
-        if (along === 'x') { K.box(a0, a1, y0 - 3, y0 + 3, 0, hgt, col, .7); K.merlons(a0, a1, y0 - 3, y0 + 3, hgt, col, Math.round((a1 - a0) / 7)); }
-        else { K.box(x0 - 3, x0 + 3, a0, a1, 0, hgt, col, .7); K.merlons(x0 - 3, x0 + 3, a0, a1, hgt, col, Math.round((a1 - a0) / 7)); }
-    };
-    const tower = (K, x, y, big) => { if (!t) { K.box(x - 4.5, x + 4.5, y - 4.5, y + 4.5, 0, hgt + 7, '#9a7046', .5); K.box(x - 6.5, x + 6.5, y - 6.5, y + 6.5, hgt + 7, hgt + 10, '#7a5232', .5);   // Holzturm mit Plattform
-            K.pyramid(x, y, 7.2, hgt + 10, 8, '#8a3a2a'); const [a, b] = K.P(x, y, hgt + 19); K.flag(a, b, BAND.player, true); return; }
-        const r = big ? 8 : 6.5; K.cyl(x, y, r, 0, th + (big ? 4 : 0), col, .8); K.cone(x, y, r + 1.5, th + (big ? 4 : 0), 9 + t * 2, roof);
-        if (t >= 2) { const [a, b] = K.P(x, y, th + 12 + t * 2); K.flag(a, b, BAND.player, true); } };
-    { const K = isoKit(back.g, 0, CITY_INK);                                          // back: the top corner, the two far runs and the side corners
-        seg(K, A, A, Bw, A); seg(K, A, A, A, Bw); tower(K, A, A, true); tower(K, CC, A); tower(K, A, CC); tower(K, Bw, A, true); tower(K, A, Bw, true); }
-    { const K = isoKit(front.g, 0, CITY_INK);                                         // front: the two near runs (with the gap for the gatehouse) and the bottom corner
-        seg(K, Bw, A, Bw, Bw); seg(K, A, Bw, CC - 16, Bw); seg(K, CC + 16, Bw, Bw, Bw); tower(K, Bw, CC); tower(K, Bw, Bw, true); }
-    return CITY_WALLS = { key, back: back.c, front: front.c, S, B: WB };
-}
-
-// ---- people: villagers on the streets ----
-const CITY_PATHS = [
-    [[CC, 520], [CC, 494], [CC, 380]], [[244, 244], [396, 244], [396, 396], [244, 396], [244, 244]],
-    [[244, 178], [244, 462]], [[396, 462], [396, 178]], [[178, 244], [462, 244]], [[462, 396], [178, 396]], [[CC, 172], [CC, 260]], [[172, CC], [260, CC]]
-];
-let cityFolk = null;
-function cityMakeFolk() {
-    const rnd = mulberry32(7), cols = ['#8e3a2c', '#2f5e9a', '#6d8a4a', '#8a6440', '#c9a54e', '#5d4a7a', '#e9dfc8'];
-    cityFolk = [];
-    for (let i = 0; i < 40; i++) { const p = CITY_PATHS[i % CITY_PATHS.length];
-        cityFolk.push({ p, t: rnd(), v: (.012 + rnd() * .018) * (rnd() < .5 ? -1 : 1), col: cols[Math.floor(rnd() * cols.length)], hat: rnd() < .4, cart: i % 11 === 5 }); }
-}
-function cityPathPoint(p, t) {                                              // a point along a polyline, t in 0..1
-    let total = 0; const seg = []; for (let i = 1; i < p.length; i++) { const l = Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); seg.push(l); total += l; }
-    let d = ((t % 1) + 1) % 1 * total;
-    for (let i = 0; i < seg.length; i++) { if (d <= seg[i]) { const q = d / seg[i]; return [p[i][0] + (p[i + 1][0] - p[i][0]) * q, p[i][1] + (p[i + 1][1] - p[i][1]) * q]; } d -= seg[i]; }
-    return p[p.length - 1];
-}
-
-// ---- camera ----
-const CITY_VIEW = { x0: -420, x1: 420, y0: 0, y1: 650 };                    // what the camera may show (the town, the land around it)
-function cityFitZoom(W, H) { return Math.min(W / (CITY_VIEW.x1 - CITY_VIEW.x0), H / (CITY_VIEW.y1 - CITY_VIEW.y0)); }
-function cityStartZoom(W, H) {                                                 // Desktop: etwas weiter weg · Handy: alle Bauplätze samt Steinbruch und Mauer im Bild (500 breit)
-    return Math.max(cityFitZoom(W, H), W >= 900 && H >= 501 ? Math.min(2.2, W / 420) * .85 : Math.min(2.2, W / 500)); }
+// ---- Kamera: Bild-Punkte; das Bild deckt immer den ganzen Bildschirm (auch hinter HUD und Leiste) ----
+const cityZMin = (W, H) => Math.max(W / CITY_BILD_W, H / CITY_BILD_H);
+function cityStartZoom(W, H) { return cityZMin(W, H); }
 function cityClampCam(W, H) {
-    const c = cityCam, zMin = Math.min(cityStartZoom(W, H), Math.max(cityFitZoom(W, H) * .95, W / (CITY_BOUNDS.x1 - CITY_BOUNDS.x0 - 60), H / (CITY_BOUNDS.y1 - CITY_BOUNDS.y0 + 60))), zMax = 3;   // (nie weiter als das gemalte Land – außer bis zum Start-Blick; oben/unten läuft es weich in die Grundfarbe aus)
-    c.z = Math.max(zMin, Math.min(zMax, c.z));
-    const hw = W / 2 / c.z, hh = H / 2 / c.z, V = CITY_VIEW;                  // keep the town in view (centred when it is smaller than the screen)
-    c.x = V.x1 - V.x0 <= 2 * hw ? (V.x0 + V.x1) / 2 : Math.max(V.x0 + hw, Math.min(V.x1 - hw, c.x));
-    c.y = V.y1 - V.y0 <= 2 * hh ? (V.y0 + V.y1) / 2 : Math.max(V.y0 + hh, Math.min(V.y1 - hh, c.y));
+    const c = cityCam, zMin = cityZMin(W, H);
+    c.z = Math.max(zMin, Math.min(Math.max(1.6, zMin * 2.5), c.z));
+    const hw = W / 2 / c.z, hh = H / 2 / c.z;
+    c.x = Math.max(hw, Math.min(CITY_BILD_W - hw, c.x)); c.y = Math.max(hh, Math.min(CITY_BILD_H - hh, c.y));
 }
+function cityFocus(id, now) {                                               // die Kamera gleitet (oder springt) zum Gebäude
+    const o = cityOrt(id); if (!o || !cityCam) return;
+    cityCam.tx = o.x; cityCam.ty = o.y;
+    if (now) { cityCam.x = cityCam.tx; cityCam.y = cityCam.ty; cityCam.tx = cityCam.ty = undefined; }
+}
+// Handy hoch: das Bild ist breiter als der Bildschirm (Heldenhalle, Botschaft … liegen rechts) – beim ersten Betreten kurz „‹ Wischen ›“
+let cityWischGezeigt = false;
+function cityWischZeigen() {
+    const el = document.getElementById('cityWisch'); if (!el || cityWischGezeigt || cityZMin(innerWidth, innerHeight) * CITY_BILD_W < innerWidth * 1.15) return;
+    cityWischGezeigt = true; el.hidden = false; setTimeout(cityWischWeg, 6000);
+}
+function cityWischWeg() { const el = document.getElementById('cityWisch'); if (el) el.hidden = true; }
 
+// ---- wischen, mit zwei Fingern oder dem Mausrad zoomen, tippen ----
 cityCanvas.addEventListener('pointerdown', e => {
-    if (e.isPrimary) { cityPointers.clear(); cityGesture = null; }             // a new first finger: whatever was left over from before is gone
+    cityWischWeg();
+    if (e.isPrimary) { cityPointers.clear(); cityGesture = null; }             // ein neuer erster Finger: Reste von vorher sind weg
     try { cityCanvas.setPointerCapture(e.pointerId); } catch (err) {}
     cityPointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (cityCam) cityCam.tx = cityCam.ty = undefined;
     if (cityPointers.size === 1) cityDrag = { x: e.clientX, y: e.clientY, cx: cityCam && cityCam.x, cy: cityCam && cityCam.y, moved: false };
@@ -10724,231 +10149,103 @@ cityCanvas.addEventListener('pointerup', cityPointerEnd);
 cityCanvas.addEventListener('pointercancel', cityPointerEnd);
 cityCanvas.addEventListener('wheel', e => { if (!cityCam) return; e.preventDefault(); cityCam.z *= Math.exp(-e.deltaY * .0015); }, { passive: false });
 cityCanvas.addEventListener('click', e => {
-    if (cityDrag && cityDrag.moved) return;       // that was a swipe, not a tap
+    if (cityDrag && cityDrag.moved) return;       // das war Wischen, kein Tippen
     const r = cityCanvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
     const hits = cityHitRects.filter(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
-    const hit = hits.sort((a, b) => Math.hypot(a.cx - x, a.cy - y) - Math.hypot(b.cx - x, b.cy - y))[0];   // the building closest to the finger
+    const hit = hits.sort((a, b) => Math.hypot(a.cx - x, a.cy - y) - Math.hypot(b.cx - x, b.cy - y))[0];   // Schild oder Gebäude am nächsten am Finger
     if (hit && hit.id !== cityRingId) { cityFocus(hit.id); cityRingAuf(hit.id); }   // erst die runden Knöpfe am Gebäude (wie in Rise of Kingdoms)
     else { cityRingZu(); cityOpenId = null; document.getElementById('citySheet').hidden = true; }
+    cityFrame.drawn = 0;
 });
-
-function cityLotOf(id) { return id === '_keep' ? CITY_KEEP_AT : CITY_LOTS[id]; }
-function cityFocus(id, now) {                                             // glide (or jump) the camera to a building
-    const at = cityLotOf(id); if (!at || !cityCam) return;
-    const [x, y] = cIso(at[0], at[1]); cityCam.tx = x; cityCam.ty = y - 14;
-    if (now) { cityCam.x = cityCam.tx; cityCam.y = cityCam.ty; cityCam.tx = cityCam.ty = undefined; }
+// ---- ein Schild wie in den großen Aufbau-Spielen: dunkel mit Goldrand, „Name“ und darunter „Stufe N“ ----
+let cityNamen = [];                                                          // die Schilder dieses Bilds (Bildschirm-Punkte)
+function cityStand(c, id) {                                                  // was das Schild eines Gebäudes zeigt
+    const bid = cityBauId(id), lvl = bid === 'keep' ? c.levels.keep || 1 : c.levels[bid] || 0, bau = cityBuildOf(c, bid);
+    const ab = !lvl && AUF ? AUF.BAU_AB_BURG[bid] || 0 : 0, zu = !!AUF && ab > AUF.burgStufe('player');
+    let zeile = bau ? fmtClock((bau.endsAt - Date.now()) / 1000) : zu ? 'ab Burg ' + ab : lvl ? 'Stufe ' + lvl : 'Bauen';
+    if (bid === 'hospital' && lvl && !bau && c.wounded) zeile += ' · ' + fmtCompact(c.wounded) + ' verw.';
+    const pfeil = !bau && !zu && !cityBlocker(bid) && (AUF ? AUF.kannZahlen('player', AUF.stadtKosten(bid, lvl)) : coins >= cityCost(bid, lvl));   // aufwertbar: grüner Pfeil
+    return { name: bid === 'keep' ? 'Burg' : cityDef(bid).name, lvl, bau, zeile, zu, pfeil };
 }
-// ---- fertige Bild-Lagen für die Stadt (siehe cityFrame): unten = Boden + hintere Mauer + Schatten, oben = vordere Mauer, licht = Licht + Rand ----
-const CITY_LAGEN = { letzt: '', letztZ: 0, key: '', lichtKey: '', unten: null, oben: null, licht: null };
-function cityLage(name, W, H, dpr2, paint) {
-    const c = CITY_LAGEN[name] || (CITY_LAGEN[name] = document.createElement('canvas')), w = Math.round(W * dpr2), h = Math.round(H * dpr2);
-    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
-    const g = c.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = 'high'; paint(g);
+const CITY_HAMMER = new Path2D('M-7-9h11l2 2v4h-15z M-2-3h3v13h-3z');           // Hammer (Kopf + Stiel) um den Mittelpunkt
+function citySchildBreite(g, s) {                                            // → [Breite, Breite der unteren Zeile]
+    g.font = '700 13px Cinzel, Georgia, serif'; const wn = g.measureText(s.name).width;
+    g.font = '600 11px Inter, system-ui, sans-serif'; const wz = g.measureText(s.zeile).width + (s.zu || s.bau ? 15 : 0);
+    return [Math.ceil(Math.max(wn, wz) + 22 + (s.pfeil ? 18 : 0)), wz];
 }
-function cityLagenFrei() {                                                   // the town is closed: give the memory back
-    for (const n of ['unten', 'oben', 'licht']) if (CITY_LAGEN[n]) { CITY_LAGEN[n].width = CITY_LAGEN[n].height = 0; CITY_LAGEN[n] = null; }
-    CITY_LAGEN.key = CITY_LAGEN.lichtKey = CITY_LAGEN.letzt = ''; CITY_LAGEN.letztZ = 0;
+function citySchild(g, s, x, y, an, now) {                                   // → {x, y, w, h}; x/y = Mitte des Schilds
+    const [w, wz] = citySchildBreite(g, s), h = 36, x0 = Math.round(x - w / 2), y0 = Math.round(y - h / 2);
+    const rund = (a, b, ww, hh, r) => { g.beginPath(); g.roundRect ? g.roundRect(a, b, ww, hh, r) : g.rect(a, b, ww, hh); };
+    g.save(); g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowBlur = 6; g.shadowOffsetY = 2;
+    const bg = g.createLinearGradient(0, y0, 0, y0 + h); bg.addColorStop(0, 'rgba(44,34,24,.94)'); bg.addColorStop(1, 'rgba(16,12,8,.94)');
+    g.fillStyle = bg; rund(x0, y0, w, h, 6); g.fill(); g.restore();
+    g.strokeStyle = an ? '#ffe7a6' : '#c9a24a'; g.lineWidth = an ? 2 : 1.5; rund(x0 + .5, y0 + .5, w - 1, h - 1, 6); g.stroke();
+    g.strokeStyle = 'rgba(255,220,150,.18)'; g.lineWidth = 1; rund(x0 + 3, y0 + 3, w - 6, h - 6, 4); g.stroke();
+    const mx = x0 + (w - (s.pfeil ? 18 : 0)) / 2;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = '700 13px Cinzel, Georgia, serif'; g.fillStyle = s.zu ? '#cfc3a8' : '#f6ead0'; g.fillText(s.name, mx, y0 + 12.5);
+    g.font = '600 11px Inter, system-ui, sans-serif'; g.fillStyle = s.bau ? '#ffd98a' : s.zu ? '#b4a88f' : !s.lvl ? '#9fe08a' : '#e4d6b4';
+    const tx = mx + (s.zu || s.bau ? 7.5 : 0); g.fillText(s.zeile, tx, y0 + 26);
+    if (s.zu || s.bau) drawGlyph(g, s.zu ? 'lock' : 'hourglass', tx - wz / 2 + 1, y0 + 26, 12, s.zu ? '#b4a88f' : '#ffd98a');
+    if (s.pfeil) { const ax = x0 + w - 15, ay = y0 + h / 2;                   // grüner Pfeil nach oben: kann jetzt aufgewertet werden
+        g.beginPath(); g.moveTo(ax, ay - 10); g.lineTo(ax + 8, ay - 1); g.lineTo(ax + 3.5, ay - 1); g.lineTo(ax + 3.5, ay + 9); g.lineTo(ax - 3.5, ay + 9); g.lineTo(ax - 3.5, ay - 1); g.lineTo(ax - 8, ay - 1); g.closePath();
+        const gg = g.createLinearGradient(0, ay - 10, 0, ay + 9); gg.addColorStop(0, '#9bf06a'); gg.addColorStop(1, '#2f9a2a');
+        g.fillStyle = gg; g.fill(); g.strokeStyle = '#163d12'; g.lineWidth = 1.2; g.stroke(); }
+    if (s.bau) { const hx = x, hy = y0 - 22 - Math.abs(Math.sin(now / 260)) * 3;  // wird gebaut: Hammer im Goldkreis, Spitze zeigt aufs Schild
+        g.beginPath(); g.moveTo(hx - 6, hy + 12); g.lineTo(hx, hy + 20); g.lineTo(hx + 6, hy + 12); g.closePath(); g.fillStyle = '#c9a24a'; g.fill();
+        const kg = g.createLinearGradient(0, hy - 15, 0, hy + 15); kg.addColorStop(0, '#ffe08a'); kg.addColorStop(1, '#a87418');
+        g.fillStyle = kg; g.beginPath(); g.arc(hx, hy, 15, 0, 7); g.fill(); g.strokeStyle = '#fff1c4'; g.lineWidth = 1.5; g.stroke();
+        g.fillStyle = '#2a2016'; g.beginPath(); g.arc(hx, hy, 11.5, 0, 7); g.fill();
+        g.save(); g.translate(hx, hy); g.rotate(-Math.PI / 5 + Math.sin(now / 260) * .25); g.scale(.85, .85); g.fillStyle = '#e9e4da'; g.fill(CITY_HAMMER); g.restore(); }
+    return { x: x0, y: y0 - (s.bau ? 38 : 0), w, h: h + (s.bau ? 38 : 0) };
 }
-function cityUnten(g, W, H, Z, ox, oy, walls, list, toS) {                   // background, ground, back walls and the soft shadows of all houses
-    const wb = CITY_BOUNDS;
-    g.fillStyle = CITY_BG_COL; g.fillRect(0, 0, W, H);
-    g.drawImage(CITY_GROUND || cityPaintGround(), wb.x0 * Z + ox, wb.y0 * Z + oy, (wb.x1 - wb.x0) * Z, (wb.y1 - wb.y0) * Z);
-    const mb = walls.B; g.drawImage(walls.back, mb.x0 * Z + ox, mb.y0 * Z + oy, (mb.x1 - mb.x0) * Z, (mb.y1 - mb.y0) * Z);
-    for (const it of list) { const [sx, sy] = toS(it.x, it.y), r = (it.keep ? 46 : it.deco ? 14 : it.ghost ? 18 : 28) * Z, shx = sx + r * .35, shy = sy + r * .12;   // soft shadow falling to the lower right (sun top left)
-        const sg = g.createRadialGradient(shx, shy, r * .1, shx, shy, r * 1.1); sg.addColorStop(0, 'rgba(20,30,10,.32)'); sg.addColorStop(1, 'rgba(20,30,10,0)');
-        g.fillStyle = sg; g.beginPath(); g.ellipse(shx, shy, r * 1.1, r * .55, 0, 0, Math.PI * 2); g.fill(); }
-}
-function cityOben(g, Z, ox, oy, walls) { const mb = walls.B; g.drawImage(walls.front, mb.x0 * Z + ox, mb.y0 * Z + oy, (mb.x1 - mb.x0) * Z, (mb.y1 - mb.y0) * Z); }
-// a house picture: painted large once (CITY_SPR_SCALE), shrunk to the current zoom once more and kept - then every
-// frame is a 1:1 copy instead of shrinking the big picture again (the same look, a fraction of the work)
-const CITY_SPR_FERTIG = new WeakMap();
-function citySprDraw(g, s, dx, dy, k, dpr2, zStill) {
-    if (!zStill) { g.drawImage(s.c, dx, dy, s.c.width * k, s.c.height * k); return; }
-    const f = k * dpr2; let m = CITY_SPR_FERTIG.get(s);
-    if (!m || m.f !== f) { const c = m ? m.c : document.createElement('canvas'); c.width = Math.ceil(s.c.width * f); c.height = Math.ceil(s.c.height * f);
-        const cg = c.getContext('2d'); cg.imageSmoothingQuality = 'high'; cg.setTransform(f, 0, 0, f, 0, 0); cg.drawImage(s.c, 0, 0); m = { f, c }; CITY_SPR_FERTIG.set(s, m); }
-    g.drawImage(m.c, dx, dy, m.c.width / dpr2, m.c.height / dpr2);
-}
-// Namensschilder: wo sie in diesem Bild liegen (Bildschirm-Punkte). Ein Schild kommt nur hin, wenn es ganz im Bild ist
-// (2 Punkte Rand) und kein schon gesetztes überdeckt (2 Punkte Luft).
-let cityNamen = [];
-function cityNamePlatz(id, x, y, w, h, W, H) {
-    if (x < 2 || x + w > W - 2 || y < 2 || y + h > H - 2) return false;
-    if (cityNamen.some(n => x < n.x + n.w + 2 && n.x < x + w + 2 && y < n.y + n.h + 2 && n.y < y + h + 2)) return false;
-    cityNamen.push({ id, x, y, w, h }); return true;
-}
-// ---- one frame ----
+// ---- ein Bild ----
 function cityFrame(now) {
     if (cityView.hidden) return;
-    // Handy schonen: steht alles still (kein Finger, keine Kamerafahrt, keine Wolken), reichen 30 Bilder pro Sekunde – die
-    // Leute gehen langsam, man sieht keinen Unterschied. Ganz in den Wolken (alles weiß) wird die Stadt gar nicht gezeichnet.
-    const bewegt = !!(cityDrag || cityGesture || cloudAnim || !cityCam || cityCam.anim || cityCam.tx !== undefined);
-    if ((!bewegt && now - (cityFrame.drawn || 0) < 30) || (cloudCover >= .95 && CITY_GROUND)) { cityRaf = requestAnimationFrame(cityFrame); return; }   // (beim allerersten Mal wird unter den Wolken schon gemalt)
+    // Handy schonen: steht alles still, reichen 4 Bilder pro Sekunde (die Uhr auf den Schildern); läuft ein Bau, hüpft der Hammer
+    const c = loadCity(), bewegt = !!(cityDrag || cityGesture || cloudAnim || !cityCam || cityCam.anim || cityCam.tx !== undefined);
+    if (!bewegt && now - (cityFrame.drawn || 0) < (c.builds.length ? 30 : 250)) { cityRaf = requestAnimationFrame(cityFrame); return; }
     cityFrame.drawn = now;
     const dpr2 = Math.min(window.devicePixelRatio || 1, 2), W = window.innerWidth, H = window.innerHeight;
     if (cityCanvas.width !== Math.round(W * dpr2) || cityCanvas.height !== Math.round(H * dpr2)) { cityCanvas.width = Math.round(W * dpr2); cityCanvas.height = Math.round(H * dpr2); }
-    if (!cityCam) { const [kx, ky] = cIso(CC, CC), desk = W >= 900 && H >= 501, z = cityStartZoom(W, H);   // (Handy: alle Baufelder und das Mauer-Tor samt Schild im Bild)
-        cityCam = { x: kx, y: ky + 6 - (desk ? 40 / z : 0), z };                                                // (Desktop: etwas weiter weg und 40 px tiefer – die ganze Mauer-Raute unter der Leiste oben)
-        if (cityPendingAnim) { cityCam.anim = { from: .62, t0: now, dur: 1100 }; cityPendingAnim = false; } }
+    if (!cityCam) { cityCam = { x: cityOrt('_keep').x, y: CITY_BILD_H / 2, z: cityStartZoom(W, H) };   // Start: die Burg in der Mitte
+        if (cityPendingAnim) { cityCam.anim = { from: 1.18, t0: now, dur: 1100 }; cityPendingAnim = false; } }
     let animZ = 1;
     if (cityCam.anim) { const a = cityCam.anim, q = Math.min(1, (now - a.t0) / a.dur), e = 1 - Math.pow(1 - q, 3), to = a.to ?? 1;
         animZ = a.from + (to - a.from) * e; if (q >= 1 && to === 1) cityCam.anim = null; }
-    const sheetH = cityOpenId && !document.getElementById('citySheet').hidden ? Math.min(380, H * .46) : 0;
-    if (cityCam.tx !== undefined && !cityDrag) { const f = Math.min(1, .16); cityCam.x += (cityCam.tx - cityCam.x) * f; cityCam.y += (cityCam.ty - cityCam.y) * f;
-        if (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3) cityCam.tx = cityCam.ty = undefined; }
-    cityClampCam(W, H - sheetH * .6);
-    const g = cityCtx, c = loadCity(), Z = cityCam.z * animZ;
-    if (!CITY_GROUND || CITY_GROUND_BIO !== cityGrundKey()) cityPaintGround();   // (neu, wenn die Hauptstadt in eine andere Gegend zieht)
-    const ox = W / 2 - cityCam.x * Z, oy = (H - sheetH * .6) / 2 - cityCam.y * Z;
-    const toS = (x, y, z) => { const [sx, sy] = cIso(x, y); return [sx * Z + ox, (sy - (z || 0)) * Z + oy]; };
-    // ground and walls (back half), then buildings and people in depth order, then the front walls
-    const wlvl = c.levels.wall || 0, walls = cityPaintWalls(wlvl);
-    const items = [];
-    const lvlKeep = c.levels.keep || 1;                                                // Paket D: die Burg wächst mit der Burg-Stufe (alle 5 Stufen ein Stück)
-    items.push({ id: '_keep', x: CITY_KEEP_AT[0], y: CITY_KEEP_AT[1], spr: citySprite('keep', Math.min(4, Math.floor(lvlKeep / 5))), name: 'Burg', lvl: lvlKeep, keep: true });
-    for (const b of CITY_BUILDINGS) { const at = CITY_LOTS[b.id]; if (!at) continue;
-        const lvl = c.levels[b.id] || 0, tier = cityTierOf(lvl);
-        if (b.id === 'wall') { items.push({ id: 'wall', x: at[0], y: at[1], spr: citySprite('gatehouse', tier), name: b.name, lvl, b, gate: true }); continue; }
-        items.push({ id: b.id, x: at[0], y: at[1], spr: tier ? citySprite(b.id, tier, b.id === 'heroes' ? Math.ceil(HEROES.filter(h => heroOwned('player', h.id)).length / HEROES.length * 3) : '') : citySprite('ghost', 0, b.id), name: b.name, lvl, b, ghost: !tier }); }
-    for (const s of cityDeco()) items.push({ x: s.at[0], y: s.at[1], spr: cityStaticSprite(s.kind, s.col), deco: s.kind });
-    const hour = new Date().getHours() + new Date().getMinutes() / 60;             // evening and night: torches, lit windows
-    const night = hour >= 20 || hour < 5.5 ? 1 : hour >= 18 ? (hour - 18) / 2 : hour < 7 ? (7 - hour) / 1.5 : 0;
-    if (c.levels.hospital) for (let i = 0; i < 2; i++) { const [hx, hy] = CITY_LOTS.hospital, a = now / 5200 + i * Math.PI;   // healers going round the tents
-        items.push({ x: hx + Math.cos(a) * 22, y: hy + 10 + Math.sin(a) * 12, healer: true }); }
-    { const [gx, gy] = CITY_LOTS.wall; for (const dx of [-14, 14]) items.push({ x: gx + dx * .55, y: gy + 12, soldier: true, guard: true }); }   // guards at the gate
-    if (!cityFolk) cityMakeFolk();
-    const dt = Math.min(.1, (now - (cityFrame.last || now)) / 1000); cityFrame.last = now;
-    for (const f of cityFolk) { f.t += f.v * dt * (f.cart ? .5 : 1); const [x, y] = cityPathPoint(f.p, f.t); items.push({ x, y, folk: f }); }
-    items.sort((p, q) => (p.x + p.y) - (q.x + q.y));
-    // Boden, hintere Mauer und die weichen Schatten der Häuser ändern sich nur mit der Kamera. Steht sie still, liegen sie
-    // fertig in einem Bild (CITY_LAGEN, wird einmal gemalt) – das spart pro Bild das teure Verkleinern der großen Boden- und
-    // Mauerbilder und ~20 Farbverläufe. Bewegt sich die Kamera, wird wie bisher direkt gezeichnet (genau gleich).
-    const LG = CITY_LAGEN, lkey = [W, H, dpr2, Z, ox, oy, walls.key, CITY_GROUND_BIO].join(','), still = lkey === LG.letzt, zStill = Z === LG.letztZ;
-    LG.letzt = lkey; LG.letztZ = Z;
-    const mitSchatten = items.filter(it => it.spr && (!it.deco || ['fountain', 'statue'].includes(it.deco)));   // (Bäume, Büsche, Laternen haben ihren eigenen Schatten)
-    if (still) {
-        if (LG.key !== lkey) { cityLage('unten', W, H, dpr2, gg => cityUnten(gg, W, H, Z, ox, oy, walls, mitSchatten, toS)); cityLage('oben', W, H, dpr2, gg => cityOben(gg, Z, ox, oy, walls)); LG.key = lkey; }
-        g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(LG.unten, 0, 0);
+    if (cityCam.tx !== undefined && !cityDrag) { cityCam.x += (cityCam.tx - cityCam.x) * .16; cityCam.y += (cityCam.ty - cityCam.y) * .16; }
+    const vor = [cityCam.x, cityCam.y]; cityClampCam(W, H);
+    if (cityCam.tx !== undefined && (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3 || Math.hypot(vor[0] - cityCam.x, vor[1] - cityCam.y) > .01)) cityCam.tx = cityCam.ty = undefined;   // angekommen (oder am Bildrand: weiter geht es nicht)
+    const g = cityCtx, Z = cityCam.z * animZ, ox = W / 2 - cityCam.x * Z, oy = H / 2 - cityCam.y * Z, im = cityBild();
+    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = 'high';
+    g.fillStyle = '#1d2716'; g.fillRect(0, 0, W, H);
+    if (im) g.drawImage(im, ox, oy, CITY_BILD_W * Z, CITY_BILD_H * Z);
+    cityHitRects = []; cityNamen = [];
+    const schilder = [];
+    for (const id of Object.keys(CITY_ORTE)) {
+        const o = cityOrt(id), s = cityStand(c, id), sx = ox + o.x * Z, sy = oy + o.y * Z, rw = o.w * Z / 2, rh = o.h * Z / 2;
+        if (!s.lvl && im) { const r = Math.max(rw, rh), vg = g.createRadialGradient(sx, sy, r * .2, sx, sy, r);   // noch nicht gebaut: dunkel verschleiert
+            vg.addColorStop(0, 'rgba(24,26,30,.5)'); vg.addColorStop(.7, 'rgba(24,26,30,.38)'); vg.addColorStop(1, 'rgba(24,26,30,0)');
+            g.save(); g.translate(sx, sy); g.scale(rw / r, rh / r); g.translate(-sx, -sy); g.fillStyle = vg; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); g.restore(); }
+        cityHitRects.push({ id, x: sx - rw, y: sy - rh, w: rw * 2, h: rh * 2, cx: sx, cy: sy });
+        schilder.push({ id, s, x: sx, y: oy + o.sy * Z });
     }
-    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = zStill ? 'high' : 'low';   // (nur während des kurzen Hinein-/Herauszoomens unter den Wolken: einfacher verkleinern)
-    if (!still) cityUnten(g, W, H, Z, ox, oy, walls, mitSchatten, toS);
-    g.imageSmoothingQuality = 'high';
-    cityHitRects = [];
-    const plates = [];
-    for (const it of items) {
-        const [sx, sy] = toS(it.x, it.y);
-        if (it.guard) continue;                                              // (the gate guards stand in front of the wall: drawn after it)
-        if (it.folk || it.soldier || it.healer) {                            // a person: body, head, a little bob
-            const k = Math.max(.7, Z * .55), bob = it.guard ? 0 : Math.abs(Math.sin(now / 150 + it.x)) * k * .6;
-            if (it.healer) { g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
-                g.fillStyle = '#f3efe6'; g.fillRect(sx - 1 * k, sy - 3.8 * k - bob, 2 * k, 3.4 * k); g.fillStyle = '#c0392b'; g.fillRect(sx - .3 * k, sy - 3.4 * k - bob, .6 * k, 1.6 * k);
-                g.fillStyle = '#e8c9a0'; g.beginPath(); g.arc(sx, sy - 4.6 * k - bob, .85 * k, 0, 7); g.fill(); g.fillStyle = '#f3efe6'; g.fillRect(sx - 1 * k, sy - 5.5 * k - bob, 2 * k, .6 * k); continue; }
-            g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
-            if (it.folk && it.folk.cart) { g.fillStyle = '#7a5a36'; g.fillRect(sx - 3 * k, sy - 3.4 * k, 6 * k, 2.6 * k); g.fillStyle = '#3a2616'; g.beginPath(); g.arc(sx - 2 * k, sy - .6 * k, .9 * k, 0, 7); g.arc(sx + 2 * k, sy - .6 * k, .9 * k, 0, 7); g.fill(); continue; }
-            g.fillStyle = it.soldier ? '#8a8f99' : it.folk.col; g.fillRect(sx - .9 * k, sy - 3.6 * k - bob, 1.8 * k, 3 * k);
-            g.fillStyle = '#e8c9a0'; g.beginPath(); g.arc(sx, sy - 4.4 * k - bob, .85 * k, 0, 7); g.fill();
-            if (it.soldier) { g.strokeStyle = '#5a4a3a'; g.lineWidth = .35 * k; g.beginPath(); g.moveTo(sx + 1.2 * k, sy - bob); g.lineTo(sx + 1.2 * k, sy - 7 * k - bob); g.stroke(); }
-            else if (it.folk.hat) { g.fillStyle = '#5a3d24'; g.fillRect(sx - 1.1 * k, sy - 5.3 * k - bob, 2.2 * k, .6 * k); }
-            continue;
-        }
-        const s = it.spr, k = Z / CITY_SPR_SCALE, dx = sx - s.w * Z, dy = sy - s.up * Z;
-        if (it.id && (cityOpenId === it.id || cityRingId === it.id)) {      // selected: a golden ring on the ground
-            g.save(); g.strokeStyle = 'rgba(255,220,140,.95)'; g.lineWidth = 2; g.setLineDash([6, 4]); g.lineDashOffset = -now / 40;
-            g.beginPath(); const r = (it.keep ? 40 : 26) * Z; g.ellipse(sx, sy, r * .866 * 1.4, r * .5 * 1.4, 0, 0, Math.PI * 2); g.stroke(); g.restore(); }
-        citySprDraw(g, s, dx, dy, k, dpr2, zStill);                         // (the soft shadow underneath is part of cityUnten)
-        if (it.id === 'forge' && it.lvl) for (let i = 0; i < 5; i++) {       // chimney smoke
-            const t = ((now / 1800) + i / 5) % 1, [cx2, cy2] = toS(it.x - 9, it.y - 5, 31);
-            g.fillStyle = 'rgba(120,120,120,' + (.5 * (1 - t)) + ')'; g.beginPath(); g.arc(cx2 + t * 8 * Z, cy2 - t * 26 * Z, (1.5 + t * 4) * Z, 0, 7); g.fill(); }
-        if (it.id === 'forge' && it.lvl) { const [ax, ay] = toS(it.x + 16, it.y + 13, 6);            // sparks off the anvil
-            for (let i = 0; i < 7; i++) { const t = ((now / 700) + i / 7) % 1, an = -Math.PI / 2 + (i - 3) * .35; if (t > .8) continue;
-                g.fillStyle = 'rgba(255,' + Math.round(200 - t * 120) + ',60,' + (1 - t) + ')'; g.fillRect(ax + Math.cos(an) * t * 12 * Z, ay + Math.sin(an) * t * 10 * Z + t * t * 8 * Z, Math.max(1, Z * .6), Math.max(1, Z * .6)); } }
-        if (it.deco === 'fountain') { const [fx, fy] = toS(it.x, it.y, 10); g.strokeStyle = 'rgba(190,230,250,.8)'; g.lineWidth = Math.max(1, Z * .5);
-            for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + now / 2000, r = 6 * Z; g.beginPath(); g.moveTo(fx, fy); g.quadraticCurveTo(fx + Math.cos(a) * r * .6, fy - 3 * Z, fx + Math.cos(a) * r, fy + Math.sin(a) * r * .5 + 7 * Z); g.stroke(); } }
-        if (!it.id) continue;
-        const building = !!cityBuildOf(c, it.id === '_keep' ? 'keep' : it.id);
-        if (building) {                                                      // scaffolding + a bouncing hammer
-            g.save(); g.strokeStyle = '#8a6a44'; g.lineWidth = Math.max(1.2, Z * .7);
-            for (const [px, py] of [[-18, 18], [18, 18], [18, -18], [-18, -18]]) { const [a, b] = toS(it.x + px, it.y + py), [, b2] = toS(it.x + px, it.y + py, 24); g.beginPath(); g.moveTo(a, b); g.lineTo(a, b2); g.stroke(); }
-            for (const zz of [8, 16, 24]) { g.beginPath(); [[-18, 18], [18, 18], [18, -18]].forEach((q, i) => { const [a, b] = toS(it.x + q[0], it.y + q[1], zz); i ? g.lineTo(a, b) : g.moveTo(a, b); }); g.stroke(); }
-            g.restore();
-            const [hx, hy] = toS(it.x, it.y, 34); drawGlyph(g, 'upgrade', hx, hy - Math.abs(Math.sin(now / 180)) * 8, Math.max(16, 9 * Z), '#ffd98a');
-            liveAnimation = true;
-        }
-        const hw = (it.keep ? 40 : 30) * Z, top = sy - (it.keep ? 70 : 38) * Z;
-        cityHitRects.push({ id: it.id, x: sx - hw, y: top, w: hw * 2, h: sy + 14 * Z - top, cx: sx, cy: sy - (it.keep ? 30 : 16) * Z, depth: it.x + it.y });
-        if (it.id === cityRingId) { const el = document.getElementById('cityRing'), tf = 'translate(' + Math.round(sx) + 'px,' + Math.round(sy + (it.keep ? 4 : 0) * Z) + 'px)';   // die runden Knöpfe folgen dem Gebäude
+    const leiste = document.getElementById('cornerButtons'), lr = leiste && leiste.getBoundingClientRect();   // die untere Leiste: kein Schild darunter (Desktop: „Steinbruch Bauen“)
+    if (lr && lr.height) { for (const p of schilder) p.w = citySchildBreite(cityCtx, p.s)[0];
+        const trifft = (p, q) => Math.abs(p.x - q.x) < (p.w + q.w) / 2 && Math.abs(p.y - q.y) < 40;
+        for (const p of schilder) if (p.y + 18 > lr.top - 6 && p.x + p.w / 2 > lr.left && p.x - p.w / 2 < lr.right) {
+            p.y = lr.top - 6 - 18; while (schilder.some(q => q !== p && trifft(p, q))) p.y -= 40; } }   // (nicht auf ein anderes Schild)
+    if (im) for (const p of schilder) {                                      // die Schilder zuletzt, über allem
+        const an = cityOpenId === p.id || cityRingId === p.id, q = citySchild(g, p.s, p.x, p.y, an, now);
+        if (q.x + q.w > 0 && q.x < W && q.y + q.h > 0 && q.y < H) cityNamen.push({ id: p.id, ...q });
+        cityHitRects.push({ id: p.id, ...q, cx: p.x, cy: p.y });
+        if (p.id === cityRingId) { const el = document.getElementById('cityRing'), nav = document.getElementById('cornerButtons'), unten = (nav ? nav.getBoundingClientRect().top : H) - 8,
+                oben = (document.querySelector('.city-head') || { getBoundingClientRect: () => ({ bottom: 90 }) }).getBoundingClientRect().bottom + 8;
+            let rx = Math.max(110, Math.min(W - 110, p.x)), ry = p.y;                            // die runden Knöpfe folgen dem Schild – ganz im Bild zwischen Kopf und Leiste:
+            if (ry + 62 + 29 + 24 > unten) ry = Math.min(p.y - 50, unten - 62 - 29 - 24);       // reicht der Bogen unter die Leiste, steht er über dem Schild
+            ry = Math.max(oben + 29 - 62 + 40, ry);
+            const tf = 'translate(' + Math.round(rx) + 'px,' + Math.round(ry) + 'px)';
             if (el.style.transform !== tf) el.style.transform = tf; if (el.style.visibility) el.style.visibility = ''; }
-        plates.push({ it, sx, sy, building, ghost: it.ghost });
-    }
-    if (still) { g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(LG.oben, 0, 0); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); } else { g.imageSmoothingQuality = zStill ? 'high' : 'low'; cityOben(g, Z, ox, oy, walls); g.imageSmoothingQuality = 'high'; }
-    // the gatehouse sits in the front wall: drawn over it
-    const gate = items.find(i => i.gate);
-    if (gate) { const [sx, sy] = toS(gate.x, gate.y), s = gate.spr, k = Z / CITY_SPR_SCALE; citySprDraw(g, s, sx - s.w * Z, sy - s.up * Z, k, dpr2, zStill); }
-    for (const it of items) if (it.guard) {                                  // two guards with spears at the gate
-        const [sx, sy] = toS(it.x, it.y), k = Math.max(.7, Z * .55);
-        g.fillStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.ellipse(sx, sy, 1.6 * k, .7 * k, 0, 0, Math.PI * 2); g.fill();
-        g.fillStyle = '#6f7682'; g.fillRect(sx - 1 * k, sy - 3.8 * k, 2 * k, 3.2 * k); g.fillStyle = '#2b5d9b'; g.fillRect(sx - 1 * k, sy - 2.6 * k, 2 * k, 1 * k);
-        g.fillStyle = '#e8c9a0'; g.beginPath(); g.arc(sx, sy - 4.6 * k, .85 * k, 0, 7); g.fill(); g.fillStyle = '#8a8f99'; g.beginPath(); g.arc(sx, sy - 4.9 * k, .9 * k, Math.PI, 0); g.fill();
-        g.strokeStyle = '#5a4a3a'; g.lineWidth = .35 * k; g.beginPath(); g.moveTo(sx + 1.3 * k, sy); g.lineTo(sx + 1.3 * k, sy - 8 * k); g.stroke();
-        g.fillStyle = '#c9c1ae'; g.beginPath(); g.moveTo(sx + 1.3 * k, sy - 9.2 * k); g.lineTo(sx + 1.8 * k, sy - 8 * k); g.lineTo(sx + .8 * k, sy - 8 * k); g.closePath(); g.fill(); }
-    // birds now and then
-    const bt = (now / 22000) % 1; if (bt < .45) { const x0 = W * (bt / .45) * 1.2 - W * .1, y0 = H * .22; g.strokeStyle = 'rgba(30,30,30,.55)'; g.lineWidth = 1;
-        for (const [dx, dy] of [[0, 0], [-10, 6], [-18, -4], [-26, 10]]) { const f = Math.sin(now / 120 + dx) * 2; g.beginPath(); g.moveTo(x0 + dx - 4, y0 + dy - f); g.lineTo(x0 + dx, y0 + dy + 1); g.lineTo(x0 + dx + 4, y0 + dy - f); g.stroke(); } }
-    if (night > 0) {                                                        // dusk and night: darker, torches glow at the gate, the keep, the square and along the main street
-        g.fillStyle = 'rgba(12,20,48,' + (.5 * night) + ')'; g.fillRect(0, 0, W, H);
-        g.save(); g.globalCompositeOperation = 'lighter';
-        const torches = [[CC - 12, CITY_WALL.b + 2, 14], [CC + 12, CITY_WALL.b + 2, 14], [CC - 30, CC + 30, 20], [CC + 30, CC + 30, 20], [CC, 371, 12]];
-        for (const y of [418, 450, 482]) torches.push([310, y, 13.5], [330, y, 13.5]);                       // die Laternen an der Hauptstraße
-        for (const [x, y] of [[244, 244], [396, 244], [244, 396], [396, 396]]) torches.push([x, y, 6]);
-        for (const [x, y, z] of torches) { const [tx, ty] = toS(x, y, z), fl = .85 + .15 * Math.sin(now / 90 + x * 3.1) * Math.sin(now / 130 + y), r = 16 * Z * fl;
-            const tg = g.createRadialGradient(tx, ty, 0, tx, ty, r); tg.addColorStop(0, 'rgba(255,190,90,' + (.55 * night) + ')'); tg.addColorStop(1, 'rgba(255,140,40,0)');
-            g.fillStyle = tg; g.beginPath(); g.arc(tx, ty, r, 0, 7); g.fill();
-            g.fillStyle = 'rgba(255,230,160,' + (.9 * night) + ')'; g.beginPath(); g.arc(tx, ty - Z * .6, Math.max(1, Z * .7), 0, 7); g.fill(); }
-        g.restore();
-    }
-    // warm afternoon light from the top left, a soft vignette around the edges
-    if (night < 1) { const nq = Math.round(night * 50) / 50, lk = [W, H, dpr2, nq].join(',');   // (both lie ready in one picture: two full-screen gradients cost more than one picture)
-      if (CITY_LAGEN.lichtKey !== lk) { cityLage('licht', W, H, dpr2, gg => {
-          const lg = gg.createLinearGradient(0, 0, W, H); lg.addColorStop(0, 'rgba(255,214,150,' + (.13 * (1 - nq)) + ')'); lg.addColorStop(.55, 'rgba(255,214,150,0)'); lg.addColorStop(1, 'rgba(40,60,90,.12)');
-          gg.fillStyle = lg; gg.fillRect(0, 0, W, H);
-          const vg = gg.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .45, W / 2, H / 2, Math.hypot(W, H) * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(10,16,8,.38)');
-          gg.fillStyle = vg; gg.fillRect(0, 0, W, H); }); CITY_LAGEN.lichtKey = lk; }
-      g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(CITY_LAGEN.licht, 0, 0); g.setTransform(dpr2, 0, 0, dpr2, 0, 0); }
-    // name plates last: jedes Schild klebt unter seinem Gebäude (nie an den Bildrand geschoben); ragt es aus dem Bild oder
-    // läge es auf einem anderen, bleibt es weg – die Burg zuerst, dann was gerade gebaut wird, gebaute Häuser, leere Plätze
-    const rund = (x, y, w, h, r) => { g.beginPath(); g.roundRect ? g.roundRect(x, y, w, h, r) : g.rect(x, y, w, h); };
-    const rang = q => q.it.keep ? 0 : q.building ? 1 : q.it.gate ? 2 : q.ghost ? 4 : 3;
-    plates.sort((p, q) => rang(p) - rang(q) || q.sy - p.sy);
-    cityNamen = [];
-    for (const { it, sx, sy, building, ghost } of plates) {
-        if (ghost && !building && Z >= .7) {                                 // leerer Platz: ein schwebendes Zeichen – „+“ = hier bauen, Schloss = braucht eine höhere Burg
-            const zu = !!(AUF && AUF.BAU_AB_BURG[it.id] > AUF.burgStufe('player')), r = Math.max(9, Math.min(14, 5.5 * Z));
-            const [bx, by0] = toS(it.x, it.y, 34), by = by0 + Math.sin(now / 430 + it.x) * 1.8;
-            g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(bx + 1.5, by + r + 2, r * .8, r * .3, 0, 0, 7); g.fill();
-            const bg = g.createLinearGradient(0, by - r, 0, by + r); bg.addColorStop(0, zu ? '#5d5a55' : '#ffe08a'); bg.addColorStop(1, zu ? '#2e2c29' : '#c98f22');
-            g.fillStyle = bg; g.strokeStyle = zu ? 'rgba(200,190,170,.7)' : '#fff1c4'; g.lineWidth = 1.5; g.beginPath(); g.arc(bx, by, r, 0, 7); g.fill(); g.stroke();
-            drawGlyph(g, zu ? 'lock' : 'plus', bx, by, r * 1.25, zu ? '#e6dccb' : '#4a2c08');
-        }
-        if (Z < .7 && !building) {                                           // weit weg: nur die Stufe (ab .7: Handy-Start-Blick mit Schildern)
-            if (!it.lvl) continue; const r2 = 7.5, [bx, by] = [sx, sy + 4 * Z + r2];
-            if (!cityNamePlatz(it.id, bx - r2, by - r2, r2 * 2, r2 * 2, W, H)) continue; g.font = '800 10px Inter, system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
-            g.fillStyle = it.keep ? '#c98f22' : '#2f6fb8'; g.strokeStyle = 'rgba(255,236,190,.9)'; g.lineWidth = 1.2; g.beginPath(); g.arc(bx, by, r2, 0, 7); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.fillText(String(it.lvl), bx, by + .5); continue; }
-        const wnd = it.id === 'hospital' ? c.wounded : 0, name = it.name + (wnd ? ' · ' + fmtCompact(wnd) + ' verw.' : ''), lv = it.lvl ? String(it.lvl) : '';
-        const fs = Math.max(9.5, Math.min(12.5, 4.6 * Z)), h2 = fs + 7; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
-        const tw = g.measureText(name).width, lw = lv ? Math.max(h2 + 2, g.measureText(lv).width + 12) : 0, W2 = tw + 16 + (lv ? lw - 4 : 0), x0 = sx - W2 / 2, py = sy + (it.keep ? 12 : it.gate ? 2 : 7) * Z;
-        if (!cityNamePlatz(it.id, x0, py, W2, building ? h2 * 2 + 3 : h2, W, H)) continue;
-        g.fillStyle = ghost ? 'rgba(18,16,12,.58)' : 'rgba(18,16,12,.84)'; g.strokeStyle = building ? '#ffd98a' : ghost ? 'rgba(228,200,134,.35)' : 'rgba(228,200,134,.7)'; g.lineWidth = 1;
-        rund(x0, py, W2, h2, h2 / 2); g.fill(); g.stroke();
-        g.textAlign = 'center'; g.textBaseline = 'middle';
-        if (lv) { const lg2 = g.createLinearGradient(0, py, 0, py + h2); lg2.addColorStop(0, it.keep ? '#e7b84a' : '#4f8ad0'); lg2.addColorStop(1, it.keep ? '#9a6a16' : '#2a5794');   // die Stufe als Abzeichen
-            g.fillStyle = lg2; g.strokeStyle = 'rgba(255,236,190,.85)'; rund(x0, py, lw, h2, h2 / 2); g.fill(); g.stroke();
-            g.fillStyle = '#fff'; g.fillText(lv, x0 + lw / 2, py + h2 / 2 + .5); }
-        g.fillStyle = ghost ? '#d6cab0' : '#f6ead0'; g.fillText(name, lv ? x0 + lw + (W2 - lw) / 2 - 2 : x0 + W2 / 2, py + h2 / 2 + .5);
-        const fs8 = h2 - 7;
-        if (building) { const b2 = cityBuildOf(c, it.id === '_keep' ? 'keep' : it.id), tl = fmtClock((b2.endsAt - Date.now()) / 1000); g.font = '700 ' + (fs8 - 1) + 'px Inter, system-ui, sans-serif';
-            const w2 = g.measureText(tl).width + 26, yy = py + h2 + 3; g.fillStyle = 'rgba(20,6,5,.92)'; g.strokeStyle = 'rgba(255,110,80,.9)';
-            g.beginPath(); g.roundRect ? g.roundRect(sx - w2 / 2, yy, w2, fs + 6, 4) : g.rect(sx - w2 / 2, yy, w2, fs + 6); g.fill(); g.stroke();
-            drawGlyph(g, 'hourglass', sx - w2 / 2 + 10, yy + (fs + 6) / 2, fs - 1, '#ffb3a0'); g.fillStyle = '#ffe2d8'; g.fillText(tl, sx + 6, yy + (fs + 6) / 2 + .5); }
     }
     cityRaf = requestAnimationFrame(cityFrame);
 }
@@ -10979,15 +10276,7 @@ function renderLevelUpModal() {
     document.getElementById('levelUpTitle').textContent = 'Stufe ' + s.to;
     const n = s.to - s.from;
     document.getElementById('levelUpSub').textContent = n > 1 ? 'Stufe ' + s.from + ' → ' + s.to + ' · ' + n + ' Aufstiege' : 'Du bist aufgestiegen!';
-    const row = (ic, label, val) => '<li>' + icon(ic, 'ico-' + ic) + '<span>' + label + '</span><b>+' + val + '</b></li>';
-    let html = '';
-    if (s.coins) html += row('coin', 'Münzen', fmtNum(s.coins));
-    if (s.troops) html += row('troops', 'Truppen (Heimat)', fmtNum(s.troops));
-    if (s.gems) html += row('gem', 'Edelsteine', fmtNum(s.gems));
-    html += row('points', s.points === 1 ? 'Fähigkeitspunkt' : 'Fähigkeitspunkte', fmtNum(s.points));
-    const list = document.getElementById('levelUpRewards');
-    list.innerHTML = html;
-    [...list.children].forEach((li, i) => { li.style.animationDelay = (180 + i * 110) + 'ms'; });
+    beuteLis([{ a: 'coins', n: s.coins }, { a: 'tr', n: s.troops }, { a: 'gems', n: s.gems }, { a: 'punkte', n: s.points }], document.getElementById('levelUpRewards'));   // Kacheln wie RoK (05e)
     document.getElementById('levelUpNext').innerHTML = 'Nächste Stufe ' + (s.to + 1) + ': ' + levelRewardText(s.to + 1);
     if (m.hidden) { m.hidden = false; dismissTutorialHint && dismissTutorialHint(); }
     updateHud();
@@ -11078,10 +10367,11 @@ function drawPickups(now) {          // screen space (setScreen active)
         glow.addColorStop(0, p.kind === 'gem' ? 'rgba(127,211,255,.45)' : 'rgba(236,208,138,.45)');
         glow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, r * 2.1, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#15120c'; ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke();
-        drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : 'coin', cx, cy, r * 1.3,
+        const rund = glyphBild('rund');                                       // runder Knopf aus den KI-Bildern, darin Beutel/Edelstein/Truppen
+        if (rund) ctx.drawImage(rund, cx - r * 1.2, cy - r * 1.2, r * 2.4, r * 2.4);
+        else { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = '#15120c'; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke(); }
+        drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : glyphBild('beute') ? 'beute' : 'coin', cx, cy, r * 1.3,
             p.kind === 'gem' ? '#8fd8ff' : p.kind === 'troops' ? '#efe8d6' : '#e8c46e');
         const t = '+' + fmtCompact(p.amount); ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';   // Beschriftung: was es gibt
         const w = ctx.measureText(t).width + 12; ctx.fillStyle = 'rgba(14,14,20,.85)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - w / 2, cy + r + 2, w, 15, 7) : ctx.rect(cx - w / 2, cy + r + 2, w, 15); ctx.fill();
@@ -11124,7 +10414,7 @@ function dismissTutorialHint() {
 // confirmed completely clear of every other base (owned by anyone
 // or neutral) - never assumed just because the bases are close.
 const TERRITORY_PADDING = 250;
-const TERRITORY_CONNECT_MAX_DIST = 6000;
+const TERRITORY_CONNECT_MAX_DIST = 6000 * KARTE_MASSSTAB;
 
 function pointToSegmentDistance(px, py, ax, ay, bx, by) {
     const abx = bx - ax, aby = by - ay;
@@ -11168,35 +10458,12 @@ const fieldCapFor = (kind, rm) => kind === 'gem' ? Math.round(FIELD_KINDS.gem.ba
     : Math.max(1, Math.round(FIELD_KINDS[kind].base * Math.sqrt(rm) * WIRTSCHAFT_ERTRAG * (FIELD_KINDS[kind].roh ? ROH_FAKTOR : MUENZ_FAKTOR)));
 const fieldDauerSec = rm => 3600 * (1 + 3 * Math.log(Math.max(1, rm)) / Math.log(300));
 const FIELD_REGEN_MS = 60 * 60000;
-const resFields = (() => {
-    const out = [], r = mulberry32(7771);
-    for (const lm of landmasses) {
-        if (lm.tier !== 'outer' || lm.ring < 2) continue;
-        const want = lm.ring >= 5 ? 3 : 2, near = islandsByLandmass[lm.id] || [];
-        for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
-            const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!aufLand(lm, x, y)) continue;
-            if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
-            const kind = r() < .78 ? 'gold' : 'gem';
-            out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: fieldCapFor(kind, ringMult(lm)), dauer: fieldDauerSec(ringMult(lm)) }); k++;
-        }
-    }
-    // Paket D: Rohstoff-Felder dazu (eigener Zufall – die Gold- und Gem-Felder bleiben genau, wo sie waren). Je Region 2 (außen 3),
-    // was dort häufig ist, je nach Landschaft: Wiese Holz, Wüste Stein, Schnee Eisen
-    const r2 = mulberry32(9917), arten = { green: ['holz', 'holz', 'stein', 'eisen'], sand: ['stein', 'stein', 'holz', 'eisen'], snow: ['eisen', 'eisen', 'stein', 'holz'] };
-    for (const lm of landmasses) {
-        if (lm.tier !== 'outer') continue;
-        const want = lm.ring >= 6 ? 3 : 2, near = islandsByLandmass[lm.id] || [], ar = arten[lm.bio] || arten.green;
-        for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
-            const x = lm.x + (r2() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r2() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!aufLand(lm, x, y)) continue;
-            if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
-            const kind = ar[Math.floor(r2() * ar.length)];
-            out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: fieldCapFor(kind, ringMult(lm)), dauer: fieldDauerSec(ringMult(lm)) }); k++;
-        }
-    }
-    return out;
-})();
+// Felder wie in der Karten-Testdatei (KARTE_ZONEN.felder): überall außer der Mitte, nie im Gebirge oder an Pässen, Stufe steigt nach innen.
+// Ertrag nach der Stärke der Zone (ringMult; die Wächter-Zone wie die stärkste äußere – vorher gab es dort keine Felder)
+const FELD_ART = { holz: 'holz', stein: 'stein', eisen: 'eisen', gold: 'gold', edelstein: 'gem' };
+const feldMult = lm => lm.tier === 'guardian' ? RING_MULT[2] : ringMult(lm);
+const resFields = KARTE_ZONEN.felder.map((o, i) => { const lm = landmasses[o.gebiet], kind = FELD_ART[o.art];
+    return { id: 'f' + i, x: o.x, y: o.y, landmassId: o.gebiet, radius: ISLAND_RADIUS * .6, kind, stufe: o.stufe, cap: fieldCapFor(kind, feldMult(lm)), dauer: fieldDauerSec(feldMult(lm)) }; });
 const fieldById = {}; for (const f of resFields) fieldById[f.id] = f;
 let fieldState = (() => { try { return JSON.parse(store.get('openWaterFields')) || {}; } catch (e) { return {}; } })();
 let fieldMarches = (() => { try { return JSON.parse(store.get('openWaterFieldMarches')) || []; } catch (e) { return []; } })();
@@ -11211,6 +10478,7 @@ function fieldHurt(who, n, hx) { return who === 'player' ? hospitalTake(n, hx ? 
 function fieldTravelSec(from, f, who) { return travelDurationSeconds(from, f, who === 'player' ? undefined : who); }
 function fieldSend(who, homeId, fieldId, troops, hero, hero2) {          // troops leave a base for a field (gathering, or attacking whoever sits there) - a hero (and a Zweitheld) may lead them
     const home = islandById[homeId], f = fieldById[fieldId]; if (!home || !f || troops <= 0) return false;
+    if (!canReach(home.landmassId, f.landmassId, who)) { if (who === 'player') flashHint(wegGrund(home.landmassId, f.landmassId, 'player') || 'Kein Weg zum Feld – ein fremdes Tor liegt dazwischen.', 4000); return false; }   // (nur über offene, eigene Pässe)
     if (!marschPlatz(who)) return false;                                                      // Marsch-Plätze (Paket D)
     if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2);
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
@@ -11279,14 +10547,18 @@ function fieldArrive(m, now) {
             gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx) };
     }
 }
+// Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Sammel-Rausch (+50 %) · Gebäude · Forschung Sammeln
+function fieldRateOf(f, o, gx) {
+    return f.cap / f.dauer * (1 + (gx ? gx.gSpd : 0) / 100) * (evThemaAktiv('sam') ? 1.5 : 1) * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1);
+}
 function fieldTick() {
     if (!rechnet()) return;
-    const now = Date.now(), dt = 1, sr = evThemaAktiv('sam') ? 1.5 : 1;   // Sammel-Rausch: 50 % schneller
+    const now = Date.now(), dt = 1;
     const due = fieldMarches.filter(m => m.resolveAt <= now);
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
     for (const f of resFields) {
         const st = fieldState[f.id]; if (!st || !st.occ) continue; if (st.left > f.cap) st.left = f.cap;
-        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100) * sr * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1), st.left, cap - o.got);   // (+ Forschung Sammeln)   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
+        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(fieldRateOf(f, o, gx) * dt, st.left, cap - o.got);
         o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
         if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
     }
@@ -11304,8 +10576,13 @@ function drawResFields(now, wallNow) {
     for (const f of resFields) {
         const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(f.x, f.y)) continue;
         const st = fieldState[f.id], left = st ? Math.min(st.left, f.cap) : f.cap, empty = left <= 0;
+        const bn = 'feld_' + (f.kind === 'gem' ? 'edelstein' : f.kind), bild = KB.fertig && KB.img[bn];
+        if (bild) {                                                          // Karte wie RoK: das KI-Bild (fest in der Welt, nie winzig), die Stufe daneben
+            const w = Math.max(FELD_BREITE * z, 34), h = w * bild.height / bild.width;
+            ctx.globalAlpha = empty ? .55 : 1; ctx.drawImage(kbBild(bn, w * dpr), x - w / 2, y - h * .62, w, h); ctx.globalAlpha = 1;
+            stufenZahl(x + w * .32, y - h * .5, f.stufe, false); }
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
-        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
+        if (!bild) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();   // (solange die Bilder laden: gezeichnet)
         if (f.kind === 'gold') {                                             // a rocky mine mouth with a heap of gold
             ctx.fillStyle = '#7d6b55'; ctx.beginPath(); ctx.moveTo(-13, 4); ctx.quadraticCurveTo(-10, -12, 0, -13); ctx.quadraticCurveTo(10, -12, 13, 4); ctx.closePath(); ctx.fill();
             ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1; ctx.stroke();
@@ -11325,7 +10602,7 @@ function drawResFields(now, wallNow) {
             ctx.fillStyle = '#6f675a'; ctx.beginPath(); ctx.ellipse(0, 2, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
             if (!empty) for (const [dx, h, w] of [[-5, 12, 3], [0, 17, 4], [5, 11, 3], [9, 7, 2.4]]) { ctx.fillStyle = '#7fd0ff'; ctx.beginPath(); ctx.moveTo(dx - w, 2); ctx.lineTo(dx, 2 - h); ctx.lineTo(dx + w, 2); ctx.closePath(); ctx.fill();
                 ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.moveTo(dx - w * .3, 1); ctx.lineTo(dx, 2 - h); ctx.lineTo(dx + w * .15, 1); ctx.closePath(); ctx.fill(); }
-        }
+        } }
         if (st && st.occ) {                                                   // the gatherers' tent and how full their packs are
             const o = st.occ, col = o.who === 'player' ? '#3f86d8' : (botById[o.who] || {}).color || '#c9423a', q = Math.min(1, o.got / Math.max(1e-9, fieldCapOf(f, o)));
             ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-18, 6); ctx.lineTo(-12, -5); ctx.lineTo(-6, 6); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#2a241b'; ctx.stroke();
@@ -11344,22 +10621,32 @@ let fieldSheetId = null, fieldShare = .5, fieldHero = null, fieldHero2 = null;
 function fieldSource(f) { let best = null, bd = Infinity; for (const id of ownedIslands) { const isl = islandById[id]; if ((islandTroops[id] || 0) < 1 || !canReach(isl.landmassId, f.landmassId)) continue;
     const d = Math.hypot(isl.x - f.x, isl.y - f.y); if (d < bd) { bd = d; best = id; } } return best; }
 function openFieldSheet(f) {
+    if (fieldSheetId !== f.id) [fieldHero, fieldHero2] = heroLetzte();   // frisch geöffnet: die zuletzt geschickten Helden
     fieldSheetId = f.id; const st = fieldInfo(f), K = FIELD_KINDS[f.kind], o = st.occ, src = fieldSource(f), mine = o && o.who === 'player';
     const avail = src !== null ? islandTroops[src] || 0 : 0, send = Math.floor(avail * fieldShare);
     if (fieldHero && (!heroOwned('player', fieldHero) || heroBusy('player', fieldHero))) fieldHero = null; fieldHero2 = heroZweitOk('player', fieldHero, fieldHero2);
     liveHtml(document.getElementById('fieldSheet'),                   // (live: liveTick – neu geschrieben nur bei einer Änderung, die Uhren zählen von selbst)
         '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + uhrHtml(st.regenAt, 'clock') + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
-        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
+        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' + fieldFortschritt(f, st, K) +
         '<span>Tragen</span><b>' + (K.load >= 1 ? (K.load * (AUF ? AUF.traglast('player') : 1)).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' ' + K.what + ' pro Truppe' : '1 Edelstein pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
         (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
-         src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
+         src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher – wähle ein Feld näher an deinen Basen.</span></div>' :
          o && ownerShielded(o.who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + fieldWhoName(o.who) + ' steht unter einem Friedensschild (noch ' + uhrHtml(ownerShieldUntil(o.who)) + ') – die Sammler dort kann niemand angreifen.</span></div>' :
          '<div class="seg" data-fshare>' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === fieldShare ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div>' +
          (heroSegHtml('data-fhero', fieldHero) ? '<div class="seg hero-seg">' + heroSegHtml('data-fhero', fieldHero) + '</div>' : '') +
          (heroSeg2Html('data-fhero2', fieldHero, fieldHero2) ? '<div class="seg hero-seg hero-seg2">' + heroSeg2Html('data-fhero2', fieldHero, fieldHero2) + '</div>' : '') +
          '<button class="btn btn--primary btn--sm" type="button" data-fsend>' + icon(o ? 'attack' : 'send') + '<span>' + (o ? 'Angreifen und übernehmen' : 'Sammeln') + ' · ' + fmtCompact(send) + ' von ' + islandTitle(islandById[src]) + '</span></button>'));
     document.getElementById('fieldSheet').hidden = false;
+}
+// wer sammelt: Restzeit bis voll beladen (oder Feld leer), Balken gesammelt/Traglast, Tempo pro Stunde
+function fieldFortschritt(f, st, K) {
+    const o = st.occ; if (!o) return '';
+    const gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), rate = fieldRateOf(f, o, gx), rest = Math.max(0, Math.min(cap - o.got, st.left)), q = Math.min(1, o.got / Math.max(1e-9, cap));
+    const proStd = rate * 3600, menge = v => K.load >= 1 ? fmtNum(Math.floor(v)) : v.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+    return '<span>Tempo</span><b>' + menge(proStd) + ' ' + K.what + ' / Std.</b>' +
+        '<span>' + (cap - o.got <= st.left ? 'Voll in' : 'Feld leer in') + '</span><b>' + (rate > 0 ? uhrHtml(Date.now() + rest / rate * 1000) : '–') + '</b>' +
+        '<span class="field-fort"><span class="ach-bar"><i style="width:' + Math.round(q * 100) + '%"></i></span><small>' + fmtNum(Math.floor(o.got)) + ' / ' + fmtNum(Math.floor(cap)) + ' ' + K.what + '</small></span>';
 }
 function closeFieldSheet() { document.getElementById('fieldSheet').hidden = true; fieldSheetId = null; }
 document.getElementById('fieldSheet').addEventListener('click', e => {
@@ -11370,30 +10657,50 @@ document.getElementById('fieldSheet').addEventListener('click', e => {
     const fh2 = e.target.closest('[data-fhero2]:not([disabled])'); if (fh2) { fieldHero2 = fh2.dataset.fhero2 || null; return openFieldSheet(f); }
     if (e.target.closest('[data-frecall]')) { const st = fieldInfo(f); if (st.occ && st.occ.who === 'player') { if (alsBefehl('feldHeim', { feld: f.id })) { flashHint('Deine Sammler kehren um.', 2500); return; } fieldGoHome(f, st, Date.now()); saveFields(); flashHint('Deine Sammler kehren mit der Beute heim.', 2500); } return closeFieldSheet(); }
     if (e.target.closest('[data-fsend]')) { const src = fieldSource(f); if (src === null) return; const n = Math.floor((islandTroops[src] || 0) * fieldShare);
-        if (n < 1 || !marschPlatz('player')) return; if (alsBefehl('feld', { home: src, feld: f.id, n, held: fieldHero, held2: fieldHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else if (!fieldSend('player', src, f.id, n, fieldHero, fieldHero2)) return; fieldHero = null; fieldHero2 = null; flashHint('Truppen unterwegs ' + fArt(FIELD_KINDS[f.kind], 'zu') + '.', 2500); closeFieldSheet(); }
+        if (n < 1 || !marschPlatz('player')) return; if (alsBefehl('feld', { home: src, feld: f.id, n, held: fieldHero, held2: fieldHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else if (!fieldSend('player', src, f.id, n, fieldHero, fieldHero2)) return; heroLetzteMerken(fieldHero, fieldHero2); fieldHero = null; fieldHero2 = null; questProgress('sammeln', 1); flashHint('Truppen unterwegs ' + fArt(FIELD_KINDS[f.kind], 'zu') + '.', 2500); closeFieldSheet(); }
 });
 // ===== BARBAREN-LAGER + TAGESBOSS: camps (Stufe 1-25) out on the land and one boss a day with a big pool of life for everyone.
 // A camp of level N only after N-1 (level 1 always), 20 camp wins a day (reset at midnight) - the same for you and every other player.
 const BARB_MAX_L = 25, BARB_DAY = 20, BARB_WANT = 110, DBOSS_HITS = 10, DBOSS_CAP = .05;   // camps on the map · a boss hit takes at most 5 % of its life
-const barbTroopsOf = L => niceRound(wirtK(2000 * Math.pow(2, L - 1)));                  // × WIRTSCHAFT_KOSTEN (5.10.): 1 at 1, ~570 at 10, ~19 Mio. at 25 (vorher 2 Tsd. · 1 Mio. · 34 Mrd.)
-const barbLootOf = L => niceRound(barbTroopsOf(L) * .6 * MUENZ_FAKTOR + wirtM(500 * L * L));   // coins for a win (+ Angriff: Gold per warrior) – Münzen × MUENZ_FAKTOR
+const barbTroopsOf = L => niceRound(500 * Math.pow(1.42, L - 1));                         // 7.10. (rokzahlen): 500 at 1, 1.400 at 4, 12.000 at 10, 2,3 Mio. at 25 – Stufe 1 ≈ 10 % der Start-Armee
+const barbLootOf = L => niceRound(barbTroopsOf(L) * 20 + 5000 * L);                          // Münzen für einen Sieg (+ Angriff: Münzen je Krieger): 15.000 at 1, 290.000 at 10, 46 Mio. at 25
 const barbTier = L => L >= 21 ? 4 : L >= 15 ? 3 : L >= 8 ? 2 : 1;                         // badge colour like the gear rarities
 const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k: 'giant', name: 'Steinriese Gorm', col: '#b39b72' }, { k: 'dragon', name: 'Feuerdrache Ignar', col: '#ee6a34' }, { k: 'wraith', name: 'Nebelkönig Morvan', col: '#9d86ea' }];
-const DBOSS_PRIZE = [{ gems: 300, crate: 3, sh: 30 }, { gems: 200, crate: 3, sh: 20 }, { gems: 150, crate: 3, sh: 15 }, { gems: 80, crate: 2, sh: 10 }, { gems: 30, crate: -1, sh: 5 }];   // 1 · 2 · 3 · 4-10 · everyone else who hit it
-const dbossPrizeOf = i => DBOSS_PRIZE[i < 3 ? i : i < 10 ? 3 : 4];
+// Tagesboss (Merkliste 33): JE Angriff die Belohnung seiner Schadens-Klasse (zweimal dieselbe = zweimal), fällt er: alle, die trafen, noch etwas
+// Klassen als Anteil vom Boss-Leben (7.10.): ein Angriff nimmt höchstens 5 % (DBOSS_CAP) – so ist jede Klasse bei jedem Boss erreichbar
+const DBOSS_KLASSEN = [{ bis: .0005, mh: 1, t: 'bis 0,05 %' }, { bis: .005, mh: 2, t: '0,05 – 0,5 %' }, { bis: .01, mh: 3, sh: 1, t: '0,5 – 1 %' },
+    { bis: .025, gems: 5, sh: 1, th: 1, crate: 0, t: '1 – 2,5 %' }, { bis: Infinity, gems: 10, sh: 2, th: 2, crate: 1, t: 'über 2,5 %' }], DBOSS_FALL = { gems: 20, sh: 5 };
+const dbossKlasse = (dmg, max) => DBOSS_KLASSEN.findIndex(k => dmg <= k.bis * max + 1e-9);
+function dbossKlasseZahlen(b, who, dmg) {           // (nur wer rechnet) ein Angriff: Zähler je Klasse, Belohnung ins Abholfach – Schlüssel je Angriff
+    const i = dbossKlasse(dmg, b.max), kl = (b.kl || (b.kl = {}))[who] || (b.kl[who] = DBOSS_KLASSEN.map(() => 0)), n = kl.reduce((a, x) => a + x, 0);
+    kl[i]++; evPreis(who, 'boss', b.name + ' · Klasse ' + (i + 1), DBOSS_KLASSEN[i], b.d + '|' + n); return i;
+}
+// Barbaren-Lager (Merkliste 33): jede Stufe 1–25 bringt einmal am Tag eine Belohnung (jeden Tag neu)
+function lagerPreis(L) {
+    const gross = { 5: { gems: 10, crate: 0 }, 10: { gems: 20, crate: 1, sh: 5 }, 15: { gems: 30, crate: 2, sh: 10 }, 20: { gems: 50, crate: 2, sh: 15 }, 25: { gems: 100, crate: 3, sh: 30 } }[L];
+    if (gross) return gross; if (L < 5) return { mh: 1 };
+    const [m, t] = L < 10 ? [2, 1] : L < 15 ? [3, 2] : L < 20 ? [4, 3] : [6, 4], p = (L - 1) % 5 % 2 ? { th: t } : { mh: m };   // abwechselnd Münzen / Truppen
+    if (L > 20) p.sh = 2; return p;
+}
+const LAGER_LEISTE = Array.from({ length: BARB_MAX_L }, (_, i) => Object.assign({ ab: i + 1 }, lagerPreis(i + 1)));
+function lagerStufeZahlen(who, L) {                 // (nur wer rechnet) Lager Stufe L besiegt: heute zum ersten Mal → Belohnung
+    const r = barbRec(who), bit = 1 << (L - 1); if (L < 1 || L > BARB_MAX_L || (r.s & bit)) return false;
+    r.s = (r.s || 0) | bit; evPreis(who, 'lager', 'Barbaren-Lager Stufe ' + L, LAGER_LEISTE[L - 1], r.d + '|' + L); return true;
+}
 const barbLoad = (k, d) => { try { return JSON.parse(store.get(k)) || d; } catch (e) { return d; } };
 let barbState = barbLoad('openWaterBarb', { camps: [], n: 0, next: 0 }), barbMarches = barbLoad('openWaterBarbMarches', []), barbWho = barbLoad('openWaterBarbWho', {}), dayBoss = barbLoad('openWaterDayBoss', null), barbSaveAt = 0;
 function saveBarb(now) { if (now && now - barbSaveAt < 5000) return; barbSaveAt = now || Date.now();
     store.set('openWaterBarb', JSON.stringify(barbState)); store.set('openWaterBarbMarches', JSON.stringify(barbMarches)); store.set('openWaterBarbWho', JSON.stringify(barbWho)); store.set('openWaterDayBoss', JSON.stringify(dayBoss)); }
 window.addEventListener('pagehide', () => saveBarb()); document.addEventListener('visibilitychange', () => { if (document.hidden) saveBarb(); });
 const barbCampById = id => barbState.camps.find(c => c.id === id);
-function barbRec(who) { const r = barbWho[who] || (barbWho[who] = { b: 0, d: '', n: 0, h: 0 }), d = todayKey(); if (r.d !== d) { r.d = d; r.n = 0; r.h = 0; } return r; }   // b: best level beaten · n: camp wins today · h: boss hits today
+function barbRec(who) { const r = barbWho[who] || (barbWho[who] = { b: 0, d: '', n: 0, h: 0, s: 0 }), d = todayKey(); if (r.d !== d) { r.d = d; r.n = 0; r.h = 0; r.s = 0; } return r; }   // b: best level beaten · n: camp wins today · h: boss hits today · s: Lager-Stufen heute (Bits, Belohnung)
 const barbOut = (who, k) => barbMarches.filter(m => m.who === who && !m.back && m.k === (k || 'c')).length;
 const barbLeft = who => Math.max(0, barbTagMax() - barbRec(who).n - barbOut(who));
 const barbOpenFor = (who, L) => L <= barbRec(who).b + 1;
 const barbPt = o => ({ id: 'barb' + (o.id || o.tid || 'b'), x: o.x, y: o.y, landmassId: o.lm, radius: ISLAND_RADIUS * .6 });
 const barbFa = who => (1 + fieldAtkPct(who) / 100) * titleMult(who, 'attack') * (AUF ? AUF.kampf(who, 'a') : 1);
-const BARB_LMS = landmasses.filter(l => l.tier === 'outer');
+const BARB_LMS = landmasses.filter(l => l.zone <= 4);   // Zone 1–4 (die Mitte nicht)
+const barbStufeZone = (z, r) => Math.min(BARB_MAX_L, 1 + (z - 1) * 6 + Math.floor(r() * (z === 4 ? 7 : 6)));   // Stufe nach der Zone (wie die Karten-Testdatei): 1–6 außen … 19–25 in Zone 4
 function barbSpot(lm, r, edge) {                    // a free place on the land: clear of bases, fields, other camps and the boss (edge: room to the shore)
     const e = ISLAND_RADIUS * (edge || 1);
     for (let t = 0; t < 30; t++) {
@@ -11401,24 +10708,22 @@ function barbSpot(lm, r, edge) {                    // a free place on the land:
         if (!aufLand(lm, x, y) || [[e, 0], [-e, 0], [0, e], [0, -e]].some(([dx, dy]) => !aufLand(lm, x + dx, y + dy)) || (islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 3)) continue;
         if (resFields.some(f => f.landmassId === lm.id && Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 2.2) || barbState.camps.some(c => Math.hypot(c.x - x, c.y - y) < ISLAND_RADIUS * 3)) continue;
         if (dayBoss && Math.hypot(dayBoss.x - x, dayBoss.y - y) < ISLAND_RADIUS * 5) continue;
-        if (felsAuf(x, y, 1200) || grenzAbstand(x, y) < 4000) continue;          // nicht auf einen Berg (01f) und nicht ins Grenzgebirge
+        if (grenzAbstand(x, y) < KETTE_FREI) continue;                                // nicht ins Grenzgebirge
         return { x, y };
     }
     return null;
 }
-function barbSpawn() {                              // a third near you, 40 % near someone else (at a level that fits them), the rest anywhere
+function barbSpawn() {                              // a third near you, 40 % near someone else, the rest anywhere – die Stufe kommt aus der Zone des Lagers
     const r = Math.random(), who = r < .3 ? 'player' : r < .7 ? BOT_DEFS[Math.floor(Math.random() * BOT_DEFS.length)].id : null, own = who && (who === 'player' ? ownedIslands : botOwnedIslands[who]);
-    let lm = null, L = Math.min(BARB_MAX_L, 1 + Math.floor(BARB_MAX_L * Math.pow(Math.random(), 1.7)));   // anywhere: many small camps, few big ones
+    let lm = null;
     if (own && own.size) { const ids = [...own], b = islandById[ids[Math.floor(Math.random() * ids.length)]];
-        if (b) { const rs = (reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => l === b.landmassId || landmassesConnected(b.landmassId, l)); lm = landmasses[rs[Math.floor(Math.random() * rs.length)]]; }
-        L = Math.max(1, Math.min(BARB_MAX_L, barbRec(who).b + 1 - Math.floor(Math.pow(Math.random(), 2) * 5))); }
-    if (!lm || lm.tier !== 'outer') lm = BARB_LMS[Math.floor(Math.random() * BARB_LMS.length)];
+        if (b) { const rs = (reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => l === b.landmassId || landmassesConnected(b.landmassId, l)); lm = landmasses[rs[Math.floor(Math.random() * rs.length)]]; } }
+    if (!lm || lm.zone > 4) lm = BARB_LMS[Math.floor(Math.random() * BARB_LMS.length)];
     const p = barbSpot(lm, Math.random); if (!p) return false;
-    const t = barbTroopsOf(L); barbState.camps.push({ id: 'c' + (barbState.n++), x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, L, t, max: t, until: Date.now() + (3 + Math.random() * 3) * 36e5 }); return true;   // moves on after 3-6 h
+    const L = barbStufeZone(lm.zone, Math.random), t = barbTroopsOf(L); barbState.camps.push({ id: 'c' + (barbState.n++), x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, L, t, max: t, until: Date.now() + (3 + Math.random() * 3) * 36e5 }); return true;   // moves on after 3-6 h
 }
 function dbossEnsure() {                            // today's boss: the kind turns every day, the place is the same for everyone today
     const d = todayKey(); if (dayBoss && dayBoss.d === d) return dayBoss;
-    if (dayBoss && dayBoss.hp > 0 && rechnet()) dbossEntkommen(dayBoss);                  // gestern nicht gefallen: alle, die getroffen haben, bekommen etwas Kleines
     const now = new Date(), n = Math.round(new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12).getTime() / 864e5), K = DBOSS_KINDS[n % DBOSS_KINDS.length], r = mulberry32(n * 7919 + 13);
     const lms = BARB_LMS.filter(l => l.ring <= 3); let p = null, lm = null;
     for (let t = 0; t < 20 && !p; t++) { lm = lms[Math.floor(r() * lms.length)]; p = barbSpot(lm, r, 3.5); }
@@ -11433,12 +10738,6 @@ function dbossEnsure() {                            // today's boss: the kind tu
 // 10 Angriffen aus einem Viertel ihrer Start-Truppen ihn schaffen (sonst 5e7 × WIRTSCHAFT_KOSTEN = 27.778). Start-Truppen 5.000
 // (Alexander 6.10.) → 100.000 Leben (sonst fiele er am ersten Tag mit einem Angriff)
 const DBOSS_MIN_ANFANG = 8 * DBOSS_HITS * PLAYER_START_TROOPS * .25;
-function dbossEntkommen(b) {                        // (nur wer rechnet) der Boss ist nicht gefallen: wie beim Drachen alle, die getroffen haben, etwas Kleines –
-    const rk = dbossRanks(b); if (!rk.length) return;   //   fester Schlüssel je Tag (derselbe wie der Preis beim Fallen: nie beides, nie doppelt)
-    for (const [who] of rk) evPreis(who, 'boss', b.name + ' entkommen', DR_PREISE[2], b.d);
-    if (b.dmg.player) flashHint(b.name + ' ist entkommen – alle, die getroffen haben, bekommen eine kleine Belohnung unter Events.', 6000);
-    saveBotState();
-}
 const DBOSS_GONE = 5 * 60000;                          // a fallen boss leaves the map 5 min after it fell
 let dbossOffen = '';                                // (Tagesboss: einmal am Tag seinen Platz aufdecken – er ist für alle angekündigt, wie Drache und Kriegsherr)
 function dbossOnMap(now) { const b = dayBoss, da = b && b.d === todayKey() && (b.hp > 0 || (now || Date.now()) - (b.fell || 0) < DBOSS_GONE) ? b : null;
@@ -11478,7 +10777,8 @@ function barbSend(who, homeId, k, tid, troops, hero, hero2) {  // troops leave a
     barbMarches.push({ who, homeId, k, tid: k === 'b' || k === 'd' ? null : tid, d: k === 'b' ? t.d : k === 'd' ? t.start : null, L: t.L, name: t.name, x: Math.round(t.x), y: Math.round(t.y), lm: t.lm, troops, hero: hero || null, hero2, startedAt: now,
         resolveAt: now + travelDurationSeconds(home, barbPt(t), who === 'player' ? undefined : who) / (1 + (mx ? mx.spd : 0) / 100) * 1000, back: false });
     if (k === 'b') barbRec(who).h++;
-    if (k === 'd') { dr.hits[who] = (dr.hits[who] || 0) + 1; evDirty = true; }
+    if (k === 'd') { dr.hits[who] = (dr.hits[who] || 0) + 1; evDirty = true; barbMarches[barbMarches.length - 1].voll = troops >= DR_ANTEIL * (evTruppenAlle(who) + troops); }   // (Drache: zählt als Treffer mit mind. 10 % aller Truppen)
+    if (k !== 'c') goalBump(who, 'q' + k);                                                     // Tagesaufgaben + Saison-Pass: Angriff auf Tagesboss (qb), Drache (qd), Barbaren-Armee (qi)
     saveBarb(); if (who === 'player') { sfx('send'); updateHud(); saveGame(); } requestRender(); return true;
 }
 function barbHome(m, n, now) { if (n < 1) return; const home = islandById[m.homeId] || islandById[playerIslandId]; if (!home) return;   // the survivors walk home
@@ -11509,7 +10809,7 @@ function barbArrive(m, now) {
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), before = c.t, fb = barbFight(who, m.troops, hx, c.t), wounded = fieldHurt(who, fb.loss, hx), best0 = rec.b;   // the leader: a full rage fires now, every fight fills it
     let gold = 0, item = null, sh = null, shN = 1 + Math.floor(c.L / 5), kGold = 0;
     if (fb.won) {
-        barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb');
+        barbState.camps = barbState.camps.filter(x => x !== c); rec.n++; rec.b = Math.max(rec.b, c.L); goalBump(who, 'barb'); goalBump(who, 'lager'); lagerStufeZahlen(who, c.L);   // (lager: nur Lager – barb zählt auch Invasions-Armeen)
         kGold = Math.round(fb.kill * killGoldRate(who, hx)); gold = payGold(who, barbLootOf(c.L) + kGold);
         if (Math.random() < .1 + c.L * .015) item = isP ? (inboxAdd({ src: 'fight', crate: Math.floor(c.L / 8) }), { box: Math.floor(c.L / 8) }) : (barbCrate(who, Math.floor(c.L / 8)), { box: Math.floor(c.L / 8) });   // (für den Bericht)   // yours wait in the Abholfach
         if (Math.random() < .15 + c.L * .01) sh = isP ? (inboxAdd({ src: 'fight', sh: shN }), { name: '' }) : heroGrantShards(who, shN);
@@ -11533,7 +10833,7 @@ function dbossHit(m, now) {                         // every attack takes life o
     const hx = heroFieldFx(who, m.hero, {}, m.hero2), h = hx || HX0, fa = (1 + (fieldAtkPct(who) + h.atk) / 100) * titleMult(who, 'attack') * (AUF ? AUF.kampf(who, 'a') : 1);
     const dmg = Math.max(1, Math.min(b.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(b.max * DBOSS_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .25 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);   // a quarter of those who struck
-    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
+    const hp0 = b.hp; b.hp -= dmg; b.dmg[who] = (b.dmg[who] || 0) + dmg; const kl = dbossKlasse(dmg, b.max); dbossKlasseZahlen(b, who, dmg); evPunkte('boss', who, 30 * dmg / (b.max * DBOSS_CAP));   // Boss-Jagd
     const gold = payGold(who, dmg * .3 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     barbHome(m, m.troops - loss, now);
     if (isP) {
@@ -11541,29 +10841,25 @@ function dbossHit(m, now) {                         // every attack takes life o
         addCombatLogEntry({ type: 'dboss', name: b.name, dmg, loss, wounded, gold, left: Math.max(0, b.hp), max: b.max, hp0, troops: m.troops, gef, atk: Math.round((m.troops + gef) * fa), capped: dmg >= Math.round(b.max * DBOSS_CAP),
             total: b.dmg.player, rank: rk.findIndex(e => e[0] === 'player') + 1, of: rk.length, hits: barbRec('player').h, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) });
         spawnBattleFx({ x: b.x, y: b.y }, true, 'Treffer', '−' + fmtCompact(dmg) + ' Leben');
-        flashHint('Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden, +' + fmtCompact(gold) + ' Münzen.', 3500); updateHud(); saveGame();
+        flashHint('Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden (Klasse ' + (kl + 1) + '), +' + fmtCompact(gold) + ' Münzen – Belohnung unter Events.', 3500); updateHud(); saveGame();
     } else if (window.WELT && botById[who] && botById[who].mensch) {    // ein echter Spieler (Weltrechner): derselbe Bericht als Nachricht
         const rk = dbossRanks(b), gef = heroGefOf(h, m.troops);
         evBericht(who, { type: 'dboss', name: b.name, dmg, loss, wounded, gold, left: Math.max(0, b.hp), max: b.max, hp0, troops: m.troops, gef, atk: Math.round((m.troops + gef) * fa), capped: dmg >= Math.round(b.max * DBOSS_CAP),
             total: b.dmg[who], rank: rk.findIndex(e => e[0] === who) + 1, of: rk.length, hits: barbRec(who).h, sourceId: m.homeId, attacker: 'Du', hA: heroTag(hx), hx: heroReportOf(hx) },
-            'Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden, +' + fmtCompact(gold) + ' Münzen.');
+            'Treffer bei ' + b.name + ': ' + fmtCompact(dmg) + ' Schaden (Klasse ' + (kl + 1) + '), +' + fmtCompact(gold) + ' Münzen – Belohnung unter Events.');
     }
     if (b.hp <= 0) { b.hp = 0; b.fell = now; dbossPayout(b); }
     if (isP || barbView && barbView.kind !== 'camp') barbSheetRefresh();
 }
-function dbossPayout(b) {                           // the boss falls: everyone who hit it gets a prize by damage (top 3 extra)
-    const rk = dbossRanks(b); let bs = null;
-    rk.forEach(([who], i) => { const p = dbossPrizeOf(i); goalBump(who, 'dboss');
-        if (who === 'player') { inboxAdd({ src: 'boss', title: b.name + ' · Platz ' + (i + 1), gems: p.gems, crate: p.crate >= 0 ? p.crate : -1, sh: p.sh });   // the prize is sent to the Abholfach
-            addCombatLogEntry({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg.player || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' });
-            flashHint(b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Events → Belohnung.', 5000); }
-        else if (botById[who] && botById[who].mensch) {   // ein echter Spieler: der ganze Preis als Nachricht (auch die Kiste), dazu ein Bericht
-            evPreis(who, 'boss', b.name + ' · Platz ' + (i + 1), p, b.d);
-            evBericht(who, { type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg[who] || 0, gems: p.gems, crate: p.crate >= 0 ? 'Kiste (mind. ' + RARITY_DEFS[p.crate].label + ')' : '', sh: p.sh ? p.sh + ' Helden-Splitter' : '' }, b.name + ' ist gefallen! Platz ' + (i + 1) + ': dein Preis liegt unter Events → Belohnung.'); }
-        else if (botById[who]) { bs = bs || loadBotState(); if (bs[who]) bs[who].gems += p.gems; if (p.crate >= 0) barbCrate(who, p.crate); heroGrantShards(who, p.sh); } });
-    if (bs) saveBotState();
+function dbossPayout(b) {                           // the boss falls: everyone who hit it gets the same prize (keine Platz-Preise mehr – Merkliste 33)
+    const rk = dbossRanks(b), p = DBOSS_FALL, beute = { gems: p.gems, crate: '', sh: p.sh + ' Helden-Splitter' };
+    rk.forEach(([who], i) => { goalBump(who, 'dboss'); evPreis(who, 'boss', b.name + ' gefallen', p, b.d + '|fall');
+        const e = Object.assign({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg[who] || 0 }, beute), t = b.name + ' ist gefallen! Deine Belohnung liegt unter Events → Belohnung.';
+        if (who === 'player') { addCombatLogEntry(e); flashHint(t, 5000); }
+        else if (botById[who] && botById[who].mensch) evBericht(who, e, t); });
+    saveBotState();
     spawnBattleFx({ x: b.x, y: b.y }, true, b.name + ' gefallen', rk.length + ' Kämpfer belohnt');
-    if (!b.dmg.player) flashHint(b.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden nach Schaden belohnt.', 5000);
+    if (!b.dmg.player) flashHint(b.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden belohnt.', 5000);
     saveBarb();
 }
 function barbTick() {
@@ -11648,6 +10944,10 @@ function drawBarb(now, wallNow) {
     if (z >= .004) for (const c of barbState.camps) {
         const x = c.x * z + mapState.offsetX, y = c.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(c.x, c.y)) continue;
         const open = c.L <= best + 1, rd = RARITY_DEFS[barbTier(c.L)];
+        if (KB.fertig && KB.img.barbaren) {                                 // Karte wie RoK: das KI-Bild (fest in der Welt, nie winzig), die Stufe daneben
+            const im = KB.img.barbaren, w = Math.max(BARB_BREITE * z, 22), h = w * im.height / im.width;
+            ctx.globalAlpha = open ? 1 : .6; ctx.drawImage(kbBild('barbaren', w * dpr), x - w / 2, y - h * .62, w, h); ctx.globalAlpha = 1;
+            stufenZahl(x + w * .32, y - h * .5, c.L, true, open ? rd.color : '#6b6660'); continue; }
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k); if (!open) ctx.globalAlpha = .6;
         ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 5, 15, 5, 0, 0, 7); ctx.fill();
         for (const [dx, s, col] of [[-6, 1, '#8a5a33'], [6, .8, '#a0412e']]) {        // two hide tents
@@ -11710,7 +11010,7 @@ function barbSheetHtml() {
             '<span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b></div>' +
             (!open ? '<div class="notice">' + icon('lock') + '<span>Erst ein Lager der Stufe ' + (c.L - 1) + ' besiegen – dann ist Stufe ' + c.L + ' dran.</span></div>' :
              left <= 0 ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Für heute genug: ' + barbTagMax() + ' / ' + barbTagMax() + ' heute. Neue Lager in ' + mid + '.</span></div>' :
-             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
+             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher – wähle ein Lager näher an deinen Basen.</span></div>' :
              barbAttackHtml(islandTroops[src] || 0, need, src, 'Angreifen'));
     }
     const K = dbossKind(b), rk = dbossRanks(b), mine = rk.findIndex(e => e[0] === 'player'), dead = b.hp <= 0;
@@ -11720,7 +11020,7 @@ function barbSheetHtml() {
         '<div class="field-lines"><span>' + (dead ? 'Neuer Boss in' : 'Verschwindet in') + '</span>' + mid + '<span>Deine Angriffe</span><b>' + rec.h + ' / ' + dbossHitsMax() + ' heute</b>' +
         '<span>Dein Schaden</span><b>' + (mine >= 0 ? fmtCompact(rk[mine][1]) + ' · Platz ' + (mine + 1) : '–') + (barbOut('player', 'b') ? ' <small>· Angriff unterwegs</small>' : '') + '</b></div>' +
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '<div class="notice">' + icon('info') + '<span>Noch hat niemand angegriffen.</span></div>');
-    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden, ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, gibt es für alle nach Rang Edelsteine, Kisten und Splitter – Platz 1 bis 3 extra. Entkommt er, bekommen alle, die getroffen haben, etwas Kleines.</div>';
+    const rules = '<div class="barb-note">Pro Angriff Münzen nach Schaden und die Belohnung seiner Schadens-Klasse (Events → Boss), ein Viertel der Kämpfer fällt, höchstens 5 % Leben pro Angriff. Fällt der Boss, bekommen alle, die getroffen haben, noch etwas dazu.</div>';
     if (v.kind === 'boss') {
         const src = barbSource(b, 1, true);
         return bossHtml + (dead ? '' : rec.h >= dbossHitsMax() ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Heute keine Angriffe mehr – morgen wieder.</span></div>' :
@@ -11733,7 +11033,7 @@ function barbNearest() {                            // the closest camp you may 
     let pick = null, ps = -Infinity; for (const c of barbState.camps) { if (c.L > best + 1 || !isCellOpen(c.x, c.y)) continue; const s = c.L * 3 - Math.hypot(c.x - home.x, c.y - home.y) / 4000; if (s > ps) { ps = s; pick = c; } }
     return pick;
 }
-function openBarbSheet(v) { barbView = v; liveHtml(barbSheetEl, barbSheetHtml()); barbSheetEl.hidden = false; }
+function openBarbSheet(v) { if (barbSheetEl.hidden) [barbHero, barbHero2] = heroLetzte(); barbView = v; liveHtml(barbSheetEl, barbSheetHtml()); barbSheetEl.hidden = false; }
 function closeBarbSheet() { barbSheetEl.hidden = true; barbView = null; }
 function barbSheetRefresh() { if (barbView && !barbSheetEl.hidden) liveHtml(barbSheetEl, barbSheetHtml()); }   // (auch jede Sekunde aus liveTick)
 barbSheetEl.addEventListener('click', e => {
@@ -11760,7 +11060,7 @@ barbSheetEl.addEventListener('click', e => {
         if (alsBefehl('lager', { home: src, k: 'c', tid: c.id, n, held: barbHero, held2: barbHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'c', c.id, n, barbHero, barbHero2); flashHint('Truppen unterwegs zum Barbaren-Lager (Stufe ' + c.L + ').', 2500); }
     else { const b = dbossEnsure(); if (b.hp <= 0 || barbRec('player').h >= dbossHitsMax()) return barbSheetRefresh(); const src = barbSource(b, 1, true); if (src === null) return;
         const n = barbShareOf(islandTroops[src] || 0, (islandTroops[src] || 0) * .5); if (n < 1) return; if (alsBefehl('lager', { home: src, k: 'b', tid: null, n, held: barbHero, held2: barbHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else barbSend('player', src, 'b', null, n, barbHero, barbHero2); flashHint('Truppen unterwegs zu ' + b.name + '.', 2500); }
-    barbHero = null; barbHero2 = null; closeBarbSheet();
+    heroLetzteMerken(barbHero, barbHero2); barbHero = null; barbHero2 = null; closeBarbSheet();
 });
 // ===== EVENTS (Paket B): Wochen-Event, Barbaren-Invasion, Drache – alles rechnet der Weltrechner, Zuschauer sehen es =====
 // Zeitpläne (Ortszeit des Weltrechners): Wochen-Event Mo–Fr mit wechselndem Thema (Wochenende frei),
@@ -11774,7 +11074,8 @@ const EV_WOCHE = [
     { k: 'bau', name: 'Bauherr', ic: 'upgrade', pkt: 'Aufwerten von Basen und Gebäuden in der Stadt (2 + neue Stufe)', bonus: 'Ausbau 20 % günstiger' }
 ];
 // ---- WOCHEN-EVENT Mo 0:00 – Fr 23:59, Wochenende frei jede Woche eins der 4 Themen, eigene Punkte (gedeckelt), Rangliste und kleine Preise ----
-const WO_PRIZES = [{ to: 1, gems: 200, sh: 10, crate: 3, t: '1.' }, { to: 3, gems: 100, sh: 5, crate: 2, t: '2.–3.' }, { to: 10, gems: 40, sh: 2, crate: 1, t: '4.–10.' }, { to: Infinity, gems: 10, sh: 1, crate: -1, t: 'Alle anderen' }];
+const WO_PRIZES = [{ to: 1, gems: 250, crate: 3, sh: 20, mh: 8, t: '1.' }, { to: 5, gems: 150, crate: 2, sh: 12, mh: 6, t: '2.–5.' }, { to: 10, gems: 100, crate: 2, sh: 8, mh: 4, t: '6.–10.' },
+    { to: 20, gems: 60, crate: 1, sh: 5, mh: 3, t: '11.–20.' }, { to: 100, gems: 30, crate: 0, sh: 3, mh: 2, t: '21.–100.' }, { to: 1000, gems: 10, sh: 1, mh: 1, t: '101.–1000.' }];   // (Merkliste 33: mh = Stunden Münzen; ab Platz 1001 nichts)
 let woWinMemo = null;
 function woWin(now) {                                 // diese oder (am Wochenende) nächste Woche, Mo 0:00 – Fr 23:59: { on, start, end, key }
     now = now || Date.now(); const m = woWinMemo; if (m && now >= m.from && now < m.to) return m.w;
@@ -11803,7 +11104,7 @@ function woDeckel(who, n, kind) {                     // höchstens 30 Punkte au
 function woPay() {                                    // Platz 1, 2–3, 4–10 und alle anderen mit Punkten – du, echte Spieler und Mitspieler gleich
     const W = woSt(), th = EV_WOCHE.find(x => x.k === W.k) || EV_WOCHE[0], list = evRang(W.pts).filter(e => e[1] >= 1);
     W.paid = true; let me = 0;
-    list.forEach(([who], i) => { evPreis(who, 'woche', 'Wochen-Event ' + th.name + ' · Platz ' + (i + 1), WO_PRIZES.find(p => i + 1 <= p.to), W.key); if (who === 'player') me = i + 1; });
+    list.forEach(([who], i) => { const p = WO_PRIZES.find(x => i + 1 <= x.to); if (p) evPreis(who, 'woche', 'Wochen-Event ' + th.name + ' · Platz ' + (i + 1), p, W.key); if (who === 'player' && p) me = i + 1; });
     W.last = { key: W.key, k: W.k, top: list.slice(0, WO_TOP).map(e => [e[0], Math.floor(e[1])]), n: list.length };
     evDirty = true; saveBotState(); saveEv();
     if (me) afterSplash(() => setTimeout(() => flashHint('Wochen-Event vorbei: Platz ' + me + ' – dein Preis liegt unter Events → Belohnung.', 6000), 2500));
@@ -11818,13 +11119,20 @@ let evDirty = false, evSaveAt = 0;
 function saveEv() { evDirty = false; evSaveAt = Date.now(); store.set('openWaterEvents', JSON.stringify(evState)); }
 window.addEventListener('pagehide', () => { if (evDirty && rechnet()) saveEv(); });
 const evRang = o => Object.entries(o || {}).filter(e => e[1] > 0 && (e[0] === 'player' || botById[e[0]])).sort((a, b) => b[1] - a[1]);
-function evPreis(who, src, title, p, schl) {          // schl: fester Schlüssel der Auszahlung (Woche, Tag …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
+// Belohnung „N Std. Münzen / Truppen“ (mh, th): so viel, wie das Reich in N Stunden erzeugt (wie beim Pass) – rechnet, wer auszahlt
+function evStunden(who, p, hp0) {
+    let hp = hp0 || null; const h = () => hp || (hp = hourProduction(who));
+    return { coins: p.mh > 0 ? Math.round(Math.max(wirtM(5000), h().coins) * p.mh) : 0, tr: p.th > 0 ? Math.round(Math.max(wirtK(500), h().troops) * p.th) : 0 };
+}
+function evPreis(who, src, title, p, schl) {          // schl: fester Schlüssel der Auszahlung (Woche, Tag, Stufe …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
     const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
-    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate }); if (titel) saisonTitelGeben(titel); return; }
+    const { coins, tr } = evStunden(who, p), k = schl != null ? src + '|' + schl : undefined;   // k: das Abholfach kennt die Stufe (Leiste im Event-Fenster)
+    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k }); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
-    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, titel ? { titel } : {}), schl != null ? src + '|' + schl : undefined); return; }
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, titel ? { titel } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
     const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
+    if (coins) botCoins[who] = (botCoins[who] || 0) + coins; if (tr) { const cap = botCapitalOf(who); if (cap !== null && cap !== undefined) islandTroops[cap] = (islandTroops[cap] || 0) + tr; }
     if (bs && titel) { bs.titles = [...new Set([...(bs.titles || []), titel])]; saveBotState(); }
 }
 function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
@@ -11838,11 +11146,17 @@ function evPlanTag(now, ok, stunde, dauer) {          // der nächste Tag (ab he
 }
 
 // ===== BARBAREN-INVASION: alle 3 Tage um 20 Uhr eine Stunde lang kommen Wellen von Barbaren-Armeen vom Rand ihrer Insel
-// und greifen die nächsten Basen an (echte Spieler und Mitspieler). Abwehren und Armeen schlagen bringt Punkte, danach
-// eine kleine Belohnung nach Punkten. Barbaren erobern nichts – wer verliert, verliert Truppen.
+// und greifen die nächsten Basen an (echte Spieler und Mitspieler). Abwehren und Armeen schlagen bringt Punkte, jede erreichte
+// Stufe der Belohnungs-Leiste liegt sofort im Abholfach (Merkliste 33). Barbaren erobern nichts – wer verliert, verliert Truppen.
 const INV_TAGE = 3, INV_STUNDE = 20, INV_DAUER = 60 * 60000, INV_WELLEN = 6, INV_WELLE_MS = 9 * 60000, INV_PRO_WELLE = 12;
 const INV_PTS_WEHR = 15, INV_PTS_SIEG = 20;
-const INV_PREISE = [{ ab: 100, gems: 60, sh: 6, crate: 2, t: 'ab 100 Punkten' }, { ab: 40, gems: 30, sh: 3, crate: 1, t: 'ab 40 Punkten' }, { ab: 10, gems: 10, sh: 1, crate: -1, t: 'ab 10 Punkten' }];
+const INV_LEISTE = [{ ab: 20, gems: 5, mh: 2 }, { ab: 50, gems: 15, crate: 0 }, { ab: 100, gems: 20, sh: 5, crate: 1 }, { ab: 150, th: 2, mh: 4 }, { ab: 200, gems: 20, crate: 2 }, { ab: 300, gems: 30, sh: 10, crate: 2 }];   // Punkte → Belohnung (mh/th: Stunden Münzen/Truppen)
+// Leiste auszahlen (nur wer rechnet): jede erreichte Stufe genau einmal (lst[who] = so viele Stufen schon bezahlt, fester Schlüssel je Stufe)
+function evLeisteZahlen(X, stufen, who, wert, src, titel, schl) {
+    const L = X.lst || (X.lst = {}); let n = L[who] || 0;
+    while (n < stufen.length && wert >= stufen[n].ab) { evPreis(who, src, titel(stufen[n], n), stufen[n], schl + '|' + n); n++; L[who] = n; evDirty = true; }
+}
+function invLeiste(I, who) { evLeisteZahlen(I, INV_LEISTE, who, (I.pts || {})[who] || 0, 'inv', x => 'Barbaren-Invasion · ' + x.ab + ' Punkte', I.start); }
 const evTagNr = t => Math.round(new Date(t.getFullYear(), t.getMonth(), t.getDate(), 12).getTime() / 864e5);
 function invPlan(now) {
     now = now || Date.now();
@@ -11901,7 +11215,7 @@ function invWelle(I, now) {                          // eine Welle: jede Armee s
     evDirty = true; requestRender();
     flashHint('Barbaren-Invasion: Welle ' + w + ' von ' + INV_WELLEN + ' rückt an!' + (mich ? ' Eine Armee marschiert auf deine Basis.' : ''), 4500);
 }
-function invPunkteDazu(I, who, n) { if (!who || !(n > 0) || (who !== 'player' && !botById[who])) return; I.pts[who] = (I.pts[who] || 0) + n; evDirty = true; }
+function invPunkteDazu(I, who, n) { if (!who || !(n > 0) || (who !== 'player' && !botById[who])) return; I.pts[who] = (I.pts[who] || 0) + n; evDirty = true; goalBump(who, 'invPkt', n); invLeiste(I, who); }   // (invPkt: Pass-Punkte je Invasions-Punkt)
 function invAnkunft(I, a, now) {                     // die Armee erreicht ihr Ziel: dieselbe Rechnung wie jeder Angriff (Truppen + Verteidigung)
     const isl = islandById[a.tid], o = isl && islandOwnerOf(a.tid); if (!o || invGeschuetzt(o, now)) return;
     const vk = typeof verstVorKampf === 'function' ? verstVorKampf(a.tid) : null;   // Verstärkung (Botschaft) verteidigt mit
@@ -11931,17 +11245,16 @@ function invTreffer(m, now) {                        // deine (oder ihre) Truppe
     barbHome(m, m.troops - fb.loss, now); evDirty = true;
     const ziel = islandById[a.tid], fuer = ziel && islandOwnerOf(ziel.id) !== who ? ' (auf ' + fieldWhoName(islandOwnerOf(ziel.id)) + ')' : '';
     evBericht(who, { type: 'ev', ic: 'attack', gut: fb.won, badge: fb.won ? 'Besiegt' : 'Geschwächt', title: 'Barbaren-Armee' + fuer,
-        txt: fmtCompact(fb.SA) + ' gegen ' + fmtCompact(fb.won ? a.t : a.t + fb.kill) + ' Barbaren · ' + fmtCompact(fb.loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : '') + ' · +' + pts + ' Punkte', at: now },
+        txt: fmtCompact(fb.SA) + ' gegen ' + fmtCompact(fb.won ? a.t : a.t + fb.kill) + ' Barbaren · ' + fmtCompact(fb.loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Münzen' : '') + ' · +' + pts + ' Punkte', at: now },
         fb.won ? 'Barbaren-Armee geschlagen: +' + pts + ' Punkte.' : 'Die Barbaren-Armee ist geschwächt (noch ' + fmtCompact(a.t) + ') – +' + pts + ' Punkte.');
     if (isP) { spawnBattleFx({ x: m.x, y: m.y }, fb.won, fb.won ? 'Armee geschlagen' : 'Geschwächt', '+' + pts + ' Punkte'); updateHud(); saveGame(); }
     if (barbView && barbView.kind === 'inv') barbSheetRefresh();
 }
-function invAuszahlen() {                            // nach der Invasion: Belohnung nach Punkten (klein)
+function invAuszahlen() {                            // nach der Invasion: was noch fehlt von der Leiste, Erfolg für alle mit mindestens einer Stufe
     const I = evState.inv; if (!I || I.paid) return; I.paid = true; I.armies = []; evDirty = true;
     let n = 0;
-    for (const [who, p] of evRang(I.pts)) { const pr = INV_PREISE.find(x => p >= x.ab); if (!pr) continue; n++; goalBump(who, 'inv');   // (Erfolg: eine Invasion mit Preis überstanden)
-        evPreis(who, 'inv', 'Barbaren-Invasion · ' + Math.floor(p) + ' Punkte', pr, I.start); }
-    if (n) flashHint('Die Barbaren-Invasion ist vorbei – ' + n + ' Verteidiger werden belohnt (Events → Belohnung).', 5000);
+    for (const [who, p] of evRang(I.pts)) { invLeiste(I, who); if (p < INV_LEISTE[0].ab) continue; n++; goalBump(who, 'inv'); }   // (Erfolg: eine Invasion mit Preis überstanden)
+    if (n) flashHint('Die Barbaren-Invasion ist vorbei – ' + n + ' Verteidiger haben Belohnungen geholt.', 5000);
     saveBotState(); requestRender();
 }
 function invTakt(now) {                              // (nur Weltrechner) Wellen losschicken, Ankünfte, Ende
@@ -11963,11 +11276,13 @@ function invTakt(now) {                              // (nur Weltrechner) Wellen
 
 // ===== DER DRACHE: jeden Sonntag 19–22 Uhr erscheint über dem Thron ein riesiger Drache, den nur alle zusammen besiegen.
 // Jeder Angriff macht Schaden (wie beim Tagesboss, höchstens 2 % seines Lebens), 10 Angriffe pro Person.
-// Fällt er: Platz 1 lila Kiste, Platz 2–10 blaue Kiste (nie Legendär – Alexander 2.10.), alle anderen etwas Kleines. Entkommt er: alle etwas Kleines.
+// Belohnungs-Leiste nach Treffern (Merkliste 33): ein Treffer zählt nur mit mind. 10 % der eigenen Truppen. Fällt er, bekommen alle
+// mit mind. einem Treffer noch etwas dazu – keine Extra-Preise für die Besten.
 const DR_STUNDE = 19, DR_DAUER = 3 * 3600000, DR_HITS = 10, DR_CAP = .02, DR_NAME = 'Urdrache Vharak', DR_COL = '#d8452e';
-const DR_PREISE = [{ gems: 150, crate: 3, sh: 20, t: '1.' }, { gems: 60, crate: 2, sh: 8, t: '2.–10.' }, { gems: 15, crate: -1, sh: 2, t: 'Alle anderen' }];
+const DR_LEISTE = [{ ab: 1, mh: 4 }, { ab: 3, gems: 10, crate: 0 }, { ab: 5, sh: 5, th: 2 }, { ab: 8, gems: 20, crate: 1 }, { ab: 10, gems: 30, sh: 10, crate: 2 }], DR_FALL = { crate: 2, sh: 5 }, DR_ANTEIL = .1;
 const DR_MIN_ANFANG = 4 * DR_HITS * PLAYER_START_TROOPS * .25;   // neue Welt-Saison (erste 3 Tage, nur Start-Truppen): 4 Spieler mit je 10 Angriffen aus einem Viertel schaffen ihn (sonst 1e7 × WIRTSCHAFT_KOSTEN) – bei 5.000 Start-Truppen 50.000 Leben
-const drPreisVon = i => DR_PREISE[i < 1 ? 0 : i < 10 ? 1 : 2];
+function evTruppenAlle(who) { let n = 0; for (const id of (who === 'player' ? ownedIslands : botOwnedIslands[who]) || []) n += islandTroops[id] || 0; return n; }   // alle Truppen in den eigenen Basen
+function drLeiste(D, who) { evLeisteZahlen(D, DR_LEISTE, who, (D.tr || {})[who] || 0, 'drache', x => D.name + ' · ' + x.ab + ' Treffer', D.start); }
 function drPlan(now) {
     now = now || Date.now();
     if (EV_TEST && EV_TEST.dr) return { start: EV_TEST.dr, end: EV_TEST.dr + DR_DAUER };
@@ -11988,22 +11303,23 @@ function drTreffer(m, now) {                         // wie beim Tagesboss: Scha
     const dmg = Math.max(1, Math.min(D.hp, Math.round((m.troops + heroGefOf(h, m.troops)) * fa), Math.round(D.max * DR_CAP)));
     const used = Math.min(m.troops, dmg / fa), loss = Math.min(m.troops, Math.round(used * .33 * (1 - Math.min(90, fieldShield(who) + h.loss) / 100))), wounded = fieldHurt(who, loss, hx);
     D.hp -= dmg; D.dmg[who] = (D.dmg[who] || 0) + dmg; evDirty = true;
+    const zaehlt = m.voll !== false; if (zaehlt) { (D.tr || (D.tr = {}))[who] = (D.tr[who] || 0) + 1; drLeiste(D, who); }   // (mit weniger als 10 % der Truppen: Schaden ja, Treffer nein)
     const gold = payGold(who, dmg * .2 * WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR * (1 + h.gold / 100));   // (Gold je Schaden wie das Kampf-Gold)
     evPunkte('boss', who, 30 * dmg / (D.max * DR_CAP));
     barbHome(m, m.troops - loss, now);
     const rk = evRang(D.dmg), pl = rk.findIndex(e => e[0] === who) + 1;
-    evBericht(who, { type: 'ev', ic: 'star', gut: true, badge: 'Drache', title: D.name, txt: fmtCompact(dmg) + ' Schaden · noch ' + fmtCompact(Math.max(0, D.hp)) + ' Leben · Platz ' + pl + ' von ' + rk.length + ' · ' + fmtCompact(loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Gold' : ''), at: now },
-        'Treffer beim Drachen: ' + fmtCompact(dmg) + ' Schaden – Platz ' + pl + '.');
+    evBericht(who, { type: 'ev', ic: 'star', gut: true, badge: 'Drache', title: D.name, txt: fmtCompact(dmg) + ' Schaden · noch ' + fmtCompact(Math.max(0, D.hp)) + ' Leben · ' + (zaehlt ? 'Treffer ' + D.tr[who] + ' / ' + DR_HITS : 'zählt nicht (unter 10 % deiner Truppen)') + ' · Platz ' + pl + ' von ' + rk.length + ' · ' + fmtCompact(loss) + ' gefallen' + (wounded ? ' (' + fmtCompact(wounded) + ' ins Krankenhaus)' : '') + (gold ? ' · +' + fmtCompact(gold) + ' Münzen' : ''), at: now },
+        zaehlt ? 'Treffer beim Drachen: ' + fmtCompact(dmg) + ' Schaden – Treffer ' + D.tr[who] + ' / ' + DR_HITS + '.' : 'Schaden beim Drachen: ' + fmtCompact(dmg) + ' – zählt nicht als Treffer (unter 10 % deiner Truppen).');
     if (isP) { spawnBattleFx({ x: D.x, y: D.y }, true, 'Treffer', '−' + fmtCompact(dmg) + ' Leben'); updateHud(); saveGame(); }
     if (D.hp <= 0) { D.hp = 0; D.fell = now; drAuszahlen(true); }
     if (barbView && barbView.kind === 'drache') barbSheetRefresh();
 }
 function drAuszahlen(fell) {
     const D = evState.dr; if (!D || D.paid) return; D.paid = true; evDirty = true;
-    const rk = evRang(D.dmg);
-    rk.forEach(([who], i) => { const p = fell ? drPreisVon(i) : DR_PREISE[2]; goalBump(who, 'dboss'); if (fell) goalBump(who, 'drache');   // (Erfolg: beim Sieg über den Drachen dabei)
-        evPreis(who, 'drache', D.name + (fell ? ' · Platz ' + (i + 1) : ' entkommen'), p, D.start); });
-    flashHint(fell ? D.name + ' ist gefallen! ' + rk.length + ' Kämpfer werden nach Schaden belohnt.' : D.name + ' ist entkommen – alle Kämpfer bekommen eine kleine Belohnung.', 6000);
+    const rk = evRang(D.dmg); let n = 0;
+    rk.forEach(([who]) => { goalBump(who, 'dboss'); if (fell) goalBump(who, 'drache');   // (Erfolg: beim Sieg über den Drachen dabei)
+        drLeiste(D, who); if (fell && (D.tr || {})[who] >= 1) { n++; evPreis(who, 'drache', D.name + ' gefallen', DR_FALL, D.start + '|fall'); } });
+    flashHint(fell ? D.name + ' ist gefallen! ' + n + ' Kämpfer bekommen eine Belohnung.' : D.name + ' ist entkommen.', 6000);
     if (fell) spawnBattleFx({ x: D.x, y: D.y }, true, D.name + ' gefallen', rk.length + ' Kämpfer belohnt');
     saveBotState(); requestRender();
 }
@@ -12079,7 +11395,9 @@ function drawEvents(now, wallNow) {
     const dead = D.hp <= 0; setScreen(ctx);
     if (!dead) { const R = 110 * kb, gr = ctx.createRadialGradient(s.x, s.y, 6, s.x, s.y, R); gr.addColorStop(0, 'rgba(255,120,60,.45)'); gr.addColorStop(1, 'rgba(255,80,40,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, 7); ctx.fill(); }
     ctx.save(); ctx.translate(s.x, s.y - (dead ? 0 : Math.sin(now / 700) * 4 * kb)); ctx.scale(kb, kb); if (dead) { ctx.globalAlpha = .45; ctx.filter = 'grayscale(1)'; }
-    drDraw(ctx, dead ? 0 : Math.sin(now / 260)); ctx.restore();
+    const bild = glyphBild('drache');                                          // der Drache als KI-Bild (Alexander 7.10.), sonst gezeichnet
+    if (bild) { const w = 170, h = w * bild.naturalHeight / bild.naturalWidth; ctx.drawImage(bild, -w / 2, -h * .62, w, h); } else drDraw(ctx, dead ? 0 : Math.sin(now / 260));
+    ctx.restore();
     liveAnimation = true;
 }
 function drawDragonName(wallNow) {                   // Name und Leben des Drachen: nach allen Gebäuden (die Thron-Kuppel deckt ihn sonst zu)
@@ -12138,7 +11456,7 @@ function drSheetHtml(head) {
         (rk.length ? '<ol class="barb-rank">' + rk.slice(0, 5).map(row).join('') + (mine >= 5 ? row(rk[mine], mine) : '') + '</ol>' : '') +
         (dead ? '' : hits >= DR_HITS ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Du hast alle ' + DR_HITS + ' Angriffe gemacht – jetzt sind die anderen dran.</span></div>' :
             src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen hat Truppen.</span></div>' : barbAttackHtml(islandTroops[src] || 0, (islandTroops[src] || 0) * .5, src, 'Angreifen')) +
-        '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Fällt er: Platz 1 epische Kiste, Platz 2–10 seltene Kiste, alle anderen Edelsteine und Splitter. Entkommt er: alle etwas Kleines.</div>';
+        '<div class="barb-note">Höchstens 2 % Leben pro Angriff, ein Drittel der Kämpfer fällt. Ein Treffer zählt für die Belohnungs-Leiste nur mit mind. 10 % deiner Truppen (jetzt ' + fmtCompact(Math.ceil(evTruppenAlle('player') * DR_ANTEIL)) + '). Fällt er, bekommen alle mit einem Treffer noch etwas dazu.</div>';
 }
 
 // ---- die Ereignisse im Events-Fenster (Dock → Events, untere Reiter): Termine, Uhren, Ranglisten ----
@@ -12198,19 +11516,60 @@ function woPunkteJe() {                               // „18 Punkte je 10 besi
     const p = 1 / WO_KILL_PER, n = [1, 10, 100, 1000].find(n => Math.abs(p * n - Math.round(p * n)) < 1e-6 && p * n >= 1) || 1000;
     return fmtNum(Math.round(p * n)) + (Math.round(p * n) === 1 ? ' Punkt' : ' Punkte') + (n === 1 ? ' pro besiegtem Krieger' : ' je ' + fmtNum(n) + ' besiegte Krieger');
 }
+function evPreisHtml(p, i) {                          // ein Preis (Platz): Kacheln wie RoK (05e) – Edelsteine, Münzen, Splitter, Kiste
+    return '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b>' + beuteRaster(evBeute(p)) + '</div>';
+}
+// ---- Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen; erreicht = leuchtet + „Abholen“ (liegt im Abholfach),
+// abgeholt = offene Kiste mit Haken. Was erreicht und bezahlt ist, sagt der Weltrechner (evState / barbWho / dayBoss), das Fach sagt „abgeholt“. ----
+function evHolBereit(tab) { const q = tab === 'tour' ? 'woche' : tab; return inboxList().some(x => x.src === q); }   // (läuft schon beim Laden – nichts aus diesem Teil davor)
+let evHpMemo = null;
+function evBeute(p) {                                 // Kacheln einer Belohnung – Stunden Münzen/Truppen mit deinen Zahlen von jetzt
+    const now = Date.now(); if (!evHpMemo || now - evHpMemo.t > 5000) evHpMemo = { t: now, hp: hourProduction('player') };
+    const { coins, tr } = evStunden('player', p, evHpMemo.hp);
+    return [{ a: 'gems', n: p.gems }, { a: 'coins', n: coins }, { a: 'tr', n: tr }, { a: 'sh', n: p.sh }, p.crate >= 0 && { a: 'kiste', k: kisteVonR(p.crate), r: p.crate, min: p.crate > 0 }];
+}
+const evKisteBild = p => p.crate >= 3 ? 'kiste_royal' : p.crate === 2 ? 'kiste_episch' : p.crate === 1 ? 'kiste_gross' : p.crate === 0 ? 'kiste_ausruestung' : null;
+const evHolKnopf = (schl, txt) => '<button class="btn btn--primary btn--sm" type="button" data-ev-hol="' + escapeHtml(schl) + '"><span>' + (txt || 'Abholen') + '</span></button>';
+function evLeistePos(stufen, wert) {                  // wie weit der Balken reicht (0–1): Stufe i sitzt in der Mitte ihrer Spalte
+    const n = stufen.length; let k = 0; while (k < n && wert >= stufen[k].ab) k++;
+    if (k >= n) return 1; const a = k ? stufen[k - 1].ab : 0, f = Math.max(0, Math.min(1, (wert - a) / Math.max(1e-9, stufen[k].ab - a)));
+    return Math.max(0, (k ? k - .5 + f : f * .5) / n);
+}
+// o: { stufen, schl(i): Schlüssel im Abholfach, erreicht(i), bezahlt(i), pos 0–1, label(x, i), zeilen/mehr: nur so viele Zeilen darunter }
+function evLeisteHtml(o) {
+    const L = inboxList(), n = o.stufen.length;
+    const st = o.stufen.map((x, i) => L.some(y => y.k === o.schl(i)) ? 'hol' : !o.erreicht(i) ? 'zu' : o.bezahlt(i) ? 'ok' : 'bald');
+    const knoten = o.stufen.map((x, i) => { const s = st[i], kb = evKisteBild(x), b0 = evBeute(x).find(y => y && (y.n > 0 || y.a === 'kiste'));
+        const bild = kb ? kb + (s === 'ok' ? '_offen' : '_zu') : beuteBild(b0 || { a: 'gems' }), tag = s === 'hol' ? 'button' : 'span';
+        return '<' + tag + (s === 'hol' ? ' type="button" data-ev-hol="' + escapeHtml(o.schl(i)) + '"' : '') + ' class="evl-k is-' + s + (kb ? '' : ' is-ding') + '" title="' + escapeHtml(o.label(x, i)) + '"><span class="evl-bild"><img src="bilder/' + bild + '.webp" alt="" draggable="false">' +
+            (s === 'ok' ? '<i class="evl-haken"><img src="bilder/ui_sym_haken.webp" alt="abgeholt" draggable="false"></i>' : '') + '</span><small>' + o.label(x, i) + '</small></' + tag + '>'; }).join('');
+    const zeile = (x, i) => { const s = st[i];
+        return '<div class="evl-z is-' + s + '"><b>' + o.label(x, i) + '</b>' + beuteRaster(evBeute(x), 'bk-mini') + '<span class="evl-st">' +
+            (s === 'hol' ? evHolKnopf(o.schl(i)) : s === 'ok' ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false"><small>Abgeholt</small>' : s === 'bald' ? '<small>kommt gleich</small>' : icon('lock')) + '</span></div>'; };
+    const nz = Math.min(n, o.zeilen || n);
+    return '<div class="evl" style="--n:' + n + '"><div class="evl-bahn"><div class="evl-spur"><i style="width:' + (o.pos * 100).toFixed(1) + '%"></i></div>' + knoten + '</div></div>' +
+        '<div class="evl-zeilen">' + o.stufen.slice(0, nz).map(zeile).join('') + '</div>' + (nz < n ? '<div class="barb-note">' + o.mehr + '</div>' : '');
+}
+function evHolen(schl) {                              // „Abholen“: eine Stufe (Schlüssel) oder alles einer Quelle („src:boss“) aus dem Abholfach
+    const quelle = schl.startsWith('src:') ? schl.slice(4) : null, ids = inboxList().filter(x => quelle ? x.src === quelle : x.k === schl).map(x => x.id);
+    if (!ids.length) return renderEvents();
+    const aus = [], kiste = inboxList().find(x => ids.includes(x.id) && x.crate >= 0), txt = ids.map(id => inboxClaim(id, aus)).filter(Boolean).join(', ');
+    if (txt) { sfx('coin'); if (aus.length) beuteFenster('Abgeholt', aus, { kiste: kiste ? kisteVonR(kiste.crate) : null }); else flashHint('Abgeholt: ' + txt + '.', 4500); }
+    updateGoalsBadge(); renderEvents();
+}
 function evTourHtml() { return woHtml(); }            // Events → Reiter „Wochen-Event“ (Schlüssel 'tour' von früher)
 function woHtml() {                                   // das Wochen-Event: Thema, Uhr, dein Platz, Preise, Rangliste, die nächsten Wochen
     const now = Date.now(), w = woWin(now), th = woThemaAm(now), W = evState.wo || {}, live = w.on && W.key === w.key, rk = live ? evRang(W.pts) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
     const kopf = (w.on ? 'Läuft · endet in ' : 'Montag bis Freitag · beginnt in ') + evUhr(w.on ? w.end : w.start);
-    const preise = WO_PRIZES.map((p, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b><span>' + icon('gem') + fmtNum(p.gems) + '</span><span>' + icon('star') + p.sh + '</span>' + (p.crate >= 0 ? '<em>' + RARITY_DEFS[p.crate].label + '-Kiste</em>' : '') + '</div>').join('');
+    const preise = WO_PRIZES.map(evPreisHtml).join(''), hol = inboxList().some(x => x.src === 'woche') ? evHolKnopf('src:woche', 'Preis abholen') : '';
     const plan = [1, 2, 3, 4].map(i => { const t = w.start + 7 * 864e5 * i + 3600000, x = woThemaAm(t), a = new Date(t), e = new Date(t + 4 * 864e5); return '<span>Mo ' + a.getDate() + '.' + (a.getMonth() === e.getMonth() ? '' : (a.getMonth() + 1) + '.') + ' – Fr ' + e.getDate() + '.' + (e.getMonth() + 1) + '.</span><b>' + icon(x.ic) + ' ' + x.name + '</b>'; }).join('');
     const alt = !live && W.last && W.last.top ? W.last.top : null, liste = live ? rk : alt || [];
     const meinePkt = fmtNum(Math.floor((W.pts || {}).player || 0)) + ' Punkte';   // (noch ohne Platz: nur die Punkte, kein „– ·“)
     return evKarte(th.ic, th.name, kopf, '<div class="ev-zeilen"><div><small>Punkte für</small><span>' + th.pkt + (th.k === 'krieg' ? ' (' + woPunkteJe() + ')' : '') + '</span></div><div><small>Bonus</small><span>' + th.bonus + '</span></div></div>' +
-            (live ? '<div class="field-lines"><span>' + (mine ? 'Dein Platz' : 'Deine Punkte') + '</span><b>' + (mine ? mine + ' · ' : '') + meinePkt + '</b></div>' : ''), 'is-tour', 'tour') +
+            (live ? '<div class="field-lines"><span>' + (mine ? 'Dein Platz' : 'Deine Punkte') + '</span><b>' + (mine ? mine + ' · ' : '') + meinePkt + '</b></div>' : ''), 'is-tour ev-woche--' + th.k, 'tour') +
         '<div class="lb-gap">' + (live ? 'Live · Top 10' : alt ? 'Letzte Woche · Top 10' : 'Top 10') + '</div>' +
         (evRangHtml(liste, v => fmtNum(Math.floor(v)) + ' P.') || rangLeer(w.on ? 'Sobald jemand Punkte holt, steht er hier.' : 'Am Montag geht es los.')) +
-        '<div class="lb-gap">Preise</div><div class="tour-prizes">' + preise + '</div>' +
+        '<div class="lb-gap">Preise nach Platz</div>' + hol + '<div class="tour-prizes ev-prizes3">' + preise + '</div>' +
         infoKlapp('tour', 'So gibt es Punkte', '<div class="tour-rules"><span>' + icon('hourglass') + '<span>Höchstens ' + WO_KILL_MAX + ' Punkte auf einmal, im Schnitt ' + WO_KILL_MIN + ' pro Minute. Jede Woche (Mo–Fr) ein anderes Thema, am Wochenende ist frei.</span></span></div>') +
         '<div class="lb-gap">Nächste Wochen</div><div class="field-lines ev-plan">' + plan + '</div>';
 }
@@ -12222,49 +11581,73 @@ function evInvHtml() {
     let inh = '<div class="field-lines"><span>Termin</span><b>' + evWann(akt ? akt.start : p.start) + ' – ' + evWann(akt ? akt.end : p.end).slice(-5) + '</b>' +
         (akt ? '<span>Armeen unterwegs</span><b>' + akt.armies.length + (meine.length ? ' · <span class="ev-rot">' + meine.length + ' auf dich</span>' : '') + '</b>' : '') +
         (I && (akt || last) ? '<span>' + (akt ? 'Deine Punkte' : 'Letztes Mal') + '</span><b>' + fmtNum(me) + (mine ? ' · Platz ' + mine : '') + '</b>' : '') + '</div>';
-    const preise = INV_PREISE.map(x => '<div class="tour-prize"><b>' + x.t + '</b><span>' + icon('gem') + x.gems + '</span><span>' + icon('star') + x.sh + '</span>' + (x.crate >= 0 ? '<em>' + RARITY_DEFS[x.crate].label + '-Kiste</em>' : '') + '</div>').join('');
+    const st = I ? I.start : 0, lst = I && I.lst ? I.lst.player || 0 : 0;
+    const leiste = evLeisteHtml({ stufen: INV_LEISTE, schl: i => 'inv|' + st + '|' + i, erreicht: i => me >= INV_LEISTE[i].ab, bezahlt: i => i < lst, pos: evLeistePos(INV_LEISTE, me), label: x => x.ab + ' P.' });
     return evKarte('defense', 'Barbaren-Invasion', kopf, inh +
         (meine.length ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="inv">' + icon('send') + '<span>Zur Armee auf deine Basis</span></button>' : ''), akt ? 'is-warn' : '', 'inv') +
+        '<div class="lb-gap">Belohnungs-Leiste · ' + (akt || !I ? 'deine Punkte' : 'letzte Invasion') + '</div>' + leiste +
         infoKlapp('inv', 'Alle 3 Tage · so gibt es Punkte', '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Alle 3 Tage um ' + INV_STUNDE + ' Uhr, eine Stunde</b> – ' + INV_WELLEN + ' Wellen, je 5–7 Minuten Marsch vom Rand der Insel</span></span>' +
         '<span>' + icon('defense') + '<span><b>+' + INV_PTS_WEHR + ' Punkte</b> für jede abgewehrte Armee an deiner Basis – schick vorher Verstärkung</span></span>' +
         '<span>' + icon('attack') + '<span><b>+' + INV_PTS_SIEG + ' Punkte</b> für jede Armee, die du unterwegs schlägst – auch die auf deine Nachbarn (Teilschaden zählt anteilig)</span></span>' +
+        '<span>' + icon('crown') + '<span>Jede Stufe der Leiste liegt sofort zum Abholen bereit, sobald du sie erreichst.</span></span>' +
         '<span>' + icon('losses') + '<span>Barbaren erobern nichts – aber wer sie nicht aufhält, verliert viele Truppen.</span></span></div>') +
-        '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Top 10' : 'Letzte Invasion') + '</div>' +
+        '<div class="lb-gap">' + (akt ? 'Live · Top 10' : 'Letzte Invasion') + '</div>' +
         (evRangHtml(rk, v => fmtNum(Math.floor(v)) + ' P.') || rangLeer(akt ? 'Sobald jemand Punkte holt, steht er hier.' : 'Noch keine Invasion gewesen.'));
 }
 function evDrHtml() {
     const now = Date.now(), D = evState.dr, akt = drAktiv(now), p = evPlanVon('dr'), rk = D ? evRang(D.dmg) : [], mine = rk.findIndex(e => e[0] === 'player') + 1;
     const kopf = akt ? 'Da · fliegt weg in ' + evUhr(akt.end) : D && D.start === p.start && D.hp <= 0 && now < D.end ? 'Besiegt!' : 'Nächster in ' + evUhr(p.start);
+    const tr = D && D.tr ? D.tr.player || 0 : 0, lst = D && D.lst ? D.lst.player || 0 : 0, st = D ? D.start : 0;
     let inh = (akt ? '<div class="barb-hp"><i style="width:' + (akt.hp / akt.max * 100).toFixed(1) + '%"></i><span>' + fmtCompact(akt.hp) + ' / ' + fmtCompact(akt.max) + ' Leben</span></div>' : '') +
         '<div class="field-lines"><span>Termin</span><b>' + evWann(akt ? akt.start : p.start) + ' – ' + evWann(akt ? akt.end : p.end).slice(-5) + '</b>' +
-        (D && rk.length ? '<span>' + (akt ? 'Dein Schaden' : 'Letztes Mal') + '</span><b>' + (mine ? fmtCompact(rk[mine - 1][1]) + ' · Platz ' + mine : '–') + '</b>' : '') + '</div>';
+        (D ? '<span>' + (akt ? 'Deine Treffer' : 'Letztes Mal') + '</span><b>' + tr + ' / ' + DR_HITS + '</b>' : '') +
+        '<span>Treffer zählt ab</span><b>' + fmtCompact(Math.max(1, Math.ceil(evTruppenAlle('player') * DR_ANTEIL))) + ' Truppen (10 %)</b>' +
+        (D && rk.length ? '<span>' + (akt ? 'Dein Schaden' : 'Schaden') + '</span><b>' + (mine ? fmtCompact(rk[mine - 1][1]) : '–') + '</b>' : '') + '</div>';
     const go = drOnMap() ? '<button class="btn btn--primary btn--sm" type="button" data-ev-go="drache">' + icon('send') + '<span>Zum Drachen</span></button>' : '';
-    const preise = DR_PREISE.map((x, i) => '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + x.t + '</b><span>' + icon('gem') + x.gems + '</span><span>' + icon('star') + x.sh + '</span>' + (x.crate >= 0 ? '<em>' + RARITY_DEFS[x.crate].label + '-Kiste</em>' : '') + '</div>').join('');
+    const leiste = evLeisteHtml({ stufen: DR_LEISTE, schl: i => 'drache|' + st + '|' + i, erreicht: i => tr >= DR_LEISTE[i].ab, bezahlt: i => i < lst, pos: evLeistePos(DR_LEISTE, tr), label: x => x.ab + '×' });
+    const fk = 'drache|' + st + '|fall', fHol = inboxList().some(x => x.k === fk), fOk = D && D.hp <= 0 && tr >= 1;
+    const fall = '<div class="evl-zeilen"><div class="evl-z is-' + (fHol ? 'hol' : fOk ? 'ok' : 'zu') + '"><b>Drache fällt<small>mit 1 Treffer</small></b>' + beuteRaster(evBeute(DR_FALL), 'bk-mini') + '<span class="evl-st">' +
+        (fHol ? evHolKnopf(fk) : fOk ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false"><small>Abgeholt</small>' : icon('lock')) + '</span></div></div>';
     return evKarte('star', 'Der Drache', kopf, inh + go, akt ? 'is-drache' : '', 'drache') +
+        '<div class="lb-gap">Belohnungs-Leiste · Treffer</div>' + leiste + fall +
         infoKlapp('drache', 'Jeden Sonntag · so läuft es', '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Jeden Sonntag ' + DR_STUNDE + '–' + (DR_STUNDE + DR_DAUER / 3600000) + ' Uhr</b> kreist ' + DR_NAME + ' über dem Thron – sehr viel Leben, nur alle zusammen schaffen ihn</span></span>' +
         '<span>' + icon('attack') + '<span><b>' + DR_HITS + ' Angriffe</b> pro Person, höchstens 2 % seines Lebens pro Angriff, ein Drittel der Kämpfer fällt</span></span>' +
-        '<span>' + icon('crown') + '<span>Fällt er, gibt es Preise nach Schaden. Entkommt er, bekommen alle Kämpfer etwas Kleines.</span></span></div>') +
-        '<div class="tour-prizes ev-prizes3">' + preise + '</div><div class="lb-gap">' + (akt ? 'Live · Schaden' : 'Letzter Drache') + '</div>' +
+        '<span>' + icon('crown') + '<span>Ein Treffer zählt für die Leiste nur mit mind. 10 % deiner Truppen. Fällt er, bekommen alle mit einem Treffer noch etwas dazu.</span></span></div>') +
+        '<div class="lb-gap">' + (akt ? 'Live · Schaden' : 'Letzter Drache') + '</div>' +
         (evRangHtml(rk, v => fmtCompact(v)) || rangLeer(akt ? 'Noch hat niemand angegriffen.' : 'Noch kein Drache gewesen.'));
 }
-function evBossHtml() {                              // Reiter „Boss & Lager“: Tagesboss und Barbaren-Lager (jeden Tag neu)
-    const b = dbossEnsure(), rec = barbRec('player'), near = barbNearest();
+function evBossHtml() {                              // Reiter „Boss“: Tagesboss, Schadens-Klassen je Angriff (mit Zähler), „Boss fällt“
+    const b = dbossEnsure(), rec = barbRec('player'), kl = (b.kl || {}).player || [], hol = inboxList().filter(x => x.src === 'boss').length;
     const boss = evKarte('crown', 'Tagesboss · ' + escapeHtml(b.name), b.hp <= 0 ? 'Besiegt · neuer in ' + evUhr(Date.now() + msToMidnight()) : rec.h + ' / ' + dbossHitsMax() + ' Angriffe heute',
-        '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (b.hp <= 0 ? 'Besiegt' : fmtCompact(b.hp) + ' Leben') + '</span></div>' +
-        (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''), '', 'boss');
-    const lager = evKarte('attack', 'Barbaren-Lager', rec.n + ' / ' + barbTagMax() + ' heute', '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b><span>Neuer Tag in</span>' + evUhr(Date.now() + msToMidnight()) + '</div>' +
+        '<div class="barb-hp"><i style="width:' + (b.hp / b.max * 100).toFixed(1) + '%"></i><span>' + (b.hp <= 0 ? 'Besiegt' : fmtCompact(b.hp) + ' / ' + fmtCompact(b.max) + ' Leben') + '</span></div>' +
+        (dbossOnMap() ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="boss">' + icon('send') + '<span>Zum Tagesboss</span></button>' : ''), 'ev-boss--' + b.k, 'boss');   // (Klasse je Boss: sein Bild im Banner, 05z)
+    const zeile = (x, i) => '<div class="evl-z' + (kl[i] ? ' is-ok' : '') + '"><b>Klasse ' + (i + 1) + '<small>' + x.t + ' seines Lebens</small></b>' + beuteRaster(evBeute(x), 'bk-mini') + '<span class="evl-st evk-n">' + (kl[i] ? '×' + kl[i] : '') + '</span></div>';
+    const fk = 'boss|' + b.d + '|fall', fHol = inboxList().some(x => x.k === fk), fOk = b.hp <= 0 && b.dmg.player > 0;
+    const fall = '<div class="evl-z is-' + (fHol ? 'hol' : fOk ? 'ok' : 'zu') + '"><b>Boss fällt<small>alle, die trafen</small></b>' + beuteRaster(evBeute(DBOSS_FALL), 'bk-mini') + '<span class="evl-st">' + (fHol ? '<small>bereit</small>' : fOk ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false">' : icon('lock')) + '</span></div>';
+    return boss + '<div class="lb-gap">Belohnung je Angriff · nach Schaden</div>' + (hol ? evHolKnopf('src:boss', 'Alles abholen · ' + hol) : '') +
+        '<div class="evl-zeilen evk">' + DBOSS_KLASSEN.map(zeile).join('') + fall + '</div>' +
+        '<div class="barb-note">Jeder Angriff zählt einzeln: zweimal dieselbe Klasse = zweimal die Belohnung. Höchstens 5 % seines Lebens pro Angriff.</div>';
+}
+function evLagerHtml() {                             // Reiter „Lager“: Barbaren-Lager, Belohnung je Stufe – jeden Tag neu
+    const rec = barbRec('player'), near = barbNearest(), s = rec.s || 0, offen = Math.min(BARB_MAX_L, rec.b + 1);
+    let hoch = 0; for (let L = BARB_MAX_L; L >= 1; L--) if (s & (1 << (L - 1))) { hoch = L; break; }
+    const lager = evKarte('attack', 'Barbaren-Lager', rec.n + ' / ' + barbTagMax() + ' heute', '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + offen + '</b><span>Neuer Tag in</span>' + evUhr(Date.now() + msToMidnight()) + '</div>' +
         (near ? '<button class="btn btn--secondary btn--sm" type="button" data-ev-go="camp">' + icon('send') + '<span>Nächstes Lager · Stufe ' + near.L + '</span></button>' : ''));
-    return boss + lager;
+    const hol = inboxList().filter(x => x.src === 'lager').length;
+    return lager + '<div class="lb-gap">Belohnung je Stufe · jeden Tag neu</div>' + (hol > 1 ? evHolKnopf('src:lager', 'Alles abholen · ' + hol) : '') +
+        evLeisteHtml({ stufen: LAGER_LEISTE, schl: i => 'lager|' + rec.d + '|' + (i + 1), erreicht: i => !!(s & (1 << i)), bezahlt: i => !!(s & (1 << i)), pos: hoch ? (hoch - .5) / BARB_MAX_L : 0, label: x => 'St. ' + x.ab,
+            zeilen: Math.max(5, offen), mehr: 'Weitere Stufen: besiege zuerst ein Lager der Stufe ' + offen + '.' });
 }
 function evOffen() { return isPanelOpen(goalsPopup) && EV_TABS.includes(goalsTab); }
 function renderEvents() {
     evRenderAt = Date.now();
     const sk = saisonKarte(), oben = sk && saisonOben(Date.now()), sz = sk ? '<div class="ev-saison">' + sk + '</div>' : '';
-    liveHtml(document.getElementById('eventBody'), (oben ? sz : '') + (evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evBossHtml()) + (!oben && evTab === 'tour' ? sz : ''));
+    liveHtml(document.getElementById('eventBody'), (oben ? sz : '') + (evTab === 'tour' ? evTourHtml() : evTab === 'inv' ? evInvHtml() : evTab === 'drache' ? evDrHtml() : evTab === 'lager' ? evLagerHtml() : evBossHtml()) + (!oben && evTab === 'tour' ? sz : ''));
 }
 // Welt-Saison: nur in den letzten 3 Tagen (oder angehalten) oben in jedem Reiter – sonst unten im Wochen-Event (der Inhalt des Reiters geht vor)
 function saisonOben(now) { return !!(saison && (saison.halt || saison.ende - now <= SAISON_BALD_MS)); }
 document.getElementById('eventBody').addEventListener('click', e => {
+    const hol = e.target.closest('[data-ev-hol]'); if (hol) return evHolen(hol.dataset.evHol);
     const go = e.target.closest('[data-ev-go]'); if (!go) return; const k = go.dataset.evGo;
     let t = null, v = null;
     if (k === 'drache') { t = drOnMap(); v = { kind: 'drache' }; }
@@ -12277,8 +11660,8 @@ document.getElementById('eventBody').addEventListener('click', e => {
 // der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da → [Dringlichkeit, html] (0 = am dringendsten)
 function evChips(now) {
     const out = [], ip = evPlanVon('inv'), I = invAktiv(now), D = drAktiv(now), dp = evPlanVon('dr');
-    if (I) { const n = I.armies.filter(a => islandOwnerOf(a.tid) === 'player').length;
-        out.push([n ? 0 : 2, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : '<b>' + fmtNum(Math.floor(I.pts.player || 0)) + ' P.</b>') + '</button>']); }
+    if (I) { const n = I.armies.filter(a => islandOwnerOf(a.tid) === 'player').length, p = Math.floor(I.pts.player || 0);   // 0 Punkte: nichts zeigen
+        out.push([n ? 0 : 2, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : p > 0 ? '<b>' + fmtNum(p) + (p === 1 ? ' Punkt' : ' Punkte') + '</b>' : '') + '</button>']); }
     else if (ip.start > now && ip.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Barbaren-Invasion in</span><i data-ev-bis="' + ip.start + '"></i></button>']);
     if (D) out.push([2, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Drache</span><b>' + Math.ceil(D.hp / D.max * 100) + ' %</b><i data-ev-bis="' + D.end + '"></i></button>']);
     else if (dp.start > now && dp.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Der Drache kommt in</span><i data-ev-bis="' + dp.start + '"></i></button>']);
@@ -12350,6 +11733,7 @@ function armyMove(a, t) {                                                    // 
     const who = armyWho(a), now = Date.now(); armyHalt(a, now);
     if (t.kind === 'base' && islandOwnerOf(t.id) === who) t.kind = 'home';
     if (t.kind === 'base' && isCapital(t.id)) return 'capital';
+    if (t.kind === 'base' && t.id === megaTempleId && now < thronOffenAb()) return 'thron';   // der Thron erst ab Tag 7 – auch für Armeen
     if (t.kind === 'base' && baseShieldedFor(t.id, who)) return 'shield';
     if (t.kind === 'army') { const b = armyById(t.id); if (b && armyWho(b) !== who && ownerShielded(armyWho(b))) return 'shield'; }
     if (bundFreund(who, t.kind === 'base' ? islandOwnerOf(t.id) : t.kind === 'army' && armyById(t.id) ? armyWho(armyById(t.id)) : null)) return 'bund';   // Bündnis-Mitglieder greifen sich nicht an
@@ -12366,6 +11750,7 @@ function armyOrder(a, t) {
     const why = !rechnet() ? (WELT.befehl('armee', { op: 'ziehen', id: a.id, ziel: t }), '') : armyMove(a, t);
     if (why === 'shield') flashHint(shieldBlockText(t.kind === 'army' ? armyWho(armyById(t.id)) : islandOwnerOf(t.id)), 4000);
     if (why === 'capital') flashHint('Das ist die Hauptstadt von ' + (botById[islandOwnerOf(t.id)] || {}).name + ' – eine Hauptstadt greifst du von einer Basis aus an (Angreifen), nicht mit einer Armee.', 4000);
+    if (why === 'thron') flashHint('Der Thron zählt erst ab Tag ' + KARTE_ZONEN.thron.tag + ' – noch ' + fmtPassWait(thronOffenAb() - Date.now()) + '.', 3500);
     if (why === 'route') flashHint(noRouteHint(a.lm, t.lm), 3500);
     if (why === 'bund') flashHint('Das gehört einem Bündnis-Mitglied – Mitglieder greifen sich nicht an.', 3500);
     if (why) return false;
@@ -12522,7 +11907,7 @@ function renderArmySheet() {
                 '<button class="btn btn--primary btn--sm" type="button" data-ago' + (sum < 1 ? ' disabled' : '') + '>' + icon('send') + '<span>' + (s.mode === 'new' ? 'Aufstellen' : 'Schicken') + ' · ' + fmtCompact(sum) + ' Truppen</span></button>'
               : '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>'));
     } else {
-        const now = Date.now(), inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
+        const inc = armyJoins.filter(j => j.armyId === a.id).reduce((n, j) => n + j.troops, 0), raid = armyRaids.find(r => r.armyId === a.id);
         const t = a.mv && a.mv.to, st = a.mv ? (t.kind === 'base' ? 'Angriff auf ' + islandTitle(islandById[t.id]) : t.kind === 'home' ? 'Heimweg' : t.kind === 'field' ? 'zur ' + FIELD_KINDS[fieldById[t.id].kind].name : 'marschiert') + ' · ' + uhrHtml(a.mv.resolveAt, 'marsch') : 'lagert';
         liveHtml(el, head('Armee im Feld') +
             '<div class="field-lines"><span>Truppen</span><b>' + fmtTile(Math.floor(a.troops)) + (inc ? ' <em class="army-inc">+' + fmtCompact(inc) + ' unterwegs</em>' : '') + '</b><span>Status</span><b>' + st + '</b>' +
@@ -12625,6 +12010,40 @@ function drawMarkers() {                                                     // 
         ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(m.text, x + 25, y - 22.5);
     }
 }
+// ===== FREIES FELD (Merkliste 33): Tipp auf freies Land → runde Knöpfe: Teleportieren · Markierung · Truppen hierher =====
+let feldRing = null;                                                        // { x, y, lm } die angetippte Stelle (Welt)
+function feldRingAuf(sx, sy) {                                              // → true, wenn dort freies Land ist
+    const w = screenToWorld(sx, sy), lm = landmassAtWorld(w.x, w.y); if (!lm) return false;
+    const el = document.getElementById('feldRing');
+    const kn = [['tp', 'ui_sym_verlegen', 'Teleportieren', tpPreisHtml()], ['mark', 'ui_k_nadel', 'Markierung', ''], ['arm', 'ui_armee', 'Truppen hierher', '']];
+    feldRing = { x: w.x, y: w.y, lm: lm.id };
+    el.innerHTML = kn.map(([p, b, t, z], i) => '<button type="button" class="cr-btn" data-fring="' + p + '" style="--x:' + (i - 1) * 84 + 'px;--y:' + (i === 1 ? -92 : -58) + 'px;--d:' + i * 40 + 'ms"><span class="fr-ic" style="--b:url(bilder/' + b + '.webp)"></span><small>' + t + (z ? ' ' + z : '') + '</small></button>').join('');
+    el.hidden = false; feldRingFrame(); requestRender(); return true;
+}
+function tpPreisHtml() { return teleImRucksack() ? '1 Teleporter' : icon('gem') + fmtNum(TP_GEMS); }   // ein Teleporter im Rucksack (auch der gratis) geht vor Edelsteinen
+function feldRingZu() { if (!feldRing) return; feldRing = null; document.getElementById('feldRing').hidden = true; if (gemsArmed('teleport')) gemsArmAus(); requestRender(); }
+function feldRingFrame() {                                                  // (jedes Bild) die Knöpfe folgen der Stelle, dort eine Nadel
+    if (!feldRing) return;
+    const z = mapState.zoom, x = feldRing.x * z + mapState.offsetX, y = feldRing.y * z + mapState.offsetY, el = document.getElementById('feldRing');
+    el.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)';
+    setScreen(ctx); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, y, 9, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#f3d27a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 16, 6.5, 0, 0, Math.PI * 2); ctx.stroke();
+}
+document.getElementById('feldRing').addEventListener('click', e => {
+    const b = e.target.closest('[data-fring]'); if (!b || !feldRing) return; e.stopPropagation();
+    const { x, y, lm } = feldRing, was = b.dataset.fring;
+    if (was === 'tp') {
+        const f = tpPruefen('player', x, y); if (f) { flashHint(f, 3500); return; }
+        const k = teleImRucksack() ? 0 : TP_GEMS; if (gems < k) { flashHint('Teleportieren kostet ' + fmtNum(TP_GEMS) + ' Edelsteine – oder 1 Teleporter aus dem Rucksack.', 3000); return; }
+        if (!gemsWirklich('teleport', k, b, true, true)) { if (gemsArm && gemsArm.t) gemsArm.t.innerHTML = 'Hierher teleportieren?<br>' + tpPreisHtml(); return; }   // (immer bestätigen, offen bis daneben getippt wird – feldRingZu)
+        if (teleportOrt(x, y)) feldRingZu(); return;
+    }
+    feldRingZu();
+    if (was === 'mark') { openMarkerSheet({ id: null, x, y, text: MARKER_PRESETS[0], col: MARKER_COLORS[0] }); return; }
+    if (myArmies().length >= ARMY_MAX) { flashHint('Höchstens ' + ARMY_MAX + ' Armeen gleichzeitig im Feld.', 3000); return; }   // (wie der Armee-Knopf: dort sammeln sich die Truppen)
+    if ((islandsByLandmass[lm] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.5)) { flashHint('Dort geht es nicht – tippe auf freies Land mit etwas Abstand zu den Basen.', 3000); return; }
+    closeIslandPopup(); openArmySheet({ mode: 'new', x, y, lm });
+});
 function screenToWorld(screenX, screenY) {
     return {
         x: (screenX - mapState.offsetX) / mapState.zoom,
@@ -12660,9 +12079,9 @@ let previewShownAt = 0; // guards against a stray click landing on the
 // the keyboard handler uses this: map shortcuts only fire while focus is on the page or the canvas
 function isUiElement(target) {
   return !!(target && target.closest && target.closest(
-    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
+    '#islandPopup,#bundPopup,#hud,#cornerButtons,#profilePopup,#rulerPopup,#rankPopup,#battleLogPopup,#goalsPopup,#shopPopup,#rucksackPopup,#chestItemPopup,#multiAttackBar,#mapControls,#uiScrim,#uiScrimTop,#midBar'));
 }
-const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
+const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', rucksackPopup: 'rucksackBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
 function isPanelOpen(el) { return el.classList.contains('is-open'); }
 function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); syncPanelState(); }
 function closePanel(el) { el.classList.remove('is-open'); syncPanelState(); }
@@ -12696,7 +12115,7 @@ function closeTopmostPanel() {           // scrim click + Escape
   if (closeCity()) return;
   if (isPanelOpen(chestItemPopup)) return chestItemCloseBtn.click();
   if (isPanelOpen(popup)) return closeBtn.click();
-  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn']])
+  for (const [pid, closeId] of [['bundPopup','bundCloseBtn'],['rulerPopup','rulerCloseBtn'],['rankPopup','rankCloseBtn'],['profilePopup','profileCloseBtn'],['battleLogPopup','battleLogCloseBtn'],['goalsPopup','goalsCloseBtn'],['shopPopup','shopCloseBtn'],['rucksackPopup','rucksackCloseBtn']])
     if (isPanelOpen(document.getElementById(pid))) return document.getElementById(closeId).click();
   if (multiAttackMode) return multiAttackCancelBtn.click();
 }
@@ -12719,6 +12138,7 @@ function closeAllPopups() {
     clearInterval(battleLogRefreshTimer);
     closePanel(document.getElementById('goalsPopup'));
     closePanel(shopPopup);
+    closePanel(document.getElementById('rucksackPopup'));
     closePanel(document.getElementById('rulerPopup'));
     closePanel(document.getElementById('rankPopup'));
     if (!document.getElementById('lookSheet').hidden) closeLookSheet();
@@ -12733,6 +12153,7 @@ function closeAllPopups() {
 }
 
 function openIslandPopup(island) {
+    if (island && island.type === 'gate' && passOpensAt(bridgeOfGate(island)) > Date.now()) { flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(island)) - Date.now()) + '.', 3500); return; }   // (Pass mit Countdown: nur der Hinweis)
     if (island && !islandSeen(island) && islandOwnerOf(island.id) !== 'player') { flashHint('Dieses Gebiet liegt im Nebel – schick zuerst einen Späher.', 3000); return; }
     closeAllPopups();
     popupIslandId = island.id;
@@ -12790,7 +12211,7 @@ function updateMultiAttackBar() {
 function startMultiAttack(sourceId) {
     multiAttackMode = true;
     multiAttackSourceId = sourceId;
-    multiAttackTargets = []; multiAttackShare = 1; multiAttackHero = null; multiAttackHero2 = null;
+    multiAttackTargets = []; multiAttackShare = 1; [multiAttackHero, multiAttackHero2] = heroLetzte();
     multiAttackBar.style.display = 'flex';
     document.body.classList.add('is-multi');
     updateMultiAttackBar();
@@ -12837,7 +12258,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
         let troopsForThis = perTarget;
         if (remainder > 0) { troopsForThis++; remainder--; }
         nextAttackHero = ok === 0 ? multiAttackHero : null; nextAttackHero2 = ok === 0 ? multiAttackHero2 : null;   // the heroes lead the first wave that goes out
-        if (launchAttack(sourceId, targetId, null, troopsForThis)) ok++;
+        if (launchAttack(sourceId, targetId, null, troopsForThis)) { if (!ok) heroLetzteMerken(multiAttackHero, multiAttackHero2); ok++; }
         else { failed.push(targetId); why.add(baseShieldedFor(targetId, 'player') ? 'Friedensschild' : isCapital(targetId) ? 'inzwischen eine Hauptstadt' : 'Tor oder Maut'); }
         nextAttackHero = null; nextAttackHero2 = null;
     }
@@ -12866,7 +12287,7 @@ multiAttackConfirmBtn.addEventListener('click', () => {
 // nächsten Saison-Ende (05a RAHMEN: Platz 1 · 2–3 · 4–5 · 6–10, aus last.top – Alexander 6.10.).
 // Bleibt: die ganze Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Gems, Holz/Stein/Eisen, alles Gekaufte.
 // Weg: alle Basen, alle Truppen (Start mit PLAYER_START_TROOPS wie ein neuer Spieler), Münzen (0 wie ein neuer Spieler), Stufe (→ 1,
-// damit alle Fähigkeitspunkte), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
+// damit alle Fähigkeitspunkte), Saison-Pass (Punkte, Stufen – Premium bleibt; Erfolge bleiben), Bündnisse, Märsche, Rallys, Verstärkungen, Armeen, Felder, Nebel, Kampfberichte. Die Hauptstadt zieht
 // auf einen freien Zufallsplatz am Rand (wie der Startplatz eines neuen Spielers). Mitspieler genau wie echte Spieler.
 // Der eigene Spielstand eines echten Spielers übernimmt den Reset über die Nachricht „saison“ (unten) → Neuladen → 01a-grundlagen.js.
 // Burg fair (Alexander 6.10. A): der ERSTE Reset danach setzt EINMAL jede Burg über Stufe BURG_FAIR auf BURG_FAIR (bis 5.10. galt die alte,
@@ -12929,7 +12350,7 @@ function saisonTop() {                                // die besten 10 nach Mach
     return l.sort((a, b) => b[1] - a[1]).slice(0, SAISON_PREISE.length);
 }
 function saisonNeu(now) {
-    const alt = saison.nr, nr = alt + 1, top = saisonTop(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
+    const alt = saison.nr, nr = alt + 1, top = saisonTop(), rb = saisonRangBasis(), wirtAb = saison.wirtAb > 0 ? saison.wirtAb : nr, f = wirtAb === nr ? WIRTSCHAFT_KOSTEN * MUENZ_FAKTOR : 1;   // f: Münz-Töpfe umrechnen (nur beim ersten Reset nach der Umstellung)
     const burgFair = saison.burgFair > 0 ? saison.burgFair : nr, B = burgFair === nr ? BURG_FAIR : 0;   // B: Burg fair (nur beim ersten Reset danach)
     console.warn('Welt-Saison ' + alt + ' zu Ende – Saison ' + nr + ' beginnt (Top 10: ' + top.map(([w]) => (botById[w] || {}).name || w).join(', ') + ')');
     if (B) saisonAusnahme();                           // (vor den Preisen: die kommen wie bei echten Spielern zusätzlich dazu)
@@ -12945,12 +12366,25 @@ function saisonNeu(now) {
     //    je Saison. Erst nach der Nachricht „saison“: sein Handy verbucht den Preis dann nach dem Neuladen, also nach der Ausnahme
     //    (Edelsteine = 1.000) – vorher konnte er ihn in den 1,5 s bis zum Neuladen abholen und verlor ihn wieder
     top.forEach(([w], i) => evPreis(w, 'saison', 'Welt-Saison ' + alt + ' · Platz ' + (i + 1), { gems: SAISON_PREISE[i], titel: 's' + alt + 'p' + (i + 1) }, alt));
-    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) } }; saisonSpeichern();
+    saison = { nr, start: now, ende: saisonEnde(now), wirtAb, burgFair, last: { nr: alt, top: top.map(([w, v]) => [neutralId(w), Math.round(v)]) }, rb }; saisonSpeichern();
     window.__prVorher = null;                          // (Prüfer im Weltrechner: die Welt ist gewollt so viel kleiner – neue Grundlinie)
     if (!window.WELT && !SYSTEM) {                     // (Vorschau, allein) dein Spielstand übernimmt den Reset beim Neuladen wie am Handy
         store.set('openWaterSaisonNeu', String(nr)); if (B) store.set('openWaterSaisonBurg', String(B)); try { saveGameNow(); saveProgressionNow(); flushBotState(); } catch (e) {}
         flashHint('Eine neue Welt-Saison beginnt – das Spiel lädt neu …', 4000); setTimeout(() => location.reload(), 600);
     }
+}
+// Ranglisten Eroberungen und Thron-Punkte zählen je Saison (die Erfolge zählen weiter alles): der Stand beim Reset ist die Grundlinie –
+// saison.rb = { wer: [Eroberungen, Thron-Punkte] } für alle anderen, die eigene merkt sich der Spielstand (01a openWaterSaisonRang)
+function saisonRangBasis() {
+    const bs = loadBotState(), rb = {};
+    for (const bd of BOT_DEFS) if (bs[bd.id]) { const c = botConquests(bd.id), t = throneEarnedOf(bd.id, bs); if (c > 0 || t > 0) rb[bd.id] = [c, t]; }
+    return rb;
+}
+function rangSaison(who, k, bs) {                     // k 0: Eroberungen, 1: Thron-Punkte – seit dem letzten Reset
+    const roh = k ? throneEarnedOf(who, bs) : conquestsOf(who); let b = 0;
+    if (who === 'player') { try { b = (JSON.parse(store.get('openWaterSaisonRang')) || [])[k] || 0; } catch (e) { b = 0; } }
+    else b = (((saison || {}).rb || {})[neutralId(who)] || [])[k] || 0;
+    return Math.max(0, roh - b);
 }
 function saisonWelt(now, f, B) {                      // alles Weltliche zurück, die Hauptstädte auf neue Plätze (f < 1: Münz-Töpfe umrechnen, B: Burg fair)
     const bs = loadBotState(), wer = (SYSTEM || window.WELT ? [] : ['player']).concat(BOT_DEFS.map(b => b.id).filter(id => bs[id]));
@@ -12959,6 +12393,10 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = [];
     fieldState = {}; fieldMarches = []; barbMarches = []; armies = []; armyJoins = []; armyRaids = [];
     if (evState.inv && Array.isArray(evState.inv.armies)) evState.inv.armies = [];
+    // Event-Stände der alten Welt: laufendes Wochen-Event, Drache, Invasion fangen bei 0 an (schon Ausgezahltes und „zuletzt“ bleiben)
+    if (evState.wo && !evState.wo.paid) { evState.wo.pts = {}; evState.wo.kb = {}; }
+    if (evState.dr && !evState.dr.paid) { evState.dr.dmg = {}; evState.dr.hits = {}; }
+    if (evState.inv && !evState.inv.paid) evState.inv.pts = {};
     if (typeof bundSaisonNeu === 'function') bundSaisonNeu();
     // Barbaren-Lager: der Fortschritt fängt für alle wieder bei Stufe 1 an (Alexander 5.10.), die alten Lager weg – neue entstehen gleich
     // (die Zähler von heute bleiben; barbWho ist Welt-Stand – das Handy bekommt ihn vom Weltrechner)
@@ -12969,15 +12407,19 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     islandTroops = {}; neutralTroopOverrides = {}; for (const isl of islands) if (isl.nt0 !== undefined) isl.neutralTroops = isl.nt0;
     templeHoldSince = {}; scoutedIslands.clear(); gateCfg = {}; store.set('openWaterGateCfg', '{}');
     titleState = { ruler: null, by: {} }; saveTitles(); bountyState = { ruler: null, gems: 0, coins: 0, since: now }; saveBounty();
+    inselOrt = {}; store.set('openWaterInselOrt', '{}'); inselOrtAnwenden();   // teleportierte Hauptstädte: jede Basis wieder an ihrem Platz
     hauptVor = {}; store.set('openWaterHauptVor', '{}'); brand = {}; store.set('openWaterBrand', '{}'); store.set('openWaterWorldStart', String(now));
     for (const o of [battleHeat, baseFought, ownerLoss, botTooStrongMem, botIntelMem, botAct, botKenntMem, botKenntBasen, botEvacuated, botLossMem, botAergerMem, botLmShareMem]) for (const k of Object.keys(o)) delete o[k];   // was die Mitspieler über die alte Karte wussten
-    // Hauptstädte: je ein freier Turm am äußeren Rand, auf der Landmasse mit den wenigsten Nachbarn (wie freierStartplatz), zufällig
-    const frei = islands.filter(i => i.type === 'tower' && landmasses[i.landmassId].tier === 'outer' && !bossAt(i.id)), proLm = {}, belegt = new Set();
+    // Hauptstädte: wie freierStartplatz erst die freien Startplätze, dann Türme in Zone 1 (tier 'outer' sind Zone 1–3 – sonst landeten sie
+    // innen), zuletzt der übrige Rand; je Stufe auf der Landmasse mit den wenigsten Nachbarn, zufällig
+    const turm = i => i.type === 'tower' && !bossAt(i.id), lm = i => landmasses[i.landmassId];
+    const stufen = [islands.filter(i => i.startSlot && turm(i)), islands.filter(i => !i.startSlot && turm(i) && lm(i).zone === 1),
+        islands.filter(i => !i.startSlot && turm(i) && lm(i).zone !== 1 && lm(i).tier === 'outer')], proLm = {}, belegt = new Set();
     for (let i = hatte.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [hatte[i], hatte[j]] = [hatte[j], hatte[i]]; }
     for (const w of hatte) {
-        const offen = frei.filter(i => !belegt.has(i.id)); if (!offen.length) break;
+        let offen = []; for (const s of stufen) { offen = s.filter(i => !belegt.has(i.id)); if (offen.length) break; } if (!offen.length) break;
         let min = Infinity; for (const i of offen) min = Math.min(min, proLm[i.landmassId] || 0);
-        const beste = offen.filter(i => (proLm[i.landmassId] || 0) === min), start = beste.filter(i => i.startSlot), l = start.length ? start : beste, z = l[Math.floor(Math.random() * l.length)];
+        const beste = offen.filter(i => (proLm[i.landmassId] || 0) === min), z = beste[Math.floor(Math.random() * beste.length)];
         belegt.add(z.id); proLm[z.landmassId] = (proLm[z.landmassId] || 0) + 1;
         islandLevels[z.id] = 1; islandTroops[z.id] = PLAYER_START_TROOPS;   // (die Stufe der Hauptstadt folgt gleich wieder der Burg – aufbau.js)
         if (w === 'player') { ownedIslands.add(z.id); playerIslandId = z.id; store.set('openWaterPlayerIslandId', String(z.id)); }
@@ -12989,6 +12431,7 @@ function saisonWelt(now, f, B) {                      // alles Weltliche zurück
     // Spieler und Mitspieler: Stufe 1, keine Fähigkeitspunkte, keine Münzen, keine Verwundeten, keine alten Pläne
     for (const w of wer) { if (w === 'player') continue; const b = bs[w];
         b.lvl = 1; b.xp = 0; b.sp = 0; b.xpNeu = 0; for (const k in b.skills || {}) b.skills[k] = 0; b.wounded = 0; b.tt = 0; botCoins[w] = 0;
+        if (b.ps) { b.ps.base = botPassScore(b); b.ps.f = 0; b.ps.p = 0; }   // Saison-Pass von vorn (Premium bleibt)
         b.rally = null; b.capWish = null; b.outAt = 0; b.vendetta = null; b.grudge = {}; b.annoy = {}; b.fails = {}; delete b.kennt; delete b.plan;
         if (B > 0 && AUF) burgFairWer(b, B);
         if (!(botById[w] && botById[w].mensch) && b.tp > SAISON_TP_MAX) { const g = Math.floor((b.tp - SAISON_TP_MAX) / SAISON_TP_JE_GEM); b.tp = SAISON_TP_MAX;   // Thron-Punkte (echte Spieler: ihr Handy)
@@ -13095,6 +12538,12 @@ function islandTitle(island) {
     for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === island.id) return 'Hauptstadt von ' + bot.name;
     return 'Turm #' + (island.id + 1);
 }
+// Name für Spieler statt „Turm #N“: „Deine Basis“ / „Basis von …“ / „Neutrale Basis“ (+ Ort, wenn nicht ohneOrt)
+function ortName(island, ohneOrt) {
+    const t = islandTitle(island); if (!/^Turm #/.test(t)) return t;
+    const ow = islandOwnerOf(island.id), n = ow === 'player' ? 'Deine Basis' : ow ? 'Basis von ' + ((botById[ow] || {}).name || 'Unbekannt') : 'Neutrale Basis';
+    return ohneOrt ? n : n + ' · ' + coordText(island.x, island.y);
+}
 
 function gateControlsHtml(gate) {
     const cfg = gateSettings(gate);
@@ -13112,15 +12561,14 @@ popupStats.addEventListener('click', e => {
     openIslandPopup(isl); requestRender();
 });
 popupStats.addEventListener('click', e => { const k = e.target.closest('[data-spaehen]'); if (k && !k.disabled && !scoutBtn.disabled) scoutBtn.click(); });   // die Kachel „Stärke unbekannt“ schickt den Späher
-function ringNotice(isl) {                         // whose ring is it: a title from the middle or a bought Ring-Skin
+function ringNotice(isl) {                         // whose ring is it: a title from the middle
     if (isl.type !== 'tower') return '';
     const o = islandOwnerOf(isl.id), st = o ? ringStatusByOwner().get(o) : null; if (!st) return '';
     const me = o === 'player', n = me ? '' : escapeHtml(botById[o].name), t = titleOf(o);
     const txt = st.k === 'ruler' ? (me ? 'Blutrot-goldener Ring: Du bist Herrscher der Meere – er bleibt, solange du den Mega-Tempel hältst.' : 'Blutrot-goldener Ring: ' + n + ' ist Herrscher der Meere.')
         : st.k === 'good' ? (me ? 'Goldring: Du trägst den Titel „' + t.name + '“ – solange du ihn behältst.' : 'Goldring: ' + n + ' trägt den Titel „' + t.name + '“ aus der Mitte.')
-        : st.k === 'bad' ? (me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.')
-        : (me ? 'Ring „' + st.name + '“ – wechseln unter „Aussehen“.' : 'Ring „' + st.name + '“.');
-    return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : st.k === 'skin' ? '' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
+        : me ? 'Roter Ring: Du trägst den Straf-Titel „' + t.name + '“ – solange er gilt.' : 'Roter Ring: ' + n + ' trägt den Straf-Titel „' + t.name + '“.';
+    return '<div class="notice' + (st.k === 'bad' ? ' notice--warn' : ' notice--gold') + '">' + icon(st.k === 'ruler' ? 'crown' : st.k === 'bad' ? 'losses' : 'star') + '<span>' + txt + '</span></div>';
 }
 function throneNotice(island) {                   // your own throne or Wächter-Tempel: points and fire at a glance
     if (island.type === 'megaTemple') { const sh = throneShooters().length;
@@ -13151,7 +12599,7 @@ const upgradeCostLabel = document.getElementById('upgradeCostLabel');
 // they are disabled, and what is visible without scouting (fog of
 // war) are exactly the old rules.
 // Koordinaten like in the big strategy games: X and Y from 0 to 1200 across the world, the Mega-Tempel at X 600 · Y 600
-function coordText(x, y) { const k = (GRID_HALF + .5) * HEX_SPACING, f = 1200 / (2 * k); return 'X ' + Math.round((x + k) * f) + ' · Y ' + Math.round((y + k) * f); }
+function coordText(x, y) { const k = FRAME_HALF, f = 1200 / (2 * k); return 'X ' + Math.round((x + k) * f) + ' · Y ' + Math.round((y + k) * f); }
 function renderPopup() {
     const island = islandById[popupIslandId];
     if (!island) return;
@@ -13170,7 +12618,7 @@ function renderPopup() {
     if (owner && !isBoss) { popupEmblem.dataset.profile = owner; popupEmblem.setAttribute('role', 'button'); popupEmblem.title = 'Profil ansehen'; }   // das Viereck antippen → Profil (mit Bündnis)
     else { delete popupEmblem.dataset.profile; popupEmblem.removeAttribute('role'); popupEmblem.removeAttribute('title'); }
     popupLevel.textContent = anzeigeStufe(island.id);
-    popupTitle.textContent = islandTitle(island);
+    popupTitle.textContent = ortName(island, true);
     popupActions.hidden = true;
     document.getElementById('cityBtn').style.display = 'none';
     document.getElementById('teleportBtn').style.display = 'none';
@@ -13279,7 +12727,7 @@ function inselMittig(island) {
 }
 
 // Angriff kompakt: Startbasis mit Truppen in der Auswahl, die Marschzeit EINMAL (im Knopf), Held + Zweitheld als zwei Chips
-let previewHeldAuf = 0;                                 // aufgeklappte Helden-Auswahl: 0 zu, 1 Held, 2 Zweitheld
+let previewHeldAuf = 0, previewHeldVor = -1;          // aufgeklappte Helden-Auswahl: 0 zu, 1 Held, 2 Zweitheld · previewHeldVor: Vorschau (previewShownAt), für die die zuletzt geschickten Helden schon gesetzt sind
 function apQuelleText(id, island, scouted) {            // „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
     return escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) + (scouted && angriffReicht(id, island) ? ' · reicht' : '');
 }
@@ -13302,6 +12750,8 @@ function renderAttackPreview(island, scouted) {
     const key = island.id + ':' + previewSourceId + ':' + scouted + ':' + atkPct;
     // Maut/Tor hinten in der Überzeile, keine Unterzeile (Startbasis + Marschzeit stehen EINMAL in der Auswahl darunter)
     popupOverline.innerHTML = 'Angriff vorbereiten<span id="previewToll"></span>'; popupSub.innerHTML = '';
+    if (previewHeldVor !== previewShownAt) { previewHeldVor = previewShownAt;   // Merkliste 18: frisch geöffnet ohne freien Helden → die zuletzt geschickten
+        if (!previewHero || !heroOwned('player', previewHero) || heroBusy('player', previewHero)) [previewHero, previewHero2] = heroLetzte(); }
     if (popupStats.dataset.preview !== key || !document.getElementById('attackTroopsSlider')) {
         popupStats.dataset.preview = key; previewHeldAuf = 0;
         const quellen = angriffQuellen(island).slice(0, 40); if (!quellen.includes(previewSourceId)) quellen.unshift(previewSourceId);   // (die gewählte steht immer drin)
@@ -13654,7 +13104,7 @@ attackBtn.addEventListener('click', () => {
         const troopsToSend = Math.max(1, Math.min(picked || available, available));
 
         nextAttackHero = previewHero; nextAttackHero2 = previewHero2;
-        launchAttack(sourceId, targetId, null, troopsToSend);
+        if (launchAttack(sourceId, targetId, null, troopsToSend)) heroLetzteMerken(previewHero, previewHero2);
         nextAttackHero = null; nextAttackHero2 = null;
         previewSourceId = null;
         closeIslandPopup();
@@ -13736,6 +13186,8 @@ function fogPromptHit(sx, sy) {                   // → 'go' (the button), 'off
     return sx >= r.x - 6 && sx <= r.x + r.w + 6 && sy >= r.y - 6 && sy <= r.y + r.h + 6 ? 'go' : 'off';
 }
 function handleTap(screenX, screenY) {
+    if (feldRing) { feldRingZu(); return; }                                 // daneben tippen schließt das Feld-Menü
+    const blattOffen = !!armySheet || !document.getElementById('markerSheet').hidden || !!fieldSheetId || !!barbView || isPanelOpen(popup);
     if (teleportMode && Date.now() > teleportBis) { teleportMode = false; requestRender(); }
     if (teleportMode) {
         teleportMode = false; requestRender();
@@ -13764,7 +13216,7 @@ function handleTap(screenX, screenY) {
     if (!multiAttackMode && marchTapAt(screenX, screenY)) return;
     const island = pickIslandAtScreen(screenX, screenY);
     if (!island && !multiAttackMode) { const fp = fogPointAt(screenX, screenY); if (fp) { tapFog(fp); return; } }
-    if (!island) { if (isPanelOpen(popup) && !multiAttackMode) closeIslandPopup(); return; }
+    if (!island) { if (isPanelOpen(popup) && !multiAttackMode) closeIslandPopup(); else if (!multiAttackMode && !blattOffen && !markerMode) feldRingAuf(screenX, screenY); return; }   // freies Feld: Teleport, Markierung, Truppen
 
     if (multiAttackMode) {
         const source = islandById[multiAttackSourceId];
@@ -14128,6 +13580,7 @@ function liveTick() {
         if (tab === 'skills') { const sig = skillPoints + JSON.stringify(skills); if (sig !== liveSkillSig) { liveSkillSig = sig; renderSkillGrid(); } }
     });
     if (isPanelOpen(shopPopup)) teil(renderShop);                                                         // Shop: Gems, Schild-Restzeit, Thron-Punkte
+    teil(renderRucksack);                                                                                   // Rucksack: Schild-Restzeit, Vorrat, Splitter
     if (isPanelOpen(goalsPopup) && goalsTab === 'reward') teil(renderInbox);                              // Events → Belohnung
     if (isPanelOpen(rankPopup) && liveZuletzt - liveRangAt >= 5000) { liveRangAt = liveZuletzt; teil(renderRankings); }   // Rangliste: alle 5 s reicht
     teil(heroHallLive);                                                                                     // Helden
@@ -14178,6 +13631,7 @@ if (window.WELT) {
         if (k.has('openWaterIslandTroops')) islandTroops = PJ('openWaterIslandTroops') || {};
         if (k.has('openWaterNeutralTroopOverrides')) { neutralTroopOverrides = PJ('openWaterNeutralTroopOverrides') || {}; for (const isl of islands) if (!(isl.id in neutralTroopOverrides) && isl.nt0 !== undefined) isl.neutralTroops = isl.nt0;   // (neue Welt-Saison: wieder die erzeugte Besatzung)
             for (const id in neutralTroopOverrides) if (islandById[id]) islandById[id].neutralTroops = neutralTroopOverrides[id]; }
+        if (k.has('openWaterInselOrt')) inselOrtLaden();   // (teleportierte Hauptstädte)
         if (k.has('openWaterTempleHoldSince')) templeHoldSince = PJ('openWaterTempleHoldSince') || {};
         if (k.has('openWaterGateCfg')) gateCfg = null;
         if (k.has('openWaterPendingAttacks')) pendingAttacks = PJ('openWaterPendingAttacks') || [];
@@ -14325,17 +13779,22 @@ if (window.WELT) {
         const a = Math.min(n, Math.max(0, lv - m.sr.reduce((s, x) => s + x.n, 0))); if (a > 0) m.sr.push({ t: now, n: a });
         const d = spielraumTag(who); if (d && n - a > 0) { d.srN = nn(d.srN) + n - a; saveBotState(); }
     }
-    // Münzen, die auf einmal kommen dürfen: Saison-Pass (je Saison höchstens die Münz-Stufen beider Reihen) und Thron-Shop
+    // Münzen, die auf einmal kommen dürfen: Saison-Pass (je Saison höchstens die Münz-Stufen beider Reihen), Tagesaufgaben (je Tag
+    // ihre Münz-Stunden – der Topf füllt sich gleichmäßig nach, höchstens 2 Tage, weil sein Tag nicht der des Servers ist) und Thron-Shop
     // (so viele Käufe, wie seine Thron-Punkte hergeben – die zählt der Weltrechner selbst). Gemessen in Stunden Ertrag.
     let passMuenzH = null;
+    const AUF_MUENZ_H = 2 * QUEST_COIN_H.reduce((a, x) => a + x, 0);   // 6 Aufgaben: je 2 leicht/mittel/schwer
     function muenzGutscheine(who, mehr, d) {
         if (!d || !(mehr > 0)) return 0;
-        if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) { const r = passRewardAt(L, pr); if (r.k === 'coins') passMuenzH += r.n || 1; } }
-        const h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(Date.now());   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        if (passMuenzH === null) { passMuenzH = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const pr of [false, true]) for (const r of passRewardAt(L, pr)) if (r.k === 'coins') passMuenzH += r.n || 1; }
+        const now = Date.now(), h = Math.max(SR_STUNDE_MIN, nn(hourProduction(who).coins)) * 1.2, s = passNo(now);   // (+20 %: sein Handy rechnet mit eigenen Boni)
+        const thH = Math.max(THRONE_STUNDEN, THRONE_MIN.coins / h);   // Stunden je Thron-Kauf (mind. THRONE_MIN Münzen, 7.10.)
         if (d.pS !== s) { d.pS = s; d.pM = 0; }
-        const passRest = Math.max(0, passMuenzH - nn(d.pM)), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
-        const use = Math.min(mehr, (passRest + thronRest * THRONE_STUNDEN) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
-        const ausPass = Math.min(use / h, passRest); d.pM = nn(d.pM) + ausPass; d.tC = nn(d.tC) + (use / h - ausPass) / THRONE_STUNDEN; saveBotState();
+        d.aM = Math.max(0, nn(d.aM) - AUF_MUENZ_H * Math.max(0, now - nn(d.aMt)) / 864e5); d.aMt = now;
+        const passRest = Math.max(0, passMuenzH - nn(d.pM)), aufRest = Math.max(0, 2 * AUF_MUENZ_H - d.aM), thronRest = Math.max(0, Math.floor(throneEarnedOf(who) / 150) + 3 - nn(d.tC));
+        const use = Math.min(mehr, (passRest + aufRest + thronRest * thH) * h); if (!(use > 0)) return 0;   // (ein Thron-Kauf: THRONE_STUNDEN Stunden – Alexander 6.10.)
+        let r = use / h; const ausPass = Math.min(r, passRest); r -= ausPass; const ausAuf = Math.min(r, aufRest); r -= ausAuf;
+        d.pM = nn(d.pM) + ausPass; d.aM += ausAuf; d.tC = nn(d.tC) + r / thH; saveBotState();
         return use;
     }
     function spielraumFrei(who, m) {
@@ -14370,6 +13829,7 @@ if (window.WELT) {
             if (zahlOk(e.sh, 1e6)) hb.shB += e.sh;
             if (Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 5) hbKisteDazu(hb, e.crate);
         }
+        if (e.art === 'evPreis' && (zahlOk(e.coins, 1e15) || zahlOk(e.tr, 1e15))) { const d = wd(who); if (d) { if (zahlOk(e.coins, 1e15)) d.gC = nn(d.gC) + e.coins; if (zahlOk(e.tr, 1e15)) d.gTr = nn(d.gTr) + e.tr; } }   // Event-Leisten (Merkliste 33): Münzen/Truppen aus dem Abholfach – wie ein Geschenk gutgeschrieben (Abholen: Münzen im Profil, Truppen als Befehl „geschenk“)
         if (e.art === 'startschild' && zahlOk(e.bis, 1e15)) hb.schild = Math.max(nn(hb.schild), e.bis);
         if (e.art === 'haendlerWare') {                // beim Händler mit Münzen bezahlt: die Ware ist bezahlt (vorher verlangte das Hauptbuch sie nochmal in Gems)
             if (zahlOk(e.sh, 1e3)) hb.shB += e.sh;
@@ -14545,7 +14005,7 @@ if (window.WELT) {
         return ende ? 'pleite' : 'warten';
     }
     // Truppen-Geschenk prüfen → wie viele er bekommt (0 = nichts), oder -1 = warten (z. B. Stufe/Profil noch nicht da)
-    const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Krankenhaus', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk' };
+    const TRUPPEN_QUELLEN = { stufe: 'Stufen-Belohnung', thron: 'Thron-Shop', heil: 'Krankenhaus', fund: 'Fund auf der Karte', geschenk: 'Admin-Geschenk', pass: 'Saison-Pass', aufgabe: 'Aufgaben-Bonus' };
     function truppenPruefen(who, b, ende) {
         const q = b.q, name = TRUPPEN_QUELLEN[q] || 'unbekannte Quelle';
         if (!zahlOk(b.n)) { warnen(who, 'truppen', 'Truppen-Geschenk mit kaputter Zahl (' + String(b.n).slice(0, 30) + ') – abgelehnt.'); return 0; }
@@ -14564,7 +14024,7 @@ if (window.WELT) {
             const kaeufe = Math.floor(throneEarnedOf(who) / 200) + 5;
             if (d.tk + 1 > kaeufe) { if (!ende) return -1; warnen(who, 'truppen', 'Thron-Shop: ' + (d.tk + 1) + '. Truppen-Kauf, mit seinen Thron-Punkten gehen höchstens ' + kaeufe + ' – abgelehnt.', b.n); return 0; }
             d.tk++; saveBotState();
-            erlaubt = 3 * Math.max(TR_STUNDE_MIN, hourProduction(who).troops * THRONE_STUNDEN) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders
+            erlaubt = 3 * Math.max(THRONE_MIN.troops, hourProduction(who).troops * THRONE_STUNDEN) + TR_STUNDE_MIN;   // ×3: sein Handy rechnet die Produktion mit eigenen Boni etwas anders (mind. THRONE_MIN wie im Shop)
         } else if (q === 'heil') {                     // Krankenhaus: höchstens so viele, wie verwundet sind
             if (now - m.w.vorT > WACHE_WARTEN_MS) m.w.vor = 0;
             erlaubt = (m.w.vor + m.w.u) * 1.02 + 10;
@@ -14578,7 +14038,23 @@ if (window.WELT) {
             if (d.fund.n >= 300) { if (d.fund.n === 300) warnen(who, 'truppen', 'Über 300 Funde auf der Karte an einem Tag – abgelehnt.', b.n); d.fund.n = 301; saveBotState(); return 0; }
             d.fund.n++; saveBotState();
             erlaubt = Math.max(FUND_TR_MIN, niceRound(levelRewardTroops(Math.max(m.lvl, 2)) * 0.05)) * 1.05 + FUND_TR_MIN;
-        } else {                                       // Admin-Geschenk: nur so viel, wie der Admin geschickt hat
+        } else if (q === 'pass') {                     // Saison-Pass: jede Stufe (Reihe) zahlt einmal je Saison ihre Truppen-Stunden – und nur so weit, wie man in der Zeit kommen kann
+            const s = passNo(now), l = b.l, pr = b.p === 1 ? 1 : 0, ok = Number.isInteger(l) && l >= 1 && l <= PASS_LVLS && (b.s === s || b.s === s - 1);
+            const r = ok ? passRewardAt(l, !!pr).find(x => x.k === 'tr') : null;
+            if (!r) { warnen(who, 'truppen', 'Saison-Pass: Truppen für eine Stufe ohne Truppen – abgelehnt.', b.n); return 0; }
+            const tage = (now - (PASS_EPOCH + (b.s - 1) * PASS_LEN)) / 864e5, bis = b.s < s ? PASS_LVLS : Math.min(PASS_LVLS, Math.ceil(PASS_LVLS * 2 * tage / 28) + 3);   // (wie das Hauptbuch: alles frühestens nach halber Saison)
+            if (l > bis) { warnen(who, 'truppen', 'Saison-Pass: Stufe ' + l + ' schon nach ' + Math.floor(tage) + ' Tagen – abgelehnt.', b.n); return 0; }
+            const P = d.pTr = d.pTr && typeof d.pTr === 'object' ? d.pTr : {}; for (const k in P) if (+k < s - 1) delete P[k];
+            const schl = l + ':' + pr, L = P[b.s] = Array.isArray(P[b.s]) ? P[b.s] : [];
+            if (L.includes(schl)) { warnen(who, 'truppen', 'Saison-Pass: Truppen von Stufe ' + l + ' schon abgeholt – abgelehnt.', b.n); return 0; }
+            L.push(schl); saveBotState();
+            erlaubt = 3 * Math.max(TR_STUNDE_MIN, hourProduction(who).troops * r.n) + TR_STUNDE_MIN;   // (×3 wie beim Thron-Shop)
+        } else if (q === 'aufgabe') {                  // Tagesaufgaben (Bonus bei 3 erledigt): einmal am Tag – höchstens 2 in 24 Std. (sein Tag ist nicht der des Servers)
+            const L = (Array.isArray(d.aufTr) ? d.aufTr : []).filter(t => now - t < 864e5);
+            if (L.length >= 2) { warnen(who, 'truppen', 'Aufgaben-Bonus: über 2 Truppen-Belohnungen in 24 Std. – abgelehnt.', b.n); return 0; }
+            d.aufTr = [...L, now]; saveBotState();
+            erlaubt = 3 * Math.max(TR_STUNDE_MIN, hourProduction(who).troops * QUEST_BONUS3.tr) + TR_STUNDE_MIN;
+        } else {                                    // Admin-Geschenk: nur so viel, wie der Admin geschickt hat
             if (n > nn(d.gTr) + 0.5 && !ende) return -1;
             erlaubt = nn(d.gTr); d.gTr = Math.max(0, nn(d.gTr) - Math.min(n, erlaubt)); saveBotState();
         }
@@ -14638,7 +14114,7 @@ if (window.WELT) {
     // gibt es eine Auffälligkeit (warnen → Admin-Seite). So bekommen echte Spieler keine Fehlalarme, wenn Gems/Münzen erst
     // einen Puls später im Konto stehen.
     const HB_V = 1, HB_WARTEN_MS = 120000, TAG = 864e5;
-    // Burg neu (4.10.: 1–60 Tage, teurer): eine Woche lang gelten für die Burg auch noch die alten (kürzeren, billigeren) Werte –
+    // Burg neu (4.10., seit 7.10. Tabelle burgZeitTab): eine Woche lang gelten für die Burg auch noch die alten (kürzeren, billigeren) Werte –
     // wer beim Hochladen gerade nach den alten Regeln baute, bekommt sonst einen falschen Alarm. Nach „Burg fair“ (09f saison.burgFair:
     // alle Burgen höchstens Stufe 4, laufende Burg-Bauten abgebrochen) baut niemand mehr nach den alten Regeln – dann nicht mehr
     const BURG_ALT_BIS = Date.UTC(2026, 9, 14), burgAlt = now => now < BURG_ALT_BIS && !(saison && saison.burgFair > 0);
@@ -14648,7 +14124,7 @@ if (window.WELT) {
         for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
-        g: 25 + 40 + 150 / 7,                         // Gems: Tagesbelohnung (höchstens 25), 3 Aufgaben + Bonus (40), Wochenkette (150 / 7 Tage)
+        g: 25 + questGemsTag() + 150 / 7,             // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42), Wochenkette (150 / 7 Tage)
         k: 3 + 1 + 3 / 7 + 1 / 7,                     // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, Wochenkette (3), epische Tageskiste
         kg: (3 * 27 + 27) / 7,                        // davon „mind. Episch“ (Wochenkette, Tag 7) als sicherer Kisten-Wert (Episch = 27)
         sh: HERO_SHARDS_DAY + HERO_SHARDS_CHAIN / 7   // Splitter: Aufgaben-Bonus, Wochenkette
@@ -14664,9 +14140,9 @@ if (window.WELT) {
     const HB_ACH = () => hbAch !== null ? hbAch : (hbAch = ACHIEVEMENTS.reduce((a, x) => a + (x.gems || 0), 0));
     function hbPass() {                               // was der Saison-Pass (frei + Premium) höchstens gibt
         if (hbPassTopf) return hbPassTopf; const t = { g: 0, k: 0, kg: 0, sh: 0, schild: 0 };
-        for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem), n = r.n || 1;
+        for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) for (const r of passRewardAt(L, prem)) { const n = r.n || 1;   // (Truppen prüft truppenPruefen)
             if (r.k === 'gems') t.g += n; else if (r.k === 'crate') t.k += n; else if (r.k === 'royal') { t.k += n; t.kg += 27 * n; }
-            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; else if (r.k === 'frame' || r.k === 'march') t.g += PASS_OWNED_GEMS; }
+            else if (r.k === 'shards') t.sh += n; else if (r.k === 'shield') t.schild += n; }
         return hbPassTopf = t;
     }
     // Helden: „Splitter-Wert“ = unverbrauchte Splitter + was Freischalten und Sterne gekostet haben
@@ -14683,7 +14159,7 @@ if (window.WELT) {
     const kWert = r => Math.pow(3, r);
     const hbKistenGrenze = N => N >= 1 ? 0.855 * N + 3 * 3.08 * Math.sqrt(N) + 27 : 0;
     const hbKistenGesamt = N => N >= 1 ? 3.42 * N + 3 * 5.4 * Math.sqrt(N) + 27 : 0;   // alle 4 Plätze zusammen (Ø 3,42 je Kiste, Streuung 5,4) – das glückliche Lila nur einmal
-    const hbPunkteGrenze = N => 25.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 12,8 je Kiste, doppelt + Start
+    const hbPunkteGrenze = N => 35.6 * N + 300;      // Stufen-Punkte (aus verkauften Teilen): Ø 17,8 je Kiste (Zerlegen 5 + Wert, 7.10.), doppelt + Start
     const hbLvlPunkte = l => 2.5 * l * (l - 1);       // Stufe 1 → l kostet 5 + 10 + … Punkte
     const hbItemWert = z => (z[0] * ITEM_MAX_LEVEL + z[1]) * (1 + z[2] * STAR_PCT / 100);
     // Alle Helden voll (5 Sterne): neue Splitter kommen als Gems (06a-aufgaben.js, 06b-pass-anleitung.js: 20 je Splitter – Abholfach, Aufgaben, Wochenkette,
@@ -14741,7 +14217,7 @@ if (window.WELT) {
         for (let l = Math.max(1, hb.lvG | 0) + 1; l <= L && l < 5000; l++) f.g = nn(f.g) + levelRewardGems(l);   // Stufen-Gems (EP sind sicher)
         if (L > (hb.lvG | 0)) hb.lvG = L;
         const n = passNo(now); if (hb.pass !== n) { hb.pass = n; hb.passF = 0; }             // Saison-Pass: nach und nach in einer halben Saison (ab Saison-Beginn bzw. ab seinem Start)
-        const frac = Math.min(1, 2 * Math.max(0, now - Math.max(PASS_EPOCH + (n - 1) * PASS_LEN, nn(hb.t0))) / PASS_LEN);
+        const frac = Math.min(1, 2 * Math.max(0, now - Math.max(PASS_EPOCH + (n - 1) * PASS_LEN, nn(hb.t0), nn(hb.passAb))) / PASS_LEN);   // (passAb: Saison-Reset – der Pass fängt neu an)
         if (frac > nn(hb.passF)) { const T = hbPass(), d = frac - nn(hb.passF); hb.passF = frac; for (const k of ['g', 'k', 'kg', 'sh', 'schild']) f[k] = nn(f[k]) + T[k] * d; }
     }
     // Kosten {c, g, h, s, e}: aus Topf (ausgegeben), Konto und Spielraum – alles oder nichts
@@ -14891,7 +14367,7 @@ if (window.WELT) {
         hb.hs = jetzt;
         if (zu.length) hbWarte(who, hb, 'helden', now, 'Helden: ' + zu.join(', ') + ' – dafür reichen seine Splitter nicht (' + fz(wert(neu)) + ' verlangt, möglich ' + fz(nn(hb.shB)) + ').', wert(neu) - nn(hb.shB));
     }
-    // Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = 300) oder geschenkt bekommen haben kann (Pass, Startschild)
+    // Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = SHIELD_PRICES[24]) oder geschenkt bekommen haben kann (Pass, Startschild)
     function hbSchildPruefen(who, hb, m, p, now, schildAlt) {
         if (schildAlt && nn(p.shieldUntil) <= schildAlt) { hbGut(hb, 'schild'); return; }   // sein Handy meldet noch den Schild, den die Welt fallen ließ: gilt nicht (welt.js), kostet nichts
         const S = Math.min(nn(p.shieldUntil), now + 8 * TAG);
@@ -14966,7 +14442,7 @@ if (window.WELT) {
     WELT.klemmen = hbKlemmen;
     // Rahmen (Alexander 6.10.): nicht mehr zu kaufen – was er bis jetzt hatte, merkt sich das Hauptbuch einmal (neu: nichts), danach
     // kommt aus dem Profil keiner mehr dazu. Saison-Rahmen und die aus der Mitte führt die Welt selbst (05a rahmenHat / rahmenVon).
-    // (Saisonkrone: Saison-Pass Stufe 40 – die Stufe kennt das Hauptbuch nicht genau, darum erlaubt)
+    // (Saisonkrone: gab es bis 7.10. im Saison-Pass – wer sie hat, behält sie, darum erlaubt)
     // Gemerkt wird erst am ersten Profil mit look.frames (nach dem Neustart kommen zuerst alte Profile ohne die Listen – sonst blieben
     // gekaufte Rahmen für immer leer); bis dahin wie vorher der angelegte (welt.js profilZuBotRoh)
     function hbRahmen(hb, b, p) {
@@ -15012,7 +14488,7 @@ if (window.WELT) {
     // was er nach dem letzten Reset behalten durfte (hb.tpB) + was der Weltrechner ihm seitdem gab (Thron, throneEarnedOf) + der
     // Saison-Pass; mit Profil höchstens seine Punkte darin (+ was danach noch kam). B: einmalige Ausnahme (Alexander 6.10.) –
     // Edelsteine genau SAISON_AUSNAHME_GEMS, Holz/Stein/Eisen 0, die Töpfe des Ausgegebenen leer (Abholfach hb.gIn bleibt).
-    function hbPassTp() { let n = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) { const r = passRewardAt(L, prem); if (r.k === 'tp') n += r.n || 1; } return n; }
+    function hbPassTp() { let n = 0; for (let L = 1; L <= PASS_LVLS; L++) for (const prem of [false, true]) for (const r of passRewardAt(L, prem)) if (r.k === 'tp') n += r.n || 1; return n; }
     function hbThronReset(who, hb, p, now) {
         const E = throneEarnedOf(who), pass = hbPassTp() * (Math.floor(Math.max(0, now - Math.max(PASS_EPOCH, nn(hb.tpT))) / PASS_LEN) + 1);
         let hoch = (hb.tpE === undefined ? E : nn(hb.tpB) + Math.max(0, E - nn(hb.tpE))) + pass;
@@ -15027,8 +14503,8 @@ if (window.WELT) {
         if (m) { for (const art in m.warte) for (const x of m.warte[art]) befehlFertig(x);   // (wartende Befehle der alten Welt: erledigt)
             if (m.init && hb) { if (m.gGeeicht) hb.gU = Math.round(m.g.u); if (m.rk) hb.rU = { h: Math.round(m.rk.h.u), s: Math.round(m.rk.s.u), e: Math.round(m.rk.e.u) }; } }
         delete wacheMem[who]; delete nbMem[who];      // (beim nächsten Ansehen neu – aus den Werten unten)
-        if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; }
-        if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; }
+        if (d) { d.u = 0; d.w = 0; d.lm = 1; d.lv = 1; delete d.fl; delete d.pTr; }   // (pTr: sein Saison-Pass fängt neu an – Truppen-Stufen wieder abholbar)
+        if (hb) { hb.sk = {}; hb.lvG = 1; hb.nb = ''; hb.sp = []; delete hb.nbAlle; hb.w = {}; hb.passF = 0; hb.passAb = Date.now(); }
         if (f > 0 && f < 1) {
             if (hb) hb.cA = Math.floor(nn(hb.cA) * f);   // (Holz/Stein/Eisen bleiben – auch ihre Töpfe rU/rA, 6.10.)
             if (d) d.gC = Math.floor(nn(d.gC) * f);
@@ -15080,7 +14556,7 @@ if (window.WELT) {
     }
     function nebelRunde(who, hb, now) {
         const z = nbZ(who, hb), I = nbIndex(), own = botOwnedIslands[who], weit = REVEAL_BASE * (AUF ? AUF.nebelWeite(who) : 1);
-        if (own) for (const id of own) if (!z.gesehen.has(id)) { z.gesehen.add(id); const i = islandById[id]; if (i && nbAufdecken(z, i.x, i.y, weit)) z.dirty = true; }
+        if (own) for (const id of own) if (!z.gesehen.has(id)) { z.gesehen.add(id); const i = islandById[id]; if (i && nbAufdecken(z, i.x, i.y, sichtVon(i, weit))) z.dirty = true; }
         if (hb.sp && hb.sp.length) hb.sp = hb.sp.filter(sc => {    // Erkundungs-Späher: unterwegs eine Gasse, am Ziel die Umgebung
             const h = islandById[sc[0]]; if (!h) return false;
             const L = Math.hypot(sc[1] - h.x, sc[2] - h.y) || 1, prog = Math.max(0, Math.min(1, (now - sc[3]) / Math.max(1, sc[4] - sc[3])));
@@ -15104,6 +14580,7 @@ if (window.WELT) {
             if (now < sc[1]) return true;
             const t = islandById[sc[0]], ow = t && islandOwnerOf(t.id);
             const r = { art: 'spaeh', ziel: sc[0] };
+            if (ow && ow !== who && neulingAktiv(ow)) { r.fehl = 1; WELT.nachricht(parseInt(who.slice(1), 10), r); return false; }   // inzwischen Anfängerschutz (neu angefangen, Saison): kein Bericht
             if (t) { r.troops = effectiveTroops(t); r.defense = effectiveDefense(t); r.verst = verst.l.reduce((s, v) => s + (v.t === t.id ? v.n : 0), 0); r.spy = ow && ow !== who ? spaeherBlick(ow, t) : null; if (ow && ow !== who) ausgespaeht(ow, who, t.id); }   // (verst: Verstärkung – eigene Zeile im Bericht)
             WELT.nachricht(parseInt(who.slice(1), 10), r); return false;
         });
@@ -15235,7 +14712,7 @@ if (window.WELT) {
             if (zuOft(wm(who), 'spaehen', 120, 3600000)) { warnen(who, 'spaehen', 'Über 120 Späher in einer Stunde – abgelehnt.'); return nein(); }
             const t = islandById[b.ziel], pt = { x: Number.isFinite(b.ex) ? b.ex : t.x, y: Number.isFinite(b.ey) ? b.ey : t.y, lm: t.landmassId };
             if (b.blick) {                            // Späher zu einer fremden Basis: bei Ankunft schreibt der Weltrechner den Bericht (nur er kennt die Werte des Herrn)
-                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id)) return nein();
+                const ow = islandOwnerOf(t.id); if (!ow || ow === who || bossAt(t.id) || neulingAktiv(ow)) return nein();   // (Anfängerschutz: niemand späht Neulinge aus)
                 let h = null, hd = Infinity; for (const id of botOwnedIslands[who] || []) { const i = islandById[id]; if (!i) continue; const d = Math.hypot(i.x - t.x, i.y - t.y); if (d < hd) { hd = d; h = i; } }
                 if (!h || !spaeherWeg(h.landmassId, t.landmassId, who)) return nein();
                 if (!nbKennt(who, hb, t.landmassId)) { warnen(who, 'spaehen', 'Späher zu einer Basis, die er nicht kennen kann – abgelehnt.'); return nein(); }
@@ -15261,6 +14738,14 @@ if (window.WELT) {
             const hb = hbDa(who); if (hb && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: TELEPORT_GEMS })) { warnen(who, 'gems', 'Hauptstadt verlegen für ' + TELEPORT_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TELEPORT_GEMS); return; }
             const from = botCapitalOf(who); if (from !== null && from !== undefined && from !== b.insel) { islandTroops[b.insel] = (islandTroops[b.insel] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0; }
             bs.capital = b.insel; capitalCache = null; saveBotState(); saveGame(); requestRender(); befehlBezahlt(b);
+        },
+        teleport(who, b) {                            // Hauptstadt an eine freie Stelle (08d tpPruefen) – nur echte Spieler
+            const bs = loadBotState()[who]; if (!bs || !bs.mensch || typeof b.x !== 'number' || typeof b.y !== 'number') return;
+            if (zuOft(wm(who), 'teleport', 20, 3600000)) { warnen(who, 'teleport', 'Über 20-mal in einer Stunde teleportiert – abgelehnt.'); return; }
+            if (tpPruefen(who, b.x, b.y)) return;           // (kein Platz, Pass zu, Marsch unterwegs – das Handy prüft dasselbe; ein Wettlauf ist kein Schummeln)
+            if (b.gratis === true) { if (!tpGratis(who)) { warnen(who, 'teleport', 'Gratis-Teleport verlangt, steht ihm nicht (mehr) zu – abgelehnt.'); return; } bs.tpGratis = 1; }
+            else { const hb = hbDa(who); if (hb && !b._nach && !schonBezahlt(wacheSehen(who), b, true) && !hbZahlen(who, hb, wacheSehen(who), { g: TP_GEMS })) { warnen(who, 'gems', 'Teleport für ' + TP_GEMS + ' Gems – so viele kann er nicht haben. Abgelehnt.', TP_GEMS); return; } }
+            tpVerlegen(who, b.x, b.y); saveBotState(); befehlBezahlt(b);
         },
         truppen(who, b) {                             // geschenkte Truppen (Stufe, Thron-Shop, Krankenhaus, Fund, Admin) → Hauptstadt
             const x = { b, bis: Date.now() + WACHE_WARTEN_MS }, l = wm(who).warte.truppen; l.push(x); wacheAbarbeiten(who);
@@ -15416,7 +14901,8 @@ if (window.WELT) {
     };
 
     // Nachrichten vom Weltrechner an mich: Münzen, Gems, EP, Thron-Punkte, Krankenhaus, Splitter, Zahlen
-    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires', drache: 'drache', inv: 'inv' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an)
+    const STAT_NAMEN = { caps: 'captures', pvp: 'pvpWins', defs: 'defends', bosses: 'bosses', temples: 'temples', scouts: 'scouts', tolls: 'tolls', tollCoins: 'tollCoins', armyWins: 'armyWins', healed: 'healed', barb: 'barb', dboss: 'dboss', throneMin: 'throneMin', heroFires: 'heroFires', drache: 'drache', inv: 'inv',
+        lager: 'lager', qb: 'qb', qd: 'qd', qi: 'qi', invPkt: 'invPkt', qHilfe: 'qHilfe', qVerst: 'qVerst', qRally: 'qRally' };   // (Thron-Minuten und Helden-Zünder zählt der Weltrechner – vorher kamen sie nie an; die q…: für Tagesaufgaben und Saison-Pass, QUEST_STAT)
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'delta') return;
         if (e.coins) coins = Math.max(0, coins + e.coins);
@@ -15456,7 +14942,9 @@ if (window.WELT) {
         const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
         const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'woche', title = String(e.title || '').slice(0, 80);
         if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Platz (Ende einer Welt-Saison): der Saison-Rahmen, gleich angelegt (bis zum nächsten Saison-Ende)
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate }) || crate >= 0 || e.sh > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
+        const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
+        if (k && inboxList().some(x => x.k === k)) return;                     // (dieselbe Stufe nie zweimal im Fach)
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;
@@ -15508,7 +14996,7 @@ if (window.WELT) {
 
     if (store.get('openWaterNeulingBis') === null) {
         store.set('openWaterNeulingBis', String(Date.now() + NEULING_MS));
-        afterSplash(() => setTimeout(() => flashHint('Anfängerschutz: 48 Stunden kann dich niemand angreifen – bau dich in Ruhe auf. (Er endet früher, wenn dein Reich 50 Mio. Macht hat oder du einen echten Spieler angreifst.)', 9000), 4000));
+        afterSplash(() => setTimeout(() => flashHint('Anfängerschutz: 48 Stunden kann dich niemand angreifen und niemand ausspähen – bau dich in Ruhe auf. (Er endet früher, wenn du 100.000 Truppen hast oder einen echten Spieler angreifst.)', 9000), 4000));
     }
     // frisch beigetreten und nicht selbst Weltrechner: den Platz anmelden
     if (startplatzNeu && !WELT.leiter) WELT.befehl('beitreten', { insel: playerIslandId });

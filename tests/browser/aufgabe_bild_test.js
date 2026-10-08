@@ -59,16 +59,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(g.chat, 'Bündnis-Chat leer: Symbol + Satz statt grauer Zeile', g.chat);
   ok(g.rallyBild && g.zeilen <= 3 && !g.lang, 'Rally: Banner + höchstens 3 Zeilen Text, die lange Erklärung hinter „i“', { bild: g.rallyBild, zeilen: g.zeilen, lang: g.lang });
   ok(g.knopf && g.zu, 'Rally leer: goldener Knopf „Ziel auf der Karte wählen“ (Text passt), schließt das Fenster', { knopf: g.knopf, zu: g.zu });
-  // 3) Shop: Markt noch nicht gebaut → Bild + Knopf in die Stadt; Schild-Vorrat leer → ein Satz
+  // 3) Shop: Markt noch nicht gebaut → Bild + Knopf in die Stadt; Rucksack: ohne Schild „Kaufen“, mit Schild „Einsetzen“
   const s = await p.evaluate(async passt => { passt = eval(passt);
     const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};
     openShop('markt'); await warte(300);
     const k = document.querySelector('#shopMarkt .ev-leer [data-markt-bauen]'); o.markt = !!k && passt(k) && !!document.querySelector('#shopMarkt .ev-leer > .icon'); o.ziel = k ? k.dataset.marktBauen : '';
     o.text = k ? k.innerText.trim() : '';
-    store.remove('openWaterShieldStock'); openShop('shield'); await warte(300);
-    o.leer = /Kein Schild im Vorrat/.test(document.getElementById('shieldUse').innerText) && !document.querySelector('[data-shield-use]');
-    store.set('openWaterShieldStock', JSON.stringify({ 2: 1, 8: 0, 24: 0 })); renderShop(); await warte(200);
-    o.voll = document.querySelectorAll('[data-shield-use]').length === 3; store.remove('openWaterShieldStock');
+    store.remove('openWaterShieldStock'); openRucksack(); await warte(300);
+    o.leer = !document.querySelector('[data-rk-schild]') && document.querySelectorAll('#rkInhalt [data-rk-kauf="schild"]').length === 3;
+    store.set('openWaterShieldStock', JSON.stringify({ 2: 1, 8: 0, 24: 0 })); renderRucksack(); await warte(200);
+    o.voll = document.querySelectorAll('[data-rk-schild]').length === 1 && !!document.querySelector('[data-rk-schild="2"]'); store.remove('openWaterShieldStock');
     openShop('markt'); await warte(200); document.querySelector('#shopMarkt [data-markt-bauen]').click();
     for (let i = 0; i < 40 && !(!cityView.hidden && cityOpenId === o.ziel); i++) await warte(250);   // (Stadt blendet ein – auf belasteter Maschine dauert es)
     o.stadt = !cityView.hidden && cityOpenId === o.ziel; o.offen = cityOpenId; o.shopZu = !isPanelOpen(shopPopup);
@@ -76,11 +76,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   }, passt);
   ok(s.markt && s.ziel === (/Markt/.test(s.text) ? 'market' : '_keep'), 'Shop → Markt ohne Markt: Bild + goldener Knopf (' + s.text + '), Text passt', s);
   ok(s.stadt && s.shopZu, 'Knopf schließt den Shop und öffnet die Stadt beim passenden Gebäude', { stadt: s.stadt, offen: s.offen, shopZu: s.shopZu });
-  ok(s.leer && s.voll, 'Schild-Vorrat leer: ein Satz statt drei „0×“-Kästen; mit Vorrat die drei Knöpfe', { leer: s.leer, voll: s.voll });
+  ok(s.leer && s.voll, 'Rucksack: ohne Schild je Größe „Kaufen“, mit Schild „Einsetzen“ nur dort', { leer: s.leer, voll: s.voll });
   // 4) Desktop: Angriffs-Fenster mit Zweitheld-Wahl (wie am Handy)
   const D = await laden({ viewport: { width: 1440, height: 900 } });
   const a = await D.p.evaluate(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms));
+    { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); }   // Helden erst mit Heldenhalle (Merkliste 21)
     const hs = loadHeroes(); HEROES.forEach((h, i) => { if (hs[h.id]) hs[h.id].own = i < 3; });
     const home = islandById[playerIslandId], ziel = islands.filter(i => !ownedIslands.has(i.id) && i.type === 'tower').sort((x, y) => Math.hypot(x.x - home.x, x.y - home.y) - Math.hypot(y.x - home.x, y.y - home.y))[0];
     openIslandPopup(ziel); await warte(300); previewSourceId = playerIslandId; previewFraction = 1; previewHero = HEROES[0].id; previewHero2 = null; popupView = 'preview'; renderPopup(); await warte(500);

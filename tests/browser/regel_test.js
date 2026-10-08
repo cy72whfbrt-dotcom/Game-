@@ -28,9 +28,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     verst.l = verst.l.filter(v => v.id !== 'vtest'); verstSpeichern();
     // 3) gemeinsamer Angriff: A und B greifen dich getrennt an, B kommt dazu
     verst.l.push({ id: 'vt2', w: C.id, t: mein, n: 5e5, von: botCapitalOf(C.id), at: Date.now() }); verstSpeichern();
-    islandTroops[mein] = 1e5; islandTroops[ca] = 1e8; islandTroops[cb] = 1e8;
+    store.set('openWaterNeulingBis', '0');   // (Anfängerschutz aus: hier greifen sie dich an)
+    const Lp = islandById[mein].landmassId, frei = islands.filter(i => i.landmassId === Lp && i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id) && !isCapital(i.id)).map(i => i.id);
+    const gib = (w, id) => { clearIslandOwner(id); botOwnedIslands[w].add(id); return id; };   // A und B bekommen eine Basis im Gebiet deiner Hauptstadt (Märsche gehen nur über Pässe)
+    const qa = gib(A.id, frei[0]), qb = gib(B.id, frei[1]);
+    islandTroops[mein] = 1e5; islandTroops[qa] = 1e8; islandTroops[qb] = 1e8;
     const send = (src, who, n) => { AUF.frei.an(); try { launchAttack(src, mein, who, n); } finally { AUF.frei.aus(); } const a = pendingAttacks[pendingAttacks.length - 1]; a.resolveAt = Date.now() + 500; return a.attackerBotId === who; };
-    out.gesendet = [send(ca, A.id, 3e6), send(cb, B.id, 3e6)];
+    out.gesendet = [send(qa, A.id, 3e6), send(qb, B.id, 3e6)];
     return out; });
   console.log(JSON.stringify(r));
   ok(r.rally.bonus === r.rally.erwartet && r.rally.bonus !== r.rally.alteRegel, 'Rally: Mitglied zählt mit SEINEM Skill (nicht mehr dem des Anführers)', r.rally);

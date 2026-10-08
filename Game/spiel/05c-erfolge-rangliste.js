@@ -12,7 +12,7 @@ function warStat(k, n, foe) {
     const keys = Object.keys(warDays).sort(); while (keys.length > 8) delete warDays[keys.shift()];
     store.set('openWaterWarDays', JSON.stringify(warDays));
 }
-function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); passBump(k, n); }
+function statBump(k, n) { playerStats[k] = (playerStats[k] || 0) + (n || 1); store.set('openWaterStats', JSON.stringify(playerStats)); achCheckSoon(); passBump(k, n); questStat(k, n); }
 function goalBump(who, k, n) { if (!who) return; if (who === 'player') { try { statBump(k, n); } catch (e) {} } else if (botById[who]) botStat(who, k, n); }   // a counter for the Erfolge - yours or anyone else's
 const achStat = k => playerStats[k] || 0;
 const cityMinLevel = () => { const c = loadCity(); return Math.min(...CITY_BUILDINGS.filter(b => !['embassy', 'market'].includes(b.id)).map(b => c.levels[b.id] || 0)); };   // (the newer Lager doesn't count: nothing earned is lost)
@@ -111,11 +111,15 @@ if (store.get('openWaterAchLook') === null) {                            // (the
 const goalsPopup = document.getElementById('goalsPopup'); var goalsTab = 'daily', achReadyN = 0;   // Ziele: the daily tasks and the Erfolge in one sheet
 let achKnown = null, achTimer = null;
 function achCheckSoon() { clearTimeout(achTimer); achTimer = setTimeout(achCheck, 400); }
+function achFensterOffen() {                                                 // Handy: ein offenes Fenster füllt den Schirm – der Erfolgs-Hinweis kommt erst danach (nicht über Heldenkarten/Gebäudekopf)
+    if (uiLayout() === 'desktop') return false;
+    return !document.getElementById('heroHall').hidden || !document.getElementById('citySheet').hidden || document.body.classList.contains('has-panel');
+}
 function achCheck() {                                                        // newly reached ones are announced once
     if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
     const ready = achClaimable();
     if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-    for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg erreicht: ' + a.name + ' – hol dir ' + a.gems + ' Edelsteine unter „Events“ ab.', 4500); sfx('crown'); }
+    if (!achFensterOffen() && !hintFrisch()) for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg: ' + a.name + ' – ' + a.gems + ' Edelsteine unter „Events“', 4500); sfx('crown'); }   // (frischer Hinweis wie „Truppen geheilt“: der Erfolg kommt eine Runde später)
     updateGoalsBadge(ready.length);
     if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
 }
@@ -145,10 +149,10 @@ function claimAch(a) {
 }
 document.getElementById('achList').addEventListener('click', e => {
     if (e.target.closest('[data-ach-all]')) { const l = achClaimable(), n = l.reduce((s, a) => s + claimAch(a), 0); if (!n) return;
-        saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für ' + l.length + ' Erfolge.', 2500); renderAchievements(); achCheck(); return; }
+        saveProgression(); updateHud(); sfx('gem'); beuteFenster('Erfolge', [{ a: 'gems', n }], { unter: l.length + ' Erfolge abgeholt' }); renderAchievements(); achCheck(); return; }
     const b = e.target.closest('[data-ach]'); if (!b || b.disabled) return;
     const a = ACHIEVEMENTS.find(q => q.id === b.dataset.ach), n = claimAch(a); if (!n) return;
-    saveProgression(); updateHud(); sfx('gem'); flashHint('+' + fmtNum(n) + ' Edelsteine für „' + a.name + '“.', 2500);
+    saveProgression(); updateHud(); sfx('gem'); beuteFenster('Erfolg', [{ a: 'gems', n }], { unter: a.name });
     renderAchievements(); achCheck();
 });
 document.getElementById('achList').addEventListener('toggle', e => { if (e.target.classList && e.target.classList.contains('ach-done')) achOpenDone = e.target.open; }, true);
@@ -217,7 +221,7 @@ function openRulerProfile(who) {
     document.getElementById('rulerBody').innerHTML =
         '<div class="rp-stats"><div class="rp-stat"><small>Macht</small><b>' + fmtCompact(powerOf(pr)) + '</b></div><div class="rp-stat"><small>Basen</small><b>' + fmtNum(pr.bases) + '</b></div>' +
         '<div class="rp-stat"><small>Stufe</small><b>' + pr.lvl + '</b></div><div class="rp-stat"><small>Tempel</small><b>' + (rulerOwner() === who ? 'Herrscher' : pr.temple ? escapeHtml(pr.temple.name) : '–') + '</b></div></div>' +
-        (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now()) + '</span></div>' : '') +
+        (ownerShielded(who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + (neulingVon(who) >= ownerShieldUntil(who) ? 'Anfängerschutz – noch ' + fmtHours(neulingVon(who) - Date.now()) + ' (oder bis 100.000 Truppen)' : (who === 'player' ? 'Dein Friedensschild' : 'Friedensschild') + ' aktiv – noch ' + fmtHours(ownerShieldUntil(who) - Date.now())) + '</span></div>' : '') +
         (verdeckt ? '' : passChip(who)) + (last ? '<div class="rp-last">' + last + '</div>' : '') +
         (verdeckt ? verdecktHtml :
         '<div class="sect"><h4>Ausrüstung</h4></div><div class="rp-gear">' + gear + '</div>' +
@@ -268,10 +272,10 @@ function escapeHtml(str) {                         // auch Anführungszeichen: s
 const rankPopup = document.getElementById('rankPopup'), RANK_TOP = 50;
 let rankTab = 'power';
 const RANK_TABS = { power: { t: 'Macht', sub: 'Die Stärke des ganzen Reichs', unit: 'Macht' },
-    caps: { t: 'Eroberungen', sub: 'Eroberte Basen insgesamt', unit: 'erobert' },
+    caps: { t: 'Eroberungen', sub: 'Eroberte Basen in dieser Saison', unit: 'erobert' },
     burg: { t: 'Hauptstadt', sub: 'Burg-Stufe, dann Forschung', unit: 'Burg-Stufe' },
     titles: { t: 'Titel', sub: 'Wer die Mitte hält und wer einen Titel trägt', unit: 'Thron-P.' },
-    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · alle je verdienten', unit: 'Thron-P.' } };
+    week: { t: 'Thron-Punkte', sub: 'Fürs Halten der Mitte · in dieser Saison verdient', unit: 'Thron-P.' } };
 function conquestsOf(who) { return who === 'player' ? playerStats.captures || 0 : botConquests(who); }
 function foPunkte(who, bs) {                             // alle erforschten Stufen – von anderen nur die Summe (rechnet der Weltrechner, foP)
     if (!AUF) return 0; if (who !== 'player' && fremdGeheim()) { const b = (bs || loadBotState())[who]; return b && Number.isFinite(b.foP) ? b.foP : 0; }
@@ -298,17 +302,17 @@ function renderRankings() {
     const macht = e => { if (e.macht === undefined) { const pr = whoProfile(e.who); e.macht = pr ? powerOf(pr) : 0; } return e.macht; };
     const gleich = (a, b) => macht(b) - macht(a) || (a.who === 'player') - (b.who === 'player');   // Gleichstand: erst Macht, sonst du hinter den anderen (nie bevorzugt)
     if (rankTab === 'power') { for (const e of people) { const pr = whoProfile(e.who); e.val = pr ? powerOf(pr) : 0; e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); }
-    else if (rankTab === 'caps') { for (const e of people) { e.val = conquestsOf(e.who); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
+    else if (rankTab === 'caps') { for (const e of people) { e.val = rangSaison(e.who, 0); e.sub = escapeHtml(e.title) + ' <i>· hält ' + basesTxt(e.bases) + '</i>'; } list = people.slice(); saveBotState(); }
     else if (rankTab === 'burg') { for (const e of people) { e.val = AUF ? AUF.burgStufe(e.who) : 1; e.fo = foPunkte(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· Forschung ' + fmtNum(e.fo) + '</i>'; }
         list = people.slice().sort((a, b) => b.val - a.val || b.fo - a.fo || b.lvl - a.lvl || gleich(a, b)); }
     else if (rankTab === 'titles') {                      // the ruler first, then everyone wearing a title from the middle
         medals = false; const by = {}; for (const x of TITLES) if (t.by[x.key]) by[t.by[x.key]] = x;
-        for (const e of people) { const x = by[e.who]; e.val = throneEarnedOf(e.who, bs);
+        for (const e of people) { const x = by[e.who]; e.val = rangSaison(e.who, 1, bs);
             e.sub = e.who === ruler ? '<span class="lb-t is-ruler">Herrscher</span>' : x ? '<span class="lb-t' + (x.good ? '' : ' is-bad') + '" title="' + x.desc + '">' + x.name + '</span> <i>' + (x.v > 0 ? '+' : '−') + Math.round(Math.abs(x.v) * 100) + ' % ' + ({ troops: 'Truppen', coins: 'Münzen', attack: 'Angriff', defense: 'Abwehr' })[x.kind] + '</i>' : '<i>kein Titel</i>'; }
         const tr = e => e.who === ruler ? 0 : by[e.who] ? (by[e.who].good ? 1 : 2) : 3;
         list = people.filter(e => tr(e) < 3).sort((a, b) => tr(a) - tr(b) || b.val - a.val || gleich(a, b));
         empty = ruler ? '' : 'Niemand hält gerade die Mitte – erobere den Mega-Tempel, dann verteilst du die Titel.';
-    } else { for (const e of people) { e.val = throneEarnedOf(e.who, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
+    } else { for (const e of people) { e.val = rangSaison(e.who, 1, bs); e.sub = escapeHtml(e.title) + ' <i>· ' + basesTxt(e.bases) + '</i>'; } list = people.filter(e => e.val > 0);
         empty = 'Noch hat niemand Thron-Punkte geholt. Halte die Mitte oder einen Wächter-Tempel.'; }
     if (rankTab !== 'titles' && rankTab !== 'burg') list.sort((a, b) => b.val - a.val || b.lvl - a.lvl || gleich(a, b));
     const lim = RANK_TOP, top = list.slice(0, lim), mi = list.findIndex(e => e.who === 'player');

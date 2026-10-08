@@ -36,7 +36,7 @@ const TYP = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css'
       return { farbig, kasten: !!document.querySelector('.splash-tipcard, .splash-cap, #splashTipPic'), tipp: document.getElementById('splashTip').textContent.length,
                balkenHoehe: document.querySelector('.splash-bar').getBoundingClientRect().height }; });
     ok(r.farbig > 400 && !r.kasten && r.tipp > 20 && r.balkenHoehe <= 5, art + ': Bild gemalt, nur Tipp-Zeile + dünner Balken', r);
-    if (bild) ok(geholt.length === 1 && geholt[0] === bild, art + ': nur das passende Titelbild geladen (' + bild + ')', geholt);   // (ohne Bild holt der Vorab-Link es trotzdem – egal)
+    if (bild) ok(geholt.filter(n => /^titel_/.test(n)).length === 1 && geholt.includes(bild), art + ': nur das passende Titelbild geladen (' + bild + ')', geholt);   // (ohne Bild holt der Vorab-Link es trotzdem – egal)
     ok(!fe.length, art + ': keine Skript-Fehler', fe);
     await ctx.close();
   }

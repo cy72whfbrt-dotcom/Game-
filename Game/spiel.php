@@ -194,19 +194,10 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mb-chip::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
 .res{position:relative;flex:1 1 auto;min-width:0;height:100%;display:flex;align-items:center;justify-content:center;gap:var(--ab-1);padding:0 var(--ab-1)}
 .res > .icon{width:16px;height:16px}
-/* der Rohstoff-Knopf: rund, oben rechts (Tippfläche 44 px) */
-.hud > .res--roh{flex:none;width:var(--hud-h);height:var(--hud-h);padding:0;justify-content:center;border-radius:50%;
-  background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.hud > .res--roh .roh-mini b{min-width:0;font-size:var(--fs-13)}
-@media (max-width:899px) and (min-height:501px){   /* Handy: Beschriftung unter dem runden Knopf (wie „Du“ unter dem Wappen, rechtsbündig – sonst ragt sie aus dem Bild) – antippen öffnet Holz/Stein/Eisen */
-  .hud > .res--roh::after{content:"Rohstoffe";position:absolute;top:calc(100% + 4px);right:-2px;pointer-events:none;
-    font:600 10px/1 var(--font-ui);color:var(--gold-100);white-space:nowrap;text-shadow:0 1px 2px #000} }
-@media (min-width:900px) and (min-height:501px){ .hud > .res--roh .roh-mini{display:flex} }   /* Desktop: Holz · Stein · Eisen immer im HUD */
-.hud > .res--roh::before{content:"";position:absolute;inset:-7px}   /* (flex-basis auto: freier Platz geht an den längeren Wert – „100 Mrd.“ statt „100 Mr…“) */
 .res b{font:600 var(--fs-13)/1 var(--font-ui);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .res--coin > .icon{color:var(--res-coin)} .res--gem > .icon{color:var(--res-gem)} .res--troop > .icon{color:var(--res-troop)}
 /* phone portrait: the dock already has Shop - the "+" would only squeeze the gem value into an ellipsis */
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .hud-werte,.res--roh,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ .hud-werte,.nav,.mapctl,.toast,.mabar{background:var(--glass-strong)} }
 
 /* avatar ring (profile header + desktop HUD). --progress (0-100) is written by renderProfile */
 .avatar-ring{--progress:0;position:relative;flex:none;width:48px;height:48px;border-radius:50%;padding:2px;
@@ -227,10 +218,10 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
    NAVIGATION  #cornerButtons  (phone = bottom dock)
    ===================================================================== */
 .nav{position:fixed;z-index:var(--z-dock);left:0;right:0;bottom:0;height:calc(var(--dock-h) + var(--safe-bd));
-  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(5,1fr);
+  padding:0 calc(var(--safe-r) + 6px) var(--safe-bd) calc(var(--safe-l) + 6px);display:grid;grid-template-columns:repeat(6,1fr);
   background:linear-gradient(180deg,rgb(18,21,28),rgb(8,10,13));border-top:1px solid var(--line-2);box-shadow:0 -12px 30px rgba(0,0,0,.45)}
 .nav::before{content:"";position:absolute;left:18%;right:18%;top:-1px;height:1px;background:linear-gradient(90deg,transparent,var(--gold-200),transparent)}
-/* Leiste: 5 runde Knöpfe mit festen Plätzen (Karte/Stadt · Bündnis · Kampf · Events · Shop); das Profil öffnet das Spielerbild im HUD */
+/* Leiste: 6 runde Knöpfe mit festen Plätzen (Karte/Stadt · Bündnis · Kampf · Events · Rucksack · Shop); das Profil öffnet das Spielerbild im HUD */
 .nav-btn{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;color:var(--tx-2);transition:color var(--dur-1)}
 .nav-btn > .icon{width:var(--k-rund);height:var(--k-rund);padding:13px;border-radius:50%;border:1px solid var(--line-2);color:var(--gold-200);
   background:radial-gradient(circle at 50% 30%,#232833,#0e1116);box-shadow:var(--sh-1);transition:border-color var(--dur-1),box-shadow var(--dur-1)}
@@ -266,10 +257,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .troop-in{width:9.5em;max-width:46vw;height:30px;padding:0 8px;border:1px solid var(--line-2);border-radius:var(--r-xs);background:#12151b;color:var(--tx-1);font:700 var(--fs-13)/1 var(--font-ui);text-align:right;font-variant-numeric:tabular-nums}
 .troop-in.is-bad{border-color:#e0685c;box-shadow:0 0 0 2px rgba(224,104,92,.25)} @media (pointer:coarse){ .troop-in{height:36px} }
 .troop-in:focus{outline:none;border-color:var(--gold-300);box-shadow:0 0 0 2px rgba(214,170,90,.25)}
-.look-title .icon{width:10px;height:10px}
-.look-titles{display:flex;flex-wrap:wrap;gap:6px}
-.look-title{display:inline-flex;align-items:center;gap:4px;min-height:34px;padding:6px 12px;border-radius:999px;border:1px solid var(--line-2);background:rgba(255,255,255,.03);color:var(--tx-1);font:600 var(--fs-12)/1 var(--font-ui)}
-.look-title.on{border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .look-title:disabled{opacity:.4}
 .pfoot[hidden]{display:none} #profileTabs.tabs{grid-template-columns:repeat(5,minmax(min-content,1fr))} #shopTabs.tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
 .pill--throne .icon{color:#f2c75c} .psub .pill + .pill{margin-left:6px}
 .throne-status{display:grid;gap:6px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;
@@ -363,33 +350,29 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .pass-prem > span,.pass-old > span{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px} .pass-prem b,.pass-old b{font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)}
 .pass-prem small,.pass-old small{font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3);font-variant-numeric:tabular-nums} .pass-prem .btn{flex:none;gap:4px}
 .pass-all{width:100%;justify-content:center}
-.pass-track{display:grid;gap:6px;position:relative}
-.pass-head{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:6px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3);text-align:center}
-.pass-head span{display:inline-flex;align-items:center;justify-content:center;gap:4px} .pass-head .icon{width:11px;height:11px} .pass-head span:last-child{color:#8ff5e6}
-.pass-row{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:6px;align-items:stretch;position:relative}
-.pass-row::before{content:"";position:absolute;left:50%;top:-6px;bottom:0;width:4px;margin-left:-2px;background:rgba(255,255,255,.08);z-index:0}
-.pass-row.is-on::before{background:linear-gradient(180deg,var(--gold-300),var(--gold-500))}
-.pass-row:first-child::before{top:50%}
-.pass-node{align-self:center;justify-self:center;position:relative;z-index:1;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:800 var(--fs-12)/1 var(--font-ui);color:var(--tx-3);background:#1c1f27;border:2px solid var(--line-2)}
-.pass-row.is-on .pass-node{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420)}
-.pass-row.is-next .pass-node{border-color:var(--gold-300);color:var(--gold-100);box-shadow:0 0 0 3px rgba(242,210,122,.15)}
-.pass-cell{position:relative;display:flex;align-items:center;gap:8px;min-height:50px;padding:6px 8px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.025);text-align:left;color:var(--tx-2)}
-.pass-cell.is-p{background:linear-gradient(100deg,rgba(91,63,196,.12),rgba(31,138,138,.08));border-color:rgba(143,245,230,.18)}
-.pass-cell.is-lock{opacity:.55} .pass-cell.is-closed{opacity:.5}
-.pass-cell.is-ready{border-color:var(--gold-200);background:radial-gradient(120% 140% at 0% 50%,rgba(242,199,92,.22),transparent 70%),rgba(0,0,0,.2);box-shadow:0 0 10px rgba(242,210,122,.28);cursor:pointer;animation:pass-glow 1.6s ease-in-out infinite alternate}
-@keyframes pass-glow{from{box-shadow:0 0 4px rgba(242,210,122,.2)}to{box-shadow:0 0 12px rgba(242,210,122,.45)}}
-.pass-cell.is-got{opacity:.6}
-.pass-cell.is-special:not(.is-got){border-color:rgba(143,245,230,.55)}
-.pc-ic{width:28px;height:28px;flex:none;display:grid;place-items:center;border-radius:8px;background:var(--tile-bg,rgba(0,0,0,.25));border:1px solid var(--line-2)}
-.pc-ic .icon{width:16px;height:16px;color:var(--gold-200)} .pc-ic .ico-coin{color:var(--res-coin)} .pc-ic .ico-gem{color:var(--res-gem)} .pc-ic .ico-tp{color:#f2c75c} .pc-ic .ico-shard{color:#d6a6ff} .pc-ic .ico-royal{color:#ffb04a}
-.pc-ic.is-look{width:32px;height:32px;border:0;background:none}
-.pc-frame{display:block;width:30px;height:30px;border-radius:50%;padding:3px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))} .pc-frame img{display:block;width:100%;height:100%;border-radius:50%}
-.pc-flag{position:relative;width:30px;height:22px;display:block} .pc-flag::before{content:"";position:absolute;left:3px;top:1px;width:2px;height:21px;background:#d9d2c0;border-radius:1px}
-.pc-flag::after{content:"";position:absolute;left:5px;top:2px;width:20px;height:12px;background:var(--c);clip-path:polygon(0 0,100% 0,78% 50%,100% 100%,0 100%);box-shadow:0 0 8px var(--t)}
-.pc-t{min-width:0;display:flex;flex-direction:column;gap:2px} .pc-t b{font:700 var(--fs-13)/1.1 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pc-t small{font:500 10px/1.15 var(--font-ui);color:var(--tx-3);overflow:hidden;text-overflow:ellipsis}
-.pc-ok{position:absolute;top:4px;right:5px;width:15px;height:15px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pc-ok .icon{width:10px;height:10px}
-.pc-ok.is-lock{background:rgba(0,0,0,.45);color:var(--tx-3)}
+/* Pass-Leiste (7.10.): waagrecht wischen, je Stufe eine Spalte (oben Premium, Mitte Stufe, unten Frei), Belohnungs-Kacheln wie überall */
+.pl{--plz:86px;position:relative;display:flex;gap:4px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;padding:2px 2px 10px;scrollbar-width:thin}
+.pl-namen{position:sticky;left:0;z-index:3;flex:none;width:20px;display:grid;grid-template-rows:var(--plz) 30px var(--plz);gap:6px;background:linear-gradient(90deg,#11141b 75%,transparent)}
+.pl-namen span{writing-mode:vertical-rl;transform:rotate(180deg);display:flex;align-items:center;justify-content:flex-end;padding-bottom:4px;gap:4px;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
+.pl-namen span.is-p{color:#8ff5e6} .pl-namen .icon{width:11px;height:11px;transform:rotate(90deg)}
+.pl-spalte{position:relative;flex:none;width:70px;display:grid;grid-template-rows:var(--plz) 30px var(--plz);gap:6px}
+.pl-spalte::before{content:"";position:absolute;left:-4px;right:0;top:calc(var(--plz) + 19px);height:4px;background:rgba(255,255,255,.08);z-index:0}
+.pl-spalte.is-on::before{background:linear-gradient(90deg,var(--gold-500),var(--gold-300))}
+.pl-knoten{align-self:center;justify-self:center;position:relative;z-index:1;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:800 var(--fs-12)/1 var(--font-ui);color:var(--tx-3);background:#1c1f27;border:2px solid var(--line-2);font-variant-numeric:tabular-nums}
+.pl-spalte.is-on .pl-knoten{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420)}
+.pl-spalte.is-next .pl-knoten{border-color:var(--gold-300);color:var(--gold-100);box-shadow:0 0 0 3px rgba(242,210,122,.18)}
+.pl-spalte.is-viertel .pl-knoten{width:34px;height:34px;border-width:3px}
+.pl-zelle{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;border:1px solid var(--line-1);border-radius:10px;background:rgba(255,255,255,.03);color:inherit;--bk:54px;cursor:default}
+.pl-zelle.is-zwei{--bk:36px}
+.pl-zelle.is-p{background:linear-gradient(180deg,rgba(91,63,196,.16),rgba(31,138,138,.08))}
+.pl-zelle.is-lock{opacity:.6} .pl-zelle.is-closed{opacity:.5} .pl-zelle.is-got{opacity:.5}
+.pl-zelle.is-ready{cursor:pointer;animation:pass-glow 1.6s ease-in-out infinite alternate}
+@keyframes pass-glow{from{filter:drop-shadow(0 0 2px rgba(242,210,122,.25))}to{filter:drop-shadow(0 0 7px rgba(242,210,122,.6))}}
+.pl-ok{position:absolute;top:5px;right:5px;z-index:2;width:16px;height:16px;border-radius:50%;display:grid;place-items:center;background:#8fcf7a;color:#10200c} .pl-ok .icon{width:10px;height:10px}
+.pl-ok.is-lock{background:rgba(0,0,0,.55);color:var(--tx-3)}
+@media (max-width:899px) and (min-height:501px){   /* Handy: Pass enger, damit die Premium-Reihe ganz im Fenster steht (Spieltest 7.10.) */
+  .pass-hero{padding:8px 10px;gap:5px} .pass-lvl{width:42px;height:42px} .pass-lvl b{font-size:17px}
+  .pl{padding-bottom:4px} .pl-spalte,.pl-namen{gap:3px} .pl-spalte::before{top:calc(var(--plz) + 16px)} .pass-prem{padding:8px} }
 .pass-how-l{display:grid;gap:2px;margin-top:8px;padding:4px 10px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.18)}
 .pass-how-l div{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line-1);font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .pass-how-l div:last-child{border-bottom:0}
 .pass-how-l .icon{width:14px;height:14px;color:var(--gold-300);flex:none} .pass-how-l b{margin-left:auto;color:var(--gold-100);font-variant-numeric:tabular-nums}
@@ -400,7 +383,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-bd) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
   background:var(--glass-strong,#141820);border:1px solid var(--line-3);box-shadow:var(--sh-2);font-family:var(--font-ui);display:flex;flex-direction:column;gap:8px}
 .marker-sheet[hidden]{display:none}
-.field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right}
+.field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right} .field-fort{grid-column:1/-1;display:grid;gap:3px} .field-fort small{text-align:right;font-variant-numeric:tabular-nums}
 .field-sheet .marker-head b{display:inline-flex;align-items:center;gap:6px} .field-sheet .marker-head .icon{width:16px;height:16px} .field-sheet .btn{justify-content:center}
 .barb-sheet{max-height:calc(100vh - var(--dock-h) - var(--safe-bd) - 120px);overflow-y:auto} .field-lines small{color:var(--tx-3);font-weight:500}
 .barb-lv{padding:2px 7px;border-radius:999px;border:1px solid var(--bc);color:var(--bc);font:700 var(--fs-11)/1.2 var(--font-ui)}
@@ -467,26 +450,27 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
-.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 58px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text höchstens 2 Zeilen, ≤ 56 px), Knöpfe darunter */
+.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 66px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
+  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text ganz, höchstens 4 Zeilen), Knöpfe darunter; rechts 10 px Luft zu den Kartenknöpfen */
   background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
 .anleitung[hidden]{display:none}
 .anleitung-n{width:min-content;font:700 10px/1.15 var(--font-ui);color:var(--gold-200);text-align:center}   /* „Schritt“ über „1/7“: schmal */
-.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1);cursor:pointer}
-.anleitung:not(.is-auf):not(.is-frage):not(.is-ok) .anleitung-t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}   /* langer Text: „…“, antippen zeigt alles */
+.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}   /* immer ganz lesbar, kein „…“ (Spieltest 7.10.) */
 #anleitungWeg{position:relative;width:32px;height:32px;align-self:center} #anleitungWeg::before{content:"";position:absolute;inset:-7px}   /* (sichtbar 32 px, Tippfläche 44 px – ab der Innenkante: 1 px Rand dazu) */
 /* Handy: mit offenem Basis-Fenster oben unter dem HUD statt direkt über dem Fenster – dort steht die Basis (inselMittig) */
-@media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important} }
+@media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important}
+  body:has(#islandPopup.is-open):has(#anleitung:not([hidden])) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--anl-h,64px) + 8px)} }   /* der Hinweis (z. B. „Der Drache ist erschienen“) dann darunter, nie hinter der Anleitung (--anl-h: 06b) */
 .anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
 .anleitung-ok{grid-column:1/-1;justify-self:end}
-body.has-sheet .anleitung{display:none}
+body.has-sheet .anleitung:not(.is-events){display:none}   /* (Schritt 6 „Abholen“ bleibt im Events-Fenster sichtbar: 06b) */
+body:has(#feldRing:not([hidden])) .anleitung{display:none}   /* (Feld-Menü auf der Karte offen: Anleitung kurz weg) */
 /* Anleitung: der nächste nötige Knopf pulsiert (06b anleitungZeigen setzt body[data-anl-puls]) */
 @keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
 body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapControls button,#hudRoh),
 body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
 body[data-anl-puls="stadt"] #cityNavBtn > .icon,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
 body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn > .icon,
-body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
+body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus3],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
   {animation:anl-puls 1.4s ease-out infinite}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
@@ -550,6 +534,8 @@ body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96
 .overline{font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .overline b{color:var(--gold-200);font-weight:600}
 .ptitle{display:block;margin:3px 0 2px;font:600 var(--fs-17)/1.15 var(--font-display);letter-spacing:var(--track-display);color:var(--gold-100);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ptitle:not(.ptitle--input){white-space:normal;overflow-wrap:break-word}   /* langer Titel („Hauptstadt von Yusuf_T“) bricht in die 2. Zeile statt „…“ */
+.panel:has(#attackBtn.mit-zeit) .ptitle{white-space:nowrap}   /* Angriff vorbereiten: kompakt, eine Zeile (Handy ≤ 55 % hoch) */
 .ptitle--input{width:100%;min-width:0;padding:1px 4px;margin-left:-4px;background:transparent;border:1px solid transparent;border-radius:var(--r-xs);outline:none}
 .ptitle--input:hover{border-color:var(--line-1)}
 .ptitle--input:focus{border-color:var(--line-3);background:rgba(0,0,0,.25);box-shadow:none}
@@ -635,7 +621,7 @@ body.has-panel .mapctl{display:none}
 .cost{display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 5px;border-radius:var(--r-xs);background:rgba(0,0,0,.22);
   font:700 10.5px/1 var(--font-ui);letter-spacing:0;font-variant-numeric:tabular-nums;text-transform:none}
 .cost .icon{width:12px;height:12px}
-.cost--gem .icon{color:var(--res-gem)} .cost--pt .icon{color:#5b3310}
+.cost--pt .icon{color:#5b3310}
 .btn--secondary .cost{background:rgba(255,255,255,.05);color:var(--tx-1)}
 .btn--secondary .cost--pt .icon{color:var(--res-point)}
 .btn:disabled .cost{background:rgba(255,255,255,.03)}
@@ -669,9 +655,6 @@ body.has-panel .mapctl{display:none}
 .pill small{font:500 var(--fs-11)/1 var(--font-ui);color:var(--tx-3)}
 .pill .icon{width:14px;height:14px}
 .pill--points .icon{color:var(--res-point)} .pill--gem .icon{color:var(--res-gem)}
-.unk{display:inline-flex;align-items:center;gap:4px;height:18px;padding:0 6px;border-radius:var(--r-xs);background:rgba(255,255,255,.04);border:1px dashed var(--line-2);
-  font:600 var(--fs-10)/1 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
-.unk .icon{width:11px;height:11px}
 
 .rar-text{color:color-mix(in srgb,var(--rc) 70%,#fff)}
 
@@ -680,7 +663,6 @@ body.has-panel .mapctl{display:none}
    ===================================================================== */
 .popup-stats{display:flex;flex-direction:column;gap:10px}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.stat-grid--3{grid-template-columns:repeat(auto-fit,minmax(128px,1fr))}
 .stat{min-width:0;padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)}
 .stat-l{display:flex;align-items:center;gap:5px;font:600 var(--fs-10)/1.3 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .stat-l .icon{width:12px;height:12px;flex:none}
@@ -862,7 +844,7 @@ body.has-panel .mapctl{display:none}
 .logRow .li{width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r-xs);background:rgba(255,255,255,.03);border:1px solid var(--line-1)}
 .logRow .li .icon{width:16px;height:16px;color:var(--lc)}
 .logRow .lt{min-width:0}
-.logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logRow .lt b{display:block;font:600 var(--fs-13)/1.25 var(--font-ui);color:var(--tx-1);overflow-wrap:break-word}   /* Abzeichen + Ort: lieber 2 Zeilen als „Hauptstadt von Yusu…“ */
 .logRow .lt small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;margin-top:2px;font:500 var(--fs-11)/1.25 var(--font-ui);color:var(--tx-3);white-space:normal;overflow:hidden;overflow-wrap:anywhere}
 .logRow .lt small.logOrt{display:flex;align-items:center;gap:8px;-webkit-line-clamp:unset;font-variant-numeric:tabular-nums}
 .logRow .lt small.logOrt .btn{min-height:22px;padding:0 8px;font-size:10px}
@@ -885,7 +867,7 @@ body.has-panel .mapctl{display:none}
 .city-sheet::before{content:none}   /* Gebäude-Fenster: der Rahmen ist der eigene Rand – er scrollt nicht mit dem Inhalt (die Ecken bleiben in den Ecken) */
 #citySheet{border-image:var(--frame) 20 / 20px stretch}   /* (#: das „border“ der Grundform weiter hinten setzt border-image sonst zurück) */
 .panel--sheet{height:var(--sheet-max)}
-body.in-stadt .hud,body.in-stadt .nav{z-index:52} body.in-stadt .panel{z-index:53} body.in-stadt .roh-drop{z-index:54}
+body.in-stadt .hud,body.in-stadt .nav{z-index:52} body.in-stadt .panel{z-index:53}
 body.in-stadt .city-head{padding-top:calc(var(--safe-t) + var(--hud-top-space) + 6px);background:linear-gradient(180deg,rgba(6,8,12,.75),rgba(6,8,12,.3) 70%,transparent)}
 body.in-stadt .city-title,body.in-stadt #cityCloseBtn{display:none}
 body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bottom:14px;max-height:calc(100% - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space) - 60px)}
@@ -925,7 +907,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .hh-foot small{font-size:10px;color:#ffffffaa}
 .hh-frag{display:block;width:80%;height:6px;border-radius:3px;background:#0009;overflow:hidden;margin-top:3px} .hh-frag i{display:block;height:100%;background:var(--gold-300)}
 .hh-qstars{display:inline-flex;gap:3px;align-items:center}
-.hh-qstars i{width:14px;height:14px;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);background:linear-gradient(90deg,var(--gold-200) 0 var(--f),#ffffff26 var(--f) 100%)}
+.hh-qstars i{width:14px;height:14px;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);background:conic-gradient(from 0deg at 50% 55%,var(--gold-200) 0 var(--f),#ffffff26 var(--f) 100%)}   /* Viertelstern als Tortenstück vom Kern aus, nicht als Streifen am Rand */
 .hh-hero{position:relative;display:grid;grid-template-columns:1fr 320px;margin-top:10px;border:1px solid var(--line-2);border-radius:var(--r-lg);overflow:hidden;background:radial-gradient(circle at 35% 40%,var(--glow),#0a0b0e 65%)}
 .hh-stage{position:sticky;top:0;align-self:start;height:min(560px,calc(100vh - 140px));min-height:440px}
 .hh-id{position:absolute;left:14px;top:12px;display:flex;flex-direction:column;gap:4px;z-index:2;text-shadow:0 1px 3px #000}
@@ -967,8 +949,8 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .hh-hint{margin:8px 0 0;font-size:11.5px;line-height:1.45;color:var(--tx-3)}
 .hh-reset{margin-top:8px;width:100%;font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-1);background:var(--ink-4);border:1px solid var(--line-2);border-radius:var(--r-lg);padding:9px;cursor:pointer} .hh-reset:disabled{opacity:.4;cursor:default}
 /* Gems-Käufe ab 500: „Wirklich? N Gems“ (gemsWirklich) */
-.is-armed:is(.hh-reset,.lk-card,.ring-card,[data-hchest],#citySpeedBtn){border-color:#f2a066;box-shadow:0 0 0 1px #f2a066 inset;background-color:rgba(222,115,56,.16)}
-.is-armed:is(.lk-card,.ring-card) small{color:#f3e6c4}
+.is-armed:is(.hh-reset,.lk-card,[data-hchest],#citySpeedBtn){border-color:#f2a066;box-shadow:0 0 0 1px #f2a066 inset;background-color:rgba(222,115,56,.16)}
+.is-armed:is(.lk-card) small{color:#f3e6c4}
 .hh-swap{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px;font-size:var(--fs-12);color:var(--tx-3)} .hh-swap label{display:flex;flex-wrap:wrap;align-items:center;gap:6px;flex:1 1 180px}
 .hh-swap select{font:600 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-1);background:var(--ink-4);border:1px solid var(--line-2);border-radius:var(--r-md,8px);padding:6px 8px;max-width:100%}
 .hh-swap-go{font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-1);background:var(--ink-4);border:1px solid var(--gold-300);border-radius:var(--r-lg);padding:9px 12px;cursor:pointer}
@@ -992,26 +974,21 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .crest-row button.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)} .crest-row button canvas{width:22px;height:22px} .crest-row .sw{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.5)}
 .avatar img{width:78%;height:78%;object-fit:contain}
 .forge-tabs{display:flex;flex-wrap:wrap;margin:8px 0} .forge-tabs button{display:inline-flex;align-items:center;gap:4px} .forge-tabs .icon{width:14px;height:14px} .forge-on{font-style:normal;font-size:var(--fs-12);color:var(--gold-300)}
-.keep-h{margin:12px 0 6px;font:700 var(--fs-12)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-2)} .keep-shields{display:grid;grid-template-columns:repeat(3,1fr);gap:6px} .keep-shields .btn{justify-content:center;gap:4px}
-.keep-note{display:block;margin-top:6px;color:var(--tx-2)} .ring-legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:var(--fs-12);color:var(--tx-2)} .ring-legend i{display:inline-block;width:12px;height:12px;border-radius:50%;border:3px solid var(--c);margin-right:5px;vertical-align:-2px} .ring-legend i.blood{box-shadow:0 0 0 2px #ffd05a} .ring-legend{margin-top:8px} .ring-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px;margin-top:6px}
-.ring-card{display:grid;justify-items:center;gap:3px;padding:8px 4px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);cursor:pointer;font-size:var(--fs-12)} .ring-card.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)}
-.ring-card small{display:inline-flex;align-items:center;gap:3px;color:var(--tx-2)} .ring-card .icon{width:12px;height:12px}
-.ring-prev{width:30px;height:30px;border-radius:50%;border:4px solid var(--c);box-shadow:0 0 0 2px rgba(10,8,4,.55),0 0 0 4px var(--c2)} .ring-prev.is-none{border:2px dashed var(--line-3);box-shadow:none}
+.keep-h{margin:12px 0 6px;font:700 var(--fs-12)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-2)}
+.keep-note{display:block;margin-top:6px;color:var(--tx-2)}
 .skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .skin-card{display:grid;justify-items:center;gap:2px;padding:6px 4px 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);cursor:pointer} .skin-card.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)}
 .skin-card canvas{width:60px;height:66px} .skin-card small{display:inline-flex;align-items:center;gap:3px;color:var(--tx-2)} .skin-card .icon{width:12px;height:12px}
 .lk-top{display:flex;align-items:center;gap:12px;padding:12px 2px 10px} .lk-me{width:58px;height:58px;flex:none;border-radius:50%;padding:6px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))}
 .lk-me img{display:block;width:100%;height:100%;border-radius:50%;background:#141a24;padding:3px} .lk-me-t{flex:1;min-width:0;display:grid;gap:3px} .lk-me-t b{font:700 var(--fs-14)/1.2 var(--font-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .lk-me-t small{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--gold-100)} .lk-pay{display:flex;flex-direction:column;align-items:flex-end;gap:4px} .lk-pay .pill b{font-variant-numeric:tabular-nums}
-#lkTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))} .lk-tabs{position:sticky;top:calc(-8px - var(--safe-t));z-index:3;background:#0e0e11;border:1px solid var(--line-1);border-radius:8px 8px 0 0} .lk-pane{padding:12px 2px 8px} .lk-pane[hidden]{display:none}
-.lk-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))} .lk-grid--m{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))} .lk-grid--m canvas{width:140px;height:70px}
+#lkTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))} .lk-tabs{position:sticky;top:calc(-8px - var(--safe-t));z-index:3;background:#0e0e11;border:1px solid var(--line-1);border-radius:8px 8px 0 0} .lk-pane{padding:12px 2px 8px} .lk-pane[hidden]{display:none}
+.lk-grid{grid-template-columns:repeat(auto-fill,minmax(100px,1fr))}
 .lk-card{align-content:start;min-height:100px} .lk-card.is-shop{background:rgba(0,0,0,.28);border-style:dashed} .lk-card b{font:600 var(--fs-12)/1.2 var(--font-ui);text-align:center}
 .lk-card.on small{color:var(--gold-100)} .lk-cost{display:inline-flex;align-items:center;gap:3px;font-weight:700;color:var(--gold-100);font-variant-numeric:tabular-nums} .lk-cost.is-bad{color:#e0685c}
 .lk-frame{width:48px;height:48px;margin:4px 0 2px;border-radius:50%;padding:5px;background:conic-gradient(from 200deg,var(--fr1),var(--fr2),var(--fr1),var(--fr2),var(--fr1))} .lk-frame img{display:block;width:100%;height:100%;border-radius:50%;background:#141a24;padding:3px}
-.lk-grid--t .lk-card{min-height:0} .lk-plate{display:grid;place-items:center;width:100%;min-height:40px;padding:4px 6px;border-radius:4px;border:1px solid var(--line-3);background:linear-gradient(180deg,#2a2419,#15120d);font:600 var(--fs-12)/1.15 var(--font-display);color:var(--gold-100);text-align:center}
 .lk-mid{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-2);border-radius:10px;background:rgba(0,0,0,.22)} .lk-mid > .icon{width:22px;height:22px;flex:none;color:var(--tx-3)} .lk-mid > span:not(.frame-ring){display:grid;gap:2px} .lk-mid > .frame-ring{flex:none} .lk-mid small{color:var(--tx-2)}
 .lk-mid.is-good{border-color:#ffd05a} .lk-mid.is-good > .icon{color:#ffd05a} .lk-mid.is-bad{border-color:#e13030} .lk-mid.is-bad > .icon{color:#e13030} .lk-mid.is-ruler{border-color:#eb3c32;box-shadow:inset 0 0 0 1px rgba(255,208,90,.5)} .lk-mid.is-ruler > .icon{color:#ffd05a}
-.lk-cap{grid-template-columns:repeat(2,1fr)} .ring-card.is-shop{background:rgba(0,0,0,.28);border-style:dashed} .lk .look-titles .look-title .icon{width:12px;height:12px}
 .logWounded,.logRetreat.logWounded{color:#f2c94c;font-weight:600}
 .logCasualty.wounded span,.logCasualty.wounded span:last-child{color:#f2c94c}
 .march-all{display:flex;justify-content:flex-end;padding:2px 4px 6px}
@@ -1068,6 +1045,13 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .kl-seite .logCompare{grid-template-columns:minmax(0,1fr)!important;gap:4px}
 .kl-seite .logVsDivider{display:flex;align-items:center;gap:8px}
 .kl-seite .logVsDivider::before,.kl-seite .logVsDivider::after{content:"";flex:1;height:1px;background:var(--line-1)}
+/* Desktop: Kampfdetails als Fenster wie die anderen (Rahmen ui_rahmen, oben unter dem HUD wie die Seitenfenster, endet im Bild) – der Inhalt rollt im Fenster */
+@media (min-width:760px){
+  .kl-seite{background:rgba(5,6,8,.62);padding:0;overflow:hidden}
+  .kl-seite > .kl-fenster{position:absolute;top:72px;left:50%;transform:translateX(-50%);width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 86px);display:flex;flex-direction:column;
+    padding:14px 18px 16px;border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);box-shadow:0 18px 50px #000c}
+  .kl-seite > .kl-fenster > #klInhalt{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:2px}
+}
 .kl-leer{width:48px;height:48px;flex:0 0 48px;display:grid;place-items:center;border-radius:8px;border:1.5px dashed var(--line-2);color:var(--tx-3);font:600 18px var(--font-display)}
 .kl-keinheld b{color:var(--tx-2)}
 .kl-rss{border-top:1px solid var(--line-1);margin-top:8px;padding-top:6px}
@@ -1075,7 +1059,6 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .logList .kl-gruppe.kl-a .logSide .logSideLabel{color:#ff9f8f}
 .logList .kl-gruppe.kl-v .logSide .logSideLabel{color:#9fc4ff}
 .kl-null span{color:var(--tx-3)}
-.kl-alt span:last-child{color:#f1c27a}   /* Spähbericht älter als 30 Min. */
 .logHero .ghero > span > small{display:block;min-height:2.7em}
 .logBalTxt{gap:10px}
 .logBalTxt span{min-width:0;white-space:normal!important;overflow:visible!important;text-overflow:clip!important}
@@ -1103,7 +1086,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .tag--player{color:#cfe3ff;background:rgba(63,134,216,.2);border:1px solid rgba(140,192,255,.4)}
 /* Rangliste sheet: rank, crest in its frame + level, name, value; top 3 gold/silver/bronze, your row blue (pinned in the foot when outside the list) */
 #rankPopup{height:var(--sheet-max)}   /* steady: switching tabs never makes the sheet jump */
- #rankTabs.tabs{grid-template-columns:repeat(5,minmax(0,1fr))} #rankBody{gap:6px;padding:10px 10px 14px}
+ #rankBody{gap:6px;padding:10px 10px 14px}
 .lb-row{--acc:transparent;display:grid;grid-template-columns:30px 40px minmax(0,1fr) auto;gap:10px;align-items:center;min-height:54px;padding:6px 10px 6px 6px;border-radius:var(--r-sm);
   border:1px solid var(--line-1);background:rgba(255,255,255,.025);box-shadow:inset 3px 0 0 var(--acc);cursor:pointer;text-align:left;color:inherit}
 .lb-row:hover{background-color:rgba(255,255,255,.05)} .lb-row:active{transform:scale(.995)}
@@ -1203,20 +1186,19 @@ use[href="#i-coin"]{color:var(--res-coin)}
 .btn:disabled .icon:has(> use[href="#i-gem"]),.btn:disabled .icon:has(> use[href="#i-coin"]){opacity:.75}
 /* a2: Zahlen – rechtsbündig, gleich breite Ziffern; Plus grün, Minus/fehlt rot */
 .zahl{font-variant-numeric:tabular-nums;font-weight:600;color:var(--tx-1);text-align:right;white-space:nowrap}
-.zahl--plus{color:var(--good)} .zahl--minus{color:var(--blood-300)}
 /* a4: Unter-Reiter (Chips) nie größer als die Hauptreiter darüber */
 .tabs + .p5-chips .p5-chip{height:var(--k-chip);font-size:var(--fs-12)}
 /* a5: Zeilen mit overflow:hidden – Platz für die Punkte über Ä/Ö/Ü */
 .tab span{line-height:1.35;padding-top:1px}
 .overline,.kl-seite .kl-kopf .overline{line-height:1.4}
-.hud-me-text b,.rp-stat b,.pc-t b,.act-s,.gslot small,.vh-chip-t small,.lk-me-t b,.ap-hchip-t b,.ap-hchip-t small,.slot-r,.lb-name small{line-height:1.35}
+.hud-me-text b,.rp-stat b,.act-s,.gslot small,.vh-chip-t small,.lk-me-t b,.ap-hchip-t b,.ap-hchip-t small,.slot-r,.lb-name small{line-height:1.35}
 /* a11: Knopftext passt immer in den Knopf (kleine Knöpfe neben Text: nicht zusammendrücken) */
 .btn--sm,.btn--chip{flex-shrink:0;min-width:max-content}
 .btn:disabled{color:var(--tx-3)}
 /* a12: Platzhalter in Eingabefeldern ruhig: normal, gedämpft, nicht größer als Text */
 input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(--fs-15));color:var(--tx-4);opacity:1;letter-spacing:normal}
 /* Schriftstufen: lesbarer Kleintext mindestens --fs-11 (10/10,5 px gibt es nicht mehr; Plaketten/Stufenzahlen ausgenommen) */
-.logGearMeta,.logSrc,.rp-gear small,.pc-t small,.ghero small,.hh-foot small,.hh-skt small,.hh-steps span,.hud-me-text small,.auf-grid span,.fo-wirk span,.ptitle-tag{font-size:var(--fs-11)}
+.logGearMeta,.logSrc,.rp-gear small,.ghero small,.hh-foot small,.hh-skt small,.hh-steps span,.hud-me-text small,.auf-grid span,.fo-wirk span,.ptitle-tag{font-size:var(--fs-11)}
 
 /* =====================================================================
    SLIDER  #attackTroopsSlider  (JS keeps --pct in sync)
@@ -1251,6 +1233,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
    (Verlauf, Rahmen, Leuchten), gezeichnete Truhe, Name groß, Inhalt eine Zeile, Preis-Knopf unten über die volle Breite
    (Gold = Edelsteine, Navy = Thron-Punkte). Die Epische Kiste groß über beide Spalten. Erklärungen hinter „i“. */
 #shopPopup.panel--sheet{--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd))}   /* (Handy: mehr Platz, damit alle Kisten ohne Scrollen passen) */
+@media (max-width:899px) and (min-height:501px){ #shopPopup.panel--sheet:has([data-spane="markt"]:not([hidden])){--sheet-max:min(70dvh,calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd)))} }   /* Markt (kurz): so hoch wie die anderen Fenster, keine leere Fläche */
 #shopPopup .phead{min-height:56px;padding-bottom:8px} #shopPopup .phead .overline{display:none} #shopPopup .emblem{width:38px;height:38px}
 #shopPopup .phead-text{display:flex;align-items:center;gap:10px;min-width:0} #shopPopup .ptitle{margin:0;flex:none} #shopPopup .psub{min-width:0}
 #shopPopup .psub small{display:none}   /* (nur Zahl + Zeichen – „Edelsteine“ steht im title) */
@@ -1273,6 +1256,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .ware-txt{display:grid;gap:2px;min-width:0;margin-top:2px;flex:1 0 auto;align-content:start}   /* (Name in 2 Zeilen: die Preis-Leisten bleiben auf einer Höhe) */
 .ware-name{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;font:600 15px/1.15 var(--font-display);color:var(--tx-1);text-shadow:0 1px 2px #000;overflow:hidden;hyphens:manual}   /* Cinzel ist breit: lieber 2 Zeilen („Ausrüstungs-|kiste“) als „…“ */
 .ware-txt small{display:block;font:500 12px/1.3 var(--font-ui);color:var(--tx-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ware-txt small.ware-lang{white-space:normal;text-overflow:clip}   /* (Teleporter: Satz in 2–3 Zeilen statt „Hauptstadt an ei…“) */
 .ware-preis{display:flex;align-items:center;justify-content:center;gap:6px;height:44px;margin:8px -10px 0;padding:0 6px;border:0;border-top:1px solid #f6e7bf;cursor:pointer;
   font:800 17px/1 var(--font-ui);color:#1d1406;background:linear-gradient(180deg,#f0dfb0 0%,#d4ad66 45%,#a27832 100%);box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}
 .ware-preis .icon{width:16px;height:16px;color:var(--res-gem);filter:drop-shadow(0 0 1px rgba(0,0,0,.7))}
@@ -1306,12 +1290,9 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .thron-zeile > .icon{width:16px;height:16px;flex:none;color:#f2c75c} .thron-zeile > span{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis} .thron-zeile b{color:var(--tx-1);font-variant-numeric:tabular-nums}
 .thron-zeile .tz-i{margin-left:4px;color:var(--gold-300)} .thron-zeile.on{border-color:var(--line-3)}
 .odds{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
-.shield-opts{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px} .shield-opts .btn{min-height:52px;flex-direction:column;justify-content:center;gap:4px;padding:6px 4px}
 .odds .chip{height:20px;padding:0 6px;font-size:var(--fs-10)}
 .odds .chip--rar{height:auto;min-height:20px;padding:4px 6px;line-height:1.3}   /* zweizeilig (Handy): Innenabstand oben/unten, nicht am Rand */
-.hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)} .hchest-h{font:600 var(--fs-13)/1.2 var(--font-display);color:var(--gold-100)}
-.hchest-row{display:grid;grid-template-columns:44px minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 8px;border-radius:var(--r-sm);border:1px solid color-mix(in srgb,var(--rc) 55%,transparent);background:rgba(0,0,0,.2)}
-.hchest-row .hchest-pic{width:44px;height:44px;border-radius:8px} .hchest-row span{display:grid;gap:2px} .hchest-row small{font-size:var(--fs-10)} .hchest-row i{font-style:normal;font-weight:700;color:var(--gold-100);font-size:var(--fs-12);text-align:right}
+.hchest-res{display:grid;gap:6px;padding:10px 12px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-3)}
 .hchest-res .btn{justify-self:start}
 .inbox{display:grid;gap:6px;margin-bottom:6px} .inbox-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-2)}
 .inbox-row.is-gold{border-color:color-mix(in srgb,var(--gold-300) 55%,transparent)} .inbox-row>.icon{width:22px;height:22px;color:var(--gold-200);justify-self:center}
@@ -1419,7 +1400,6 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
   .hud-me-text{max-width:none;text-align:left}
   .hud-me-text small{display:block}
   .hud-werte{flex:none;height:auto;padding:0;background:none;border:0;border-radius:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
-  .hud > .res--roh{width:auto;height:48px;padding:0 14px;border:0;border-left:1px solid var(--line-1);border-radius:0;background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
   .hud-me:hover{background:rgba(255,255,255,.03)}
   .hud-me-text b{display:block;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 13px/1.1 var(--font-display);color:var(--gold-100);letter-spacing:.04em}
   .hud-me-text small{display:block;font:500 10.5px/1.2 var(--font-ui);color:var(--tx-3);margin-top:2px}
@@ -1442,6 +1422,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
   .toast{top:auto;bottom:104px;max-width:min(640px,calc(100vw - 40px))}   /* über der Leiste */
   body.has-sheet .toast{left:calc(50% - 209px);max-width:min(640px,calc(100vw - 458px))}   /* centred in the map area left of the drawer */
   body.is-multi .toast{bottom:170px}
+  body .toast.toast--oben{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto}   /* über einem offenen Fenster: oben (06d hintFrei) */
   .scrim{display:none!important}
   .sheet-grab{display:none}
   .panel .sheet-grab + .phead{padding-top:10px}
@@ -1509,7 +1490,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .lvlup .btn{width:100%}
 .xp-next{margin-top:4px;font:500 var(--fs-11)/1.3 var(--font-ui);color:var(--tx-3)}
 .xp-next b{color:var(--tx-2);font-weight:600}
-.ico-coin{color:var(--gold-300)} .ico-gem{color:#7fd3ff} .ico-troops{color:#e8e2d2}
+.ico-coin{color:var(--gold-300)} .ico-troops{color:#e8e2d2}
 @media (prefers-reduced-motion:reduce){.lvlup-card,.lvlup-card::before,.lvlup-rewards li{animation:none;opacity:1}}
 
 /* ---- daily reward + quests ---- */
@@ -1523,7 +1504,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .daily-day.is-done::after{content:"";position:absolute;right:3px;top:3px;width:5px;height:5px;border-radius:50%;background:#5cbf62}
 .daily-day.is-today{border-color:var(--gold-300);color:var(--gold-100);box-shadow:var(--glow-gold)} .daily-day.is-today .icon{color:var(--gold-200)}
 .daily-day.is-big .icon{color:var(--r-lila)}
-.daily-row{display:flex;align-items:center;gap:10px}
+.daily-row{display:flex;align-items:center;gap:10px;padding:8px 8px 8px 12px}   /* Abstand zum Kartenrand (Spieltest 7.10.: Text klebte links) */
 .daily-row .daily-txt{flex:1;min-width:0}
 .daily-row .daily-txt b{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--tx-1)}
 .daily-row .daily-txt small{display:block;font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
@@ -1621,7 +1602,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cb-buy.is-armed{border-style:solid;border-color:var(--gold-300);background:color-mix(in srgb,var(--gold-300) 22%,rgba(10,10,14,.8))}
 .city-sheet{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;padding:14px 14px calc(var(--safe-b) + 14px);
   background:var(--noise),var(--panel-bg);border:1px solid var(--line-2);border-bottom:0;border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:var(--sh-3);
-  display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out);max-height:calc(100% - 90px);overflow-y:auto;overscroll-behavior:contain}
+  display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out);max-height:calc(100% - 90px);overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain}
+.city-sheet > *{min-width:0;max-width:100%}   /* nur senkrecht scrollen: nichts darf breiter sein als das Fenster */
 .city-sheet[hidden]{display:none}
 .city-sheet-head{display:flex;align-items:center;gap:12px}
 .city-bicon{width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-3);
@@ -1641,6 +1623,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .city-progress{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .city-progress i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
 /* Stadt im Stil von Rise of Kingdoms (Alexander 4.10.): runde Knöpfe am Gebäude, Bild, Voraussetzungen, Forschungs-Baum */
+.city-wisch{position:absolute;left:50%;top:37%;z-index:2;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:var(--r-pill);background:rgba(6,8,12,.72);border:1px solid var(--line-2);color:var(--gold-100);font:600 var(--fs-14,14px)/1.2 var(--font-ui);white-space:nowrap;pointer-events:none;transform:translateX(-50%);animation:city-wisch 1.6s ease-in-out infinite}
+.city-wisch[hidden]{display:none} .city-wisch-r{transform:scaleX(-1)}   /* Handy: beim ersten Betreten – die Stadt geht links und rechts weiter */
+@keyframes city-wisch{50%{transform:translateX(calc(-50% + 10px))}}
 .city-ring{position:absolute;left:0;top:0;z-index:2;width:0;height:0;pointer-events:none}
 .city-ring[hidden]{display:none}
 .cr-btn{position:absolute;left:0;top:0;width:58px;height:58px;margin:-29px 0 0 -29px;transform:translate(var(--x),var(--y));pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent;
@@ -1675,6 +1660,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .anf .icon.icon--coin,.anf > .icon[data-i="coin"]{color:#e8b64a}
 .city-uptime{display:inline-flex;align-items:center;margin-left:8px;padding:2px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.28);font:700 11px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
 .city-uptime:empty{display:none}
+.city-lbl2{display:inline-flex;flex-direction:column;align-items:center;min-width:0} .city-warte{font:600 11px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;opacity:.85} .city-warte:empty{display:none}   /* „Fehlt: …“ – darunter, wann es reicht */
 .fo-baum{display:flex;gap:22px;overflow-x:auto;padding:4px 2px 10px;overscroll-behavior-x:contain;scrollbar-width:thin}
 .fo-spalte{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;flex:none}
 .fo-spalte + .fo-spalte::before{content:"";position:absolute;left:-22px;top:calc(50% + 9px);width:22px;height:2px;background:linear-gradient(90deg,var(--gold-500),var(--gold-300));opacity:.7}
@@ -1729,6 +1715,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .forge-row b{display:block;font:700 var(--fs-13)/1.2 var(--font-ui)}
 .forge-row small{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--gold-200);letter-spacing:.08em}
 .forge-row em{font:600 var(--fs-11)/1 var(--font-ui);font-style:normal;color:var(--tx-3)}
+.heal-row{flex-wrap:wrap} .heal-row > span{min-width:max-content} .heal-row small{white-space:nowrap} .heal-row .btn{margin-left:auto;max-width:100%}   /* Handy: „1.000 / 1.422“ in einer Zeile, der Knopf darf darunter */
 .forge-row.is-empty{color:var(--tx-3);font:500 var(--fs-12)/1.3 var(--font-ui)}
 .tile .stars{position:absolute;left:4px;right:24px;bottom:3px;display:flex;justify-content:flex-start;gap:0;color:#ffd76a;overflow:hidden}
 .tile .stars .icon{width:9px;height:9px;filter:drop-shadow(0 0 1px #000)}
@@ -1737,20 +1724,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .starbar i{display:contents}
 .starbar i .icon{color:rgba(255,255,255,.18)}
 /* ===== AUFBAU (aufbau.js, Paket D): Rohstoffe im HUD, Kosten, Forschung, Markt, Truppen-Stufe ===== */
-.res--roh{flex:0 0 auto;max-width:none;cursor:pointer;color:var(--tx-1);padding:0 8px}
-.res--roh > .icon{color:#d9b27a}
-.res--roh.on{border-color:var(--line-3);background:rgba(214,170,90,.16)}
-.roh-mini{display:none;align-items:center;gap:10px}
 .roh-v{display:flex;align-items:center;gap:4px} .roh-v .icon{width:15px;height:15px}
 .roh-h .icon,.icon.roh-h{color:#c08a4c} .roh-s .icon,.icon.roh-s{color:#aab3bd} .roh-e .icon,.icon.roh-e{color:#8fb6e0}
-.roh-drop{position:fixed;z-index:calc(var(--z-hud) + 1);top:calc(var(--safe-t) + 14px + var(--hud-h));right:calc(var(--safe-r) + 10px);width:min(300px,calc(100vw - 20px));padding:10px 12px;border-radius:var(--r-sm);
-  background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.roh-drop[hidden]{display:none}
-.roh-row{display:grid;grid-template-columns:22px 1fr auto;grid-template-rows:auto auto;column-gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line-1)}
-.roh-row .icon{width:20px;height:20px;grid-row:1 / 3} .roh-row span{font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-2)}
-.roh-row b{font:700 var(--fs-15)/1.2 var(--font-ui);color:var(--tx-1);font-variant-numeric:tabular-nums;text-align:right}
-.roh-row small{grid-column:2 / 4;font:600 var(--fs-11)/1.2 var(--font-ui);color:#9fd28a;text-align:right}
-.roh-hint{display:block;margin-top:8px;font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
 .city-bstats b .kost{display:inline-flex;align-items:center;gap:3px;margin:0 10px 0 0;white-space:nowrap;letter-spacing:0;text-transform:none;font:700 var(--fs-15)/1.2 var(--font-ui);color:var(--tx-1)}
 .city-bstats b{flex-wrap:wrap}
 .kost.is-bad,.city-bstats b .kost.is-bad{color:#ff8d7e}.kost--h .icon{color:#c08a4c} .kost--s .icon{color:#aab3bd} .kost--e .icon{color:#8fb6e0}
@@ -1771,8 +1746,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fo-row.is-max{opacity:.75} .fo-row.is-run{border-color:var(--line-3);background:rgba(214,170,90,.1)}
 .fo-row .btn .icon{width:13px;height:13px}
 .fo-lauf{margin-top:8px;align-items:center;gap:10px}
-@media (min-width:900px) and (min-height:501px){ .res--roh{min-width:0;padding:0 14px} .roh-drop{top:72px;left:14px;right:auto} }
-@media (min-width:1560px) and (min-height:501px){ .roh-mini{display:flex} }   /* nur bei viel Platz die drei Zahlen im HUD (sonst stößt es an die Leiste rechts) */
 /* ===== HÄNDLER (haendler.js) ===== */
 .mb-chip.is-hd{border-color:rgba(242,199,92,.6);background:linear-gradient(90deg,rgba(120,80,20,.8),rgba(20,14,6,.88))} .mb-chip.is-hd .icon{color:#f2c75c} .mb-chip.is-hd i{color:#f6e2b0}
 .hd-live{display:grid;gap:8px} .hd-info{display:flex;align-items:center;gap:6px;margin:0;color:var(--tx-3);font-size:var(--fs-12);line-height:1.4} .hd-info .icon{width:14px;height:14px;flex:none;color:var(--gold-300)}
@@ -1840,11 +1813,11 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .bd-tag::placeholder{text-transform:none;letter-spacing:normal}
 #bdZeichen{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;justify-items:center} #bdZeichen button{width:100%;max-width:44px;height:auto;aspect-ratio:1}
 #bdFarben{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-items:center} #bdFarben button{width:34px;height:34px}
-.bd-gf-los{width:100%;min-height:48px;gap:8px} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}
+.bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
 /* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
-/* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen und Wirkung zuerst, Schild-Kasten unten */
+/* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen zuerst, dann der Schild-Kasten */
 .city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}
-.city-sheet.cs-keep > #cityBNote.city-wirkung{order:4}
+.city-sheet.cs-keep > #cityBStats{order:1} .city-sheet.cs-keep > #cityBNote.city-wirkung{order:2} .city-sheet.cs-keep > #cityBExtra{order:3}   /* Burg: Schild-Kasten unter den Voraussetzungen – nie halb unter dem festen Knopf (Handy) */
 .city-bfoot .btn{min-height:48px}
 .city-sheet .fo-go{position:sticky;bottom:0;z-index:3;width:100%;min-height:48px;box-shadow:0 0 0 10px #15161b}   /* Forschen: bleibt sichtbar, solange die Forschung offen ist */
 .anf.is-bad > i{visibility:hidden}   /* fehlt etwas: die rote Zahl reicht, der Knopf sagt „Fehlt: …“ */
@@ -1881,8 +1854,306 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 /* Umlaut-Punkte über Großbuchstaben (Ä/Ö/Ü in Überschriften, Reitern, Versalien) nicht abschneiden: einzeilige Texte mit
    „…“ schneiden nur noch seitlich ab (overflow-x:clip), nach oben bleibt Platz – die Zeilenhöhe (oft 1) war kleiner als die Punkte hoch sind */
 @supports (overflow:clip) {
-  .tab span,.overline,.ptitle:not(.ptitle--input),.hh-head h2,.city-title h2,.act-t,.stat-l,.stat-v,.slot-r,.gslot small,.lb-name small,.hud-me-text b,.rp-stat b,.pc-t b,.lk-me-t b,.kv b,.statRow b,.res b{overflow-x:clip;overflow-y:visible}
+  .tab span,.overline,.ptitle:not(.ptitle--input),.hh-head h2,.city-title h2,.act-t,.stat-l,.stat-v,.slot-r,.gslot small,.lb-name small,.hud-me-text b,.rp-stat b,.lk-me-t b,.kv b,.statRow b,.res b{overflow-x:clip;overflow-y:visible}
 }
+    </style>
+    <style>
+/* =====================================================================
+   BELOHNUNGS-KACHELN (Alexander 7.10., Vorbild RoK): Kachel-Bild je Seltenheit (ui_kachel_*, --ki-kachel aus 05z), großes Symbol
+   (bilder/beute_*.webp, kiste_*.webp), Menge unten rechts. Größe über --bk. Überall gleich: Fenster, Listen, Pass, Events, Berichte.
+   ===================================================================== */
+.bk{--ki-kachel:url(bilder/ui_kachel_grau.webp);position:relative;display:block;flex:none;width:var(--bk,60px);height:var(--bk,60px);margin:0;padding:0;border:0;list-style:none;
+  background:var(--ki-kachel) center/100% 100% no-repeat;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+.bk[data-r="grau"]{--ki-kachel:url(bilder/ui_kachel_grau.webp)} .bk[data-r="gruen"]{--ki-kachel:url(bilder/ui_kachel_gruen.webp)} .bk[data-r="blau"]{--ki-kachel:url(bilder/ui_kachel_blau.webp)}
+.bk[data-r="lila"]{--ki-kachel:url(bilder/ui_kachel_lila.webp)} .bk[data-r="gold"]{--ki-kachel:url(bilder/ui_kachel_gold.webp)} .bk[data-r="rot"]{--ki-kachel:url(bilder/ui_kachel_rot.webp)}
+.bk > img{position:absolute;left:10%;top:9%;width:80%;height:80%;object-fit:contain;filter:drop-shadow(0 2px 2px rgba(0,0,0,.6));pointer-events:none}
+.bk > img.bk-held{left:5%;top:5%;width:40%;height:40%;border-radius:50%;object-fit:cover;border:1.5px solid #f6e7bf;background:#1b2638;filter:none}
+.bk > b{position:absolute;right:7%;bottom:5%;font:800 calc(var(--bk,60px) * .22)/1 var(--font-ui);color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap;
+  text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 1px #000,-1px 0 1px #000,0 -1px 1px #000}
+.bk-raster{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+.bk-klein{--bk:40px;gap:4px} .bk-mini{--bk:32px;gap:3px;justify-content:flex-start}
+.bk-mit{display:flex;flex-direction:column;align-items:center;gap:3px;width:calc(var(--bk,60px) + 16px)}
+.bk-mit small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font:600 10.5px/1.15 var(--font-ui);color:var(--tx-2);text-align:center;text-shadow:0 1px 2px #000}
+/* Listen in den Fenstern (Tag, Stufe, Kriegsherr): Kacheln nebeneinander statt Zeilen */
+.lvlup-rewards:has(> .bk){flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px}
+.lvlup-rewards > li.bk{display:block;padding:0;border:0;border-radius:0;background:var(--ki-kachel) center/100% 100% no-repeat;--bk:58px}
+/* Aufgaben, Abholfach, Events, Pass: kleine Kacheln in der Zeile */
+.quest-rew:has(.bk){padding:0;border:0;background:none;gap:3px} .quest-rew .bk{--bk:38px}
+.inbox-row .bk-raster{margin-top:4px}
+.tour-prize .bk-raster{--bk:32px;gap:2px;margin-top:3px} .tour-prize .bk{display:block}
+.daily-row .bk-raster{justify-content:flex-start;margin-top:4px}
+.kl-rss .bk-raster{--bk:46px;justify-content:flex-start;margin:4px 0 2px} .kl-rss.bk-an > .kl-rss-zeilen{display:none}
+.bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}
+
+/* Rucksack (Dock): je Gegenstand eine Listen-Karte mit Kachel, Name und Knopf; Splitter als Kacheln mit Heldennamen */
+#rucksackPopup .pbody{display:grid;gap:10px;align-content:start} .rk-emblem{width:78%;height:78%;object-fit:contain;filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+.rk-inhalt{display:grid;gap:8px} .rk-liste{display:grid;gap:6px}
+.rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
+.rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}
+.rk-knopf{flex:none;min-width:96px;min-height:44px;gap:6px} .rk-knopf[data-rk-kauf]{min-width:132px} .rk-knopf .icon{width:14px;height:14px} .rk-preis{font:700 13px/1 var(--font-ui)}   /* „Kaufen ◆ 80“ wie im Shop */
+@media (max-width:899px) and (min-height:501px){ #rucksackPopup .pbody{gap:8px} .rk-fach{--bk:46px;padding:4px 8px} .rk-liste{gap:4px} }   /* Handy: enger, damit die Splitter-Reihe ganz im Fenster steht */
+.rk-splitter{--bk:56px;justify-content:flex-start;gap:8px} .rk-splitter .bk-mit{padding:0;border:0;background:none;cursor:pointer;min-height:44px}
+
+/* ---- Belohnungs-Fenster: Kiste wackelt, geht auf, Strahlen drehen, Kacheln kommen nacheinander ---- */
+.bf{position:fixed;inset:0;z-index:calc(var(--z-modal) + 2);display:flex;align-items:center;justify-content:center;padding:16px;
+  background:radial-gradient(ellipse at 50% 42%,rgba(52,36,8,.6),rgba(3,4,8,.86));animation:fade-in var(--dur-3) var(--ease-out)}
+.bf[hidden]{display:none}
+.bf-karte{position:relative;width:min(380px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:30px 16px 16px;text-align:center;color:var(--tx-1);
+  border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 fill / 16px stretch;animation:lvlup-in 420ms cubic-bezier(.2,1.4,.3,1)}
+.bf-band{position:relative;margin:-14px -6px 4px;padding:10px 40px 14px;background:url(bilder/ui_band_gold.webp) center/100% 100% no-repeat}
+.bf-band h2{margin:0;font:700 19px/1.15 var(--font-display);letter-spacing:.04em;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.55)}
+.bf-unter{position:relative;z-index:1;font:500 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-2);text-shadow:0 1px 3px #000;margin-bottom:4px}
+.bf-buehne{position:relative;display:none;height:150px;margin:0 auto 6px;width:200px}
+.bf.mit-kiste .bf-buehne{display:block}
+.bf-strahlen{position:absolute;left:50%;top:50%;width:300px;height:300px;margin:-150px 0 0 -150px;background:url(bilder/ui_strahlen.webp) center/contain no-repeat;
+  opacity:0;transform:scale(.4);pointer-events:none;-webkit-mask-image:radial-gradient(circle,#000 30%,transparent 68%);mask-image:radial-gradient(circle,#000 30%,transparent 68%)}
+.bf.is-auf .bf-strahlen{opacity:.95;transform:scale(1);transition:opacity .3s,transform .4s cubic-bezier(.2,1.4,.3,1);animation:lvlup-spin 12s linear infinite}
+.bf-kiste{position:absolute;left:50%;top:50%;width:150px;height:150px;margin:-75px 0 0 -75px;object-fit:contain;filter:drop-shadow(0 6px 10px rgba(0,0,0,.6))}
+.bf.is-wackeln .bf-kiste{animation:bf-wackeln .7s ease-in-out}
+.bf.is-auf .bf-kiste{animation:bf-auf .35s cubic-bezier(.2,1.6,.4,1)}
+.bf-anzahl{position:absolute;right:6px;bottom:8px;font:800 20px/1 var(--font-display);color:var(--gold-100);text-shadow:0 0 3px #000,0 2px 4px #000}
+@keyframes bf-wackeln{0%,100%{transform:none}15%{transform:rotate(-6deg) scale(1.03)}30%{transform:rotate(6deg) scale(1.05)}45%{transform:rotate(-8deg) scale(1.07)}
+  60%{transform:rotate(8deg) scale(1.09)}75%{transform:rotate(-4deg) scale(1.12)}90%{transform:scale(.94)}}
+@keyframes bf-auf{from{transform:scale(1.25)}to{transform:none}}
+.bf-inhalt{min-height:20px;margin:6px 0 12px}
+.bf-inhalt .bk-raster{gap:8px 4px}
+.bf-inhalt .bk-viele{--bk:50px}
+.bf-inhalt .bk-mit{opacity:0;transform:scale(.3)}
+.bf.is-auf .bf-inhalt .bk-mit{animation:bf-kachel .32s cubic-bezier(.2,1.5,.4,1) forwards;animation-delay:calc(var(--i) * 90ms + (var(--bf-warte, 0ms)))}
+.bf.mit-kiste{--bf-warte:260ms}
+.bf.is-fertig .bf-inhalt .bk-mit{animation:none;opacity:1;transform:none}
+@keyframes bf-kachel{to{opacity:1;transform:none}}
+.bf-ok{width:100%}
+@media (prefers-reduced-motion:reduce){.bf-karte,.bf-strahlen,.bf-kiste,.bf-inhalt .bk-mit{animation:none!important;opacity:1;transform:none}}
+
+/* ---- Shop: Kisten als Bild, Öffnen 1× / 10× ---- */
+.ware-bild > img.kiste-bild{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 6px rgba(0,0,0,.55))}
+.ware-preise{display:flex;margin:8px -10px 0}
+.ware-preise > .ware-preis{flex:1 1 0;min-width:0;margin:0;gap:3px;padding:0 3px;font-size:15px} .ware-preise > .ware-preis .icon{width:13px;height:13px}
+.ware-preise > .ware-preis + .ware-preis{border-left:1px solid rgba(0,0,0,.35)}
+.ware-preis[data-x]::before{content:attr(data-x);font:800 12px/1 var(--font-ui);opacity:.85;margin-right:-2px}
+.ware-preis .ware-x{font:800 12px/1 var(--font-ui);opacity:.85;margin-right:-2px}
+    </style>
+    <style>
+/* =====================================================================
+   KI-BILDER (Alexander 7.10.: „alles mit KI-Bildern, sieht besser aus“) – überschreibt das gezeichnete Aussehen.
+   Rahmen/Knöpfe dehnen sich per border-image (Ecken fest, Mitte gedehnt); Symbole als Hintergrund, das SVG-<use> bleibt (Karte/Tests).
+
+   GRUNDFORM FENSTER (EINE für alle – neue Fenster nur daraus bauen, nichts Eigenes zeichnen):
+     .ki-fenster   Fenster-Rahmen ui_rahmen + dunkler Grund (schon dran: .panel, .hh, .lvlup-card, .marker-sheet, #citySheet)
+     .phead        Kopfzeile: Wappen/Symbol · Überzeile (.overline) + Titel (.ptitle) · rotes X (.btn-x); darunter die Trennlinie ui_linie
+     .tabs > .tab  Reiter ui_reiter, aktiv (.active) ui_reiter_an · Unter-Reiter/Wahl (.p5-chip, .seg button): ui_k_chip, aktiv ui_k_gold
+     .ki-karte     Listen-Karte ui_karte (Zeile/Kasten im Fenster), .ki-karte--an hervorgehoben ui_karte_an (abholbar/fertig)
+                   (schon dran: KI_KARTE unten – .quest, .ach, .logRow, .stat, .inbox-row, …)
+     Knöpfe        .btn--primary Gold (gedrückt ui_k_gold_an) · .btn--secondary Dunkel · .btn--danger Rot · :disabled Grau · .chip Schildchen
+     Kacheln       [data-r="grau|gruen|blau|lila|gold|rot"] ui_kachel_* · .tile.empty ui_platz
+     Hinweis       .anleitung ui_hinweis (Rolle links) · .notice wie Listen-Karte
+     Balken        .pass-bar/.ach-sum-bar/.ki-balken Rahmen ui_balken (Füllung <i> bleibt Code)
+     Symbole       automatisch: <svg class="icon"><use href="#i-…"> → bilder/ui_sym_*.webp (Liste unten)
+   ===================================================================== */
+:root{
+  --ui-rund:url(bilder/ui_rund.webp); --ui-rund-an:url(bilder/ui_rund_an.webp);
+}
+/* Ladebild: der dunkle Grund hinter dem Titel läuft rundum weich aus (closest-side: nie eine harte Kante am Kastenrand) */
+.splash-top::before{inset:-70px -60px;background:radial-gradient(closest-side at 50% 55%,rgba(6,10,28,.72),rgba(6,10,28,.35) 60%,transparent)}
+/* solange das Ladebild steht: HUD, Leiste und Kartenknöpfe gar nicht zeichnen – sonst lädt der Browser ihre Bilder vor dem Titelbild */
+body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBar){display:none}
+/* Symbol-Bild statt SVG-Zeichnung: das <svg class="icon"> bleibt (Größe, Platz), nur seine Linien verschwinden */
+.ki-sym > use,.nav-btn > .icon > use,.mapctl button > .icon > use,.btn-x > .icon:has(> use[href="#i-close"]) > use{display:none}
+
+/* ---------------- HUD oben ---------------- */
+.hud-me .avatar-ring{overflow:visible}
+.hud-me .avatar-ring::after{content:"";position:absolute;inset:-6px;background:url(bilder/ui_ring.webp) center/100% 100% no-repeat;pointer-events:none}
+.hud-me .lvl{border:0;background:url(bilder/ui_stufe.webp) center/100% 100% no-repeat;box-shadow:none;min-width:19px;height:23px;right:-9px;bottom:-9px;padding:0 3px 3px;
+  text-shadow:0 1px 2px #000}
+/* EINE Reihe: Münzen · Edelsteine · Truppen · Holz · Stein · Eisen – kleine Kapseln (Symbol links, Zahl rechts, fmtHud höchstens 5 Zeichen) */
+.hud-werte{background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;gap:2px;padding:0;height:24px;margin-top:6px}
+.hud{z-index:calc(var(--z-hud) + 1)}   /* die Tippflächen der Kapseln liegen über dem Streifen darunter */
+.hud-werte .res-roh{display:contents}
+.hud-werte .res{position:relative;flex:1 1 auto;min-width:max-content;height:24px;padding:0 3px 0 20px;gap:0;justify-content:center;border-style:solid;border-width:0;
+  border-image:url(bilder/ui_kapsel.webp) 20 30 20 90 fill / 6px 6px 6px 21px stretch}
+.hud-werte .res > .icon{position:absolute;left:1px;top:50%;width:19px;height:19px;margin-top:-10px}
+.hud-werte .res b{overflow:visible;font:600 11px/1 var(--font-ui);letter-spacing:-.02em;color:var(--tx-1);text-shadow:0 1px 2px #000}
+.hud-werte button.res::before{content:"";position:absolute;left:0;right:0;top:50%;height:var(--k-tipp);transform:translateY(-50%)}   /* Tippfläche 44 px */
+#hudRoh.on [data-roh]{filter:brightness(1.1)}
+.roh-blase{position:fixed;z-index:var(--z-toast);display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;max-width:240px;padding:6px 10px;
+  font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1);border-style:solid;border-width:0;border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch}
+.roh-blase .icon{width:16px;height:16px} .roh-blase small{flex:1 1 100%;color:var(--gold-200);font-size:var(--fs-11)}
+@media (min-width:900px) and (min-height:501px){ .hud-werte{flex:0 1 640px} .hud-werte .res{flex:0 0 84px;min-width:84px;padding-left:24px} .hud-werte .res b{font-size:13px;min-width:0;text-align:center} }   /* Desktop: gleich breite Kapseln (fmtHud ≤ 5 Zeichen), jede Zahl mittig (vorher 6,2em-Feld: Münzen links, Holz mittig) */
+/* Event-Streifen: rotes Band statt lila Verlauf */
+.mb-chip.is-tour{background:none;border-color:transparent;border-style:solid;border-width:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;
+  padding:0 18px 0 16px;border-image:url(bilder/ui_band_rot.webp) 22 70 22 70 fill / 7px 22px 7px 22px stretch;color:#fff3e6}
+.mb-chip.is-tour i{color:#ffe1c8}
+.badge{border:0;background:url(bilder/ui_punkt.webp) center/100% 100% no-repeat;text-shadow:0 1px 1px rgba(0,0,0,.6)}
+
+/* ---------------- Leiste unten (Dock) ---------------- */
+.nav{background:#07090c;border-top:0;border-style:solid;border-width:0;border-image:url(bilder/ui_dock.webp) 30 60 30 60 fill / 9px 30px 6px 30px stretch}
+.nav::before{display:none}
+.nav-btn > .icon{border:0;border-radius:50%;padding:0;box-shadow:none;background:var(--ki-bild,none) center/60% auto no-repeat,var(--ui-rund) center/100% 100% no-repeat;transition:none}
+.nav-btn.active > .icon,.nav-btn:hover > .icon{border:0;box-shadow:none;background:var(--ki-bild,none) center/62% auto no-repeat,var(--ui-rund-an) center/100% 100% no-repeat}
+.nav{padding-bottom:var(--safe-bd)}   /* Beschriftung immer über der Home-Leiste des iPhones */
+.nav-btn{gap:1px;justify-content:center} .nav-btn > .icon{width:44px;height:44px}
+.nav-btn .nav-l{font-size:10px;color:var(--gold-100);text-shadow:0 1px 2px #000,0 0 4px #000}
+@media (max-width:899px) and (min-height:501px){   /* Handy (Alexander 7.10.): Leiste niedriger, mit Abstand zum Rand – beide Endstücke ganz zu sehen –, Knöpfe enger und kleiner (Tippfläche ≥ 44 px) */
+  :root{--dock-h:56px}
+  .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);bottom:var(--safe-bd);height:var(--dock-h);padding:0 24px;background:none;align-items:center;grid-template-columns:repeat(6,minmax(44px,56px));justify-content:center;column-gap:2px;
+    border-image-width:7px 22px 5px 22px}
+  /* Ring und Symbol als Hintergrund des Knopfs (nicht des SVG – Safari setzt ein SVG-Hintergrundbild nicht mittig); das SVG bleibt als Platzhalter */
+  .nav{align-items:stretch}
+  .nav-btn{--ki-gr:auto 20px;justify-content:flex-start;padding:7px 0 5px;background:var(--ki-bild,none) center 13px/var(--ki-gr) no-repeat,var(--ui-rund) center 7px/32px 32px no-repeat}   /* zwischen oberem und unterem Leistenrand */
+  .nav-btn.active,.nav-btn:hover{background:var(--ki-bild,none) center 13px/var(--ki-gr) no-repeat,var(--ui-rund-an) center 7px/32px 32px no-repeat}
+  .nav-btn > .icon,.nav-btn.active > .icon,.nav-btn:hover > .icon{width:32px;height:32px;background:none}
+  #bundBtn,#goalsBtn{--ki-gr:22px auto}   /* breite Symbole: nach der Breite */
+  .nav-btn .nav-l{font-size:9px;letter-spacing:0}   /* 6 Knöpfe: „Rucksack“ passt in seine Spalte */
+  body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:var(--safe-bd);z-index:var(--z-dock);background:#07090c;pointer-events:none}   /* die Home-Leiste des iPhones: dunkler Grund UNTER der Leiste */
+}
+@media (min-width:900px) and (min-height:501px){   /* Desktop: dieselbe schlanke Leiste (nur unten mittig statt am Rand) */
+  .nav{padding:2px 30px 0;gap:4px;border:0;border-radius:0;box-shadow:none;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;border-image-width:7px 22px 5px 22px}
+  .nav-btn{width:60px;height:54px;gap:1px} .nav-btn > .icon{width:36px;height:36px}
+  .nav-l{font:600 10px/1 var(--font-ui);letter-spacing:.04em;text-transform:uppercase}
+}
+#cityNavBtn{--ki-bild:url(bilder/ui_dock_burg.webp)} body.in-stadt #cityNavBtn{--ki-bild:url(bilder/ui_fahne.webp)}
+#bundBtn{--ki-bild:url(bilder/ui_dock_bund.webp)} #battleLogBtn{--ki-bild:url(bilder/ui_dock_kampf.webp)}
+#goalsBtn{--ki-bild:url(bilder/ui_dock_events.webp)} #rucksackBtn{--ki-bild:url(bilder/ui_dock_rucksack.webp)} #shopBtn{--ki-bild:url(bilder/ui_dock_shop.webp)} #profileBtn{--ki-bild:url(bilder/ui_dock_krone.webp)}
+
+/* ---------------- Karten-Knöpfe ---------------- */
+.mapctl{gap:6px;background:none;border:0;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none}
+.mapctl button,.mapctl button + button{border:0;border-radius:50%;background:var(--ui-rund) center/100% 100% no-repeat}
+.mapctl button:hover,.mapctl button:active,.mapctl button.on{background:var(--ui-rund-an) center/100% 100% no-repeat}
+.mapctl .icon{width:30px;height:30px;background:var(--ki-bild) center/contain no-repeat}
+#zoomInBtn{--ki-bild:url(bilder/ui_zoom_rein.webp)} #zoomOutBtn{--ki-bild:url(bilder/ui_zoom_raus.webp)} #homeBtn{--ki-bild:url(bilder/ui_kompass.webp)}
+#markerBtn{--ki-bild:url(bilder/ui_fahne.webp)} #armyBtn{--ki-bild:url(bilder/ui_armee.webp)}
+.mapctl button:disabled .icon{opacity:.45}
+
+/* ---------------- Knöpfe (Schrift bleibt Code) ---------------- */
+.btn--primary,.btn--secondary,.btn--danger,.btn:disabled{border-style:solid;border-color:transparent;box-shadow:none;background:none;border-width:0;
+  border-image:var(--k-bild) 30 40 30 40 fill / 11px 14px 11px 14px stretch}
+.btn--primary:not(.btn--sm):not(.btn--chip),.btn--secondary:not(.btn--sm):not(.btn--chip),.btn--danger:not(.btn--sm):not(.btn--chip){padding-left:18px;padding-right:18px}   /* Schrift nicht auf den Spitzen links/rechts */
+.btn--primary{--k-bild:url(bilder/ui_k_gold.webp);color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
+.btn--primary:active{--k-bild:url(bilder/ui_k_gold_an.webp)}
+.btn--secondary{--k-bild:url(bilder/ui_k_dunkel.webp)}
+.btn--danger{--k-bild:url(bilder/ui_k_rot.webp)}
+.btn:disabled{--k-bild:url(bilder/ui_k_grau.webp);color:var(--tx-3);text-shadow:0 1px 2px #000}
+.btn--chip.btn--secondary,.btn--chip.btn--primary{border-image:var(--k-bild) 30 40 30 40 fill / 9px 12px 9px 12px stretch}
+.chip:not(.chip--rar):not(.chip--scouted){border:0;background:none;border-style:solid;border-image:url(bilder/ui_k_chip.webp) 26 fill / 10px stretch}
+
+/* ---------------- Grundform Fenster: Rahmen, Kopfzeile, Schließen, Reiter, Trennlinie ---------------- */
+/* der Rahmen ist der eigene Rand jedes Fensters (nicht ein darübergelegtes ::before): immer sichtbar, egal welcher Reiter und wie geöffnet; der Inhalt liegt nie darunter */
+.panel{border:solid transparent;border-width:12px 12px 8px;border-image:url(bilder/ui_rahmen.webp) 44 / 12px 12px 8px stretch;background-clip:border-box}
+.panel::before{content:none} .panel .sheet-grab{display:none}   /* kein grauer Griff – der Rahmen ist überall gleich */
+/* Fenster-Inhalt rollt weiter: unten läuft er weich aus (Hinweis „da kommt noch mehr“) statt hart am Rahmen abgeschnitten – am Ende keine Blende */
+@property --pb-blende{syntax:"<length>";inherits:false;initial-value:0px}
+.panel > .pbody{-webkit-mask-image:linear-gradient(180deg,#000 calc(100% - var(--pb-blende)),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - var(--pb-blende)),transparent)}
+@keyframes pb-blende{0%,94%{--pb-blende:30px} 100%{--pb-blende:0px}}
+@supports (animation-timeline:scroll()){ .panel > .pbody{animation:pb-blende linear both;animation-timeline:scroll(self)} }
+.hh::before{border:16px solid transparent;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch}
+.ki-fenster,.marker-sheet{border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;background:var(--noise),var(--panel-bg);border-radius:0}
+.marker-sheet{padding:16px}
+/* gleicher Innenabstand links und rechts: der Inhalt bleibt innerhalb des Rahmens (16 px Rand + 4 px Luft) */
+.panel > :is(.phead,.pbody,.pfoot,.p5-chips){padding-left:8px;padding-right:8px} .hh{padding-left:20px;padding-right:20px}
+#citySheet{border-style:solid;border-width:1px 1px 0;border-image:url(bilder/ui_rahmen.webp) 44 / 16px stretch;border-radius:0}
+.phead::after{width:160px;height:10px;background:url(bilder/ui_linie.webp) center/100% 100% no-repeat}
+.btn-x{border:0}
+.btn-x > .icon:has(> use[href="#i-close"]){width:32px;height:32px;background:url(bilder/ui_zu.webp) center/contain no-repeat}   /* (nur „Schließen“ – andere runde Knöpfe wie „Info“ behalten ihr Zeichen) */
+.btn-x:hover{border:0;filter:brightness(1.12)}
+.tabs{background:none;border-bottom:0;gap:3px;padding:4px 4px 0}
+.tab,.tab + .tab{box-shadow:none;border-style:solid;border-width:0;border-image:url(bilder/ui_reiter.webp) 30 40 14 40 fill / 10px 6px 5px 6px stretch}
+.tab.active{background:none;border-image:url(bilder/ui_reiter_an.webp) 30 40 14 40 fill / 10px 6px 5px 6px stretch}
+.tab.active::after,.tab.active::before{display:none}
+@container tabs (max-width:420px){ .tab{font:600 10.5px/1 var(--font-ui);letter-spacing:0;padding:0 1px} }   /* Handy: schmale Schrift – „Einstellungen“, „Thron-Punkte“ passen ganz in den Reiter */
+.sect::after{height:8px;background:url(bilder/ui_linie.webp) left center/auto 100% no-repeat;background-size:100% 100%}
+/* ---------------- Symbole überall (HTML; die Karte zeichnet weiter aus den SVG-Pfaden, 01a glyph) ---------------- */
+:where(svg.icon:has(> use[href="#i-castle"]),svg.icon:has(> use[href="#i-star"]),svg.icon:has(> use[href="#i-crown"]),svg.icon:has(> use[href="#i-rank"]),svg.icon:has(> use[href="#i-gear"]),svg.icon:has(> use[href="#i-goal"]),svg.icon:has(> use[href="#i-lock"]),svg.icon:has(> use[href="#i-check"]),svg.icon:has(> use[href="#i-attack"]),svg.icon:has(> use[href="#i-scout"]),svg.icon:has(> use[href="#i-recall"]),svg.icon:has(> use[href="#i-multiattack"]),svg.icon:has(> use[href="#i-tower"]),svg.icon:has(> use[href="#i-defense"]),svg.icon:has(> use[href="#i-losses"]),svg.icon:has(> use[href="#i-upgrade"]),svg.icon:has(> use[href="#i-hourglass"]),svg.icon:has(> use[href="#i-battlelog"]),svg.icon:has(> use[href="#i-bund"]),svg.icon:has(> use[href="#i-event"]),svg.icon:has(> use[href="#i-shop"]),svg.icon:has(> use[href="#i-flag"]),svg.icon:has(> use[href="#i-back"]),svg.icon:has(> use[href="#i-coin"]),svg.icon:has(> use[href="#i-gem"]),svg.icon:has(> use[href="#i-troops"]),svg.icon:has(> use[href="#i-wood"]),svg.icon:has(> use[href="#i-stone"]),svg.icon:has(> use[href="#i-iron"]),svg.icon:has(> use[href="#i-weapon"]),svg.icon:has(> use[href="#i-armor"]),svg.icon:has(> use[href="#i-shield"]),svg.icon:has(> use[href="#i-boots"]),svg.icon:has(> use[href="#i-points"])) > use{display:none}
+:where(svg.icon:has(> use[href="#i-castle"]),svg.icon:has(> use[href="#i-star"]),svg.icon:has(> use[href="#i-crown"]),svg.icon:has(> use[href="#i-rank"]),svg.icon:has(> use[href="#i-gear"]),svg.icon:has(> use[href="#i-goal"]),svg.icon:has(> use[href="#i-lock"]),svg.icon:has(> use[href="#i-check"]),svg.icon:has(> use[href="#i-attack"]),svg.icon:has(> use[href="#i-scout"]),svg.icon:has(> use[href="#i-recall"]),svg.icon:has(> use[href="#i-multiattack"]),svg.icon:has(> use[href="#i-tower"]),svg.icon:has(> use[href="#i-defense"]),svg.icon:has(> use[href="#i-losses"]),svg.icon:has(> use[href="#i-upgrade"]),svg.icon:has(> use[href="#i-hourglass"]),svg.icon:has(> use[href="#i-battlelog"]),svg.icon:has(> use[href="#i-bund"]),svg.icon:has(> use[href="#i-event"]),svg.icon:has(> use[href="#i-shop"]),svg.icon:has(> use[href="#i-flag"]),svg.icon:has(> use[href="#i-back"]),svg.icon:has(> use[href="#i-coin"]),svg.icon:has(> use[href="#i-gem"]),svg.icon:has(> use[href="#i-troops"]),svg.icon:has(> use[href="#i-wood"]),svg.icon:has(> use[href="#i-stone"]),svg.icon:has(> use[href="#i-iron"]),svg.icon:has(> use[href="#i-weapon"]),svg.icon:has(> use[href="#i-armor"]),svg.icon:has(> use[href="#i-shield"]),svg.icon:has(> use[href="#i-boots"]),svg.icon:has(> use[href="#i-points"])){background:var(--ki-sym) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
+svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg.icon:has(> use[href="#i-star"]){--ki-sym:url(bilder/ui_sym_stern.webp)} svg.icon:has(> use[href="#i-crown"]){--ki-sym:url(bilder/ui_sym_krone.webp)} svg.icon:has(> use[href="#i-rank"]){--ki-sym:url(bilder/ui_sym_pokal.webp)} svg.icon:has(> use[href="#i-gear"]){--ki-sym:url(bilder/ui_sym_zahnrad.webp)} svg.icon:has(> use[href="#i-goal"]){--ki-sym:url(bilder/ui_sym_ziel.webp)} svg.icon:has(> use[href="#i-lock"]){--ki-sym:url(bilder/ui_sym_schloss.webp)} svg.icon:has(> use[href="#i-check"]){--ki-sym:url(bilder/ui_sym_haken.webp)} svg.icon:has(> use[href="#i-attack"]){--ki-sym:url(bilder/ui_sym_schwert.webp)} svg.icon:has(> use[href="#i-scout"]){--ki-sym:url(bilder/ui_sym_spaeher.webp)} svg.icon:has(> use[href="#i-recall"]){--ki-sym:url(bilder/ui_sym_rueckzug.webp)} svg.icon:has(> use[href="#i-multiattack"]){--ki-sym:url(bilder/ui_sym_pfeile.webp)} svg.icon:has(> use[href="#i-tower"]){--ki-sym:url(bilder/ui_sym_turm.webp)} svg.icon:has(> use[href="#i-defense"]){--ki-sym:url(bilder/ui_sym_turm.webp)} svg.icon:has(> use[href="#i-losses"]){--ki-sym:url(bilder/ui_sym_verluste.webp)} svg.icon:has(> use[href="#i-upgrade"]){--ki-sym:url(bilder/ui_sym_aufstieg.webp)} svg.icon:has(> use[href="#i-hourglass"]){--ki-sym:url(bilder/ui_sym_zeit.webp)} svg.icon:has(> use[href="#i-battlelog"]){--ki-sym:url(bilder/ui_sym_rolle.webp)} svg.icon:has(> use[href="#i-bund"]){--ki-sym:url(bilder/ui_dock_bund.webp)} svg.icon:has(> use[href="#i-event"]){--ki-sym:url(bilder/ui_dock_events.webp)} svg.icon:has(> use[href="#i-shop"]){--ki-sym:url(bilder/ui_dock_shop.webp)} svg.icon:has(> use[href="#i-flag"]){--ki-sym:url(bilder/ui_fahne.webp)} svg.icon:has(> use[href="#i-back"]){--ki-sym:url(bilder/ui_zurueck.webp)} svg.icon:has(> use[href="#i-coin"]){--ki-sym:url(bilder/ui_res_muenzen.webp)} svg.icon:has(> use[href="#i-gem"]){--ki-sym:url(bilder/ui_res_edelstein.webp)} svg.icon:has(> use[href="#i-troops"]){--ki-sym:url(bilder/ui_res_truppen.webp)} svg.icon:has(> use[href="#i-wood"]){--ki-sym:url(bilder/ui_res_holz.webp)} svg.icon:has(> use[href="#i-stone"]){--ki-sym:url(bilder/ui_res_stein.webp)} svg.icon:has(> use[href="#i-iron"]){--ki-sym:url(bilder/ui_res_eisen.webp)} svg.icon:has(> use[href="#i-weapon"]){--ki-sym:url(bilder/ui_sym_waffe.webp)} svg.icon:has(> use[href="#i-armor"]){--ki-sym:url(bilder/ui_sym_ruestung.webp)} svg.icon:has(> use[href="#i-shield"]){--ki-sym:url(bilder/ui_sym_schild.webp)} svg.icon:has(> use[href="#i-boots"]){--ki-sym:url(bilder/ui_sym_stiefel.webp)} svg.icon:has(> use[href="#i-points"]){--ki-sym:url(bilder/ui_res_punkte.webp)}
+
+/* ---------------- Belohnungs-Kacheln je Seltenheit, leerer Platz ---------------- */
+.tile[data-r],.item-icon[data-r]{border-color:transparent;box-shadow:none;background:var(--ki-kachel) center/100% 100% no-repeat}
+.tile[data-r]::before{display:none} .tile[data-r] > .icon{color:#fff8ea;filter:drop-shadow(0 1px 2px rgba(0,0,0,.8))}
+[data-r="grau"]{--ki-kachel:url(bilder/ui_kachel_grau.webp)} [data-r="gruen"]{--ki-kachel:url(bilder/ui_kachel_gruen.webp)} [data-r="blau"]{--ki-kachel:url(bilder/ui_kachel_blau.webp)}
+[data-r="lila"]{--ki-kachel:url(bilder/ui_kachel_lila.webp)} [data-r="gold"]{--ki-kachel:url(bilder/ui_kachel_gold.webp)} [data-r="rot"]{--ki-kachel:url(bilder/ui_kachel_rot.webp)}
+.tile.empty{border:0;background:url(bilder/ui_platz.webp) center/100% 100% no-repeat}
+
+/* ---------------- Listen-Karten, Hinweisbox (Anleitung), Balken ---------------- */
+.ach{border:0;border-style:solid;background:none;border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch}
+.ach.is-ready{border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch}
+.anleitung{border:0;border-style:solid;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding-left:18px;
+  border-image:url(bilder/ui_hinweis.webp) 30 20 30 80 fill / 10px 7px 10px 20px stretch}
+.pass-bar,.ach-sum-bar{height:12px;padding:3px 11px;border-radius:0;background:none;border-style:solid;border-width:0;overflow:visible;
+  border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch} .pass-bar i,.ach-sum-bar i{border-radius:3px}
+
+/* ---------------- Aufstieg: Strahlen, Wappen mit Krone, Lorbeer ---------------- */
+.lvlup-card{border:0;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 fill / 16px stretch;background:none}
+.lvlup-card::before{background:url(bilder/ui_strahlen.webp) center/contain no-repeat;-webkit-mask-image:none;mask-image:none;opacity:.8}
+.lvlup-badge{width:84px;height:96px;border:0;border-radius:0;box-shadow:none;background:url(bilder/ui_wappen.webp) center/contain no-repeat;padding-top:16px;isolation:isolate}
+.lvlup-badge::after{content:"";position:absolute;inset:-6px -26px -10px;background:url(bilder/ui_lorbeer.webp) center/contain no-repeat;pointer-events:none;z-index:-1}
+.lvlup-rule{height:10px;background:url(bilder/ui_linie.webp) center/100% 100% no-repeat}
+
+/* ---------------- Listen-Karten in allen Fenstern (Shop, Events, Bündnis, Kampf, Berichte, Pass, Rangliste, Einstellungen, Gebäude) ---------------- */
+:is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.chain,.tour-prize,.pl-zelle,.pass-how-l,.ach-sum,.pass-hero,
+  .pass-prem,.pass-old,.daily-row,.title-row,.forge-row,.fo-row,.fo-detail,.bd-zeile,.bd-form,.anf,.gate-ctl,.city-vgl,.shop-info,.skin-card,.crest-card,.statChip,.notice,
+  .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in,.from-sel,.ap-kopf,.ap-hchip,.inbox-empty,.empty-state,.lb-row,.rank-row,.p5-zeile,.lk-mid,.lk-card){border-radius:0!important;box-shadow:none;
+  border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch!important}   /* (!important: Grundform gilt immer – auch gegen ältere „border:“-Kurzregeln mit #id) */
+:is(.ki-karte--an,.ach.is-ready,.quest.is-done:not(.is-claimed),.pl-zelle.is-ready,.inbox-row.is-gold,.barb-rank li.me,.logRow.is-new,.ap-hchip.on,.bd-gk,.daily-day.is-today){border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch!important}
+.set-zeile{padding:0 10px;margin-bottom:4px} .set-zeile:last-child{border-bottom:0}
+/* Unter-Reiter und Wahl-Knöpfe: Schildchen, aktiv gold */
+:is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border-radius:0!important;box-shadow:none;
+  border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
+#goalsTabs.p5-chips{gap:4px;padding-left:8px;padding-right:8px} #goalsTabs .p5-chip{padding:0 8px;gap:4px}   /* 5 Ereignis-Chips (mit Lager) passen auch ins schmale Desktop-Fenster */
+:is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
+:is(.seg:not(.hero-seg) > button):disabled{border-image:url(bilder/ui_k_grau.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
+.ki-balken{border-style:solid;border-width:0;border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch}
+/* Wappen-Feld im Fenster-Kopf (.emblem): Item-Platz statt gezeichnetem Kasten; Stufe als Schildchen */
+.emblem{border:0;border-radius:0;box-shadow:none;background:url(bilder/ui_platz.webp) center/100% 100% no-repeat}
+:is(.emblem,.rp-crest,#pAvatarRing) .lvl{border:0;background:url(bilder/ui_stufe.webp) center/100% 100% no-repeat;box-shadow:none;height:22px;padding-bottom:3px;text-shadow:0 1px 2px #000}
+.ap-spaehen{border-radius:0;background:none;border-image:url(bilder/ui_k_dunkel.webp) 30 40 30 40 fill / 8px 10px 8px 10px stretch!important}
+/* Schieberegler: Spur im Balken-Rahmen, Knopf als Edelstein-Knopf */
+.slider::-webkit-slider-runnable-track{height:12px;border:0;border-radius:0;border-style:solid;border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch}
+.slider::-webkit-slider-thumb{width:26px;height:26px;margin-top:-7px;border:0;border-radius:50%;background:url(bilder/ui_edelstein.webp) center/100% 100% no-repeat;box-shadow:none}
+.slider::-moz-range-track{height:12px;border-radius:0;background:url(bilder/ui_balken.webp) center/100% 100% no-repeat}
+.slider::-moz-range-thumb{width:26px;height:26px;border:0;background:url(bilder/ui_edelstein.webp) center/100% 100% no-repeat}
+/* Shop-Angebote, tägliche Belohnung, Bündnis-Start: Rahmen der Listen-Karte um den eigenen (farbigen) Grund */
+:is(.ware,.daily,.bd-start){border-radius:0!important;border-image:url(bilder/ui_karte.webp) 24 / 8px stretch!important}
+.daily-day{border-radius:0!important;border-image:url(bilder/ui_platz.webp) 30 fill / 8px stretch!important}
+:is(.pill,.ware-link){border-radius:0!important;background:none;border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
+.ware-preis{border-radius:0!important;border-image:url(bilder/ui_k_dunkel.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
+/* Preise überall gleich (Alexander 7.10.): helle Schrift, wenn es reicht – rot, wenn nicht (nie grau); eine Größe; volle Zahl mit Punkt */
+.ware-preis,.ware-preis.thron{color:#fbeec9;font:800 15px/1 var(--font-ui);text-shadow:0 1px 2px #000;background:none}
+.ware-preis.zu-teuer,.ware-preis:disabled{color:#ff8d82}
+.ware-preis .icon{width:15px;height:15px}
+.ware-preise > .ware-preis{flex-wrap:wrap;align-content:center;row-gap:2px;font-size:15px}   /* 1× / 10×: das Mal klein darüber, der Preis gleich groß wie überall */
+.ware-preise > .ware-preis .ware-x,.ware-preis[data-x]::before{flex:1 0 100%;text-align:center;margin:0;font:700 10px/1 var(--font-ui);opacity:.8}
+.ware .band{border-style:solid;border-width:0;background:none;border-image:url(bilder/ui_band_gold.webp) 30 70 30 70 fill / 6px 16px 6px 16px stretch;padding:0 16px}
+
+/* ---------------- Symbole je Ort (dritte Lieferung): Basis-Knöpfe, Bauarbeiter, Fähigkeiten, Labor, Rangliste, Bündnis, Einstellungen ---------------- */
+:is(#teleportBtn .act-ic > svg.icon,#sendBtn .act-ic > svg.icon,#recallBtn .act-ic > svg.icon,#titleBtn .act-ic > svg.icon,.cb-slot > svg.icon,#skillGrid svg.icon:has(> use[href="#i-attack"]),#skillGrid svg.icon:has(> use[href="#i-troops"]),#skillGrid svg.icon:has(> use[href="#i-defense"]),.fo-node-ic > svg.icon:has(> use[href="#i-coin"]),.fo-node-ic > svg.icon:has(> use[href="#i-crate"]),.fo-node-ic > svg.icon:has(> use[href="#i-castle"]),.fo-node-ic > svg.icon:has(> use[href="#i-send"]),.fo-node-ic > svg.icon:has(> use[href="#i-flag"]),.fo-node-ic > svg.icon:has(> use[href="#i-plus"]),.fo-node-ic > svg.icon:has(> use[href="#i-hourglass"]),[data-rtab="power"] > svg.icon,[data-rtab="caps"] > svg.icon,#profileKennung svg.icon:has(> use[href="#i-attack"]),.bd-rally svg.icon,.bd-hilfe-btn svg.icon,svg.icon:has(> use[href="#i-question"]),svg.icon:has(> use[href="#i-sound"]),svg.icon:has(> use[href="#i-sfx"]),svg.icon:has(> use[href="#i-send"]),svg.icon:has(> use[href="#i-temple"]),svg.icon:has(> use[href="#i-market"]),svg.icon:has(> use[href="#i-sell"])) > use{display:none}
+:is(#teleportBtn .act-ic > svg.icon,#sendBtn .act-ic > svg.icon,#recallBtn .act-ic > svg.icon,#titleBtn .act-ic > svg.icon,.cb-slot > svg.icon,#skillGrid svg.icon:has(> use[href="#i-attack"]),#skillGrid svg.icon:has(> use[href="#i-troops"]),#skillGrid svg.icon:has(> use[href="#i-defense"]),.fo-node-ic > svg.icon:has(> use[href="#i-coin"]),.fo-node-ic > svg.icon:has(> use[href="#i-crate"]),.fo-node-ic > svg.icon:has(> use[href="#i-castle"]),.fo-node-ic > svg.icon:has(> use[href="#i-send"]),.fo-node-ic > svg.icon:has(> use[href="#i-flag"]),.fo-node-ic > svg.icon:has(> use[href="#i-plus"]),.fo-node-ic > svg.icon:has(> use[href="#i-hourglass"]),[data-rtab="power"] > svg.icon,[data-rtab="caps"] > svg.icon,#profileKennung svg.icon:has(> use[href="#i-attack"]),.bd-rally svg.icon,.bd-hilfe-btn svg.icon,svg.icon:has(> use[href="#i-question"]),svg.icon:has(> use[href="#i-sound"]),svg.icon:has(> use[href="#i-sfx"]),svg.icon:has(> use[href="#i-send"]),svg.icon:has(> use[href="#i-temple"]),svg.icon:has(> use[href="#i-market"]),svg.icon:has(> use[href="#i-sell"])){background:var(--ki-ort) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
+#teleportBtn .act-ic > svg.icon{--ki-ort:url(bilder/ui_sym_verlegen.webp)} #sendBtn .act-ic > svg.icon{--ki-ort:url(bilder/ui_sym_senden.webp)} #recallBtn .act-ic > svg.icon{--ki-ort:url(bilder/ui_sym_sammeln.webp)} #titleBtn .act-ic > svg.icon{--ki-ort:url(bilder/ui_sym_tempelbonus.webp)} .cb-slot > svg.icon{--ki-ort:url(bilder/ui_sym_bauarbeiter.webp)} #skillGrid svg.icon:has(> use[href="#i-attack"]){--ki-ort:url(bilder/ui_skill_angriff.webp)} #skillGrid svg.icon:has(> use[href="#i-troops"]){--ki-ort:url(bilder/ui_skill_truppen.webp)} #skillGrid svg.icon:has(> use[href="#i-defense"]){--ki-ort:url(bilder/ui_skill_verteidigung.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-coin"]){--ki-ort:url(bilder/ui_fo_ertrag.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-crate"]){--ki-ort:url(bilder/ui_fo_traglast.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-castle"]){--ki-ort:url(bilder/ui_fo_burgschutz.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-send"]){--ki-ort:url(bilder/ui_fo_marschtempo.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-flag"]){--ki-ort:url(bilder/ui_fo_kundschaft.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-plus"]){--ki-ort:url(bilder/ui_sym_verwundete.webp)} .fo-node-ic > svg.icon:has(> use[href="#i-hourglass"]){--ki-ort:url(bilder/ui_sym_sammeln.webp)} [data-rtab="power"] > svg.icon{--ki-ort:url(bilder/ui_sym_macht.webp)} [data-rtab="caps"] > svg.icon{--ki-ort:url(bilder/ui_sym_eroberung.webp)} #profileKennung svg.icon:has(> use[href="#i-attack"]){--ki-ort:url(bilder/ui_sym_macht.webp)} .bd-rally svg.icon{--ki-ort:url(bilder/ui_sym_rally.webp)} .bd-hilfe-btn svg.icon{--ki-ort:url(bilder/ui_sym_hilfe.webp)} svg.icon:has(> use[href="#i-question"]){--ki-ort:url(bilder/ui_set_hilfe.webp)} svg.icon:has(> use[href="#i-sound"]){--ki-ort:url(bilder/ui_set_ton.webp)} svg.icon:has(> use[href="#i-sfx"]){--ki-ort:url(bilder/ui_set_ton.webp)} svg.icon:has(> use[href="#i-send"]){--ki-ort:url(bilder/ui_sym_senden.webp)} svg.icon:has(> use[href="#i-temple"]){--ki-ort:url(bilder/ui_sym_tempelbonus.webp)} svg.icon:has(> use[href="#i-market"]){--ki-ort:url(bilder/ui_sym_markt.webp)} svg.icon:has(> use[href="#i-sell"]){--ki-ort:url(bilder/ui_sym_handeln.webp)}
+
+/* ---------------- Rahmen um das Wappen: Saison-Rahmen und Neuling als Bild-Ring, Rang-Rahmen mit Rang-Abzeichen oben ---------------- */
+:is(#pAvatarRing,.frame-ring,.lb-crest,.rp-crest,.hud-me .avatar-ring):is([data-frame="bronze"],[data-frame="sz1"],[data-frame="sz2"],[data-frame="sz4"],[data-frame="sz6"],[data-frame="mgut"]){
+  background:none!important;box-shadow:none!important;animation:none!important;position:relative;overflow:visible}
+:is(#pAvatarRing,.frame-ring,.lb-crest,.rp-crest,.hud-me .avatar-ring)[data-frame]::after{content:"";position:absolute;pointer-events:none;background:var(--ki-rahmen,none) center/100% 100% no-repeat;inset:-12%}
+:is(#pAvatarRing,.frame-ring,.lb-crest,.rp-crest)[data-frame]::before{content:"";position:absolute;pointer-events:none;z-index:1;left:50%;top:-22%;width:40%;aspect-ratio:3/4;transform:translateX(-50%);background:var(--ki-rang,none) center/contain no-repeat}
+[data-frame="bronze"]{--ki-rahmen:url(bilder/ui_rahmen_neuling.webp)} [data-frame="sz1"]{--ki-rahmen:url(bilder/ui_rahmen_champion.webp)} [data-frame="sz2"]{--ki-rahmen:url(bilder/ui_rahmen_grossadmiral.webp)}
+[data-frame="sz4"]{--ki-rahmen:url(bilder/ui_rahmen_admiral.webp)} [data-frame="sz6"]{--ki-rahmen:url(bilder/ui_rahmen_kapitaen.webp)} [data-frame="mgut"]{--ki-rahmen:url(bilder/ui_rahmen_mitte.webp)}
+[data-frame="silver"]{--ki-rang:url(bilder/ui_rang_silberritter.webp)} [data-frame="gold"]{--ki-rang:url(bilder/ui_rang_goldfuerst.webp)} [data-frame="platin"]{--ki-rang:url(bilder/ui_rang_platingraf.webp)}
+[data-frame="diamond"]{--ki-rang:url(bilder/ui_rang_diamantherzog.webp)} [data-frame="master"]{--ki-rang:url(bilder/ui_rang_meister.webp)} [data-frame="legend"]{--ki-rang:url(bilder/ui_rang_legende.webp)}
+
+/* ---------------- Ereignis-Banner: KI-Bild statt gezeichneter Szene (Invasion, Drache, Tagesboss je Boss, Sammel-Rausch) ---------------- */
+:is(.ev-banner--inv,.ev-banner--drache,.ev-boss--kraken .ev-banner,.ev-boss--giant .ev-banner,.ev-boss--dragon .ev-banner,.ev-boss--wraith .ev-banner,.ev-woche--sam .ev-banner,.ev-woche--krieg .ev-banner,.ev-woche--boss .ev-banner,.ev-woche--bau .ev-banner){height:118px;background:var(--ki-banner) center 35%/cover no-repeat}
+:is(.ev-banner--inv,.ev-banner--drache,.ev-boss--kraken .ev-banner,.ev-boss--giant .ev-banner,.ev-boss--dragon .ev-banner,.ev-boss--wraith .ev-banner,.ev-woche--sam .ev-banner,.ev-woche--krieg .ev-banner,.ev-woche--boss .ev-banner,.ev-woche--bau .ev-banner) .ev-bild{visibility:hidden}
+.ev-banner--inv{--ki-banner:url(bilder/event_invasion.webp)} .ev-banner--drache{--ki-banner:url(bilder/event_drache.webp)} .ev-boss--kraken{--ki-banner:url(bilder/boss_kraken.webp)}
+.ev-boss--giant{--ki-banner:url(bilder/boss_steinriese.webp)} .ev-boss--dragon{--ki-banner:url(bilder/boss_feuerdrache.webp)} .ev-boss--wraith{--ki-banner:url(bilder/boss_nebelkoenig.webp)}
+.ev-woche--sam{--ki-banner:url(bilder/woche_sammeln.webp)} .ev-woche--krieg{--ki-banner:url(bilder/woche_krieg.webp)} .ev-woche--boss{--ki-banner:url(bilder/woche_boss.webp)} .ev-woche--bau{--ki-banner:url(bilder/woche_bau.webp)}
+/* Tipp auf ein freies Feld der Karte (Merkliste 33): runde KI-Knöpfe im Bogen wie am Gebäude (.cr-btn), Stelle = Nadel auf der Karte */
+.feld-ring{position:fixed;left:0;top:0;z-index:44;width:0;height:0;pointer-events:none}
+.feld-ring[hidden]{display:none}
+.feld-ring .cr-btn{border:0;border-radius:50%;background:var(--ui-rund) center/100% 100% no-repeat;box-shadow:0 4px 12px rgba(0,0,0,.5)}
+.feld-ring .cr-btn.is-armed{background-image:var(--ui-rund-an)}
+.feld-ring .fr-ic{width:34px;height:34px;background:var(--b) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
+.feld-ring .cr-btn small{font-size:11px;text-align:center}   /* „Hierher teleportieren?“ über dem Preis: 2 Zeilen, schmal */
+.feld-ring .cr-btn small .icon{width:12px;height:12px;vertical-align:-2px}
     </style>
 </head>
 <body>
@@ -1960,7 +2231,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 <canvas id="mapCanvas" aria-label="Weltkarte"></canvas>
 <div id="mapVignette" aria-hidden="true"></div>
 
-<!-- HUD: Spielerbild (antippen = Profil) + eine Werte-Zeile + runder Rohstoff-Knopf; Desktop = ein Rahmen mit Namensschild -->
+<!-- HUD: Spielerbild (antippen = Profil) + EINE Reihe Werte (Münzen, Edelsteine, Truppen, Holz, Stein, Eisen); Rohstoff antippen = Ertrag/Std. als Blase -->
 <div id="hud" class="hud">
   <button id="hudPlayer" class="hud-me" type="button" title="Profil öffnen">
     <span class="avatar-ring avatar-ring--sm"><span class="avatar"><svg class="icon"><use href="#i-profile"/></svg></span><span id="hudLevel" class="lvl">1</span></span>
@@ -1970,21 +2241,22 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
     <div class="res res--coin" title="Münzen"><svg class="icon"><use href="#i-coin"/></svg><b id="coinCount">0</b></div>
     <div class="res res--gem" title="Edelsteine"><svg class="icon"><use href="#i-gem"/></svg><b id="gemCount">0</b></div>
     <div class="res res--troop" title="Truppen"><svg class="icon"><use href="#i-troops"/></svg><b id="troopCount">0</b></div>
+    <span id="hudRoh" class="res-roh" role="group" aria-label="Rohstoffe"><button class="res res--h" type="button" data-roh="h" title="Holz"><svg class="icon"><use href="#i-wood"/></svg><b data-r="h">0</b></button><button class="res res--s" type="button" data-roh="s" title="Stein"><svg class="icon"><use href="#i-stone"/></svg><b data-r="s">0</b></button><button class="res res--e" type="button" data-roh="e" title="Eisen"><svg class="icon"><use href="#i-iron"/></svg><b data-r="e">0</b></button></span>
   </div>
-  <button id="hudRoh" class="res res--roh" type="button" title="Rohstoffe" aria-label="Rohstoffe"><svg class="icon"><use href="#i-crate"/></svg><span class="roh-mini"><span class="roh-v roh-h"><svg class="icon"><use href="#i-wood"/></svg><b data-r="h">0</b></span><span class="roh-v roh-s"><svg class="icon"><use href="#i-stone"/></svg><b data-r="s">0</b></span><span class="roh-v roh-e"><svg class="icon"><use href="#i-iron"/></svg><b data-r="e">0</b></span></span></button>
 </div>
-<div id="rohDrop" class="roh-drop" hidden></div>
+<div id="rohDrop" class="roh-blase" role="status" hidden></div>
 
 <div id="midBar" class="midbar" hidden></div>
 
-<!-- Navigation (die EINE Ordnung, Abschnitt 26): Karte/Stadt · Bündnis · Kampf · Events · Shop – runde Knöpfe; das Profil über das Spielerbild.
+<!-- Navigation (die EINE Ordnung, Abschnitt 26): Karte/Stadt · Bündnis · Kampf · Events · Rucksack · Shop – runde Knöpfe; das Profil über das Spielerbild.
      phone = bottom dock, landscape phone = left rail, desktop = unten Mitte -->
 <nav id="cornerButtons" class="nav" aria-label="Hauptmenü">
   <button id="cityNavBtn" class="nav-btn" type="button" title="Stadt: Burg, Gebäude, Forschung, Helden, Rohstoffe"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="bundBtn" class="nav-btn" type="button" title="Bündnis"><svg class="icon"><use href="#i-bund"/></svg><span class="nav-l">Bündnis</span><span id="bundBadge" class="badge" style="display:none">0</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Kampf: Märsche und Berichte"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
   <button id="goalsBtn" class="nav-btn" type="button" title="Events: Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Boss"><svg class="icon"><use href="#i-event"/></svg><span class="nav-l">Events</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
-  <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
+  <button id="rucksackBtn" class="nav-btn" type="button" title="Rucksack: Schilde, Teleporter, Splitter"><svg class="icon"><use href="#i-crate"/></svg><span class="nav-l">Rucksack</span></button>
+  <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Teleporter, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
   <button id="profileBtn" class="nav-btn" type="button" title="Profil: Spieler, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
 </nav>
 
@@ -1999,6 +2271,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 <div id="armySheet" class="marker-sheet field-sheet" hidden></div>
 <div id="fieldSheet" class="marker-sheet field-sheet" hidden></div>
 <div id="barbSheet" class="marker-sheet field-sheet barb-sheet" hidden></div>
+<div id="feldRing" class="feld-ring" hidden></div>
 <div id="markerSheet" class="marker-sheet" hidden>
   <div class="marker-head"><b id="markerTitle">Wegmarke</b><button id="markerClose" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button></div>
   <div class="marker-presets" id="markerPresets"></div>
@@ -2031,7 +2304,8 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 
 <style>
 /* Fenster Events, Kampf, Bündnis, Profil: höchstens 4 Reiter, Unterreiter als Chips, Tippflächen mind. 44 px, nichts abgeschnitten */
-#goalsGruppen.tabs,#profilePopup #profileTabs.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+#goalsGruppen.tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
+#profilePopup #profileTabs.tabs,#rankTabs.tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:auto}   /* Breite nach dem Text: „Einstellungen“, „Thron-Punkte“ bekommen mehr Platz, stoßen nicht an den Rand */
 #battleTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 .p5-reiter .tab .badge{position:absolute;top:4px;right:8px}
 @media (min-height:501px),(orientation:portrait){
@@ -2066,8 +2340,30 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 .empty-state.ev-leer{padding:22px 16px;gap:8px;border:1px dashed var(--line-2);border-radius:10px;background:rgba(255,255,255,.02)}
 .empty-state.ev-leer > .icon{width:40px;height:40px;color:var(--gold-300)} .empty-state.ev-leer > span{max-width:34ch}
 .empty-state.ev-leer > b{font-size:var(--fs-15)} .empty-state.ev-leer .btn{margin-top:8px;max-width:100%}
-#shieldUse > .lb-leer{grid-column:1/-1}
-.ev-saison{margin-top:12px} .ev-saison .field-lines b{text-align:left;justify-content:flex-start}
+/* Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen – erreicht leuchtet („Abholen“), abgeholt = offene Kiste + Haken */
+.evl{contain:inline-size;width:100%;overflow-x:auto;overscroll-behavior-x:contain;margin:2px -2px 6px;padding:4px 2px 2px;scrollbar-width:thin}
+.evl-bahn{position:relative;display:grid;grid-template-columns:repeat(var(--n),minmax(52px,1fr));min-width:calc(var(--n) * 52px)}
+.evl-spur{position:absolute;left:0;right:0;top:20px;height:8px;border-radius:4px;background:rgba(0,0,0,.45);border:1px solid var(--line-2);overflow:hidden}
+.evl-spur i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#a8831a,#f2c75c);box-shadow:0 0 8px rgba(242,199,92,.6)}
+.evl-k{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:none;color:var(--tx-3);font:700 10.5px/1.1 var(--font-ui);white-space:nowrap}
+.evl-bild{position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:10px} .evl-bild img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7))}
+.evl-k.is-ding .evl-bild{background:rgba(10,8,6,.75);border:1px solid var(--line-2)} .evl-k.is-ding .evl-bild img{width:32px;height:32px}
+.evl-k.is-zu .evl-bild img{filter:grayscale(.85) brightness(.6)} .evl-k.is-zu{opacity:.85}
+.evl-k.is-hol,.evl-k.is-bald{color:var(--gold-100);cursor:pointer} .evl-k.is-hol .evl-bild{background:radial-gradient(circle,rgba(255,214,110,.55),rgba(255,214,110,0) 70%);animation:evlGlueh 1.4s ease-in-out infinite}
+.evl-k.is-ok{color:var(--tx-2)} .evl-haken{position:absolute;right:-4px;top:-4px;width:20px;height:20px} .evl-haken img{width:20px;height:20px;filter:none}
+@keyframes evlGlueh{50%{transform:scale(1.08);box-shadow:0 0 14px rgba(255,214,110,.6)}}
+@media (prefers-reduced-motion:reduce){.evl-k.is-hol .evl-bild{animation:none}}
+.evl-zeilen{display:grid;gap:6px;margin-bottom:8px}
+.evl-z{display:grid;grid-template-columns:minmax(64px,38%) 1fr auto;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
+.evl-z > b{display:flex;flex-direction:column;gap:1px;font:700 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-1)} .evl-z > b small{font:600 10.5px/1.2 var(--font-ui);color:var(--tx-3)}
+.evl-z.is-hol{border-color:rgba(242,199,92,.7);background:linear-gradient(90deg,rgba(242,199,92,.16),rgba(0,0,0,.2));box-shadow:0 0 10px rgba(242,199,92,.25)}
+.evl-z.is-ok{opacity:.8} .evl-z.is-zu .bk-raster{filter:saturate(.5) brightness(.8)}
+.evl-st{display:flex;align-items:center;gap:4px;justify-content:flex-end;color:var(--tx-3)} .evl-st img{width:20px;height:20px} .evl-st small{font:600 11px/1 var(--font-ui)} .evl-st .icon{width:16px;height:16px}
+.evk-n{min-width:30px;font:800 var(--fs-15)/1 var(--font-display);color:var(--gold-100)}
+#eventBody > .btn[data-ev-hol]{width:100%;margin:0 0 8px}
+/* Lebensbalken (Tagesboss/Drache): die Zahl nie halb abgeschnitten – Höhe wächst mit der Schrift */
+.barb-hp{height:auto;min-height:20px} .barb-hp span{line-height:1.35;padding:2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ev-saison{margin-top:12px}.ev-saison .field-lines b{text-align:left;justify-content:flex-start}
 .tour-prize{gap:4px;padding:9px 4px} .tour-prize b{font-size:var(--fs-13)} .tour-prize span{font-size:12px} .tour-prize .icon{width:14px;height:14px} .tour-prize em{font-size:10px}
 .lb-info summary{display:flex;align-items:center;gap:6px;min-height:44px;list-style:none;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-2)} .lb-info summary::-webkit-details-marker{display:none}
 .lb-info summary .icon{width:18px;height:18px;color:var(--gold-300)} .lb-info p{margin:0 0 8px}
@@ -2168,10 +2464,10 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   <div class="pbody">
     <div id="tabInfo" class="profileTabPanel active" role="tabpanel">
       <div id="xpNext" class="xp-next p5-naechste"></div>
-      <!-- Aussehen: nur hier (Wappen, Rahmen, Titel, Basis- und Marsch-Skins, Ringe) -->
-      <button id="crestCard" class="crest-card" type="button" aria-label="Aussehen: Wappen, Rahmen, Skins, Ringe">
+      <!-- Aussehen: nur hier (Wappen, Rahmen, Titel) -->
+      <button id="crestCard" class="crest-card" type="button" aria-label="Aussehen: Wappen, Rahmen">
         <canvas id="crestSmall" width="112" height="112"></canvas>
-        <span id="lookNow" class="crest-card-t"><b>Aussehen</b><small>Wappen, Rahmen, Skins, Ringe</small></span>
+        <span id="lookNow" class="crest-card-t"><b>Aussehen</b><small>Wappen · Rahmen</small></span>
         <span class="crest-card-go">Ändern<svg class="icon"><use href="#i-upgrade"/></svg></span>
       </button>
       <!-- Rangliste: eigenes Fenster, hier nur der Weg dorthin -->
@@ -2373,7 +2669,8 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><span>Woche</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="inv" data-ggrp-von="ereignisse" hidden><span>Invasion</span><span class="badge" data-gbadge="inv" style="display:none">!</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="drache" data-ggrp-von="ereignisse" hidden><span>Drache</span><span class="badge" data-gbadge="drache" style="display:none">!</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span>Boss</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span>Boss</span><span class="badge" data-gbadge="boss" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="lager" data-ggrp-von="ereignisse" hidden><span>Lager</span><span class="badge" data-gbadge="lager" style="display:none">!</span></button>
   </div>
   <div class="pbody">
     <div class="mail-pane" data-gpane="daily">
@@ -2401,7 +2698,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   </div>
 </section>
 
-<!-- ============ SHOP (Dock): Kisten · Schilde · Thron · Händler (nur wenn einer da ist) · Markt – alles Kaufen/Tauschen nur hier ============ -->
+<!-- ============ SHOP (Dock): Kisten · Schilde + Teleporter (nur kaufen – benutzt wird im Rucksack) · Thron · Händler (nur wenn einer da ist) · Markt – alles Kaufen/Tauschen nur hier ============ -->
 <section id="shopPopup" class="panel panel--sheet" role="dialog" aria-labelledby="shopTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
@@ -2423,25 +2720,29 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <div class="mail-pane" data-spane="markt" hidden><div id="shopMarkt" class="ev-body"></div></div>
     <div class="mail-pane" data-spane="shield" hidden>
       <div id="shieldState" class="notice"></div>
-      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Vorrat<button type="button" class="shop-i" data-sinfo="schild" aria-expanded="false" aria-label="Erklärung"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
+      <div class="sect"><h4>Kaufen</h4><span class="sect-aside">kommt in den Rucksack<button type="button" class="shop-i" data-sinfo="schild" aria-expanded="false" aria-label="Erklärung"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
       <p class="mail-intro shop-info" data-sinfo-box="schild" hidden>Friedensschild: niemand kann deine Türme angreifen, solange er steht – Tore, Tempel und der Thron bleiben angreifbar. Greifst du selbst an, fällt der Schild sofort.</p>
       <div class="waren waren--3">
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>2 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>2 Stunden</small></span>
-          <button type="button" class="ware-preis" data-shield="2" aria-label="Schild 2 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>40</b></button></div>
+          <button type="button" class="ware-preis" data-shield="2" aria-label="Schild 2 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>80</b></button></div>
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>8 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>8 Stunden</small></span>
-          <button type="button" class="ware-preis" data-shield="8" aria-label="Schild 8 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>120</b></button></div>
+          <button type="button" class="ware-preis" data-shield="8" aria-label="Schild 8 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>300</b></button></div>
         <div class="ware ware--klein" data-r="blau"><span class="ware-bild ware-bild--ic"><svg class="icon"><use href="#i-shield"/></svg><i>24 h</i></span><span class="ware-txt"><b class="ware-name">Schild</b><small>24 Stunden</small></span>
-          <button type="button" class="ware-preis" data-shield="24" aria-label="Schild 24 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>300</b></button></div>
+          <button type="button" class="ware-preis" data-shield="24" aria-label="Schild 24 Std. kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>700</b></button></div>
       </div>
-      <div class="sect"><h4>Einschalten</h4><span class="sect-aside">aus dem Vorrat</span></div>
-      <div id="shieldUse" class="shield-opts"></div>
+      <div class="sect"><h4>Teleporter</h4><span class="sect-aside">kommt in den Rucksack</span></div>
+      <div class="waren waren--3">
+        <div class="ware ware--klein" data-r="lila"><span class="ware-bild"><img class="kiste-bild" src="bilder/ui_sym_verlegen.webp" alt="" draggable="false"></span><span class="ware-txt"><b class="ware-name">Teleporter</b><small class="ware-lang">Hauptstadt an eine freie Stelle</small></span>
+          <button type="button" class="ware-preis" data-tele-kauf aria-label="Teleporter kaufen"><svg class="icon"><use href="#i-gem"/></svg><b>500</b></button></div>
+      </div>
+      <button type="button" class="ware-link" data-zum-rucksack><svg class="icon"><use href="#i-crate"/></svg><span id="shopRucksackN">Rucksack ›</span></button>
     </div>
     <div class="mail-pane" data-spane="gems">
-      <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte gezeichnete Truhe in der Farbe der Seltenheit, Preis-Knopf unten über die ganze Breite (ein Tipp = kaufen) -->
+      <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte das KI-Bild der Kiste, Preis-Knöpfe unten über die ganze Breite (ein Tipp = kaufen; unter 500 Edelsteinen „1ד und „10ד) -->
       <div class="waren">
         <div id="heroChestOpts" class="waren-teil"></div>
         <div class="ware" data-r="grau"><span class="ware-bild" data-kiste-art="aus"></span><span class="ware-txt"><b class="ware-name">Ausrüstungs&shy;kiste</b><small>1 Teil · Grau bis Episch</small></span>
-          <button id="shopOpenCrateBtn" class="ware-preis" type="button" aria-label="Ausrüstungskiste kaufen"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></button></div>
+          <span class="ware-preise"><button id="shopOpenCrateBtn" class="ware-preis" type="button" data-x="1×" aria-label="Ausrüstungskiste kaufen"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></button><button type="button" class="ware-preis" data-mehr="aus" aria-label="10 Kisten öffnen" disabled><span class="ware-x">10×</span><svg class="icon"><use href="#i-gem"/></svg><b>1.500</b></button></span></div>
         <div class="ware-mehr"><button id="shopToEquipBtn" class="ware-link" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Inventar ›</span></button>
           <button type="button" class="ware-link" data-sinfo="kiste" aria-expanded="false"><svg class="icon"><use href="#i-info"/></svg><span>Chancen</span></button></div>
       </div>
@@ -2452,6 +2753,20 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <div id="shopCrateResult" class="loot" style="display:none"></div>
       <div id="shopHeroResult" class="hchest-res" hidden></div>
     </div>
+  </div>
+</section>
+
+<!-- ============ RUCKSACK (Dock): was du hast – Schilde (einsetzen), Teleporter (benutzen), Splitter je Held (nur Anzeige) ============ -->
+<section id="rucksackPopup" class="panel panel--sheet" role="dialog" aria-labelledby="rucksackTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><img class="rk-emblem" src="bilder/ui_dock_rucksack.webp" alt="" draggable="false"></div>
+    <div class="phead-text"><div class="overline">Deine Gegenstände</div><h3 id="rucksackTitle" class="ptitle">Rucksack</h3></div>
+    <button id="rucksackCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="pbody">
+    <div id="rkSchildStand" class="notice"></div>
+    <div id="rkInhalt" class="rk-inhalt"></div>
   </div>
 </section>
 
@@ -2475,6 +2790,83 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button id="chestItemSellBtn" class="btn btn--danger-outline btn--grow" type="button"><svg class="icon"><use href="#i-sell"/></svg><span>Verkaufen</span></button>
   </footer>
 </section>
+<style>
+/* =====================================================================
+   HELDEN (Merkliste 20, Alexander 7.10.: Helden-Fenster neu wie RoK): Raster aus Bild-Karten im Seltenheits-Rahmen (ui_kachel_*),
+   Held groß auf einer Bühne mit Name, Sternen, Macht und den 4 Fähigkeiten als Kacheln; darunter Werte, Sterne, Fähigkeiten.
+   Nur Aussehen – Zahlen und Knöpfe bleiben dieselben. Rahmen/Listen-Karten aus der Grundform (05z: .ki-karte, [data-r]).
+   ===================================================================== */
+/* Kopf-Chips (Marsch-Auswahl, Kampfbericht, Profil, Mauer, Kisten): Kopfbild auf dem Farbgrund der Seltenheit */
+.hero-pic{object-fit:cover;object-position:50% 0;background:radial-gradient(circle at 50% 30%,color-mix(in srgb,var(--hc,var(--rc,#8a8f99)) 60%,#20232a),#0b0c10 80%)}
+
+/* ---------------- Raster: Bild-Karten ---------------- */
+.hh-cards{grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px}
+.hh-card{aspect-ratio:3/4.15;border-radius:9px;border-style:solid;border-width:0;border-color:transparent;background:#0b0c10;
+  border-image:var(--ki-kachel) 24 fill / 9px stretch;box-shadow:0 4px 10px #0009;overflow:hidden}
+.hh-card.is-locked{background:#0b0c10}
+.hh-art{inset:5px 5px 0;top:5px;aspect-ratio:auto;bottom:0;-webkit-mask:linear-gradient(#000 70%,#0000 96%);mask:linear-gradient(#000 70%,#0000 96%)}
+.hh-art .hero-pic{width:100%;height:100%;object-fit:cover;object-position:50% 0;background:none;border:0}
+.hh-card.is-locked .hh-art{filter:grayscale(1) brightness(.5)}
+.hh-foot{left:4px;right:4px;bottom:4px;padding:16px 3px 5px;border-radius:0 0 6px 6px;background:linear-gradient(0deg,#000 0%,#000d 55%,#0000)}
+.hh-foot b{font:700 var(--fs-13)/1.1 var(--font-display);letter-spacing:.02em;color:#fff6e0}
+.hh-foot small{color:#ffffffb0}
+.hh-foot .hh-qstars i{width:12px;height:12px}
+.hh-dot{left:8px;top:8px;z-index:1}
+.hh-lk{right:7px;top:7px;z-index:1}
+.hh-frei{box-sizing:border-box;max-width:100%;flex-wrap:wrap;justify-content:center;row-gap:2px;padding:5px 8px;gap:3px;font-size:9.5px;letter-spacing:0}   /* „Freischalten“ + Kosten passen ganz in die schmale Karte */
+.hh-frei .icon{display:none}   /* (das Plus bräche in eine eigene Zeile) */
+.hh-frei em{flex-basis:100%;font:700 9px/1 var(--font-ui);font-style:normal;text-transform:none;opacity:.8}
+.hh-head [data-hh-back] > .icon{background-image:url(bilder/ui_zurueck.webp)}   /* Zurück statt Schließen-Bild (05z gibt jedem .btn-x das X) */
+.hh-cards--zu{grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:6px}
+.hh-cards--zu .hh-card{aspect-ratio:3/4;border-image:var(--ki-kachel) 24 fill / 7px stretch}
+.hh-cards--zu .hh-foot{padding:10px 2px 4px}
+@media (min-width:900px){ .hh-cards{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px} .hh-cards.hh-cards--zu{grid-template-columns:repeat(auto-fill,minmax(104px,1fr));gap:8px} }
+.hh-pair-pics .hero-pic{--hc:var(--gold-300)}
+.hero-pic.bd-hpic{width:18px;height:18px;margin:0 3px -4px 1px;border-radius:4px;border:1px solid var(--gold-300)}   /* Rally-Zeile: Kopf vor dem Namen */
+
+/* ---------------- Ein Held: Bühne ---------------- */
+.hh-hero{border:0;border-radius:12px;border-style:solid;border-image:url(bilder/ui_rahmen.webp) 44 / 14px stretch;
+  background:radial-gradient(ellipse 70% 55% at 50% 40%,color-mix(in srgb,var(--rc) 45%,transparent),transparent 70%),linear-gradient(180deg,#1a1d24,#07080b 75%)}
+.hh-stage{overflow:hidden;background:radial-gradient(ellipse 60% 45% at 55% 42%,color-mix(in srgb,var(--rc) 55%,transparent),transparent 72%)}
+.hh-strahl{position:absolute;left:50%;top:6%;width:min(520px,110%);aspect-ratio:1;transform:translateX(-50%);background:url(bilder/ui_strahlen.webp) center/contain no-repeat;opacity:.35;mix-blend-mode:screen;pointer-events:none}
+.hh-floor{left:14%;right:14%;bottom:118px;height:46px;background:radial-gradient(ellipse,color-mix(in srgb,var(--rc) 40%,#000c),transparent 70%)}
+.hh-portrait{left:50%;bottom:112px;top:auto;transform:translateX(-50%);width:auto;height:calc(100% - 150px);max-height:470px;aspect-ratio:3/4;border:0;border-radius:0;box-shadow:none;background:none;
+  object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 8px 18px #000c);-webkit-mask:linear-gradient(#000 82%,#0000);mask:linear-gradient(#000 82%,#0000)}
+.hh-portrait.is-locked{filter:grayscale(.9) brightness(.55) drop-shadow(0 8px 18px #000c)}
+.hh-id{max-width:46%}
+.hh-gem{color:#fff;background:color-mix(in srgb,var(--rc) 70%,#000);padding:4px 8px 4px 6px;border-radius:3px;align-self:flex-start;box-shadow:0 1px 0 #ffffff30 inset}
+.hh-gem::before{background:#fff;border-color:color-mix(in srgb,var(--rc) 40%,#000)}
+.hh-nm{font-size:32px;color:#fff6e0;letter-spacing:.02em}
+.hh-unten{position:absolute;left:0;right:0;bottom:0;z-index:2;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;padding:10px 14px 12px;
+  background:linear-gradient(0deg,#07080bee 40%,#07080b00)}
+.hh-unten .hh-top{flex-direction:column;align-items:flex-start;gap:2px;padding:0;border:0}
+.hh-unten h3{margin:0;font:700 var(--fs-11)/1 var(--font-ui);letter-spacing:.14em;text-transform:uppercase;color:var(--tx-3)}
+.hh-skks{display:flex;gap:6px}
+.hh-skk{position:relative;width:48px;height:48px;display:grid;place-items:center;font:700 20px/1 var(--font-display);color:#fff;text-shadow:0 1px 3px #000;
+  border-style:solid;border-width:0;border-image:var(--ki-kachel) 24 fill / 8px stretch}
+.hh-skk.act{border-image-source:url(bilder/ui_kachel_gold.webp)}
+.hh-skk.is-null{filter:grayscale(.85) brightness(.7)}
+.hh-skk i{position:absolute;right:-3px;bottom:-3px;min-width:17px;height:17px;padding:0 3px;border-radius:9px;background:#0b0c10;border:1px solid var(--gold-300);font:800 10px/15px var(--font-ui);font-style:normal;color:var(--gold-100);text-align:center}
+
+/* ---------------- Ein Held: Werte als Kacheln, Fähigkeiten mit Kachel-Symbol ---------------- */
+.hh-panel{background:linear-gradient(180deg,rgba(20,22,28,.94),rgba(10,11,14,.97))}
+.hh-vals{grid-template-columns:repeat(2,1fr);gap:6px}
+.hh-vals div{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:6px;padding:7px 9px;background:none}   /* Rahmen: Grundform .ki-karte (05z) */
+.hh-vals b{font:700 var(--fs-13)/1 var(--font-ui);color:var(--gold-100)}
+.hh-vi{width:28px;height:28px;display:grid;place-items:center;border-style:solid;border-width:0;border-image:var(--ki-kachel) 24 fill / 6px stretch}
+.hh-vi .icon{width:16px;height:16px;color:#fff;filter:drop-shadow(0 1px 1px #000)}
+.hh-hx{width:46px;height:46px;clip-path:none;background:none;border-style:solid;border-width:0;border-image:var(--ki-kachel) 24 fill / 8px stretch;text-shadow:0 1px 3px #000}
+.hh-hx.act{border-image-source:url(bilder/ui_kachel_gold.webp);background:none;color:#fff}
+.hh-sk{grid-template-columns:46px 1fr 32px}
+@media (min-width:900px){ .hh-vals{grid-template-columns:repeat(4,1fr)} .hh-vals div{grid-template-columns:1fr;justify-items:center;text-align:center} }
+@media (max-width:760px){
+  .hh-stage{min-height:440px}
+  .hh-portrait{left:62%;height:calc(100% - 128px);bottom:100px}
+  .hh-floor{left:30%;right:0;bottom:100px}
+  .hh-id{max-width:52%} .hh-nm{font-size:28px}
+  .hh-unten{padding:8px 10px 10px} .hh-skk{width:42px;height:42px;font-size:18px}
+}
+</style>
 
 <!-- ============ LEVEL-UP MODAL ============ -->
 <div id="levelUpModal" class="lvlup" role="dialog" aria-modal="true" aria-labelledby="levelUpTitle" hidden>
@@ -2548,6 +2940,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 <div id="cityView" class="city" hidden>
   <canvas id="cityCanvas" class="city-canvas" aria-label="Hauptstadt"></canvas>
   <div id="cityRing" class="city-ring" hidden></div>
+  <div id="cityWisch" class="city-wisch" hidden><svg class="icon"><use href="#i-back"/></svg><span>Wischen – mehr Gebäude</span><svg class="icon city-wisch-r"><use href="#i-back"/></svg></div>
   <header class="city-head">
     <div class="city-title"><div class="overline">Hauptstadt</div><h2 id="cityName">Deine Stadt</h2></div>
     <div id="cityBuilder" class="city-builder"></div>
@@ -2566,7 +2959,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <div id="cityBStats" class="city-bstats"></div>
     <div id="cityBExtra"></div>
     <div class="city-bfoot">
-      <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="lbl">Aufwerten</span><small id="cityUpTime" class="city-uptime"></small></button>
+      <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="city-lbl2"><span class="lbl">Aufwerten</span><small id="cityUpWarte" class="city-warte"></small></span><small id="cityUpTime" class="city-uptime"></small></button>
       <button id="citySpeedBtn" class="btn btn--secondary btn--grow" type="button" style="display:none"><svg class="icon"><use href="#i-gem"/></svg><span class="lbl">Beschleunigen</span></button>
     </div>
   </section>
@@ -2580,8 +2973,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   <div id="lkTabs" class="tabs lk-tabs" role="tablist">
     <button class="tab" type="button" role="tab" data-lk-tab="crest"><svg class="icon"><use href="#i-flag"/></svg><span>Wappen</span></button>
     <button class="tab" type="button" role="tab" data-lk-tab="frame"><svg class="icon"><use href="#i-star"/></svg><span>Rahmen</span></button>
-    <button class="tab" type="button" role="tab" data-lk-tab="base"><svg class="icon"><use href="#i-castle"/></svg><span>Basis</span></button>
-    <button class="tab" type="button" role="tab" data-lk-tab="march"><svg class="icon"><use href="#i-troops"/></svg><span>Marsch</span></button>
   </div>
   <div id="crestPage" class="lk-pane" hidden>
     <div class="crest-ed">

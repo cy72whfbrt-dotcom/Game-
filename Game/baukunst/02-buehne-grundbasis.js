@@ -68,23 +68,14 @@
     const pm = new T.PMREMGenerator(renderer); const rt = pm.fromEquirectangular(t); pm.dispose(); t.dispose(); return rt.texture;
   }
 
-  // ---------- capital plinth and water castle ----------
-  function buildPlinth(p, rad, style, owner) {
+  // ---------- capital plinth ----------
+  function buildPlinth(p, rad) {
     const g = new T.Group(); p.add(g); const h = 1.2;
     K.cyl(g, rad + .3, rad + .9, h, M.cap(), 0, 0, 0, { seg: 40, uv: .3 });
     const top = K.cyl(g, rad + .15, rad + .15, .06, M.grass(), 0, h, 0, { seg: 40 }); top.receiveShadow = true;
     K.torus(g, rad + .3, .09, M.gold(), 0, h, 0, { seg: 48 });
     K.stairs(g, 3.2, 5, h / 5, .45, M.cap(), 0, 0, rad + .9 + 5 * .45, { ry: 0 });
     for (const s of [-1, 1]) { K.box(g, .5, h + .4, .5, M.cap(), s * 1.85, 0, rad + 1.2); K.flameAt(g, s * 1.85, h + .4, rad + 1.2, { size: .16, power: 8 }); }
-    if (style === 'wasser') {
-      K.water(g, { ring: [rad + 1.0, rad + 3.6], y: .02 });
-      const rim = new T.Mesh(new T.RingGeometry(rad + 3.6, rad + 4.1, 48), M.cap()); rim.rotation.x = -Math.PI / 2; rim.position.y = .08; rim.receiveShadow = true; g.add(rim);
-      for (const a of [Math.PI / 2, -Math.PI / 2 + .0001]) { // two little arched bridges
-        const bx = Math.cos(a) * (rad + 2.3), bz = Math.sin(a) * (rad + 2.3), b = new T.Group(); b.position.set(bx, 0, bz); b.rotation.y = -a + Math.PI / 2; g.add(b);
-        const s = new T.Shape(); s.moveTo(-1.6, 0); s.lineTo(-1.6, .9); s.quadraticCurveTo(0, 1.6, 1.6, .9); s.lineTo(1.6, 0); s.lineTo(1.0, 0); s.quadraticCurveTo(0, 1.0, -1.0, 0); s.closePath();
-        const bg = new T.ExtrudeGeometry(s, { depth: 1.8, bevelEnabled: false }); bg.translate(0, 0, -.9); K.worldUV(bg, .3); const bm = new T.Mesh(bg, M.cap()); bm.rotation.y = Math.PI / 2; bm.castShadow = bm.receiveShadow = true; b.add(bm); }
-      for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2 + Math.PI / 4; K.waterfall(g, Math.cos(a) * (rad + .95), h - .05, Math.sin(a) * (rad + .95), 1.1, h - .02, { ry: -a + Math.PI / 2 }); }
-    }
     g.userData.h = h; return g;
   }
 
@@ -118,7 +109,7 @@
     while (tScene.children.length > 2) tScene.remove(tScene.children[2]); tScene.add(tSun);
     const g = new T.Group(); tScene.add(g); let info;
     S.scoped(() => { const def = OW.models[c.model]; const meta = (def.meta && def.meta(c)) || {}; const holder = new T.Group(); g.add(holder); let lift = 0;
-      if (c.capital) { const pl = buildPlinth(holder, (meta.plotR || 7) * 1.12, c.capStyle, c.owner); lift = pl.userData.h; }
+      if (c.capital) { const pl = buildPlinth(holder, (meta.plotR || 7) * 1.12); lift = pl.userData.h; }
       const inner = new T.Group(); inner.position.y = lift; holder.add(inner); const { group } = buildModel(c, inner); if (c.capital) inner.scale.setScalar(1.12);
       info = { top: (group.userData.top || 10) + lift, rad: (group.userData.radius || 6) * (c.capital ? 1.12 : 1) + (c.capital ? 1 : 0), lift };
       if ((c.state === 'brand' || c.state === 'qualm' || c.state === 'russ') && OW.fire) OW.fire.build(g, group, info, c.state); });
@@ -388,7 +379,7 @@
   const defOf = (t) => { for (let i = t; i >= 0; i--) if (OW.TIERS[i]) return OW.TIERS[i]; return OW.TIERS[0]; };
   OW.models.basis = {
     label: 'Basis',
-    meta: (c) => { const t = tierOf(c.level), d = defOf(t); return { tier: t, plotR: d.plotR, islandR: d.islandR + (c.capital ? 2 : 0) + (c.capital && c.capStyle === 'wasser' ? 3 : 0) }; },
+    meta: (c) => { const t = tierOf(c.level), d = defOf(t); return { tier: t, plotR: d.plotR, islandR: d.islandR + (c.capital ? 2 : 0) }; },
     build: (ctx) => { const t = tierOf(ctx.level); const g = defOf(t).build(ctx); g.userData.tier = t; return g; }
   };
 })();

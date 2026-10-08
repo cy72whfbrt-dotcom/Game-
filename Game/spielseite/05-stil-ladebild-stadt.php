@@ -70,7 +70,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .cb-buy.is-armed{border-style:solid;border-color:var(--gold-300);background:color-mix(in srgb,var(--gold-300) 22%,rgba(10,10,14,.8))}
 .city-sheet{position:absolute;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;padding:14px 14px calc(var(--safe-b) + 14px);
   background:var(--noise),var(--panel-bg);border:1px solid var(--line-2);border-bottom:0;border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:var(--sh-3);
-  display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out);max-height:calc(100% - 90px);overflow-y:auto;overscroll-behavior:contain}
+  display:flex;flex-direction:column;gap:10px;animation:panel-in var(--dur-3) var(--ease-out);max-height:calc(100% - 90px);overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain}
+.city-sheet > *{min-width:0;max-width:100%}   /* nur senkrecht scrollen: nichts darf breiter sein als das Fenster */
 .city-sheet[hidden]{display:none}
 .city-sheet-head{display:flex;align-items:center;gap:12px}
 .city-bicon{width:48px;height:48px;flex:none;display:grid;place-items:center;border-radius:var(--r-sm);border:1px solid var(--line-3);
@@ -90,6 +91,9 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .city-progress{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .city-progress i{display:block;height:100%;width:var(--p,0%);background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
 /* Stadt im Stil von Rise of Kingdoms (Alexander 4.10.): runde Knöpfe am Gebäude, Bild, Voraussetzungen, Forschungs-Baum */
+.city-wisch{position:absolute;left:50%;top:37%;z-index:2;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:var(--r-pill);background:rgba(6,8,12,.72);border:1px solid var(--line-2);color:var(--gold-100);font:600 var(--fs-14,14px)/1.2 var(--font-ui);white-space:nowrap;pointer-events:none;transform:translateX(-50%);animation:city-wisch 1.6s ease-in-out infinite}
+.city-wisch[hidden]{display:none} .city-wisch-r{transform:scaleX(-1)}   /* Handy: beim ersten Betreten – die Stadt geht links und rechts weiter */
+@keyframes city-wisch{50%{transform:translateX(calc(-50% + 10px))}}
 .city-ring{position:absolute;left:0;top:0;z-index:2;width:0;height:0;pointer-events:none}
 .city-ring[hidden]{display:none}
 .cr-btn{position:absolute;left:0;top:0;width:58px;height:58px;margin:-29px 0 0 -29px;transform:translate(var(--x),var(--y));pointer-events:auto;cursor:pointer;-webkit-tap-highlight-color:transparent;
@@ -124,6 +128,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .anf .icon.icon--coin,.anf > .icon[data-i="coin"]{color:#e8b64a}
 .city-uptime{display:inline-flex;align-items:center;margin-left:8px;padding:2px 7px;border-radius:var(--r-pill);background:rgba(0,0,0,.28);font:700 11px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;font-variant-numeric:tabular-nums}
 .city-uptime:empty{display:none}
+.city-lbl2{display:inline-flex;flex-direction:column;align-items:center;min-width:0} .city-warte{font:600 11px/1.2 var(--font-ui);letter-spacing:0;text-transform:none;opacity:.85} .city-warte:empty{display:none}   /* „Fehlt: …“ – darunter, wann es reicht */
 .fo-baum{display:flex;gap:22px;overflow-x:auto;padding:4px 2px 10px;overscroll-behavior-x:contain;scrollbar-width:thin}
 .fo-spalte{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;flex:none}
 .fo-spalte + .fo-spalte::before{content:"";position:absolute;left:-22px;top:calc(50% + 9px);width:22px;height:2px;background:linear-gradient(90deg,var(--gold-500),var(--gold-300));opacity:.7}
@@ -178,6 +183,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .forge-row b{display:block;font:700 var(--fs-13)/1.2 var(--font-ui)}
 .forge-row small{display:block;font:600 var(--fs-13)/1.3 var(--font-ui);color:var(--gold-200);letter-spacing:.08em}
 .forge-row em{font:600 var(--fs-11)/1 var(--font-ui);font-style:normal;color:var(--tx-3)}
+.heal-row{flex-wrap:wrap} .heal-row > span{min-width:max-content} .heal-row small{white-space:nowrap} .heal-row .btn{margin-left:auto;max-width:100%}   /* Handy: „1.000 / 1.422“ in einer Zeile, der Knopf darf darunter */
 .forge-row.is-empty{color:var(--tx-3);font:500 var(--fs-12)/1.3 var(--font-ui)}
 .tile .stars{position:absolute;left:4px;right:24px;bottom:3px;display:flex;justify-content:flex-start;gap:0;color:#ffd76a;overflow:hidden}
 .tile .stars .icon{width:9px;height:9px;filter:drop-shadow(0 0 1px #000)}
@@ -186,20 +192,8 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .starbar i{display:contents}
 .starbar i .icon{color:rgba(255,255,255,.18)}
 /* ===== AUFBAU (aufbau.js, Paket D): Rohstoffe im HUD, Kosten, Forschung, Markt, Truppen-Stufe ===== */
-.res--roh{flex:0 0 auto;max-width:none;cursor:pointer;color:var(--tx-1);padding:0 8px}
-.res--roh > .icon{color:#d9b27a}
-.res--roh.on{border-color:var(--line-3);background:rgba(214,170,90,.16)}
-.roh-mini{display:none;align-items:center;gap:10px}
 .roh-v{display:flex;align-items:center;gap:4px} .roh-v .icon{width:15px;height:15px}
 .roh-h .icon,.icon.roh-h{color:#c08a4c} .roh-s .icon,.icon.roh-s{color:#aab3bd} .roh-e .icon,.icon.roh-e{color:#8fb6e0}
-.roh-drop{position:fixed;z-index:calc(var(--z-hud) + 1);top:calc(var(--safe-t) + 14px + var(--hud-h));right:calc(var(--safe-r) + 10px);width:min(300px,calc(100vw - 20px));padding:10px 12px;border-radius:var(--r-sm);
-  background:var(--glass);border:1px solid var(--line-2);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
-.roh-drop[hidden]{display:none}
-.roh-row{display:grid;grid-template-columns:22px 1fr auto;grid-template-rows:auto auto;column-gap:8px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line-1)}
-.roh-row .icon{width:20px;height:20px;grid-row:1 / 3} .roh-row span{font:600 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-2)}
-.roh-row b{font:700 var(--fs-15)/1.2 var(--font-ui);color:var(--tx-1);font-variant-numeric:tabular-nums;text-align:right}
-.roh-row small{grid-column:2 / 4;font:600 var(--fs-11)/1.2 var(--font-ui);color:#9fd28a;text-align:right}
-.roh-hint{display:block;margin-top:8px;font:500 var(--fs-11)/1.35 var(--font-ui);color:var(--tx-3)}
 .city-bstats b .kost{display:inline-flex;align-items:center;gap:3px;margin:0 10px 0 0;white-space:nowrap;letter-spacing:0;text-transform:none;font:700 var(--fs-15)/1.2 var(--font-ui);color:var(--tx-1)}
 .city-bstats b{flex-wrap:wrap}
 .kost.is-bad,.city-bstats b .kost.is-bad{color:#ff8d7e}.kost--h .icon{color:#c08a4c} .kost--s .icon{color:#aab3bd} .kost--e .icon{color:#8fb6e0}
@@ -220,8 +214,6 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fo-row.is-max{opacity:.75} .fo-row.is-run{border-color:var(--line-3);background:rgba(214,170,90,.1)}
 .fo-row .btn .icon{width:13px;height:13px}
 .fo-lauf{margin-top:8px;align-items:center;gap:10px}
-@media (min-width:900px) and (min-height:501px){ .res--roh{min-width:0;padding:0 14px} .roh-drop{top:72px;left:14px;right:auto} }
-@media (min-width:1560px) and (min-height:501px){ .roh-mini{display:flex} }   /* nur bei viel Platz die drei Zahlen im HUD (sonst stößt es an die Leiste rechts) */
 /* ===== HÄNDLER (haendler.js) ===== */
 .mb-chip.is-hd{border-color:rgba(242,199,92,.6);background:linear-gradient(90deg,rgba(120,80,20,.8),rgba(20,14,6,.88))} .mb-chip.is-hd .icon{color:#f2c75c} .mb-chip.is-hd i{color:#f6e2b0}
 .hd-live{display:grid;gap:8px} .hd-info{display:flex;align-items:center;gap:6px;margin:0;color:var(--tx-3);font-size:var(--fs-12);line-height:1.4} .hd-info .icon{width:14px;height:14px;flex:none;color:var(--gold-300)}
@@ -289,11 +281,11 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .bd-tag::placeholder{text-transform:none;letter-spacing:normal}
 #bdZeichen{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;justify-items:center} #bdZeichen button{width:100%;max-width:44px;height:auto;aspect-ratio:1}
 #bdFarben{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-items:center} #bdFarben button{width:34px;height:34px}
-.bd-gf-los{width:100%;min-height:48px;gap:8px} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}
+.bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
 /* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
-/* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen und Wirkung zuerst, Schild-Kasten unten */
+/* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen zuerst, dann der Schild-Kasten */
 .city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}
-.city-sheet.cs-keep > #cityBNote.city-wirkung{order:4}
+.city-sheet.cs-keep > #cityBStats{order:1} .city-sheet.cs-keep > #cityBNote.city-wirkung{order:2} .city-sheet.cs-keep > #cityBExtra{order:3}   /* Burg: Schild-Kasten unter den Voraussetzungen – nie halb unter dem festen Knopf (Handy) */
 .city-bfoot .btn{min-height:48px}
 .city-sheet .fo-go{position:sticky;bottom:0;z-index:3;width:100%;min-height:48px;box-shadow:0 0 0 10px #15161b}   /* Forschen: bleibt sichtbar, solange die Forschung offen ist */
 .anf.is-bad > i{visibility:hidden}   /* fehlt etwas: die rote Zahl reicht, der Knopf sagt „Fehlt: …“ */
@@ -330,6 +322,6 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 /* Umlaut-Punkte über Großbuchstaben (Ä/Ö/Ü in Überschriften, Reitern, Versalien) nicht abschneiden: einzeilige Texte mit
    „…“ schneiden nur noch seitlich ab (overflow-x:clip), nach oben bleibt Platz – die Zeilenhöhe (oft 1) war kleiner als die Punkte hoch sind */
 @supports (overflow:clip) {
-  .tab span,.overline,.ptitle:not(.ptitle--input),.hh-head h2,.city-title h2,.act-t,.stat-l,.stat-v,.slot-r,.gslot small,.lb-name small,.hud-me-text b,.rp-stat b,.pc-t b,.lk-me-t b,.kv b,.statRow b,.res b{overflow-x:clip;overflow-y:visible}
+  .tab span,.overline,.ptitle:not(.ptitle--input),.hh-head h2,.city-title h2,.act-t,.stat-l,.stat-v,.slot-r,.gslot small,.lb-name small,.hud-me-text b,.rp-stat b,.lk-me-t b,.kv b,.statRow b,.res b{overflow-x:clip;overflow-y:visible}
 }
     </style>

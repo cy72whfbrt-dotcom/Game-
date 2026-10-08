@@ -178,7 +178,7 @@ function botHeroLikes(bot) {                              // what their heroes s
 // ---- the bot's gear: one worn item per slot, spares for combining, points for levels, stars ----
 function botItem(b, slot) { const g = b.gear && b.gear[slot]; return g ? { rarity: g.r, level: g.lvl, stars: g.st || 0 } : null; }
 
-function botGearPct(b, slot) { const g = b.gear && b.gear[slot]; return g ? itemScore({ rarity: g.r, level: g.lvl }) * RARITY_PCT_PER_SCORE * (1 + (g.st || 0) * STAR_PCT / 100) : 0; }
+function botGearPct(b, slot) { const g = b.gear && b.gear[slot]; return g ? itemPct({ rarity: g.r, level: g.lvl }) * (1 + (g.st || 0) * STAR_PCT / 100) : 0; }
 
 function botMults(botId) {
     const b = loadBotState()[botId]; if (!b) return { troops: 1, coins: 1, armorPct: 0, defensePct: 0, attackPct: 0, shield: 0 };
@@ -233,22 +233,9 @@ function botOnlinePlan(bot, now) {                                              
     return r < Math.min(.97, st.act * 1.15);
 }
 
-// Ring-Skins: about a third of them like a ring round their bases - always the same favourite, bought with gems or Thron-Punkte like the player
-function botRingFav(botId) { const idn = parseInt(botId.slice(3), 10) || 0, r = mulberry32(idn * 613 + 29); return r() < .3 ? RING_SKINS[Math.floor(r() * RING_SKINS.length)] : null; }
-function botRings(bot, b) {
-    if (!b.ringMig) { let L = 0; for (const id of botOwnedIslands[bot.id] || []) L = Math.max(L, islandLevels[id] || 1);   // what they wore by level stays theirs as a skin (as for the player)
-        b.rings = [...new Set([...(b.rings || []), ...(L >= 10 ? ['bronze'] : []), ...(L >= 25 ? ['silver'] : [])])]; b.ringMig = 1; }
-    const fav = botRingFav(bot.id); if (!fav) return;
-    if (fav.gems && !b.rings.includes(fav.id) && b.gems >= fav.gems * 2 && b.gems - fav.gems >= TELEPORT_GEMS) { b.gems -= fav.gems; b.rings.push(fav.id); }
-    const wear = b.rings.includes(fav.id) ? fav.id : b.rings[b.rings.length - 1] || '';   // the favourite, until then the best they have
-    if ((b.ring || '') !== wear) { b.ring = wear; ringVer++; requestRender(); }
-}
-
 function botShop(bot) {                                  // gems and points spent the way a player would: heroes, stars, crates, gear
     botThroneShop(bot.id);
     const b = loadBotState()[bot.id], slots = Object.keys(EQUIPMENT_DEFS);
-    botRings(bot, b);
-    botLookShop(bot, b);                                 // frame, title, Marsch-Skin
     botPassCare(bot, b);                                 // Saison-Pass: premium (some), rewards as they climb
     botHeroCare(bot);                                    // shards → unlock, stars, skill points
     const starCap = Math.min(STAR_MAX, botBld(bot.id, 'forge'));   // one star per visit on the best-worn piece
@@ -266,12 +253,12 @@ function botShop(bot) {                                  // gems and points spen
         for (let r = 0; r < c.length - 1; r++) while (c[r] >= COMBINE_COUNT) { c[r] -= COMBINE_COUNT; c[r + 1]++; }   // 3 of a kind → 1 of the next
         let top = -1; for (let r = c.length - 1; r >= 0; r--) if (c[r] > 0) { top = r; break; }
         const worn = b.gear[k];
-        const pctOf = (r, lvl, st) => itemScore({ rarity: r, level: lvl }) * RARITY_PCT_PER_SCORE * (1 + (st || 0) * STAR_PCT / 100);
+        const pctOf = (r, lvl, st) => itemPct({ rarity: r, level: lvl }) * (1 + (st || 0) * STAR_PCT / 100);
         if (top >= 0 && (!worn || (top > worn.r && pctOf(top, 1, 0) > pctOf(worn.r, worn.lvl, worn.st)))) {   // really better: wear it, the old one is salvaged for points
-            if (worn) { b.pts += itemScore({ rarity: worn.r, level: worn.lvl }); b.gems = (b.gems || 0) + starRefund({ stars: worn.st || 0 }); }   // (die Gems der Sterne zurück – wie bei dir beim Zerlegen)
+            if (worn) { b.pts += salvagePoints({ rarity: worn.r, level: worn.lvl }); b.gems = (b.gems || 0) + starRefund({ stars: worn.st || 0 }); }   // (die Gems der Sterne zurück – wie bei dir beim Zerlegen)
             b.gear[k] = { r: top, lvl: 1, st: 0 }; c[top]--;
         }
-        const w = b.gear[k]; if (w) for (let r = 0; r < Math.max(0, w.r - 1); r++) if (c[r] > 0) { b.pts += c[r] * itemScore({ rarity: r, level: 1 }); c[r] = 0; }   // far below: salvage
+        const w = b.gear[k]; if (w) for (let r = 0; r < Math.max(0, w.r - 1); r++) if (c[r] > 0) { b.pts += c[r] * salvagePoints({ rarity: r, level: 1 }); c[r] = 0; }   // far below: salvage
     }
     for (let guard = 0; guard < 60; guard++) {             // level up the lowest worn piece with the points
         let lo = null; for (const k of slots) { const g = b.gear[k]; if (g && g.lvl < ITEM_MAX_LEVEL && (!lo || g.lvl < lo.lvl)) lo = g; }

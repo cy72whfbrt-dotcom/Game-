@@ -277,6 +277,7 @@ function liveTick() {
         if (tab === 'skills') { const sig = skillPoints + JSON.stringify(skills); if (sig !== liveSkillSig) { liveSkillSig = sig; renderSkillGrid(); } }
     });
     if (isPanelOpen(shopPopup)) teil(renderShop);                                                         // Shop: Gems, Schild-Restzeit, Thron-Punkte
+    teil(renderRucksack);                                                                                   // Rucksack: Schild-Restzeit, Vorrat, Splitter
     if (isPanelOpen(goalsPopup) && goalsTab === 'reward') teil(renderInbox);                              // Events → Belohnung
     if (isPanelOpen(rankPopup) && liveZuletzt - liveRangAt >= 5000) { liveRangAt = liveZuletzt; teil(renderRankings); }   // Rangliste: alle 5 s reicht
     teil(heroHallLive);                                                                                     // Helden
