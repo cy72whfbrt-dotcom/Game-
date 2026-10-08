@@ -214,7 +214,7 @@ function bundWahlLos() {
         bundBefehl('rally', { basis: w.von, ziel: w.t, min: w.min || 3, n, held, held2 }, 'Rally gestartet – dein Bündnis kann jetzt mitmachen.'); heroLetzteMerken(held, held2);
         islandTroops[w.von] = Math.max(0, (islandTroops[w.von] || 0) - n);
     } else {
-        const nach = w.mode === 'dazu' ? (bund.r.find(r => r.id === w.rid) || {}).at : w.nach; if (nach === undefined) return;
+        const nach = w.mode === 'dazu' ? (bund.r.find(r => r.id === w.rid) || {}).at : w.nach; if (!islandById[nach]) return;
         const vh = lastHop(von.landmassId, islandById[nach].landmassId, 'player'); if (!mautVorab(vh[0], vh[1], n)) return;
         const held = w.mode === 'dazu' && w.held && heroOwned('player', w.held) && !heroBusy('player', w.held) ? w.held : null, held2 = heroZweitOk('player', held, w.held2);   // (Rally-Mitglied: seine Helden für seine Truppen)
         heroLetzteMerken(held, held2);

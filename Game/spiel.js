@@ -978,7 +978,7 @@ for (const bot of BOT_DEFS) botById[bot.id] = bot;
 const botOwnerIndex = new Map();
 class BotBaseSet extends Set {
     constructor(owner, items) { super(); this.owner = owner; for (const id of items || []) this.add(id); }
-    add(id) { if (!this.has(id)) ownVer++; botOwnerIndex.set(id, this.owner); return super.add(id); }
+    add(id) { if (!islandById[id]) return this; if (!this.has(id)) ownVer++; botOwnerIndex.set(id, this.owner); return super.add(id); }   // (Basen, die es auf dieser Karte nicht gibt – alte Welt –, fallen weg)
     delete(id) { if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); const r = super.delete(id); if (r) ownVer++; return r; }
     clear() { for (const id of this) if (botOwnerIndex.get(id) === this.owner) botOwnerIndex.delete(id); if (this.size) ownVer++; super.clear(); }
 }
