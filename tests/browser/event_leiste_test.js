@@ -92,7 +92,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const chip = await p.evaluate(() => { const now = Date.now(), I = evState.inv = { start: now - 1000, end: now + 3e6, welle: 1, n: 0, armies: [], pts: {}, wehr: {}, paid: false };
     const t = () => (evChips(Date.now()).find(c => /ev-inv/.test(c[1])) || [0, ''])[1].replace(/<[^>]+>/g, ' ');
     const null_ = t(); I.pts.player = 1234; return [null_, t()]; });
-  ok(!/P\./.test(chip.join()) && !/\d/.test(chip[0].replace(/Welle \d\/\d/, '')) && /1\.234 Punkte/.test(chip[1]), 'Invasions-Leiste: keine „0 P.“, sonst „1.234 Punkte“', chip);
+  ok(!/P\./.test(chip.join()) && !/\d/.test(chip[0].replace(/Invasion \d\/\d/, '')) && /1\.234 Punkte/.test(chip[1]), 'Invasions-Leiste: keine „0 P.“, sonst „1.234 Punkte“', chip);
   for (const [w, h] of [[430, 736], [375, 667]]) {
     await p.setViewportSize({ width: w, height: h }); await p.evaluate(() => { closeAllPopups(); openGoals('pass'); }); await p.waitForTimeout(700);
     const q = await p.evaluate(() => { const pb = goalsPopup.querySelector('.pbody').getBoundingClientRect(), pr = document.querySelector('#passPane .pass-prem').getBoundingClientRect();
