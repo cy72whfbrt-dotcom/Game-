@@ -1,4 +1,4 @@
-// Teil 05-verteidigen-takt.js: Mitspieler: Verteidigen, Friedensschild, Hauptstadt verlegen, Titel, Takt
+// Teil 05-verteidigen-takt.js: Mitspieler: Verteidigen, Friedensschild, Hauptstadt teleportieren, Titel, Takt
 // Under attack (online - offline nobody reacts): a person notices the column after a few seconds (a Späherturm
 // helps), works out whether the base holds, and then either sends help from bases that get there in time - or, if
 // it can't be held, pulls the garrison out to the nearest base before the enemy arrives. The capital can't fall.
@@ -144,7 +144,9 @@ function botShieldCrisis(bot, now, lost) {             // lost: [{id, str, at}] 
     return botUseShield(bot, 'crisis', last - now + 30 * 60000, now);
 }
 
-// ===== HAUPTSTADT VERLEGEN (the others): 50 gems like yours, a tower of their own, the garrison moves along.
+// ===== HAUPTSTADT VERLEGEN (the others): a teleport like yours (Alexander 8.10.) – 500 gems (or the free one while new), same
+// checks (tpPruefen: free spot, open passes, no march at the capital), to a free spot next to a tower of their own; the base
+// moves with its garrison. Not enough gems: no move.
 // Why a person does it: the land around the capital is being lost (retreat), trouble further back - several attacks or
 // lost bases in a short time - so it moves close to help (hilfe, Alexander 6.10.), the front has moved towards the middle
 // and it is calm (forward, 1-3 rings), or most of the empire now lies elsewhere (mass). Nach vorne oder zurück, je nach
@@ -190,24 +192,32 @@ function botCapitalPlan(bot, now) {                      // → { to, why } | nu
     const m = best(fest, c => c.reach + c.lv * .1);
     return m && m.reach >= capReach * 1.6 && m.loc.o > here.o ? { to: m.id, why: 'mass' } : null; }
 
-function botTeleportCapital(bot, toId) {
-    const b = loadBotState()[bot.id], from = botCapitalOf(bot.id);
-    if (!botCapitalMoveOk(bot.id, toId) || b.gems < TELEPORT_GEMS) return false;
-    b.gems -= TELEPORT_GEMS;
-    islandTroops[toId] = (islandTroops[toId] || 0) + (islandTroops[from] || 0); islandTroops[from] = 0;     // the garrison moves along, like yours
-    b.capital = toId; b.capMovedAt = Date.now(); b.capWish = null; botStat(bot.id, 'teleports'); if (b.rally && b.rally.at === from) b.rally = null;
-    { const act = botActOf(bot.id); if (act.plan && act.plan.kind === 'send' && act.plan.t === from) act.plan = null; }
-    capitalCache = null;                                                                                    // isCapital() caches for 250 ms
-    saveBotState(); saveGame(); requestRender(); botCapitalNotice(bot, from, toId); return true; }
+function botTpBezahlbar(botId) { const b = loadBotState()[botId]; return !!b && (tpGratis(botId) || (b.gems || 0) >= TP_GEMS); }   // (Teleporter haben Mitspieler nicht)
+function botTpOrt(botId, toId) {                        // freie Stelle neben dem Turm toId, die tpPruefen erlaubt → [x, y] | null
+    const t = islandById[toId];
+    for (let r = BASE_SPACING * .6; r <= BASE_SPACING * 3; r += BASE_SPACING * .3)
+        for (let k = 0; k < 16; k++) { const w = k * Math.PI / 8 + toId, x = t.x + Math.cos(w) * r, y = t.y + Math.sin(w) * r;
+            if (gebietAn(x, y) === t.landmassId && !tpPruefen(botId, x, y)) return [x, y]; }
+    return null; }
 
-function botCapitalNotice(bot, fromId, toId) {          // only news if it happens next to you
+function botTeleportCapital(bot, toId) {
+    const b = loadBotState()[bot.id], cap = botCapitalOf(bot.id), c = islandById[cap];
+    if (!c || !botCapitalMoveOk(bot.id, toId) || !botTpBezahlbar(bot.id)) return false;
+    const ort = botTpOrt(bot.id, toId); if (!ort) return false;
+    const alt = { x: c.x, y: c.y, landmassId: c.landmassId };
+    if (tpGratis(bot.id)) b.tpGratis = 1; else b.gems -= TP_GEMS;
+    tpVerlegen(bot.id, ort[0], ort[1]);                                                                     // die Basis zieht um, die Truppen bleiben darin
+    b.capMovedAt = Date.now(); b.capWish = null; botStat(bot.id, 'teleports');
+    saveBotState(); botCapitalNotice(bot, alt, toId); return true; }
+
+function botCapitalNotice(bot, alt, toId) {             // only news if it happens next to you
     const near = isl => { for (const l of reachableLandmassIds[isl.landmassId] || [isl.landmassId]) for (const i of islandsByLandmass[l] || [])
         if (ownedIslands.has(i.id) && Math.hypot(i.x - isl.x, i.y - isl.y) < ISLAND_RADIUS * 40) return true; return false; };
-    const to = islandById[toId], nt = near(to), nf = near(islandById[fromId]);
-    if (nt) flashHint(bot.name + ' hat die Hauptstadt nach Turm #' + (toId + 1) + ' verlegt – nah bei dir.', 5500);
-    else if (nf) flashHint(bot.name + ' hat die Hauptstadt verlegt – Turm #' + (fromId + 1) + ' ist keine Hauptstadt mehr.', 5000);
-    if ((nt || nf) && islandSeen(to)) spawnBattleFx(toId, false, 'Hauptstadt', 'hierher verlegt');
-    if (isPanelOpen(popup) && (popupIslandId === fromId || popupIslandId === toId)) renderPopup(); }
+    const cap = botCapitalOf(bot.id), nt = near(islandById[toId]), nf = near(alt);
+    if (nt) flashHint(bot.name + ' ist mit der Hauptstadt neben Turm #' + (toId + 1) + ' teleportiert – nah bei dir.', 5500);
+    else if (nf) flashHint(bot.name + ' ist mit der Hauptstadt weg teleportiert.', 5000);
+    if ((nt || nf) && islandSeen(islandById[cap])) spawnBattleFx(cap, false, 'Hauptstadt', 'hierher teleportiert');
+    if (isPanelOpen(popup) && popupIslandId === cap) renderPopup(); }
 
 function botConsiderCapital(bot, now) {
     const b = loadBotState()[bot.id], act = botActOf(bot.id);
@@ -221,7 +231,7 @@ function botConsiderCapital(bot, now) {
         else w.to = pl.to;
         saveBotState(); }
     const w = b.capWish, capNow = botCapitalOf(bot.id);
-    if (!w || now - w.since < w.wait || now < act.next || now - botCapLastAny < BOT_CAP_GAP || b.gems < TELEPORT_GEMS) return;
+    if (!w || now - w.since < w.wait || now < act.next || now - botCapLastAny < BOT_CAP_GAP || !botTpBezahlbar(bot.id)) return;
     if ((b.rally && b.rally.at === capNow) || (act.plan && act.plan.kind === 'send' && act.plan.t === capNow)) return;   // troops are being gathered at the capital: not now
     if (!botCapitalMoveOk(bot.id, w.to)) { b.capWish = null; return; }
     if (botTeleportCapital(bot, w.to)) { botCapLastAny = now; botTapped(bot); } }

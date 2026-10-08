@@ -80,7 +80,22 @@ function botCityFinish(bot, now) {                        // a build is done whe
     for (const x of done) { c.levels[x.id] = x.to; evPunkte('bau', bot.id, 2 + x.to); } c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();   // (Wochen-Event Bauherr: auch die Stadt)
 }
 
-const BOT_BUILD_PREF = {                                  // what each kind of player builds first (lower = sooner)
+const BOT_GEMS_REST = 50;                                 // a small rest stays when they buy (Sterne, Schilde: dringend – nur diese Rücklage)
+// Sparen wie echte Spieler (Alexander 8.10.): Kisten, Heldenkisten, Beschleunigen, Helden-Reset erst aus dem, was über dem
+// Spar-Ziel liegt. Ziel = das größte, was dieser Spieler gerade anpeilt: Teleport (ab 8 Basen), Premium-Pass (will ihn, hat ihn in
+// dieser Saison noch nicht, noch ≥ 7 Tage), 2. Baumeister. Je Gruppe anders (Anteil, der es überhaupt anpeilt; fest je Spieler).
+const BOT_SPAR = { veteran: { tp: .95, pass: .6, b2: 1 }, raider: { tp: .8, pass: .35, b2: .6 }, builder: { tp: .4, pass: .3, b2: 1 },
+    templer: { tp: .7, pass: .4, b2: .8 }, balanced: { tp: .6, pass: .35, b2: .8 } };
+function botSpart(bot, k) { const idn = parseInt(bot.id.slice(3), 10) || 0, s = k === 'tp' ? 11 : k === 'pass' ? 53 : 97;   // (fest je Spieler: nicht alle gleich)
+    return mulberry32(idn * s + 7)() < (BOT_SPAR[bot.style] || BOT_SPAR.balanced)[k]; }
+function botSparZiel(bot, b) {
+    const now = Date.now(), n = passNo(now); let z = 0;
+    if (botSpart(bot, 'tp') && (botOwnedIslands[bot.id] || new Set()).size >= 8 && !tpGratis(bot.id)) z = Math.max(z, TP_GEMS);
+    if (b.ps && b.ps.s === n && b.ps.want && !b.ps.prem && passEndOf(n) - now >= 7 * 86400000) z = Math.max(z, PASS_PREMIUM);
+    if (!b.city.builder2 && botSpart(bot, 'b2')) z = Math.max(z, CITY_BUILDER2_GEMS);
+    return z; }
+const botGemsFrei = (bot, b) => (b.gems || 0) - botSparZiel(bot, b);   // was sie ausgeben mögen (ohne das Gesparte)
+const BOT_BUILD_PREF = {                                // what each kind of player builds first (lower = sooner)
     raider:   { academy: 1.1, heroes: 1.2, forge: 1.4, hospital: 1.4, wall: 1.7, embassy: 2, market: 1.8 },
     builder:  { wall: 1, hospital: 1.2, forge: 1.5, heroes: 1.5, academy: 1.3, embassy: 1.8, market: 1.2 },
     templer:  { heroes: 1, wall: 1.2, hospital: 1.3, forge: 1.3, academy: 1.3, embassy: 1.4, market: 1.7 },
@@ -92,7 +107,7 @@ function botCityBuild(bot, now) {                         // one builder (two on
     const b = loadBotState()[bot.id], c = b.city;
     for (const x of c.builds.slice()) {                   // a person with gems finishes the last few minutes now and then
         const mins = Math.ceil((x.endsAt - now) / 60000);
-        if (mins > 0 && mins <= 30 && b.gems >= mins * 4 && b.gems - mins >= TELEPORT_GEMS && Math.random() < .15) { b.gems -= mins; x.endsAt = now; botCityFinish(bot, now); }
+        if (mins > 0 && mins <= 30 && b.gems >= mins * 4 && botGemsFrei(bot, b) - mins >= BOT_GEMS_REST && Math.random() < .15) { b.gems -= mins; x.endsAt = now; botCityFinish(bot, now); }
     }
     if (c.builds.length >= citySlots(c)) return;
     const pref = BOT_BUILD_PREF[bot.style] || BOT_BUILD_PREF.balanced; let best = null, bs = Infinity;
@@ -145,10 +160,11 @@ const BOT_HERO_LIKES = { raider: ['atk', 'strongAtk', 'neutralAtk', 'fieldAtk', 
 
 function botHeroCare(bot) {                               // like a player in the Heldenhalle: the day's shards, unlock, quarter stars, points into what suits their style
     const b = loadBotState()[bot.id], day = todayKey(); if (!b || !b.hs) return;
-    if (b.hsDay !== day) { const first = !b.hsDay; b.hsDay = day;               // the daily tasks' shards - on the days they play enough to finish them
-        if (!first && Math.random() < Math.min(.95, (BOT_STYLES[bot.style].act || .6) + .2)) { heroGrantShards(bot.id, HERO_SHARDS_DAY); b.hsDays = (b.hsDays || 0) + 1; if (b.hsDays % 7 === 0) heroGrantShards(bot.id, HERO_SHARDS_CHAIN); } }
+    if (b.hsDay !== day) { const first = !b.hsDay; b.hsDay = day;               // the daily tasks - on the days they play enough to finish them: shards + gems like yours (alle 6: questGemsTag, Wochenkette 150)
+        if (!first && Math.random() < Math.min(.95, (BOT_STYLES[bot.style].act || .6) + .2)) { heroGrantShards(bot.id, HERO_SHARDS_DAY); b.gems += questGemsTag(); b.hsDays = (b.hsDays || 0) + 1;
+            if (b.hsDays % 7 === 0) { heroGrantShards(bot.id, HERO_SHARDS_CHAIN); b.gems += CHAIN_REWARD.gems; } } }
     if (b.hcDay !== day && (b.hcDay = day) && Math.random() < .3) {               // a hero chest from the shop now and then (at most one a day), only from gems they can spare - like the player
-        const c = [...HERO_CHESTS].reverse().find(x => b.gems >= x.gems * 3 + TELEPORT_GEMS); if (c && heroChestOpen(bot.id, c).length) { b.gems -= c.gems; b.hcN = (b.hcN || 0) + 1; } }
+        const c = [...HERO_CHESTS].reverse().find(x => botGemsFrei(bot, b) >= x.gems * 3 + BOT_GEMS_REST); if (c && heroChestOpen(bot.id, c).length) { b.gems -= c.gems; b.hcN = (b.hcN || 0) + 1; } }
     const like = botHeroLikes(bot), rank = t => { const i = like.indexOf(t); return i < 0 ? 99 : i; }, now = Date.now();
     for (const h of HEROES) {
         const s = b.hs[h.id]; if (!s) continue;
@@ -156,7 +172,7 @@ function botHeroCare(bot) {                               // like a player in th
         for (let n = 0; n < HERO_MAXQ && s.own && heroDoStep(bot.id, h.id); n++);
         const pr = q => rank(h.sk[q][2]), best = [1, 2, 3].sort((x, y) => pr(x) - pr(y))[0];
         if (s.own && pr(best) < 99 && !s.sk[best] && [1, 2, 3].some(q => s.sk[q] && pr(q) > pr(best)) && now - ((b.hsReset || {})[h.id] || 0) > 7 * 86400000
-            && b.gems >= HERO_RESET_GEMS * 3 && b.gems - HERO_RESET_GEMS >= TELEPORT_GEMS && Math.random() < .3) {   // the points sit in the wrong passive for what they do now (the middle, the ruler): reset for gems, like yours
+            && botGemsFrei(bot, b) >= HERO_RESET_GEMS * 3 && Math.random() < .3) {   // the points sit in the wrong passive for what they do now (the middle, the ruler): reset for gems, like yours
             b.gems -= HERO_RESET_GEMS; s.sk = [0, 0, 0, 0]; (b.hsReset || (b.hsReset = {}))[h.id] = now; botStat(bot.id, 'heroResets'); }
         for (let n = 0; n < 10 && s.own && heroFree(s) > 0; n++) {             // the active skill first, then the passive that suits them best
             let k = s.sk[0] < 5 ? 0 : -1;
@@ -240,11 +256,11 @@ function botShop(bot) {                                  // gems and points spen
     botHeroCare(bot);                                    // shards → unlock, stars, skill points
     const starCap = Math.min(STAR_MAX, botBld(bot.id, 'forge'));   // one star per visit on the best-worn piece
     for (const k of slots.filter(q => b.gear[q]).sort((x, y) => botGearPct(b, y) - botGearPct(b, x))) {   // the strongest piece first
-        const g = b.gear[k]; if ((g.st || 0) < starCap && b.gems >= starGemCost(g.st || 0) * 1.5 && b.gems - starGemCost(g.st || 0) >= TELEPORT_GEMS) { b.gems -= starGemCost(g.st || 0); g.st = (g.st || 0) + 1; break; } }
+        const g = b.gear[k]; if ((g.st || 0) < starCap && b.gems >= starGemCost(g.st || 0) * 1.5 && b.gems - starGemCost(g.st || 0) >= BOT_GEMS_REST) { b.gems -= starGemCost(g.st || 0); g.st = (g.st || 0) + 1; break; } }
     const user = botShieldUser(bot), want = user ? { 8: bot.style === 'builder' ? 2 : 1, 2: 1 } : { 2: bot.style === 'raider' ? 0 : 1 };   // a small stock of shields
-    for (const h of [8, 2]) while ((b.shields[h] || 0) < (want[h] || 0) && b.gems >= SHIELD_PRICES[h] * 1.25 && b.gems - SHIELD_PRICES[h] >= TELEPORT_GEMS) { b.gems -= SHIELD_PRICES[h]; b.shields[h]++; }
-    if (!b.city.builder2 && b.gems >= CITY_BUILDER2_GEMS * 1.5 && b.gems - CITY_BUILDER2_GEMS >= TELEPORT_GEMS + 100) { b.gems -= CITY_BUILDER2_GEMS; b.city.builder2 = true; }   // rich enough: the second builder, for good
-    const reserve = TELEPORT_GEMS + Object.entries(want).reduce((s2, [h, n]) => s2 + Math.max(0, n - (b.shields[h] || 0)) * SHIELD_PRICES[h], 0);   // (and 50 for a capital move)
+    for (const h of [8, 2]) while ((b.shields[h] || 0) < (want[h] || 0) && b.gems >= SHIELD_PRICES[h] * 1.25 && b.gems - SHIELD_PRICES[h] >= BOT_GEMS_REST) { b.gems -= SHIELD_PRICES[h]; b.shields[h]++; }
+    if (!b.city.builder2 && b.gems - CITY_BUILDER2_GEMS >= BOT_GEMS_REST && (botSpart(bot, 'b2') || botGemsFrei(bot, b) - CITY_BUILDER2_GEMS >= BOT_GEMS_REST)) { b.gems -= CITY_BUILDER2_GEMS; b.city.builder2 = true; }   // gespart (oder ohnehin übrig): the second builder, for good
+    const reserve = BOT_GEMS_REST + botSparZiel(bot, b) + Object.entries(want).reduce((s2, [h, n]) => s2 + Math.max(0, n - (b.shields[h] || 0)) * SHIELD_PRICES[h], 0);   // (das Gesparte und a small rest)
     for (let n = 0; n < 10 && b.gems - reserve >= CRATE_GEM_COST; n++) {   // crates: random slot + rarity
         b.gems -= CRATE_GEM_COST; b.spare[pickRandomSlot()][pickRandomRarity()]++;
     }

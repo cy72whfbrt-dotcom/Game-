@@ -32,16 +32,16 @@ function botClaimGoals(bot) {
 }
 
 // Saison-Pass: their points are what their stats grew by since the season began (+ 200 for each day with all tasks done) - no work per tick.
-// A third of them buy premium once they can spare the gems; rewards go out as they climb, the same ones you get.
+// About a third of them (BOT_SPAR, je Gruppe) save up for premium (botSparZiel) and buy it once there; rewards go out as they climb, the same ones you get.
 function botPassScore(b) { const st = b.stats || {}; let s = (b.hsDays || 0) * 200; for (const k in PASS_BOT_XP) s += (st[k] || 0) * PASS_BOT_XP[k]; return s; }
 function botPassInfo(botId) { const b = loadBotState()[botId]; if (!b || !b.ps || b.ps.s !== passNo(Date.now())) return { lvl: 0, prem: false };
     return { lvl: Math.min(PASS_LVLS, Math.floor(Math.max(0, botPassScore(b) - b.ps.base) / PASS_STEP)), prem: !!b.ps.prem }; }
 function botPassCare(bot, b) {
     const now = Date.now(), n = passNo(now); if (b.ps && (b.ps.s > n || (b.ps.s === n && now < (b.ps.at || 0)))) return;   // once a minute is plenty (and never backwards)
     if (!b.ps || b.ps.s !== n) { if (b.ps) { b.ps.at = 0; botPassPay(bot.id, b); }             // the old season: what they reached is still paid out, then a fresh pass
-        b.ps = { s: n, base: botPassScore(b), f: 0, p: 0, prem: false, want: mulberry32((parseInt(bot.id.slice(3), 10) || 0) * 53 + n * 7)() < .35 }; }
+        b.ps = { s: n, base: botPassScore(b), f: 0, p: 0, prem: false, want: mulberry32((parseInt(bot.id.slice(3), 10) || 0) * 53 + n * 7)() < (BOT_SPAR[bot.style] || BOT_SPAR.balanced).pass }; }
     b.ps.at = now + 60000;
-    if (!b.ps.prem && b.ps.want && b.gems >= PASS_PREMIUM * 1.5 && b.gems - PASS_PREMIUM >= TELEPORT_GEMS) { b.gems -= PASS_PREMIUM; b.ps.prem = true; }
+    if (!b.ps.prem && b.ps.want && b.gems - PASS_PREMIUM >= BOT_GEMS_REST) { b.gems -= PASS_PREMIUM; b.ps.prem = true; }
     botPassPay(bot.id, b);
 }
 function botPassPay(botId, b) { const ps = b.ps, L = Math.min(PASS_LVLS, Math.floor(Math.max(0, botPassScore(b) - ps.base) / PASS_STEP));

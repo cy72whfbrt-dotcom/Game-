@@ -1006,13 +1006,23 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   d.u = Start-Münzen), Start-Truppen bleiben 5.000. (2) **Verlegen in einen eigenen Turm (50 Edelsteine) ist raus** –
   nur noch Teleport (500 Edelsteine oder 1 Teleporter, 1 gratis am Start). Der Knopf im Hauptstadt-Fenster heißt
   „Teleportieren“ (Preis: 1 Teleporter oder 500) und führt wie der Rucksack-Teleporter zur Auswahl auf der Karte.
-  Weltrechner-Befehl `hauptstadt` und der Server-Filter dafür sind weg. Mitspieler verlegen ihre Hauptstadt weiter wie
-  bisher (bots/05, Bündnis „gemeinsam vorrücken“, `TELEPORT_GEMS`). (3) Neue Saison setzt auch das **gekaufte Premium**
+  Weltrechner-Befehl `hauptstadt` und der Server-Filter dafür sind weg. **Mitspieler teleportieren genauso:** 500
+  Edelsteine (bzw. der Gratis-Teleport im Anfängerschutz), dieselben Prüfungen (`tpPruefen`: freie Stelle, nur über offene
+  Pässe, kein Marsch an der Hauptstadt), die Hauptstadt zieht mit ihren Truppen an eine freie Stelle neben dem gewählten
+  eigenen Turm (bots/05 `botTeleportCapital`/`botTpOrt`, auch Bündnis „gemeinsam vorrücken“; im Weltrechner direkt im Takt).
+  Zu wenig Edelsteine: kein Umzug. `TELEPORT_GEMS` (50) ist weg; beim Einkaufen lassen Mitspieler wie bisher einen Rest von
+  50 Edelsteinen übrig (`BOT_GEMS_REST`, bots/04). (3) Neue Saison setzt auch das **gekaufte Premium**
   des Saison-Passes zurück (Handy 01a, Mitspieler 09f). (4) **Stufen-Belohnung Truppen** = 1 Tag Truppen-Ertrag einer
   Basis dieser Stufe (`levelRewardTroops` = 24 × `troopsPerTick`): Stufe 2: 10 → 410, 5: 10 → 620, 10: 41 → 1.300,
   20: 330 → 5.100, 30: 1.100 → 21.000, 40: 1.700 → 84.000, 50: 2.200 → 340.000. Helden-Gefolge und Funde rechnen weiter mit
   dem alten Maß (`stufenTruppenMass`). Das Hauptbuch prüft die Stufen-Truppen mit derselben Funktion. Tests: `saison_test`,
   `teleport_test`, `neuling_vorschau_test`, `forschung_kosten_test` angepasst/erweitert.
+  (5) **Mitspieler sparen wie echte Spieler:** Kisten, Heldenkisten, Beschleunigen und Helden-Reset nur noch aus dem, was
+  über ihrem Spar-Ziel liegt (`botSparZiel`, bots/04): Teleport 500 (ab 8 Basen), Premium-Pass (will ihn, noch nicht
+  gekauft, Saison läuft noch ≥ 7 Tage), 2. Baumeister – je Gruppe verschieden (`BOT_SPAR`, fest je Spieler). Pass und
+  Baumeister kaufen sie, sobald es reicht (Rest 50, nicht mehr erst ab 1,5-fach). Sterne und Schilde bleiben dringend
+  (nur Rest 50). An Tagen mit allen Aufgaben bekommen sie dieselben Edelsteine wie du (`questGemsTag` = 42, alle 7 Tage
+  + 150 Wochenkette). Test: `mitspieler_sparen_test`.
 - **8.10. – 3D-Burg raus (Alexander: „KI-Bilder statt Code“; NICHT hochgeladen):** Die alte 3D-Burg (three.js vom CDN +
   `baukunst.js`) und die gezeichneten Häuser/Tempel/Tore (isometrisch, 03b) sind komplett weg. Basen sind überall nur noch das
   KI-Bild `basis_01…15` (`drawBasisBild`), Thron/Tempel ihr Bild, Pass-Tore ihr Bild. Solange ein Bild noch lädt, liegt dort nur

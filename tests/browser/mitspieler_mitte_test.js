@@ -1,6 +1,7 @@
 // Mitspieler wie Menschen: Mitte erobern, Rest im Blick (Alexander 6.10.). Geprüft an einem Mitspieler mit zwei Gruppen
 // eigener Türme (vorne Ring r, hinten Ring r+1): (a) ruhig → Hauptstadt 1 Ring nach vorne; (b) Ärger hinten → Hauptstadt
-// zurück in die Nähe (kostet Edelsteine, Truppen ziehen mit), von dort Hilfe; nicht gleich wieder vor; (c) Sammeln für die
+// zurück in die Nähe – ein Teleport wie bei dir (Alexander 8.10.: 500 Edelsteine, tpPruefen, die Basis zieht mit ihren Truppen um;
+// zu wenig Edelsteine: kein Umzug), von dort Hilfe; nicht gleich wieder vor; (c) Sammeln für die
 // Mitte: bedrohte Basen geben nichts, Basen mit Ärger und die Hauptstadt nur einen Teil (botFrei), keiner wird leergezogen.
 const { chromium, devices } = require('playwright'), path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 300) : ''));
@@ -35,14 +36,15 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const pa = botCapitalPlan(Y, Date.now());
       out.a = pa && { why: pa.why, ring: landmasses[islandById[pa.to].landmassId].ring, vorne: vorne.includes(pa.to) };
       // (b) Hauptstadt vorne bei T, hinten drei Angriffe in kurzer Zeit → zurück in die Nähe, helfen
+      localStorage.setItem('openWaterWorldStart', String(Date.now() - 864e6));   // (alle Pässe offen – Teleport nur über offene Pässe)
       st.capital = T.id; st.capMovedAt = Date.now() - 20 * 60000; capitalCache = null; islandTroops[T.id] = 1e6;
       const now = Date.now();
       for (const id of hinten.slice(1, 4)) botAergerNote(Y.id, id, now - 60000);
       const pb = botCapitalPlan(Y, now); out.b = pb && { why: pb.why, hinten: hinten.includes(pb.to) };
       const gems0 = st.gems; botCapNext[Y.id] = 0; botActOf(Y.id).next = 0; botCapLastAny = 0;
       botConsiderCapital(Y, now); botCapLastAny = 0; botConsiderCapital(Y, now + 61000);
-      const cap = botCapitalOf(Y.id);
-      out.bZug = { hinten: hinten.includes(cap), gems: gems0 - st.gems, teleGems: TELEPORT_GEMS, truppen: islandTroops[cap], alt: islandTroops[T.id] };
+      const cap = botCapitalOf(Y.id), naechster = Math.min(...hinten.map(id => Math.hypot(islandById[id].x - T.x, islandById[id].y - T.y)));
+      out.bZug = { cap: cap === T.id, hinten: naechster < BASE_SPACING * 3.5, weg: T.x !== T.ort0[0] || T.y !== T.ort0[1], frei: !!inselOrt[T.id], gems: gems0 - st.gems, tpGems: TP_GEMS, truppen: islandTroops[T.id] };
       out.bNichtVor = (botCapitalPlan(Y, now + 70000) || {}).why !== 'forward';
       // ein Angriff hinten: Hilfe kommt (die Hauptstadt ist jetzt nah)
       const ziel = hinten.find(id => id !== cap); islandTroops[ziel] = 100;
@@ -52,6 +54,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       for (const x of pendingSends.slice(s0)) sends.push(x);
       out.hilfe = sends.filter(x => x.senderBotId === Y.id && x.toId === ziel).map(x => ({ von: x.fromId, cap: x.fromId === cap, n: x.troops }));
       for (const x of sends) { islandTroops[x.fromId] += x.troops; pendingSends.splice(pendingSends.indexOf(x), 1); } sends.length = 0;
+      pendingAttacks.splice(pendingAttacks.indexOf(a), 1);
+      // (b) noch einmal, aber nur 400 Edelsteine (kein Gratis-Teleport): kein Umzug, nichts bezahlt
+      inselOrt = {}; inselOrtAnwenden(); st.gems = 400; st.capMovedAt = now - 50 * 60000; st.capWish = null; botCapNext[Y.id] = 0; botActOf(Y.id).next = 0; botCapLastAny = 0;
+      botConsiderCapital(Y, now); botCapLastAny = 0; botConsiderCapital(Y, now + 61000);
+      out.arm = { wunsch: !!st.capWish, gleich: T.x === T.ort0[0] && T.y === T.ort0[1] && !inselOrt[T.id], gems: st.gems, gratis: tpGratis(Y.id) };
+      pendingAttacks.push(a);
       // (c) Sammeln für die Mitte (botRally): „ziel“ bedroht (der Angriff oben), B (hinten) mit Ärger, Hauptstadt T, D ruhig
       st.capital = T.id; capitalCache = null; botAergerMem[Y.id] = []; st.rally = null; botActOf(Y.id).plan = null;
       for (const id of [...vorne, ...hinten]) islandTroops[id] = 0;
@@ -78,7 +86,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(!r.fehlt, 'passende Türme gefunden', r.fehlt);
   ok(r.a && r.a.why === 'forward' && r.a.ring === r.ringT && r.a.vorne, '(a) ruhig: Hauptstadt 1 Zone nach vorne (ab 6 Türmen in der Nähe)', r.a);
   ok(r.b && r.b.why === 'hilfe' && r.b.hinten, '(b) Ärger hinten: Plan „zurück, helfen“', r.b);
-  ok(r.bZug && r.bZug.hinten && r.bZug.gems === r.bZug.teleGems && r.bZug.truppen >= 1e6 && r.bZug.alt === 0, '(b) Hauptstadt verlegt: kostet Edelsteine wie bei dir, Truppen ziehen mit', r.bZug);
+  ok(r.bZug && r.bZug.cap && r.bZug.hinten && r.bZug.weg && r.bZug.frei && r.bZug.gems === 500 && r.bZug.tpGems === 500 && r.bZug.truppen >= 1e6, '(b) Hauptstadt teleportiert wie bei dir: neben einen Turm hinten, kostet 500 Edelsteine (nicht 50), Truppen ziehen mit', r.bZug);
+  ok(r.arm && r.arm.wunsch && r.arm.gleich && r.arm.gems === 400 && !r.arm.gratis, '(b) nur 400 Edelsteine: Wunsch bleibt, aber kein Umzug und nichts bezahlt', r.arm);
   ok(r.bNichtVor, '(b) nicht gleich wieder nach vorne (Ärger noch frisch)');
   ok(r.hilfe && r.hilfe.length >= 1 && r.hilfe.some(h => h.cap), '(b) Angriff hinten: Hilfe aus der nahen Hauptstadt', r.hilfe);
   ok(r.frei && r.frei.bedroht === 0 && r.frei.aerger < .5 && r.frei.cap <= .5 && r.frei.ruhig >= .6, '(c) botFrei nach Lage: bedroht 0, Ärger wenig, Hauptstadt höchstens die Hälfte', r.frei);

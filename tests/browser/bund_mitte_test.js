@@ -46,18 +46,25 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         mitte: (() => { const c = eBasen.map(id => islandById[id]); return { x: (c[0].x + c[1].x) / 2, y: (c[0].y + c[1].y) / 2 }; })() };
       for (const x of pe) pendingAttacks.splice(pendingAttacks.indexOf(x), 1);
       // 4) gemeinsam vorrücken: ohne Ärger liegt der Treffpunkt beim Schwerpunkt der anderen, ein Stück näher am Thron; A hat einen
-      //    eigenen Turm dort → er verlegt seine Hauptstadt (Zufall 10 %: vorher griff es erst unter 5 %)
+      //    eigenen Turm dort → er teleportiert seine Hauptstadt daneben wie du (500 Edelsteine, tpPruefen; Zufall 10 %: vorher griff es erst
+      //    unter 5 %); mit nur 400 Edelsteinen: kein Umzug
       const tp = bundTreffpunkt(a, A.id, Date.now()), cE = islandById[botCapitalOf(E.id)], cF = islandById[botCapitalOf(F.id)];
       out.treff = { tp, soll: { x: (cE.x + cF.x) / 2 * .6, y: (cE.y + cF.y) / 2 * .6 } };
       const nah = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && landmasses[i.landmassId].ring > 0 && !pendingAttacks.some(x => x.targetId === i.id))
         .sort((x, y) => Math.hypot(x.x - tp.x, x.y - tp.y) - Math.hypot(y.x - tp.x, y.y - tp.y))[0];
       geben(A.id, nah.id, 5000);
-      const st = loadBotState()[A.id]; st.gems = 1000; st.capMovedAt = 0;
-      out.vor = { cap: botCapitalOf(A.id), dVor: Math.hypot(islandById[botCapitalOf(A.id)].x - tp.x, islandById[botCapitalOf(A.id)].y - tp.y), nah: nah.id };
+      const st = loadBotState()[A.id]; st.gems = 400; st.capMovedAt = 0; st.neuBis = 0; localStorage.setItem('openWaterWorldStart', String(Date.now() - 864e6));   // (Pässe offen)
+      const c0 = islandById[botCapitalOf(A.id)], an = m => m && [m.sourceId, m.targetId, m.fromId, m.toId, m.homeId].includes(c0.id);
+      for (const d of BOT_DEFS) botNextAt[d.id] = Date.now() + 1e9;   // (keiner zieht nebenher – ein Marsch an der Hauptstadt verbietet den Teleport)
+      for (const l of [pendingAttacks, pendingSends, pendingRetreats, fieldMarches, barbMarches]) for (let i = l.length - 1; i >= 0; i--) if (an(l[i])) l.splice(i, 1);
+      out.vor = { cap: c0.id, dVor: Math.hypot(c0.x - tp.x, c0.y - tp.y), nah: nah.id };
       stub('botOnline', bot => bot.id === A.id); stub('bundOp', () => 'Test'); stub('verstPruefen', () => {});
-      const rnd = Math.random; Math.random = () => .1;
-      try { bundMitspielerRunde(Date.now()); } finally { Math.random = rnd; }
-      out.vor.nachher = botCapitalOf(A.id); out.vor.log = (a.log[0] || {}).t;
+      const rnd = Math.random, log0 = a.log.length; Math.random = () => .1;
+      try { bundMitspielerRunde(Date.now()); out.vor.arm = { gleich: c0.x === c0.ort0[0] && c0.y === c0.ort0[1], gems: st.gems, log: a.log.length === log0 };
+        st.gems = 1000; out.vor.marsch = tpMarschDa(c0.id); bundMitspielerRunde(Date.now()); } finally { Math.random = rnd; }
+      out.vor.nachher = botCapitalOf(A.id); out.vor.log = (a.log[0] || {}).t; out.vor.gems = 1000 - st.gems;
+      out.vor.dNah = Math.hypot(c0.x - nah.x, c0.y - nah.y); out.vor.grenze = BASE_SPACING * 3.5;
+      inselOrt = {}; inselOrtAnwenden();
     } finally { for (const n in alt) window[n] = alt[n]; }
     return out; });
   ok(v.reiz.turm === null && v.reiz.thron < v.reiz.waechter && v.reiz.waechter < v.reiz.tor && v.reiz.turmBesetzt > v.reiz.tor, 'Rally-Ziele: freier Turm nein; freier Thron vor Wächter-Tempel vor Tor', v.reiz);
@@ -67,6 +74,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(v.aerger.plan && v.aerger.plan.n < 90000 && v.aerger.lage < 1, 'Ärger im Bündnis: Quelle schickt weniger', v.aerger.plan);
   ok(v.aerger.treff.zurueck && Math.abs(v.aerger.treff.x - v.aerger.mitte.x) < 1 && Math.abs(v.aerger.treff.y - v.aerger.mitte.y) < 1, 'Viel Ärger hinten: Treffpunkt dort (zurück)', v.aerger);
   ok(!v.treff.tp.zurueck && Math.abs(v.treff.tp.x - v.treff.soll.x) < 1 && Math.abs(v.treff.tp.y - v.treff.soll.y) < 1, 'Ohne Ärger: Treffpunkt beim Schwerpunkt, näher am Thron', v.treff);
-  ok(v.vor.nachher === v.vor.nah && /vorgerückt/.test(v.vor.log || ''), 'Mitspieler rückt mit der Hauptstadt zum Treffpunkt vor', v.vor);
+  ok(v.vor.arm && v.vor.arm.gleich && v.vor.arm.gems === 400 && v.vor.arm.log, 'nur 400 Edelsteine: kein Vorrücken, nichts bezahlt', v.vor.arm);
+  ok(v.vor.nachher === v.vor.cap && v.vor.dNah < v.vor.dVor && v.vor.dNah < v.vor.grenze && v.vor.gems === 500 && /vorgerückt/.test(v.vor.log || ''), 'Mitspieler teleportiert die Hauptstadt neben den Turm am Treffpunkt (500 Edelsteine)', v.vor);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
