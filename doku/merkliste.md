@@ -67,3 +67,7 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - Bilder für Thron-/Wochen-Event (Karte, Herrscher, Titel, Event-Münze, Schlüssel, epische Helden-Kiste, Beschleuniger klein/mittel/groß) liegen in `Game/bilder/`; Test-Dateien nutzen sie (Test `eventbilder_test`), Shop dort mit Reitern Kisten + Event.
 - Lager-Tagesgrenze: höchstens 2,5 Mio. Münzen, 3 Schlüssel 1 und 1 Schlüssel 2 pro Tag. Wochen-Rangliste-Stufen ok
   (1/2/3/4–10/11–50/Rest). Alte Thron-Punkte: Start bei 0. Shop sortiert (Test-Datei): Reiter Kisten · Event · Tempo · Schilde · Markt; Gruppen mit Zwischenüberschrift, je Gruppe nach Wert aufsteigend. Lager: 30K × 1,15^(Stufe−1), Tagesgrenze oben mit Balken.
+- Mitte, Beschlüsse 8.10.: Nur die Thron-RANGPUNKTE starten jedes Wochenende bei 0; Event-Münzen bleiben. Herrscher vergibt
+  keine Titel → Titel bleiben leer. Kisten gut/mittel/normal = episch/groß/normal, Inhalt sichtbar (Vorschau beim Verteilen).
+  Verteilen freiwillig, Rest verfällt beim nächsten Thron-Event. Tote im Thron wie überall (Krankenhaus, wenn voll sterben).
+  Türme dürfen verstärkt werden. Herrscher-Burg: vorhandenes Kronen-Bild über dem Skin (kein neues Bild nötig).
