@@ -99,9 +99,12 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
   weitere eigene Sammel-Märsche am Feld stehen als eigene Sechsecke auf der Verteidiger-Seite (`occ.teile`, nur Anzeige). Zuschauer
   bekommen die Szene über den Feld-Bericht vom Weltrechner (`fieldId`, `aWho`/`dWho`). Test `marsch_bild_test` Teil D.
 - Spieltest-Funde (8.10.): nichts liegt mehr übereinander – Marsch-Köpfe weichen den Schlachten (Flächen des letzten Bilds),
-  Basis-Schildern und Leisten (Kopfleiste, Zoom-Knöpfe, Anleitung) aus, Chip am rechten Rand links vom Kopf; kein Platz nah am Trupp:
-  klein (nur Kopf), dann weiter weg mit Strich. Armeen im Kampf nie an einer fremden Basis/auf ihrem Schild und nie außerhalb des
-  Bilds (sonst klein). Antipp-Knöpfe: Bogen, sonst Reihe/Spalte – immer im Bild, nicht unter Leisten/Hinweis, nie übereinander.
+  Basis-Schildern, Leisten und dem Hinweis oben aus, Chip am rechten Rand links vom Kopf. Kopf, Chip und Trupp sind eine Einheit:
+  höchstens 60 px Lücke (gestrichelter Strich in Seitenfarbe), sonst klein dicht am Trupp (Chip kleiner, ggf. unter dem Kopf);
+  jeder Marsch hat Kopf und Zahl (auch Rückweg und kleine Armeen im Kampf). Rückwege aus einer laufenden Schlacht starten außerhalb
+  ihrer Armeen; Armeen der Schlacht stellen sich neben Märsche. Kampf-Tafel nie unter dem Hinweis (sonst neben dem Verteidiger).
+  Sieg/Niederlage-Band über dem Kampfort (im Bild gehalten). Armeen im Kampf nie an einer fremden Basis/auf ihrem Schild und nie
+  außerhalb des Bilds (sonst klein). Antipp-Knöpfe: Bogen, sonst Reihe/Spalte – immer im Bild, nicht unter Leisten/Hinweis, nie übereinander.
   Eigene/verbündete Welle, die einem laufenden Kampf beitritt, zeigt kein „⌛ wartet“ mehr. Lebensbalken blendet mit dem Kampf aus.
 - Fremde Märsche nur, wenn sie auf deine Basis zielen; Bündnis-Märsche zu dir (Rally, Hilfe, Verstärkung) und ihre
   Rückwege werden gezeichnet; Kämpfe zwischen anderen unsichtbar. Echte Zahlen des Angreifers erst, wenn er bei dir kämpft.

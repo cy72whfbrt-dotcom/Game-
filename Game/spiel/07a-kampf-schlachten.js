@@ -236,7 +236,7 @@ function drawBattleFx(now) {       // screen space (setScreen active)
             const pop = Math.min(1, (ms - 450) / 260), scale = pop < 1 ? 0.5 + 0.62 * Math.sin(pop * Math.PI * 0.62) : 1;
             const alpha = k > 0.78 ? 1 - (k - 0.78) / 0.22 : Math.min(1, pop * 1.6);
             ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'source-over';
-            mzErgebnisBand(f, Math.max(0, alpha), scale, sx, sy);   // (03f: kleines Band am Bildrand, weg vom Ziel)
+            mzErgebnisBand(f, Math.max(0, alpha), scale, sx, sy);   // (03f: Band über dem Kampfort)
         }
         ctx.restore();
     }

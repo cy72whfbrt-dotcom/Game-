@@ -8,13 +8,15 @@ const { chromium, devices } = require('playwright'); const http = require('http'
 const D = process.argv[2], FOTOS = process.env.MARSCH_FOTOS || '';
 const srv = http.createServer((q, r) => { const f = path.join(D, decodeURIComponent(q.url.split('?')[0]).replace(/\/$/, '/index.html')); fs.readFile(f, (e, d) => { if (e) { r.writeHead(404); r.end(); return; } r.writeHead(200, { 'Content-Type': f.endsWith('.html') ? 'text/html' : f.endsWith('.js') ? 'text/javascript' : f.endsWith('.webp') ? 'image/webp' : 'application/octet-stream' }); r.end(d); }); }).listen(0, '127.0.0.1');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 400) : ''));
+const nah = l => l.filter(k => k.fig && Math.hypot(Math.max(k.x - k.fig.x - (k.fig.w || 0), 0, k.fig.x - k.x - k.w), Math.max(k.y - k.fig.y - (k.fig.h || 0), 0, k.fig.y - k.y - k.h)) > 60).map(k => k.text);   // Lücke Kopf–Figur über 60 px?
+const leer = l => l.filter(k => ['marsch', 'rueck', 'rally', 'sammeln', 'kampf'].includes(k.art) && !/\d|\?/.test(k.text || '')).map(k => k.art + ':' + k.text);   // Sechseck ohne Zahl?
 const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j = i + 1; j < l.length; j++) { const a = l[i], b = l[j];   // Sechsecke (mit Chip) übereinander?
   const f = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
   if (f > .15 * Math.min(a.w * a.h, b.w * b.h)) n.push(a.text + ' / ' + b.text); } return n; };
 (async () => {
   const br = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1;localhost'] });
   const fe = [];
-  for (const [name, geraet] of [['Handy', { ...devices['iPhone 13'] }], ['Desktop', { viewport: { width: 1280, height: 800 } }]]) {
+  for (const [name, geraet] of [['Handy', { ...devices['iPhone 13'] }], ['Handy360', { viewport: { width: 360, height: 640 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 }], ['Desktop', { viewport: { width: 1280, height: 800 } }]]) {
     const p = await (await br.newContext(geraet)).newPage(); p.on('pageerror', e => fe.push(name + ': ' + e.message));
     await p.goto('http://127.0.0.1:' + srv.address().port + '/'); await p.waitForTimeout(8000);
     await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof AUF !== 'undefined' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
@@ -58,6 +60,8 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     await p.evaluate(ids => { const now = Date.now();                       // Gedränge (Spieltest F1): zwei eigene Rückwege ziehen gerade vom Kampf weg
       for (const [n, nach] of [[1.8e6, ids.home], [1.6e6, ids.own2]]) pendingRetreats.push({ fromId: ids.T, toId: nach, troops: n, startedAt: now - 2000, resolveAt: now + 60000 }); }, ids);
     await p.waitForTimeout(700);
+    await p.evaluate(T => flashHint('Verstärkung ist im Kampf um ' + islandTitle(islandById[T]) + ' eingetroffen: +2.000.000 Truppen, jetzt 11 Mio.', 8000), ids.T);
+    await p.waitForTimeout(300);
     const k1 = await bild(); await foto('kampf');
     await p.waitForTimeout(3500);
     const k2 = await bild();
@@ -77,6 +81,11 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     const imBild = await p.evaluate(() => { mzLeistenLesen(); return { schilde: bannerHitRects.slice(), leisten: mzLeisten, w: viewW, h: viewH }; });
     const stoert = (l, nur) => l.filter(k => !nur || nur.includes(k.art)).flatMap(k => imBild.schilde.concat(imBild.leisten).filter(q => Math.max(0, Math.min(k.x + k.w, q.x + q.w) - Math.max(k.x, q.x)) * Math.max(0, Math.min(k.y + k.h, q.y + q.h) - Math.max(k.y, q.y)) > .15 * k.w * k.h).map(() => k.text));
     ok(!stoert(k1.koepfe, ['kampf', 'rueck', 'marsch']).length, name + ': Armeen-Chips nicht auf Basis-Schildern oder Leisten', stoert(k1.koepfe, ['kampf', 'rueck', 'marsch']));
+    ok(!nah(k1.koepfe).length, name + ': jeder Kopf dicht an seiner Armee (höchstens 60 px)', nah(k1.koepfe));
+    ok(!leer(k1.koepfe).length, name + ': jedes Sechseck im Kampf zeigt eine Zahl', leer(k1.koepfe));
+    const hint = await p.evaluate(() => { const c = canvas.getBoundingClientRect(), r = hintEl.getBoundingClientRect(); return { x: r.left - c.left, y: r.top - c.top, w: r.width, h: r.height }; });
+    const tafel = k1.koepfe.filter(k => k.art === 'tafel' && Math.max(0, Math.min(k.x + k.w, hint.x + hint.w) - Math.max(k.x, hint.x)) * Math.max(0, Math.min(k.y + k.h, hint.y + hint.h) - Math.max(k.y, hint.y)) > 0);
+    ok(!tafel.length, name + ': Hinweis „Verstärkung …“ liegt nicht über der Kampf-Tafel', { hint, tafel });
     ok(!k1.koepfe.some(k => k.seite === 'eigen' && /wartet/.test(k.text)), name + ': eigene Wellen zeigen nie „⌛ wartet“', k1.koepfe.filter(k => /wartet/.test(k.text)));
     // ===== B) Märsche: Chip = Spieldaten, Rally, Sammeln, Späher, Zurückgerufen =====
     await p.waitForFunction(T => !pendingAttacks.some(a => a.targetId === T), ids.T, { timeout: 30000, polling: 300 }).catch(() => {});
@@ -105,6 +114,10 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     ok(m1.koepfe.some(k => k.art === 'marsch' && /^7\sMio\./.test(k.text)), name + ': Angriff zeigt seine Truppen am Sechseck („7 Mio. · ⌛ …“)', m1.koepfe);
     ok(m1.koepfe.some(k => k.art === 'rally' && /^9\sMio\./.test(k.text)), name + ': Rally mit goldenem Kopf und ihrer Truppenzahl', m1.koepfe);
     ok(arten.includes('sammeln') && arten.includes('rueck') && arten.includes('spaeher'), name + ': Sammeln, Rückweg (zurückgerufen) und Späher stehen auf der Karte', { arten, m0 });
+    const ohneKopf = await p.evaluate(() => marchTokens.filter(m => m.info.art !== 'spaeher' && m.x > 0 && m.x < viewW && m.y > 0 && m.y < viewH && !m.kopf).map(m => m.info.art));
+    ok(!ohneKopf.length, name + ': jeder Marsch im Bild hat seinen Kopf', ohneKopf);
+    ok(!nah(m1.koepfe).length, name + ': Köpfe der Märsche dicht an ihrer Armee (höchstens 60 px)', nah(m1.koepfe));
+    ok(!leer(m1.koepfe).length, name + ': jeder Marsch-Kopf zeigt eine Zahl (auch der Rückweg)', leer(m1.koepfe));
     ok(!ueber(m1.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Märsche)', ueber(m1.koepfe));
     // ===== C) Antippen + Bilder/s =====
     const c = await p.evaluate(() => new Promise(r => { requestRender(); requestAnimationFrame(() => {
@@ -141,7 +154,8 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     //    dein 2. Sammel-Marsch steht als eigenes Sechseck auf der Verteidiger-Seite =====
     const fk0 = await p.evaluate(ids => {
       selMarch = null; pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = []; mapBattles = []; battleFx = []; dropShield(); window.__band = []; const fx0 = spawnBattleFx;
-      spawnBattleFx = function (wo, gut, text) { __band.push({ text, at: performance.now() }); return fx0.apply(this, arguments); };   // (wann das Band kommt)
+      spawnBattleFx = function (wo, gut, text) { __band.push({ text, at: performance.now() }); return fx0.apply(this, arguments); };
+      window.__bandOrt = []; const eb0 = mzErgebnisBand; mzErgebnisBand = function (f, al, sc, sx, sy) { const r = eb0.apply(this, arguments); __bandOrt.push({ sx, sy, x: r.x, y: r.y }); return r; };   // (wo das Band steht)   // (wann das Band kommt)
       const home = islandById[ids.home], bq = [...botOwnedIslands[ids.D]].find(id => islandById[id].landmassId === home.landmassId);
       const f = resFields.filter(f => f.landmassId === home.landmassId && !(fieldState[f.id] && fieldState[f.id].occ) && !fieldMarches.some(m => m.fieldId === f.id))
         .sort((x, y) => Math.hypot(x.x - home.x, x.y - home.y) - Math.hypot(y.x - home.x, y.y - home.y))[0];
@@ -171,6 +185,8 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     ok(kA && kA.helfer === 1 && Math.abs(dS - kA.d) <= 2, name + ': dein 2. Sammel-Marsch als eigenes Sechseck auf der Verteidiger-Seite (Summe = Sammler)', { dS, kA });
     ok(ber && kB && kB.a === ber.a - ber.aL && kB.d === ber.d - ber.dL, name + ': Zahlen laufen auf das echte Ergebnis zu', { ber, kB });
     ok(fx.feld === 0 && fx.band.length === 1 && fx.band[0].text === (ber && ber.won ? 'Sieg' : 'Niederlage') && fx.band[0].nach >= 4000 && fx.band[0].nach < 6500, name + ': Szene ~5 s, danach Sieg/Niederlage-Band', fx);
+    const bo = await p.evaluate(() => { const o = __bandOrt[__bandOrt.length - 1]; return o && { ...o, w: viewW, h: viewH }; });
+    ok(bo && Math.abs(bo.x - Math.max(0, Math.min(bo.w, bo.sx))) < 140 && bo.y < Math.max(60, bo.sy) && Math.max(60, bo.sy) - bo.y < 220 && bo.y > 0 && bo.y < bo.h, name + ': Sieg/Niederlage-Band über dem Kampfort (nicht am Bildrand)', bo);
     ok(!ueber(fA.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Feld-Kampf)', ueber(fA.koepfe));
     await p.context().close();
   }
