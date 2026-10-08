@@ -16,7 +16,7 @@ Die Weltkarte ist EINE große Landkarte wie das RoK-Königreich: Gebiete in Zone
   Basen sind überall das KI-Bild `basis_01…15` (`drawBasisBild`), Thron/Tempel/Pass-Tore ihr Bild; solange ein Bild lädt nur
   ein Schatten (`drawPlatzhalter`). Die 3D-Burg (three.js, baukunst.js) ist seit 8.10. ganz raus.
 - Weit draußen (< 0,0025): Farbflächen, Gebirgs-Bänder, Tore als Punkte (gold offen, rot zu), Mitte immer sichtbar, eigenes
-  Wappen an der Hauptstadt (`drawHeimWappen`); Nebel weit = dunkle Fläche #1a2433 mit Landschaftsfarben (`nebelWeit`).
+  Krone + Goldring an der Hauptstadt (`drawHeimWappen`); Nebel weit = dunkle Fläche #1a2433 mit Landschaftsfarben (`nebelWeit`).
 
 ## Pässe und Öffnungszeiten
 - Jeder Pass hat eine Stufe 1–5 (`KARTE_ZONEN.paesse[].stufe`); er öffnet an Tag = Stufe ab Welt-Start
@@ -43,6 +43,12 @@ Die Weltkarte ist EINE große Landkarte wie das RoK-Königreich: Gebiete in Zone
 - Rohstoff-Felder (Holz/Stein/Eisen/Gold/Edelstein) aus `KARTE_ZONEN.felder`, Stufe steigt nach innen.
 
 ## Namensschilder an den Basen (8.10.)
+- Eigene Hauptstadt: pulsierender Goldring am Boden (`drawHauptstadtRing`, 1,6× Basisbreite, Deckkraft 0,55↔0,9 in 2 s, eigener
+  Takt ~8 Bilder/s `hauptPulsWeiter`), Krone auf dem Wappen im Namensschild. Bild `bilder/karte_hauptstadt_ring.webp` – fehlt es,
+  `marsch_ring_gold` (neues Bild nur reinkopieren). Nur die eigene, nie fremde Hauptstädte.
+- Grenztor, das du nicht angreifen kannst: Schloss `ui_sym_schloss` 30 px oben auf dem Tor, bei jedem Zoom gleich groß
+  (`torSchloesser`/`drawTorSchloesser`; Fahnen und Märsche weichen aus). Regel wie der Angriffsknopf: keine eigene Basis grenzt
+  an (`torAngreifbar` → `canReach`); eigene/Bündnis-Tore und Pässe mit Countdown ohne dieses Schloss.
 - Unter jeder Basis mit Besitzer ein Namensschild (Wappen, Stufe, Truppen; fremde „?“ bis gespäht), ab mittlerem Zoom, statt
   Ring und Fahne; der angelegte Saison-Rahmen erscheint am Schild und im HUD-Wappen. Freie Basen ohne Schild, nur kleine
   Stufen-Zahl (Alexander 8.10.). Verdeckte Schilde fallen weg. Code `bannerModel`/`TIER` (03b), `paintPlate`/`layoutBanners`

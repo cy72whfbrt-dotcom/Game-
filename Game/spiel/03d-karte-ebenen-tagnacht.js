@@ -103,6 +103,7 @@ function drawMap() {
   for (const r of pendingRetreats) drawMarchLine('retreat', islandById[r.fromId], islandById[r.toId], r.startedAt, r.resolveAt, wallNow, r.path, marchKeyOf(r));   // 6
   setScreen(ctx);
   if (typeof bundKarteUnten === 'function') bundKarteUnten(vis, z);                                                    // Bündnis-Gebiet: zart in der Bündnisfarbe
+  drawHauptstadtRing(z, now);                                                                                          // eigene Hauptstadt: Goldring am Boden
   drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
   drawThronePlaza(z, now);                                                                                             // the Thronplatz around the Mega-Tempel
   drawResFields(now, wallNow);                                                                                          // gold mines and gem veins
@@ -119,6 +120,7 @@ function drawMap() {
   const plates = layoutBanners(vis, z, isPanelOpen(popup) ? popupIslandId : null);
   drawMarchTokens();                                                                                                   // 8 tokens (clear of the plates)
   paintBanners(plates);                                                                                                // 9 nameplates on top
+  drawTorSchloesser();                                                                                                 // Schloss auf Toren, die du noch nicht angreifen kannst
   drawArmyCamps(now);                                                                                                  // armies camping in the field
   drawRulerCrowns(plates);
   drawDragonName(wallNow);                                                                                             // Drachen-Name über der Thron-Kuppel
