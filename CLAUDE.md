@@ -136,6 +136,9 @@ jede Änderung in die passende Themen-Datei eintragen (aktueller Stand, keine Ge
   Zusammenführer zwischendurch nur betroffene Tests (`tests/alle_tests.sh <namen>`).
 - **C Große Pakete:** lieber 2–3 Agenten mit großen, getrennten Aufgaben als viele kleine; einmal am Ende zusammenführen.
 - **D Nichts doppelt bauen:** Testdateien zeigen nur Aussehen; Regeln/Zahlen kommen immer aus dem Spiel.
+- **E Neuer Chat rechtzeitig (Alexander 8.10.):** Wird der Chat lang oder langsam, schlägt Claude selbst einen neuen Chat
+  vor (Alexanders Tokens sparen) – vorher `doku/uebergabe.md` schreiben (Stand, laufende/offene Agenten-Ergebnisse, nächste
+  Schritte, offene Fragen) und pushen. Neuer Chat startet mit „Lies doku/uebergabe.md und mach weiter“.
 
 ## Regeln von Alexander
 - Code zuerst auf GitHub (Branch `claude/neues-projekt-8agldl`), **vor jedem Hochladen Alexander fragen**

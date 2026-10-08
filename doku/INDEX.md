@@ -23,3 +23,4 @@ passende Datei öffnen. Code-Stellen: `grep -n "<name>" KARTE.md`. Jede Änderun
 | `entscheidungen-alexander.md` | Alle festen Entscheidungen von Alexander, kurz, nach Datum (1.–8.10.), inkl. „Nein“-Liste |
 | `merkliste.md` | Nur OFFENE Punkte: Fehler-Merkliste 11c, zu prüfen, Reste im Code, Fragen an Alexander, Ideen |
 | `archiv.md` | Alte LIESMICH (Verlauf, Hochlade-Protokolle, alte Pläne, Tabellen vorher/nachher) – nur bei Bedarf; Code-Verweise „LIESMICH 11b A“ |
+- uebergabe.md – Übergabe für neuen Chat: Stand, nächste Schritte, offene Fragen
