@@ -13,6 +13,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const ids = Object.keys(r); let k = 0;
       for (const id of ids) { r[id] = (r[id] || []).concat([ALT + k]); st[id] = st[id] || {}; st[id].capital = ALT + k; k++; }
       if (ids[0]) r[ids[0]] = [ALT + 100];                                   // einer hat NUR noch alte Basen
+      const eig = JSON.parse(localStorage.getItem('openWaterOwnedIslands')) || []; eig.push(ALT + 200, ALT + 201);   // auch der Spieler: unbekannte IDs
+      localStorage.setItem('openWaterOwnedIslands', JSON.stringify(eig));
       localStorage.setItem('openWaterBotOwnedIslands', JSON.stringify(r)); localStorage.setItem('openWaterBotState', JSON.stringify(st));      localStorage.setItem('testAlteWeltIds', JSON.stringify({ nur: ids[0] || null, alt: ALT }));
     } catch (e) {}
   });
@@ -25,6 +27,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const info = JSON.parse(localStorage.getItem('testAlteWeltIds') || '{}'), out = { info, fehler: [] };
     const versuch = (name, f) => { try { return f(); } catch (e) { out.fehler.push(name + ': ' + e.message); } };
     out.unbekannt = []; for (const d of BOT_DEFS) for (const id of botOwnedIslands[d.id] || []) if (!islandById[id]) out.unbekannt.push(d.id + ':' + id);
+    out.eigenUnbekannt = [...ownedIslands].filter(id => !islandById[id]);
     out.caps = {}; for (const d of BOT_DEFS) { const c = versuch('botCapitalOf ' + d.id, () => botCapitalOf(d.id)); out.caps[d.id] = c === null || c === undefined ? null : islandById[c] ? islandById[c].type : 'UNBEKANNT'; }
     versuch('islandTitle', () => { for (const i of islands.slice(0, 50)) islandTitle(i); });
     versuch('isCapital', () => { for (const i of islands.slice(0, 50)) isCapital(i.id); });
@@ -34,6 +37,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(r.info && r.info.alt, 'alte IDs eingeschleust', r.info);
   ok(!r.unbekannt.length, 'keine unbekannten Basen im Besitz der Mitspieler', r.unbekannt.slice(0, 5));
+  ok(!r.eigenUnbekannt.length, 'unbekannte Spieler-ID in openWaterOwnedIslands fällt weg (OwnSet)', r.eigenUnbekannt);
   ok(Object.values(r.caps).every(c => c === null || c === 'tower'), 'Hauptstadt der Mitspieler: ein Turm der Karte oder keine', r.caps);
   ok(!r.fehler.length, 'Aufrufe ohne Absturz', r.fehler);
   ok(!fe.length, 'keine Skript-Fehler', fe.slice(0, 5));
