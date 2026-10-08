@@ -113,9 +113,11 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     const bps = await p.evaluate(ids => { selMarch = null; const now = Date.now(), b = [...ownedIslands];
       for (let i = 0; i < 24; i++) { const a = { fromId: b[i % b.length], toId: b[(i + 1) % b.length], troops: 1e5 * (i + 1), startedAt: now - 1e5 * (i % 7 + 1), resolveAt: now + 1e5 * (8 - i % 7), senderBotId: null };
         if (a.fromId !== a.toId) pendingSends.push(a); }
-      return new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; requestRender(); if (performance.now() - t0 < 2500) requestAnimationFrame(f); else r(Math.round(n * 1000 / (performance.now() - t0))); }; requestAnimationFrame(f); }); }, ids);
-    console.log(name + ': ' + bps + ' Bilder/s bei ' + (await p.evaluate(() => marchTokens.length)) + ' Märschen auf dem Bild (vorher ohne Märsche ' + ohne + ')');
-    ok(bps >= ohne * .7, name + ': flüssig bei vielen Märschen (Bilder/s kaum weniger als ohne Märsche)', { bps, ohne });
+      let ms = 0; const mess = n => { const f = window[n]; window[n] = function () { const t = performance.now(); const r = f.apply(this, arguments); ms += performance.now() - t; return r; }; };
+      for (const n of ['drawMarchLine', 'drawMarchTokens', 'drawMarchChips', 'drawMapBattles']) mess(n);   // (Rechenzeit der Marsch-Anzeige je Bild)
+      return new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; requestRender(); if (performance.now() - t0 < 2500) requestAnimationFrame(f); else r({ bps: Math.round(n * 1000 / (performance.now() - t0)), ms: Math.round(ms / n * 10) / 10 }); }; requestAnimationFrame(f); }); }, ids);
+    console.log(name + ': ' + bps.bps + ' Bilder/s bei ' + (await p.evaluate(() => marchTokens.length)) + ' Märschen auf dem Bild (ohne Märsche ' + ohne + '), Marsch-Anzeige ' + bps.ms + ' ms je Bild');
+    ok(bps.ms < 10, name + ': Marsch-Anzeige rechnet schnell (unter 10 ms je Bild, auch bei 4 Testläufen zugleich)', bps);
     await p.context().close();
   }
   ok(!fe.length, 'keine Skript-Fehler', fe);

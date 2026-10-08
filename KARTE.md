@@ -696,6 +696,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `dismissTutorialHint` → Game/spiel/09a-funde-felder.js:107
 - `dockLuecke` → Game/spiel/01a-grundlagen.js:28
 - `drAktiv` → Game/spiel/09c-events-drache.js:228
+- `drauf` → Game/spiel/03f-marsch-bilder.js:336
 - `drAuszahlen` → Game/spiel/09c-events-drache.js:254
 - `drawArmies` → Game/spiel/09d-armeen-wegmarken.js:163
 - `drawArmyCamps` → Game/spiel/09d-armeen-wegmarken.js:174
@@ -1166,7 +1167,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hintFrei` → Game/spiel/06d-schild-produktion.js:436
 - `hintFrisch` → Game/spiel/06d-schild-produktion.js:442
 - `hinweis` → Game/benachrichtigung.js:17
-- `hJetzt` → Game/spiel/03f-marsch-bilder.js:359
+- `hJetzt` → Game/spiel/03f-marsch-bilder.js:360
 - `holen` → Game/weltrechner/start.js:179
 - `homeAgain` → Game/bots/02-kampf-karte.js:75
 - `horn` → Game/spiel/10c-start-einstellungen.js:71
@@ -1439,13 +1440,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzBildAn` → Game/spiel/03f-marsch-bilder.js:60
 - `mzChip` → Game/spiel/03f-marsch-bilder.js:67
 - `mzEigenerMarsch` → Game/spiel/03f-marsch-bilder.js:263
-- `mzErgebnisBand` → Game/spiel/03f-marsch-bilder.js:449
+- `mzErgebnisBand` → Game/spiel/03f-marsch-bilder.js:450
 - `mzFrei` → Game/spiel/03f-marsch-bilder.js:189
-- `mzGeschosse` → Game/spiel/03f-marsch-bilder.js:423
+- `mzGeschosse` → Game/spiel/03f-marsch-bilder.js:424
 - `mzInfo` → Game/spiel/03f-marsch-bilder.js:117
 - `mzInfoZeigen` → Game/spiel/03f-marsch-bilder.js:292
-- `mzKampf` → Game/spiel/03f-marsch-bilder.js:342
-- `mzKampfFern` → Game/spiel/03f-marsch-bilder.js:441
+- `mzKampf` → Game/spiel/03f-marsch-bilder.js:343
+- `mzKampfFern` → Game/spiel/03f-marsch-bilder.js:442
 - `mzKampfTeile` → Game/spiel/03f-marsch-bilder.js:316
 - `mzKopf` → Game/spiel/03f-marsch-bilder.js:40
 - `mzKopfText` → Game/spiel/03f-marsch-bilder.js:184
@@ -1457,7 +1458,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzPfeile` → Game/spiel/03f-marsch-bilder.js:93
 - `mzPlaetze` → Game/spiel/03f-marsch-bilder.js:329
 - `mzRadius` → Game/spiel/03f-marsch-bilder.js:133
-- `mzRallyRing` → Game/spiel/03f-marsch-bilder.js:464
+- `mzRallyRing` → Game/spiel/03f-marsch-bilder.js:465
 - `mzS` → Game/spiel/03f-marsch-bilder.js:21
 - `mzSanduhr` → Game/spiel/03f-marsch-bilder.js:87
 - `mzSechseck` → Game/spiel/03f-marsch-bilder.js:39
@@ -3298,13 +3299,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drin` :298
 - `mzKampfTeile` :316 — Kampf: Kreis + Säule am Ziel, Armeen im Halbkreis, Verteidiger mit Verstärkern,…
 - `mzPlaetze` :329 — freie Plätze am nächsten zur Ankunftsseite: nicht auf einer anderen Basis, Kopf…
-- `flaeche` :333
-- `mzKampf` :342 — (Bildschirm) eine Schlacht nah: t = Ablauf 0 … MB_MS
-- `hJetzt` :359
-- `mzGeschosse` :423 — je Seite alle 400 ms 1–3 Pfeile/Steine im Bogen (450 ms, 30 px hoch), Einschlag…
-- `mzKampfFern` :441 — weit draußen: kleiner Kampf-Kreis mit gekreuzten Schwertern, pulst
-- `mzErgebnisBand` :449 — Sieg / Niederlage: kleines Band (KI-Bild) am Bildrand, weg vom Ziel – verdeckt …
-- `mzRallyRing` :464 — Rally sammelt: goldener Bodenring dreht (12°/s) am Sammelpunkt
+- `flaeche` :333 — (Trupp, Kopf und Chip darüber)
+- `drauf` :336
+- `mzKampf` :343 — (Bildschirm) eine Schlacht nah: t = Ablauf 0 … MB_MS
+- `hJetzt` :360
+- `mzGeschosse` :424 — je Seite alle 400 ms 1–3 Pfeile/Steine im Bogen (450 ms, 30 px hoch), Einschlag…
+- `mzKampfFern` :442 — weit draußen: kleiner Kampf-Kreis mit gekreuzten Schwertern, pulst
+- `mzErgebnisBand` :450 — Sieg / Niederlage: kleines Band (KI-Bild) am Bildrand, weg vom Ziel – verdeckt …
+- `mzRallyRing` :465 — Rally sammelt: goldener Bodenring dreht (12°/s) am Sammelpunkt
 
 ### Game/spiel/04-kampf.js — Titel (Mega-Tempel), Takt der Mitspieler, Ankunft und Kämpfe (kampfDazu, Warten…
 - `loadTitles` :16

@@ -186,6 +186,7 @@ function drawBattleFx(now) {       // screen space (setScreen active)
             ctx.globalAlpha = 1;
         }
         ctx.globalCompositeOperation = 'lighter';
+        if (f.good && ms > 200 && ms < 1000) { const k = (ms - 200) / 800; ctx.globalAlpha = Math.sin(k * Math.PI); mzBildAn('marsch_sieg_blitz', sx, sy - 30, 120 + 80 * k); ctx.globalAlpha = 1; }   // Sieg: Lichtstrahl-Blitz (KI-Bild)
         // 2) star flare at the clash (250-700 ms)
         if (ms > 250 && ms < 700) {
             const k = (ms - 250) / 450, a = Math.sin(k * Math.PI), R = 26 + 70 * k;

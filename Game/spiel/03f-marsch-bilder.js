@@ -325,16 +325,17 @@ function mzKampfTeile(b) {                              // wer auf der Angreifer
     const w = p.attackerBotId || 'player'; if (w === wer || bundFreund(w, wer)) l.push({ who: w, n: p.rawTroops, held: p.hero || null }); }
   return { l, fa };
 }
-const MZ_PLAETZE = [90, 60, 120, 30, 150, 0, 180, 210, 330].map(g => g * Math.PI / 180);   // unter und neben dem Ziel (oben: Verteidiger, Tafel)
+const MZ_PLAETZE = [90, 67.5, 112.5, 45, 135, 22.5, 157.5, 0, 180].map(g => g * Math.PI / 180);   // unter und neben dem Ziel (oben: Verteidiger, Tafel)
 function mzPlaetze(b, n, tx, cy, R, belegt) {           // freie Plätze am nächsten zur Ankunftsseite: nicht auf einer anderen Basis, Kopf + Chip
   const w0 = Math.atan2(-b.uy, -b.ux), ab = (x, y) => Math.abs(Math.atan2(Math.sin(x - y), Math.cos(x - y))), s = mzS();   // nie über einem anderen
   const andere = towerRects.filter(q => q.id !== b.targetId).map(q => ({ x: q.x + q.w * .2, y: q.y + q.h * .2, w: q.w * .6, h: q.h * .6 }));
-  const reihe = [1, 1.55, 2.1].flatMap(k => MZ_PLAETZE.filter(w => k === 1 || Math.sin(w) >= 0).sort((x, y) => ab(x, w0) - ab(y, w0)).map(w => ({ x: tx + Math.cos(w) * R * k, y: cy + Math.sin(w) * R * k * .72 })));   // (weiter draußen nur unten: oben stehen Verteidiger und Tafel)
-  const flaeche = p => p.x < tx - 4 ? { x: p.x - 128 * s, y: p.y - 84 * s, w: 150 * s, h: 96 * s } : { x: p.x - 22 * s, y: p.y - 84 * s, w: 150 * s, h: 96 * s };
+  const reihe = [1, 1.5, 2, 2.6].flatMap(k => MZ_PLAETZE.slice().sort((x, y) => ab(x, w0) - ab(y, w0)).map(w => ({ x: tx + Math.cos(w) * R * k, y: cy + Math.sin(w) * R * k * .72 })));   // (nur unten und seitlich: oben stehen Verteidiger und Tafel)
+  const flaeche = p => ({ x: p.x - 64 * s, y: p.y - 108 * s, w: 128 * s, h: 112 * s });   // (Trupp, Kopf und Chip darüber)
   const voll = belegt.slice(), aus = [];
   for (let i = 0; i < n; i++) {
-    const p = reihe.find(q => !aus.includes(q) && flaeche(q).x >= 0 && flaeche(q).x + flaeche(q).w <= viewW && mzFrei({ x: q.x - 18, y: q.y - 30, w: 36, h: 44 }, andere) && mzFrei(flaeche(q), voll))
-      || reihe.find(q => !aus.includes(q) && mzFrei(flaeche(q), voll)) || reihe.find(q => !aus.includes(q));
+    const drauf = q => flaeche(q).x >= 0 && flaeche(q).x + flaeche(q).w <= viewW;
+    const p = reihe.find(q => !aus.includes(q) && drauf(q) && mzFrei({ x: q.x - 18, y: q.y - 30, w: 36, h: 44 }, andere) && mzFrei(flaeche(q), voll))
+      || reihe.find(q => !aus.includes(q) && drauf(q) && mzFrei(flaeche(q), voll)) || reihe.find(q => !aus.includes(q) && mzFrei(flaeche(q), voll)) || reihe.find(q => !aus.includes(q));
     aus.push(p); voll.push(flaeche(p));
   }
   return aus;
@@ -391,9 +392,9 @@ function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Sch
     ctx.drawImage(k, x - kw / 2 - 2, ky - kh / 2 - 2, k.w, k.h);
     mzBalken(x, ky + kh / 2 + 3 * s, 28 * s, 4 * s, va / Math.max(1, b.my), MZ_FARBE[sd].haupt); ctx.globalAlpha = al;
     const txt = fmtCompact(n) + ' · ' + rest; ctx.font = `700 ${px}px Inter, system-ui, sans-serif`;
-    const c = mzChip(txt, x < tx - 4 ? x - kw / 2 - 4 : x + kw / 2 + 4, ky - px / 2 - 3, px, '#fff6dc', x < tx - 4);   // (links vom Ziel: Chip nach links)
+    const cw = ctx.measureText(txt).width + 10, c = mzChip(txt, x - cw / 2, ky - kh / 2 - px - 9 * s, px, '#fff6dc');   // (Chip über dem Kopf: schmal, nichts daneben verdeckt)
     if (q.rally) mzMiniKoepfe(q.rally, x, ky + kh / 2 + 9 * s, s);
-    koepfe.push({ art: 'kampf', seite: sd, n, text: txt, x: Math.min(x - kw / 2, c.x), y: ky - kh / 2, w: Math.max(x + kw / 2, c.x + c.w) - Math.min(x - kw / 2, c.x), h: kh });
+    koepfe.push({ art: 'kampf', seite: sd, n, text: txt, x: Math.min(x - kw / 2, c.x), y: c.y, w: Math.max(kw, c.w), h: ky + kh / 2 - c.y });
     return { x, y: ky };
   });
   ctx.globalAlpha = 1;
