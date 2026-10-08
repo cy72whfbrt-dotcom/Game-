@@ -5,13 +5,21 @@
 // ganz rausgezoomt ruhiger Nebel statt Wolken-Brei, die Gebiete schimmern durch, Wappen an der Hauptstadt; Umlaute in Versalien
 // (Reiter, Überzeilen) nicht abgeschnitten. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
 const { chromium, devices } = require('playwright');
-const path = require('path');
+const http = require('http'), fs = require('fs'), path = require('path');
+const D = path.resolve(process.argv[2]);
+const TYP = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.woff2': 'font/woff2', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp' };
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 (async () => {
-  const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] }); const fe = [], bilder = process.argv[3];
+  // Vorschau über einen eigenen Server (nicht file://: sonst ist die Leinwand „tainted“ und getImageData wirft SecurityError)
+  const srv = http.createServer((q, a) => { let f = path.join(D, decodeURIComponent(q.url.split('?')[0])); if (q.url === '/' || q.url.startsWith('/?')) f = path.join(D, 'index.html');
+    if (!f.startsWith(D) || !fs.existsSync(f) || !fs.statSync(f).isFile()) { a.writeHead(404); return a.end(); }
+    a.writeHead(200, { 'Content-Type': TYP[path.extname(f)] || 'application/octet-stream' }); fs.createReadStream(f).pipe(a); });
+  await new Promise(r => srv.listen(0, '127.0.0.1', r));
+  const B = 'http://127.0.0.1:' + srv.address().port + '/';
+  const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1'] }); const fe = [], bilder = process.argv[3];
   for (const [art, opt] of [['Handy', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }], ['Desktop', { viewport: { width: 1440, height: 900 } }], ['Desktop klein', { viewport: { width: 1280, height: 720 } }]]) {
     const ctx = await b.newContext(opt), p = await ctx.newPage(); p.on('pageerror', e => fe.push(e.message));
-    await p.goto('file://' + path.resolve(process.argv[2]) + '/index.html', { timeout: 120000 });
+    await p.goto(B + 'index.html', { timeout: 120000 });
     await p.waitForFunction(() => typeof islands !== 'undefined' && islands.length && typeof playerIslandId !== 'undefined' && islandById[playerIslandId] && typeof renderCitySheet === 'function', null, { timeout: 90000, polling: 500 }).catch(() => {});
     await p.waitForTimeout(3000);
     const bild = async n => { if (bilder) await p.screenshot({ path: path.join(bilder, 'leiste_' + art.replace(' ', '_') + '_' + n + '.png') }); };
@@ -130,5 +138,5 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await ctx.close();
   }
   ok(!fe.length, 'keine Skriptfehler', fe.slice(0, 3));
-  await b.close();
-})();
+  await b.close(); srv.close();
+})().catch(e => { console.log('FEHLER Abbruch: ' + (e && e.stack || e)); process.exit(1); });
