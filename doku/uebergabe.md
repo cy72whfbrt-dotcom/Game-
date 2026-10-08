@@ -1,26 +1,27 @@
-# Übergabe an den neuen Chat (Stand 8.10. nachmittags)
+# Übergabe (Stand 8.10. abends)
 
-Erst lesen: `CLAUDE.md`, dann `doku/INDEX.md`. Offen: `doku/merkliste.md`. Live: NICHTS hochgeladen (Wartung, Alexander: erst weiterbauen).
-Branch `claude/neues-projekt-8agldl` = Endprüfung bestanden (komplett.sh grün, Server-Tests grün außer kiste_test = leere Test-Welt).
-Vorschau (Test, unbegrenzt): https://claude.ai/artifact/XPoQzPd5cwov4ybQTTWN93
+Erst lesen: `CLAUDE.md`, dann `doku/INDEX.md`. Offene Punkte: `doku/merkliste.md`.
 
-## Heute fertig
-Code nach Thema sortiert (50 Teile), App-Symbol Ritter, Event-Belohnungen nur im Event abholen (danach Postfach), Drache über dem Thron,
-Marsch-Köpfe/Sieg-Band am Kampfort, 360-px-Fixes.
+## Stand
+- Branch `claude/neues-projekt-8agldl` = alles fertig + geprüft (Endprüfung: komplett.sh grün, Server-Tests grün außer
+  `kiste_test` = leere Test-Welt, bekannt). **Live: NICHTS hochgeladen** (Wartung; Alexander will erst weiterbauen).
+- Test-Vorschau (unbegrenzt): https://claude.ai/artifact/XPoQzPd5cwov4ybQTTWN93
+  (neu veröffentlichen: `vorschau_bauen.php <ordner> test`, Reset-Skript mit neuem `owVorschauStand` vor
+  `klein/ladebildschirm.js`, Publish mit `url` + `root` + nur geänderten `files`).
+- Server-Tests brauchen MariaDB: im neuen Container neu einrichten (Endprüfer kann das, siehe `tests/server_tests.sh`-Kopf).
 
-## Läuft / wartet auf Alexander
-- Programmierer (Worktree, Branch claude/wonderful-gates-y11bvd): Heldenkiste auf 2–3 Helden verteilen + Angriffs-Wellen zur eigenen Basis zurück. Danach Schnellprüfer.
-- Fotos für Alexander (Spieltester, scratchpad/fotos_alex): Helden-Plätze in Späh-/Kampfbericht, Teleport-Animation, Karte ganz weit.
-- Test-Dateien (Alexander sagt je Ja/Nein): Angriff https://claude.ai/artifact/4eCXyGSsK4ALCtufi6qfBJ · Basis https://claude.ai/artifact/QEEdZDEWgiPZVNLfuRWtzv ·
-  Hauptstadt A/B/C https://claude.ai/artifact/N1smTgj9uGTN7FxXn1YY2D · Grenztor https://claude.ai/artifact/Dqr4c3mWwb2ixVCF4NKFNe · Stadt https://claude.ai/artifact/LUqEG1w8eCUKuqwxZ94Ryz
-  (KI-Bild-Prompts stehen im scratchpad design_*.md – falls weg, Designer neu schreiben lassen).
-- Frage offen: Drache/Kriegsherr zählen bei Verteidigungs-Helden nur Angriff+Gefolge, nicht Abwehr-Werte → reparieren? (Empfehlung ja)
+## Nächste Schritte (mit Alexander besprechen, erst reden, dann starten)
+1. Zahlen + Thron-Shop zusammen mit Alexander (eigene Frage-Runde, viel zu ändern).
+2. Wichtig später: Hauptbuch zählt keine Bauarbeiter-Plätze (Schummel-Lücke).
+3. Später: Namensschild-Skins, kompletter Code-Check / alter Code raus.
+4. Hochladen + Welt-Neustart erst auf Alexanders Ja (neue Karte braucht neue Welt), danach `werkzeuge/nach_hochladen.sh`,
+   Live-Wächter-Routine trig_01Qoa3CR2p5twrXZEv5Uvahh aktivieren, alte `baukunst.js` auf dem Server löschen.
 
-## Später (Alexander)
-Bauarbeiter-Lücke im Hauptbuch (wichtig), Zahlen + Thron-Shop zusammen mit Alexander (zuletzt), Skins, Code-Check.
+## Offene Fragen an Alexander
+- Fremde Tabellen eines anderen Spiels in der Datenbank löschen?
+- Erfolge bleiben über den Saison-Reset – so gewollt?
+- Ansehen: Ladebild/Login, Heldenhalle, Saison-Reset.
 
-## Nachtrag (8.10. abends)
-Fertig + geprüft: Heldenkiste 2–3 Helden, Wellen zur eigenen Basis, Werte zählen überall (Kriegsherr/Invasion), Goldring Hauptstadt
-(Bild karte_hauptstadt_ring.webp), Schloss an Toren, neue Fenster Basis/Angriff/Grenztor (Alexander: gut), Spähbericht „?“-Plätze,
-Teleport mit Lichtsäule (karte_lichtsaeule.webp). Offen: leerer Kasten unter Event-Band (Fix läuft), danach Endprüfung komplett.sh +
-Server-Tests (DB in scratchpad/srv – im neuen Chat neu einrichten) und neue Test-Vorschau. Nichts hochgeladen.
+## Arbeitsweise, die gut lief
+Erst reden → Test-Datei/Fotos zeigen → Alexander sagt Ja → einbauen. Fotos immer mit normalen Zahlen (Vorschau ohne „test“).
+Designer prüft Fotos vor Alexander; Überlappungs-Tests (`fenster_neu_test`, `karte_ring_test`) streng halten.
