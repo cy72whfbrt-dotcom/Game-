@@ -1034,6 +1034,37 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   ca. 600 KB vom CDN fallen weg, spiel.js 977 → 959 KB (verkleinert). Tests: `laden_test` (keine 3D-Dateien, keine Anfrage
   nach außen), `basen_bild_test` (Platzhalter beim Laden), `server_test` (CSP ohne CDN), `karte_test`, `design_stil_test`.
   Auf dem Server liegen `baukunst.js`/`klein/baukunst.js` noch – werden nicht mehr geladen (beim nächsten Aufräumen löschen).
+- **8.10. Marsch-Testdatei (`werkzeuge/marschtest/`, nur Anzeige, Spiel unverändert):** gemeinsamer Kampf wie im Spiel
+  (`kampfDazu`, 04-kampf.js): weitere eigene Märsche und Bündnis-Mitglieder treten dem laufenden Kampf am selben Ziel bei
+  (Truppen addiert, Kampf mindestens noch 2,5 s, Hinweis „Verstärkung im Kampf: +… · jetzt …“), Verstärkung des Gegners
+  erhöht die Verteidiger, ein dritter Spieler wartet sichtbar am Rand (Sanduhr, „wartet“) und kämpft erst nach der
+  Entscheidung. Ein Kampfkreis, Armeen stellen sich um das Ziel, Tafel „4 Armeen · 10,3 Mio. ⚔ 8,4 Mio.“, Chip am Sechseck
+  immer „Truppen · Restzeit“ (auch im Kampf), Kampfdauer wie `fightDurationMs` (4–12 s). Knöpfe unter „Mehr“: 3 Angriffe,
+  + eigener Marsch, + Verbündeter, + Verstärkung Gegner, Dritter Spieler. Test `marschtest_test.js`.
+  Runde 2: Sammeln wie 09a (`fieldArrive`): ein Sammler je Feld, ein zweiter eigener Marsch tritt bei (Truppen + Traglast
+  wachsen, Tempo bleibt fest), Bündnis-Mitglied kehrt um; Verstärker des Gegners stehen als eigene Sechsecke in der Basis
+  (Name, Truppen, Balken, eigene Schadenszahlen, nach Niederlage weg); jeder Marsch nimmt nur freie Truppen der Basis
+  (12,4 → 6,2 + 3,1 Mio., vorher zählte jeder Marsch die ganze Basis); Sieg-Band am Bildrand.
+  Abgleich Gruppe 1 (Ergebnis wie `resolveAttack`/`barbFight`): Sieg nur, wenn Angriff > Truppen + Verteidigung; Sieger verliert
+  die Verteidigung, Verlierer: 20 % fliehen heim. Hauptstadt: „Geplündert – die Hauptstadt hält“, brennt 30 Min., 10 % über dem
+  Schutz als Beute; Turm erobert: wird deiner, Überlebende bleiben als Besatzung (keine Beute); Lager sofort entschieden (Sieg:
+  Münzen ins Abholfach, Niederlage: alle Truppen weg). Ziel inzwischen eigen/Bündnis: einziehen bzw. heim. Armeen im Halbkreis
+  unter dem Ziel (nie auf anderen Basen), Hinweis = Tafel, Band 60 % breit. Knöpfe „Ergebnis wie im Spiel“ im Mehr-Menü.
+  Gruppe 2 (Nebel wie `drawMap`/`marsch_teil`): fremde Märsche nur, wenn sie auf deine Basis zielen; Verbündete nur beim Beitritt,
+  in deinem Kampf und auf dem Heimweg danach; fremde Truppen/Helden „?“ (Fahne), bis sie bei dir kämpfen; Verstärker in fremden
+  Basen erst nach deinem Späher; Kämpfe zwischen anderen unsichtbar. Knopf „Nebel an/aus“ (aus = Testansicht).
+  Gruppe 3 (Schild, Ziel inzwischen eigen): Friedensschild als Kuppel; Angriff prallt ab („Schild hält – Dein Angriff prallt ab“
+  bzw. „X prallt ab“), keine Verluste, Truppen laufen heim (`welleHeim`); Warnung „Friedensschild hält – prallt ab“; wer angreift,
+  verliert seinen Schild. Ziel gehört inzwischen dir: Truppen ziehen ein; Bündnis: kein Kampf, heim.
+  Gruppe 4 (Weg/Tempo wie `travelDurationSeconds`, `tollFor`): Laufzeit = Strecke ÷ 540/s, 6–60 s (vorher erfundenes Tempo);
+  Späher und Rally ohne erfundene ×1,8/×0,8; „Über den Pass“: Knick-Linie über Pass 8, Maut beim Losschicken (Stufe × 1000 je Truppe,
+  100 … 560.000, Hinweis mit Münz-Kachel), Tor zu = kein Weg (kein Warten am Tor); Zurückrufen: zurück so lange, wie schon gelaufen.
+  Gruppe 5 (`speedUpMarch`/`speedUpAll`/`recallMarch`): „Schneller“ kostet 1 Edelstein je angefangene Restminute (Preis am Knopf),
+  ab 500 erst „Wirklich?“, nicht im Kampf; „Alle schneller“; Zurück im Kampf „zu spät zum Zurückrufen“, Rally nie, Späher „kehrt um“.
+  Gruppe 6 (Rally wie `bundRallyStart/Dazu/Los/Ende`): 1 Min. Wartezeit, Platz = (Botschaft + 1) × 10 % der Truppen (wer mehr
+  schickt, bringt nur den Rest), Ziel-Besitzer gewarnt, Rally gegen dich mit Warnung „los in …“ (Truppen „?“), Starter kann abbrechen,
+  beim Start Schild/Bündnis-Ziel → abgebrochen, Nachzügler ziehen direkt zum Ziel und kämpfen mit. (Danach Stopp – Alexander: die
+  Logik ist im Spiel fertig, die Testdatei zeigt nur die Darstellung.)
 
 - **8.10. – Märsche und Kämpfe als KI-Bilder im Spiel (Alexander: Aussehen aus der Marsch-Testdatei; NICHT hochgeladen):**
   Neuer Teil `03f-marsch-bilder.js` (nur Darstellung, Spiel-Logik unverändert): jede Armee = Trupp-Bild (`marsch_trupp_*`,
