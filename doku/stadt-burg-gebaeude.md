@@ -3,7 +3,7 @@
 Die Hauptstadt ist das Wichtigste im Spiel: Burg (Stufe 1–25) mit Gebäuden und Labor-Forschung, bleibt über jeden
 Saison-Reset. Wichtigste Dateien: `Game/aufbau.js` (`AUF`: Burg-Fenster, Kosten `stadtKosten`/`foKosten`, Forschungs-Baum,
 Markt, Marsch-Plätze, `burgFair`), `Game/spiel/08a-stadt-bauen.js` (`burgZeitTab`, `burgBasis`, Bauzeiten, `openCity`),
-`08b-burg-aussehen.js` (`cityFehlt`, `cityWarte`), `08d-gebaeude-wirkung.js`, `08e`/`08f` (Stadtbild).
+`08b-stadt-burg-aussehen.js` (`cityFehlt`, `cityWarte`), `08d1-stadt-gebaeude-wirkung.js, 08d2-stadt-teleport.js`, `08e`/`08f` (Stadtbild).
 
 ## Burg
 - Eigene Burg-Stufe 1–25 (`city.levels.keep`); die Hauptstadt auf der Karte folgt ihr (Anzeige = Burg-Stufe, intern × 4).

@@ -1,4 +1,4 @@
-// Teil 05c-erfolge-rangliste.js: Erfolge, Profil antippen, Rangliste
+// Teil 05c-profil-erfolge-rangliste.js: Erfolge, Profil antippen, Rangliste
 // ===== ERFOLGE: badges for what you've done, each with gems to collect (only gems - the look is bought, not earned) =====
 let playerStats = (() => { try { return JSON.parse(store.get('openWaterStats')) || {}; } catch (e) { return {}; } })();
 if (!playerStats.seeded) { playerStats.captures = Math.max(playerStats.captures || 0, Math.max(0, ownedIslands.size - 1)); playerStats.seeded = 1; store.set('openWaterStats', JSON.stringify(playerStats)); }   // an existing empire: its bases count as conquered

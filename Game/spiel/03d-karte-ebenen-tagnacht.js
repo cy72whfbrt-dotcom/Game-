@@ -1,4 +1,4 @@
-// Teil 03d-maersche-tagnacht.js: Karte zeichnen (drawMap: Reihenfolge der Ebenen) und Tag und Nacht
+// Teil 03d-karte-ebenen-tagnacht.js: Karte zeichnen (drawMap: Reihenfolge der Ebenen) und Tag und Nacht
 function ownerKeyOf(isl) { const o = islandOwnerOf(isl.id); return o === 'player' ? 'player' : o ? 'bot' : 'neutral'; }
 function visibleIslands(view) {
   const out = [];

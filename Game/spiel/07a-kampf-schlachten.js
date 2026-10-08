@@ -1,4 +1,4 @@
-// Teil 07a-schlachten.js: Schlachten auf der Karte (auch Zuschauer-Anzeige) und Kampf-Effekte
+// Teil 07a-kampf-schlachten.js: Schlachten auf der Karte (auch Zuschauer-Anzeige) und Kampf-Effekte
 // ===== BATTLES ON THE MAP =====
 // When a fight the player is part of resolves, it plays out at the base itself: the arriving column
 // forms up, the garrison steps out, they clash, soldiers fall in proportion to the real losses,

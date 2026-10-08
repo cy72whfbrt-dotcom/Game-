@@ -1,4 +1,4 @@
-// Teil 01e-nebel-kampfwerte-hud.js: Nebel (Daten), Kampfwerte (Angriff, Verteidigung, Mauer, Helden), Speichern, Produktion, Anzeige oben
+// Teil 01e-kampf-werte-nebel-hud.js: Nebel (Daten), Kampfwerte (Angriff, Verteidigung, Mauer, Helden), Speichern, Produktion, Anzeige oben
 // Nebel des Krieges: only explored islands are visible. Owning a base explores its island and
 // every island bridged to it; a scout sent into the fog explores the island it reaches.
 // The fog lifts in small sections (FOG_CELL squares): around every own base, and wherever a scout goes.

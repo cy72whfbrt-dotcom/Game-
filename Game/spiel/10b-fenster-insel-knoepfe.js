@@ -1,4 +1,4 @@
-// Teil 10b-inselfenster-knoepfe.js: Insel-Fenster: Ausbau merken, Zurückrufen, Nebel antippen, Tippen auf die Karte
+// Teil 10b-fenster-insel-knoepfe.js: Insel-Fenster: Ausbau merken, Zurückrufen, Nebel antippen, Tippen auf die Karte
 // (Zuschauer) eben ausgebaute Stufen merken: bis der Weltrechner sie bestätigt, überschreibt die nächste Welt-Lieferung
 // sie nicht wieder mit der alten Stufe (sonst springt die Anzeige zurück und man bezahlt dieselbe Stufe zweimal)
 const wartendeAusbauten = new Map();   // Basis → { stufe, bis }

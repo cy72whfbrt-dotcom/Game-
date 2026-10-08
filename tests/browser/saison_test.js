@@ -119,7 +119,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(B.gems === 1000 + 2000 + 1500 && (B.titel || []).includes('s1p2') && B.look === 'Saison-Großadmiral' && B.rahmen === 'sz2', 'Mitspieler Platz 2: Edelsteine 1.000 (Ausnahme) + 2.000 Preis + 1.500 aus Thron-Punkten (gleich abgeholt) + Rahmen „Saison-Großadmiral“ (Platz 2–3)', { gems: B.gems, titel: B.titel, look: B.look, rahmen: B.rahmen });
   ok(n.pass && n.pass[0] === 0 && n.pass[1] === 0 && n.pass[2] === 0 && n.pass[3] === false, 'Saison-Pass von vorn (Punkte, abgeholte Stufen) – Premium auch weg (Alexander 8.10.)', n.pass);
   ok(n.botPass && n.botPass[0] === 0 && n.botPass[1] === 0 && n.botPass[2] === false, 'Mitspieler: Saison-Pass von vorn, Premium auch weg', n.botPass);
-  { const q = (require('fs').readFileSync(require('path').join(__dirname, '../../Game/spiel/10d-welt-weltrechner.js'), 'utf8').match(/WELT\.saisonKonto = function[\s\S]*?\n    \};/) || [''])[0];
+  { const q = (require('fs').readFileSync(require('path').join(__dirname, '../../Game/spiel/10d3-welt-hauptbuch.js'), 'utf8').match(/WELT\.saisonKonto = function[\s\S]*?\n    \};/) || [''])[0];
     ok(/d\.u = PLAYER_START_COINS/.test(q), 'Hauptbuch: neue Saison setzt sein Münz-Konto auf die Start-Münzen (wie sein Handy)'); }
   ok(n.rang[0] === 0 && n.rang[1] === 0 && n.rang[2] === 0 && n.rang[3] === 50 && n.rang[4] >= 9000, 'Ranglisten Eroberungen/Thron-Punkte zählen ab dem Reset (Erfolge behalten 50 / 9.000)', n.rang);
   ok(n.wo === 0, 'Wochen-Event: Punkte der alten Welt weg', n.wo);

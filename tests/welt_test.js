@@ -30,9 +30,9 @@ pruefe('Flicken hin und zurück (' + gut + ' von 2000)', gut === 2000);
 pruefe('leere {} bleiben {}', (() => { const a = { x: {} }, b = { x: {}, y: {} }, c = JSON.parse(J(a)); flickenAnwenden(c, flickenBauen(a, b)); return J(c) === '{"x":{},"y":{}}'; })());
 pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, { d: { z: { s: { x: 1 } } } }) === false);
 
-// 3) Hauptbuch (10d-welt-weltrechner.js): keine Fehlalarme für Thron-Shop-Kisten, Splitter → Gems (alle Helden voll), Wochenketten-/Pass-Kisten (fr.kg)
+// 3) Hauptbuch (10d3-welt-hauptbuch.js): keine Fehlalarme für Thron-Shop-Kisten, Splitter → Gems (alle Helden voll), Wochenketten-/Pass-Kisten (fr.kg)
 {
-    const s10 = fs.readFileSync(path.join(G, 'spiel', '10d-welt-weltrechner.js'), 'utf8'), stueck = (a, b) => { const i = s10.indexOf(a), j = s10.indexOf(b, i); if (i < 0 || j < 0) throw new Error('nicht gefunden: ' + a); return s10.slice(i, j); };
+    const s10 = fs.readdirSync(path.join(G, 'spiel')).filter(f => f.startsWith('10d')).sort().map(f => fs.readFileSync(path.join(G, 'spiel', f), 'utf8')).join(''), stueck = (a, b) => { const i = s10.indexOf(a), j = s10.indexOf(b, i); if (i < 0 || j < 0) throw new Error('nicht gefunden: ' + a); return s10.slice(i, j); };
     const code = stueck('    const kWert', '    function hbKisteDazu') + stueck('    const hbThronPreis', '    function hbFreiDazu') + stueck('    function hbGearNeu', '    // alle Neuerungen eines Profils');
     const nn = v => (typeof v === 'number' && Number.isFinite(v) ? v : 0), WERT = { a: 0 };
     const H = new Function('nn', 'HEROES', 'HERO_MAXQ', 'hbHeldZeile', 'hbHeldenWert', 'hbE0f', 'HB_SLOTS', 'starGemCost', 'CRATE_GEM_COST', 'hbZahlen', 'fz', 'THRONE_OFFERS', 'STAR_PCT', 'ITEM_MAX_LEVEL',
@@ -122,14 +122,14 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     pruefe('Push Sammler: je Art richtig benannt (Holz ist keine Münze)', sm === 'Deine Sammler sind zurück: +500 Münzen, +3 Edelsteine, +5.000 Holz, +200 Eisen.');
     M.u7.profil.city.bauBis[0] = jetzt - 20 * 60000; win.__pushMerker.ev = {};
     pruefe('Push Bau fertig: über 10 Min. alt → keine Meldung mehr', !lauf().some(e => e.art === 'bau'));
-    const s10 = fs.readFileSync(path.join(G, 'spiel', '10d-welt-weltrechner.js'), 'utf8'), schritt = s10.slice(s10.indexOf('function hbStadtSchritt'), s10.indexOf('function hbFoSchritt'));
+    const s10 = fs.readdirSync(path.join(G, 'spiel')).filter(f => f.startsWith('10d')).sort().map(f => fs.readFileSync(path.join(G, 'spiel', f), 'utf8')).join(''), schritt = s10.slice(s10.indexOf('function hbStadtSchritt'), s10.indexOf('function hbFoSchritt'));
     pruefe('Bauherr: echte Spieler bekommen beim Weltrechner Punkte für Stadt-Gebäude', /evPunkte\('bau', who, 2 \+ L \+ 1\)/.test(schritt));
     pruefe('Welt-Profil schickt Bau- und Forschungs-Ende mit', /bauBis: bl\.map/.test(fs.readFileSync(path.join(G, 'welt.js'), 'utf8')));
 }
 // 6) Burg fair (Alexander 6.10. A): beim Reset Handy (aufbau.js burgFair) und Hauptbuch des Weltrechners (09f burgFairWer → hb.st/hb.fo)
 // gleich – das Handy meldet danach nie mehr als das Hauptbuch erlaubt (kein Fehlalarm); die alten Burg-Bauzeiten enden mit dem Reset
 {
-    const a = fs.readFileSync(path.join(G, 'aufbau.js'), 'utf8'), s9 = fs.readFileSync(path.join(G, 'spiel', '09f-saison.js'), 'utf8'), s10 = fs.readFileSync(path.join(G, 'spiel', '10d-welt-weltrechner.js'), 'utf8');
+    const a = fs.readFileSync(path.join(G, 'aufbau.js'), 'utf8'), s9 = fs.readFileSync(path.join(G, 'spiel', '09f-saison.js'), 'utf8'), s10 = fs.readdirSync(path.join(G, 'spiel')).filter(f => f.startsWith('10d')).sort().map(f => fs.readFileSync(path.join(G, 'spiel', f), 'utf8')).join('');
     const stueck = (q, von, bis) => { const i = q.indexOf(von), j = q.indexOf(bis, i); if (i < 0 || j < 0) throw new Error('Stück fehlt: ' + von); return q.slice(i, j); };
     const AUF = new Function('cityMaxLevel', 'BURG_MAX', stueck(a, 'function stadtCapB', 'function stadtCap(') + stueck(a, 'const FO_AESTE', 'function foStufe') + 'return { burgFair };')(id => id === 'forge' ? 5 : id === 'hospital' ? 40 : 25, 25);
     const burgFairWer = new Function('AUF', stueck(s9, 'function burgFairWer', '\n}\n') + '\n}\nreturn burgFairWer;')(AUF);
@@ -160,7 +160,7 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
 // 7) Rahmen (Endprüfung 6.10.): nach einem Neustart kommt zuerst ein altes Profil (ohne look.frames/titles) – das Hauptbuch merkt
 // sich die Rahmen erst am ersten neuen Profil (vorher blieben gekaufte Rahmen für immer leer), danach kommt keiner mehr dazu
 {
-    const w = fs.readFileSync(path.join(G, 'welt.js'), 'utf8'), s10 = fs.readFileSync(path.join(G, 'spiel', '10d-welt-weltrechner.js'), 'utf8');
+    const w = fs.readFileSync(path.join(G, 'welt.js'), 'utf8'), s10 = fs.readdirSync(path.join(G, 'spiel')).filter(f => f.startsWith('10d')).sort().map(f => fs.readFileSync(path.join(G, 'spiel', f), 'utf8')).join('');
     const stueck = (q, von, bis) => { const i = q.indexOf(von), j = q.indexOf(bis, i); if (i < 0 || j < 0) throw new Error('Stück fehlt: ' + von); return q.slice(i, j); };
     const roh = new Function('SYSTEM', stueck(w, 'function profilZuBotRoh', '    W.profilZuBot =') + 'return profilZuBotRoh;')(true);
     const hbRahmen = new Function(stueck(s10, 'function hbRahmen', '    // Nach dem Zurückspielen') + 'return hbRahmen;')();

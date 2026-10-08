@@ -4,7 +4,7 @@ Alles im Fenster „Events“: Wochen-Event, Invasion, Drache, Tagesboss, Barbar
 Saison-Pass, Abholen, dazu die Anleitung für neue Spieler. Alles rechnet der Weltrechner (Welt-Teil `openWaterEvents`),
 Zeiten = Berliner Zeit. Wichtigste Dateien: `Game/spiel/09c-events-drache.js` (`evBild`/`evBanner`, Drache),
 `09b-lager-tagesboss.js`, `07b-kriegsherr.js`, `06a-aufgaben.js` (`QUEST_STAT`, `loadQuests`), `06b-pass-anleitung.js`
-(`passRewardAt`, `PASS_XP`, `ANLEITUNG`), `05c-erfolge-rangliste.js` (`ACHIEVEMENTS`), `bots/` (Mitspieler machen mit).
+(`passRewardAt`, `PASS_XP`, `ANLEITUNG`), `05c-profil-erfolge-rangliste.js` (`ACHIEVEMENTS`), `bots/` (Mitspieler machen mit).
 
 ## Fenster Events (4 Reiter)
 Aufgaben (Chips Täglich · Erfolge) · Abholen (Abholfach + Tagesbelohnung) · Pass · Ereignisse (Chips Woche · Invasion ·

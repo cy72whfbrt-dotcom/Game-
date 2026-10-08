@@ -1,4 +1,4 @@
-// Teil 05b-truhe-skills.js: Truhe und Ausrüstung im Profil, Skills
+// Teil 05b-profil-truhe-skills.js: Truhe und Ausrüstung im Profil, Skills
 // The old coin-upgraded weapon/armor/shield/boots cards were
 // removed - the gem-crate rarity system below (renderChestEquipment)
 // replaced them as the way to grow this equipment. This just keeps

@@ -3,7 +3,7 @@
 Die Weltkarte ist EINE große Landkarte wie das RoK-Königreich: Gebiete in Zonen, dazwischen Gebirgsketten, nur Pässe
 (Tore) führen durch. Wichtigste Dateien: `Game/spiel/01a2-karte-zonen.js` (Daten `KARTE_ZONEN`, erzeugt von
 `werkzeuge/kartentest/karte_erzeugen.js` – nie von Hand ändern), `01b-weltkarte.js` (Pässe, Wege `passOpensAt`,
-`thronOffenAb`, `landmassesConnected`), `03a-karte-hintergrund.js` / `03b` / `03c` (Zeichnen), `06e-nebel-zeichnen.js`.
+`thronOffenAb`, `landmassesConnected`), `03a-karte-hintergrund.js` / `03b` / `03c` (Zeichnen), `06e-karte-nebel-paesse.js`.
 
 ## Aufbau (Alexander 7.10., entschieden)
 - Zone 1 außen (10 Gebiete, Start), Zone 2 (8), Zone 3 (6), Zone 4 (4, je ein Tempel/Wächter-Tempel), in der Mitte der

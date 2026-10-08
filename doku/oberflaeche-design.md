@@ -3,7 +3,7 @@
 HUD, Leiste, Fenster, Texte, KI-Bilder und Prompt-Regeln. Vorbild für Aufbau und Aussehen: Rise of Kingdoms (RoK),
 Million Lords, Lords Mobile – „sieht aus wie ein Spiel, nicht wie eine Liste“. Wichtigste Dateien: `Game/spielseite/`
 (01 Grundwerte, 02 HUD/Fenster, 03 Bausteine, 05z KI-Bilder mit der GRUNDFORM FENSTER im Kopfkommentar, 07 Fenster,
-08 Dialoge), `Game/spiel/05a-aussehen-profil.js`, `10c-start-einstellungen.js`, `06c` (`renderMidBar`), `Game/index.php`,
+08 Dialoge), `Game/spiel/05a-profil-rahmen.js`, `10c-start-einstellungen.js`, `06c` (`renderMidBar`), `Game/index.php`,
 `Game/ladebildschirm.js`.
 
 ## Regeln (CLAUDE.md, Alexander)

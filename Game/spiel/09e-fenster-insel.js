@@ -1,4 +1,4 @@
-// Teil 09e-inselfenster.js: Fenster öffnen und schließen, Insel-Fenster, Mehrfach-Angriff
+// Teil 09e-fenster-insel.js: Fenster öffnen und schließen, Insel-Fenster, Mehrfach-Angriff
 const popup = document.getElementById('islandPopup');
 const popupTitle = document.getElementById('popupTitle');
 const popupStats = document.getElementById('popupStats');

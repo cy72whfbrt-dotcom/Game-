@@ -1,4 +1,4 @@
-// Teil 02b-maersche.js: Märsche: Angriffe und Verlegen losschicken, Laufzeit, Zurückrufen, Beschleunigen
+// Teil 02b-marsch-losschicken.js: Märsche: Angriffe und Verlegen losschicken, Laufzeit, Zurückrufen, Beschleunigen
 // Attacks and troop transfers now take real time to arrive, scaled
 // by the distance between the two towers - the "Geschwindigkeit"
 // skill (which also speeds up production) shortens the march.

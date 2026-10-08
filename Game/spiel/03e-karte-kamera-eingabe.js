@@ -1,4 +1,4 @@
-// Teil 03e-kamera-eingabe.js: Kamera und Eingabe: Ziehen, Zoomen, Tippen, Bildgröße
+// Teil 03e-karte-kamera-eingabe.js: Kamera und Eingabe: Ziehen, Zoomen, Tippen, Bildgröße
 // ===== CAMERA & INPUT (spec §6) =====
 // Keeps mapState.{offsetX, offsetY, zoom, targetZoom, velocityX, velocityY, isDragging} and zoomAnchor as the
 // source of truth (screenToWorld, the harness and the probes read them).

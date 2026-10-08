@@ -1,4 +1,4 @@
-// Teil 09d-armeen-wegmarken.js: Armeen auf der Karte und Wegmarken
+// Teil 09d-karte-armeen-wegmarken.js: Armeen auf der Karte und Wegmarken
 // ===== ARMEEN AUF DER KARTE: troops that stand out in the open instead of in a base. Gather them from several
 // bases at one spot, walk them anywhere and give orders: move, attack a base, take a field, join another army,
 // go home. Out there they have no walls and produce nothing - and bots that notice them may come for them.

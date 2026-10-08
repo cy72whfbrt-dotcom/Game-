@@ -13,16 +13,18 @@ jede Änderung in die passende Themen-Datei eintragen (aktueller Stand, keine Ge
   `werkzeuge/spiel_bauen.sh pruefen` meldet einen Fehler, wenn eine Datei nicht zu ihren Teilen passt.
   Jeder Teil beginnt mit EINER Kopfzeile `// Teil <name>: …` (kommt nicht in die zusammengesetzte Datei).
   (Eine Datei im Spiel, weil der Code beim Laden Funktionen aufruft, die weiter hinten stehen.)
-- Teile von spiel.js (44): 01a grundlagen · 01a2 karte-zonen (Kartendaten, erzeugt von werkzeuge/kartentest) · 01b weltkarte ·
-  01c basen-spielstand · 01d helden-mitspieler · 01e nebel-kampfwerte-hud · 02a shop-stufen · 02b maersche ·
-  02c spaeher-ankunft (resolveAttack) · 03a karte-hintergrund · 03b gebaeude-3d (Basen, Tore, Thron als KI-Bild; keine 3D-Burg mehr) ·
-  03c wappen-thronplatz · 03d maersche-tagnacht · 03e kamera-eingabe · 03f marsch-bilder (Märsche/Kämpfe als KI-Bilder) · 04 kampf (Ankunft, kampfDazu) ·
-  05a aussehen-profil · 05b truhe-skills · 05c erfolge-rangliste · 05d maersche-kampfbericht · 05e belohnung (Kacheln, Kisten) ·
-  06a aufgaben · 06b pass-anleitung · 06c thron-mitte · 06d schild-produktion · 06e nebel-zeichnen · 07a schlachten ·
-  07b kriegsherr · 08a stadt-bauen · 08b burg-aussehen · 08c helden · 08d gebaeude-wirkung · 08e stadtbild-haeuser ·
-  08f stadtbild-bild · 09a funde-felder · 09b lager-tagesboss · 09c events-drache · 09d armeen-wegmarken · 09e inselfenster ·
-  09f saison · 10a inselfenster-vorschau · 10b inselfenster-knoepfe · 10c start-einstellungen ·
-  10d welt-weltrechner (Weltrechner-Befehle, Hauptbuch/Schummel-Schutz).
+- Teile von spiel.js (50, Name = Thema: karte-/marsch-/kampf-/profil-/stadt-/helden-/fenster-/welt-…; Nummer = Reihenfolge im Zusammenbau):
+  01a grundlagen · 01a2 karte-zonen (Kartendaten, erzeugt von werkzeuge/kartentest) · 01b weltkarte · 01c basen-spielstand ·
+  01d helden-daten-herrscher · 01e kampf-werte-nebel-hud · 02a shop-stufen · 02b marsch-losschicken ·
+  02c marsch-spaeher-ankunft (resolveAttack) · 03a karte-hintergrund · 03b karte-basen-bilder (Basen, Tore, Thron als KI-Bild) ·
+  03c karte-wappen-thronplatz · 03d karte-ebenen-tagnacht (drawMap) · 03e karte-kamera-eingabe · 03f marsch-bilder · 04 kampf-ankunft (kampfDazu) ·
+  05a profil-rahmen · 05b profil-truhe-skills · 05c profil-erfolge-rangliste · 05d marsch-liste-kampfbericht · 05e belohnung (Kacheln, Kisten) ·
+  06a aufgaben · 06b pass-anleitung · 06c thron-mitte · 06d schild-produktion · 06e karte-nebel-paesse · 07a kampf-schlachten ·
+  07b kriegsherr · 08a stadt-bauen · 08b stadt-burg-aussehen · 08c helden-fenster · 08d1 stadt-gebaeude-wirkung · 08d2 stadt-teleport ·
+  08e stadt-bild-orte · 08f stadt-bild-zeichnen · 09a funde-felder · 09b lager-tagesboss · 09c events-drache · 09d karte-armeen-wegmarken ·
+  09e fenster-insel · 09f saison · 10a fenster-insel-vorschau · 10b fenster-insel-knoepfe · 10c start-einstellungen ·
+  10d1 welt-verbindung · 10d2 welt-schummelschutz · 10d3 welt-hauptbuch · 10d4 welt-nebel-server · 10d5 welt-befehle (BEFEHLE) ·
+  10d6 welt-nachrichten-start (10d2–10d6 liegen im Block `if (window.WELT)` aus 10d1 – nur zusammengesetzt gültiges JS).
   bots.js (Mitspieler), Teile in bots/ (6): 01 spieler · 02 kampf-karte · 03 angreifen · 04 stand-stadt · 05 verteidigen-takt · 06 aussehen-felder-barbaren.
   buendnis.js (Bündnis, Rally, Chat, Verstärkung), Teile in buendnis/ (4): 01 daten-regeln (bundOp) · 02 rally-geschenke · 03 mitspieler · 04 fenster-karte-welt.
   spiel.php (Spielseite), Teile in spielseite/ (11, *.php): 01 kopf-grundwerte · 02 stil-hud-fenster · 03 stil-bausteine ·

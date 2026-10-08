@@ -1,4 +1,4 @@
-// Teil 05a-aussehen-profil.js: Rahmen (Titel + Ring ums Wappen), Profil-Fenster
+// Teil 05a-profil-rahmen.js: Rahmen (Titel + Ring ums Wappen), Profil-Fenster
 // ===== RAHMEN (Alexander 6.10.): Titel und Rahmen sind EIN Ding – ein Titel kommt immer mit seinem Ring ums Wappen. Nicht mehr zu
 // kaufen: man bekommt sie am Saison-Ende (Platz 1–10, bis zum nächsten Saison-Ende) oder über die Mitte (Herrscher, Titel aus der Mitte).
 // Was jemand vorher gekauft oder nach Rang/Erfolg hatte, bleibt seins (look.frames / look.titles, Mitspieler b.frames / b.titles).

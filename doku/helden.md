@@ -1,8 +1,8 @@
 # Helden
 
 20 Helden mit Splittern, Sternen (in Vierteln), Fähigkeiten und Wut; je Marsch Haupt- und Zweitheld, Verteidigungs-Helden
-über die Mauer. Wichtigste Dateien: `Game/spiel/08c-helden.js` (Heldenhalle, `heroHalle`, `heroDoSwap`, `vhFx`/`vhSetzen`/
-`vhBest`), `01d-helden-mitspieler.js` (`HERO_*`-Tabellen), `08d-gebaeude-wirkung.js` (Mauer-Fenster `vhHtml`), `04-kampf.js`
+über die Mauer. Wichtigste Dateien: `Game/spiel/08c-helden-fenster.js` (Heldenhalle, `heroHalle`, `heroDoSwap`, `vhFx`/`vhSetzen`/
+`vhBest`), `01d-helden-daten-herrscher.js` (`HERO_*`-Tabellen), `08d1-stadt-gebaeude-wirkung.js` (Mauer-Fenster `vhHtml`), `04-kampf-ankunft.js`
 (`heroBonus`, `heroDuo`, `heroBusy`, `heroWutZurueck`).
 
 ## Grundregeln

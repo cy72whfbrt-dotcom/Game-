@@ -1,4 +1,4 @@
-// Teil 03b-gebaeude-3d.js: Gebäude der Karte als KI-Bild (Basen, Pass-Tore, Thron und Tempel)
+// Teil 03b-karte-basen-bilder.js: Basen, Pass-Tore, Thron und Tempel auf der Karte als KI-Bilder
 // Pass-Tor auf der Karte: steht genau auf der Grenze im Pass (KARTE_ZONEN.paesse – die Grenze läuft dort gerade, 03a karteObjekte)
 // → { x, y, r: Abstand Mitte–Schild, senk: Grenze läuft senkrecht } oder null
 const TOR_PUNKT_ZOOM = 0.0015;                                                  // noch weiter draußen keine Tor-Punkte (Handy: über 500 Punkte wären nur Rauschen)

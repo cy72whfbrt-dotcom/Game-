@@ -1,4 +1,4 @@
-// Teil 08c-helden.js: Helden: Splitter, Freischalten, Sterne, Skillpunkte, Helden-Fenster
+// Teil 08c-helden-fenster.js: Helden: Splitter, Freischalten, Sterne, Skillpunkte, Helden-Fenster
 // ===== HELDEN: shards → unlock → quarter stars → skill points. A hero only works in the fight he leads - for you and everyone else =====
 var heroState = null;                              // { id: { sh, q, own, sk: [4 levels], rage } } in openWaterHeroes2 (the old openWaterHeroes is only read to convert)
 function heroFresh(h) { return { sh: HERO_START_SHARDS[h.r], q: 0, own: false, sk: [0, 0, 0, 0], rage: 0 }; }
