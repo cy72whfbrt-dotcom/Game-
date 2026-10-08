@@ -12853,7 +12853,7 @@ function patchAttackPreview() {
     if (chip2 && !seg2) { chip2.hidden = true; if (previewHeldAuf === 2) previewHeldAuf = 0; } else if (chip2) chip2.hidden = false;
     apHeldChip(chip1, previewHero, previewHero ? heroById(previewHero).name : 'Kein Held', previewHero ? icon('star') + heroStarNum(heroSt('player', previewHero).q) : 'Held wählen');
     if (chip2 && seg2) { const p2 = previewHero2 && heroPairOf(previewHero, previewHero2);
-        apHeldChip(chip2, previewHero2, previewHero2 ? heroById(previewHero2).name : '+ Zweitheld', p2 ? 'Paar +' + HERO_PAIR_BONUS + ' %' : 'Zweitheld · ' + Math.round(HERO_ZWEIT * 100) + ' %'); }
+        apHeldChip(chip2, previewHero2, previewHero2 ? heroById(previewHero2).name : 'Wählen', p2 ? 'Paar +' + HERO_PAIR_BONUS + ' %' : 'Zweitheld · ' + Math.round(HERO_ZWEIT * 100) + ' %'); }
     for (const [el, n] of [[chip1, 1], [chip2, 2]]) if (el) { el.classList.toggle('on', previewHeldAuf === n); el.setAttribute('aria-expanded', previewHeldAuf === n); }
     const hl1 = popupStats.querySelector('[data-preview="hero"]'), hl2 = popupStats.querySelector('[data-preview="hero2"]');
     if (hl1) hl1.hidden = previewHeldAuf !== 1; if (hl2) hl2.hidden = previewHeldAuf !== 2;

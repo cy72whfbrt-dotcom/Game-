@@ -27,7 +27,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const home = islandById[playerIslandId]; openIslandPopup(home); await warte(500);
       const k1 = knoepfe(), haupt1 = k1.filter(x => x.classList.contains('act--haupt'));
       const eigen = { haupt: haupt1.map(x => x.id), erster: k1.slice().sort((a, c) => a.getBoundingClientRect().top - c.getBoundingClientRect().top || a.getBoundingClientRect().left - c.getBoundingClientRect().left)[0].id,
-        ganz: k1.map(x => [x.id, ganz(x.querySelector('.act-t')), ganz(x.querySelector('.act-s'))]).filter(z => !z[1] || !z[2]), sub: ganz(document.getElementById('popupSub')) };
+        ganz: k1.map(x => [x.id, ganz(x.querySelector('.act-t')), !x.querySelector('.act-s') || ganz(x.querySelector('.act-s'))]).filter(z => !z[1] || !z[2]), sub: ganz(document.getElementById('popupSub')) };
       // 2) zweite eigene Basis: Haupt-Knopf „Aufwerten“
       const nah = l => l.sort((a, c) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(c.x - home.x, c.y - home.y))[0];
       const zweite = nah(islands.filter(i => i.id !== playerIslandId && !islandOwnerOf(i.id) && i.type === 'tower'));

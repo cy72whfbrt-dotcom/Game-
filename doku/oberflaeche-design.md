@@ -40,11 +40,17 @@ Million Lords, Lords Mobile – „sieht aus wie ein Spiel, nicht wie eine Liste
   `.tabs > .tab`, Listen-Karten `.ki-karte`, Knöpfe `.btn--primary` (Gold) / `--secondary` / `--danger`, Kacheln
   `[data-r=…]`, Balken. Neue Fenster nur daraus bauen.
 - Grundwerte (spielseite/01): Abstände `--ab-1…4`, Schrift `--fs-11…22` (nichts unter 11 px), Tippflächen ≥ 44 px.
-- Fenster am Handy höchstens 70 % hoch (Shop Ausnahme), Fußknopf fest unten; Angriff vorbereiten ≤ 55 %, ohne Scrollen.
+- Fenster am Handy höchstens 70 % hoch (Shop Ausnahme), Fußknopf fest unten; Insel/Angriff ≤ 62 %, der Inhalt scrollt.
   Umlaute in Versalien nicht abschneiden (`overflow-x:clip`). Alles in offenen Fenstern zieht live nach (kein Flackern).
-- Basis-Fenster: ein goldener Haupt-Knopf (Hauptstadt „Stadt betreten“, sonst „Aufwerten“) + kleine Zweit-Knöpfe;
-  ungespäht eine Kachel „Stärke unbekannt“ (Tipp = spähen). Angriff vorbereiten: Startbasis-Auswahl, ANGRIFF | VS | ABWEHR,
-  Schieber + 25/50/75/Alle, Held-Chips, „Angreifen ⌛ 0:21“.
+- Basis-Fenster (8.10., Test `fenster_neu_test`: 360×640, 390×844, Desktop – nichts überlappt, Tippflächen ≥ 44 px):
+  Kopf mit Basis-/Tor-Bild, Werte als Bild + Zahl (`bwWerte`), runde Knöpfe (ui_rund) mit kurzem Wort:
+  Hauptstadt Betreten · Teleport · Schild (Rucksack) · Truppen (Armee aufstellen) · Mehr (Senden, Sammeln, Mehrfach);
+  eigene Basis Aufwerten · Senden · Sammeln · Truppen · Mehr (Mehrfach, Titel). Fremd: Truppen/Verteidigung/gespäht,
+  runde Knöpfe Spähen + Angreifen; ungespäht eine Kachel „Stärke unbekannt“ (Tipp = spähen). Keine eigene Basis daneben
+  (Grenztor & Co.): Zeile „Keine deiner Basen grenzt an …“ im Inhalt, Angreifen grau (Tipp = Hinweis).
+  Angriff vorbereiten: Hauptheld groß, Zweitheld klein darunter („Zweitheld · 50 %“, antippen = Auswahl), daneben
+  Startbasis + Angriff | Abwehr + Kräfte-Balken (Vorschau-Rechnung), Truppen-Kachel + Zahl, Schieber + 25/50/75/Alle,
+  Leiste Zeit · Truppen · Angriffskraft, goldener Knopf „Losmarschieren ⌛ 0:21“ (Traglast gibt es im Spiel nicht).
 - Profil: Kopf (Rang · Titel, Name, Stufe, Macht, Spieler-Nummer), Reiter Spieler · Ausrüstung · Fähigkeiten ·
   Einstellungen; Rangliste als eigenes Fenster (Macht, Eroberungen, Titel, Thron-Punkte, Hauptstadt). Name = Konto-Name,
   wenn keiner eingetragen.

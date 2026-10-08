@@ -32,7 +32,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       scoutedIslands.delete(nb.id); islandTroops[playerIslandId] = Math.max(1000, islandTroops[playerIslandId] || 0); openIslandPopup(nb); attackBtn.click(); await w(400);
       const s0 = anleitung.schritt, an = document.getElementById('anleitung'); anleitung.schritt = 1;
       const leer = () => { anleitungZeigen(); return /bleibt deine Hauptstadt ohne Truppen/.test(document.getElementById('anleitungText').textContent); };
-      const o = { quelle: previewSourceId === playerIslandId, alle: leer(), spaeh: __t44('.ap-spaehen'), chips: __t44('.ap-regler .seg button') };
+      const o = { quelle: previewSourceId === playerIslandId, alle: leer(), spaeh: __t44('.ap-spaehen'), chips: __t44('[data-preview="quick"] button') };
       popupStats.querySelector('[data-preview="quick"] [data-f=".5"]').click(); await w(100); o.halb = leer();
       popupStats.querySelector('[data-preview="quick"] [data-f="1"]').click(); await w(100); o.wieder = leer();
       o.truppen = islandTroops[playerIslandId] > 0; const tx = document.getElementById('anleitungText');

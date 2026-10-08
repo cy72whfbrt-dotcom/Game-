@@ -276,7 +276,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .ap-hchip--klein .ap-hchip-t b,.ap-hchip--klein .ap-hchip-t small{white-space:normal;font-size:10px;line-height:1.15}
 .ap-held-wahl{display:flex;flex-direction:column;gap:4px}
 #islandPopup .hero-seg button,#islandPopup .ap-truppen .seg button{min-height:44px;height:44px}
-#islandPopup .from-sel{height:44px}
+#islandPopup .from-sel{height:44px} #islandPopup .ap-spaehen{min-height:44px}
 .ap-truppen{gap:4px}
 .ap-truppen .ap-regler{justify-content:flex-start;gap:8px}
 .ap-kachel{width:44px;height:44px;flex:none;display:grid;place-items:center;border:3px solid transparent;border-image:url(bilder/ui_kachel_gold.webp) 30 fill / 3px stretch}

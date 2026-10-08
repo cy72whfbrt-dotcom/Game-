@@ -72,7 +72,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     out.danach = [previewHero, previewHero2];
     c.lh = ['ida', 'brunhild', 'ragna']; saveCity(); previewHero = previewHero2 = null; await vorschau();
     out.vor = [previewHero, previewHero2]; const chip = popupStats.querySelector('[data-held-auf="1"]'); out.chip = chip ? chip.textContent : '';
-    out.chipBild = !!(chip && chip.querySelector('img[src*="held_ida_kopf"]'));
+    out.chipBild = !!(chip && chip.querySelector('img[src*="held_ida"]'));
     previewHeldAuf = 1; patchAttackPreview(); return out;
   });
   await warte(800); await foto('marsch_auswahl');
