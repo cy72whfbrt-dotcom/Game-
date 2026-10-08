@@ -114,10 +114,15 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     ok(m1.koepfe.some(k => k.art === 'marsch' && /^7\sMio\./.test(k.text)), name + ': Angriff zeigt seine Truppen am Sechseck („7 Mio. · ⌛ …“)', m1.koepfe);
     ok(m1.koepfe.some(k => k.art === 'rally' && /^9\sMio\./.test(k.text)), name + ': Rally mit goldenem Kopf und ihrer Truppenzahl', m1.koepfe);
     ok(arten.includes('sammeln') && arten.includes('rueck') && arten.includes('spaeher'), name + ': Sammeln, Rückweg (zurückgerufen) und Späher stehen auf der Karte', { arten, m0 });
-    const ohneKopf = await p.evaluate(() => marchTokens.filter(m => m.info.art !== 'spaeher' && m.x > 0 && m.x < viewW && m.y > 0 && m.y < viewH && !m.kopf).map(m => m.info.art));
+    const ohneKopf = await p.evaluate(() => { mzLeistenLesen(); const oben = Math.max(0, ...mzLeisten.filter(q => q.y < 8 && q.w >= viewW).map(q => q.y + q.h));   // (unter der Kopfleiste verdeckt: ohne Kopf)
+      return marchTokens.filter(m => m.info.art !== 'spaeher' && m.x > 0 && m.x < viewW && m.y > oben && m.y < viewH && !m.kopf).map(m => m.info.art); });
     ok(!ohneKopf.length, name + ': jeder Marsch im Bild hat seinen Kopf', ohneKopf);
     ok(!nah(m1.koepfe).length, name + ': Köpfe der Märsche dicht an ihrer Armee (höchstens 60 px)', nah(m1.koepfe));
     ok(!leer(m1.koepfe).length, name + ': jeder Marsch-Kopf zeigt eine Zahl (auch der Rückweg)', leer(m1.koepfe));
+    const leiste = await p.evaluate(() => { mzLeistenLesen(); const hud = ['hud', 'midBar'].map(id => document.getElementById(id)).filter(e => e && !e.hidden).map(e => e.getBoundingClientRect()).filter(b => b.height);
+      const unten = Math.max(0, ...hud.map(b => b.bottom - canvas.getBoundingClientRect().top)); return { unten, q: mzLeisten }; });
+    const unterLeiste = m1.koepfe.filter(k => k.y < leiste.unten - 2 || leiste.q.some(q => Math.max(0, Math.min(k.x + k.w, q.x + q.w) - Math.max(k.x, q.x)) * Math.max(0, Math.min(k.y + k.h, q.y + q.h) - Math.max(k.y, q.y)) > .15 * k.w * k.h)).map(k => k.text);
+    ok(!unterLeiste.length, name + ': kein Marsch-Kopf unter der Kopfleiste/dem Event-Streifen', { unterLeiste, unten: leiste.unten });
     ok(!ueber(m1.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Märsche)', ueber(m1.koepfe));
     // ===== C) Antippen + Bilder/s =====
     const c = await p.evaluate(() => new Promise(r => { requestRender(); requestAnimationFrame(() => {
