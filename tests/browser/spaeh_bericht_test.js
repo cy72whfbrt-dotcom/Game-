@@ -53,7 +53,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     out.A.text = zeile(row);
     // A2) kompakt: keine Zeilen voller „–“, kein Gefallen/Geflohen, kein leerer Zweitheld, nur EIN Alter (oben in der Karte)
     out.A.striche = row ? [...row.querySelectorAll('.logLine, .logCasualty')].filter(l => l.lastElementChild && /^[–—-]$/.test(l.lastElementChild.textContent.trim())).length : -1;
-    out.A.leerZ = /Gefallen|Geflohen|Kein Zweitheld|Kein Hauptheld|Fähigkeit –/.test(out.A.text);
+    out.A.leerZ = /Gefallen|Geflohen|Fähigkeit –/.test(out.A.text) || (!!s.vh && /Kein Zweitheld|Kein Hauptheld/.test(out.A.text));
+    out.A.ohneVh = !(s.vh && heroById(s.vh.id));   // ohne Verteidigungs-Held: dieselben „?“-Plätze und „Held +0“ wie im Kampfbericht
+    out.A.fragen = row ? row.querySelectorAll('.kl-keinheld .kl-leer').length : -1;
+    out.A.heldZeile = row ? ([...row.querySelectorAll('.logLine')].map(l => l.textContent.replace(/\s+/g, ' ')).find(t => /^Held(?!en)/.test(t)) || '') : '';
     out.A.alter = (out.A.text.match(/vor \d+ (s|Min\.|Std\.)/g) || []).length;
     const sm = row && row.querySelector('summary'); if (sm) sm.click();
     const ks = document.querySelector('.kl-seite');
@@ -142,6 +145,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(A.kampf === A.def && JSON.stringify((A.kampfTeile || []).map(q => [q[0], q[1]])) === JSON.stringify((A.teile || []).map(q => [q[0], q[1]])), 'Kampf gleich danach: dieselbe Verteidigung, dieselben Teile wie im Spähbericht', { kampf: A.kampf, kampfFehler: A.kampfFehler });
   ok(/Rüstung/.test(A.text || '') && /Basis Stufe 20/.test(A.text || '') && /Spieler-Stufe/.test(A.text || ''), 'Spähbericht-Anzeige: Rüstung-Zeile, „Basis Stufe 20“ und „Spieler-Stufe“ beschriftet', (A.text || '').slice(0, 300));
   ok(A.striche === 0 && !A.leerZ, 'Spähbericht kompakt: keine „–“-Zeilen, kein Gefallen/Geflohen, keine leeren Heldenplätze', { striche: A.striche, text: (A.text || '').slice(0, 300) });
+  ok(!A.ohneVh || (A.fragen === 2 && /Kein Hauptheld/.test(A.text) && /Kein Zweitheld/.test(A.text) && /\+0$/.test(A.heldZeile)), 'Spähbericht ohne Verteidigungs-Held: 2 leere „?“-Plätze wie im Kampfbericht, Zeile „Held +0“', { ohneVh: A.ohneVh, fragen: A.fragen, held: A.heldZeile });
+  ok(!/zu 50 %/.test(A.text || ''), 'Bericht: kein verwirrender Zusatz „Zweitheld · Werte … zu 50 %“', (A.text || '').slice(0, 200));
   ok(A.alter === 1 && A.seite && A.seiteAlter.length === 1 && A.seiteAlter[0] === 'vor 3 Min.' && A.seiteStriche === 0, 'Spähbericht: nur EIN Alter (läuft auch in der offenen Seite mit)', { alter: A.alter, seite: A.seite, seiteAlter: A.seiteAlter, striche: A.seiteStriche });
   ok(a.B && /gespäht vor 2 Std\./.test(a.B.chip || '') && /neu spähen/.test(a.B.chip || '') && a.B.gelb, 'Kampflog: „gespäht vor 2 Std. · neu spähen?“ gelb', a.B);
   ok(a.B && /vor 2 Std\./.test(a.B.angriff || '') && a.B.angriffGelb && /neu spähen/.test(a.B.menu || ''), 'Angriffsfenster + Basis-Fenster: Alter des Berichts, ab 30 Min. gelb', a.B);

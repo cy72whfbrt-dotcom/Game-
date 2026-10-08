@@ -76,10 +76,58 @@ function teleportOrt(x, y) {                     // (Spieler) Tipp auf „Telepo
     gems -= k; if (gratis) store.set('openWaterTpGratis', '1'); if (tele) store.set('openWaterTeleporter', String(teleVorrat() - 1));   // (gekaufter Teleporter: der Weltrechner bucht die 500 beim Kauf ausgegebenen Gems – wie beim Bezahlen hier)
     statBump('teleports'); saveGame(); saveProgression(); updateHud();
     if (alsBefehl('teleport', { x: Math.round(x), y: Math.round(y), gratis })) { flashHint('Die Hauptstadt zieht um …', 3000); return true; }   // (Zuschauer: der Weltrechner verlegt sie)
+    const alt = islandById[playerIslandId], ax = alt.x, ay = alt.y;
     tpVerlegen('player', x, y);
-    spawnBattleFx(playerIslandId, true, 'Hauptstadt', 'hierher teleportiert');
+    teleportFx(playerIslandId, ax, ay);
     flashHint('Die Hauptstadt ist hierher teleportiert – deine Truppen sind mitgekommen.', 3500);
     return true;
+}
+// Teleport-Effekt (FX_MS): goldene Lichtsäule von oben auf den neuen Platz, Staub/Funken am Boden, die alte Stelle verblasst;
+// das Band „Hauptstadt – hierher teleportiert“ steht die ganze Zeit. Ruhig gezeichnet (kaum Bewegung, spart Akku).
+// Bild: bilder/karte_lichtsaeule.webp (Alexanders KI-Bild) – fehlt es, ui_strahlen.webp als Ersatz.
+const TP_SAEULE = { bild: null, ersatz: false };
+function tpSaeuleBild() {
+    if (TP_SAEULE.laedt) return TP_SAEULE.bild; TP_SAEULE.laedt = true;
+    const im = new Image();
+    im.onload = () => { TP_SAEULE.bild = im; requestRender(); };
+    im.onerror = () => { if (TP_SAEULE.ersatz) return; TP_SAEULE.ersatz = true; im.src = 'bilder/ui_strahlen.webp'; };
+    im.src = 'bilder/karte_lichtsaeule.webp';
+    return null;
+}
+function teleportFx(cap, ax, ay) {
+    const isl = islandById[cap]; if (!isl) return;
+    sfx('move'); tpSaeuleBild();
+    const funken = []; for (let i = 0; i < 10; i++) funken.push({ a: i / 10 * Math.PI * 2 + Math.random() * .4, d: 18 + Math.random() * 26 });
+    battleFx.push({ tp: 1, x: isl.x, y: isl.y, ax, ay, good: true, label: 'Hauptstadt', sub: 'hierher teleportiert', born: performance.now(), funken, stack: 0 });
+    if (battleFx.length > 12) battleFx.shift();
+    requestRender();
+}
+function tpFxZeichnen(f, ms, sx, sy) {           // (aus drawBattleFx, Bildschirm-Koordinaten)
+    const s = mzS(), k = ms / FX_MS, rein = Math.min(1, ms / 300), raus = k > .8 ? 1 - (k - .8) / .2 : 1;
+    const ox = f.ax * mapState.zoom + mapState.offsetX, oy = f.ay * mapState.zoom + mapState.offsetY;
+    if (ms < 1200) {                               // alte Stelle: Schimmer, der verblasst
+        const a = 1 - ms / 1200, R = 34 * s, g = ctx.createRadialGradient(ox, oy, 0, ox, oy, R);
+        g.addColorStop(0, 'rgba(255,226,150,' + .55 * a + ')'); g.addColorStop(1, 'rgba(255,226,150,0)');
+        ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(ox, oy, R, R * .55, 0, 0, Math.PI * 2); ctx.fill();
+    }
+    const a = rein * raus, w = 70 * s, oben = Math.max(0, sy - 320 * s), h = (sy - oben) * Math.min(1, ms / 260);   // Säule kommt von oben herab
+    ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = a * .9;
+    const im = tpSaeuleBild();
+    if (im && !TP_SAEULE.ersatz) ctx.drawImage(im, sx - w / 2, oben, w, h);
+    else { const g = ctx.createLinearGradient(sx - w / 2, 0, sx + w / 2, 0);
+        g.addColorStop(0, 'rgba(255,200,90,0)'); g.addColorStop(.5, 'rgba(255,236,170,.85)'); g.addColorStop(1, 'rgba(255,200,90,0)');
+        ctx.fillStyle = g; ctx.fillRect(sx - w / 2, oben, w, h);
+        if (im) ctx.drawImage(im, sx - w * .9, sy - w * 1.2, w * 1.8, w * 1.8); }
+    ctx.globalAlpha = a;                           // Boden: Lichtkreis, Staub, Funken
+    const R = 46 * s, g2 = ctx.createRadialGradient(sx, sy, 0, sx, sy, R);
+    g2.addColorStop(0, 'rgba(255,240,190,.8)'); g2.addColorStop(1, 'rgba(255,200,90,0)');
+    ctx.fillStyle = g2; ctx.beginPath(); ctx.ellipse(sx, sy, R, R * .5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    for (const p of f.funken) { const px = sx + Math.cos(p.a) * p.d * s, py = sy + Math.sin(p.a) * p.d * s * .45 - k * 10 * s;
+        ctx.fillStyle = 'rgba(255,230,160,' + a * .9 + ')'; ctx.fillRect(px - 1.5, py - 1.5, 3, 3);
+        ctx.fillStyle = 'rgba(150,130,100,' + a * .25 + ')'; ctx.beginPath(); ctx.arc(px, py + 4 * s, 7 * s, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    mzErgebnisBand(f, ms > FX_MS - 150 ? (FX_MS - ms) / 150 : 1, 1, sx, sy);   // Band: von Anfang bis Ende lesbar
 }
 inselOrtLaden();
 document.getElementById('cityCloseBtn').addEventListener('click', closeCity);
