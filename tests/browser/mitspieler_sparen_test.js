@@ -25,7 +25,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const gut = i => i.type === 'tower' && i.id !== megaTempleId && !bossAt(i.id) && !ownedIslands.has(i.id);
       const Y = BOT_DEFS.find(d => !d.mensch && botSpart(d, 'tp') && (!d.mensch && d.style === 'veteran')) || BOT_DEFS.find(d => !d.mensch && botSpart(d, 'tp'));
       if (bundVon(Y.id)) bundOp(Y.id, { op: 'verlassen' });
-      const T = islands.find(t => gut(t) && landmasses[t.landmassId].zone >= 2 && islands.filter(i => gut(i) && i.landmassId === t.landmassId).length >= 11);
+      const T = islands.find(t => gut(t) && landmasses[t.landmassId].ring > 0 && landmasses[t.landmassId].tier !== 'throne' && islands.filter(i => gut(i) && i.landmassId === t.landmassId).length >= 11);
       if (!T) return { fehlt: 'kein Gebiet mit 11 Türmen' };
       for (const id of [...botOwnedIslands[Y.id]]) { botOwnedIslands[Y.id].delete(id); islandTroops[id] = 0; }
       const meine = islands.filter(i => gut(i) && i.landmassId === T.landmassId).slice(0, 10).map(i => i.id);
@@ -38,8 +38,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       for (; tage < 30 && st.gems < TP_GEMS; tage++) { st.hsDay = 'alt'; const k = kisten(st); for (let n = 0; n < 4; n++) botShop(Y); if (kisten(st) > k && st.gems < TP_GEMS) kisteUnter = true; }
       out.b = { tage, gems: st.gems, kisteUnter, kisten: kisten(st) - k0, bezahlbar: botTpBezahlbar(Y.id) };
       localStorage.setItem('openWaterWorldStart', String(Date.now() - 864e6));   // (alle Pässe offen – Teleport nur über offene Pässe)
-      const g0 = st.gems; st.capMovedAt = 0; const tp = botTeleportCapital(Y, meine[5]);
-      out.b.tp = { tp, cap: botCapitalOf(Y.id) === meine[5], bezahlt: g0 - st.gems };
+      const g0 = st.gems, c0 = islandById[meine[0]], t5 = islandById[meine[5]]; st.capMovedAt = 0;
+      const tp = botTeleportCapital(Y, meine[5]);
+      out.b.tp = { tp, nah: Math.hypot(c0.x - t5.x, c0.y - t5.y) < BASE_SPACING * 3.5, bezahlt: g0 - st.gems };   // (die Hauptstadt zieht neben den Turm)
       inselOrt = {}; inselOrtAnwenden();
       // (c) Premium-Pass: Saison läuft noch lange → Ziel 1000, angespart und gekauft; kurz vor Schluss: kein Ziel mehr
       passEndOf = n => Date.now() + 20 * 864e5;
@@ -59,7 +60,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.a && r.a.tag1 === r.a.soll && r.a.soll === 42 && r.a.tag7 === r.a.soll + r.a.kette && r.a.kette === 150, '(a) Tagesaufgaben: 42 Edelsteine wie bei dir, am 7. Tag + 150 Wochenkette', r.a);
   ok(r.zielTp === 500, '(b) mit 10 Basen: Spar-Ziel 500 (Teleport)', r.zielTp);
   ok(r.b && r.b.gems >= 500 && !r.b.kisteUnter && r.b.bezahlbar && r.b.tage <= 14, '(b) spart auf 500, keine Kiste darunter', r.b);
-  ok(r.b && r.b.tp && r.b.tp.tp && r.b.tp.cap && r.b.tp.bezahlt === 500, '(b) danach Teleport für 500', r.b && r.b.tp);
+  ok(r.b && r.b.tp && r.b.tp.tp && r.b.tp.nah && r.b.tp.bezahlt === 500, '(b) danach Teleport für 500 (neben den eigenen Turm)', r.b && r.b.tp);
   ok(r.zielPass === 1000 && r.c && r.c.prem && r.c.gems >= 50, '(c) Premium-Pass: auf 1000 gespart und gekauft', [r.zielPass, r.c]);
   ok(r.zielSpaet === 500, '(c) kurz vor Saison-Ende: kein Pass-Ziel mehr (nur Teleport)', r.zielSpaet);
   ok(r.d && r.d.ziel === 500 && r.d.stern === 1, '(d) Stern bleibt dringend (trotz Spar-Ziel)', r.d);
