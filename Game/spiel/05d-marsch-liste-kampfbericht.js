@@ -1,4 +1,4 @@
-// Teil 05d-maersche-kampfbericht.js: Liste der Märsche und Kampfbericht
+// Teil 05d-marsch-liste-kampfbericht.js: Liste der Märsche und Kampfbericht
 // Battle log popup: which of your troops are marching right now,
 // plus a history of resolved attacks/transfers
 const battleLogBtn = document.getElementById('battleLogBtn');

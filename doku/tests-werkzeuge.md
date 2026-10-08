@@ -9,6 +9,8 @@ Wie man den Code zusammensetzt, prüft, testet und hochlädt. Wichtigste Dateien
   `buendnis/`, `spielseite/`, `server/` zusammengesetzt (Tabelle ZIELE in `spiel_bauen.sh`). NUR in den Teilen ändern, dann
   `werkzeuge/spiel_bauen.sh`; `spiel_bauen.sh pruefen` meldet Abweichungen. Jeder Teil beginnt mit EINER Kopfzeile
   `// Teil <name>: …`. (Eine Datei im Browser, weil beim Laden Funktionen aufgerufen werden, die weiter hinten stehen.)
+  Teil-Namen: Nummer = Reihenfolge im Zusammenbau, Rest = Thema (`karte-`, `marsch-`, `kampf-`, `profil-`, `stadt-`, `fenster-`,
+  `welt-`); Liste in `CLAUDE.md`. Ein Teil darf mitten in einem Block enden (10d1–10d6: Block `if (window.WELT)`).
 - `spiel_bauen.sh` verkleinert danach alle Browser-Skripte nach `Game/klein/` (terser, nicht im Git; `skript.php` liefert sie
   gepackt mit Version in der Adresse, passt die sha1 nicht → Original) und erzeugt `KARTE.md` neu (`werkzeuge/karte.sh`).
 - `KARTE.md`: Index Funktion → Datei:Zeile (auch Teile, Server-Aktionen). Nur per `grep` lesen. `merge=ours` in

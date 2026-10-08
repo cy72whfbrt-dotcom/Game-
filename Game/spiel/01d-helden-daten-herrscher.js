@@ -1,4 +1,4 @@
-// Teil 01d-helden-mitspieler.js: Helden-Daten (Seltenheit, Werte) und Herrscher der Meere
+// Teil 01d-helden-daten-herrscher.js: Helden-Daten (Seltenheit, Werte) und Herrscher der Meere
 // ===== HELDEN: 20 heroes with a fixed rarity like the gear (1 grün · 2 blau · 3 lila · 4 gold). Shards unlock them, then
 // quarter stars up to 5; 1 skill point per half star for 4 skills (1 active at full rage, 3 passive). Only in fights they lead.
 const HEROES = [

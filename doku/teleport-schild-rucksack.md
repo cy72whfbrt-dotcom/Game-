@@ -1,9 +1,9 @@
 # Teleport, Friedensschild, Anfängerschutz, Rucksack
 
 Wie man seine Hauptstadt versetzt, sich schützt und was im Rucksack liegt. Wichtigste Dateien:
-`Game/spiel/08d-gebaeude-wirkung.js` (`tpPruefen`, `teleportOrt`, `TP_GEMS`, `TELEPORT_NUR_OFFEN`, Rucksack-Fenster),
-`09d-armeen-wegmarken.js` (`feldRingAuf` – Menü auf freiem Land), `06d-schild-produktion.js` (`SHIELD_PRICES`, Schild),
-`bots/05-verteidigen-takt.js` (`botTeleportCapital`, `botTpOrt`), `10d-welt-weltrechner.js` (Befehl `teleport`).
+`Game/spiel/08d2-stadt-teleport.js` (`tpPruefen`, `teleportOrt`, `TP_GEMS`, `TELEPORT_NUR_OFFEN`, Rucksack-Fenster),
+`09d-karte-armeen-wegmarken.js` (`feldRingAuf` – Menü auf freiem Land), `06d-schild-produktion.js` (`SHIELD_PRICES`, Schild),
+`bots/05-verteidigen-takt.js` (`botTeleportCapital`, `botTpOrt`), `10d5-welt-befehle.js` (Befehl `teleport`).
 
 ## Teleport (Alexander 7.10./8.10.)
 - Tipp auf freies Land → runde Knöpfe: Teleportieren · Markierung (Wegmarke) · Truppen hierher (neue Armee an der Stelle).

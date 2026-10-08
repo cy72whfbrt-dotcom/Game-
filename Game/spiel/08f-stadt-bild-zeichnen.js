@@ -1,4 +1,4 @@
-// Teil 08f-stadtbild-bild.js: Stadtansicht: Bild zeichnen, Schilder (Name/Stufe, Hammer, Pfeil); Stufenaufstieg-Fenster
+// Teil 08f-stadt-bild-zeichnen.js: Stadtansicht: Bild zeichnen, Schilder (Name/Stufe, Hammer, Pfeil); Stufenaufstieg-Fenster
 // ---- ein Schild wie in den großen Aufbau-Spielen: dunkel mit Goldrand, „Name“ und darunter „Stufe N“ ----
 let cityNamen = [];                                                          // die Schilder dieses Bilds (Bildschirm-Punkte)
 function cityStand(c, id) {                                                  // was das Schild eines Gebäudes zeigt

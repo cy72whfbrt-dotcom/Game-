@@ -1,9 +1,9 @@
 # Märsche und Kampf
 
 Alles über Losschicken, Marschwege, Ankunft, Kampf, gemeinsame Kämpfe, Rally-Kampf, Verstärkung im Kampf, Beute und
-die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-maersche.js` (`launchAttack`, `marschStrecke`,
-`marschPlatz`), `02c-spaeher-ankunft.js` (`resolveAttack`, Späher), `04-kampf.js` (Ankunft, `kampfDazu`, `welleHeim`,
-`kampfAufraeumen`), `05d-maersche-kampfbericht.js`, `07a-schlachten.js`, `03d`/`03f-marsch-bilder.js`,
+die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicken.js` (`launchAttack`, `marschStrecke`,
+`marschPlatz`), `02c-marsch-spaeher-ankunft.js` (`resolveAttack`, Späher), `04-kampf-ankunft.js` (Ankunft, `kampfDazu`, `welleHeim`,
+`kampfAufraeumen`), `05d-marsch-liste-kampfbericht.js`, `07a-kampf-schlachten.js`, `03d`/`03f-marsch-bilder.js`,
 `bots/02-kampf-karte.js` (`resolveBotAttack`), `buendnis/02-rally-geschenke.js` (`rallyWerte`, `kampfAnteile`).
 
 ## Losschicken

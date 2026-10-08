@@ -1,4 +1,4 @@
-// Teil 06e-nebel-zeichnen.js: Nebel und Pässe zeichnen
+// Teil 06e-karte-nebel-paesse.js: Nebel und Pässe zeichnen
 // ===== FOG + PASSES (drawing) =====
 function drawWorldFrame() {                        // the square map border: dark outside (kein Meer mehr), a framed edge with corner marks
     const z = mapState.zoom, ox = mapState.offsetX, oy = mapState.offsetY;

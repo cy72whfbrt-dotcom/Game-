@@ -1,4 +1,4 @@
-// Teil 02c-spaeher-ankunft.js: Späher und Späherbericht, Ankunft der Angriffe (resolveAttack), Rückzug
+// Teil 02c-marsch-spaeher-ankunft.js: Späher und Späherbericht, Ankunft der Angriffe (resolveAttack), Rückzug
 // "Spähen": no troops needed, but a scout still takes time to reach
 // the target - measured from the player's home base.
 // Always scouts from whichever owned base is actually closest to the

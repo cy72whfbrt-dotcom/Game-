@@ -4,7 +4,7 @@ EINE Welt für alle; der Weltrechner (Node auf dem Server) ist der einzige, der 
 schicken Befehle. Wichtigste Dateien: `Game/server/` (7 Teile → `server.php`: 01 grundlagen-login · 02 sicherheit-datenlecks ·
 03 nebel-maersche-seite · 04 datenbank-spieler · 05 datenbank-welt `MysqlLager` · 06 speichern-push-konto · 07 welt-puls),
 `Game/welt.js` (Umrechnen, Puls, Flicken, Befehle, `profilZuBot`), `Game/speichern.js`, `Game/weltrechner/` (`start.js`,
-`wachhund.php`, `push.js`, `jsdom.js`), `Game/spiel/10d-welt-weltrechner.js` (`BEFEHLE`, Hauptbuch `hbKlemmen`, `WELT.wache`).
+`wachhund.php`, `push.js`, `jsdom.js`), `Game/spiel/10d*` (10d5-welt-befehle: `BEFEHLE`, `WELT.wache`; 10d3-welt-hauptbuch: `hbKlemmen`; 10d2: Schummel-Schutz).
 
 ## Server und Datenbank
 - Live: https://office.hobbitonhill.de/html/725/klassenarbeit_GR4/Game/ – Office-Server (netcup-Webhosting von Alexander,

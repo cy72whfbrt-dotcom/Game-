@@ -149,7 +149,7 @@ function feldAnkunft(a) {
   heimwaerts(a);
 }
 
-// ===== Kampf wie im Spiel (04-kampf.js, 07a kampfDazu): EIN Kampf je Ziel. Kommt eine weitere Welle derselben Seite an (eigener
+// ===== Kampf wie im Spiel (04-kampf-ankunft.js, 07a kampfDazu): EIN Kampf je Ziel. Kommt eine weitere Welle derselben Seite an (eigener
 // Marsch oder Bündnis-Mitglied), tritt sie dem laufenden Kampf bei: Truppen werden addiert, der Kampf läuft mindestens noch 2,5 s
 // („the fresh troops get to fight too“). Verstärkung des Verteidigers landet in der Besatzung (mehr Verteidiger). Ein fremder
 // Angreifer (andere Seite, nicht im Bündnis) wartet, bis der Kampf entschieden ist, und kämpft dann gegen die Basis, wie sie DANN steht.
@@ -392,7 +392,7 @@ function gedraenge() {                                 // 12 Armeen + 2 Kämpfe 
 }
 
 // ===== Ablauf je Bild =====
-function ankunft(a) {                                 // Welle am Ziel: beitreten, warten oder neuer Kampf (wie 04-kampf.js)
+function ankunft(a) {                                 // Welle am Ziel: beitreten, warten oder neuer Kampf (wie 04-kampf-ankunft.js)
   const k = kaempfe.find(k => k.z === a.ziel);
   const z = a.ziel;
   if (!k && z.art === 'lager') return lagerKampf(a);

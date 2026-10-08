@@ -3,7 +3,7 @@
 Alles, was man kauft oder bekommt: Shop-Reiter, Ausrüstungs- und Heldenkisten, Belohnungs-Kacheln, Abholfach, Händler,
 Thron-Shop, Markt. Wichtigste Dateien: `Game/spiel/02a-shop-stufen.js` (`CRATE_GEM_COST`, `openCrate`), `05e-belohnung.js`
 (`beuteKachel`, `beuteRaster`, `beuteFenster`), `spielseite/05y-stil-kisten.php`, `06c-thron-mitte.js` (`throneAmount`),
-`05b-truhe-skills.js` (Truhe, Ausrüstung), `Game/haendler.js`, `aufbau.js` (`marktHtml`).
+`05b-profil-truhe-skills.js` (Truhe, Ausrüstung), `Game/haendler.js`, `aufbau.js` (`marktHtml`).
 
 ## Regeln
 - BELOHNUNG = BILD + ZAHL (Alexander 8.10., immer behalten): jede Belohnung/jeder Preis/jede Beute als Bild-Kachel

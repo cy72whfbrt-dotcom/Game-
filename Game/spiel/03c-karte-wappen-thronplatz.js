@@ -1,4 +1,4 @@
-// Teil 03c-wappen-thronplatz.js: Wappen und der Thronplatz in der Mitte
+// Teil 03c-karte-wappen-thronplatz.js: Wappen und der Thronplatz in der Mitte
 // ===== WAPPEN: the player's coat of arms (profile, HUD, own nameplates, battle banner) =====
 var CREST_COLORS = ['#2c4a70', '#8e2a24', '#2f5a2f', '#1d1d24', '#d4a93c', '#ece6d6', '#5b2c6f'];
 var CREST_SHAPES = ['heater', 'round', 'kite'], CREST_DIVS = ['plain', 'pale', 'fess', 'quarterly', 'bend', 'chevron'];

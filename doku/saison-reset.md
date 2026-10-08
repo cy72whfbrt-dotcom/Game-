@@ -2,7 +2,7 @@
 
 Alle 8 Wochen beginnt eine neue Saison: die Karte wird neu, die Hauptstadt bleibt. Wichtigste Dateien:
 `Game/spiel/09f-saison.js` (`saisonTakt`, `saisonWelt`, `saisonNeu`, `SAISON_PREISE`, `saisonAnfang`), `01a-grundlagen.js`
-(Reset am Handy), `10d-welt-weltrechner.js` (`WELT.saisonKonto`, Hauptbuch), `server/` (`sicherung_anlegen`,
+(Reset am Handy), `10d3-welt-hauptbuch.js` (`WELT.saisonKonto`, Hauptbuch), `server/` (`sicherung_anlegen`,
 `saison_anhalten`), `admin.php` (Karte „Welt-Saison“). Welt-Teil `openWaterSaison` = `{ nr, start, ende, bald, jetzt, last }`.
 
 ## Termin

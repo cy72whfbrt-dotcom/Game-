@@ -3,7 +3,7 @@
 Login, Datenlecks, Server-Filter und was der Weltrechner gegen gefälschte Handys prüft. Wichtigste Dateien:
 `Game/server/01-grundlagen-login.php`, `02-sicherheit-datenlecks.php` (`profil_bereinigen`, `FREMD_OEFFENTLICH`,
 `fremd_kuerzen`, `muenzen_kuerzen`, `NUR_WELTRECHNER`, `befehl_ok`, CSP), `03-nebel-maersche-seite.php` (`nebel_welt`,
-`marsch_teil`, `marsch_welt`), `Game/index.php` (Login), `10d-welt-weltrechner.js` (Hauptbuch – siehe
+`marsch_teil`, `marsch_welt`), `Game/index.php` (Login), `10d2-welt-schummelschutz.js/10d3-welt-hauptbuch.js` (Hauptbuch – siehe
 `server-weltrechner-hauptbuch.md`). Regel: keine Passwörter in Dateien/Commits, nur Umgebungsvariablen.
 
 ## Login und Konto

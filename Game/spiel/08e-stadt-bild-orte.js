@@ -1,4 +1,4 @@
-// Teil 08e-stadtbild-haeuser.js: Stadtansicht als KI-Bild: Gebäude-Orte, Kamera, Wischen/Zoomen, Tippen
+// Teil 08e-stadt-bild-orte.js: Stadtansicht als KI-Bild: Gebäude-Orte, Kamera, Wischen/Zoomen, Tippen
 // ===== DIE STADT ALS BILD (Alexander 7.10.: „KI-Bilder statt Code“) =====
 // Die ganze Hauptstadt ist EIN gemaltes Bild (bilder/stadt_gross.webp, 1536 × 1024): Burg, Labor, Krankenhaus, Markt, Heldenhalle,
 // Botschaft, Schmiede, Holzfäller, Steinbruch, Eisenmine und die Mauer ringsum. Das Bild füllt den Bildschirm (Handy hoch: breiter
