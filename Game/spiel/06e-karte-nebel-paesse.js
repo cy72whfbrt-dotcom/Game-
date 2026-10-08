@@ -236,13 +236,15 @@ function heimWappenRect(z) {                           // Tipp-Fläche des Wappe
     const heim = heimWappenSicht(z) > 0 && islandById[playerIslandId]; if (!heim) return null;
     return { id: heim.id, x: heim.x * z + mapState.offsetX - 22, y: heim.y * z + mapState.offsetY - 22, w: 44, h: 44 };
 }
-function drawHeimWappen(z) {                           // ganz draußen (die Basis selbst ist nur noch ein Punkt): das eigene Wappen an der Hauptstadt, über allem
+function drawHeimWappen(z) {                           // ganz draußen (die Basis selbst ist nur noch ein Punkt): Goldring + Krone an der Hauptstadt, über allem
     const k = heimWappenSicht(z), heim = k > 0 && islandById[playerIslandId]; if (!heim) return;
+    const ring = hauptRingBild(), krone = hauptBild('ui_sym_krone');
     setScreen(ctx);
     const hx = heim.x * z + mapState.offsetX, hy = heim.y * z + mapState.offsetY;
     ctx.save(); ctx.globalAlpha = k;
-    ctx.beginPath(); ctx.arc(hx, hy, 22, 0, Math.PI * 2); ctx.fillStyle = 'rgba(8,10,14,.6)'; ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = '#e4c886'; ctx.stroke();
-    drawCrest(ctx, hx, hy, 28);
+    ctx.beginPath(); ctx.arc(hx, hy, 18, 0, Math.PI * 2); ctx.fillStyle = 'rgba(8,10,14,.6)'; ctx.fill();
+    if (ring) { const w = 64, h = w * ring.height / ring.width; ctx.globalAlpha = k * hauptPuls(performance.now()); ctx.drawImage(ring, hx - w / 2, hy - h / 2 + 8, w, h); ctx.globalAlpha = k; hauptPulsWeiter(); }
+    if (krone) { const w = 28, h = w * krone.height / krone.width; ctx.drawImage(krone, hx - w / 2, hy - h / 2, w, h); }
+    else drawCrest(ctx, hx, hy, 28);
     ctx.restore();
 }

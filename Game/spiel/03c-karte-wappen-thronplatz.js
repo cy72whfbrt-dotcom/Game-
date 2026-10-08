@@ -154,8 +154,9 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const schilde = basisSchilde(visible, z).map(s => Object.assign({ id: s.isl.id }, s.r));   // (nur die gezeigten: verdeckte sind weggelassen)
   bannerHitRects.push(...schilde);                                                // (Schild antippen öffnet die Basis, Funde und Märsche weichen aus)
   const hw = heimWappenRect(z); if (hw) bannerHitRects.push(hw);                 // das Wappen an der Hauptstadt ebenso (Funde nicht halb dahinter)
+  schlossRects = torSchloesser(visible, z); bannerHitRects.push(...schlossRects); // Schlösser auf den Toren (antippen öffnet das Tor)
   if (z < Math.min(TERRITORY_VIEW_ZOOM, maxZoom * .25)) return [];
-  for (const q of schilde) towers.push({ id: -1, x: q.x, y: q.y, w: q.w, h: q.h });
+  for (const q of schilde.concat(schlossRects)) towers.push({ id: -1, x: q.x, y: q.y, w: q.w, h: q.h });
   const base = tierFor(z);
   let items = visible.filter(isl => !schild(isl) || isl.id === selectedId).map(isl => {
     const m = bannerModel(isl);

@@ -104,7 +104,8 @@ function schildRect(island, z) {                                               /
 function schildDaten(island) {                                                 // → { art, wer, stufe, truppen }
   const m = bannerModel(island), wer = islandOwnerOf(island.id);
   const truppen = m.kind === 'ally' && islandTroops[island.id] !== undefined ? fmtCompact(islandTroops[island.id]) : m.troops;
-  return { art: m.kind === 'player' || m.kind === 'ally' || m.kind === 'bot' ? m.kind : 'neutral', wer, stufe: anzeigeStufe(island.id), truppen };
+  return { art: m.kind === 'player' || m.kind === 'ally' || m.kind === 'bot' ? m.kind : 'neutral', wer, stufe: anzeigeStufe(island.id), truppen,
+           krone: island.id === playerIslandId && wer === 'player' };                // eigene Hauptstadt: Krone auf dem Wappen
 }
 // Rahmen als Ring ums Wappen (Merkliste 7): Saison- und Mitte-Rahmen als KI-Bild wie im Profil (Neuling trägt jeder: kein Ring)
 const RAHMEN_RING = { sz1: 'champion', sz2: 'grossadmiral', sz4: 'admiral', sz6: 'kapitaen', mgut: 'mitte' }, RING_BILD = {}, RING_WER = new Map();
@@ -120,13 +121,15 @@ function rahmenAufKarte(who) {                                                 /
 }
 function schildBild(d, W, mitZahl) {                                           // das fertige Schild, W px breit (Leinwand × dpr)
   const cr = crestFor(d.wer), ring = ringBild(rahmenAufKarte(d.wer));          // (Schilde gibt es nur mit Besitzer: immer ein Wappen)
-  const key = d.art + '|' + d.stufe + '|' + (mitZahl ? d.truppen : '') + '|' + crestKeyOf(cr) + '|' + (ring ? ring.src : '') + '|' + W + '|' + dpr;
+  const krone = d.krone && hauptBild('ui_sym_krone');
+  const key = d.art + '|' + d.stufe + '|' + (mitZahl ? d.truppen : '') + '|' + crestKeyOf(cr) + '|' + (ring ? ring.src : '') + '|' + (krone ? 'k' : '') + '|' + W + '|' + dpr;
   let c = SCHILD_MERK.get(key); if (c) return c;
   const H = W * 159 / 512, k = W / 512, farbe = SCHILD_FARBE[d.art];
   c = document.createElement('canvas'); c.width = Math.ceil(W * dpr); c.height = Math.ceil(H * dpr);
   const g = c.getContext('2d'); g.scale(dpr, dpr); g.drawImage(KB.img.schild, 0, 0, W, H);
   drawCrest(g, 82 * k, 79 * k, 76 * k, cr);                                    // im runden Feld
   if (ring) g.drawImage(ring, 12 * k, 9 * k, 140 * k, 140 * k);                 // der Rahmen ums Wappen
+  if (krone) { const kw = Math.max(14, Math.min(20, 64 * k)); g.drawImage(krone, 82 * k - kw / 2, 1, kw, kw * krone.height / krone.width); }   // oben auf dem Wappen (im Schild)
   const x0 = 168 * k, x1 = 462 * k, ym = 79 * k, fs = Math.max(8, Math.min(14, Math.round(W * .1)));   // (klein: die Schrift passt in den Balken)   // der Balken innen
   g.textBaseline = 'middle'; g.font = '700 ' + fs + 'px Inter, system-ui, sans-serif';
   const lang = 'Stufe ' + d.stufe, t = mitZahl ? g.measureText(d.truppen).width + fs + 6 : 0;   // erst „Stufe 12“, wird es eng nur „12“
@@ -186,6 +189,60 @@ function drawBasisSchilder(vis, z) {                                          //
   setScreen(ctx);
   for (const { x, y, c } of zs) ctx.drawImage(c, Math.round(x * dpr) / dpr, Math.round(y * dpr) / dpr, c.cssW, c.cssH);
   for (const { r, d } of rs) ctx.drawImage(schildBild(d, r.w, r.w >= SCHILD_ZAHL), Math.round(r.x * dpr) / dpr, Math.round(r.y * dpr) / dpr, r.w, r.h);
+}
+// Eigene Hauptstadt (Vorgabe design_hauptstadt A): pulsierender Goldring am Boden, 1,6× so breit wie die Basis. Bild karte_hauptstadt_ring
+// (fehlt es: marsch_ring_gold). Ganz weit (heimWappenSicht) nur Ring + Krone in fester Größe (drawHeimWappen, 06e).
+const HAUPT_BILD = {};
+function hauptBild(n, ersatz) {                                                // geladenes Bild oder null (lädt beim ersten Mal; fehlt es, das Ersatz-Bild)
+  if (!HAUPT_BILD[n]) { const im = HAUPT_BILD[n] = new Image(); im.onload = () => { SCHILD_MERK.clear(); requestRender(); };
+    if (ersatz) im.onerror = () => { im.onerror = null; im.src = 'bilder/' + ersatz + '.webp'; };
+    im.src = 'bilder/' + n + '.webp'; }
+  return HAUPT_BILD[n].complete && HAUPT_BILD[n].naturalWidth ? HAUPT_BILD[n] : null;
+}
+const hauptRingBild = () => hauptBild('karte_hauptstadt_ring', 'marsch_ring_gold');
+const hauptPuls = now => .725 + .175 * Math.sin(now / 2000 * Math.PI * 2);    // Deckkraft 0,55 ↔ 0,9 in 2 s
+let hauptPulsUhr = 0;
+function hauptPulsWeiter() {                                                   // der langsame Puls braucht nur ~8 Bilder/s (nicht die 30 der Märsche: schont das Handy)
+  if (!hauptPulsUhr) hauptPulsUhr = setTimeout(() => { hauptPulsUhr = 0; requestRender(); }, 120);
+}
+function drawHauptstadtRing(z, now) {                                           // (Bildschirm) unter der Basis, vor den Gebäuden
+  const heim = islandById[playerIslandId]; if (!heim || islandOwnerOf(heim.id) !== 'player') return;
+  const bw = basisBreite(heim, z), k = 1 - heimWappenSicht(z), im = hauptRingBild(); if (!bw || k <= 0 || !im) return;
+  const w = bw * 1.6, h = w * im.height / im.width, x = toSX(heim.x), y = toSY(heim.y);
+  if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;
+  setScreen(ctx); ctx.globalAlpha = k * hauptPuls(now); ctx.drawImage(im, x - w / 2, y - h / 2, w, h); ctx.globalAlpha = 1; hauptPulsWeiter();
+}
+// Grenztor, das du noch nicht angreifen kannst (Vorgabe design_grenztor): Schloss oben auf dem Tor, bei jedem Zoom gleich groß.
+// Angreifbar wie im Angriffsknopf (10b): eine deiner Basen grenzt daran (canReach); eigene und Bündnis-Tore tragen keins,
+// ein Pass mit Countdown zeigt schon sein Schloss (drawPasses).
+const SCHLOSS_PX = 30, SCHLOSS_MERK = { t: 0, n: -1, m: new Map() };
+function torAngreifbar(isl) {
+  const ow = islandOwnerOf(isl.id); if (ow === 'player' || (ow && bundFreund('player', ow))) return true;
+  const jetzt = Date.now(); if (jetzt - SCHLOSS_MERK.t > 1000 || SCHLOSS_MERK.n !== ownedIslands.size) { SCHLOSS_MERK.t = jetzt; SCHLOSS_MERK.n = ownedIslands.size; SCHLOSS_MERK.m.clear(); }
+  let a = SCHLOSS_MERK.m.get(isl.id);
+  if (a === undefined) SCHLOSS_MERK.m.set(isl.id, a = [...ownedIslands].some(id => islandById[id] && canReach(islandById[id].landmassId, isl.landmassId)));
+  return a;
+}
+function torSchloesser(vis, z) {                                               // → [{ id, x, y, w, h }] (Bildschirm) der Schlösser im Bild
+  if (!karteBilder() || KARTE_MASS.tor * z < 16) return [];
+  const im = hauptBild('ui_sym_schloss'); if (!im) return [];
+  const h = SCHLOSS_PX, w = h * im.width / im.height, jetzt = Date.now(), aus = [];
+  for (const isl of vis) {
+    if (isl.type !== 'gate' || !islandSeen(isl) || torAngreifbar(isl)) continue;
+    const br = bridgeOfGate(isl); if (br && passOpensAt(br) > jetzt) continue;
+    const tm = torMitte(isl); if (!tm) continue;
+    const oben = tm.senk ? toSY(tm.y) - TOR_SENK.hoch * z * TOR_SENK.weg : toSY(tm.y) - KARTE_MASS.tor * z * KB.img.tor_zu.height / KB.img.tor_zu.width * KETTE_ACHSE.tor_zu;
+    const x = toSX(tm.x) - w / 2, y = Math.min(Math.max(oben - h * .55, 8), toSY(tm.y) - h);   // (ganz nah: oben im Bild, noch auf dem Tor)
+    if (x + w >= 0 && x <= viewW && y + h >= 0 && y <= viewH) aus.push({ id: isl.id, x, y, w, h });
+  }
+  return aus;
+}
+let schlossRects = [];                                                          // (layoutBanners setzt sie: Fahnen und Märsche weichen aus)
+function drawTorSchloesser() {
+  const im = hauptBild('ui_sym_schloss'); if (!im || !schlossRects.length) return;
+  setScreen(ctx); ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.6)'; ctx.shadowBlur = 4; ctx.shadowOffsetY = 1;
+  for (const r of schlossRects) ctx.drawImage(im, Math.round(r.x * dpr) / dpr, Math.round(r.y * dpr) / dpr, r.w, r.h);
+  ctx.restore();
 }
 // Alle Gebäude nur noch als KI-Bild (Alexander 8.10.: die alte 3D-Burg ist raus). Solange ein Bild noch lädt, liegt dort nur ein
 // leiser Schatten; Pass-Tore ohne Bild gar nichts. Ganz weit draußen (kein Basis-Bild mehr): eigene Basen ein Punkt, freie ein Fleck.
