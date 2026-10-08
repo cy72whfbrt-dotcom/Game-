@@ -3212,10 +3212,10 @@ function hauptBild(n, ersatz) {                                                /
   return HAUPT_BILD[n].complete && HAUPT_BILD[n].naturalWidth ? HAUPT_BILD[n] : null;
 }
 const hauptRingBild = () => hauptBild('karte_hauptstadt_ring', 'marsch_ring_gold');
-const hauptPuls = now => .725 + .175 * Math.sin(now / 2000 * Math.PI * 2);    // Deckkraft 0,55 ↔ 0,9 in 2 s
+const hauptPuls = now => akkuSparen ? .8 : .725 + .175 * Math.sin(now / 2000 * Math.PI * 2);   // Deckkraft 0,55 ↔ 0,9 in 2 s (Akku sparen: fest 0,8)
 let hauptPulsUhr = 0;
 function hauptPulsWeiter() {                                                   // der langsame Puls braucht nur ~8 Bilder/s (nicht die 30 der Märsche: schont das Handy)
-  if (!hauptPulsUhr) hauptPulsUhr = setTimeout(() => { hauptPulsUhr = 0; requestRender(); }, 120);
+  if (!hauptPulsUhr && !akkuSparen) hauptPulsUhr = setTimeout(() => { hauptPulsUhr = 0; requestRender(); }, 120);
 }
 function drawHauptstadtRing(z, now) {                                           // (Bildschirm) unter der Basis, vor den Gebäuden
   const heim = islandById[playerIslandId]; if (!heim || islandOwnerOf(heim.id) !== 'player') return;

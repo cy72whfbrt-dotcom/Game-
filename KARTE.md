@@ -3194,7 +3194,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawBasisSchilder` :187 — nach allen Basen: Schilde und Stufen-Zahlen liegen obenauf
 - `hauptBild` :196 — geladenes Bild oder null (lädt beim ersten Mal; fehlt es, das Ersatz-Bild)
 - `hauptRingBild` :202
-- `hauptPuls` :203 — Deckkraft 0,55 ↔ 0,9 in 2 s
+- `hauptPuls` :203 — Deckkraft 0,55 ↔ 0,9 in 2 s (Akku sparen: fest 0,8)
 - `hauptPulsWeiter` :205 — der langsame Puls braucht nur ~8 Bilder/s (nicht die 30 der Märsche: schont das…
 - `drawHauptstadtRing` :208 — (Bildschirm) unter der Basis, vor den Gebäuden
 - `torAngreifbar` :219

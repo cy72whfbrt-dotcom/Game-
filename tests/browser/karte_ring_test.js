@@ -1,5 +1,5 @@
 // Eigene Hauptstadt + gesperrte Grenztore auf der Karte (Vorgaben design_hauptstadt A, design_grenztor):
-// A) Goldring unter der EIGENEN Hauptstadt (Bild karte_hauptstadt_ring, fehlt es: marsch_ring_gold), Puls 0,55 ↔ 0,9, nicht 30 Bilder/s
+// A) Goldring unter der EIGENEN Hauptstadt (Bild karte_hauptstadt_ring, fehlt es: marsch_ring_gold), Puls 0,55 ↔ 0,9, nicht 30 Bilder/s (Akku sparen: fest 0,8, kein Puls)
 // B) Namensschild der Hauptstadt mit Krone (nur die eigene), ganz weit nur Krone + Ring (kein Wappen)
 // C) Schloss auf Toren, die du nicht angreifen kannst (keine deiner Basen grenzt an, wie der Angriffsknopf 10b); angreifbar/eigen: keins
 // D) Schloss bei jedem Zoom gleich groß, oben auf dem Tor; nichts überlappt (Schilde, Fahnen, Schlösser) – 360/390/1280, nah und weit
@@ -30,6 +30,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const zeichne = () => { const od = ctx.drawImage, n = []; ctx.drawImage = function (im) { n.push((im && im.src) || ''); return od.apply(this, arguments); }; drawMap(); ctx.drawImage = od; return n; };
       flyTo(h.x, h.y, { zoom: maxZoom * .5, instant: true }); let n = zeichne();
       o.ringNah = n.some(s => /marsch_ring_gold|karte_hauptstadt_ring/.test(s)); o.kein30 = !!hauptPulsUhr;
+      clearTimeout(hauptPulsUhr); hauptPulsUhr = 0; akkuSparen = true; zeichne();
+      o.akku = { uhr: !hauptPulsUhr, fest: [0, 500, 1500].map(t => hauptPuls(t)).every(a => a === .8) }; akkuSparen = false;
       const alt = window.islandOwnerOf; window.islandOwnerOf = id => id === playerIslandId ? Object.keys(botById)[0] : alt(id);
       o.nurEigene = !zeichne().some(s => /marsch_ring_gold|karte_hauptstadt_ring/.test(s)); window.islandOwnerOf = alt;
       flyTo(h.x, h.y, { zoom: 0.0028, instant: true }); n = zeichne();
@@ -51,6 +53,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(/marsch_ring_gold|karte_hauptstadt_ring/.test(r.ring), tag + 'Ring-Bild geladen (karte_hauptstadt_ring, sonst marsch_ring_gold)', r.ring.split('/').pop());
     ok(Math.min(...r.puls) >= .549 && Math.max(...r.puls) <= .901 && r.puls[1] > .85 && r.puls[3] < .6, tag + 'Ring pulsiert 0,55 ↔ 0,9 in 2 s', r.puls);
     ok(r.kein30 && r.nurEigene && r.ringNah, tag + 'Ring nur an der eigenen Hauptstadt, Puls über eigenen langsamen Takt', [r.kein30, r.nurEigene, r.ringNah]);
+    ok(r.akku.uhr && r.akku.fest, tag + 'Akku sparen: kein Puls (fest 0,8), kein Extra-Neuzeichnen', r.akku);
     ok(r.krone, tag + 'Krone im Namensschild nur der eigenen Hauptstadt');
     ok(r.weit.ring && r.weit.krone, tag + 'ganz weit: Krone + Ring', r.weit);
     ok(r.regel[0] && r.regel[1] && r.regelGleich, tag + 'angreifbar wie der Angriffsknopf (eine eigene Basis grenzt an)', r.regel);
