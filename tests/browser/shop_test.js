@@ -20,6 +20,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
       closeAllPopups(); flashHint('', 1); gems = 5e7; updateHud();   // (über den 10 Mio. des Test-Modus: der füllt sonst mitten im Kauf auf)
       openShop('gems'); await warte(500);
+      for (let i = 0; i < 40 && [...document.querySelectorAll('#shopPopup [data-spane="gems"] img.kiste-bild')].some(b => !b.complete); i++) await warte(250);   // (unter Last: bis die Truhen-Bilder geladen sind)
       const pb = document.querySelector('#shopPopup .pbody'), pr = pb.getBoundingClientRect();
       const knoepfe = [...document.querySelectorAll('#shopPopup [data-spane="gems"] .ware .ware-preis')], karten = [...document.querySelectorAll('#shopPopup [data-spane="gems"] .ware')];
       o.kisten = { n: knoepfe.length, aus: !!document.querySelector('.ware #shopOpenCrateBtn'), preis: document.getElementById('shopOpenCrateBtn').textContent.trim(),
