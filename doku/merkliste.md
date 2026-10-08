@@ -29,7 +29,6 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - 11c Nr. 20 Helden-Fenster neu wie RoK – gebaut 7.10. (Heldenhalle neu, KI-Bilder), Alexander zeigen.
 
 ## Bekannte Reste im Code (klein)
-- Drache/Kriegsherr-Angriffe auf Basen nehmen von Verteidigungs-Helden nur Angriff + Gefolge.
 - Münzen/Rohstoffe im Profil auf 1 Billiarde gedeckelt (Truppen 1e30) – bei Bedarf anheben.
 - Hauptbuch: Edelsteine statt Splitter noch nicht geprüft (Thron-Shop-Kisten kennt es) (nur mögliche Fehlalarme im Admin).
 - **WICHTIG (später, Alexander 8.10.)** Hauptbuch zählt keine Bauarbeiter-Plätze (gefälschtes Handy könnte mehrere Gebäude gleichzeitig bauen, voll bezahlt).

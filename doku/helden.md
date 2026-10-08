@@ -36,7 +36,8 @@
   Angreifer. Derselbe Held darf angreifen – solange er unterwegs ist, verteidigt er nicht.
 - Weltrechner-Befehl `vheld` (`vhSetzen`), Eintrag `vh` im Mitspieler-Datensatz (Fremde sehen ihn nur im Spähbericht).
   Mitspieler tragen ihren besten Helden ein (`botVhCare`). Test `mauer_helden_test`.
-- Offen: Drache/Kriegsherr-Angriffe auf Basen nehmen nur Angriff + Gefolge der Verteidigungs-Helden.
+- Gilt bei jedem Angriff auf eine Basis gleich (Spieler, Mitspieler, Rally, Kriegsherr, Barbaren-Invasion): Angriff + Gefolge in
+  `effectiveDefense`, dazu weniger Verluste (`loss`), Krankenhaus (`hosp`), Verteidigungs-Gold (`defGoldRateHx`), Bericht (`defGear`).
 
 ## Anzeige
 - Heldenhalle: Reiter „Helden | Paare“, gesperrte Helden kleiner unter „N gesperrt“; genug Splitter → Karte golden oben mit

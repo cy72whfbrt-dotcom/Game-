@@ -8902,6 +8902,7 @@ function wanderArrive(now) {                          // the storm: same maths a
     const owner = islandOwnerOf(tgt.id), my = wander.troops;
     if (shieldCovers(islandById[wander.to]) && ownerShielded(owner, Math.min(now, wander.arriveAt || now))) { Object.assign(wander, { at: from, to: null, campUntil: now + 20000 }); saveWander(); return; }
     const vk = owner && typeof verstVorKampf === 'function' ? verstVorKampf(tgt.id) : null;   // Verstärkung (Botschaft) verteidigt mit
+    const dHx = owner ? vhFx(owner) : null;               // Verteidigungs-Helden aus der Mauer: Angriff + Gefolge in effectiveDefense, dazu Verluste, Krankenhaus, Gold (wie bei jedem Angriff)
     let en = 0, def = 0, won = false, capitalHolds = false, vs = null;
     try {                                                                  // (ein Fehler dazwischen: die Verstärkung wird trotzdem wieder getrennt)
         en = effectiveTroops(tgt); def = effectiveDefense(tgt); won = my > en + def;
@@ -8916,27 +8917,27 @@ function wanderArrive(now) {                          // the storm: same maths a
             wander.troops = Math.max(1, Math.round(my - def * .6 - en * .3));
             Object.assign(wander, { at: tgt.id, to: null, campUntil: now + 90000 });
         } else {
-            const cas = Math.min(en, my);
+            const cas = Math.round(Math.min(en, my) * (1 - (dHx ? dHx.loss : 0) / 100));   // (sein Verteidigungs-Held: weniger Verluste)
             if (owner) islandTroops[tgt.id] = Math.max(0, (islandTroops[tgt.id] || 0) - cas); else { tgt.neutralTroops = en - cas; neutralTroopOverrides[tgt.id] = tgt.neutralTroops; }
             wander.troops = Math.max(0, Math.round(my * .35));
             Object.assign(wander, { at: from, to: null, campUntil: now + 45000 });
         }
     } finally { vs = vk ? verstNachKampf(tgt.id, vk, won) : null; }   // wieder trennen: jeder trägt seinen Anteil an den Verlusten
     wander.defense = niceRound(wander.troops * .15);
-    const wKilled = Math.max(0, my - wander.troops), fallenAlle = won ? en : Math.min(en, my), fallen = vs ? vs.eigenWeg : fallenAlle;   // (Besitzer: nur seine)
+    const wKilled = Math.max(0, my - wander.troops), fallenAlle = won ? en : Math.round(Math.min(en, my) * (1 - (dHx ? dHx.loss : 0) / 100)), fallen = vs ? vs.eigenWeg : fallenAlle;   // (Besitzer: nur seine)
     const dTeile = typeof verstAnteile === 'function' ? verstAnteile(vk, owner, en + def) : null, dTeil = w => { const t = dTeile && dTeile.find(x => x[0] === w); return t ? t[1] : 1; };
     if (vs) for (const h of vs.helfer) h.gold = payGold(h.w, wKilled * dTeil(h.w) * defGoldRate(h.w));   // "Verteidigung: Gold" der Helfer: ihr Anteil mit IHREM Satz
     const verstInfo = vs ? { verst: vs.helfer, eigen: vs.eigen } : {};
     let dwBesitzer = 0;
-    if (owner && owner !== 'player') { dwBesitzer = botHospitalTake(owner, fallen) || 0; botCoins[owner] = (botCoins[owner] || 0) + Math.round(wKilled * dTeil(owner) * botGoldRate(owner, 'defenseGold')); }
-    const wGold = owner === 'player' ? Math.round(wKilled * dTeil('player') * (skills.defenseGold || 0) * SKILL_DEFS.defenseGold.rate) : 0; if (wGold) inboxAdd({ src: 'fight', coins: wGold });
+    if (owner && owner !== 'player') { dwBesitzer = fieldHurt(owner, fallen, dHx) || 0; botCoins[owner] = (botCoins[owner] || 0) + Math.round(wKilled * dTeil(owner) * defGoldRateHx(owner, dHx)); }
+    const wGold = owner === 'player' ? Math.round(wKilled * dTeil('player') * defGoldRateHx('player', dHx)) : 0; if (wGold) inboxAdd({ src: 'fight', coins: wGold });
     if (owner === 'player') {
         scoutedIslands.add(tgt.id);
         const name = wander.name;
-        const wounded = hospitalTake(fallen); dwBesitzer = wounded;
+        const wounded = fieldHurt('player', fallen, dHx); dwBesitzer = wounded;
         spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallenAlle, won,
             onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
-        addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold, ...verstInfo });
+        addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold, defGear: fighterSnapshot('player', dHx), ...verstInfo });
         flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
     }
     if (owner && owner !== 'player' && botById[owner] && botById[owner].mensch) {   // ein echter Spieler: der Bericht kommt bei ihm an (wie bei jedem Angriff)
@@ -8946,7 +8947,7 @@ function wanderArrive(now) {                          // the storm: same maths a
             capitalHolds ? wander.name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? wander.name + ' hat deine Basis ' + t + ' zerstört!' : 'Verteidigt! ' + wander.name + ' wurde bei ' + t + ' zurückgeschlagen.');
     }
     if (vs) verstBerichte(vs, { type: 'botAttack', botName: wander.name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, fallen, wounded: dwBesitzer,   // die Helfer: derselbe Bericht
-        won, capitalHolds, defGear: owner ? fighterSnapshot(owner) : null, defName: owner === 'player' ? ((window.profileName && profileName.value) || 'Spieler') : (botById[owner] || {}).name, ...verstInfo });
+        won, capitalHolds, defGear: owner ? fighterSnapshot(owner, dHx) : null, defName: owner === 'player' ? ((window.profileName && profileName.value) || 'Spieler') : (botById[owner] || {}).name, ...verstInfo });
     if (wander.troops <= 0) return endWander(wander.name + ' ist zerschlagen.');
     updateHud(); saveGame(); saveWander(); requestRender();
 }
@@ -11259,13 +11260,14 @@ function invPunkteDazu(I, who, n) { if (!who || !(n > 0) || (who !== 'player' &&
 function invAnkunft(I, a, now) {                     // die Armee erreicht ihr Ziel: dieselbe Rechnung wie jeder Angriff (Truppen + Verteidigung)
     const isl = islandById[a.tid], o = isl && islandOwnerOf(a.tid); if (!o || invGeschuetzt(o, now)) return;
     const vk = typeof verstVorKampf === 'function' ? verstVorKampf(a.tid) : null;   // Verstärkung (Botschaft) verteidigt mit
+    const dHx = vhFx(o);                                                   // Verteidigungs-Helden aus der Mauer: Angriff + Gefolge in effectiveDefense, dazu Verluste + Krankenhaus
     let en = 0, def = 0, durch = false, verlustAlle = 0, vs = null;
     try {                                                                  // (ein Fehler dazwischen: die Verstärkung wird trotzdem wieder getrennt)
         en = effectiveTroops(isl); def = effectiveDefense(isl); durch = a.t > en + def;
-        verlustAlle = Math.min(en, Math.round(durch ? en * .6 : a.t * .35));
+        verlustAlle = Math.min(en, Math.round(durch ? en * .6 : a.t * .35 * (1 - (dHx ? dHx.loss : 0) / 100)));
         islandTroops[a.tid] = Math.max(0, (islandTroops[a.tid] || 0) - verlustAlle);
     } finally { vs = vk ? verstNachKampf(a.tid, vk, false) : null; }
-    const verlust = vs ? vs.eigenWeg : verlustAlle, wounded = verlust > 0 ? fieldHurt(o, verlust, null) : 0;   // (jeder seinen Anteil)
+    const verlust = vs ? vs.eigenWeg : verlustAlle, wounded = verlust > 0 ? fieldHurt(o, verlust, dHx) : 0;   // (jeder seinen Anteil)
     if (vs) for (const h of vs.helfer) if (h.fallen + h.wounded > 0) bundMelden(h.w, 'Barbaren-Invasion bei ' + islandTitle(isl) + ': deine Verstärkung verlor ' + fmtCompact(h.fallen + h.wounded) + (h.wounded ? ' (' + fmtCompact(h.wounded) + ' ins Krankenhaus)' : '') + '.');
     if (!durch) { invPunkteDazu(I, o, INV_PTS_WEHR); I.wehr[o] = (I.wehr[o] || 0) + 1;
         for (const [w, f] of (typeof verstAnteile === 'function' && verstAnteile(vk, o, en + def)) || [[o, 1]]) if (f > 0) evPunkte('krieg', w, a.t * f / WO_KILL_PER); }   // (Wochen-Punkte: Besitzer + Helfer nach Anteil)
@@ -12722,8 +12724,8 @@ function renderPopup() {
         liveHtml(popupStats, (haupt ? bwWerte([['ui_sym_macht', fmtCompact(powerOf(whoProfile('player'))), 'Macht'], ['beute_truppen', fmtTile(troopsHere), 'Truppen hier'],
                 ['ui_sym_friedensschild', sh > Date.now() ? fmtClock((sh - Date.now()) / 1000) : 'aus', 'Schutz (Friedensschild/Anfängerschutz)']])
             : bwWerte([['beute_truppen', fmtTile(troopsHere), 'Truppen hier'], ['ui_sym_schild', fmtTile(effectiveDefense(island)), 'Verteidigung'],
-                ['beute_muenzen', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())), 'Münzen pro Stunde', 'is-good'],
-                ['ui_sym_aufstieg', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())), 'Truppen pro Stunde', 'is-good']])) +
+                ['beute_muenzen', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())) + '/Std.', 'Münzen pro Stunde', 'is-good'],
+                ['ui_sym_aufstieg', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())) + '/Std.', 'Truppen pro Stunde', 'is-good']])) +
             (island.type === 'gate' ? gateControlsHtml(island) : '') +
             (isTemple ? templeBonusLine(island) : '') + throneNotice(island) + midNotice(island) + ringNotice(island));
         liveHtml(upgradeCostLabel, level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level)));
@@ -12747,7 +12749,7 @@ function renderPopup() {
         if (popupView === 'preview' && shieldOw) popupView = 'menu';
         subH = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? '<span class="psub-who">' + whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
             (botBestRarity(ownerBot.id) >= 0 ? ' · <b style="color:' + RARITY_DEFS[botBestRarity(ownerBot.id)].color + ';font-weight:600">' + RARITY_DEFS[botBestRarity(ownerBot.id)].label + '</b>' : '') + '</span>' : 'Unbesetzt') +
-            (scouted ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');
+            (scouted && popupView === 'preview' ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');   // (im Menü steht „gespäht“ schon bei den Werten)
 
         if (popupView === 'preview') {
             renderAttackPreview(island, scouted);
@@ -12763,9 +12765,9 @@ function renderPopup() {
                 (spaehAlterText(island.id) ? '<div class="notice' + (Date.now() - spaehVom(island.id) >= SPAEH_ALT_MS ? ' notice--warn' : '') + '">' + icon('scout') + '<span>' + spaehAlterText(island.id) + '</span></div>' : '')   // wie alt ist der Bericht?
                     : '<button type="button" class="spaeh-kachel" data-spaehen' + (scoutEnRoute ? ' disabled' : '') + '>' + icon('scout') + '<span><b>Stärke unbekannt</b><small>' +   // eine Kachel: antippen = spähen
                         (scoutEnRoute ? 'Späher ist unterwegs …' : 'Antippen: Späher schicken') + '</small></span><span class="spaeh-kachel-w">' + icon('troops') + '?' + icon('defense') + '?</span></button>') +
-                (keinNachbar ? '<div class="notice notice--warn tor-hinweis"><img src="bilder/ui_hinweis.webp" alt=""><span>Keine deiner Basen grenzt an ' + (island.type === 'gate' ? 'dieses Tor' : 'dieses Gebiet') + '.</span></div>' : '') + midNotice(island) + ringNotice(island) +
+                (keinNachbar ? '<div class="notice notice--warn tor-hinweis">' + icon('info') + '<span>Keine deiner Basen grenzt an ' + (island.type === 'gate' ? 'dieses Tor' : 'dieses Gebiet') + '.</span></div>' : '') + midNotice(island) + ringNotice(island) +
                 (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Fällt nie · Sieg = ' + Math.round(HAUPT_BEUTE * 100) + ' % Beute über dem Schutz' + (brennt(island.id) ? ' · brennt gerade' : '') + '</span></div>' : '') +
-                (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
+                (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Verschlossen – wer das Tor erobert, kommt durch und bestimmt die Maut.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
                 (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
@@ -12989,6 +12991,7 @@ function patchAttackPreview() {
     const src0 = islandById[previewSourceId], px = previewHero && src0 ? heroPeek('player', previewHero, src0, island, shown, previewHero2) : null, hfx = popupStats.querySelector('[data-preview="herofx"]');   // what the hero does in THIS attack
     const hfl = x => x.lines.filter(l => l[0] !== 'Gefolge' && l[0] !== 'Tempo' && l[0].indexOf('Paar') !== 0).map(l => l[1]).join(', ');
     if (hfx) hfx.textContent = !px ? '' : heroStarTxt(px.q) + (px.fired ? ' · ' + px.skill + ' zündet' : '') + (px.pair ? ' · Paar +' + HERO_PAIR_BONUS + ' %' : px.h2 ? ' · + ' + heroById(px.h2.id).name : '') + ' · ' + hfl(px);
+    if (chip1) chip1.title = hfx ? hfx.textContent : '';   // (kleines Handy: die Zeile ist ausgeblendet)
     if (hfx) hfx.title = !px ? '' : hfl(px) + (px.h2 ? ' · ' + heroById(px.h2.id).name + ' (' + Math.round(HERO_ZWEIT * 100) + ' %): ' + hfl(px.h2) : '');   // alles einzeln beim Draufzeigen
     const swordBonus = attackFlatBonus(shown), heroTroops = px ? Math.round(shown * px.atk / 100) + heroGefOf(px, shown) : 0, atkBonus = swordBonus + heroTroops;
     const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack') * (AUF ? AUF.kampf('player', 'a') : 1));        // same maths as resolveAttack (+ Forschung)
@@ -13211,6 +13214,7 @@ attackBtn.addEventListener('click', () => {
     const target = islandById[popupIslandId];
     const best = angriffStart(target);
     if (best === null) {
+        if (attackBtn.classList.contains('is-grau')) { const z = popupStats.querySelector('.tor-hinweis'); if (z) { z.classList.remove('blinkt'); void z.offsetWidth; z.classList.add('blinkt'); } return; }   // der Grund steht schon im Fenster: die Zeile blinkt, kein Hinweis darüber
         const any = [...ownedIslands].some(id => canReach(islandById[id].landmassId, target.landmassId));
         flashHint(any ? 'Deine Basen neben diesem Gebiet haben keine Truppen – schicke erst Truppen dorthin (Senden).'
                       : 'Keine deiner Basen grenzt an dieses Gebiet. Erobere zuerst eine Basis oder ein Tor direkt daneben und schicke Truppen hin.', 5000);

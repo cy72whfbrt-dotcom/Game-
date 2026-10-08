@@ -158,13 +158,14 @@ function invPunkteDazu(I, who, n) { if (!who || !(n > 0) || (who !== 'player' &&
 function invAnkunft(I, a, now) {                     // die Armee erreicht ihr Ziel: dieselbe Rechnung wie jeder Angriff (Truppen + Verteidigung)
     const isl = islandById[a.tid], o = isl && islandOwnerOf(a.tid); if (!o || invGeschuetzt(o, now)) return;
     const vk = typeof verstVorKampf === 'function' ? verstVorKampf(a.tid) : null;   // Verstärkung (Botschaft) verteidigt mit
+    const dHx = vhFx(o);                                                   // Verteidigungs-Helden aus der Mauer: Angriff + Gefolge in effectiveDefense, dazu Verluste + Krankenhaus
     let en = 0, def = 0, durch = false, verlustAlle = 0, vs = null;
     try {                                                                  // (ein Fehler dazwischen: die Verstärkung wird trotzdem wieder getrennt)
         en = effectiveTroops(isl); def = effectiveDefense(isl); durch = a.t > en + def;
-        verlustAlle = Math.min(en, Math.round(durch ? en * .6 : a.t * .35));
+        verlustAlle = Math.min(en, Math.round(durch ? en * .6 : a.t * .35 * (1 - (dHx ? dHx.loss : 0) / 100)));
         islandTroops[a.tid] = Math.max(0, (islandTroops[a.tid] || 0) - verlustAlle);
     } finally { vs = vk ? verstNachKampf(a.tid, vk, false) : null; }
-    const verlust = vs ? vs.eigenWeg : verlustAlle, wounded = verlust > 0 ? fieldHurt(o, verlust, null) : 0;   // (jeder seinen Anteil)
+    const verlust = vs ? vs.eigenWeg : verlustAlle, wounded = verlust > 0 ? fieldHurt(o, verlust, dHx) : 0;   // (jeder seinen Anteil)
     if (vs) for (const h of vs.helfer) if (h.fallen + h.wounded > 0) bundMelden(h.w, 'Barbaren-Invasion bei ' + islandTitle(isl) + ': deine Verstärkung verlor ' + fmtCompact(h.fallen + h.wounded) + (h.wounded ? ' (' + fmtCompact(h.wounded) + ' ins Krankenhaus)' : '') + '.');
     if (!durch) { invPunkteDazu(I, o, INV_PTS_WEHR); I.wehr[o] = (I.wehr[o] || 0) + 1;
         for (const [w, f] of (typeof verstAnteile === 'function' && verstAnteile(vk, o, en + def)) || [[o, 1]]) if (f > 0) evPunkte('krieg', w, a.t * f / WO_KILL_PER); }   // (Wochen-Punkte: Besitzer + Helfer nach Anteil)

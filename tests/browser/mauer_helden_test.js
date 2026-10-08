@@ -154,6 +154,22 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.waitForTimeout(600); await p.evaluate(() => { const h = [...document.querySelectorAll('.logGearHeroes')].find(x => x.offsetParent && /Brunhild/.test(x.textContent)); if (h) h.scrollIntoView({ block: 'center' }); });
     await p.waitForTimeout(400); await p.screenshot({ path: path.join(bilder, 'spaehbericht.png') });
   }
+  // H) Kriegsherr und Barbaren-Invasion: der Verteidigungs-Held zählt wie bei jedem Angriff (weniger Verluste)
+  const h = await p.evaluate(([B, T]) => {
+    const out = {}, s = loadBotState()[B], von = islands.find(i => i.id !== T && !islandOwnerOf(i.id)).id;
+    s.shieldUntil = 0; s.city.levels.wall = 3; s.vh = ['brunhild', null]; saveBotState(); verst.l = [];
+    const neu = () => { islandTroops[T] = 40000; vhMem = null; return vhFx(B); };
+    let fx = neu(); out.loss = fx && fx.loss;
+    try { wander = { wander: true, name: 'Kriegsherr', troops: 3000, defense: 450, max: 3000, at: von, from: von, to: T, arriveAt: Date.now() }; wanderArrive(Date.now()); } catch (x) { out.fehlerK = x.message; }
+    out.K = { weg: 40000 - islandTroops[T], erwartet: Math.round(3000 * (1 - fx.loss / 100)) };
+    fx = neu();
+    const I = { pts: {}, wehr: {}, start: Date.now(), armies: [] };
+    try { invAnkunft(I, { id: 'iT', tid: T, t: 3000, max: 3000 }, Date.now()); } catch (x) { out.fehlerI = x.message; }
+    out.I = { weg: 40000 - islandTroops[T], erwartet: Math.round(3000 * .35 * (1 - fx.loss / 100)) };
+    return out;
+  }, [a.B, a.T]);
+  ok(!h.fehlerK && h.loss > 0 && h.K.weg === h.K.erwartet, 'Kriegsherr abgewehrt: weniger gefallene Verteidiger (Verteidigungs-Held, Verluste −' + h.loss + ' %)', h);
+  ok(!h.fehlerI && h.I.weg === h.I.erwartet, 'Barbaren-Invasion abgewehrt: weniger gefallene Verteidiger (Verteidigungs-Held)', h);
   ok(!fe.length, 'keine Seitenfehler', fe.slice(0, 3));
   await b.close();
 })();
