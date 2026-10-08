@@ -62,6 +62,15 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const zw = 0.003; mapState.zoom = zw; mapState.offsetX = viewW / 2 - h.x * zw; mapState.offsetY = viewH / 2 - h.y * zw;
     layoutBanners(visibleIslands({ l: -1e9, t: -1e9, r: 1e9, b: 1e9 }), zw, null);
     o.wappen = { tipp: (pickIslandAtScreen(viewW / 2 + 18, viewH / 2 - 18) || {}).id === h.id, fund: pickupVerdeckt({ x: viewW / 2 - 25, y: viewH / 2 - 20 }) };
+    // 3D-Burg raus (8.10.): lädt das Bild noch, nur ein leiser Schatten – nichts Gezeichnetes, kein 3D; geladen: das KI-Bild
+    const zp = 0.02; mapState.zoom = zp; mapState.offsetX = viewW / 2 - h.x * zp; mapState.offsetY = viewH / 2 - h.y * zp;
+    const tempel = islands.find(i => i.bildR), bilder = BASIS_BILD.img.slice(), kbf = KB.fertig; let gez = 0, ell = 0;
+    ctx.drawImage = function () { gez++; }; const el = ctx.ellipse; ctx.ellipse = function () { ell++; return el.apply(this, arguments); };
+    setScreen(ctx); BASIS_BILD.img.length = 0; KB.fertig = false;
+    drawBuilding(h, 'player', zp); drawBuilding(tempel, 'neutral', zp); o.laedt = { gez, ell };
+    BASIS_BILD.img.push(...bilder); KB.fertig = kbf; gez = 0; ell = 0; drawBuilding(h, 'player', zp); o.fertig = { gez, ell };
+    ctx.drawImage = dr; ctx.ellipse = el;
+    o.alt3D = ['buildingSprite', 'bkSprite', 'towerTier', 'BUILDING_SPRITES'].filter(n => { try { return typeof eval(n) !== 'undefined'; } catch (e) { return false; } });
     return o;
   });
   ok(JSON.stringify(r.nr) === JSON.stringify([1, 1, 2, 2, 3, 8, 14, 15, 15]) && r.geladen === 15, 'Stufe 1–100 → Bild 1–15 (ceil(Stufe·15/100)), alle 15 Bilder geladen', r);
@@ -76,5 +85,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(JSON.stringify(r.schild) === JSON.stringify([['player', '1.234', true], ['bot', '?', true], ['bot', '800', true], ['ally', '700', true], ['neutral', '?', false]]),
     'Namensschild: eigene und Bündnis echte Truppen, fremde „?“ bis gespäht, frei ohne Wappen', r.schild);
   ok(r.nah.schilde === 1 && r.nah.ringe === 0 && r.nah.breit && r.nah.mittig && r.nah.unter && r.mittelSchild === 1, 'Schild nah: höchstens 70 % der Basis-Breite, mittig darunter; mittel auch das Schild (kein Ring)', [r.nah, r.mittelSchild]);
+  ok(r.laedt.gez === 0 && r.laedt.ell === 2 && r.fertig.gez === 1 && r.fertig.ell === 0 && !r.alt3D.length, 'Bild lädt noch: nur ein Schatten (keine 3D-Burg, kein gezeichnetes Haus), danach das KI-Bild', [r.laedt, r.fertig, r.alt3D]);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

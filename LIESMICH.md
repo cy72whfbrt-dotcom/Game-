@@ -35,7 +35,6 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   ladebildschirm.js    Ladebildschirm (Meer, Burg, Tageszeit, Tipps)
   spiel.js             das ganze Spiel
   bots.js              alles über die Mitspieler (Denken, Angriffe, Stadt, Helden …) – zusammengesetzt aus bots/
-  baukunst.js          3D-Bilder der Basen (braucht three.js aus dem Netz, sonst 2D)
   speichern.js         Speichern/Laden: hält den Stand im Arbeitsspeicher, schickt ihn an server.php
   welt.js              die EINE Welt: Umrechnen, andere Spieler, Weltrechner, Puls, Befehle, Nachrichten
   buendnis.js          Bündnisse: Gründen, Beitreten, Signale, Rally, Geschenke, Tempel-Bonus, Gebiet (Abschnitt 18) – zusammengesetzt aus buendnis/
@@ -59,7 +58,7 @@ Game/                  ← genau dieser Ordner liegt auf dem Server
   config.php           Datenbank-Zugang – NUR auf dem Server, nie im Git (wird von hochladen.sh erzeugt)
   spiel/01a-…10d-*.js  die 41 Teile von spiel.js (NUR hier ändern, dann werkzeuge/spiel_bauen.sh)
   bots/, buendnis/     die Teile von bots.js (6) und buendnis.js (4) – genauso: NUR dort ändern, dann spiel_bauen.sh
-  baukunst/, spielseite/, server/   die Teile von baukunst.js (8), spiel.php (8) und server.php (7) – genauso
+  spielseite/, server/ die Teile von spiel.php und server.php – genauso
 LIESMICH.md            diese Datei
 CLAUDE.md              Kurz-Hinweise für Claude
 hochladen.sh           lädt Game/ auf den Server (ein Befehl)
@@ -73,7 +72,7 @@ tests/                 Tests (liegen NIE auf dem Server)
                        am Ende „ALLES OK“. Zugang der Test-Konten in <arbeitsordner>/zugang.env (nie im Git)
   server/              die Server-Tests: Absturz/Zurückspielen, Admin, Nebel bei Armeen, Bündnis-Kiste,
                        Verstärkung, Klick-Test neuer Spieler (+ geschenk.sh: Admin-Geschenk für Tests)
-werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js, baukunst.js, spiel.php, server.php zusammensetzen),
+werkzeuge/             spiel_bauen.sh (spiel.js, bots.js, buendnis.js, spiel.php, server.php zusammensetzen),
                        vorschau_bauen.php (Vorschau ohne Server), verkleinern.js (+ terser.js: Skripte für den Browser
                        verkleinern → Game/klein/, läuft in spiel_bauen.sh),
                        vorschau_test*.js (Test-Modus), welt_neustart.php (neue Saison), vor_commit.sh (Prüfung vor dem
@@ -1014,6 +1013,17 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   20: 330 → 5.100, 30: 1.100 → 21.000, 40: 1.700 → 84.000, 50: 2.200 → 340.000. Helden-Gefolge und Funde rechnen weiter mit
   dem alten Maß (`stufenTruppenMass`). Das Hauptbuch prüft die Stufen-Truppen mit derselben Funktion. Tests: `saison_test`,
   `teleport_test`, `neuling_vorschau_test`, `forschung_kosten_test` angepasst/erweitert.
+- **8.10. – 3D-Burg raus (Alexander: „KI-Bilder statt Code“; NICHT hochgeladen):** Die alte 3D-Burg (three.js vom CDN +
+  `baukunst.js`) und die gezeichneten Häuser/Tempel/Tore (isometrisch, 03b) sind komplett weg. Basen sind überall nur noch das
+  KI-Bild `basis_01…15` (`drawBasisBild`), Thron/Tempel ihr Bild, Pass-Tore ihr Bild. Solange ein Bild noch lädt, liegt dort nur
+  ein leiser Schatten (`drawPlatzhalter`), ganz weit draußen eigene Basen ein Punkt, freie ein Fleck. Ladebild: kein „Gebäude
+  werden vorbereitet“ mehr (rund 300 Gebäude-Bilder wurden vorher beim Start gemalt). Raus: `Game/baukunst/` (8 Teile),
+  `Game/baukunst.js`, ZIELE-Eintrag in `spiel_bauen.sh`, `skript.php`/`verkleinern.js`-Liste, three.js in Spielseite und CSP
+  (jetzt keine fremden Skripte mehr), Vorschau, `hochladen.sh`. **Zeilen:** baukunst 8.436 (Teile) bzw. 4.214 (baukunst.js) → 0,
+  spiel.js 15.008 → 14.661, Teil 03b 577 → 259. **Größe im Browser:** baukunst.js 241 KB (verkleinert) + three.js
+  ca. 600 KB vom CDN fallen weg, spiel.js 977 → 959 KB (verkleinert). Tests: `laden_test` (keine 3D-Dateien, keine Anfrage
+  nach außen), `basen_bild_test` (Platzhalter beim Laden), `server_test` (CSP ohne CDN), `karte_test`, `design_stil_test`.
+  Auf dem Server liegen `baukunst.js`/`klein/baukunst.js` noch – werden nicht mehr geladen (beim nächsten Aufräumen löschen).
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -2019,8 +2029,8 @@ Beispieldateien. Es gab nie eine config.php/.env im Git. `.env.example` (ohne We
 
 **Behoben (Server, PHP):**
 - Kein PHP-Fehlertext mehr im Browser (`display_errors` aus, eigener Fehler-Fänger); Admin-Seite/Spielseite nie im Zwischenspeicher.
-- Sicherheits-Kopfzeilen: HSTS (immer HTTPS), CSP (nur eigene Dateien + three.js + Google-Schriften; Daten nur an den
-  eigenen Server), `X-Frame-Options: DENY`, Permissions-Policy. three.js mit Echtheitsprüfung (`integrity`).
+- Sicherheits-Kopfzeilen: HSTS (immer HTTPS), CSP (nur eigene Dateien + Google-Schriften, seit 8.10. kein three.js mehr; Daten nur an den
+  eigenen Server), `X-Frame-Options: DENY`, Permissions-Policy.
 - Formulare (Anmelden, Registrieren, Abmelden, Admin) und Puls/Speichern nur von dieser Seite (`herkunft_ok`).
 - Login-Bremse in einem Schritt (nicht mit vielen gleichzeitigen Anfragen umgehbar), pro Konto UND Gerät (niemand kann
   ein fremdes Konto von außen aussperren) + Grenze pro Konto über alle Geräte. Neue Passwörter ab 10, höchstens 72 Zeichen.

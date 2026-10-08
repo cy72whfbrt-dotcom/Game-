@@ -9,7 +9,7 @@
 const fs = require('fs'), path = require('path'), crypto = require('crypto');
 const GAME = path.join(__dirname, '..', 'Game'), KLEIN = path.join(GAME, 'klein');
 // dieselbe Liste wie SKRIPTE in Game/skript.php
-const SKRIPTE = ['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung', 'baukunst'];
+const SKRIPTE = ['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung'];
 const OPTIONEN = { compress: false, mangle: { keep_fnames: true, keep_classnames: true }, format: { comments: false } };
 const voll = process.argv[2] === 'voll', pruefen = voll || process.argv[2] === 'pruefen';
 // erste Zeile: Original-Name · sha1 des Originals (skript() in server.php vergleicht ihn – nie alter Code, egal in welcher

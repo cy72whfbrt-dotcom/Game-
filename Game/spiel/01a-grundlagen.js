@@ -37,7 +37,7 @@ function eigeneTruppenDazu(base, n, q, mehr) { if (base === null || base === und
     addEventListener('resize', () => setTimeout(setzen, 50)); addEventListener('orientationchange', () => setTimeout(setzen, 300));
 })();
 // ===== spiel.js – das ganze Spiel Open Water (Karte, Stadt, Kämpfe, Helden, Ereignisse, Fenster …) =====
-// Mitspieler: bots.js · 3D-Basen: baukunst.js · Speichern: speichern.js (alles geht über "store")
+// Mitspieler: bots.js · Speichern: speichern.js (alles geht über "store")
 // Every storage access goes through here: blocked site data, sandboxed frames and a full quota must not stop the
 // game - it then simply runs in memory.
 const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },

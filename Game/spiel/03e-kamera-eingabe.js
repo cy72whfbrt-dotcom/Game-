@@ -411,7 +411,7 @@ function onViewportResize() {             // registered after boot; keeps the wo
   sizeBackingStore();
   mapState.offsetX = viewW / 2 - c.x * mapState.zoom; mapState.offsetY = viewH / 2 - c.y * mapState.zoom;
   updateZoomBounds(); clampCamera(); BG.valid = false;
-  if (dpr !== oldDpr) { BUILDING_SPRITES.clear(); flushBannerSprites(); HATCH = null; }
+  if (dpr !== oldDpr) { flushBannerSprites(); HATCH = null; }
   requestRender();
 }
 let resizeQueued = false;

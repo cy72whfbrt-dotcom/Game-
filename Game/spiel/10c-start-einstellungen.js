@@ -194,23 +194,6 @@ document.addEventListener('click', e => { const bt = e.target.closest && e.targe
     if (skip) { if (window.__stopSplashScene) window.__stopSplashScene(); sp.remove(); splashDone(); return; }
     const statusEl = document.getElementById('splashStatus');   // (Tipps und Prozent laufen im eigenen Skript des Ladebilds)
     const steps = ['Welt wird erschaffen …', 'Inseln werden besiedelt …', 'Truppen werden gerüstet …', 'Bereit'];
-    // Everything the map draws is painted once up front (every building, owner and size step), so nothing has to be
-    // drawn for the first time while you play - no stutter when zooming or scrolling. Later: images and music too.
-    const jobs = [], sizes = [16, 23, 32, 45, 64, 91, 128, 181];
-    for (const size of sizes) for (const own of ['neutral', 'player', 'bot']) {
-        for (let t = 0; t <= 4; t++) jobs.push(['tower', own, false, size, t]);
-        jobs.push(['temple', own, false, size, 0], ['guardian', own, false, size, 0], ['mega', own, false, size, 0], ['gate', own, false, size, 0], ['gateShut', own, false, size, 0]);
-    }
-    for (const size of sizes) for (let t = 0; t <= 4; t++) jobs.push(['tower', 'player', true, size, t]);
-    statusEl.textContent = 'Gebäude werden vorbereitet …';
-    let ji = 0;
-    (function work() {
-        const until = performance.now() + 12;
-        while (ji < jobs.length && performance.now() < until) { const j = jobs[ji++]; try { buildingSprite(j[0], j[1], j[2], j[3], j[4]); } catch (e) {} }
-        if (ji < jobs.length) { requestAnimationFrame(work); return; }
-        finish();
-    })();
-    function finish() {
     const wait = Math.max(0, 2600 - performance.now());
     steps.slice(1, 3).forEach((t, i) => setTimeout(() => { statusEl.textContent = t; }, wait * (i + 1) / 3));
     setTimeout(() => {
@@ -225,7 +208,6 @@ document.addEventListener('click', e => { const bt = e.target.closest && e.targe
             setTimeout(() => { if (window.__stopSplashScene) window.__stopSplashScene(); sp.remove(); }, 800);
         }, 900);
     }, wait);
-    }
 })();
 
 exploreOwned();                          // Nebel: the land around every own base is always known
@@ -233,17 +215,6 @@ renderActiveMarches();
 if (bonusGrantedAtBoot) saveGame();      // a reload right after the first start must not lose the grant
 updateZoomBounds(); clampCamera();
 requestAnimationFrame(frame);
-requestAnimationFrame(() => setTimeout(dreiDLaden, 0));   // (nach dem ersten Bild der Karte)
-
-// 3D-Basen erst jetzt laden (three.js vom CDN, dann baukunst.js) – vorher würden sie den Start bremsen. Ohne Netz oder
-// WebGL bleiben die gezeichneten Basen (bk3d). Der Weltrechner braucht sie nie.
-function dreiDLaden() {
-    const el = document.getElementById('spaeterLaden');
-    if (SYSTEM || !el || el.dataset.geladen) return;
-    el.dataset.geladen = '1';
-    const laden = (src, sri, dann) => { const s = document.createElement('script'); s.src = src; if (sri) { s.integrity = sri; s.crossOrigin = 'anonymous'; } s.onload = dann; document.body.appendChild(s); };
-    laden(el.dataset.three, el.dataset.sri, () => laden(el.dataset.baukunst, '', requestRender));
-}
 
 // Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefeldern)
 const feldErlaubt = t => t && t.closest && t.closest('input,textarea,select,[contenteditable]');

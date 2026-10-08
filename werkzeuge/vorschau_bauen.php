@@ -4,7 +4,7 @@
 // in diesem Browser. Kein Login, keine Datenbank, keine Handy-Nachrichten. Nur zum Ansehen neuer Sachen – nie hochladen.
 $quelle = dirname(__DIR__) . '/Game';
 function stopp($text) { fwrite(STDERR, "Fehler: $text\n"); exit(1); }   // (Exit-Code 1: alle_tests.sh merkt es)
-passthru(escapeshellarg(__DIR__ . '/spiel_bauen.sh'), $rc); if ($rc) stopp('spiel.js/bots.js/buendnis.js/baukunst.js/spiel.php/server.php lassen sich nicht zusammensetzen');   // (aus Game/spiel/, bots/, buendnis/, baukunst/, spielseite/, server/)
+passthru(escapeshellarg(__DIR__ . '/spiel_bauen.sh'), $rc); if ($rc) stopp('spiel.js/bots.js/buendnis.js/spiel.php/server.php lassen sich nicht zusammensetzen');   // (aus Game/spiel/, bots/, buendnis/, spielseite/, server/)
 // Game/klein/ ist nicht im Git: spiel_bauen.sh hat es eben erzeugt – hier sicherstellen, dass alle verkleinerten Skripte da sind
 exec('node ' . escapeshellarg(__DIR__ . '/verkleinern.js') . ' voll 2>&1', $aus, $rc); if ($rc) stopp("Game/klein/ unvollständig\n" . implode("\n", $aus));
 $ziel = $argv[1] ?? (dirname(__DIR__) . '/vorschau');
@@ -34,7 +34,7 @@ if (($argv[2] ?? '') === 'artifact') {   // als Claude-Artifact: ohne <html>/<he
     $html = "<title>Open Water</title>\n" . preg_replace('#<title>[^<]*</title>\s*#', '', $html);
 }
 file_put_contents($ziel . '/index.html', $html);
-foreach (['ladebildschirm.js', 'baukunst.js', 'bots.js', 'spiel.js', 'aufbau.js', 'buendnis.js', 'haendler.js'] as $f) copy($quelle . '/' . $f, $ziel . '/' . $f);
+foreach (['ladebildschirm.js', 'bots.js', 'spiel.js', 'aufbau.js', 'buendnis.js', 'haendler.js'] as $f) copy($quelle . '/' . $f, $ziel . '/' . $f);
 @mkdir($ziel . '/klein', 0755, true);
 foreach (glob($quelle . '/klein/*.js') as $f) copy($f, $ziel . '/klein/' . basename($f));
 @mkdir($ziel . '/app', 0755, true);

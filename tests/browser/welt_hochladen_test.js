@@ -82,7 +82,7 @@ function lauf(port, ordner, arg) {
   });
 }
 const gleich = (a, b) => fs.existsSync(a) && fs.existsSync(b) && Buffer.compare(fs.readFileSync(a), fs.readFileSync(b)) === 0;
-const NUR_SERVER = /^weltrechner\/(herz.*|log.*|zustand.*|sperre|crontab.*|schummel.*|vapid.*)\.php$/, TEILE = /^(spiel|bots|buendnis|baukunst|spielseite|server)\//;
+const NUR_SERVER = /^weltrechner\/(herz.*|log.*|zustand.*|sperre|crontab.*|schummel.*|vapid.*)\.php$/, TEILE = /^(spiel|bots|buendnis|spielseite|server)\//;
 function dateien(d, r = '') { return fs.readdirSync(path.join(d, r)).flatMap(x => fs.statSync(path.join(d, r, x)).isDirectory() ? dateien(d, path.join(r, x)) : [path.join(r, x)]); }
 
 (async () => {
