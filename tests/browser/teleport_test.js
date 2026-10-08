@@ -115,7 +115,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     k.click(); flashHint = fh;
     return Object.assign(o, { hinweis, zu: !isPanelOpen(popup), gems: g0 - gems, cap: playerIslandId === cap && islandTroops[cap] === tr,
       alt: ['teleportCapital', 'teleportMode', 'teleportBis'].filter(n => typeof window[n] !== 'undefined'), befehl: !!(WELT.BEFEHLE && WELT.BEFEHLE.hauptstadt) }); });
-  ok(e.sicht && /^Teleportieren/.test(e.text) && !/Verlegen/.test(e.text), 'Hauptstadt-Fenster: Knopf „Teleportieren“ (kein „Verlegen“ mehr)', e);
+  ok(e.sicht && /^Teleport/.test(e.text) && !/Verlegen/.test(e.text), 'Hauptstadt-Fenster: runder Knopf „Teleport“ (kein „Verlegen“ mehr)', e);
   ok(e.zu && /freie Stelle/.test(e.hinweis) && /Teleportieren/.test(e.hinweis) && e.gems === 0 && e.cap, 'Tipp: Fenster zu, Hinweis auf die Teleport-Auswahl der Karte – nichts bezahlt, Hauptstadt bleibt', e);
   ok(!e.alt.length && !e.befehl, 'Verlegen für 50 Edelsteine ist weg (kein teleportCapital/teleportMode, kein Weltrechner-Befehl „hauptstadt“)', e);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();

@@ -104,7 +104,7 @@ function openIslandPopup(island) {
     if (island && !islandSeen(island) && islandOwnerOf(island.id) !== 'player') { flashHint('Dieses Gebiet liegt im Nebel – schick zuerst einen Späher.', 3000); return; }
     closeAllPopups();
     popupIslandId = island.id;
-    popupView = 'menu';
+    popupView = 'menu'; popupMehr = false;
     renderPopup();
 }
 

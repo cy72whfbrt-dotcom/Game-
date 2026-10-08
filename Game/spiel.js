@@ -12076,7 +12076,7 @@ function openIslandPopup(island) {
     if (island && !islandSeen(island) && islandOwnerOf(island.id) !== 'player') { flashHint('Dieses Gebiet liegt im Nebel – schick zuerst einen Späher.', 3000); return; }
     closeAllPopups();
     popupIslandId = island.id;
-    popupView = 'menu';
+    popupView = 'menu'; popupMehr = false;
     renderPopup();
 }
 
@@ -12428,7 +12428,8 @@ if (saisonNeuGeladen) afterSplash(() => setTimeout(() => flashHint('Welt-Saison 
 // HUD shortcuts, first-launch toast, player plate =====
 for (const el of document.querySelectorAll('[data-const]'))
     el.textContent = fmtNum({ CRATE_GEM_COST, MULTI_ATTACK_GEM_COST, RECALL_GEM_COST }[el.dataset.const]);
-document.querySelector('#teleportBtn .act-t').textContent = 'Teleportieren';   // Zweit-Knopf: kurzer Name + Preis (der Preis kommt beim Öffnen – 1 Teleporter oder Edelsteine)
+document.querySelector('#teleportBtn .act-t').textContent = 'Teleport';   // runder Knopf: kurzes Wort + Preis (der Preis kommt beim Öffnen – 1 Teleporter oder Edelsteine)
+document.querySelector('#cityBtn .act-t').textContent = 'Betreten';
 document.getElementById('shopOdds').innerHTML = RARITY_DEFS.map((rd, i) => RARITY_DROP_WEIGHTS[i] > 0 ?
     '<span class="chip chip--rar" data-r="' + rd.key + '">' + rd.label + ' ' + RARITY_DROP_WEIGHTS[i].toLocaleString('de-DE') + ' %</span>' : '').join('') +
     '<span class="chip chip--rar">' + RARITY_DEFS[4].label + ' + ' + RARITY_DEFS[5].label + ': nur durch Zusammenlegen</span>';
@@ -12512,6 +12513,30 @@ const popupOverline = document.getElementById('popupOverline');
 const popupSub = document.getElementById('popupSub');
 const popupActions = document.getElementById('popupActions');
 const upgradeCostLabel = document.getElementById('upgradeCostLabel');
+// Runde Knöpfe (8.10.): dazu Schild (Rucksack), Truppen (Armee aufstellen) und „Mehr“ – dahinter liegen die übrigen Knöpfe (Mehrfach, Titel …)
+function rundKnopf(id, sym, wort) {
+    const bt = document.createElement('button'); bt.type = 'button'; bt.id = id; bt.className = 'act'; bt.style.display = 'none';
+    bt.innerHTML = '<span class="act-ic">' + icon(sym) + '</span><span class="act-t">' + wort + '</span>'; popupActions.appendChild(bt); return bt;
+}
+const schildBtn = rundKnopf('schildBtn', 'shield', 'Schild'), truppenBtn = rundKnopf('truppenBtn', 'troops', 'Truppen'), mehrBtn = rundKnopf('mehrBtn', 'plus', 'Mehr');
+popupActions.classList.add('rund'); backBtn.setAttribute('aria-label', 'Zurück');
+let popupMehr = false;                                  // „Mehr“ aufgeklappt (neu zu bei jedem Öffnen)
+schildBtn.addEventListener('click', () => { closeIslandPopup(); openRucksack(); });
+truppenBtn.addEventListener('click', () => { closeIslandPopup(); document.getElementById('armyBtn').click(); });
+mehrBtn.addEventListener('click', () => { popupMehr = !popupMehr; renderPopup(); });
+// Werte als Bild + Zahl (statt Kacheln): [[Bild, Zahl, Bezeichnung, Klasse]]
+function bwWerte(L) {
+    return '<div class="bw-werte">' + L.map(([bild, wert, name, cls]) => '<span class="bw-wert' + (cls ? ' ' + cls : '') + '" title="' + name + '"><img src="bilder/' + bild + '.webp" alt="' + name + '"><b>' + wert + '</b></span>').join('') + '</div>';
+}
+// Kopf: Basen zeigen ihr Bild (wie auf der Karte), Tore das Tor – sonst das Symbol
+function popupKopfBild(island) {
+    const bild = island.type === 'tower' ? 'basis_' + String(basisBildNr(baseLevelOf(island))).padStart(2, '0') : island.type === 'gate' ? 'karte_tor_zu' : '';
+    let img = popupEmblem.querySelector('.bw-bild');
+    if (!bild) { if (img) img.remove(); popupEmblem.classList.remove('emblem--bild'); return; }
+    if (!img) { img = document.createElement('img'); img.className = 'bw-bild'; img.alt = ''; popupEmblem.prepend(img); }
+    if (!img.src.endsWith(bild + '.webp')) img.src = 'bilder/' + bild + '.webp';
+    popupEmblem.classList.add('emblem--bild');
+}
 
 // Presentation rewrite (design-spec §4.5). Which buttons show, when
 // they are disabled, and what is visible without scouting (fog of
@@ -12538,6 +12563,8 @@ function renderPopup() {
     popupLevel.textContent = anzeigeStufe(island.id);
     popupTitle.textContent = ortName(island, true);
     popupActions.hidden = true;
+    for (const bt of [schildBtn, truppenBtn, mehrBtn]) bt.style.display = 'none';
+    popupKopfBild(island);
     document.getElementById('cityBtn').style.display = 'none';
     document.getElementById('teleportBtn').style.display = 'none';
     document.getElementById('titleBtn').style.display = island.type === 'megaTemple' ? 'inline-block' : 'none';
@@ -12562,13 +12589,12 @@ function renderPopup() {
 
         popupOverline.textContent = island.id === playerIslandId ? 'Deine Hauptstadt' + (brennt(island.id) ? ' · brennt' : '') : isTemple ? 'Dein Tempel' : island.type === 'gate' ? 'Dein Tor · Maut für dich' : 'Deine Basis';
         if (island.id === playerIslandId) { document.getElementById('cityBtn').style.display = 'inline-block'; document.getElementById('teleportBtn').style.display = 'inline-block'; document.querySelector('#teleportBtn .act-s').innerHTML = tpPreisHtml(); }
-        document.getElementById('cityBtn').classList.toggle('act--haupt', island.id === playerIslandId);   // ein Haupt-Knopf: Stadt betreten (Hauptstadt) bzw. Aufwerten
-        upgradeBtn.classList.toggle('act--haupt', island.id !== playerIslandId);
-        liveHtml(popupStats, '<div class="stat-grid">' +
-            statTile('Truppen hier', 'troops', fmtTile(troopsHere)) +
-            statTile('Verteidigung', 'defense', fmtTile(effectiveDefense(island))) +
-            statTile('Münzen / Std.', 'coin', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())), 'is-good') +
-            statTile('Truppen / Std.', 'troops', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())), 'is-good') + '</div>' +
+        const haupt = island.id === playerIslandId, sh = haupt ? ownerShieldUntil('player') : 0;
+        liveHtml(popupStats, (haupt ? bwWerte([['ui_sym_macht', fmtCompact(powerOf(whoProfile('player'))), 'Macht'], ['beute_truppen', fmtTile(troopsHere), 'Truppen hier'],
+                ['ui_sym_friedensschild', sh > Date.now() ? fmtClock((sh - Date.now()) / 1000) : 'aus', 'Schutz (Friedensschild/Anfängerschutz)']])
+            : bwWerte([['beute_truppen', fmtTile(troopsHere), 'Truppen hier'], ['ui_sym_schild', fmtTile(effectiveDefense(island)), 'Verteidigung'],
+                ['beute_muenzen', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())), 'Münzen pro Stunde', 'is-good'],
+                ['ui_sym_aufstieg', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())), 'Truppen pro Stunde', 'is-good']])) +
             (island.type === 'gate' ? gateControlsHtml(island) : '') +
             (isTemple ? templeBonusLine(island) : '') + throneNotice(island) + midNotice(island) + ringNotice(island));
         liveHtml(upgradeCostLabel, level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level)));
@@ -12581,6 +12607,12 @@ function renderPopup() {
         multiAttackBtn.disabled = troopsHere <= 0 || gems < MULTI_ATTACK_GEM_COST;
         recallBtn.style.display = 'inline-block';
         recallBtn.disabled = gems < RECALL_GEM_COST || ownedIslands.size <= 1;
+        // runde Knöpfe: vier vorn, der Rest hinter „Mehr“ (Reihenfolge = Liste)
+        const vorn = haupt ? ['cityBtn', 'teleportBtn', 'schildBtn', 'truppenBtn'] : ['upgradeBtn', 'sendBtn', 'recallBtn', 'truppenBtn'];
+        const hinten = (haupt ? ['sendBtn', 'recallBtn', 'multiAttackBtn'] : ['multiAttackBtn']).concat(island.type === 'megaTemple' ? ['titleBtn'] : []);
+        schildBtn.style.display = haupt ? 'inline-block' : 'none'; truppenBtn.style.display = mehrBtn.style.display = 'inline-block';
+        for (const bt of popupActions.children) { const i = vorn.indexOf(bt.id), j = hinten.indexOf(bt.id); bt.style.order = i >= 0 ? i : j >= 0 ? 10 + j : bt === mehrBtn ? 9 : 99; bt.classList.toggle('act--mehr', j >= 0); }
+        popupActions.classList.toggle('mehr-auf', popupMehr); setBtnLabel(mehrBtn.querySelector('.act-t'), popupMehr ? 'Weniger' : 'Mehr');
     } else {
         const scouted = scoutedIslands.has(island.id), shieldOw = ownerBot && shieldCovers(island) && ownerShielded(ownerBot.id) ? ownerBot : null;
         if (popupView === 'preview' && shieldOw) popupView = 'menu';
@@ -12590,19 +12622,19 @@ function renderPopup() {
 
         if (popupView === 'preview') {
             renderAttackPreview(island, scouted);
-            setBtnLabel(attackBtn, 'Angreifen');
+            setBtnLabel(attackBtn, 'Losmarschieren');
             attackBtn.style.display = 'inline-block';
             attackBtn.disabled = (previewSourceId !== null ? (islandTroops[previewSourceId] || 0) : 0) <= 0;
             backBtn.style.display = 'inline-block';
         } else {
             const scoutEnRoute = pendingScouts.some(s => !s.back && s.targetId === island.id);
             popupOverline.textContent = bossAt(island.id) ? 'Weltereignis · Boss' : ownerBot ? (isCapital(island.id) ? (brennt(island.id) ? 'Hauptstadt · brennt' : 'Feindliche Hauptstadt') : isTemple ? 'Feindlicher Tempel' : island.type === 'gate' ? 'Feindliches Tor' : 'Feindliche Basis') : (isTemple ? 'Tempel · unbesetzt' : island.type === 'gate' ? 'Tor · unbesetzt' : 'Neutrale Basis');
-            liveHtml(popupStats, (scouted ? '<div class="stat-grid">' +
-                statTile('Truppen', 'troops', fmtTile(effectiveTroops(island)), ownerBot ? 'is-enemy' : '') +
-                statTile('Verteidigung', 'defense', fmtTile(effectiveDefense(island))) + '</div>' +
+            const keinNachbar = !shieldOw && ![...ownedIslands].some(id => islandById[id] && canReach(islandById[id].landmassId, island.landmassId));   // Grenztor & Co.: keine eigene Basis daneben
+            liveHtml(popupStats, (scouted ? bwWerte([['beute_truppen', fmtTile(effectiveTroops(island)), 'Truppen', ownerBot ? 'is-enemy' : ''], ['ui_sym_schild', fmtTile(effectiveDefense(island)), 'Verteidigung'], ['ui_sym_spaeher', 'gespäht', 'Gespäht']]) +
                 (spaehAlterText(island.id) ? '<div class="notice' + (Date.now() - spaehVom(island.id) >= SPAEH_ALT_MS ? ' notice--warn' : '') + '">' + icon('scout') + '<span>' + spaehAlterText(island.id) + '</span></div>' : '')   // wie alt ist der Bericht?
                     : '<button type="button" class="spaeh-kachel" data-spaehen' + (scoutEnRoute ? ' disabled' : '') + '>' + icon('scout') + '<span><b>Stärke unbekannt</b><small>' +   // eine Kachel: antippen = spähen
-                        (scoutEnRoute ? 'Späher ist unterwegs …' : 'Antippen: Späher schicken') + '</small></span><span class="spaeh-kachel-w">' + icon('troops') + '?' + icon('defense') + '?</span></button>') + midNotice(island) + ringNotice(island) +
+                        (scoutEnRoute ? 'Späher ist unterwegs …' : 'Antippen: Späher schicken') + '</small></span><span class="spaeh-kachel-w">' + icon('troops') + '?' + icon('defense') + '?</span></button>') +
+                (keinNachbar ? '<div class="notice notice--warn tor-hinweis"><img src="bilder/ui_hinweis.webp" alt=""><span>Keine deiner Basen grenzt an ' + (island.type === 'gate' ? 'dieses Tor' : 'dieses Gebiet') + '.</span></div>' : '') + midNotice(island) + ringNotice(island) +
                 (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Fällt nie · Sieg = ' + Math.round(HAUPT_BEUTE * 100) + ' % Beute über dem Schutz' + (brennt(island.id) ? ' · brennt gerade' : '') + '</span></div>' : '') +
                 (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
@@ -12612,6 +12644,7 @@ function renderPopup() {
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
                     ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));
             if (shieldOw) popupOverline.textContent = 'Friedensschild · unangreifbar';
+            attackBtn.classList.toggle('is-grau', keinNachbar);   // grau, antippen sagt warum (attackBtn)
             setBtnLabel(attackBtn, shieldOw ? 'Schild aktiv' : 'Angreifen');
             attackBtn.disabled = !!shieldOw;
             attackBtn.style.display = 'inline-block';   // (auch Hauptstädte – sie fallen nur nie)
@@ -12624,7 +12657,10 @@ function renderPopup() {
         }
     }
     const menu = popupView !== 'preview' && popupView !== 'send' && popupView !== 'recall';
-    attackBtn.classList.toggle('mit-zeit', popupView === 'preview');   // Angriff: Marschzeit mit Sanduhr im Knopf
+    attackBtn.classList.toggle('mit-zeit', popupView === 'preview');   // Angriff: goldener Knopf „Losmarschieren“ mit der Marschzeit
+    attackBtn.classList.toggle('btn--gold', popupView === 'preview');
+    if (!menu || isOwned) attackBtn.classList.remove('is-grau');
+    popup.classList.toggle('fuss-rund', menu && !isOwned);              // fremde Basis: Spähen + Angreifen als runde Knöpfe
     popupSub.classList.toggle('psub--zwei', menu);                       // Name/Stufe und Koordinaten in zwei Zeilen: nichts wird abgeschnitten
     if (menu) liveHtml(popupSub, subH + '<span class="num coord psub-ort">' + coordText(island.x, island.y) + '</span>');
     if (typeof bundInselfenster === 'function') bundInselfenster(island, popupView);               // Bündnis: Signale, Rally, Hilfe
@@ -12649,10 +12685,10 @@ let previewHeldAuf = 0, previewHeldVor = -1;          // aufgeklappte Helden-Aus
 function apQuelleText(id, island, scouted) {            // „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
     return escapeHtml(islandTitle(islandById[id])) + ' · ' + fmtCompact(islandTroops[id] || 0) + (scouted && angriffReicht(id, island) ? ' · reicht' : '');
 }
-function apHeldChip(el, id, oben, unten) {             // ein Chip: Bild, Name, darunter klein Sterne/Hinweis
+function apHeldChip(el, id, oben, unten) {             // eine Held-Karte: Bild (Hauptheld groß), Name, darunter klein Sterne/Hinweis
     if (!el) return;
     const h = heroById(id); el.style.setProperty('--hc', h ? RARITY_DEFS[h.r].color : 'var(--line-1)');
-    liveHtml(el, (h ? heroImg(id) : '') + '<span class="ap-hchip-t"><b>' + oben + '</b><small>' + unten + '</small></span>');
+    liveHtml(el, (h ? heroImg(id, '', el.classList.contains('ap-hchip--gross')) : '<span class="ap-hchip-leer">' + icon('plus') + '</span>') + '<span class="ap-hchip-t"><b>' + oben + '</b><small>' + unten + '</small></span>');
 }
 
 // Attack preview. Built ONCE per (target, source, scouted, bonus); later
@@ -12674,24 +12710,27 @@ function renderAttackPreview(island, scouted) {
         popupStats.dataset.preview = key; previewHeldAuf = 0;
         const quellen = angriffQuellen(island).slice(0, 40); if (!quellen.includes(previewSourceId)) quellen.unshift(previewSourceId);   // (die gewählte steht immer drin)
         const helden = heroSegHtml('data-hero', previewHero);
-        popupStats.innerHTML = '<div class="ap-kopf">' +                   // bleibt beim Scrollen oben stehen: Startbasis + Angriff gegen Abwehr
+        // oben: Hauptheld groß (Zweitheld klein daneben) | Startbasis, Angriff gegen Abwehr, Kräfte-Balken · darunter Truppen + Leiste
+        popupStats.innerHTML = '<div class="ap-oben' + (helden ? '' : ' ap-oben--ohne') + '">' +
+            (helden ? '<div class="ap-held"><button type="button" class="ap-hchip ap-hchip--gross" data-held-auf="1" aria-label="Held wählen"></button><button type="button" class="ap-hchip ap-hchip--klein" data-held-auf="2" aria-label="Zweitheld wählen"></button></div>' : '') +
+            '<div class="ap-kopf">' +
             '<select id="attackFromSel" class="from-sel" aria-label="Von Basis">' +
                 quellen.map(id => '<option value="' + id + '"' + (id === previewSourceId ? ' selected' : '') + '>' + apQuelleText(id, island, scouted) + '</option>').join('') + '</select>' +
             '<div class="versus">' +
                 '<div class="force force--me"><span class="stat-l">' + icon('troops') + 'Angriff</span><b id="previewMyTroops"></b><small>' +   // darunter klein woraus (eine Zeile, ganz beim Draufzeigen)
                     (atkPct > 0 ? '<span id="previewRawTroops"></span> + <span id="previewAtkBonus"></span> Schwert (+' + fmtNum(atkPct) + ' %)' : '<span id="previewRawTroops"></span> Truppen') + '<span id="previewHeroBonus"></span><span id="previewTitleBonus"></span></small></div>' +
-                '<div class="vs"><span>VS</span></div>' +
                 '<div class="force force--foe"><span class="stat-l">Abwehr' + icon('defense') + '</span><b data-foe="total">?</b>' + (scouted ? '<small data-foe="sub"></small>' :
                     '<button type="button" class="ap-spaehen" data-spaehen>' + icon('scout') + '<span>Spähen</span></button>') + '</div>' +   // ungespäht: gleich Späher schicken
             '</div>' +
-            (scouted ? '<div class="ap-bal" title="Kräfteverhältnis"><div class="balance" data-preview="balance"><i></i><b></b></div><span class="balance-note" data-preview="verdict"></span></div>' : '') + '</div>' +
+            (scouted ? '<div class="ap-bal" title="Kräfteverhältnis"><div class="balance" data-preview="balance"><i></i><b></b></div><span class="balance-note" data-preview="verdict"></span></div>' : '') + '</div></div>' +
+            (helden ? '<div class="ap-held-wahl"><div class="seg hero-seg chips-quer" data-preview="hero" hidden>' + helden + '</div><div class="seg hero-seg hero-seg2 chips-quer" data-preview="hero2" hidden></div>' +
+                '<small class="ap-herofx" data-preview="herofx"></small></div>' : '') +
             (scouted ? '<div class="notice" data-preview="alter" hidden></div>' : '') +
-            '<div class="ap-truppen"><input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +   // Schieber ganze Breite (Daumen)
-                '<div class="ap-regler"><div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div>' +
-                '<span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"></span></div></div>' +
-            (helden ? '<div class="ap-held"><div class="ap-held-zeile"><button type="button" class="ap-hchip" data-held-auf="1" aria-label="Held wählen"></button><button type="button" class="ap-hchip" data-held-auf="2" aria-label="Zweitheld wählen"></button></div>' +   // Held + Zweitheld als zwei Chips, antippen klappt die Auswahl auf
-                '<div class="seg hero-seg chips-quer" data-preview="hero" hidden>' + helden + '</div><div class="seg hero-seg hero-seg2 chips-quer" data-preview="hero2" hidden></div>' +
-                '<small class="ap-herofx" data-preview="herofx"></small></div>' : '');
+            '<div class="ap-truppen"><div class="ap-regler"><span class="ap-kachel"><img src="bilder/beute_truppen.webp" alt="Truppen"></span><span class="val"><input id="attackTroopsLabel" class="troop-in" inputmode="decimal" autocomplete="off" enterkeyhint="done" aria-label="Anzahl Truppen"><span class="ap-max" data-preview="max"></span></span></div>' +
+                '<input type="range" id="attackTroopsSlider" class="slider" min="0" max="' + SLIDER_STEPS + '" value="' + troopsToSlider(previewAttackTroops || 0, maxTroops) + '"' + (maxTroops <= 0 ? ' disabled' : '') + ' aria-label="Truppen entsenden">' +   // Schieber ganze Breite (Daumen)
+                '<div class="seg" data-preview="quick"><button type="button" data-f=".25">25 %</button><button type="button" data-f=".5">50 %</button><button type="button" data-f=".75">75 %</button><button type="button" data-f="1">Alle</button></div></div>' +
+            '<div class="ap-leiste"><span title="Marschzeit"><img src="bilder/ui_sym_zeit.webp" alt="Zeit"><b data-preview="zeit"></b></span><span title="Truppen im Marsch"><img src="bilder/beute_truppen.webp" alt="Truppen"><b data-preview="n"></b></span>' +
+                '<span title="Angriffskraft"><img src="bilder/ui_sym_macht.webp" alt="Macht"><b data-preview="kraft"></b></span></div>';
         document.getElementById('attackFromSel').addEventListener('change', e => {   // andere Startbasis gewählt
             const id = +e.target.value; if (!ownedIslands.has(id)) return;
             previewSourceId = id; previewFraction = 1; previewAttackTroops = null; renderPopup();
@@ -12814,7 +12853,7 @@ function patchAttackPreview() {
     if (chip2 && !seg2) { chip2.hidden = true; if (previewHeldAuf === 2) previewHeldAuf = 0; } else if (chip2) chip2.hidden = false;
     apHeldChip(chip1, previewHero, previewHero ? heroById(previewHero).name : 'Kein Held', previewHero ? icon('star') + heroStarNum(heroSt('player', previewHero).q) : 'Held wählen');
     if (chip2 && seg2) { const p2 = previewHero2 && heroPairOf(previewHero, previewHero2);
-        apHeldChip(chip2, previewHero2, previewHero2 ? heroById(previewHero2).name : '+ Zweitheld', p2 ? 'Paar +' + HERO_PAIR_BONUS + ' %' : previewHero2 ? 'Zweitheld · ' + Math.round(HERO_ZWEIT * 100) + ' %' : Math.round(HERO_ZWEIT * 100) + ' % der Passiven'); }
+        apHeldChip(chip2, previewHero2, previewHero2 ? heroById(previewHero2).name : '+ Zweitheld', p2 ? 'Paar +' + HERO_PAIR_BONUS + ' %' : 'Zweitheld · ' + Math.round(HERO_ZWEIT * 100) + ' %'); }
     for (const [el, n] of [[chip1, 1], [chip2, 2]]) if (el) { el.classList.toggle('on', previewHeldAuf === n); el.setAttribute('aria-expanded', previewHeldAuf === n); }
     const hl1 = popupStats.querySelector('[data-preview="hero"]'), hl2 = popupStats.querySelector('[data-preview="hero2"]');
     if (hl1) hl1.hidden = previewHeldAuf !== 1; if (hl2) hl2.hidden = previewHeldAuf !== 2;
@@ -12830,7 +12869,9 @@ function patchAttackPreview() {
     const tv = mitTitel - Math.round(shown + atkBonus), tx = titleOf('player'), tbEl = popupStats.querySelector('#previewTitleBonus');
     if (tbEl) tbEl.textContent = (tv && tx ? (tv > 0 ? ' + ' : ' − ') + fmtNum(Math.abs(tv)) + ' Titel ' + tx.name : '') + (kv ? ' + ' + fmtNum(kv) + ' Forschung' : '');
     const src = islandById[previewSourceId], tEl = popupOverline.querySelector('#previewToll');
-    if (src) liveHtml(document.getElementById('attackZeit'), icon('hourglass') + fmtClock(travelDurationSeconds(src, island) / (1 + (px ? px.spd : 0) / 100)));   // Marschzeit mit dem Tempo des Helden
+    const zeit = src ? fmtClock(travelDurationSeconds(src, island) / (1 + (px ? px.spd : 0) / 100)) : '';   // Marschzeit mit dem Tempo des Helden
+    if (src) liveHtml(document.getElementById('attackZeit'), icon('hourglass') + zeit);
+    for (const [k, v] of [['zeit', zeit], ['n', fmtCompact(shown)], ['kraft', fmtCompact(mine)], ['max', '/ ' + fmtCompact(maxTroops)]]) { const el = popupStats.querySelector('[data-preview="' + k + '"]'); if (el && el.textContent !== v) el.textContent = v; }
     const spB = popupStats.querySelector('.ap-spaehen');
     if (spB) { const unterwegs = pendingScouts.some(s => !s.back && s.targetId === island.id); spB.disabled = unterwegs || scoutBtn.disabled; setBtnLabel(spB, unterwegs ? 'Späher unterwegs' : 'Spähen'); }
     if (tEl && src) { const hop = lastHop(src.landmassId, island.landmassId, 'player'), t = tollFor(hop[0], hop[1], shown, 'player', island.id, px ? px.toll : 0);
