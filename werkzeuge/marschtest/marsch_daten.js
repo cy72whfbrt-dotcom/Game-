@@ -21,5 +21,5 @@ const MARSCH_DATEN = (() => {
   KARTE_ZONEN.barbaren.push({ x: lager.x, y: lager.y, gebiet: 27, stufe: lager.stufe });
   KARTE_ZONEN.felder.push({ x: feld.x, y: feld.y, gebiet: 27, art: 'holz', stufe: feld.stufe });
   const pass = { x: 699257, y: -272032, besitzer: '[DK]Wulfgar', stufe: 3 };   // Pass 8 (Gebiet 27 → 28) mit Tor von Wulfgar, Maut-Stufe 3 (0,5)
-  return { mitte: M, basen, lager, feld, pass, muenzen: 2e6 };
+  return { mitte: M, basen, lager, feld, pass, muenzen: 2e6, edelsteine: 2000 };
 })();

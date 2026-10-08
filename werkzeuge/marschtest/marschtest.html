@@ -16,6 +16,7 @@
     grid-template-columns: repeat(10, auto); width: max-content; gap: 6px; background: rgba(20, 16, 10, .8); border: 1px solid #8a6a3a; border-radius: 12px; padding: 6px; z-index: 3; }
   #leiste button, #mehr button { font: 600 13px var(--ui); color: #f3e2bd; background: #4a3720; border: 1px solid #a07c45; border-radius: 8px;
     padding: 0 10px; min-width: 44px; height: 44px; white-space: nowrap; }
+  #mehr button.wirklich, #knoepfe button.wirklich { background: #8a2a1e; border-color: #ffb199; }
   #leiste button.an, #mehr button.an { background: #8a6326; color: #fff6dc; }
   #zeile { position: fixed; left: 10px; color: #f3e2bd; background: rgba(20, 16, 10, .76); border: 1px solid #6b5230; border-radius: 8px;
     padding: 5px 9px; font: 12px/1.45 var(--ui); pointer-events: none; z-index: 2; max-width: calc(100% - 40px); }
@@ -68,7 +69,7 @@
   <button data-erg="turm">Turm erobern</button><button data-erg="lager">Lager</button><button data-erg="lagerSchwach">Lager zu schwach</button>
   <button data-erg="meinSchild">Dein Schild</button><button data-erg="kevinSchild">Kevins Schild</button>
   <b>Weg und Tempo</b>
-  <button data-erg="pass">Über den Pass</button>
+  <button data-erg="pass">Über den Pass</button><button id="alle">Alle schneller</button>
 </div>
 <div id="zeile"></div>
 <div id="bps"></div>

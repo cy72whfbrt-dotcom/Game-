@@ -37,8 +37,8 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       ok(/Held: Aldric/.test(info) && /Truppen: 6,2\sMio\./.test(info) && /Restzeit: ⌛ \d+:\d\d/.test(info), `${name} ${art}: Info zeigt Held, Truppen, Ziel, Restzeit`, info);
       const vorher = await p.evaluate(() => MT.armeen[0].dauer - (MT.jetzt - MT.armeen[0].t0));
       await p.mouse.click(f.x + f.w / 2, f.y + 18); await p.click('[data-knopf="schneller"]', { force: true });
-      const nachher = await p.evaluate(() => [MT.armeen[0].dauer - (MT.jetzt - MT.armeen[0].t0), document.querySelector('[data-knopf="schneller"] i').textContent]);
-      ok(nachher[0] < vorher * .6 && nachher[1] === '11', `${name} ${art}: Schneller halbiert die Restzeit, Zähler 12 → 11`, [vorher, nachher]);
+      const nachher = await p.evaluate(() => [MT.armeen[0].dauer - (MT.jetzt - MT.armeen[0].t0), MT.D.edelsteine]);
+      ok(nachher[0] < vorher * .6 && nachher[1] === 1999, `${name} ${art}: Schneller halbiert die Restzeit, kostet 1 Edelstein je Restminute (2.000 → 1.999)`, [vorher, nachher]);
       await p.click('[data-knopf="zurueck"]', { force: true });
       const zur = await p.evaluate(() => [MT.armeen[0].phase, MT.armeen[0].zurueck, document.querySelectorAll('#knoepfe button').length]);
       ok(zur[0] === 'rueck' && zur[1] && zur[2] === 0, `${name} ${art}: Zurück dreht die Armee um (weiße Fahne), Knöpfe zu`, zur);
@@ -75,6 +75,8 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       const r0 = await p.evaluate(() => MT.armeen.map(a => a.art + ':' + a.phase).join());
       await p.evaluate(() => { MT.tempo = 5; });
       ok(/rally:sammelt/.test(r0) && await bis(() => MT.armeen.some(a => a.art === 'rally' && a.phase === 'hin' && a.rally.mitglieder.length === 4)), `${name} ${art}: Rally sammelt (3 Beitritte), dann Rally-Marsch mit 4 Mitgliedern`, r0);
+      const rz = await p.evaluate(() => { const a = MT.armeen.find(x => x.art === 'rally'); MT.waehlen(a); document.querySelector('[data-knopf="zurueck"]').click(); return [a.phase, MT.effekte.some(e => /kann nicht zurückgerufen/.test(e.text))]; });
+      ok(rz[0] === 'hin' && rz[1], `${name} ${art}: eine Rally kann nicht zurückgerufen werden`, rz);
       ok(await bis(() => MT.effekte.some(e => e.art === 'pfeile')) && await bis(() => MT.kaempfe.length === 1), `${name} ${art}: Rally kommt an (Pfeile von allen Seiten), dann Kampf`);
       // Gemeinsamer Kampf wie im Spiel (kampfDazu): 3 eigene Märsche versetzt → EIN Kampf, ein Kreis, Truppen addiert, Armeen um das Ziel
       await leer(); await p.click('#mehr-knopf'); await p.click('#drei'); await p.click('#mehr-knopf'); await p.evaluate(() => { MT.tempo = 3; });
@@ -147,6 +149,16 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       await leer(); await knopf('marsch'); await p.evaluate(() => { MT.tempo = 5; }); await p.waitForTimeout(1000);
       const zr = await p.evaluate(() => { const a = MT.armeen[0], gel = MT.jetzt - a.t0; MT.waehlen(a); document.querySelector('[data-knopf="zurueck"]').click(); return [gel, a.dauer]; });
       ok(Math.abs(zr[0] - zr[1]) < .5, `${name} ${art}: Zurückrufen: Rückweg so lange wie schon gelaufen`, zr);
+      // Beschleunigen ab 500 Edelsteinen erst „Wirklich?“; Zurückrufen im Kampf „zu spät“, Rally nie
+      await leer(); await knopf('marsch');
+      const wk = await p.evaluate(() => { const a = MT.armeen[0]; a.dauer = 40000; MT.D.edelsteine = 2000; MT.waehlen(a); const b = () => document.querySelector('[data-knopf="schneller"]');
+        b().click(); const t1 = b().textContent, g1 = MT.D.edelsteine; b().click(); return [t1, g1, MT.D.edelsteine]; });
+      ok(/Wirklich\? 💎 667/.test(wk[0]) && wk[1] === 2000 && wk[2] === 2000 - 667, `${name} ${art}: 667 Edelsteine: erst „Wirklich?“, zweiter Tipp zahlt`, wk);
+      await leer(); await knopf('niederlage'); await p.evaluate(() => { MT.tempo = 3; });
+      await bis(() => MT.kaempfe.length === 1);
+      const zs = await p.evaluate(() => { const a = MT.armeen[0]; MT.waehlen(a); const kn = [...document.querySelectorAll('#knoepfe button')].map(b => b.dataset.knopf); document.querySelector('[data-knopf="zurueck"]').click();
+        return [kn.join(), a.phase, MT.effekte.some(e => /zu spät zum Zurückrufen/.test(e.text))]; });
+      ok(zs[0] === 'info,zurueck' && zs[1] === 'kampf' && zs[2], `${name} ${art}: im Kampf kein „Schneller“, Zurück → „zu spät“`, zs);
       // Marsch zweimal: jeder nur mit den Truppen, die noch in der Basis sind (12,4 → 6,2 + 3,1 Mio.), nie doppelt
       await leer(); await knopf('marsch'); await knopf('marsch');
       const mz = await p.evaluate(() => MT.armeen.map(a => a.truppen));

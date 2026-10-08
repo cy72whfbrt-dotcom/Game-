@@ -32,7 +32,7 @@ const HELDEN = ['aldric', 'bernhard', 'brunhild', 'bruno', 'eskil', 'fenn', 'gre
 const MARSCH = ['band_niederlage', 'band_sieg', 'fahne_leer', 'geschoss_pfeil', 'geschoss_pfeil_feuer', 'geschoss_stein', 'kampf_kreis', 'kampf_saeule',
   'rahmen_bund', 'rahmen_eigen', 'rahmen_feind', 'rahmen_gold', 'ring_gold', 'sieg_blitz', 'spaeher', 'trupp_rally', 'trupp_sammler', 'zeichen_warnung', 'zeichen_zurueck',
   ...['eigen', 'bund', 'feind'].flatMap(s => ['runter', 'hoch', 'kampf', 'verletzt'].map(a => `trupp_${s}_${a}`))].map(n => 'marsch_' + n);
-const SPIEL = [...HELDEN.map(h => `held_${h}_kopf`), 'beute_muenzen', 'beute_holz', 'beute_beschleuniger',
+const SPIEL = [...HELDEN.map(h => `held_${h}_kopf`), 'beute_muenzen', 'beute_holz', 'ui_edelstein',
   ...Array.from({ length: 15 }, (_, i) => 'basis_' + String(i + 1).padStart(2, '0')),
   'ui_sym_rolle', 'ui_sym_rueckzug', 'ui_sym_rally', 'ui_sym_schwert', 'ui_sym_spaeher'];
 const BILD = {};
@@ -764,11 +764,34 @@ function infoArmee(a) {
   karteInfo(a.name, [`Held: ${!b ? '?' : a.held ? a.held[0].toUpperCase() + a.held.slice(1) : '–'}`, `Truppen: ${b ? fmtCompact(a.truppen - teilVerlust(a)) : '? (Nebel)'}`,
     `Ziel: ${a.ziel.name || 'Rally-Platz'}`, a.phase === 'wartet' ? 'Wartet, bis der Kampf entschieden ist' : `${a.phase === 'rueck' ? 'Heimweg' : a.phase === 'kampf' ? 'Kampf läuft' : 'Restzeit'}: ⌛ ${uhr(rest(a))}`]);
 }
+// Zurückrufen wie recallMarch (02b): kehrt am Ort um; im Kampf „zu spät“; eine Rally nie; Späher ohne Bericht; Sammler mit Ladung.
+// Beschleunigen wie speedUpMarch/speedUpAll: halbiert die Restzeit (Ort bleibt), kostet 1 Edelstein je angefangene Restminute,
+// ab 500 Edelsteinen erst „Wirklich?“ (gemsWirklich), nicht im Kampf; „Alle schneller“ für alle eigenen Märsche.
+const GEMS_WIRKLICH = 500;
+const hinweis = (a, text) => effekte.push({ art: 'dazu', t0: jetzt, ziel: pos(a), feind: true, text });
+const schnellKosten = a => Math.max(1, Math.ceil(rest(a) / 60));
+const schnellBar = a => meins(a) && (a.phase === 'hin' || a.phase === 'rueck') && rest(a) >= 1.5;
+let wirklich = null;                                   // { key, t } – zweiter Tipp innerhalb 4 s bestätigt
+function edelsteineZahlen(key, kosten, knopf, a) {     // → true: jetzt zahlen
+  if (D.edelsteine < kosten) { effekte.push({ art: 'dazu', t0: jetzt, ziel: a ? pos(a) : basis('eigen'), feind: true, text: `Zu wenig Edelsteine – Beschleunigen kostet ${NF.format(kosten)}.` }); return false; }
+  if (kosten >= GEMS_WIRKLICH && !(wirklich && wirklich.key === key && performance.now() - wirklich.t < 4000)) {
+    wirklich = { key, t: performance.now() }; if (knopf) { knopf.classList.add('wirklich'); const l = knopf.querySelector('span') || knopf; l.textContent = `Wirklich? 💎 ${NF.format(kosten)}`; } return false; }
+  wirklich = null; D.edelsteine -= kosten; return true;
+}
+function halbieren(a) { const f = Math.min(.99, (jetzt - a.t0) / a.dauer); a.dauer = rest(a) / 2 / (1 - f); a.t0 = jetzt - f * a.dauer; }
+function alleSchneller(knopf) {
+  const l = armeen.filter(schnellBar); if (!l.length) return;
+  const k = l.reduce((x, a) => x + schnellKosten(a), 0); if (!edelsteineZahlen('alle', k, knopf, l[0])) return;
+  l.forEach(halbieren); effekte.push({ art: 'dazu', t0: jetzt, ziel: pos(l[0]), text: `${l.length} ${l.length === 1 ? 'Marsch' : 'Märsche'} beschleunigt – Restzeit halbiert.` });
+  if (knopf) { knopf.classList.remove('wirklich'); knopf.textContent = 'Alle schneller'; }
+}
 const KNOPF = {
   info: ['ui_sym_rolle', 'Info', a => infoArmee(a)],
-  zurueck: ['ui_sym_rueckzug', 'Zurück', a => { if (a.phase === 'hin' || a.phase === 'sammelt') heimwaerts(a, true); waehlen(null); }],
-  schneller: ['beute_beschleuniger', 'Schneller', a => { if ((a.phase === 'hin' || a.phase === 'rueck') && (a.beschl ?? 12) > 0) {   // Restzeit halbieren, Ort bleibt
-    const f = Math.min(.99, (jetzt - a.t0) / a.dauer); a.dauer = rest(a) / 2 / (1 - f); a.t0 = jetzt - f * a.dauer; a.beschl = (a.beschl ?? 12) - 1; } waehlen(a); }],
+  zurueck: ['ui_sym_rueckzug', 'Zurück', a => {
+    if (a.kampf) return hinweis(a, 'Die Truppen kämpfen schon – zu spät zum Zurückrufen.');
+    if (a.art === 'rally') return hinweis(a, 'Eine Rally gehört allen, die mitmachen – sie kann nicht zurückgerufen werden.');
+    if (a.phase === 'hin' || a.phase === 'sammelt') { heimwaerts(a, true); hinweis(a, a.art === 'spaeher' ? 'Dein Späher kehrt um.' : 'Deine Truppen kehren um.'); } waehlen(null); }],
+  schneller: ['ui_edelstein', 'Schneller', (a, knopf) => { if (!schnellBar(a) || !edelsteineZahlen('m' + a.id, schnellKosten(a), knopf, a)) return; halbieren(a); waehlen(a); }],
   rally: ['ui_sym_rally', 'Rally', a => karteInfo('Rally', a.rally.mitglieder.map(m => `${m.name} · ${fmtCompact(m.truppen)}`))],
   angreifen: ['ui_sym_schwert', 'Angreifen', a => { const b = basis('eigen'); armee({ seite: 'eigen', von: b, ziel: { x: pos(a).x, y: pos(a).y, art: 'feld', name: a.name }, held: 'aldric', name: '[NW]Alex', truppen: 12.4e6, ohneKampf: true }); waehlen(null); }],
   spaehen: ['ui_sym_spaeher', 'Spähen', a => { const b = basis('eigen'), q = pos(a); armee({ seite: 'eigen', art: 'spaeher', von: b, ziel: { x: q.x, y: q.y, art: 'feld', name: a.name }, name: '[NW]Alex', truppen: 1, dauer: 4 }); waehlen(null); }],
@@ -776,10 +799,10 @@ const KNOPF = {
 function waehlen(a) {
   gewaehlt = a; const box = $('knoepfe'); box.innerHTML = '';
   if (!a) return;
-  const liste = a.seite === 'eigen' ? ['info', 'zurueck', 'schneller', ...(a.rally ? ['rally'] : [])] : ['info', 'angreifen', 'spaehen'];
+  const liste = a.seite === 'eigen' ? ['info', 'zurueck', ...(a.kampf ? [] : ['schneller']), ...(a.rally ? ['rally'] : [])] : ['info', 'angreifen', 'spaehen'];
   for (const n of liste) { const [bild, text, tun] = KNOPF[n], b = document.createElement('button'); b.dataset.knopf = n;
-    b.innerHTML = `<img alt="" src="${quelle(bild, SPIEL_BILD_PFAD)}"><span>${text}</span>` + (n === 'schneller' ? `<i>${a.beschl ?? 12}</i>` : '');
-    b.addEventListener('click', e => { e.stopPropagation(); tun(a); }); box.appendChild(b); }
+    b.innerHTML = `<img alt="" src="${quelle(bild, SPIEL_BILD_PFAD)}"><span>${text}</span>` + (n === 'schneller' ? `<i>${schnellKosten(a)}</i>` : '');   // (Preis in Edelsteinen)
+    b.addEventListener('click', e => { e.stopPropagation(); tun(a, b); }); box.appendChild(b); }
   knoepfeSetzen();
 }
 function knoepfeSetzen() {                             // Halbkreis über der Armee, 44 px, 8 px Abstand; folgt der Armee
@@ -818,6 +841,7 @@ $('mehr-knopf').addEventListener('click', () => { const m = $('mehr'); m.classLi
 const SEITEN = ['eigen', 'bund', 'feind', 'barb'], SEITE_NAME = { eigen: 'eigen', bund: 'Bündnis', feind: 'Feind', barb: 'Barbaren' };
 $('seite').addEventListener('click', e => { seite = SEITEN[(SEITEN.indexOf(seite) + 1) % 4]; e.target.dataset.s = seite; e.target.textContent = 'Seite: ' + SEITE_NAME[seite]; });
 $('tempo').addEventListener('click', e => { tempo = tempo === 1 ? 5 : 1; e.target.textContent = 'Tempo ×' + tempo; e.target.classList.toggle('an', tempo > 1); });
+$('alle').addEventListener('click', e => alleSchneller(e.target));
 $('drei').addEventListener('click', () => { dreiAngriffe(); zustandText = '3 Angriffe'; });
 document.querySelectorAll('#mehr [data-erg]').forEach(b => b.addEventListener('click', () => { ERGEBNIS[b.dataset.erg](); zustandText = b.textContent; }));
 document.querySelectorAll('#mehr [data-dazu]').forEach(b => b.addEventListener('click', () => { DAZU[b.dataset.dazu](); zustandText = b.textContent; }));
@@ -841,7 +865,7 @@ function bild(t) {
   schritt(dtBild); malen(); knoepfeSetzen();
   bilder++; if (t - bpsZeit >= 1000) { bps = Math.round(bilder * 1000 / (t - bpsZeit)); bilder = 0; bpsZeit = t;
     $('bps').textContent = bps + ' Bilder/s'; $('bps').classList.toggle('schlecht', bps < 30); zoomText();
-    $('zeile').innerHTML = `<b>${ZOOM_NAME[{ nah: 'nah', mittel: 'mittel', weit: 'weit', 'ganz weit': 'ganz' }[stufeJetzt()]]}</b> · ${zustandText} · ${armeen.length} Armeen · ${bps} Bilder/s`; }
+    $('zeile').innerHTML = `<b>${ZOOM_NAME[{ nah: 'nah', mittel: 'mittel', weit: 'weit', 'ganz weit': 'ganz' }[stufeJetzt()]]}</b> · ${zustandText} · ${armeen.length} Armeen · 💎 ${NF.format(D.edelsteine)} · ${bps} Bilder/s`; }
   requestAnimationFrame(bild);
 }
 ZUSTAND.marsch(); seite = 'feind'; ZUSTAND.marsch(); seite = 'eigen'; zustandText = 'Marsch';

@@ -1059,6 +1059,8 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Gruppe 4 (Weg/Tempo wie `travelDurationSeconds`, `tollFor`): Laufzeit = Strecke ÷ 540/s, 6–60 s (vorher erfundenes Tempo);
   Späher und Rally ohne erfundene ×1,8/×0,8; „Über den Pass“: Knick-Linie über Pass 8, Maut beim Losschicken (Stufe × 1000 je Truppe,
   100 … 560.000, Hinweis mit Münz-Kachel), Tor zu = kein Weg (kein Warten am Tor); Zurückrufen: zurück so lange, wie schon gelaufen.
+  Gruppe 5 (`speedUpMarch`/`speedUpAll`/`recallMarch`): „Schneller“ kostet 1 Edelstein je angefangene Restminute (Preis am Knopf),
+  ab 500 erst „Wirklich?“, nicht im Kampf; „Alle schneller“; Zurück im Kampf „zu spät zum Zurückrufen“, Rally nie, Späher „kehrt um“.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
