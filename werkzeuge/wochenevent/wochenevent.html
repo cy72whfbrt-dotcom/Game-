@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wochen-Event Ansicht</title>
+<link rel="stylesheet" href="../../Game/schrift/schrift.css">
+<!-- Stil + Symbole wie im Spiel: aus werkzeuge/thronevent (neu holen mit ../thronevent/stil_holen.sh) -->
+<link rel="stylesheet" href="../thronevent/spiel_stil.css">
+<style>
+  /* Nur Ansicht zum Zeigen (Wochen-Event Mo–Fr): Regeln/Zahlen sind Vorschlag, nicht im Spiel. Ansicht: ?a=mo|di|mi|do|fr|rang */
+  body { background: #0d1118 url(../../Game/bilder/karte_boden_mitte.webp) center/cover; }
+  body::after { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,.45); pointer-events: none; }
+  .panel.is-open { z-index: 5; animation: none; }
+  .panel--sheet { --sheet-max: calc(100dvh - 52px); top: auto; bottom: 0; }
+  .wahl { position: fixed; top: 8px; left: 8px; right: 8px; z-index: 6; display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; }
+  .wahl a { padding: 4px 8px; border-radius: 12px; background: rgba(0,0,0,.6); border: 1px solid var(--line-2); color: var(--tx-2); font: 600 11px var(--font-ui); text-decoration: none; }
+  .wahl a.on { color: var(--gold-100); border-color: var(--gold-300); }
+  /* Chips: läuft = grüner Punkt, sonst grau */
+  .p5-chip .ev-st { width: 7px; height: 7px; border-radius: 50%; background: #5b6070; flex: none; }
+  .p5-chip .ev-st.an { background: #5cdb6a; box-shadow: 0 0 6px #5cdb6a; }
+  .p5-chip small { font: 600 9.5px/1 var(--font-ui); color: var(--tx-3); white-space: nowrap; }
+  .p5-chip.active small { color: inherit; opacity: .75; }
+  #goalsTabs .p5-chip { padding: 0 9px; }
+  /* Tag-Leiste Mo–Fr: heute hervorgehoben, sonst grau („vorbei“/„morgen“) */
+  .tage { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 3px; }
+  .tage div { padding: 5px 2px; border-radius: 6px; background: rgba(255,255,255,.04); border: 1px solid var(--line-1); text-align: center; font: 600 9.5px/1.2 var(--font-ui); color: var(--tx-3); opacity: .6; }
+  .tage b { display: block; font-size: 11.5px; color: var(--tx-2); }
+  .tage .icon { width: 16px; height: 16px; display: block; margin: 2px auto; }
+  .tage div.jetzt { opacity: 1; border-color: var(--gold-300); background: rgba(214,170,90,.16); color: var(--gold-100); }
+  .tage div.jetzt b { color: var(--gold-100); }
+  /* So gibt es heute Punkte */
+  .pkt { display: flex; flex-direction: column; gap: 4px; }
+  .pkt div { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; background: rgba(255,255,255,.04); border: 1px solid var(--line-1); font: 500 var(--fs-12)/1.3 var(--font-ui); color: var(--tx-2); }
+  .pkt div b { margin-left: auto; color: var(--gold-100); white-space: nowrap; }
+  .pkt .icon { width: 16px; height: 16px; flex: none; }
+  .meine { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .meine div { padding: 6px 8px; border-radius: 8px; background: rgba(0,0,0,.25); border: 1px solid var(--line-1); text-align: center; font: 600 10.5px var(--font-ui); color: var(--tx-3); }
+  .meine b { display: block; font: 700 16px var(--font-display); color: var(--gold-100); }
+  /* Rang-Belohnungen wie Thron-Event: farbiges Band, darunter Kacheln */
+  .rang { display: flex; flex-direction: column; gap: 5px; }
+  .rband { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px; border-radius: 6px 16px 16px 6px; font: 800 13px var(--font-ui); color: #fff; text-shadow: 0 1px 2px #000; }
+  .rband.p1 { background: linear-gradient(90deg, #b8861f, #f2cf6a 60%, transparent); }
+  .rband.p2 { background: linear-gradient(90deg, #7d8790, #d3dbe2 60%, transparent); }
+  .rband.p3 { background: linear-gradient(90deg, #8a4f22, #d08a4f 60%, transparent); }
+  .rband.p4 { background: linear-gradient(90deg, #3d5a86, #6f93c8 60%, transparent); }
+  .rband.p5 { background: linear-gradient(90deg, #4a4033, #7a6a52 60%, transparent); }
+  .rband img { width: 22px; height: 22px; }
+  .rband span { margin-left: auto; font-size: 11px; font-weight: 600; }
+  .thron-satz { display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; background: rgba(90,160,255,.1); border: 1px solid rgba(150,210,255,.35); font: 500 var(--fs-12)/1.3 var(--font-ui); color: var(--tx-2); }
+  .platzh { outline: 2px dashed #ff8d82; outline-offset: -2px; }
+</style>
+</head>
+<body>
+<nav class="wahl" id="wahl"></nav>
+
+<!-- ============ EVENTS-Fenster wie im Spiel (#goalsPopup), Chips „Woche“ und „Thron“ ============ -->
+<section id="goalsPopup" class="panel panel--sheet is-open" role="dialog">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><svg class="icon"><use href="#i-event"/></svg></div>
+    <div class="phead-text"><div class="overline">Aufgaben &amp; Ereignisse</div><h3 class="ptitle">Events</h3>
+      <div class="psub"><span class="pill"><svg class="icon"><use href="#i-flag"/></svg><b>4 / 6</b><small>heute</small></span><span class="pill"><svg class="icon"><use href="#i-star"/></svg><b>12 / 40</b><small>Erfolge</small></span></div></div>
+    <button class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="tabs mail-tabs p5-reiter" role="tablist">
+    <button class="tab" type="button"><svg class="icon"><use href="#i-flag"/></svg><span>Aufgaben</span></button>
+    <button class="tab" type="button"><svg class="icon"><use href="#i-shop"/></svg><span>Abholen</span></button>
+    <button class="tab" type="button"><svg class="icon"><use href="#i-crown"/></svg><span>Pass</span></button>
+    <button class="tab active" type="button"><svg class="icon"><use href="#i-event"/></svg><span>Ereignisse</span><span class="badge">!</span></button>
+  </div>
+  <div id="goalsTabs" class="p5-chips" role="tablist"></div>
+  <div class="pbody"><div class="ev-body" id="eventBody"></div></div>
+</section>
+
+<script src="../thronevent/symbole.js"></script>
+<script>
+// Nur Ansicht: Markup und Klassen wie im Spiel (renderEvents, evLeisteHtml, beuteKachel)
+const B = '../../Game/bilder/';
+const icon = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"/></svg>';
+const kachel = (bild, r, zahl, platzh) => '<span class="bk' + (platzh ? ' platzh' : '') + '" data-r="' + r + '"><img src="' + B + bild + '.webp" alt="">' + (zahl ? '<b>' + zahl + '</b>' : '') + '</span>';
+const zahl = n => n.toLocaleString('de-DE');
+const A = new URLSearchParams(location.search).get('a') || 'mo';
+const TAGE = ['mo', 'di', 'mi', 'do', 'fr'], heute = A === 'rang' ? 4 : Math.max(0, TAGE.indexOf(A)), rangSicht = A === 'rang';
+document.getElementById('wahl').innerHTML = [...TAGE, 'rang'].map(k => '<a href="?a=' + k + '"' + (k === A ? ' class="on"' : '') + '>' + (k === 'rang' ? 'Rangliste' : k[0].toUpperCase() + k[1]) + '</a>').join('');
+
+// Chips: nur Woche und Thron; grüner Punkt = läuft gerade
+document.getElementById('goalsTabs').innerHTML = [['Woche', true, ''], ['Thron', false, 'Sa 10']].map(([t, an, ab]) =>
+  '<button class="p5-chip' + (t === 'Woche' ? ' active' : '') + '" type="button"><i class="ev-st' + (an ? ' an' : '') + '"></i><span>' + t + '</span>' + (ab ? '<small>' + ab + '</small>' : '') + '</button>').join('');
+
+// Die fünf Tages-Events: Name, Symbol, so gibt es Punkte
+const EVENTS = [
+  { k: 'Mo', name: 'Bauherr', ic: 'upgrade', pkt: [['upgrade', 'Gebäude eine Stufe ausbauen', '30 P. × Stufe'], ['hourglass', 'Je Minute Beschleunigen (Bauen)', '1'], ['gem', 'Je Edelstein ausgegeben', '2']] },
+  { k: 'Di', name: 'Krieger', ic: 'attack', pkt: [['attack', 'Je getötete gegnerische Truppe', '1'], ['shield', 'Gilt im Angriff und in der Abwehr', '']] },
+  { k: 'Mi', name: 'Sammeln', ic: 'crate', pkt: [['crate', 'Je 100 Rohstoffe von der Karte gesammelt', '1'], ['flag', 'Funde und Felder zählen gleich', '']] },
+  { k: 'Do', name: 'Boss-Jagd', ic: 'crown', pkt: [['crown', 'Boss erscheint nur heute auf der Karte', ''], ['attack', 'Je 1.000 Schaden am Boss', '1']] },
+  { k: 'Fr', name: 'Helden-Tag', ic: 'star', pkt: [['star', 'Helden-Stufe aufsteigen', '100'], ['shield', 'Ausrüstung schmieden oder verbessern', '150'], ['crate', 'Kiste öffnen', '120']] }
+];
+const EV = EVENTS[heute], tagPkt = [7400, 5100, 9800, 3600, 2200][heute], wochePkt = [7400, 12500, 22300, 25900, 28100][heute];
+
+// Kisten-Leiste: gleich jeden Tag (Punkte dieses Tages)
+const EM = 'beute_thron';                                  // Event-Münze: Platzhalter, bis eigenes Bild da ist
+const KISTEN = [
+  [1000, 'kiste_ausruestung', [[EM, 'gruen', '50', 1], ['beute_edelsteine', 'gruen', '10'], ['beute_muenzen', 'gruen', '1 Std.']]],
+  [3000, 'kiste_gross', [[EM, 'blau', '100', 1], ['beute_edelsteine', 'blau', '20'], ['beute_beschleuniger', 'blau', '30 Min.']]],
+  [6000, 'kiste_gross', [[EM, 'blau', '150', 1], ['beute_edelsteine', 'blau', '30'], ['beute_truppen', 'blau', '2 Std.']]],
+  [12000, 'kiste_episch', [[EM, 'lila', '250', 1], ['beute_edelsteine', 'lila', '50'], ['beute_beschleuniger', 'lila', '2 Std.']]],
+  [20000, 'kiste_royal', [[EM, 'gold', '400', 1], ['beute_edelsteine', 'gold', '80'], ['kiste_episch_zu', 'gold', '1']]]
+];
+function leiste(wert, an) {
+  const n = KISTEN.length; let k = 0; while (k < n && wert >= KISTEN[k][0]) k++;
+  const a = k ? KISTEN[k - 1][0] : 0, f = k >= n ? 1 : Math.min(1, (wert - a) / (KISTEN[k][0] - a)), pos = k >= n ? 1 : (k ? k - .5 + f : f * .5) / n;
+  const st = i => !an ? 'zu' : i < k - 1 ? 'ok' : i === k - 1 ? 'hol' : 'zu';
+  const knoten = KISTEN.map(([ab, kb], i) => { const s = st(i), tag = s === 'hol' ? 'button' : 'span';
+    return '<' + tag + ' class="evl-k is-' + s + '"' + (tag === 'button' ? ' type="button"' : '') + '><span class="evl-bild"><img src="' + B + kb + (s === 'ok' ? '_offen' : '_zu') + '.webp" alt="">' +
+      (s === 'ok' ? '<i class="evl-haken"><img src="' + B + 'ui_sym_haken.webp" alt=""></i>' : '') + '</span><small>' + zahl(ab) + '</small></' + tag + '>'; }).join('');
+  const zeilen = KISTEN.map(([ab, kb, L], i) => { const s = st(i);
+    return '<div class="evl-z is-' + s + '"><b>' + zahl(ab) + ' P.</b><div class="bk-raster bk-mini">' + L.map(([b, r, z, p]) => kachel(b, r, z, p)).join('') + '</div><span class="evl-st">' +
+      (s === 'hol' ? '<button class="btn btn--primary btn--sm" type="button"><span>Abholen</span></button>' : s === 'ok' ? '<img src="' + B + 'ui_sym_haken.webp" alt=""><small>Abgeholt</small>' : icon('lock')) + '</span></div>'; }).join('');
+  return '<div class="evl" style="--n:' + n + '"><div class="evl-bahn"><div class="evl-spur"><i style="width:' + (an ? pos * 100 : 0).toFixed(1) + '%"></i></div>' + knoten + '</div></div><div class="evl-zeilen">' + zeilen + '</div>';
+}
+
+// Wochen-Rangliste: Punkte Mo–Fr zusammen, Freitag 20 Uhr Auswertung
+const RAENGE = [
+  ['p1', 'Platz 1', 'ui_rang_legende', '', [[EM, 'gold', '3.000', 1], ['beute_edelsteine', 'gold', '500'], ['kiste_royal_zu', 'gold', '2'], ['beute_beschleuniger', 'gold', '24 Std.']]],
+  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200', 1], ['beute_edelsteine', 'lila', '350'], ['kiste_royal_zu', 'lila', '1'], ['beute_beschleuniger', 'lila', '15 Std.']]],
+  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700', 1], ['beute_edelsteine', 'lila', '250'], ['kiste_episch_zu', 'lila', '2'], ['beute_beschleuniger', 'lila', '10 Std.']]],
+  ['p4', 'Platz 4–10', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000', 1], ['beute_edelsteine', 'blau', '150'], ['kiste_episch_zu', 'blau', '1'], ['beute_beschleuniger', 'blau', '5 Std.']]],
+  ['p4', 'Platz 11–50', 'ui_rang_platingraf', '', [[EM, 'blau', '500', 1], ['beute_edelsteine', 'blau', '80'], ['kiste_gross_zu', 'blau', '1'], ['beute_beschleuniger', 'blau', '2 Std.']]],
+  ['p5', 'Ab Platz 51', 'ui_rang_neuling', 'alle mit mind. 1 Punkt', [[EM, 'gruen', '200', 1], ['beute_edelsteine', 'gruen', '20'], ['kiste_gross_zu', 'gruen', '1']]]
+];
+const TOP = [['Seewolf', 61200], ['Morgana', 48800], ['Ragnar', 41500], ['Eisenfaust', 33900], ['Krähe', 30100], ['Du', wochePkt]].sort((a, b) => b[1] - a[1]);
+const liste = '<ol class="barb-rank">' + TOP.map(([n, p], i) => '<li' + (n === 'Du' ? ' class="me"' : '') + '><em>' + (i + 1) + '</em><span>' + n + '</span><b>' + zahl(p) + ' P.</b></li>').join('') + '</ol>';
+const meinPlatz = TOP.findIndex(x => x[0] === 'Du') + 1;
+const preise = RAENGE.map(([k, name, bild, zusatz, L]) => '<div class="rang"><div class="rband ' + k + '"><img src="' + B + bild + '.webp" alt="">' + name + (zusatz ? '<span>' + zusatz + '</span>' : '') + '</div><div class="bk-raster">' +
+  L.map(([b, r, z, p]) => kachel(b, r, z, p)).join('') + '</div></div>').join('');
+
+const tage = '<div class="tage">' + EVENTS.map((e, i) => '<div' + (i === heute ? ' class="jetzt"' : '') + '><b>' + e.k + '</b>' + icon(e.ic) + e.name + '<br>' + (i === heute ? 'heute' : i < heute ? 'vorbei' : i === heute + 1 ? 'morgen' : e.k) + '</div>').join('') + '</div>';
+const kopf = '<div class="barb-card ev-card is-tour"><div class="barb-ct"><b>' + icon(EV.ic) + ' ' + EV.k + ' · ' + EV.name + '</b><small>Nur heute · endet in <b>' + ['13:42:05', '09:15:40', '05:02:11', '17:30:58', '08:11:27'][heute] + '</b></small></div>' + tage +
+  '<div class="meine"><div><b>' + zahl(tagPkt) + '</b>Punkte heute</div><div><b>' + zahl(wochePkt) + '</b>Woche · Platz ' + meinPlatz + '</div></div></div>';
+const punkte = '<div class="lb-gap">So gibt es heute Punkte</div><div class="pkt">' + EV.pkt.map(([ic, t, p]) => '<div>' + icon(ic) + '<span>' + t + '</span>' + (p ? '<b>' + p + (/P\./.test(p) ? '' : ' P.') + '</b>' : '') + '</div>').join('') + '</div>';
+const kisten = '<div class="lb-gap">Kisten heute · ab Punkten des Tages</div>' + leiste(tagPkt, true);
+const rang = '<div class="lb-gap">Wochen-Rangliste · Mo–Fr zusammen</div>' + liste +
+  '<div class="lb-gap">Preise nach Platz · Freitag 20 Uhr im Abholfach</div>' + preise;
+const thron = '<div class="thron-satz">' + icon('crown') + '<span>Samstag und Sonntag: <b>Thron-Event</b> – Kampf um den Königsthron (Chip „Thron“).</span></div>';
+document.getElementById('eventBody').innerHTML = rangSicht ? kopf + rang + thron : kopf + punkte + kisten + rang + thron;
+</script>
+</body>
+</html>
