@@ -69,3 +69,4 @@ Leere Zustände mit Symbol + Satz + einem Gold-Knopf (`leerHtml`). Hinweise unte
 
 ## Offen (Merkliste)
 - 11c Nr. 5: alte Event-Ranglisten/Wochen-Punkte beim Reset (prüfen, ob erledigt); Nr. 28: Invasionsleiste „0 P.“.
+- Test-Ansicht Thron-Event (Vorschlag, noch nicht im Spiel): `werkzeuge/thronevent/thronevent.html` (Event-Fenster, Rang-Belohnungen, Herrscher, Event-Shop, Karte mit Kuppel).

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thron-Event Ansicht</title>
+<link rel="stylesheet" href="../../Game/schrift/schrift.css">
+<style>
+  /* Nur Ansicht zum Zeigen (Thron-Event): Regeln/Zahlen sind Vorschlag, nicht im Spiel */
+  :root { --tx-1: #f3e2bd; --tx-2: #c9b48a; --gold: #eab24a; --ui: 'Inter', system-ui, sans-serif; --font-ui: var(--ui); }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #14110c; color: var(--tx-1); font: 14px/1.4 var(--ui); }
+  main { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; padding: 16px; }
+  .f { width: 100%; max-width: 380px; background: linear-gradient(180deg, #33281a, #1f1910); border: 2px solid #8a6a3a;
+    border-radius: 14px; padding: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.6); }
+  .f > h2 { margin: -12px -12px 10px; padding: 12px 8px; text-align: center; font: 800 18px var(--ui); color: #fff6dc;
+    background: url(../../Game/bilder/ui_band_gold.webp) center/100% 100% no-repeat; text-shadow: 0 2px 3px #000; }
+  .nr { font: 700 11px var(--ui); color: var(--tx-2); text-transform: uppercase; letter-spacing: .06em; margin: 0 0 6px; }
+  h3 { margin: 12px 0 6px; font: 700 14px var(--ui); color: #e4c886; }
+  .uhr { display: flex; align-items: center; gap: 10px; background: rgba(0,0,0,.35); border-radius: 10px; padding: 8px 10px; }
+  .uhr img { width: 34px; height: 34px; }
+  .uhr b { font: 800 22px var(--ui); color: #fff; font-variant-numeric: tabular-nums; }
+  .regeln { margin: 6px 0 0; padding-left: 18px; color: var(--tx-1); font-size: 13px; }
+  .regeln li { margin: 2px 0; }
+  .ich { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+  .ich div { background: rgba(0,0,0,.35); border: 1px solid #6b5230; border-radius: 10px; padding: 8px; text-align: center; }
+  .ich small { display: block; color: var(--tx-2); font-size: 11px; }
+  .ich b { font: 800 20px var(--ui); color: var(--gold); }
+  .knopf { display: block; width: 100%; min-height: 44px; margin-top: 10px; font: 700 15px var(--ui); color: #fff6dc; background: #8a6326;
+    border: 1px solid #e4c886; border-radius: 10px; }
+  .knopf.klein { display: inline-block; width: auto; min-height: 36px; margin: 0; padding: 0 12px; font-size: 13px; }
+  .knopf[disabled] { background: #3a3024; color: #8d7c60; border-color: #5a4a34; }
+  /* Kacheln wie im Spiel (05y): Seltenheits-Rahmen + Zahl */
+  .bk { position: relative; display: block; flex: none; width: var(--bk, 52px); height: var(--bk, 52px);
+    background: url(../../Game/bilder/ui_kachel_grau.webp) center/100% 100% no-repeat; filter: drop-shadow(0 2px 3px rgba(0,0,0,.5)); }
+  .bk[data-r="gruen"] { background-image: url(../../Game/bilder/ui_kachel_gruen.webp); } .bk[data-r="blau"] { background-image: url(../../Game/bilder/ui_kachel_blau.webp); }
+  .bk[data-r="lila"] { background-image: url(../../Game/bilder/ui_kachel_lila.webp); } .bk[data-r="gold"] { background-image: url(../../Game/bilder/ui_kachel_gold.webp); }
+  .bk[data-r="rot"] { background-image: url(../../Game/bilder/ui_kachel_rot.webp); }
+  .bk > img { position: absolute; left: 10%; top: 9%; width: 80%; height: 80%; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(0,0,0,.6)); }
+  .bk > b { position: absolute; right: 7%; bottom: 5%; font: 800 calc(var(--bk, 52px) * .23)/1 var(--ui); color: #fff; white-space: nowrap;
+    text-shadow: 0 0 2px #000, 0 1px 2px #000, 1px 0 1px #000, -1px 0 1px #000; }
+  .bk.platz > img { opacity: .55; }
+  .reihe { display: flex; flex-wrap: wrap; gap: 5px; }
+  /* Rang-Belohnungen wie RoK: farbiges Band, darunter Kacheln */
+  .rang { margin-bottom: 10px; }
+  .band { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 6px 16px 16px 6px; font: 800 14px var(--ui);
+    color: #fff; text-shadow: 0 1px 2px #000; margin-bottom: 6px; }
+  .band.p1 { background: linear-gradient(90deg, #b8861f, #f2cf6a 60%, transparent); }
+  .band.p2 { background: linear-gradient(90deg, #7d8790, #d3dbe2 60%, transparent); }
+  .band.p3 { background: linear-gradient(90deg, #8a4f22, #d08a4f 60%, transparent); }
+  .band.p4 { background: linear-gradient(90deg, #3d5a86, #6f93c8 60%, transparent); }
+  .band.p5 { background: linear-gradient(90deg, #4a4033, #7a6a52 60%, transparent); }
+  .band img { width: 24px; height: 24px; }
+  .band span { margin-left: auto; font-size: 11px; font-weight: 600; }
+  /* Herrscher */
+  .herr { display: flex; gap: 10px; align-items: center; }
+  .bild { position: relative; width: 72px; height: 72px; flex: none; border-radius: 50%; background: #1b2638; }
+  .bild img { width: 100%; height: 100%; }
+  .bild.leucht { box-shadow: 0 0 14px 4px rgba(255, 210, 90, .8); animation: leucht 2s ease-in-out infinite; }
+  @keyframes leucht { 50% { box-shadow: 0 0 22px 8px rgba(255, 230, 140, .95); } }
+  .titel { display: grid; grid-template-columns: 34px 1fr auto; gap: 8px; align-items: center; padding: 6px; border-bottom: 1px solid rgba(138,106,58,.4); }
+  .titel img { width: 34px; height: 34px; }
+  .titel small { display: block; color: #8fd67a; font-size: 11px; }
+  .titel small.boese { color: #ff8d82; }
+  .titel .wer { font-size: 12px; color: var(--tx-2); }
+  .kisten { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; text-align: center; }
+  .kisten > div { background: rgba(0,0,0,.35); border-radius: 10px; padding: 6px 2px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; }
+  /* Shop: 3 Spalten */
+  .geld { display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,.35); border-radius: 10px; padding: 6px 10px; }
+  .geld b { display: flex; align-items: center; gap: 4px; font: 800 16px var(--ui); color: var(--gold); }
+  .geld img { width: 24px; height: 24px; }
+  .shop { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  .ware { background: rgba(0,0,0,.4); border: 1px solid #6b5230; border-radius: 10px; padding: 6px 4px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .ware .bk { --bk: 60px; }
+  .ware small { font-size: 11px; color: var(--tx-1); text-align: center; line-height: 1.15; min-height: 26px; }
+  .ware em { font-style: normal; font-size: 10.5px; color: var(--tx-2); }
+  .ware button { width: 100%; min-height: 32px; display: flex; align-items: center; justify-content: center; gap: 3px; font: 800 13px var(--ui); color: #fff6dc;
+    background: #2f6a2c; border: 1px solid #8fd67a; border-radius: 8px; }
+  .ware button img { width: 16px; height: 16px; }
+  .ware.leer { opacity: .5; } .ware.leer button { background: #3a3024; border-color: #5a4a34; }
+  /* Karte: Mitte + 4 Türme */
+  .karten { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .karte { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; background: url(../../Game/bilder/karte_boden_mitte.webp) center/cover; }
+  .karte img { position: absolute; transform: translate(-50%, -50%); }
+  .karte .thron { left: 50%; top: 50%; width: 46%; }
+  .karte .turm { width: 22%; }
+  .karte .kuppel { position: absolute; left: 50%; top: 50%; width: 96%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, rgba(255,255,255,.35), rgba(120,190,255,.18) 45%, rgba(90,160,255,.35) 70%, rgba(150,210,255,.6));
+    border: 2px solid rgba(180,225,255,.8); box-shadow: 0 0 18px rgba(120,190,255,.7); }
+  .karte .schuss { position: absolute; height: 3px; background: linear-gradient(90deg, #ffb35c, #ff5a2c); transform-origin: 0 50%; border-radius: 2px; box-shadow: 0 0 6px #ff7a3c; }
+  .karte b { position: absolute; left: 6px; bottom: 6px; font: 700 11px var(--ui); background: rgba(0,0,0,.6); padding: 2px 6px; border-radius: 6px; }
+  .platzh { outline: 2px dashed #ff8d82; outline-offset: -2px; }
+  .hinweis { font-size: 11px; color: #ff8d82; margin-top: 6px; }
+</style>
+</head>
+<body>
+<main>
+
+<section class="f" id="s1">
+  <h2>Kampf um den Königsthron</h2>
+  <p class="nr">1 · Event-Fenster</p>
+  <div class="uhr"><img src="../../Game/bilder/ui_sym_zeit.webp" alt=""><div><small>Event endet in</small><br><b>1 T 09:42:17</b></div></div>
+  <ul class="regeln">
+    <li>Jeden <b>Samstag 10 Uhr bis Sonntag 22 Uhr</b>. Sonst liegt eine Kuppel über Thron und Türmen.</li>
+    <li><b>Königsthron</b>: 30 Punkte je 10 Min. für den Halter, Verbündete darin 15.</li>
+    <li><b>4 Wachtürme</b>: je 15 Punkte je 10 Min.</li>
+    <li>Türme schießen alle 10 Min. 2 % auf den Thron – nie auf das eigene Bündnis.</li>
+    <li>Punkte starten jedes Wochenende bei 0. Platz 1 wird <b>Herrscher</b> für 1 Woche.</li>
+  </ul>
+  <div class="ich"><div><small>Meine Punkte</small><b>1.230</b></div><div><small>Mein Rang</small><b>Platz 6</b></div></div>
+  <h3>Gerade an der Spitze</h3>
+  <div class="titel"><img src="../../Game/bilder/ui_rang_legende.webp" alt=""><div><b>1. Seewolf</b><small>Hält den Königsthron</small></div><span class="wer">4.860</span></div>
+  <div class="titel"><img src="../../Game/bilder/ui_rang_diamantherzog.webp" alt=""><div><b>2. Morgana</b><small>Wachturm Nord</small></div><span class="wer">3.115</span></div>
+  <div class="titel"><img src="../../Game/bilder/ui_rang_goldfuerst.webp" alt=""><div><b>3. Ragnar</b><small>Wachturm Ost</small></div><span class="wer">2.940</span></div>
+  <button class="knopf">Zum Königsthron</button>
+</section>
+
+<section class="f" id="s2">
+  <h2>Rang-Belohnungen</h2>
+  <p class="nr">2 · Am Event-Ende per Post</p>
+  <div id="raenge"></div>
+</section>
+
+<section class="f" id="s3">
+  <h2>Herrscher</h2>
+  <p class="nr">3 · Herrscher-Fenster (1 Woche)</p>
+  <div class="herr">
+    <div class="bild leucht"><img src="../../Game/bilder/ui_wappen.webp" alt="" style="position:absolute;inset:18%;width:64%;height:64%"><img src="../../Game/bilder/ui_rahmen_grossadmiral.webp" alt="" style="position:absolute;inset:0"></div>
+    <div><b style="font-size:17px">Seewolf</b><br><small style="color:var(--tx-2)">Herrscher bis Sa 10:00 · Skin „Königsburg“</small></div>
+  </div>
+  <h3>Titel vergeben</h3>
+  <div class="titel"><img src="../../Game/bilder/ui_sym_schwert.webp" alt=""><div><b>Feldherr</b><small>+5 % Angriff</small></div><span class="wer">Morgana</span></div>
+  <div class="titel"><img src="../../Game/bilder/ui_sym_schild.webp" alt=""><div><b>Burgvogt</b><small>+5 % Verteidigung</small></div><button class="knopf klein">Vergeben</button></div>
+  <div class="titel"><img src="../../Game/bilder/ui_sym_sammeln.webp" alt=""><div><b>Schatzmeister</b><small>+10 % Ertrag</small></div><span class="wer">Ragnar</span></div>
+  <div class="titel"><img src="../../Game/bilder/ui_sym_verluste.webp" alt=""><div><b>Narr</b><small class="boese">−5 % Marschtempo</small></div><button class="knopf klein">Vergeben</button></div>
+  <h3>Kisten verschicken (nicht an dich selbst)</h3>
+  <div class="kisten">
+    <div><span class="bk" data-r="gold"><img src="../../Game/bilder/kiste_royal_zu.webp" alt=""><b>1/2</b></span>Königliche</div>
+    <div><span class="bk" data-r="lila"><img src="../../Game/bilder/kiste_episch_zu.webp" alt=""><b>3/5</b></span>Epische</div>
+    <div><span class="bk" data-r="blau"><img src="../../Game/bilder/kiste_gross_zu.webp" alt=""><b>10/10</b></span>Große</div>
+  </div>
+  <button class="knopf">Kiste an Spieler schicken</button>
+</section>
+
+<section class="f" id="s4">
+  <h2>Event-Shop</h2>
+  <p class="nr">4 · Für Event-Münzen (alle Events)</p>
+  <div class="geld"><b><img class="platzh" src="../../Game/bilder/beute_thron.webp" alt="">2.450</b><small>Neu in 3 T 14 Std.</small></div>
+  <div class="shop" id="shop"></div>
+  <p class="hinweis">Rot gestrichelt = Platzhalter-Bild (Prompt in PROMPTS.md).</p>
+</section>
+
+<section class="f" id="s5">
+  <h2>Thron auf der Karte</h2>
+  <p class="nr">5 · Kartenausschnitt</p>
+  <div class="karten">
+    <div class="karte" id="k1"><b>Unter der Woche: Kuppel</b></div>
+    <div class="karte" id="k2"><b>Event: Türme schießen</b></div>
+  </div>
+  <p class="hinweis">Kuppel und Turm-Bild sind Platzhalter (CSS/Symbol) – Prompts in PROMPTS.md.</p>
+</section>
+
+</main>
+<script>
+// Nur Ansicht: Kacheln wie beuteKachel() im Spiel
+const B = '../../Game/bilder/';
+function kachel(bild, r, zahl, platzh) {
+  return '<span class="bk' + (platzh ? ' platzh' : '') + '" data-r="' + r + '"><img src="' + B + bild + '.webp" alt=""><b>' + zahl + '</b></span>';
+}
+const EM = ['beute_thron', true];                         // Event-Münze: Platzhalter, bis eigenes Bild da ist
+const RAENGE = [
+  ['p1', 'Platz 1', 'ui_rang_legende', 'Herrscher', [[EM, 'gold', '3.000'], ['beute_muenzen', 'gold', '12 Std.'], ['beute_holz', 'gold', '600K'], ['beute_beschleuniger', 'gold', '24 Std.'], ['kiste_royal_zu', 'gold', '2']]],
+  ['p2', 'Platz 2', 'ui_rang_diamantherzog', '', [[EM, 'lila', '2.200'], ['beute_muenzen', 'lila', '8 Std.'], ['beute_holz', 'lila', '400K'], ['beute_beschleuniger', 'lila', '15 Std.'], ['kiste_royal_zu', 'lila', '1']]],
+  ['p3', 'Platz 3', 'ui_rang_goldfuerst', '', [[EM, 'lila', '1.700'], ['beute_muenzen', 'lila', '6 Std.'], ['beute_holz', 'lila', '300K'], ['beute_beschleuniger', 'lila', '10 Std.'], ['kiste_episch_zu', 'lila', '2']]],
+  ['p4', 'Platz 4–8', 'ui_rang_platingraf', '', [[EM, 'blau', '1.000'], ['beute_muenzen', 'blau', '4 Std.'], ['beute_holz', 'blau', '150K'], ['beute_beschleuniger', 'blau', '5 Std.'], ['kiste_episch_zu', 'blau', '1']]],
+  ['p5', 'Teilnahme', 'ui_rang_neuling', 'ab 100 Punkten', [[EM, 'gruen', '300'], ['beute_muenzen', 'gruen', '1 Std.'], ['beute_beschleuniger', 'gruen', '1 Std.'], ['kiste_gross_zu', 'gruen', '1']]]
+];
+document.getElementById('raenge').innerHTML = RAENGE.map(([k, name, bild, zusatz, L]) =>
+  '<div class="rang"><div class="band ' + k + '"><img src="' + B + bild + '.webp" alt="">' + name + (zusatz ? '<span>' + zusatz + '</span>' : '') + '</div><div class="reihe">' +
+  L.map(([b, r, z]) => Array.isArray(b) ? kachel(b[0], r, z, b[1]) : kachel(b, r, z)).join('') + '</div></div>').join('');
+const SHOP = [
+  ['kiste_royal_zu', 'gold', 'Königliche Kiste', 1500, '0/1', true, false],
+  ['beute_edelsteine', 'lila', '500 Edelsteine', 1000, '1/2', false, false],
+  ['beute_beschleuniger', 'lila', '8 Std. Beschleuniger', 600, '2/3', false, false],
+  ['kiste_episch_zu', 'lila', 'Epische Kiste', 500, '0/3', false, false],
+  ['beute_truppen', 'blau', '4 Std. Truppen', 300, '5/5', false, true],
+  ['beute_muenzen', 'blau', '4 Std. Münzen', 250, '1/5', false, false],
+  ['beute_holz', 'gruen', '100K Holz', 150, '0/10', false, false],
+  ['beute_stein', 'gruen', '70K Stein', 150, '0/10', false, false],
+  ['ui_rahmen_champion', 'rot', 'Skin „Goldene Flagge“', 4000, '0/1', true, false]
+];
+document.getElementById('shop').innerHTML = SHOP.map(([b, r, name, preis, lim, platzh, leer]) =>
+  '<div class="ware' + (leer ? ' leer' : '') + '">' + kachel(b, r, '', platzh) + '<small>' + name + '</small><em>Woche ' + lim + '</em>' +
+  '<button' + (leer ? ' disabled' : '') + '><img src="' + B + 'beute_thron.webp" alt="">' + preis.toLocaleString('de-DE') + '</button></div>').join('');
+// Karte: Thron in der Mitte, 4 Türme an den Ecken
+const TUERME = [[18, 18], [82, 18], [18, 82], [82, 82]];
+for (const id of ['k1', 'k2']) {
+  const k = document.getElementById(id); let h = '';
+  if (id === 'k2') h += TUERME.map(([x, y], i) => { const dx = 50 - x, dy = 50 - y, l = Math.hypot(dx, dy) * 0.7;
+    return i === 3 ? '' : '<i class="schuss" style="left:' + x + '%;top:' + y + '%;width:' + l + '%;transform:rotate(' + Math.atan2(dy, dx) + 'rad)"></i>'; }).join('');
+  h += '<img class="thron" src="' + B + 'karte_thron.webp" alt="">';
+  h += TUERME.map(([x, y]) => '<img class="turm platzh" src="' + B + 'karte_waechtertempel.webp" style="left:' + x + '%;top:' + y + '%" alt="">').join('');
+  if (id === 'k1') h += '<i class="kuppel platzh"></i>';
+  k.insertAdjacentHTML('afterbegin', h);
+}
+</script>
+</body>
+</html>
