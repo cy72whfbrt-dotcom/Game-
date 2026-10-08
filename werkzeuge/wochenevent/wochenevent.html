@@ -92,6 +92,12 @@
   .rl-ich li.me { background: linear-gradient(90deg, #1f4a27, #14251a); }
   .rl-ich li { height: 40px; box-shadow: 0 -2px 10px rgba(0,0,0,.6); }
   .rl-ich em { color: #9ff0a8; }
+  /* Lager-Tagesgrenze: Bild + Zahl + Balken */
+  .lg-heute { display: grid; gap: 6px; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.28); border: 1px solid rgba(228,200,134,.3); }
+  .lg-titel { font: 700 12px/1 var(--font-display); color: var(--gold-100); letter-spacing: .06em; } .lg-titel small { font: 600 10.5px var(--font-ui); color: var(--tx-3); letter-spacing: 0; margin-left: 6px; }
+  .lg-grenze { display: flex; align-items: center; gap: 8px; } .lg-grenze .bk { width: 30px; height: 30px; flex: none; }
+  .lg-grenze > span { flex: 1; display: grid; gap: 3px; } .lg-grenze b { font: 700 12.5px/1 var(--font-ui); color: #fff; }
+  .lg-grenze i { display: block; height: 6px; border-radius: 3px; background: linear-gradient(90deg, #e4c886 var(--p), rgba(255,255,255,.12) var(--p)); }
   /* Shop-Kisten */
   .sk-liste { display: flex; flex-direction: column; gap: 8px; }
   .sk { display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 10px; padding: 8px; border-radius: 10px; background: rgba(0,0,0,.3); border: 1px solid var(--line-2); }
@@ -210,12 +216,15 @@ const rang = '<div class="lb-gap">Wochen-Rangliste · Mo–Fr zusammen</div>' + 
   '<div class="lb-gap">Preise nach Platz · Freitag 20 Uhr im Abholfach</div>' + preise;
 const thron = '<div class="thron-satz">' + icon('crown') + '<span>Samstag und Sonntag: <b>Thron-Event</b> – Kampf um den Königsthron (Chip „Thron“).</span></div>';
 // Barbaren-Lager (eigenes Event, letzter Chip): nur feste Münzen je Stufe, zählt nicht für Krieger-Punkte
-// 25K × 1,2^(Stufe−1); Schlüssel 1 ab Stufe 10, 2 Stück ab 20, Schlüssel 2 nur auf Stufe 24–25
-const LAGER = Array.from({ length: 25 }, (x, i) => { const m = Math.round(25 * 1.2 ** i), st = i + 1;
-  return [st, m >= 1000 ? (m / 1000).toFixed(1).replace('.', ',') + ' Mio.' : m + 'K', st >= 20 ? 2 : st >= 10 ? 1 : 0, st >= 24 ? 1 : 0]; }), LG = 4;   // 25 Stufen wie BARB_MAX_L
-const lager = '<div class="barb-card ev-card"><div class="barb-ct"><b>' + icon('attack') + ' Barbaren-Lager</b><small>3 / 20 heute · jeden Tag neu</small></div>' +
+// 30K × 1,15^(Stufe−1); Schlüssel 1 ab Stufe 10, Schlüssel 2 ab Stufe 20; Tagesgrenze 2,5 Mio. Münzen, 3 Schlüssel 1, 1 Schlüssel 2
+const LAGER = Array.from({ length: 25 }, (x, i) => { const m = Math.round(30 * 1.15 ** i), st = i + 1;
+  return [st, m >= 1000 ? (m / 1000).toFixed(2).replace('.', ',') + ' Mio.' : m + 'K', st >= 10 ? 1 : 0, st >= 20 ? 1 : 0]; }), LG = 12;   // 25 Stufen wie BARB_MAX_L
+const balken = (bild, r, txt, hab, max) => '<div class="lg-grenze">' + kachel(bild, r, '') + '<span><b>' + txt + '</b><i style="--p:' + Math.round(100 * hab / max) + '%"></i></span></div>';
+const lager = '<div class="barb-card ev-card"><div class="barb-ct"><b>' + icon('attack') + ' Barbaren-Lager</b><small>7 / 20 Angriffe heute · jeden Tag neu</small></div>' +
+  '<div class="lg-heute"><div class="lg-titel">Heute <small>Tagesgrenze · neu um 0 Uhr</small></div>' +
+  balken('beute_muenzen', 'gold', '1,2 / 2,5 Mio.', 1.2, 2.5) + balken(S1, 'blau', 'Schlüssel 1/3', 1, 3) + balken(S2, 'lila', 'Lila 0/1', 0, 1) + '</div>' +
   '<div class="field-lines"><span>Freigeschaltet</span><b>bis Stufe ' + (LG + 1) + '</b></div>' +
-  '<div class="thron-satz">' + icon('coin') + '<span>Jedes besiegte Lager gibt <b>feste Münzen</b> nach Stufe, ab Stufe 10 auch <b>Schlüssel</b>. Getötete Truppen zählen <b>nicht</b> für den Krieger-Tag.</span></div></div>' +
+  '<div class="thron-satz">' + icon('coin') + '<span>Jedes besiegte Lager gibt <b>feste Münzen</b> nach Stufe, ab Stufe 10 auch <b>Schlüssel</b>, bis die Tagesgrenze voll ist. Getötete Truppen zählen <b>nicht</b> für den Krieger-Tag.</span></div></div>' +
   '<div class="lb-gap">Münzen je Lager-Stufe</div><div class="evl-zeilen">' + LAGER.map(([st, m, k1, k2]) => '<div class="evl-z is-' + (st <= LG ? 'ok' : st === LG + 1 ? 'bald' : 'zu') + '"><b>Stufe ' + st + '</b><div class="bk-raster bk-mini">' + kachel('beute_muenzen', st <= 5 ? 'gruen' : st <= 10 ? 'blau' : st <= 18 ? 'lila' : 'gold', m) + (k1 ? kachel(S1, 'blau', String(k1)) : '') + (k2 ? kachel(S2, 'lila', '1') : '') + '</div><span class="evl-st">' +
     (st <= LG ? '<img src="' + B + 'ui_sym_haken.webp" alt=""><small>besiegt</small>' : st === LG + 1 ? '<small>offen</small>' : icon('lock')) + '</span></div>').join('') + '</div>';
 // Rangliste-Ansicht (6. Feld): Podest Top 3, Liste 4–50, eigener Platz fest unten; Umschalter „Belohnungen“ (?b=1)

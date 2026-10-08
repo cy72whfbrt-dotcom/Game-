@@ -66,4 +66,4 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
   Edelsteine oder Event-Münzen. Kisten-Reiter: öffnen mit Schlüssel oder Edelsteinen.
 - Bilder für Thron-/Wochen-Event (Karte, Herrscher, Titel, Event-Münze, Schlüssel, epische Helden-Kiste, Beschleuniger klein/mittel/groß) liegen in `Game/bilder/`; Test-Dateien nutzen sie (Test `eventbilder_test`), Shop dort mit Reitern Kisten + Event.
 - Lager-Tagesgrenze: höchstens 2,5 Mio. Münzen, 3 Schlüssel 1 und 1 Schlüssel 2 pro Tag. Wochen-Rangliste-Stufen ok
-  (1/2/3/4–10/11–50/Rest). Alte Thron-Punkte: Start bei 0. Shop muss sauber sortiert sein (Reihenfolge in Test-Datei).
+  (1/2/3/4–10/11–50/Rest). Alte Thron-Punkte: Start bei 0. Shop sortiert (Test-Datei): Reiter Kisten · Event · Tempo · Schilde · Markt; Gruppen mit Zwischenüberschrift, je Gruppe nach Wert aufsteigend. Lager: 30K × 1,15^(Stufe−1), Tagesgrenze oben mit Balken.

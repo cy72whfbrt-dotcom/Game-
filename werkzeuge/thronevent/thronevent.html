@@ -8,7 +8,7 @@
 <!-- Stil + Symbole wie im Spiel (aus Game/spiel.php, neu holen mit stil_holen.sh) -->
 <link rel="stylesheet" href="spiel_stil.css">
 <style>
-  /* Nur Ansicht zum Zeigen (Thron-Event): Regeln/Zahlen sind Vorschlag, nicht im Spiel. Ansicht wählen: ?a=woche|wochenende|shopkisten|shop|karte|herrscher */
+  /* Nur Ansicht zum Zeigen (Thron-Event): Regeln/Zahlen sind Vorschlag, nicht im Spiel. Ansicht wählen: ?a=woche|wochenende|shopkisten|shop|shoptempo|karte|herrscher */
   body { background: #0d1118 url(../../Game/bilder/karte_boden_mitte.webp) center/cover; }
   body::after { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,.45); pointer-events: none; }
   .panel.is-open { z-index: 5; animation: none; }
@@ -46,8 +46,18 @@
   .ware .zeit { position: absolute; left: 50%; bottom: 2px; transform: translateX(-50%); font: 800 12px/1 var(--font-ui); color: #fff; text-shadow: 0 1px 2px #000, 0 0 3px #000; white-space: nowrap; }
   .ware-bild { position: relative; }
   .waren--2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .ware-preis.oeffnen { font-size: 13px; gap: 4px; } .ware-preis.oeffnen + .ware-preis.oeffnen, .wirklich + .ware-preis.oeffnen { margin-top: 4px; }
-  .ware .wirklich { display: block; text-align: center; font: 600 10px/1.4 var(--font-ui); color: #ffb37a; padding-bottom: 4px; }
+  .ware-preis.oeffnen { font-size: 13px; gap: 4px; } .ware-preis.oeffnen + .ware-preis.oeffnen { margin-top: 4px; }
+  /* Shop sortiert: Zwischenüberschrift mit Trennlinie, gleich große Kacheln, Preis-Knöpfe unten */
+  .sort-kopf { display: flex; align-items: center; gap: 8px; margin: 14px 0 8px; font: 700 11px/1 var(--font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--gold-100); }
+  .sort-kopf::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, rgba(228,200,134,.45), transparent); }
+  .waren--3 .ware { min-height: 0; }
+  .waren--3 .ware-txt { flex: 1; }
+  .waren--3 .ware-name { font-size: 12px; min-height: 2.4em; display: flex; align-items: center; justify-content: center; }
+  .ware-knoepfe { display: flex; flex-direction: column; gap: 4px; margin: 6px -10px 0; }
+  .ware-knoepfe .ware-preis.zwei { margin: 0; height: 32px; font-size: 12.5px; gap: 3px; }
+  .ev-guthaben { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 10px; background: rgba(0,0,0,.28); border: 1px solid rgba(228,200,134,.3); }
+  .ev-guthaben img { width: 28px; height: 28px; } .ev-guthaben b { font: 800 17px/1 var(--font-display); color: var(--gold-100); }
+  .ev-guthaben small { margin-left: auto; text-align: right; font: 600 11px/1.3 var(--font-ui); color: var(--tx-3); } .ev-guthaben small b { font-size: 12px; }
   /* Karte: Thron in der Mitte, 4 Türme – jeder mit eigener Kuppel */
   .karten { display: grid; gap: 10px; }
   .karte { position: relative; aspect-ratio: 1.25; border-radius: 10px; overflow: hidden; background: url(../../Game/bilder/karte_boden_mitte.webp) center/cover; border: 1px solid var(--line-2); }
@@ -122,10 +132,12 @@
       <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b>1.240</b><small>Edelsteine</small></span><span class="pill pill--throne"><img src="../../Game/bilder/beute_eventmuenze.webp" alt="" style="width:16px;height:16px"><b>2.450</b><small>Event</small></span></div></div>
     <button class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
+  <!-- Reiter-Reihenfolge (Vorschlag): Kisten · Event · Tempo · Schilde · Markt (Händler kommt nur bei Besuch dazu, Thron-Reiter geht im Event auf) -->
   <div id="shopTabs" class="tabs mail-tabs" role="tablist">
     <button class="tab" type="button" id="reiterKisten"><svg class="icon"><use href="#i-gem"/></svg><span>Kisten</span></button>
-    <button class="tab" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Schilde</span></button>
     <button class="tab" type="button" id="reiterEvent"><svg class="icon"><use href="#i-star"/></svg><span>Event</span></button>
+    <button class="tab" type="button" id="reiterTempo"><svg class="icon"><use href="#i-hourglass"/></svg><span>Tempo</span></button>
+    <button class="tab" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Schilde</span></button>
     <button class="tab" type="button"><svg class="icon"><use href="#i-crate"/></svg><span>Markt</span></button>
   </div>
   <div class="pbody">
@@ -191,9 +203,9 @@ const B = '../../Game/bilder/';
 const icon = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"/></svg>';
 const kachel = (bild, r, zahl) => '<span class="bk" data-r="' + r + '"><img src="' + B + bild + '.webp" alt="">' + (zahl ? '<b>' + zahl + '</b>' : '') + '</span>';
 const A = new URLSearchParams(location.search).get('a') || 'woche', ende = A === 'wochenende';
-const ANSICHTEN = [['woche', 'Events Mi'], ['wochenende', 'Events Sa'], ['shopkisten', 'Shop Kisten'], ['shop', 'Shop Event'], ['karte', 'Karte'], ['herrscher', 'Herrscher']];
+const ANSICHTEN = [['woche', 'Events Mi'], ['wochenende', 'Events Sa'], ['shopkisten', 'Shop Kisten'], ['shop', 'Shop Event'], ['shoptempo', 'Shop Tempo'], ['karte', 'Karte'], ['herrscher', 'Herrscher']];
 document.getElementById('wahl').innerHTML = ANSICHTEN.map(([k, t]) => '<a href="?a=' + k + '"' + (k === A ? ' class="on"' : '') + '>' + t + '</a>').join('');
-document.getElementById({ woche: 'goalsPopup', wochenende: 'goalsPopup', shop: 'shopPopup', shopkisten: 'shopPopup', karte: 'kartePopup', herrscher: 'herrPopup' }[A]).classList.add('is-open');
+document.getElementById({ woche: 'goalsPopup', wochenende: 'goalsPopup', shop: 'shopPopup', shopkisten: 'shopPopup', shoptempo: 'shopPopup', karte: 'kartePopup', herrscher: 'herrPopup' }[A]).classList.add('is-open');
 
 // Chips: Woche läuft Mo–Fr, Thron Sa 10 – So 22; grüner Punkt = läuft gerade
 const CHIPS = [['Woche', !ende, ende ? 'ab Mo' : ''], ['Thron', ende, ende ? '' : 'Sa 10'], ['Invasion', false, ''], ['Drache', false, ''], ['Boss', true, ''], ['Lager', true, '']];
@@ -230,35 +242,37 @@ document.getElementById('eventBody').innerHTML =
     '<span>' + icon('attack') + '<span>Türme schießen alle 10 Min. 2 % auf den Thron – nie auf das eigene Bündnis.</span></span>' +
     '<span>' + icon('rank') + '<span>Punkte starten jedes Wochenende bei 0. Platz 1 wird <b>Herrscher</b> für 1 Woche.</span></span></div></details>';
 
-// Shop: Reiter Kisten (öffnen mit Schlüssel oder Edelsteinen) und Event (Event-Münzen, Limit je Woche)
-const preis = (art, n, leer) => '<button type="button" class="ware-preis zwei' + (art === 'm' ? ' thron' : '') + '"' + (leer ? ' disabled' : '') + '>' +
+// Shop sortiert: je Reiter Gruppen mit Zwischenüberschrift, in jeder Gruppe nach Wert aufsteigend, 3 Spalten, Knöpfe unten
+const preis = (art, n, leer, vor) => '<button type="button" class="ware-preis zwei' + (art === 'm' ? ' thron' : '') + '"' + (leer ? ' disabled' : '') + '>' + (vor || '') +
   (art === 'm' ? '<img src="' + B + EM + '.webp" alt="">' : art === 'g' ? icon('gem') : '<img src="' + B + art + '.webp" alt="">') + '<b>' + (typeof n === 'number' ? zahl(n) : n) + '</b></button>';
 const ware = (b, r, name, unter, knoepfe, zeit, leer) => '<div class="ware ware--klein' + (leer ? ' leer' : '') + '" data-r="' + r + '"><span class="ware-bild"><img class="kiste-bild" src="' + B + b + '.webp" alt="">' + (zeit ? '<b class="zeit">' + zeit + '</b>' : '') + '</span>' +
-  '<span class="ware-txt"><b class="ware-name">' + name + '</b><small class="lim">' + unter + '</small></span>' + knoepfe + '</div>';
-// Beschleuniger: Dauer, Edelsteine, Event-Münzen, Woche gekauft/Limit (gilt für Bauen, Forschen, Heilen)
-const TEMPO = [['1 Min', 5, 10, '3/20'], ['5 Min', 20, 40, '0/20'], ['15 Min', 50, 100, '0/10'], ['1 Std', 150, 300, '1/10'], ['3 Std', 400, 800, '0/5'], ['8 Std', 1000, 2000, '2/3'], ['24 Std', 2800, 5500, '0/1']];
-const KISTEN = [['kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', S2, 500, '2 Schlüssel · sicher Lila in 20'], ['kiste_episch_zu', 'lila', 'Epische Ausrüstung', S2, 500, '0 Schlüssel'], ['kiste_held_zu', 'blau', 'Helden-Kiste', S1, 100, '5 Schlüssel'], ['kiste_ausruestung_zu', 'blau', 'Ausrüstungs-Kiste', S1, 100, '5 Schlüssel']];
-// Je Kiste „1× öffnen“ und „10× öffnen“: mit Schlüssel, solange genug da sind, sonst Edelsteine; ab 500 Edelsteinen „Wirklich?“
-const oeffnen = (anz, s, hab, g) => '<button type="button" class="ware-preis zwei oeffnen">' + anz + '× öffnen ' + (hab >= anz ? '<img src="' + B + s + '.webp" alt=""><b>' + anz + '</b>'
-  : icon('gem') + '<b>' + zahl(g * anz) + '</b>') + '</button>' + (hab < anz && g * anz >= 500 ? '<small class="wirklich">fragt „Wirklich?“</small>' : '');
+  '<span class="ware-txt"><b class="ware-name">' + name + '</b><small class="lim">' + unter + '</small></span><span class="ware-knoepfe">' + knoepfe + '</span></div>';
+const gruppe = (titel, waren) => '<div class="sort-kopf">' + titel + '</div><div class="waren waren--3">' + waren.join('') + '</div>';
+// Beschleuniger aufsteigend: Dauer, Edelsteine, Event-Münzen, Woche gekauft/Limit (gilt für Bauen, Forschen, Heilen)
+const TEMPO = [['1 Min', 5, 10, '3/20'], ['5 Min', 20, 40, '0/20'], ['15 Min', 50, 100, '0/10'], ['1 Std', 150, 300, '1/10'], ['3 Std', 400, 800, '0/5'], ['8 Std', 1000, 2000, '3/3'], ['24 Std', 2800, 5500, '0/1']];
+const tempoR = z => /Min/.test(z) ? 'gruen' : /^(1|3) Std/.test(z) ? 'blau' : 'lila';
+// Kisten: Bild, Seltenheit, Name, Schlüssel, Edelsteine je Öffnen, Schlüssel vorhanden
+const KISTE = { aus: ['kiste_ausruestung_zu', 'blau', 'Ausrüstungs-Kiste', S1, 100, 5], ausE: ['kiste_episch_zu', 'lila', 'Epische Ausrüstung', S2, 500, 0],
+  held: ['kiste_held_zu', 'blau', 'Helden-Kiste', S1, 100, 5], heldE: ['kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', S2, 500, 2] };
+// „1ד und „10ד: mit Schlüssel, solange genug da sind, sonst Edelsteine; ab 500 Edelsteinen „Wirklich?“
+const oeffnen = (anz, s, hab, g) => '<button type="button" class="ware-preis zwei oeffnen">' + anz + '× ' + (hab >= anz ? '<img src="' + B + s + '.webp" alt=""><b>' + anz + '</b>' : icon('gem') + '<b>' + zahl(g * anz) + '</b>') + '</button>';
+const kisteWare = k => { const [b, r, name, s, g, hab] = KISTE[k];
+  return ware(b, r, name, hab + ' Schlüssel da', oeffnen(1, s, hab, g) + oeffnen(10, s, hab, g)); };
 const kistenReiter = '<div class="sect"><h4>Kisten öffnen</h4><span class="sect-aside">mit Schlüssel oder Edelsteinen</span></div>' +
-  '<div class="waren waren--2">' + KISTEN.map(([b, r, name, s, g, unter]) => ware(b, r, name, unter, oeffnen(1, s, +unter.split(' ')[0], g) + oeffnen(10, s, +unter.split(' ')[0], g))).join('') + '</div>' +
-  '<div class="sect"><h4>Schlüssel</h4></div><div class="waren waren--3">' +
-  ware(S1, 'blau', 'Schlüssel', 'Woche 1/10', preis('g', 100) + preis('m', 200)) + ware(S2, 'lila', 'Epischer Schlüssel', 'Woche 0/3', preis('g', 500) + preis('m', 1000)) + '</div>' +
-  '<div class="sect"><h4>Beschleuniger</h4><span class="sect-aside">Bauen · Forschen · Heilen</span></div><div class="waren waren--3">' +
-  TEMPO.map(([z, g]) => ware(BE(z), /Min/.test(z) ? 'gruen' : /^(1|3) Std/.test(z) ? 'blau' : 'lila', 'Beschleuniger', 'Edelsteine', preis('g', g), z)).join('') + '</div>';
-const eventReiter = '<div class="sect"><h4>Event-Shop</h4><span class="sect-aside">' + icon('hourglass') + ' Neu in <b>3 T 14:20:05</b></span></div>' +
-  '<p class="mail-intro">Event-Münzen gibt es in allen Events. Die Limits gelten je Woche und füllen sich Montag neu auf.</p>' +
-  '<div class="sect"><h4>Beschleuniger</h4><span class="sect-aside">Edelsteine oder Event-Münzen</span></div><div class="waren waren--3">' +
-  TEMPO.map(([z, g, m, lim]) => { const leer = lim.split('/')[0] === lim.split('/')[1];
-    return ware(BE(z), /Min/.test(z) ? 'gruen' : /^(1|3) Std/.test(z) ? 'blau' : 'lila', 'Beschleuniger', (leer ? 'aus · ' : 'Woche ') + lim, preis('g', g) + preis('m', m, leer), z); }).join('') + '</div>' +
-  '<div class="sect"><h4>Schlüssel und mehr</h4></div><div class="waren waren--3">' +
-  ware(S1, 'blau', 'Schlüssel', 'Woche 1/10', preis('m', 200) + preis('g', 100)) + ware(S2, 'lila', 'Epischer Schlüssel', 'Woche 0/3', preis('m', 1000) + preis('g', 500)) +
-  ware('kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', 'Woche 0/2', preis('m', 1500)) + ware('beute_muenzen', 'blau', '4 Std. Münzen', 'Woche 1/5', preis('m', 250)) +
-  ware('beute_holz', 'gruen', '100K Holz', 'Woche 0/10', preis('m', 150)) + ware('skin_goldene_flagge', 'rot', 'Skin „Goldene Flagge“', 'Woche 0/1', preis('m', 4000)) + '</div>';
-const kistenAnsicht = A === 'shopkisten';
-document.getElementById(kistenAnsicht ? 'reiterKisten' : 'reiterEvent').classList.add('active');
-document.getElementById('shopInhalt').innerHTML = kistenAnsicht ? kistenReiter : eventReiter;
+  gruppe('Ausrüstung', [kisteWare('aus'), kisteWare('ausE')]) + gruppe('Helden', [kisteWare('held'), kisteWare('heldE')]) +
+  gruppe('Schlüssel', [ware(S1, 'blau', 'Schlüssel', '5 da', preis('g', 100)), ware(S2, 'lila', 'Epischer Schlüssel', '1 da', preis('g', 500))]);
+const tempoReiter = '<div class="sect"><h4>Beschleuniger</h4><span class="sect-aside">Bauen · Forschen · Heilen</span></div>' +
+  gruppe('Beschleuniger · Edelsteine', TEMPO.map(([z, g]) => ware(BE(z), tempoR(z), 'Beschleuniger', z, preis('g', g), z)));
+const lim = l => { const [a, b] = l.split('/'); return [a === b ? 'ausverkauft' : 'Woche ' + l, a === b]; };
+const evWare = (b, r, name, l, m, zeit) => { const [t, leer] = lim(l); return ware(b, r, name, t, preis('m', m, leer), zeit, leer); };
+const eventReiter = '<div class="ev-guthaben"><img src="' + B + EM + '.webp" alt=""><span><b>2.450</b><br><small style="margin:0;text-align:left">Event-Münzen</small></span><small>' + icon('hourglass') + ' füllt auf in<br><b>3 T 14:20:05</b> (Mo)</small></div>' +
+  gruppe('Beschleuniger', TEMPO.map(([z, g, m, l]) => evWare(BE(z), tempoR(z), 'Beschleuniger', l, m, z))) +
+  gruppe('Schlüssel', [evWare(S1, 'blau', 'Schlüssel', '1/10', 200), evWare(S2, 'lila', 'Epischer Schlüssel', '0/3', 1000)]) +
+  gruppe('Kisten', [evWare('kiste_held_zu', 'blau', 'Helden-Kiste', '0/5', 250), evWare('kiste_episch_zu', 'lila', 'Epische Ausrüstung', '0/2', 1200), evWare('kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', '0/2', 1500)]) +
+  gruppe('Besonderes', [evWare('skin_goldene_flagge', 'gold', 'Goldene Flagge', '0/1', 4000), evWare('skin_koenigsburg', 'gold', 'Skin Königsburg', '0/1', 8000)]);
+const reiter = { shopkisten: ['reiterKisten', kistenReiter], shoptempo: ['reiterTempo', tempoReiter] }[A] || ['reiterEvent', eventReiter];
+document.getElementById(reiter[0]).classList.add('active');
+document.getElementById('shopInhalt').innerHTML = reiter[1];
 
 // Karte: Thron in der Mitte, 4 Türme an den Ecken – unter der Woche je eine eigene Kuppel
 const TUERME = [[16, 20], [84, 20], [16, 80], [84, 80]];
