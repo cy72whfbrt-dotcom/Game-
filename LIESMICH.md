@@ -401,7 +401,7 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   `pts`, `salvage`, `shields`, `goals`, `ps` (Pass), `tp`, ganze Stadt/Forschung u. a. Der eigene Eintrag (`u<id>`) und der
   Weltrechner bekommen alles. Auch die Profile anderer in `spieler_liste` nur noch öffentlich (`profil_oeffentlich`).
   **Macht:** der Weltrechner rechnet sie jede Minute für alle (`powerOf`, in `hbRunde` neben `tt`, nur bei > 1 % Änderung) –
-  Handys nehmen `b.macht` (Rangliste, Profil, Bündnis, Anfängerschutz-Grenze). **Spähen:** Späher zu einer fremden Basis schickt
+  Handys nehmen `b.macht` (Rangliste, Profil, Bündnis), `tt` auch für die Anfängerschutz-Grenze (100.000 Truppen). **Spähen:** Späher zu einer fremden Basis schickt
   zusätzlich den Befehl `spaehen` mit `blick`; der Weltrechner merkt ihn (`hb.sb`) und schickt bei Ankunft die Nachricht `spaeh`
   (Truppen, Verteidigung, Spähblick wie bisher + Abwehr-Werte `k`) – sie füllt den Kampflog-Eintrag (`spaehBericht`, auch wenn
   sie vor dem eigenen Späher ankommt). Gespähte Abwehr (Insel-Fenster, Angriffs-Vorschau) rechnet mit den Werten aus dem
@@ -986,6 +986,21 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   nach 1,1 s weg; Karten-Hinweise (Invasion …) verschwinden in der Stadt hart statt durchzuscheinen; Desktop startet
   etwas weiter weg (× 0,85) und 40 px tiefer. „ab Burg-Stufe 4“ bricht nicht mehr am Bindestrich um.
   Test: `stadt_fenster_test` erweitert.
+- **7.10. – Saison-Pass 100 Stufen + 6 Tagesaufgaben (Event-Zahlen, Alexander zugestimmt; NICHT hochgeladen):** Pass
+  100 Stufen × 150 Punkte, jede Stufe gibt in beiden Reihen etwas (`passRewardAt` → Liste; frei z. B. 1 = 3 Std. Münzen,
+  2 = 2 Std. Truppen, 3 = Kiste, 4 = 3 Splitter, 5 = 20 Edelsteine, 10 = Königliche Kiste, 25/50/75/100 = 50 + Königliche;
+  Premium 12 Std. Münzen + 10, 6 Std. Truppen, Schild 8 Std., 150 Thron-Punkte, Rahmen bei 100). Edelsteine je Saison frei
+  360, Premium 950. Ansicht: lange waagrechte Leiste (oben Premium, Mitte Stufe, unten Frei) mit Belohnungs-Kacheln (05e).
+  Premium kaufen mit „Wirklich?“ (`gemsWirklich`). Neue Pass-Punkte: Lager besiegt 5, Angriff auf Tagesboss/Drache 10,
+  Invasions-Punkt 1 (`PASS_XP.invPkt` – das Zählen `goalBump(who, 'invPkt', n)` baut der Events-Programmierer ein).
+  Aufgaben: 6 am Tag (2 leicht/2 mittel/2 schwer, 3/5/8 Edelsteine + 1/2/3 Std. Münzen), Bonus bei 3 (2 Std. Truppen) und
+  bei allen 6 (Kiste, 10 Edelsteine, 5 Splitter) – 42 Edelsteine am Tag. 14 neue Arten (Lager, Tagesboss, Sammler,
+  Bau-Hilfe, Verstärkung, Rally, Gegenstand verbessern, zusammenlegen, Heilen, Markt, Tempel, Thron-Minuten, Invasion,
+  Drache), nur was heute geht (Bündnis, Gebäude, Invasions-/Drachen-Tag). Gezählt über neue Zähler (`QUEST_STAT`:
+  lager/qb/qd/qi/qHilfe/qVerst/qRally, auch vom Weltrechner) und die Knöpfe. Weltrechner: Truppen-Quellen `pass` (je
+  Stufe/Reihe einmal je Saison, höchstens so weit wie in der Zeit möglich) und `aufgabe` (höchstens 2 in 24 Std.),
+  Münz-Topf der Aufgaben (12 Std. am Tag, hält 2 Tage), `HB_TAG` Edelsteine 42. Tests: `pass_saison_test`,
+  `aufgabe_sechs_test`, `welt_test` erweitert.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
@@ -999,9 +1014,13 @@ Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 23. ✅ **Sammeln ohne Bericht:** Kehren Sammler zurück, gibt es einen Bericht „Sammler zurück · Goldmine · +… Münzen ·
     … Truppen zurück“ (auch für Zuschauer, über den Weltrechner).
 24. ✅ **Neue Spieler sofort plattgemacht:** **Anfängerschutz** – 48 Std. unangreifbar (für Mitspieler und echte
-    Spieler), auch wenn man selbst Mitspieler/Lager/Felder angreift. Endet früher, sobald die **Macht 50 Mio.** erreicht
-    (wie in der Rangliste) oder man einen echten Spieler angreift. Gilt auch für alle, die schon spielen und ihn noch nie
-    hatten (einmalig ab dem nächsten Start).
+    Spieler), auch wenn man selbst Mitspieler/Lager/Felder angreift. **Neu (Alexander 7.10., Variante B):** Der Schutz endet,
+    sobald EINES eintritt: 48 Std. vorbei, **100.000 Truppen** (Gesamttruppen wie im HUD, `whoTroops`; ersetzt die alte
+    50-Mio.-Macht-Grenze) oder man greift selbst einen echten Spieler an. Solange er steht, kann einen auch **niemand
+    ausspähen** (Spieler, Mitspieler, Weltrechner: `neulingAktiv` in `launchScout`, `botLearn`, Befehl `spaehen`, `spaehRunde`);
+    Mitspieler wählen Neulinge gar nicht erst als Späher-Ziel. Hinweis „Anfängerschutz – noch … (oder bis 100.000 Truppen)“
+    (`neulingBlockText`) bei Spähen/Angreifen, im Schild-Fenster, in der Burg und im Profil. Gilt auch nach dem Saison-Reset.
+    Getestet: `neuling_test`. Gilt auch für alle, die schon spielen und ihn noch nie hatten (einmalig ab dem nächsten Start).
 25. ✅ **Späher durch geschlossene Tore:** Ein geschlossenes fremdes Tor lässt keinen Späher durch (`spaeherWeg`) – gilt
     für dich und die Mitspieler. Gibt es einen anderen Weg ohne geschlossenes Tor, darf er den nehmen.
 27. ✅ **Kopieren/Nachschlagen beim langen Drücken:** Im Spiel lässt sich nichts mehr markieren, kein Kopieren-Menü
@@ -1011,8 +1030,8 @@ Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 29. ✅ **„Hier weiterspielen“ reagierte nicht:** Der Knopf zeigt sofort „Lädt …“, reagiert direkt aufs Tippen, und
     `spiel.php?weiter=1` übernimmt sofort (ohne bis zu 8 s auf das alte Gerät zu warten). Getestet: 1,7 s, altes Gerät fliegt raus.
 26. ✅ **Anfängerschutz auch für Mitspieler:** gleiche Regeln (48 Std. ab Weltstart bzw. ab ihrem Neustart, endet mit
-    50 Mio. Macht oder wenn sie einen echten Spieler angreifen; `botNeulingBis`). Text: „Anfängerschutz: … ist neu und
-    noch … unangreifbar.“
+    100.000 Truppen oder wenn sie einen echten Spieler angreifen; `botNeulingBis`). Text: „Anfängerschutz – noch … (oder bis
+    100.000 Truppen): … ist neu und kann nicht angegriffen und nicht ausgespäht werden.“
 - Hochladen: `hochladen.sh` wartet nach dem Einschalten der Wartung jetzt 10 s, damit jedes laufende Spiel noch
   speichert (beim Wartungs-Fenster wird automatisch gesichert), am Ende geht die Wartung wieder aus.
 
@@ -1640,6 +1659,9 @@ Nacht – vorher bauen und testen.
     nutzen“). → Gebäude sinnlos. Alle Gebäude prüfen: was geht ohne das Gebäude? FRAGE an Alexander beim Abarbeiten:
     Helden erst mit Heldenhalle (Stufe 1) nutzbar? (Empfehlung ja, wie RoK.) Außerdem Zahlen: Heldenhalle kostet 280 Münzen /
     300 Holz bei 180 Mio. Münzen (vgl. Punkt 9: Kosten zu klein); „Fehlt: 259 Holz“ ok.
+    ✅ (7.10.) Helden erst mit Heldenhalle Stufe 1 (`heroHalle` in 08c, für dich und Mitspieler, auch im Weltrechner): ohne Halle
+    zeigt das Helden-Fenster „Baue die Heldenhalle“, kein Freischalten/Aufwerten/Fähigkeiten, kein Held im Marsch; Splitter
+    (Heldenkiste) sammeln geht. Test `heldenhalle_test`. Dazu: Armeen dürfen den Thron auch erst ab Tag 7 angreifen (09d).
 22. **Stadt-Ansicht: außerhalb der Mauer nur die echte Außenkarte** (Bild 189a3a74, 18:35; schon früher gesagt): Jetzt
     stehen außerhalb der Mauer selbst gezeichnete Berge, Wälder, Fluss, Felsen. Gewünscht wie RoK: um die Mauer herum
     nur ein kleines Stück der echten Weltkarte (gleiches Gelände/Biom wie auf der Karte an dieser Stelle), sonst nichts
@@ -1653,6 +1675,13 @@ Nacht – vorher bauen und testen.
     („1.000“, „60m“, „4h“), unten rechts Anzahl („25“). In Tabellen: Zeile je Stufe/Platz (z. B. „10001+“), Kacheln
     nebeneinander. Überall gleich nutzen: Events, Pass, Kisten-Ergebnis, Shop, Postfach, Ranglisten-Belohnung.
     Vorbild-Datei: scratchpad/vorbilder/11_belohnung_rok_alexander.jpg.
+    ✅ **Umgesetzt (7.10., mit 23 „Kisten“):** Teil `05e-belohnung.js` (`beuteKachel`, `beuteRaster`, `beuteFenster`) + Stil `05y-stil-kisten.php`:
+    Kachel `ui_kachel_*` je Seltenheit, KI-Symbol `bilder/beute_*.webp`, Menge unten rechts – in Shop, Aufgaben, Erfolgen, Tagesbelohnung,
+    Abholfach, Pass, Stufe, Kriegsherr, Event-Preisen, Thron-Shop, Kampfbericht (Rohstoffe). Belohnungs-Fenster: Kiste (`kiste_*_zu/offen.webp`)
+    wackelt, geht auf, Strahlen, Kacheln nacheinander; Tipp = gleich Endbild, „OK“ schließt. Shop: Kisten als KI-Bild, unter 500 Edelsteinen
+    „1ד und „10ד (weniger Edelsteine: „N×“ mit dem Rest, ab 500 „Wirklich?“) – ruft nur `openCrate`/`heroChestOpen` N-mal (Inhalt,
+    Chancen, Hauptbuch unverändert; Große/Epische Kiste bleiben einzeln wegen Bündnis-Geschenk). Bilder geschnitten mit
+    `werkzeuge/beute_bilder_schneiden.py` (Blätter ohne Transparenz: Hintergrund geschätzt). Test `belohnung_test`.
 25. **Weltkarte neu wie RoK – Entscheidungen Alexander (6.10. abends):** KEIN Wasser mehr (kein Meer, keine Flüsse, keine
     Seen), eine große Land-Karte. Statt Flüssen hohe Felsketten zwischen den Gebieten, durch die man nicht laufen kann –
     nur durch Pass-Tore (heutige Brücken-Tore; Logik Gebiete/Tore/Maut/Öffnungszeiten bleibt). Boden nur nach Ringen
@@ -1704,14 +1733,41 @@ Nacht – vorher bauen und testen.
     - Barbaren-Lager: Belohnung pro geschaffter Lager-Stufe im Event-Fenster (grün = abholen).
     - Pass viel länger, auch Truppen u. a. als Belohnung. Aufgaben: viel mehr.
     - Karte: Tipp auf freies Feld → Menü (Teleportieren, Markierung, Truppen dorthin verlegen).
+      ✅ **Gebaut 7.10. (nicht hochgeladen):** Tipp auf freies Land → runde KI-Knöpfe (`feldRingAuf`, 09d): **Teleportieren**
+      (`tpPruefen`/`teleportOrt`, 08d) – die Hauptstadt-Basis selbst zieht an die Stelle (Truppen, Stufe, Stadt bleiben), Platz wie
+      für eine Basis (nicht im Gebirge, an Basen/Toren/Feldern/Lagern/Tempeln, nicht in der Thron-Mitte), nur in Gebiete hinter
+      Pässen, deren Öffnungs-Zeit vorbei ist (Tor-Besitzer egal; Schalter `TELEPORT_NUR_OFFEN`), nicht solange ein Marsch/Angriff
+      an der Hauptstadt hängt. Immer 500 Edelsteine mit „Hierher teleportieren?“-Bestätigung (`gemsWirklich`), keine Abklingzeit,
+      im Anfängerschutz 1× gratis. Weltrechner-Befehl `teleport` (Hauptbuch, nur echte Spieler), Welt-Teil `openWaterInselOrt`
+      (verlegte Basen, neue Saison: alle zurück). **Markierung** = Wegmarken-Fenster, **Truppen hierher** = neue Armee an der
+      Stelle (bestehende Armee-Funktion). Alter Umzug auf eigenen Turm (50) bleibt. Test `teleport_test`.
     - Event-Bilder gefallen Alexander („schon geil“).
     - ENTSCHIEDEN 7.10. 16:30 (Zahlen: scratchpad/eventzahlen.md): Tagesboss nur Schadens-Klassen (Platz-Preise weg);
       Drache nur Leiste, keine Extra-Preise für die Besten; Teleport frei wo Platz + Pass offen, neue Spieler 1× gratis;
       Lager-Stufen-Belohnung jeden Tag neu (210 Edelsteine/Woche ok, Alexander B).
+    - GEBAUT 7.10. (Events-Teil, nicht hochgeladen): Wochen-Preise bis Platz 1000; Invasion/Drache/Lager als Leiste (Balken mit
+      Kisten, leuchtet = Abholen, Haken = abgeholt), jede Stufe sofort im Abholfach (Schlüssel je Stufe, nie doppelt); Drache-Treffer
+      zählt ab 10 % aller Truppen; Tagesboss: Belohnung je Angriff nach Schadens-Klasse (Zähler ×n) + „Boss fällt“ für alle, keine
+      Platz-Preise und kein „entkommen“-Preis mehr; Lager-Reiter neu (Stufe 1–25 je Tag). „N Std. Münzen/Truppen“ rechnet der
+      Weltrechner beim Auszahlen; echte Spieler: Münzen/Truppen als Gutschrift im Schummel-Schutz. Lebensbalken-Zahl nicht mehr
+      abgeschnitten. Test: `event_leiste_test`.
 35. **Zahlen an RoK (Alexander 7.10. abends, Vorschlag scratchpad/rokzahlen.md):** alle 10 Punkte ja; Burg 25 NICHT in
     einer Saison (Saison 1 ≈ Burg 16–18, Burg 25 nach ~4 Saisons, Anfang schnell). Schild 80/300/700 (A). Truppen aus
     Basen: ausgewogen anpassen („nicht zu langsam, nicht zu schnell“). Start-Helden: alle behalten die 3 Standard-Helden
     (B). Neue Zeiten gelten sofort (A).
+    - GEBAUT 7.10. (Zahlen-Paket, nicht hochgeladen): Burg-Bauzeit als Tabelle (`burgZeitTab`, 08a): 1→2 10 s … 10→11 12 Std.,
+      ab 11 steil bis 45 Tage (24→25) – Burg 10 am ersten Tag, Burg 18 nach ~35 Tagen Grundzeit, Burg 25 nach ~231 Tagen (~4 Saisons).
+      Burg-Kosten `burgBasis` 1.000 × 1,75 je Stufe bis 10, danach × 1,6 (Burg 2: 1.000 Holz/1.100 Münzen, Burg 25: 110 Mio. Holz
+      statt 5,6 Mrd.). Gebäude = 30 % der Burg-Kosten, 15 % der Burg-Zeit gleicher Stufe (mind. 10 s, höchstens 7 Tage),
+      Krankenhaus 26–40 × 1,15 je Stufe (40: ~300 Mio. statt 21.000 Mrd. Münzen). Rohstoff-Gebäude + 33 % je Stufe (statt 42 %).
+      Barbaren-Lager 500 × 1,42^(Stufe−1) Krieger (1: 500, 4: 1.400, 10: 12.000, 25: 2,3 Mio.), Beute Krieger × 20 + 5.000 × Stufe.
+      Schild 80/300/700 Edelsteine (700 mit „Wirklich?“). Thron-Shop mind. 20.000 Münzen / 2.000 Truppen. Ausrüstung: Wirkung
+      (Wert + 6) × 0,15 % (grau 1 ≈ 1 %), Zerlegen 5 + Wert Punkte (grau 1 = 6). Tagesboss-Klassen als Anteil vom Boss-Leben
+      (bis 0,05 % / 0,5 % / 1 % / 2,5 % / darüber). Truppen aus Basen 15 je Std. auf Stufe 1 (vorher 5, alle gleich – auch
+      Mitspieler). Spähbericht: Holz/Stein/Eisen gegen den Rohstoff-Schutz (vorher fälschlich der Münzen-Schutz). „Gold“ →
+      „Münzen“ in Fähigkeiten, Berichten, Helden-Texten („Goldmine“ und die Seltenheit „Gold“ bleiben). Keine Übergangsfrist
+      im Hauptbuch (die Welt wird vor dem Hochladen neu gestartet). Start-Rohstoffe und Basis-Ertrag (× 1,15 je Stufe bis 100) bleiben.
+      Test: `burg_tempo_test`.
 34. **Teleport-Animation (Alexander 7.10.: „wäre geil, merken“):** beim Teleportieren eine Animation (Basis verschwindet
     mit Lichtsäule/Staub, taucht am Ziel auf). Später.
 
@@ -2392,7 +2448,7 @@ für beide Spieler. Keine Fehler in der Konsole oder im Weltrechner, keine Schum
   wertest du weiter sofort mit Münzen auf (ohne Bauzeit). Ziehst du um, bekommt die alte Hauptstadt ihre alte Stufe
   zurück (Welt-Schlüssel `openWaterHauptVor`). Mitspieler werten ihre Hauptstadt draußen nicht mehr auf.
 - **Neue Stadt-Gebäude vor der Mauer:** Holzfäller, Steinbruch, Eisenmine (je bis Stufe 25, Bauzeit + Bauarbeiter wie die
-  anderen). Pro Stunde: 150 (die Burg allein) + 600 × 1,42^(Stufe−1) × Landschaft der Hauptstadt (0,6–1,0) × Ertrag
+  anderen). Pro Stunde: 150 (die Burg allein) + 600 × 1,33^(Stufe−1) (bis 7.10.: 1,42) × Landschaft der Hauptstadt (0,6–1,0) × Ertrag
   (Forschung, Titel). Beispiel Holzfäller 5 auf Wiese: ~1.900 Holz/Std. Das Gebäude-Fenster zeigt „Jetzt … pro Stunde,
   nächste Stufe …“. Die alten Basis-Rohstoffe gibt es nicht mehr (nur noch Stadt + Felder sammeln). Mitspieler bauen sie auch.
 - Anleitung angepasst (Schritt 4: Holzfäller bauen, Schritt 6: Belohnungen unter „Events“); in der Stadt erscheint sie nur
@@ -3372,8 +3428,9 @@ Alles aus der Merkliste 12a („Hauptstadt = das Wichtigste“) – **außer dem
 - **T1–T5 komplett raus:** keine Truppen-Stufen, keine Forschung dafür, nichts mehr im Kampf, Profil, Hauptbuch, Server.
 - **Labor (alles wird geforscht, kostet Rohstoffe und Zeit, Stufen wie bisher):** neu **Tempel** (+10 % Tempel-Bonus je
   Stufe, statt Tempelschrein), **Späher** jetzt bis Stufe 10 (statt Späherturm), **Wachturm** (Stufe 1–10, statt Gebäude).
-- **Burg (Hauptstadt, max. 25):** jede Stufe kostet Gold, Holz, Stein, Eisen (Stufe 1: 10.000 Gold … Stufe 24: 11 Mrd.)
-  und dauert **1 Tag bis 60 Tage** – zusammen **rund 1 Jahr** bis 25. Mit Gems schneller wie jeder Bau.
+- **Burg (Hauptstadt, max. 25):** jede Stufe kostet Münzen, Holz, Stein, Eisen und dauert Zeit. Seit 7.10. (Merkliste 35):
+  10 s (1→2) bis 45 Tage (24→25), Burg 25 nach ~4 Saisons, Burg 25 kostet ~110 Mio. Holz (vorher 1–60 Tage, 5,6 Mrd.).
+  Mit Gems schneller wie jeder Bau.
   Übergang: eine Woche (bis 14.10.) nimmt das Hauptbuch für die Burg auch noch die alten Zeiten/Kosten (kein falscher Alarm).
 - **Burg-Schutz (statt Lager):** von jedem Rohstoff (Gold, Holz, Stein, Eisen) ist so viel sicher:
   Stufe 1: 10.000 · 10: 1 Mio. · 25: 100 Mio. (dazwischen gleichmäßig).
@@ -3502,3 +3559,38 @@ Truppen. Belohnungen nach Anteil. Neu dazu (vorher galt vieles nur für den Anf�
   erste Teil fängt danach mit `<?php` an). `spiel_bauen.sh` hat dafür eine Tabelle ZIELE (Ordner ↔ Datei) und prüft
   `.js` mit `node --check`, `.php` mit `php -l`. Ergebnis Byte für Byte gleich; die Pfade der fertigen Dateien bleiben
   (index.php, admin.php, wachhund.php, Tests binden weiter `Game/server.php` ein). `hochladen.sh` überspringt die Ordner.
+
+## 81. Aufräumen: alter Code raus (Alexander 7.10.: „Alter Code raus, Dateien sortieren“)
+- **Teil `01f-felsen.js` ganz raus** (Bergstöcke in den Gebieten, seit den Zonen wie RoK aus: `WELT_FELSEN = false`) mit
+  `bilder/fels_1/2.webp`; die Aufrufe (`felsAuf` bei Wald/Lagern, `felsenMalen`) fallen weg – Verhalten gleich.
+- Ring-Skin-Reste (Ring auf der Karte, Hinweis im Insel-Fenster), Wasserschloss-Sockel der Hauptstadt (baukunst, `capStyle`),
+  „Skins, Ringe“ im Aussehen-Knopf, alter Rohstoff-HUD-Stil (`.res--roh`, `.roh-drop/-row/-mini/-hint`) und weitere
+  unbenutzte CSS-Klassen, `UNK`, `beuteFensterOffen`, unbenutzte Variablen, `bilder/karte_wald1/2.webp`.
+- `CLAUDE.md`: Teileliste auf dem echten Stand (spiel.js 43 Teile, spielseite 11).
+
+- **Karte mittlerer Zoom (7.10.):** Basen auch bei mittlerem Zoom sichtbar (mit Besitzer mind. 22 px, freie in echter Größe);
+  Schilde liegen nie übereinander (verdeckte fallen weg); freie Basen mit Wimpel statt leerem Kreis; Wappen an der Hauptstadt
+  hält Funde fern und ist antippbar; Pass-Punkt bei mittlerem Zoom wieder gezeichnet. (03b/03c/06e)
+- **Tagesaufgaben (7.10.):** Tempel-Aufgabe erst, wenn Zone 4 offen ist; Thron-Aufgabe erst ab Tag 7. Push-Text angepasst.
+
+## Fix-Pakete (7.10., zusammengeführt)
+- **Teleport-Fix:** Teleport auf die eigene Stelle wird abgelehnt; die Bestätigung bleibt offen, bis sie klappt; Pass-Hinweis
+  kommt als eine Meldung; Shop-Text „Teleporter“ ganz lesbar; Anleitung liegt nicht mehr unter dem Feld-Menü.
+- **Stadt/Helden-Feinschliff:** Stadt betreten ohne Fehler, Heldenkarten, Erfolgs-Hinweis, Stern; Stadt-Schilder über der
+  Leiste: geschobene Schilder legen sich nicht auf andere (08f). Test `stadt_feinschliff_test`.
+- **Fenster/Anleitung-Feinschliff:** Anleitung ganz lesbar (bis 4 Zeilen), Meldungen „unterwegs: …“, Hinweis rutscht nach oben,
+  Rucksack-Preise, Reiter, Pass/Markt am Handy. Test `fenster_fein_test`.
+- **Fix-Runde 2 (Spieltest r2a/r2b):** Anleitung Schritt 6 bleibt im Events-Fenster sichtbar (Handy darüber, Desktop links
+  daneben); Feld/Lager zu weit: Tipp „wähle ein … näher an deinen Basen“; Krankenhaus: „Fehlt: X Münzen“ (wie beim Bauen),
+  „1.000 / 1.422“ in einer Zeile, „Truppen geheilt“ wird nicht mehr vom Erfolgs-Hinweis überdeckt (`hintFrisch`, 06d);
+  Bündnis-Knopf ohne Welt-Verbindung meldet „Keine Verbindung zur Welt“; „Gründen“ bleibt am Handy unten sichtbar; Spähen:
+  „Neutrale Basis gespäht – Bericht unter „Kampf““ und Bericht „Neutrale Basis“ (`ortName`); „Zeigen“ als Knopf.
+  Test `fenster_fein_test` (H–M).
+- **Fix-Runde 3 (Spieltest r3):** Burg-Fenster: Schild-Kasten direkt unter den Voraussetzungen – beim Öffnen keine Karte halb
+  unter dem festen Knopf (Handy); „Fehlt: 1.062 Münzen“ zeigt darunter die Wartezeit beim jetzigen Ertrag pro Stunde („in ~7 Min.“,
+  mehreres fehlt: das Längste; `cityWarte`, 08b); hast/brauchst gleich geschrieben („998.912 / 1.900“ statt „998,9 Tsd. / 1.900“,
+  `anfKosten`); Stadt am Handy: beim ersten Betreten „‹ Wischen – mehr Gebäude ›“ (`cityWischZeigen`, 08e); gesperrter Held ohne
+  „Macht Gesperrt“, Gefolge nur über 0; Heldenhalle: Reiter/Knopf „Helden“ öffnet gleich die Helden (kein zweites „Helden öffnen“);
+  Hinweis (z. B. „Der Drache ist erschienen“) steht am Handy beim Angriff unter der Anleitung statt dahinter (`--anl-h`).
+  Geprüft, kein Fehler: „Unterwegs 1“ nach dem Kampf = die Truppen auf dem Heimweg; „Kampfdetails“ öffnet (ist ein `<summary>`).
+  Test `stadt_feinschliff_test`.

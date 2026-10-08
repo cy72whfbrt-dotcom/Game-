@@ -135,7 +135,7 @@ function renderChestEquipment() {
         chestSelectionLabel.textContent = chestFlashMessage;
     } else if (selected.length > 0) {
         chestSelectionLabel.style.display = 'block';
-        const selPoints = selected.reduce((sum, it) => sum + itemScore(it), 0);
+        const selPoints = selected.reduce((sum, it) => sum + salvagePoints(it), 0);
         chestSelectionLabel.innerHTML = '<b>' + selected.length + '</b> gewählt · +' +
             fmtNum(selPoints) + (selPoints === 1 ? ' Punkt' : ' Punkte');
     } else {
@@ -196,7 +196,7 @@ function renderChestItemPopup() {
     const fmt1 = v => v.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const starF = 1 + (item.stars || 0) * STAR_PCT / 100;                   // forge stars multiply the item's effect
     const bonusText = sc => def.pct !== undefined
-        ? '+' + fmt1(Math.min(item.slot === 'shield' ? 90 : Infinity, sc * RARITY_PCT_PER_SCORE * starF)) + ' % ' + def.desc
+        ? '+' + fmt1(Math.min(item.slot === 'shield' ? 90 : Infinity, (sc + ITEM_GRUND) * RARITY_PCT_PER_SCORE * starF)) + ' % ' + def.desc
         : '+' + fmt1(sc * RARITY_FLAT_PER_SCORE * starF) + ' ' + def.desc;
 
     chestItemIconBig.dataset.r = rd.key;
@@ -208,11 +208,11 @@ function renderChestItemPopup() {
     const maxed = item.level >= ITEM_MAX_LEVEL;
     chestItemStats.innerHTML =
         '<div><span>' + icon(def.icon) + 'Bonus</span><b class="up">' + bonusText(score) + '</b></div>' +
-        (item.stars ? '<div><span>' + icon(def.icon) + 'Grundwert</span><b>+' + fmt1(score * RARITY_PCT_PER_SCORE) + ' %</b></div>' +
-                      '<div><span>' + icon('star') + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (Grundwert ×' + fmt1(starF).replace(',0', '') + ')</span><b class="up">+' + fmt1(score * RARITY_PCT_PER_SCORE * (starF - 1)) + ' %</b></div>' : '') +
+        (item.stars ? '<div><span>' + icon(def.icon) + 'Grundwert</span><b>+' + fmt1(itemPct(item)) + ' %</b></div>' +
+                      '<div><span>' + icon('star') + item.stars + (item.stars === 1 ? ' Stern' : ' Sterne') + ' (Grundwert ×' + fmt1(starF).replace(',0', '') + ')</span><b class="up">+' + fmt1(itemPct(item) * (starF - 1)) + ' %</b></div>' : '') +
         (isEquipped ? '' : '<div><span>' + icon('info') + 'Status</span><b>wirkt, sobald ausgerüstet</b></div>') +
         (maxed ? '' : '<div><span>' + icon('upgrade') + 'Nächste Stufe</span><b>' + bonusText(itemScore({ ...item, level: item.level + 1 })) + '</b></div>') +
-        '<div><span>' + icon('points') + 'Verkaufswert</span><b>' + fmtNum(score) + (score === 1 ? ' Punkt' : ' Punkte') + '</b></div>';
+        '<div><span>' + icon('points') + 'Verkaufswert</span><b>' + fmtNum(salvagePoints(item)) + ' Punkte' + '</b></div>';
 
     setBtnLabel(chestItemUpgradeBtn, maxed ? 'Max. Stufe' : 'Verbessern');
     const upgradeCostEl = chestItemUpgradeBtn.querySelector('.cost');
@@ -286,14 +286,15 @@ function resetSkills() {
     flashHint('Fähigkeiten zurückgesetzt: ' + fmtNum(spent) + ' Fähigkeitspunkte sind wieder frei.', 3500);
 }
 // Gems-Käufe ab 500 (und Helden-Zurücksetzen): erst „Wirklich? N Gems“, erst der zweite Tipp (nach >450 ms, binnen 4 s) zahlt – wie resetSkills
+// bisZu: ohne Uhr offen, bis der Aufrufer gemsArmAus() ruft (Teleport-Ring: daneben tippen)
 const GEMS_WIRKLICH = 500;
 let gemsArm = null;
-function gemsWirklich(key, cost, btn, immer) {      // → true: jetzt zahlen
+function gemsWirklich(key, cost, btn, immer, bisZu) {      // → true: jetzt zahlen
     if (!immer && cost < GEMS_WIRKLICH) return true;
     const now = Date.now();
-    if (gemsArm && gemsArm.key === key && now - gemsArm.at < 4000) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
+    if (gemsArm && gemsArm.key === key && (gemsArm.bisZu ? gemsArm.btn === btn && btn.isConnected : now - gemsArm.at < 4000)) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
     gemsArmAus(); const t = btn && (btn.querySelector('.lbl') || btn.querySelector('small') || btn);
-    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, timer: setTimeout(gemsArmAus, 4000) };
+    gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, bisZu: !!bisZu, timer: bisZu ? 0 : setTimeout(gemsArmAus, 4000) };
     if (t) { btn.classList.add('is-armed'); t.innerHTML = 'Wirklich? ' + icon('gem') + fmtNum(cost); }
     return false;
 }

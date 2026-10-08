@@ -117,6 +117,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       gems = 5000; pendingScouts = [];
       const bot = BOT_DEFS.find(d => (botOwnedIslands[d.id] || new Set()).size), T = [...botOwnedIslands[bot.id]].find(id => !bossAt(id));
       revealAround(islandById[T].x, islandById[T].y, 30000, false);
+      loadBotState()[bot.id].neuBis = 0;                                         // (kein Anfängerschutz: den späht niemand aus)
       launchScout(T);
       const sc = pendingScouts.find(s => !s.back && s.targetId === T), k = sc && marchKeyOf(sc), sp = bef.find(x => x[0] === 'spaehen');
       out.spaehen = sp ? sp[1] : null; out.key = k;
@@ -143,7 +144,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const out = { befehle: !!(WELT.BEFEHLE && WELT.BEFEHLE.spaehen) }; if (!out.befehle) return out;
     const bots = BOT_DEFS.filter(x => !x.mensch && botOwnedIslands[x.id] && botOwnedIslands[x.id].size);
     const H = bots[0].id, B = bots.find(x => x.id !== H), T = [...botOwnedIslands[B.id]].find(id => !bossAt(id));
-    const bs = loadBotState(); bs[H].hb = { v: 1, nbAlle: 1 }; saveBotState(); WELT.menschen[H] = {};
+    const bs = loadBotState(); bs[H].hb = { v: 1, nbAlle: 1 }; bs[B.id].neuBis = 0; saveBotState(); WELT.menschen[H] = {};   // (B ohne Anfängerschutz)
     const hb = () => loadBotState()[H].hb;
     WELT.BEFEHLE.spaehen(H, { ziel: T, blick: 1, key: 'sp1' });
     const e = (hb().sb || []).find(x => x[2] === 'sp1'); out.sb = e ? e.slice() : null;

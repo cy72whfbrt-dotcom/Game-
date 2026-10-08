@@ -22,11 +22,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         k: ['--k-haupt', '--k-zweit', '--k-gefahr', '--k-chip', '--k-tipp', '--k-rund'].map(v) };
       // 2) HUD: Spielerbild sichtbar, ≥ 44 px, antippen öffnet das Profil
       const hp = document.getElementById('hudPlayer'), ring = hp.querySelector('.avatar-ring'), rb = box(ring);
-      const hud = { sicht: sicht(hp), ring: Math.round(rb.width), tipp: Math.round(Math.min(box(hp).width, box(hp).height)), werteZeile: new Set([...document.querySelectorAll('.hud-werte .res')].map(e => Math.round(box(e).top))).size };
+      const hud = { sicht: sicht(hp), ring: Math.round(rb.width), tipp: Math.round(Math.min(box(hp).width, box(hp).height)), werteZeile: new Set([...document.querySelectorAll('.hud-werte .res')].map(e => Math.round(box(e).top))).size,
+        mitte: [...document.querySelectorAll('.hud-werte .res')].map(e => { const c = getComputedStyle(e), r = box(e), z = e.querySelector('b'), t = document.createRange(); t.selectNodeContents(z); const tb = t.getBoundingClientRect();
+          return Math.round(Math.abs((tb.left + tb.right) / 2 - (r.left + parseFloat(c.paddingLeft) + r.right - parseFloat(c.paddingRight)) / 2)); }) };
       hp.click(); await warte(500); hud.profil = isPanelOpen(profilePopup); closeAllPopups(); await warte(200);
-      // 3) Leiste: 5 runde Knöpfe in fester Reihenfolge, Profil nicht in der Leiste, Tippfläche ≥ 44 px
+      // 3) Leiste: 6 runde Knöpfe in fester Reihenfolge, Profil nicht in der Leiste, Tippfläche ≥ 44 px
       const knoepfe = [...document.querySelectorAll('#cornerButtons .nav-btn')].filter(sicht);
-      const leiste = { ids: knoepfe.map(e => e.id), rund: knoepfe.every(e => { const i = e.querySelector('.icon'); return box(i).width >= 44 && getComputedStyle(i).borderRadius === '50%'; }),
+      const leiste = { ids: knoepfe.map(e => e.id), rund: knoepfe.every(e => { const i = e.querySelector('.icon'); return box(e).width >= 44 && box(e).height >= 44 && getComputedStyle(i).borderRadius === '50%'; }),   // (Alexander 7.10.: Knöpfe kleiner, die Tippfläche bleibt ≥ 44 px)
         hoehe: Math.min(...knoepfe.map(e => box(e).height)) };
       // 4) EIN Streifen: mehrere Dauer-Hinweise → einer sichtbar + „+N“, antippen klappt alle auf
       const altEv = evChips; evChips = () => [[2, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache"><span>Drache</span></button>'], [3, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv"><span>Barbaren-Invasion in</span></button>']];
@@ -89,7 +91,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.tokens.ab.join() === '4px,8px,12px,16px' && r.tokens.fs.join() === '11px,13px,15px,17px,22px,11px,11px' && r.tokens.k.join() === '48px,44px,48px,36px,44px,48px', art + ': Grundwerte (Abstände, Schriftstufen ohne 9,5/10, Knopf-Arten)', r.tokens);
     ok(r.hud.sicht && r.hud.ring >= (art === 'Handy' ? 44 : 34) && r.hud.tipp >= 44 && r.hud.profil, art + ': Spielerbild im HUD (Handy 44 px, Tippfläche ≥ 44), antippen öffnet das Profil', r.hud);
     ok(r.hud.werteZeile === 1, art + ': Münzen, Edelsteine, Truppen in einer Zeile', r.hud);
-    ok(r.leiste.ids.join() === 'cityNavBtn,bundBtn,battleLogBtn,goalsBtn,shopBtn' && r.leiste.rund && r.leiste.hoehe >= 44, art + ': Leiste = 5 runde Knöpfe (Karte/Stadt, Bündnis, Kampf, Events, Shop), kein Profil', r.leiste);
+    ok(r.hud.mitte.every(d => d <= 3), art + ': jede Zahl mittig in ihrer Kapsel (vorher am Desktop mal links, mal mittig)', r.hud.mitte);
+    ok(r.leiste.ids.join() === 'cityNavBtn,bundBtn,battleLogBtn,goalsBtn,rucksackBtn,shopBtn' && r.leiste.rund && r.leiste.hoehe >= 44, art + ': Leiste = 6 runde Knöpfe (Karte/Stadt, Bündnis, Kampf, Events, Rucksack, Shop), kein Profil', r.leiste);
     ok(r.streifen.chips === 1 && r.streifen.auf >= 2 && r.streifen.mehr === '+' + (r.streifen.auf - 1) && r.streifen.zeile && r.streifen.unterHud, art + ': ein Streifen unter den Werten – ein Hinweis + „+N“ (Drache, Invasion …)', r.streifen);
     ok(r.streifen.zu === 1, art + ': „+N“ klappt alle Hinweise auf und wieder zu', r.streifen);
     if (art === 'Handy') ok(r.fenster.hoehe <= 0.705, art + ': Fenster höchstens 70 % hoch (Karte bleibt sichtbar)', r.fenster);

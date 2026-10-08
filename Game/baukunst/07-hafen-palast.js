@@ -72,7 +72,7 @@
     for (let k = n - 1; k >= 0; k--) pts.push([-xs[k + 1], ys[k]], [-xs[k], ys[k]]);
     pts.push([s, 0]);
     const geo = new T.ExtrudeGeometry(new T.Shape(pts.map(([a, b]) => new T.Vector2(a, b))), { depth: th, bevelEnabled: false }); geo.translate(0, 0, -th / 2); K.worldUV(geo, .3);
-    const g = K.put(p, geo, m, x, y, z, { ry });
+    K.put(p, geo, m, x, y, z, { ry });
     return { top, ys, xs };
   }
   // a boat hull lofted from cross sections: length along x (bow +x), waterline at y = 0
@@ -222,7 +222,7 @@
     for (const a of [128.5 * D, 140.5 * D]) { const [x, z] = P(a, 8.3); Bt.box(HS(), .72, 1.9, .72, x, Y0 - .02, z, -a); Bt.box(M.cap(), .86, .12, .86, x, Y0 + 1.88, z, -a); lantern(x, Y0 + 2.0, z, .08); }
     { const [x, z] = P(134.5 * D, 9.2); K.stairs(g, 1.5, 3, (Y0 - .16) / 3, .24, PAVE(), x, .16, z, { ry: PI / 2 - 134.5 * D }); }
     arc(8.12, -150 * D, -20 * D, 6.5 * D, (a, len, ry, da) => {
-      const [x, z] = P(a, 8.12), [xo, zo] = P(a, 8.32);
+      const [x, z] = P(a, 8.12);
       Bt.box(HS(), len, 2.3, .76, x, Y0 - .02, z, ry); Bt.box(M.cap(), len + .02, .12, .94, x, Y0 + 2.28, z, ry);
       for (const f of [-.25, .25]) { const [x3, z3] = P(a + f * da, 8.32); Bt.box(M.cap(), .44, .46, .3, x3, Y0 + 2.4, z3, ry); } });
     // a flat-topped wall tower on the curtain

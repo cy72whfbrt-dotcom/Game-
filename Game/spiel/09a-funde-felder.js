@@ -74,10 +74,11 @@ function drawPickups(now) {          // screen space (setScreen active)
         glow.addColorStop(0, p.kind === 'gem' ? 'rgba(127,211,255,.45)' : 'rgba(236,208,138,.45)');
         glow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, r * 2.1, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fillStyle = '#15120c'; ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke();
-        drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : 'coin', cx, cy, r * 1.3,
+        const rund = glyphBild('rund');                                       // runder Knopf aus den KI-Bildern, darin Beutel/Edelstein/Truppen
+        if (rund) ctx.drawImage(rund, cx - r * 1.2, cy - r * 1.2, r * 2.4, r * 2.4);
+        else { ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fillStyle = '#15120c'; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = p.kind === 'gem' ? '#8fd8ff' : '#e4c886'; ctx.stroke(); }
+        drawGlyph(ctx, p.kind === 'gem' ? 'gem' : p.kind === 'troops' ? 'troops' : glyphBild('beute') ? 'beute' : 'coin', cx, cy, r * 1.3,
             p.kind === 'gem' ? '#8fd8ff' : p.kind === 'troops' ? '#efe8d6' : '#e8c46e');
         const t = '+' + fmtCompact(p.amount); ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';   // Beschriftung: was es gibt
         const w = ctx.measureText(t).width + 12; ctx.fillStyle = 'rgba(14,14,20,.85)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(cx - w / 2, cy + r + 2, w, 15, 7) : ctx.rect(cx - w / 2, cy + r + 2, w, 15); ctx.fill();
@@ -120,7 +121,7 @@ function dismissTutorialHint() {
 // confirmed completely clear of every other base (owned by anyone
 // or neutral) - never assumed just because the bases are close.
 const TERRITORY_PADDING = 250;
-const TERRITORY_CONNECT_MAX_DIST = 6000;
+const TERRITORY_CONNECT_MAX_DIST = 6000 * KARTE_MASSSTAB;
 
 function pointToSegmentDistance(px, py, ax, ay, bx, by) {
     const abx = bx - ax, aby = by - ay;
@@ -164,35 +165,12 @@ const fieldCapFor = (kind, rm) => kind === 'gem' ? Math.round(FIELD_KINDS.gem.ba
     : Math.max(1, Math.round(FIELD_KINDS[kind].base * Math.sqrt(rm) * WIRTSCHAFT_ERTRAG * (FIELD_KINDS[kind].roh ? ROH_FAKTOR : MUENZ_FAKTOR)));
 const fieldDauerSec = rm => 3600 * (1 + 3 * Math.log(Math.max(1, rm)) / Math.log(300));
 const FIELD_REGEN_MS = 60 * 60000;
-const resFields = (() => {
-    const out = [], r = mulberry32(7771);
-    for (const lm of landmasses) {
-        if (lm.tier !== 'outer' || lm.ring < 2) continue;
-        const want = lm.ring >= 5 ? 3 : 2, near = islandsByLandmass[lm.id] || [];
-        for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
-            const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!aufLand(lm, x, y)) continue;
-            if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
-            const kind = r() < .78 ? 'gold' : 'gem';
-            out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: fieldCapFor(kind, ringMult(lm)), dauer: fieldDauerSec(ringMult(lm)) }); k++;
-        }
-    }
-    // Paket D: Rohstoff-Felder dazu (eigener Zufall – die Gold- und Gem-Felder bleiben genau, wo sie waren). Je Region 2 (außen 3),
-    // was dort häufig ist, je nach Landschaft: Wiese Holz, Wüste Stein, Schnee Eisen
-    const r2 = mulberry32(9917), arten = { green: ['holz', 'holz', 'stein', 'eisen'], sand: ['stein', 'stein', 'holz', 'eisen'], snow: ['eisen', 'eisen', 'stein', 'holz'] };
-    for (const lm of landmasses) {
-        if (lm.tier !== 'outer') continue;
-        const want = lm.ring >= 6 ? 3 : 2, near = islandsByLandmass[lm.id] || [], ar = arten[lm.bio] || arten.green;
-        for (let k = 0, tries = 0; k < want && tries < 60; tries++) {
-            const x = lm.x + (r2() * 2 - 1) * lm.shapeMaxR * .8, y = lm.y + (r2() * 2 - 1) * lm.shapeMaxR * .8;
-            if (!aufLand(lm, x, y)) continue;
-            if (near.some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 2.4) || out.some(f => Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 4)) continue;
-            const kind = ar[Math.floor(r2() * ar.length)];
-            out.push({ id: 'f' + out.length, x, y, landmassId: lm.id, radius: ISLAND_RADIUS * .6, kind, cap: fieldCapFor(kind, ringMult(lm)), dauer: fieldDauerSec(ringMult(lm)) }); k++;
-        }
-    }
-    return out;
-})();
+// Felder wie in der Karten-Testdatei (KARTE_ZONEN.felder): überall außer der Mitte, nie im Gebirge oder an Pässen, Stufe steigt nach innen.
+// Ertrag nach der Stärke der Zone (ringMult; die Wächter-Zone wie die stärkste äußere – vorher gab es dort keine Felder)
+const FELD_ART = { holz: 'holz', stein: 'stein', eisen: 'eisen', gold: 'gold', edelstein: 'gem' };
+const feldMult = lm => lm.tier === 'guardian' ? RING_MULT[2] : ringMult(lm);
+const resFields = KARTE_ZONEN.felder.map((o, i) => { const lm = landmasses[o.gebiet], kind = FELD_ART[o.art];
+    return { id: 'f' + i, x: o.x, y: o.y, landmassId: o.gebiet, radius: ISLAND_RADIUS * .6, kind, stufe: o.stufe, cap: fieldCapFor(kind, feldMult(lm)), dauer: fieldDauerSec(feldMult(lm)) }; });
 const fieldById = {}; for (const f of resFields) fieldById[f.id] = f;
 let fieldState = (() => { try { return JSON.parse(store.get('openWaterFields')) || {}; } catch (e) { return {}; } })();
 let fieldMarches = (() => { try { return JSON.parse(store.get('openWaterFieldMarches')) || []; } catch (e) { return []; } })();
@@ -207,6 +185,7 @@ function fieldHurt(who, n, hx) { return who === 'player' ? hospitalTake(n, hx ? 
 function fieldTravelSec(from, f, who) { return travelDurationSeconds(from, f, who === 'player' ? undefined : who); }
 function fieldSend(who, homeId, fieldId, troops, hero, hero2) {          // troops leave a base for a field (gathering, or attacking whoever sits there) - a hero (and a Zweitheld) may lead them
     const home = islandById[homeId], f = fieldById[fieldId]; if (!home || !f || troops <= 0) return false;
+    if (!canReach(home.landmassId, f.landmassId, who)) { if (who === 'player') flashHint(wegGrund(home.landmassId, f.landmassId, 'player') || 'Kein Weg zum Feld – ein fremdes Tor liegt dazwischen.', 4000); return false; }   // (nur über offene, eigene Pässe)
     if (!marschPlatz(who)) return false;                                                      // Marsch-Plätze (Paket D)
     if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2);
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
@@ -275,14 +254,18 @@ function fieldArrive(m, now) {
             gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx) };
     }
 }
+// Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Sammel-Rausch (+50 %) · Gebäude · Forschung Sammeln
+function fieldRateOf(f, o, gx) {
+    return f.cap / f.dauer * (1 + (gx ? gx.gSpd : 0) / 100) * (evThemaAktiv('sam') ? 1.5 : 1) * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1);
+}
 function fieldTick() {
     if (!rechnet()) return;
-    const now = Date.now(), dt = 1, sr = evThemaAktiv('sam') ? 1.5 : 1;   // Sammel-Rausch: 50 % schneller
+    const now = Date.now(), dt = 1;
     const due = fieldMarches.filter(m => m.resolveAt <= now);
     if (due.length) { fieldMarches = fieldMarches.filter(m => m.resolveAt > now); for (const m of due) fieldArrive(m, now); saveFields(); requestRender(); }
     for (const f of resFields) {
         const st = fieldState[f.id]; if (!st || !st.occ) continue; if (st.left > f.cap) st.left = f.cap;
-        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(f.cap / f.dauer * dt * (1 + (gx ? gx.gSpd : 0) / 100) * sr * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1), st.left, cap - o.got);   // (+ Forschung Sammeln)   // festes Tempo (nicht mehr Truppen × Tempo) · Spürnase: schneller
+        const o = st.occ, gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), amt = Math.min(fieldRateOf(f, o, gx) * dt, st.left, cap - o.got);
         o.got += Math.max(0, amt); st.left -= Math.max(0, amt);
         if (o.got >= cap - 1e-9 || st.left <= 0) { fieldGoHome(f, st, now); requestRender(); }
     }
@@ -300,8 +283,13 @@ function drawResFields(now, wallNow) {
     for (const f of resFields) {
         const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(f.x, f.y)) continue;
         const st = fieldState[f.id], left = st ? Math.min(st.left, f.cap) : f.cap, empty = left <= 0;
+        const bn = 'feld_' + (f.kind === 'gem' ? 'edelstein' : f.kind), bild = KB.fertig && KB.img[bn];
+        if (bild) {                                                          // Karte wie RoK: das KI-Bild (fest in der Welt, nie winzig), die Stufe daneben
+            const w = Math.max(FELD_BREITE * z, 34), h = w * bild.height / bild.width;
+            ctx.globalAlpha = empty ? .55 : 1; ctx.drawImage(kbBild(bn, w * dpr), x - w / 2, y - h * .62, w, h); ctx.globalAlpha = 1;
+            stufenZahl(x + w * .32, y - h * .5, f.stufe, false); }
         ctx.save(); ctx.translate(x, y); ctx.scale(k, k);
-        ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();
+        if (!bild) { ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(0, 4, 13, 5, 0, 0, Math.PI * 2); ctx.fill();   // (solange die Bilder laden: gezeichnet)
         if (f.kind === 'gold') {                                             // a rocky mine mouth with a heap of gold
             ctx.fillStyle = '#7d6b55'; ctx.beginPath(); ctx.moveTo(-13, 4); ctx.quadraticCurveTo(-10, -12, 0, -13); ctx.quadraticCurveTo(10, -12, 13, 4); ctx.closePath(); ctx.fill();
             ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1; ctx.stroke();
@@ -321,7 +309,7 @@ function drawResFields(now, wallNow) {
             ctx.fillStyle = '#6f675a'; ctx.beginPath(); ctx.ellipse(0, 2, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
             if (!empty) for (const [dx, h, w] of [[-5, 12, 3], [0, 17, 4], [5, 11, 3], [9, 7, 2.4]]) { ctx.fillStyle = '#7fd0ff'; ctx.beginPath(); ctx.moveTo(dx - w, 2); ctx.lineTo(dx, 2 - h); ctx.lineTo(dx + w, 2); ctx.closePath(); ctx.fill();
                 ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.moveTo(dx - w * .3, 1); ctx.lineTo(dx, 2 - h); ctx.lineTo(dx + w * .15, 1); ctx.closePath(); ctx.fill(); }
-        }
+        } }
         if (st && st.occ) {                                                   // the gatherers' tent and how full their packs are
             const o = st.occ, col = o.who === 'player' ? '#3f86d8' : (botById[o.who] || {}).color || '#c9423a', q = Math.min(1, o.got / Math.max(1e-9, fieldCapOf(f, o)));
             ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-18, 6); ctx.lineTo(-12, -5); ctx.lineTo(-6, 6); ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#2a241b'; ctx.stroke();
@@ -340,22 +328,32 @@ let fieldSheetId = null, fieldShare = .5, fieldHero = null, fieldHero2 = null;
 function fieldSource(f) { let best = null, bd = Infinity; for (const id of ownedIslands) { const isl = islandById[id]; if ((islandTroops[id] || 0) < 1 || !canReach(isl.landmassId, f.landmassId)) continue;
     const d = Math.hypot(isl.x - f.x, isl.y - f.y); if (d < bd) { bd = d; best = id; } } return best; }
 function openFieldSheet(f) {
+    if (fieldSheetId !== f.id) [fieldHero, fieldHero2] = heroLetzte();   // frisch geöffnet: die zuletzt geschickten Helden
     fieldSheetId = f.id; const st = fieldInfo(f), K = FIELD_KINDS[f.kind], o = st.occ, src = fieldSource(f), mine = o && o.who === 'player';
     const avail = src !== null ? islandTroops[src] || 0 : 0, send = Math.floor(avail * fieldShare);
     if (fieldHero && (!heroOwned('player', fieldHero) || heroBusy('player', fieldHero))) fieldHero = null; fieldHero2 = heroZweitOk('player', fieldHero, fieldHero2);
     liveHtml(document.getElementById('fieldSheet'),                   // (live: liveTick – neu geschrieben nur bei einer Änderung, die Uhren zählen von selbst)
         '<div class="marker-head"><b>' + icon(K.icon) + ' ' + K.name + '</b><button class="btn-x" type="button" data-fclose aria-label="Schließen">' + icon('close') + '</button></div>' +
         '<div class="field-lines"><span>Vorrat</span><b>' + (st.left <= 0 ? 'erschöpft – wächst in ' + uhrHtml(st.regenAt, 'clock') + ' nach' : fmtNum(Math.floor(st.left)) + ' ' + K.what) + '</b>' +
-        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' +
+        '<span>Besetzt</span><b>' + (o ? fieldWhoName(o.who) + (o.hero && heroById(o.hero) ? ' mit ' + heroById(o.hero).name + (o.hero2 && heroById(o.hero2) ? ' & ' + heroById(o.hero2).name : '') : '') + ' · ' + fmtCompact(o.troops) + ' Truppen · ' + fmtNum(Math.floor(o.got)) + ' gesammelt' : 'frei') + '</b>' + fieldFortschritt(f, st, K) +
         '<span>Tragen</span><b>' + (K.load >= 1 ? (K.load * (AUF ? AUF.traglast('player') : 1)).toLocaleString('de-DE', { maximumFractionDigits: 1 }) + ' ' + K.what + ' pro Truppe' : '1 Edelstein pro ' + Math.round(1 / K.load) + ' Truppen') + '</b></div>' +
         (mine ? '<button class="btn btn--secondary btn--sm" type="button" data-frecall>' + icon('recall') + '<span>Mit Beute heimkehren</span></button>' :
-         src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher.</span></div>' :
+         src === null ? '<div class="notice">' + icon('lock') + '<span>Keine deiner Basen mit Truppen kommt hierher – wähle ein Feld näher an deinen Basen.</span></div>' :
          o && ownerShielded(o.who) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + fieldWhoName(o.who) + ' steht unter einem Friedensschild (noch ' + uhrHtml(ownerShieldUntil(o.who)) + ') – die Sammler dort kann niemand angreifen.</span></div>' :
          '<div class="seg" data-fshare>' + ['.25', '.5', '.75', '1'].map(v => '<button type="button" data-f="' + v + '"' + (+v === fieldShare ? ' class="on"' : '') + '>' + (v === '1' ? 'Alle' : Math.round(v * 100) + ' %') + '</button>').join('') + '</div>' +
          (heroSegHtml('data-fhero', fieldHero) ? '<div class="seg hero-seg">' + heroSegHtml('data-fhero', fieldHero) + '</div>' : '') +
          (heroSeg2Html('data-fhero2', fieldHero, fieldHero2) ? '<div class="seg hero-seg hero-seg2">' + heroSeg2Html('data-fhero2', fieldHero, fieldHero2) + '</div>' : '') +
          '<button class="btn btn--primary btn--sm" type="button" data-fsend>' + icon(o ? 'attack' : 'send') + '<span>' + (o ? 'Angreifen und übernehmen' : 'Sammeln') + ' · ' + fmtCompact(send) + ' von ' + islandTitle(islandById[src]) + '</span></button>'));
     document.getElementById('fieldSheet').hidden = false;
+}
+// wer sammelt: Restzeit bis voll beladen (oder Feld leer), Balken gesammelt/Traglast, Tempo pro Stunde
+function fieldFortschritt(f, st, K) {
+    const o = st.occ; if (!o) return '';
+    const gx = heroGatherFx(o), cap = fieldCapOf(f, o, gx), rate = fieldRateOf(f, o, gx), rest = Math.max(0, Math.min(cap - o.got, st.left)), q = Math.min(1, o.got / Math.max(1e-9, cap));
+    const proStd = rate * 3600, menge = v => K.load >= 1 ? fmtNum(Math.floor(v)) : v.toLocaleString('de-DE', { maximumFractionDigits: 1 });
+    return '<span>Tempo</span><b>' + menge(proStd) + ' ' + K.what + ' / Std.</b>' +
+        '<span>' + (cap - o.got <= st.left ? 'Voll in' : 'Feld leer in') + '</span><b>' + (rate > 0 ? uhrHtml(Date.now() + rest / rate * 1000) : '–') + '</b>' +
+        '<span class="field-fort"><span class="ach-bar"><i style="width:' + Math.round(q * 100) + '%"></i></span><small>' + fmtNum(Math.floor(o.got)) + ' / ' + fmtNum(Math.floor(cap)) + ' ' + K.what + '</small></span>';
 }
 function closeFieldSheet() { document.getElementById('fieldSheet').hidden = true; fieldSheetId = null; }
 document.getElementById('fieldSheet').addEventListener('click', e => {
@@ -366,5 +364,5 @@ document.getElementById('fieldSheet').addEventListener('click', e => {
     const fh2 = e.target.closest('[data-fhero2]:not([disabled])'); if (fh2) { fieldHero2 = fh2.dataset.fhero2 || null; return openFieldSheet(f); }
     if (e.target.closest('[data-frecall]')) { const st = fieldInfo(f); if (st.occ && st.occ.who === 'player') { if (alsBefehl('feldHeim', { feld: f.id })) { flashHint('Deine Sammler kehren um.', 2500); return; } fieldGoHome(f, st, Date.now()); saveFields(); flashHint('Deine Sammler kehren mit der Beute heim.', 2500); } return closeFieldSheet(); }
     if (e.target.closest('[data-fsend]')) { const src = fieldSource(f); if (src === null) return; const n = Math.floor((islandTroops[src] || 0) * fieldShare);
-        if (n < 1 || !marschPlatz('player')) return; if (alsBefehl('feld', { home: src, feld: f.id, n, held: fieldHero, held2: fieldHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else if (!fieldSend('player', src, f.id, n, fieldHero, fieldHero2)) return; fieldHero = null; fieldHero2 = null; flashHint('Truppen unterwegs ' + fArt(FIELD_KINDS[f.kind], 'zu') + '.', 2500); closeFieldSheet(); }
+        if (n < 1 || !marschPlatz('player')) return; if (alsBefehl('feld', { home: src, feld: f.id, n, held: fieldHero, held2: fieldHero2 })) islandTroops[src] = Math.max(0, (islandTroops[src] || 0) - n); else if (!fieldSend('player', src, f.id, n, fieldHero, fieldHero2)) return; heroLetzteMerken(fieldHero, fieldHero2); fieldHero = null; fieldHero2 = null; questProgress('sammeln', 1); flashHint('Truppen unterwegs ' + fArt(FIELD_KINDS[f.kind], 'zu') + '.', 2500); closeFieldSheet(); }
 });

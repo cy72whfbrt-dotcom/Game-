@@ -1,14 +1,12 @@
-// Karte wie RoK (LIESMICH 11c Punkt 25): kein Wasser, Boden nach Ringen, Gebirgsketten auf allen Grenzen, Pass-Tore in der Kette.
-// A) alle Karten-Bilder geladen (Game/bilder/karte_*.webp), zusammen < 1,5 MB
-// B) Boden nach Ringen: außen grün → Mitte Sand (lm.boden, Masken), lm.bio bleibt für Rohstoffe/Felder (keine neue Spielregel)
-// C) Ketten auf jeder Grenze (auch am Kartenrand), Knoten an jeder Kreuzung, an jedem Tor eine Lücke für das Tor-Bild; wo ein Feld auf
-//    der Grenze liegt (Lage = Spiellogik), spart die Kette aus
-// D) Tor genau in der Kette: Lücke auf dem Torpunkt (≤ 2 % Torbreite); waagrechte Grenze: Mauer in Kettenrichtung (≤ 10°), Fuß bündig
-//    (≤ 2 px bei 0,03); senkrechte Grenze (Lücke + Wachtürme, kein Quer-Tor): Kette über und unter dem Tor auf einer Linie (≤ 2 % Torbreite)
-// E) Märsche nur durch die Tore: jeder Weg zwischen zwei Gebieten kreuzt die Grenze nur an einem Tor (Logik unverändert)
-// F) Wald nicht auf Basen/Feldern, nicht an der Kette; weit draußen nur Farbflächen + Bänder (keine Bilder in der Kachel)
-// G) Weltrechner zeichnet nie → lädt keine Karten-Bilder (Laden erst beim ersten Zeichnen)
-// H) Barbaren-Lager entstehen nicht im Grenzgebirge (barbSpot)
+// Karte wie RoK mit Zonen (LIESMICH 11c Punkt 25/30): Gebiete, Grenzen, Pässe, Tempel und Startplätze aus KARTE_ZONEN (Teil 01a2),
+// kein Wasser, Gebirgsketten auf allen Grenzen, Pass-Tore in der Kette.
+// A) alle Karten-Bilder geladen (Game/bilder/karte_*.webp, mit Thron und Tempeln), zusammen < 2 MB; Laden erst beim Zeichnen (G)
+// B) Gebiete aus den Daten (Zone 1–4 + Mitte, Ring/Stufe wie vorher), Boden je Zone (Masken), kein Meer
+// C) Ketten auf jeder Grenze zwischen zwei Gebieten, Knoten an jeder Kreuzung; an jedem Pass eine Lücke, kein Stück im Tor
+// D) Tore genau im Pass (Tor = Passpunkt), Pässe öffnen nach Stufe (Tag 1 sofort … zur Mitte Tag 5)
+// E) Märsche nur durch die Tore: ein Weg zwischen zwei Gebieten kommt dem Gebirge nur am Tor nah
+// F) weit draußen nur Farbfläche + Bänder (keine Bilder in der Kachel), Bilder fest in der Welt (keine Vergrößerung je Zoom)
+// H) Barbaren-Lager und Basen nie im Grenzgebirge; Startplätze gleich viele je Zone-1-Gebiet, Tempel je Zone-4-Gebiet + Thron
 //   node tests/browser/karte_rok_test.js <vorschau>
 const { chromium } = require('playwright');
 const fs = require('fs'), path = require('path');
@@ -18,94 +16,77 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] }), fe = [];
   const p = await (await b.newContext({ viewport: { width: 1280, height: 800 } })).newPage(); p.on('pageerror', e => fe.push(e.message));
   await p.goto('file://' + VS + '/index.html', { timeout: 120000 }); await p.waitForTimeout(6000);
-  // G) vor dem ersten Bild: noch nichts geladen? (das Spiel zeichnet sofort – darum hier nur: Laden hängt am Zeichnen, nicht am Start)
   const g0 = await p.evaluate(() => ({ quelle: karteBilder.toString().includes('new Image'), start: /karteBilder\(\)/.test(paintBackground.toString()) }));
   await p.waitForFunction(() => typeof karteBilder === 'function' && karteBilder(), null, { timeout: 60000, polling: 500 }).catch(() => {});
-  // ===== A =====
+  // ===== A + G =====
   const a = await p.evaluate(() => ({ fertig: KB.fertig, n: KB_DATEIEN.filter(n => KB.img[n]).length, soll: KB_DATEIEN.length, breit: KB_DATEIEN.map(n => KB.img[n] && KB.img[n].naturalWidth) }));
   const groesse = fs.readdirSync(path.join(VS, 'bilder')).filter(f => f.startsWith('karte_')).reduce((s, f) => s + fs.statSync(path.join(VS, 'bilder', f)).size, 0);
   ok(a.fertig && a.n === a.soll && a.breit.every(w => w > 100), 'alle Karten-Bilder geladen', a);
-  ok(groesse < 1.5 * 1048576, 'Karten-Bilder zusammen < 1,5 MB', Math.round(groesse / 1024) + ' KB');
+  ok(groesse < 2 * 1048576, 'Karten-Bilder zusammen < 2 MB', Math.round(groesse / 1024) + ' KB');
   ok(g0.quelle && g0.start, 'Bilder laden erst beim Zeichnen (paintBackground → karteBilder)');
   // ===== B =====
   const bb = await p.evaluate(() => {
-    const art = r => landmasses.find(l => l.ring === r).boden, M = bodenMasken(), an = (k, x, y) => M.w[k][Math.floor((y + M.R) * M.k) * M.n + Math.floor((x + M.R) * M.k)];
-    const S = HEX_SPACING;
-    return { ringe: [0, 1, 2, 3, 4, 5, 6, 7, 8].map(art), mitteSand: an('sand', 0, 0), aussenSand: an('sand', 7 * S, 7 * S), aussenMitte: an('mitte', 7 * S, 0),
-             ring4mitte: an('mitte', 4 * S, 0), ring4innen: an('innen', 4 * S, 0), ringAn: [ringAn(0, 0), ringAn(4 * S, -2 * S), ringAn(8 * S, 8 * S), ringAn(9.2 * S, 0)],
-             bio: new Set(landmasses.map(l => l.bio)).size, keinMeer: typeof SEA_PATTERN === 'undefined' && typeof paintSea === 'undefined' };
+    const M = bodenMasken(), an = (k, x, y) => M.w[k][Math.floor((y + M.R) * M.k) * M.n + Math.floor((x + M.R) * M.k)], kern = z => landmasses.find(l => l.zone === z);
+    return { anzahl: [1, 2, 3, 4, 5].map(z => landmasses.filter(l => l.zone === z).length), mitte: landmasses[0].zone === 5 && landmasses[0].tier === 'throne' && landmasses[0].ring === 0,
+      tiers: [1, 2, 3, 4].map(z => kern(z).tier + kern(z).ring), boden: [1, 2, 3, 5].map(z => { const l = kern(z); return ['mitte', 'sand', 'innen'].map(k => an(k, l.x, l.y)).join('/'); }),
+      keinMeer: typeof SEA_PATTERN === 'undefined' && typeof paintSea === 'undefined', daten: landmasses.length === KARTE_ZONEN.gebiete.length && bridges.length === KARTE_ZONEN.paesse.length };
   });
-  ok(bb.ringe.join() === 'sand,sand,innen,innen,mitte,mitte,aussen,aussen,aussen', 'Boden nach Ringen: außen grün → Mitte Sand', bb.ringe);
-  ok(bb.mitteSand === 255 && bb.aussenSand === 0 && bb.aussenMitte === 0 && bb.ring4mitte === 255 && bb.ring4innen === 0, 'Boden-Masken passen zu den Ringen', bb);
-  ok(bb.ringAn.join() === '0,4,8,9', 'ringAn über die geschlängelten Grenzen (außerhalb: 9)', bb.ringAn);
-  ok(bb.keinMeer, 'kein Meer mehr (SEA_PATTERN / paintSea weg)');
-  ok(bb.bio > 3, 'Landschaften (lm.bio) bleiben für Rohstoffe/Felder – nur nicht mehr zu sehen', bb.bio);
+  ok(bb.anzahl.join() === '10,8,6,4,1' && bb.mitte && bb.daten, 'Gebiete aus KARTE_ZONEN: Zone 1–4 mit 10/8/6/4 Gebieten, Mitte = Landmasse 0 (Thron)', bb);
+  ok(bb.tiers.join() === 'outer7,outer5,outer2,guardian1', 'Ring/Stufe wie vorher: Zone 1 außen (leicht) … Zone 4 Wächter', bb.tiers);
+  ok(bb.boden.join() === '0/0/0,255/0/0,0/255/0,0/0/255', 'Boden je Zone: 1 Gras, 2 Gras gelbgrün, 3 Wüste, Mitte braune Erde', bb.boden);
+  ok(bb.keinMeer, 'kein Meer (SEA_PATTERN / paintSea weg)');
   // ===== C + D =====
   const c = await p.evaluate(() => {
-    const K = karteObjekte(), S = HEX_SPACING, ende = (GRID_HALF + .5) * S, zaehl = n => K.liste.filter(o => o.n.startsWith(n)).length;
-    const linien = []; for (let k = -GRID_HALF - 1; k <= GRID_HALF; k++) linien.push(k + .5);
-    const ohne = [];                                  // Grenzabschnitte ohne Kette (alle 8.000 Einheiten eine Probe; nicht an Toren/Knoten)
-    const tore = bridges.map(br => torMitte(islandById[br.gateId]));
-    for (const senk of [true, false]) for (const L of linien) for (let t = -ende + 4000; t < ende - 4000; t += 8000) {
-      const aus = Math.abs(L) > GRID_HALF ? Math.sign(L) * RAND_AUSSEN : 0, x = senk ? grenzLinie(true, L, t) + aus : t, y = senk ? t : grenzLinie(false, L, t) + aus;   // (Kartenrand: nach außen versetzt)
-      if (tore.some(g => Math.hypot(g.x - x, g.y - y) < KARTE_MASS.tor * .7)) continue;   // (die Lücke am Tor selbst)
-      if (resFields.some(q => Math.hypot(q.x - x, q.y - y) < q.radius + 7000)) continue;   // (ein Feld liegt auf der Grenze: dort spart die Kette aus)
-      const drin = (x, y) => K.liste.some(o => o.n.startsWith('kette') && x > o.bb.l && x < o.bb.r && y > o.bb.t && y < o.bb.b);
-      const g = tore.find(q => Math.hypot(q.x - x, q.y - y) < KETTE_GERADE[senk ? 'hoch' : 'quer']);   // am Tor läuft die Kette gerade auf der Linie des Tors
-      if (!drin(x, y) && !(g && drin(senk ? g.x : x, senk ? y : g.y))) ohne.push([senk ? 'senk' : 'waag', L, Math.round(t)]); }
-    const mess = bridges.map(br => { const isl = islandById[br.gateId], tm = torMitte(isl), senk = Math.abs(br.x2 - br.x1) > Math.abs(br.y2 - br.y1);
-      const L = senk ? Math.round(tm.x / S - .5) + .5 : Math.round(tm.y / S - .5) + .5, punkt = senk ? grenzLinie(true, L, tm.y) : grenzLinie(false, L, tm.x);
-      const luecke = Math.abs((senk ? tm.x : tm.y) - punkt) / KARTE_MASS.tor * 100;
-      if (senk) {   // Tor-Bild für Nord-Süd-Ketten; mittlere Kettenreihe über und unter der Lücke auf derselben Linie (Abstand der Stücke zur Torlinie)
-        const reihe = K.liste.filter(o => o.n.startsWith('kette_hoch') && Math.abs(o.y - tm.y) < 15000 && Math.abs(o.x - tm.x) < 700);
-        const oben = reihe.filter(o => o.y < tm.y), unten = reihe.filter(o => o.y > tm.y), ab = Math.max(...reihe.map(o => Math.abs(o.x - tm.x)));
-        const bild = KB.img.tor_senk_zu && TOR_SENK.achse > 0;   // (Tor-Bild für Nord-Süd-Ketten: Achse und Weg werden genau auf den Torpunkt gesetzt, 03b drawTorBild)
-        return { id: isl.id, senk, luecke, versatz: oben.length && unten.length && bild ? ab / KARTE_MASS.tor * 100 : 99 }; }
-      const nb = K.liste.filter(o => o.n.startsWith('kette_quer') && Math.abs(o.x - tm.x) < 10000 && Math.abs(o.y - tm.y) < 600);
-      const paar = [nb.filter(o => o.x < tm.x).sort((u, v) => v.x - u.x)[0], nb.filter(o => o.x > tm.x).sort((u, v) => u.x - v.x)[0]].filter(Boolean);
-      const winkel = paar.length === 2 ? Math.abs(Math.atan2(paar[1].y - paar[0].y, paar[1].x - paar[0].x) * 180 / Math.PI) : 99;
-      return { id: isl.id, senk, luecke, winkel, fuss: Math.max(...paar.map(o => Math.abs(o.y - tm.y))) * .03 }; });
-    const feldNah = m => { const g = torMitte(islandById[m.id]); return resFields.some(q => Math.hypot(q.x - g.x, q.y - g.y) < 20000); };   // (ein Feld neben dem Tor: das Nachbarstück ist absichtlich ausgespart)
-    const ausgespart = mess.filter(m => (m.senk ? m.versatz : m.winkel) === 99 && feldNah(m)).length;
-    const schlecht = mess.filter(m => !(m.luecke <= 2 && (m.senk ? m.versatz <= 2 : m.winkel <= 10 && m.fuss <= 2)) && !((m.senk ? m.versatz : m.winkel) === 99 && feldNah(m)));
-    const imTor = tore.filter(g => K.liste.some(o => o.n.startsWith('kette_quer') || o.n.startsWith('kette_hoch') ? Math.hypot(o.x - g.x, o.y - g.y) < 1400 : false)).length;
-    return { quer: zaehl('kette_quer'), hoch: zaehl('kette_hoch'), knoten: zaehl('kette_knoten'), soll: linien.length * linien.length, ohne: ohne.length, ohneB: ohne.slice(0, 4),
-             tore: mess.length, ausgespart, schlecht: schlecht.slice(0, 4), nSchlecht: schlecht.length, imTor };
+    const K = karteObjekte(), ketten = K.liste.filter(o => /^kette_(quer|hoch)/.test(o.n)), knoten = K.liste.filter(o => o.n === 'kette_knoten');
+    const tore = bridges.map(br => torMitte(islandById[br.gateId])), ohne = [];
+    for (const g of KARTE_ZONEN.grenzen) if (g.b !== -1) for (let i = 0; i < g.punkte.length; i += 3) { const [x, y] = g.punkte[i];
+      if (tore.some(t => Math.hypot(t.x - x, t.y - y) < KARTE_MASS.tor)) continue;                      // (die Lücke am Tor)
+      if (Math.hypot(g.punkte[0][0] - x, g.punkte[0][1] - y) < 9000 || Math.hypot(g.punkte[g.punkte.length - 1][0] - x, g.punkte[g.punkte.length - 1][1] - y) < 9000) continue;   // (am Knoten)
+      if (!ketten.some(o => x > o.bb.l && x < o.bb.r && y > o.bb.t && y < o.bb.b)) ohne.push([g.id, x, y]); }
+    const enden = []; for (const g of KARTE_ZONEN.grenzen) if (g.b !== -1) for (const q of [g.punkte[0], g.punkte[g.punkte.length - 1]]) if (!enden.some(e => Math.hypot(e[0] - q[0], e[1] - q[1]) < 5000)) enden.push(q);
+    const imTor = tore.filter(t => ketten.some(o => Math.hypot(o.x - t.x, o.y - t.y) < KARTE_MASS.tor * .3)).length;
+    const genau = bridges.every(br => { const t = torMitte(islandById[br.gateId]); return t.x === br.pass.x && t.y === br.pass.y && t.senk === br.pass.senk; });
+    const ws = worldStartAt(), tage = bridges.map(br => { const o = passOpensAt(br); return o ? Math.round((o - ws) / 864e5) + 1 : 1; });
+    const tagOk = bridges.every((br, i) => tage[i] === KARTE_ZONEN.oeffnen[br.pass.stufe]);
+    return { ketten: ketten.length, knoten: knoten.length, enden: enden.length, ohne: ohne.length, ohneB: ohne.slice(0, 3), tore: tore.length, imTor, genau, tagOk, tage: [...new Set(tage)].sort() };
   });
-  ok(c.quer > 500 && c.hoch > 500 && c.knoten >= c.soll * .97, 'Ketten (quer + hoch) und Knoten an jeder Kreuzung (außer wo ein Feld an der Kreuzung liegt)', c);
-  ok(c.ohne === 0, 'jede Grenze (auch der Kartenrand) ist eine geschlossene Kette', c.ohneB);
-  ok(c.tore > 500 && c.nSchlecht === 0 && c.ausgespart < 100, 'Tor genau in der Kette: Lücke auf dem Torpunkt, Mauer in Kettenrichtung, Fuß bündig, kein Versatz (' + c.tore + ' Tore, ' + c.ausgespart + ' mit Feld daneben)', c.schlecht);
-  ok(c.imTor === 0, 'kein Kettenstück steht mitten im Tor (Lücke frei)', c.imTor);
+  ok(c.ketten > 1500 && c.knoten === c.enden, 'Ketten an allen Grenzen, Knoten an jeder Kreuzung', c);
+  ok(c.ohne === 0, 'jede Grenze zwischen zwei Gebieten ist eine geschlossene Kette (bis auf die Pässe)', c.ohneB);
+  ok(c.tore === 56 && c.imTor === 0 && c.genau, 'Tor genau im Pass, kein Kettenstück im Tor (' + c.tore + ' Tore)', c);
+  ok(c.tagOk && c.tage.join() === '1,2,3,4,5', 'Pässe öffnen von außen nach innen: Tag 1 (sofort) … zur Mitte Tag 5', c.tage);
   // ===== E: Märsche nur durch die Tore =====
   const e = await p.evaluate(() => {
-    const S = HEX_SPACING, fehler = []; let n = 0;
-    for (const br of bridges.filter((x, i) => i % 9 === 0)) {
+    const fehler = []; let n = 0;
+    for (const br of bridges.filter((x, i) => i % 4 === 0)) {
       const A = (islandsByLandmass[br.a] || []).find(i => i.type === 'tower'), B = (islandsByLandmass[br.b] || []).find(i => i.type === 'tower'); if (!A || !B) continue;
       const weg = marchPath(A, B), g = torMitte(islandById[br.gateId]); n++;
       for (let k = 1; k < weg.length; k++) { const p0 = weg[k - 1], p1 = weg[k];
-        for (let s = 0; s <= 20; s++) { const x = p0.x + (p1.x - p0.x) * s / 20, y = p0.y + (p1.y - p0.y) * s / 20;
-          const nahe = Math.abs(x - grenzLinie(true, Math.round(x / S - .5) + .5, y)) < 200 || Math.abs(y - grenzLinie(false, Math.round(y / S - .5) + .5, x)) < 200;
-          if (nahe && Math.hypot(x - g.x, y - g.y) > 4000) { fehler.push([A.id, B.id, Math.round(x), Math.round(y)]); break; } } } }
+        for (let s = 0; s <= 40; s++) { const x = p0.x + (p1.x - p0.x) * s / 40, y = p0.y + (p1.y - p0.y) * s / 40;
+          if (grenzAbstand(x, y) < 3000 && Math.hypot(x - g.x, y - g.y) > PASS_TIEFE) { fehler.push([A.id, B.id, Math.round(x), Math.round(y)]); break; } } } }
     return { n, fehler: fehler.slice(0, 4), nF: fehler.length };
   });
-  ok(e.n > 20 && e.nF === 0, 'Märsche kreuzen die Kette nur am Tor (' + e.n + ' Wege geprüft)', e.fehler);
+  ok(e.n >= 10 && e.nF === 0, 'Märsche kreuzen das Gebirge nur am Tor (' + e.n + ' Wege geprüft)', e.fehler);
   // ===== F =====
   const f = await p.evaluate(() => {
-    const K = karteObjekte(), wald = K.liste.filter(o => o.n.startsWith('wald')), S = HEX_SPACING, zuNah = [];
-    for (const o of wald) { const lm = landmasses[felsLmAn(o.x, o.y)]; if (!lm) { zuNah.push('aus'); continue; }
-      for (const i of islandsByLandmass[lm.id] || []) if (Math.hypot(i.x - o.x, i.y - o.y) < i.radius + o.w * .5 - 1) zuNah.push(['Basis', i.id]);
-      for (const fl of resFields) if (fl.landmassId === lm.id && Math.hypot(fl.x - o.x, fl.y - o.y) < fl.radius + o.w * .5 - 1) zuNah.push(['Feld', fl.id]); }
     const c = document.createElement('canvas'); c.width = c.height = 256; const g = c.getContext('2d'), od = g.drawImage; let bilder = 0;
     g.drawImage = function (im) { if (im && im.width > 300) bilder++; return od.apply(this, arguments); };
     paintBackground({ c, g, z: .0015, l: -50000, t: -50000 }, null, true);
-    return { wald: wald.length, zuNah: zuNah.slice(0, 4), nZ: zuNah.length, weitBilder: bilder };
+    return { weitBilder: bilder, fest: typeof karteSkala === 'undefined' && !/karteSkala/.test(paintGelaende.toString() + drawTorBild.toString()) };
   });
-  ok(f.wald > 500 && f.nZ === 0, 'Wald-Gruppen auf freier Wiese (nicht auf Basen/Feldern)', f);
   ok(f.weitBilder <= 1, 'weit draußen: nur Farbfläche + Bänder, keine Gelände-Bilder in der Kachel', f.weitBilder);
-  // ===== H: Barbaren-Lager entstehen nie im Grenzgebirge (Platzwahl barbSpot, wie schon bei den Bergstöcken) =====
+  ok(f.fest, 'Ketten und Tore fest in der Welt (keine Vergrößerung je Zoom)');
+  // ===== H =====
   const h = await p.evaluate(() => { const r = mulberry32(4711); let n = 0, nah = 0;
-    for (let i = 0; i < 600; i++) { const s = barbSpot(BARB_LMS[i % BARB_LMS.length], r); if (!s) continue; n++; if (grenzAbstand(s.x, s.y) < 4000) nah++; }
-    return { n, nah }; });
-  ok(h.n > 300 && h.nah === 0, 'Barbaren-Lager: neue Plätze nie näher als 4.000 an einer Grenze (Gebirge)', h);
+    for (let i = 0; i < 300; i++) { const s = barbSpot(BARB_LMS[i % BARB_LMS.length], r); if (!s) continue; n++; if (grenzAbstand(s.x, s.y) < KETTE_FREI) nah++; }
+    const tuerme = islands.filter(i => i.type === 'tower'), imGebirge = tuerme.filter(i => grenzAbstand(i.x, i.y) < KETTE_FREI).length;
+    const falschesGebiet = tuerme.filter((i, k) => k % 7 === 0 && !pointInPolygon(i.x, i.y, landmasses[i.landmassId].shape)).length;
+    const start = islands.filter(i => i.startSlot), jeLm = {}; for (const i of start) jeLm[i.landmassId] = (jeLm[i.landmassId] || 0) + 1;
+    const tempel = islands.filter(i => i.type === 'temple' || i.type === 'megaTemple');
+    return { n, nah, tuerme: tuerme.length, imGebirge, falschesGebiet, start: start.length, startZone1: start.every(i => landmasses[i.landmassId].zone === 1), jeLm: Object.values(jeLm),
+      tempel: tempel.map(i => (i.type === 'megaTemple' ? 'T' : i.tempelArt[0]) + landmasses[i.landmassId].zone).sort().join() }; });
+  ok(h.n > 150 && h.nah === 0, 'Barbaren-Lager: neue Plätze nie im Grenzgebirge', h);
+  ok(h.tuerme > 15000 && h.tuerme < 40000 && h.imGebirge === 0 && h.falschesGebiet === 0, 'Basen: etwa so viele wie vorher, nie im Gebirge, jede in ihrem Gebiet', h);
+  ok(h.start === 100 && h.startZone1 && h.jeLm.every(v => v === h.jeLm[0]), 'Startplätze: alle in Zone 1, gleich viele je Gebiet', h.jeLm);
+  ok(h.tempel === 'T5,t4,t4,w4,w4', 'Thron in der Mitte, je Zone-4-Gebiet ein Tempel (Felskessel/Wächter abwechselnd)', h.tempel);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

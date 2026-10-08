@@ -49,6 +49,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       pendingScouts.splice(0, pendingScouts.length);
       // 4b) Angriff kompakt (Alexander 6.10.): Handy höchstens 55 % hoch ohne Scrollen, Startbasis + Marschzeit nur EINMAL,
       //     Zahlen ganz, Held + Zweitheld als zwei Chips (≥ 44 px) – antippen klappt die Auswahl auf, eine Wahl klappt sie zu
+      { const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity(); }   // Helden erst mit Heldenhalle (Merkliste 21)
       const hs0 = loadHeroes(); HEROES.forEach((h, i) => { if (hs0[h.id]) hs0[h.id].own = i < 3; });
       const kompakt = [], maut0 = tollFor;
       for (const sp of [false, true]) {

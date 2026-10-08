@@ -1,5 +1,6 @@
 // Wirtschaft „pro Stunde“ (Alexander 5.10., LIESMICH 11b A): was früher pro Sekunde kam, kommt jetzt pro Stunde. Geprüft wird, dass
-// genau das ankommt, was das Profil anzeigt (Beispiel Alexander: 2 Türme je 94/Std. → Profil 188/Std.; Münzen seit 6.10. × 1.000), auch mit der Fähigkeit
+// genau das ankommt, was das Profil anzeigt (Beispiel Alexander: 2 Türme Stufe 22 → Profil = doppelter Turm-Wert; Münzen seit 6.10. × 1.000,
+// Truppen seit 7.10. BASE_TROOPS 15 statt 5 → je Turm 282 statt 94 – Soll-Werte darum aus troopsPerTick/coinsPerTick), auch mit der Fähigkeit
 // „Geschwindigkeit“ und allen Boni; Basis-Fenster und Tempel zeigen „/ Std.“; die Hauptstadt macht Holz/Stein/Eisen pro Stunde wie
 // angezeigt; Mitspieler genau gleich; die Saison endet sonntags 18 Uhr deutscher Zeit – auch wenn die Uhr des Geräts woanders steht.
 const { chromium, devices } = require('playwright');
@@ -19,7 +20,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const meine = () => [...ownedIslands].reduce((a, id) => a + (islandTroops[id] || 0), 0);
     const stunde = n => { prodCarry.coins = 0; prodCarry.troops = {}; const t0 = meine(), c0 = coins; produceTicks(n); return { troops: meine() - t0, coins: coins - c0 }; };
     const out = {};
-    // 1) Alexanders Beispiel: 2 Türme Stufe 22 ohne Boni → je 94 Truppen und 188.000 Münzen pro Stunde
+    // 1) Alexanders Beispiel: 2 Türme Stufe 22 ohne Boni → je troopsPerTick(22) Truppen und coinsPerTick(22) Münzen pro Stunde
+    out.je = { t: Math.round(troopsPerTick(22) * 3600), c: Math.round(coinsPerTick(22) * 3600) };   // (je Tick 1 s ein 3.600stel)
     const pt = playerTroopMult, pc = playerCoinMult; playerTroopMult = () => 1; playerCoinMult = () => 1; skills.speed = 0;
     const hp = hourProduction('player'); renderProfile(true);
     out.grund = { hp, profil: [document.getElementById('kTroopsRate').textContent, document.getElementById('kCoinsRate').textContent],
@@ -59,16 +61,17 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return out;
   });
   console.log(JSON.stringify(r));
-  const G = r.grund, fmtN = n => n.toLocaleString('de-DE');
-  ok(Math.round(G.hp.troops) === 188 && Math.round(G.hp.coins) === 376000 && G.profil[0] === '+188' && G.profil[1] === '+376.000', 'Profil: 2 Türme je 94 Truppen/188.000 Münzen pro Stunde → +188 / +376.000', G);
+  const G = r.grund, fmtN = n => n.toLocaleString('de-DE'), JT = r.je.t, JC = r.je.c, ST = 2 * JT, SC = 2 * JC;
+  ok(JT === 282 && JC === 188000, 'ein Turm Stufe 22: 282 Truppen (15 × 1,15^21) und 188.000 Münzen pro Stunde', r.je);
+  ok(Math.round(G.hp.troops) === ST && Math.round(G.hp.coins) === SC && G.profil[0] === '+' + fmtN(ST) && G.profil[1] === '+' + fmtN(SC), 'Profil: 2 Türme je ' + JT + ' Truppen/' + fmtN(JC) + ' Münzen pro Stunde → +' + fmtN(ST) + ' / +' + fmtN(SC), G);
   ok(/Std\./.test(G.label) && !/Tick/.test(G.label), 'Profil sagt „Truppen / Std.“ (nicht mehr „/ Tick“)', G.label);
-  ok(G.kommt.troops === 188 && G.kommt.coins === 376000, 'eine Stunde: genau 188 Truppen und 376.000 Münzen kommen an', G.kommt);
-  ok(r.takte.troops === 188 && r.takte.coins === 376000, 'eine Stunde in 3.600 Sekunden-Takten: genau so viel (nichts geht verloren)', r.takte);
-  ok(/Truppen \/ Std\.\s*\+94/i.test(r.fenster) && /Münzen \/ Std\.\s*\+188\.000/i.test(r.fenster) && !/\/ s\b/i.test(r.fenster), 'Basis-Fenster: „/ Std.“ mit dem Wert der Basis', r.fenster);
+  ok(G.kommt.troops === ST && G.kommt.coins === SC, 'eine Stunde: genau ' + ST + ' Truppen und ' + fmtN(SC) + ' Münzen kommen an', G.kommt);
+  ok(r.takte.troops === ST && r.takte.coins === SC, 'eine Stunde in 3.600 Sekunden-Takten: genau so viel (nichts geht verloren)', r.takte);
+  ok(new RegExp('Truppen \\/ Std\\.\\s*\\+' + JT, 'i').test(r.fenster) && new RegExp('Münzen \\/ Std\\.\\s*\\+' + fmtN(JC).replace('.', '\\.'), 'i').test(r.fenster) && !/\/ s\b/i.test(r.fenster), 'Basis-Fenster: „/ Std.“ mit dem Wert der Basis', r.fenster);
   const T = r.tempo, sollT = T.hp.troops * T.anteil;
-  ok(T.ms === 600 && Math.round(T.hp.troops) === Math.round(188 * 1000 / 600) && T.profil === '+' + Math.round(T.hp.troops) && T.kommt.troops <= sollT && sollT - T.kommt.troops < 2, 'Geschwindigkeit (Tick 0,6 s): Profil zeigt mehr pro Stunde – genau das kommt an (je Basis wartet höchstens der Bruchteil einer Truppe)', T);
+  ok(T.ms === 600 && Math.round(T.hp.troops) === Math.round(ST * 1000 / 600) && T.profil === '+' + Math.round(T.hp.troops) && T.kommt.troops <= sollT && sollT - T.kommt.troops < 2, 'Geschwindigkeit (Tick 0,6 s): Profil zeigt mehr pro Stunde – genau das kommt an (je Basis wartet höchstens der Bruchteil einer Truppe)', T);
   const O = r.boni;
-  ok(O.profil[0] === '+' + O.fmt[0] && O.profil[1] === '+' + O.fmt[1] && O.hp.troops > 188 && O.hp.coins > 376000 && Math.abs(O.kommt.troops - O.hp.troops) < 2 && Math.abs(O.kommt.coins - O.hp.coins) < 1, 'mit Boni: was im Profil steht, kommt in einer Stunde an (±1)', O);
+  ok(O.profil[0] === '+' + O.fmt[0] && O.profil[1] === '+' + O.fmt[1] && O.hp.troops > ST && O.hp.coins > SC && Math.abs(O.kommt.troops - O.hp.troops) < 2 && Math.abs(O.kommt.coins - O.hp.coins) < 1, 'mit Boni: was im Profil steht, kommt in einer Stunde an (±1)', O);
   ok(/pro Stunde/.test(r.tempel) && !/Tick/.test(r.tempel) && r.tempel.includes('+' + fmtN(Math.round(15000 * r.tempelMult)) + ' Münzen') && r.tempel.includes('+' + Math.round(6 * r.tempelMult) + ' Truppen pro Stunde'), 'Tempel: Münzen und Truppen pro Stunde', r.tempel);
   const R = r.roh;
   ok(['h', 's', 'e'].every(k => Math.abs(R.kam[k] - R.rs[k]) <= 1) && R.rs.h > 5e4 && R.rs.h < 1e6, 'Hauptstadt: Holz/Stein/Eisen pro Stunde wie angezeigt (RoK-Größe, × ROH_FAKTOR) (Holzfäller 20: ' + Math.round(R.rs.h) + ' Holz/Std.)', R);

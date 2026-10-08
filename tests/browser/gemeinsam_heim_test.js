@@ -11,10 +11,11 @@ const D = process.argv[2]; const srv = http.createServer((q, r) => { const f = p
     for (const x of bots) if (bundVon(x.id)) bundOp(x.id, { op: 'verlassen' });
     const [A, B, C] = bots; botCoins[A.id] = 1e9;
     bundOp(A.id, { op: 'gruenden', name: 'Heimweg', tag: 'HEI', offen: true }); bundOp(B.id, { op: 'beitreten', aid: bundVon(A.id).id });
-    const frei = islands.filter(i => i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id) && !isCapital(i.id)).map(i => i.id);
-    const [a2, tB, tC, z1, z2] = frei, ca = botCapitalOf(A.id), cb = botCapitalOf(B.id);
+    const L = islandById[botCapitalOf(A.id)].landmassId;   // alle im Gebiet von A (Märsche gehen nur über Pässe – auch bei Mitspielern)
+    const frei = islands.filter(i => i.landmassId === L && i.type === 'tower' && !islandOwnerOf(i.id) && !bossAt(i.id) && !isCapital(i.id)).map(i => i.id);
+    const [a2, tB, tC, z1, z2, b2] = frei, ca = botCapitalOf(A.id), cb = b2;
     const gib = (w, id) => { clearIslandOwner(id); botOwnedIslands[w].add(id); };
-    gib(A.id, a2); gib(B.id, tB); gib(C.id, tC); loadBotState()[C.id].shieldUntil = Date.now() + 864e5;
+    gib(A.id, a2); gib(B.id, tB); gib(C.id, tC); gib(B.id, b2); loadBotState()[C.id].shieldUntil = Date.now() + 864e5;
     for (const z of [z1, z2]) { islandTroops[z] = 0; neutralTroopOverrides[z] = 1000000; islandById[z].neutralTroops = 1000000; }
     for (const c of [ca, a2, cb]) islandTroops[c] = 1e8;
     const t0 = Date.now();

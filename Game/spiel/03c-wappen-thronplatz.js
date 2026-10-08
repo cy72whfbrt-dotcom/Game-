@@ -31,7 +31,7 @@ function drawCrest(g, x, y, s, c) {
     g.restore();
     const sym = CREST_SYMBOLS[c.sym], ink = CREST_INK[c.ink];
     if (sym === 'crown') { const cw = s * .42; g.save(); g.translate(x, y + cw * .3); g.fillStyle = ink; g.beginPath(); g.moveTo(-cw / 2, 0); g.lineTo(-cw / 2, -cw * .34); g.lineTo(-cw / 4, -cw * .16); g.lineTo(0, -cw * .62); g.lineTo(cw / 4, -cw * .16); g.lineTo(cw / 2, -cw * .34); g.lineTo(cw / 2, 0); g.closePath(); g.fill(); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.55)'; g.stroke(); g.restore(); }
-    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink);
+    else if (sym !== 'none') drawGlyph(g, sym, x, y - s * .02, s * .5, ink, true);   // (Wappen-Zeichen: Linien)
     crestPath(g, x, y, s, shape); g.lineWidth = Math.max(1, s * .05); g.strokeStyle = '#d8b56c'; g.stroke();
     crestPath(g, x, y, s * 1.04, shape); g.lineWidth = Math.max(.8, s * .025); g.strokeStyle = 'rgba(0,0,0,.7)'; g.stroke();
 }
@@ -138,7 +138,7 @@ function bannerSprite(tierKey, m) {
   return s;
 }
 const DOWN = { A: 'B', B: 'K', K: 'C', C: 'C', N: 'N' };
-function tierFor(z) { return z >= 0.06 ? 'A' : z >= 0.026 ? 'B' : 'C'; }
+function tierFor(z) { const q = z / maxZoom; return q >= .75 ? 'A' : q >= .45 ? 'B' : 'C'; }   // (im Verhältnis zum größten Zoom – der hängt von der Bildschirmbreite ab)
 let bannerHitRects = [];
 function overlap(a, b) { return Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y)); }
 
@@ -150,9 +150,14 @@ function senkSchildX(tm, w, z) { const k = TOR_SENK.hoch * .13 * z, x = toSX(tm.
 function layoutBanners(visible, z, selectedId) {  // places every nameplate (sets bannerHitRects) → items for paintBanners()
   bannerHitRects = [];
   const towers = towerRects = visible.map(isl => { const s = 2 * isl.radius * z; return { id: isl.id, x: toSX(isl.x) - s / 2, y: toSY(isl.y) - s * 0.65, w: s, h: s }; });
-  if (z < TERRITORY_VIEW_ZOOM) return [];
+  const schild = isl => isl.type === 'tower' && z >= SCHILD_ZOOM && !!KB.img.schild;   // Basen tragen ihr Namensschild – Fahne nur noch beim Antippen
+  const schilde = basisSchilde(visible, z).map(s => Object.assign({ id: s.isl.id }, s.r));   // (nur die gezeigten: verdeckte sind weggelassen)
+  bannerHitRects.push(...schilde);                                                // (Schild antippen öffnet die Basis, Funde und Märsche weichen aus)
+  const hw = heimWappenRect(z); if (hw) bannerHitRects.push(hw);                 // das Wappen an der Hauptstadt ebenso (Funde nicht halb dahinter)
+  if (z < Math.min(TERRITORY_VIEW_ZOOM, maxZoom * .25)) return [];
+  for (const q of schilde) towers.push({ id: -1, x: q.x, y: q.y, w: q.w, h: q.h });
   const base = tierFor(z);
-  let items = visible.map(isl => {
+  let items = visible.filter(isl => !schild(isl) || isl.id === selectedId).map(isl => {
     const m = bannerModel(isl);
     let p = m.p; if (isl.id === selectedId) p = 5;
     let tier = base;
@@ -165,7 +170,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const placed = [];
   for (const it of items) {
     const tm = torMitte(it.isl);                                                   // Pass-Tor (Karten-Bild): das Schild direkt unter das Tor
-    const r = tm ? tm.r * z * karteSkala(z) : it.isl.radius * z * (it.isl.type === 'megaTemple' ? 1.8 : it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
+    const r = tm ? tm.r * z : it.isl.bildR ? Math.max(it.isl.bildR * z, 14) : it.isl.radius * z * (it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
     let best = null;
     for (let t = it.tier; ; t = DOWN[t]) {
       const sp = bannerSprite(t, it.m), w = sp.w, h = sp.h;
@@ -324,8 +329,8 @@ function drawBaseSparks(vis, z, now) {            // over the towers
     const t = titled.get(isl.id), x = toSX(isl.x), y = toSY(isl.y), r = Math.max(20, isl.radius * z * 1.25);
     if (x < -r * 5 || x > viewW + r * 5 || y < -r * 6 || y > viewH + r * 5) continue;
     const shOw = islandOwnerOf(isl.id);
-    if (shOwn.has(shOw) && shieldCovers(isl)) { const r = isl.radius * z;                                               // Friedensschild: a pale dome over every base of its owner
-      const R = Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id);
+    if (shOwn.has(shOw) && shieldCovers(isl)) { const bk = basisKreis(isl, z), r = isl.radius * z;                     // Friedensschild: a pale dome over every base of its owner
+      const R = bk ? bk.r * 1.15 : Math.max(r * 1.45, 16), ph = .6 + .4 * Math.sin(now / 700 + isl.id), y = bk ? toSY(isl.y) - bk.dy + R * .2 : toSY(isl.y);   // (Bild: die Kuppel mittig darüber)
       const gd = ctx.createRadialGradient(x, y - R * .2, R * .3, x, y - R * .2, R);
       gd.addColorStop(0, 'rgba(210,235,255,.12)'); gd.addColorStop(.7, 'rgba(190,225,255,' + (.28 * ph).toFixed(2) + ')'); gd.addColorStop(1, 'rgba(230,245,255,' + (.6 * ph).toFixed(2) + ')');
       ctx.fillStyle = gd; ctx.beginPath(); ctx.arc(x, y - R * .2, R, 0, Math.PI * 2); ctx.fill();
@@ -382,7 +387,9 @@ function drawRings(visible, z, now) {
   const pulse = .5 + .5 * Math.sin(now / 280);
   const attackTarget = pendingAttackTargetId !== null ? islandById[pendingAttackTargetId] : null;
   for (const isl of visible) {
-    const x = toSX(isl.x), y = toSY(isl.y), r = isl.radius * z, S = Math.max(r * 1.28 + 3, 12);
+    let x = toSX(isl.x), y = toSY(isl.y), r = isl.radius * z;
+    const bk = basisKreis(isl, z); if (bk) { y -= bk.dy; r = bk.r; }   // Basis als Bild: Ringe mittig um das Bild (Bildmitte, nicht Fußpunkt), passend groß
+    const S = Math.max(r * 1.28 + 3, 12);
     const isOwned = ownedIslands.has(isl.id);
     const isTemple = isl.type === 'temple' || isl.type === 'megaTemple';
     if (isTemple && z >= 0.006) {
@@ -391,11 +398,9 @@ function drawRings(visible, z, now) {
         ctx.moveTo(x + Math.cos(a) * r * 1.44, y + Math.sin(a) * r * 1.44); ctx.lineTo(x + Math.cos(a) * r * 1.52, y + Math.sin(a) * r * 1.52); }
         ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke(); }
     }
-    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base: a title from the middle or a bought Ring-Skin (see ringStatusByOwner)
+    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base with a title from the middle (see ringStatusByOwner)
       const o = islandOwnerOf(isl.id), st = o ? rankOf.get(o) : null;
-      if (st && st.k === 'skin') {                                                  // a bought Ring-Skin: one plain thin ring - quiet, so the title rings stand out
-        const R1 = Math.max(r * 1.35, 21); ring(x, y, R1, 3.6, 'rgba(10,8,4,.45)'); ring(x, y, R1, 1.8, st.c0);
-      } else if (st) {                                                                // a title from the middle: bold double ring with notches + a badge (crown, or skull for a penalty)
+      if (st) {                                                                       // bold double ring with notches + a badge (crown, or skull for a penalty)
         const R1 = Math.max(r * 1.35, 21), R2 = R1 + Math.max(r * .28, 5), W = 3.4;
         ring(x, y, R1, W + 2.5, 'rgba(10,8,4,.55)'); ring(x, y, R1, W, st.c0);          // dark underlay so the ring reads on grass and territory
         ring(x, y, R2, 3, 'rgba(10,8,4,.35)'); ring(x, y, R2, 1.4, st.c1);
@@ -436,20 +441,26 @@ function drawRings(visible, z, now) {
 const MARCH_STYLE = { attack: ['#ff8d82', [7, 6], 'attack'], incoming: ['#ff8d82', [7, 6], 'bot'], send: ['#8cc0ff', [7, 6], 'send'],
                       scout: ['#e4c886', [3, 6], 'scout'], retreat: ['#f2a066', [5, 5], 'recall'], enemyScout: ['#ff9f7a', [3, 6], 'scout'] };
 let marchTokens = [], liveAnimation = false;
-function marchPath(source, target) {             // source → over every bridge on the route → target
-  const path = [{ x: source.x, y: source.y }];
-  if (source.landmassId !== target.landmassId) {
-    const route = routeFor(source.landmassId, target.landmassId, islandOwnerOf(source.id) || 'player') || [source.landmassId, target.landmassId];
-    for (let i = 0; i < route.length - 1; i++) {
-      const br = bridgeBetween(route[i], route[i + 1]); if (!br) continue;
-      const sA = br.a === route[i];
-      path.push(sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 });
-    }
+const MARSCH_WEG_MERK = new Map();
+function marchPath(source, target) {             // source → over every pass on the route → target: nie durchs Gebirge (in jedem Gebiet gebietWeg, 01b)
+  const payer = islandOwnerOf(source.id) || 'player', key = source.id + '>' + target.id + '|' + payer + '|' + ownVer + '|' + offenePaesse() + '|' + source.x + ',' + source.y + '|' + target.x + ',' + target.y;
+  const m = MARSCH_WEG_MERK.get(key); if (m && Date.now() - m.t < 2000) return m.p;
+  const sL = source.landmassId ?? gebietAn(source.x, source.y), tL = target.landmassId ?? gebietAn(target.x, target.y);
+  const route = sL === undefined || tL === undefined || sL === tL ? [sL] : routeFor(sL, tL, payer) || routeFor(sL, tL, payer, true) || [sL];
+  const path = [{ x: source.x, y: source.y }]; let lm = sL;
+  const bis = (p, l) => { const w = l === undefined ? [path[path.length - 1], p] : gebietWeg(path[path.length - 1], p, l); for (let k = 1; k < w.length; k++) path.push(w[k]); };
+  for (let i = 0; i < route.length - 1; i++) {
+    const br = bridgeBetween(route[i], route[i + 1]); if (!br) continue;
+    const sA = br.a === route[i];
+    bis(sA ? { x: br.x1, y: br.y1 } : { x: br.x2, y: br.y2 }, lm);
+    path.push({ x: br.pass.x, y: br.pass.y }, sA ? { x: br.x2, y: br.y2 } : { x: br.x1, y: br.y1 }); lm = route[i + 1];   // (durch den Pass)
   }
-  path.push({ x: target.x, y: target.y });
-  return felsenPfad(path);                       // um die Berge herum (01f; Schalter aus: unverändert)
+  bis({ x: target.x, y: target.y }, lm);
+  if (MARSCH_WEG_MERK.size > 3000) MARSCH_WEG_MERK.clear();
+  MARSCH_WEG_MERK.set(key, { t: Date.now(), p: path });
+  return path;
 }
-function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (their Marsch-Skin); yours by default
+function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOverride, mk, who) {   // who: whose column (its flag); yours by default
   if (!source || !target) return;
   if (!startedAt) startedAt = resolveAt - MIN_ATTACK_SECONDS * 1000;
   const total = resolveAt - startedAt, progress = total > 0 ? Math.min(1, Math.max(0, (now - startedAt) / total)) : 1;
@@ -466,7 +477,7 @@ function drawMarchLine(type, source, target, startedAt, resolveAt, now, pathOver
   // placed in drawMarchTokens(), after the nameplates, so the token can start past the source's own plate
   const own = type !== 'incoming' && type !== 'enemyScout'; if (who === undefined) who = own ? 'player' : null;
   marchTokens.push({ pts, seg, tot, progress, r: (source.radius || 0) * mapState.zoom, srcId: source.id, key: type + source.id + '>' + target.id + '@' + resolveAt, col, glyph: glyphName, own, mk: mk || null, secs: Math.max(0, Math.ceil((resolveAt - now) / 1000)),
-                    who, sk: who && glyphName !== 'scout' ? marchSkinOf(who) : null });
+                    who, fahne: !!who && glyphName !== 'scout' });
 }
 function marchPointAt(m, d) {                   // screen point at path distance d
   for (let i = 0; i < m.seg.length; i++) { if (d <= m.seg[i] || i === m.seg.length - 1) { const t = m.seg[i] > 0 ? Math.min(1, Math.max(0, d / m.seg[i])) : 1;
