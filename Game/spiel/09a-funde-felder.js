@@ -229,7 +229,9 @@ function fieldArrive(m, now) {
         return;
     }
     if (!o) { st.occ = { who: m.who, troops: m.troops, homeId: m.homeId, hero: m.hero || null, hero2: m.hero2 || null, since: now, got: 0 }; if (m.who === 'player') flashHint('Deine Truppen sammeln jetzt an ' + fArt(FIELD_KINDS[f.kind], 'dat') + '.', 3000); return; }
-    if (o.who === m.who) { o.troops += m.troops; if (!o.hero) { o.hero = m.hero || null; o.hero2 = m.hero2 || null; } return; }   // more of your own join the gatherers (other heroes just go along)
+    if (o.who === m.who) {                                                // more of your own join the gatherers (other heroes just go along)
+        const t = o.teile || [[o.troops, o.hero || null]]; if (t.length < 6) t.push([m.troops, m.hero || null]); else t[5][0] += m.troops; o.teile = t;   // (nur fürs Kampf-Bild: je Marsch ein Sechseck)
+        o.troops += m.troops; if (!o.hero) { o.hero = m.hero || null; o.hero2 = m.hero2 || null; } return; }
     if (m.who !== 'player' && botById[m.who] && botKeepsShield(botById[m.who], now)) { const home = islandById[m.homeId] || islandById[playerIslandId];   // under their own shield: no fight, back home
         fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, hero2: m.hero2 || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 }); return; }
     if (m.who === 'player') dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else { botDropShield(m.who); botNeulingWeg(m.who, o.who); }   // a fight for the field is an attack
@@ -242,7 +244,7 @@ function fieldArrive(m, now) {
     const fg = fieldGold(m.who, oWho, fb, aHx, dHx);
     if (involved) {
         const youWon = (m.who === 'player') === won;
-        addCombatLogEntry(feldBericht(m.who === 'player'));
+        const eb = feldBericht(m.who === 'player'); addCombatLogEntry(eb); feldKampfBild(eb);   // (03f: der Kampf ist entschieden – die Karte spielt ihn trotzdem ab)
         flashHint(youWon ? 'Du hast ' + fArt(FIELD_KINDS[f.kind], 'akk') + ' gegen ' + loserName + ' gehalten/erobert.' : winnerName + ' hat dich von ' + fArt(FIELD_KINDS[f.kind], 'dat') + ' vertrieben.', 4000);
         sfx(youWon ? 'victory' : 'defeat');
     }
@@ -251,7 +253,8 @@ function fieldArrive(m, now) {
     function feldBericht(istA) {                     // aus Sicht des Angreifers (istA) oder des Sammlers: Du, Gegner, Verluste, Verwundete, Gold
         return { type: 'field', fieldKind: f.kind, won: istA === won, attacker: istA ? 'Du' : fieldWhoName(m.who), defender: istA ? fieldWhoName(oWho) : 'Du', atk: fb.SA, def: fb.SD,
             aTroops: m.troops, dTroops: o.troops + (won ? 0 : fb.dLoss), aLoss: fb.aLoss, dLoss: fb.dLoss, aWounded: wA, dWounded: wD,
-            gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx) };
+            gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx),
+            fieldId: f.id, aWho: m.who, dWho: oWho, aHome: m.homeId, aHero: m.hero || null, dHero: o.hero || null, dTeile: o.teile || null };   // (fürs Kampf-Bild)
     }
 }
 // Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Sammel-Rausch (+50 %) · Gebäude · Forschung Sammeln

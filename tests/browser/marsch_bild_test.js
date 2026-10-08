@@ -55,6 +55,8 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     // sie dem Handy mit der Kampf-Zeit (Zuschauer) – hier so nachgestellt
     await p.evaluate(ids => { const f = pendingAttacks.find(a => a.targetId === ids.T && a.fightEndsAt), v = f && pendingAttacks.find(a => a.attackerBotId === ids.A && a.targetId === ids.T);
       if (v) { v.fightEndsAt = f.fightEndsAt; v.resolveAt = Date.now(); } }, ids);
+    await p.evaluate(ids => { const now = Date.now();                       // Gedränge (Spieltest F1): zwei eigene Rückwege ziehen gerade vom Kampf weg
+      for (const [n, nach] of [[1.8e6, ids.home], [1.6e6, ids.own2]]) pendingRetreats.push({ fromId: ids.T, toId: nach, troops: n, startedAt: now - 2000, resolveAt: now + 60000 }); }, ids);
     await p.waitForTimeout(700);
     const k1 = await bild(); await foto('kampf');
     await p.waitForTimeout(3500);
@@ -71,7 +73,11 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     ok(kf && kf.helfer >= 1 && k1.koepfe.some(k => k.art === 'verst' && k.n > 0) && Math.abs(dSumme - kf.d) <= 2 && kf.d <= daten.b.en, name + ': Verteidiger + Verstärker des Gegners je mit Sechseck und Zahl', { dSumme, kf });
     ok(kf && kf2 && kf2.d < kf.d, name + ': Verteidiger-Zahl sinkt im Kampf', { vorher: kf && kf.d, nachher: kf2 && kf2.d });
     ok(daten.wartet >= 1 && k1.koepfe.some(k => /wartet/.test(k.text)), name + ': fremder Dritter wartet sichtbar (⌛ wartet)', daten);
-    ok(!ueber(k1.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Kampf)', ueber(k1.koepfe));
+    ok(!ueber(k1.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Kampf mit 4 Armeen, Verstärker, Wartendem, 2 Rückwegen)', ueber(k1.koepfe));
+    const imBild = await p.evaluate(() => { mzLeistenLesen(); return { schilde: bannerHitRects.slice(), leisten: mzLeisten, w: viewW, h: viewH }; });
+    const stoert = (l, nur) => l.filter(k => !nur || nur.includes(k.art)).flatMap(k => imBild.schilde.concat(imBild.leisten).filter(q => Math.max(0, Math.min(k.x + k.w, q.x + q.w) - Math.max(k.x, q.x)) * Math.max(0, Math.min(k.y + k.h, q.y + q.h) - Math.max(k.y, q.y)) > .15 * k.w * k.h).map(() => k.text));
+    ok(!stoert(k1.koepfe, ['kampf', 'rueck', 'marsch']).length, name + ': Armeen-Chips nicht auf Basis-Schildern oder Leisten', stoert(k1.koepfe, ['kampf', 'rueck', 'marsch']));
+    ok(!k1.koepfe.some(k => k.seite === 'eigen' && /wartet/.test(k.text)), name + ': eigene Wellen zeigen nie „⌛ wartet“', k1.koepfe.filter(k => /wartet/.test(k.text)));
     // ===== B) Märsche: Chip = Spieldaten, Rally, Sammeln, Späher, Zurückgerufen =====
     await p.waitForFunction(T => !pendingAttacks.some(a => a.targetId === T), ids.T, { timeout: 30000, polling: 300 }).catch(() => {});
     await p.waitForTimeout(3000);
@@ -107,6 +113,19 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
       requestAnimationFrame(() => requestAnimationFrame(() => r({ sel: selMarch, knoepfe: marchBtnRects.map(x => x.act), rund: marchBtnRects.every(x => x.w === 44 && x.h === 44) }))); }); }));
     ok(c.sel && JSON.stringify(c.knoepfe) === '["info","recall","speed"]' && c.rund, name + ': eigene Armee antippen → runde Knöpfe Info/Zurück/Schneller', c);
     await foto('knoepfe');
+    const knoepfe = await p.evaluate(() => {                       // Spieltest F3/F4: Armee am rechten Rand / oben unter der Kopfleiste → Knöpfe frei im Bild, nie übereinander
+      const out = {};
+      for (const [art, wo] of [['rally', 'rechts'], ['sammeln', 'oben']]) {
+        const m = marchTokens.find(t => t.info.art === art && t.mk); if (!m) { out[art] = 'fehlt'; continue; }
+        const W = innerWidth, H = innerHeight, zx = wo === 'rechts' ? W - 24 : W / 2, zy = wo === 'rechts' ? H / 2 : 70;
+        mapState.offsetX += zx - m.x; mapState.offsetY += zy - m.y; selMarch = mzSelKey(m); requestRender(); drawMap(); drawMap();
+        const b = marchBtnRects.map(r => ({ x: r.x - 4, y: r.y, w: r.w + 8, h: r.h + 16 }));   // (mit Text darunter)
+        const ueber2 = b.some((r, i) => b.some((q, j) => j > i && overlap(r, q) > 0)), raus = b.filter(r => r.x < 0 || r.y < 0 || r.x + r.w > viewW || r.y + r.h > viewH).length;
+        out[art] = { n: b.length, ueber: ueber2, raus, leiste: b.filter(r => mzLeisten.some(q => overlap(r, q) > 0)).length };
+      }
+      return out; });
+    await p.waitForTimeout(300); await foto('knoepfe_oben');
+    ok(['rally', 'sammeln'].every(a => knoepfe[a].n >= 2 && !knoepfe[a].ueber && !knoepfe[a].raus && !knoepfe[a].leiste), name + ': Knöpfe am Rand/oben: im Bild, nicht unter Leisten, nie übereinander', knoepfe);
     const ohne = await p.evaluate(() => { selMarch = null; window.__alt = [pendingAttacks, pendingSends, pendingRetreats, pendingScouts]; pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = [];
       return new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; requestRender(); if (performance.now() - t0 < 2500) requestAnimationFrame(f); else r(Math.round(n * 1000 / (performance.now() - t0))); }; requestAnimationFrame(f); }); });
     await p.evaluate(() => { [pendingAttacks, pendingSends, pendingRetreats, pendingScouts] = __alt; });
@@ -118,6 +137,41 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
       return new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; requestRender(); if (performance.now() - t0 < 2500) requestAnimationFrame(f); else r({ bps: Math.round(n * 1000 / (performance.now() - t0)), ms: Math.round(ms / n * 10) / 10 }); }; requestAnimationFrame(f); }); }, ids);
     console.log(name + ': ' + bps.bps + ' Bilder/s bei ' + (await p.evaluate(() => marchTokens.length)) + ' Märschen auf dem Bild (ohne Märsche ' + ohne + '), Marsch-Anzeige ' + bps.ms + ' ms je Bild');
     ok(bps.ms < 10, name + ': Marsch-Anzeige rechnet schnell (unter 10 ms je Bild, auch bei 4 Testläufen zugleich)', bps);
+    // ===== D) Angriff auf Sammler: sofort entschieden (09a), trotzdem ~5 s Kampf-Szene, die Zahlen laufen auf das echte Ergebnis zu, danach das Band;
+    //    dein 2. Sammel-Marsch steht als eigenes Sechseck auf der Verteidiger-Seite =====
+    const fk0 = await p.evaluate(ids => {
+      selMarch = null; pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = []; mapBattles = []; battleFx = []; dropShield(); window.__band = []; const fx0 = spawnBattleFx;
+      spawnBattleFx = function (wo, gut, text) { __band.push({ text, at: performance.now() }); return fx0.apply(this, arguments); };   // (wann das Band kommt)
+      const home = islandById[ids.home], bq = [...botOwnedIslands[ids.D]].find(id => islandById[id].landmassId === home.landmassId);
+      const f = resFields.filter(f => f.landmassId === home.landmassId && !(fieldState[f.id] && fieldState[f.id].occ) && !fieldMarches.some(m => m.fieldId === f.id))
+        .sort((x, y) => Math.hypot(x.x - home.x, x.y - home.y) - Math.hypot(y.x - home.x, y.y - home.y))[0];
+      fieldMarches = fieldMarches.filter(m => m.who !== 'player');
+      const lm = loadBotState()[ids.D]; if (lm) lm.shieldUntil = 0; islandTroops[bq] = 1e8;
+      AUF.frei && AUF.frei.an();
+      try { fieldSend('player', ids.home, f.id, 3e6); fieldSend('player', ids.home, f.id, 1e6);
+        for (const m of fieldMarches.filter(m => m.fieldId === f.id)) { fieldMarches.splice(fieldMarches.indexOf(m), 1); fieldArrive(m, Date.now()); }   // (beide angekommen: sammeln zusammen)
+        if (fieldSend(ids.D, bq, f.id, 2e7)) fieldMarches[fieldMarches.length - 1].resolveAt = Date.now() + 300;   // (Gegner D greift deine Sammler an)
+      } finally { AUF.frei && AUF.frei.aus(); }
+      flyTo(f.x, f.y + 1200, { instant: true, zoom: innerWidth >= 700 ? .03 : .02 });
+      return { f: f.id };
+    }, ids);
+    const born = await p.waitForFunction(() => { const b = mapBattles.find(b => b.feld); return b && b.born; }, null, { timeout: 5000, polling: 100 }).then(h => h.jsonValue()).catch(() => 0);
+    const t0 = Date.now();
+    await p.waitForTimeout(900);
+    const fA = await bild(); await foto('feldkampf');
+    const ber = await p.evaluate(F => { const e = combatLog.find(x => x.type === 'field' && x.fieldId === F); return e && { a: e.aTroops, aL: e.aLoss, d: e.dTroops, dL: e.dLoss, won: e.won }; }, fk0.f);
+    await p.waitForTimeout(Math.max(0, 4300 - (Date.now() - t0)));
+    const fB = await bild(); await foto('feldkampf_ende');
+    await p.waitForTimeout(1500);
+    const fx = await p.evaluate(([F, born]) => ({ feld: mapBattles.filter(b => b.feld).length, band: __band.map(x => ({ text: x.text, nach: Math.round(x.at - born) })) }), [fk0.f, born]);
+    const kA = fA.kaempfe.find(k => k.feld === fk0.f), kB = fB.kaempfe.find(k => k.feld === fk0.f);
+    console.log(name, JSON.stringify({ fk0, ber, kA, kB, fx, koepfe: fA.koepfe.map(k => k.art + ':' + k.text) }));
+    ok(ber && kA && kA.a <= ber.a && kA.a >= ber.a - ber.aL && kA.d <= ber.d && kA.d >= ber.d - ber.dL, name + ': Angriff auf Sammler → Kampf-Szene am Feld mit den Zahlen des Kampfs', { ber, kA });
+    const dS = fA.koepfe.filter(k => k.art === 'vert' || k.art === 'verst').reduce((x, k) => x + k.n, 0);
+    ok(kA && kA.helfer === 1 && Math.abs(dS - kA.d) <= 2, name + ': dein 2. Sammel-Marsch als eigenes Sechseck auf der Verteidiger-Seite (Summe = Sammler)', { dS, kA });
+    ok(ber && kB && kB.a === ber.a - ber.aL && kB.d === ber.d - ber.dL, name + ': Zahlen laufen auf das echte Ergebnis zu', { ber, kB });
+    ok(fx.feld === 0 && fx.band.length === 1 && fx.band[0].text === (ber && ber.won ? 'Sieg' : 'Niederlage') && fx.band[0].nach >= 4000 && fx.band[0].nach < 6500, name + ': Szene ~5 s, danach Sieg/Niederlage-Band', fx);
+    ok(!ueber(fA.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Feld-Kampf)', ueber(fA.koepfe));
     await p.context().close();
   }
   ok(!fe.length, 'keine Skript-Fehler', fe);

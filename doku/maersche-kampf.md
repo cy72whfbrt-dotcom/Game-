@@ -94,6 +94,15 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-maersche.js` (`la
 - Kampf: Kampf-Kreis, Armeen im Halbkreis um das Ziel (nie auf anderen Basen), Verstärker als eigene Sechsecke, Tafel
   „N Armeen · X ⚔ Y“, Geschosse, Verluste; Wartende mit Sanduhr; Sieg/Niederlage als Band-Bild. Armee antippen → runde
   Knöpfe (eigene: Info/Zurück/Schneller, fremde: Info/Angreifen/Spähen). Test `marsch_bild_test`.
+- Kampf am Feld (Sammler angegriffen): wird wie bisher sofort entschieden (09a, Regeln unverändert), die Karte spielt ihn aber
+  ~5 s als dieselbe Kampf-Szene ab (`feldKampfBild`, 03f): Zahlen laufen auf das echte Ergebnis zu, danach Sieg/Niederlage-Band;
+  weitere eigene Sammel-Märsche am Feld stehen als eigene Sechsecke auf der Verteidiger-Seite (`occ.teile`, nur Anzeige). Zuschauer
+  bekommen die Szene über den Feld-Bericht vom Weltrechner (`fieldId`, `aWho`/`dWho`). Test `marsch_bild_test` Teil D.
+- Spieltest-Funde (8.10.): nichts liegt mehr übereinander – Marsch-Köpfe weichen den Schlachten (Flächen des letzten Bilds),
+  Basis-Schildern und Leisten (Kopfleiste, Zoom-Knöpfe, Anleitung) aus, Chip am rechten Rand links vom Kopf; kein Platz nah am Trupp:
+  klein (nur Kopf), dann weiter weg mit Strich. Armeen im Kampf nie an einer fremden Basis/auf ihrem Schild und nie außerhalb des
+  Bilds (sonst klein). Antipp-Knöpfe: Bogen, sonst Reihe/Spalte – immer im Bild, nicht unter Leisten/Hinweis, nie übereinander.
+  Eigene/verbündete Welle, die einem laufenden Kampf beitritt, zeigt kein „⌛ wartet“ mehr. Lebensbalken blendet mit dem Kampf aus.
 - Fremde Märsche nur, wenn sie auf deine Basis zielen; Bündnis-Märsche zu dir (Rally, Hilfe, Verstärkung) und ihre
   Rückwege werden gezeichnet; Kämpfe zwischen anderen unsichtbar. Echte Zahlen des Angreifers erst, wenn er bei dir kämpft.
 - Testdatei nur für die Darstellung: `werkzeuge/marschtest/` (Regeln kommen immer aus dem Spiel, Test `marschtest_test`).
