@@ -35,15 +35,23 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         const x = r(a), y = r(c), w = Math.min(x.right, y.right) - Math.max(x.left, y.left), h = Math.min(x.bottom, y.bottom) - Math.max(x.top, y.top);
         if (w > 1 && h > 1) ueber.push(name(a) + ' × ' + name(c));
       }
-      const raus = teile.filter(e => { const x = r(e); return x.left < pr.left - 1 || x.right > pr.right + 1 || x.left < 0 || x.right > innerWidth + 1 || x.bottom > innerHeight + 1; }).map(name);
-      const texte = [...pop.querySelectorAll('.act-t, .act-s, .bw-wert b, .ptitle, .ap-leiste b, #attackBtn .lbl, .tor-hinweis span')].filter(sicht)
+      let raus = teile.filter(e => { const x = r(e); return x.left < pr.left - 1 || x.right > pr.right + 1 || x.left < 0 || x.right > innerWidth + 1 || x.bottom > innerHeight + 1; }).map(name);
+      const texte = [...pop.querySelectorAll('.act-t, .act-s, .bw-wert b, .ptitle, .ap-leiste b, #attackBtn .lbl, .notice span, .force b, .force small, .balance-note, .ap-hchip-t b, .ap-hchip-t small, .ap-max')].filter(sicht)
         .filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent.trim());
+      const sel = pop.querySelector('#attackFromSel');   // Auswahl: der gewählte Text passt ganz hinein
+      if (sel && sicht(sel)) { const c = document.createElement('canvas').getContext('2d'), cs = getComputedStyle(sel); c.font = cs.fontWeight + ' ' + cs.fontSize + ' ' + cs.fontFamily;
+        if (c.measureText(sel.selectedOptions[0].textContent).width > sel.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)) texte.push('Auswahl: ' + sel.selectedOptions[0].textContent); }
+      const prR = pr.right;   // kein Text/Bild ragt rechts aus dem Fenster (Quer-Wischlisten ausgenommen)
+      for (const e of pop.querySelectorAll('.pbody *, .phead *, .pfoot *')) if (sicht(e) && !e.closest('.chips-quer') && e.getBoundingClientRect().right > prR + 1) { raus.push('ragt raus: ' + name(e)); break; }
+      const hint = document.getElementById('hint'), hr = hint && !hint.hidden && getComputedStyle(hint).display !== 'none' && +getComputedStyle(hint).opacity > 0 && hint.textContent.trim() ? hint.getBoundingClientRect() : null;
+      if (hr) for (const e of pop.querySelectorAll('button')) if (sicht(e)) { const x = e.getBoundingClientRect(); if (Math.min(x.right, hr.right) - Math.max(x.left, hr.left) > 1 && Math.min(x.bottom, hr.bottom) - Math.max(x.top, hr.top) > 1) { ueber.push('Hinweis über ' + name(e)); break; } }
+      const bedien = [...pop.querySelectorAll('#attackTroopsSlider, #attackTroopsLabel, [data-preview="quick"] button, #attackBtn')].filter(e => sicht(e) && !document.querySelector('.hero-seg:not([hidden])')).filter(e => { const x = e.getBoundingClientRect(), bx = pb.contains(e) ? br : pr; return x.top < bx.top - 1 || x.bottom > bx.bottom + 1 || x.height < 1; }).map(name);
       const knoepfe = [...pop.querySelectorAll('button, select, input')].filter(sicht).filter(e => !e.closest('[hidden]'))
         .filter(e => !pb.contains(e) || r(e).height > 1).map(e => { const x = e.getBoundingClientRect(); return [name(e) + ':' + (e.textContent || '').trim().slice(0, 12), Math.round(x.width), Math.round(x.height)]; })
         .filter(([n, w, h]) => !/slider|troop-in|who-link/i.test(n) && (w < 43.5 || h < 43.5));   // (Schieber: der Daumen zählt; Name im Untertitel: Textverweis)
-      return { ueber, raus, texte, knoepfe, oben: Math.round(pr.top), scroll: pb.scrollHeight > pb.clientHeight + 2 };
+      return { ueber, raus, texte, knoepfe, bedien, oben: Math.round(pr.top), scroll: pb.scrollHeight > pb.clientHeight + 2 };
     });
-    const gut = (x, t) => ok(!x.ueber.length && !x.raus.length && !x.texte.length && !x.knoepfe.length, art + ': ' + t + ' – nichts überlappt/abgeschnitten, Knöpfe ≥ 44 px', x);
+    const gut = (x, t) => ok(!x.ueber.length && !x.raus.length && !x.texte.length && !x.knoepfe.length && !x.bedien.length, art + ': ' + t + ' – nichts überlappt/abgeschnitten, Knöpfe ≥ 44 px', x);
     const knoepfe = () => ev(() => [...document.querySelectorAll('#popupActions > .act')].filter(e => e.offsetParent)   // wie man sie sieht: Zeile für Zeile, links nach rechts
       .sort((a, c) => a.getBoundingClientRect().top - c.getBoundingClientRect().top || a.getBoundingClientRect().left - c.getBoundingClientRect().left).map(e => e.querySelector('.act-t').textContent.trim()));
 
@@ -66,6 +74,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const z = islands.filter(i => i.id !== playerIslandId && !islandOwnerOf(i.id) && i.type === 'tower').sort((a, c) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(c.x - home.x, c.y - home.y))[0];
       ownedIslands.add(z.id); islandTroops[z.id] = 12400; closeAllPopups(); openIslandPopup(z); await new Promise(r => setTimeout(r, 600)); return z.id; });
     ok((await knoepfe()).join() === 'Aufwerten,Senden,Sammeln,Truppen,Mehr', art + ': eigene Basis – Aufwerten, Senden, Sammeln, Truppen, Mehr', await knoepfe());
+    const ein = await ev(() => [...document.querySelectorAll('#popupStats .bw-wert b')].map(e => e.textContent));
+    ok(ein.filter(t => /^\+/.test(t)).every(t => /\/Std\.$/.test(t)), art + ': eigene Basis – Ertrag mit Einheit „/Std.“', ein);
     gut(await pruefe(), 'eigene Basis'); await bild('basis');
     await ev(async () => { const m = document.getElementById('mehrBtn'); if (m) m.click(); await new Promise(r => setTimeout(r, 200)); });
     ok((await knoepfe()).includes('Mehrfach'), art + ': eigene Basis – „Mehr“ zeigt Mehrfach', await knoepfe());
@@ -77,7 +87,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const z = islands.filter(i => islandOwnerOf(i.id) && islandOwnerOf(i.id) !== 'player' && i.type === 'tower' && canReach(home.landmassId, i.landmassId) && !baseShieldedFor(i.id, 'player'))
         .sort((a, c) => Math.hypot(a.x - home.x, a.y - home.y) - Math.hypot(c.x - home.x, c.y - home.y))[0] || islands.find(i => !islandOwnerOf(i.id) && i.type === 'tower' && canReach(home.landmassId, i.landmassId));
       scoutedIslands.add(z.id); islandTroops[playerIslandId] = Math.max(20000, islandTroops[playerIslandId] || 0); closeAllPopups(); openIslandPopup(z); await new Promise(r => setTimeout(r, 600)); return z.id; });
-    const f1 = await ev(() => ({ werte: [...document.querySelectorAll('#popupStats .bw-wert')].map(e => e.textContent.trim()), fuss: [...document.querySelectorAll('.pfoot > button')].filter(e => e.offsetParent).map(e => e.id),
+    const f1 = await ev(() => ({ einheit: true, werte: [...document.querySelectorAll('#popupStats .bw-wert')].map(e => e.textContent.trim()), fuss: [...document.querySelectorAll('.pfoot > button')].filter(e => e.offsetParent).map(e => e.id),
       rund: document.getElementById('islandPopup').classList.contains('fuss-rund') }));
     ok(f1.werte.length === 3 && /gespäht/.test(f1.werte[2]) && f1.fuss.join() === 'scoutBtn,attackBtn' && f1.rund, art + ': fremde Basis – Truppen, Verteidigung, gespäht; runde Knöpfe Spähen + Angreifen', f1);
     gut(await pruefe(), 'fremde Basis'); await bild('fremd');
@@ -86,9 +96,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       return { gross: g ? Math.round(g.getBoundingClientRect().height) : 0, klein: k && k.offsetParent ? Math.round(k.getBoundingClientRect().height) : 0, zweit: k ? k.textContent : '',
         knopf: at.querySelector('.lbl').textContent, gold: at.classList.contains('btn--gold'), zeit: document.getElementById('attackZeit').textContent, leiste: document.querySelectorAll('.ap-leiste > span').length,
         kachel: !!document.querySelector('.ap-truppen .ap-kachel img'), quick: document.querySelectorAll('[data-preview="quick"] button').length, chance: !!document.querySelector('[data-preview="balance"]') }; });
-    ok(a1.gross > a1.klein && a1.klein >= 44 && /Zweitheld · 50 %|\+ Zweitheld/.test(a1.zweit), art + ': Angriff – Hauptheld groß, Zweitheld klein („Zweitheld · 50 %“)', a1);
+    ok(a1.gross > a1.klein && a1.klein >= 44 && (a1.zweit.match(/Zweitheld/g) || []).length === 1 && (a1.zweit.match(/\+/g) || []).length <= 1, art + ': Angriff – Hauptheld groß, Zweitheld klein („Zweitheld · 50 %“)', a1);
     ok(a1.knopf === 'Losmarschieren' && a1.gold && /\d:\d\d/.test(a1.zeit) && a1.leiste === 3 && a1.kachel && a1.quick === 4 && a1.chance, art + ': Angriff – Truppen-Kachel, 25/50/75/Alle, Leiste, Gewinnchance, goldener Knopf mit Zeit', a1);
-    gut(await pruefe(), 'Angriff vorbereiten'); await bild('angriff');
+    await ev(() => flashHint('Erfolg: Erster Held – 5 Edelsteine unter „Events“', 5000)); await p.waitForTimeout(300);   // ein Hinweis kommt dazu: nie über den Knöpfen
+    gut(await pruefe(), 'Angriff vorbereiten (mit Hinweis)'); await bild('angriff');
     const a2 = await ev(async () => { const k = document.querySelector('[data-held-auf="2"]'); if (k) k.click(); await new Promise(r => setTimeout(r, 200)); const l = document.querySelector('[data-preview="hero2"]'); return !!l && !l.hidden; });
     ok(a2, art + ': Angriff – Zweitheld antippen klappt die Auswahl auf');
     gut(await pruefe(), 'Angriff mit Helden-Auswahl'); await bild('angriff_held');
@@ -100,10 +111,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       closeAllPopups(); popupIslandId = g.id; popupView = 'menu'; renderPopup(); await new Promise(r => setTimeout(r, 600));
       const hw = document.querySelector('#popupStats .tor-hinweis'), at = document.getElementById('attackBtn'), sp = document.getElementById('scoutBtn');
       const out = { hinweis: hw ? hw.textContent : '', imInhalt: !!hw && document.getElementById('popupStats').contains(hw), grau: at.classList.contains('is-grau'), spaehen: sp.offsetParent !== null };
-      at.click(); await new Promise(r => setTimeout(r, 200)); out.toast = (document.getElementById('hint') || {}).textContent || ''; out.offen = isPanelOpen(popup); return out; });
+      const h0 = (document.getElementById('hint') || {}).textContent || ''; at.click(); await new Promise(r => setTimeout(r, 200));
+      const h1 = (document.getElementById('hint') || {}).textContent || ''; out.toast = h1 !== h0 && /Keine deiner Basen/.test(h1); out.blinkt = !!hw && hw.classList.contains('blinkt'); out.offen = isPanelOpen(popup);
+      out.gespaeht = (document.getElementById('islandPopup').textContent.match(/gespäht/gi) || []).length; return out; });
     if (tor) {
       ok(/Keine deiner Basen grenzt/.test(tor.hinweis) && tor.imInhalt && tor.grau && tor.spaehen, art + ': Grenztor – Hinweis als Zeile im Fenster, Angreifen grau, Spähen da', tor);
-      ok(/Keine deiner Basen grenzt/.test(tor.toast) && tor.offen, art + ': Grenztor – grauer Knopf zeigt den Hinweis, Fenster bleibt offen', tor);
+      ok(!tor.toast && tor.blinkt && tor.offen && tor.gespaeht === 1, art + ': Grenztor – grauer Knopf lässt die Zeile blinken (kein Hinweis darüber), „gespäht“ nur einmal', tor);
       gut(await pruefe(), 'Grenztor'); await bild('grenztor');
     } else ok(false, art + ': kein Grenztor ohne Nachbar-Basis gefunden');
     await p.close();

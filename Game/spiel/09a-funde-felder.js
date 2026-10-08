@@ -281,7 +281,7 @@ function drawResFields(now, wallNow) {
     const z = mapState.zoom; if (z < .004) return;
     for (const m of fieldMarches) if (m.who === 'player') { const f = fieldById[m.fieldId], home = islandById[m.homeId]; if (!f || !home) continue;
         m.back ? drawMarchLine('send', m.vx !== undefined ? { x: m.vx, y: m.vy, landmassId: m.vlm ?? f.landmassId } : f, home, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)); }   // (antippen: Knöpfe wie jeder Marsch)
-    setScreen(ctx);
+    setScreen(ctx); let leisten = null;                                       // (Leisten über der Karte: erst beim ersten Vorrat-Text holen)
     const k = Math.max(.6, Math.min(2.2, z / .012));
     for (const f of resFields) {
         const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(f.x, f.y)) continue;
@@ -321,7 +321,8 @@ function drawResFields(now, wallNow) {
         }
         ctx.restore();
         if (z >= .008) { ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            const t = empty ? 'erschöpft' : fmtCompact(Math.floor(left)); const w = ctx.measureText(t).width + 12;
+            const t = empty ? 'erschöpft' : fmtCompact(Math.floor(left)); const w = ctx.measureText(t).width + 12, kr = { x: x - w / 2, y: y + 8 * k, w, h: 15 };
+            if ((leisten || (leisten = leistenRects())).some(q => overlap(kr, q) > 0)) continue;   // unter HUD/Event-Leiste: kein halber Vorrat-Text
             ctx.fillStyle = 'rgba(14,14,20,.8)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y + 8 * k, w, 15, 7) : ctx.rect(x - w / 2, y + 8 * k, w, 15); ctx.fill();
             ctx.fillStyle = empty ? '#9a927f' : FIELD_KINDS[f.kind].col; ctx.fillText(t, x, y + 8 * k + 3); }
     }

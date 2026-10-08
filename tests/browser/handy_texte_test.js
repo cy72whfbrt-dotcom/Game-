@@ -32,7 +32,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const home = islandById[playerIslandId], d = x => Math.hypot(islandById[botCapitalOf(x.id)].x - home.x, islandById[botCapitalOf(x.id)].y - home.y);
       const bot = BOT_DEFS.filter(x => !x.mensch && islandById[botCapitalOf(x.id)]).sort((a, c) => d(a) - d(c))[0], isl = botCapitalOf(bot.id);
       scoutedIslands.add(isl); openIslandPopup(islandById[isl]); await warte(600);
-      const chip = document.querySelector('#popupSub .chip--scouted'), wer = document.querySelector('#popupSub .psub-who'), knopf = document.querySelector('#scoutBtn .lbl');
+      const chip = [...document.querySelectorAll('#popupStats .bw-wert')].find(e => /gespäht/.test(e.textContent)),   // (8.10.: „gespäht“ steht bei den Werten, nicht doppelt im Untertitel)
+         wer = document.querySelector('#popupSub .psub-who'), knopf = document.querySelector('#scoutBtn .lbl');
       const fremd = { marke: ganz(chip), wer: ganz(wer), werText: wer && wer.textContent, knopf: knopf.textContent, knopfGanz: ganz(knopf) };
       // 4) Wörter (5.10.): „Edelsteine“ statt „Gems“, „Fähigkeiten“ statt „Skills“ – und trotzdem nichts abgeschnitten
       closeAllPopups(); const alt = /(^|[^A-Za-zäöü])(Gems?|Skills?|Skillpunkte?)([^A-Za-zäöü]|$)/;
@@ -51,7 +52,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.lang.klasse && r.lang.ganz && r.lang.preise && r.lang.sichtbar, art + ': Saison-Hinweis ganz lesbar (mit den Preisen)', r.lang);
     if (r.handy) ok(r.mitFenster === 'none', art + ': Saison-Hinweis verdeckt kein offenes Fenster', r.mitFenster);
     ok(!r.kurz.klasse && r.kurz.sichtbar, art + ': kurze Hinweise wie bisher', r.kurz);
-    ok(r.fremd.marke && r.fremd.wer, art + ': fremde Basis – Name und Marke „Gespäht“ ganz', r.fremd);
+    ok(r.fremd.marke && r.fremd.wer, art + ': fremde Basis – Name und „gespäht“ ganz', r.fremd);
     ok(r.fremd.knopf === 'Neu spähen' && r.fremd.knopfGanz, art + ': Knopf „Neu spähen“ ganz', r.fremd);
     ok(r.shop.wort === 'Edelsteine' && r.shop.ganz && !r.shop.alt, art + ': Shop sagt „Edelsteine“ (ganz, kein „Gems“ mehr)', r.shop);
     ok(r.profil.reiter === 'Fähigkeiten' && r.profil.reiterGanz && r.profil.zeile === 'Verfügbare Fähigkeitspunkte' && r.profil.zeileGanz && !r.profil.alt, art + ': Profil sagt „Fähigkeiten“/„Fähigkeitspunkte“ (ganz, kein „Skill“ mehr)', r.profil);

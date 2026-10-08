@@ -3526,10 +3526,14 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   return items;
 }
 const BANNER_UNTER = ['hud', 'midBar', 'mapControls', 'anleitung', 'cornerButtons'];   // Leisten über der Karte: Fahnen darunter blass
-function paintBanners(items) {
-  setScreen(ctx);
+function leistenRects() {                                                      // (Bildschirm) die Leisten über der Karte
   const cv = canvas.getBoundingClientRect(), unter = [];
   for (const id of BANNER_UNTER) { const el = document.getElementById(id); if (!el || el.hidden) continue; const b = el.getBoundingClientRect(); if (b.width && b.height) unter.push({ x: b.left - cv.left, y: b.top - cv.top, w: b.width, h: b.height }); }
+  return unter;
+}
+function paintBanners(items) {
+  setScreen(ctx);
+  const unter = leistenRects();
   for (const it of items) {
     ctx.globalAlpha = (it.m.filler ? 0.8 : 1) * (unter.some(q => overlap(it.rect, q) > 0) ? 0.35 : 1);
     const x = Math.round(it.rect.x * dpr) / dpr, y = Math.round(it.rect.y * dpr) / dpr;
@@ -10548,7 +10552,7 @@ function drawResFields(now, wallNow) {
     const z = mapState.zoom; if (z < .004) return;
     for (const m of fieldMarches) if (m.who === 'player') { const f = fieldById[m.fieldId], home = islandById[m.homeId]; if (!f || !home) continue;
         m.back ? drawMarchLine('send', m.vx !== undefined ? { x: m.vx, y: m.vy, landmassId: m.vlm ?? f.landmassId } : f, home, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)) : drawMarchLine('attack', home, f, m.startedAt, m.resolveAt, wallNow, null, marchKeyOf(m)); }   // (antippen: Knöpfe wie jeder Marsch)
-    setScreen(ctx);
+    setScreen(ctx); let leisten = null;                                       // (Leisten über der Karte: erst beim ersten Vorrat-Text holen)
     const k = Math.max(.6, Math.min(2.2, z / .012));
     for (const f of resFields) {
         const x = f.x * z + mapState.offsetX, y = f.y * z + mapState.offsetY; if (x < -40 || x > viewW + 40 || y < -40 || y > viewH + 40 || !isCellOpen(f.x, f.y)) continue;
@@ -10588,7 +10592,8 @@ function drawResFields(now, wallNow) {
         }
         ctx.restore();
         if (z >= .008) { ctx.font = '700 10px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-            const t = empty ? 'erschöpft' : fmtCompact(Math.floor(left)); const w = ctx.measureText(t).width + 12;
+            const t = empty ? 'erschöpft' : fmtCompact(Math.floor(left)); const w = ctx.measureText(t).width + 12, kr = { x: x - w / 2, y: y + 8 * k, w, h: 15 };
+            if ((leisten || (leisten = leistenRects())).some(q => overlap(kr, q) > 0)) continue;   // unter HUD/Event-Leiste: kein halber Vorrat-Text
             ctx.fillStyle = 'rgba(14,14,20,.8)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x - w / 2, y + 8 * k, w, 15, 7) : ctx.rect(x - w / 2, y + 8 * k, w, 15); ctx.fill();
             ctx.fillStyle = empty ? '#9a927f' : FIELD_KINDS[f.kind].col; ctx.fillText(t, x, y + 8 * k + 3); }
     }
@@ -12663,8 +12668,8 @@ function renderPopup() {
         liveHtml(popupStats, (haupt ? bwWerte([['ui_sym_macht', fmtCompact(powerOf(whoProfile('player'))), 'Macht'], ['beute_truppen', fmtTile(troopsHere), 'Truppen hier'],
                 ['ui_sym_friedensschild', sh > Date.now() ? fmtClock((sh - Date.now()) / 1000) : 'aus', 'Schutz (Friedensschild/Anfängerschutz)']])
             : bwWerte([['beute_truppen', fmtTile(troopsHere), 'Truppen hier'], ['ui_sym_schild', fmtTile(effectiveDefense(island)), 'Verteidigung'],
-                ['beute_muenzen', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())), 'Münzen pro Stunde', 'is-good'],
-                ['ui_sym_aufstieg', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())), 'Truppen pro Stunde', 'is-good']])) +
+                ['beute_muenzen', '+' + fmtStunde(proStunde(coinsPerTick(level) * playerCoinMult())) + '/Std.', 'Münzen pro Stunde', 'is-good'],
+                ['ui_sym_aufstieg', '+' + fmtStunde(proStunde(troopsPerTick(level) * playerTroopMult())) + '/Std.', 'Truppen pro Stunde', 'is-good']])) +
             (island.type === 'gate' ? gateControlsHtml(island) : '') +
             (isTemple ? templeBonusLine(island) : '') + throneNotice(island) + midNotice(island) + ringNotice(island));
         liveHtml(upgradeCostLabel, level >= MAX_BASE_LEVEL ? 'Max. Stufe' : icon('coin', 'icon--coin') + fmtCompact(upgradeCost(level)));
@@ -12688,7 +12693,7 @@ function renderPopup() {
         if (popupView === 'preview' && shieldOw) popupView = 'menu';
         subH = '<span class="dot dot--' + (bossAt(island.id) ? 'enemy' : kind) + '"></span>' + (bossAt(island.id) ? 'Boss' : ownerBot ? '<span class="psub-who">' + whoLink(ownerBot.id, ownerBot.name) + ' · Stufe ' + loadBotState()[ownerBot.id].lvl + (botOnline(ownerBot, Date.now()) ? ' · online' : ' · offline') +
             (botBestRarity(ownerBot.id) >= 0 ? ' · <b style="color:' + RARITY_DEFS[botBestRarity(ownerBot.id)].color + ';font-weight:600">' + RARITY_DEFS[botBestRarity(ownerBot.id)].label + '</b>' : '') + '</span>' : 'Unbesetzt') +
-            (scouted ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');
+            (scouted && popupView === 'preview' ? sep + '<span class="chip chip--scouted">' + icon('scout') + 'Gespäht</span>' : '');   // (im Menü steht „gespäht“ schon bei den Werten)
 
         if (popupView === 'preview') {
             renderAttackPreview(island, scouted);
@@ -12704,9 +12709,9 @@ function renderPopup() {
                 (spaehAlterText(island.id) ? '<div class="notice' + (Date.now() - spaehVom(island.id) >= SPAEH_ALT_MS ? ' notice--warn' : '') + '">' + icon('scout') + '<span>' + spaehAlterText(island.id) + '</span></div>' : '')   // wie alt ist der Bericht?
                     : '<button type="button" class="spaeh-kachel" data-spaehen' + (scoutEnRoute ? ' disabled' : '') + '>' + icon('scout') + '<span><b>Stärke unbekannt</b><small>' +   // eine Kachel: antippen = spähen
                         (scoutEnRoute ? 'Späher ist unterwegs …' : 'Antippen: Späher schicken') + '</small></span><span class="spaeh-kachel-w">' + icon('troops') + '?' + icon('defense') + '?</span></button>') +
-                (keinNachbar ? '<div class="notice notice--warn tor-hinweis"><img src="bilder/ui_hinweis.webp" alt=""><span>Keine deiner Basen grenzt an ' + (island.type === 'gate' ? 'dieses Tor' : 'dieses Gebiet') + '.</span></div>' : '') + midNotice(island) + ringNotice(island) +
+                (keinNachbar ? '<div class="notice notice--warn tor-hinweis">' + icon('info') + '<span>Keine deiner Basen grenzt an ' + (island.type === 'gate' ? 'dieses Tor' : 'dieses Gebiet') + '.</span></div>' : '') + midNotice(island) + ringNotice(island) +
                 (isCapital(island.id) ? '<div class="notice notice--gold">' + icon('castle') + '<span>Fällt nie · Sieg = ' + Math.round(HAUPT_BEUTE * 100) + ' % Beute über dem Schutz' + (brennt(island.id) ? ' · brennt gerade' : '') + '</span></div>' : '') +
-                (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Tor: Unbesetzt ist es verschlossen – erobere es, um über die Brücke zu kommen. Wer es besitzt, geht kostenlos durch und bestimmt die Maut für alle anderen.</span></div>' : '') +
+                (island.type === 'gate' && !ownerBot ? '<div class="notice notice--gold">' + icon('lock') + '<span>Verschlossen – wer das Tor erobert, kommt durch und bestimmt die Maut.</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (ownerBot ? escapeHtml(ownerBot.name) + ' verteilt die Titel (neu alle 3 Min.).' : 'Niemand verteilt gerade Titel.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Titel ansehen</button></div>' : '') +
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Thron der Meere: wer ihn hält, trägt die Krone – +25 % Münzen und Truppen im ganzen Reich und alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte. Die Wächter-Tempel feuern auf ihn – nächster Beschuss in <b data-throne-fire>' + fmtClock((throneState.nextFire - Date.now()) / 1000) + '</b>.' : island.guardian ? 'Wächter-Tempel: 3-facher Tempel-Bonus und alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht dem Herrscher, feuert er alle 3 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
                 (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
@@ -12930,6 +12935,7 @@ function patchAttackPreview() {
     const src0 = islandById[previewSourceId], px = previewHero && src0 ? heroPeek('player', previewHero, src0, island, shown, previewHero2) : null, hfx = popupStats.querySelector('[data-preview="herofx"]');   // what the hero does in THIS attack
     const hfl = x => x.lines.filter(l => l[0] !== 'Gefolge' && l[0] !== 'Tempo' && l[0].indexOf('Paar') !== 0).map(l => l[1]).join(', ');
     if (hfx) hfx.textContent = !px ? '' : heroStarTxt(px.q) + (px.fired ? ' · ' + px.skill + ' zündet' : '') + (px.pair ? ' · Paar +' + HERO_PAIR_BONUS + ' %' : px.h2 ? ' · + ' + heroById(px.h2.id).name : '') + ' · ' + hfl(px);
+    if (chip1) chip1.title = hfx ? hfx.textContent : '';   // (kleines Handy: die Zeile ist ausgeblendet)
     if (hfx) hfx.title = !px ? '' : hfl(px) + (px.h2 ? ' · ' + heroById(px.h2.id).name + ' (' + Math.round(HERO_ZWEIT * 100) + ' %): ' + hfl(px.h2) : '');   // alles einzeln beim Draufzeigen
     const swordBonus = attackFlatBonus(shown), heroTroops = px ? Math.round(shown * px.atk / 100) + heroGefOf(px, shown) : 0, atkBonus = swordBonus + heroTroops;
     const mine = Math.round((shown + atkBonus) * titleMult('player', 'attack') * (AUF ? AUF.kampf('player', 'a') : 1));        // same maths as resolveAttack (+ Forschung)
@@ -13152,6 +13158,7 @@ attackBtn.addEventListener('click', () => {
     const target = islandById[popupIslandId];
     const best = angriffStart(target);
     if (best === null) {
+        if (attackBtn.classList.contains('is-grau')) { const z = popupStats.querySelector('.tor-hinweis'); if (z) { z.classList.remove('blinkt'); void z.offsetWidth; z.classList.add('blinkt'); } return; }   // der Grund steht schon im Fenster: die Zeile blinkt, kein Hinweis darüber
         const any = [...ownedIslands].some(id => canReach(islandById[id].landmassId, target.landmassId));
         flashHint(any ? 'Deine Basen neben diesem Gebiet haben keine Truppen – schicke erst Truppen dorthin (Senden).'
                       : 'Keine deiner Basen grenzt an dieses Gebiet. Erobere zuerst eine Basis oder ein Tor direkt daneben und schicke Truppen hin.', 5000);
