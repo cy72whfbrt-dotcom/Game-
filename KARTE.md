@@ -711,8 +711,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawBuilding` → Game/spiel/03b-karte-basen-bilder.js:195
 - `drawCrest` → Game/spiel/03c-karte-wappen-thronplatz.js:19
 - `drawCrown` → Game/spiel/07b-kriegsherr.js:182
-- `drawDragonName` → Game/spiel/09c-events-drache.js:342
-- `drawEvents` → Game/spiel/09c-events-drache.js:311
+- `drawDragon` → Game/spiel/09c-events-drache.js:337
+- `drawDragonName` → Game/spiel/09c-events-drache.js:348
+- `drawEvents` → Game/spiel/09c-events-drache.js:315
 - `drawFog` → Game/spiel/06e-karte-nebel-paesse.js:108
 - `drawGatehouse` → Game/spiel/06e-karte-nebel-paesse.js:174
 - `drawGlyph` → Game/spiel/01a-grundlagen.js:249
@@ -743,16 +744,16 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawUebersichtZeichen` → Game/spiel/03b-karte-basen-bilder.js:25
 - `drawWander` → Game/spiel/07b-kriegsherr.js:145
 - `drawWorldFrame` → Game/spiel/06e-karte-nebel-paesse.js:3
-- `drDraw` → Game/spiel/09c-events-drache.js:353
+- `drDraw` → Game/spiel/09c-events-drache.js:359
+- `drFlug` → Game/spiel/09c-events-drache.js:309
 - `drin` → Game/spiel/03a-karte-hintergrund.js:186
 - `drin` → Game/spiel/03f-marsch-bilder.js:345
-- `drK` → Game/spiel/09c-events-drache.js:309
 - `drLeiste` → Game/spiel/09c-events-drache.js:224
 - `drNeu` → Game/spiel/09c-events-drache.js:232
 - `drOnMap` → Game/spiel/09c-events-drache.js:231
 - `dropShield` → Game/spiel/06d-schild-produktion.js:7
 - `drPlan` → Game/spiel/09c-events-drache.js:225
-- `drSheetHtml` → Game/spiel/09c-events-drache.js:387
+- `drSheetHtml` → Game/spiel/09c-events-drache.js:393
 - `drTakt` → Game/spiel/09c-events-drache.js:265
 - `drTreffer` → Game/spiel/09c-events-drache.js:238
 - `drum` → Game/spiel/10c-start-einstellungen.js:41
@@ -780,43 +781,43 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ereignisse_verbucht` → Game/server/05-datenbank-welt.php:269
 - `ertrag` → Game/aufbau.js:235
 - `escapeHtml` → Game/spiel/05c-profil-erfolge-rangliste.js:267
-- `EV_SZENE.boss` → Game/spiel/09c-events-drache.js:431
-- `EV_SZENE.drache` → Game/spiel/09c-events-drache.js:421
-- `EV_SZENE.inv` → Game/spiel/09c-events-drache.js:425
-- `EV_SZENE.rally` → Game/spiel/09c-events-drache.js:433
-- `EV_SZENE.tempel` → Game/spiel/09c-events-drache.js:436
-- `EV_SZENE.tour` → Game/spiel/09c-events-drache.js:428
+- `EV_SZENE.boss` → Game/spiel/09c-events-drache.js:437
+- `EV_SZENE.drache` → Game/spiel/09c-events-drache.js:427
+- `EV_SZENE.inv` → Game/spiel/09c-events-drache.js:431
+- `EV_SZENE.rally` → Game/spiel/09c-events-drache.js:439
+- `EV_SZENE.tempel` → Game/spiel/09c-events-drache.js:442
+- `EV_SZENE.tour` → Game/spiel/09c-events-drache.js:434
 - `evAnzeige` → Game/spiel/09c-events-drache.js:295
 - `evAt` → Game/spiel/09c-events-drache.js:302
-- `evBanner` → Game/spiel/09c-events-drache.js:446
+- `evBanner` → Game/spiel/09c-events-drache.js:452
 - `evBericht` → Game/spiel/09c-events-drache.js:77
-- `evBeute` → Game/spiel/09c-events-drache.js:465
-- `evBild` → Game/spiel/09c-events-drache.js:439
-- `evBossHtml` → Game/spiel/09c-events-drache.js:558
+- `evBeute` → Game/spiel/09c-events-drache.js:471
+- `evBild` → Game/spiel/09c-events-drache.js:445
+- `evBossHtml` → Game/spiel/09c-events-drache.js:565
 - `evBossTakt` → Game/spiel/09c-events-drache.js:51
-- `evChips` → Game/spiel/09c-events-drache.js:600
-- `evDrHtml` → Game/spiel/09c-events-drache.js:536
+- `evChips` → Game/spiel/09c-events-drache.js:608
+- `evDrHtml` → Game/spiel/09c-events-drache.js:542
 - `eventsBereit` → Game/spiel/06b-pass-anleitung.js:172
 - `evHinweise` → Game/spiel/09c-events-drache.js:286
-- `evHolBereit` → Game/spiel/09c-events-drache.js:463
-- `evHolen` → Game/spiel/09c-events-drache.js:492
-- `evHolKnopf` → Game/spiel/09c-events-drache.js:471
-- `evInvHtml` → Game/spiel/09c-events-drache.js:515
-- `evJetzt` → Game/spiel/09c-events-drache.js:403
-- `evKarte` → Game/spiel/09c-events-drache.js:413
-- `evKisteBild` → Game/spiel/09c-events-drache.js:470
-- `evLagerHtml` → Game/spiel/09c-events-drache.js:570
-- `evLeisteHtml` → Game/spiel/09c-events-drache.js:478
-- `evLeistePos` → Game/spiel/09c-events-drache.js:472
+- `evHolBereit` → Game/spiel/09c-events-drache.js:469
+- `evHolen` → Game/spiel/09c-events-drache.js:498
+- `evHolKnopf` → Game/spiel/09c-events-drache.js:477
+- `evInvHtml` → Game/spiel/09c-events-drache.js:521
+- `evJetzt` → Game/spiel/09c-events-drache.js:409
+- `evKarte` → Game/spiel/09c-events-drache.js:419
+- `evKisteBild` → Game/spiel/09c-events-drache.js:476
+- `evLagerHtml` → Game/spiel/09c-events-drache.js:578
+- `evLeisteHtml` → Game/spiel/09c-events-drache.js:484
+- `evLeistePos` → Game/spiel/09c-events-drache.js:478
 - `evLeisteZahlen` → Game/spiel/09c-events-drache.js:94
-- `evOffen` → Game/spiel/09c-events-drache.js:580
+- `evOffen` → Game/spiel/09c-events-drache.js:588
 - `evPlanTag` → Game/spiel/09c-events-drache.js:81
 - `evPlanVon` → Game/spiel/09c-events-drache.js:284
 - `evPreis` → Game/spiel/09c-events-drache.js:64
-- `evPreisHtml` → Game/spiel/09c-events-drache.js:458
+- `evPreisHtml` → Game/spiel/09c-events-drache.js:464
 - `evPunkte` → Game/spiel/09c-events-drache.js:29
 - `evRang` → Game/spiel/09c-events-drache.js:58
-- `evRangHtml` → Game/spiel/09c-events-drache.js:408
+- `evRangHtml` → Game/spiel/09c-events-drache.js:414
 - `evState` → Game/spiel/09c-events-drache.js:54
 - `evStunden` → Game/spiel/09c-events-drache.js:60
 - `evTagesEnde` → Game/spiel/09b-lager-tagesboss.js:13
@@ -824,10 +825,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evThemaAktiv` → Game/spiel/09c-events-drache.js:28
 - `evThemaAktivAm` → Game/spiel/09c-events-drache.js:27
 - `evTick` → Game/spiel/09c-events-drache.js:278
-- `evTourHtml` → Game/spiel/09c-events-drache.js:499
+- `evTourHtml` → Game/spiel/09c-events-drache.js:505
 - `evTruppenAlle` → Game/spiel/09c-events-drache.js:223
-- `evUhr` → Game/spiel/09c-events-drache.js:406
-- `evWann` → Game/spiel/09c-events-drache.js:407
+- `evUhr` → Game/spiel/09c-events-drache.js:412
+- `evWann` → Game/spiel/09c-events-drache.js:413
 - `exploreOwned` → Game/spiel/01e-kampf-werte-nebel-hud.js:58
 - `extraHtml` → Game/aufbau.js:373
 - `fade` → Game/spiel/10c-start-einstellungen.js:121
@@ -1173,7 +1174,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hintFrisch` → Game/spiel/06d-schild-produktion.js:442
 - `hinweis` → Game/benachrichtigung.js:17
 - `hJetzt` → Game/spiel/03f-marsch-bilder.js:417
-- `hol` → Game/spiel/09c-events-drache.js:601
+- `hol` → Game/spiel/09c-events-drache.js:609
 - `holen` → Game/weltrechner/start.js:179
 - `homeAgain` → Game/bots/02-kampf-karte.js:75
 - `horn` → Game/spiel/10c-start-einstellungen.js:71
@@ -1194,7 +1195,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `inboxList` → Game/spiel/06a-aufgaben.js:245
 - `inboxPiles` → Game/spiel/06a-aufgaben.js:251
 - `inboxSave` → Game/spiel/06a-aufgaben.js:249
-- `infoKlapp` → Game/spiel/09c-events-drache.js:449
+- `infoKlapp` → Game/spiel/09c-events-drache.js:455
 - `init` → Game/spiel/10c-start-einstellungen.js:20
 - `inselMittig` → Game/spiel/10a-fenster-insel-vorschau.js:215
 - `inselOk` → Game/spiel/10d2-welt-schummelschutz.js:16
@@ -1212,8 +1213,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `invPlan` → Game/spiel/09c-events-drache.js:100
 - `invPos` → Game/spiel/09c-events-drache.js:107
 - `invPunkteDazu` → Game/spiel/09c-events-drache.js:157
-- `invSheetHtml` → Game/spiel/09c-events-drache.js:375
-- `invSichtbar` → Game/spiel/09c-events-drache.js:310
+- `invSheetHtml` → Game/spiel/09c-events-drache.js:381
+- `invSichtbar` → Game/spiel/09c-events-drache.js:314
 - `invStartPunkt` → Game/spiel/09c-events-drache.js:117
 - `invTakt` → Game/spiel/09c-events-drache.js:199
 - `invTreffer` → Game/spiel/09c-events-drache.js:177
@@ -1299,7 +1300,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `leer.setItem` → Game/speichern.js:54
 - `leerGear` → Game/spiel/05d-marsch-liste-kampfbericht.js:363
 - `leerHeld` → Game/spiel/05d-marsch-liste-kampfbericht.js:362
-- `leerHtml` → Game/spiel/09c-events-drache.js:452
+- `leerHtml` → Game/spiel/09c-events-drache.js:458
 - `leinwand` → Game/ladebildschirm.js:8
 - `leinwand` → Game/weltrechner/start.js:220
 - `leiter_sek` → Game/server/07-welt-puls.php:12
@@ -1707,7 +1708,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rallySchild` → Game/buendnis/02-rally-geschenke.js:137
 - `rallyVerluste` → Game/buendnis/02-rally-geschenke.js:140
 - `rallyWerte` → Game/buendnis/02-rally-geschenke.js:121
-- `rangLeer` → Game/spiel/09c-events-drache.js:453
+- `rangLeer` → Game/spiel/09c-events-drache.js:459
 - `rangSaison` → Game/spiel/09f-saison.js:106
 - `rankIndexFor` → Game/spiel/05a-profil-rahmen.js:41
 - `rankPeople` → Game/spiel/05c-profil-erfolge-rangliste.js:284
@@ -1740,7 +1741,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderCrestCard` → Game/spiel/05a-profil-rahmen.js:72
 - `renderCrestEditor` → Game/spiel/05a-profil-rahmen.js:77
 - `renderEquipGrid` → Game/spiel/05b-profil-truhe-skills.js:7
-- `renderEvents` → Game/spiel/09c-events-drache.js:581
+- `renderEvents` → Game/spiel/09c-events-drache.js:589
 - `renderGoalsSub` → Game/spiel/06a-aufgaben.js:349
 - `renderHeroChests` → Game/spiel/06d-schild-produktion.js:118
 - `renderHeroHall` → Game/spiel/08c-helden-fenster.js:276
@@ -1808,8 +1809,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rohWacheProfil` → Game/spiel/10d2-welt-schummelschutz.js:158
 - `routeFor` → Game/spiel/01b-weltkarte.js:219
 - `row` → Game/spiel/09b-lager-tagesboss.js:358
-- `row` → Game/spiel/09c-events-drache.js:390
-- `row` → Game/spiel/09c-events-drache.js:410
+- `row` → Game/spiel/09c-events-drache.js:396
+- `row` → Game/spiel/09c-events-drache.js:416
 - `rr` → Game/spiel/03a-karte-hintergrund.js:610
 - `rueckzuegeZuClient` → Game/welt.js:204
 - `rulerOwner` → Game/spiel/01d-helden-daten-herrscher.js:163
@@ -1831,7 +1832,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saisonNachholen` → Game/spiel/09f-saison.js:212
 - `saisonNeu` → Game/spiel/09f-saison.js:75
 - `saisonNr` → Game/welt.js:277
-- `saisonOben` → Game/spiel/09c-events-drache.js:587
+- `saisonOben` → Game/spiel/09c-events-drache.js:595
 - `saisonPlatz` → Game/spiel/05a-profil-rahmen.js:21
 - `saisonRahmenFuer` → Game/spiel/05a-profil-rahmen.js:38
 - `saisonRangBasis` → Game/spiel/09f-saison.js:101
@@ -2270,10 +2271,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wirtM` → Game/spiel/01b-weltkarte.js:32
 - `wirtR` → Game/spiel/01b-weltkarte.js:30
 - `woDeckel` → Game/spiel/09c-events-drache.js:36
-- `woHtml` → Game/spiel/09c-events-drache.js:500
+- `woHtml` → Game/spiel/09c-events-drache.js:506
 - `woOn` → Game/spiel/09c-events-drache.js:25
 - `woPay` → Game/spiel/09c-events-drache.js:41
-- `woPunkteJe` → Game/spiel/09c-events-drache.js:454
+- `woPunkteJe` → Game/spiel/09c-events-drache.js:460
 - `world` → Game/spiel/03a-karte-hintergrund.js:473
 - `WORLD` → Game/spiel/03a-karte-hintergrund.js:9
 - `worldArmy` → Game/spiel/07b-kriegsherr.js:10
@@ -2316,8 +2317,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zeige` → Game/speichern.js:65
 - `zeigen` → Game/benachrichtigung.js:50
 - `zeile` → Game/buendnis/01-daten-regeln.js:531
-- `zeile` → Game/spiel/09c-events-drache.js:485
-- `zeile` → Game/spiel/09c-events-drache.js:563
+- `zeile` → Game/spiel/09c-events-drache.js:491
+- `zeile` → Game/spiel/09c-events-drache.js:570
 - `zeitGrenze` → Game/weltrechner/start.js:170
 - `zielPruefen` → Game/spiel/10d5-welt-befehle.js:7
 - `zinnen` → Game/ladebildschirm.js:49
@@ -4100,53 +4101,54 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evHinweise` :286 — (Zuschauer) neue Welle, Drache erschienen → kurzer Hinweis (beim Weltrechner ko…
 - `evAnzeige` :295 — Uhren in Fenster und Leiste, offenes Fenster auffrischen
 - `evAt` :302 — ---- die Karte: Barbaren-Armeen (wie Märsche: gestrichelte Linie + Marke) und d…
-- `drK` :309 — so groß zeichnen (mit dem Zoom, nie riesig)
-- `invSichtbar` :310
-- `drawEvents` :311
-- `drawDragonName` :342 — Name und Leben des Drachen: nach allen Gebäuden (die Thron-Kuppel deckt ihn son…
-- `drDraw` :353 — der Drache: Flügel (schlagend), Körper, langer Hals, gehörnter Kopf, Schwanz, F…
-- `invSheetHtml` :375 — ---- das Blatt an der Karte (wie Lager/Tagesboss): eine Barbaren-Armee oder der…
-- `drSheetHtml` :387
-- `row` :390
-- `evJetzt` :403 — was gerade läuft (für das „!“ am Reiter und den ersten Blick ins Fenster)
-- `evUhr` :406
-- `evWann` :407
-- `evRangHtml` :408 — Top 10 (+ deine Zeile)
-- `row` :410
-- `evKarte` :413 — art: mit Bild-Banner (Titel + Uhr darauf) statt Textzeile
-- `EV_SZENE.drache` :421
-- `EV_SZENE.inv` :425
-- `EV_SZENE.tour` :428
-- `EV_SZENE.boss` :431
-- `EV_SZENE.rally` :433
-- `EV_SZENE.tempel` :436
-- `evBild` :439
-- `evBanner` :446
-- `infoKlapp` :449
-- `leerHtml` :452 — leerer Zustand: Symbol, eine Zeile groß, eine klein, höchstens EIN goldener Kno…
-- `rangLeer` :453 — leere Rangliste: Symbol + Satz
-- `woPunkteJe` :454 — „18 Punkte je 10 besiegte Krieger“ – ganze Zahlen statt „1,8 Punkte pro …“
-- `evPreisHtml` :458 — ein Preis (Platz): Kacheln wie RoK (05e) – Edelsteine, Münzen, Splitter, Kiste
-- `evHolBereit` :463 — ---- Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen;…
-- `evBeute` :465 — Kacheln einer Belohnung – Stunden Münzen/Truppen mit deinen Zahlen von jetzt
-- `evKisteBild` :470
-- `evHolKnopf` :471
-- `evLeistePos` :472 — wie weit der Balken reicht (0–1): Stufe i sitzt in der Mitte ihrer Spalte
-- `evLeisteHtml` :478 — o: { stufen, schl(i): Schlüssel im Abholfach, erreicht(i), bezahlt(i), pos 0–1,…
-- `zeile` :485
-- `evHolen` :492 — „Abholen“: eine Stufe (Schlüssel) oder alles einer Quelle („src:boss“) aus dem …
-- `evTourHtml` :499
-- `woHtml` :500 — das Wochen-Event: Thema, Uhr, dein Platz, Preise, Rangliste, die nächsten Wochen
-- `evInvHtml` :515
-- `evDrHtml` :536
-- `evBossHtml` :558 — Reiter „Boss“: Tagesboss, Schadens-Klassen je Angriff (mit Zähler), „Boss fällt“
-- `zeile` :563
-- `evLagerHtml` :570 — Reiter „Lager“: Barbaren-Lager, Belohnung je Stufe – jeden Tag neu
-- `evOffen` :580
-- `renderEvents` :581
-- `saisonOben` :587 — Welt-Saison: nur in den letzten 3 Tagen (oder angehalten) oben in jedem Reiter …
-- `evChips` :600 — der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da → [Dringlichkeit…
-- `hol` :601 — roter Punkt: im Event liegt etwas zum Abholen
+- `drFlug` :309 — (Bildschirm) wo und wie groß der Drache kreist: über der Spitze des Thron-Bilds…
+- `invSichtbar` :314
+- `drawEvents` :315
+- `drawDragon` :337 — der Drache: nach den Gebäuden, groß über dem Thron (sonst deckt ihn das Thron-B…
+- `drawDragonName` :348 — Name und Leben des Drachen: unter dem Drachen, über der Thron-Spitze
+- `drDraw` :359 — der Drache: Flügel (schlagend), Körper, langer Hals, gehörnter Kopf, Schwanz, F…
+- `invSheetHtml` :381 — ---- das Blatt an der Karte (wie Lager/Tagesboss): eine Barbaren-Armee oder der…
+- `drSheetHtml` :393
+- `row` :396
+- `evJetzt` :409 — was gerade läuft (für das „!“ am Reiter und den ersten Blick ins Fenster)
+- `evUhr` :412
+- `evWann` :413
+- `evRangHtml` :414 — Top 10 (+ deine Zeile)
+- `row` :416
+- `evKarte` :419 — art: mit Bild-Banner (Titel + Uhr darauf) statt Textzeile
+- `EV_SZENE.drache` :427
+- `EV_SZENE.inv` :431
+- `EV_SZENE.tour` :434
+- `EV_SZENE.boss` :437
+- `EV_SZENE.rally` :439
+- `EV_SZENE.tempel` :442
+- `evBild` :445
+- `evBanner` :452
+- `infoKlapp` :455
+- `leerHtml` :458 — leerer Zustand: Symbol, eine Zeile groß, eine klein, höchstens EIN goldener Kno…
+- `rangLeer` :459 — leere Rangliste: Symbol + Satz
+- `woPunkteJe` :460 — „18 Punkte je 10 besiegte Krieger“ – ganze Zahlen statt „1,8 Punkte pro …“
+- `evPreisHtml` :464 — ein Preis (Platz): Kacheln wie RoK (05e) – Edelsteine, Münzen, Splitter, Kiste
+- `evHolBereit` :469 — ---- Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen;…
+- `evBeute` :471 — Kacheln einer Belohnung – Stunden Münzen/Truppen mit deinen Zahlen von jetzt
+- `evKisteBild` :476
+- `evHolKnopf` :477
+- `evLeistePos` :478 — wie weit der Balken reicht (0–1): Stufe i sitzt in der Mitte ihrer Spalte
+- `evLeisteHtml` :484 — o: { stufen, schl(i): Schlüssel im Abholfach, erreicht(i), bezahlt(i), pos 0–1,…
+- `zeile` :491
+- `evHolen` :498 — „Abholen“: eine Stufe (Schlüssel) oder alles einer Quelle („src:boss“) aus dem …
+- `evTourHtml` :505
+- `woHtml` :506 — das Wochen-Event: Thema, Uhr, dein Platz, Preise, Rangliste, die nächsten Wochen
+- `evInvHtml` :521
+- `evDrHtml` :542
+- `evBossHtml` :565 — Reiter „Boss“: Tagesboss, Schadens-Klassen je Angriff (mit Zähler), „Boss fällt“
+- `zeile` :570
+- `evLagerHtml` :578 — Reiter „Lager“: Barbaren-Lager, Belohnung je Stufe – jeden Tag neu
+- `evOffen` :588
+- `renderEvents` :589
+- `saisonOben` :595 — Welt-Saison: nur in den letzten 3 Tagen (oder angehalten) oben in jedem Reiter …
+- `evChips` :608 — der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da → [Dringlichkeit…
+- `hol` :609 — roter Punkt: im Event liegt etwas zum Abholen
 
 ### Game/spiel/09d-karte-armeen-wegmarken.js — Armeen auf der Karte und Wegmarken
 - `saveArmies` :9

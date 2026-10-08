@@ -26,6 +26,8 @@ Leere Zustände mit Symbol + Satz + einem Gold-Knopf (`leerHtml`). Hinweise unte
   und Saison-Platzpreise kommen direkt ins Abholfach; Mitspieler bekommen alles sofort.
 - **Drache** jeden Sonntag 19–22 Uhr über dem Thron; Leben ≈ 75 % dessen, was alle schaffen; 10 Angriffe pro Person,
   höchstens 2 % Leben pro Angriff; Treffer zählt ab 10 % aller eigenen Truppen. Nur Leiste, keine Extra-Preise für die Besten.
+  Karte: `drawDragon` nach den Gebäuden, `drFlug` setzt ihn über die Spitze des Thron-Bilds (halb so breit wie der Thron, mind. 120 px).
+  Fenster Drache/Tagesboss: oben ein Satz `.ev-zaehlt`, was zählt (Treffer bzw. Schaden je Angriff, Grenze aus DR_CAP/DBOSS_CAP).
 - **Tagesboss** (täglich): Belohnung je Angriff nach Schadens-Klasse (Anteil am Boss-Leben bis 0,05 % / 0,5 % / 1 % /
   2,5 % / darüber; gleiche Klasse zweimal = zweimal); „Boss fällt“ für alle. Keine Platz-Preise, kein „entkommen“-Preis.
   Für alle ohne Nebel-Sperre (Platz einmal am Tag aufgedeckt).

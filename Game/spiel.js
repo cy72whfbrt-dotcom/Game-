@@ -3864,6 +3864,7 @@ function drawMap() {
   drawArmies(now, wallNow);                                                                                             // your armies out in the open
   for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
   drawThroneFx(z, now);
+  drawDragon(now, wallNow);                                                                                            // der Drache über dem Thron (nach den Gebäuden)
   drawBaseSparks(vis, z, now);
   drawBasisSchilder(vis, z);                                                                                           // Namensschilder der Basen: über Kuppel und Funken (immer lesbar)
   drawWander(now);                                                                                                     // the Kriegsherr and his host
@@ -11233,12 +11234,16 @@ function evAnzeige(now) {                            // Uhren in Fenster und Lei
 // ---- die Karte: Barbaren-Armeen (wie Märsche: gestrichelte Linie + Marke) und der Drache ----
 function evAt(sx, sy) {                              // → { kind: 'drache' } | { kind: 'inv', id } unter einem Tippen
     const z = mapState.zoom, D = drOnMap();
-    if (D && z >= .0015) { const s = barbScreen(D), kb = drK(); if (Math.hypot(s.x - sx, s.y - sy + 12 * kb) < Math.max(28, 52 * kb)) return { kind: 'drache' }; }
+    if (D && z >= .0015) { const s = drFlug(D), kb = s.kb; if (Math.hypot(s.x - sx, s.y - sy + 12 * kb) < Math.max(28, 52 * kb)) return { kind: 'drache' }; }
     const I = invAktiv(); if (!I || z < .003) return null;
     let best = null, bd = 20; for (const a of I.armies) { const p = invPos(a); if (!invSichtbar(a, p)) continue; const s = barbScreen(p), d = Math.hypot(s.x - sx, s.y - sy + 6); if (d < bd) { bd = d; best = a; } }
     return best ? { kind: 'inv', id: best.id } : null;
 }
-const drK = () => Math.max(.45, Math.min(1.2, mapState.zoom / .025));   // so groß zeichnen (mit dem Zoom, nie riesig)
+function drFlug(D) {                                  // (Bildschirm) wo und wie groß der Drache kreist: über der Spitze des Thron-Bilds (03b), halb so breit wie der Thron
+    const m = islandById[megaTempleId], im = typeof KB !== 'undefined' && KB.img && KB.img.thron, z = mapState.zoom;
+    const tw = Math.max(HEILIGTUM_BREITE.megaTemple * z, 64), th = tw * (im && im.width ? im.height / im.width : 1), w = Math.max(120, Math.min(viewW * .7, tw * .5));
+    const c = barbScreen(m || D); return { x: c.x, y: c.y - th * .56 - w * .15, w, kb: w / 170 };
+}
 const invSichtbar = (a, p) => isCellOpen(p.x, p.y) || islandOwnerOf(a.tid) === 'player';
 function drawEvents(now, wallNow) {
     const z = mapState.zoom, I = invAktiv(wallNow);
@@ -11261,8 +11266,10 @@ function drawEvents(now, wallNow) {
             ctx.restore(); liveAnimation = true;
         }
     }
-    const D = drOnMap(wallNow); if (!D || z < .0015) return;
-    const s = barbScreen(D), kb = drK(); if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
+}
+function drawDragon(now, wallNow) {                  // der Drache: nach den Gebäuden, groß über dem Thron (sonst deckt ihn das Thron-Bild zu)
+    const z = mapState.zoom, D = drOnMap(wallNow); if (!D || z < .0015) return;
+    const s = drFlug(D), kb = s.kb; if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
     const dead = D.hp <= 0; setScreen(ctx);
     if (!dead) { const R = 110 * kb, gr = ctx.createRadialGradient(s.x, s.y, 6, s.x, s.y, R); gr.addColorStop(0, 'rgba(255,120,60,.45)'); gr.addColorStop(1, 'rgba(255,80,40,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, 7); ctx.fill(); }
     ctx.save(); ctx.translate(s.x, s.y - (dead ? 0 : Math.sin(now / 700) * 4 * kb)); ctx.scale(kb, kb); if (dead) { ctx.globalAlpha = .45; ctx.filter = 'grayscale(1)'; }
@@ -11271,11 +11278,11 @@ function drawEvents(now, wallNow) {
     ctx.restore();
     liveAnimation = true;
 }
-function drawDragonName(wallNow) {                   // Name und Leben des Drachen: nach allen Gebäuden (die Thron-Kuppel deckt ihn sonst zu)
+function drawDragonName(wallNow) {                   // Name und Leben des Drachen: unter dem Drachen, über der Thron-Spitze
     const z = mapState.zoom, D = drOnMap(wallNow); if (!D || z < .0015) return;
-    const s = barbScreen(D), kb = drK(); if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
+    const s = drFlug(D), kb = s.kb; if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
     const dead = D.hp <= 0; setScreen(ctx);
-    const bw = Math.max(90, 130 * kb), by = s.y + 40 * kb;
+    const bw = Math.max(90, Math.min(220, 130 * kb)), by = s.y + 30 * kb;
     ctx.font = '800 12px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const label = dead ? D.name + ' · besiegt' : D.name, tw = ctx.measureText(label).width + 18;
     rr(ctx, s.x - tw / 2, by, tw, 20, 10); ctx.fillStyle = 'rgba(24,8,6,.92)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#f2c75c'; ctx.stroke();
@@ -11480,6 +11487,7 @@ function evDrHtml() {
     const fall = '<div class="evl-zeilen"><div class="evl-z is-' + (fHol ? 'hol' : fOk ? 'ok' : 'zu') + '"><b>Drache fällt<small>mit 1 Treffer</small></b>' + beuteRaster(evBeute(DR_FALL), 'bk-mini') + '<span class="evl-st">' +
         (fHol ? evHolKnopf(fk) : fOk ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false"><small>Abgeholt</small>' : icon('lock')) + '</span></div></div>';
     return evKarte('star', 'Der Drache', kopf, inh + go, akt ? 'is-drache' : '', 'drache') +
+        '<div class="barb-note ev-zaehlt">Es zählen deine <b>Treffer</b> (1×, 3× …): jeder Angriff mit mind. 10 % deiner Truppen ist ein Treffer. Der Schaden (höchstens ' + Math.round(DR_CAP * 100) + ' % seines Lebens pro Angriff) zählt nur für die Rangliste.</div>' +
         '<div class="lb-gap">Belohnungs-Leiste · Treffer</div>' + leiste + fall +
         infoKlapp('drache', 'Jeden Sonntag · so läuft es', '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Jeden Sonntag ' + DR_STUNDE + '–' + (DR_STUNDE + DR_DAUER / 3600000) + ' Uhr</b> kreist ' + DR_NAME + ' über dem Thron – sehr viel Leben, nur alle zusammen schaffen ihn</span></span>' +
         '<span>' + icon('attack') + '<span><b>' + DR_HITS + ' Angriffe</b> pro Person, höchstens 2 % seines Lebens pro Angriff, ein Drittel der Kämpfer fällt</span></span>' +
@@ -11495,9 +11503,10 @@ function evBossHtml() {                              // Reiter „Boss“: Tages
     const zeile = (x, i) => '<div class="evl-z' + (kl[i] ? ' is-ok' : '') + '"><b>Klasse ' + (i + 1) + '<small>' + x.t + ' seines Lebens</small></b>' + beuteRaster(evBeute(x), 'bk-mini') + '<span class="evl-st evk-n">' + (kl[i] ? '×' + kl[i] : '') + '</span></div>';
     const fk = 'boss|' + b.d + '|fall', fHol = inboxList().some(x => x.k === fk), fOk = b.hp <= 0 && b.dmg.player > 0;
     const fall = '<div class="evl-z is-' + (fHol ? 'hol' : fOk ? 'ok' : 'zu') + '"><b>Boss fällt<small>alle, die trafen</small></b>' + beuteRaster(evBeute(DBOSS_FALL), 'bk-mini') + '<span class="evl-st">' + (fHol ? '<small>bereit</small>' : fOk ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false">' : icon('lock')) + '</span></div>';
-    return boss + '<div class="lb-gap">Belohnung je Angriff · nach Schaden</div>' + (hol ? evHolKnopf('src:boss', 'Alles abholen · ' + hol) : '') +
+    return boss + '<div class="barb-note ev-zaehlt">Es zählt der <b>Schaden jedes einzelnen Angriffs</b> (Anteil am Boss-Leben, höchstens ' + Math.round(DBOSS_CAP * 100) + ' % pro Angriff) – jeder Angriff bringt die Belohnung seiner Klasse.</div>' +
+        '<div class="lb-gap">Belohnung je Angriff · nach Schaden</div>' + (hol ? evHolKnopf('src:boss', 'Alles abholen · ' + hol) : '') +
         '<div class="evl-zeilen evk">' + DBOSS_KLASSEN.map(zeile).join('') + fall + '</div>' +
-        '<div class="barb-note">Jeder Angriff zählt einzeln: zweimal dieselbe Klasse = zweimal die Belohnung. Höchstens 5 % seines Lebens pro Angriff.</div>';
+        '<div class="barb-note">Zweimal dieselbe Klasse = zweimal die Belohnung.</div>';
 }
 function evLagerHtml() {                             // Reiter „Lager“: Barbaren-Lager, Belohnung je Stufe – jeden Tag neu
     const rec = barbRec('player'), near = barbNearest(), s = rec.s || 0, offen = Math.min(BARB_MAX_L, rec.b + 1);

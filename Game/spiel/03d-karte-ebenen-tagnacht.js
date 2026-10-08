@@ -110,6 +110,7 @@ function drawMap() {
   drawArmies(now, wallNow);                                                                                             // your armies out in the open
   for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
   drawThroneFx(z, now);
+  drawDragon(now, wallNow);                                                                                            // der Drache über dem Thron (nach den Gebäuden)
   drawBaseSparks(vis, z, now);
   drawBasisSchilder(vis, z);                                                                                           // Namensschilder der Basen: über Kuppel und Funken (immer lesbar)
   drawWander(now);                                                                                                     // the Kriegsherr and his host

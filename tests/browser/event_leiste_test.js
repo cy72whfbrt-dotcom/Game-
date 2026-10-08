@@ -83,8 +83,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(v.L === 6 && v.hol === 2 && v.mehr && v.ok === 1 && !v.text, 'Leiste: 6 Kisten, 2 leuchten, Abholen gibt Münzen, danach Haken', v);
   for (const t of ['boss', 'lager', 'drache']) {
     await p.evaluate(t => openGoals(t), t); await p.waitForTimeout(500);
-    const w = await p.evaluate(() => { const e = document.getElementById('eventBody'); return { breit: e.scrollWidth <= e.clientWidth + 1, text: /undefined|NaN/.test(e.innerText), n: e.querySelectorAll('.evl-z').length }; });
+    const w = await p.evaluate(() => { const e = document.getElementById('eventBody'); return { breit: e.scrollWidth <= e.clientWidth + 1, text: /undefined|NaN/.test(e.innerText), n: e.querySelectorAll('.evl-z').length, zaehlt: (e.querySelector('.ev-zaehlt') || {}).textContent || '' }; });
     ok(w.breit && !w.text && w.n >= 5, 'Reiter ' + t + ': passt aufs Handy, keine kaputten Werte', w);
+    if (t !== 'lager') ok(t === 'drache' ? /Treffer/.test(w.zaehlt) && /2 %/.test(w.zaehlt) : /Schaden jedes einzelnen Angriffs/.test(w.zaehlt) && /5 %/.test(w.zaehlt), 'Reiter ' + t + ': oben ein Satz, was zählt (Regel-Zahl stimmt)', w.zaehlt);
     if (bilder) await p.screenshot({ path: path.join(bilder, 'event_' + t + '.png') });
   }
   // Invasions-Chip (Merkliste 28): nie „P.“, bei 0 Punkten keine Zahl, sonst „… Punkte“
@@ -106,6 +107,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return { blaettern: pb.scrollTop > 0, ganz: r.top >= a.top - 1 && r.bottom <= a.bottom, zeilenDarunter: z.top < r.bottom, bg: getComputedStyle(l).backgroundColor !== 'rgba(0, 0, 0, 0)' }; });
   ok(lg.blaettern && lg.ganz && lg.bg, 'Lager 375×667 geblättert: Stufen-Leiste bleibt ganz oben stehen (deckend, nicht halb verdeckt)', lg);
   if (bilder) await p.screenshot({ path: path.join(bilder, 'lager_geblaettert.png') });
+  // Drache über dem Thron (Alexander 8.10.): über der Spitze des Thron-Bilds, nicht winzig, nach den Gebäuden gezeichnet
+  const dr = await p.evaluate(() => { const D = evState.dr; D.hp = D.max = 1e9; const out = [];
+    for (const z of [.002, .02]) { mapState.zoom = z; const f = drFlug(D), m = barbScreen(islandById[megaTempleId]), tw = Math.max(HEILIGTUM_BREITE.megaTemple * z, 64);
+      out.push({ ueber: f.y < m.y - tw * .3, gross: f.w >= 120 }); }
+    const q = drawMap.toString(); return { out, reihe: q.indexOf('drawDragon(') > q.indexOf('drawBuilding(') }; });
+  ok(dr.out.every(x => x.ueber && x.gross) && dr.reihe, 'Drache: groß über dem Thron, nach den Gebäuden gezeichnet', dr);
   ok(!fe.length, 'keine Fehler auf der Seite', fe.slice(0, 3));
   await b.close();
 })();
