@@ -268,8 +268,7 @@ const evWare = (b, r, name, l, m, zeit) => { const [t, leer] = lim(l); return wa
 const eventReiter = '<div class="ev-guthaben"><img src="' + B + EM + '.webp" alt=""><span><b>2.450</b><br><small style="margin:0;text-align:left">Event-Münzen</small></span><small>' + icon('hourglass') + ' füllt auf in<br><b>3 T 14:20:05</b> (Mo)</small></div>' +
   gruppe('Beschleuniger', TEMPO.map(([z, g, m, l]) => evWare(BE(z), tempoR(z), 'Beschleuniger', l, m, z))) +
   gruppe('Schlüssel', [evWare(S1, 'blau', 'Schlüssel', '1/10', 200), evWare(S2, 'lila', 'Epischer Schlüssel', '0/3', 1000)]) +
-  gruppe('Kisten', [evWare('kiste_held_zu', 'blau', 'Helden-Kiste', '0/5', 250), evWare('kiste_episch_zu', 'lila', 'Epische Ausrüstung', '0/2', 1200), evWare('kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', '0/2', 1500)]) +
-  gruppe('Besonderes', [evWare('skin_goldene_flagge', 'gold', 'Goldene Flagge', '0/1', 4000), evWare('skin_koenigsburg', 'gold', 'Skin Königsburg', '0/1', 8000)]);
+  gruppe('Kisten', [evWare('kiste_held_zu', 'blau', 'Helden-Kiste', '0/5', 250), evWare('kiste_episch_zu', 'lila', 'Epische Ausrüstung', '0/2', 1200), evWare('kiste_held_episch_zu', 'lila', 'Epische Helden-Kiste', '0/2', 1500)]);
 const reiter = { shopkisten: ['reiterKisten', kistenReiter], shoptempo: ['reiterTempo', tempoReiter] }[A] || ['reiterEvent', eventReiter];
 document.getElementById(reiter[0]).classList.add('active');
 document.getElementById('shopInhalt').innerHTML = reiter[1];
