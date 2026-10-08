@@ -171,6 +171,7 @@ function renderCitySheet() {                       // (läuft auch jede Sekunde 
     up.title = blocker || '';
     up.style.display = building ? 'none' : '';
     sp.style.display = building ? '' : 'none';
+    document.getElementById('cityBeschBtn').style.display = building && beschMinuten() > 0 ? '' : 'none';   // Beschleuniger aus dem Rucksack (06g)
     if (building) renderCitySheetTimer();
     liveHtml(document.getElementById('cityBExtra'), cityExtraHtml(id, lvl));
 }

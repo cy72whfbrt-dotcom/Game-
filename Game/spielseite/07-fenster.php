@@ -397,19 +397,20 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   </div>
 </section>
 
-<!-- ============ SHOP (Dock): Kisten · Schilde + Teleporter (nur kaufen – benutzt wird im Rucksack) · Thron · Händler (nur wenn einer da ist) · Markt – alles Kaufen/Tauschen nur hier ============ -->
+<!-- ============ SHOP (Dock): Kisten (Schlüssel/Edelsteine) · Event (Event-Münzen) · Tempo (Beschleuniger) · Schilde + Teleporter · Händler (nur wenn einer da ist) · Markt – alles Kaufen/Tauschen nur hier ============ -->
 <section id="shopPopup" class="panel panel--sheet" role="dialog" aria-labelledby="shopTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">
     <div class="emblem emblem--gold"><svg class="icon"><use href="#i-shop"/></svg></div>
     <div class="phead-text"><div class="overline">Kaufen &amp; Tauschen</div><h3 id="shopTitle" class="ptitle">Shop</h3>
-      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Edelsteine</small></span><span class="pill pill--throne"><svg class="icon"><use href="#i-crown"/></svg><b id="shopThroneCount">0</b><small>Thron</small></span></div></div>
+      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Edelsteine</small></span><span class="pill pill--em"><img src="bilder/beute_eventmuenze.webp" alt="" draggable="false"><b id="shopEmCount">0</b><small>Event-Münzen</small></span></div></div>
     <button id="shopCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div id="shopTabs" class="tabs mail-tabs" role="tablist">
     <button class="tab active" type="button" role="tab" data-stab="gems"><svg class="icon"><use href="#i-gem"/></svg><span>Kisten</span></button>
+    <button class="tab" type="button" role="tab" data-stab="ev"><svg class="icon"><use href="#i-star"/></svg><span>Event</span></button>
+    <button class="tab" type="button" role="tab" data-stab="tempo"><svg class="icon"><use href="#i-hourglass"/></svg><span>Tempo</span></button>
     <button class="tab" type="button" role="tab" data-stab="shield"><svg class="icon"><use href="#i-shield"/></svg><span>Schilde</span></button>
-    <button class="tab" type="button" role="tab" data-stab="throne"><svg class="icon"><use href="#i-crown"/></svg><span>Thron</span></button>
     <button class="tab" type="button" role="tab" data-stab="hd" hidden><svg class="icon"><use href="#i-coin"/></svg><span>Händler</span><span class="badge">!</span></button>
     <button class="tab" type="button" role="tab" data-stab="markt"><svg class="icon"><use href="#i-crate"/></svg><span>Markt</span></button>
   </div>
@@ -437,22 +438,30 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <button type="button" class="ware-link" data-zum-rucksack><svg class="icon"><use href="#i-crate"/></svg><span id="shopRucksackN">Rucksack ›</span></button>
     </div>
     <div class="mail-pane" data-spane="gems">
-      <!-- Schaufenster: Epische Kiste groß oben, darunter 2 Spalten; je Karte das KI-Bild der Kiste, Preis-Knöpfe unten über die ganze Breite (ein Tipp = kaufen; unter 500 Edelsteinen „1ד und „10ד) -->
-      <div class="waren">
-        <div id="heroChestOpts" class="waren-teil"></div>
-        <div class="ware" data-r="grau"><span class="ware-bild" data-kiste-art="aus"></span><span class="ware-txt"><b class="ware-name">Ausrüstungs&shy;kiste</b><small>1 Teil · Grau bis Episch</small></span>
-          <span class="ware-preise"><button id="shopOpenCrateBtn" class="ware-preis" type="button" data-x="1×" aria-label="Ausrüstungskiste kaufen"><svg class="icon"><use href="#i-gem"/></svg><b data-const="CRATE_GEM_COST">150</b></button><button type="button" class="ware-preis" data-mehr="aus" aria-label="10 Kisten öffnen" disabled><span class="ware-x">10×</span><svg class="icon"><use href="#i-gem"/></svg><b>1.500</b></button></span></div>
-        <div class="ware-mehr"><button id="shopToEquipBtn" class="ware-link" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Inventar ›</span></button>
-          <button type="button" class="ware-link" data-sinfo="kiste" aria-expanded="false"><svg class="icon"><use href="#i-info"/></svg><span>Chancen</span></button></div>
-      </div>
+      <!-- Kisten wie die Test-Datei (werkzeuge/thronevent ?a=shopkisten): Gruppen Ausrüstung · Helden · Schlüssel, je Kiste „1ד und „10ד (Schlüssel, sonst Edelsteine) -->
+      <div class="sect"><h4>Kisten öffnen</h4><span class="sect-aside">mit Schlüssel oder Edelsteinen<button type="button" class="shop-i" data-sinfo="kiste" aria-expanded="false" aria-label="Chancen"><svg class="icon"><use href="#i-info"/></svg></button></span></div>
       <div class="shop-info" data-sinfo-box="kiste" hidden>
-        <p class="mail-intro"><b>Ausrüstungskiste:</b> ein zufälliges Teil (Waffe, Rüstung, Schild oder Stiefel) in einer von sechs Seltenheiten.</p><div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div>
-        <p class="mail-intro"><b>Heldenkisten:</b> Splitter für zufällige Helden – je gewöhnlicher, desto öfter. Damit schaltest du Helden frei und wertest sie um Viertel-Sterne auf; Helden mit 5 Sternen fallen heraus.</p><div id="heroChestOdds" class="odds"></div>
+        <p class="mail-intro"><b>Ausrüstungs-Kiste:</b> ein zufälliges Teil (Waffe, Rüstung, Schild oder Stiefel).</p><div id="shopOdds" class="odds"><!-- JS fills from RARITY_DEFS + RARITY_DROP_WEIGHTS --></div>
+        <p class="mail-intro"><b>Epische Ausrüstung:</b> Ungewöhnlich bis Episch – spätestens beim 20. Mal sicher Episch.</p><div id="shopOddsE" class="odds"></div>
+        <p class="mail-intro"><b>Helden-Kisten:</b> Splitter für zufällige Helden; die epische spätestens beim 20. Mal für einen epischen Helden. Helden mit 5 Sternen fallen heraus.</p><div id="heroChestOdds" class="odds"></div>
       </div>
-      <div id="shopCrateResult" class="loot" style="display:none"></div>
-      <div id="shopHeroResult" class="hchest-res" hidden></div>
+      <div id="shopKisten"></div>
+      <button id="shopToEquipBtn" class="ware-link" type="button"><svg class="icon"><use href="#i-shield"/></svg><span>Inventar ›</span></button>
     </div>
+    <div class="mail-pane" data-spane="ev" hidden><div id="shopEvent"></div></div>
+    <div class="mail-pane" data-spane="tempo" hidden><div id="shopTempo"></div></div>
   </div>
+</section>
+
+<!-- ============ BESCHLEUNIGER benutzen (Bauen, Forschen): je Tipp einer, oder „Passend benutzen“ ============ -->
+<section id="beschPopup" class="panel panel--sheet" role="dialog" aria-labelledby="beschTitle">
+  <span class="sheet-grab" aria-hidden="true"></span>
+  <header class="phead">
+    <div class="emblem emblem--gold"><img class="rk-emblem" src="bilder/beute_beschleuniger_mittel.webp" alt="" draggable="false"></div>
+    <div class="phead-text"><div class="overline">Bauen · Forschen</div><h3 id="beschTitle" class="ptitle">Beschleuniger</h3></div>
+    <button id="beschCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
+  </header>
+  <div class="pbody"><div id="beschInhalt" class="rk-inhalt"></div></div>
 </section>
 
 <!-- ============ RUCKSACK (Dock): was du hast – Schilde (einsetzen), Teleporter (benutzen), Splitter je Held (nur Anzeige) ============ -->

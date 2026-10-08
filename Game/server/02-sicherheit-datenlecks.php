@@ -71,7 +71,7 @@ function profil_bereinigen($text) {
     $bau = []; $bauBis = []; $bl = is_array($p['city']['bau'] ?? null) ? array_slice(array_values($p['city']['bau']), 0, 2) : []; $bz = is_array($p['city']['bauBis'] ?? null) ? array_values($p['city']['bauBis']) : [];
     foreach ($bl as $i => $x) if (is_string($x) && isset($STADT[$x])) { $bau[] = $x; $bauBis[] = $plus($bz[$i] ?? 0, 1e15); }   // was gerade gebaut wird + wann fertig (Push „Bau fertig“) – je Gebäude seine Zeit
     // Paket D: Forschung im Labor (feste Liste, Höchststufen wie FORSCHUNG in aufbau.js), Rohstoffe wie Münzen
-    $FO = ['w_prod' => 10, 'w_sam' => 10, 'w_last' => 10, 'w_tempel' => 10, 'm_atk' => 10, 'm_def' => 10, 'm_laz' => 10, 'x_tempo' => 10, 'x_spaeh' => 10, 'x_nebel' => 5,
+    $FO = ['w_prod' => 10, 'w_sam' => 10, 'w_last' => 10, 'w_tempel' => 10, 'm_atk' => 10, 'm_def' => 10, 'm_laz' => 10, 'x_tempo' => 10, 'x_spaeh' => 10, 'x_nebel' => 5, 'x_marsch' => 4,
            'w_schutz' => 3, 'm_laz2' => 3, 'x_tempo2' => 3];   // (ab Labor 23, 5.10.)
     $fo = []; foreach ($FO as $k => $mx) if (isset($p['fo'][$k])) $fo[$k] = (int)$plus($p['fo'][$k], $mx);
     $foLauf = isset($p['city']['foLauf']) && is_string($p['city']['foLauf']) && isset($FO[$p['city']['foLauf']]) ? $p['city']['foLauf'] : null;

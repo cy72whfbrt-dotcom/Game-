@@ -93,6 +93,7 @@
     <div class="city-bfoot">
       <button id="cityUpgradeBtn" class="btn btn--primary btn--grow" type="button"><svg class="icon"><use href="#i-upgrade"/></svg><span class="city-lbl2"><span class="lbl">Aufwerten</span><small id="cityUpWarte" class="city-warte"></small></span><small id="cityUpTime" class="city-uptime"></small></button>
       <button id="citySpeedBtn" class="btn btn--secondary btn--grow" type="button" style="display:none"><svg class="icon"><use href="#i-gem"/></svg><span class="lbl">Beschleunigen</span></button>
+      <button id="cityBeschBtn" class="btn btn--secondary" type="button" style="display:none" aria-label="Beschleuniger benutzen"><img class="besch-ic" src="bilder/beute_beschleuniger_mittel.webp" alt="" draggable="false"><span class="lbl">Beschleuniger</span></button>
     </div>
   </section>
 </div>

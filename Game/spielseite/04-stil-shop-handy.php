@@ -81,7 +81,21 @@
 @keyframes ware-glanz{0%,70%{left:-60%}100%{left:130%}}
 @media (prefers-reduced-motion:reduce){.ware.glanz::after,.ware--gross .ware-bild::before{animation:none}}
 .waren--3 .ware{padding:6px 6px 0} .waren--3 .ware-bild{height:64px} .waren--3 .ware-preis{margin:8px -6px 0;font-size:15px} .waren--3 .ware-name{font-size:14px} .waren--3 .ware-txt small{font-size:11px}
-#heroChestOpts .ware{cursor:pointer}   /* Heldenkisten: die ganze Karte kauft (wie der Preis-Knopf) */
+/* Shop sortiert (Test-Datei werkzeuge/thronevent): Zwischenüberschrift mit Trennlinie, gleich große Karten, Preis-Knöpfe unten */
+.sort-kopf{display:flex;align-items:center;gap:8px;margin:12px 0 8px;font:700 11px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;color:var(--gold-100)}
+.sort-kopf::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(228,200,134,.45),transparent)}
+.waren--3 .ware-name{font-size:12px;min-height:2.4em;display:flex;align-items:center;justify-content:center}
+.ware .lim{font:600 10.5px/1.2 var(--font-ui);color:var(--tx-3)} .ware.leer{opacity:.5}
+.ware .zeit{position:absolute;left:50%;bottom:2px;transform:translateX(-50%);font:800 12px/1 var(--font-ui);color:#fff;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap}
+.ware-knoepfe{display:flex;flex-direction:column;gap:4px;margin:6px -6px 0}
+.ware-knoepfe .ware-preis{margin:0;height:32px;font-size:12.5px;gap:3px}
+.ware-preis img{width:16px;height:16px;object-fit:contain}
+.ware .pity{font:700 10.5px/1.2 var(--font-ui);color:#d9b8ff}
+.ev-guthaben{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.28);border:1px solid rgba(228,200,134,.3)}
+.ev-guthaben img{width:28px;height:28px} .ev-guthaben b{font:800 17px/1 var(--font-display);color:var(--gold-100)}
+.ev-guthaben small{margin-left:auto;text-align:right;font:600 11px/1.3 var(--font-ui);color:var(--tx-3)} .ev-guthaben small b{font-size:12px}
+.pill--em img{width:16px;height:16px}
+main .besch-ic,.besch-ic{width:22px;height:22px;object-fit:contain} #beschInhalt .bk-mit{border:0;background:none;padding:0;cursor:pointer} #beschInhalt .btn--haupt{margin-top:10px;width:100%}
 .ware-mehr{display:grid;gap:8px;align-content:stretch}
 .ware-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 8px;border-radius:12px;border:1px dashed var(--line-3);background:rgba(0,0,0,.22);cursor:pointer;
   font:600 var(--fs-13) var(--font-ui);color:var(--gold-200)} .ware-link .icon{width:16px;height:16px;color:var(--gold-300)} .ware-link.on{color:var(--gold-100);border-style:solid}

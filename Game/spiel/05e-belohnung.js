@@ -44,8 +44,8 @@ function gibBelohnung(art, menge, extra) {
     gegenstSpeichern(); return { a: art, n };
 }
 var BEUTE_SLOT = { weapon: 'beute_waffe', armor: 'beute_ruestung', shield: 'beute_rundschild', boots: 'beute_stiefel' };
-var KISTE_BILD = { aus: 'kiste_ausruestung', held: 'kiste_held', gross: 'kiste_gross', episch: 'kiste_episch', royal: 'kiste_royal' };
-var KISTE_NAME = { aus: 'Ausrüstungskiste', held: 'Heldenkiste', gross: 'Große Kiste', episch: 'Epische Kiste', royal: 'Königliche Kiste' };
+var KISTE_BILD = { aus: 'kiste_ausruestung', held: 'kiste_held', gross: 'kiste_gross', episch: 'kiste_episch', royal: 'kiste_royal', heldE: 'kiste_held_episch' };
+var KISTE_NAME = { aus: 'Ausrüstungskiste', held: 'Heldenkiste', gross: 'Große Kiste', episch: 'Epische Kiste', royal: 'Königliche Kiste', heldE: 'Epische Helden-Kiste' };
 const kisteVonR = r => r >= 3 ? 'royal' : 'aus';   // Kiste „mind. <Seltenheit>“ (Preise, Abholfach): ab Episch die Königliche
 function beuteR(b) {                                // Seltenheit der Kachel: eigene, sonst je Art (Edelsteine nach Menge)
     if (b.r >= 0) return Math.min(5, b.r | 0);

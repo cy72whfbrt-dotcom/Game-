@@ -21,7 +21,7 @@ const RARITY_DEFS = [
 ];
 const ITEM_MAX_LEVEL = 20;
 const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen (seit 2.10. auch kein Preis mehr mit „mind. Legendär“)
-const CRATE_GEM_COST = 150;  // (5.10. Alexander: vorher 30, davor 5 – Gold-Ausrüstung kam zu schnell)
+const CRATE_GEM_COST = 100;  // Ausrüstungs-Kiste: 1 Schlüssel oder 100 Edelsteine (Alexander 8.10.; Hauptbuch rechnet je Kiste damit)
 const COMBINE_COUNT = 3;
 const RARITY_PCT_PER_SCORE = 0.15, ITEM_GRUND = 6;   // %-Wirkung = (Wert + 6) × 0,15 → grau Stufe 1 = 1 % (7.10.: vorher 0,15 %)
 const RARITY_FLAT_PER_SCORE = 0.3;
@@ -75,19 +75,6 @@ function addInventoryItem(slot, rarity, level) {
     const id = 'item' + (nextItemId++);
     const item = { id, slot, rarity, level: level || 1 };
     inventory[id] = item;
-    return item;
-}
-// Buys and opens one crate for CRATE_GEM_COST gems - returns the new
-// item, or null if the player can't afford it.
-function openCrate() {
-    if (gems < CRATE_GEM_COST) return null;
-    gems -= CRATE_GEM_COST;
-    const item = addInventoryItem(pickRandomSlot(), pickRandomRarity(), 1);
-    sfx('crate');
-    questProgress('crate', 1);
-    saveGame();
-    saveProgression();
-    updateHud();
     return item;
 }
 // Combining doesn't need the player to pick anything - the button

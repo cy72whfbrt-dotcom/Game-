@@ -117,7 +117,7 @@ function stadtCapB(id, B) { return id === 'keep' ? BURG_MAX : B >= BURG_MAX ? ci
 function stadtCap(who, id) { return stadtCapB(id, burgStufe(who)); }   // höchste Stufe, die die Burg gerade erlaubt
 // Marsch-Plätze: so viele Aktionen gleichzeitig (Angriff, Verstärkung, Sammeln, Lager/Boss, Armee). Ein Mehrfachangriff
 // (oder „Truppen sammeln“) zählt als EINE Aktion. Rückwege zählen nicht.
-const marschGrenze = who => 2 + Math.floor((burgStufe(who) - 1) / 6);   // Burg 1: 2 · 7: 3 · 13: 4 · 19: 5 · 25: 6
+const marschGrenze = who => 2 + foStufe(who, 'x_marsch');      // 2 von Anfang an, +1 je Stufe der Forschung „Marsch-Plätze“ (Labor 5/10/16/22, Alexander 8.10.)
 let marschFreiPass = 0;                                        // (Rally-Start: der gemeinsame Angriff ist schon gezählt)
 const werIst = x => x || 'player';
 function marschBelegt(who) {
@@ -142,8 +142,8 @@ function gruppeLaeuft(who, grp, src) {                         // gehört dieser
 }
 const marschFrei = who => Math.max(0, marschGrenze(who) - marschBelegt(who));
 function marschOk(who, grp, src) { return marschFreiPass > 0 || gruppeLaeuft(who, grp, src) || marschBelegt(who) < marschGrenze(who); }
-function marschVoll(who) { who = who || 'player'; const n = marschGrenze(who), B = burgStufe(who), nx = B < BURG_MAX ? Math.min(BURG_MAX, (Math.floor((B - 1) / 6) + 1) * 6 + 1) : 0;
-    return 'Alle ' + n + ' Marsch-Plätze sind belegt – warte, bis ein Marsch ankommt' + (nx ? ' (Burg Stufe ' + nx + ': ' + (n + 1) + ' Plätze).' : '.'); }
+function marschVoll(who) { who = who || 'player'; const n = marschGrenze(who), d = FO_BY.x_marsch, L = foStufe(who, 'x_marsch') + 1;
+    return 'Alle ' + n + ' Marsch-Plätze sind belegt – warte, bis ein Marsch ankommt' + (L <= d.max ? ' (Forschung „Marsch-Plätze“ ab Labor ' + foAkaFuer(d, L) + ': ' + (n + 1) + ' Plätze).' : '.'); }
 
 // ---------------------------------------------------------------------------------------------------------------
 // 3) FORSCHUNG (Labor – im Gebäude 'academy'): drei Äste, lange Zeiten, eine Forschung gleichzeitig. Im Labor wird ALLES
@@ -160,6 +160,7 @@ const FORSCHUNG = [
     { id: 'm_laz', ast: 'm', name: 'Krankenhaus', icon: 'plus', max: 10, aka: 4, pro: 2, txt: v => '+' + v + ' % der Gefallenen ins Krankenhaus' },
     { id: 'x_tempo', ast: 'x', name: 'Marschtempo', icon: 'send', max: 10, aka: 1, pro: 3, txt: v => 'Truppen laufen ' + v + ' % schneller' },
     { id: 'x_spaeh', ast: 'x', name: 'Späher', icon: 'scout', max: 10, aka: 3, pro: 10, txt: v => 'Späher ' + v + ' % schneller' },
+    { id: 'x_marsch', ast: 'x', name: 'Marsch-Plätze', icon: 'send', max: 4, aka: 5, akaL: [5, 10, 16, 22], pro: 1, txt: v => '+' + v + ' Marsch-Plätze (zusammen ' + (2 + v) + ')' },   // je Stufe eine feste Labor-Stufe
     { id: 'x_nebel', ast: 'x', name: 'Kundschaft', icon: 'flag', max: 5, aka: 6, pro: 15, txt: v => 'eroberte Basen decken ' + v + ' % mehr Nebel auf' + (v >= 45 ? ' (Mitspieler: auch die Nachbarn der Nachbarn)' : '') },
     // ab Labor 23 (Alexander 5.10.): je Stufe eine Labor-Stufe mehr (23, 24, 25) – wirken überall dort, wo die Grundforschung wirkt
     { id: 'w_schutz', ast: 'w', name: 'Burg-Schutz+', icon: 'castle', max: 3, aka: 23, schritt: 1, pro: 10, txt: v => 'die Burg schützt ' + v + ' % mehr von jedem Rohstoff' },
@@ -167,7 +168,7 @@ const FORSCHUNG = [
     { id: 'x_tempo2', ast: 'x', name: 'Marschtempo II', icon: 'send', max: 3, aka: 23, schritt: 1, pro: 3, vor: 'x_tempo', txt: v => 'Truppen laufen noch ' + v + ' % schneller' }
 ];
 const FO_BY = {}; for (const d of FORSCHUNG) FO_BY[d.id] = d;
-const foAkaFuer = (d, L) => d.aka + (L - 1) * (d.schritt || 2);   // Stufe L braucht diese Labor-Stufe
+const foAkaFuer = (d, L) => d.akaL ? d.akaL[Math.max(0, Math.min(d.akaL.length, L) - 1)] : d.aka + (L - 1) * (d.schritt || 2);   // Stufe L braucht diese Labor-Stufe
 // Burg fair (Alexander 6.10. A): beim ersten Saison-Reset danach EINMAL jede Burg über Stufe B auf B – für Mitspieler und echte
 // Spieler gleich (09f-saison.js saisonWelt, dein Spielstand: 01a-grundlagen.js → unten beim Laden). Die anderen Gebäude bis zur
 // Burg-Stufe, die Forschung bis zum Labor (und Vorgänger), Bauten und Forschung darüber abgebrochen – ohne Erstattung.
@@ -189,10 +190,10 @@ function foWert(who, id) { const d = FO_BY[id]; return d && d.pro ? foStufe(who,
 const foSumme = who => FORSCHUNG.reduce((a, d) => a + foStufe(who, d.id), 0);   // alle erforschten Stufen (Erfolge, Rangliste „Hauptstadt“)
 const foGesamt = () => FORSCHUNG.reduce((a, d) => a + d.max, 0);
 function foKosten(d, L) {                                      // Stufe L erforschen
-    const k = Math.pow(1.6, d.aka - 1), g = Math.pow(1.8, L - 1);
+    const k = Math.pow(1.6, (d.akaL ? foAkaFuer(d, L) : d.aka) - 1), g = d.akaL ? 1 : Math.pow(1.8, L - 1);   // (feste Labor-Stufen: Preis wie eine Forschung dieser Stufe)
     return { c: niceRound(wirtM(3000 * k * g)), h: niceRound(wirtR(1500 * k * g)), s: niceRound(wirtR(1200 * k * g)), e: niceRound(wirtR(600 * k * g * (d.ast === 'm' ? 1.6 : 1))) };   // (Münzen wirtM, Rohstoffe wirtR)
 }
-function foZeitRoh(d, L) { return Math.min(7 * 86400, 300 * Math.pow(1.7, L - 1) * Math.pow(1.35, d.aka - 1)); }   // 5 Min. … Tage
+function foZeitRoh(d, L) { return Math.min(7 * 86400, d.akaL ? 300 * Math.pow(1.35, foAkaFuer(d, L) - 1) : 300 * Math.pow(1.7, L - 1) * Math.pow(1.35, d.aka - 1)); }   // 5 Min. … Tage
 const foZeit = (who, d, L) => Math.round(foZeitRoh(d, L));
 function foSperre(who, d) {                                    // warum diese Forschung gerade nicht geht (oder null)
     const c = stadtVon(who); if (!c) return 'kaputt';
@@ -301,7 +302,6 @@ function rohUmschalten(an, x) {                                // x: welche Kaps
 
 function freiText(B) {                                         // was die Burg-Stufe B freischaltet
     const out = ['Gebäude bis Stufe ' + (B >= BURG_MAX ? 'zum Höchstwert' : B)];
-    const m = 2 + Math.floor((B - 1) / 6); if (B === 1 || (B - 1) % 6 === 0) out.push(m + ' Marsch-Plätze');
     out.push('Schutz: ' + schutzText(burgSchutzRoh('player', B)) + ' von jedem Rohstoff, ' + schutzText(burgSchutz('player', B)) + ' Münzen');
     for (const id in BAU_AB_BURG) if (BAU_AB_BURG[id] === B) out.push('neues Gebäude: ' + cityDef(id).name);
     return out;
@@ -373,7 +373,8 @@ function foDetail(d) {
 function extraHtml(id, lvl) {
     if (id === 'academy') {
         const c = loadCity(), r = c.foRun, d = r && FO_BY[r.id];
-        const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('fo', r.id, r.to, r.endsAt) : '') + '</span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>' + (gemsArmed('fo:' + r.id) ? 'Wirklich? ' + icon('gem') + foGems(c) : 'Fertig · ' + icon('gem') + foGems(c)) + '</button></div>' : '';
+        const lauf = d ? '<div class="notice notice--gold fo-lauf">' + icon('hourglass') + '<span style="flex:1"><b>' + d.name + (d.max > 1 ? ' Stufe ' + r.to : '') + '</b> · noch ' + uhrHtml(r.endsAt) + '<div class="city-progress" style="margin-top:6px"><i style="--p:' + Math.min(100, (Date.now() - r.startedAt) / Math.max(1, r.endsAt - r.startedAt) * 100).toFixed(1) + '%"></i></div>' + (typeof bundHilfeKnopf === 'function' ? bundHilfeKnopf('fo', r.id, r.to, r.endsAt) : '') + '</span><button type="button" class="btn btn--secondary btn--sm" data-fo-gems' + (gems < foGems(c) ? ' disabled' : '') + '>' + (gemsArmed('fo:' + r.id) ? 'Wirklich? ' + icon('gem') + foGems(c) : 'Fertig · ' + icon('gem') + foGems(c)) + '</button>' +
+            (typeof beschMinuten === 'function' && beschMinuten() > 0 ? '<button type="button" class="btn btn--secondary btn--sm" data-fo-besch aria-label="Beschleuniger benutzen"><img class="besch-ic" src="bilder/beute_beschleuniger_mittel.webp" alt="" draggable="false"></button>' : '') + '</div>' : '';
         if (!lvl) return lauf;
         return lauf + '<div class="seg fo-tabs">' + Object.keys(FO_AESTE).map(a => '<button type="button" data-fo-ast="' + a + '"' + (a === foAst ? ' class="on"' : '') + '>' + FO_AESTE[a] + '</button>').join('') + '</div>' +
             foBaum(lvl);
@@ -400,6 +401,7 @@ document.getElementById('citySheet').addEventListener('click', e => {
     const f = e.target.closest('[data-fo]:not([disabled])'); if (f) { const why = foStart('player', f.dataset.fo); flashHint(why || 'Forschung gestartet: ' + FO_BY[f.dataset.fo].name + '.', 2800); if (!why) sfx('upgrade'); renderCitySheet(); return; }
     const fg = e.target.closest('[data-fo-gems]:not([disabled])');
     if (fg) { const c = loadCity(), g = foGems(c); if (!g || gems < g || !c.foRun || !gemsWirklich('fo:' + c.foRun.id, g, fg)) return; gems -= g; saveGame(); updateHud(); foFertig('player', true); renderCitySheet(); return; }
+    if (e.target.closest('[data-fo-besch]')) { beschWahl('fo'); return; }   // Beschleuniger aus dem Rucksack (06g)
     if (e.target.closest('[data-markt-shop]')) { closeCity(); openShop('markt'); }
 });
 { const mp = document.getElementById('shopMarkt'); if (mp) mp.addEventListener('click', e => {   // Shop → Markt

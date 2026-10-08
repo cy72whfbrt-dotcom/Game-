@@ -233,8 +233,6 @@ afterSplash(() => setTimeout(anleitungStarten, 1500));
 const shopBtn = document.getElementById('shopBtn');
 const shopPopup = document.getElementById('shopPopup');
 const shopGemCount = document.getElementById('shopGemCount');
-const shopCrateResult = document.getElementById('shopCrateResult');
-const shopOpenCrateBtn = document.getElementById('shopOpenCrateBtn');
 const shopToEquipBtn = document.getElementById('shopToEquipBtn');
 const shopCloseBtn = document.getElementById('shopCloseBtn');
 

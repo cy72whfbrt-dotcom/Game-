@@ -68,8 +68,8 @@ const HERO_TIER = { 1: { a: 15, p: 5, st: 1 }, 2: { a: 20, p: 8, st: 1.6 }, 3: {
 const HERO_UNLOCK = { 1: 10, 2: 20, 3: 40, 4: 80 }, HERO_START_SHARDS = { 1: 10, 2: 8, 3: 6, 4: 4 };   // shards to unlock · everyone's starter shards
 const HERO_MAXQ = 20, HERO_RAGE = 25, HERO_RESET_GEMS = 200, HERO_HALL_GEF = 3;
 const HERO_SHARDS_WANDER = 25, HERO_SHARDS_DAY = 5, HERO_SHARDS_CHAIN = 30;   // where shards come from (and the hero chests in the shop)
-const HERO_CHESTS = [{ id: 'hc1', name: 'Heldenkiste', gems: 150, sh: 6, n: 1, minR: 1, teile: 1, txt: '6 Splitter · 2–3 Helden' }, { id: 'hc3', name: 'Große Kiste', gems: 500, sh: 8, n: 3, minR: 1, txt: '3 × 8 Splitter' },
-    { id: 'hcE', name: 'Epische Kiste', gems: 1200, sh: 30, n: 1, minR: 3, txt: '30 Splitter · Episch+' }];   // gems per shard: 25 / 21 / 40 (only Episch or Legendär)                // 5 stars in quarters · rage per fight · reset price · +3 % Gefolge per hall level
+const HERO_CHESTS = [{ id: 'hc1', name: 'Helden-Kiste', gems: 100, sh: 6, n: 1, minR: 1, teile: 1, txt: '6 Splitter · 2–3 Helden' },   // Shop (06g): 1 Schlüssel oder 100 Edelsteine
+    { id: 'hcE', name: 'Epische Helden-Kiste', gems: 500, sh: 10, n: 1, minR: 2, txt: '10 Splitter · Selten oder Episch' }];   // 1 Epischer Schlüssel oder 500 – Lila sicher spätestens beim 20. Mal (06g)                // 5 stars in quarters · rage per fight · reset price · +3 % Gefolge per hall level
 const botById = {};
 for (const bot of BOT_DEFS) botById[bot.id] = bot;
 

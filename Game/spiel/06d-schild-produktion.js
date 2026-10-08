@@ -92,6 +92,14 @@ function renderRucksack() {
     h += '<div class="sect"><h4>Teleporter</h4><span class="sect-aside">Hauptstadt umziehen</span></div><div class="rk-liste">' +
         rkFach({ a: 'tele', n: nt }, 'Teleporter', nt + '× im Rucksack' + (gratis ? ' (1 gratis für neue Spieler)' : ''),
             nt ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-tele><span>Benutzen</span></button>' : kaufen('tele', TP_GEMS)) + '</div>';
+    h += '<div class="sect"><h4>Schlüssel &amp; Event-Münzen</h4><span class="sect-aside">Kisten · Event-Shop</span></div><div class="rk-liste">' +
+        rkFach({ a: 'schluessel1', n: schluessel1 }, 'Schlüssel', schluessel1 + '× · öffnet normale Kisten', '<button type="button" class="btn btn--primary rk-knopf" data-rk-shop="gems"><span>Kisten</span></button>') +
+        rkFach({ a: 'schluessel2', n: schluessel2 }, 'Epischer Schlüssel', schluessel2 + '× · öffnet epische Kisten', '<button type="button" class="btn btn--primary rk-knopf" data-rk-shop="gems"><span>Kisten</span></button>') +
+        rkFach({ a: 'eventMuenzen', n: eventMuenzen }, 'Event-Münzen', fmtNum(eventMuenzen) + ' · für den Event-Shop', '<button type="button" class="btn btn--secondary rk-knopf" data-rk-shop="ev"><span>Event-Shop</span></button>') + '</div>';
+    const bda = BESCH_DAUERN.filter(d => besch[d] > 0);
+    h += '<div class="sect"><h4>Beschleuniger</h4><span class="sect-aside">beim Bauen und Forschen</span></div>' + (bda.length
+        ? '<div class="bk-raster rk-splitter">' + bda.map(d => '<span class="bk-mit">' + beuteKachel({ a: 'besch', n: besch[d], dauer: d }) + '<small>' + beschText(d) + '</small></span>').join('') + '</div>'
+        : '<div class="empty-state lb-leer">' + icon('hourglass') + '<span><b>Keine Beschleuniger</b>Es gibt sie bei Events und im Shop (Tempo, Event).</span></div>');
     const helden = HEROES.map(x => [x, heroSt('player', x.id)]).filter(([, s]) => s && s.sh > 0);
     h += '<div class="sect"><h4>Helden-Splitter</h4><span class="sect-aside">Tipp → Held</span></div>' + (helden.length
         ? '<div class="bk-raster rk-splitter">' + helden.map(([x, s]) => '<button type="button" class="bk-mit" data-rk-held="' + x.id + '" aria-label="' + escapeHtml(x.name) + ' öffnen">' + beuteKachel({ a: 'sh', n: s.sh, held: x.id }) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>'
@@ -112,31 +120,17 @@ rucksackPopup.addEventListener('click', e => {
         closeAllPopups(); if (!cityView.hidden) closeCity(); recenterOnHome(true);
         flashHint('Tippe auf eine freie Stelle der Karte, dann „Teleportieren“ – das kostet 1 Teleporter.', 5000); return; }
     const k = e.target.closest('[data-rk-kauf]'); if (k) { openShop('shield'); return; }
+    const rs = e.target.closest('[data-rk-shop]'); if (rs) { openShop(rs.dataset.rkShop); return; }
     const hd = e.target.closest('[data-rk-held]'); if (hd) { closePanel(rucksackPopup); openHeroHall(hd.dataset.rkHeld); }
 });
 function heroChestPool(minR) { return HEROES.filter(h => { const s = heroSt('player', h.id); return s && !(s.own && s.q >= HERO_MAXQ) && h.r >= minR; }); }
-function renderHeroChests() {                       // the odds per rarity follow your heroes: maxed ones drop out
-    const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0);
-    liveHtml(document.getElementById('heroChestOdds'), [1, 2, 3, 4].map(r => { const w = pool.filter(h => h.r === r).reduce((a, h) => a + 5 - h.r, 0); const rd = RARITY_DEFS[r];
-        return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + (tot ? Math.round(w / tot * 100) : 0) + ' %</span>'; }).join(''));
-    liveHtml(document.getElementById('heroChestOpts'), HERO_CHESTS.slice().reverse().map(c => { const k = HCHEST_ART[c.id] || 'held';   // die wertvollste groß zuerst
-        return '<div class="ware' + (c.id === 'hcE' ? ' ware--gross glanz' : '') + '" data-r="' + KISTE_R[k] + '">' + (HCHEST_BAND[c.id] ? '<span class="band">' + HCHEST_BAND[c.id] + '</span>' : '') +
-            '<span class="ware-bild">' + kisteBild(k) + '</span><span class="ware-txt"><b class="ware-name">' + c.name + '</b><small>' + c.txt + '</small></span>' +
-            (c.gems < GEMS_WIRKLICH ? '<span class="ware-preise">' : '') + '<button type="button" class="ware-preis" data-hchest="' + c.id + '"' + (c.gems < GEMS_WIRKLICH ? ' data-x="1×"' : '') + ' aria-label="' + c.name + ' kaufen"' + (gems < c.gems || !heroChestPool(c.minR).length ? ' disabled' : '') + '>' + icon('gem') + '<b>' + fmtNum(c.gems) + '</b></button>' +
-            (c.gems < GEMS_WIRKLICH ? kistenMehrKnopf(c.id, c.gems) + '</span>' : '') + '</div>'; }).join(''));
+function renderKistenChancen() {                   // „i“ im Kisten-Reiter: Chancen je Seltenheit (Helden: nur die, die noch nicht 5 Sterne haben)
+    const pool = heroChestPool(1), tot = pool.reduce((a, h) => a + 5 - h.r, 0), chip = (r, p) => { const rd = RARITY_DEFS[r]; return '<span class="chip" style="color:' + rd.color + ';border-color:' + rd.color + '88">' + rd.label + ' ' + p + ' %</span>'; };
+    liveHtml(document.getElementById('heroChestOdds'), [1, 2, 3, 4].map(r => chip(r, tot ? Math.round(pool.filter(h => h.r === r).reduce((a, h) => a + 5 - h.r, 0) / tot * 100) : 0)).join(''));
+    liveHtml(document.getElementById('shopOddsE'), RARITY_EPISCH.map((w, r) => w ? chip(r, w) : '').join(''));
 }
 const KISTE_R = { aus: 'grau', held: 'blau', gross: 'gold', episch: 'lila', royal: 'lila' };
-const HCHEST_ART = { hc1: 'held', hc3: 'gross', hcE: 'episch' }, HCHEST_BAND = { hcE: 'Bester Wert', hc1: 'Beliebt' };   // (Bänder nur Optik)
 function kisteBild(k) { return '<img class="kiste-bild" src="bilder/' + (KISTE_BILD[k] || KISTE_BILD.aus) + '_zu.webp" alt="" draggable="false">'; }   // KI-Bild der Kiste (zu)
-// Mehrere auf einmal öffnen (wie RoK „10×“): höchstens 10, sonst so viele, wie die Edelsteine reichen – nur bei Kisten unter 500 (die großen bleiben einzeln: Bündnis-Geschenk je Kiste)
-const KISTE_MEHR = 10;
-const kistenMehrN = preis => Math.max(0, Math.min(KISTE_MEHR, Math.floor(gems / preis)));
-function kistenMehrKnopf(id, preis) {               // „10×“ (oder „N×“ mit dem Rest) neben dem Einzel-Knopf
-    const n = kistenMehrN(preis), m = n >= 2 ? n : KISTE_MEHR, rest = n >= 2 && n < KISTE_MEHR;   // rest: für 10× reicht es nicht – „max. N×“ sagt, warum es weniger sind
-    const was = rest ? 'Für ' + KISTE_MEHR + '× reichen deine Edelsteine nicht – ' + m + ' Kisten öffnen' : m + ' Kisten öffnen';
-    return '<button type="button" class="ware-preis" data-mehr="' + id + '" aria-label="' + was + '" title="' + was + '"' + (n < 2 ? ' disabled' : '') + '><span class="ware-x">' + (rest ? 'max. ' : '') + m + '×</span>' + icon('gem') + '<b>' + fmtNum(m * preis) + '</b></button>';
-}
-for (const el of document.querySelectorAll('[data-kiste-art]')) el.innerHTML = kisteBild(el.dataset.kisteArt);
 shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sinfo]'); if (!b) return;   // „i“: Erklärung/Chancen auf und zu
     const k = b.dataset.sinfo, auf = !shopInfoAuf.has(k); if (auf) shopInfoAuf.add(k); else shopInfoAuf.delete(k);
     b.setAttribute('aria-expanded', auf ? 'true' : 'false'); b.classList.toggle('on', auf);
@@ -155,26 +149,8 @@ function heroChestTeile(who, c) {                   // Heldenkiste: c.sh Splitte
         while (i < pool.length - 1 && (r -= 5 - pool[i].r) >= 0) i++; wahl.push(pool.splice(i, 1)[0]); }
     return wahl.map((h, i) => { const n = Math.floor(c.sh / k) + (i < c.sh % k ? 1 : 0); heroGrantShards(who, n, h.id); return { id: h.id, n }; });
 }
-function heroChestKauf(c, n, bt) {                   // n Heldenkisten auf einmal (Edelsteine genau n-mal) – dieselbe Kiste wie bisher, nur öfter
-    if (gems < c.gems * n) { flashHint('Zu wenig Edelsteine – ' + (n > 1 ? n + '× ' : 'die ') + c.name + ' kostet ' + fmtNum(c.gems * n) + '.', 3000); return; }
-    if (!heroChestPool(c.minR).length) { flashHint('Alle passenden Helden haben schon 5 Sterne.', 3000); return; }
-    if (!gemsWirklich((n > 1 ? 'mehr:' : 'kiste:') + c.id, c.gems * n, bt)) return;
-    const got = []; let anz = 0;
-    for (; anz < n && gems >= c.gems && heroChestPool(c.minR).length; anz++) { gems -= c.gems; got.push(...heroChestOpen('player', c)); questProgress('crate', 1); }   // (zählt für „Öffne … Kisten“)
-    updateHud(); saveGame(); renderShop();
-    const k = HCHEST_ART[c.id] || 'held', beute = got.map(g => ({ a: 'sh', n: g.n, held: g.id }));
-    // (keine Liste mehr unten im Shop – das Belohnungs-Fenster mit Animation zeigt alles, Alexander 7.10.)
-    beuteFenster(c.name, beute, { kiste: k, n: anz, unter: anz > 1 ? anz + ' Kisten geöffnet' : '' });
-}
-shopPopup.addEventListener('click', e => { if (e.target.closest('[data-mehr]')) return;   // (10×: eigener Knopf unten)
-    const karte = e.target.closest('#heroChestOpts .ware'), bt = e.target.closest('[data-hchest]') || (karte && karte.querySelector('[data-hchest]')); if (!bt || bt.disabled) return;   // die ganze Karte ist der Knopf (Spieltest: Tipp aufs Bild lief ins Leere)
-    const c = HERO_CHESTS.find(x => x.id === bt.dataset.hchest); if (c) heroChestKauf(c, 1, bt); });
-shopPopup.addEventListener('click', e => { const bt = e.target.closest('[data-mehr]'); if (!bt || bt.disabled) return;
-    if (bt.dataset.mehr === 'aus') { ausKistenKauf(kistenMehrN(CRATE_GEM_COST), bt); return; }
-    const c = HERO_CHESTS.find(x => x.id === bt.dataset.mehr); if (c && c.gems < GEMS_WIRKLICH) heroChestKauf(c, kistenMehrN(c.gems), bt); });
-shopPopup.addEventListener('click', e => { if (e.target.closest('[data-hchest-hall]')) { closeAllPopups(); openHeroHall(); } });
 function preiseFaerben(root) {                         // Edelstein-Preise: reicht es nicht, steht der Preis rot (sonst hell) – überall dieselbe Regel
-    for (const b of root.querySelectorAll('.ware-preis:not(.thron)')) { const t = b.querySelector('b'), n = t ? parseInt(t.textContent.replace(/\D/g, ''), 10) : NaN;
+    for (const b of root.querySelectorAll('.ware-preis:not(.thron):not(.ohne-g)')) { const t = b.querySelector('b'), n = t ? parseInt(t.textContent.replace(/\D/g, ''), 10) : NaN;
         b.classList.toggle('zu-teuer', n > 0 && n > Math.floor(gems)); }
 }
 let kopfVorab = null;
@@ -183,42 +159,23 @@ function renderShop() {
     const hdTab = document.querySelector('#shopTabs [data-stab="hd"]'), hdHier = typeof hdDa === 'function' && !!hdDa();   // der Reiter „Händler“ nur, wenn einer da ist
     if (hdTab.hidden === hdHier) hdTab.hidden = !hdHier;
     if (shopTab === 'hd' && !hdHier) { showShopTab('gems'); return; }
-    if (shopTab === 'shield') renderShieldState(); else if (shopTab === 'gems') renderHeroChests();
-    const tc = document.getElementById('shopThroneCount'); setText(tc, fmtHud(throneState.pts || 0)); tc.title = fmtNum(throneState.pts || 0) + ' Thron-Punkte';
-    if (shopTab === 'throne') renderThroneShop();
+    if (shopTab === 'shield') renderShieldState(); else if (shopTab === 'gems') { renderKistenReiter(); renderKistenChancen(); }
+    else if (shopTab === 'ev') renderEventReiter(); else if (shopTab === 'tempo') renderTempoReiter();
     if (shopTab === 'hd' && typeof hdRender === 'function') hdRender();
     if (shopTab === 'markt' && AUF) liveHtml(document.getElementById('shopMarkt'), AUF.marktHtml());
     setText(shopGemCount, fmtHud(Math.floor(gems)));
     shopGemCount.title = fmtNum(Math.floor(gems)) + ' Edelsteine';
-    shopOpenCrateBtn.disabled = gems < CRATE_GEM_COST;
-    const mehr = document.querySelector('#shopPopup [data-mehr="aus"]'); if (mehr && !gemsArmed('mehr:aus')) mehr.outerHTML = kistenMehrKnopf('aus', CRATE_GEM_COST);
+    const em = document.getElementById('shopEmCount'); setText(em, fmtHud(eventMuenzen)); em.title = fmtNum(eventMuenzen) + ' Event-Münzen';
     preiseFaerben(document.getElementById('shopPopup'));
 }
-function openShop(tab) {                              // der EINE Shop (Dock); tab: gems | shield | throne | hd | markt
+function openShop(tab) {                              // der EINE Shop (Dock); tab: gems (Kisten) | ev (Event) | tempo | shield | hd | markt
     closeAllPopups();
-    shopCrateResult.style.display = 'none'; document.getElementById('shopHeroResult').hidden = true;   // no old chest results on a fresh visit
     openPanel(shopPopup); showShopTab(tab || shopTab);
 }
 shopBtn.addEventListener('click', () => { if (isPanelOpen(shopPopup)) shopCloseBtn.click(); else openShop(); });
 shopCloseBtn.addEventListener('click', () => {
     closePanel(shopPopup);
 });
-function ausKistenKauf(n, bt) {                     // n Ausrüstungskisten (openCrate n-mal: Edelsteine und Teile genau wie n einzelne Käufe)
-    if (n > 1 && !gemsWirklich('mehr:aus', CRATE_GEM_COST * n, bt)) return;
-    const items = []; for (let i = 0; i < n; i++) { const it = openCrate(); if (!it) break; items.push(it); }
-    renderShop();
-    if (!items.length) {
-        shopCrateResult.style.display = 'block';
-        delete shopCrateResult.dataset.r;
-        shopCrateResult.innerHTML = '<div class="tile empty">' + icon('gem') + '</div>' +
-            '<div><b>Nicht genug Edelsteine</b><small>Eine Kiste kostet ' + fmtNum(CRATE_GEM_COST) + ' Edelsteine.</small></div>';
-        shopCrateResult.scrollIntoView({ block: 'nearest' });
-        return;
-    }
-    const beute = items.map(it => ({ a: 'item', slot: it.slot, r: it.rarity }));
-    beuteFenster('Ausrüstungskiste', beute, { kiste: 'aus', n: items.length, unter: items.length > 1 ? items.length + ' Kisten geöffnet' : '' });
-}
-shopOpenCrateBtn.addEventListener('click', () => ausKistenKauf(1, shopOpenCrateBtn));
 shopToEquipBtn.addEventListener('click', () => {
     closePanel(shopPopup);
     renderProfile();
