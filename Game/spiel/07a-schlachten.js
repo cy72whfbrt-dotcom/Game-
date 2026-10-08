@@ -6,20 +6,8 @@
 var mapBattles = [];
 const MB_MS = 4200, MB_SLOW = 0.6, MB_HOLD = 2700; // ≈ 7 s on screen · a live fight keeps fighting at MB_HOLD until it is decided
 function mbT(b, now) { return b.t0 + (now - b.anchor) * b.slow; }                  // choreography clock (slowed ms)
-function mbArmyPlan(b, side, atk, t) {               // how many soldiers a side shows and when the fallen go down
-    const share = b.my / Math.max(1, b.my + b.en), n = Math.max(4, Math.min(24, Math.round(30 * (atk ? share : 1 - share))));
-    const loss = Math.min(1, atk ? b.myLoss / Math.max(1, b.my) : b.enLoss / Math.max(1, b.en)), seed = b.seed;
-    while (side.units.length < n) { const i = side.units.length;                            // reinforcements file in at the back
-        side.units.push({ f: i % side.files, r: Math.floor(i / side.files), ph: seed() * 6.28, jx: seed() - .5, jy: seed() - .5, die: Infinity, from: side.units.length && t > 50 ? t : 0 }); }
-    const units = side.units, dead = units.filter(u => u.die <= t).length, want = Math.round(units.length * loss);
-    const alive = units.map((u, i) => ({ u, k: u.r + seed() * 1.6 })).filter(x => x.u.die > t).sort((p, q) => p.k - q.k);
-    for (const x of alive) x.u.die = Infinity;
-    const from = Math.max(t + 60, 1000), to = Math.max(from + 300, 3000);
-    for (let j = 0; j < Math.min(alive.length, want - dead); j++) alive[j].u.die = from + (j / Math.max(1, want - dead)) * (to - from) + seed() * 120;
-}
-function mbReplan(b, o, now) {                       // new numbers (reinforcements, or the real result): re-plan who falls from here on
+function mbReplan(b, o) {                       // new numbers (reinforcements, or the real result): the counters follow from here on
     Object.assign(b, { my: o.my, myLoss: o.myLoss, en: o.en, enLoss: o.enLoss, won: o.won });
-    const t = mbT(b, now); mbArmyPlan(b, b.A, true, t); mbArmyPlan(b, b.D, false, t);
 }
 function spawnMapBattle(o) {
     sfx('clash');
@@ -28,12 +16,8 @@ function spawnMapBattle(o) {
     o.defWho = o.def === 'mine' ? 'player' : o.def === 'bot' ? islandOwnerOf(tgt.id) : null;
     const path = marchPath(src, tgt), from = path[path.length - 2];
     const dx = tgt.x - from.x, dy = tgt.y - from.y, l = Math.hypot(dx, dy) || 1, now = performance.now();
-    const share = o.my / Math.max(1, o.my + o.en), seed = mulberry32(Math.round(o.my % 9973) + Math.round(o.en % 9967) + o.targetId);
-    const nA = Math.max(4, Math.min(24, Math.round(30 * share))), nD = Math.max(4, Math.min(24, Math.round(30 * (1 - share))));
-    const b = Object.assign({}, o, { x: tgt.x, y: tgt.y, ux: dx / l, uy: dy / l, born: now, t0: 0, anchor: now, seed, final: !o.live,
-        slow: o.live ? MB_HOLD / Math.max(2500, o.fightMs) : MB_SLOW,                     // a live fight fills its whole duration, then waits for the result
-        A: { units: [], files: Math.min(6, nA) }, D: { units: [], files: Math.min(6, Math.ceil(nD / 2)) }, done: false });
-    mbArmyPlan(b, b.A, true, 0); mbArmyPlan(b, b.D, false, 0);
+    const b = Object.assign({}, o, { x: tgt.x, y: tgt.y, ux: dx / l, uy: dy / l, born: now, t0: 0, anchor: now, final: !o.live,
+        slow: o.live ? MB_HOLD / Math.max(2500, o.fightMs) : MB_SLOW, done: false });   // a live fight fills its whole duration, then waits for the result
     mapBattles.push(b);
     if (mapBattles.length > 10) { const i = Math.max(0, mapBattles.findIndex(x => x.final)), old = mapBattles.splice(i, 1)[0]; if (!old.done && old.onEnd) old.onEnd(); }
     requestRender();
@@ -103,7 +87,7 @@ setInterval(() => {
 function drawMapBattles(now) {                      // screen space
     if (!mapBattles.length) return;
     liveAnimation = true;
-    const z = mapState.zoom, k = Math.max(1.1, Math.min(2.6, z / 0.015)), near = z >= 0.006;
+    const near = mapState.zoom >= 0.006;
     for (const b of mapBattles.slice()) {
         const rt = now - b.born, t = b.final ? mbT(b, now) : Math.min(MB_HOLD, mbT(b, now));   // choreography runs slowed down, motion cycles in real time
         if (t > MB_MS) { b.done = true; mapBattles.splice(mapBattles.indexOf(b), 1); if (b.onEnd) b.onEnd(); continue; }
@@ -111,194 +95,10 @@ function drawMapBattles(now) {                      // screen space
             if (window.WELT && !rechnet()) { const n = performance.now(); b.t0 = Math.min(MB_HOLD, mbT(b, n)); b.anchor = n; b.slow = MB_SLOW; b.final = true; }   // Zuschauer: der Weltrechner hat entschieden → zu Ende spielen
             else { mapBattles.splice(mapBattles.indexOf(b), 1); continue; }   // its attack was resolved without a finish (base changed hands mid-fight)
         }
-        const tx = b.x * z + mapState.offsetX, ty = b.y * z + mapState.offsetY;
+        const tx = b.x * mapState.zoom + mapState.offsetX, ty = b.y * mapState.zoom + mapState.offsetY;
         if (tx < -120 || ty < -120 || tx > viewW + 120 || ty > viewH + 120) continue;
-        if (!near) {                                 // far out: a pulsing crossed-swords marker at the base
-            const pulse = 1 + Math.sin(rt / 140) * .12;
-            ctx.beginPath(); ctx.arc(tx, ty - 14, 11 * pulse, 0, Math.PI * 2); ctx.fillStyle = 'rgba(20,10,8,.85)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#ff8d7e'; ctx.stroke();
-            drawGlyph(ctx, 'attack', tx, ty - 14, 13, '#ffd2c8'); continue;
-        }
-        const ux = b.ux, uy = b.uy, vx = -uy, vy = ux, face = ux >= 0 ? 1 : -1;
-        const adv = Math.min(1, t / 800), advE = adv * adv, fight = t > 800 && t < 3200, after = t > 3200;
-        const gap = 8.5 * k, fileGap = 8 * k, s = 14 * k;
-        const dFront = 22 * k, aFront = dFront + 13 * k + (1 - advE) * 46 * k;
-        const ak = b.atk === 'mine' ? 'mine' : b.atk === 'boss' ? 'boss' : 'bot', cA = BS_COL[ak], cD = BS_COL[b.def] || BS_COL.bot, tA = BS_TROOP[ak], tD = BS_TROOP[b.def] || BS_TROOP.bot;
-        const aWon = b.won, drawn = [];
-        const place = (side, u) => {
-            const atk = side === b.A, files = side.files, off = (u.f - (files - 1) / 2) * fileGap + u.jx * 2 * k;
-            let d = atk ? aFront + u.r * gap : dFront - u.r * gap * .8;
-            const fall = Math.max(0, Math.min(1, (t - u.die) / 240));
-            let alpha = 1;
-            if (!atk && t < 700) { d *= t / 700; alpha = t / 700; }                            // garrison steps out of the base
-            if (u.from && t < u.from + 600) { const q = Math.max(0, (t - u.from) / 600); d += (1 - q) * (atk ? 50 : -20) * k; alpha = Math.min(alpha, q); }   // reinforcements arrive
-            if (t > 800 && t < 1100) { const kq = Math.sin((t - 800) / 300 * Math.PI) * k / (1 + u.r * .6); d += atk ? kq * 3 : -kq * 7; }   // the impact shoves both lines
-            if (after && fall === 0) {
-                const q = Math.min(1, (t - 3200) / 900);
-                if (atk) { if (aWon) { d -= q * aFront; alpha = 1 - q; } else { d += q * 60 * k; alpha = 1 - q; } }   // storm the base / fall back
-                else { d -= q * dFront; alpha = 1 - q; }                                            // survivors return inside
-            }
-            if (fall > 0) alpha = Math.max(0, 1 - Math.max(0, t - u.die - 900) / 600);          // the fallen fade after a moment
-            const x = tx - ux * d + vx * off, y = ty - uy * d + vy * off + u.jy * 2 * k;
-            const walk = atk && adv < 1 ? rt / 45 + u.ph : after && fall === 0 ? rt / 70 + u.ph : u.ph;   // sprint in the charge
-            const thrust = fight && fall === 0 && u.r <= 1 ? Math.max(0, Math.sin(rt / 75 + u.ph)) : 0;
-            const [col, rim] = atk ? tA : tD;
-            if (fall > 0 && t - u.die < 700) falls.push([x, y, t - u.die]);
-            drawn.push({ y, f: () => { if (alpha <= 0.01) return; ctx.save(); ctx.globalAlpha = alpha; bsSoldier(ctx, x, y, s, atk ? face : -face, col, rim, walk, thrust, fall); ctx.restore(); } });
-        };
-        const falls = [];
-        for (const u of b.A.units) place(b.A, u);
-        for (const u of b.D.units) place(b.D, u);
-        // standard bearers behind each army, flags in the side's colour
-        const bearer = (atk) => {
-            const side = atk ? b.A : b.D, rows = Math.ceil(side.units.length / side.files);
-            let d = atk ? aFront + (rows + .6) * gap : Math.max(4 * k, dFront - (rows + .4) * gap * .8);
-            let alpha = 1; if (after) { const q = Math.min(1, (t - 3200) / 900); alpha = 1 - q; if (atk) d += (aWon ? -aFront * q : 60 * k * q); }
-            if (!atk && t < 700) alpha = t / 700;
-            const x = tx - ux * d, y = ty - uy * d, [col] = atk ? tA : tD, wave = Math.sin(rt / 160) * 2 * k;
-            drawn.push({ y: y + .01, f: () => { ctx.save(); ctx.globalAlpha = alpha;
-                bsSoldier(ctx, x, y, s, atk ? face : -face, col, (atk ? tA : tD)[1], atk && adv < 1 ? rt / 45 : after ? rt / 70 : 0, 0, 0);
-                ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1.4 * k; ctx.beginPath(); ctx.moveTo(x, y - s * .2); ctx.lineTo(x, y - s * 1.9); ctx.stroke();
-                const fd = atk ? face : -face, top = y - s * 1.9, bw = 13 * k, bh = s * .62, rimC = (atk ? tA : tD)[1];
-                ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1.2 * k; ctx.beginPath(); ctx.moveTo(x, top + 1 * k); ctx.lineTo(x + fd * bw, top + 1 * k); ctx.stroke();   // crossbar
-                ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x, top + 1 * k); ctx.lineTo(x + fd * bw, top + 1 * k + wave * .3);
-                ctx.quadraticCurveTo(x + fd * (bw + wave * .4), top + bh * .5, x + fd * bw, top + bh + wave * .5); ctx.lineTo(x + fd * bw * .5, top + bh * .78 + wave * .4); ctx.lineTo(x, top + bh); ctx.closePath(); ctx.fill();
-                ctx.lineWidth = .9 * k; ctx.strokeStyle = 'rgba(12,12,16,.8)'; ctx.stroke();
-                ctx.strokeStyle = rimC; ctx.lineWidth = 1.1 * k; ctx.beginPath(); ctx.moveTo(x + fd * bw * .5, top + 3 * k); ctx.lineTo(x + fd * bw * .5, top + bh * .62); ctx.stroke();   // stripe
-                ctx.fillStyle = '#e4c886'; ctx.beginPath(); ctx.arc(x, top - 1.5 * k, 1.8 * k, 0, Math.PI * 2); ctx.fill();   // gold finial
-                const cw = atk ? b.atkWho : b.defWho; if (cw) drawCrest(ctx, x + fd * bw * .5, top + bh * .42, bh * .72, crestFor(cw));   // each side's coat of arms on its banner
-                ctx.restore(); } });
-        };
-        bearer(true); bearer(false);
-        const hdef = b.hero && heroById(b.hero); let heroPlate = null;
-        if (hdef) {                                    // the hero leads from the front: a bigger figure in the hero's colour, a gold plume and a name plate
-            let d = aFront - 4 * k; let alpha = 1;
-            if (after) { const q = Math.min(1, (t - 3200) / 900); alpha = 1 - q; d += aWon ? -aFront * q : 60 * k * q; }
-            const hx = tx - ux * d + vx * 0, hy = ty - uy * d;
-            drawn.push({ y: hy + .02, f: () => { ctx.save(); ctx.globalAlpha = alpha;
-                bsSoldier(ctx, hx, hy, s * 1.35, face, hdef.color, '#f0d69a', adv < 1 || after ? rt / 60 : 0, fight ? Math.max(0, Math.sin(rt / 90)) : 0, 0);
-                ctx.fillStyle = '#e8c547'; ctx.beginPath(); ctx.ellipse(hx - face * 1 * k, hy - s * 1.52, 1.3 * k, 3 * k, -face * .4, 0, Math.PI * 2); ctx.fill();   // plume
-                ctx.restore(); } });
-            heroPlate = () => { ctx.save(); ctx.globalAlpha = alpha; ctx.font = '700 11px Inter, system-ui, sans-serif'; const tw = ctx.measureText(hdef.name).width + 12, py = hy + 12;   // on top of every figure
-                rr(ctx, hx - tw / 2, py - 9, tw, 16, 8); ctx.fillStyle = 'rgba(14,12,10,.88)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = RARITY_DEFS[hdef.r].color; ctx.stroke();
-                ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(hdef.name, hx, py - .5); ctx.restore(); };
-        }
-        {                                             // the battlefield: the ground is trampled, the front glows
-            const env = Math.min(1, t / 900) * (after ? Math.max(0, 1 - (t - 3200) / 900) : 1), ang = Math.atan2(vy, vx);
-            const fxp = tx - ux * (dFront + 6.5 * k), fyp = ty - uy * (dFront + 6.5 * k);
-            const gg = ctx.createRadialGradient(fxp, fyp + 3 * k, 0, fxp, fyp + 3 * k, 60 * k);
-            gg.addColorStop(0, 'rgba(74,58,38,' + (.5 * env) + ')'); gg.addColorStop(.7, 'rgba(74,58,38,' + (.25 * env) + ')'); gg.addColorStop(1, 'rgba(74,58,38,0)');
-            ctx.save(); ctx.translate(fxp, fyp + 3 * k); ctx.rotate(ang); ctx.scale(1, .42); ctx.translate(-fxp, -(fyp + 3 * k));
-            ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(fxp, fyp + 3 * k, 60 * k, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-            if (fight) {                              // a hot line where the two fronts grind against each other
-                const pl = .6 + .4 * Math.sin(rt / 90), gl = ctx.createRadialGradient(fxp, fyp - s * .4, 0, fxp, fyp - s * .4, 42 * k);
-                gl.addColorStop(0, 'rgba(255,170,80,' + (.32 * pl) + ')'); gl.addColorStop(1, 'rgba(255,120,40,0)');
-                ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.translate(fxp, fyp - s * .4); ctx.rotate(ang); ctx.scale(1, .35); ctx.translate(-fxp, -(fyp - s * .4));
-                ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(fxp, fyp - s * .4, 42 * k, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-            }
-        }
-        // dust kicked up behind the charging column
-        if (adv < 1) { for (let i = 0; i < 4; i++) { const d = aFront + (b.A.files ? i * gap : 0), o = (i - 1.5) * fileGap;
-            const x = tx - ux * (d + 6 * k) + vx * o, y = ty - uy * (d + 6 * k) + vy * o;
-            ctx.fillStyle = 'rgba(190,175,140,' + (.18 * (1 - adv)) + ')'; ctx.beginPath(); ctx.ellipse(x, y + 2 * k, (8 + adv * 10) * k, (3 + adv * 3) * k, 0, 0, Math.PI * 2); ctx.fill(); } }
-        drawn.sort((p, q) => p.y - q.y).forEach(d => d.f());
-        if (heroPlate) heroPlate();
-        for (const [fx, fy, dt] of falls) {           // hit flash, then a puff of dust where he went down
-            if (dt < 140) { ctx.save(); ctx.globalCompositeOperation = 'lighter'; const q = dt / 140, R = (4 + 8 * q) * k, gh = ctx.createRadialGradient(fx, fy - s * .6, 0, fx, fy - s * .6, R);
-                gh.addColorStop(0, 'rgba(255,240,210,' + (1 - q) + ')'); gh.addColorStop(1, 'rgba(255,160,90,0)'); ctx.fillStyle = gh; ctx.beginPath(); ctx.arc(fx, fy - s * .6, R, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
-            const q = dt / 700, R = (4 + 10 * q) * k; ctx.fillStyle = 'rgba(150,136,112,' + (.4 * (1 - q)) + ')'; ctx.beginPath(); ctx.ellipse(fx, fy - 1 * k, R * 1.4, R * .5, 0, 0, Math.PI * 2); ctx.fill();
-        }
-        const mx = tx - ux * (dFront + 6.5 * k), my2 = ty - uy * (dFront + 6.5 * k);
-        if (t > 780 && t < 1400) {                   // the impact: a hard white-hot flash and a wall of dust thrown sideways
-            const q = (t - 780) / 620;
-            ctx.save(); ctx.globalCompositeOperation = 'lighter';
-            if (q < .45) { const qq = q / .45, R = (16 + 46 * qq) * k, gb = ctx.createRadialGradient(mx, my2 - s * .5, 0, mx, my2 - s * .5, R);
-                gb.addColorStop(0, 'rgba(255,250,235,' + (1 - qq) + ')'); gb.addColorStop(.35, 'rgba(255,205,130,' + (.55 * (1 - qq)) + ')'); gb.addColorStop(1, 'rgba(255,150,60,0)');
-                ctx.fillStyle = gb; ctx.beginPath(); ctx.arc(mx, my2 - s * .5, R, 0, Math.PI * 2); ctx.fill(); }
-            ctx.restore();
-            for (let i = 0; i < 6; i++) { const side = i % 2 ? 1 : -1, o = side * (10 + Math.floor(i / 2) * 12) * k * (.4 + q), R = (9 + 14 * q) * k;   // dust along the front line
-                const px = mx + vx * o, py = my2 + vy * o - q * 8 * k, gd = ctx.createRadialGradient(px, py, 0, px, py, R);
-                gd.addColorStop(0, 'rgba(160,145,118,' + (.5 * (1 - q)) + ')'); gd.addColorStop(1, 'rgba(160,145,118,0)'); ctx.fillStyle = gd; ctx.beginPath(); ctx.arc(px, py, R, 0, Math.PI * 2); ctx.fill(); }
-        }
-        if (t > 780 && t < 1150) {                   // the lines crash together: a flash and a ring of dust
-            const q = (t - 780) / 370;
-            ctx.strokeStyle = 'rgba(255,236,190,' + (.7 * (1 - q)) + ')'; ctx.lineWidth = 3 * k * (1 - q);
-            ctx.beginPath(); ctx.ellipse(mx, my2 - s * .4, (12 + 40 * q) * k, (5 + 16 * q) * k, Math.atan2(vy, vx), 0, Math.PI * 2); ctx.stroke();
-            ctx.fillStyle = 'rgba(255,245,215,' + (.35 * (1 - q)) + ')'; ctx.beginPath(); ctx.arc(mx, my2 - s * .5, (8 + 10 * q) * k, 0, Math.PI * 2); ctx.fill();
-        }
-        if (t > 350 && t < 2800) {                   // arrow volleys from the back ranks, both ways
-            const r = mulberry32(b.targetId * 7 + 1);
-            for (let i = 0; i < 10; i++) {
-                const atk = i % 2 === 0, start = 350 + r() * 1600, dur = 520 + r() * 200, q = (t - start) / dur;
-                if (q < 0 || q > 1) continue;
-                const o1 = (r() - .5) * 40 * k, o2 = (r() - .5) * 40 * k;
-                const d1 = atk ? aFront + 2.5 * gap : dFront * .2, d2 = atk ? dFront * .6 : aFront + gap;
-                const x1 = tx - ux * d1 + vx * o1, y1 = ty - uy * d1 + vy * o1 - s, x2 = tx - ux * d2 + vx * o2, y2 = ty - uy * d2 + vy * o2 - s * .5;
-                const h = 26 * k, px = x1 + (x2 - x1) * q, py = y1 + (y2 - y1) * q - Math.sin(q * Math.PI) * h;
-                const qn = Math.min(1, q + .06), nx = x1 + (x2 - x1) * qn, ny = y1 + (y2 - y1) * qn - Math.sin(qn * Math.PI) * h;
-                const ang = Math.atan2(ny - py, nx - px);
-                ctx.strokeStyle = '#2a2016'; ctx.lineWidth = 1.1 * k; ctx.beginPath(); ctx.moveTo(px - Math.cos(ang) * 5 * k, py - Math.sin(ang) * 5 * k); ctx.lineTo(px + Math.cos(ang) * 4 * k, py + Math.sin(ang) * 4 * k); ctx.stroke();
-                ctx.fillStyle = '#d8dde2'; ctx.beginPath(); ctx.arc(px + Math.cos(ang) * 4 * k, py + Math.sin(ang) * 4 * k, .9 * k, 0, Math.PI * 2); ctx.fill();
-            }
-        }
-        if (after && aWon && b.atk === 'mine') {       // your banner goes up on the captured base
-            const q = Math.min(1, (t - 3300) / 700), fx = tx + 6 * k, fy = ty - s * .6, pole = s * 2.2 * q;
-            ctx.strokeStyle = '#3a2c1c'; ctx.lineWidth = 1.6 * k; ctx.beginPath(); ctx.moveTo(fx, fy); ctx.lineTo(fx, fy - pole); ctx.stroke();
-            if (q > .3) { const wave = Math.sin(rt / 150) * 2.5 * k; ctx.fillStyle = cA[0]; ctx.beginPath(); ctx.moveTo(fx, fy - pole);
-                ctx.quadraticCurveTo(fx + 10 * k, fy - pole + wave, fx + 20 * k, fy - pole + 3 * k + wave); ctx.lineTo(fx, fy - pole + 11 * k); ctx.closePath(); ctx.fill();
-                ctx.lineWidth = .8 * k; ctx.stroke(); }
-        }
-        if (fight) {                                  // sparks + dust on the front line
-            for (let i = 0; i < 8; i++) {             // dust haze drifting up off the melee
-                const ph = ((Math.max(0, rt) / 1800) + i / 8) % 1, o = ((i * 37) % 11 / 11 - .5) * 60 * k, R = (8 + ph * 16) * k;
-                const px = mx + vx * o + ph * 10 * k, py = my2 + vy * o - s * .3 - ph * 22 * k, gd = ctx.createRadialGradient(px, py, 0, px, py, R);
-                gd.addColorStop(0, 'rgba(150,136,112,' + (.28 * Math.sin(ph * Math.PI)) + ')'); gd.addColorStop(1, 'rgba(150,136,112,0)');
-                ctx.fillStyle = gd; ctx.beginPath(); ctx.arc(px, py, R, 0, Math.PI * 2); ctx.fill(); }
-            const r = mulberry32(Math.floor(rt / 55) + b.targetId);
-            ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
-            for (let i = 0; i < 10; i++) { const o = (r() - .5) * 50 * k, x = mx + vx * o, y = my2 + vy * o - s * .55;   // steel on steel
-                const a = r() * 6.28, l = (2 + r() * 4.5) * k, al = .5 + r() * .5;
-                ctx.strokeStyle = 'rgba(255,' + (190 + Math.floor(r() * 60)) + ',120,' + al + ')'; ctx.lineWidth = 1;
-                ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke();
-                if (i < 2) { ctx.fillStyle = 'rgba(255,245,220,' + al * .6 + ')'; ctx.beginPath(); ctx.arc(x, y, .9 * k, 0, Math.PI * 2); ctx.fill(); } }
-            ctx.restore();
-        }
-        // troop counts over each side, ticking down, with floating losses
-        const tick = Math.max(0, Math.min(1, (t - 1000) / 2200)), e = 1 - Math.pow(1 - tick, 2);
-        const ad = aFront + gap * 1.5, alphaP = after ? Math.max(0, 1 - (t - 3200) / 600) : Math.min(1, t / 300);
-        const va = Math.max(0, b.my - b.myLoss * e), vd = Math.max(0, b.en - b.enLoss * e);
-        {                                             // one strength bar above the fight: attacker | defender
-            const cx = tx - ux * (aFront * .55), top = Math.min(ty - uy * ad, ty - uy * dFront * .4, ty) - s * 1.5 - 22;
-            ctx.save(); ctx.globalAlpha = alphaP; ctx.font = '700 11px Inter, system-ui, sans-serif'; ctx.textBaseline = 'middle';
-            const la = fmtCompact(Math.round(va)), ld = fmtCompact(Math.round(vd)), W = Math.max(116, ctx.measureText(la + ld).width + 64), x0 = cx - W / 2;
-            rr(ctx, x0, top, W, 27, 6); ctx.fillStyle = 'rgba(10,12,16,.92)'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke();
-            ctx.fillStyle = cA[1]; ctx.textAlign = 'left'; ctx.fillText(la, x0 + 8, top + 10);
-            ctx.fillStyle = cD[1]; ctx.textAlign = 'right'; ctx.fillText(ld, x0 + W - 8, top + 10);
-            drawGlyph(ctx, 'attack', cx, top + 10, 11, '#e4c886');
-            const bw = W - 16, sh = va + vd > 0 ? va / (va + vd) : .5, by = top + 17.5, bx = x0 + 8, sx = bx + bw * sh;
-            ctx.save(); rr(ctx, bx, by, bw, 5, 2.5); ctx.clip();                          // tug-of-war bar: two bevelled halves, a gold notch at the front line
-            const gD = ctx.createLinearGradient(0, by, 0, by + 5); gD.addColorStop(0, cD[1]); gD.addColorStop(.45, cD[0]); gD.addColorStop(1, cD[0]);
-            const gA = ctx.createLinearGradient(0, by, 0, by + 5); gA.addColorStop(0, cA[1]); gA.addColorStop(.45, cA[0]); gA.addColorStop(1, cA[0]);
-            ctx.fillStyle = gD; ctx.fillRect(bx, by, bw, 5); ctx.fillStyle = gA; ctx.fillRect(bx, by, bw * sh, 5); ctx.restore();
-            rr(ctx, bx, by, bw, 5, 2.5); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,.6)'; ctx.stroke();
-            ctx.fillStyle = '#f0d69a'; ctx.beginPath(); ctx.moveTo(sx, by - 2); ctx.lineTo(sx + 2.5, by + 2.5); ctx.lineTo(sx, by + 7); ctx.lineTo(sx - 2.5, by + 2.5); ctx.closePath(); ctx.fill();
-            ctx.restore();
-        }
-        if (t > 900 && t < 3400) {
-            ctx.font = '700 12px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            const i0 = Math.floor((t - 900) / 450);
-            for (let i = Math.max(0, i0 - 2); i <= i0; i++) {
-                const age = t - 900 - i * 450; if (age < 0 || age > 900) continue;
-                const r = mulberry32(i * 31 + b.targetId), a = 1 - age / 900, rise = age / 900 * 22;
-                for (const [atk, loss, col] of [[true, b.myLoss, cA[1]], [false, b.enLoss, cD[1]]]) {
-                    if (loss <= 0) continue;
-                    const chunk = loss / 5, d = atk ? aFront + gap : dFront * .6, o = (r() - .5) * 30 * k;
-                    ctx.globalAlpha = a; ctx.fillStyle = '#0b0d12'; const txt = '−' + fmtCompact(Math.max(1, Math.round(chunk)));
-                    const px = tx - ux * d + vx * o, py = ty - uy * d + vy * o - s - rise;
-                    ctx.fillText(txt, px + 1, py + 1); ctx.fillStyle = col; ctx.fillText(txt, px, py);
-                }
-            }
-            ctx.globalAlpha = 1;
-        }
+        if (!near) mzKampfFern(tx, ty, rt);          // far out: a small pulsing fight marker at the base
+        else mzKampf(b, t, tx, ty);                  // 03f: Kampf-Kreis, Armeen im Halbkreis, Verteidiger, Tafel, Geschosse, Verluste
     }
 }
 function mapBattleShake(now) {                        // a short jolt of the camera on the impact and when the base falls
@@ -346,8 +146,6 @@ function bsSoldier(g, x, y, s, dir, col, rim, walk, thrust, fall) {
     g.restore();
     g.restore();
 }
-const BS_TROOP = { mine: ['#2c4a70', '#8ea6c4'], bot: ['#6b2620', '#c08a80'], neutral: ['#51493b', '#a39780'], boss: ['#3f1630', '#b07c98'] };   // cloth dyes: darker, less toy-like
-const BS_COL = { mine: ['#3d6fb3', '#b7d3f5'], bot: ['#a3352b', '#f2aa9f'], neutral: ['#7a6a4f', '#d9c7a1'], boss: ['#5b1d3d', '#e39ac0'] };
 // ===== BATTLE EFFECTS =====
 // A flash, a shockwave and sparks at the base when a fight the player is part of resolves,
 // plus "Sieg!" / "Verloren" floating up (screen space, drawn in drawMap).
@@ -367,34 +165,6 @@ function spawnBattleFx(islandId, good, label, sub) {
     requestRender();
 }
 const FX_MS = 2600;
-function fxRibbon(label, sub, good, alpha, scale) {   // result banner at (0,0): ribbon with swallow tails + icon medallion
-    ctx.save(); ctx.globalAlpha = alpha; ctx.scale(scale, scale);
-    ctx.font = '700 17px Cinzel, Georgia, serif';
-    const text = label.toUpperCase(), tw = ctx.measureText(text).width, w = Math.max(96, tw + 58), h = 30, x = -w / 2, y = -h / 2;
-    const c1 = good ? '#f6dc8e' : '#e76a5c', c2 = good ? '#b98733' : '#8e1f17', edge = good ? '#5a3c0e' : '#3e0906';
-    for (const sgn of [-1, 1]) {                      // swallow tails
-        const tx = sgn * (w / 2 - 4);
-        ctx.beginPath(); ctx.moveTo(tx, y + 5); ctx.lineTo(tx + sgn * 20, y + 5); ctx.lineTo(tx + sgn * 12, 0 + 5); ctx.lineTo(tx + sgn * 20, h / 2 + 5); ctx.lineTo(tx, h / 2 + 5); ctx.closePath();
-        ctx.fillStyle = good ? '#8d6320' : '#6d140f'; ctx.fill(); ctx.lineWidth = 1.2; ctx.strokeStyle = edge; ctx.stroke();
-    }
-    const gr = ctx.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, c1); gr.addColorStop(1, c2);
-    ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x, y, w, h, 4) : ctx.rect(x, y, w, h);
-    ctx.fillStyle = gr; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = edge; ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x + 4, y + 2.5); ctx.lineTo(x + w - 4, y + 2.5); ctx.stroke();
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillStyle = good ? '#2a1a04' : '#fff1ec'; ctx.fillText(text, 12, 1);
-    const mx = x + 17;                                 // medallion with glyph
-    ctx.beginPath(); ctx.arc(mx, 0, 13, 0, Math.PI * 2); ctx.fillStyle = good ? '#1d1509' : '#1c0806'; ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = good ? '#f0d38a' : '#ff8d7e'; ctx.stroke();
-    drawGlyph(ctx, good ? 'flag' : 'defense', mx, 0, 15, good ? '#f5dd9c' : '#ffb2a7');
-    if (sub) {
-        ctx.font = '600 11px Inter, system-ui, sans-serif';
-        const sw = ctx.measureText(sub).width + 16;
-        ctx.fillStyle = 'rgba(8,8,12,.82)'; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-sw / 2, h / 2 + 5, sw, 18, 9) : ctx.rect(-sw / 2, h / 2 + 5, sw, 18); ctx.fill();
-        ctx.fillStyle = good ? '#f2e2b8' : '#ffc1b8'; ctx.fillText(sub, 0, h / 2 + 14.5);
-    }
-    ctx.restore();
-}
 function drawBattleFx(now) {       // screen space (setScreen active)
     battleFx = battleFx.filter(f => now - f.born < FX_MS);
     for (const f of battleFx) {
@@ -464,8 +234,8 @@ function drawBattleFx(now) {       // screen space (setScreen active)
             const k = (ms - 450) / (FX_MS - 450);
             const pop = Math.min(1, (ms - 450) / 260), scale = pop < 1 ? 0.5 + 0.62 * Math.sin(pop * Math.PI * 0.62) : 1;
             const alpha = k > 0.78 ? 1 - (k - 0.78) / 0.22 : Math.min(1, pop * 1.6);
-            ctx.translate(sx, sy - 52 - k * 26 - f.stack * 58);
-            fxRibbon(f.label, f.sub, f.good, Math.max(0, alpha), scale);
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalCompositeOperation = 'source-over';
+            mzErgebnisBand(f, Math.max(0, alpha), scale, sx, sy);   // (03f: kleines Band am Bildrand, weg vom Ziel)
         }
         ctx.restore();
     }

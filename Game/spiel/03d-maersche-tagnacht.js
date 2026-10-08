@@ -1,143 +1,4 @@
-// Teil 03d-maersche-tagnacht.js: Märsche auf der Karte (Fahne) und Tag und Nacht
-// Märsche on the map: a small flag with the owner's crest (one cached bitmap per owner)
-var marchFlagCache = new Map();
-function marchFlag(g, x, y, who) {                   // (x, y) = the token's centre; the pole stands on its upper right
-  const cr = crestFor(who), key = (who || '') + '|' + crestKeyOf(cr); let c = marchFlagCache.get(key);
-  if (!c) { c = document.createElement('canvas'); c.width = 72; c.height = 84; const q = c.getContext('2d'); q.scale(3, 3);
-    q.strokeStyle = '#2a241b'; q.lineWidth = 1.4; q.beginPath(); q.moveTo(2, 27); q.lineTo(2, 1.5); q.stroke();
-    q.fillStyle = '#e9dfc6'; q.beginPath(); q.moveTo(2.5, 2); q.lineTo(20, 2); q.lineTo(17, 8.5); q.lineTo(20, 15); q.lineTo(2.5, 15); q.closePath(); q.fill();
-    q.lineWidth = .8; q.strokeStyle = 'rgba(10,8,4,.7)'; q.stroke(); drawCrest(q, 10, 8.6, 10, cr);
-    if (marchFlagCache.size > 200) marchFlagCache.clear(); marchFlagCache.set(key, c); }
-  g.drawImage(c, x + 3, y - 26, 24, 28);
-}
-function drawMarchColumn(m, t) {                  // a short column of soldiers (pairs) trailing the token along its path
-  const k = Math.max(1, Math.min(2, mapState.zoom / 0.02)), n = 8, gap = 8.5 * k;
-  for (let i = n - 1; i >= 0; i--) {
-    const d = m.d - 11 * k - Math.floor(i / 2) * gap; if (d < 0) continue;
-    const p = marchPointAt(m, d), q = marchPointAt(m, d + 2), dx = q.x - p.x, dy = q.y - p.y, l = Math.hypot(dx, dy) || 1;
-    const side = i % 2 ? 1 : -1, ox = -dy / l * 3.4 * k * side, oy = dx / l * 3.4 * k * side;
-    const x = p.x + ox, y = p.y + oy, bob = Math.abs(Math.sin(t / 110 + i * 1.7)) * 1.1 * k, fx = dx / l >= 0 ? 1 : -1;
-    ctx.save(); ctx.translate(x, y - bob); ctx.scale(k, k);
-    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(0, 3.4 + bob / k, 2.8, 1, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#1a1d24'; ctx.fillRect(-1.7, -3.4, 3.4, 6);                   // body
-    ctx.fillStyle = m.col; ctx.fillRect(fx > 0 ? 0.8 : -2.6, -2.8, 1.8, 3.6);        // shield in the troop colour
-    ctx.beginPath(); ctx.arc(0, -4.7, 1.6, 0, Math.PI * 2); ctx.fillStyle = '#aab2bc'; ctx.fill();   // helmet
-    ctx.strokeStyle = '#c9b48a'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(-fx * 1.3, 0.8); ctx.lineTo(fx * 2.4, -8.5); ctx.stroke();   // spear
-    ctx.restore();
-  }
-}
-const hitsAny = (r, list, e) => list.some(q => r.x < q.x + q.w + e && q.x < r.x + r.w + e && r.y < q.y + q.h + e && q.y < r.y + r.h + e);
-function drawMarchTokens() {                      // drawn BEFORE the nameplates: a token slides along its path (up to 60 px)
-  setScreen(ctx);                                 // to a spot clear of every plate; when there is none, the plate covers it
-  const box = p => ({ x: p.x - 9, y: p.y - 9, w: 18, h: 18 });
-  for (const m of marchTokens) {
-    const plate = bannerHitRects.find(q => q.id === m.srcId);                   // leave the source base (tower + plate) visible
-    let off = Math.min(m.tot * .5, m.r + 10);
-    if (plate) while (off < m.tot * .5 && hitsAny(box(marchPointAt(m, off)), [plate], 1)) off += 2;
-    const d0 = off + (m.tot - off) * m.progress; let d = d0;
-    if (hitsAny(box(marchPointAt(m, d0)), bannerHitRects, 1))
-      for (let k = 3; k <= 60; k += 3) {
-        if (d0 + k <= m.tot && !hitsAny(box(marchPointAt(m, d0 + k)), bannerHitRects, 1)) { d = d0 + k; break; }
-        if (d0 - k >= off && !hitsAny(box(marchPointAt(m, d0 - k)), bannerHitRects, 1)) { d = d0 - k; break; } }
-    const p = marchPointAt(m, d); m.x = p.x; m.y = p.y; m.d = d;
-  }
-  const cols = mapState.zoom >= 0.006, t = performance.now();
-  for (const m of marchTokens) if (cols && m.glyph !== 'scout') drawMarchColumn(m, t);
-  for (const m of marchTokens) {
-    ctx.beginPath(); ctx.arc(m.x, m.y, 7.5, 0, Math.PI * 2); ctx.fillStyle = '#141820'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = m.col; ctx.stroke();
-    drawGlyph(ctx, m.glyph, m.x, m.y, 10, m.col);
-    if (m.fahne && cols) marchFlag(ctx, m.x, m.y, m.who);                  // the flag with the owner's crest
-  }
-}
-const CHIP_SLOTS = [0, -20, 20, -40, 40, -60, 60].flatMap(dy => [[1, dy], [-1, dy]])          // beside the cluster, then above / below;
-  .concat([-10, 10, -30, 30, -50, 50, -80, 80].flatMap(dy => [[1, dy], [-1, dy]]),                                    // in between; further out
-          [0, -20, 20, -40, 40].flatMap(dy => [[2, dy], [-2, dy]]), [0, -20, 20, -40, 40].flatMap(dy => [[3, dy], [-3, dy]]));
-let chipDigit = null;                             // the widest digit: chips reserve the width of their widest label
-let chipSlotOf = new Map();                       // cluster key → slot used last frame (a chip only moves when that slot gets blocked)
-// Tap your own marching column (Späher, Lager, Sammler too): small buttons pop up beside it - on the way Zurück + Schneller (gems), heim nur Schneller.
-var selMarch = null, marchBtnRects = [];
-function drawMarchButtons() {
-  marchBtnRects = [];
-  if (!selMarch) return;
-  const m = marchTokens.find(t => t.mk === selMarch);
-  if (!m || m.x === undefined) { selMarch = null; return; }
-  setScreen(ctx);
-  const list = [pendingAttacks, pendingSends, pendingRetreats, pendingScouts, eigeneFeldBarb()].find(l => l.some(x => marchKeyOf(x) === selMarch)), mm = list && list.find(x => marchKeyOf(x) === selMarch);
-  if (!mm) { selMarch = null; return; }
-  const btns = (list !== pendingRetreats && !mm.back ? [{ act: 'recall', glyph: 'recall', label: 'Zurück' }] : []).concat([{ act: 'speed', glyph: 'hourglass', label: (gemsArmed('marsch:' + selMarch) ? 'Wirklich? ' : 'Schneller · ') + speedUpCost(mm) }]);
-  ctx.font = '700 12px Inter, system-ui, sans-serif';
-  const ws = btns.map(b => ctx.measureText(b.label).width + 34 + (b.act === 'speed' ? 14 : 0)), total = ws.reduce((a, b) => a + b, 0) + 8 * (btns.length - 1);
-  let x = Math.max(8, Math.min(viewW - total - 8, m.x - total / 2)); const y = Math.max(8, m.y - 74);
-  btns.forEach((b, i) => { const w = ws[i];
-    rr(ctx, x, y, w, 32, 16); ctx.fillStyle = 'rgba(14,12,10,.94)'; ctx.fill(); ctx.lineWidth = 1.4; ctx.strokeStyle = b.act === 'speed' ? '#e4c886' : '#f2a066'; ctx.stroke();
-    drawGlyph(ctx, b.glyph, x + 16, y + 16, 15, '#f3e6c4');
-    ctx.fillStyle = '#f3e6c4'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(b.label, x + 28, y + 16.5);
-    if (b.act === 'speed') drawGlyph(ctx, 'gem', x + w - 14, y + 16, 12, '#7fd0ff');
-    marchBtnRects.push({ act: b.act, x, y, w, h: 32 }); x += w + 8; });
-  ctx.strokeStyle = 'rgba(228,200,134,.8)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(m.x, m.y, 14, 0, Math.PI * 2); ctx.stroke();   // ring round the chosen column
-}
-function marchTapAt(sx, sy) {                     // → true when the tap was meant for a column or its buttons
-  const b = marchBtnRects.find(r => sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h);
-  if (b && selMarch) { const k = selMarch; if (b.act === 'recall') { recallMarch(k); selMarch = null; } else speedUpMarch(k); requestRender(); return true; }
-  const t = marchTokens.filter(m => m.mk && m.x !== undefined).map(m => ({ m, d: Math.hypot(m.x - sx, m.y - sy) })).filter(o => o.d < 22).sort((a, c) => a.d - c.d)[0];
-  if (t) { selMarch = selMarch === t.m.mk ? null : t.m.mk; requestRender(); return true; }
-  if (selMarch) { selMarch = null; requestRender(); }
-  return false;
-}
-function drawMarchChips() {                       // after the nameplates: one chip per cluster of tokens, "×n" when merged
-  setScreen(ctx);
-  const far = mapState.zoom < 0.006;             // zoomed far out only the player's own
-  const on = marchTokens.filter(m => (m.own || !far) && m.x > 0 && m.x < viewW && m.y > 0 && m.y < viewH);
-  const root = on.map((_, i) => i), find = i => root[i] === i ? i : (root[i] = find(root[i]));
-  for (let i = 0; i < on.length; i++) for (let j = i + 1; j < on.length; j++)   // chains of tokens < 34 px apart merge (own and incoming apart)
-    if (on[i].own === on[j].own && Math.hypot(on[i].x - on[j].x, on[i].y - on[j].y) < 34) root[find(j)] = find(i);
-  const byRoot = new Map();
-  on.forEach((m, i) => { const r = find(i), g = byRoot.get(r);
-    if (!g) { byRoot.set(r, { key: m.key, sx: m.x, sy: m.y, l: m.x, r: m.x, n: 1, secs: m.secs }); return; }
-    g.n++; g.secs = Math.min(g.secs, m.secs); g.sx += m.x; g.sy += m.y; g.l = Math.min(g.l, m.x); g.r = Math.max(g.r, m.x); if (m.key < g.key) g.key = m.key; });
-  const clusters = [...byRoot.values()].sort((a, b) => a.key < b.key ? -1 : 1);   // a steady order → steady slots
-  for (const c of clusters) c.y = c.sy / c.n;
-  const lastSlot = chipSlotOf; chipSlotOf = new Map();
-  if (!clusters.length) return;
-  ctx.font = '600 10.5px Inter, system-ui, sans-serif'; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';   // (sonst steht noch 'center' von den Namensschildern: Zahl über der Sanduhr)
-  if (!chipDigit) chipDigit = [...'0123456789'].reduce((w, d) => ctx.measureText(d).width > ctx.measureText(w).width ? d : w, '0');
-  const label = c => marschUhr(c.secs) + (c.n > 1 ? '  ×' + c.n : '');
-  const tokens = marchTokens.map(m => ({ x: m.x - 8.5, y: m.y - 8.5, w: 17, h: 17 }));
-  const towers = towerRects.map(t => ({ x: t.x + t.w * .2, y: t.y + t.h * .1, w: t.w * .6, h: t.h * .8 }));
-  const screen = { x: 0, y: 0, w: viewW, h: viewH }, placed = [];
-  const width = c => Math.ceil(ctx.measureText(label(c).replace(/\d/g, chipDigit)).width) + 22;   // steady from second to second
-  const slot = (c, i) => { const [side, dy] = CHIP_SLOTS[i], tw = width(c);
-    const gap = [0, 11, 34, 60][Math.abs(side)], r = { x: side > 0 ? c.r + gap : c.l - gap - tw, y: c.y - 9 + dy, w: tw, h: 18 }, e = { x: r.x - 2, y: r.y - 2, w: r.w + 4, h: r.h + 4 };
-    let over = r.w * r.h - overlap(r, screen), hard = over, soft = 0;                // hard: within 2 px of a plate or a chip, or off screen
-    for (const q of bannerHitRects) { hard += overlap(e, q); over += overlap(r, q); }    // over: really on top of one
-    for (const q of placed) { hard += overlap(e, q.rect); over += overlap(r, q.rect); }
-    for (const q of tokens) soft += 3 * overlap(e, q);
-    for (const q of towers) soft += overlap(e, q);
-    if (over < 0.5) over = 0; if (hard < 0.5) hard = 0;                                  // (float residue of the area sums)
-    return { i, r, over, hard, soft, sc: (over > 0 ? 1e6 : 0) + (hard > 0 ? 1e5 : 0) + 50 * hard + soft }; };   // on a plate / off screen only when no slot avoids it
-  const place = (c, s) => { c.rect = s.r; chipSlotOf.set(c.key, s.i); placed.push(c); };
-  const rest = [];
-  const bestSlot = c => { let best = null;
-    for (let i = 0; i < CHIP_SLOTS.length; i++) { const s = slot(c, i); if (!best || s.sc < best.sc) best = s; if (s.sc === 0) break; }
-    return best; };
-  for (const c of clusters) {                     // a chip keeps last frame's slot (hysteresis) while it is not on a plate, a chip or
-    const s = lastSlot.has(c.key) ? slot(c, lastSlot.get(c.key)) : null;   // the screen edge and does not hide most of a token
-    if (s && s.over === 0 && s.soft < 1200) place(c, s); else rest.push(c);
-  }
-  for (const c of rest) {                         // others: the first free slot; none free → the least bad one (over a tower rather than
-    if (!lastSlot.has(c.key)) { place(c, bestSlot(c)); continue; }   // a plate); a chip that had to leave its slot takes the nearest good one
-    const p = slot(c, lastSlot.get(c.key)).r; let best = null, bs = Infinity;
-    for (let i = 0; i < CHIP_SLOTS.length; i++) { const s = slot(c, i), v = s.sc + 20 * Math.hypot(s.r.x - p.x, s.r.y - p.y); if (v < bs) { bs = v; best = s; } }
-    place(c, best);
-  }
-  for (const c of placed) {
-    c.rect.x = Math.max(2, Math.min(viewW - c.rect.w - 2, c.rect.x)); c.rect.y = Math.max(2, Math.min(viewH - 20, c.rect.y));   // never cut by the edge
-    const { x, y, w } = c.rect;
-    rr(ctx, x, y, w, 18, 3); ctx.fillStyle = 'rgba(10,12,16,.86)'; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(212,176,102,.4)'; ctx.stroke();
-    drawGlyph(ctx, 'hourglass', x + 8, y + 9, 10, '#e4c886'); ctx.fillStyle = '#eee6d4'; ctx.fillText(label(c), x + 16, y + 12.8);
-  }
-}
-
+// Teil 03d-maersche-tagnacht.js: Karte zeichnen (drawMap: Reihenfolge der Ebenen) und Tag und Nacht
 function ownerKeyOf(isl) { const o = islandOwnerOf(isl.id); return o === 'player' ? 'player' : o ? 'bot' : 'neutral'; }
 function visibleIslands(view) {
   const out = [];
@@ -229,13 +90,13 @@ function drawMap() {
   drawUebersichtZeichen(z);                                                      // ganz weit: Pass-Punkte, Zonen-Nummern, Thron und Tempel (wie die Karten-Testdatei)
   const vis = visibleIslands(viewPad);
   drawRings(vis, z, now);                                                        // 5
-  for (const a of pendingAttacks) { if (a.attackerBotId && islandOwnerOf(a.targetId) !== 'player') continue;         // fog of war (unchanged)
+  for (const a of pendingAttacks) { if (a.attackerBotId && islandOwnerOf(a.targetId) !== 'player' && !mzWartetBeiMir(a, wallNow)) continue;   // fog of war (unchanged; wer an deinem Kampf wartet, steht sichtbar davor)
     if (a.fightEndsAt) continue;                                                                                     // the fight is on - the battle shows it
-    drawMarchLine(a.attackerBotId ? 'incoming' : 'attack', islandById[a.sourceId], islandById[a.targetId], a.startedAt, a.resolveAt, wallNow, null, a.attackerBotId ? null : marchKeyOf(a), a.attackerBotId || 'player'); }
+    drawMarchLine(a.attackerBotId ? 'incoming' : 'attack', islandById[a.sourceId], islandById[a.targetId], a.startedAt, a.resolveAt, wallNow, null, a.attackerBotId ? null : marchKeyOf(a), a.attackerBotId || 'player', a); }
   for (const s of pendingSends) {
     if (s.senderBotId) {                                                     // fremde Märsche: nur Bündnis-Mitglieder, die zu DIR kommen (Rally, Hilfe, Verstärkung) – sonst Nebel wie bisher
       if (!bundFreund(s.senderBotId, 'player') || (!s.back && islandOwnerOf(s.toId) !== 'player')) continue;   // (auch ihre Rückwege nach Hause – z. B. nach einer gemeinsamen Rally)
-      drawMarchLine(s.back ? 'retreat' : 'send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, null, s.senderBotId); continue; }
+      drawMarchLine(s.back ? 'retreat' : 'send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, null, s.senderBotId, s); continue; }
     drawMarchLine('send', islandById[s.fromId], islandById[s.toId], s.startedAt, s.resolveAt, wallNow, null, marchKeyOf(s)); }
   for (const s of pendingScouts) drawMarchLine('scout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow, null, marchKeyOf(s));   // (antippen: Zurück/Schneller wie jeder Marsch)
   for (const s of botScoutsOnMap) drawMarchLine('enemyScout', islandById[s.sourceId], islandById[s.targetId], s.startedAt, s.resolveAt, wallNow);   // a bot's scout coming to look at you
