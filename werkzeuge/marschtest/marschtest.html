@@ -13,7 +13,7 @@
   #marsch { pointer-events: none; }
   #info { display: none; }                               /* (Infozeile der Karten-Testdatei: hier #zeile) */
   #leiste { position: fixed; left: 50%; top: max(8px, env(safe-area-inset-top)); transform: translateX(-50%); display: grid;
-    grid-template-columns: repeat(10, auto); gap: 6px; background: rgba(20, 16, 10, .8); border: 1px solid #8a6a3a; border-radius: 12px; padding: 6px; z-index: 3; }
+    grid-template-columns: repeat(10, auto); width: max-content; gap: 6px; background: rgba(20, 16, 10, .8); border: 1px solid #8a6a3a; border-radius: 12px; padding: 6px; z-index: 3; }
   #leiste button, #mehr button { font: 600 13px var(--ui); color: #f3e2bd; background: #4a3720; border: 1px solid #a07c45; border-radius: 8px;
     padding: 0 10px; min-width: 44px; height: 44px; white-space: nowrap; }
   #leiste button.an, #mehr button.an { background: #8a6326; color: #fff6dc; }

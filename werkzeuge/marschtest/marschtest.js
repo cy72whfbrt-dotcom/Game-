@@ -90,13 +90,17 @@ const TEMPO = 1500;                                    // Welt-Einheiten je Seku
 const KUERZEL = { eigen: 'NW', bund: 'NW', feind: 'RX', barb: '' };
 function armee(o) {
   const a = Object.assign({ id: naechsteId++, art: 'marsch', phase: 'hin', t0: jetzt, spiegel: 1, verlust: 0, zurueck: false, beute: null }, o);
-  a.kuerzel = KUERZEL[a.seite]; a.start = { x: a.von.x, y: a.von.y }; a.truppen0 = a.truppen0 || a.truppen;
+  a.kuerzel = KUERZEL[a.seite]; a.start = rand(a.von, a.ziel); a.truppen0 = a.truppen0 || a.truppen;
   a.dauer = a.dauer || Math.hypot(a.ziel.x - a.von.x, a.ziel.y - a.von.y) / TEMPO;
   armeen.push(a); return a;
 }
 function halt(a) {                                     // wo die Armee am Ziel stehen bleibt: vor der Basis/dem Lager, auf ihrer Ankunftsseite
   const z = a.ziel, dx = a.start.x - z.x, dy = a.start.y - z.y, d = Math.hypot(dx, dy) || 1, r = z.art === 'feld' ? 0 : z.art === 'lager' ? 9000 : 7500;
-  return { x: z.x + dx / d * r, y: z.y + dy / d * r * .7 };
+  return { x: z.x + dx / d * r, y: z.y + dy / d * r };
+}
+function rand(b, q) {                                 // Trupp zeigt sich erst am Burgrand (Richtung q), nicht mitten auf der Burg
+  const r = b.art === 'basis' ? 3600 : b.art === 'lager' ? 5000 : 0, dx = q.x - b.x, dy = q.y - b.y, d = Math.hypot(dx, dy) || 1;
+  return { x: b.x + dx / d * r, y: b.y + dy / d * r };
 }
 function pos(a) {                                      // Weltpunkt der Armee jetzt
   if (a.phase === 'hin') { const h = halt(a), f = Math.min(1, (jetzt - a.t0) / a.dauer); return { x: a.start.x + (h.x - a.start.x) * f, y: a.start.y + (h.y - a.start.y) * f }; }
@@ -105,7 +109,7 @@ function pos(a) {                                      // Weltpunkt der Armee je
 }
 function rest(a) { return a.phase === 'hin' || a.phase === 'rueck' ? a.dauer - (jetzt - a.t0) : a.phase === 'sammelt' ? a.ende - jetzt : 0; }
 function heimwaerts(a, zurueck) {                      // Rückweg ab hier (Zurückrufen: sofort, weiße Fahne)
-  const p = pos(a); a.ab = p; a.heim = a.von; a.phase = 'rueck'; a.t0 = jetzt; a.zurueck = !!zurueck;
+  const p = pos(a); a.ab = p; a.heim = rand(a.von, p); a.phase = 'rueck'; a.t0 = jetzt; a.zurueck = !!zurueck;
   a.dauer = Math.max(1, Math.hypot(a.heim.x - p.x, a.heim.y - p.y) / TEMPO);
 }
 
@@ -149,7 +153,7 @@ function blickAuf(p, q) { if (stufeJetzt() === 'ganz weit') return; cam.x = (p.x
 const ZUSTAND = {
   marsch() { const v = von(seite), z = ziel(seite, 'marsch'); armee({ seite, von: v, ziel: z, held: heldVon(seite), name: name(seite), truppen: seite === 'barb' ? 640000 : v.truppen }); blickAuf(v, z); },
   sammeln() { const v = von(seite === 'barb' ? 'eigen' : seite), s = seite === 'barb' ? 'eigen' : seite;
-    armee({ seite: s, art: 'sammeln', von: v, ziel: D.feld, held: heldVon(s), name: name(s), truppen: 1.8e6 }); blickAuf(v, D.feld); },
+    armee({ seite: s, art: 'sammeln', von: v, ziel: D.feld, held: heldVon(s), name: name(s), truppen: 1.8e6 }); blickAuf(D.feld, { x: (v.x + D.feld.x) / 2, y: (v.y + D.feld.y) / 2 }); },
   spaeher() { const s = seite === 'barb' ? 'eigen' : seite, v = von(s), z = s === 'feind' ? basis('eigen') : basis('kevin');
     armee({ seite: s, art: 'spaeher', von: v, ziel: z, name: name(s), truppen: 1, dauer: Math.hypot(z.x - v.x, z.y - v.y) / (TEMPO * 1.8) }); blickAuf(v, z); },
   rally() { rallyStarten(); },
@@ -168,11 +172,11 @@ function schnellKampf(sieg) {                          // eigene Armee kurz vor 
 }
 function rallyStarten() {                              // Anführer sammelt an seiner Burg, 3 Bündnis-Märsche kommen dazu, dann Rally-Marsch zu Kevin
   const v = basis('eigen'), z = basis('kevin');
-  const r = armee({ seite: 'eigen', art: 'rally', von: v, ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 12.4e6, phase: 'sammelt', steht: { x: v.x, y: v.y + 2600 } });
+  const r = armee({ seite: 'eigen', art: 'rally', von: v, ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 12.4e6, phase: 'sammelt', steht: { x: v.x + 4800, y: v.y + 1800 } });
   r.rally = { mitglieder: [{ name: '[NW]Alex', held: 'aldric', truppen: 12.4e6 }], platz: 10 }; r.ende = jetzt + 18;
-  [['mira', 'mira', 3.6e6], ['bjarne', 'bruno', 2.9e6], ['sturm', 'greta', 9.1e6]].forEach(([b, h, t], i) => {
+  [['mira', 'mira', 3.6e6], ['bjarne', 'bruno', 2.9e6], [null, 'greta', 9.1e6]].forEach(([b, h, t], i) => {
     const q = i === 2 ? { x: v.x + 15000, y: v.y + 12000 } : basis(b);
-    armee({ seite: i === 2 ? 'eigen' : 'bund', von: q, ziel: { x: v.x, y: v.y + 2600, art: 'feld' }, held: h, name: i === 2 ? '[NW]Alex' : basis(b).name, truppen: t,
+    armee({ seite: 'bund', von: q, ziel: { x: r.steht.x, y: r.steht.y, art: 'feld' }, held: h, name: i === 2 ? '[NW]Tilda' : basis(b).name, truppen: t,
       beitritt: r, dauer: 5 + i * 3.5 }); });
   blickAuf(v, z);
 }
@@ -215,7 +219,7 @@ function schritt(dt) {
 
 // ===== Zeichnen =====
 const S = () => W >= 700 ? 1.25 : 1;                   // Desktop: alle Pixelwerte ×1,25
-function stufeJetzt() { const z = cam.z; return z >= .016 ? 'nah' : z >= .007 ? 'mittel' : z >= BILD_ZOOM ? 'weit' : 'ganz weit'; }
+function stufeJetzt() { const z = cam.z, k = W >= 700 ? 1.5 : 1; return z >= .016 * k ? 'nah' : z >= .007 * k ? 'mittel' : z >= BILD_ZOOM ? 'weit' : 'ganz weit'; }
 const MASS = { nah: { trupp: 56, kopf: 44, linie: 3, pfeil: 18 }, mittel: { trupp: 36, kopf: 32, linie: 2, pfeil: 14 }, weit: { punkt: 8, kopf: 20, linie: 1.5 }, 'ganz weit': { punkt: 6, linie: 1 } };
 const P = p => ({ x: sx(p.x), y: sy(p.y) });
 const zuMir = a => (a.seite === 'feind' || a.seite === 'barb') && a.ziel === basis('eigen') && a.phase === 'hin';
@@ -244,7 +248,7 @@ function linie(a, st) {
   if (a.art === 'spaeher') return strich(p, q, '#ffffff', 1.5, [1.5, 5], .7);
   if (a.art === 'sammeln') return strich(p, q, '#e3b65a', Math.max(1.5, m.linie), [6, 5], .9);
   if (st !== 'nah' && st !== 'mittel') return strich(p, q, zuMir(a) ? '#ff5a4e' : f.haupt, m.linie, [1.5, 4], .85);
-  if (a.art === 'rally') { for (const v of [-6, 0, 6]) pfeilkette(p, q, FARBE.rally.haupt, m.linie, m.pfeil, .9, t, v * S()); return; }
+  if (a.art === 'rally') { for (const v of [-6, 0, 6]) pfeilkette(p, q, FARBE.rally.haupt, m.linie * .8, m.pfeil * 1.4, .9, t, v * S()); return; }
   pfeilkette(p, q, zuMir(a) ? '#ff4a3e' : f.haupt, m.linie, m.pfeil, .85, t);
 }
 function bildAn(n, x, y, w, ax = .5, ay = .5, spiegel = 1) {
@@ -360,8 +364,9 @@ function kampfZeichnen(k, st) {
   const vk = { seite: k.z.seite, held: k.z.held, name: k.z.art === 'lager' ? `Lager Stufe ${k.z.stufe}` : k.z.name, truppen: k.d0, truppen0: k.d0, phase: 'kampf', kuerzel: k.z.art === 'lager' ? '' : 'RX', zurueck: false };
   const m = MASS[st], vy = z.y - zw * .62 - m.kopf * s * .5 - 20 * s;
   const vkh = kopf(vk, z.x, vy, m.kopf * s, st, true);
-  if (st === 'nah') { const b = band(vk.name, FARBE[k.z.seite].hell, Math.round(11 * s)); g.drawImage(b, z.x - b.w / 2, vy + m.kopf * s * 50 / 44 / 2 + 2, b.w, b.h); }
-  balken(z.x, vy + m.kopf * s * 50 / 44 / 2 + (st === 'nah' ? 20 : 4) * s, (st === 'nah' ? 36 : 28) * s, (st === 'nah' ? 5 : 4) * s, (k.d0 - kampfStand(k, 'd')) / k.d0, FARBE[k.z.seite].haupt);
+  const lagerBand = st === 'nah' && k.z.art === 'lager';   // (Basen tragen ihr Namensschild schon auf der Karte: nicht doppelt)
+  if (lagerBand) { const b = band(vk.name, FARBE[k.z.seite].hell, Math.round(11 * s)); g.drawImage(b, z.x - b.w / 2, vy + m.kopf * s * 50 / 44 / 2 + 2, b.w, b.h); }
+  balken(z.x, vy + m.kopf * s * 50 / 44 / 2 + (lagerBand ? 20 : 4) * s, (st === 'nah' ? 36 : 28) * s, (st === 'nah' ? 5 : 4) * s, (k.d0 - kampfStand(k, 'd')) / k.d0, FARBE[k.z.seite].haupt);
   k.flaeche = { x: z.x - zw * .65, y: vkh.y, w: zw * 1.3, h: z.y - vkh.y + zw * .3 };
   // Geschosse: je Seite alle 250–400 ms 1–3 Stück, Bogen 450 ms, 30 px hoch, Einschlag = 6 Funken
   for (const sd of ['a', 'd']) if (t >= k.naechst[sd] && t < k.dauer - .5) {
@@ -385,12 +390,12 @@ function kampfZeichnen(k, st) {
     g.globalAlpha = 1 - d / .35; g.fillRect(f.x + f.vx * d - 1.5, f.y + f.vy * d - 1.5, 3, 3); }
   g.globalAlpha = 1;
   // Schadenszahlen: je Welle eine Zahl über dem getroffenen Kopf, steigt 34 px in 900 ms, ab 600 ms aus; höchstens 4 zugleich
-  const hk = { a: { x: ap.x, y: ap.y - 70 * s }, d: { x: z.x, y: vy - m.kopf * s * .6 } };
+  const hk = { a: { x: ap.x + m.kopf * s * .5 + 30 * s, y: ap.y - 60 * s }, d: { x: z.x + m.kopf * s * .5 + 30 * s, y: vy } };   // (neben dem Sechseck: nichts überdeckt)
   const aktiv = k.wellen.filter(w => t >= w.t && t < w.t + .9).slice(-4);
   for (const w of aktiv) { const d = t - w.t, gross = w.n > (w.s === 'a' ? k.a0 : k.d0) * .1, px = Math.round((gross ? 16 : 13) * s);
     const eigen = (w.s === 'a' && a.seite === 'eigen') || (w.s === 'd' && k.z.seite === 'eigen');
     g.globalAlpha = d < .6 ? 1 : 1 - (d - .6) / .3; g.font = `800 ${px}px Inter, system-ui, sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    const x = hk[w.s].x + (w.s === 'a' ? -14 : 16) * s, y = hk[w.s].y - 10 * s - 34 * s * d / .9;
+    const x = hk[w.s].x, y = hk[w.s].y - 34 * s * d / .9;
     g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.75)'; g.strokeText('-' + fmtCompact(w.n), x, y);
     g.fillStyle = gross && d < .25 ? '#ffd678' : eigen ? '#ff8d82' : '#ffffff'; g.fillText('-' + fmtCompact(w.n), x, y); }
   g.globalAlpha = 1;
@@ -423,12 +428,13 @@ function rallyPlatz(a, st) {                           // Rally sammelt: goldene
   const s = S(), p = P(a.steht), im = BILD.marsch_ring_gold; if (!im) return;
   const r = 35 * s * (st === 'nah' ? 1.6 : 1);
   g.save(); g.translate(p.x, p.y); g.scale(1, .38); g.rotate(jetzt * 12 * Math.PI / 180); g.drawImage(im, -r, -r, 2 * r, 2 * r); g.restore();
-  if (st === 'nah' || st === 'mittel') chip(`Rally ⌛ ${uhr(a.ende - jetzt)} · ${a.rally.mitglieder.length}/${a.rally.platz}`, p.x, p.y + 14 * s, Math.round(11 * s), '#1d1406', 'rgba(234,178,74,.95)');
+  if (st === 'nah' || st === 'mittel') chip(`Rally ⌛ ${uhr(a.ende - jetzt)} · ${a.rally.mitglieder.length}/${a.rally.platz}`, p.x, p.y + r * .38 + 6 * s, Math.round(11 * s), '#1d1406', 'rgba(234,178,74,.95)');
 }
 function warnung(st) {                                 // Feind auf dich zu: rotes Warn-Dreieck an deiner Burg, pulst
   if (!armeen.some(zuMir)) return;
-  const b = P(basis('eigen')), s = S(), w = (st === 'ganz weit' ? 18 : 26) * s;
-  g.globalAlpha = .55 + .45 * Math.sin(performance.now() / 300); bildAn('marsch_zeichen_warnung', b.x, b.y - Math.max(22, 5500 * cam.z) * .9, w); g.globalAlpha = 1;
+  const e = basis('eigen'), f = armeen.filter(zuMir).map(pos).sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0];
+  const b = P(rand(e, f)), s = S(), w = (st === 'ganz weit' ? 18 : 30) * s;   // an der Burgseite, von der der Feind kommt
+  g.globalAlpha = .55 + .45 * Math.sin(performance.now() / 300); bildAn('marsch_zeichen_warnung', b.x, b.y - 8 * s, w); g.globalAlpha = 1;
 }
 let dtBild = 0;
 function malen() {
@@ -531,7 +537,8 @@ function lage() {                                      // Infozeile, Bilder/s un
   $('zeile').style.top = u + 'px'; $('bps').style.top = u + 'px'; $('mehr').style.top = u + 'px';
 }
 addEventListener('resize', () => { ov.width = cv.width; ov.height = cv.height; MERK.clear(); lage(); });
-ZOOM.nah = .022; ZOOM.mittel = .01; ZOOM.weit = .004;  // (wie im Spiel: Nah = eine Basis gut 120 px breit am Handy)
+const BREIT = innerWidth >= 700 ? 1.5 : 1;              // Desktop: näher heran (eine Stadt zur nächsten ≈ ein Bildschirm)
+ZOOM.nah = .022 * BREIT; ZOOM.mittel = .01 * BREIT; ZOOM.weit = .004 * BREIT;   // (Handy wie im Spiel: Nah = eine Basis gut 120 px breit)
 
 // ===== Schleife + Bilder/s =====
 let zuletzt = performance.now(), bilder = 0, bpsZeit = zuletzt, bps = 0;
