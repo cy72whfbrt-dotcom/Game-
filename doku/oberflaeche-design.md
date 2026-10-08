@@ -49,7 +49,7 @@ Million Lords, Lords Mobile – „sieht aus wie ein Spiel, nicht wie eine Liste
   runde Knöpfe Spähen + Angreifen; ungespäht eine Kachel „Stärke unbekannt“ (Tipp = spähen). Keine eigene Basis daneben
   (Grenztor & Co.): Zeile „Keine deiner Basen grenzt an …“ im Inhalt, Angreifen grau (Tipp = Zeile blinkt, kein Hinweis darüber).
   Hinweise (Toast) liegen nie über Fenster-Knöpfen; kleines Handy (≤ 700 px hoch): Angriff ohne Überzeile/Leiste, alles ohne Scrollen.
-  Angriff vorbereiten: Hauptheld groß, Zweitheld klein darunter („Zweitheld · 50 %“, antippen = Auswahl), daneben
+  Angriff vorbereiten: Hauptheld groß, Zweitheld klein darunter („+ Zweitheld“; antippen = Auswahl daneben statt Startbasis), daneben
   Startbasis + Angriff | Abwehr + Kräfte-Balken (Vorschau-Rechnung), Truppen-Kachel + Zahl, Schieber + 25/50/75/Alle,
   Leiste Zeit · Truppen · Angriffskraft, goldener Knopf „Losmarschieren ⌛ 0:21“ (Traglast gibt es im Spiel nicht).
 - Profil: Kopf (Rang · Titel, Name, Stufe, Macht, Spieler-Nummer), Reiter Spieler · Ausrüstung · Fähigkeiten ·

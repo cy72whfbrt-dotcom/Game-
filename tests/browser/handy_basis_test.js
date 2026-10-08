@@ -89,7 +89,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const angriff = { kopf: !!kopf, versus: !!(kopf && kopf.querySelector('.versus') && kopf.querySelector('#attackFromSel')),
         oben: !!kr && body.scrollTop > 20 && kr.top >= br.top - 16 && kr.top <= br.top + 2 && kr.bottom <= br.bottom, gescrollt: body.scrollTop,
         hinweis: /Abwehr unbekannt/.test(st.textContent), foe: (st.querySelector('[data-foe="total"]') || {}).textContent,
-        helden: !hs || (hs.classList.contains('chips-quer') && getComputedStyle(hs).flexWrap === 'nowrap' && hs.getBoundingClientRect().height < 60),
+        helden: !hs || !!hs.closest('.ap-oben'),   // (8.10.: die Auswahl steht neben dem Helden-Bild, umgebrochen)
         knopf: ab.bottom <= innerHeight && ab.top >= br.bottom - 2, zahl: !!st.querySelector('.ap-truppen #attackTroopsLabel') && !!st.querySelector('[data-preview="quick"]') && !!document.getElementById('attackTroopsSlider') };
       popup.style.maxHeight = ''; closeAllPopups();
       return { eigen, basis, fremd, angriff, kompakt, auf };
@@ -113,7 +113,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.auf.liste1 && r.auf.zu1 && r.auf.liste2 && r.auf.zu2, art + ': Held-Chip antippen klappt die Auswahl auf, eine Wahl klappt sie zu (Held und Zweitheld)', r.auf);
     ok(r.angriff.kopf && r.angriff.versus, art + ': Angriff – Startbasis + Angriff/Abwehr neben dem Held-Bild', r.angriff);
     ok(!r.angriff.hinweis && r.angriff.foe === '?', art + ': „Abwehr unbekannt“ nicht doppelt (nur „?“ in der Kachel)', r.angriff);
-    ok(r.angriff.helden && r.angriff.zahl, art + ': Helden-Auswahl in einer Zeile, Truppen: Schieber + Prozent + Zahl', r.angriff);
+    ok(r.angriff.helden && r.angriff.zahl, art + ': Helden-Auswahl neben dem Bild, Truppen: Schieber + Prozent + Zahl', r.angriff);
     ok(r.angriff.knopf, art + ': „Losmarschieren“ fest unten sichtbar', r.angriff);
     await ctx.close();
   }
