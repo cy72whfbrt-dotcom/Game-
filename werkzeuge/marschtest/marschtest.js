@@ -303,15 +303,37 @@ function schnellKampf(sieg) {                          // Armee kurz vor dem Zie
     name: seite === 'bund' ? '[NW]Mira_7' : '[NW]Alex', truppen: sieg ? 12.4e6 : 4.2e6 });
   a.t0 = jetzt - a.dauer + 1.2; zuruecksetzen(z); blickAuf(z, z);
 }
+// Rally wie bundRallyStart/bundRallyDazu/bundRallyLos (buendnis/02): Wartezeit 1/3/5 Min. (hier 1 Min.), Platz für Beitritte =
+// (Botschaft-Stufe + 1) × 10 % der eigenen Truppen (rallyPlatz) – wer mehr schickt, bringt nur, was noch frei ist; der Ziel-Besitzer
+// wird gewarnt; beim Start: Ziel unter Schild / inzwischen im Bündnis → abgebrochen, alle heim; Nachzügler ziehen vom Sammelpunkt
+// direkt zum Ziel und kämpfen mit; der Starter kann abbrechen; eine marschierende Rally kann niemand zurückrufen.
+const BOTSCHAFT = 10, RALLY_WARTE = 60;
+function rallyBeitreten(r, o) {                        // → Marsch zum Sammelpunkt oder null (voll)
+  const R = r.rally, frei = Math.floor(R.platz - R.belegt);
+  if (frei < 1) { effekte.push({ art: 'dazu', t0: jetzt, ziel: r.steht || pos(r), feind: true, text: `Die Rally ist voll – mehr Platz gibt die Botschaft von ${ohneTag(r.name)}` }); return null; }
+  const n = Math.min(o.truppen, frei); R.belegt += n;
+  return armee(Object.assign(o, { seite: 'bund', ziel: { x: r.steht.x, y: r.steht.y, art: 'feld' }, truppen: n, beitritt: r }));
+}
 function rallyStarten() {                              // Anführer sammelt an seiner Burg, 3 Bündnis-Märsche kommen dazu, dann Rally-Marsch zu Kevin
-  const v = basis('eigen'), z = basis('kevin');
-  const r = armee({ seite: 'eigen', art: 'rally', von: v, ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 12.4e6, phase: 'sammelt', steht: { x: v.x + 4800, y: v.y + 1800 } });
-  r.rally = { mitglieder: [{ name: '[NW]Alex', held: 'aldric', truppen: 12.4e6 }], platz: 10 }; r.ende = jetzt + 18;
-  [['mira', 'mira', 3.6e6], ['bjarne', 'bruno', 2.9e6], [null, 'greta', 9.1e6]].forEach(([b, h, t], i) => {
-    const q = i === 2 ? { x: v.x + 15000, y: v.y + 12000 } : basis(b);
-    armee({ seite: 'bund', von: q, ziel: { x: r.steht.x, y: r.steht.y, art: 'feld' }, held: h, name: i === 2 ? '[NW]Tilda' : basis(b).name, truppen: t,
-      beitritt: r, dauer: 5 + i * 3.5 }); });
-  blickAuf(v, z);
+  const v = basis('eigen'), z = basis('kevin'); zuruecksetzen(z);
+  if (seite === 'feind') return feindRally();
+  const r = armee({ seite: 'eigen', art: 'rally', von: v, ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 6.2e6, phase: 'sammelt', steht: { x: v.x + 4800, y: v.y + 1800 } });
+  r.rally = { mitglieder: [{ name: '[NW]Alex', held: 'aldric', truppen: 6.2e6 }], platz: (BOTSCHAFT + 1) * v.truppen * .1, belegt: 0 }; r.ende = jetzt + RALLY_WARTE;
+  effekte.push({ art: 'dazu', t0: jetzt, ziel: z, feind: true, text: `Kevin_93 wird gewarnt: „Rally gegen dich – los in ${uhr(RALLY_WARTE)}“` });
+  [['mira', 'mira', 3.6e6], ['bjarne', 'bruno', 2.9e6], [null, 'greta', 5e6]].forEach(([b, h, t], i) => {
+    rallyBeitreten(r, { von: i === 2 ? { x: v.x + 15000, y: v.y + 12000 } : basis(b), held: h, name: i === 2 ? '[NW]Tilda' : basis(b).name, truppen: t }); });
+  blickAuf(v, v);
+}
+function rallyEnde(r, grund) {                         // abgebrochen (bundRallyEnde): alle wieder heim, wer noch unterwegs ist, kehrt bei der Ankunft um
+  r.rally.ende = true; effekte.push({ art: 'dazu', t0: jetzt, ziel: r.steht || pos(r), feind: true, text: `Rally auf ${ohneTag(r.ziel.name)} abgebrochen: ${grund}.` });
+  for (const m of r.rally.mitglieder.slice(1)) armee({ seite: 'bund', von: { x: r.steht.x, y: r.steht.y, art: 'feld' }, ziel: { x: r.steht.x + 1, y: r.steht.y, art: 'feld' }, held: m.held, name: m.name, truppen: m.truppen, phase: 'hin', ohneKampf: true, dauer: .1, heimNach: m.von });
+  r.truppen = r.rally.mitglieder[0].truppen; r.rally.mitglieder.length = 1; heimwaerts(r);
+}
+function feindRally() {                                // Sturmfaust sammelt gegen dich: du siehst Ziel und Startzeit (Warnung), nie die Truppen (Nebel)
+  const q = basis('sturm'), z = basis('eigen');
+  const r = armee({ seite: 'feind', art: 'rally', von: q, ziel: z, held: 'ragna', name: '[RX]Sturmfaust', truppen: 9.6e6, phase: 'sammelt', steht: { x: q.x + 4800, y: q.y - 1800 } });
+  r.rally = { mitglieder: [{ name: '[RX]Sturmfaust', held: 'ragna', truppen: 9.6e6 }], platz: 0, belegt: 0, gegenMich: true }; r.ende = jetzt + RALLY_WARTE;
+  blickAuf(z, z);
 }
 // Gemeinsamer Kampf (Alexander 8.10.): mehrere Wellen aufs selbe Ziel, Verbündete, Verstärkung des Gegners, dritte Seite wartet
 const kampfZiel = () => (kaempfe.find(k => k.teile.some(a => a.seite === 'eigen')) || {}).z || basis('kevin');
@@ -324,6 +346,10 @@ function dreiAngriffe() {                              // 3 eigene Märsche, ver
   blickAuf(z, z);
 }
 const DAZU = {
+  nachzuegler() { const r = armeen.find(a => a.art === 'rally' && meins(a) && (a.phase === 'sammelt' || a.phase === 'hin'));   // kommt erst nach dem Start an
+    if (!r) return rallyStarten();
+    const a = rallyBeitreten(r, { von: basis('mira'), held: 'pia', name: '[NW]Mira_7', truppen: 3e6 }); if (!a) return;   // (mehr als frei: bringt nur den Rest)
+    a.dauer = Math.max(3, (r.phase === 'sammelt' ? r.ende - jetzt : 0) + 4); },
   eigen() { const z = kampfZiel(); welle({ seite: 'eigen', von: basis('eigen'), ziel: z, held: 'otto', name: '[NW]Alex', truppen: 2.4e6 }, 3); blickAuf(z, z); },
   bund() { const z = kampfZiel(); welle({ seite: 'bund', von: basis('bjarne'), ziel: z, held: 'bruno', name: '[NW]Bjarne', truppen: 2.9e6 }, 3); blickAuf(z, z); },
   gegner() { const z = kampfZiel(), q = z === basis('kevin') ? basis('sturm') : basis('kevin');   // sein Bündnis schickt Verstärkung in die Besatzung
@@ -389,7 +415,12 @@ function schritt(dt) {
     if (a.rufen && jetzt >= a.rufen && a.phase === 'hin') { a.rufen = 0; heimwaerts(a, true); }
     const z = a.ziel;
     if (a.phase === 'hin' && jetzt - a.t0 >= a.dauer) {
-      if (a.beitritt) { const r = a.beitritt; r.rally.mitglieder.push({ name: a.name, held: a.held, truppen: a.truppen }); r.truppen += a.truppen; r.truppen0 = r.truppen; armeen.splice(armeen.indexOf(a), 1); continue; }
+      if (a.beitritt) { const r = a.beitritt;
+        if (r.phase === 'sammelt' && !r.rally.ende) { r.rally.mitglieder.push({ name: a.name, held: a.held, truppen: a.truppen, von: a.von }); r.truppen += a.truppen; r.truppen0 = r.truppen; armeen.splice(armeen.indexOf(a), 1); continue; }
+        if (r.rally.ende || !armeen.includes(r) || r.phase === 'rueck') { heimwaerts(a); continue; }
+        a.beitritt = null; a.start = pos(a); a.ziel = r.ziel; a.t0 = jetzt; a.dauer = reise(laenge(hinWeg(a)));   // Nachzügler: direkt zum Ziel, kämpft mit
+        effekte.push({ art: 'dazu', t0: jetzt, ziel: a.start, text: `Die Rally ist schon los – ${fmtCompact(a.truppen)} Truppen von ${ohneTag(a.name)} ziehen direkt weiter zum Ziel.` }); continue; }
+      if (a.heimNach) { a.von = a.heimNach; heimwaerts(a); continue; }
       if (a.art === 'spaeher') { effekte.push({ art: 'licht', t0: jetzt, ziel: z }); if (meins(a)) z.gespaeht = true; heimwaerts(a); continue; }   // (dein Späher: Verstärker dort jetzt bekannt)
       if (a.art === 'sammeln') { feldAnkunft(a); continue; }
       if (a.ohneKampf) { heimwaerts(a); continue; }
@@ -402,6 +433,9 @@ function schritt(dt) {
     if (a.phase === 'wartet' && !kaempfe.some(k => k.z === a.ziel)) ankunft(a);   // der Kampf ist entschieden: jetzt kämpft sie
     if (a.phase === 'sammelt' && a.art === 'sammeln') { const n = Math.max(0, Math.min(sammelTempo(z) * dt * tempo, z.rest, traglast(a) - a.got));
       a.got += n; z.rest -= n; if (a.got >= traglast(a) - 1e-6 || z.rest <= 0) heimwaerts(a); }
+    if (a.phase === 'sammelt' && a.art === 'rally' && jetzt >= a.ende && !a.rally.gegenMich) {   // Start: Ziel unter Schild oder im Bündnis → abgebrochen
+      if (a.ziel.schild) { rallyEnde(a, 'das Ziel steht unter einem Friedensschild'); continue; }
+      if (kuerzelVon(a.ziel) === a.kuerzel) { rallyEnde(a, 'das Ziel gehört inzwischen dem Bündnis'); continue; } }
     if (a.phase === 'sammelt' && a.art === 'rally' && jetzt >= a.ende) { a.phase = 'hin'; a.t0 = jetzt; a.start = { x: a.steht.x, y: a.steht.y }; a.steht = null;
       a.dauer = reise(laenge(hinWeg(a))); a.angekommen = 0; }   // (Rally: normales Marsch-Tempo, wie bundRallyLos)
     if (a.phase === 'rueck' && jetzt - a.t0 >= a.dauer) armeen.splice(armeen.indexOf(a), 1);
@@ -701,7 +735,7 @@ function rallyPlatz(a, st) {                           // Rally sammelt: goldene
   const s = S(), p = P(a.steht), im = BILD.marsch_ring_gold; if (!im) return;
   const r = 35 * s * (st === 'nah' ? 1.6 : 1);
   g.save(); g.translate(p.x, p.y); g.scale(1, .38); g.rotate(jetzt * 12 * Math.PI / 180); g.drawImage(im, -r, -r, 2 * r, 2 * r); g.restore();
-  if (st === 'nah' || st === 'mittel') chip(`Rally ⌛ ${uhr(a.ende - jetzt)} · ${a.rally.mitglieder.length}/${a.rally.platz}`, p.x, p.y + r * .38 + 6 * s, Math.round(11 * s), '#1d1406', 'rgba(234,178,74,.95)');
+  const R = a.rally; if (st === 'nah' || st === 'mittel') chip(bekannt(a) ? `Rally ⌛ ${uhr(a.ende - jetzt)} · ${fmtCompact(a.truppen)} · Platz ${fmtCompact(R.belegt)} / ${fmtCompact(R.platz)}` : `Rally ⌛ ${uhr(a.ende - jetzt)} · ?`, p.x, p.y + r * .38 + 6 * s, Math.round(11 * s), '#1d1406', 'rgba(234,178,74,.95)');
 }
 function schildSetzen(name, an) { for (const b of D.basen) if (b.name === name) b.schild = an; }   // (der Schild deckt alle Basen des Besitzers)
 function schildZeichnen(b) {                           // Friedensschild: helle Kuppel über der Basis (wie 03c), pulst
@@ -713,6 +747,8 @@ function schildZeichnen(b) {                           // Friedensschild: helle 
   g.strokeStyle = `rgba(225,242,255,${(.75 + .25 * ph).toFixed(2)})`; g.lineWidth = 2.6; g.beginPath(); g.arc(x, y, R, 0, 7); g.stroke();
 }
 function warnung(st) {                                 // Feind auf dich zu: rotes Warn-Dreieck an deiner Burg, pulst (mit Schild: „prallt ab“)
+  const fr = armeen.find(a => a.art === 'rally' && a.phase === 'sammelt' && a.rally.gegenMich);   // Rally gegen dich: Warnung mit Startzeit (Truppen nie)
+  if (fr) { const e = P(basis('eigen')), s = S(); chip(`⚠ Rally von ${ohneTag(fr.name)} gegen dich · los in ${uhr(fr.ende - jetzt)}`, e.x, e.y + zielBreite(basis('eigen')) * .4, Math.round(11 * s), '#ffd2c8', 'rgba(82,21,15,.92)', false, 700); }
   if (!armeen.some(zuMir)) return;
   if (basis('eigen').schild) { const e = P(basis('eigen')), s = S(); return chip('Friedensschild hält – prallt ab', e.x, e.y + zielBreite(basis('eigen')) * .4, Math.round(11 * s), '#e2f2ff', 'rgba(16,40,70,.9)', false, 700); }
   const e = basis('eigen'), f = armeen.filter(zuMir).map(pos).sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0];
@@ -789,6 +825,7 @@ const KNOPF = {
   info: ['ui_sym_rolle', 'Info', a => infoArmee(a)],
   zurueck: ['ui_sym_rueckzug', 'Zurück', a => {
     if (a.kampf) return hinweis(a, 'Die Truppen kämpfen schon – zu spät zum Zurückrufen.');
+    if (a.art === 'rally' && a.phase === 'sammelt') { rallyEnde(a, `${ohneTag(a.name)} hat die Rally abgebrochen`); return waehlen(null); }   // (der Starter darf abbrechen)
     if (a.art === 'rally') return hinweis(a, 'Eine Rally gehört allen, die mitmachen – sie kann nicht zurückgerufen werden.');
     if (a.phase === 'hin' || a.phase === 'sammelt') { heimwaerts(a, true); hinweis(a, a.art === 'spaeher' ? 'Dein Späher kehrt um.' : 'Deine Truppen kehren um.'); } waehlen(null); }],
   schneller: ['ui_edelstein', 'Schneller', (a, knopf) => { if (!schnellBar(a) || !edelsteineZahlen('m' + a.id, schnellKosten(a), knopf, a)) return; halbieren(a); waehlen(a); }],
@@ -871,6 +908,6 @@ function bild(t) {
 ZUSTAND.marsch(); seite = 'feind'; ZUSTAND.marsch(); seite = 'eigen'; zustandText = 'Marsch';
 lage(); zoomStufe('nah', D.mitte.x, D.mitte.y - 4000); zoomText();
 requestAnimationFrame(bild);
-window.MT = { set nebel(v) { nebel = v; }, versteckt, bekannt, armeen, kaempfe, effekte, ZUSTAND, DAZU, ERGEBNIS, dreiAngriffe, zuruecksetzen, D, tippen, waehlen, get bps() { return bps; }, get jetzt() { return jetzt; }, set tempo(v) { tempo = v; },
+window.MT = { set nebel(v) { nebel = v; }, versteckt, bekannt, feindRally, armeen, kaempfe, effekte, ZUSTAND, DAZU, ERGEBNIS, dreiAngriffe, zuruecksetzen, D, tippen, waehlen, get bps() { return bps; }, get jetzt() { return jetzt; }, set tempo(v) { tempo = v; },
   bereit: () => KB.fertig && !bilderOffen, stufe: stufeJetzt, flaeche: a => a.flaeche, gedraenge: () => $('gedraenge').click() };
 })();

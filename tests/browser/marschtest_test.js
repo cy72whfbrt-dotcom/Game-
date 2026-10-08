@@ -169,6 +169,23 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       const sm = await p.evaluate(() => { const a = MT.armeen[0]; return { t: a.truppen, dazu: MT.effekte.some(e => e.art === 'dazu' && /Traglast jetzt 240/.test(e.text)) }; });
       ok(sm.t === 120000 && sm.dazu, `${name} ${art}: Truppen addiert (120 Tsd.), Hinweis „Traglast jetzt 240 Tsd. Holz“`, sm);
       ok(await bis(() => MT.armeen[0] && MT.armeen[0].phase === 'rueck' && MT.armeen[0].beute && MT.armeen[0].beute.n >= 239999), `${name} ${art}: voll beladen heim mit 240 Tsd. Holz`);
+      // Rally wie im Spiel: Platz nach Botschaft (Tilda bringt nur, was frei ist), Abbrechen, Schild beim Start, Nachzügler, Warnung
+      await leer(); await knopf('rally');
+      const rp = await p.evaluate(() => { const r = MT.armeen.find(a => a.art === 'rally'); return { platz: r.rally.platz, tilda: MT.armeen.find(a => a.name === '[NW]Tilda').truppen, warn: MT.effekte.some(e => /Kevin_93 wird gewarnt/.test(e.text)) }; });
+      ok(Math.round(rp.platz) === 13.64e6 && rp.tilda === 5e6 && rp.warn, `${name} ${art}: Rally-Platz (Botschaft 10 → 13,6 Mio.), Kevin wird gewarnt`, rp);
+      await p.evaluate(() => { const r = MT.armeen.find(a => a.art === 'rally'); MT.waehlen(r); document.querySelector('[data-knopf="zurueck"]').click(); });
+      ok(await p.evaluate(() => MT.armeen.find(a => a.art === 'rally').phase === 'rueck' && MT.effekte.some(e => /Rally auf Kevin_93 abgebrochen: Alex hat die Rally abgebrochen/.test(e.text))), `${name} ${art}: Starter bricht die Rally ab → alle heim`);
+      await leer(); await knopf('rally'); await p.evaluate(() => { MT.D.basen.find(b => b.id === 'kevin').schild = true; MT.tempo = 10; });
+      ok(await bis(() => MT.effekte.some(e => /abgebrochen: das Ziel steht unter einem Friedensschild/.test(e.text))), `${name} ${art}: Ziel hat beim Start einen Schild → Rally abgebrochen`);
+      await p.evaluate(() => { MT.D.basen.find(b => b.id === 'kevin').schild = false; });
+      await leer(); await knopf('rally');
+      const nz = await p.evaluate(() => { MT.DAZU.nachzuegler(); MT.tempo = 10; return MT.armeen.find(a => a.held === 'pia').truppen; });
+      ok(Math.round(nz) === Math.round(13.64e6 - 3.6e6 - 2.9e6 - 5e6), `${name} ${art}: Rally fast voll: Nachzügler bringt nur den freien Platz (2,1 statt 3 Mio.)`, nz);
+      ok(await bis(() => MT.effekte.some(e => /Die Rally ist schon los/.test(e.text)), null, 30000), `${name} ${art}: Nachzügler kommt nach dem Start: zieht direkt zum Ziel`);
+      ok(await bis(() => MT.kaempfe[0] && MT.kaempfe[0].teile.some(a => a.held === 'pia'), null, 30000), `${name} ${art}: Nachzügler kämpft mit (ein Kampf)`);
+      await leer(); await p.evaluate(() => MT.feindRally());
+      const fr = await p.evaluate(() => { const r = MT.armeen[0]; return [r.rally.gegenMich, MT.bekannt(r), MT.versteckt(r)]; });
+      ok(fr[0] && !fr[1] && !fr[2], `${name} ${art}: Rally gegen dich: sichtbar mit Warnung, Truppen unbekannt`, fr);
       // Zurückrufen ohne laufenden Marsch: Marsch geht los und dreht nach 2,5 s
       await leer(); await knopf('zurueck');
       ok(await bis(() => MT.armeen[0] && MT.armeen[0].phase === 'rueck' && MT.armeen[0].zurueck), `${name} ${art}: Zurückrufen dreht einen Marsch um`);

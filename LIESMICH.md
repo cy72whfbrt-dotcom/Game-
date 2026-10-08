@@ -1061,6 +1061,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   100 … 560.000, Hinweis mit Münz-Kachel), Tor zu = kein Weg (kein Warten am Tor); Zurückrufen: zurück so lange, wie schon gelaufen.
   Gruppe 5 (`speedUpMarch`/`speedUpAll`/`recallMarch`): „Schneller“ kostet 1 Edelstein je angefangene Restminute (Preis am Knopf),
   ab 500 erst „Wirklich?“, nicht im Kampf; „Alle schneller“; Zurück im Kampf „zu spät zum Zurückrufen“, Rally nie, Späher „kehrt um“.
+  Gruppe 6 (Rally wie `bundRallyStart/Dazu/Los/Ende`): 1 Min. Wartezeit, Platz = (Botschaft + 1) × 10 % der Truppen (wer mehr
+  schickt, bringt nur den Rest), Ziel-Besitzer gewarnt, Rally gegen dich mit Warnung „los in …“ (Truppen „?“), Starter kann abbrechen,
+  beim Start Schild/Bündnis-Ziel → abgebrochen, Nachzügler ziehen direkt zum Ziel und kämpfen mit. (Danach Stopp – Alexander: die
+  Logik ist im Spiel fertig, die Testdatei zeigt nur die Darstellung.)
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
