@@ -23,6 +23,7 @@ const php = (code, ein) => execFileSync('php', ['-r', "$_SERVER['SCRIPT_FILENAME
     for (const h of Object.keys(b.hs).slice(0, 2)) { b.hs[h].own = true; b.hs[h].q = 6; }
     const isl = [...botOwnedIslands[bot.id]].find(id => islandById[id].type === 'tower' && !bossAt(id));
     islandTroops[isl] = 5000; staerkeMem[bot.id] = null;
+    hauptstadtStufen();   // (Burg 4: die Hauptstadt-Stufe folgt sonst erst beim nächsten 3-s-Takt – unter Last vor dem Spähen, dann passt die Abwehr nicht mehr)
     const lange = Date.now() + 1e9; for (const d of BOT_DEFS) botNextAt[d.id] = lange;   // (bis zum Zuschauer-Modus greift keiner an – unter Last dauert das länger)
     for (let i = pendingAttacks.length - 1; i >= 0; i--) if (pendingAttacks[i].targetId === isl) pendingAttacks.splice(i, 1);
     for (const d of BOT_DEFS) bs[d.id].macht = Math.round(powerOf(whoProfile(d.id)));   // (wie der Weltrechner jede Minute)

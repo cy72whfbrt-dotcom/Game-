@@ -49,7 +49,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         const d = g.getImageData(x, y, Math.min(k, c.width - x), Math.min(k, c.height - y)).data;
         const L = []; for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) L.push(d[i] + d[i + 1] + d[i + 2]);
         const m = L.reduce((s, x) => s + x, 0) / Math.max(1, L.length); return { n: L.length, sd: Math.round(Math.sqrt(L.reduce((s, x) => s + (x - m) * (x - m), 0) / Math.max(1, L.length))) }; };
-      flyTo(h.x, h.y, { zoom: 0.012, instant: true }); requestRender(); await warte(700); const nah = streu();
+      const zu = landmasses.filter(l => !isExplored(l.id)).reduce((a, l) => !a || Math.hypot(l.x - h.x, l.y - h.y) < Math.hypot(a.x - h.x, a.y - h.y) ? l : a, null) || h;
+      flyTo(zu.x, zu.y, { zoom: 0.012, instant: true }); requestRender(); await warte(700);   // nah: über dem nächsten Gebiet im Nebel (die Startsicht reicht bis zum Gebirge)
+      let nah = { n: 0, sd: 0 };   // der Block mit dem meisten Nebel im Bild
+      for (let y = 0; y + 60 <= fogComp.height; y += 60) for (let x = 0; x + 60 <= fogComp.width; x += 60) {
+        const s = streu((x + 30) / fogComp.width * innerWidth / mapState.zoom - mapState.offsetX / mapState.zoom, (y + 30) / fogComp.height * innerHeight / mapState.zoom - mapState.offsetY / mapState.zoom);
+        if (s.n > nah.n) nah = s; }
       flyTo(h.x, h.y, { zoom: minZoom }); await warte(1500); requestRender(); await new Promise(f => requestAnimationFrame(() => requestAnimationFrame(f)));   // wie mit „−“: die Kamera darf die Hauptstadt über die Leiste schieben
       const z = mapState.zoom, imBild = l => { const x = l.x * z + mapState.offsetX, y = l.y * z + mapState.offsetY; return x > 60 && x < innerWidth - 60 && y > 120 && y < innerHeight - 120; };
       const fern = landmasses.filter(imBild).reduce((a, l) => Math.hypot(l.x - h.x, l.y - h.y) > Math.hypot(a.x - h.x, a.y - h.y) ? l : a);   // das Gebiet im Bild am weitesten weg (im Nebel)

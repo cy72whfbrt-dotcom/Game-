@@ -61,7 +61,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const a = ACHIEVEMENTS.find(x => !achClaimed[x.id] && !achDone(x)), ziel = a.goal;
       achKnown = new Set(achClaimable().map(x => x.id)); a.goal = 0;              // (gerade erreicht: neu für achCheck)
       hintEl.textContent = ''; achCheck(); o.hinweisOffen = hintEl.textContent;
-      closeHeroHall(); await warte(100); achCheck(); o.hinweisZu = hintEl.textContent; a.goal = ziel; achKnown = null;
+      closeHeroHall(); await warte(100); hintEl.textContent = '';   // (ein Mitspieler-Hinweis in den 100 ms – „Späher unterwegs“ – hielte den Erfolg sonst eine Runde zurück)
+      achCheck(); o.hinweisZu = hintEl.textContent; a.goal = ziel; achKnown = null;
       return o;
     }));
     // Fix-Runde 3 (Spieltest r3): B Burg-Blatt beim Öffnen ohne halb verdeckte Karte · C „Fehlt“ mit Wartezeit · E gesperrter Held ohne
@@ -72,6 +73,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const sh = document.getElementById('citySheet'); sh.scrollTop = 0; await warte(200);
       const ft = sh.querySelector('.city-bfoot').getBoundingClientRect().top;
       o.halb = [...sh.querySelectorAll('.anf, #cityBNote, .auf-grid > div')].filter(e => e.offsetParent).map(e => e.getBoundingClientRect()).filter(q => q.top < ft - 2 && q.bottom > ft + 2).length;
+      coins = 0; renderCitySheet();   // (Test-Welt: in den 500 ms kommen unter Last schon wieder 1.100 Münzen herein)
       o.knopf = document.getElementById('cityUpgradeBtn').querySelector('.lbl').textContent; o.warte = document.getElementById('cityUpWarte').textContent;
       const r = AUF.rohVon('player'), alt = { h: r.h, s: r.s, e: r.e }; r.h = r.s = r.e = 5000; coins = 998912; renderCitySheet(); await warte(100);
       o.zahlen = [...document.querySelectorAll('#cityBStats .anf b')].map(b => b.textContent); Object.assign(r, alt);
