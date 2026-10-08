@@ -18,7 +18,7 @@ Leere Zustände mit Symbol + Satz + einem Gold-Knopf (`leerHtml`). Hinweise unte
   Das Wochenende ist frei (kein Turnier mehr). Krieger-Woche-Punkte nach Anteil an alle Kämpfer.
 - **Barbaren-Invasion** alle 3 Tage um 20 Uhr eine Stunde, 6 Wellen; jeder echte Spieler bekommt je Welle eine Armee auf
   seine äußerste Basis (Neulinge halb so stark). Barbaren erobern nichts; Abwehr/Abfangen gibt Punkte. Belohnung als
-  LEISTE (Punkte-Linie mit Kisten, Schlüssel je Stufe, nie doppelt).
+  LEISTE (Punkte-Linie mit Kisten, Schlüssel je Stufe, nie doppelt). Chip in der Karten-Leiste: „Invasion 2/6“ (Welle).
 - **Event-Belohnungen abholen** (Alexander A, 8.10.): Invasion, Drache, Tagesboss, Lager werden im Event abgeholt („Abholen“
   an der Kiste/Stufe). Der Eintrag liegt mit `bis` (Event-Ende, bei Tagesboss/Lager Mitternacht, `evTagesEnde`) im Fach;
   `inboxFach()` zeigt ihn im Abholfach erst danach – nichts geht verloren. Roter Punkt `.mb-hol` am Invasions-/Drachen-Chip,
@@ -47,7 +47,7 @@ Leere Zustände mit Symbol + Satz + einem Gold-Knopf (`leerHtml`). Hinweise unte
 - Premium 1.000 Edelsteine mit „Wirklich?“; eine neue Welt-Saison setzt Punkte, Stufen und Premium zurück (Handy 01a,
   Mitspieler 09f).
 - Punkte (`PASS_XP`): Bau/Forschung gestartet 15, Lager 5, Tagesboss/Drache-Angriff 10, Invasions-Punkt 1 u. a.
-- Ansicht: lange waagrechte Leiste (oben Premium, Mitte Stufe, unten Frei) mit Belohnungs-Kacheln. Heißt „Saison-Pass“.
+- Ansicht: lange waagrechte Leiste (oben Premium, Mitte Stufe, unten Frei) mit Belohnungs-Kacheln. Heißt „Saison-Pass“. Kleines Handy (360×640): Kacheln kleiner, Premium-Reihe ohne Krone – ganz im Fenster (Test handy_360).
 
 ## Aufgaben
 - 6 am Tag (2 leicht / 2 mittel / 2 schwer: 3/5/8 Edelsteine + 1/2/3 Std. Münzen); Bonus bei 3 (2 Std. Truppen) und bei
