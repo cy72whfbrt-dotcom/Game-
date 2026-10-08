@@ -638,7 +638,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:377
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:232
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:74
-- `closeFieldSheet` → Game/spiel/09a-funde-felder.js:358
+- `closeFieldSheet` → Game/spiel/09a-funde-felder.js:361
 - `closeHeroHall` → Game/spiel/08c-helden.js:283
 - `closeIslandPopup` → Game/spiel/09e-inselfenster.js:111
 - `closeLevelUpModal` → Game/spiel/08f-stadtbild-bild.js:126
@@ -730,7 +730,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawPasses` → Game/spiel/06e-nebel-zeichnen.js:206
 - `drawPickups` → Game/spiel/09a-funde-felder.js:62
 - `drawPlatzhalter` → Game/spiel/03b-gebaeude-3d.js:192
-- `drawResFields` → Game/spiel/09a-funde-felder.js:277
+- `drawResFields` → Game/spiel/09a-funde-felder.js:280
 - `drawRings` → Game/spiel/03c-wappen-thronplatz.js:385
 - `drawRulerCrowns` → Game/spiel/07b-kriegsherr.js:192
 - `drawTerritoriesInto` → Game/spiel/03a-karte-hintergrund.js:359
@@ -836,8 +836,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feld` → Game/buendnis/04-fenster-karte-welt.js:150
 - `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:88
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:89
-- `feldBericht` → Game/spiel/09a-funde-felder.js:251
+- `feldBericht` → Game/spiel/09a-funde-felder.js:253
 - `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:220
+- `feldKampfBild` → Game/spiel/03f-marsch-bilder.js:447
 - `feldMult` → Game/spiel/09a-funde-felder.js:171
 - `feldRingAuf` → Game/spiel/09d-armeen-wegmarken.js:345
 - `feldRingFrame` → Game/spiel/09d-armeen-wegmarken.js:355
@@ -847,13 +848,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fest_lesen` → Game/server/05-datenbank-welt.php:9
 - `festeNummer` → Game/welt.js:380
 - `fieldArrive` → Game/spiel/09a-funde-felder.js:201
-- `fieldAt` → Game/spiel/09a-funde-felder.js:276
+- `fieldAt` → Game/spiel/09a-funde-felder.js:279
 - `fieldAtkPct` → Game/spiel/09d-armeen-wegmarken.js:93
 - `fieldBattle` → Game/spiel/09d-armeen-wegmarken.js:95
 - `fieldCapFor` → Game/spiel/09a-funde-felder.js:164
 - `fieldCapOf` → Game/spiel/09a-funde-felder.js:183
 - `fieldDauerSec` → Game/spiel/09a-funde-felder.js:166
-- `fieldFortschritt` → Game/spiel/09a-funde-felder.js:350
+- `fieldFortschritt` → Game/spiel/09a-funde-felder.js:353
 - `fieldGoHome` → Game/spiel/09a-funde-felder.js:195
 - `fieldGold` → Game/spiel/04-kampf.js:287
 - `fieldHeroDet` → Game/spiel/05d-maersche-kampfbericht.js:159
@@ -862,12 +863,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fieldInfo` → Game/spiel/09a-funde-felder.js:180
 - `fieldLoadCap` → Game/spiel/09a-funde-felder.js:182
 - `fieldMarches` → Game/spiel/09a-funde-felder.js:176
-- `fieldRateOf` → Game/spiel/09a-funde-felder.js:258
+- `fieldRateOf` → Game/spiel/09a-funde-felder.js:261
 - `fieldSend` → Game/spiel/09a-funde-felder.js:186
 - `fieldShield` → Game/spiel/09d-armeen-wegmarken.js:94
-- `fieldSource` → Game/spiel/09a-funde-felder.js:328
+- `fieldSource` → Game/spiel/09a-funde-felder.js:331
 - `fieldState` → Game/spiel/09a-funde-felder.js:175
-- `fieldTick` → Game/spiel/09a-funde-felder.js:261
+- `fieldTick` → Game/spiel/09a-funde-felder.js:264
 - `fieldTravelSec` → Game/spiel/09a-funde-felder.js:185
 - `fieldWhoName` → Game/spiel/09a-funde-felder.js:181
 - `fightDurationMs` → Game/spiel/03e-kamera-eingabe.js:546
@@ -1167,7 +1168,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hintFrei` → Game/spiel/06d-schild-produktion.js:436
 - `hintFrisch` → Game/spiel/06d-schild-produktion.js:442
 - `hinweis` → Game/benachrichtigung.js:17
-- `hJetzt` → Game/spiel/03f-marsch-bilder.js:360
+- `hJetzt` → Game/spiel/03f-marsch-bilder.js:361
 - `holen` → Game/weltrechner/start.js:179
 - `homeAgain` → Game/bots/02-kampf-karte.js:75
 - `horn` → Game/spiel/10c-start-einstellungen.js:71
@@ -1440,13 +1441,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzBildAn` → Game/spiel/03f-marsch-bilder.js:60
 - `mzChip` → Game/spiel/03f-marsch-bilder.js:67
 - `mzEigenerMarsch` → Game/spiel/03f-marsch-bilder.js:263
-- `mzErgebnisBand` → Game/spiel/03f-marsch-bilder.js:450
+- `mzErgebnisBand` → Game/spiel/03f-marsch-bilder.js:468
 - `mzFrei` → Game/spiel/03f-marsch-bilder.js:189
-- `mzGeschosse` → Game/spiel/03f-marsch-bilder.js:424
+- `mzGeschosse` → Game/spiel/03f-marsch-bilder.js:425
 - `mzInfo` → Game/spiel/03f-marsch-bilder.js:117
 - `mzInfoZeigen` → Game/spiel/03f-marsch-bilder.js:292
 - `mzKampf` → Game/spiel/03f-marsch-bilder.js:343
-- `mzKampfFern` → Game/spiel/03f-marsch-bilder.js:442
+- `mzKampfFern` → Game/spiel/03f-marsch-bilder.js:460
 - `mzKampfTeile` → Game/spiel/03f-marsch-bilder.js:316
 - `mzKopf` → Game/spiel/03f-marsch-bilder.js:40
 - `mzKopfText` → Game/spiel/03f-marsch-bilder.js:184
@@ -1458,7 +1459,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzPfeile` → Game/spiel/03f-marsch-bilder.js:93
 - `mzPlaetze` → Game/spiel/03f-marsch-bilder.js:329
 - `mzRadius` → Game/spiel/03f-marsch-bilder.js:133
-- `mzRallyRing` → Game/spiel/03f-marsch-bilder.js:465
+- `mzRallyRing` → Game/spiel/03f-marsch-bilder.js:483
 - `mzS` → Game/spiel/03f-marsch-bilder.js:21
 - `mzSanduhr` → Game/spiel/03f-marsch-bilder.js:87
 - `mzSechseck` → Game/spiel/03f-marsch-bilder.js:39
@@ -1524,7 +1525,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openChestItemPopup` → Game/spiel/05b-truhe-skills.js:182
 - `openCity` → Game/spiel/08a-stadt-bauen.js:214
 - `openCrate` → Game/spiel/02a-shop-stufen.js:82
-- `openFieldSheet` → Game/spiel/09a-funde-felder.js:330
+- `openFieldSheet` → Game/spiel/09a-funde-felder.js:333
 - `openGoals` → Game/spiel/06a-aufgaben.js:350
 - `openHeroHall` → Game/spiel/08c-helden.js:282
 - `openIslandPopup` → Game/spiel/09e-inselfenster.js:102
@@ -2235,7 +2236,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `whoLink` → Game/spiel/05c-erfolge-rangliste.js:266
 - `whoProfile` → Game/spiel/05c-erfolge-rangliste.js:166
 - `whoTroops` → Game/spiel/05c-erfolge-rangliste.js:162
-- `willkommenFenster` → Game/spiel/10d-welt-weltrechner.js:1356
+- `willkommenFenster` → Game/spiel/10d-welt-weltrechner.js:1357
 - `window.__owSpeicher.privat` → Game/speichern.js:187
 - `window.__owSpeicher.rauswurf` → Game/speichern.js:189
 - `window.__owSpeicher.roh` → Game/speichern.js:185
@@ -2243,8 +2244,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `window.__weltBefehl` → Game/spiel/10d-welt-weltrechner.js:1254
 - `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:398
 - `window.__weltLaden` → Game/haendler.js:139
-- `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1385
-- `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1410
+- `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1386
+- `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:1411
 - `window.__weltLaden` → Game/spiel/10d-welt-weltrechner.js:26
 - `window.__weltLeiterWechsel` → Game/spiel/10d-welt-weltrechner.js:79
 - `window.__weltNeuerMensch` → Game/spiel/10d-welt-weltrechner.js:86
@@ -3273,7 +3274,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzBand` :53 — Namensband „[NW]Alex“ in Seitenfarbe hell auf dunkel
 - `mzBildAn` :60 — Bild mit Breite w an (x, y); → Höhe (0: noch nicht geladen)
 - `mzChip` :67 — Chip „12,4 Mio. · ⌛ 2:14“ (am Bildrand nach innen) → { x, y, w, h }
-- `mzBalken` :74 — Lebensbalken: unter 25 % pulst er
+- `mzBalken` :74 — Lebensbalken: unter 25 % pulst er (blendet mit dem Kampf aus)
 - `mzBeute` :80 — BELOHNUNG = BILD + ZAHL: kleine Kachel mit Beute-Bild und Zahl darauf
 - `mzSanduhr` :87 — wartet: goldene Sanduhr im dunklen Kreis, pulst
 - `mzPfeile` :93 — Pfeilkette ››› entlang der Punkte, wandert mit 40 px/s zum Ziel
@@ -3302,11 +3303,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `flaeche` :333 — (Trupp, Kopf und Chip darüber)
 - `drauf` :336
 - `mzKampf` :343 — (Bildschirm) eine Schlacht nah: t = Ablauf 0 … MB_MS
-- `hJetzt` :360
-- `mzGeschosse` :424 — je Seite alle 400 ms 1–3 Pfeile/Steine im Bogen (450 ms, 30 px hoch), Einschlag…
-- `mzKampfFern` :442 — weit draußen: kleiner Kampf-Kreis mit gekreuzten Schwertern, pulst
-- `mzErgebnisBand` :450 — Sieg / Niederlage: kleines Band (KI-Bild) am Bildrand, weg vom Ziel – verdeckt …
-- `mzRallyRing` :465 — Rally sammelt: goldener Bodenring dreht (12°/s) am Sammelpunkt
+- `hJetzt` :361
+- `mzGeschosse` :425 — je Seite alle 400 ms 1–3 Pfeile/Steine im Bogen (450 ms, 30 px hoch), Einschlag…
+- `feldKampfBild` :447
+- `mzKampfFern` :460 — weit draußen: kleiner Kampf-Kreis mit gekreuzten Schwertern, pulst
+- `mzErgebnisBand` :468 — Sieg / Niederlage: kleines Band (KI-Bild) am Bildrand, weg vom Ziel – verdeckt …
+- `mzRallyRing` :483 — Rally sammelt: goldener Bodenring dreht (12°/s) am Sammelpunkt
 
 ### Game/spiel/04-kampf.js — Titel (Mega-Tempel), Takt der Mitspieler, Ankunft und Kämpfe (kampfDazu, Warten…
 - `loadTitles` :16
@@ -3948,15 +3950,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fieldSend` :186 — troops leave a base for a field (gathering, or attacking whoever sits there) - …
 - `fieldGoHome` :195 — the gatherers pack up and walk home with what they have
 - `fieldArrive` :201
-- `feldBericht` :251 — aus Sicht des Angreifers (istA) oder des Sammlers: Du, Gegner, Verluste, Verwun…
-- `fieldRateOf` :258 — Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Samm…
-- `fieldTick` :261
-- `fieldAt` :276 — drawing: the mine or the vein, the gatherers' tent in their colour with a progr…
-- `drawResFields` :277
-- `fieldSource` :328
-- `openFieldSheet` :330
-- `fieldFortschritt` :350 — wer sammelt: Restzeit bis voll beladen (oder Feld leer), Balken gesammelt/Tragl…
-- `closeFieldSheet` :358
+- `feldBericht` :253 — aus Sicht des Angreifers (istA) oder des Sammlers: Du, Gegner, Verluste, Verwun…
+- `fieldRateOf` :261 — Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Samm…
+- `fieldTick` :264
+- `fieldAt` :279 — drawing: the mine or the vein, the gatherers' tent in their colour with a progr…
+- `drawResFields` :280
+- `fieldSource` :331
+- `openFieldSheet` :333
+- `fieldFortschritt` :353 — wer sammelt: Restzeit bis voll beladen (oder Feld leer), Balken gesammelt/Tragl…
+- `closeFieldSheet` :361
 
 ### Game/spiel/09b-lager-tagesboss.js — Barbaren-Lager und Tagesboss
 - `barbTroopsOf` :5 — 7.10. (rokzahlen): 500 at 1, 1.400 at 4, 12.000 at 10, 2,3 Mio. at 25 – Stufe 1…
@@ -4421,9 +4423,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `WELT.wache.gutschrift` :1293
 - `WELT.wache.hilfe` :1294 — Bündnis-Hilfe: so viel schneller darf dieser Bau / diese Forschung fertig sein
 - `WELT.bericht` :1316 — Kampfbericht an einen anderen echten Spieler (vom Weltrechner): Kennungen neutr…
-- `willkommenFenster` :1356
-- `window.__weltLaden` :1385
-- `window.__weltLaden` :1410
+- `willkommenFenster` :1357
+- `window.__weltLaden` :1386
+- `window.__weltLaden` :1411
 
 ## Game/spielseite/ (Teile)
 

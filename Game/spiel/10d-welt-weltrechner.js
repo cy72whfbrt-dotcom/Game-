@@ -1317,18 +1317,19 @@ if (window.WELT) {
         if (!an || !botById[an] || !botById[an].mensch) return;
         const e = Object.assign({}, eintrag);
         if (!Number.isFinite(e.at)) e.at = Date.now();           // wann der Kampf war (der Weltrechner hat die Server-Uhr)
-        for (const f of ['botId', 'defenderId']) if (e[f] !== undefined) e[f] = e[f] === null ? null : neutralId(e[f]);
+        for (const f of ['botId', 'defenderId', 'aWho', 'dWho']) if (e[f] !== undefined) e[f] = e[f] === null ? null : neutralId(e[f]);
         if (e.botName === undefined && e.botId) e.botName = (botById[lokalId(e.botId)] || {}).name;
         WELT.nachricht(parseInt(an.slice(1), 10), { art: 'bericht', eintrag: e, hint });
     };
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'bericht' || !e.eintrag) return;
         const x = e.eintrag;
-        for (const f of ['botId', 'defenderId']) if (x[f]) x[f] = lokalId(x[f]);
+        for (const f of ['botId', 'defenderId', 'aWho', 'dWho']) if (x[f]) x[f] = lokalId(x[f]);
         if (x.defenderId === 'player') x.defenderId = null;
         addCombatLogEntry(x);
         if (e.hint) flashHint(e.hint, 5000);
         if (x.type === 'ausgespaeht') { sfx('warn'); return; }   // (kein Kampf: nur die Nachricht)
+        if (x.type === 'field' && Math.abs(Date.now() - x.at) < 60000) feldKampfBild(x);   // Kampf am Feld: als Schlacht abspielen (nur frische)
         if (x.targetId !== undefined && islandById[x.targetId]) spawnBattleFx(x.targetId, x.type === 'attack' ? !!x.won : !x.won || !!x.capitalHolds, x.type === 'attack' ? (x.won ? 'Sieg' : 'Niederlage') : (x.won ? (x.capitalHolds ? 'Hauptstadt hält' : 'Basis verloren') : 'Verteidigt'), x.botName || x.defenderName || '');
         sfx(x.won === (x.type === 'attack') ? 'victory' : 'warn');
     });

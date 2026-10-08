@@ -118,6 +118,41 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
       return new Promise(r => { let n = 0; const t0 = performance.now(); const f = () => { n++; requestRender(); if (performance.now() - t0 < 2500) requestAnimationFrame(f); else r({ bps: Math.round(n * 1000 / (performance.now() - t0)), ms: Math.round(ms / n * 10) / 10 }); }; requestAnimationFrame(f); }); }, ids);
     console.log(name + ': ' + bps.bps + ' Bilder/s bei ' + (await p.evaluate(() => marchTokens.length)) + ' Märschen auf dem Bild (ohne Märsche ' + ohne + '), Marsch-Anzeige ' + bps.ms + ' ms je Bild');
     ok(bps.ms < 10, name + ': Marsch-Anzeige rechnet schnell (unter 10 ms je Bild, auch bei 4 Testläufen zugleich)', bps);
+    // ===== D) Angriff auf Sammler: sofort entschieden (09a), trotzdem ~5 s Kampf-Szene, die Zahlen laufen auf das echte Ergebnis zu, danach das Band;
+    //    dein 2. Sammel-Marsch steht als eigenes Sechseck auf der Verteidiger-Seite =====
+    const fk0 = await p.evaluate(ids => {
+      selMarch = null; pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = []; mapBattles = []; battleFx = []; dropShield(); window.__band = []; const fx0 = spawnBattleFx;
+      spawnBattleFx = function (wo, gut, text) { __band.push({ text, at: performance.now() }); return fx0.apply(this, arguments); };   // (wann das Band kommt)
+      const home = islandById[ids.home], bq = [...botOwnedIslands[ids.D]].find(id => islandById[id].landmassId === home.landmassId);
+      const f = resFields.filter(f => f.landmassId === home.landmassId && !(fieldState[f.id] && fieldState[f.id].occ) && !fieldMarches.some(m => m.fieldId === f.id))
+        .sort((x, y) => Math.hypot(x.x - home.x, x.y - home.y) - Math.hypot(y.x - home.x, y.y - home.y))[0];
+      fieldMarches = fieldMarches.filter(m => m.who !== 'player');
+      const lm = loadBotState()[ids.D]; if (lm) lm.shieldUntil = 0; islandTroops[bq] = 1e8;
+      AUF.frei && AUF.frei.an();
+      try { fieldSend('player', ids.home, f.id, 3e6); fieldSend('player', ids.home, f.id, 1e6);
+        for (const m of fieldMarches.filter(m => m.fieldId === f.id)) { fieldMarches.splice(fieldMarches.indexOf(m), 1); fieldArrive(m, Date.now()); }   // (beide angekommen: sammeln zusammen)
+        if (fieldSend(ids.D, bq, f.id, 2e7)) fieldMarches[fieldMarches.length - 1].resolveAt = Date.now() + 300;   // (Gegner D greift deine Sammler an)
+      } finally { AUF.frei && AUF.frei.aus(); }
+      flyTo(f.x, f.y + 1200, { instant: true, zoom: innerWidth >= 700 ? .03 : .02 });
+      return { f: f.id };
+    }, ids);
+    const born = await p.waitForFunction(() => { const b = mapBattles.find(b => b.feld); return b && b.born; }, null, { timeout: 5000, polling: 100 }).then(h => h.jsonValue()).catch(() => 0);
+    const t0 = Date.now();
+    await p.waitForTimeout(900);
+    const fA = await bild(); await foto('feldkampf');
+    const ber = await p.evaluate(F => { const e = combatLog.find(x => x.type === 'field' && x.fieldId === F); return e && { a: e.aTroops, aL: e.aLoss, d: e.dTroops, dL: e.dLoss, won: e.won }; }, fk0.f);
+    await p.waitForTimeout(Math.max(0, 4300 - (Date.now() - t0)));
+    const fB = await bild(); await foto('feldkampf_ende');
+    await p.waitForTimeout(1500);
+    const fx = await p.evaluate(([F, born]) => ({ feld: mapBattles.filter(b => b.feld).length, band: __band.map(x => ({ text: x.text, nach: Math.round(x.at - born) })) }), [fk0.f, born]);
+    const kA = fA.kaempfe.find(k => k.feld === fk0.f), kB = fB.kaempfe.find(k => k.feld === fk0.f);
+    console.log(name, JSON.stringify({ fk0, ber, kA, kB, fx, koepfe: fA.koepfe.map(k => k.art + ':' + k.text) }));
+    ok(ber && kA && kA.a <= ber.a && kA.a >= ber.a - ber.aL && kA.d <= ber.d && kA.d >= ber.d - ber.dL, name + ': Angriff auf Sammler → Kampf-Szene am Feld mit den Zahlen des Kampfs', { ber, kA });
+    const dS = fA.koepfe.filter(k => k.art === 'vert' || k.art === 'verst').reduce((x, k) => x + k.n, 0);
+    ok(kA && kA.helfer === 1 && Math.abs(dS - kA.d) <= 2, name + ': dein 2. Sammel-Marsch als eigenes Sechseck auf der Verteidiger-Seite (Summe = Sammler)', { dS, kA });
+    ok(ber && kB && kB.a === ber.a - ber.aL && kB.d === ber.d - ber.dL, name + ': Zahlen laufen auf das echte Ergebnis zu', { ber, kB });
+    ok(fx.feld === 0 && fx.band.length === 1 && fx.band[0].text === (ber && ber.won ? 'Sieg' : 'Niederlage') && fx.band[0].nach >= 4000 && fx.band[0].nach < 6500, name + ': Szene ~5 s, danach Sieg/Niederlage-Band', fx);
+    ok(!ueber(fA.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Feld-Kampf)', ueber(fA.koepfe));
     await p.context().close();
   }
   ok(!fe.length, 'keine Skript-Fehler', fe);

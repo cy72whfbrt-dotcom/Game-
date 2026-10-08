@@ -4511,10 +4511,10 @@ function mzChip(text, x, y, px, farbe, links) {         // Chip „12,4 Mio. · 
   ctx.fillStyle = farbe; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(text, x0 + 5, y + h / 2 + .5);
   return { x: x0, y, w, h };
 }
-function mzBalken(x, y, w, h, anteil, farbe) {           // Lebensbalken: unter 25 % pulst er
-  ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(x - w / 2, y, w, h);
+function mzBalken(x, y, w, h, anteil, farbe) {           // Lebensbalken: unter 25 % pulst er (blendet mit dem Kampf aus)
+  const a0 = ctx.globalAlpha; ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fillRect(x - w / 2, y, w, h);
   if (anteil < .25) ctx.globalAlpha *= .6 + .4 * (.5 + .5 * Math.sin(performance.now() / 600 * Math.PI * 2));
-  ctx.fillStyle = farbe; ctx.fillRect(x - w / 2, y, w * Math.max(0, Math.min(1, anteil)), h); ctx.globalAlpha = 1;
+  ctx.fillStyle = farbe; ctx.fillRect(x - w / 2, y, w * Math.max(0, Math.min(1, anteil)), h); ctx.globalAlpha = a0;
   ctx.strokeStyle = '#0c0f14'; ctx.lineWidth = 1; ctx.strokeRect(x - w / 2 - .5, y - .5, w + 1, h + 1);
 }
 function mzBeute(b, x, y, w) {                          // BELOHNUNG = BILD + ZAHL: kleine Kachel mit Beute-Bild und Zahl darauf
@@ -4755,7 +4755,7 @@ function marchTapAt(sx, sy) {                           // → true, wenn der Ti
 // ===== Kampf: Kreis + Säule am Ziel, Armeen im Halbkreis, Verteidiger mit Verstärkern, Tafel, Geschosse, Verluste =====
 function mzKampfTeile(b) {                              // wer auf der Angreiferseite kämpft: [{ who, n, held, rally }] (Summe der Truppen = Kampf)
   const fa = b.attackId && pendingAttacks.find(a => kampfKey(a) === b.attackId);
-  const wer = fa ? fa.attackerBotId || 'player' : b.atk === 'mine' ? 'player' : islandOwnerOf(b.sourceId) || 'barb';
+  const wer = fa ? fa.attackerBotId || 'player' : b.feld ? b.aWho : b.atk === 'mine' ? 'player' : islandOwnerOf(b.sourceId) || 'barb';
   let l;
   if (fa && fa.rally && !fa.rally.zus) l = [{ who: fa.rally.by || wer, n: fa.rawTroops, held: fa.hero || null, rally: fa.rally.an }];
   else if (fa && fa.rally) l = fa.rally.an.map(x => ({ who: x[0] || wer, n: x[2], held: x[4] && x[4].id || null }));
@@ -4781,8 +4781,9 @@ function mzPlaetze(b, n, tx, cy, R, belegt) {           // freie Plätze am näc
   return aus;
 }
 function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Schlacht nah: t = Ablauf 0 … MB_MS
-  const s = mzS(), st = mzStufe() === 'nah' ? 'nah' : 'mittel', M = MZ_MASS[st], isl = islandById[b.targetId], now = Date.now();
-  const bk = isl && isl.type === 'tower' && basisKreis(isl, mapState.zoom), zw = Math.max(44, bk ? bk.r / .42 : (isl ? isl.radius * mapState.zoom * 2 : 44)), cy = ty - (bk ? bk.dy : 0);
+  const s = mzS(), st = mzStufe() === 'nah' ? 'nah' : 'mittel', M = MZ_MASS[st], isl = b.feld ? null : islandById[b.targetId], now = Date.now();
+  const bk = isl && isl.type === 'tower' && basisKreis(isl, mapState.zoom), zw = Math.max(44, bk ? bk.r / .42 : isl ? isl.radius * mapState.zoom * 2 : b.feld ? FELD_BREITE * mapState.zoom * .7 : 44);
+  const cy = ty - (bk ? bk.dy : b.feld ? zw * .2 : 0), kz = b.feld ? +b.feld.slice(1) : b.targetId;   // (Feld: Mitte des Feld-Bilds; kz: Zufall je Ziel)
   const after = t > 3200, al = after ? Math.max(0, 1 - (t - 3200) / 900) : Math.min(1, t / 300);
   const tick = Math.max(0, Math.min(1, (t - 1000) / 2200)), e = 1 - Math.pow(1 - tick, 2);
   const va = Math.max(0, Math.round(b.my - b.myLoss * e)), vd = Math.max(0, Math.round(b.en - b.enLoss * e));
@@ -4794,17 +4795,17 @@ function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Sch
   if (!after) { ctx.globalAlpha = .8 * al; mzBildAn('marsch_kampf_saeule', tx, cy + zw * .12, Math.max(48 * s, zw * .55), .5, .92); }
   ctx.restore();
   const kw = M.kopf * s, kh = kw * 50 / 44, px = Math.round((st === 'nah' ? 12 : 11) * s), tw = M.trupp * s, belegt = mzAnzeige.koepfe.slice();
-  const owner = islandOwnerOf(b.targetId), dSeite = b.def === 'mine' ? 'eigen' : b.def === 'neutral' ? 'barb' : mzSeite(owner) === 'eigen' ? 'feind' : mzSeite(owner);
-  // Verteidiger über dem Ziel (Wappen des Besitzers), daneben die Verstärker der Basis je mit eigenem Sechseck
-  const vy = cy - zw * .55 - kh / 2 - 4 * s, helfer = typeof verst !== 'undefined' ? verst.l.filter(v => v.t === b.targetId && v.n >= 1) : [];
+  const owner = b.feld ? b.dWho : islandOwnerOf(b.targetId), dSeite = b.def === 'mine' ? 'eigen' : b.def === 'neutral' ? 'barb' : mzSeite(owner) === 'eigen' ? 'feind' : mzSeite(owner);
+  // Verteidiger über dem Ziel (Wappen des Besitzers), daneben die Verstärker der Basis (am Feld: weitere Märsche der Sammler) je mit eigenem Sechseck
+  const vy = cy - zw * .55 - kh / 2 - 4 * s, helfer = b.feld ? b.helfer : typeof verst !== 'undefined' ? verst.l.filter(v => v.t === b.targetId && v.n >= 1) : [];
   const hJetzt = v => Math.round(v.n * vd / Math.max(1, b.en)), besatzung = Math.max(0, vd - helfer.reduce((x, v) => x + hJetzt(v), 0));
   ctx.globalAlpha = al;
-  const dk = mzKopf({ seite: dSeite, who: owner }, kw); ctx.drawImage(dk, tx - kw / 2 - 2, vy - kh / 2 - 2, dk.w, dk.h);
+  const dk = mzKopf({ seite: dSeite, who: owner, held: b.dHeld || null }, kw); ctx.drawImage(dk, tx - kw / 2 - 2, vy - kh / 2 - 2, dk.w, dk.h);
   mzBalken(tx, vy + kh / 2 + 3 * s, (st === 'nah' ? 36 : 28) * s, (st === 'nah' ? 5 : 4) * s, vd / Math.max(1, b.en), MZ_FARBE[dSeite].haupt); ctx.globalAlpha = al;
   const dTxt = fmtCompact(besatzung) + ' · ' + rest, dc = mzChip(dTxt, tx + kw / 2 + 4, vy - px / 2 - 3, px, MZ_FARBE[dSeite].hell);
   const koepfe = [{ art: 'vert', n: besatzung, text: dTxt, x: tx - kw / 2, y: vy - kh / 2, w: dc.x + dc.w - tx + kw / 2, h: kh }];
   const hp = helfer.slice(0, 6).map((v, i) => {         // (rechts/links neben dem Verteidiger, eine Reihe tiefer)
-    const x = tx + (i % 2 ? -1 : 1) * (kw * 1.6 + Math.floor(i / 2) * 104 * s), y = vy + kh * .95, w = kw * .78, hk = mzKopf({ seite: mzSeite(v.w), who: v.w }, w), n = hJetzt(v);
+    const x = tx + (i % 2 ? -1 : 1) * (kw * 1.6 + Math.floor(i / 2) * 104 * s), y = vy + kh * .95, w = kw * .78, hk = mzKopf({ seite: mzSeite(v.w), who: v.w, held: v.h || null }, w), n = hJetzt(v);
     ctx.drawImage(hk, x - w / 2 - 2, y - w * 50 / 44 / 2 - 2, hk.w, hk.h);
     const txt = mzName(v.w).replace(/^\[\w+\]/, '') + ' · ' + fmtCompact(n), c = mzChip(txt, x - 40 * s, y + w * 50 / 88 + 2 * s, Math.round(10.5 * s), MZ_FARBE[mzSeite(v.w)].hell);
     koepfe.push({ art: 'verst', n, text: txt, x: Math.min(x - w / 2, c.x), y: y - w * 50 / 88, w: Math.max(w, c.w), h: w * 50 / 44 + c.h + 2 * s });
@@ -4838,19 +4839,19 @@ function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Sch
     return { x, y: ky };
   });
   ctx.globalAlpha = 1;
-  if (!after) mzGeschosse(b, t, ap, tx, cy, zw, s);
+  if (!after) mzGeschosse(kz, t, ap, tx, cy, zw, s);
   // Verluste: je Welle eine Zahl neben dem getroffenen Kopf (echte Verluste in 5 Teilen), steigt und blendet aus, höchstens 4 zugleich
   if (t > 900 && t < 3400) {
     const i0 = Math.floor((t - 900) / 450);
     for (let i = Math.max(0, i0 - 1); i <= i0; i++) {
       const age = t - 900 - i * 450; if (age < 0 || age > 900 || i > 4) continue;
-      const r = mulberry32(i * 31 + b.targetId);
+      const r = mulberry32(i * 31 + kz);
       for (const [atk, loss, ganz] of [[true, b.myLoss, b.my], [false, b.enLoss, b.en]]) {
         const n = Math.round(loss / 5); if (n < 1) continue;
         const ziel = atk ? ap[Math.floor(r() * ap.length)] : hp.length && r() < .5 ? hp[Math.floor(r() * hp.length)] : { x: tx, y: vy };
         if (!ziel) continue;
         const gross = n > ganz * .1, pz = Math.round((gross ? 16 : 13) * s), eigen = atk ? mzSeite(teile[0].who) === 'eigen' : dSeite === 'eigen';
-        const x = ziel.x - kw / 2 - 26 * s, y = ziel.y - 34 * s * age / 900;
+        const x = Math.max(36 * s, ziel.x - kw / 2 - 26 * s), y = ziel.y - 34 * s * age / 900;   // (nie über den Bildrand)
         ctx.globalAlpha = age < 600 ? 1 : 1 - (age - 600) / 300; ctx.font = `800 ${pz}px Inter, system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.75)'; ctx.strokeText('-' + fmtCompact(n), x, y);
         ctx.fillStyle = gross && age < 220 ? '#ffd678' : eigen ? '#ff8d82' : '#ffffff'; ctx.fillText('-' + fmtCompact(n), x, y);
@@ -4859,12 +4860,12 @@ function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Sch
     ctx.globalAlpha = 1;
   }
   mzAnzeige.koepfe.push(...koepfe);
-  mzAnzeige.kaempfe.push({ ziel: b.targetId, armeen: teile.length, a: va, d: vd, tafel: links + ' ⚔ ' + rechts, helfer: hp.length });
+  mzAnzeige.kaempfe.push({ ziel: b.targetId, feld: b.feld || null, armeen: teile.length, a: va, d: vd, tafel: links + ' ⚔ ' + rechts, helfer: hp.length });
 }
-function mzGeschosse(b, t, ap, tx, cy, zw, s) {          // je Seite alle 400 ms 1–3 Pfeile/Steine im Bogen (450 ms, 30 px hoch), Einschlag = Funken
+function mzGeschosse(kz, t, ap, tx, cy, zw, s) {          // je Seite alle 400 ms 1–3 Pfeile/Steine im Bogen (450 ms, 30 px hoch), Einschlag = Funken
   if (!ap.length) return;
   for (let k = Math.max(1, Math.floor((t - 620) / 400)); k <= Math.floor(t / 400); k++) {
-    const r = mulberry32(b.targetId * 131 + k * 7);
+    const r = mulberry32(kz * 131 + k * 7);
     for (const sd of ['a', 'd']) for (let j = 0, n = 1 + Math.floor(r() * 3); j < n; j++) {
       const q = (t - k * 400 - r() * 150 - j * 60) / 450, a = ap[Math.floor(r() * ap.length)], dx = (r() - .5) * 16, dy = (r() - .5) * 10, art = sd === 'a' ? 'marsch_geschoss_pfeil' : r() < .5 ? 'marsch_geschoss_pfeil_feuer' : 'marsch_geschoss_stein';
       if (q < 0 || q > 1.3) continue;
@@ -4878,6 +4879,23 @@ function mzGeschosse(b, t, ap, tx, cy, zw, s) {          // je Seite alle 400 ms
       ctx.drawImage(im, -w / 2, -w * im.height / im.width / 2, w, w * im.height / im.width); ctx.restore();
     }
   }
+}
+// Kampf am Feld (Sammler angegriffen, 09a): wird sofort entschieden – die Karte spielt ihn trotzdem ~5 s als Schlacht ab, die Zahlen laufen
+// auf das echte Ergebnis zu, danach das Band. Nur Anzeige (e = Feld-Bericht, aWho/dWho aus Sicht dieses Spielers); weitere Märsche der Sammler
+// stehen als eigene Sechsecke auf der Verteidiger-Seite (dTeile), ihre Zahlen zusammen = die Sammler im Kampf.
+const MZ_FELD_MS = 5000;
+function feldKampfBild(e) {
+  const f = fieldById[e.fieldId]; if (SYSTEM || !f || !e.aWho || !e.dWho) return;
+  const home = islandById[e.aHome], dx = home ? f.x - home.x : 0, dy = home ? f.y - home.y : 1, l = Math.hypot(dx, dy) || 1, now = performance.now();
+  const aWon = e.aWho === 'player' ? !!e.won : !e.won, du = e.aWho === 'player' ? aWon : !aWon;
+  const t = e.dTeile || [], sum = t.reduce((x, q) => x + q[0], 0) || 1;
+  const helfer = t.slice(1).map(q => ({ w: e.dWho, n: q[0] * e.dTroops / sum, h: q[1] }));
+  sfx('clash');
+  mapBattles.push({ feld: f.id, targetId: null, x: f.x, y: f.y, ux: dx / l, uy: dy / l, atk: e.aWho === 'player' ? 'mine' : 'bot', def: e.dWho === 'player' ? 'mine' : 'bot',
+    aWho: e.aWho, dWho: e.dWho, hero: e.aHero || null, dHeld: e.dHero || null, helfer, my: e.aTroops, myLoss: e.aLoss, en: e.dTroops, enLoss: e.dLoss, won: aWon,
+    born: now, t0: 0, anchor: now, slow: MB_MS / MZ_FELD_MS, final: true, done: false,
+    onEnd: () => spawnBattleFx({ x: f.x, y: f.y }, du, du ? 'Sieg' : 'Niederlage', FIELD_KINDS[f.kind].name) });
+  requestRender();
 }
 function mzKampfFern(tx, ty, rt) {                      // weit draußen: kleiner Kampf-Kreis mit gekreuzten Schwertern, pulst
   const p = 1 + Math.sin(rt / 140) * .08, s = mzS();
@@ -10311,7 +10329,9 @@ function fieldArrive(m, now) {
         return;
     }
     if (!o) { st.occ = { who: m.who, troops: m.troops, homeId: m.homeId, hero: m.hero || null, hero2: m.hero2 || null, since: now, got: 0 }; if (m.who === 'player') flashHint('Deine Truppen sammeln jetzt an ' + fArt(FIELD_KINDS[f.kind], 'dat') + '.', 3000); return; }
-    if (o.who === m.who) { o.troops += m.troops; if (!o.hero) { o.hero = m.hero || null; o.hero2 = m.hero2 || null; } return; }   // more of your own join the gatherers (other heroes just go along)
+    if (o.who === m.who) {                                                // more of your own join the gatherers (other heroes just go along)
+        const t = o.teile || [[o.troops, o.hero || null]]; if (t.length < 6) t.push([m.troops, m.hero || null]); else t[5][0] += m.troops; o.teile = t;   // (nur fürs Kampf-Bild: je Marsch ein Sechseck)
+        o.troops += m.troops; if (!o.hero) { o.hero = m.hero || null; o.hero2 = m.hero2 || null; } return; }
     if (m.who !== 'player' && botById[m.who] && botKeepsShield(botById[m.who], now)) { const home = islandById[m.homeId] || islandById[playerIslandId];   // under their own shield: no fight, back home
         fieldMarches.push({ who: m.who, homeId: m.homeId, fieldId: f.id, troops: m.troops, hero: m.hero || null, hero2: m.hero2 || null, startedAt: now, resolveAt: now + fieldTravelSec(home, f, m.who) * 1000, back: true, load: 0 }); return; }
     if (m.who === 'player') dropShield('Dein Friedensschild ist gefallen, weil du angreifst.'); else { botDropShield(m.who); botNeulingWeg(m.who, o.who); }   // a fight for the field is an attack
@@ -10324,7 +10344,7 @@ function fieldArrive(m, now) {
     const fg = fieldGold(m.who, oWho, fb, aHx, dHx);
     if (involved) {
         const youWon = (m.who === 'player') === won;
-        addCombatLogEntry(feldBericht(m.who === 'player'));
+        const eb = feldBericht(m.who === 'player'); addCombatLogEntry(eb); feldKampfBild(eb);   // (03f: der Kampf ist entschieden – die Karte spielt ihn trotzdem ab)
         flashHint(youWon ? 'Du hast ' + fArt(FIELD_KINDS[f.kind], 'akk') + ' gegen ' + loserName + ' gehalten/erobert.' : winnerName + ' hat dich von ' + fArt(FIELD_KINDS[f.kind], 'dat') + ' vertrieben.', 4000);
         sfx(youWon ? 'victory' : 'defeat');
     }
@@ -10333,7 +10353,8 @@ function fieldArrive(m, now) {
     function feldBericht(istA) {                     // aus Sicht des Angreifers (istA) oder des Sammlers: Du, Gegner, Verluste, Verwundete, Gold
         return { type: 'field', fieldKind: f.kind, won: istA === won, attacker: istA ? 'Du' : fieldWhoName(m.who), defender: istA ? fieldWhoName(oWho) : 'Du', atk: fb.SA, def: fb.SD,
             aTroops: m.troops, dTroops: o.troops + (won ? 0 : fb.dLoss), aLoss: fb.aLoss, dLoss: fb.dLoss, aWounded: wA, dWounded: wD,
-            gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx) };
+            gold: istA ? fg.a : fg.d, hA: heroTag(aHx), hD: heroTag(dHx), hx: heroReportOf(istA ? aHx : dHx), hxA: heroReportOf(aHx), hxD: heroReportOf(dHx),
+            fieldId: f.id, aWho: m.who, dWho: oWho, aHome: m.homeId, aHero: m.hero || null, dHero: o.hero || null, dTeile: o.teile || null };   // (fürs Kampf-Bild)
     }
 }
 // Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Sammel-Rausch (+50 %) · Gebäude · Forschung Sammeln
@@ -14661,18 +14682,19 @@ if (window.WELT) {
         if (!an || !botById[an] || !botById[an].mensch) return;
         const e = Object.assign({}, eintrag);
         if (!Number.isFinite(e.at)) e.at = Date.now();           // wann der Kampf war (der Weltrechner hat die Server-Uhr)
-        for (const f of ['botId', 'defenderId']) if (e[f] !== undefined) e[f] = e[f] === null ? null : neutralId(e[f]);
+        for (const f of ['botId', 'defenderId', 'aWho', 'dWho']) if (e[f] !== undefined) e[f] = e[f] === null ? null : neutralId(e[f]);
         if (e.botName === undefined && e.botId) e.botName = (botById[lokalId(e.botId)] || {}).name;
         WELT.nachricht(parseInt(an.slice(1), 10), { art: 'bericht', eintrag: e, hint });
     };
     WELT.beiNachricht.push(function (e) {
         if (!e || e.art !== 'bericht' || !e.eintrag) return;
         const x = e.eintrag;
-        for (const f of ['botId', 'defenderId']) if (x[f]) x[f] = lokalId(x[f]);
+        for (const f of ['botId', 'defenderId', 'aWho', 'dWho']) if (x[f]) x[f] = lokalId(x[f]);
         if (x.defenderId === 'player') x.defenderId = null;
         addCombatLogEntry(x);
         if (e.hint) flashHint(e.hint, 5000);
         if (x.type === 'ausgespaeht') { sfx('warn'); return; }   // (kein Kampf: nur die Nachricht)
+        if (x.type === 'field' && Math.abs(Date.now() - x.at) < 60000) feldKampfBild(x);   // Kampf am Feld: als Schlacht abspielen (nur frische)
         if (x.targetId !== undefined && islandById[x.targetId]) spawnBattleFx(x.targetId, x.type === 'attack' ? !!x.won : !x.won || !!x.capitalHolds, x.type === 'attack' ? (x.won ? 'Sieg' : 'Niederlage') : (x.won ? (x.capitalHolds ? 'Hauptstadt hält' : 'Basis verloren') : 'Verteidigt'), x.botName || x.defenderName || '');
         sfx(x.won === (x.type === 'attack') ? 'victory' : 'warn');
     });

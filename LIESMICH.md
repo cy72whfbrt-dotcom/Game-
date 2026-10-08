@@ -1076,6 +1076,10 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Basis je eigenes Sechseck, Tafel „N Armeen · X ⚔ Y“, Geschosse, fliegende Verluste; wer an deinem Kampf wartet, steht mit
   Sanduhr davor. Sieg/Niederlage: kleines Band-Bild am Bildrand. Rally-Sammelpunkt: goldener Ring. Armee antippen → runde
   Knöpfe (deine: Info/Zurück/Schneller, fremde: Info/Angreifen/Spähen). Test `marsch_bild_test` (Handy + Desktop).
+  **Kampf am Feld (Sammler angegriffen):** wird wie bisher sofort entschieden (09a, Regeln unverändert), die Karte spielt ihn aber
+  ~5 s als dieselbe Kampf-Szene ab (`feldKampfBild`, 03f): Zahlen laufen auf das echte Ergebnis zu, danach Sieg/Niederlage-Band;
+  weitere eigene Sammel-Märsche am Feld stehen als eigene Sechsecke auf der Verteidiger-Seite (`occ.teile`, nur Anzeige). Zuschauer
+  bekommen die Szene über den Feld-Bericht vom Weltrechner (`fieldId`, `aWho`/`dWho`). Test `marsch_bild_test` Teil D.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
