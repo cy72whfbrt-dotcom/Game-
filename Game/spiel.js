@@ -817,7 +817,7 @@ if (SYSTEM) {
 // Islands the player owns, each with its own level and troop garrison
 var ownVer = 0;                                                  // bumped whenever anyone's bases change: the map skips its ownership scans while it stays
 class OwnSet extends Set {
-    add(id) { if (!this.has(id)) ownVer++; return super.add(id); }
+    add(id) { if (!islandById[id]) return this; if (!this.has(id)) ownVer++; return super.add(id); }   // (unbekannte Basen aus einer alten Welt: weg)
     delete(id) { const r = super.delete(id); if (r) ownVer++; return r; }
     clear() { if (this.size) ownVer++; super.clear(); }
 }
