@@ -53,3 +53,10 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - Sa 10 – So 22 Thron-Event (Mitte): Plan + Test-Datei `werkzeuge/thronevent/thronevent.html` (Zahlen in ZAHLEN-Vorschlag
   dort). Thron-Punkte → Event-Münzen + Event-Shop-Reiter im Shop. Weiter, wenn die Wochen-Events fertig sind.
 - Drache, Boss, Lager bleiben als eigene Events (Einordnung offen).
+- Beschlüsse 8.10. (Wochen-Event): Mo Bauherr · Di Krieger · Mi Sammeln · Do Boss-Jagd (1 P./1.000 Schaden) · Fr Helden-Tag.
+  Je Tag 5 Tages-Kisten (Edelsteine bleiben, bis 190/Tag); nicht abgeholte Kisten → Abholfach. Wochen-Rangliste Fr 20 Uhr,
+  6. Feld „Rangliste“ hinter Fr. Test-Datei `werkzeuge/wochenevent/wochenevent.html`. Alte Woche/Invasion/Drache/Boss raus.
+- Barbaren-Lager bleibt (letzter Chip): nur feste Münzen je Stufe (höhere Stufen etwas mehr) + Schlüssel ab höheren Stufen;
+  dort getötete Truppen zählen nicht für Krieger.
+- Schlüssel 1 (normal) / 2 (episch) öffnen Ausrüstungs- und Helden-Kisten; ohne Schlüssel 100 / 500 Edelsteine; episch: sicher
+  1 Lila spätestens nach 20 Versuchen. Beschleuniger 1/5/15 Min, 1/3/8/24 Std – gelten für Bauen, Forschen, Heilen (nicht Truppen).
