@@ -2210,7 +2210,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .ap-oben .ap-bal{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;min-width:0;gap:6px;padding-right:4px} .ap-oben .ap-bal .balance{min-width:30px} .ap-oben .ap-bal .balance-note{font-size:10px;gap:3px;margin:0}
 #islandPopup .ap-oben .from-sel{font-size:12px;padding-left:6px;padding-right:22px}
 .panel--island:has(.ap-oben){max-height:calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space) - 40px)}   /* Angriff: alles ohne Scrollen sichtbar; darüber Platz für einen Hinweis (2 Zeilen) */
-@media (max-width:899px){ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-webkit-line-clamp:2;max-height:calc(2.7em + 16px);overflow:clip;overflow-clip-margin:content-box} }   /* bei offenem Fenster: höchstens 2 ganze Zeilen, dann „…“ */
+body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-webkit-line-clamp:2;max-height:calc(2.7em + 16px);overflow:clip;overflow-clip-margin:content-box}   /* bei offenem Fenster: höchstens 2 ganze Zeilen, dann „…“ */
 @media (max-width:899px) and (max-height:700px){ .panel--island:has(.ap-oben) :is(.ap-leiste,.ap-herofx,#popupOverline){display:none}
   .panel--island:has(.ap-oben) .ptitle{font-size:15px;margin:0} #popupStats:has(.ap-oben){gap:4px} .panel--island:has(.ap-oben) .pfoot{padding-top:6px;padding-bottom:6px}
   .ap-oben .force{padding-top:4px!important;padding-bottom:4px!important}

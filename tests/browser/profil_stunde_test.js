@@ -30,7 +30,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     prodCarry.coins = 0; prodCarry.troops = {}; const t0 = meine(), c0 = coins; for (let i = 0; i < 3600; i++) produceTicks(1);
     out.takte = { troops: meine() - t0, coins: coins - c0 };
     // Basis-Fenster: „/ Std.“ mit dem Wert dieser einen Basis
-    openIslandPopup(zweite); out.fenster = document.getElementById('popupStats').innerText; closePanel(popup);
+    openIslandPopup(zweite); out.fenster = [...document.querySelectorAll('#popupStats .bw-wert')].map(e => e.querySelector('img').getAttribute('src').replace(/^.*\/|\.webp$/g, '') + ' ' + e.textContent.trim()).join(' | '); closePanel(popup);   // (Werte als Bild + Zahl)
     // 2) Fähigkeit „Geschwindigkeit“ (kürzere Ticks): mehr pro Stunde – Profil und Ankunft gleich
     skills.speed = 10; const ms = productionTickMs(), n = Math.round(3600000 / ms), hs = hourProduction('player'); renderProfile(true);
     out.tempo = { ms, hp: hs, profil: document.getElementById('kTroopsRate').textContent, kommt: stunde(n), anteil: n * ms / 3600000 };
@@ -67,7 +67,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(/Std\./.test(G.label) && !/Tick/.test(G.label), 'Profil sagt „Truppen / Std.“ (nicht mehr „/ Tick“)', G.label);
   ok(G.kommt.troops === ST && G.kommt.coins === SC, 'eine Stunde: genau ' + ST + ' Truppen und ' + fmtN(SC) + ' Münzen kommen an', G.kommt);
   ok(r.takte.troops === ST && r.takte.coins === SC, 'eine Stunde in 3.600 Sekunden-Takten: genau so viel (nichts geht verloren)', r.takte);
-  ok(new RegExp('Truppen \\/ Std\\.\\s*\\+' + JT, 'i').test(r.fenster) && new RegExp('Münzen \\/ Std\\.\\s*\\+' + fmtN(JC).replace('.', '\\.'), 'i').test(r.fenster) && !/\/ s\b/i.test(r.fenster), 'Basis-Fenster: „/ Std.“ mit dem Wert der Basis', r.fenster);
+  ok(new RegExp('ui_res_truppen \\+' + JT + '\\/Std\\.').test(r.fenster) && new RegExp('ui_res_muenzen \\+' + fmtN(JC).replace('.', '\\.') + '\\/Std\\.').test(r.fenster) && !/\/ s\b/i.test(r.fenster), 'Basis-Fenster: Münz-/Truppen-Symbol mit „+Wert/Std.“ der Basis', r.fenster);
   const T = r.tempo, sollT = T.hp.troops * T.anteil;
   ok(T.ms === 600 && Math.round(T.hp.troops) === Math.round(ST * 1000 / 600) && T.profil === '+' + Math.round(T.hp.troops) && T.kommt.troops <= sollT && sollT - T.kommt.troops < 2, 'Geschwindigkeit (Tick 0,6 s): Profil zeigt mehr pro Stunde – genau das kommt an (je Basis wartet höchstens der Bruchteil einer Truppe)', T);
   const O = r.boni;
