@@ -103,7 +103,8 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
   höchstens 60 px Lücke (gestrichelter Strich in Seitenfarbe), sonst klein dicht am Trupp (Chip kleiner, ggf. unter dem Kopf);
   jeder Marsch hat Kopf und Zahl (auch Rückweg und kleine Armeen im Kampf). Rückwege aus einer laufenden Schlacht starten außerhalb
   ihrer Armeen; Armeen der Schlacht stellen sich neben Märsche. Kampf-Tafel nie unter dem Hinweis (sonst neben dem Verteidiger).
-  Sieg/Niederlage-Band über dem Kampfort (im Bild gehalten). Armeen im Kampf nie an einer fremden Basis/auf ihrem Schild und nie
+  Sieg/Niederlage-Band über dem Kampfort (im Bild gehalten, samt Unterzeile nie über einem Kopf/Chip). Köpfe und Zahlen am Kampf
+  (auch Marsch-Köpfe wie „⌛ wartet“) werden über Kreis, Säule und Speeren nachgezeichnet. Armeen im Kampf nie an einer fremden Basis/auf ihrem Schild und nie
   außerhalb des Bilds (sonst klein). Antipp-Knöpfe: Bogen, sonst Reihe/Spalte – immer im Bild, nicht unter Leisten/Hinweis, nie übereinander.
   Eigene/verbündete Welle, die einem laufenden Kampf beitritt, zeigt kein „⌛ wartet“ mehr. Lebensbalken blendet mit dem Kampf aus.
 - Fremde Märsche nur, wenn sie auf deine Basis zielen; Bündnis-Märsche zu dir (Rally, Hilfe, Verstärkung) und ihre

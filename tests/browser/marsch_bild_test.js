@@ -86,6 +86,8 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     const hint = await p.evaluate(() => { const c = canvas.getBoundingClientRect(), r = hintEl.getBoundingClientRect(); return { x: r.left - c.left, y: r.top - c.top, w: r.width, h: r.height }; });
     const tafel = k1.koepfe.filter(k => k.art === 'tafel' && Math.max(0, Math.min(k.x + k.w, hint.x + hint.w) - Math.max(k.x, hint.x)) * Math.max(0, Math.min(k.y + k.h, hint.y + hint.h) - Math.max(k.y, hint.y)) > 0);
     ok(!tafel.length, name + ': Hinweis „Verstärkung …“ liegt nicht über der Kampf-Tafel', { hint, tafel });
+    const unten = k1.koepfe.filter(k => (['vert', 'verst', 'kampf'].includes(k.art) || /wartet/.test(k.text)) && !(k1.oben || []).includes(k.text)).map(k => k.text);
+    ok(!unten.length, name + ': Köpfe/Zahlen am Kampf (auch „⌛ wartet“) über Kreis, Säule und Speeren gezeichnet', unten);
     ok(!k1.koepfe.some(k => k.seite === 'eigen' && /wartet/.test(k.text)), name + ': eigene Wellen zeigen nie „⌛ wartet“', k1.koepfe.filter(k => /wartet/.test(k.text)));
     // ===== B) Märsche: Chip = Spieldaten, Rally, Sammeln, Späher, Zurückgerufen =====
     await p.waitForFunction(T => !pendingAttacks.some(a => a.targetId === T), ids.T, { timeout: 30000, polling: 300 }).catch(() => {});
@@ -160,7 +162,7 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     const fk0 = await p.evaluate(ids => {
       selMarch = null; pendingAttacks = []; pendingSends = []; pendingRetreats = []; pendingScouts = []; mapBattles = []; battleFx = []; dropShield(); window.__band = []; const fx0 = spawnBattleFx;
       spawnBattleFx = function (wo, gut, text) { __band.push({ text, at: performance.now() }); return fx0.apply(this, arguments); };
-      window.__bandOrt = []; const eb0 = mzErgebnisBand; mzErgebnisBand = function (f, al, sc, sx, sy) { const r = eb0.apply(this, arguments); __bandOrt.push({ sx, sy, x: r.x, y: r.y }); return r; };   // (wo das Band steht)   // (wann das Band kommt)
+      window.__bandOrt = []; const eb0 = mzErgebnisBand; mzErgebnisBand = function (f, al, sc, sx, sy) { const r = eb0.apply(this, arguments); __bandOrt.push({ sx, sy, x: r.x, y: r.y, w: r.w, h: r.h, unter: mzAnzeige.koepfe.filter(k => k.art !== 'tafel' && Math.max(0, Math.min(k.x + k.w, r.x + r.w / 2) - Math.max(k.x, r.x - r.w / 2)) * Math.max(0, Math.min(k.y + k.h, r.y - r.h / 2 + r.h) - Math.max(k.y, r.y - r.h / 2)) > 0).map(k => k.text) }); return r; };   // (wo das Band steht)   // (wann das Band kommt)
       const home = islandById[ids.home], bq = [...botOwnedIslands[ids.D]].find(id => islandById[id].landmassId === home.landmassId);
       const f = resFields.filter(f => f.landmassId === home.landmassId && !(fieldState[f.id] && fieldState[f.id].occ) && !fieldMarches.some(m => m.fieldId === f.id))
         .sort((x, y) => Math.hypot(x.x - home.x, x.y - home.y) - Math.hypot(y.x - home.x, y.y - home.y))[0];
@@ -192,6 +194,8 @@ const ueber = l => { let n = []; for (let i = 0; i < l.length; i++) for (let j =
     ok(fx.feld === 0 && fx.band.length === 1 && fx.band[0].text === (ber && ber.won ? 'Sieg' : 'Niederlage') && fx.band[0].nach >= 4000 && fx.band[0].nach < 6500, name + ': Szene ~5 s, danach Sieg/Niederlage-Band', fx);
     const bo = await p.evaluate(() => { const o = __bandOrt[__bandOrt.length - 1]; return o && { ...o, w: viewW, h: viewH }; });
     ok(bo && Math.abs(bo.x - Math.max(0, Math.min(bo.w, bo.sx))) < 140 && bo.y < Math.max(60, bo.sy) && Math.max(60, bo.sy) - bo.y < 220 && bo.y > 0 && bo.y < bo.h, name + ': Sieg/Niederlage-Band über dem Kampfort (nicht am Bildrand)', bo);
+    const bandDrauf = await p.evaluate(() => [...new Set(__bandOrt.flatMap(o => o.unter))]);
+    ok(!bandDrauf.length, name + ': Sieg/Niederlage-Band (samt Unterzeile) verdeckt keinen Kopf/Chip', bandDrauf);
     ok(!ueber(fA.koepfe).length, name + ': keine Sechsecke/Chips übereinander (Feld-Kampf)', ueber(fA.koepfe));
     await p.context().close();
   }

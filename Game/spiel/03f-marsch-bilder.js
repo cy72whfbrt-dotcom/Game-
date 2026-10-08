@@ -26,7 +26,7 @@ function mzName(who) {                                 // „[NW]Alex“ wie im 
   const tag = typeof bundTagVon === 'function' ? bundTagVon(who) : '';
   return (tag ? '[' + tag + ']' : '') + (who === 'player' ? (window.profileName && profileName.value) || 'Du' : botById[who].name);
 }
-let mzAnzeige = { koepfe: [], kaempfe: [] };          // was gerade gezeichnet ist (Sechsecke mit Zahl, Kampf-Tafeln) – fürs Antippen und Prüfen
+let mzAnzeige = { koepfe: [], kaempfe: [], oben: [] }, mzChipZuege = [];   // mzChipZuege: Marsch-Köpfe zum Nachzeichnen über Kampf-Effekten          // was gerade gezeichnet ist (Sechsecke mit Zahl, Kampf-Tafeln) – fürs Antippen und Prüfen
 let mzKampfFlaechen = [], mzLeisten = [];              // Sechsecke/Chips der Schlachten vom letzten Bild (Märsche weichen aus) · Leisten über der Karte
 function mzLeistenLesen() {                            // Kopfleiste, Zoom-Knöpfe, Anleitung …: dort kein Chip und kein Knopf
   const cv = canvas.getBoundingClientRect(); mzLeisten = [];
@@ -173,7 +173,7 @@ function mzTruppBild(m) {
 }
 function drawMarchTokens() {                            // vor den Namensschildern: Linie und Trupp (Kopf und Chip danach: drawMarchChips)
   mzKampfFlaechen = mzAnzeige.koepfe.filter(k => k.art === 'vert' || k.art === 'verst' || k.art === 'kampf' || k.art === 'tafel');
-  setScreen(ctx); mzAnzeige = { koepfe: [], kaempfe: [] }; mzLeistenLesen();
+  setScreen(ctx); mzAnzeige = { koepfe: [], kaempfe: [], oben: [] }; mzChipZuege = []; mzLeistenLesen();
   const st = mzStufe(), s = mzS();
   for (const m of marchTokens) {
     const ausKampf = m.info.art === 'rueck' && mapBattles.some(b => !b.final && b.targetId === m.srcId);   // (Rückweg aus einer laufenden Schlacht: erst außerhalb ihrer Armeen)
@@ -264,6 +264,7 @@ function drawMarchChips() {                             // nach den Namensschild
     belegt.push(r); mzKopfAlt.set(m.key, r);
     const unter = y > m.tf.y + m.tf.h, ya = unter ? m.tf.y + m.tf.h : m.kopfY, yb = unter ? y - kh / 2 : y + kh / 2;   // (Kopf unter dem Trupp: Strich nach unten)
     if (Math.hypot(x - m.x, yb - ya) > 6) { ctx.save(); ctx.setLineDash([4, 3]); ctx.strokeStyle = MZ_FARBE[I.seite].hell; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(m.x, ya); ctx.lineTo(x, yb); ctx.stroke(); ctx.restore(); }   // (kurzer Strich in Seitenfarbe)
+    const zeichne = () => {                            // (Kopf, Namensband, Chip – über Kampf-Effekten noch einmal: mzKampf)
     const k = mzKopf({ ...I, rally: I.art === 'rally' }, kw); ctx.drawImage(k, x - kw / 2 - 2, y - kh / 2 - 2, k.w, k.h);
     if (I.zurueck) mzBildAn('marsch_zeichen_zurueck', x + kw * .42, y - kh * .38, 14 * s);
     if (I.wartet) mzSanduhr(x - kw * .5, y - kh * .5, 10 * s);
@@ -271,6 +272,8 @@ function drawMarchChips() {                             // nach den Namensschild
     const c = pl.unten ? mzChip(txt, x - cwK / 2, y + kh / 2 + 2, pxC, I.wartet ? '#ffd678' : '#fff6dc') : mzChip(txt, pl.links ? x - kw / 2 - 4 - (I.beute && !pl.klein ? 26 * s : 0) : x + kw / 2 + 4, y - pxC / 2 - 3, pxC, I.wartet ? '#ffd678' : '#fff6dc', pl.links);   // (Zahl immer direkt am Sechseck)
     if (I.beute && st === 'nah' && !pl.klein) mzBeute(I.beute, c.x + c.w + 4, y - 12 * s, 18 * s);
     if (I.rally && I.rally.length > 1 && !pl.klein) mzMiniKoepfe(I.rally, x, y + kh / 2 + bandH + 4 * s, s);
+    };
+    zeichne(); mzChipZuege.push({ r, zeichne, text: txt });
     m.kopf = { x: x - Math.max(22, kw / 2), y: y - Math.max(22, kh / 2), w: Math.max(44, kw), h: Math.max(44, kh) };
     mzAnzeige.koepfe.push({ art: I.art, seite: I.seite, n: I.n, text: txt, klein: pl.klein, x: r.x, y: r.y, w: r.w, h: r.h, fig: { x: m.tf.x, y: m.kopfY, w: m.tf.w, h: m.tf.h } });
   }
@@ -434,11 +437,13 @@ function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Sch
   const dk = mzKopf({ seite: dSeite, who: owner, held: b.dHeld || null }, kw); ctx.drawImage(dk, tx - kw / 2 - 2, vy - kh / 2 - 2, dk.w, dk.h);
   mzBalken(tx, vy + kh / 2 + 3 * s, (st === 'nah' ? 36 : 28) * s, (st === 'nah' ? 5 : 4) * s, vd / Math.max(1, b.en), MZ_FARBE[dSeite].haupt); ctx.globalAlpha = al;
   const dTxt = fmtCompact(besatzung) + ' · ' + rest, dc = mzChip(dTxt, tx + kw / 2 + 4, vy - px / 2 - 3, px, MZ_FARBE[dSeite].hell);
+  const nach = [() => { ctx.drawImage(dk, tx - kw / 2 - 2, vy - kh / 2 - 2, dk.w, dk.h); mzChip(dTxt, tx + kw / 2 + 4, vy - px / 2 - 3, px, MZ_FARBE[dSeite].hell); }];   // Beschriftungen über Geschossen noch einmal
   const koepfe = [{ art: 'vert', n: besatzung, text: dTxt, x: tx - kw / 2, y: vy - kh / 2, w: dc.x + dc.w - tx + kw / 2, h: kh }];
   const hp = helfer.slice(0, 6).map((v, i) => {         // (rechts/links neben dem Verteidiger, eine Reihe tiefer)
     const x = tx + (i % 2 ? -1 : 1) * (kw * 1.6 + Math.floor(i / 2) * 104 * s), y = vy + kh * .95, w = kw * .78, hk = mzKopf({ seite: mzSeite(v.w), who: v.w, held: v.h || null }, w), n = hJetzt(v);
     ctx.drawImage(hk, x - w / 2 - 2, y - w * 50 / 44 / 2 - 2, hk.w, hk.h);
-    const txt = mzName(v.w).replace(/^\[\w+\]/, '') + ' · ' + fmtCompact(n), c = mzChip(txt, x - 40 * s, y + w * 50 / 88 + 2 * s, Math.round(10.5 * s), MZ_FARBE[mzSeite(v.w)].hell);
+    const txt = mzName(v.w).replace(/^\[\w+\]/, '') + ' · ' + fmtCompact(n), zv = () => mzChip(txt, x - 40 * s, y + w * 50 / 88 + 2 * s, Math.round(10.5 * s), MZ_FARBE[mzSeite(v.w)].hell), c = zv();
+    nach.push(() => { ctx.drawImage(hk, x - w / 2 - 2, y - w * 50 / 44 / 2 - 2, hk.w, hk.h); zv(); });
     koepfe.push({ art: 'verst', n, text: txt, x: Math.min(x - w / 2, c.x), y: y - w * 50 / 88, w: Math.max(w, c.w), h: w * 50 / 44 + c.h + 2 * s });
     return { x, y };
   });
@@ -472,13 +477,18 @@ function mzKampf(b, t, tx, ty) {                        // (Bildschirm) eine Sch
     ctx.drawImage(k, x - kw / 2 - 2, ky - kh / 2 - 2, k.w, k.h);
     mzBalken(x, ky + kh / 2 + 3 * s, 28 * s, 4 * s, va / Math.max(1, b.my), MZ_FARBE[sd].haupt); ctx.globalAlpha = al;
     const pc = p.klein ? Math.round(px * .85) : px, txt = p.klein ? fmtCompact(n) : fmtCompact(n) + ' · ' + rest; ctx.font = `700 ${pc}px Inter, system-ui, sans-serif`;
-    const cw = ctx.measureText(txt).width + 10, c = mzChip(txt, x - cw / 2, ky - kh / 2 - pc - 9 * s, pc, '#fff6dc');   // (Chip über dem Kopf: schmal, nichts daneben verdeckt; klein nur die Zahl)
+    const cw = ctx.measureText(txt).width + 10, za = () => mzChip(txt, x - cw / 2, ky - kh / 2 - pc - 9 * s, pc, '#fff6dc'), c = za();
+    nach.push(() => { ctx.drawImage(k, x - kw / 2 - 2, ky - kh / 2 - 2, k.w, k.h); za(); });   // (Chip über dem Kopf: schmal, nichts daneben verdeckt; klein nur die Zahl)
     if (q.rally && !p.klein) mzMiniKoepfe(q.rally, x, ky + kh / 2 + 9 * s, s);
     koepfe.push({ art: 'kampf', seite: sd, n, text: txt, klein: !!p.klein, x: Math.min(x - Math.max(kw, tw) / 2, c.x), y: c.y, w: Math.max(kw, tw, c.w), h: y + th * .4 - c.y, fig: { x, y: y - th * .6 } });   // (mit dem Trupp)
     return { x, y: ky };
   });
   ctx.globalAlpha = 1;
   if (!after) mzGeschosse(kz, t, ap, tx, cy, zw, s);
+  ctx.globalAlpha = al; for (const f of nach) f(); ctx.globalAlpha = 1;   // (Köpfe und Zahlen über Kreis, Säule und Speeren)
+  const feld = { x: tx - zw * .9, y: cy - zw * .8, w: zw * 1.8, h: zw * 1.3 };   // Marsch-Köpfe am Kampf (z. B. „⌛ wartet“): über dem Kampf-Effekt
+  for (const z of mzChipZuege) if (overlap(z.r, feld) > 0) { z.zeichne(); mzAnzeige.oben.push(z.text); }
+  mzAnzeige.oben.push(...koepfe.filter(k => k.art !== 'tafel').map(k => k.text));
   // Verluste: je Welle eine Zahl neben dem getroffenen Kopf (echte Verluste in 5 Teilen), steigt und blendet aus, höchstens 4 zugleich
   if (t > 900 && t < 3400) {
     const i0 = Math.floor((t - 900) / 450);
@@ -547,7 +557,9 @@ function mzKampfFern(tx, ty, rt) {                      // weit draußen: kleine
 function mzErgebnisBand(f, alpha, scale, sx, sy) {      // → Mitte des Bands
   const im = mzBild(f.good ? 'marsch_band_sieg' : 'marsch_band_niederlage'), bw = Math.min(viewW >= 700 ? 300 : 230, viewW * .6);
   const bh = im ? bw * im.height / im.width : 60, x = Math.max(bw / 2 + 4, Math.min(viewW - bw / 2 - 4, sx));
-  const y = Math.max(bh / 2 + 4, Math.min(viewH - bh / 2 - 4, sy - 70 - bh / 2 - f.stack * (bh + 8)));   // über dem Kampfort (mehrere stapeln nach oben)
+  const y0 = sy - 70 - bh / 2 - f.stack * (bh + 8), hb = bh + (f.sub ? 22 : 0), im0 = v => Math.max(bh / 2 + 4, Math.min(viewH - hb + bh / 2 - 4, v));   // über dem Kampfort (mehrere stapeln nach oben)
+  const frei = v => !mzAnzeige.koepfe.some(k => k.art !== 'tafel' && overlap({ x: x - bw / 2, y: v - bh / 2, w: bw, h: hb }, k) > 0);   // (Band samt Unterzeile verdeckt keinen Kopf/Chip)
+  const y = [0, -1, 1, -2, 2, -3, 3, -4, 4].map(i => im0(y0 + i * 24)).find(frei) ?? im0(y0);
   ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(scale, scale);
   if (im) ctx.drawImage(im, -bw / 2, -bh / 2, bw, bh);
   const titel = f.label.toUpperCase(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -555,7 +567,7 @@ function mzErgebnisBand(f, alpha, scale, sx, sy) {      // → Mitte des Bands
   if (f.good) { ctx.fillStyle = '#1d1406'; ctx.fillText(titel, 0, bh * .08); }
   else { ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(40,6,4,.8)'; ctx.strokeText(titel, 0, 0); ctx.fillStyle = '#ffc1b8'; ctx.fillText(titel, 0, 0); }
   if (f.sub) { ctx.font = '700 12px Inter, system-ui, sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)'; ctx.strokeText(f.sub, 0, bh / 2 + 10); ctx.fillStyle = f.good ? '#fff3d6' : '#ffc1b8'; ctx.fillText(f.sub, 0, bh / 2 + 10); }
-  ctx.restore(); return { x, y };
+  ctx.restore(); return { x, y, w: bw, h: hb };
 }
 
 // ===== Rally sammelt: goldener Bodenring dreht (12°/s) am Sammelpunkt =====
