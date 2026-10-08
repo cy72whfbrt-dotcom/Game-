@@ -89,7 +89,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   }, v.vor);
   console.log(JSON.stringify(n));
   ok(n.lvl === '1' && n.sp === '0' && n.skills && Object.values(n.skills).every(x => !x), 'Stufe 1, keine Fähigkeitspunkte', { lvl: n.lvl, sp: n.sp, skills: n.skills });
-  ok(n.coins === '0', 'Start-Gold wie ein neuer Spieler (0)', n.coins);
+  ok(+n.coins >= 10000 && +n.coins < 10500, 'Start-Münzen wie ein neuer Spieler (10.000, Alexander 8.10.)', n.coins);
   ok(n.ownN === 1 && n.capNeu && n.rand && n.zweite === null, 'nur noch die Hauptstadt – auf einem neuen Platz am Rand, die zweite Basis ist neutral', { ownN: n.ownN, neu: n.capNeu, rand: n.rand, zweite: n.zweite });
   ok(n.truppen >= 5000 && n.truppen < 6000, 'Start-Truppen wie ein neuer Spieler (5.000)', n.truppen);
   ok(n.bund === 0, 'keine Bündnisse mehr', n.bund);
@@ -110,15 +110,17 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(n.saison.nr === 2 && n.saison.top === 10 && n.saison.erster === 'player' && n.saison.ende > 55 * 864e5, 'Saison 2 läuft, nächste in 8 Wochen, Top 10 gemerkt', n.saison);
   ok(/['"]saison\|['"]\s*\+\s*\w+\s*\+\s*['"]\|['"]\s*\+\s*\w+/.test(await p.evaluate(() => saisonNeu.toString())), 'Nachricht „saison“: Nummer je Reset eindeutig (mit Zeitpunkt)');
   const B = n.bot;
-  ok(B.lvl === 1 && B.skills === 0 && B.coins < 1e5 && B.basen === 1, 'Mitspieler: Stufe 1, keine Fähigkeiten, Start-Gold, nur die Hauptstadt', B);
+  ok(B.lvl === 1 && B.skills === 0 && B.coins >= 10000 && B.coins < 1e5 && B.basen === 1, 'Mitspieler: Stufe 1, keine Fähigkeiten, Start-Münzen (10.000), nur die Hauptstadt', B);
   ok(B.truppen >= 5000 && B.truppen < 6000, 'Mitspieler: Start-Truppen wie ein neuer Spieler', B.truppen);
   ok(B.keep === 4 && B.aca === 4 && B.lumber === 4 && B.wall === 3 && JSON.stringify(B.fo) === '{"w_prod":2,"m_atk":2,"x_tempo":2}' && !B.bau.length && !B.foRun,
     'Burg fair beim Mitspieler: Burg 14 → 4, Gebäude bis 4, Forschung bis Labor 4, Burg-Bau (15) und Forschung (Sammeln 3) abgebrochen', B);
   ok(B.gear && B.hs && ['h', 's', 'e'].every(k => B.res[k] === 0) && resVor.h >= 4444, 'Mitspieler: Ausrüstung, Helden bleiben, Holz/Stein/Eisen 0 (einmalige Ausnahme)', { B, resVor });
   ok(B.tp === 20000, 'Mitspieler: Thron-Punkte 35.000 → 20.000', B.tp);
   ok(B.gems === 1000 + 2000 + 1500 && (B.titel || []).includes('s1p2') && B.look === 'Saison-Großadmiral' && B.rahmen === 'sz2', 'Mitspieler Platz 2: Edelsteine 1.000 (Ausnahme) + 2.000 Preis + 1.500 aus Thron-Punkten (gleich abgeholt) + Rahmen „Saison-Großadmiral“ (Platz 2–3)', { gems: B.gems, titel: B.titel, look: B.look, rahmen: B.rahmen });
-  ok(n.pass && n.pass[0] === 0 && n.pass[1] === 0 && n.pass[2] === 0 && n.pass[3] === true, 'Saison-Pass von vorn (Punkte, abgeholte Stufen), Premium bleibt gekauft', n.pass);
-  ok(n.botPass && n.botPass[0] === 0 && n.botPass[1] === 0 && n.botPass[2] === true, 'Mitspieler: Saison-Pass von vorn, Premium bleibt', n.botPass);
+  ok(n.pass && n.pass[0] === 0 && n.pass[1] === 0 && n.pass[2] === 0 && n.pass[3] === false, 'Saison-Pass von vorn (Punkte, abgeholte Stufen) – Premium auch weg (Alexander 8.10.)', n.pass);
+  ok(n.botPass && n.botPass[0] === 0 && n.botPass[1] === 0 && n.botPass[2] === false, 'Mitspieler: Saison-Pass von vorn, Premium auch weg', n.botPass);
+  { const q = (require('fs').readFileSync(require('path').join(__dirname, '../../Game/spiel/10d-welt-weltrechner.js'), 'utf8').match(/WELT\.saisonKonto = function[\s\S]*?\n    \};/) || [''])[0];
+    ok(/d\.u = PLAYER_START_COINS/.test(q), 'Hauptbuch: neue Saison setzt sein Münz-Konto auf die Start-Münzen (wie sein Handy)'); }
   ok(n.rang[0] === 0 && n.rang[1] === 0 && n.rang[2] === 0 && n.rang[3] === 50 && n.rang[4] >= 9000, 'Ranglisten Eroberungen/Thron-Punkte zählen ab dem Reset (Erfolge behalten 50 / 9.000)', n.rang);
   ok(n.wo === 0, 'Wochen-Event: Punkte der alten Welt weg', n.wo);
   ok(n.capsInnen === 0, 'alle Hauptstädte auf Startplätzen oder in Zone 1 (nie weiter innen)', n.capsInnen);

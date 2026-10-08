@@ -1002,6 +1002,19 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Münz-Topf der Aufgaben (12 Std. am Tag, hält 2 Tage), `HB_TAG` Edelsteine 42. Tests: `pass_saison_test`,
   `aufgabe_sechs_test`, `welt_test` erweitert.
 
+- **8.10. – Entscheidungen 8.10. (Alexander; NICHT hochgeladen):** (1) Neue Spieler, Mitspieler und jede neue Saison starten
+  mit **10.000 Münzen** (`PLAYER_START_COINS`, 01a; Handy 01c, Mitspieler-Start 01d, Saison 01a/09f, Hauptbuch `saisonKonto`
+  d.u = Start-Münzen), Start-Truppen bleiben 5.000. (2) **Verlegen in einen eigenen Turm (50 Edelsteine) ist raus** –
+  nur noch Teleport (500 Edelsteine oder 1 Teleporter, 1 gratis am Start). Der Knopf im Hauptstadt-Fenster heißt
+  „Teleportieren“ (Preis: 1 Teleporter oder 500) und führt wie der Rucksack-Teleporter zur Auswahl auf der Karte.
+  Weltrechner-Befehl `hauptstadt` und der Server-Filter dafür sind weg. Mitspieler verlegen ihre Hauptstadt weiter wie
+  bisher (bots/05, Bündnis „gemeinsam vorrücken“, `TELEPORT_GEMS`). (3) Neue Saison setzt auch das **gekaufte Premium**
+  des Saison-Passes zurück (Handy 01a, Mitspieler 09f). (4) **Stufen-Belohnung Truppen** = 1 Tag Truppen-Ertrag einer
+  Basis dieser Stufe (`levelRewardTroops` = 24 × `troopsPerTick`): Stufe 2: 10 → 410, 5: 10 → 620, 10: 41 → 1.300,
+  20: 330 → 5.100, 30: 1.100 → 21.000, 40: 1.700 → 84.000, 50: 2.200 → 340.000. Helden-Gefolge und Funde rechnen weiter mit
+  dem alten Maß (`stufenTruppenMass`). Das Hauptbuch prüft die Stufen-Truppen mit derselben Funktion. Tests: `saison_test`,
+  `teleport_test`, `neuling_vorschau_test`, `forschung_kosten_test` angepasst/erweitert.
+
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
 

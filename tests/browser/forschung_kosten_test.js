@@ -20,7 +20,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.gebaeude = [cityCost('wall', 5) === nm(.6 * 1000 * Math.pow(1.75, 4)), AUF.stadtKosten('wall', 5).h === niceRound(Math.round(.3 * 1000 * Math.pow(1.75, 4) * .5))];   // (30 % der Burg gleicher Stufe)
     o.kiste = [CRATE_GEM_COST, (document.querySelector('[data-const="CRATE_GEM_COST"]') || {}).textContent];
     o.bund = BUND.KOSTEN;
-    o.belohnung = [levelRewardTroops(30), levelRewardCoins(30), levelRewardTroops(2)];
+    o.belohnung = [levelRewardTroops(30), levelRewardCoins(30), levelRewardTroops(2), stufenTruppenMass(30), [2, 5, 10, 20, 30, 40].map(levelRewardTroops)];
     o.ep = kampfEp(2, 10, 2, 2) === Math.ceil(xpNeededForLevel(10) * KAMPF_EP_ANTEIL);   // 2 besiegte Krieger zählen wie vorher 3.600
     o.lager = [barbTroopsOf(1), barbTroopsOf(10)];
     o.krankenhaus = [hospitalPlatz(1), hospitalPlatz(10)];
@@ -61,7 +61,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.gebaeude.every(Boolean), 'Gebäude (Mauer 5): Münzen × 1.000 ÷ 1.800, Holz in RoK-Größe', r.gebaeude);
   ok(r.kiste[0] === 150 && r.kiste[1] === '150', 'Ausrüstungskiste kostet 150 Edelsteine (auch der Knopf)', r.kiste);
   ok(r.bund === 20000, 'Bündnis gründen: 30.000 × 1.000 ÷ 1.800 auf 10.000 gerundet = 20.000 Münzen', r.bund);
-  ok(r.belohnung[0] === 1100 && r.belohnung[1] === 250000 && r.belohnung[2] === 10, 'Stufen-Belohnung Stufe 30: Truppen ÷ 1.800, Münzen × 1.000 ÷ 1.800, Truppen nie unter 10', r.belohnung);
+  ok(r.belohnung[0] === 21000 && r.belohnung[1] === 250000 && r.belohnung[2] === 410 && r.belohnung[3] === 1100, 'Stufen-Belohnung (Alexander 8.10.): Truppen = 1 Tag Ertrag einer Basis der Stufe (Stufe 2: 410, Stufe 30: 21.000), Münzen Stufe 30: 250.000; Gefolge/Funde-Maß bleibt (1.100)', r.belohnung);
+  ok(r.belohnung[4].every((x, i, a) => !i || x > a[i - 1]) && r.belohnung[4][0] / 5000 >= .05 && r.belohnung[4][0] / 5000 <= .1, 'Stufen-Truppen wachsen mit der Stufe, Stufe 2 ≈ 5–10 % der 5.000 Start-Truppen', r.belohnung[4]);
   ok(r.ep, 'EP: ein besiegter Krieger zählt wie vorher 1.800 (Stufen gleich schnell)');
   ok(r.lager[0] === 500 && r.lager[1] === 12000, 'Barbaren-Lager Stufe 1 / 10: 500 / 12.000 Krieger (7.10.)', r.lager);
   ok(r.krankenhaus[0] === 556 && r.krankenhaus[1] > 10000, 'Krankenhaus-Platz ÷ 1800', r.krankenhaus);

@@ -1,5 +1,6 @@
 // Anfängerschutz auch in der Vorschau ohne Server (Alexander 7.10., Entscheidung B): beim frischen Start ist der Spieler geschützt –
 // kein Mitspieler späht ihn aus oder greift ihn an; '0' im Spielstand schaltet ihn ab (so machen es Tests mit frühen Angriffen).
+// Start-Münzen (Alexander 8.10.): 10.000 für neue Spieler und Mitspieler.
 //   node tests/browser/neuling_vorschau_test.js <vorschau>
 const { chromium, devices } = require('playwright'), path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 300) : ''));
@@ -17,6 +18,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(s.spaeher === 0 && s.angriffe === 0, 'kein Mitspieler späht oder greift den Neuling an', s);
   const aus = await p.evaluate(() => { store.set('openWaterNeulingBis', '0'); return neulingAktiv('player'); });
   ok(aus === false, "Tests: '0' schaltet den Schutz ab", aus);
+  const m = await p.evaluate(() => ({ coins, bots: BOT_DEFS.filter(d => !d.mensch && botOwnedIslands[d.id].size).map(d => botCoins[d.id]) }));
+  ok(m.coins >= 10000 && m.coins < 12000, 'neuer Spieler startet mit 10.000 Münzen (Alexander 8.10.)', m.coins);
+  ok(m.bots.length && m.bots.filter(c => c >= 5000).length >= m.bots.length * .8, 'Mitspieler starten auch mit 10.000 Münzen (fast alle haben noch über 5.000)', m.bots.slice(0, 12));
   ok(!fe.length, 'keine Skriptfehler', fe.slice(0, 3));
   await b.close();
 })();

@@ -5,6 +5,7 @@
 //    kostet 500 Edelsteine, die Basis steht danach dort (Truppen bleiben), zu wenig Edelsteine: nichts passiert
 // C) Markierung → Wegmarken-Fenster, Truppen hierher → Armee-Fenster (bestehende Funktionen)
 // D) Weltrechner: Befehl „teleport“ nur für echte Spieler, Gratis nur einmal im Anfängerschutz; neue Saison: alle Basen zurück
+// E) Hauptstadt-Fenster: „Teleportieren“ führt zur Auswahl auf der Karte – Verlegen in einen eigenen Turm (50 Edelsteine) gibt es nicht mehr
 // Bilder (Menü, nach dem Teleport) nur, wenn ein Ordner als 2. Argument kommt.
 //   node tests/browser/teleport_test.js <vorschau> [bilder]
 const { chromium, devices } = require('playwright');
@@ -108,5 +109,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(!d.fehlt && d.mitspieler && d.gratis && d.zweimal && d.kaputt && d.selbst && d.welt, 'Weltrechner: nur echte Spieler, Gratis einmal, kaputte und eigene Stelle abgelehnt, steht im Welt-Teil', d);
   ok(d.zurueck, 'ohne Eintrag (neue Saison): jede Basis wieder an ihrem Platz', d);
+  // E) Alexander 8.10.: kein Verlegen in einen eigenen Turm mehr – der Knopf im Hauptstadt-Fenster führt zum Teleport auf der Karte
+  const e = await p.evaluate(() => { const g0 = gems, cap = playerIslandId, tr = islandTroops[cap]; let hinweis = ''; const fh = flashHint; flashHint = t => { hinweis = String(t); };
+    openIslandPopup(islandById[cap]); const k = document.getElementById('teleportBtn'), o = { sicht: k.style.display !== 'none', text: k.textContent.trim() };
+    k.click(); flashHint = fh;
+    return Object.assign(o, { hinweis, zu: !isPanelOpen(popup), gems: g0 - gems, cap: playerIslandId === cap && islandTroops[cap] === tr,
+      alt: ['teleportCapital', 'teleportMode', 'teleportBis'].filter(n => typeof window[n] !== 'undefined'), befehl: !!(WELT.BEFEHLE && WELT.BEFEHLE.hauptstadt) }); });
+  ok(e.sicht && /^Teleportieren/.test(e.text) && !/Verlegen/.test(e.text), 'Hauptstadt-Fenster: Knopf „Teleportieren“ (kein „Verlegen“ mehr)', e);
+  ok(e.zu && /freie Stelle/.test(e.hinweis) && /Teleportieren/.test(e.hinweis) && e.gems === 0 && e.cap, 'Tipp: Fenster zu, Hinweis auf die Teleport-Auswahl der Karte – nichts bezahlt, Hauptstadt bleibt', e);
+  ok(!e.alt.length && !e.befehl, 'Verlegen für 50 Edelsteine ist weg (kein teleportCapital/teleportMode, kein Weltrechner-Befehl „hauptstadt“)', e);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
