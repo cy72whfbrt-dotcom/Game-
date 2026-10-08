@@ -50,7 +50,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       st.ps.prem = false; passEndOf = n => Date.now() + 3 * 864e5; out.zielSpaet = botSparZiel(Y, st);
       passEndOf = pe;
       // (d) Stern dringend: trotz Spar-Ziel aus der Rücklage 50
-      st.ps.prem = true; st.gems = 400; const g = Object.values(st.gear).find(x => x); if (g) g.st = 0; st.city.levels.forge = Math.max(1, st.city.levels.forge || 0);
+      st.ps.prem = true; st.gems = 400; if (!Object.values(st.gear).some(x => x)) st.gear.weapon = { r: 1, lvl: 1, st: 0 };   // (Ausrüstung kommt nicht mehr aus dem Lager – zur Not eine hinlegen)
+      const g = Object.values(st.gear).find(x => x); if (g) g.st = 0; st.city.levels.forge = Math.max(1, st.city.levels.forge || 0);
       const ziel = botSparZiel(Y, st); botShop(Y); out.d = { ziel, stern: g ? g.st : -1, gems: st.gems };
     } finally { Math.random = rnd; passEndOf = pe; }
     return out;

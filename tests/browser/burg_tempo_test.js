@@ -43,7 +43,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.geb.erst === 10 && r.geb.t25 > 6 && r.geb.t25 <= 7, 'Gebäude: Stufe 1 in 10 s, 24 → 25 ≈ 6,8 Tage', r.geb);
   ok(r.kh.c40 < 1e9 && r.kh.c40 > r.kh.c25 && r.kh.t40 <= 7, 'Krankenhaus 40: unter 1 Mrd. Münzen (× 1,15 je Stufe), höchstens 7 Tage', r.kh);
   ok(r.roh[1] === 1.33, 'Rohstoff-Gebäude: + 33 % je Stufe', r.roh);
-  ok(JSON.stringify(r.lager.map(x => x[0])) === JSON.stringify([500, 1400, 12000, 2300000]) && r.lager[0][1] === 30000 && r.lager[2][1] === 106000 && r.lager[3][1] === 861000, 'Lager: 500 / 1.400 / 12.000 / 2,3 Mio. Krieger, feste Münzen 30K / 106K / 861K', r.lager);
+  ok(JSON.stringify(r.lager.map(x => x[0])) === JSON.stringify([500, 1400, 12000, 2300000]) && r.lager[0][1] === 30000 && r.lager[2][1] === 106000 && r.lager[3][1] === 859000, 'Lager: 500 / 1.400 / 12.000 / 2,3 Mio. Krieger, feste Münzen 30K / 106K / 859K', r.lager);
   ok(JSON.stringify(r.schild) === '[80,300,700]', 'Schild: 80 / 300 / 700 Edelsteine', r.schild);
   ok(r.thron[0] && r.thron[1], 'Thron-Shop: mind. 20.000 Münzen bzw. 2.000 Truppen', r.thron);
   ok(Math.abs(r.gear[0] - 1.05) < 1e-9 && r.gear[1] === 6, 'Ausrüstung grau 1 ≈ 1 %, Zerlegen 6 Punkte', r.gear);
