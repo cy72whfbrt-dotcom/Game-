@@ -14,7 +14,7 @@ Erst lesen: `CLAUDE.md`, dann `doku/INDEX.md`. Offene Punkte: `doku/merkliste.md
 1. Zahlen + Thron-Shop zusammen mit Alexander (eigene Frage-Runde, viel zu ändern).
 2. Wichtig später: Hauptbuch zählt keine Bauarbeiter-Plätze (Schummel-Lücke).
 3. Später: Namensschild-Skins, kompletter Code-Check / alter Code raus.
-4. Hochladen + Welt-Neustart erst auf Alexanders Ja (neue Karte braucht neue Welt), danach `werkzeuge/nach_hochladen.sh`,
+4. Hochladen + Welt-Neustart nur wenn Alexander es sagt (nicht danach fragen) (neue Karte braucht neue Welt), danach `werkzeuge/nach_hochladen.sh`,
    Live-Wächter-Routine trig_01Qoa3CR2p5twrXZEv5Uvahh aktivieren, alte `baukunst.js` auf dem Server löschen.
 
 ## Offene Fragen an Alexander

@@ -111,7 +111,7 @@ jede Änderung in die passende Themen-Datei eintragen (aktueller Stand, keine Ge
   unvergeben. Nach 30 Min. ohne Ergebnis Zwischenstand holen und antreiben. Live-Seite (Artifact „Agenten-Firma“,
   claude.ai/artifact/UDzcMoamcZSv1qugqKXymm) bei jeder Vergabe/jedem Abschluss aktualisieren (Regelwerk steht dort); sie
   zeigt bei jedem Agenten den letzten Schritt aus seiner Statusdatei, wer >10 Min. nichts meldet, steht dort rot.
-- Einmal am Ende komplett testen (`tests/komplett.sh`), dann Alexander wegen Hochladen fragen.
+- Einmal am Ende komplett testen (`tests/komplett.sh`) und melden „fertig + geprüft“ (nicht nach Hochladen fragen).
 - Spieltester schon auf dem ersten fertigen Branch einer Oberflächen-Aufgabe laufen lassen (parallel), nicht erst vor dem Endprüfer.
   Bei Netz/Server-Änderungen prüft ein Sucher Fristen/Zeitgrenzen gegen langsame Antworten (Hoster-Last).
 - Programmierer/Schnellprüfer: Server-Tests nur `betroffen` statt der ganzen Reihe; vor dem Commit `werkzeuge/vor_commit.sh`.
@@ -143,8 +143,8 @@ jede Änderung in die passende Themen-Datei eintragen (aktueller Stand, keine Ge
   Agenten-Ergebnisse, nächste Schritte, offene Fragen; Erledigtes steht in der Themen-Datei) und pushen. Neuer Chat startet mit „Lies doku/uebergabe.md und mach weiter“.
 
 ## Regeln von Alexander
-- Code zuerst auf GitHub (Branch `claude/neues-projekt-8agldl`), **vor jedem Hochladen Alexander fragen**
-  (`./hochladen.sh`, nur nach seinem Ja). Nach jedem Hochladen: `werkzeuge/nach_hochladen.sh` (Live-Server, nur lesend →
+- Code zuerst auf GitHub (Branch `claude/neues-projekt-8agldl`). **Hochladen nur, wenn Alexander es sagt** – NICHT danach
+  fragen (Alexander 8.10.: „ich sage es dir dann schon“). `./hochladen.sh` nur auf seinen Auftrag. Nach jedem Hochladen: `werkzeuge/nach_hochladen.sh` (Live-Server, nur lesend →
   „LIVE OK“ oder Fehlerliste).
 - Keine neuen Spielregeln erfinden – echte Fehler beheben. Bots heißen nie „Bot“/„KI“.
 - Keine Passwörter in Dateien oder Commits (nur Umgebungsvariablen).
