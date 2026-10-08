@@ -135,7 +135,7 @@ function cityFinishBuild(announce, id) {
     const def = cityDef(b.id);
     c.levels[b.id] = b.to;
     const to = b.to; c.builds = c.builds.filter(x => x !== b);
-    saveCity(); evPunkte('bau', 'player', 2 + to);   // Wochen-Event „Bauherr“ (wie eine Basis; beim Weltrechner zählt es das Hauptbuch)
+    saveCity(); evPunkte('bau', 'player', WO_PKT.bauStufe * to);   // Wochen-Event „Bauherr“ (wie eine Basis; beim Weltrechner zählt es das Hauptbuch)
     if (announce) flashHint(def.name + ' ist fertig – jetzt ' + (b.id === 'keep' ? 'Burg-Stufe ' : 'Stufe ') + to + '.', 3000);
     if (cityOpenId) renderCitySheet();
     updateCityBuilder();

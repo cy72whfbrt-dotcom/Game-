@@ -31,7 +31,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mb-chip .icon{width:14px;height:14px;flex:none;color:var(--gold-200)} .mb-chip .icon.mb-gem{width:12px;height:12px;margin-left:-3px;color:var(--res-gem)}
 .mb-chip b{color:var(--tx-1);font-variant-numeric:tabular-nums} .mb-chip i{font-style:normal;color:var(--tx-3);font-variant-numeric:tabular-nums}
 .mb-chip.is-tour{border-color:rgba(176,120,255,.55);background:linear-gradient(90deg,rgba(110,55,190,.7),rgba(16,12,24,.85))} .mb-chip.is-tour .icon{color:#f2c75c} .mb-chip.is-tour i{color:#d9c6ff}
-.mb-chip.is-drache{border-color:rgba(255,140,70,.6);background:linear-gradient(90deg,rgba(170,50,20,.78),rgba(22,10,8,.88))} .mb-chip.is-drache .icon{color:#ffc46a} .mb-chip.is-drache i{color:#ffd9c0}
 .mb-chip.is-warn{border-color:rgba(225,72,60,.6);background:linear-gradient(90deg,rgba(150,30,30,.75),rgba(20,12,12,.88));color:#ffd9d3} .mb-chip.is-warn > .icon:first-child{color:#ffb3aa}
 .mb-chip > span{overflow:hidden;text-overflow:ellipsis}
 .mb-chip .mb-hol{position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:#e5372c;border:1.5px solid #fff;box-shadow:0 0 4px rgba(229,55,44,.8)}   /* Event-Chip: im Event liegt eine Belohnung */
@@ -111,13 +110,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .throne-status .ts-row .icon{width:15px;height:15px;color:#f2c75c;flex:none}
 .throne-status .ts-row b{margin-left:auto;color:var(--tx-1);font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
 .throne-status .ts-row b.warn{color:#ff9d8f}
-.tour-rules b{color:var(--tx-1);font-weight:700} .tour-rules span span{display:block} .tour-rules{display:grid;gap:5px} .tour-rules span{display:flex;align-items:center;gap:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)} .tour-rules .icon{width:15px;height:15px;flex:none;color:#c9a2ff}
-.tour-prizes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
-.tour-prize{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22);text-align:center;min-width:0}
-.tour-prize b{font:700 var(--fs-12)/1.1 var(--font-display);color:var(--gold-100)} .tour-prize span{display:flex;align-items:center;gap:3px;font:600 10.5px/1.1 var(--font-ui);color:var(--tx-2);white-space:nowrap}
-.tour-prize .icon{width:11px;height:11px;flex:none;color:var(--res-gem)} .tour-prize span + span .icon{color:#c9a2ff}
-.tour-prize em{font:700 9px/1.1 var(--font-ui);font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:#e6d8ff}
-.tour-prize.is-1{border-color:rgba(242,199,92,.5);background:linear-gradient(180deg,rgba(160,92,235,.25),rgba(242,199,92,.08))}
 .mail-tabs .tab .badge{position:absolute;top:4px;right:8px}
 .mail-pane[hidden]{display:none} .mail-pane{display:grid;gap:10px}
 .mail-intro{font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
@@ -145,12 +137,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .rp-grid > div{display:flex;justify-content:space-between;gap:8px;font:500 var(--fs-12)/1.6 var(--font-ui);color:var(--tx-2);border-bottom:1px solid var(--line-1)} .rp-grid b{color:var(--tx-1);font-variant-numeric:tabular-nums}
 .rp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px} .rp-actions .btn{justify-content:center}
 .who-link{background:none;border:0;padding:6px 2px;margin:-6px -2px;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px;cursor:pointer}
-.chain{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.02)}
-.chain-links{display:grid;grid-template-columns:repeat(7,1fr) 1.3fr;gap:5px;align-items:center}
-.chain-link{height:30px;border-radius:8px;display:grid;place-items:center;border:1px solid var(--line-2);background:rgba(0,0,0,.2);font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-3)}
-.chain-link.on{border-color:#8fcf7a;background:rgba(143,207,122,.16);color:#8fcf7a} .chain-link .icon{width:14px;height:14px}
-.chain-chest{height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line-2);color:var(--tx-3);background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.06),rgba(0,0,0,.2))}
-.chain-chest .icon{width:20px;height:20px} .chain-chest.on{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420);box-shadow:0 0 14px rgba(242,210,122,.45)}
 .ach-sum{display:flex;flex-direction:column;gap:6px;font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .ach-sum b{color:var(--tx-1)}
 .ach-sum-bar,.ach-bar{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .ach-sum-bar i,.ach-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
@@ -248,9 +234,8 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 /* Ereignisse (Paket B) */
 .ev-body{display:flex;flex-direction:column;gap:8px}
 .ev-card .field-lines b{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap} .ev-card .field-lines .icon{width:13px;height:13px;color:var(--gold-300)}
-.ev-card.is-tour{border-color:rgba(176,120,255,.4);background:rgba(160,92,235,.08)} .ev-card.is-warn{border-color:rgba(225,72,60,.55);background:rgba(150,30,30,.12)} .ev-card.is-drache{border-color:rgba(255,140,70,.55);background:rgba(170,60,20,.12)}
+.ev-card.is-tour{border-color:rgba(176,120,255,.4);background:rgba(160,92,235,.08)} .ev-card.is-warn{border-color:rgba(225,72,60,.55);background:rgba(150,30,30,.12)}
 .ev-card .barb-ct{flex-wrap:wrap;row-gap:2px} .ev-card .barb-ct > b{white-space:nowrap} .ev-card .barb-ct small{margin-left:auto;text-align:right} .ev-card .barb-ct small b{font-variant-numeric:tabular-nums;color:var(--tx-1)} .ev-rot{color:#ff8a7a} .ev-prizes3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.ev-plan b{display:flex;align-items:center;justify-content:flex-end;gap:5px} .ev-plan .icon{width:13px;height:13px;color:#c9a2ff}
 .barb-rank .who-link{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
 .barb-card{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:var(--r-sm);background:rgba(255,255,255,.03);border:1px solid var(--line-1)}
 .barb-ct{display:flex;align-items:baseline;justify-content:space-between;gap:8px} .barb-ct b{display:inline-flex;align-items:center;gap:6px;font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)} .barb-ct .icon{width:15px;height:15px;color:var(--gold-300)} .barb-ct small{font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-200)}
@@ -321,7 +306,7 @@ body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapContro
 body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
 body[data-anl-puls="stadt"] #cityNavBtn > .icon,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
 body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn > .icon,
-body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus3],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
+body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus3],[data-bonus],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
   {animation:anl-puls 1.4s ease-out infinite}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }

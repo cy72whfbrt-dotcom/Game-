@@ -1,4 +1,4 @@
-// Langzeit (6.10.): neue Erfolge für die Hauptstadt (Burg 5–25, Forschung, Drache, Invasion, Saison-Top-10), gesenkte Erfolge
+// Langzeit (6.10.): neue Erfolge für die Hauptstadt (Burg 5–25, Forschung, Saison-Top-10), gesenkte Erfolge
 // (Großreich 100 statt 150), dieselben Zahlen für Mitspieler (BOT_GOAL_VAL) – Drache/Invasion zählen beim Auszahlen.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 300) : ''));
@@ -9,7 +9,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.waitForFunction(() => typeof AUF !== 'undefined' && AUF && typeof BOT_DEFS !== 'undefined' && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
   const r = await p.evaluate(() => {
     const A = id => ACHIEVEMENTS.find(a => a.id === id), out = {};
-    out.neu = ['burg5', 'burg10', 'burg15', 'burg20', 'burg25', 'fo10', 'fo50', 'foall', 'drache1', 'drache5', 'inv1', 'inv10', 'saison1', 'saison3'].filter(id => !A(id));
+    out.neu = ['burg5', 'burg10', 'burg15', 'burg20', 'burg25', 'fo10', 'fo50', 'foall', 'saison1', 'saison3'].filter(id => !A(id));
     out.gems = [A('burg5').gems, A('burg25').gems, A('foall').gems];
     out.ziele = { emp: A('emp150').goal, base: A('base100').goal, cap: A('cap1000').goal, foall: A('foall').goal, foGesamt: AUF.foGesamt() };
     // Burg und Labor (deine Stadt)
@@ -17,16 +17,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     out.burg = [achDone(A('burg5')), achDone(A('burg10')), achDone(A('burg15'))];
     out.fo = [achVal(A('fo10')), achDone(A('fo10')), achDone(A('fo50'))];
     const g0 = gems; out.abgeholt = claimAch(A('burg5')); out.gemsDazu = gems - g0; out.zweimal = claimAch(A('burg5'));
-    // Drache besiegt / entkommen, Invasion mit Preis – du und ein Mitspieler
-    const bot = BOT_DEFS.find(d => !d.mensch), st0 = (loadBotState()[bot.id].stats || {}).drache || 0;
-    evState.dr = { start: Date.now() - 1000, end: Date.now() + 1e6, name: 'Test', hp: 0, max: 1, dmg: { player: 5, [bot.id]: 3 }, hits: {}, fell: Date.now(), paid: false };
-    drAuszahlen(true);
-    evState.dr = { start: Date.now() - 2000, end: Date.now() + 1e6, name: 'Test2', hp: 5, max: 9, dmg: { player: 1 }, hits: {}, fell: 0, paid: false };
-    drAuszahlen(false);   // entkommen: zählt nicht als besiegt
-    out.drache = [achStat('drache'), ((loadBotState()[bot.id].stats || {}).drache || 0) - st0, achDone(A('drache1')), botGoalVal(bot.id, 'drache') >= 1];
-    evState.inv = { start: Date.now() - 1000, end: Date.now(), welle: 6, n: 0, armies: [], pts: { player: 50, [bot.id]: 3 }, wehr: {}, paid: false };
-    invAuszahlen();
-    out.inv = [achStat('inv'), botGoalVal(bot.id, 'inv'), achDone(A('inv1'))];   // (Mitspieler mit 3 Punkten: kein Preis → zählt nicht)
+    const bot = BOT_DEFS.find(d => !d.mensch);
+    out.altWeg = ACHIEVEMENTS.filter(x => /^(drache|inv)/.test(x.id)).length;   // Drache/Invasion gibt es nicht mehr
     // Saison-Titel (die besten 10)
     saisonTitelGeben('s2p4'); out.saison = [achVal(A('saison1')), achDone(A('saison1'))];
     const bs = loadBotState()[bot.id]; bs.sTitel = ['s1p2', 's2p1']; bs.titles = ['s2p1', 'king']; out.saisonBot = botGoalVal(bot.id, 'saisonTop');
@@ -46,8 +38,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.burg.join() === 'true,true,false', 'Burg 10: Burg 5 und 10 erreicht, 15 nicht', r.burg);
   ok(r.fo[0] === 11 && r.fo[1] && !r.fo[2], 'Forschung: 11 Stufen → „Forscher“ erreicht', r.fo);
   ok(r.abgeholt === 30 && r.gemsDazu === 30 && r.zweimal === 0, 'Burgvogt abgeholt: +30 Edelsteine, nur einmal', r);
-  ok(r.drache[0] === 1 && r.drache[1] === 1 && r.drache[2] && r.drache[3], 'Drache besiegt zählt (du + Mitspieler), entkommen nicht', r.drache);
-  ok(r.inv[0] === 1 && r.inv[1] === 0 && r.inv[2], 'Invasion: nur mit Preis', r.inv);
+  ok(r.altWeg === 0, 'Erfolge für Drache/Invasion sind raus (Events 8.10.)', r.altWeg);
   ok(r.saison[0] === 1 && r.saison[1] && r.saisonBot === 2, 'Saison-Titel zählen (du und Mitspieler, jeder einmal)', { du: r.saison, bot: r.saisonBot });
   ok(r.bot[0] === 15 && r.bot[1] === 13 && r.botHat === 4, 'Mitspieler: gleiche Burg-/Forschungs-Erfolge', { werte: r.bot, abgeholt: r.botHat });
   ok(r.text.burg && !r.text.schlecht, 'Erfolge-Fenster zeigt die Hauptstadt-Erfolge sauber', r.text);

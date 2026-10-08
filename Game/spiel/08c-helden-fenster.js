@@ -131,7 +131,7 @@ function heroGrantShards(who, n, id, minR) {        // n shards for one hero (a 
     const s = heroSt(who, h.id); s.sh += n; heroSave(who); return h;
 }
 function heroDoUnlock(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || s.own || s.sh < HERO_UNLOCK[h.r] || !heroHalle(who)) return false; s.sh -= HERO_UNLOCK[h.r]; s.own = true; s.q = 0; heroSave(who); return true; }
-function heroDoStep(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !heroOwned(who, id) || s.q >= HERO_MAXQ) return false; const c = heroStepCost(h, s.q); if (s.sh < c) return false; s.sh -= c; s.q++; heroSave(who); return true; }
+function heroDoStep(who, id) { const h = heroById(id), s = heroSt(who, id); if (!h || !s || !heroOwned(who, id) || s.q >= HERO_MAXQ) return false; const c = heroStepCost(h, s.q); if (s.sh < c) return false; s.sh -= c; s.q++; heroSave(who); evPunkte('held', who, WO_PKT.held); return true; }   // (Wochen-Event Helden-Tag)
 function heroDoSwap(who, from, to, n) {              // übrige Splitter eines Helden mit 5 Sternen → Splitter für einen anderen (1:1, nicht für einen mit 5 Sternen)
     const a = heroSt(who, from), b = heroSt(who, to); n = Math.floor(n);
     if (!a || !b || from === to || !a.own || a.q < HERO_MAXQ || (b.own && b.q >= HERO_MAXQ) || !(n > 0) || n > a.sh) return false;

@@ -744,8 +744,6 @@ function botThink(bot) {
     if (botKeepsShield(bot, Date.now())) { if (Math.random() < .3 && (botGatherField(bot, true) || botBarbHunt(bot))) botTapped(bot); return; }   // under their own shield: no attacks, only gathering and camps
     if (Math.random() < .5 && botThroneHold(bot)) { botTapped(bot); saveBotState(); return; }   // just took the throne: fill it up before the next one comes
     if (AUF && Math.random() < .25 && AUF.botRohWunsch(bot.id) && botGatherField(bot)) { botTapped(bot); saveBotState(); return; }   // Holz/Stein/Eisen fehlen für die Burg: Sammler los (Paket D)
-    if (invAktiv() && Math.random() < .5 && botInvasion(bot)) { botTapped(bot); saveBotState(); return; }   // Barbaren-Invasion: sich verteidigen, den Nachbarn helfen
-    if (drAktiv() && Math.random() < .3 && botDrache(bot)) { botTapped(bot); saveBotState(); return; }      // der Drache am Sonntagabend
     if (Math.random() < .1 && (botBarbHunt(bot) || botDayBoss(bot))) { botTapped(bot); saveBotState(); return; }   // now and then a camp or a strike at the daily boss (that is this move's order)
     const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: a hero only leads one, so he's a bonus, not part of the plan
     const shielded = playerShielded(), now = Date.now(), shOwn = shieldedOwners(now);
@@ -996,7 +994,7 @@ function botBld(botId, id) { const b = loadBotState()[botId]; return b ? (b.city
 
 function botCityFinish(bot, now) {                        // a build is done when its time is up - online or not, like yours
     const c = loadBotState()[bot.id].city, done = c.builds.filter(x => now >= x.endsAt); if (!done.length) return;
-    for (const x of done) { c.levels[x.id] = x.to; evPunkte('bau', bot.id, 2 + x.to); } c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();   // (Wochen-Event Bauherr: auch die Stadt)
+    for (const x of done) { c.levels[x.id] = x.to; evPunkte('bau', bot.id, WO_PKT.bauStufe * x.to); } c.builds = c.builds.filter(x => now < x.endsAt); saveBotState();   // (Wochen-Event Bauherr: auch die Stadt)
 }
 
 const BOT_GEMS_REST = 50;                                 // a small rest stays when they buy (Sterne, Schilde: dringend – nur diese Rücklage)
@@ -1079,9 +1077,8 @@ const BOT_HERO_LIKES = { raider: ['atk', 'strongAtk', 'neutralAtk', 'fieldAtk', 
 
 function botHeroCare(bot) {                               // like a player in the Heldenhalle: the day's shards, unlock, quarter stars, points into what suits their style
     const b = loadBotState()[bot.id], day = todayKey(); if (!b || !b.hs) return;
-    if (b.hsDay !== day) { const first = !b.hsDay; b.hsDay = day;               // the daily tasks - on the days they play enough to finish them: shards + gems like yours (alle 6: questGemsTag, Wochenkette 150)
-        if (!first && Math.random() < Math.min(.95, (BOT_STYLES[bot.style].act || .6) + .2)) { heroGrantShards(bot.id, HERO_SHARDS_DAY); b.gems += questGemsTag(); b.hsDays = (b.hsDays || 0) + 1;
-            if (b.hsDays % 7 === 0) { heroGrantShards(bot.id, HERO_SHARDS_CHAIN); b.gems += CHAIN_REWARD.gems; } } }
+    if (b.hsDay !== day) { const first = !b.hsDay; b.hsDay = day;               // the daily tasks - on the days they play enough to finish them: shards + gems like yours (alle 6: questGemsTag)
+        if (!first && Math.random() < Math.min(.95, (BOT_STYLES[bot.style].act || .6) + .2)) { heroGrantShards(bot.id, HERO_SHARDS_DAY); b.gems += questGemsTag(); } }
     if (b.hcDay !== day && (b.hcDay = day) && Math.random() < .3) {               // a hero chest from the shop now and then (at most one a day), only from gems they can spare - like the player
         const c = [...HERO_CHESTS].reverse().find(x => botGemsFrei(bot, b) >= x.gems * 3 + BOT_GEMS_REST); if (c && heroChestOpen(bot.id, c).length) { b.gems -= c.gems; b.hcN = (b.hcN || 0) + 1; } }
     const like = botHeroLikes(bot), rank = t => { const i = like.indexOf(t); return i < 0 ? 99 : i; }, now = Date.now();
@@ -1216,7 +1213,7 @@ function botConsiderUpgrade(bot) {
     let budget = botCoins[bot.id] * st.spend, did = 0;
     for (const c of cand) {
         if (did >= 25 || c.cost > budget) break;
-        budget -= c.cost; botCoins[bot.id] -= c.cost; islandLevels[c.id] = (islandLevels[c.id] || 1) + 1; did++; evPunkte('bau', bot.id, 2 + islandLevels[c.id]);   // (Wochen-Event Bauherr)
+        budget -= c.cost; botCoins[bot.id] -= c.cost; islandLevels[c.id] = (islandLevels[c.id] || 1) + 1; did++; evPunkte('bau', bot.id, WO_PKT.bauStufe * islandLevels[c.id]);   // (Wochen-Event Bauherr)
     }
     if (did) saveGame();
 }
@@ -1674,7 +1671,7 @@ const BOT_GOAL_VAL = {
     baseTop: (b, st, id) => goalBaseTop(id), gates: (b, st, id) => goalGates(id), tolls: (b, st) => st.tolls, tollCoins: (b, st) => st.tollCoins,
     armyWins: (b, st) => st.armyWins, heroes: (b, st, id) => goalHeroes(id), heroStars: (b, st, id) => goalHeroStars(id), heroFires: (b, st) => st.heroFires,
     healed: (b, st) => st.healed, shields: (b, st) => st.shields, teleports: (b, st) => st.teleports, barb: (b, st) => st.barb, dboss: (b, st) => st.dboss,
-    burg: (b, st, id) => AUF ? AUF.burgStufe(id) : b.city.levels.keep || 1, foStufen: (b, st, id) => AUF ? AUF.foSumme(id) : 0, drache: (b, st) => st.drache, inv: (b, st) => st.inv,
+    burg: (b, st, id) => AUF ? AUF.burgStufe(id) : b.city.levels.keep || 1, foStufen: (b, st, id) => AUF ? AUF.foSumme(id) : 0,
     saisonTop: b => new Set([...(b.sTitel || []), ...(b.titles || [])].filter(saisonTitel)).size
 };
 function botGoalVal(botId, k) { const b = loadBotState()[botId], f = BOT_GOAL_VAL[k]; return b && f ? f(b, b.stats || {}, botId) || 0 : 0; }
@@ -1953,40 +1950,11 @@ function botBarbHunt(bot) {                               // the strongest camp 
     const n = Math.min(have, Math.ceil(pick.t * (1.3 + Math.random() * .4) / fa));
     const hp = heroPickPair(bot.id, null, null, n); return barbSend(bot.id, base, 'c', pick.id, n, hp[0], hp[1]);
 }
-// Events (Paket B) – mit denselben Regeln wie du: Verstärkung schicken, Barbaren-Armeen abfangen, den Drachen angreifen
-function botInvasion(bot) {
-    const I = invAktiv(), own = botOwnedIslands[bot.id]; if (!I || !I.armies.length || !own || !own.size) return false;
-    const now = Date.now(), fa = barbFa(bot.id), thr = botThreatened(bot.id);
-    for (const a of I.armies) {                           // 1) eine eigene Basis ist das Ziel: Verstärkung von einer Basis auf derselben Insel, die rechtzeitig ankommt
-        if (!own.has(a.tid) || pendingSends.some(x => x.senderBotId === bot.id && x.toId === a.tid && !x.back)) continue;
-        const isl = islandById[a.tid], need = a.t * 1.15 - effectiveTroops(isl) - effectiveDefense(isl); if (need <= 0) continue;
-        let best = null; for (const id of own) { if (id === a.tid || thr.has(id)) continue; const s = islandById[id]; if (s.landmassId !== isl.landmassId) continue;
-            const n = Math.floor((islandTroops[id] || 0) * .6); if (n < need * .5 || now + travelDurationSeconds(s, isl, bot.id) * 1000 > a.at1 - 5000) continue; if (!best || n > best.n) best = { id, n }; }
-        if (best) { const k = pendingSends.length; launchSend(best.id, a.tid, bot.id, Math.min(best.n, Math.ceil(need * 1.3))); if (pendingSends.length > k) return true; }
-    }
-    if (barbOut(bot.id, 'i') >= 2) return false;          // 2) Armeen in der Nähe abfangen – auch die auf die Nachbarn (höchstens 2 Züge gleichzeitig, je Armee höchstens 2 Helfer)
-    for (const a of I.armies) {
-        if (barbMarches.filter(m => !m.back && m.k === 'i' && m.tid === a.id).length >= 2) continue;
-        const nNeed = Math.ceil(a.t * (1.25 + Math.random() * .3) / fa); let pick = null;
-        for (const id of own) { if (thr.has(id)) continue; const s = islandById[id]; if (s.landmassId !== a.lm) continue; const have = Math.floor((islandTroops[id] || 0) * .6);
-            if (have < nNeed || !invTreffpunkt(a, id, bot.id)) continue; if (!pick || have > pick.have) pick = { id, have }; }
-        if (pick) return barbSend(bot.id, pick.id, 'i', a.id, nNeed, heroPickBest(bot.id, null, null, nNeed));
-    }
-    return false;
-}
-function botDrache(bot) {                                 // ein paar Schläge über den Abend verteilt, mit einem Teil ihrer größten freien Basis
-    const D = drAktiv(); if (!D) return false;
-    const due = Math.min(DR_HITS, Math.ceil(DR_HITS * (Date.now() - D.start) / (D.end - D.start)) + 1);
-    if ((D.hits[bot.id] || 0) >= due || barbOut(bot.id, 'd')) return false;
-    const base = botBarbBase(bot); if (base === null) return false;
-    const have = islandTroops[base] || 0, n = Math.min(have, Math.max(Math.floor(have * (.15 + Math.random() * .2)), Math.ceil(evTruppenAlle(bot.id) * DR_ANTEIL * 1.05))); if (n < wirtK(1000)) return false;   // (mind. 10 % aller Truppen – sonst zählt der Treffer nicht, wie bei dir)
-    return barbSend(bot.id, base, 'd', null, n, heroPickBest(bot.id, null, null, n));
-}
-function botDayBoss(bot) {                                // the daily boss: a few strikes a day with a share of their biggest free base
+function botDayBoss(bot) {                                // the boss (nur donnerstags): a few strikes a day with a share of their biggest free base
     const d = dbossEnsure(), due = Math.min(dbossHitsMax(), Math.ceil(dbossHitsMax() * (1 - msToMidnight() / 864e5)));   // spread over the day (strikes not made yet are caught up): the boss falls in the evening, not in the first hour
     if (!d || d.hp <= 0 || barbRec(bot.id).h >= due || barbOut(bot.id, 'b') || Math.random() < .5) return false;
     const base = botBarbBase(bot); if (base === null) return false;
-    // (kein Nebel-Tor mehr: der Tagesboss ist für alle angekündigt, wie Drache und Kriegsherr – vorher griff nur an, wer seine Insel kannte: 1 von 150)
+    // (kein Nebel-Tor: der Tagesboss ist für alle angekündigt, wie der Kriegsherr)
     const n = Math.floor((islandTroops[base] || 0) * (.15 + Math.random() * .2)); if (n < wirtK(1000)) return false;
     const hp = heroPickPair(bot.id, null, null, n); return barbSend(bot.id, base, 'b', null, n, hp[0], hp[1]);
 }

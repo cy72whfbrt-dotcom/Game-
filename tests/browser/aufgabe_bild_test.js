@@ -1,4 +1,4 @@
-// Events/Bündnis/Shop mit Bildern (Gesamt-Blick 6.10.): je Ereignis ein gezeichnetes Bild-Banner mit Titel + Uhr, lange
+// Bündnis/Shop mit Bildern (Gesamt-Blick 6.10.): Bild-Banner mit Titel, lange
 // Erklärungen hinter „i“ (bleiben beim Neuzeichnen offen), leere Zustände mit Symbol + EINEM Knopf (Rally, Chat, Markt,
 // Schild-Vorrat), alle Knopf-Texte passen; am Desktop im Angriffs-Fenster auch die Zweitheld-Wahl.
 const { chromium, devices } = require('playwright');
@@ -13,28 +13,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } closeAllPopups(); });
     return { p, fe }; };
   const passt = '(el => !!el && el.scrollWidth <= el.clientWidth + 1 && el.getBoundingClientRect().right <= innerWidth)';
-  // 1) Handy: Events
+  // 1) Handy (die Ereignisse haben seit dem Wochen-Event 8.10. keine Banner mehr – Test wochenevent_test)
   const { p, fe } = await laden({ ...devices['iPhone 13'] });
-  const e = await p.evaluate(async () => {
-    const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};
-    for (const t of ['tour', 'inv', 'drache', 'boss']) {
-      openGoals(t); await warte(250);
-      const bn = document.querySelector('#eventBody .ev-banner'), r = bn && bn.getBoundingClientRect(), t0 = bn && bn.querySelector('.ev-banner-t'), svg = bn && bn.querySelector('svg.ev-bild');
-      o[t] = { da: !!svg, art: bn ? bn.className : '', h: r ? Math.round(r.height) : 0, drin: !!r && r.left >= 0 && r.right <= innerWidth, titel: t0 ? t0.innerText.split('\n')[0] : '',
-        uhr: !!(bn && bn.querySelector('[data-ev-bis]')) || t === 'boss', textDrin: !!t0 && t0.getBoundingClientRect().bottom <= r.bottom };
-    }
-    openGoals('inv'); await warte(250);
-    const d = document.querySelector('#eventBody details.ev-info'); o.zu = !!d && !d.open && !/Wellen, je 5/.test(document.getElementById('eventBody').innerText);
-    d.querySelector('summary').click(); await warte(100); o.auf = /Wellen, je 5/.test(document.getElementById('eventBody').innerText);
-    document.getElementById('eventBody')._lh = 'anders'; renderEvents(); await warte(50);   // neu gezeichnet: bleibt offen
-    const d2 = document.querySelector('#eventBody details.ev-info'); o.bleibt = !!d2 && d2.open;
-    d2.querySelector('summary').click(); await warte(50);
-    const ids = [...document.querySelectorAll('svg.ev-bild [id]')].map(x => x.id); o.idsEinzeln = ids.length > 0 && new Set(ids).size === ids.length;
-    closeAllPopups(); return o;
-  });
-  for (const t of ['tour', 'inv', 'drache', 'boss']) ok(e[t].da && e[t].h >= 80 && e[t].h <= 120 && e[t].drin && e[t].titel.length > 3 && e[t].uhr && e[t].textDrin, 'Events „' + t + '“: Bild-Banner (gezeichnet) mit Titel' + (t === 'boss' ? '' : ' und Uhr') + ' darauf, ganz im Bild', e[t]);
-  ok(e.zu && e.auf && e.bleibt, 'Invasion: Regeln hinter „i“ (zu), aufklappen zeigt sie, bleibt beim Neuzeichnen offen', { zu: e.zu, auf: e.auf, bleibt: e.bleibt });
-  ok(e.idsEinzeln, 'Banner-Verläufe mit eigenen Kennungen (keine doppelten ids)', e.idsEinzeln);
   // 2) Bündnis: Tempel-Banner, Chat leer, Rally leer mit Knopf zur Karte
   const g = await p.evaluate(async passt => { passt = eval(passt);
     const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};

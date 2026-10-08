@@ -212,7 +212,7 @@ function fieldArrive(m, now) {
         const baseId = own && own.has(m.homeId) ? m.homeId : m.who === 'player' ? rewardBaseId() : own && [...own][0];
         if (baseId !== undefined && baseId !== null) islandTroops[baseId] = (islandTroops[baseId] || 0) + m.troops;
         const load = Math.floor(m.load);
-        if (load > 0) evPunkte('sam', m.who, Math.max(1, 30 * load / f.cap));                              // Sammel-Rausch: ein volles Feld = 30 Punkte
+        if (load > 0) evPunkte('sam', m.who, load / WO_PKT.samJe);                                    // Wochen-Event Sammeln: 1 Punkt je 100 Rohstoffe
         const RK = FIELD_KINDS[f.kind].roh;                                   // Paket D: Holz, Stein, Eisen
         if (m.who === 'player') { if (RK) { if (load && AUF) AUF.rohDazu('player', { [RK]: load }); } else if (f.kind === 'gold') coins += load; else gems += load; if (load && !RK) warStat(f.kind === 'gold' ? 'fieldCoins' : 'fieldGems', load); if (load) { flashHint('Sammler zurück: +' + fmtNum(load) + ' ' + FIELD_KINDS[f.kind].what + ' aus ' + fArt(FIELD_KINDS[f.kind], 'dat') + '.', 3500); sfx(f.kind === 'gem' ? 'gem' : 'coin'); } updateHud(); saveGame(); saveProgression(); }
         else if (botCoins[m.who] !== undefined) { if (RK) { if (load && AUF) AUF.rohDazu(m.who, { [RK]: load }); } else if (f.kind === 'gold') botCoins[m.who] += load; else loadBotState()[m.who].gems += load; }
@@ -240,7 +240,7 @@ function fieldArrive(m, now) {
     const loserName = fieldWhoName(won ? o.who : m.who), winnerName = fieldWhoName(won ? m.who : o.who), oWho = o.who;
     if (won) st.occ = { who: m.who, troops: m.troops - fb.aLoss, homeId: m.homeId, hero: m.hero || null, hero2: m.hero2 || null, since: now, got: 0 }; else o.troops -= fb.dLoss;
     const [wA, wD] = [[m.who, fb.aLoss, aHx], [oWho, fb.dLoss, dHx]].map(([w, n, hx]) => fieldHurt(w, n, hx) || 0);   // both sides' Krankenhaus (+ their hero)
-    evPunkte('krieg', m.who, fb.dLoss / WO_KILL_PER); evPunkte('krieg', oWho, fb.aLoss / WO_KILL_PER);   // Krieger-Woche
+    evPunkte('krieg', m.who, fb.dLoss); evPunkte('krieg', oWho, fb.aLoss);                        // Wochen-Event Krieger: 1 Punkt je getötete Truppe
     const fg = fieldGold(m.who, oWho, fb, aHx, dHx);
     if (involved) {
         const youWon = (m.who === 'player') === won;
@@ -259,7 +259,7 @@ function fieldArrive(m, now) {
 }
 // Sammel-Tempo je Sekunde: festes Tempo (nicht Truppen × Tempo) · Spürnase · Sammel-Rausch (+50 %) · Gebäude · Forschung Sammeln
 function fieldRateOf(f, o, gx) {
-    return f.cap / f.dauer * (1 + (gx ? gx.gSpd : 0) / 100) * (evThemaAktiv('sam') ? 1.5 : 1) * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1);
+    return f.cap / f.dauer * (1 + (gx ? gx.gSpd : 0) / 100) * (AUF ? AUF.sammelTempo(o.who) : 1) * (typeof hdSammeln === 'function' ? hdSammeln(o.who) : 1);
 }
 function fieldTick() {
     if (!rechnet()) return;

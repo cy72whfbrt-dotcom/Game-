@@ -15,12 +15,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const drin = (e, box) => { const a = e.getBoundingClientRect(), c = box.getBoundingClientRect(); return a.left >= c.left - 1 && a.right <= c.right + 1 && a.top >= c.top - 1 && a.bottom <= c.bottom + 1; };
       for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
       closeAllPopups(); flashHint('', 1);
-      // 1) Karten-Leiste: Invasion läuft, Welle 2, 120 Punkte – der Chip zeigt die Welle ganz (kein „…“)
-      const altInv = invAktiv; invAktiv = () => ({ welle: 2, armies: [], pts: { player: 120 }, start: Date.now() - 6e5 });
+      // 1) Karten-Leiste: Wochen-Event (Fr · Helden-Tag) – der Chip zeigt den Namen ganz (kein „…“)
+      const altH = woHeute; woHeute = () => WO_TAGE[4];
       updateHud(); await warte(1500);
-      const chip = document.querySelector('#midBar [data-mb="ev-inv"]'), span = chip && chip.querySelector('span');
+      const chip = document.querySelector('#midBar [data-mb="woche"]'), span = chip && chip.querySelector('span');
       const inv = { da: !!chip, text: span && span.textContent, ganz: ganz(span), imBild: !!chip && drin(chip, document.documentElement) };
-      invAktiv = altInv;
+      woHeute = altH;
       // 2) Events-Kopf: beide Marken ganz im Kopf
       openGoals('pass'); await warte(800);
       const sub = document.getElementById('goalsSub'), pills = [...sub.querySelectorAll('.pill')];
@@ -33,7 +33,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
     if (foto) await p.screenshot({ path: foto + '/pass_' + art.replace(/ /g, '') + '.png' });
-    ok(r.inv.da && /2\/\d/.test(r.inv.text) && r.inv.ganz && r.inv.imBild, art + ': Invasions-Chip – Welle ganz lesbar', r.inv);
+    ok(r.inv.da && /Helden-Tag/.test(r.inv.text) && r.inv.ganz && r.inv.imBild, art + ': Wochen-Event-Chip – Name ganz lesbar', r.inv);
     ok(r.kopf.texte.length === 2 && r.kopf.ganz, art + ': Events-Kopf – „… heute“ und „Erfolge“ ganz', r.kopf);
     ok(r.pass.da && r.pass.ganz, art + ': Pass – Premium-Reihe ganz sichtbar', r.pass);
     await ctx.close();

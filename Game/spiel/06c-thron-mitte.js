@@ -170,13 +170,11 @@ document.getElementById('shopTabs').addEventListener('click', e => { const b = e
 document.getElementById('throneShop').addEventListener('click', e => { const b = e.target.closest('[data-throne-buy]'); if (b && !b.disabled) throneBuy(b.dataset.throneBuy); });
 
 // ===== DIE MITTE: Thron, Wächter-Tempel und Tore
-// Punkte für Kämpfe gibt es nur noch im Wochen-Event (Krieger-Woche): 1 je 1.000 besiegte (× WIRTSCHAFT_KOSTEN: heute je 0,56 – die
-// Gegner sind so viel kleiner), höchstens 30 auf einmal, im Schnitt 10 pro Minute.
-const WO_KILL_PER = 1000 * WIRTSCHAFT_KOSTEN, WO_KILL_MAX = 30, WO_KILL_MIN = 10, WO_TOP = 10;
+// Punkte für Kämpfe gibt es im Wochen-Event (Krieger-Tag, 09c): 1 je getötete gegnerische Truppe.
 const midZoneIds = new Set(islands.filter(i => { const lm = landmasses[i.landmassId]; return i.type === 'megaTemple' || i.guardian || i.type === 'gate' && (i.gateKind === 'throne' || i.gateKind === 'guardian') || !!lm && (lm.tier === 'throne' || lm.tier === 'guardian'); }).map(i => i.id));
-function midFight(tid, aWho, aKills, dWho, dKills, aTeile, dTeile) {     // nach jedem Kampf um eine Basis: Punkte für die Krieger-Woche (überall)
+function midFight(tid, aWho, aKills, dWho, dKills, aTeile, dTeile) {     // nach jedem Kampf um eine Basis: Punkte für den Krieger-Tag (überall)
     // gemeinsam (Rally, Verstärkung): jeder nach seinem Anteil – aTeile/dTeile = [[wer, Anteil 0…1], …] (kampfTeile, verstAnteile)
-    const geben = (wer, n, teile) => { if (Array.isArray(teile) && teile.length) { for (const [w, f] of teile) if (f > 0) evPunkte('krieg', w, n * f / WO_KILL_PER); } else evPunkte('krieg', wer, n / WO_KILL_PER); };
+    const geben = (wer, n, teile) => { if (Array.isArray(teile) && teile.length) { for (const [w, f] of teile) if (f > 0) evPunkte('krieg', w, n * f); } else evPunkte('krieg', wer, n); };
     geben(aWho, aKills, aTeile); geben(dWho, dKills, dTeile);
 }
 // ===== KOPFGELD AUF DEN HERRSCHER: while someone holds the throne a bounty grows (gems + coins, every 3 min with the Thron-Punkte).
@@ -211,11 +209,9 @@ const midBar = document.getElementById('midBar');
 let midBarHtml = '', midBarAuf = false;
 function renderMidBar() {
     const now = Date.now(), b = bountyOf(), chips = [];   // [Dringlichkeit, html]
-    if (woOn(now)) { const th = woThemaAm(now), W = evState.wo || {}, rk = W.key === woWin(now).key ? evRang(W.pts) : [], pl = rk.findIndex(e => e[0] === 'player') + 1;   // Wochen-Event (Mo–Fr)
-        chips.push([9, '<button type="button" class="mb-chip is-tour" data-mb="woche">' + icon(th.ic) + '<span>Wochen-Event · ' + th.name + '</span><b class="mb-platz' + (pl ? '' : ' is-leer') + '">Platz ' + (pl || '–') + '</b></button>']); }   // (Platz immer belegt: der Chip springt nicht, wenn der Rang kommt)
     if (b && b.gems >= 5) chips.push([b.who === 'player' ? 1 : 7, '<button type="button" class="mb-chip' + (b.who === 'player' ? ' is-warn' : '') + '" data-mb="bounty">' + icon(b.who === 'player' ? 'losses' : 'coin') +
         '<span>' + (b.who === 'player' ? 'Kopfgeld auf dich' : 'Kopfgeld') + '</span><b>' + fmtNum(b.gems) + '</b>' + icon('gem', 'mb-gem') + '</button>']);
-    chips.push(...evChips(now));                                                        // Invasion, Drache (Events)
+    chips.push(...evChips(now));                                                        // Wochen-Event, Welt-Saison (09c)
     if (typeof haendlerChip === 'function') { const hc = haendlerChip(now); if (hc) chips.push([6, hc]); }   // Paket C: ein Händler ist da
     chips.sort((x, y) => x[0] - y[0]);
     if (chips.length < 2) midBarAuf = false;

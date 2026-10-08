@@ -186,7 +186,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mb-chip .icon{width:14px;height:14px;flex:none;color:var(--gold-200)} .mb-chip .icon.mb-gem{width:12px;height:12px;margin-left:-3px;color:var(--res-gem)}
 .mb-chip b{color:var(--tx-1);font-variant-numeric:tabular-nums} .mb-chip i{font-style:normal;color:var(--tx-3);font-variant-numeric:tabular-nums}
 .mb-chip.is-tour{border-color:rgba(176,120,255,.55);background:linear-gradient(90deg,rgba(110,55,190,.7),rgba(16,12,24,.85))} .mb-chip.is-tour .icon{color:#f2c75c} .mb-chip.is-tour i{color:#d9c6ff}
-.mb-chip.is-drache{border-color:rgba(255,140,70,.6);background:linear-gradient(90deg,rgba(170,50,20,.78),rgba(22,10,8,.88))} .mb-chip.is-drache .icon{color:#ffc46a} .mb-chip.is-drache i{color:#ffd9c0}
 .mb-chip.is-warn{border-color:rgba(225,72,60,.6);background:linear-gradient(90deg,rgba(150,30,30,.75),rgba(20,12,12,.88));color:#ffd9d3} .mb-chip.is-warn > .icon:first-child{color:#ffb3aa}
 .mb-chip > span{overflow:hidden;text-overflow:ellipsis}
 .mb-chip .mb-hol{position:absolute;top:-3px;right:-3px;width:10px;height:10px;border-radius:50%;background:#e5372c;border:1.5px solid #fff;box-shadow:0 0 4px rgba(229,55,44,.8)}   /* Event-Chip: im Event liegt eine Belohnung */
@@ -266,13 +265,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .throne-status .ts-row .icon{width:15px;height:15px;color:#f2c75c;flex:none}
 .throne-status .ts-row b{margin-left:auto;color:var(--tx-1);font-weight:600;text-align:right;font-variant-numeric:tabular-nums}
 .throne-status .ts-row b.warn{color:#ff9d8f}
-.tour-rules b{color:var(--tx-1);font-weight:700} .tour-rules span span{display:block} .tour-rules{display:grid;gap:5px} .tour-rules span{display:flex;align-items:center;gap:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)} .tour-rules .icon{width:15px;height:15px;flex:none;color:#c9a2ff}
-.tour-prizes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
-.tour-prize{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 3px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22);text-align:center;min-width:0}
-.tour-prize b{font:700 var(--fs-12)/1.1 var(--font-display);color:var(--gold-100)} .tour-prize span{display:flex;align-items:center;gap:3px;font:600 10.5px/1.1 var(--font-ui);color:var(--tx-2);white-space:nowrap}
-.tour-prize .icon{width:11px;height:11px;flex:none;color:var(--res-gem)} .tour-prize span + span .icon{color:#c9a2ff}
-.tour-prize em{font:700 9px/1.1 var(--font-ui);font-style:normal;letter-spacing:.06em;text-transform:uppercase;color:#e6d8ff}
-.tour-prize.is-1{border-color:rgba(242,199,92,.5);background:linear-gradient(180deg,rgba(160,92,235,.25),rgba(242,199,92,.08))}
 .mail-tabs .tab .badge{position:absolute;top:4px;right:8px}
 .mail-pane[hidden]{display:none} .mail-pane{display:grid;gap:10px}
 .mail-intro{font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
@@ -300,12 +292,6 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .rp-grid > div{display:flex;justify-content:space-between;gap:8px;font:500 var(--fs-12)/1.6 var(--font-ui);color:var(--tx-2);border-bottom:1px solid var(--line-1)} .rp-grid b{color:var(--tx-1);font-variant-numeric:tabular-nums}
 .rp-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px} .rp-actions .btn{justify-content:center}
 .who-link{background:none;border:0;padding:6px 2px;margin:-6px -2px;font:inherit;color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:3px;cursor:pointer}
-.chain{display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:10px;border:1px solid var(--line-1);background:rgba(255,255,255,.02)}
-.chain-links{display:grid;grid-template-columns:repeat(7,1fr) 1.3fr;gap:5px;align-items:center}
-.chain-link{height:30px;border-radius:8px;display:grid;place-items:center;border:1px solid var(--line-2);background:rgba(0,0,0,.2);font:700 var(--fs-12)/1 var(--font-ui);color:var(--tx-3)}
-.chain-link.on{border-color:#8fcf7a;background:rgba(143,207,122,.16);color:#8fcf7a} .chain-link .icon{width:14px;height:14px}
-.chain-chest{height:38px;border-radius:10px;display:grid;place-items:center;border:1px solid var(--line-2);color:var(--tx-3);background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.06),rgba(0,0,0,.2))}
-.chain-chest .icon{width:20px;height:20px} .chain-chest.on{color:#2a1c08;border-color:#f2d27a;background:radial-gradient(circle at 35% 30%,#fff2c4,#d9a93f 60%,#8a6420);box-shadow:0 0 14px rgba(242,210,122,.45)}
 .ach-sum{display:flex;flex-direction:column;gap:6px;font:500 var(--fs-12)/1.2 var(--font-ui);color:var(--tx-2)} .ach-sum b{color:var(--tx-1)}
 .ach-sum-bar,.ach-bar{display:block;height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
 .ach-sum-bar i,.ach-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-500),var(--gold-200))}
@@ -403,9 +389,8 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 /* Ereignisse (Paket B) */
 .ev-body{display:flex;flex-direction:column;gap:8px}
 .ev-card .field-lines b{display:flex;align-items:center;justify-content:flex-end;gap:5px;flex-wrap:wrap} .ev-card .field-lines .icon{width:13px;height:13px;color:var(--gold-300)}
-.ev-card.is-tour{border-color:rgba(176,120,255,.4);background:rgba(160,92,235,.08)} .ev-card.is-warn{border-color:rgba(225,72,60,.55);background:rgba(150,30,30,.12)} .ev-card.is-drache{border-color:rgba(255,140,70,.55);background:rgba(170,60,20,.12)}
+.ev-card.is-tour{border-color:rgba(176,120,255,.4);background:rgba(160,92,235,.08)} .ev-card.is-warn{border-color:rgba(225,72,60,.55);background:rgba(150,30,30,.12)}
 .ev-card .barb-ct{flex-wrap:wrap;row-gap:2px} .ev-card .barb-ct > b{white-space:nowrap} .ev-card .barb-ct small{margin-left:auto;text-align:right} .ev-card .barb-ct small b{font-variant-numeric:tabular-nums;color:var(--tx-1)} .ev-rot{color:#ff8a7a} .ev-prizes3{grid-template-columns:repeat(3,minmax(0,1fr))}
-.ev-plan b{display:flex;align-items:center;justify-content:flex-end;gap:5px} .ev-plan .icon{width:13px;height:13px;color:#c9a2ff}
 .barb-rank .who-link{background:none;border:0;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}
 .barb-card{display:flex;flex-direction:column;gap:6px;padding:9px 10px;border-radius:var(--r-sm);background:rgba(255,255,255,.03);border:1px solid var(--line-1)}
 .barb-ct{display:flex;align-items:baseline;justify-content:space-between;gap:8px} .barb-ct b{display:inline-flex;align-items:center;gap:6px;font:700 var(--fs-13)/1.2 var(--font-ui);color:var(--tx-1)} .barb-ct .icon{width:15px;height:15px;color:var(--gold-300)} .barb-ct small{font:600 var(--fs-11)/1 var(--font-ui);color:var(--gold-200)}
@@ -476,7 +461,7 @@ body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapContro
 body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
 body[data-anl-puls="stadt"] #cityNavBtn > .icon,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
 body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn > .icon,
-body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus3],[data-bonus],[data-chain],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
+body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus3],[data-bonus],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
   {animation:anl-puls 1.4s ease-out infinite}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
@@ -1901,7 +1886,6 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) bei
 /* Aufgaben, Abholfach, Events, Pass: kleine Kacheln in der Zeile */
 .quest-rew:has(.bk){padding:0;border:0;background:none;gap:3px} .quest-rew .bk{--bk:38px}
 .inbox-row .bk-raster{margin-top:4px}
-.tour-prize .bk-raster{--bk:32px;gap:2px;margin-top:3px} .tour-prize .bk{display:block}
 .daily-row .bk-raster{justify-content:flex-start;margin-top:4px}
 .kl-rss .bk-raster{--bk:46px;justify-content:flex-start;margin:4px 0 2px} .kl-rss.bk-an > .kl-rss-zeilen{display:none}
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}
@@ -2111,7 +2095,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 .lvlup-rule{height:10px;background:url(bilder/ui_linie.webp) center/100% 100% no-repeat}
 
 /* ---------------- Listen-Karten in allen Fenstern (Shop, Events, Bündnis, Kampf, Berichte, Pass, Rangliste, Einstellungen, Gebäude) ---------------- */
-:is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.chain,.tour-prize,.pl-zelle,.pass-how-l,.ach-sum,.pass-hero,
+:is(.ki-karte,.quest,.ach,.logRow,.stat,.force,.inbox-row,.barb-card,.rp-stat,.rp-bld,.rp-last,.rp-pass,.rp-bund,.pl-zelle,.pass-how-l,.ach-sum,.pass-hero,
   .pass-prem,.pass-old,.daily-row,.title-row,.forge-row,.fo-row,.fo-detail,.bd-zeile,.bd-form,.anf,.gate-ctl,.city-vgl,.shop-info,.skin-card,.crest-card,.statChip,.notice,
   .throne-status,.p5-naechste,.ach-done summary,.set-zeile,.barb-rank li,.marker-input,.troop-in,.from-sel,.ap-kopf,.ap-hchip,.inbox-empty,.empty-state,.lb-row,.rank-row,.p5-zeile,.lk-mid,.lk-card){border-radius:0!important;box-shadow:none;
   border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch!important}   /* (!important: Grundform gilt immer – auch gegen ältere „border:“-Kurzregeln mit #id) */
@@ -2161,12 +2145,6 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 [data-frame="silver"]{--ki-rang:url(bilder/ui_rang_silberritter.webp)} [data-frame="gold"]{--ki-rang:url(bilder/ui_rang_goldfuerst.webp)} [data-frame="platin"]{--ki-rang:url(bilder/ui_rang_platingraf.webp)}
 [data-frame="diamond"]{--ki-rang:url(bilder/ui_rang_diamantherzog.webp)} [data-frame="master"]{--ki-rang:url(bilder/ui_rang_meister.webp)} [data-frame="legend"]{--ki-rang:url(bilder/ui_rang_legende.webp)}
 
-/* ---------------- Ereignis-Banner: KI-Bild statt gezeichneter Szene (Invasion, Drache, Tagesboss je Boss, Sammel-Rausch) ---------------- */
-:is(.ev-banner--inv,.ev-banner--drache,.ev-boss--kraken .ev-banner,.ev-boss--giant .ev-banner,.ev-boss--dragon .ev-banner,.ev-boss--wraith .ev-banner,.ev-woche--sam .ev-banner,.ev-woche--krieg .ev-banner,.ev-woche--boss .ev-banner,.ev-woche--bau .ev-banner){height:118px;background:var(--ki-banner) center 35%/cover no-repeat}
-:is(.ev-banner--inv,.ev-banner--drache,.ev-boss--kraken .ev-banner,.ev-boss--giant .ev-banner,.ev-boss--dragon .ev-banner,.ev-boss--wraith .ev-banner,.ev-woche--sam .ev-banner,.ev-woche--krieg .ev-banner,.ev-woche--boss .ev-banner,.ev-woche--bau .ev-banner) .ev-bild{visibility:hidden}
-.ev-banner--inv{--ki-banner:url(bilder/event_invasion.webp)} .ev-banner--drache{--ki-banner:url(bilder/event_drache.webp)} .ev-boss--kraken{--ki-banner:url(bilder/boss_kraken.webp)}
-.ev-boss--giant{--ki-banner:url(bilder/boss_steinriese.webp)} .ev-boss--dragon{--ki-banner:url(bilder/boss_feuerdrache.webp)} .ev-boss--wraith{--ki-banner:url(bilder/boss_nebelkoenig.webp)}
-.ev-woche--sam{--ki-banner:url(bilder/woche_sammeln.webp)} .ev-woche--krieg{--ki-banner:url(bilder/woche_krieg.webp)} .ev-woche--boss{--ki-banner:url(bilder/woche_boss.webp)} .ev-woche--bau{--ki-banner:url(bilder/woche_bau.webp)}
 /* Tipp auf ein freies Feld der Karte (Merkliste 33): runde KI-Knöpfe im Bogen wie am Gebäude (.cr-btn), Stelle = Nadel auf der Karte */
 .feld-ring{position:fixed;left:0;top:0;z-index:44;width:0;height:0;pointer-events:none}
 .feld-ring[hidden]{display:none}
@@ -2436,15 +2414,12 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 .ev-banner{position:relative;flex:none;height:96px;margin:0 0 10px;border-radius:var(--r-sm);overflow:hidden;border:1px solid var(--line-2);background:#100b08}
 .ev-banner .ev-bild{position:absolute;inset:0;width:100%;height:100%;display:block}
 .ev-banner::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,6,4,.85) 0%,rgba(8,6,4,.55) 50%,rgba(8,6,4,0) 76%);pointer-events:none}
-.ev-banner--tour::after{background:linear-gradient(90deg,rgba(18,10,30,.92) 0%,rgba(18,10,30,.75) 55%,rgba(18,10,30,0) 80%)}   /* Woche: Titel + Uhr nie auf Fahne/Schwertern */
 .ev-banner-t{position:absolute;left:12px;right:26%;bottom:10px;z-index:1;display:flex;flex-direction:column;gap:4px;text-shadow:0 1px 3px rgba(0,0,0,.9)}
 .ev-banner-t > b{display:flex;align-items:center;gap:7px;font:600 16px/1.25 var(--font-display);color:var(--gold-100);letter-spacing:.02em}
 .ev-banner-t > b .icon{width:18px;height:18px;flex:none;color:var(--gold-300)}
 .ev-banner-t small{font:600 var(--fs-12)/1.35 var(--font-ui);color:var(--tx-1)} .ev-banner-t small b{font-variant-numeric:tabular-nums;color:var(--gold-200)}
 .ev-card.ev-mit-bild{padding-top:0;overflow:hidden} .ev-card.ev-mit-bild > .ev-banner{margin:0 -10px 4px;border-radius:0;border:0;border-bottom:1px solid var(--line-1)}
-.ev-zeilen{display:grid;gap:8px} .ev-zeilen > div{display:flex;flex-direction:column;gap:2px} .ev-zeilen small{font:600 var(--fs-11)/1.3 var(--font-ui);letter-spacing:.06em;text-transform:uppercase;color:var(--tx-3)}
-.ev-zeilen span{font:600 var(--fs-13)/1.4 var(--font-ui);color:var(--tx-1)}
-.ev-info{margin:0} .ev-info summary > span{flex:1} .ev-info .tour-rules{padding:2px 0 8px} .ev-info .mail-intro{margin:0 0 8px}
+.ev-info{margin:0} .ev-info summary > span{flex:1} .ev-info .mail-intro{margin:0 0 8px}
 .bd-kurz{margin:0 0 4px;font:500 var(--fs-13)/1.4 var(--font-ui);color:var(--tx-2)}
 .empty-state.ev-leer{padding:22px 16px;gap:8px;border:1px dashed var(--line-2);border-radius:10px;background:rgba(255,255,255,.02)}
 .empty-state.ev-leer > .icon{width:40px;height:40px;color:var(--gold-300)} .empty-state.ev-leer > span{max-width:34ch}
@@ -2457,7 +2432,6 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 .evl-spur i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#a8831a,#f2c75c);box-shadow:0 0 8px rgba(242,199,92,.6)}
 .evl-k{position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;padding:0;border:0;background:none;color:var(--tx-3);font:700 10.5px/1.1 var(--font-ui);white-space:nowrap}
 .evl-bild{position:relative;display:grid;place-items:center;width:46px;height:46px;border-radius:10px} .evl-bild img{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 2px 3px rgba(0,0,0,.7))}
-.evl-k.is-ding .evl-bild{background:rgba(10,8,6,.75);border:1px solid var(--line-2)} .evl-k.is-ding .evl-bild img{width:32px;height:32px}
 .evl-k.is-zu .evl-bild img{filter:grayscale(.85) brightness(.6)} .evl-k.is-zu{opacity:.85}
 .evl-k.is-hol,.evl-k.is-bald{color:var(--gold-100);cursor:pointer} .evl-k.is-hol .evl-bild{background:radial-gradient(circle,rgba(255,214,110,.55),rgba(255,214,110,0) 70%);animation:evlGlueh 1.4s ease-in-out infinite}
 .evl-k.is-ok{color:var(--tx-2)} .evl-haken{position:absolute;right:-4px;top:-4px;width:20px;height:20px} .evl-haken img{width:20px;height:20px;filter:none}
@@ -2469,12 +2443,57 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 .evl-z.is-hol{border-color:rgba(242,199,92,.7);background:linear-gradient(90deg,rgba(242,199,92,.16),rgba(0,0,0,.2));box-shadow:0 0 10px rgba(242,199,92,.25)}
 .evl-z.is-ok{opacity:.8} .evl-z.is-zu .bk-raster{filter:saturate(.5) brightness(.8)}
 .evl-st{display:flex;align-items:center;gap:4px;justify-content:flex-end;color:var(--tx-3)} .evl-st img{width:20px;height:20px} .evl-st small{font:600 11px/1 var(--font-ui)} .evl-st .icon{width:16px;height:16px}
-.evk-n{min-width:30px;font:800 var(--fs-15)/1 var(--font-display);color:var(--gold-100)}
+/* Wochen-Event (Vorgabe werkzeuge/wochenevent): Chips mit Punkt (grün = läuft), Tag-Leiste Mo–Fr + Rangliste, Punkte-Regeln, Rang-Bänder, Podest */
+.p5-chip .ev-st{width:7px;height:7px;border-radius:50%;background:#5b6070;flex:none} .p5-chip .ev-st.an{background:#5cdb6a;box-shadow:0 0 6px #5cdb6a}
+.p5-chip small{font:600 10px/1 var(--font-ui);color:var(--tx-3);white-space:nowrap} .p5-chip.active small{color:inherit;opacity:.75}
+.wo-tage{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;margin:6px 0}
+.wo-tage > button{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;padding:5px 2px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--line-1);font:600 10px/1.2 var(--font-ui);color:var(--tx-3);opacity:.6;cursor:pointer}
+.wo-tage > button b{font-size:12px;color:var(--tx-2)} .wo-tage > button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .wo-tage .icon{width:16px;height:16px}
+.wo-tage > .jetzt{opacity:1;border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .wo-tage > .jetzt b{color:var(--gold-100)}
+.wo-tage > .an{opacity:1;box-shadow:0 0 0 1px var(--gold-100) inset}
+.wo-tage > .t-rang{opacity:1;border-color:rgba(214,170,90,.55);background:linear-gradient(180deg,rgba(214,170,90,.22),rgba(90,60,20,.25));color:var(--gold-100)}
+.wo-tage .t-rang img{width:18px;height:18px;filter:drop-shadow(0 0 4px rgba(255,200,90,.6))}
+.wo-meine{display:grid;grid-template-columns:1fr 1fr;gap:6px} .wo-meine > div{padding:6px 8px;border-radius:8px;background:rgba(0,0,0,.25);border:1px solid var(--line-1);text-align:center;font:600 11px var(--font-ui);color:var(--tx-3)}
+.wo-meine b{display:block;font:700 16px var(--font-display);color:var(--gold-100)}
+.wo-pkt{display:flex;flex-direction:column;gap:4px} .wo-pkt div{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:8px;background:rgba(255,255,255,.04);border:1px solid var(--line-1);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
+.wo-pkt div b{margin-left:auto;color:var(--gold-100);white-space:nowrap} .wo-pkt .icon{width:16px;height:16px;flex:none}
+.wo-satz{display:flex;gap:8px;align-items:center;margin-top:8px;padding:6px 8px;border-radius:8px;background:rgba(90,160,255,.1);border:1px solid rgba(150,210,255,.35);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)} .wo-satz .icon{width:16px;height:16px;flex:none}
+.wo-alle{width:100%;margin-top:6px}
+.wo-preise{display:flex;flex-direction:column;gap:8px} .wo-rang{display:flex;flex-direction:column;gap:5px}
+.wo-band{display:flex;align-items:center;gap:8px;height:30px;padding:0 10px;border-radius:6px 16px 16px 6px;font:800 13px var(--font-ui);color:#fff;text-shadow:0 1px 2px #000}
+.wo-band.p1{background:linear-gradient(90deg,#b8861f,#f2cf6a 60%,transparent)} .wo-band.p2{background:linear-gradient(90deg,#7d8790,#d3dbe2 60%,transparent)} .wo-band.p3{background:linear-gradient(90deg,#8a4f22,#d08a4f 60%,transparent)}
+.wo-band.p4{background:linear-gradient(90deg,#3d5a86,#6f93c8 60%,transparent)} .wo-band.p5{background:linear-gradient(90deg,#4a4033,#7a6a52 60%,transparent)}
+.wo-band img{width:22px;height:22px} .wo-band span{margin-left:auto;font-size:11px;font-weight:600}
+.wo-uhr{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;padding:6px;border-radius:8px;background:rgba(0,0,0,.3);border:1px solid var(--line-1);font:600 11px var(--font-ui);color:var(--tx-2)}
+.wo-uhr b{font:700 13px var(--font-display);color:var(--gold-100);letter-spacing:.5px} .wo-uhr .icon{width:14px;height:14px}
+.wo-um{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;padding:3px;border-radius:10px;background:rgba(0,0,0,.35);border:1px solid var(--line-1)}
+.wo-um button{padding:6px;border:0;border-radius:8px;background:none;text-align:center;font:700 12px var(--font-ui);color:var(--tx-3);cursor:pointer} .wo-um button.an{color:#2a1c06;background:linear-gradient(180deg,#f6dc8a,#c99a3a);box-shadow:0 1px 3px #000}
+.wo-podest{display:grid;grid-template-columns:1fr 1.22fr 1fr;align-items:end;gap:6px;padding:14px 4px 0;background:radial-gradient(ellipse at 50% 30%,rgba(255,210,110,.18),transparent 70%)}
+.wo-pod{display:flex;flex-direction:column;align-items:center;min-width:0;text-align:center} .wo-pod .wp{position:relative;width:62px;height:62px;border-radius:50%} .wo-pod.g .wp{width:82px;height:82px}
+.wo-pod .wp > img{position:absolute;inset:9%;width:82%;height:82%;object-fit:contain} .wo-pod .wp > .lb{inset:-14% -18% auto;width:136%;height:90%;opacity:.95}
+.wo-pod .wp i{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);min-width:22px;height:22px;border-radius:11px;display:grid;place-items:center;font:800 12px var(--font-display);font-style:normal;color:#1b1205;box-shadow:0 1px 3px #000}
+.wo-pod.g .wp{box-shadow:0 0 0 3px #f2cf6a,0 0 18px rgba(255,205,90,.7)} .wo-pod.s .wp{box-shadow:0 0 0 3px #cfd8e0,0 0 10px rgba(210,225,240,.45)} .wo-pod.b .wp{box-shadow:0 0 0 3px #c98447,0 0 10px rgba(210,130,70,.45)}
+.wo-pod.g i{background:linear-gradient(#ffe9a0,#d4a23a)} .wo-pod.s i{background:linear-gradient(#f2f6fa,#a8b3bd)} .wo-pod.b i{background:linear-gradient(#f0b37a,#a3612c)}
+.wo-pod .nm{margin-top:10px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:700 12.5px var(--font-ui);color:#fff} .wo-pod.g .nm{font-size:14px;color:var(--gold-100)} .wo-pod .nm .who-link{max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.wo-pod .bd{font:600 10px var(--font-ui);color:var(--tx-3)} .wo-pod .bd small{font:inherit;color:#8fb7e8} .wo-pod .pt{font:700 12px var(--font-display);color:var(--gold-100)}
+.wo-pod .sockel{width:100%;margin-top:4px;border-radius:6px 6px 0 0;display:grid;place-items:center;font:800 20px var(--font-display);color:rgba(0,0,0,.45)}
+.wo-pod.g .sockel{height:46px;background:linear-gradient(#f2cf6a,#8a6416)} .wo-pod.s .sockel{height:32px;background:linear-gradient(#d3dbe2,#6b747c)} .wo-pod.b .sockel{height:24px;background:linear-gradient(#d08a4f,#6e3b16)}
+.wo-rl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px}
+.wo-rl li{display:grid;grid-template-columns:28px 26px minmax(0,1fr) auto;align-items:center;gap:7px;height:34px;padding:0 10px 0 6px;border-radius:8px;background:rgba(255,255,255,.035);border:1px solid var(--line-1)}
+.wo-rl li:nth-child(odd){background:rgba(255,255,255,.06)} .wo-rl em{font:700 13px var(--font-display);font-style:normal;color:var(--tx-3);text-align:center} .wo-rl li > img{width:24px;height:24px;object-fit:contain}
+.wo-rl span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12.5px var(--font-ui);color:var(--tx-1)} .wo-rl small{margin-left:4px;font:700 10px var(--font-ui);color:#8fb7e8}
+.wo-rl b{font:700 12.5px var(--font-display);color:var(--gold-100);text-align:right;font-variant-numeric:tabular-nums}
+.wo-rl li.me{background:linear-gradient(90deg,rgba(92,219,106,.25),rgba(92,219,106,.08));border-color:#5cdb6a}
+.wo-ich{position:sticky;bottom:-1px;z-index:2;margin-top:6px;padding:6px 0 4px;background:linear-gradient(rgba(10,12,18,0),#0c0f16 35%)} .wo-ich li.me{height:40px;background:linear-gradient(90deg,#1f4a27,#14251a);box-shadow:0 -2px 10px rgba(0,0,0,.6)} .wo-ich em{color:#9ff0a8}
+/* Barbaren-Lager: Tagesgrenze oben (Bild + Zahl + Balken) */
+.lg-heute{display:grid;gap:6px;margin:6px 0;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,.28);border:1px solid rgba(228,200,134,.3)}
+.lg-titel{font:700 12px/1 var(--font-display);color:var(--gold-100);letter-spacing:.06em} .lg-titel small{font:600 11px var(--font-ui);color:var(--tx-3);letter-spacing:0;margin-left:6px}
+.lg-grenze{display:flex;align-items:center;gap:8px} .lg-grenze .bk{--bk:30px;flex:none} .lg-grenze > span{flex:1;display:grid;gap:3px} .lg-grenze b{font:700 12.5px/1 var(--font-ui);color:#fff}
+.lg-grenze i{display:block;height:6px;border-radius:3px;background:linear-gradient(90deg,#e4c886 var(--p),rgba(255,255,255,.12) var(--p))}
 #eventBody > .btn[data-ev-hol]{width:100%;margin:0 0 8px}
 /* Lebensbalken (Tagesboss/Drache): die Zahl nie halb abgeschnitten – Höhe wächst mit der Schrift */
 .barb-hp{height:auto;min-height:20px} .barb-hp span{line-height:1.35;padding:2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev-saison{margin-top:12px}.ev-saison .field-lines b{text-align:left;justify-content:flex-start}
-.tour-prize{gap:4px;padding:9px 4px} .tour-prize b{font-size:var(--fs-13)} .tour-prize span{font-size:12px} .tour-prize .icon{width:14px;height:14px} .tour-prize em{font-size:10px}
 .lb-info summary{display:flex;align-items:center;gap:6px;min-height:44px;list-style:none;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-2)} .lb-info summary::-webkit-details-marker{display:none}
 .lb-info summary .icon{width:18px;height:18px;color:var(--gold-300)} .lb-info p{margin:0 0 8px}
 .empty-state.lb-leer{flex-direction:row;align-items:center;gap:12px;padding:12px 14px;text-align:left;border:1px dashed var(--line-2);border-radius:10px} .lb-leer > span{display:flex;flex-direction:column;gap:2px} .lb-leer .icon{flex:none;width:26px;height:26px}
@@ -2632,8 +2651,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
           <label class="set-zeile"><span>Bündnis ruft um Hilfe</span><input type="checkbox" data-push-art="hilfe"></label>
           <div class="p5-gruppe">Events</div>
           <label class="set-zeile"><span>Kriegsherr erschienen</span><input type="checkbox" data-push-art="boss"></label>
-          <label class="set-zeile"><span>Barbaren-Invasion beginnt<small>10 Minuten vorher</small></span><input type="checkbox" data-push-art="invasion"></label>
-          <label class="set-zeile"><span>Der Drache ist erschienen<small>Sonntagabend</small></span><input type="checkbox" data-push-art="drache"></label>
           <label class="set-zeile"><span>Ein Händler ist da<small>Wandernder Händler auf der Karte</small></span><input type="checkbox" data-push-art="haendler"></label>
           <div class="p5-gruppe">Stadt</div>
           <label class="set-zeile"><span>Sammler zurück</span><input type="checkbox" data-push-art="sammler"></label>
@@ -2669,7 +2686,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
         <p><b>Stadt</b> → Burg (deine Hauptstadt-Stufe), Gebäude, Holz/Stein/Eisen, Forschung, Krankenhaus, Helden.</p>
         <p><b>Bündnis</b> → zusammen mit anderen: Chat, Rally, Verstärkung, Bündnis-Hilfe, Tempel-Bonus.</p>
         <p><b>Kampf</b> → Unterwegs (deine Märsche) und Berichte.</p>
-        <p><b>Events</b> → Aufgaben (Täglich, Erfolge), Abholen (Abholfach, tägliche Belohnung), Pass, Ereignisse (Wochen-Event, Invasion, Drache, Tagesboss und Lager).</p>
+        <p><b>Events</b> → Aufgaben (Täglich, Erfolge), Abholen (Abholfach, tägliche Belohnung), Pass, Ereignisse (Wochen-Event Mo–Fr mit Rangliste, Barbaren-Lager).</p>
         <p><b>Shop</b> → Kisten, Friedensschilde, Thron-Shop, Händler, Markt.</p>
         <p><b>Profil</b> → Spieler (Aussehen, Rangliste), Ausrüstung, Fähigkeiten, Einstellungen.</p>
         <p><b>Karte</b> → Basis antippen: angreifen, Truppen senden, aufwerten. Felder: sammeln. Mitte: wer den Mega-Tempel hält, herrscht.</p>
@@ -2776,18 +2793,13 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
     <button class="p5-chip" type="button" role="tab" data-gtab="ach" data-ggrp-von="aufgaben"><span>Erfolge</span><span class="badge" data-gbadge="ach" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="reward" data-ggrp-von="abholen" hidden><span>Belohnung</span><span class="badge" data-gbadge="reward" style="display:none">0</span></button>
     <button class="p5-chip" type="button" role="tab" data-gtab="pass" data-ggrp-von="pass" hidden><span>Pass</span><span class="badge" data-gbadge="pass" style="display:none">0</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><span>Woche</span><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="inv" data-ggrp-von="ereignisse" hidden><span>Invasion</span><span class="badge" data-gbadge="inv" style="display:none">!</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="drache" data-ggrp-von="ereignisse" hidden><span>Drache</span><span class="badge" data-gbadge="drache" style="display:none">!</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="boss" data-ggrp-von="ereignisse" hidden><span>Boss</span><span class="badge" data-gbadge="boss" style="display:none">!</span></button>
-    <button class="p5-chip" type="button" role="tab" data-gtab="lager" data-ggrp-von="ereignisse" hidden><span>Lager</span><span class="badge" data-gbadge="lager" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="tour" data-ggrp-von="ereignisse" hidden><i class="ev-st"></i><span>Woche</span><small hidden></small><span class="badge" data-gbadge="tour" style="display:none">!</span></button>
+    <button class="p5-chip" type="button" role="tab" data-gtab="lager" data-ggrp-von="ereignisse" hidden><i class="ev-st an"></i><span>Lager</span><small hidden></small><span class="badge" data-gbadge="lager" style="display:none">!</span></button>
   </div>
   <div class="pbody">
     <div class="mail-pane" data-gpane="daily">
       <div class="sect"><h4>Heutige Aufgaben</h4><span id="questReset" class="sect-aside quest-reset"></span></div>
       <div id="questList" class="quests"></div>
-      <div class="sect"><h4>Wochenkette</h4></div>
-      <div id="chainCard" class="chain"></div>
     </div>
     <div class="mail-pane" data-gpane="reward" hidden>
       <div class="sect"><h4>Zum Abholen</h4><span id="inboxAside" class="sect-aside"></span></div>

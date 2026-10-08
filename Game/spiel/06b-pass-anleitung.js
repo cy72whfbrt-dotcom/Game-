@@ -2,11 +2,11 @@
 // ===== SAISON-PASS: 28 days on one calendar for everyone, 100 levels of 150 points (7.10., vorher 40 × 300), a free row and a premium row (Gems, never money) – jede Stufe gibt in beiden Reihen etwas. Points come from what you do anyway =====
 var PASS_EPOCH = Date.UTC(2026, 0, 5), PASS_LEN = 28 * 86400000, PASS_GRACE = 3 * 86400000, PASS_LVLS = 100, PASS_STEP = 150, PASS_PREMIUM = 1000;   // (keine Rahmen mehr im Pass – Alexander 7.10.: Stufe 100 gibt Edelsteine)
 var PASS_XP = { quest: 40, questBonus: 80, captures: 20, pvpWins: 10, defends: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, upgrade: 4, pickup: 8, crate: 3, scouts: 3, heroFires: 2, bau: 15, forschung: 15,
-    lager: 5, qb: 10, qd: 10, invPkt: 1 };   // what each deed is worth (bau/forschung: in der Stadt gestartet · lager: Lager besiegt · qb/qd: Angriff auf Tagesboss/Drache · invPkt: Invasions-Punkte)
-var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15, lager: 5, qb: 10, qd: 10, invPkt: 1 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
+    lager: 5, qb: 10 };   // what each deed is worth (bau/forschung: in der Stadt gestartet · lager: Lager besiegt · qb: Angriff auf den Tagesboss)
+var PASS_BOT_XP = { caps: 20, pvp: 10, defs: 15, armyWins: 15, bosses: 60, temples: 25, throneMin: 2, scouts: 3, heroFires: 2, bau: 15, fo: 15, lager: 5, qb: 10 };   // the same by the names in the others' stats (+ 200 a day with all tasks done)
 var PASS_HOW = [['goal', 'Tagesaufgabe abgeholt', 40], ['star', 'Alle sechs Aufgaben (Bonus)', 80], ['flag', 'Basis erobert', 20], ['attack', 'Basis eines Spielers (zusätzlich)', '+10'], ['shield', 'Angriff abgewehrt', 15], ['troops', 'Armee siegt im Feld', 15],
     ['losses', 'Kriegsherr besiegt', 60], ['temple', 'Tempel erobert', 25], ['crown', 'Minute auf dem Thron', 2], ['upgrade', 'Basis ausgebaut', 4], ['coin', 'Karten-Belohnung', 8], ['scout', 'Späher ausgeschickt', 3], ['shop', 'Kiste geöffnet', 3], ['castle', 'Bau in der Stadt gestartet', 15], ['flask', 'Forschung gestartet', 15],
-    ['attack', 'Barbaren-Lager besiegt', 5], ['star', 'Angriff auf den Tagesboss', 10], ['star', 'Angriff auf den Drachen', 10], ['defense', 'Invasions-Punkt', 1]];
+    ['attack', 'Barbaren-Lager besiegt', 5], ['star', 'Angriff auf den Tagesboss (donnerstags)', 10]];
 function passRewardAt(L, prem) {                          // what level L gives in each row – eine Liste (coins/tr: n Stunden Ertrag); die erste passende Regel gilt
     const g = (k, n) => ({ k, n }), viertel = L % 25 === 0;
     if (!prem) return viertel ? [g('gems', 50), g('royal', 1)] : L % 10 === 0 ? [g('royal', 1)] : L % 5 === 0 ? [g('gems', 20)] : L % 4 === 0 ? [g('shards', 3)] :

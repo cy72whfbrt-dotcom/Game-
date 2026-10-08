@@ -107,11 +107,10 @@ function drawMap() {
   drawBaseAuras(vis, z, now);                                                                                          // level + title auras under the towers
   drawThronePlaza(z, now);                                                                                             // the Thronplatz around the Mega-Tempel
   drawResFields(now, wallNow);                                                                                          // gold mines and gem veins
-  drawBarb(now, wallNow); drawEvents(now, wallNow);                                                                                               // Barbaren-Lager, the Tagesboss and the columns on their way
+  drawBarb(now, wallNow);                                                                                               // Barbaren-Lager, the Tagesboss and the columns on their way
   drawArmies(now, wallNow);                                                                                             // your armies out in the open
   for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
   drawThroneFx(z, now);
-  drawDragon(now, wallNow);                                                                                            // der Drache über dem Thron (nach den Gebäuden)
   drawBaseSparks(vis, z, now);
   drawBasisSchilder(vis, z);                                                                                           // Namensschilder der Basen: über Kuppel und Funken (immer lesbar)
   drawWander(now);                                                                                                     // the Kriegsherr and his host
@@ -123,7 +122,6 @@ function drawMap() {
   drawTorSchloesser();                                                                                                 // Schloss auf Toren, die du noch nicht angreifen kannst
   drawArmyCamps(now);                                                                                                  // armies camping in the field
   drawRulerCrowns(plates);
-  drawDragonName(wallNow);                                                                                             // Drachen-Name über der Thron-Kuppel
   drawTitleBadges(z, now);                                                                                             // crown on the ruler's plates
   drawWander(now, true);
   drawMarchChips();                                                                                                    // 10 countdown chips

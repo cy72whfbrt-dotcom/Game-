@@ -92,12 +92,9 @@ const BEOBACHTER = `(function () {
     // Friedensschild läuft in der nächsten Stunde ab
     try { const bs = loadBotState(); for (const id in M) { const su = (bs[id] || {}).shieldUntil || 0; if (su > jetzt && su - jetzt <= 3600000) { const k = id + '@' + su; neu.schild[k] = 1;
         if (alt && alt.schild && !alt.schild[k]) raus.push({ an: id, art: 'schild', bis: su }); } } } catch (e) {}
-    // Events (an alle echten Spieler): 10 Minuten vor der Barbaren-Invasion, und wenn der Drache erscheint – je einmal
+    // Merker für einmalige Meldungen (Händler, fertige Bauten …)
     neu.ev = {}; const evAlt = alt && alt.ev || {};
     for (const k in evAlt) if (evAlt[k] > jetzt - 864e5) neu.ev[k] = evAlt[k];
-    const ev = typeof evState !== 'undefined' && evState ? evState : {}, ip = ev.plan && ev.plan.inv, dr = ev.dr;
-    if (ip && ip.start > jetzt && ip.start - jetzt <= 10 * 60000 && !neu.ev['i' + ip.start]) { neu.ev['i' + ip.start] = ip.start; if (alt) for (const id in M) if (mensch(id)) raus.push({ an: id, art: 'invasion', ankunft: ip.start }); }
-    if (dr && dr.hp > 0 && !dr.paid && dr.start <= jetzt && dr.end > jetzt && !neu.ev['d' + dr.start]) { neu.ev['d' + dr.start] = dr.end; if (alt) for (const id in M) if (mensch(id)) raus.push({ an: id, art: 'drache', ankunft: dr.end, name: dr.name }); }
     // Ein wandernder Händler ist da (haendler.js) – an alle echten Spieler, einmal pro Besuch
     try { const hd = typeof hdState !== 'undefined' && hdState && hdState.h; if (hd && hd.start <= jetzt && hd.end > jetzt && !neu.ev['h' + hd.id]) { neu.ev['h' + hd.id] = hd.end;
         let wo = ''; try { wo = coordText(hd.x, hd.y); } catch (e) {} if (alt) for (const id in M) if (mensch(id)) raus.push({ an: id, art: 'haendler', von: hd.name, basis: wo, ankunft: hd.end }); } } catch (e) {}
@@ -142,9 +139,6 @@ function nachrichtBauen(liste, jetzt) {
     if (sammler.length) { const sum = k => sammler.filter(x => (x.was || 'gold') === k).reduce((a, x) => a + x.menge, 0);   // je Feld-Art zusammen (Wörter wie FIELD_KINDS.what)
         teile.push('Deine Sammler sind zurück: ' + SAMMEL_WAS.map(([k, w]) => { const n = Math.round(sum(k)); return n ? '+' + n.toLocaleString('de-DE') + ' ' + w : ''; }).filter(Boolean).join(', ') + '.'); }
     if (schild.length) teile.push('Dein Friedensschild läuft in ' + minuten(schild[0].bis - jetzt) + ' ab.');
-    const invasion = liste.filter(e => e.art === 'invasion'), drache = liste.filter(e => e.art === 'drache');
-    if (invasion.length) teile.push('Barbaren-Invasion beginnt in ' + minuten(Math.min(...invasion.map(e => e.ankunft)) - jetzt) + ' – stärke deine Basen!');
-    if (drache.length) teile.push('Der Drache ist erschienen' + (drache[0].name ? ' (' + drache[0].name + ')' : '') + ' – greif ihn zusammen mit allen anderen an!');
     const haendler = liste.filter(e => e.art === 'haendler');
     if (haendler.length) teile.push('Ein Händler ist da: ' + haendler[0].von + (haendler[0].basis ? ' (' + haendler[0].basis + ')' : '') + ' – nur noch ' + minuten(haendler[0].ankunft - jetzt) + '.');
     const bau = liste.filter(e => e.art === 'bau'), fo = liste.filter(e => e.art === 'forschung'), stufe = e => e.name + ' Stufe ' + e.stufe;
@@ -154,7 +148,7 @@ function nachrichtBauen(liste, jetzt) {
     if (rally.length) { const r = rally[0]; teile.push('Rally gegen deine Basis ' + r.basis + ': ' + r.von + ' sammelt Truppen' + (r.ankunft > jetzt ? ' (Start in ' + minuten(r.ankunft - jetzt) + ')' : '') + '.'); }
     if (hilfe.length === 1) teile.push('Bündnis: ' + hilfe[0].von + ' ruft um Hilfe – ' + hilfe[0].basis + ' wird angegriffen.');
     else if (hilfe.length) teile.push('Bündnis: ' + hilfe.length + '-mal Hilfe gerufen (' + [...new Set(hilfe.map(h => h.von))].slice(0, 3).join(', ') + ').');
-    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : rally.length ? 'Rally gegen dich!' : hilfe.length ? 'Dein Bündnis braucht Hilfe' : spaeher.length ? 'Späher unterwegs' : aus.length ? 'Basis ausgespäht' : invasion.length ? 'Barbaren-Invasion' : drache.length ? 'Der Drache ist da' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : haendler.length ? 'Ein Händler ist da' : bau.length ? 'Bau fertig' : fo.length ? 'Forschung fertig' : 'Sammler zurück';
+    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : rally.length ? 'Rally gegen dich!' : hilfe.length ? 'Dein Bündnis braucht Hilfe' : spaeher.length ? 'Späher unterwegs' : aus.length ? 'Basis ausgespäht' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : haendler.length ? 'Ein Händler ist da' : bau.length ? 'Bau fertig' : fo.length ? 'Forschung fertig' : 'Sammler zurück';
     return { titel, text: teile.join(' ').slice(0, 400), tag: 'open-water' };
 }
 

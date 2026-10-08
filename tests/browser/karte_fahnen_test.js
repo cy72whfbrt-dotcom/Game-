@@ -2,7 +2,7 @@
 // Schrift mind. 11 px, zwei Zeilen mit Abstand; neutrale, nicht gespähte Basen nur Wappen + Stufe (Fahne erst beim Antippen/ganz nah).
 // Rausgezoomt ruhig (Alexander 6.10.): eigene Basen ohne Namen (nur Hauptstadt), fremde Nicht-Hauptstädte erst ganz nah mit Namen,
 // keine Fahne verdeckt eine andere, Stufen-Chip so breit wie die Zahl (nicht über Wappen/Zahl), „?“ ohne langen leeren Balken;
-// Designer: weit weg eigene nur Wappen + Stufe, Zahl kürzer, Drachen-Name über der Kuppel, Fahnen unter Leisten blass
+// Designer: weit weg eigene nur Wappen + Stufe, Zahl kürzer, Fahnen unter Leisten blass
 const { chromium, devices } = require('playwright');
 const TIERW = [34 + 4 + 140 + 8 + 12, 28 + 4 + 120 + 7 + 12, 22 + 4 + 62 + 4 + 12];   // Wappen + Textfeld-Grenze + Rand (+ breiterer Stufen-Chip)
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -31,7 +31,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     g.font = FONT(700, 11); r.chip = { lw: geo.lw, zahl: g.measureText('100').width, frei: geo.tx >= geo.lx0 + geo.lw, W: geo.W };
     r.chipWappen = ['A', 'B', 'K', 'C', 'N'].every(k => { const T = TIER[k], q = plateGeo(g, T, { ...m, level: 100 }, false); return q.lx0 >= T.av / 2 - 1 + T.av * .62 * .41; });   // Chip rechts neben dem Wappen
     r.kurz = [plateTroops(TIER.C, '464,7 Mrd.'), plateTroops(TIER.C, '29,7 Mrd.'), plateTroops(TIER.A, '464,7 Mrd.')];
-    r.drache = drawMap.toString().indexOf('drawDragonName') > drawMap.toString().indexOf('paintBanners(') && !/drawDragonName/.test(drawEvents.toString());
     // neutrale Basen in der Nähe: ruhig (Stufe N); ausgewählt → volle Fahne
     flyTo(h.x, h.y, { zoom: maxZoom, instant: true });   // (ganz nah = größter Zoom: eine Basis ein Drittel der Breite)
     const vis = [basis, ...neutral], z = mapState.zoom;
@@ -78,7 +77,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(weit.breiteMax <= 88 && weit.eigenNurWappen, 'rausgezoomt kompakte Plaketten, eigene Basen nur Wappen + Stufe (keine 20× gleiche Zahl)', weit);
   ok(v.chipWappen, 'Stufen-Chip neben dem Wappen, nicht darauf (alle Stufen)');
   ok(v.kurz.join('|') === '465 Mrd.|29,7 Mrd.|464,7 Mrd.', 'weit weg kürzere Zahl („465 Mrd.“), nah die genaue', v.kurz);
-  ok(v.drache, 'Drachen-Name nach allen Gebäuden und Fahnen gezeichnet (Thron-Kuppel deckt ihn nicht zu)');
   ok(v.blass[0] < 0.5 && v.blass[1] === 1, 'Fahnen unter der oberen Leiste blass, auf der Karte voll', v.blass);
   ok(v.neutralRuhig, 'neutrale, nicht gespähte Basen: nur Wappen + Stufe');
   ok(v.neutralGewaehlt && v.spielerVoll, 'angetippte neutrale Basis und Mitspieler: volle Fahne');

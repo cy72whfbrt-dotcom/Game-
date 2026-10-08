@@ -123,7 +123,7 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     M.u7.profil.city.bauBis[0] = jetzt - 20 * 60000; win.__pushMerker.ev = {};
     pruefe('Push Bau fertig: über 10 Min. alt → keine Meldung mehr', !lauf().some(e => e.art === 'bau'));
     const s10 = fs.readdirSync(path.join(G, 'spiel')).filter(f => f.startsWith('10d')).sort().map(f => fs.readFileSync(path.join(G, 'spiel', f), 'utf8')).join(''), schritt = s10.slice(s10.indexOf('function hbStadtSchritt'), s10.indexOf('function hbFoSchritt'));
-    pruefe('Bauherr: echte Spieler bekommen beim Weltrechner Punkte für Stadt-Gebäude', /evPunkte\('bau', who, 2 \+ L \+ 1\)/.test(schritt));
+    pruefe('Bauherr: echte Spieler bekommen beim Weltrechner Punkte für Stadt-Gebäude', /evPunkte\('bau', who, WO_PKT\.bauStufe \* \(L \+ 1\)/.test(schritt));
     pruefe('Welt-Profil schickt Bau- und Forschungs-Ende mit', /bauBis: bl\.map/.test(fs.readFileSync(path.join(G, 'welt.js'), 'utf8')));
 }
 // 6) Burg fair (Alexander 6.10. A): beim Reset Handy (aufbau.js burgFair) und Hauptbuch des Weltrechners (09f burgFairWer → hb.st/hb.fo)

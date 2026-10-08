@@ -21,11 +21,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.geb = { h: g.h / bk.h, c: g.c / bk.c, t: cityTimeRoh('academy', 15) / cityTimeRoh('keep', 15), erst: cityTimeRoh('academy', 0), t25: cityTimeRoh('academy', 24) / T };
     o.kh = { c40: AUF.stadtKosten('hospital', 39).c, c25: AUF.stadtKosten('hospital', 24).c, t40: cityTimeRoh('hospital', 39) / T };
     o.roh = [AUF.rohJeStunde ? 1 : 0, Math.round(rohGebStunde(25) / rohGebStunde(24) * 100) / 100];
-    o.lager = [1, 4, 10, 25].map(L => [barbTroopsOf(L), barbLootOf(L)]);
+    o.lager = [1, 4, 10, 25].map(L => [barbTroopsOf(L), lagerMuenzen(L)]);
     o.schild = [SHIELD_PRICES[2], SHIELD_PRICES[8], SHIELD_PRICES[24]];
     o.thron = [throneAmount('player', 'coins') >= 20000, throneAmount('player', 'troops') >= 2000];
     o.gear = [itemPct({ rarity: 0, level: 1 }), salvagePoints({ rarity: 0, level: 1 })];
-    o.boss = [dbossKlasse(4, 1e4), dbossKlasse(6, 1e4), dbossKlasse(100, 1e4), dbossKlasse(200, 1e4), dbossKlasse(500, 1e4)];
     o.truppen = [troopsPerTick(1) * 3600, troopsPerTick(10) * 3600];
     o.texte = [SKILL_DEFS.attackGold.name, SKILL_DEFS.defenseGold.name, HERO_FX_TXT.gold(5)];
     o.muenzTxt = /Münzen/.test(beuteText({ loot: 1000 }));
@@ -44,11 +43,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.geb.erst === 10 && r.geb.t25 > 6 && r.geb.t25 <= 7, 'Gebäude: Stufe 1 in 10 s, 24 → 25 ≈ 6,8 Tage', r.geb);
   ok(r.kh.c40 < 1e9 && r.kh.c40 > r.kh.c25 && r.kh.t40 <= 7, 'Krankenhaus 40: unter 1 Mrd. Münzen (× 1,15 je Stufe), höchstens 7 Tage', r.kh);
   ok(r.roh[1] === 1.33, 'Rohstoff-Gebäude: + 33 % je Stufe', r.roh);
-  ok(JSON.stringify(r.lager.map(x => x[0])) === JSON.stringify([500, 1400, 12000, 2300000]) && r.lager[0][1] === 15000 && r.lager[2][1] >= 250000 && r.lager[2][1] <= 300000, 'Lager: 500 / 1.400 / 12.000 / 2,3 Mio. Krieger, Beute mitgewachsen', r.lager);
+  ok(JSON.stringify(r.lager.map(x => x[0])) === JSON.stringify([500, 1400, 12000, 2300000]) && r.lager[0][1] === 30000 && r.lager[2][1] === 106000 && r.lager[3][1] === 859000, 'Lager: 500 / 1.400 / 12.000 / 2,3 Mio. Krieger, feste Münzen 30K / 106K / 859K', r.lager);
   ok(JSON.stringify(r.schild) === '[80,300,700]', 'Schild: 80 / 300 / 700 Edelsteine', r.schild);
   ok(r.thron[0] && r.thron[1], 'Thron-Shop: mind. 20.000 Münzen bzw. 2.000 Truppen', r.thron);
   ok(Math.abs(r.gear[0] - 1.05) < 1e-9 && r.gear[1] === 6, 'Ausrüstung grau 1 ≈ 1 %, Zerlegen 6 Punkte', r.gear);
-  ok(JSON.stringify(r.boss) === '[0,1,2,3,4]', 'Tagesboss: Klassen als Anteil vom Boss-Leben (jede erreichbar)', r.boss);
   ok(r.truppen[0] === 15 && r.truppen[1] > 45, 'Truppen aus Basen: 15 / Std. auf Stufe 1, wächst mit der Stufe', r.truppen);
   ok(r.texte.every(t => !/Gold/.test(t) && /Münzen/.test(t)) && r.muenzTxt, '„Münzen“ statt „Gold“ in Fähigkeiten/Beute', r.texte);
   // Schild 700: erst „Wirklich?“, erst der zweite Tipp zahlt

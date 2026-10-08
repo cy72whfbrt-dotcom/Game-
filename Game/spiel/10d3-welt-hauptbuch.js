@@ -28,10 +28,10 @@
         for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
-        g: 25 + questGemsTag() + 150 / 7,             // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42), Wochenkette (150 / 7 Tage)
-        k: 3 + 1 + 3 / 7 + 1 / 7,                     // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, Wochenkette (3), epische Tageskiste
-        kg: (3 * 27 + 27) / 7,                        // davon „mind. Episch“ (Wochenkette, Tag 7) als sicherer Kisten-Wert (Episch = 27)
-        sh: HERO_SHARDS_DAY + HERO_SHARDS_CHAIN / 7,  // Splitter: Aufgaben-Bonus, Wochenkette
+        g: 25 + questGemsTag(),                       // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42) – Event-Preise kommen als Nachricht (gIn)
+        k: 3 + 1 + 1 / 7,                             // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, epische Tageskiste
+        kg: 27 / 7,                                   // davon „mind. Episch“ (Tag 7) als sicherer Kisten-Wert (Episch = 27)
+        sh: HERO_SHARDS_DAY,                          // Splitter: Aufgaben-Bonus
         em: 1000, s1: 4.5, s2: 1.5, bm: 1000          // Gegenstände (05e): Event-Münzen (Woche höchstens 4.750), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740)
     };
     const HB_ONLINE_STUNDE_G = 40;                    // Karten-Funde: 1–3 Gems, alle 20–45 s einer, 15 % davon Gems – nur solange er online ist
@@ -197,7 +197,7 @@
         hb.st[id] = [L + 1, g || bx ? now : Math.min(now, start + need)];   // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
         bu[i] = hb.st[id][1];                                          // (dieser Bauarbeiter ist ab da wieder frei)
         if (hb.hilfe) delete hb.hilfe[hk];
-        evPunkte('bau', who, 2 + L + 1);                               // Wochen-Event „Bauherr“: auch die Stadt (wie bei Mitspielern)
+        evPunkte('bau', who, WO_PKT.bauStufe * (L + 1) + (g ? WO_PKT.bauMin * g / CITY_GEMS_PER_MIN + WO_PKT.bauGem * g : 0));   // Wochen-Event „Bauherr“: Stufe, beschleunigte Minuten, Edelsteine
         return 'ok';
     }
     function hbFoSchritt(who, hb, m, d, now) {
@@ -211,6 +211,7 @@
         hb.bMin = nn(hb.bMin) - bx;
         hb.fo[d.id] = L; hb.foT = g || bx ? now : Math.min(now, T + need);    // eine Forschung gleichzeitig: die nächste zählt ab da
         if (hb.hilfe) delete hb.hilfe[hk];
+        if (g) evPunkte('bau', who, WO_PKT.bauMin * g / CITY_GEMS_PER_MIN + WO_PKT.bauGem * g);   // Wochen-Event „Bauherr“: beschleunigte Forschung
         return 'ok';
     }
     // Sterne (alle Teile, angelegt oder nicht – Profil stW = Gems in allen Sternen): ein Kauf wird aus den ausgegebenen Gems bezahlt
@@ -221,13 +222,13 @@
         if (!Number.isFinite(hb.stW)) { hb.stW = T; hb.sternRes = Math.min(T, 20000); hb.sternG = 0; return; }   // erstes Mal: was es schon gibt, gilt (wie beim ersten Sehen des Hauptbuchs – gekappt)
         const d = T - hb.stW;
         if (d > 0) { const x = Math.min(d, nn(hb.gA)); hb.gA = nn(hb.gA) - x; let rest = d - x; if (rest > 0 && hbZahlen(who, hb, m, { g: rest })) rest = 0;
-            hb.sternRes = nn(hb.sternRes) + d - rest; hb.stW += d - rest; }   // (nicht Bezahltes zählt nicht – wird es verkauft, gibt es nichts zurück)
+            hb.sternRes = nn(hb.sternRes) + d - rest; hb.stW += d - rest; if (d > rest) evPunkte('held', who, WO_PKT.schmiede); }   // (Helden-Tag: Ausrüstung verbessert)   // (nicht Bezahltes zählt nicht – wird es verkauft, gibt es nichts zurück)
         else if (d < 0) { const y = Math.min(-d, nn(hb.sternRes)); hb.sternRes = nn(hb.sternRes) - y; hb.sternG = nn(hb.sternG) + y; hb.stW = T; }
     }
     // ein neuer Gegenstand in Platz s (z = [Seltenheit, Stufe, Sterne]) → '' (angenommen) oder warum nicht
     function hbGearNeu(who, hb, m, s, z, forge) {
         if (z[2] > forge) return 'die Schmiede (Stufe ' + forge + ') erlaubt höchstens ' + forge + ' Sterne';
-        const A = hb.gear[s], N = nn(hb.kN), wert = kWert(z[0]), kG = nn(hb.kG) + nn(hb.fr.kg);   // sichere „mind. Episch“-Kisten: geschickte (kG) und aus Wochenkette/Pass/Thron-Shop (fr.kg – vorher nie benutzt)
+        const A = hb.gear[s], N = nn(hb.kN), wert = kWert(z[0]), kG = nn(hb.kG) + nn(hb.fr.kg);   // sichere „mind. Episch“-Kisten: geschickte (kG) und aus Pass/Thron-Shop (fr.kg – vorher nie benutzt)
         const gesamt = HB_SLOTS.reduce((a, x) => a + Math.max(x === s ? wert : 0, ...(hb.gear[x] || []).map(b => kWert(b[0])), 0), 0);   // bester Kisten-Wert je Platz, zusammen
         const punkte = HB_SLOTS.reduce((a, x) => { const l = (hb.gear[x] || []).reduce((y, b) => Math.max(y, b[1]), x === s ? z[1] : 1); return a + hbLvlPunkte(l); }, 0);
         let n = 0; const mehr = () => n < 10 ? 1 : Math.ceil(n * .1);
@@ -238,7 +239,7 @@
         if (Number.isFinite(hb.stW)) { if (10 * z[2] * (z[2] + 1) > hb.stW + 1e-6) return 'die Sterne sind nicht bezahlt'; sternG = 0; }   // (neues Handy: Sterne zahlt hbSterne – nicht doppelt)
         const freiK = Math.min(n, Math.floor(nn(hb.fr.k))), gems = (n - freiK) * CRATE_GEM_COST + sternG;
         if (gems > 0 && !hbZahlen(who, hb, m, { g: gems })) return n > freiK ? 'dafür hätte er ' + (N + n > 1 ? 'etwa ' + Math.round(N + n) : 'eine') + ' Kisten öffnen müssen, ' + fz(gems) + ' Gems fehlen' : 'die Sterne kosten ' + sternG + ' Gems';
-        hb.fr.k = nn(hb.fr.k) - freiK; hb.kN = N + n; hb.sternG = nn(hb.sternG) + sternG;
+        hb.fr.k = nn(hb.fr.k) - freiK; hb.kN = N + n; if (n > 0) evPunkte('held', who, WO_PKT.kiste * n);   // (Helden-Tag: geöffnete Kisten) hb.sternG = nn(hb.sternG) + sternG;
         const ueber = Math.max(wert - hbKistenGrenze(hb.kN), gesamt - hbKistenGesamt(hb.kN)); if (ueber > 0) { const x = Math.min(ueber, Math.max(0, nn(hb.fr.kg))); hb.fr.kg = nn(hb.fr.kg) - x; hb.kG = Math.max(0, nn(hb.kG) - (ueber - x)); }   // die sichere Kiste ist verbraucht (zuerst aus fr.kg)
         A.push(z);
         for (let i = A.length - 1; i >= 0; i--) if (A.some((b, j) => j !== i && b[0] === A[i][0] && b[1] >= A[i][1] && b[2] >= A[i][2] && (b[1] > A[i][1] || b[2] > A[i][2] || j < i))) A.splice(i, 1);
@@ -298,13 +299,17 @@
         if (bedarf > 0) { const aus = Math.min(bedarf, nn(hb.fr.sh)); hb.fr.sh = nn(hb.fr.sh) - aus; hb.shB = nn(hb.shB) + aus; bedarf -= aus;
             if (bedarf > 0 && hbZahlen(who, hb, m, { g: Math.ceil(bedarf * HB_SH_GEMS) })) { hb.shB += bedarf; gBez = Math.ceil(bedarf * HB_SH_GEMS); } }
         if (hb.shB > shVor) { const L = (hb.shKauf || []).filter(x => now - x.t < KISTE_FRIST); L.push({ sh: hb.shB - shVor, gd: nn(m.gAus), g: gBez, t: now }); m.gAus = 0; hb.shKauf = L.slice(-20); hbKisteFrei(who, hb, now); }   // Splitter + Gems aus DEMSELBEN Profil: Beleg für eine Heldenkiste
-        if (wert(neu) <= nn(hb.shB) + 1e-6) { hb.hs = Object.assign({}, hb.hs, neu); hbGut(hb, 'helden'); return; }
+        if (wert(neu) <= nn(hb.shB) + 1e-6) { hbHeldPunkte(who, hb.hs, neu); hb.hs = Object.assign({}, hb.hs, neu); hbGut(hb, 'helden'); return; }
         let jetzt = Object.assign({}, hb.hs);          // sonst Held für Held, die billigsten Änderungen zuerst
         const zu = [];
         for (const h of geaendert.sort((a, b) => (hbHeldWert(a.id, neu[a.id]) - hbHeldWert(a.id, hb.hs[a.id])) - (hbHeldWert(b.id, neu[b.id]) - hbHeldWert(b.id, hb.hs[b.id])))) {
             const v = Object.assign({}, jetzt, { [h.id]: neu[h.id] }); if (wert(v) <= nn(hb.shB) + 1e-6) jetzt = v; else zu.push(h.name); }
-        hb.hs = jetzt;
+        hbHeldPunkte(who, hb.hs, jetzt); hb.hs = jetzt;
         if (zu.length) hbWarte(who, hb, 'helden', now, 'Helden: ' + zu.join(', ') + ' – dafür reichen seine Splitter nicht (' + fz(wert(neu)) + ' verlangt, möglich ' + fz(nn(hb.shB)) + ').', wert(neu) - nn(hb.shB));
+    }
+    function hbHeldPunkte(who, alt, neu) {           // Wochen-Event „Helden-Tag“: jede neue Helden-Stufe (Stern) zählt
+        let n = 0; for (const id in neu) n += Math.max(0, nn((neu[id] || [])[1]) - nn((alt[id] || [])[1]));
+        if (n > 0) evPunkte('held', who, WO_PKT.held * n);
     }
     // Friedensschild: länger nur, wenn er ihn gekauft (Gems, 24 Std. = SHIELD_PRICES[24]) oder geschenkt bekommen haben kann (Pass, Startschild)
     function hbSchildPruefen(who, hb, m, p, now, schildAlt) {

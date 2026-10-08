@@ -23,7 +23,6 @@
 /* Aufgaben, Abholfach, Events, Pass: kleine Kacheln in der Zeile */
 .quest-rew:has(.bk){padding:0;border:0;background:none;gap:3px} .quest-rew .bk{--bk:38px}
 .inbox-row .bk-raster{margin-top:4px}
-.tour-prize .bk-raster{--bk:32px;gap:2px;margin-top:3px} .tour-prize .bk{display:block}
 .daily-row .bk-raster{justify-content:flex-start;margin-top:4px}
 .kl-rss .bk-raster{--bk:46px;justify-content:flex-start;margin:4px 0 2px} .kl-rss.bk-an > .kl-rss-zeilen{display:none}
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}

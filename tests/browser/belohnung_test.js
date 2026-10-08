@@ -77,7 +77,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.fach = document.querySelectorAll('#inboxList .inbox-row .bk').length >= 2; const g0 = gems; document.querySelector('#inboxList [data-inbox]').click();
     const f = document.getElementById('beuteFenster'); o.fachAb = gems - g0 >= 7 && !f.hidden && /kiste_royal/.test(f.querySelector('.bf-kiste').getAttribute('src')); beuteFensterZu();
     showGoalsTab('pass'); await new Promise(f => setTimeout(f, 300)); o.pass = document.querySelectorAll('#passPane .pl-zelle .bk').length >= 200;
-    showGoalsTab('tour'); await new Promise(f => setTimeout(f, 300)); o.events = document.querySelectorAll('.tour-prize .bk').length >= 4; closeAllPopups();
+    showGoalsTab('tour'); await new Promise(f => setTimeout(f, 300)); o.events = document.querySelectorAll('#tourPane .evl-z .bk, .evl-z .bk').length >= 4; closeAllPopups();
     levelUpShown = { from: 2, to: 3, coins: 500, troops: 300, gems: 10, points: 1 }; renderLevelUpModal(); o.stufe = document.querySelectorAll('#levelUpRewards li.bk').length === 4; closeLevelUpModal();
     const d = document.createElement('div'); d.innerHTML = beuteRaster([{ a: 'holz', n: 900 }, { a: 'eisen', n: 40, minus: true }]); o.minus = !!d.querySelector('.bk[data-minus] b') && d.querySelector('.bk[data-minus] b').textContent === '−40';
     return o; });

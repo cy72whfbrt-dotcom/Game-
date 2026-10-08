@@ -211,7 +211,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
 }
 
 // ===== MARCH ORDERS: recall a column on the way, or speed it up with gems =====
-const marchKeyOf = m => m.mid || (m.mid = (m.startedAt || 0) + '-' + (m.sourceId ?? m.fromId ?? m.homeId) + '-' + (m.targetId ?? m.toId ?? m.fieldId ?? m.tid ?? m.k));   // (auch Lager/Boss/Drache und Sammler)   // fixed once, so speeding up keeps it
+const marchKeyOf = m => m.mid || (m.mid = (m.startedAt || 0) + '-' + (m.sourceId ?? m.fromId ?? m.homeId) + '-' + (m.targetId ?? m.toId ?? m.fieldId ?? m.tid ?? m.k));   // (auch Lager/Boss und Sammler)   // fixed once, so speeding up keeps it
 function pathSoFar(src, tgt, frac) {                // the stretch of the route already walked, from the start to where the column is now
     const pts = marchPath(src, tgt); let total = 0;
     for (let i = 1; i < pts.length; i++) total += Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y);
@@ -227,7 +227,7 @@ function recallMarch(key) {                          // an attack or a send turn
     if (sc) { if (sc.back) return; pendingScouts = pendingScouts.filter(x => x !== sc); spaeherHeim(sc, now - sc.startedAt);   // kehrt um: zurück so lange, wie er schon unterwegs war
         alsBefehl('zurueck', { key });                                         // (Zuschauer: auch beim Weltrechner – kein Bericht)
         saveProgression(); renderActiveMarches(); requestRender(); flashHint('Dein Späher kehrt um.', 2500); return; }
-    const fm = feldBarbMarsch('player', key);                                  // Lager, Boss, Drache, Invasion, Sammler
+    const fm = feldBarbMarsch('player', key);                                  // Lager, Boss, Sammler
     if (fm) { if (fm.back) return;
         if (!alsBefehl('zurueck', { key })) { marschUmkehren(fm, now); updateHud(); saveGame(); }
         renderActiveMarches(); requestRender(); flashHint('Deine Truppen kehren um.', 3000); return; }

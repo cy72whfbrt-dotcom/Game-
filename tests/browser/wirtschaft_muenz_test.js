@@ -23,7 +23,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // 3) aus Spieler-Sicht: nirgends Einer-/Zehner-Münzbeträge
     const L = n => Array.from({ length: n }, (_, i) => i + 1), min = a => Math.min(...a);
     o.klein = {
-      stufe: min(L(60).map(l => levelRewardCoins(l + 1))), aufwerten: min(L(99).map(upgradeCostRoh)), lager: min(L(25).map(barbLootOf)),
+      stufe: min(L(60).map(l => levelRewardCoins(l + 1))), aufwerten: min(L(99).map(upgradeCostRoh)), lager: min(L(25).map(lagerMuenzen)),
       gebaeude: min(['lumber', 'quarry', 'mine', 'wall', 'forge', 'market', 'hospital', 'academy'].map(id => cityCost(id, 0))),
       forschung: min(AUF.FORSCHUNG.map(f => AUF.foKosten(f, 1).c)), haendler: min(Object.keys(HD_WAREN).map(k => hdPreis('player', k))),
       fund: pickupAmount('coin'), feld: min(resFields.filter(f => f.kind === 'gold').map(f => f.cap)), schutz: AUF.burgSchutzStufe(1),

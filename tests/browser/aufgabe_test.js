@@ -17,7 +17,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const k = await ev(() => {
     const out = { text: QUEST_DEFS.crate.text(3) };
     gems = 5000; kisteOeffnen('aus', 1); beuteFensterZu(); out.shop = loadQuests().list[0].progress;
-    grantFreeCrate(0); out.frei = loadQuests().list[0].progress;                                   // tägliche Belohnung, Bonus, Wochenkette, Abholfach (crate)
+    grantFreeCrate(0); out.frei = loadQuests().list[0].progress;                                   // tägliche Belohnung, Bonus, Abholfach (crate)
     inboxAdd({ src: 'haendler', kiste: 1 }); inboxClaim(inboxList()[0].id); out.abholfach = loadQuests().list[0].progress;   // Abholfach: genau diese Kiste
     passGive('player', { k: 'crate', n: 2 }); out.pass = loadQuests().list[0].progress;
     throneGive('player', 'crate'); out.thron = loadQuests().list[0].progress;
@@ -49,8 +49,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return out;
   });
   ok(s.bau === 1 && s.pass === 15 && s.text === 'Starte einen Bau in der Stadt', 'Stadt-Bau zählt für die Aufgabe und gibt 15 Pass-Punkte', s);
-  ok(s.stufe === 3 && JSON.stringify(s.punkte) === '[["bau","player",5]]', 'Bauherr: fertiges Gebäude gibt 2 + neue Stufe', s.punkte);
-  ok(JSON.stringify(s.bot.punkte) === '[["bau","' + (await ev(() => BOT_DEFS.find(d => !d.mensch && loadBotState()[d.id]).id)) + '",6]]' && s.bot.stufe === 4, 'Mitspieler: Bauherr für Stadt-Gebäude', s.bot);
+  ok(s.stufe === 3 && JSON.stringify(s.punkte) === '[["bau","player",90]]', 'Bauherr: fertiges Gebäude gibt 30 × neue Stufe', s.punkte);
+  ok(JSON.stringify(s.bot.punkte) === '[["bau","' + (await ev(() => BOT_DEFS.find(d => !d.mensch && loadBotState()[d.id]).id)) + '",120]]' && s.bot.stufe === 4, 'Mitspieler: Bauherr für Stadt-Gebäude', s.bot);
   ok(s.bot.start === 1 && s.bot.xp === 15, 'Mitspieler: Bau-Start zählt für den Pass (wie bei dir)', s.bot);
   // 3) Forschung: Aufgabe + Pass-Punkte; nur angeboten, wenn sie heute geht
   await auf('forschung');
@@ -83,8 +83,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(!f.bauBelegt && f.bauFrei, 'Bau-Aufgabe nur, wenn heute ein Bauarbeiter frei wird', f);
   ok(f.botFo[0] === 1 && f.botFo[1] && f.botFo[2] === 15, 'Mitspieler: Forschung zählt für den Pass', f.botFo);
   ok(await ev(() => PASS_HOW.some(h => /Bau in der Stadt/.test(h[1])) && PASS_HOW.some(h => /Forschung/.test(h[1]))), 'Pass erklärt die neuen Punkte');
-  const bh = await ev(() => EV_WOCHE.find(x => x.k === 'bau').pkt);
-  ok(/Stadt/.test(bh), 'Wochen-Event Bauherr nennt die Stadt', bh);
+  const bh = await ev(() => WO_TAGE.find(x => x.k === 'bau').pkt.map(x => x[1]).join(' '));
+  ok(/Gebäude/.test(bh), 'Wochen-Event Bauherr nennt die Gebäude', bh);
   // 4) Liste beim Skript-Start gewürfelt (AUF noch nicht da): nach dem Laden wird „Forschung“ ohne Labor getauscht
   const p2 = await (await b.newContext({ ...devices['iPhone 13'] })).newPage(); p2.on('pageerror', e => fe.push(e.message));
   await p2.addInitScript(() => { const d = new Date(), tag = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');

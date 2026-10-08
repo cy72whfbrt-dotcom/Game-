@@ -169,8 +169,6 @@ function botThink(bot) {
     if (botKeepsShield(bot, Date.now())) { if (Math.random() < .3 && (botGatherField(bot, true) || botBarbHunt(bot))) botTapped(bot); return; }   // under their own shield: no attacks, only gathering and camps
     if (Math.random() < .5 && botThroneHold(bot)) { botTapped(bot); saveBotState(); return; }   // just took the throne: fill it up before the next one comes
     if (AUF && Math.random() < .25 && AUF.botRohWunsch(bot.id) && botGatherField(bot)) { botTapped(bot); saveBotState(); return; }   // Holz/Stein/Eisen fehlen für die Burg: Sammler los (Paket D)
-    if (invAktiv() && Math.random() < .5 && botInvasion(bot)) { botTapped(bot); saveBotState(); return; }   // Barbaren-Invasion: sich verteidigen, den Nachbarn helfen
-    if (drAktiv() && Math.random() < .3 && botDrache(bot)) { botTapped(bot); saveBotState(); return; }      // der Drache am Sonntagabend
     if (Math.random() < .1 && (botBarbHunt(bot) || botDayBoss(bot))) { botTapped(bot); saveBotState(); return; }   // now and then a camp or a strike at the daily boss (that is this move's order)
     const st = botStyle(bot), atk = botAtkFactor(bot, true), ruler = rulerOwner();   // several waves: a hero only leads one, so he's a bonus, not part of the plan
     const shielded = playerShielded(), now = Date.now(), shOwn = shieldedOwners(now);

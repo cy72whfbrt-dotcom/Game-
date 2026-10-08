@@ -55,7 +55,7 @@
             if (!kennungOk(b.key)) return;
             const m = marschVon(who, b.key); if (!m) { const sp = spaeherVon(who, b.key); if (sp) sp.weg(); return; }   // (sein Späher kehrt um)
             if (m.fightEndsAt || m.rally || m.back) return;   // (eine Rally gehört allen, die mitmachen; wer schon heimgeht, kehrt nicht nochmal um)
-            if (!pendingAttacks.includes(m) && !pendingSends.includes(m)) { marschUmkehren(m, Date.now()); requestRender(); return; }   // Lager, Boss, Drache, Invasion, Sammler
+            if (!pendingAttacks.includes(m) && !pendingSends.includes(m)) { marschUmkehren(m, Date.now()); requestRender(); return; }   // Lager, Boss, Sammler
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             if (pendingAttacks.includes(m)) heroWutZurueck(who, m.hx);   // (nicht gekämpft: die Wut bleibt)
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
@@ -132,14 +132,7 @@
         },
         feldHeim(who, b) { const f = resFields.find(x => x.id === b.feld), st = f && fieldInfo(f); if (st && st.occ && st.occ.who === who) { fieldGoHome(f, st, Date.now()); saveFields(); } },
         lager(who, b) {
-            if (!inselOk(b.home) || !gehoert(b.home, who) || !['c', 'b', 'i', 'd'].includes(b.k)) return;
-            if (b.k === 'i' || b.k === 'd') {                // Events: eine Barbaren-Armee abfangen / den Drachen angreifen
-                if (zuOft(wm(who), 'event', 40, 3600000)) { warnen(who, 'lager', 'Über 40 Event-Angriffe in einer Stunde – abgelehnt.'); return; }
-                if (b.k === 'i' && (!kennungOk(b.tid) || !invArmee(b.tid))) return;
-                if (b.k === 'i' && !wegOk(who, islandById[b.home].landmassId, invPos(invArmee(b.tid)).lm)) { warnen(who, 'weg', 'Abfangen ohne Weg dorthin – abgelehnt.'); return; }
-                if (b.k === 'd') { const D = drAktiv(); if (!D) return; if ((D.hits[who] || 0) >= DR_HITS) { warnen(who, 'lager', 'Mehr als ' + DR_HITS + ' Angriffe auf den Drachen – abgelehnt.'); return; } }
-                const n = truppenVon(b.home, b.n); if (n >= 1) barbSend(who, b.home, b.k, b.k === 'i' ? b.tid : null, n, heldOk(b.held), heldOk(b.held2)); return;
-            }
+            if (!inselOk(b.home) || !gehoert(b.home, who) || !['c', 'b'].includes(b.k)) return;
             // Tagesgrenzen wie auf dem Handy (Boss 10 Angriffe, Lager 20 pro Tag) – auch, was gerade unterwegs ist, zählt mit
             // (Boss: der Zähler steigt schon beim Losschicken; Lager: beim Sieg – darum zählen dort die unterwegs mit, wie barbLeft)
             if (b.k === 'b' ? barbRec(who).h >= dbossHitsMax() : barbLeft(who) <= 0) { warnen(who, 'lager', 'Tagesgrenze für ' + (b.k === 'b' ? 'den Boss' : 'Lager') + ' überschritten – abgelehnt.'); return; }

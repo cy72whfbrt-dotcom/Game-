@@ -90,7 +90,7 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
   // 4) Wochen-Punkte nach Anteil
   const kA = e.A.k, kE = e.E.k, sk = kA + kE, aK = Math.min(e.en, e.my), weg = 4e6 - 1e6, Tot = e.en + e.def, kH = (e.verst[0] || {}).k || 0;
   const pk = w => e.pkt.filter(x => x.w === w).reduce((s, x) => s + x.n, 0);
-  const KILL = 1000 / 1800;   // WO_KILL_PER = 1000 × WIRTSCHAFT_KOSTEN (1/1800)
+  const KILL = 1;   // Krieger-Tag: 1 Punkt je getötete Truppe
   ok(nah(pk(e.A.w), aK * kA / sk / KILL, 1e-6) && nah(pk(e.E.w), aK * kE / sk / KILL, 1e-6), '4) Angreifer: Punkte nach Stärke-Anteil', { A: pk(e.A.w), E: pk(e.E.w), sollA: aK * kA / sk / KILL, sollE: aK * kE / sk / KILL });
   ok(kH > 0 && (e.verst[0] || {}).w === e.ids.H && nah(pk(e.ids.H), weg * kH / Tot / KILL, 1e-6) && nah(pk(e.ids.Z), weg * (Tot - kH) / Tot / KILL, 1e-6), '4) Verteidiger: Zora + Hugo (Verstärkung) nach Anteil',
     { H: pk(e.ids.H), Z: pk(e.ids.Z), sollH: weg * kH / Tot / KILL, sollZ: weg * (Tot - kH) / Tot / KILL });

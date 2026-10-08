@@ -102,7 +102,7 @@ function bot_namen() {
     return $n;
 }
 // Nachrichten, die der Weltrechner an andere schicken darf (Geschenke nur über admin.php – bis auf das kleine Bündnis-Geschenk)
-const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis', 'bundInfo', 'bundGeschenk', 'haendlerWare', 'spaeh', 'saison', 'saisonBald'];   // evPreis: Preis aus Wochen-Event/Invasion/Drache/Welt-Saison (Abholfach) · spaeh: Spähbericht (6.10.) · saison/saisonBald: neue Welt-Saison (Reset) und ihre Ankündigung
+const WELTRECHNER_NACHRICHTEN = ['delta', 'bericht', 'startschild', 'evPreis', 'bundInfo', 'bundGeschenk', 'haendlerWare', 'spaeh', 'saison', 'saisonBald'];   // evPreis: Preis aus Wochen-Event/Lager/Welt-Saison (Abholfach) · spaeh: Spähbericht (6.10.) · saison/saisonBald: neue Welt-Saison (Reset) und ihre Ankündigung
 // Ware vom wandernden Händler (haendler.js): höchstens 10 Splitter, eine Kiste bis blau, Truppen, ein 2-Std.-Schild – nie Gems, nie Münzen
 function haendler_ware_ok($e) {
     foreach ($e as $k => $v) if (!in_array($k, ['art', 'title', 'sh', 'kiste', 'tr', 'schild', 'text'], true)) return false;
