@@ -125,7 +125,7 @@ const info = (t, x) => console.log('INFO  ' + t + (x !== undefined ? ' – ' + J
   // ---------- Fall 6 + 7 + 8: Rally auf ein Ziel + eigener Extra-Marsch + Extra-Marsch eines Verbündeten + ein Fremder
   { const z = await p.evaluate(() => K.z6 = K.z[4]);
     const st = await p.evaluate(() => {
-      const w = bundOp(K.A, { op: 'rally', basis: K.ca, ziel: K.z6, min: 1, n: 400000 }); if (w) return { w };
+      AUF.frei.an(); let w; try { w = bundOp(K.A, { op: 'rally', basis: K.ca, ziel: K.z6, min: 1, n: 400000 }); } finally { AUF.frei.aus(); }   // (Marsch-Plätze: eigene Regel) if (w) return { w };
       const r = bund.r.find(x => x.by === K.A); const w2 = bundOp(K.B, { op: 'rallyDazu', rid: r.id, von: K.b, n: 100000 }); if (w2) return { w2 };
       const s = pendingSends.find(s => s.senderBotId === K.B && s.rally === r.id); s.resolveAt = Date.now() - 10; K.rid = r.id; return {}; });
     await warte(() => bund.r.some(r => r.id === K.rid && r.j.every(j => j.da)), null, 5000);
@@ -148,7 +148,7 @@ const info = (t, x) => console.log('INFO  ' + t + (x !== undefined ? ' – ' + J
   { const z = await p.evaluate(() => K.z7 = K.z[5]);
     await p.evaluate(() => K.los(K.a2, K.z7, K.A, 60000)); await kampfDa(z);
     await p.evaluate(() => K.los(K.b2, K.z7, K.B2, 40000));
-    const w = await p.evaluate(() => { const w = bundOp(K.A, { op: 'rally', basis: K.ca, ziel: K.z7, min: 1, n: 300000 }); if (w) return w;
+    const w = await p.evaluate(() => { AUF.frei.an(); let w; try { w = bundOp(K.A, { op: 'rally', basis: K.ca, ziel: K.z7, min: 1, n: 300000 }); } finally { AUF.frei.aus(); }   // (Marsch-Plätze: eigene Regel) if (w) return w;
       const r = bund.r.find(x => x.by === K.A); bundRallyLos(r); const a = pendingAttacks.find(a => a.rally && a.rally.id === r.id); if (a) a.resolveAt = Date.now() - 10; return a ? '' : 'Rally nicht los'; });
     await warte(z => K.kampf(z) && K.kampf(z).rawTroops === 400000, z, 6000);
     const l = await p.evaluate(z => ({ lage: K.lage(z), n: pendingAttacks.filter(a => a.targetId === z).length }), z);
