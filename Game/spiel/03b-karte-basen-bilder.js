@@ -80,6 +80,10 @@ function basisKreis(isl, z) {                                                 //
   const w = isl.type === 'tower' ? basisBreite(isl, z) : 0, im = w && basisBild(basisBildNr(baseLevelOf(isl)));
   return im ? { dy: w * im.height / im.width * .22, r: w * .42 } : null;
 }
+function basisBildRect(island, z) {                                            // (Bildschirm) wo das Basis-Bild steht (ohne den leeren Rand unten) oder null
+  const w = basisBreite(island, z), im = w && basisBild(basisBildNr(baseLevelOf(island))); if (!im) return null;
+  const h = w * im.height / im.width; return { x: toSX(island.x) - w / 2, y: toSY(island.y) - h * .72, w, h: h * .89 };
+}
 function drawBasisBild(island, ownerKey, z) {                                  // (Bildschirm) → true, wenn das Bild gezeichnet ist
   const w = basisBreite(island, z); if (!w) return false;
   const nr = basisBildNr(baseLevelOf(island)), im = basisBild(nr); if (!im) return false;

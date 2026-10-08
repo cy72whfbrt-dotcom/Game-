@@ -3092,6 +3092,10 @@ function basisKreis(isl, z) {                                                 //
   const w = isl.type === 'tower' ? basisBreite(isl, z) : 0, im = w && basisBild(basisBildNr(baseLevelOf(isl)));
   return im ? { dy: w * im.height / im.width * .22, r: w * .42 } : null;
 }
+function basisBildRect(island, z) {                                            // (Bildschirm) wo das Basis-Bild steht (ohne den leeren Rand unten) oder null
+  const w = basisBreite(island, z), im = w && basisBild(basisBildNr(baseLevelOf(island))); if (!im) return null;
+  const h = w * im.height / im.width; return { x: toSX(island.x) - w / 2, y: toSY(island.y) - h * .72, w, h: h * .89 };
+}
 function drawBasisBild(island, ownerKey, z) {                                  // (Bildschirm) → true, wenn das Bild gezeichnet ist
   const w = basisBreite(island, z); if (!w) return false;
   const nr = basisBildNr(baseLevelOf(island)), im = basisBild(nr); if (!im) return false;
@@ -3498,7 +3502,8 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   const placed = [];
   for (const it of items) {
     const tm = torMitte(it.isl);                                                   // Pass-Tor (Karten-Bild): das Schild direkt unter das Tor
-    const r = tm ? tm.r * z : it.isl.bildR ? Math.max(it.isl.bildR * z, 14) : it.isl.radius * z * (it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
+    const bb = schild(it.isl) && basisBildRect(it.isl, z);                        // (angetippte Basis mit Schild: Abstand nach dem Bild, Fahne darüber)
+    const r = bb ? Math.max(it.isl.radius * z, (toSY(it.isl.y) - bb.y) / 1.32) : tm ? tm.r * z : it.isl.bildR ? Math.max(it.isl.bildR * z, 14) : it.isl.radius * z * (it.m.cap ? 1.25 : 1), sx = toSX(tm ? tm.x : it.isl.x), sy = toSY(tm ? tm.y : it.isl.y);   // Thron und Hauptstädte sind größer: Fahne darunter, nicht auf der Mauer
     let best = null;
     for (let t = it.tier; ; t = DOWN[t]) {
       const sp = bannerSprite(t, it.m), w = sp.w, h = sp.h;
@@ -3508,6 +3513,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
         let sc = cost;
         for (const q of placed) sc += overlap(rect, q);
         for (const tw of towers) if (tw.id !== it.isl.id) sc += 0.35 * overlap(rect, tw);
+        if (bb) sc += 2 * overlap(rect, bb);   // angetippte Basis mit Schild: Fahne neben/über die Burg, nie darauf
         if (!best || sc < best.sc) best = { sc, rect, sp, t };
       }
       if (best.sc <= 0.25 * best.rect.w * best.rect.h || it.p >= 4 || DOWN[t] === t) break;   // überdeckt → kleinere Stufe (Hauptstadt, Tempel, Auswahl bleiben)

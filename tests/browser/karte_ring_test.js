@@ -46,6 +46,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
           ueber: !!s && s.y < toSY(tm.y), zu, gemalt: n.some(x => /ui_sym_schloss/.test(x)) });
       }
       if (nah) { const tm = torMitte(nah); flyTo(tm.x, tm.y, { zoom: maxZoom * .5, instant: true }); zeichne(); o.nahFrei = !schlossRects.some(q => q.id === nah.id); }
+      for (const zz of [maxZoom, maxZoom * .5, maxZoom * .3]) {               // angetippte Hauptstadt: die Fahne verdeckt die Burg nicht
+        flyTo(h.x, h.y, { zoom: zz, instant: true }); const f = layoutBanners([h], mapState.zoom, h.id).find(x => x.isl === h), bb = basisBildRect(h, mapState.zoom);
+        (o.burgFrei = o.burgFrei || []).push(f && bb ? +(overlap(f.rect, bb) / (bb.w * bb.h)).toFixed(2) : -1); }
       flyTo(h.x, h.y, { zoom: maxZoom * .5, instant: true }); drawMap();
       return o;
     });
@@ -54,6 +57,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(Math.min(...r.puls) >= .549 && Math.max(...r.puls) <= .901 && r.puls[1] > .85 && r.puls[3] < .6, tag + 'Ring pulsiert 0,55 ↔ 0,9 in 2 s', r.puls);
     ok(r.kein30 && r.nurEigene && r.ringNah, tag + 'Ring nur an der eigenen Hauptstadt, Puls über eigenen langsamen Takt', [r.kein30, r.nurEigene, r.ringNah]);
     ok(r.akku.uhr && r.akku.fest, tag + 'Akku sparen: kein Puls (fest 0,8), kein Extra-Neuzeichnen', r.akku);
+    ok(r.burgFrei.every(a => a >= 0 && a <= .1), tag + 'angetippte Hauptstadt: Fahne höchstens 10 % auf der Burg', r.burgFrei);
     ok(r.krone, tag + 'Krone im Namensschild nur der eigenen Hauptstadt');
     ok(r.weit.ring && r.weit.krone, tag + 'ganz weit: Krone + Ring', r.weit);
     ok(r.regel[0] && r.regel[1] && r.regelGleich, tag + 'angreifbar wie der Angriffsknopf (eine eigene Basis grenzt an)', r.regel);
