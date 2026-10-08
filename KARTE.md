@@ -80,14 +80,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `anyIn` → Game/spiel/03a-karte-hintergrund.js:501
 - `anzahl_teile` → Game/server/05-datenbank-welt.php:99
 - `anzeigeStufe` → Game/spiel/03a-karte-hintergrund.js:614
-- `apHeldChip` → Game/spiel/10a-fenster-insel-vorschau.js:227
+- `apHeldChip` → Game/spiel/10a-fenster-insel-vorschau.js:263
 - `api.clear` → Game/speichern.js:39
 - `api.getItem` → Game/speichern.js:36
 - `api.key` → Game/speichern.js:40
 - `api.removeItem` → Game/speichern.js:38
 - `api.setItem` → Game/speichern.js:37
 - `applyCrestAvatars` → Game/spiel/05a-profil-rahmen.js:95
-- `apQuelleText` → Game/spiel/10a-fenster-insel-vorschau.js:224
+- `apQuelleText` → Game/spiel/10a-fenster-insel-vorschau.js:260
 - `arch` → Game/spiel/06e-karte-nebel-paesse.js:192
 - `armee_sicht_setzen` → Game/server/05-datenbank-welt.php:310
 - `armeeSichtRunde` → Game/spiel/10d4-welt-nebel-server.js:74
@@ -238,7 +238,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bgShow` → Game/spiel/03a-karte-hintergrund.js:404
 - `bgWarm` → Game/spiel/03a-karte-hintergrund.js:431
 - `bild30` → Game/ladebildschirm.js:289
-- `bindTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:313
+- `bindTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:352
 - `bis` → Game/spiel/03c-karte-wappen-thronplatz.js:450
 - `bitHat` → Game/spiel/10d4-welt-nebel-server.js:18
 - `bitsZu` → Game/spiel/10d4-welt-nebel-server.js:17
@@ -548,6 +548,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `burgStufe` → Game/aufbau.js:93
 - `burgZeitAlt` → Game/spiel/10d3-welt-hauptbuch.js:25
 - `burgZeitTab` → Game/spiel/08a-stadt-bauen.js:81
+- `bwWerte` → Game/spiel/10a-fenster-insel-vorschau.js:103
 - `bytes` → Game/benachrichtigung.js:31
 - `CAM_PIECES` → Game/spiel/03e-karte-kamera-eingabe.js:49
 - `camInsetTarget` → Game/spiel/03e-karte-kamera-eingabe.js:93
@@ -658,7 +659,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `confirmRecall` → Game/spiel/10b-fenster-insel-knoepfe.js:79
 - `conquestsOf` → Game/spiel/05c-profil-erfolge-rangliste.js:279
 - `convexHull` → Game/spiel/03e-karte-kamera-eingabe.js:41
-- `coordText` → Game/spiel/10a-fenster-insel-vorschau.js:95
+- `coordText` → Game/spiel/10a-fenster-insel-vorschau.js:120
 - `count` → Game/spiel/03a-karte-hintergrund.js:602
 - `covered` → Game/spiel/03a-karte-hintergrund.js:527
 - `crestDataUrl` → Game/spiel/03c-karte-wappen-thronplatz.js:54
@@ -968,7 +969,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `FX.victory` → Game/spiel/10c-start-einstellungen.js:87
 - `FX.warn` → Game/spiel/10c-start-einstellungen.js:84
 - `fxCurseFlames` → Game/spiel/03c-karte-wappen-thronplatz.js:214
-- `gateControlsHtml` → Game/spiel/10a-fenster-insel-vorschau.js:41
+- `gateControlsHtml` → Game/spiel/10a-fenster-insel-vorschau.js:42
 - `gateOnRoute` → Game/spiel/01b-weltkarte.js:270
 - `gateSettings` → Game/spiel/01b-weltkarte.js:278
 - `geben` → Game/spiel/06c-thron-mitte.js:179
@@ -1164,7 +1165,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroWutZurueck` → Game/spiel/08c-helden-fenster.js:91
 - `heroZweitOk` → Game/spiel/08c-helden-fenster.js:84
 - `herzSchreiben` → Game/weltrechner/start.js:65
-- `hfl` → Game/spiel/10a-fenster-insel-vorschau.js:397
+- `hfl` → Game/spiel/10a-fenster-insel-vorschau.js:436
 - `hhGrid` → Game/spiel/08c-helden-fenster.js:205
 - `hhHero` → Game/spiel/08c-helden-fenster.js:228
 - `hhOhneHalle` → Game/spiel/08c-helden-fenster.js:272
@@ -1206,7 +1207,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `inboxSave` → Game/spiel/06a-aufgaben.js:249
 - `infoKlapp` → Game/spiel/09c-events-drache.js:455
 - `init` → Game/spiel/10c-start-einstellungen.js:20
-- `inselMittig` → Game/spiel/10a-fenster-insel-vorschau.js:215
+- `inselMittig` → Game/spiel/10a-fenster-insel-vorschau.js:251
 - `inselOk` → Game/spiel/10d2-welt-schummelschutz.js:16
 - `inselOrtAnwenden` → Game/spiel/08d2-stadt-teleport.js:18
 - `inselOrtLaden` → Game/spiel/08d2-stadt-teleport.js:17
@@ -1236,7 +1237,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `isExplored` → Game/spiel/01e-kampf-werte-nebel-hud.js:39
 - `islandOwnerOf` → Game/spiel/01d-helden-daten-herrscher.js:151
 - `islandSeen` → Game/spiel/01e-kampf-werte-nebel-hud.js:31
-- `islandTitle` → Game/spiel/10a-fenster-insel-vorschau.js:24
+- `islandTitle` → Game/spiel/10a-fenster-insel-vorschau.js:25
 - `isPanelOpen` → Game/spiel/09e-fenster-insel.js:33
 - `ist_admin` → Game/server/02-sicherheit-datenlecks.php:18
 - `ist_https` → Game/server/01-grundlagen-login.php:33
@@ -1560,7 +1561,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openRulerProfile` → Game/spiel/05c-profil-erfolge-rangliste.js:200
 - `openShop` → Game/spiel/06d-schild-produktion.js:197
 - `opts` → Game/spiel/04-kampf-ankunft.js:62
-- `ortName` → Game/spiel/10a-fenster-insel-vorschau.js:35
+- `ortName` → Game/spiel/10a-fenster-insel-vorschau.js:36
 - `out` → Game/spiel/10c-start-einstellungen.js:32
 - `overHole` → Game/spiel/03a-karte-hintergrund.js:568
 - `overlap` → Game/spiel/03c-karte-wappen-thronplatz.js:143
@@ -1580,7 +1581,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `paintPlate` → Game/spiel/03c-karte-wappen-thronplatz.js:80
 - `paketText` → Game/speichern.js:125
 - `panBy` → Game/spiel/03e-karte-kamera-eingabe.js:432
-- `parseTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:302
+- `parseTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:341
 - `partLines` → Game/spiel/05d-marsch-liste-kampfbericht.js:161
 - `partsFor` → Game/bots/02-kampf-karte.js:43
 - `passBump` → Game/spiel/06b-pass-anleitung.js:31
@@ -1608,8 +1609,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `passTruppen` → Game/spiel/06b-pass-anleitung.js:18
 - `passwort_anfrage` → Game/server/06-speichern-push-konto.php:159
 - `passXp` → Game/spiel/06b-pass-anleitung.js:32
-- `patchAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:374
-- `patchSendPreview` → Game/spiel/10a-fenster-insel-vorschau.js:354
+- `patchAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:413
+- `patchSendPreview` → Game/spiel/10a-fenster-insel-vorschau.js:393
 - `pathSoFar` → Game/spiel/02b-marsch-losschicken.js:215
 - `payGold` → Game/spiel/04-kampf-ankunft.js:286
 - `payToll` → Game/spiel/01b-weltkarte.js:291
@@ -1640,6 +1641,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `plunderOf` → Game/spiel/08a-stadt-bauen.js:32
 - `pointInPolygon` → Game/spiel/01b-weltkarte.js:68
 - `pointToSegmentDistance` → Game/spiel/09a-funde-felder.js:126
+- `popupKopfBild` → Game/spiel/10a-fenster-insel-vorschau.js:107
 - `positionIslandPopover` → Game/spiel/03e-karte-kamera-eingabe.js:460
 - `powerOf` → Game/spiel/05c-profil-erfolge-rangliste.js:181
 - `preiseFaerben` → Game/spiel/06d-schild-produktion.js:176
@@ -1742,7 +1744,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderAchievements` → Game/spiel/05c-profil-erfolge-rangliste.js:128
 - `renderActiveMarches` → Game/spiel/05d-marsch-liste-kampfbericht.js:47
 - `renderArmySheet` → Game/spiel/09d-karte-armeen-wegmarken.js:219
-- `renderAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:236
+- `renderAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:272
 - `renderChestEquipment` → Game/spiel/05b-profil-truhe-skills.js:46
 - `renderChestItemPopup` → Game/spiel/05b-profil-truhe-skills.js:189
 - `renderCitySheet` → Game/spiel/08b-stadt-burg-aussehen.js:143
@@ -1764,13 +1766,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderLookTop` → Game/spiel/08b-stadt-burg-aussehen.js:38
 - `renderMidBar` → Game/spiel/06c-thron-mitte.js:212
 - `renderPass` → Game/spiel/06b-pass-anleitung.js:86
-- `renderPopup` → Game/spiel/10a-fenster-insel-vorschau.js:96
+- `renderPopup` → Game/spiel/10a-fenster-insel-vorschau.js:121
 - `renderProfile` → Game/spiel/05a-profil-rahmen.js:103
 - `renderQuestPanel` → Game/spiel/06a-aufgaben.js:297
 - `renderRankings` → Game/spiel/05c-profil-erfolge-rangliste.js:297
 - `renderRecallPreview` → Game/spiel/10b-fenster-insel-knoepfe.js:56
 - `renderRucksack` → Game/spiel/06d-schild-produktion.js:84
-- `renderSendPreview` → Game/spiel/10a-fenster-insel-vorschau.js:323
+- `renderSendPreview` → Game/spiel/10a-fenster-insel-vorschau.js:362
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:58
 - `renderShop` → Game/spiel/06d-schild-produktion.js:181
 - `renderSkillGrid` → Game/spiel/05b-profil-truhe-skills.js:306
@@ -1796,7 +1798,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ringBadge` → Game/spiel/03c-karte-wappen-thronplatz.js:379
 - `ringBild` → Game/spiel/03b-karte-basen-bilder.js:112
 - `ringMult` → Game/spiel/01b-weltkarte.js:25
-- `ringNotice` → Game/spiel/10a-fenster-insel-vorschau.js:57
+- `ringNotice` → Game/spiel/10a-fenster-insel-vorschau.js:58
 - `ringStatusByOwner` → Game/spiel/04-kampf-ankunft.js:29
 - `ringTruppen` → Game/spiel/01b-weltkarte.js:23
 - `rkFach` → Game/spiel/06d-schild-produktion.js:81
@@ -1827,6 +1829,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `runBotTick` → Game/bots/05-verteidigen-takt.js:335
 - `rund` → Game/spiel/08f-stadt-bild-zeichnen.js:20
 - `runde` → Game/weltrechner/push.js:225
+- `rundKnopf` → Game/spiel/10a-fenster-insel-vorschau.js:92
 - `runProductionTick` → Game/spiel/06d-schild-produktion.js:249
 - `S.beimSetzen` → Game/welt.js:312
 - `saison_anhalten` → Game/server/07-welt-puls.php:36
@@ -1915,7 +1918,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `setScreen` → Game/spiel/03a-karte-hintergrund.js:5
 - `setShown` → Game/spiel/01e-kampf-werte-nebel-hud.js:232
 - `setText` → Game/spiel/01e-kampf-werte-nebel-hud.js:231
-- `setTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:312
+- `setTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:351
 - `setW` → Game/spiel/03a-karte-hintergrund.js:360
 - `setze_cookie` → Game/server/01-grundlagen-login.php:37
 - `setzen` → Game/spiel/01a-grundlagen.js:29
@@ -1948,9 +1951,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sizeBackingStore` → Game/spiel/03e-karte-kamera-eingabe.js:401
 - `skillBonusText` → Game/spiel/04-kampf-ankunft.js:294
 - `skript` → Game/server/03-nebel-maersche-seite.php:145
-- `sliderToTroops` → Game/spiel/10a-fenster-insel-vorschau.js:300
+- `sliderToTroops` → Game/spiel/10a-fenster-insel-vorschau.js:339
 - `sofort` → Game/speichern.js:168
-- `sourceTroops` → Game/spiel/10a-fenster-insel-vorschau.js:237
+- `sourceTroops` → Game/spiel/10a-fenster-insel-vorschau.js:273
 - `spaeh` → Game/spiel/05d-marsch-liste-kampfbericht.js:487
 - `spaehAbgelaufen` → Game/spiel/02c-marsch-spaeher-ankunft.js:106
 - `spaehAlterText` → Game/spiel/02c-marsch-spaeher-ankunft.js:119
@@ -2037,7 +2040,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `teleVorrat` → Game/spiel/06d-schild-produktion.js:79
 - `tempelPlus` → Game/aufbau.js:242
 - `templeBaseMult` → Game/spiel/01b-weltkarte.js:48
-- `templeBonusLine` → Game/spiel/10a-fenster-insel-vorschau.js:73
+- `templeBonusLine` → Game/spiel/10a-fenster-insel-vorschau.js:74
 - `templeHoldMultiplier` → Game/spiel/01c-basen-spielstand.js:269
 - `territorySigs` → Game/spiel/03a-karte-hintergrund.js:266
 - `textOf` → Game/spiel/05d-marsch-liste-kampfbericht.js:366
@@ -2049,7 +2052,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `throneGive` → Game/spiel/06c-thron-mitte.js:38
 - `throneHelfer` → Game/spiel/06c-thron-mitte.js:20
 - `throneIncome` → Game/spiel/06c-thron-mitte.js:22
-- `throneNotice` → Game/spiel/10a-fenster-insel-vorschau.js:66
+- `throneNotice` → Game/spiel/10a-fenster-insel-vorschau.js:67
 - `throneShooters` → Game/spiel/06c-thron-mitte.js:23
 - `throneState` → Game/spiel/06c-thron-mitte.js:13
 - `throneTick` → Game/spiel/06c-thron-mitte.js:95
@@ -2088,7 +2091,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `travelDurationSeconds` → Game/spiel/02b-marsch-losschicken.js:23
 - `troopProductionMultiplier` → Game/spiel/04-kampf-ankunft.js:256
 - `troopsPerTick` → Game/spiel/01b-weltkarte.js:106
-- `troopsToSlider` → Game/spiel/10a-fenster-insel-vorschau.js:301
+- `troopsToSlider` → Game/spiel/10a-fenster-insel-vorschau.js:340
 - `trunc` → Game/spiel/03b-karte-basen-bilder.js:316
 - `truppenBekannt` → Game/spiel/01e-kampf-werte-nebel-hud.js:38
 - `truppenGeben` → Game/spiel/10d2-welt-schummelschutz.js:360
@@ -4270,28 +4273,31 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saisonWeltZurueck` :224 — (Handy) die Welt ist wieder in einer älteren Saison als dein Spielstand (Sicher…
 
 ### Game/spiel/10a-fenster-insel-vorschau.js — Fenster-Start, Insel-Fenster: Inhalt, Angriffs- und Sende-Vorschau, Truppen-Reg…
-- `islandTitle` :24 — Renders whichever screen (menu or the upgrade preview) is currently active - ne…
-- `ortName` :35 — Name für Spieler statt „Turm #N“: „Deine Basis“ / „Basis von …“ / „Neutrale Bas…
-- `gateControlsHtml` :41
-- `ringNotice` :57 — whose ring is it: a title from the middle
-- `throneNotice` :66 — your own throne or Wächter-Tempel: points and fire at a glance
-- `templeBonusLine` :73
-- `coordText` :95 — Presentation rewrite (design-spec §4.5). Which buttons show, when they are disa…
-- `renderPopup` :96
-- `inselMittig` :215 — Handy: die Basis immer mittig in den freien Teil der Karte über dem Fenster (un…
-- `apQuelleText` :224 — „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
-- `apHeldChip` :227 — ein Chip: Bild, Name, darunter klein Sterne/Hinweis
-- `renderAttackPreview` :236 — Attack preview. Built ONCE per (target, source, scouted, bonus); later calls (t…
-- `sourceTroops` :237
-- `sliderToTroops` :300
-- `troopsToSlider` :301
-- `parseTroopInput` :302
-- `setTroopInput` :312
-- `bindTroopInput` :313
-- `renderSendPreview` :323 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
-- `patchSendPreview` :354
-- `patchAttackPreview` :374 — Writes the live numbers of the attack preview (own force, enemy force when scou…
-- `hfl` :397
+- `islandTitle` :25 — Renders whichever screen (menu or the upgrade preview) is currently active - ne…
+- `ortName` :36 — Name für Spieler statt „Turm #N“: „Deine Basis“ / „Basis von …“ / „Neutrale Bas…
+- `gateControlsHtml` :42
+- `ringNotice` :58 — whose ring is it: a title from the middle
+- `throneNotice` :67 — your own throne or Wächter-Tempel: points and fire at a glance
+- `templeBonusLine` :74
+- `rundKnopf` :92 — Runde Knöpfe (8.10.): dazu Schild (Rucksack), Truppen (Armee aufstellen) und „M…
+- `bwWerte` :103 — Werte als Bild + Zahl (statt Kacheln): [[Bild, Zahl, Bezeichnung, Klasse]]
+- `popupKopfBild` :107 — Kopf: Basen zeigen ihr Bild (wie auf der Karte), Tore das Tor – sonst das Symbol
+- `coordText` :120 — Presentation rewrite (design-spec §4.5). Which buttons show, when they are disa…
+- `renderPopup` :121
+- `inselMittig` :251 — Handy: die Basis immer mittig in den freien Teil der Karte über dem Fenster (un…
+- `apQuelleText` :260 — „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
+- `apHeldChip` :263 — eine Held-Karte: Bild (Hauptheld groß), Name, darunter klein Sterne/Hinweis
+- `renderAttackPreview` :272 — Attack preview. Built ONCE per (target, source, scouted, bonus); later calls (t…
+- `sourceTroops` :273
+- `sliderToTroops` :339
+- `troopsToSlider` :340
+- `parseTroopInput` :341
+- `setTroopInput` :351
+- `bindTroopInput` :352
+- `renderSendPreview` :362 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
+- `patchSendPreview` :393
+- `patchAttackPreview` :413 — Writes the live numbers of the attack preview (own force, enemy force when scou…
+- `hfl` :436
 
 ### Game/spiel/10b-fenster-insel-knoepfe.js — Insel-Fenster: Ausbau merken, Zurückrufen, Nebel antippen, Tippen auf die Karte
 - `ausbauMerken` :5
