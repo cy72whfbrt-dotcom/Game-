@@ -92,6 +92,8 @@ function armee(o) {
   const a = Object.assign({ id: naechsteId++, art: 'marsch', phase: 'hin', t0: jetzt, spiegel: 1, verlust: 0, zurueck: false, beute: null }, o);
   a.kuerzel = o.kuerzel !== undefined ? o.kuerzel : KUERZEL[a.seite]; a.start = rand(a.von, a.ziel); a.truppen0 = a.truppen0 || a.truppen;
   a.dauer = a.dauer || Math.hypot(a.ziel.x - a.von.x, a.ziel.y - a.von.y) / TEMPO;
+  if (meins(a) && a.art === 'marsch' && !a.beitritt && a.ziel.art === 'basis' && basis('eigen').schild) {   // wie launchAttack: wer angreift, verliert seinen Schild
+    schildSetzen('[NW]Alex', false); effekte.push({ art: 'dazu', t0: jetzt, ziel: basis('eigen'), feind: true, text: 'Dein Friedensschild ist gefallen, weil du angreifst.' }); }
   armeen.push(a); return a;
 }
 function halt(a) {                                     // wo die Armee am Ziel stehen bleibt: vor der Basis/dem Lager, auf ihrer Ankunftsseite
@@ -316,7 +318,9 @@ const DAZU = {
   dritter() { const z = kampfZiel();                   // ganz andere Seite ([DK], weder du noch der Gegner): muss warten
     welle({ seite: 'feind', kuerzel: 'DK', von: { x: z.x + 6000, y: z.y - 15000, art: 'feld' }, ziel: z, held: 'yrsa', name: '[DK]Wulfgar', truppen: 6.5e6 }, 3); blickAuf(z, z); },
 };
-const ERGEBNIS = {                                     // Ergebnis-Regeln: Turm wird deiner, Lager sofort entschieden
+const ERGEBNIS = {
+  meinSchild() { const an = !basis('eigen').schild; schildSetzen('[NW]Alex', an); if (an) { seite = 'feind'; ZUSTAND.marsch(); seite = $('seite').dataset.s || 'eigen'; blickAuf(basis('eigen'), basis('eigen')); } },
+  kevinSchild() { const z = basis('kevin'), an = !z.schild; zuruecksetzen(z); schildSetzen(z.name, an); if (an) welle({ seite: 'eigen', von: basis('eigen'), ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 6.2e6 }, 3); blickAuf(z, z); },                                     // Ergebnis-Regeln: Turm wird deiner, Lager sofort entschieden
   turm() { const z = basis('turm'); zuruecksetzen(z); welle({ seite: 'eigen', von: basis('eigen'), ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 6.2e6 }, 3); blickAuf(z, z); },
   lager() { const z = D.lager; z.truppen = z.truppen0 = z.truppen0 || z.truppen; welle({ seite: 'eigen', von: basis('eigen'), ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 6.2e6 }, 3); blickAuf(z, z); },
   lagerSchwach() { const z = D.lager; z.truppen = z.truppen0 = z.truppen0 || z.truppen; welle({ seite: 'eigen', von: basis('eigen'), ziel: z, held: 'aldric', name: '[NW]Alex', truppen: 5e5 }, 3); blickAuf(z, z); },
@@ -342,6 +346,10 @@ function ankunft(a) {                                 // Welle am Ziel: beitrete
     if (z.name === a.name) { z.truppen += a.truppen; armeen.splice(armeen.indexOf(a), 1);
       return effekte.push({ art: 'dazu', t0: jetzt, ziel: z, text: `gehört schon dir – ${fmtCompact(a.truppen)} Truppen verstärken die Besatzung` }); }
     effekte.push({ art: 'dazu', t0: jetzt, ziel: z, text: `${ohneTag(z.name)} ist im Bündnis – kein Kampf, ${ohneTag(a.name)} kehrt um` }); return heimwaerts(a); }
+  if (!k && z.art === 'basis' && z.schild) {         // Friedensschild hält (welleHeim): kein Kampf, keine Verluste, die Truppen laufen heim
+    bandZeigen({ eigen: meins(a) || z === basis('eigen'), art: z === basis('eigen') ? 'sieg' : 'niederlage', ziel: z, titel: 'SCHILD HÄLT',
+      text: z === basis('eigen') ? `${ohneTag(a.name)} prallt ab` : 'Dein Angriff prallt ab' });
+    return heimwaerts(a); }
   if (!k) return kampf(a);
   if (freund(k.a, a)) return beitreten(k, a);
   if (a.phase !== 'wartet') {                          // fremder Angreifer: stellt sich am Rand auf und wartet
@@ -659,8 +667,18 @@ function rallyPlatz(a, st) {                           // Rally sammelt: goldene
   g.save(); g.translate(p.x, p.y); g.scale(1, .38); g.rotate(jetzt * 12 * Math.PI / 180); g.drawImage(im, -r, -r, 2 * r, 2 * r); g.restore();
   if (st === 'nah' || st === 'mittel') chip(`Rally ⌛ ${uhr(a.ende - jetzt)} · ${a.rally.mitglieder.length}/${a.rally.platz}`, p.x, p.y + r * .38 + 6 * s, Math.round(11 * s), '#1d1406', 'rgba(234,178,74,.95)');
 }
-function warnung(st) {                                 // Feind auf dich zu: rotes Warn-Dreieck an deiner Burg, pulst
+function schildSetzen(name, an) { for (const b of D.basen) if (b.name === name) b.schild = an; }   // (der Schild deckt alle Basen des Besitzers)
+function schildZeichnen(b) {                           // Friedensschild: helle Kuppel über der Basis (wie 03c), pulst
+  const w = zielBreite(b), x = sx(b.x), R = w * .5, y = sy(b.y) - w * .2, ph = .6 + .4 * Math.sin(performance.now() / 700);
+  const gd = g.createRadialGradient(x, y, R * .3, x, y, R);
+  gd.addColorStop(0, 'rgba(210,235,255,.12)'); gd.addColorStop(.7, `rgba(190,225,255,${(.28 * ph).toFixed(2)})`); gd.addColorStop(1, `rgba(230,245,255,${(.6 * ph).toFixed(2)})`);
+  g.fillStyle = gd; g.beginPath(); g.arc(x, y, R, 0, Math.PI * 2); g.fill();
+  g.strokeStyle = 'rgba(10,30,60,.35)'; g.lineWidth = 5; g.beginPath(); g.arc(x, y, R + 1, 0, 7); g.stroke();
+  g.strokeStyle = `rgba(225,242,255,${(.75 + .25 * ph).toFixed(2)})`; g.lineWidth = 2.6; g.beginPath(); g.arc(x, y, R, 0, 7); g.stroke();
+}
+function warnung(st) {                                 // Feind auf dich zu: rotes Warn-Dreieck an deiner Burg, pulst (mit Schild: „prallt ab“)
   if (!armeen.some(zuMir)) return;
+  if (basis('eigen').schild) { const e = P(basis('eigen')), s = S(); return chip('Friedensschild hält – prallt ab', e.x, e.y + zielBreite(basis('eigen')) * .4, Math.round(11 * s), '#e2f2ff', 'rgba(16,40,70,.9)', false, 700); }
   const e = basis('eigen'), f = armeen.filter(zuMir).map(pos).sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0];
   const b = P(rand(e, f)), s = S(), w = (st === 'ganz weit' ? 18 : 30) * s;   // an der Burgseite, von der der Feind kommt
   g.globalAlpha = .55 + .45 * Math.sin(performance.now() / 300); bildAn('marsch_zeichen_warnung', b.x, b.y - 8 * s, w); g.globalAlpha = 1;
@@ -675,6 +693,7 @@ function malen() {
   const zu = armeen.filter(a => !versteckt(a)); for (const a of armeen) if (versteckt(a)) a.flaeche = a.ringFlaeche = null;
   for (const a of zu) linie(a, st);
   for (const a of zu) zielRing(a, st);
+  for (const b of D.basen) if (b.schild && st !== 'ganz weit') schildZeichnen(b);
   for (const b of D.basen) if (b.brennt > jetzt && st !== 'ganz weit') { const w = zielBreite(b); brandZeichnen(sx(b.x), sy(b.y) - w * .3, w / 64); }
   for (const k of kaempfe) if (kampfSichtbar(k)) kampfZeichnen(k, st); else k.flaeche = null;
   for (const b of D.basen) if (b.verst && b.verst.length && verstSichtbar(b) && !kaempfe.some(k => k.z === b)) verstKoepfe(b, st, null);

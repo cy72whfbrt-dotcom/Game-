@@ -1053,6 +1053,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Gruppe 2 (Nebel wie `drawMap`/`marsch_teil`): fremde Märsche nur, wenn sie auf deine Basis zielen; Verbündete nur beim Beitritt,
   in deinem Kampf und auf dem Heimweg danach; fremde Truppen/Helden „?“ (Fahne), bis sie bei dir kämpfen; Verstärker in fremden
   Basen erst nach deinem Späher; Kämpfe zwischen anderen unsichtbar. Knopf „Nebel an/aus“ (aus = Testansicht).
+  Gruppe 3 (Schild, Ziel inzwischen eigen): Friedensschild als Kuppel; Angriff prallt ab („Schild hält – Dein Angriff prallt ab“
+  bzw. „X prallt ab“), keine Verluste, Truppen laufen heim (`welleHeim`); Warnung „Friedensschild hält – prallt ab“; wer angreift,
+  verliert seinen Schild. Ziel gehört inzwischen dir: Truppen ziehen ein; Bündnis: kein Kampf, heim.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.

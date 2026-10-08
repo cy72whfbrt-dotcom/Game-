@@ -122,6 +122,15 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       ok(await bis(() => MT.effekte.some(e => e.titel === 'ABGEWEHRT')), `${name} ${art}: Lager zu stark → Band ABGEWEHRT`);
       const ls = await p.evaluate(() => [MT.armeen.length, MT.D.lager.truppen]);
       ok(ls[0] === 0 && ls[1] === 1.2e6 - 5e5, `${name} ${art}: Niederlage am Lager: alle Truppen weg, Lager geschwächt`, ls);
+      // Friedensschild (welleHeim): Angriff prallt ab, keine Verluste, Truppen laufen heim; wer angreift, verliert seinen Schild
+      await leer(); await p.evaluate(() => { MT.ERGEBNIS.kevinSchild(); MT.tempo = 3; });
+      ok(await bis(() => MT.effekte.some(e => e.titel === 'SCHILD HÄLT' && /Dein Angriff prallt ab/.test(e.text))), `${name} ${art}: Kevins Schild: „Schild hält – Dein Angriff prallt ab“`);
+      const sh = await p.evaluate(() => [MT.armeen[0].phase, MT.armeen[0].truppen, MT.kaempfe.length]);
+      ok(sh[0] === 'rueck' && sh[1] === 6.2e6 && sh[2] === 0, `${name} ${art}: abgeprallt: kein Kampf, alle 6,2 Mio. laufen heim`, sh);
+      await p.evaluate(() => { MT.ERGEBNIS.kevinSchild(); });   // (Schild wieder aus)
+      await leer(); await p.evaluate(() => { MT.D.basen[0].schild = true; });
+      await knopf('marsch');
+      ok(await p.evaluate(() => !MT.D.basen[0].schild && MT.effekte.some(e => /Friedensschild ist gefallen, weil du angreifst/.test(e.text))), `${name} ${art}: dein Angriff lässt deinen Schild fallen`);
       // Marsch zweimal: jeder nur mit den Truppen, die noch in der Basis sind (12,4 → 6,2 + 3,1 Mio.), nie doppelt
       await leer(); await knopf('marsch'); await knopf('marsch');
       const mz = await p.evaluate(() => MT.armeen.map(a => a.truppen));
