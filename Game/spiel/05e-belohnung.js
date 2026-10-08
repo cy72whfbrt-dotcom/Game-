@@ -6,8 +6,43 @@ var BEUTE_ART = {
     gems: { b: 'beute_edelsteine', t: 'Edelsteine' }, coins: { b: 'beute_muenzen', t: 'Münzen', r: 1 }, holz: { b: 'beute_holz', t: 'Holz', r: 1 },
     stein: { b: 'beute_stein', t: 'Stein', r: 1 }, eisen: { b: 'beute_eisen', t: 'Eisen', r: 1 }, tr: { b: 'beute_truppen', t: 'Truppen', r: 2 },
     sh: { b: 'beute_splitter', t: 'Helden-Splitter', r: 3 }, tp: { b: 'beute_thron', t: 'Thron-Punkte', r: 4 }, schild: { b: 'beute_schild', t: 'Friedensschild', r: 2 },
-    punkte: { b: 'beute_punkte', t: 'Fähigkeitspunkte', r: 2 }, tele: { b: 'ui_sym_verlegen', t: 'Teleporter', r: 3 }, rahmen: { b: 'ui_sym_krone', t: 'Rahmen', r: 4 }, item: { t: 'Ausrüstung', r: 0 }, kiste: { t: 'Kiste', r: 0 }
+    punkte: { b: 'beute_punkte', t: 'Fähigkeitspunkte', r: 2 }, tele: { b: 'ui_sym_verlegen', t: 'Teleporter', r: 3 }, rahmen: { b: 'ui_sym_krone', t: 'Rahmen', r: 4 }, item: { t: 'Ausrüstung', r: 0 }, kiste: { t: 'Kiste', r: 0 },
+    eventMuenzen: { b: 'beute_eventmuenze', t: 'Event-Münzen', r: 3 }, schluessel1: { b: 'beute_schluessel', t: 'Schlüssel', r: 2 },
+    schluessel2: { b: 'beute_schluessel_episch', t: 'Epischer Schlüssel', r: 3 }, besch: { b: 'beute_beschleuniger_klein', t: 'Beschleuniger', r: 1 }
 };
+// ===== GEGENSTÄNDE (Events/Shop, 8.10.): Event-Münzen, Schlüssel 1 (normal) / 2 (episch), Beschleuniger je Dauer =====
+// Beschleuniger gelten für Bauen, Forschen und Heilen – nicht für Truppen. Alles in EINEM Spielstand-Eintrag (openWaterGegenst).
+var BESCH_MIN = { '1m': 1, '5m': 5, '15m': 15, '1h': 60, '3h': 180, '8h': 480, '24h': 1440 };
+var BESCH_DAUERN = Object.keys(BESCH_MIN);
+const beschText = d => BESCH_MIN[d] < 60 ? BESCH_MIN[d] + ' Min' : BESCH_MIN[d] / 60 + ' Std';
+const beschR = d => BESCH_MIN[d] <= 15 ? 1 : BESCH_MIN[d] <= 180 ? 2 : 3;          // Bronze (grün) · Silber (blau) · Gold (lila)
+const beschBild = d => 'beute_beschleuniger_' + (BESCH_MIN[d] <= 15 ? 'klein' : BESCH_MIN[d] <= 180 ? 'mittel' : 'gross');
+// Preise im Shop (Kisten-/Tempo-/Event-Reiter, 06g) – das Hauptbuch (10d3 hbGegenst) rechnet mit denselben: [Edelsteine, Event-Münzen, Woche-Limit Event-Shop]
+var BESCH_PREIS = { '1m': [5, 10, 20], '5m': [20, 40, 20], '15m': [50, 100, 10], '1h': [150, 300, 10], '3h': [400, 800, 5], '8h': [1000, 2000, 3], '24h': [2800, 5500, 1] };
+var SCHLUESSEL_PREIS = { 1: [100, 200, 10], 2: [500, 1000, 3] };
+var eventMuenzen = 0, schluessel1 = 0, schluessel2 = 0, besch = {};
+function gegenstLaden() {
+    let g = null; try { g = JSON.parse(store.get('openWaterGegenst')); } catch (e) { g = null; }
+    g = g && typeof g === 'object' ? g : {}; const z = v => Math.max(0, Math.floor(+v || 0));
+    eventMuenzen = z(g.em); schluessel1 = z(g.s1); schluessel2 = z(g.s2); besch = {};
+    for (const d of BESCH_DAUERN) besch[d] = z(g.besch && g.besch[d]);
+}
+function gegenstSpeichern() { store.set('openWaterGegenst', JSON.stringify({ em: eventMuenzen, s1: schluessel1, s2: schluessel2, besch })); }
+gegenstLaden();
+const beschMinuten = () => BESCH_DAUERN.reduce((a, d) => a + besch[d] * BESCH_MIN[d], 0);   // alle Beschleuniger zusammen in Minuten
+// Gutschreiben (alle Teams rufen nur das auf): art 'eventMuenzen' | 'schluessel1' | 'schluessel2' | 'besch' (extra.dauer '1m'…'24h') | 'gems' | 'coins'.
+// → die Belohnung als Kachel-Angabe für beuteKachel/beuteFenster (null: unbekannt oder nichts)
+function gibBelohnung(art, menge, extra) {
+    const n = Math.floor(+menge || 0); if (!(n > 0)) return null;
+    if (art === 'eventMuenzen') eventMuenzen += n;
+    else if (art === 'schluessel1') schluessel1 += n;
+    else if (art === 'schluessel2') schluessel2 += n;
+    else if (art === 'besch') { const d = extra && (typeof extra === 'string' ? extra : extra.dauer); if (!BESCH_MIN[d]) return null; besch[d] += n; gegenstSpeichern(); return { a: 'besch', n, dauer: d }; }
+    else if (art === 'gems') { gems += n; saveGame(); updateHud(); return { a: 'gems', n }; }
+    else if (art === 'coins') { coins += n; saveGame(); updateHud(); return { a: 'coins', n }; }
+    else return null;
+    gegenstSpeichern(); return { a: art, n };
+}
 var BEUTE_SLOT = { weapon: 'beute_waffe', armor: 'beute_ruestung', shield: 'beute_rundschild', boots: 'beute_stiefel' };
 var KISTE_BILD = { aus: 'kiste_ausruestung', held: 'kiste_held', gross: 'kiste_gross', episch: 'kiste_episch', royal: 'kiste_royal' };
 var KISTE_NAME = { aus: 'Ausrüstungskiste', held: 'Heldenkiste', gross: 'Große Kiste', episch: 'Epische Kiste', royal: 'Königliche Kiste' };
@@ -16,6 +51,7 @@ function beuteR(b) {                                // Seltenheit der Kachel: ei
     if (b.r >= 0) return Math.min(5, b.r | 0);
     if (b.a === 'sh' && b.held && typeof heroById === 'function' && heroById(b.held)) return heroById(b.held).r;
     if (b.a === 'gems') return b.n >= 500 ? 4 : b.n >= 100 ? 3 : 2;
+    if (b.a === 'besch' && BESCH_MIN[b.dauer]) return beschR(b.dauer);
     const d = BEUTE_ART[b.a]; return d && d.r >= 0 ? d.r : 0;
 }
 function beuteName(b) {
@@ -23,11 +59,13 @@ function beuteName(b) {
     if (b.a === 'kiste') return KISTE_NAME[b.k || 'aus'] + (b.min ? ' (mind. ' + RARITY_DEFS[b.r].label + ')' : '');
     if (b.a === 'sh' && b.held && typeof heroById === 'function' && heroById(b.held)) return 'Splitter ' + heroById(b.held).name;
     if (b.a === 'schild') return 'Friedensschild ' + b.n + ' Std.';
+    if (b.a === 'besch' && BESCH_MIN[b.dauer]) return 'Beschleuniger ' + beschText(b.dauer);
     return (BEUTE_ART[b.a] || { t: '' }).t;
 }
 function beuteBild(b) {
     if (b.a === 'item') return BEUTE_SLOT[b.slot] || 'beute_waffe';
     if (b.a === 'kiste') return KISTE_BILD[b.k || 'aus'] + '_zu';
+    if (b.a === 'besch' && BESCH_MIN[b.dauer]) return beschBild(b.dauer);
     return (BEUTE_ART[b.a] || BEUTE_ART.gems).b;
 }
 function beuteMenge(b) {                            // unten rechts: Anzahl (Schild: Stunden); ein einzelnes Teil/eine Kiste ohne Zahl; ohneZahl: steht daneben
@@ -41,12 +79,12 @@ function beuteKachel(b, tag) {                      // tag: 'li' in Listen (Tage
     tag = tag || 'span'; const r = beuteR(b), m = beuteMenge(b), name = beuteName(b);
     const held = b.a === 'sh' && b.held && typeof heroImg === 'function' ? heroImg(b.held, 'bk-held') : '';
     return '<' + tag + ' class="bk" data-r="' + (RARITY_DEFS[r] || RARITY_DEFS[0]).key + '" data-beute="' + b.a + '"' + (b.minus ? ' data-minus' : '') + ' title="' + escapeHtml(name + (m ? ' · ' + m : '')) + '">' +
-        '<img src="bilder/' + beuteBild(b) + '.webp" alt="' + escapeHtml(name) + '" draggable="false">' + held + (m ? '<b>' + m + '</b>' : '') + '</' + tag + '>';
+        '<img src="bilder/' + beuteBild(b) + '.webp" alt="' + escapeHtml(name) + '" draggable="false">' + held + (b.a === 'besch' && BESCH_MIN[b.dauer] ? '<i class="bk-zeit">' + beschText(b.dauer) + '</i>' : '') + (m ? '<b>' + m + '</b>' : '') + '</' + tag + '>';
 }
 function beuteZusammen(liste) {                     // gleiche Sachen in eine Kachel (10 Kisten: „3 × Episch Waffe“)
     const out = [], idx = {};
     for (const b of liste) { if (!b || !(b.n > 0 || b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen')) continue;
-        const k = [b.a, beuteR(b), b.slot || '', b.held || '', b.k || '', b.a === 'schild' ? b.n : '', b.minus ? 1 : ''].join('|');
+        const k = [b.a, beuteR(b), b.slot || '', b.held || '', b.k || '', b.dauer || '', b.a === 'schild' ? b.n : '', b.minus ? 1 : ''].join('|');
         if (idx[k] !== undefined && b.a !== 'schild') { out[idx[k]].n = (out[idx[k]].n || 1) + (b.n || 1); continue; }
         idx[k] = out.length; out.push(Object.assign({}, b, { n: b.n || 1 })); }
     return out;

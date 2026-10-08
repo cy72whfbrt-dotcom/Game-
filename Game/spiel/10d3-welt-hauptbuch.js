@@ -31,7 +31,8 @@
         g: 25 + questGemsTag(),                       // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42) – Event-Preise kommen als Nachricht (gIn)
         k: 3 + 1 + 1 / 7,                             // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, epische Tageskiste
         kg: 27 / 7,                                   // davon „mind. Episch“ (Tag 7) als sicherer Kisten-Wert (Episch = 27)
-        sh: HERO_SHARDS_DAY                           // Splitter: Aufgaben-Bonus
+        sh: HERO_SHARDS_DAY,                          // Splitter: Aufgaben-Bonus
+        em: 1000, s1: 4.5, s2: 1.5, bm: 1000          // Gegenstände (05e): Event-Münzen (Woche höchstens 4.750), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740)
     };
     const HB_ONLINE_STUNDE_G = 40;                    // Karten-Funde: 1–3 Gems, alle 20–45 s einer, 15 % davon Gems – nur solange er online ist
     const HB_KAPPE_TAGE = 14;                         // so viele Tage Spielraum sammeln sich höchstens an
@@ -114,6 +115,7 @@
         const heute = todayKey(); if (!hb.gOn || hb.gOn.t !== heute) hb.gOn = { t: heute, n: 0 };   // Karten-Funde höchstens ~7 Std. am Tag (wie die Truppen-Funde: 300 am Tag – gegen ein Skript rund um die Uhr)
         const onG = on ? Math.max(0, Math.min(HB_ONLINE_STUNDE_G * Math.min(dt, 600000) / 36e5, 7 * HB_ONLINE_STUNDE_G - hb.gOn.n)) : 0; hb.gOn.n += onG;
         dazu('g', HB_TAG.g * t + onG, HB_KAPPE_TAGE * (HB_TAG.g + 8 * HB_ONLINE_STUNDE_G));   // Karten-Funde nur für die Zeit, die er wirklich da war (online kommt alle 5 Min. ein Profil – nie die Tage dazwischen)
+        for (const k of ['em', 's1', 's2', 'bm']) dazu(k, HB_TAG[k] * t, HB_KAPPE_TAGE * HB_TAG[k]);
         dazu('k', HB_TAG.k * t, HB_KAPPE_TAGE * HB_TAG.k); dazu('kg', HB_TAG.kg * t, HB_KAPPE_TAGE * HB_TAG.kg); dazu('sh', HB_TAG.sh * t, HB_KAPPE_TAGE * HB_TAG.sh);
         const L = hbStufe(who), alter = hb.t0 ? (now - hb.t0) / TAG : 999;
         const ach = HB_ACH() * Math.min(1, alter / 30 + (L - 1) / 100);                   // Erfolge: nach und nach (30 Tage bzw. Stufe 100)
@@ -142,6 +144,36 @@
         }
         return true;
     }
+    // fehlende Bau-/Forschungszeit (ms): zuerst aus benutzten Beschleunigern (hb.bMin, Minuten), der Rest kostet Gems → [Gems, Beschleuniger-Minuten]
+    function hbTempo(hb, fehlt) {
+        let min = fehlt > 0 ? Math.ceil(fehlt / 60000) : 0; const bx = Math.min(min, Math.floor(nn(hb.bMin))); min -= bx;
+        return [min * CITY_GEMS_PER_MIN, bx];
+    }
+    // Gegenstände (05e, Profil gg: Event-Münzen em, Schlüssel s1/s2, Beschleuniger-Minuten bm). Weniger = benutzt: Schlüssel öffnen Kisten
+    // (Ausrüstung oder Helden – beides gutgeschrieben), Beschleuniger kürzen Bauten/Forschung (hb.bMin), Event-Münzen zählen halb als
+    // ausgegebene Gems (Event-Shop ≈ 2× Edelstein-Preis: so bezahlt das Hauptbuch Schild, Teleporter und Schlüssel daraus).
+    // Mehr = geschickt (hb.ggIn aus Nachrichten) → Spielraum (hb.fr) → mit Gems gekauft; der Rest ist auffällig und zählt nicht.
+    const HB_G_JE_BM = Math.min(...BESCH_DAUERN.map(d => BESCH_PREIS[d][0] / BESCH_MIN[d]));   // Gems je Beschleuniger-Minute (bester Shop-Preis)
+    const HB_GG = { em: 0, s1: SCHLUESSEL_PREIS[1][0], s2: SCHLUESSEL_PREIS[2][0], bm: HB_G_JE_BM }, HB_GG_NAME = { em: 'Event-Münzen', s1: 'Schlüssel', s2: 'Epische Schlüssel', bm: 'Beschleuniger-Minuten' };
+    function hbGegenst(who, hb, p, m, now) {
+        const q = p && p.gg; if (!q || typeof q !== 'object') return;
+        const gg = hb.gg; if (!gg) { hb.gg = { em: nn(q.em), s1: nn(q.s1), s2: nn(q.s2), bm: nn(q.bm) }; return; }   // erstes Mal: gilt, was er hat
+        const ein = hb.ggIn || (hb.ggIn = {}), f = hb.fr, heldSh = c => (HERO_CHESTS.find(x => x.id === c) || { sh: 0 }).sh;
+        for (const k in HB_GG) {
+            const d = nn(q[k]) - nn(gg[k]); if (!(d < 0)) continue; const n = -d; gg[k] = nn(q[k]);
+            if (k === 's1') { f.k = nn(f.k) + n; f.sh = nn(f.sh) + n * heldSh('hc1'); }
+            else if (k === 's2') { f.k = nn(f.k) + n; f.kg = nn(f.kg) + n * kWert(3); f.sh = nn(f.sh) + n * heldSh('hcE'); }
+            else if (k === 'em') hb.gA = nn(hb.gA) + n / 2;
+            else hb.bMin = nn(hb.bMin) + n;
+        }
+        for (const k in HB_GG) {
+            let d = nn(q[k]) - nn(gg[k]); if (!(d > 0)) { hbGut(hb, 'gg:' + k); continue; } const roh = d;
+            for (const t of [ein, f]) { const x = Math.min(d, nn(t[k])); t[k] = nn(t[k]) - x; d -= x; }
+            if (d > 0 && HB_GG[k] > 0 && hbZahlen(who, hb, m, { g: d * HB_GG[k] })) d = 0;
+            if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d); }
+            else { gg[k] = nn(q[k]); hbGut(hb, 'gg:' + k); }
+        }
+    }
     // abgelehnt: erst nach 2 Min. (immer noch im Profil) eine Auffälligkeit – einmal
     function hbWarte(who, hb, key, now, text, wert) {
         const w = hb.w || (hb.w = {}); wm(who).hbOffen = 1;
@@ -158,10 +190,11 @@
         // des letzten Baus dieses Bauarbeiters (hb.bu – 1 bzw. 2 Bauarbeiter). Vorher zählte Leerlauf mit (10 Tage still = 10 Tage Bauzeit gratis).
         const pl = (hb.b2 ? 2 : 1), bu = hb.bu || (hb.bu = [0, 0]), i = pl > 1 && bu[1] < bu[0] ? 1 : 0, start = Math.max(T, nn((hb.ruhe || {})[id]), nn(bu[i]));
         const hk = 'bau:' + id + ':' + (L + 1), hilfe = Math.min(nn((hb.hilfe || {})[hk]), zeit * 1000), need = zeit * 1000 - hilfe, fehlt = need - (now - start) - 60000;   // (Bündnis-Hilfe macht den Bau kürzer)
-        const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
+        const [g, bx] = hbTempo(hb, fehlt);
         const k = Object.assign({}, alt ? burgKostenAlt(L) : AUF ? AUF.stadtKosten(id, L) : { c: cityCost(id, L) }); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
-        hb.st[id] = [L + 1, g ? now : Math.min(now, start + need)];   // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
+        hb.bMin = nn(hb.bMin) - bx;
+        hb.st[id] = [L + 1, g || bx ? now : Math.min(now, start + need)];   // (fertig spätestens jetzt – die nächste Stufe zählt ab da)
         bu[i] = hb.st[id][1];                                          // (dieser Bauarbeiter ist ab da wieder frei)
         if (hb.hilfe) delete hb.hilfe[hk];
         evPunkte('bau', who, WO_PKT.bauStufe * (L + 1) + (g ? WO_PKT.bauMin * g / CITY_GEMS_PER_MIN + WO_PKT.bauGem * g : 0));   // Wochen-Event „Bauherr“: Stufe, beschleunigte Minuten, Edelsteine
@@ -172,10 +205,11 @@
         if (L > d.max || (hb.st.academy || [0])[0] < AUF.foAkaFuer(d, L)) return 'nein';
         if (d.vor && !((hb.fo[d.vor] | 0) >= 1)) return 'nein';
         const hk = 'fo:' + d.id + ':' + L, need = AUF.foZeitRoh(d, L) * 1000 - Math.min(nn((hb.hilfe || {})[hk]), AUF.foZeitRoh(d, L) * 1000), T = Math.max(nn(hb.foT), nn(hb.foRuhe)), fehlt = need - (now - T) - 60000;   // (Bündnis-Hilfe macht die Forschung kürzer · nie vor dem letzten Profil mit freiem Labor)
-        const g = fehlt > 0 ? Math.ceil(fehlt / 60000) * CITY_GEMS_PER_MIN : 0;
+        const [g, bx] = hbTempo(hb, fehlt);
         const k = Object.assign({}, AUF.foKosten(d, L)); if (g) k.g = g;
         if (!hbZahlen(who, hb, m, k)) return 'geld';
-        hb.fo[d.id] = L; hb.foT = g ? now : Math.min(now, T + need);    // eine Forschung gleichzeitig: die nächste zählt ab da
+        hb.bMin = nn(hb.bMin) - bx;
+        hb.fo[d.id] = L; hb.foT = g || bx ? now : Math.min(now, T + need);    // eine Forschung gleichzeitig: die nächste zählt ab da
         if (hb.hilfe) delete hb.hilfe[hk];
         if (g) evPunkte('bau', who, WO_PKT.bauMin * g / CITY_GEMS_PER_MIN + WO_PKT.bauGem * g);   // Wochen-Event „Bauherr“: beschleunigte Forschung
         return 'ok';
@@ -216,6 +250,7 @@
     function hbPruefen(who, hb, p, m, now, schildAlt) {
         const mm = wm(who); mm.hbOffen = 0; mm.hbPrT = now;
         hbFreiDazu(who, hb, now);
+        hbGegenst(who, hb, p, m, now);                 // (vor den Bauten: benutzte Beschleuniger kürzen deren Bauzeit)
         const pl = (p.city && p.city.levels) || {}, will = id => Math.min(hbMax(id), Math.floor(nn(pl[id])));
         for (let runde = 0, weiter = true; weiter && runde < 80; runde++) { weiter = false;
             for (const id of hbBauten()) if (will(id) > hb.st[id][0] && hbStadtSchritt(who, hb, m, id, now) === 'ok') weiter = true; }
