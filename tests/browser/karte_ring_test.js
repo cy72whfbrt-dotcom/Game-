@@ -49,6 +49,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       for (const zz of [maxZoom, maxZoom * .5, maxZoom * .3]) {               // angetippte Hauptstadt: die Fahne verdeckt die Burg nicht
         flyTo(h.x, h.y, { zoom: zz, instant: true }); const f = layoutBanners([h], mapState.zoom, h.id).find(x => x.isl === h), bb = basisBildRect(h, mapState.zoom);
         (o.burgFrei = o.burgFrei || []).push(f && bb ? +(overlap(f.rect, bb) / (bb.w * bb.h)).toFixed(2) : -1); }
+      // Vorrat-Text eines Felds unter der HUD-Leiste: nicht halb darunter gezeichnet
+      window.isCellOpen = () => true; const hud = document.getElementById('hud').getBoundingClientRect(), f = resFields[0], zf = Math.max(.012, maxZoom * .5);
+      flyTo(f.x, f.y, { zoom: zf, instant: true }); mapState.offsetY += hud.top + hud.height / 2 - (f.y * zf + mapState.offsetY) - 8 * Math.max(.6, Math.min(2.2, zf / .012)) - 7;
+      const ft = ctx.fillText, txt = []; ctx.fillText = function (t, x, y) { txt.push([t, y]); return ft.apply(this, arguments); }; drawMap(); ctx.fillText = ft;
+      const vorrat = fmtCompact(Math.floor(fieldInfo(f).left));
+      o.unterLeiste = { hud: [Math.round(hud.top), Math.round(hud.bottom)], gezeichnet: txt.filter(([t, y]) => t === vorrat && y >= hud.top - 15 && y <= hud.bottom).length };
       flyTo(h.x, h.y, { zoom: maxZoom * .5, instant: true }); drawMap();
       return o;
     });
@@ -58,6 +64,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.kein30 && r.nurEigene && r.ringNah, tag + 'Ring nur an der eigenen Hauptstadt, Puls über eigenen langsamen Takt', [r.kein30, r.nurEigene, r.ringNah]);
     ok(r.akku.uhr && r.akku.fest, tag + 'Akku sparen: kein Puls (fest 0,8), kein Extra-Neuzeichnen', r.akku);
     ok(r.burgFrei.every(a => a >= 0 && a <= .1), tag + 'angetippte Hauptstadt: Fahne höchstens 10 % auf der Burg', r.burgFrei);
+    ok(r.unterLeiste.gezeichnet === 0, tag + 'Vorrat-Text eines Felds unter der HUD-Leiste weggelassen', r.unterLeiste);
     ok(r.krone, tag + 'Krone im Namensschild nur der eigenen Hauptstadt');
     ok(r.weit.ring && r.weit.krone, tag + 'ganz weit: Krone + Ring', r.weit);
     ok(r.regel[0] && r.regel[1] && r.regelGleich, tag + 'angreifbar wie der Angriffsknopf (eine eigene Basis grenzt an)', r.regel);
