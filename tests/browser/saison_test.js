@@ -156,7 +156,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(r3.jetzt === true && r3.neu === '2' && r3.schutz > 46 && r3.schutz <= 47, 'Rückfall: Saison der Welt neuer, keine Nachricht – Reset wird übernommen (Anfängerschutz ab dem Reset)', r3);
   await p.waitForNavigation({ timeout: 30000 }).catch(() => {}); await p.waitForTimeout(500);
   const z3 = await p.evaluate(() => ({ gems: window.__nach.gems, keep: (JSON.parse(window.__nach.city || '{}').levels || {}).keep, lvl: window.__nach.lvl, coins: window.__nach.coins, mein: localStorage.getItem('openWaterSaisonMein'), res: JSON.parse(window.__nach.res || '{}') }));
-  ok(z3.lvl === '1' && z3.coins === '0' && z3.mein === '2', 'Rückfall: nach dem Neuladen Stufe 1, 0 Münzen, Saison 2', z3);
+  ok(z3.lvl === '1' && z3.coins === '10000' && z3.mein === '2', 'Rückfall: nach dem Neuladen Stufe 1, Start-Münzen (10.000), Saison 2', z3);
   ok(z3.res.h <= 5 && z3.res.s === 0 && z3.res.e === 0 && z3.gems === '1000', 'Rückfall ohne Nachricht: Ausnahme trotzdem (die Welt sagt: saison.burgFair = 2) – Holz/Stein/Eisen 0, Edelsteine 1.000', { vor: z.res, nach: z3.res, gems: z3.gems });
   ok(z3.keep === 4, 'Rückfall ohne Nachricht: Burg fair trotzdem (die Welt sagt: saison.burgFair = 2) – Burg 7 → 4', z3.keep);
   // 4) noch ein Reset: Burg fair war schon – Burgen über 4 (inzwischen gebaut) bleiben, für dich, Mitspieler und das Hauptbuch
