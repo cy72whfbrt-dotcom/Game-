@@ -3864,6 +3864,7 @@ function drawMap() {
   drawArmies(now, wallNow);                                                                                             // your armies out in the open
   for (const isl of vis.slice().sort((a, b) => a.y - b.y)) drawBuilding(isl, ownerKeyOf(isl), z);                    // 7
   drawThroneFx(z, now);
+  drawDragon(now, wallNow);                                                                                            // der Drache über dem Thron (nach den Gebäuden)
   drawBaseSparks(vis, z, now);
   drawBasisSchilder(vis, z);                                                                                           // Namensschilder der Basen: über Kuppel und Funken (immer lesbar)
   drawWander(now);                                                                                                     // the Kriegsherr and his host
@@ -7176,6 +7177,7 @@ var inboxState = null;
 function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.get('openWaterInbox')); } catch (e) { inboxState = null; } if (!Array.isArray(inboxState)) inboxState = [];
         const m = {}; inboxState = inboxState.filter(x => { const k = inboxPiles(x), p = k && m[x.src]; if (!p) { if (k) m[x.src] = x; return true; } p.gems = (p.gems || 0) + (x.gems || 0); p.coins = (p.coins || 0) + (x.coins || 0); p.sh = (p.sh || 0) + (x.sh || 0); p.n = (p.n || 1) + (x.n || 1); return false; }); }   // (older saves: many single entries become one)
     return inboxState; }
+const inboxFach = () => inboxList().filter(x => !(x.bis > Date.now()));   // das Abholfach zeigt Event-Belohnungen (bis) erst nach dem Event-/Tagesende
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
 const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
@@ -7202,7 +7204,7 @@ function inboxClaim(id, aus) {                      // into your coffers - retur
     inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
 }
 function renderInbox() {
-    const L = inboxList(), el = document.getElementById('inboxList'); if (!el) return;
+    const L = inboxFach(), el = document.getElementById('inboxList'); if (!el) return;
     setText(document.getElementById('inboxAside'), L.length ? L.length + ' bereit' : '');
     liveHtml(el, L.length ? L.map(x => { const d = INBOX_SRC[x.src] || INBOX_SRC.fight;
         return '<div class="inbox-row' + (x.src === 'fight' ? '' : ' is-gold') + '">' + icon(d.ic) + '<div><b>' + escapeHtml(x.title || d.t) + '</b>' + beuteRaster(inboxBeute(x), 'bk-mini') + '<small>' + (x.n > 1 ? x.n + (x.src === 'fight' ? ' Kämpfe' : '×') + ' · zuletzt ' : '') + 'vor ' + uhrHtml(x.at, 'vor') + '</small></div>' +
@@ -7211,13 +7213,13 @@ function renderInbox() {
 }
 goalsPopup.addEventListener('click', e => {
     const one = e.target.closest('[data-inbox]'), all = e.target.closest('[data-inbox-all]'); if (!one && !all) return;
-    const aus = [], kiste = (all ? inboxList() : inboxList().filter(x => x.id === one.dataset.inbox)).find(x => x.crate >= 0 || x.kiste >= 0);
-    const txt = all ? inboxList().map(x => x.id).map(id => inboxClaim(id, aus)).filter(Boolean).join(', ') : inboxClaim(one.dataset.inbox, aus);
+    const aus = [], kiste = (all ? inboxFach() : inboxList().filter(x => x.id === one.dataset.inbox)).find(x => x.crate >= 0 || x.kiste >= 0);
+    const txt = all ? inboxFach().map(x => x.id).map(id => inboxClaim(id, aus)).filter(Boolean).join(', ') : inboxClaim(one.dataset.inbox, aus);
     if (txt) { sfx('coin'); if (aus.length) beuteFenster('Abgeholt', aus, { kiste: kiste ? (kiste.crate >= 0 ? kisteVonR(kiste.crate) : 'aus') : null }); else flashHint('Abgeholt: ' + txt + '.', 4500); } renderInbox(); updateGoalsBadge();
 });
 function updateGoalsBadge(nAch) {
     if (nAch === undefined) nAch = achReadyN; else achReadyN = nAch;   // (the Erfolge are counted by achCheck - not before everything has loaded)
-    const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxList().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
+    const nd = dailyGoalCount(), nr = (dailyClaimable() ? 1 : 0) + inboxFach().length, np = passReadyAll().length, n = nd + nr + nAch + np, set = (el, v) => { setText(el, v); setShown(el, v > 0); };   // (only on a change: this runs every few seconds)
     set(document.getElementById('goalsBadge'), n); set(goalsPopup.querySelector('[data-gbadge="daily"]'), nd); set(goalsPopup.querySelector('[data-gbadge="reward"]'), nr); set(goalsPopup.querySelector('[data-gbadge="ach"]'), nAch); set(goalsPopup.querySelector('[data-gbadge="pass"]'), np);
     const jetzt = evJetzt(), hol = ['tour', 'inv', 'drache', 'boss', 'lager'].filter(k => jetzt === k || evHolBereit(k));
     for (const k of EV_TABS) setShown(goalsPopup.querySelector('[data-gbadge="' + k + '"]'), hol.includes(k));   // „!“ am Ereignis, das gerade läuft oder eine Belohnung zum Abholen hat
@@ -7281,7 +7283,7 @@ function renderGoalsSub() { const q = loadQuests(), nd = q.list.filter(t => t.cl
 function openGoals(tab) {
     closeAllPopups(); if (barbView) closeBarbSheet(); renderGoalsSub();
     const nd = dailyGoalCount(), na = achClaimable().length;
-    showGoalsTab(tab || (dailyClaimable() || inboxList().length ? 'reward' : nd ? 'daily' : na ? 'ach' : passReadyAll().length ? 'pass' : evJetzt() || goalsTab)); openPanel(goalsPopup);   // roter Punkt: zuerst Abholen
+    showGoalsTab(tab || (dailyClaimable() || inboxFach().length ? 'reward' : nd ? 'daily' : na ? 'ach' : passReadyAll().length ? 'pass' : evJetzt() || goalsTab)); openPanel(goalsPopup);   // roter Punkt: zuerst Abholen
 }
 document.getElementById('goalsBtn').addEventListener('click', () => { if (isPanelOpen(goalsPopup)) closePanel(goalsPopup); else openGoals(); });
 document.getElementById('goalsCloseBtn').addEventListener('click', () => closePanel(goalsPopup));
@@ -10556,10 +10558,11 @@ const DBOSS_KINDS = [{ k: 'kraken', name: 'Kraken Thalor', col: '#3fb0c4' }, { k
 // Klassen als Anteil vom Boss-Leben (7.10.): ein Angriff nimmt höchstens 5 % (DBOSS_CAP) – so ist jede Klasse bei jedem Boss erreichbar
 const DBOSS_KLASSEN = [{ bis: .0005, mh: 1, t: 'bis 0,05 %' }, { bis: .005, mh: 2, t: '0,05 – 0,5 %' }, { bis: .01, mh: 3, sh: 1, t: '0,5 – 1 %' },
     { bis: .025, gems: 5, sh: 1, th: 1, crate: 0, t: '1 – 2,5 %' }, { bis: Infinity, gems: 10, sh: 2, th: 2, crate: 1, t: 'über 2,5 %' }], DBOSS_FALL = { gems: 20, sh: 5 };
+const evTagesEnde = () => Date.now() + msToMidnight();   // Tagesboss/Lager: bis Mitternacht nur im Event abholbar
 const dbossKlasse = (dmg, max) => DBOSS_KLASSEN.findIndex(k => dmg <= k.bis * max + 1e-9);
 function dbossKlasseZahlen(b, who, dmg) {           // (nur wer rechnet) ein Angriff: Zähler je Klasse, Belohnung ins Abholfach – Schlüssel je Angriff
     const i = dbossKlasse(dmg, b.max), kl = (b.kl || (b.kl = {}))[who] || (b.kl[who] = DBOSS_KLASSEN.map(() => 0)), n = kl.reduce((a, x) => a + x, 0);
-    kl[i]++; evPreis(who, 'boss', b.name + ' · Klasse ' + (i + 1), DBOSS_KLASSEN[i], b.d + '|' + n); return i;
+    kl[i]++; evPreis(who, 'boss', b.name + ' · Klasse ' + (i + 1), DBOSS_KLASSEN[i], b.d + '|' + n, evTagesEnde()); return i;
 }
 // Barbaren-Lager (Merkliste 33): jede Stufe 1–25 bringt einmal am Tag eine Belohnung (jeden Tag neu)
 function lagerPreis(L) {
@@ -10571,7 +10574,7 @@ function lagerPreis(L) {
 const LAGER_LEISTE = Array.from({ length: BARB_MAX_L }, (_, i) => Object.assign({ ab: i + 1 }, lagerPreis(i + 1)));
 function lagerStufeZahlen(who, L) {                 // (nur wer rechnet) Lager Stufe L besiegt: heute zum ersten Mal → Belohnung
     const r = barbRec(who), bit = 1 << (L - 1); if (L < 1 || L > BARB_MAX_L || (r.s & bit)) return false;
-    r.s = (r.s || 0) | bit; evPreis(who, 'lager', 'Barbaren-Lager Stufe ' + L, LAGER_LEISTE[L - 1], r.d + '|' + L); return true;
+    r.s = (r.s || 0) | bit; evPreis(who, 'lager', 'Barbaren-Lager Stufe ' + L, LAGER_LEISTE[L - 1], r.d + '|' + L, evTagesEnde()); return true;
 }
 const barbLoad = (k, d) => { try { return JSON.parse(store.get(k)) || d; } catch (e) { return d; } };
 let barbState = barbLoad('openWaterBarb', { camps: [], n: 0, next: 0 }), barbMarches = barbLoad('openWaterBarbMarches', []), barbWho = barbLoad('openWaterBarbWho', {}), dayBoss = barbLoad('openWaterDayBoss', null), barbSaveAt = 0;
@@ -10739,8 +10742,8 @@ function dbossHit(m, now) {                         // every attack takes life o
 }
 function dbossPayout(b) {                           // the boss falls: everyone who hit it gets the same prize (keine Platz-Preise mehr – Merkliste 33)
     const rk = dbossRanks(b), p = DBOSS_FALL, beute = { gems: p.gems, crate: '', sh: p.sh + ' Helden-Splitter' };
-    rk.forEach(([who], i) => { goalBump(who, 'dboss'); evPreis(who, 'boss', b.name + ' gefallen', p, b.d + '|fall');
-        const e = Object.assign({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg[who] || 0 }, beute), t = b.name + ' ist gefallen! Deine Belohnung liegt unter Events → Belohnung.';
+    rk.forEach(([who], i) => { goalBump(who, 'dboss'); evPreis(who, 'boss', b.name + ' gefallen', p, b.d + '|fall', evTagesEnde());
+        const e = Object.assign({ type: 'dbossWin', name: b.name, rank: i + 1, of: rk.length, dmg: b.dmg[who] || 0 }, beute), t = b.name + ' ist gefallen! Deine Belohnung wartet im Tagesboss-Reiter.';
         if (who === 'player') { addCombatLogEntry(e); flashHint(t, 5000); }
         else if (botById[who] && botById[who].mensch) evBericht(who, e, t); });
     saveBotState();
@@ -11010,13 +11013,15 @@ function evStunden(who, p, hp0) {
     let hp = hp0 || null; const h = () => hp || (hp = hourProduction(who));
     return { coins: p.mh > 0 ? Math.round(Math.max(wirtM(5000), h().coins) * p.mh) : 0, tr: p.th > 0 ? Math.round(Math.max(wirtK(500), h().troops) * p.th) : 0 };
 }
-function evPreis(who, src, title, p, schl) {          // schl: fester Schlüssel der Auszahlung (Woche, Tag, Stufe …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
+function evPreis(who, src, title, p, schl, bis) {     // schl: fester Schlüssel der Auszahlung (Woche, Tag, Stufe …) – kommt nie doppelt an; ein Preis: deiner ins Abholfach, ein echter Mitspieler bekommt ihn als Nachricht (auch Kisten), Mitspieler direkt
+    // bis: Ende des Events (Invasion, Drache) bzw. des Tages (Tagesboss, Lager) – bis dahin nur im Event abholbar, danach im Abholfach
     const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
     const { coins, tr } = evStunden(who, p), k = schl != null ? src + '|' + schl : undefined;   // k: das Abholfach kennt die Stufe (Leiste im Event-Fenster)
-    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k }); if (titel) saisonTitelGeben(titel); return; }
+    if (!(bis > Date.now())) bis = undefined;
+    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k, bis }); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
-    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, titel ? { titel } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
     const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
     if (coins) botCoins[who] = (botCoins[who] || 0) + coins; if (tr) { const cap = botCapitalOf(who); if (cap !== null && cap !== undefined) islandTroops[cap] = (islandTroops[cap] || 0) + tr; }
     if (bs && titel) { bs.titles = [...new Set([...(bs.titles || []), titel])]; saveBotState(); }
@@ -11033,14 +11038,14 @@ function evPlanTag(now, ok, stunde, dauer) {          // der nächste Tag (ab he
 
 // ===== BARBAREN-INVASION: alle 3 Tage um 20 Uhr eine Stunde lang kommen Wellen von Barbaren-Armeen vom Rand ihrer Insel
 // und greifen die nächsten Basen an (echte Spieler und Mitspieler). Abwehren und Armeen schlagen bringt Punkte, jede erreichte
-// Stufe der Belohnungs-Leiste liegt sofort im Abholfach (Merkliste 33). Barbaren erobern nichts – wer verliert, verliert Truppen.
+// Stufe der Belohnungs-Leiste wird im Event abgeholt (bis zum Ende, danach liegt sie im Abholfach). Barbaren erobern nichts – wer verliert, verliert Truppen.
 const INV_TAGE = 3, INV_STUNDE = 20, INV_DAUER = 60 * 60000, INV_WELLEN = 6, INV_WELLE_MS = 9 * 60000, INV_PRO_WELLE = 12;
 const INV_PTS_WEHR = 15, INV_PTS_SIEG = 20;
 const INV_LEISTE = [{ ab: 20, gems: 5, mh: 2 }, { ab: 50, gems: 15, crate: 0 }, { ab: 100, gems: 20, sh: 5, crate: 1 }, { ab: 150, th: 2, mh: 4 }, { ab: 200, gems: 20, crate: 2 }, { ab: 300, gems: 30, sh: 10, crate: 2 }];   // Punkte → Belohnung (mh/th: Stunden Münzen/Truppen)
 // Leiste auszahlen (nur wer rechnet): jede erreichte Stufe genau einmal (lst[who] = so viele Stufen schon bezahlt, fester Schlüssel je Stufe)
 function evLeisteZahlen(X, stufen, who, wert, src, titel, schl) {
     const L = X.lst || (X.lst = {}); let n = L[who] || 0;
-    while (n < stufen.length && wert >= stufen[n].ab) { evPreis(who, src, titel(stufen[n], n), stufen[n], schl + '|' + n); n++; L[who] = n; evDirty = true; }
+    while (n < stufen.length && wert >= stufen[n].ab) { evPreis(who, src, titel(stufen[n], n), stufen[n], schl + '|' + n, X.end); n++; L[who] = n; evDirty = true; }
 }
 function invLeiste(I, who) { evLeisteZahlen(I, INV_LEISTE, who, (I.pts || {})[who] || 0, 'inv', x => 'Barbaren-Invasion · ' + x.ab + ' Punkte', I.start); }
 const evTagNr = t => Math.round(new Date(t.getFullYear(), t.getMonth(), t.getDate(), 12).getTime() / 864e5);
@@ -11204,7 +11209,7 @@ function drAuszahlen(fell) {
     const D = evState.dr; if (!D || D.paid) return; D.paid = true; evDirty = true;
     const rk = evRang(D.dmg); let n = 0;
     rk.forEach(([who]) => { goalBump(who, 'dboss'); if (fell) goalBump(who, 'drache');   // (Erfolg: beim Sieg über den Drachen dabei)
-        drLeiste(D, who); if (fell && (D.tr || {})[who] >= 1) { n++; evPreis(who, 'drache', D.name + ' gefallen', DR_FALL, D.start + '|fall'); } });
+        drLeiste(D, who); if (fell && (D.tr || {})[who] >= 1) { n++; evPreis(who, 'drache', D.name + ' gefallen', DR_FALL, D.start + '|fall', D.end); } });
     flashHint(fell ? D.name + ' ist gefallen! ' + n + ' Kämpfer bekommen eine Belohnung.' : D.name + ' ist entkommen.', 6000);
     if (fell) spawnBattleFx({ x: D.x, y: D.y }, true, D.name + ' gefallen', rk.length + ' Kämpfer belohnt');
     saveBotState(); requestRender();
@@ -11248,12 +11253,16 @@ function evAnzeige(now) {                            // Uhren in Fenster und Lei
 // ---- die Karte: Barbaren-Armeen (wie Märsche: gestrichelte Linie + Marke) und der Drache ----
 function evAt(sx, sy) {                              // → { kind: 'drache' } | { kind: 'inv', id } unter einem Tippen
     const z = mapState.zoom, D = drOnMap();
-    if (D && z >= .0015) { const s = barbScreen(D), kb = drK(); if (Math.hypot(s.x - sx, s.y - sy + 12 * kb) < Math.max(28, 52 * kb)) return { kind: 'drache' }; }
+    if (D && z >= .0015) { const s = drFlug(D), kb = s.kb; if (Math.hypot(s.x - sx, s.y - sy + 12 * kb) < Math.max(28, 52 * kb)) return { kind: 'drache' }; }
     const I = invAktiv(); if (!I || z < .003) return null;
     let best = null, bd = 20; for (const a of I.armies) { const p = invPos(a); if (!invSichtbar(a, p)) continue; const s = barbScreen(p), d = Math.hypot(s.x - sx, s.y - sy + 6); if (d < bd) { bd = d; best = a; } }
     return best ? { kind: 'inv', id: best.id } : null;
 }
-const drK = () => Math.max(.45, Math.min(1.2, mapState.zoom / .025));   // so groß zeichnen (mit dem Zoom, nie riesig)
+function drFlug(D) {                                  // (Bildschirm) wo und wie groß der Drache kreist: über der Spitze des Thron-Bilds (03b), halb so breit wie der Thron
+    const m = islandById[megaTempleId], im = typeof KB !== 'undefined' && KB.img && KB.img.thron, z = mapState.zoom;
+    const tw = Math.max(HEILIGTUM_BREITE.megaTemple * z, 64), th = tw * (im && im.width ? im.height / im.width : 1), w = Math.max(120, Math.min(viewW * .7, tw * .5));
+    const c = barbScreen(m || D); return { x: c.x, y: c.y - th * .56 - w * .15, w, kb: w / 170 };
+}
 const invSichtbar = (a, p) => isCellOpen(p.x, p.y) || islandOwnerOf(a.tid) === 'player';
 function drawEvents(now, wallNow) {
     const z = mapState.zoom, I = invAktiv(wallNow);
@@ -11276,8 +11285,10 @@ function drawEvents(now, wallNow) {
             ctx.restore(); liveAnimation = true;
         }
     }
-    const D = drOnMap(wallNow); if (!D || z < .0015) return;
-    const s = barbScreen(D), kb = drK(); if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
+}
+function drawDragon(now, wallNow) {                  // der Drache: nach den Gebäuden, groß über dem Thron (sonst deckt ihn das Thron-Bild zu)
+    const z = mapState.zoom, D = drOnMap(wallNow); if (!D || z < .0015) return;
+    const s = drFlug(D), kb = s.kb; if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
     const dead = D.hp <= 0; setScreen(ctx);
     if (!dead) { const R = 110 * kb, gr = ctx.createRadialGradient(s.x, s.y, 6, s.x, s.y, R); gr.addColorStop(0, 'rgba(255,120,60,.45)'); gr.addColorStop(1, 'rgba(255,80,40,0)'); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(s.x, s.y, R, 0, 7); ctx.fill(); }
     ctx.save(); ctx.translate(s.x, s.y - (dead ? 0 : Math.sin(now / 700) * 4 * kb)); ctx.scale(kb, kb); if (dead) { ctx.globalAlpha = .45; ctx.filter = 'grayscale(1)'; }
@@ -11286,11 +11297,11 @@ function drawEvents(now, wallNow) {
     ctx.restore();
     liveAnimation = true;
 }
-function drawDragonName(wallNow) {                   // Name und Leben des Drachen: nach allen Gebäuden (die Thron-Kuppel deckt ihn sonst zu)
+function drawDragonName(wallNow) {                   // Name und Leben des Drachen: unter dem Drachen, über der Thron-Spitze
     const z = mapState.zoom, D = drOnMap(wallNow); if (!D || z < .0015) return;
-    const s = barbScreen(D), kb = drK(); if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
+    const s = drFlug(D), kb = s.kb; if (s.x < -200 || s.x > viewW + 200 || s.y < -200 || s.y > viewH + 200) return;
     const dead = D.hp <= 0; setScreen(ctx);
-    const bw = Math.max(90, 130 * kb), by = s.y + 40 * kb;
+    const bw = Math.max(90, Math.min(220, 130 * kb)), by = s.y + 30 * kb;
     ctx.font = '800 12px Inter, system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const label = dead ? D.name + ' · besiegt' : D.name, tw = ctx.measureText(label).width + 18;
     rr(ctx, s.x - tw / 2, by, tw, 20, 10); ctx.fillStyle = 'rgba(24,8,6,.92)'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#f2c75c'; ctx.stroke();
@@ -11405,7 +11416,7 @@ function woPunkteJe() {                               // „18 Punkte je 10 besi
 function evPreisHtml(p, i) {                          // ein Preis (Platz): Kacheln wie RoK (05e) – Edelsteine, Münzen, Splitter, Kiste
     return '<div class="tour-prize' + (i ? '' : ' is-1') + '"><b>' + p.t + '</b>' + beuteRaster(evBeute(p)) + '</div>';
 }
-// ---- Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen; erreicht = leuchtet + „Abholen“ (liegt im Abholfach),
+// ---- Belohnungs-Leiste wie RoK (Merkliste 33): Balken mit Kisten an den Stufen; erreicht = leuchtet + „Abholen“ (bis Event-Ende nur hier, danach auch im Abholfach),
 // abgeholt = offene Kiste mit Haken. Was erreicht und bezahlt ist, sagt der Weltrechner (evState / barbWho / dayBoss), das Fach sagt „abgeholt“. ----
 function evHolBereit(tab) { const q = tab === 'tour' ? 'woche' : tab; return inboxList().some(x => x.src === q); }   // (läuft schon beim Laden – nichts aus diesem Teil davor)
 let evHpMemo = null;
@@ -11475,7 +11486,7 @@ function evInvHtml() {
         infoKlapp('inv', 'Alle 3 Tage · so gibt es Punkte', '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Alle 3 Tage um ' + INV_STUNDE + ' Uhr, eine Stunde</b> – ' + INV_WELLEN + ' Wellen, je 5–7 Minuten Marsch vom Rand der Insel</span></span>' +
         '<span>' + icon('defense') + '<span><b>+' + INV_PTS_WEHR + ' Punkte</b> für jede abgewehrte Armee an deiner Basis – schick vorher Verstärkung</span></span>' +
         '<span>' + icon('attack') + '<span><b>+' + INV_PTS_SIEG + ' Punkte</b> für jede Armee, die du unterwegs schlägst – auch die auf deine Nachbarn (Teilschaden zählt anteilig)</span></span>' +
-        '<span>' + icon('crown') + '<span>Jede Stufe der Leiste liegt sofort zum Abholen bereit, sobald du sie erreichst.</span></span>' +
+        '<span>' + icon('crown') + '<span>Jede erreichte Stufe holst du hier ab – was bis zum Ende liegen bleibt, kommt ins Abholfach.</span></span>' +
         '<span>' + icon('losses') + '<span>Barbaren erobern nichts – aber wer sie nicht aufhält, verliert viele Truppen.</span></span></div>') +
         '<div class="lb-gap">' + (akt ? 'Live · Top 10' : 'Letzte Invasion') + '</div>' +
         (evRangHtml(rk, v => fmtNum(Math.floor(v)) + ' P.') || rangLeer(akt ? 'Sobald jemand Punkte holt, steht er hier.' : 'Noch keine Invasion gewesen.'));
@@ -11495,6 +11506,7 @@ function evDrHtml() {
     const fall = '<div class="evl-zeilen"><div class="evl-z is-' + (fHol ? 'hol' : fOk ? 'ok' : 'zu') + '"><b>Drache fällt<small>mit 1 Treffer</small></b>' + beuteRaster(evBeute(DR_FALL), 'bk-mini') + '<span class="evl-st">' +
         (fHol ? evHolKnopf(fk) : fOk ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false"><small>Abgeholt</small>' : icon('lock')) + '</span></div></div>';
     return evKarte('star', 'Der Drache', kopf, inh + go, akt ? 'is-drache' : '', 'drache') +
+        '<div class="barb-note ev-zaehlt">Es zählen deine <b>Treffer</b> (1×, 3× …): jeder Angriff mit mind. 10 % deiner Truppen ist ein Treffer. Der Schaden (höchstens ' + Math.round(DR_CAP * 100) + ' % seines Lebens pro Angriff) zählt nur für die Rangliste.</div>' +
         '<div class="lb-gap">Belohnungs-Leiste · Treffer</div>' + leiste + fall +
         infoKlapp('drache', 'Jeden Sonntag · so läuft es', '<div class="tour-rules"><span>' + icon('hourglass') + '<span><b>Jeden Sonntag ' + DR_STUNDE + '–' + (DR_STUNDE + DR_DAUER / 3600000) + ' Uhr</b> kreist ' + DR_NAME + ' über dem Thron – sehr viel Leben, nur alle zusammen schaffen ihn</span></span>' +
         '<span>' + icon('attack') + '<span><b>' + DR_HITS + ' Angriffe</b> pro Person, höchstens 2 % seines Lebens pro Angriff, ein Drittel der Kämpfer fällt</span></span>' +
@@ -11510,9 +11522,10 @@ function evBossHtml() {                              // Reiter „Boss“: Tages
     const zeile = (x, i) => '<div class="evl-z' + (kl[i] ? ' is-ok' : '') + '"><b>Klasse ' + (i + 1) + '<small>' + x.t + ' seines Lebens</small></b>' + beuteRaster(evBeute(x), 'bk-mini') + '<span class="evl-st evk-n">' + (kl[i] ? '×' + kl[i] : '') + '</span></div>';
     const fk = 'boss|' + b.d + '|fall', fHol = inboxList().some(x => x.k === fk), fOk = b.hp <= 0 && b.dmg.player > 0;
     const fall = '<div class="evl-z is-' + (fHol ? 'hol' : fOk ? 'ok' : 'zu') + '"><b>Boss fällt<small>alle, die trafen</small></b>' + beuteRaster(evBeute(DBOSS_FALL), 'bk-mini') + '<span class="evl-st">' + (fHol ? '<small>bereit</small>' : fOk ? '<img src="bilder/ui_sym_haken.webp" alt="" draggable="false">' : icon('lock')) + '</span></div>';
-    return boss + '<div class="lb-gap">Belohnung je Angriff · nach Schaden</div>' + (hol ? evHolKnopf('src:boss', 'Alles abholen · ' + hol) : '') +
+    return boss + '<div class="barb-note ev-zaehlt">Es zählt der <b>Schaden jedes einzelnen Angriffs</b> (Anteil am Boss-Leben, höchstens ' + Math.round(DBOSS_CAP * 100) + ' % pro Angriff) – jeder Angriff bringt die Belohnung seiner Klasse.</div>' +
+        '<div class="lb-gap">Belohnung je Angriff · nach Schaden</div>' + (hol ? evHolKnopf('src:boss', 'Alles abholen · ' + hol) : '') +
         '<div class="evl-zeilen evk">' + DBOSS_KLASSEN.map(zeile).join('') + fall + '</div>' +
-        '<div class="barb-note">Jeder Angriff zählt einzeln: zweimal dieselbe Klasse = zweimal die Belohnung. Höchstens 5 % seines Lebens pro Angriff.</div>';
+        '<div class="barb-note">Zweimal dieselbe Klasse = zweimal die Belohnung.</div>';
 }
 function evLagerHtml() {                             // Reiter „Lager“: Barbaren-Lager, Belohnung je Stufe – jeden Tag neu
     const rec = barbRec('player'), near = barbNearest(), s = rec.s || 0, offen = Math.min(BARB_MAX_L, rec.b + 1);
@@ -11545,11 +11558,12 @@ document.getElementById('eventBody').addEventListener('click', e => {
 });
 // der Hinweis unter dem HUD: Invasion bald/läuft, Drache bald/da → [Dringlichkeit, html] (0 = am dringendsten)
 function evChips(now) {
+    const hol = k => evHolBereit(k) ? '<em class="mb-hol" aria-label="Belohnung abholen"></em>' : '';   // roter Punkt: im Event liegt etwas zum Abholen
     const out = [], ip = evPlanVon('inv'), I = invAktiv(now), D = drAktiv(now), dp = evPlanVon('dr');
     if (I) { const n = I.armies.filter(a => islandOwnerOf(a.tid) === 'player').length, p = Math.floor(I.pts.player || 0);   // 0 Punkte: nichts zeigen
-        out.push([n ? 0 : 2, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : p > 0 ? '<b>' + fmtNum(p) + (p === 1 ? ' Punkt' : ' Punkte') + '</b>' : '') + '</button>']); }
+        out.push([n ? 0 : 2, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Invasion · Welle ' + Math.min(INV_WELLEN, I.welle) + '/' + INV_WELLEN + '</span>' + (n ? '<b>' + n + ' auf dich</b>' : p > 0 ? '<b>' + fmtNum(p) + (p === 1 ? ' Punkt' : ' Punkte') + '</b>' : '') + hol('inv') + '</button>']); }
     else if (ip.start > now && ip.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-warn" data-mb="ev-inv">' + icon('defense') + '<span>Barbaren-Invasion in</span><i data-ev-bis="' + ip.start + '"></i></button>']);
-    if (D) out.push([2, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Drache</span><b>' + Math.ceil(D.hp / D.max * 100) + ' %</b><i data-ev-bis="' + D.end + '"></i></button>']);
+    if (D) out.push([2, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Drache</span><b>' + Math.ceil(D.hp / D.max * 100) + ' %</b><i data-ev-bis="' + D.end + '"></i>' + hol('drache') + '</button>']);
     else if (dp.start > now && dp.start - now <= 30 * 60000) out.push([3, '<button type="button" class="mb-chip is-drache" data-mb="ev-drache">' + icon('star') + '<span>Der Drache kommt in</span><i data-ev-bis="' + dp.start + '"></i></button>']);
     const sz = saisonChip(now); if (sz) out.push(sz);                                  // die letzten 3 Tage einer Welt-Saison: Countdown
    
@@ -14782,7 +14796,8 @@ if (window.WELT) {
         if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Platz (Ende einer Welt-Saison): der Saison-Rahmen, gleich angelegt (bis zum nächsten Saison-Ende)
         const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
         if (k && inboxList().some(x => x.k === k)) return;                     // (dieselbe Stufe nie zweimal im Fach)
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + ': dein Preis liegt unter Events → Belohnung.' + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
+        const bis = typeof e.bis === 'number' && e.bis > Date.now() ? Math.min(e.bis, Date.now() + 864e5) : undefined;   // (Event-Stufe: bis zum Ende nur im Event abholbar, höchstens einen Tag)
+        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k, bis }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt
         if (!e || e.art !== 'nebel') return;

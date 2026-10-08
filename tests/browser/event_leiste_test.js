@@ -1,5 +1,5 @@
 // Events neu (Merkliste 33, Alexander 7.10.): Wochen-Event Preise bis Platz 1000, Invasion/Drache/Lager als Belohnungs-Leiste
-// (jede erreichte Stufe sofort im Abholfach, nie doppelt), Drache: Treffer zählt nur mit mind. 10 % der Truppen, Tagesboss: je Angriff
+// (jede erreichte Stufe im Event abholen, erst nach dem Ende im Abholfach, nie doppelt), Drache: Treffer zählt nur mit mind. 10 % der Truppen, Tagesboss: je Angriff
 // die Belohnung seiner Schadens-Klasse + „Boss fällt“ für alle (keine Platz-Preise), Lager: je Stufe einmal am Tag. Mitspieler gleich,
 // echte Spieler bekommen Münzen/Truppen als Nachricht (Gutschrift). Abholen im Event-Fenster. Fotos in process.argv[3], wenn angegeben.
 // Kurze Handys (Fotos 8.10.): Pass – Premium-Reihe ganz im Fenster; Lager – die Stufen-Leiste beim Blättern nie halb verdeckt.
@@ -25,7 +25,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     invPunkteDazu(I, 'player', 55); invPunkteDazu(I, bot.id, 25); invLeiste(I, 'player');
     out.inv = [fach('inv|' + I.start + '|0').length, fach('inv|' + I.start + '|1').length, fach('inv|' + I.start + '|2').length, I.lst.player, (bs().gems || 0) - g0, (botCoins[bot.id] || 0) > c0];
     out.invMuenzen = fach('inv|' + I.start + '|0')[0] && fach('inv|' + I.start + '|0')[0].coins > 0;
+    // Alexander (A): Event-Stufen nur im Event abholen – bis zum Ende nicht im Abholfach, roter Punkt am Chip; danach im Abholfach
+    out.invHalten = [inboxFach().filter(x => x.src === 'inv').length, fach('inv|' + I.start + '|0')[0].bis === I.end, evHolBereit('inv'), /mb-hol/.test(evChips(Date.now()).map(c => c[1]).join(''))];
     invAuszahlen(); out.invEnde = inboxList().filter(x => x.src === 'inv').length;
+    inboxList().forEach(x => { if (x.src === 'inv') x.bis = Date.now() - 1; }); out.invNachEnde = inboxFach().filter(x => x.src === 'inv').length;
+    const bisB = Date.now() + msToMidnight();
     // Drache: zu wenige Truppen → kein Treffer; genug → Treffer + Stufe 1; fällt er: nur wer traf
     const D = evState.dr = Object.assign(drNeu({ start: now - 1000, end: now + 3e6 }), { hp: 1e12, max: 1e12 });
     const base = [...ownedIslands][0]; islandTroops[base] = 100000;
@@ -41,6 +45,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     out.klasse = [dbossKlasse(1, 1e6), dbossKlasse(500, 1e6), dbossKlasse(501, 1e6), dbossKlasse(2e4, 1e6), dbossKlasse(5e4, 1e6)];
     const max0 = B.max; B.max = 1e6; dbossKlasseZahlen(B, 'player', 300); dbossKlasseZahlen(B, 'player', 400); dbossKlasseZahlen(B, 'player', 5e4); B.max = max0;
     out.boss = [B.kl.player.join(), inboxList().filter(x => x.src === 'boss').length];
+    out.bossHalten = [inboxFach().filter(x => x.src === 'boss').length, inboxList().filter(x => x.src === 'boss').every(x => Math.abs(x.bis - bisB) < 5000)];
     B.dmg = { player: 2000, [bot.id]: 10 }; dbossPayout(B);
     out.bossFall = [fach('boss|' + B.d + '|fall').length, inboxList().filter(x => x.src === 'boss' && /Platz/.test(x.title)).length];
     // Lager: je Stufe einmal am Tag, am nächsten Tag wieder; zusammen 210 Edelsteine
@@ -52,12 +57,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // echter Spieler: der Preis geht als Nachricht – mit Münzen/Truppen und Schlüssel
     const msg = [], w0 = window.WELT; botById[bot.id].mensch = true;
     window.WELT = new Proxy({}, { get: (o, k) => k === 'nachricht' ? (uid, e, schl) => msg.push({ e, schl }) : k === 'wache' ? undefined : () => [] });
-    try { evPreis(bot.id, 'inv', 'Test', INV_LEISTE[3], 'x|3'); } finally { window.WELT = w0; botById[bot.id].mensch = false; }
-    out.mensch = msg[0] && [msg[0].e.coins > 0, msg[0].e.tr > 0, msg[0].e.k, msg[0].schl];
+    try { evPreis(bot.id, 'inv', 'Test', INV_LEISTE[3], 'x|3', Date.now() + 5000); } finally { window.WELT = w0; botById[bot.id].mensch = false; }
+    out.mensch = msg[0] && [msg[0].e.coins > 0, msg[0].e.tr > 0, msg[0].e.k, msg[0].schl, msg[0].e.bis > Date.now()];
     return out;
   });
   ok(r.wo.join() === '6,250,150,30,10,true', 'Wochen-Event: 6 Stufen (250 · 150 · … · 10), ab Platz 1001 nichts', r.wo);
   ok(r.inv.join() === '1,1,0,2,5,true' && r.invMuenzen, 'Invasion: 55 Punkte → Stufe 20 + 50 im Abholfach (je einmal), Mitspieler direkt (Gems + Münzen)', r.inv);
+  ok(r.invHalten.join() === '0,true,true,true' && r.invNachEnde === 2, 'Invasion: Stufen bis Event-Ende nur im Event (nicht im Abholfach, roter Punkt am Chip), danach im Abholfach', [r.invHalten, r.invNachEnde]);
+  ok(r.bossHalten.join() === '0,true', 'Tagesboss: Belohnung bis Mitternacht nur im Event', r.bossHalten);
   ok(r.invEnde === 2, 'Invasion zu Ende: keine Extra-Preise, nichts doppelt', r.invEnde);
   ok(r.drVoll.join() === 'false,true' && r.drKlein === 0, 'Drache: unter 10 % der Truppen zählt kein Treffer', [r.drVoll, r.drKlein]);
   ok(r.drGross.join() === '1,1', 'Drache: Treffer mit genug Truppen → Stufe 1 der Leiste', r.drGross);
@@ -67,7 +74,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.bossFall.join() === '1,0', 'Tagesboss fällt: Belohnung für alle, keine Platz-Preise mehr', r.bossFall);
   ok(r.lager.join() === 'true,false,1' && r.lagerNeu === true, 'Lager: Stufe einmal am Tag, am nächsten Tag wieder', [r.lager, r.lagerNeu]);
   ok(r.lagerGems === 210 && r.lagerArt.join() === '2,1,2,3', 'Lager: 210 Edelsteine über 25 Stufen, Münzen/Truppen abwechselnd', [r.lagerGems, r.lagerArt]);
-  ok(r.mensch && r.mensch.join() === 'true,true,inv|x|3,inv|x|3', 'Echter Spieler: Münzen + Truppen + Schlüssel in der Nachricht', r.mensch);
+  ok(r.mensch && r.mensch.join() === 'true,true,inv|x|3,inv|x|3,true', 'Echter Spieler: Münzen + Truppen + Schlüssel + Event-Ende (bis) in der Nachricht', r.mensch);
   // Abholen im Event-Fenster: leuchtet → Abholen → Haken; Münzen kommen an
   await p.evaluate(() => openGoals('inv')); await p.waitForTimeout(600);
   const v = await p.evaluate(() => { const L = document.querySelectorAll('#eventBody .evl-k').length, hol = document.querySelectorAll('#eventBody .evl-k.is-hol').length, c0 = coins;
@@ -76,8 +83,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(v.L === 6 && v.hol === 2 && v.mehr && v.ok === 1 && !v.text, 'Leiste: 6 Kisten, 2 leuchten, Abholen gibt Münzen, danach Haken', v);
   for (const t of ['boss', 'lager', 'drache']) {
     await p.evaluate(t => openGoals(t), t); await p.waitForTimeout(500);
-    const w = await p.evaluate(() => { const e = document.getElementById('eventBody'); return { breit: e.scrollWidth <= e.clientWidth + 1, text: /undefined|NaN/.test(e.innerText), n: e.querySelectorAll('.evl-z').length }; });
+    const w = await p.evaluate(() => { const e = document.getElementById('eventBody'); return { breit: e.scrollWidth <= e.clientWidth + 1, text: /undefined|NaN/.test(e.innerText), n: e.querySelectorAll('.evl-z').length, zaehlt: (e.querySelector('.ev-zaehlt') || {}).textContent || '' }; });
     ok(w.breit && !w.text && w.n >= 5, 'Reiter ' + t + ': passt aufs Handy, keine kaputten Werte', w);
+    if (t !== 'lager') ok(t === 'drache' ? /Treffer/.test(w.zaehlt) && /2 %/.test(w.zaehlt) : /Schaden jedes einzelnen Angriffs/.test(w.zaehlt) && /5 %/.test(w.zaehlt), 'Reiter ' + t + ': oben ein Satz, was zählt (Regel-Zahl stimmt)', w.zaehlt);
     if (bilder) await p.screenshot({ path: path.join(bilder, 'event_' + t + '.png') });
   }
   // Invasions-Chip (Merkliste 28): nie „P.“, bei 0 Punkten keine Zahl, sonst „… Punkte“
@@ -99,6 +107,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return { blaettern: pb.scrollTop > 0, ganz: r.top >= a.top - 1 && r.bottom <= a.bottom, zeilenDarunter: z.top < r.bottom, bg: getComputedStyle(l).backgroundColor !== 'rgba(0, 0, 0, 0)' }; });
   ok(lg.blaettern && lg.ganz && lg.bg, 'Lager 375×667 geblättert: Stufen-Leiste bleibt ganz oben stehen (deckend, nicht halb verdeckt)', lg);
   if (bilder) await p.screenshot({ path: path.join(bilder, 'lager_geblaettert.png') });
+  // Drache über dem Thron (Alexander 8.10.): über der Spitze des Thron-Bilds, nicht winzig, nach den Gebäuden gezeichnet
+  const dr = await p.evaluate(() => { const D = evState.dr; D.hp = D.max = 1e9; const out = [];
+    for (const z of [.002, .02]) { mapState.zoom = z; const f = drFlug(D), m = barbScreen(islandById[megaTempleId]), tw = Math.max(HEILIGTUM_BREITE.megaTemple * z, 64);
+      out.push({ ueber: f.y < m.y - tw * .3, gross: f.w >= 120 }); }
+    const q = drawMap.toString(); return { out, reihe: q.indexOf('drawDragon(') > q.indexOf('drawBuilding(') }; });
+  ok(dr.out.every(x => x.ueber && x.gross) && dr.reihe, 'Drache: groß über dem Thron, nach den Gebäuden gezeichnet', dr);
   ok(!fe.length, 'keine Fehler auf der Seite', fe.slice(0, 3));
   await b.close();
 })();
