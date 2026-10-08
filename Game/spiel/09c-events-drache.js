@@ -71,11 +71,16 @@ function evPreis(who, src, title, p, schl, bis) {     // schl: fester Schlüssel
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
     if (bd.mensch && window.WELT && b) { for (const [a, n] of b) if (a === 'holz' && AUF) AUF.rohDazu(who, { h: n }); b = b.filter(x => x[0] !== 'holz'); if (!b.length) b = undefined; }   // Holz gleich in seinen Topf (kommt mit dem nächsten Puls, das Hauptbuch kennt es)
-    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {}, b ? { b } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {}, b ? { b } : {}, b ? beuteFelder(b) : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
     const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
     if (coins) botCoins[who] = (botCoins[who] || 0) + coins; if (tr) { const cap = botCapitalOf(who); if (cap !== null && cap !== undefined) islandTroops[cap] = (islandTroops[cap] || 0) + tr; }
     for (const [a, n, e] of b || []) beuteBot(who, a, n, e);
     if (bs && titel) { bs.titles = [...new Set([...(bs.titles || []), titel])]; saveBotState(); }
+}
+function beuteFelder(b) {                            // Gegenstände für das Hauptbuch (10d, Team C): em, s1, s2, besch {Dauer: Anzahl}
+    const o = {}; for (const [a, n, e] of b) { if (a === 'eventMuenzen') o.em = (o.em || 0) + n; else if (a === 'schluessel1') o.s1 = (o.s1 || 0) + n; else if (a === 'schluessel2') o.s2 = (o.s2 || 0) + n;
+        else if (a === 'besch' && e && e.dauer) { o.besch = o.besch || {}; o.besch[e.dauer] = (o.besch[e.dauer] || 0) + n; } }
+    return o;
 }
 function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
     if (who === 'player') { addCombatLogEntry(e); if (hint) flashHint(hint, 4500); return; }

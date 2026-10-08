@@ -6,7 +6,6 @@
 // Burg fair (Alexander 6.10. A): derselbe erste Reset setzt jede Burg über 4 auf 4 (Gebäude bis zur Burg, Forschung bis zum Labor, Bauten
 // darüber weg) – du, Mitspieler und das Hauptbuch eines echten Spielers gleich; der nächste Reset ändert nichts mehr (saison.burgFair).
 // Alexander 6.10.: einmalige Ausnahme im selben Schritt – Edelsteine genau 1.000, Holz/Stein/Eisen 0 (später nie wieder).
-// Thron-Punkte (jeder Reset): höchstens 20.000 bleiben, der Rest 10 : 1 als Edelsteine ins Abholfach (Mitspieler: gleich abgeholt).
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 // Nur in der NORMALEN Vorschau (alle_tests.sh: $N): der Test-Modus füllt alle 10 s Gems, Münzen, Truppen und Helden-Gefolge auf –
@@ -23,13 +22,13 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
     c.builds = [{ id: 'keep', to: 8, startedAt: Date.now(), endsAt: Date.now() + 864e5 }]; c.foRun = { id: 'w_sam', to: 3, startedAt: Date.now(), endsAt: Date.now() + 864e5 }; saveCity();
     const hs = loadHeroes(); const h0 = Object.keys(hs)[0]; hs[h0].sh = 77; saveHeroes();
     const it = addInventoryItem('weapon', 3, 1); if (it && it.id !== undefined) equippedItems.weapon = it.id;
-    gems = 12345; throneState.pts = 35000; saveThrone(); coins = 5e6; playerLvl = 20; skillPoints = 4; skills.attack = 10; skills.defense = 5;
+    gems = 12345; coins = 5e6; playerLvl = 20; skillPoints = 4; skills.attack = 10; skills.defense = 5;
     const r = AUF.rohVon('player'); r.h = 77777; r.s = 66666; r.e = 55555; AUF.rohSpeichern();
     const cap0 = playerIslandId, home = islandById[cap0];
     const zweite = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && i.landmassId === home.landmassId && i.id !== cap0);
     ownedIslands.add(zweite.id); islandLevels[zweite.id] = 9; islandTroops[zweite.id] = 5e5; islandTroops[cap0] = 1e15;   // (Macht: Platz 1)
     const X = BOT_DEFS.find(x => !x.mensch && botOwnedIslands[x.id].size && islandById[botCapitalOf(x.id)]).id, bx = loadBotState()[X];
-    islandTroops[botCapitalOf(X)] = 1e14; bx.lvl = 30; bx.skills.attack = 12; bx.city.levels.keep = 14; bx.city.levels.academy = 14; bx.city.levels.lumber = 13; bx.city.levels.wall = 3; bx.city.fo = { w_prod: 7, m_atk: 6, x_tempo: 5, x_nebel: 3 }; bx.gems = 999; bx.tp = 35000; bx.res = { h: 4444, s: 3333, e: 2222 }; botCoins[X] = 7e6;
+    islandTroops[botCapitalOf(X)] = 1e14; bx.lvl = 30; bx.skills.attack = 12; bx.city.levels.keep = 14; bx.city.levels.academy = 14; bx.city.levels.lumber = 13; bx.city.levels.wall = 3; bx.city.fo = { w_prod: 7, m_atk: 6, x_tempo: 5, x_nebel: 3 }; bx.gems = 999; bx.res = { h: 4444, s: 3333, e: 2222 }; botCoins[X] = 7e6;
     bx.city.builds = [{ id: 'keep', to: 15, startedAt: Date.now(), endsAt: Date.now() + 864e5 }]; bx.city.foRun = { id: 'w_sam', to: 3, startedAt: Date.now(), endsAt: Date.now() + 864e5 };
     // ein echter Spieler (Hauptbuch des Weltrechners, 10d hb.st/hb.fo): Burg 6 → 4
     const Y = BOT_DEFS.find(x => !x.mensch && x.id !== X && loadBotState()[x.id] && loadBotState()[x.id].city).id, by = loadBotState()[Y], T = Date.now() - 864e5;
@@ -76,11 +75,11 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
     return { coins: N.coins, lvl: N.lvl, sp: N.sp, skills: J(N.skills), ownN: own.length, capNeu: cap !== V.cap0, rand: isl && isl.type === 'tower' && (isl.startSlot || landmasses[isl.landmassId].zone === 1), zweite: islandOwnerOf(V.zweite),
       truppen: tr[cap], bund: Object.keys((J(N.bund) || {}).b || {}).length, log: N.log, fog: (J(N.fog) || []).filter(k => k === V.fogAlt || k === V.fogZweite).length, weit: Math.hypot(isl.x - islandById[V.cap0].x, isl.y - islandById[V.cap0].y) > 2 * REVEAL_BASE,
       keep: c.levels.keep, aca: c.levels.academy, forge: c.levels.forge, lumber: c.levels.lumber, fo: c.fo, bau: c.builds.length, foRun: c.foRun, wounded: c.wounded, gems, roh: AUF.rohVon('player'),
-      hinweis: saisonBurgGeladen, nGems: N.gems, nRes: J(N.res), tp: (J(N.thron) || {}).pts, tpPost: (x => x && [x.gems, x.title])(inboxList().find(x => x.src === 'saison' && /Thron-Punkte/.test(x.title || ''))), karte: /Burg höchstens/.test(saisonKarte()), y: (({ city, hb }) => ({ keep: city.levels.keep, aca: city.levels.academy, fo: city.fo, st: hb && hb.st, hfo: hb && hb.fo }))((J(N.botState) || {})[V.Y] || {}),
+      hinweis: saisonBurgGeladen, nGems: N.gems, nRes: J(N.res), tpPost: inboxList().find(x => x.src === 'saison' && /Thron-Punkte/.test(x.title || '')), karte: /Burg höchstens/.test(saisonKarte()), y: (({ city, hb }) => ({ keep: city.levels.keep, aca: city.levels.academy, fo: city.fo, st: hb && hb.st, hfo: hb && hb.fo }))((J(N.botState) || {})[V.Y] || {}),
       inv: localStorage.getItem('openWaterInventory') === V.inv, eq: localStorage.getItem('openWaterEquippedItems') === V.eq, hel: localStorage.getItem('openWaterHeroes2') === V.hel,
       preis: inbox && inbox.gems, titel: look.titles, traegt: playerTitle(), rahmen: playerFrame(), saison: { nr: saison.nr, wirtAb: saison.wirtAb, burgFair: saison.burgFair, halt: saison.halt, ende: saison.ende - Date.now(), top: saison.last && saison.last.top.length, erster: saison.last && saison.last.top[0][0] },
       bot: { lvl: bx.lvl, skills: Object.values(bx.skills).reduce((a, x) => a + x, 0), coins: bc[V.X], basen: (bo[V.X] || []).length, keep: bx.city.levels.keep, aca: bx.city.levels.academy, lumber: bx.city.levels.lumber, wall: bx.city.levels.wall,
-        fo: bx.city.fo, bau: (bx.city.builds || []).map(x => x.id + x.to), foRun: bx.city.foRun || null, gear: JSON.stringify(bx.gear) === JSON.stringify(V.bot.gear), gems: bx.gems, tp: bx.tp, res: bx.res, titel: [...(bx.sTitel || []), ...(bx.titles || [])], look: botLook(V.X).title, rahmen: botLook(V.X).frame,
+        fo: bx.city.fo, bau: (bx.city.builds || []).map(x => x.id + x.to), foRun: bx.city.foRun || null, gear: JSON.stringify(bx.gear) === JSON.stringify(V.bot.gear), gems: bx.gems, res: bx.res, titel: [...(bx.sTitel || []), ...(bx.titles || [])], look: botLook(V.X).title, rahmen: botLook(V.X).frame,
         hs: Object.entries(bx.hs).every(([k, x]) => V.bot.hs[k] && V.bot.hs[k][0] === x.own && V.bot.hs[k][1] === x.q), truppen: tr[bx.capital] },
       pass: (x => x && [x.xp, x.f.length, x.p.length, x.prem])((J(N.pass) || { s: {} }).s[passNo(Date.now())]), botPass: bx.ps && [bx.ps.f, bx.ps.p, bx.ps.prem],
       rang: [rangSaison('player', 0), rangSaison('player', 1), rangSaison(V.X, 0), conquestsOf('player'), throneEarnedOf('player')], wo: Object.keys(((J(N.ev) || {}).wo || {}).pts || {}).length,
@@ -101,9 +100,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
     'Burg fair beim echten Spieler: Welt-Stadt und Hauptbuch (Burg 6 → 4, Labor 4, Holzfäller 4, Mauer 3 bleibt, Forschung passend) – wie sein Handy, also kein Fehlalarm', Y);
   ok(n.inv && n.eq && n.hel, 'Ausrüstung und Helden bleiben', { inv: n.inv, eq: n.eq, hel: n.hel });
   ok(n.nGems === '1000' && n.nRes && n.nRes.h <= 5 && n.nRes.s === 0 && n.nRes.e === 0, 'Einmalige Ausnahme (Alexander 6.10.): Edelsteine genau 1.000 (vorher 12.345), Holz/Stein/Eisen 0 (Holz ≤ 5: der Holzfäller arbeitet bis zum Auslesen weiter)', { gems: n.nGems, res: n.nRes });
-  ok(n.tp === 20000 && n.tpPost && n.tpPost[0] === 1500 && /Saison 1/.test(n.tpPost[1]), 'Thron-Punkte: 35.000 → 20.000, 1.500 Edelsteine im Abholfach („Thron-Punkte aus Saison 1 umgetauscht“)', { tp: n.tp, post: n.tpPost });
-  const ab = await p.evaluate(() => { const x = inboxList().find(y => y.src === 'saison' && /Thron-Punkte/.test(y.title || '')), g0 = gems; inboxClaim(x.id); return gems - g0; });
-  ok(ab === 1500, 'Abholen: Edelsteine + 1.500', ab);
+  ok(!n.tpPost, 'Kein Thron-Punkte-Umtausch mehr (Thron-Shop raus, 8.10.)', n.tpPost);
   ok(n.saison.wirtAb === 2, 'Saison 2 ist die erste mit der neuen Wirtschaft (der nächste Reset rechnet nicht noch einmal um)', n.saison.wirtAb);
   ok(n.preis === 3000 && (n.titel || []).includes('s1p1') && n.traegt === 'Saison-Champion' && n.rahmen === 'sz1', 'Platz 1: 3.000 Gems im Abholfach + Rahmen „Saison-Champion“ (angelegt)', { preis: n.preis, titel: n.titel, traegt: n.traegt, rahmen: n.rahmen });
   ok(!n.saison.halt, 'Admin-Knopf: die angehaltene Saison beginnt neu (nicht mehr angehalten)', n.saison);
@@ -115,8 +112,7 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(B.keep === 4 && B.aca === 4 && B.lumber === 4 && B.wall === 3 && JSON.stringify(B.fo) === '{"w_prod":2,"m_atk":2,"x_tempo":2}' && !B.bau.length && !B.foRun,
     'Burg fair beim Mitspieler: Burg 14 → 4, Gebäude bis 4, Forschung bis Labor 4, Burg-Bau (15) und Forschung (Sammeln 3) abgebrochen', B);
   ok(B.gear && B.hs && ['h', 's', 'e'].every(k => B.res[k] === 0) && resVor.h >= 4444, 'Mitspieler: Ausrüstung, Helden bleiben, Holz/Stein/Eisen 0 (einmalige Ausnahme)', { B, resVor });
-  ok(B.tp === 20000, 'Mitspieler: Thron-Punkte 35.000 → 20.000', B.tp);
-  ok(B.gems === 1000 + 2000 + 1500 && (B.titel || []).includes('s1p2') && B.look === 'Saison-Großadmiral' && B.rahmen === 'sz2', 'Mitspieler Platz 2: Edelsteine 1.000 (Ausnahme) + 2.000 Preis + 1.500 aus Thron-Punkten (gleich abgeholt) + Rahmen „Saison-Großadmiral“ (Platz 2–3)', { gems: B.gems, titel: B.titel, look: B.look, rahmen: B.rahmen });
+  ok(B.gems === 1000 + 2000 && (B.titel || []).includes('s1p2') && B.look === 'Saison-Großadmiral' && B.rahmen === 'sz2', 'Mitspieler Platz 2: Edelsteine 1.000 (Ausnahme) + 2.000 Preis + Rahmen „Saison-Großadmiral“ (Platz 2–3)', { gems: B.gems, titel: B.titel, look: B.look, rahmen: B.rahmen });
   ok(n.pass && n.pass[0] === 0 && n.pass[1] === 0 && n.pass[2] === 0 && n.pass[3] === false, 'Saison-Pass von vorn (Punkte, abgeholte Stufen) – Premium auch weg (Alexander 8.10.)', n.pass);
   ok(n.botPass && n.botPass[0] === 0 && n.botPass[1] === 0 && n.botPass[2] === false, 'Mitspieler: Saison-Pass von vorn, Premium auch weg', n.botPass);
   { const q = (require('fs').readFileSync(require('path').join(__dirname, '../../Game/spiel/10d3-welt-hauptbuch.js'), 'utf8').match(/WELT\.saisonKonto = function[\s\S]*?\n    \};/) || [''])[0];
@@ -161,19 +157,18 @@ if (require('fs').existsSync(require('path').join(process.argv[2] || '.', 'testm
   ok(z3.keep === 4, 'Rückfall ohne Nachricht: Burg fair trotzdem (die Welt sagt: saison.burgFair = 2) – Burg 7 → 4', z3.keep);
   // 4) noch ein Reset: Burg fair war schon – Burgen über 4 (inzwischen gebaut) bleiben, für dich, Mitspieler und das Hauptbuch
   await p.waitForFunction(() => typeof AUF !== 'undefined' && typeof saisonJetzt === 'function' && saison && saison.nr === 2 && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
-  const v4 = await p.evaluate(V => { const c = loadCity(); c.levels.keep = 6; c.levels.lumber = 6; saveCity(); gems = 777; throneState.pts = 25000; saveThrone(); const r = AUF.rohVon('player'); r.h = 500; r.s = 400; r.e = 300; AUF.rohSpeichern(); saveGameNow();
-    const bs = loadBotState(), bx = bs[V.X], by = bs[V.Y]; bx.city.levels.keep = 9; bx.gems = 555; bx.tp = 25000; bx.res = { h: 600, s: 500, e: 400 }; bx.city.builds = []; botNextAt[V.X] = Date.now() + 1e9; by.city.levels.keep = 7; by.city.builds = []; botNextAt[V.Y] = Date.now() + 1e9; by.hb.st.keep = [7, Date.now()]; saveBotState(); saveGameNow();
+  const v4 = await p.evaluate(V => { const c = loadCity(); c.levels.keep = 6; c.levels.lumber = 6; saveCity(); gems = 777; const r = AUF.rohVon('player'); r.h = 500; r.s = 400; r.e = 300; AUF.rohSpeichern(); saveGameNow();
+    const bs = loadBotState(), bx = bs[V.X], by = bs[V.Y]; bx.city.levels.keep = 9; bx.gems = 555; bx.res = { h: 600, s: 500, e: 400 }; bx.city.builds = []; botNextAt[V.X] = Date.now() + 1e9; by.city.levels.keep = 7; by.city.builds = []; botNextAt[V.Y] = Date.now() + 1e9; by.hb.st.keep = [7, Date.now()]; saveBotState(); saveGameNow();
     return { nr: saison.nr, fair: saison.burgFair }; }, v.vor);
   await Promise.all([p.waitForNavigation({ timeout: 30000 }), p.evaluate(() => saisonJetzt())]);
   await p.waitForFunction(() => window.__nach && typeof saison !== 'undefined' && saison && saison.nr === 3 && typeof AUF !== 'undefined', null, { timeout: 60000, polling: 500 }).catch(() => {});
   const z4 = await p.evaluate(V => { const bs = JSON.parse(window.__nach.botState || '{}'), c = JSON.parse(window.__nach.city || '{}');
-    const xi = saison.last.top.findIndex(([w]) => w === V.X), preis = xi >= 0 ? SAISON_PREISE[xi] : 0, post = inboxList().find(x => x.src === 'saison' && /Thron-Punkte aus Saison 2/.test(x.title || ''));
-    return { gems: window.__nach.gems, res: JSON.parse(window.__nach.res || '{}'), tp: JSON.parse(window.__nach.thron || '{}').pts, post: post && post.gems, xGems: bs[V.X].gems - preis, xTp: bs[V.X].tp, xRes: bs[V.X].res,
+    const xi = saison.last.top.findIndex(([w]) => w === V.X), preis = xi >= 0 ? SAISON_PREISE[xi] : 0;
+    return { gems: window.__nach.gems, res: JSON.parse(window.__nach.res || '{}'), xGems: bs[V.X].gems - preis, xRes: bs[V.X].res,
       nr: saison.nr, fair: saison.burgFair, keep: c.levels.keep, lumber: c.levels.lumber, x: bs[V.X].city.levels.keep, y: bs[V.Y].city.levels.keep, hb: bs[V.Y].hb.st.keep[0], hinweis: saisonBurgGeladen }; }, v.vor);
   ok(v4.nr === 2 && v4.fair === 2 && z4.nr === 3 && z4.fair === 2 && z4.keep === 6 && z4.lumber === 6 && z4.x === 9 && z4.y === 7 && z4.hb === 7 && !z4.hinweis,
     'Zweiter Reset danach: Burg fair nur einmal – Burg 6 (du), 9 (Mitspieler), 7 (Hauptbuch) bleiben', { v4, z4 });
-  ok(z4.gems === '777' && z4.res.h >= 500 && z4.res.s >= 400 && z4.res.e >= 300 && z4.xGems === 555 + 500 && z4.xRes.h >= 600 && z4.xRes.e >= 400,
+  ok(z4.gems === '777' && z4.res.h >= 500 && z4.res.s >= 400 && z4.res.e >= 300 && z4.xGems === 555 && z4.xRes.h >= 600 && z4.xRes.e >= 400,
     'Zweiter Reset: keine Ausnahme mehr – Edelsteine und Holz/Stein/Eisen bleiben (du und Mitspieler)', z4);
-  ok(z4.tp === 20000 && z4.post === 500 && z4.xTp === 20000, 'Zweiter Reset: Thron-Punkte wieder gekappt (25.000 → 20.000, 500 Edelsteine ins Abholfach, Mitspieler gleich abgeholt)', z4);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

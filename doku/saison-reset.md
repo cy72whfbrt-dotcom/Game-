@@ -15,12 +15,11 @@ Alle 8 Wochen beginnt eine neue Saison: die Karte wird neu, die Hauptstadt bleib
 
 ## Was bleibt / was geht
 - **Bleibt:** Hauptstadt (Burg, alle Gebäude, Forschung), Helden mit Fähigkeiten, Ausrüstung, Edelsteine, Holz/Stein/Eisen
-  (unverändert), alles Gekaufte, Abholfach, Aufgaben/Erfolge, Thron-Punkte bis 20.000.
+  (unverändert), alles Gekaufte, Abholfach, Aufgaben/Erfolge.
 - **Neu/weg:** alle anderen Basen (Karte wieder neutral), Truppen (5.000 Start, in der Hauptstadt), Münzen (10.000 Start),
   Stufe 1 + alle Fähigkeitspunkte, Verwundete, Bündnisse (aufgelöst), Märsche, Späher, Rallys, Verstärkungen, Armeen,
   Felder, Tempel-Titel, Kopfgeld, Tor-Einstellungen, Nebel, Kampfberichte, Saison-Pass (Fortschritt + Premium),
   Lager-Fortschritt (wieder ab Stufe 1), verlegte Basen (`openWaterInselOrt`).
-- Thron-Punkte über 20.000 (`SAISON_TP_MAX`) werden 10 : 1 zu Edelsteinen ins Abholfach (`hbThronReset`).
 - Hauptstadt zieht auf einen freien Zufallsplatz am Rand (Zone 1). Mitspieler genau wie echte Spieler.
 - 48 Std. Anfängerschutz für ALLE echten Spieler und Mitspieler (`neuBis`, Nachricht `saison` bringt ihn mit).
 - Pässe öffnen wieder ab Tag 1 (neuer Welt-Start, siehe `karte-zonen-paesse.md`).

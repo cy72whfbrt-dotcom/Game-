@@ -70,7 +70,6 @@
 .ware--gross{grid-column:1/-1;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:1fr auto;align-items:center;text-align:left}
 .ware--gross .ware-bild{height:104px;margin:-4px 0 -2px}
 .ware--gross .band{top:0;left:0;right:auto;width:auto;padding:0 12px;transform:none;border-radius:10px 0 10px 0}   /* gerades Band oben links: ganz lesbar */
-#throneShop{display:grid;gap:10px}
 .ware--gross .ware-bild::before{content:"";position:absolute;inset:-30px -10px;background:conic-gradient(from 0deg,transparent 0 8deg,rgba(169,112,242,.22) 8deg 14deg,transparent 14deg 30deg,rgba(169,112,242,.22) 30deg 36deg,transparent 36deg 52deg,rgba(169,112,242,.22) 52deg 58deg,transparent 58deg 74deg,rgba(169,112,242,.22) 74deg 80deg,transparent 80deg 96deg,rgba(169,112,242,.22) 96deg 102deg,transparent 102deg 120deg);
   -webkit-mask:radial-gradient(circle,#000 25%,transparent 68%);mask:radial-gradient(circle,#000 25%,transparent 68%);animation:ware-strahlen 40s linear infinite;pointer-events:none}
 .ware--gross .ware-bild svg{position:relative}

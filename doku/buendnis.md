@@ -55,7 +55,7 @@ Welt-Teile `openWaterBuendnisse`, `openWaterBundChat`, `openWaterVerstaerkung`; 
 - Tempel-Bonus: hält ein Mitglied einen Tempel, produzieren alle mehr: +2 % je Tempel, Mega-Tempel +5 %, höchstens +12 %
   (Forschung „Tempel“ +10 % je Stufe darauf).
 - Gebiet: Basen färben die Karte zart; Mitglieder 10 % schneller zu Bündnis-Basen und in Gebieten mit ≥ 40 % Bündnis-Basen.
-- Thron-Punkte alle 3 Min.: Halter 30, jeder mit Verstärkung im Thron 15 (nur beim verbündeten Halter, `THRONE_PTS_VERST`).
+- Thron-Event: Halter 30, jeder mit Verstärkung im Thron 15 (nur beim verbündeten Halter, `THRONE_PTS_VERST`); Wachtürme schießen nie aufs eigene Bündnis.
 - Profil zeigt das Bündnis (Wappen + Name, antippen öffnet es).
 
 ## Tests

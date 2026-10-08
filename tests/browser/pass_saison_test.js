@@ -22,7 +22,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(!z.leer.length, 'jede Stufe gibt in beiden Reihen etwas', z.leer);
   ok(z.g[0] === 360 && z.g[1] === 1100, 'Edelsteine je Saison: frei 360, Premium 1100', z.g);
   ok(z.bsp[1].join() === 'coins3,coins12+gems10' && z.bsp[2].join() === 'tr2,tr6' && z.bsp[3].join() === 'crate1,shield8' && z.bsp[4].join() === 'shards3,shards8' &&
-    z.bsp[5].join() === 'gems20,gems30' && z.bsp[6].join() === 'crate1,tp150' && z.bsp[10].join() === 'royal1,royal1' && z.bsp[25].join() === 'gems50+royal1,gems150+royal1' && z.bsp[100].join() === 'gems50+royal1,gems150+royal1',
+    z.bsp[5].join() === 'gems20,gems30' && z.bsp[6].join() === 'crate1,eventMuenzen150' && z.bsp[10].join() === 'royal1,royal1' && z.bsp[25].join() === 'gems50+royal1,gems150+royal1' && z.bsp[100].join() === 'gems50+royal1,gems150+royal1',
     'Beispiele wie im Vorschlag (1 Münzen · 2 Truppen · 3 Kiste · 4 Splitter · 5 Edelsteine · 10 lila · 25 50 + lila · 100 Edelsteine, kein Rahmen)', z.bsp);
   ok(z.trStunden[0] === 28 && z.trStunden[1] === 84, 'Truppen in beiden Reihen (14 Stufen: frei 2, Premium 6 Std.)', z.trStunden);
   // 2) Leiste

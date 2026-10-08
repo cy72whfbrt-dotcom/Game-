@@ -20,11 +20,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     grantFreeCrate(0); out.frei = loadQuests().list[0].progress;                                   // tägliche Belohnung, Bonus, Wochenkette, Abholfach (crate)
     inboxAdd({ src: 'haendler', kiste: 1 }); inboxClaim(inboxList()[0].id); out.abholfach = loadQuests().list[0].progress;   // Abholfach: genau diese Kiste
     passGive('player', { k: 'crate', n: 2 }); out.pass = loadQuests().list[0].progress;
-    throneGive('player', 'crate'); out.thron = loadQuests().list[0].progress;
     return out;
   });
   ok(k.text === 'Öffne 3 Kisten', 'Text ohne „im Shop“', k.text);
-  ok(k.shop === 1 && k.frei === 2 && k.abholfach === 3 && k.pass === 5 && k.thron === 6, 'Shop, Gratis-Kiste, Abholfach, Pass (2), Thron-Shop zählen', k);
+  ok(k.shop === 1 && k.frei === 2 && k.abholfach === 3 && k.pass === 5, 'Shop, Gratis-Kiste, Abholfach, Pass (2) zählen', k);
   await ev(() => { closeAllPopups(); openShop('gems'); });
   await p.waitForTimeout(400);
   await p.locator('[data-hchest="hc1"]').click(); await p.waitForTimeout(300);

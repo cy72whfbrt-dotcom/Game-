@@ -1276,7 +1276,6 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .ware--gross{grid-column:1/-1;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:1fr auto;align-items:center;text-align:left}
 .ware--gross .ware-bild{height:104px;margin:-4px 0 -2px}
 .ware--gross .band{top:0;left:0;right:auto;width:auto;padding:0 12px;transform:none;border-radius:10px 0 10px 0}   /* gerades Band oben links: ganz lesbar */
-#throneShop{display:grid;gap:10px}
 .ware--gross .ware-bild::before{content:"";position:absolute;inset:-30px -10px;background:conic-gradient(from 0deg,transparent 0 8deg,rgba(169,112,242,.22) 8deg 14deg,transparent 14deg 30deg,rgba(169,112,242,.22) 30deg 36deg,transparent 36deg 52deg,rgba(169,112,242,.22) 52deg 58deg,transparent 58deg 74deg,rgba(169,112,242,.22) 74deg 80deg,transparent 80deg 96deg,rgba(169,112,242,.22) 96deg 102deg,transparent 102deg 120deg);
   -webkit-mask:radial-gradient(circle,#000 25%,transparent 68%);mask:radial-gradient(circle,#000 25%,transparent 68%);animation:ware-strahlen 40s linear infinite;pointer-events:none}
 .ware--gross .ware-bild svg{position:relative}
@@ -2830,18 +2829,16 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   <header class="phead">
     <div class="emblem emblem--gold"><svg class="icon"><use href="#i-shop"/></svg></div>
     <div class="phead-text"><div class="overline">Kaufen &amp; Tauschen</div><h3 id="shopTitle" class="ptitle">Shop</h3>
-      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Edelsteine</small></span><span class="pill pill--throne"><svg class="icon"><use href="#i-crown"/></svg><b id="shopThroneCount">0</b><small>Thron</small></span></div></div>
+      <div class="psub"><span class="pill pill--gem"><svg class="icon"><use href="#i-gem"/></svg><b id="shopGemCount">0</b><small>Edelsteine</small></span></div></div>
     <button id="shopCloseBtn" class="btn-x" type="button" aria-label="Schließen"><svg class="icon"><use href="#i-close"/></svg></button>
   </header>
   <div id="shopTabs" class="tabs mail-tabs" role="tablist">
     <button class="tab active" type="button" role="tab" data-stab="gems"><svg class="icon"><use href="#i-gem"/></svg><span>Kisten</span></button>
     <button class="tab" type="button" role="tab" data-stab="shield"><svg class="icon"><use href="#i-shield"/></svg><span>Schilde</span></button>
-    <button class="tab" type="button" role="tab" data-stab="throne"><svg class="icon"><use href="#i-crown"/></svg><span>Thron</span></button>
     <button class="tab" type="button" role="tab" data-stab="hd" hidden><svg class="icon"><use href="#i-coin"/></svg><span>Händler</span><span class="badge">!</span></button>
     <button class="tab" type="button" role="tab" data-stab="markt"><svg class="icon"><use href="#i-crate"/></svg><span>Markt</span></button>
   </div>
   <div class="pbody">
-    <div class="mail-pane" data-spane="throne" hidden><div id="throneShop"></div></div>
     <div class="mail-pane" data-spane="hd" hidden><div class="sect"><h4 id="hdTitle">Wandernder Händler</h4><span id="hdSub" class="sect-aside"></span></div><div id="hdLive" class="hd-live"></div></div>
     <div class="mail-pane" data-spane="markt" hidden><div id="shopMarkt" class="ev-body"></div></div>
     <div class="mail-pane" data-spane="shield" hidden>

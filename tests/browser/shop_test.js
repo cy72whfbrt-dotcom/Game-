@@ -55,16 +55,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         T += 600; o.gross.wieder = /^[\d.]+$/.test(gross().textContent.trim()); gross().click(); await warte(50); o.gross.neuFrage = g2 - gems;
         gemsArmAus();
       } finally { Date.now = echt; window.questProgress = qp; }
-      // Schilde, Thron: Erklärung hinter „i“; Thron bleibt beim Neuzeichnen offen
+      // Schilde: Erklärung hinter „i“
       showShopTab('shield'); await warte(200);
       o.schild = { zu: document.querySelector('[data-sinfo-box="schild"]').hidden, kauf: document.querySelectorAll('.ware [data-shield]').length };
-      showShopTab('throne'); await warte(300);
-      const tb = () => document.querySelector('[data-sinfo-box="thron"]');
-      const tk = [...document.querySelectorAll('#throneShop .ware [data-throne-buy]')], tr = pb.getBoundingClientRect();
-      o.thron = { zu: tb().hidden, zeilen: tk.length, sicht: tk.every(k => k.getBoundingClientRect().bottom <= tr.bottom + 1), zeile: !!document.querySelector('#throneShop .thron-zeile[data-sinfo="thron"] [data-throne-pts]') };
-      document.querySelector('[data-sinfo="thron"]').click(); await warte(50); renderThroneShop(); throneState.nextPts += 1000; renderThroneShop(); await warte(50);
-      o.thron.bleibtAuf = !tb().hidden && /Mega-Tempel/.test(tb().textContent);
-      document.querySelector('[data-sinfo="thron"]').click(); await warte(50); o.thron.wiederZu = tb().hidden;
       showShopTab('gems'); document.getElementById('shopCrateResult').style.display = 'none'; document.getElementById('shopHeroResult').hidden = true;
       return o;
     }).catch(e => ({ fehler: e.message }));
@@ -82,8 +75,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.gross.erst === 0 && r.gross.frage && r.gross.doppel === 0 && r.gross.dann === 500 && r.gross.ergebnis, art + ': Große Kiste: erst „Wirklich?“, Doppel-Tipp zählt nicht, dann genau 500 weg', r.gross);
     ok(r.gross.wieder && r.gross.neuFrage === 500, art + ': danach wieder Preis im Knopf, nächster Kauf fragt wieder', r.gross);
     ok(r.schild.zu && r.schild.kauf === 3, art + ': Schilde – Erklärung hinter „i“, 3 Karten mit Kauf-Knopf', r.schild);
-    ok(r.thron.zu && r.thron.zeile && r.thron.zeilen === 4 && r.thron.sicht && r.thron.bleibtAuf && r.thron.wiederZu, art + ': Thron – Status in einer Zeile (aufklappbar, bleibt beim Neuzeichnen offen), 4 Waren-Karten ohne Scrollen', r.thron);
-    for (const t of ['gems', 'shield', 'throne', 'markt']) { await p.evaluate(async t => { showShopTab(t); await new Promise(f => setTimeout(f, 300)); }, t); await bild('shop_' + t); }
+    for (const t of ['gems', 'shield', 'markt']) { await p.evaluate(async t => { showShopTab(t); await new Promise(f => setTimeout(f, 300)); }, t); await bild('shop_' + t); }
     await ctx.close();
   }
   ok(!fe.length, 'keine Seitenfehler', fe.slice(0, 3));

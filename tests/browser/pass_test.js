@@ -34,7 +34,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     clearIslandOwner(turm.id); botOwnedIslands[Y.id].add(turm.id); islandTroops[turm.id] = 1e6;
     const thronAngriff = () => { const n0 = pendingAttacks.length, ok = launchAttack(turm.id, megaTempleId, Y.id, 1000); return { ok: !!ok, neu: pendingAttacks.length - n0 }; };
     localStorage.setItem('openWaterWorldStart', String(Date.now() - 5 * TAG - 60000)); out.thron6 = { offen: Date.now() >= thronOffenAb(), ...thronAngriff() };   // Tag 6: Mitte erreichbar, Thron noch zu
-    localStorage.setItem('openWaterWorldStart', String(Date.now() - 6 * TAG - 60000)); out.thron7 = { offen: Date.now() >= thronOffenAb(), ...thronAngriff() };   // Tag 7: Thron offen
+    localStorage.setItem('openWaterWorldStart', String(Date.now() - 6 * TAG - 60000)); out.thron7 = (() => { const tfE = thronFenster; thronFenster = n => ({ start: n - 1000, end: n + 864e5 });    const x = { offen: Date.now() >= thronOffenAb(), ...thronAngriff() }; thronFenster = tfE; return x; })();   // Tag 7: Thron offen
     saisonWelt(Date.now()); out.reset = stand(); out.start = Date.now() - parseInt(localStorage.getItem('openWaterWorldStart'), 10);   // neue Saison: wieder zu
     return out; });
   ok(Object.values(v.tage).join() === '1,2,3,4,5', 'Pass-Timer: Tag 1 … 5 von außen nach innen', v.tage);

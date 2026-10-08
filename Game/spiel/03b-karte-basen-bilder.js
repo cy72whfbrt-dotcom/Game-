@@ -51,7 +51,7 @@ function heiligtumBild(island, z) {                                            /
   ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
   if (!thronKuppel(island.id)) return;
   const ki = KB.img.kuppel, kw = w * 1.12, kh = kw * ki.height / ki.width;   // die Kuppel: fast durchsichtig, Rand auf dem Boden unter dem Gebäude
-  ctx.globalAlpha = .9; ctx.drawImage(kbBild('kuppel', kw * dpr), x - kw / 2, y + h * (1 - ay) * .55 - kh, kw, kh); ctx.globalAlpha = 1;
+  ctx.globalAlpha = .6; ctx.drawImage(kbBild('kuppel', kw * dpr), x - kw / 2, y + h * (1 - ay) * .55 - kh, kw, kh); ctx.globalAlpha = 1;
 }
 // Bilder außerhalb der Kartenliste (Herrscher-Skin, Krone, Titel-Abzeichen): einmal laden, danach neu zeichnen
 const EXTRA_BILD = {};

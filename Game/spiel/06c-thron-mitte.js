@@ -176,6 +176,15 @@ function drawThroneShots(now) {                        // leuchtende Geschosse i
         }
     }
 }
+const shopInfoAuf = new Set();                      // Shop: offene Erklärungen hinter „i“ (bleiben beim Neuzeichnen offen)
+let shopTab = 'gems';
+function showShopTab(t) {
+    shopTab = t;
+    for (const b of document.querySelectorAll('#shopTabs [data-stab]')) { const on = b.dataset.stab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+    for (const pn of document.querySelectorAll('#shopPopup [data-spane]')) pn.hidden = pn.dataset.spane !== t;
+    renderShop();
+}
+document.getElementById('shopTabs').addEventListener('click', e => { const b = e.target.closest('[data-stab]'); if (b) showShopTab(b.dataset.stab); });
 // ---- Events-Fenster, Chip „Thron“: Ablauf, Rangliste (live bzw. letztes Wochenende), Preise nach Platz, Herrscher ----
 const thronKachel = (bild, r, txt) => '<span class="bk" data-r="' + r + '"><img src="bilder/' + bild + '.webp" alt="" draggable="false">' + (txt ? '<b>' + txt + '</b>' : '') + '</span>';
 const BESCH_TXT = { '1m': '1 Min', '5m': '5 Min', '15m': '15 Min', '1h': '1 Std', '3h': '3 Std', '8h': '8 Std', '24h': '24 Std' };

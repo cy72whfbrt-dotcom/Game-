@@ -10,9 +10,9 @@ passende Datei öffnen. Code-Stellen: `grep -n "<name>" KARTE.md`. Jede Änderun
 | `helden.md` | Helden → Heldenhalle, Splitter, Sterne, Wut, Haupt-/Zweitheld, Paare, heroBusy, Verteidigungs-Helden (Mauer) |
 | `stadt-burg-gebaeude.md` | Hauptstadt → Burg 1–25, Bauzeit-Tabelle, Gebäude, Labor-Forschung, Burg-Schutz, Markt, Bündnis-Hilfe, Stadtbild, Burg fair |
 | `wirtschaft-zahlen.md` | Zahlen → Faktoren (ERTRAG/KOSTEN/ROH/MUENZ), Start 5.000/10.000, Ertrag, Kosten, Gegner-Tabelle, Lager, Stufen-Belohnung, Ausrüstung |
-| `shop-kisten-belohnung.md` | Shop → Kisten 150, Heldenkisten, 1×/10×, Belohnungs-Kacheln, „Wirklich?“ ab 500, Thron-Shop, Händler, Abholfach, Tagesbelohnung |
-| `events-pass-aufgaben.md` | Events → Wochen-Event, Invasion, Drache, Tagesboss, Lager, Kriegsherr, Saison-Pass 100 Stufen, 6 Aufgaben, Erfolge, Anleitung |
-| `saison-reset.md` | Welt-Saison → 8 Wochen, Sonntag 18 Uhr, was bleibt/geht, Preise Top 10, Saison-Rahmen, Thron-Punkte 20.000, Reset am Handy, Zurückspielen |
+| `shop-kisten-belohnung.md` | Shop → Kisten 150, Heldenkisten, 1×/10×, Belohnungs-Kacheln, „Wirklich?“ ab 500, Händler, Abholfach, Tagesbelohnung |
+| `events-pass-aufgaben.md` | Events → Wochen-Event, Invasion, Drache, Tagesboss, Lager, Kriegsherr, Thron-Event + Herrscher, Saison-Pass 100 Stufen, 6 Aufgaben, Erfolge, Anleitung |
+| `saison-reset.md` | Welt-Saison → 8 Wochen, Sonntag 18 Uhr, was bleibt/geht, Preise Top 10, Saison-Rahmen, Reset am Handy, Zurückspielen |
 | `mitspieler.md` | Bots → gleiche Regeln, Schätzen, Handy-Zeiten, botFrei, Teleport, Sparen, Stadt/Helden, Bündnis-/Chat-Verhalten |
 | `buendnis.md` | Bündnis → 5 Mitglieder, Gründen, Einladen, Tauschen, Chat-Sätze, Rückzug, Hilfe, Verstärkung, Rally (Mitte), Geschenke, Tempel-Bonus, Gebiet |
 | `teleport-schild-rucksack.md` | Schutz/Umzug → Teleport 500/Teleporter, Feld-Menü, Rucksack, Friedensschild 80/300/700, Anfängerschutz 48 Std./100.000 Truppen |

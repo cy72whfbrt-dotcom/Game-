@@ -49,10 +49,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       closeAllPopups(); sh.hidden = true; openLookSheet('title'); await warte(300);
       const tb = document.getElementById('lkTabs').getBoundingClientRect(), tt = document.getElementById('lkTitel').getBoundingClientRect();
       o.sprung = { tab: lkTab, sichtbar: tt.top >= tb.bottom - 1 && tt.top < innerHeight * 0.75, aktiv: (document.querySelector('#lkTabs .active') || {}).dataset.lkTab };
-      // 6) Mitspieler kaufen keine Rahmen, der Thron-Shop hat keinen
+      // 6) Mitspieler kaufen keine Rahmen (Thron-Shop und Thronhüter-Rahmen sind weg)
       const X = BOT_DEFS.find(x => !x.mensch && loadBotState()[x.id]).id, bx = loadBotState()[X], fr0 = JSON.stringify(bx.frames || []), ti0 = JSON.stringify(bx.titles || []);
-      bx.gems = 1e7; bx.tp = 1e7; for (let i = 0; i < 20; i++) botThroneShop(X);
-      o.bots = { frames: JSON.stringify(bx.frames || []) === fr0, titles: JSON.stringify(bx.titles || []) === ti0, look: botLook(X), thron: THRONE_OFFERS.map(x => x.id).filter(id => id === 'look' || id.startsWith('ring_')) };
+      o.bots = { frames: JSON.stringify(bx.frames || []) === fr0, titles: JSON.stringify(bx.titles || []) === ti0, look: botLook(X), thron: typeof THRONE_OFFERS !== 'undefined' || RAHMEN.some(x => x.id === 'throne') };
       look.frames = ['gold']; look.titles = ['conq']; look.frame = 'conq'; saveLook();
       return o;
     }).catch(e => ({ fehler: e.message }));
@@ -66,7 +65,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.mitte.gut.titel === r.mitte.gutName && r.mitte.gut.rahmen === 'mgut' && r.mitte.straf.titel === r.mitte.strafName && r.mitte.straf.rahmen === 'mstraf' && r.mitte.danach === 'Eroberer', art + ': Titel aus der Mitte geht vor (mit Rahmen Gold/Rot), danach wieder der eigene', r.mitte);
     ok(r.saison.da && r.saison.titel === 'Saison-Großadmiral' && r.saison.rahmen === 'sz2' && !r.saison.sz1, art + ': Saison Platz 2 → „Saison-Großadmiral“ anlegen (Platz 1 nicht)', r.saison);
     ok(r.sprung.tab === 'frame' && r.sprung.aktiv === 'frame' && r.sprung.sichtbar, art + ': openLookSheet(\'title\') öffnet „Rahmen“ bei den Saison-Rahmen', r.sprung);
-    ok(r.bots.frames && r.bots.titles && !r.bots.thron.length && r.bots.look.frame && r.bots.look.title, art + ': Mitspieler kaufen keine Rahmen, Thron-Shop ohne Rahmen', r.bots);
+    ok(r.bots.frames && r.bots.titles && !r.bots.thron && r.bots.look.frame && r.bots.look.title, art + ': Mitspieler kaufen keine Rahmen, kein Thron-Shop/Thronhüter mehr', r.bots);
     await p.evaluate(() => { closeAllPopups(); openLookSheet('frame'); }); await p.waitForTimeout(300); await bild('aussehen_rahmen');
     await p.evaluate(() => { openLookSheet('title'); }); await p.waitForTimeout(300); await bild('aussehen_saison');
     await ctx.close();

@@ -3059,7 +3059,7 @@ function heiligtumBild(island, z) {                                            /
   ctx.drawImage(kbBild(n, w * dpr), x - w / 2, y - h * ay, w, h);
   if (!thronKuppel(island.id)) return;
   const ki = KB.img.kuppel, kw = w * 1.12, kh = kw * ki.height / ki.width;   // die Kuppel: fast durchsichtig, Rand auf dem Boden unter dem Gebäude
-  ctx.globalAlpha = .9; ctx.drawImage(kbBild('kuppel', kw * dpr), x - kw / 2, y + h * (1 - ay) * .55 - kh, kw, kh); ctx.globalAlpha = 1;
+  ctx.globalAlpha = .6; ctx.drawImage(kbBild('kuppel', kw * dpr), x - kw / 2, y + h * (1 - ay) * .55 - kh, kw, kh); ctx.globalAlpha = 1;
 }
 // Bilder außerhalb der Kartenliste (Herrscher-Skin, Krone, Titel-Abzeichen): einmal laden, danach neu zeichnen
 const EXTRA_BILD = {};
@@ -7791,6 +7791,15 @@ function drawThroneShots(now) {                        // leuchtende Geschosse i
         }
     }
 }
+const shopInfoAuf = new Set();                      // Shop: offene Erklärungen hinter „i“ (bleiben beim Neuzeichnen offen)
+let shopTab = 'gems';
+function showShopTab(t) {
+    shopTab = t;
+    for (const b of document.querySelectorAll('#shopTabs [data-stab]')) { const on = b.dataset.stab === t; b.classList.toggle('active', on); b.setAttribute('aria-selected', on ? 'true' : 'false'); }
+    for (const pn of document.querySelectorAll('#shopPopup [data-spane]')) pn.hidden = pn.dataset.spane !== t;
+    renderShop();
+}
+document.getElementById('shopTabs').addEventListener('click', e => { const b = e.target.closest('[data-stab]'); if (b) showShopTab(b.dataset.stab); });
 // ---- Events-Fenster, Chip „Thron“: Ablauf, Rangliste (live bzw. letztes Wochenende), Preise nach Platz, Herrscher ----
 const thronKachel = (bild, r, txt) => '<span class="bk" data-r="' + r + '"><img src="bilder/' + bild + '.webp" alt="" draggable="false">' + (txt ? '<b>' + txt + '</b>' : '') + '</span>';
 const BESCH_TXT = { '1m': '1 Min', '5m': '5 Min', '15m': '15 Min', '1h': '1 Std', '3h': '3 Std', '8h': '8 Std', '24h': '24 Std' };
@@ -11268,11 +11277,16 @@ function evPreis(who, src, title, p, schl, bis) {     // schl: fester Schlüssel
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
     if (bd.mensch && window.WELT && b) { for (const [a, n] of b) if (a === 'holz' && AUF) AUF.rohDazu(who, { h: n }); b = b.filter(x => x[0] !== 'holz'); if (!b.length) b = undefined; }   // Holz gleich in seinen Topf (kommt mit dem nächsten Puls, das Hauptbuch kennt es)
-    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {}, b ? { b } : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
+    if (bd.mensch && window.WELT) { WELT.nachricht(parseInt(who.slice(1), 10), Object.assign({ art: 'evPreis', src, title, gems, sh, crate }, coins ? { coins } : {}, tr ? { tr } : {}, k ? { k } : {}, bis ? { bis } : {}, titel ? { titel } : {}, b ? { b } : {}, b ? beuteFelder(b) : {}), k); return; }   // (Münzen/Truppen: Gutschrift im Schummel-Schutz, 10d)
     const bs = loadBotState()[who]; if (bs) bs.gems = (bs.gems || 0) + gems; if (sh) heroGrantShards(who, sh); if (crate >= 0) barbCrate(who, crate);
     if (coins) botCoins[who] = (botCoins[who] || 0) + coins; if (tr) { const cap = botCapitalOf(who); if (cap !== null && cap !== undefined) islandTroops[cap] = (islandTroops[cap] || 0) + tr; }
     for (const [a, n, e] of b || []) beuteBot(who, a, n, e);
     if (bs && titel) { bs.titles = [...new Set([...(bs.titles || []), titel])]; saveBotState(); }
+}
+function beuteFelder(b) {                            // Gegenstände für das Hauptbuch (10d, Team C): em, s1, s2, besch {Dauer: Anzahl}
+    const o = {}; for (const [a, n, e] of b) { if (a === 'eventMuenzen') o.em = (o.em || 0) + n; else if (a === 'schluessel1') o.s1 = (o.s1 || 0) + n; else if (a === 'schluessel2') o.s2 = (o.s2 || 0) + n;
+        else if (a === 'besch' && e && e.dauer) { o.besch = o.besch || {}; o.besch[e.dauer] = (o.besch[e.dauer] || 0) + n; } }
+    return o;
 }
 function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
     if (who === 'player') { addCombatLogEntry(e); if (hint) flashHint(hint, 4500); return; }
@@ -12614,7 +12628,7 @@ function saisonKarte() {
     const preise = 'Platz 1: ' + fmtNum(SAISON_PREISE[0]) + ' · 2: ' + fmtNum(SAISON_PREISE[1]) + ' · 3: ' + fmtNum(SAISON_PREISE[2]) + ' · 4–10: ' + fmtNum(SAISON_PREISE[3]) + ' Edelsteine + Saison-Rahmen bis zum nächsten Saison-Ende';
     const last = S.last && S.last.top && S.last.top.length ? '<div class="lb-gap">Saison ' + S.last.nr + ' · Top 10</div>' + evRangHtml(S.last.top.map(([w, v]) => [lokalId(w), v]), v => fmtCompact(v)) : '';
     return evKarte('crown', 'Welt-Saison ' + S.nr, now < S.ende ? 'Neue Saison in ' + evUhr(S.ende) : S.halt ? 'Neue Saison: der Termin folgt' : 'Die neue Saison beginnt gleich …',
-        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes · Thron-Punkte bis ' + fmtNum(SAISON_TP_MAX) + ' (der Rest ' + SAISON_TP_JE_GEM + ' : 1 als Edelsteine)</b>' +
+        '<div class="field-lines"><span>Neustart</span><b>' + (S.halt ? 'vom Admin' : evWann(S.ende) + ' Uhr') + '</b><span>Bleibt</span><b>Hauptstadt (Burg, Gebäude, Forschung), Helden, Ausrüstung, Edelsteine, Holz/Stein/Eisen, Gekauftes</b>' +
         (S.burgFair ? '' : '<span>Einmalig</span><b>Ausnahme wegen eines Fehlers, für alle gleich: Burg höchstens Stufe ' + BURG_FAIR + ', Edelsteine genau ' + fmtNum(SAISON_AUSNAHME_GEMS) + ', Holz/Stein/Eisen 0</b>') +
         '<span>Neu</span><b>Basen, Truppen, Münzen (' + fmtNum(PLAYER_START_COINS) + ' zum Start), Stufe, Saison-Pass (auch Premium), Bündnisse – die Hauptstadt zieht an einen neuen Platz am Rand</b><span>Preise</span><b>Die besten 10 nach Macht: ' + preise + '</b></div>', bald ? 'is-warn' : '') + last;
 }

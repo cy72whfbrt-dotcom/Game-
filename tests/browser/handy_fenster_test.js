@@ -32,7 +32,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     return out; });
   const soll = { daily: ['daily', 'aufgaben'], ach: ['ach', 'aufgaben'], reward: ['reward', 'abholen'], pass: ['pass', 'pass'], tour: ['ev', 'ereignisse'], inv: ['ev', 'ereignisse'], drache: ['ev', 'ereignisse'], boss: ['ev', 'ereignisse'], lager: ['ev', 'ereignisse'] };
   ok(Object.keys(soll).every(k => e3[k] && e3[k].tab === k && e3[k].pane === soll[k][0] && e3[k].gruppe === soll[k][1]), 'Events: jeder Unterreiter zeigt sein Fach und seine Gruppe', e3);
-  ok(e3.boss.sicht === 'tour,inv,drache,boss,lager' && e3.daily.sicht === 'daily,ach' && e3.boss.chipH >= 36, 'Events: Chips nur der offenen Gruppe sichtbar', { boss: e3.boss.sicht, daily: e3.daily.sicht });
+  ok(e3.boss.sicht === 'tour,thron,inv,drache,boss,lager' && e3.daily.sicht === 'daily,ach' && e3.boss.chipH >= 36, 'Events: Chips nur der offenen Gruppe sichtbar', { boss: e3.boss.sicht, daily: e3.daily.sicht });
   const e4 = await ev(() => { document.querySelector('#goalsGruppen [data-ggrp="ereignisse"]').click(); const a = goalsTab; document.querySelector('#goalsGruppen [data-ggrp="aufgaben"]').click(); const b2 = goalsTab;
     document.querySelector('#goalsGruppen [data-ggrp="pass"]').click(); return [a, b2, goalsTab]; });
   ok(e4[0] === 'lager' && e4[1] === 'ach' && e4[2] === 'pass', 'Events: Reiter merkt sich den letzten Unterreiter', e4);
