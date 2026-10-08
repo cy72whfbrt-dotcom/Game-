@@ -207,7 +207,7 @@ function checkRuler() {             // announces a change of ruler once
     const lost = lastGoodTitle && r !== 'player' ? ' Dein Titel „' + lastGoodTitle.name + '“ ist verfallen, der ' + (lastGoodTitle.good ? 'Goldring' : 'rote Ring') + ' ist weg.' : ''; lastGoodTitle = null;
     if (r === 'player') statBump('throne');
     if (r && r !== 'player' && botById[r]) { const bs = loadBotState()[r]; bs.stats = bs.stats || {}; bs.stats.ruled = 1; saveBotState(); }
-    if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen, blutrot-goldener Ring um deine Basen.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
+    if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen, Königsburg mit Krone auf der Karte.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
     else if (was === 'player') flashHint('Du hast den Mega-Tempel verloren – die Krone und der blutrot-goldene Ring sind weg!', 5000);
     else if (r && botById[r]) flashHint(botById[r].name + ' ist jetzt Herrscher der Meere!' + lost, lost ? 6000 : 4000);
     else if (lost) flashHint(lost.trim(), 5000);

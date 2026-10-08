@@ -87,7 +87,7 @@
 .p5-chip small{font:600 10px/1 var(--font-ui);color:var(--tx-3);white-space:nowrap} .p5-chip.active small{color:inherit;opacity:.75}
 .wo-tage{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;margin:6px 0}
 .wo-tage > button{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0;padding:5px 2px;border-radius:6px;background:rgba(255,255,255,.04);border:1px solid var(--line-1);font:600 10px/1.2 var(--font-ui);color:var(--tx-3);opacity:.6;cursor:pointer}
-.wo-tage > button b{font-size:12px;color:var(--tx-2)} .wo-tage > button span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .wo-tage .icon{width:16px;height:16px}
+.wo-tage > button b{font-size:12px;color:var(--tx-2)} .wo-tage > button span{max-width:100%;white-space:normal;text-align:center;overflow-wrap:anywhere;line-height:1.1;font-size:9.5px} .wo-tage .icon{width:16px;height:16px}
 .wo-tage > .jetzt{opacity:1;border-color:var(--gold-300);background:rgba(214,170,90,.16);color:var(--gold-100)} .wo-tage > .jetzt b{color:var(--gold-100)}
 .wo-tage > .an{opacity:1;box-shadow:0 0 0 1px var(--gold-100) inset}
 .wo-tage > .t-rang{opacity:1;border-color:rgba(214,170,90,.55);background:linear-gradient(180deg,rgba(214,170,90,.22),rgba(90,60,20,.25));color:var(--gold-100)}

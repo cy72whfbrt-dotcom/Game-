@@ -34,6 +34,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       o.akku = { uhr: !hauptPulsUhr, fest: [0, 500, 1500].map(t => hauptPuls(t)).every(a => a === .8) }; akkuSparen = false;
       const alt = window.islandOwnerOf; window.islandOwnerOf = id => id === playerIslandId ? Object.keys(botById)[0] : alt(id);
       o.nurEigene = !zeichne().some(s => /marsch_ring_gold|karte_hauptstadt_ring/.test(s)); window.islandOwnerOf = alt;
+      { flyTo(h.x, h.y, { zoom: maxZoom * .5, instant: true });               // Hauptstadt: keine Ring-Effekte (nur Kranz + Krone), Herrscher: Skin statt Kranz
+        const oa = ctx.arc, oe = ctx.ellipse; let k = 0; ctx.arc = function () { k++; return oa.apply(this, arguments); }; ctx.ellipse = function () { k++; return oe.apply(this, arguments); };
+        drawRings([h], mapState.zoom, performance.now()); ctx.arc = oa; ctx.ellipse = oe; o.keineRinge = k === 0;
+        const ra = window.rulerOwner; window.rulerOwner = () => 'player'; o.herrKeinKranz = !zeichne().some(s => /marsch_ring_gold|karte_hauptstadt_ring/.test(s)); window.rulerOwner = ra; }
       flyTo(h.x, h.y, { zoom: 0.0028, instant: true }); n = zeichne();
       o.weit = { ring: n.some(s => /marsch_ring_gold|karte_hauptstadt_ring/.test(s)), krone: n.some(s => /ui_sym_krone/.test(s)) };
       // Schlösser: gleich groß bei jedem Zoom, oben auf dem Tor, nichts überlappt
@@ -62,6 +66,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(/marsch_ring_gold|karte_hauptstadt_ring/.test(r.ring), tag + 'Ring-Bild geladen (karte_hauptstadt_ring, sonst marsch_ring_gold)', r.ring.split('/').pop());
     ok(Math.min(...r.puls) >= .549 && Math.max(...r.puls) <= .901 && r.puls[1] > .85 && r.puls[3] < .6, tag + 'Ring pulsiert 0,55 ↔ 0,9 in 2 s', r.puls);
     ok(r.kein30 && r.nurEigene && r.ringNah, tag + 'Ring nur an der eigenen Hauptstadt, Puls über eigenen langsamen Takt', [r.kein30, r.nurEigene, r.ringNah]);
+    ok(r.keineRinge && r.herrKeinKranz, tag + 'Hauptstadt: keine Ring-Effekte (rot/blau/gestrichelt), Herrscher: Skin statt Kranz', [r.keineRinge, r.herrKeinKranz]);
     ok(r.akku.uhr && r.akku.fest, tag + 'Akku sparen: kein Puls (fest 0,8), kein Extra-Neuzeichnen', r.akku);
     ok(r.burgFrei.every(a => a >= 0 && a <= .1), tag + 'angetippte Hauptstadt: Fahne höchstens 10 % auf der Burg', r.burgFrei);
     ok(r.unterLeiste.gezeichnet === 0, tag + 'Vorrat-Text eines Felds unter der HUD-Leiste weggelassen', r.unterLeiste);

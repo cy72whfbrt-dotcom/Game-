@@ -221,6 +221,7 @@ function hauptPulsWeiter() {                                                   /
 }
 function drawHauptstadtRing(z, now) {                                           // (Bildschirm) unter der Basis, vor den Gebäuden
   const heim = islandById[playerIslandId]; if (!heim || islandOwnerOf(heim.id) !== 'player') return;
+  if (rulerOwner() === 'player') return;                                       // Herrscher: sein Skin (skin_koenigsburg) ersetzt den Kranz – nie beides übereinander
   const bw = basisBreite(heim, z), k = 1 - heimWappenSicht(z), im = hauptRingBild(); if (!bw || k <= 0 || !im) return;
   const w = bw * 1.6, h = w * im.height / im.width, x = toSX(heim.x), y = toSY(heim.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;

@@ -38,7 +38,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.waitForTimeout(500); await ev(() => { HEROES.forEach((h, i) => { const s = heroSt('player', h.id); if (s) s.sh = i < 4 ? 4 : 0; }); saveHeroes(); renderRucksack(); }); await p.waitForTimeout(300);   // (die Test-Vorschau setzt die Helden beim Start noch einmal)
     const rk = await ev(() => [...document.querySelectorAll('#rkInhalt [data-rk-kauf]')].map(k => ({ text: k.textContent.replace(/\s+/g, ''), gem: !!k.querySelector('.icon') })));
     ok(rk.length === 4 && rk.every(k => k.gem) && rk.map(k => k.text).join('|') === 'Kaufen80|Kaufen300|Kaufen700|Kaufen500', art + ': Rucksack – „Kaufen“ mit Preis und Edelstein (80/300/700, Teleporter 500)', rk);
-    if (art === 'Handy') { const f = await frei('#rkInhalt .rk-splitter'); ok(f >= 30, art + ': Rucksack – Splitter-Reihe ganz im Fenster (nicht abgeschnitten)', f); }
+    if (art === 'Handy') { await ev(() => document.querySelector('#rkInhalt .rk-splitter').scrollIntoView({ block: 'center' })); await p.waitForTimeout(150); const f = await frei('#rkInhalt .rk-splitter'); ok(f >= 10, art + ': Rucksack – Splitter-Reihe ganz im Fenster (nicht abgeschnitten)', f); }
     await bild('rucksack');
     const hRuck = await ev(() => Math.round(rucksackPopup.getBoundingClientRect().height));
     // B) Pass

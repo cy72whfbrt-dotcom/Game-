@@ -405,7 +405,8 @@ function drawRings(visible, z, now) {
         ctx.moveTo(x + Math.cos(a) * r * 1.44, y + Math.sin(a) * r * 1.44); ctx.lineTo(x + Math.cos(a) * r * 1.52, y + Math.sin(a) * r * 1.52); }
         ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke(); }
     }
-    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base with a title from the middle (see ringStatusByOwner)
+    const hauptsitz = isl.id === playerIslandId || isCapital(isl.id);               // (Alexander 8.10.: an jeder Hauptstadt keine Ring-Effekte – nur Krone + Kranz/Herrscher-Skin, 03b)
+    if (isl.type === 'tower' && z >= 0.006 && !hauptsitz) {                    // ring round every base with a title from the middle (see ringStatusByOwner)
       const o = islandOwnerOf(isl.id), st = o ? rankOf.get(o) : null;
       if (st) {                                                                       // bold double ring with notches + a badge (crown, or skull for a penalty)
         const R1 = Math.max(r * 1.35, 21), R2 = R1 + Math.max(r * .28, 5), W = 3.4;
@@ -419,9 +420,6 @@ function drawRings(visible, z, now) {
         if (st.dash) { ring(x, y, R2 + 5, 2, st.dash, [8, 5], -now / 40); liveAnimation = true; }
         if (R1 >= 18) ringBadge(x, y - R2 - 1, Math.min(13, Math.max(9, r * .22)), st);
       }
-    }
-    if (isl.id === playerIslandId && z >= 0.006) {                            // the capital: blue-gold double ring
-      ring(x, y, Math.max(r * 1.55, 12), 2, 'rgba(228,200,134,.95)'); ring(x, y, Math.max(r * 1.8, 15), 1.2, 'rgba(140,192,255,.6)', [3, 4]);
     }
     const isSelectable = (attackTarget && isOwned && canReach(isl.landmassId, attackTarget.landmassId)) ||
                          (pendingSendFromId !== null && isOwned && isl.id !== pendingSendFromId);

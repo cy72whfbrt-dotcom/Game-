@@ -81,9 +81,10 @@ function evPreis(who, src, title, p, schl, bis) {     // schl: fester Schlüssel
     const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
     const { coins, tr } = evStunden(who, p), k = schl != null ? src + '|' + schl : undefined;   // k: das Abholfach kennt die Stufe (Leiste im Event-Fenster)
     let b = Array.isArray(p.b) && p.b.length ? p.b : undefined;   // b: Gegenstände [Art, Menge, Extra] (Thron-Event)
-    { const d = evDing(p); b = [...(b || []), ...(d.em ? [['eventMuenzen', d.em]] : []), ...(d.s1 ? [['schluessel1', d.s1]] : []), ...(d.s2 ? [['schluessel2', d.s2]] : []), ...(d.besch ? [['besch', 1, { dauer: d.besch }]] : [])]; if (!b.length) b = undefined; }   // A: Event-Münzen/Schlüssel/Beschleuniger als Gegenstände
+    const bP = b, dP = evDing(p);   // (für dich selbst: Event-Münzen/Schlüssel/Beschleuniger als eigene Felder, Gegenstände des Thron-Events als b)
+    { const d = dP; b = [...(b || []), ...(d.em ? [['eventMuenzen', d.em]] : []), ...(d.s1 ? [['schluessel1', d.s1]] : []), ...(d.s2 ? [['schluessel2', d.s2]] : []), ...(d.besch ? [['besch', 1, { dauer: d.besch }]] : [])]; if (!b.length) b = undefined; }   // A: Event-Münzen/Schlüssel/Beschleuniger als Gegenstände
     if (!(bis > Date.now())) bis = undefined;
-    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k, bis, b }); if (titel) saisonTitelGeben(titel); return; }
+    if (who === 'player') { inboxAdd(Object.assign({ src, title, gems, sh, crate, coins, tr, k, bis, b: bP }, dP)); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
     if (bd.mensch && window.WELT && b) { for (const [a, n] of b) if (a === 'holz' && AUF) AUF.rohDazu(who, { h: n }); b = b.filter(x => x[0] !== 'holz'); if (!b.length) b = undefined; }   // Holz gleich in seinen Topf (kommt mit dem nächsten Puls, das Hauptbuch kennt es)

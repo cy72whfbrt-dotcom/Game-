@@ -54,6 +54,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const M = islandById[megaTempleId], armee = { id: 'thronTest', x: w4.x, y: w4.y, lm: w4.landmassId, troops: 1000, homeId: w4.id, mv: null, who: Y.id };
     const armeeVor = armyMove(armee, { kind: 'base', id: megaTempleId, x: M.x, y: M.y, lm: M.landmassId });   // Armee: auch erst ab Tag 7
     localStorage.setItem('openWaterWorldStart', String(Date.now() - 6 * TAG - 60000));
+    window.thronLaeuft = () => true;                                                   // (Thron-Event läuft: sonst liegt die Kuppel über der Mitte – Sa 10 bis So 22)
     for (const q of bridges.filter(q => q.pass.stufe === 5)) clearIslandOwner(q.gateId);
     o.thron = { vor, armeeVor, unbesetzt: los(w4.id, megaTempleId), grund: wegGrund(w4.landmassId, 0, Y.id) };
     clearIslandOwner(torM.id); ownedIslands.add(torM.id); o.thron.fremd = los(w4.id, megaTempleId);

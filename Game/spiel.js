@@ -3213,6 +3213,7 @@ function hauptPulsWeiter() {                                                   /
 }
 function drawHauptstadtRing(z, now) {                                           // (Bildschirm) unter der Basis, vor den Gebäuden
   const heim = islandById[playerIslandId]; if (!heim || islandOwnerOf(heim.id) !== 'player') return;
+  if (rulerOwner() === 'player') return;                                       // Herrscher: sein Skin (skin_koenigsburg) ersetzt den Kranz – nie beides übereinander
   const bw = basisBreite(heim, z), k = 1 - heimWappenSicht(z), im = hauptRingBild(); if (!bw || k <= 0 || !im) return;
   const w = bw * 1.6, h = w * im.height / im.width, x = toSX(heim.x), y = toSY(heim.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;
@@ -3726,7 +3727,8 @@ function drawRings(visible, z, now) {
         ctx.moveTo(x + Math.cos(a) * r * 1.44, y + Math.sin(a) * r * 1.44); ctx.lineTo(x + Math.cos(a) * r * 1.52, y + Math.sin(a) * r * 1.52); }
         ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(228,200,134,.7)'; ctx.stroke(); }
     }
-    if (isl.type === 'tower' && z >= 0.006) {                                  // ring round every base with a title from the middle (see ringStatusByOwner)
+    const hauptsitz = isl.id === playerIslandId || isCapital(isl.id);               // (Alexander 8.10.: an jeder Hauptstadt keine Ring-Effekte – nur Krone + Kranz/Herrscher-Skin, 03b)
+    if (isl.type === 'tower' && z >= 0.006 && !hauptsitz) {                    // ring round every base with a title from the middle (see ringStatusByOwner)
       const o = islandOwnerOf(isl.id), st = o ? rankOf.get(o) : null;
       if (st) {                                                                       // bold double ring with notches + a badge (crown, or skull for a penalty)
         const R1 = Math.max(r * 1.35, 21), R2 = R1 + Math.max(r * .28, 5), W = 3.4;
@@ -3740,9 +3742,6 @@ function drawRings(visible, z, now) {
         if (st.dash) { ring(x, y, R2 + 5, 2, st.dash, [8, 5], -now / 40); liveAnimation = true; }
         if (R1 >= 18) ringBadge(x, y - R2 - 1, Math.min(13, Math.max(9, r * .22)), st);
       }
-    }
-    if (isl.id === playerIslandId && z >= 0.006) {                            // the capital: blue-gold double ring
-      ring(x, y, Math.max(r * 1.55, 12), 2, 'rgba(228,200,134,.95)'); ring(x, y, Math.max(r * 1.8, 15), 1.2, 'rgba(140,192,255,.6)', [3, 4]);
     }
     const isSelectable = (attackTarget && isOwned && canReach(isl.landmassId, attackTarget.landmassId)) ||
                          (pendingSendFromId !== null && isOwned && isl.id !== pendingSendFromId);
@@ -3871,6 +3870,7 @@ function drawNacht(vis, z, view) {                  // nach den Gebäuden, vor d
       const ow = islandOwnerOf(isl.id); if (!ow && isl.type === 'tower') continue;                     // leere Basen bleiben dunkel
       const size = 2 * isl.radius * z * 1.5 * (isl.type === 'tower' ? 1 : 1.3), x = toSX(isl.x), y = toSY(isl.y);
       if (x < -size * 2 || x > viewW + size * 2 || y < -size * 2 || y > viewH + size * 2) continue;
+      if (isl.id === playerIslandId || isCapital(isl.id)) continue;                   // Hauptstädte: kein Glow/keine Fackeln am Boden (Alexander 8.10.)
       rest--; ctx.globalAlpha = L.licht * (ow ? 1 : .6);
       const R = Math.max(4, size * .75); ctx.drawImage(warm, x - R, y - size * .2 - R, R * 2, R * 2);
       if (size >= 18 && !akkuSparen) { const f = Math.max(3, size * .16);                             // zwei Fackeln am Tor
@@ -9208,7 +9208,7 @@ function checkRuler() {             // announces a change of ruler once
     const lost = lastGoodTitle && r !== 'player' ? ' Dein Titel „' + lastGoodTitle.name + '“ ist verfallen, der ' + (lastGoodTitle.good ? 'Goldring' : 'rote Ring') + ' ist weg.' : ''; lastGoodTitle = null;
     if (r === 'player') statBump('throne');
     if (r && r !== 'player' && botById[r]) { const bs = loadBotState()[r]; bs.stats = bs.stats || {}; bs.stats.ruled = 1; saveBotState(); }
-    if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen, blutrot-goldener Ring um deine Basen.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
+    if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen, Königsburg mit Krone auf der Karte.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
     else if (was === 'player') flashHint('Du hast den Mega-Tempel verloren – die Krone und der blutrot-goldene Ring sind weg!', 5000);
     else if (r && botById[r]) flashHint(botById[r].name + ' ist jetzt Herrscher der Meere!' + lost, lost ? 6000 : 4000);
     else if (lost) flashHint(lost.trim(), 5000);
@@ -11353,9 +11353,10 @@ function evPreis(who, src, title, p, schl, bis) {     // schl: fester Schlüssel
     const gems = Math.round(p.gems || 0), sh = Math.round(p.sh || 0), crate = p.crate >= 0 ? p.crate : -1, titel = saisonTitel(p.titel) ? p.titel : null;   // titel: Saison-Platz (Erfolg; der Saison-Rahmen kommt aus saison.last)
     const { coins, tr } = evStunden(who, p), k = schl != null ? src + '|' + schl : undefined;   // k: das Abholfach kennt die Stufe (Leiste im Event-Fenster)
     let b = Array.isArray(p.b) && p.b.length ? p.b : undefined;   // b: Gegenstände [Art, Menge, Extra] (Thron-Event)
-    { const d = evDing(p); b = [...(b || []), ...(d.em ? [['eventMuenzen', d.em]] : []), ...(d.s1 ? [['schluessel1', d.s1]] : []), ...(d.s2 ? [['schluessel2', d.s2]] : []), ...(d.besch ? [['besch', 1, { dauer: d.besch }]] : [])]; if (!b.length) b = undefined; }   // A: Event-Münzen/Schlüssel/Beschleuniger als Gegenstände
+    const bP = b, dP = evDing(p);   // (für dich selbst: Event-Münzen/Schlüssel/Beschleuniger als eigene Felder, Gegenstände des Thron-Events als b)
+    { const d = dP; b = [...(b || []), ...(d.em ? [['eventMuenzen', d.em]] : []), ...(d.s1 ? [['schluessel1', d.s1]] : []), ...(d.s2 ? [['schluessel2', d.s2]] : []), ...(d.besch ? [['besch', 1, { dauer: d.besch }]] : [])]; if (!b.length) b = undefined; }   // A: Event-Münzen/Schlüssel/Beschleuniger als Gegenstände
     if (!(bis > Date.now())) bis = undefined;
-    if (who === 'player') { inboxAdd({ src, title, gems, sh, crate, coins, tr, k, bis, b }); if (titel) saisonTitelGeben(titel); return; }
+    if (who === 'player') { inboxAdd(Object.assign({ src, title, gems, sh, crate, coins, tr, k, bis, b: bP }, dP)); if (titel) saisonTitelGeben(titel); return; }
     const bd = botById[who]; if (!bd) return;
     if (titel) { const b0 = loadBotState()[who]; if (b0) { b0.sTitel = [...new Set([...(b0.sTitel || []), titel])]; saveBotState(); } }   // die vergebenen Saison-Titel führt nur, wer rechnet (ein Profil kann sich keinen eintragen)
     if (bd.mensch && window.WELT && b) { for (const [a, n] of b) if (a === 'holz' && AUF) AUF.rohDazu(who, { h: n }); b = b.filter(x => x[0] !== 'holz'); if (!b.length) b = undefined; }   // Holz gleich in seinen Topf (kommt mit dem nächsten Puls, das Hauptbuch kennt es)

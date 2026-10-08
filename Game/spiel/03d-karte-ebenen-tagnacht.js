@@ -64,6 +64,7 @@ function drawNacht(vis, z, view) {                  // nach den Gebäuden, vor d
       const ow = islandOwnerOf(isl.id); if (!ow && isl.type === 'tower') continue;                     // leere Basen bleiben dunkel
       const size = 2 * isl.radius * z * 1.5 * (isl.type === 'tower' ? 1 : 1.3), x = toSX(isl.x), y = toSY(isl.y);
       if (x < -size * 2 || x > viewW + size * 2 || y < -size * 2 || y > viewH + size * 2) continue;
+      if (isl.id === playerIslandId || isCapital(isl.id)) continue;                   // Hauptstädte: kein Glow/keine Fackeln am Boden (Alexander 8.10.)
       rest--; ctx.globalAlpha = L.licht * (ow ? 1 : .6);
       const R = Math.max(4, size * .75); ctx.drawImage(warm, x - R, y - size * .2 - R, R * 2, R * 2);
       if (size >= 18 && !akkuSparen) { const f = Math.max(3, size * .16);                             // zwei Fackeln am Tor

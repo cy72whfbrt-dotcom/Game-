@@ -15,7 +15,7 @@ const D = process.argv[2]; const srv = http.createServer((q, r) => { const f = p
       if (new Set(g.map(x => x.id)).size !== g.length) verschieden = false;
       for (const x of g) { if (x.id === voll) vollDabei = true; const rr = heroById(x.id).r; zaehl[rr] = (zaehl[rr] || 0) + 1; } }
     const sumOk = shSum() - sum0 === 300 * c.sh;
-    gems = 1000; heroChestKauf(c, 1, null); const kach = document.querySelectorAll('#beuteFenster .bf-inhalt [data-held], #beuteFenster .bf-inhalt img.held, #beuteFenster .bf-inhalt .bk-held').length;
+    gems = 1000; kisteOeffnen('held', 1); const kach = document.querySelectorAll('#beuteFenster .bf-inhalt [data-held], #beuteFenster .bf-inhalt img.held, #beuteFenster .bf-inhalt .bk-held').length;
     const kachHtml = document.querySelector('#beuteFenster .bf-inhalt').innerHTML.slice(0, 400); beuteFensterZu();
     // Wellen: zwei eigene Basen → ein Ziel mit riesiger Besatzung, zusammengelegt (quellen), verloren
     const L = islandById[playerIslandId].landmassId, frei = islands.filter(i => i.id !== playerIslandId && i.landmassId === L && !islandOwnerOf(i.id) && !isCapital(i.id) && !bossAt(i.id));

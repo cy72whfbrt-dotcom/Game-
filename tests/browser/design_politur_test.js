@@ -36,7 +36,7 @@ srv.listen(0, '127.0.0.1', async () => {
       // 2) Wochen-Event
       openGoals('tour'); await warte(250);
       const body = document.getElementById('eventBody');
-      o.tour = { titel: txt(body.querySelector('.ev-banner-t > b')).trim(), text: body.innerText, leer: !!body.querySelector('.ev-leer .icon') || !!body.querySelector('.barb-rank') };
+      o.tour = { titel: txt(body.querySelector('.ev-card.is-tour .barb-ct > b')).trim(), text: body.innerText, leer: !!body.querySelector('.ev-leer .icon') || !!body.querySelector('.barb-rank') };
       const chips = [...document.querySelectorAll('#goalsTabs [data-gtab]:not([hidden])')], box = document.getElementById('goalsTabs').getBoundingClientRect();
       o.chips = chips.map(c => [c.textContent.trim(), Math.round(c.getBoundingClientRect().right) <= Math.round(box.right) + 1]);
       closeAllPopups();
@@ -68,10 +68,10 @@ srv.listen(0, '127.0.0.1', async () => {
     ok(!r.burg.gold && /10\.000 je Rohstoff · 5\.600 Münzen/.test(r.burg.schutz), art + ': Burg-Schutz „10.000 je Rohstoff · 5.600 Münzen“ (glatt, kein „Gold“)', r.burg);
     ok(r.holz && r.holz[0][1] === '–' && /^\d[\d.]*$/.test(r.holz[0][2]), art + ': Holzfäller ungebaut – Jetzt „–“, nächste Stufe ganze Zahl', r.holz);
     ok(!/\d,\d+\/Std/.test(r.roh) && /\/Std\./.test(r.roh) && /Münzen vor Angreifern/.test(r.roh), art + ': Rohstoff-Liste ohne Kommazahlen, Schutz in Münzen', r.roh.slice(-120));
-    ok(r.tour.titel && !/Wochen-Event/.test(r.tour.titel), art + ': Wochen-Banner zeigt nur das Thema', r.tour.titel);
+    ok(r.tour.titel && /·/.test(r.tour.titel) && !/Wochen-Event/.test(r.tour.titel), art + ': Wochen-Banner zeigt nur das Thema', r.tour.titel);
     ok(!/\d,\d Punkte pro/.test(r.tour.text) && !/– · \d/.test(r.tour.text) && (/Krieger-Woche/.test(r.tour.titel) ? /18 Punkte je 10 besiegte Krieger/.test(r.tour.text) : true), art + ': Punkte als ganze Zahlen, kein „– ·“', r.tour.text.slice(0, 300));
     ok(r.tour.leer, art + ': Top 10 leer → Symbol + Satz', r.tour.leer);
-    ok(r.chips.length === 5 && r.chips.every(c => c[1]), art + ': Ereignis-Chips ganz im Bild', r.chips);
+    ok(r.chips.length === 3 && r.chips.every(c => c[1]), art + ': Ereignis-Chips ganz im Bild', r.chips);
     ok(r.kampf.leer && r.kampf.gold && r.kampf.zu, art + ': Kampf leer – Symbol, Gold-Knopf „Ziel auf der Karte wählen“ schließt das Fenster', r.kampf);
     ok(r.bund.ov === 'none' && r.bund.titel === 'Bündnis' && r.bund.leer, art + ': Bündnis ohne Bündnis – Kopf nicht doppelt, leere Liste mit Symbol', r.bund);
     ok(r.shop.namen.length >= 4 && r.shop.namen.every(n => n[1]), art + ': Kistennamen ganz zu sehen', r.shop.namen);
