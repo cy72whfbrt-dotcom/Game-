@@ -5,15 +5,14 @@ mit allen Punkten in `archiv.md`, Abschnitte 11, 11b, 11c, 12, 12a). Nummern „
 Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, aber nicht als erledigt markiert.
 
 ## Offen (bauen, wenn Alexander es sagt)
-- **11c Nr. 6b** Heldenkiste: Splitter auf 2–3 verschiedene Helden verteilen (nach Seltenheit gewichtet).
+- **11c Nr. 6b** Heldenkiste (normale, 6 Splitter): auf 2–3 Helden verteilen, nach Seltenheit gewichtet (Große Kiste macht es schon).
 - **11c Nr. 10** Angriffs-Fenster wirkt wie ein Formular → neu mit Designer + Vorbildern (RoK „Marsch aufstellen“).
   (Grundform 6.10. eingebaut – Alexander fragen, ob es jetzt passt.)
 - **11c Nr. 11** Fenster „Deine Basis“ wirkt wie Tabelle → Bild der Basis, Name, wenige Werte als Symbol-Zeile, runde
   Knöpfe. Zahlen-Fragen: Münzen/Std. vs. Truppen/Std., „Sammeln“/„Mehrfach“ je 1 Edelstein sinnvoll?
 - **11c Nr. 15** Spähbericht und Kampfbericht: Helden-Plätze einheitlich (leer = ein Platz mit „?“ und einem Satz).
-- **11c Nr. 17** Tore auf der Karte markieren, eigene Hauptstadt hervorheben (prüfen nach Zonen-Karte/Namensschildern).
-- **11c Nr. 19** fremde Märsche mit Figur/Fahne statt nur Strich (prüfen nach 03f-Marsch-Bildern); Schloss-Symbol an
-  angreifbarem Grenztor; Hinweis „Keine deiner Basen grenzt …“ liegt über dem Inhalt.
+- **11c Nr. 17** eigene Hauptstadt auf der Karte hervorheben (Tore sind schon KI-Bilder, auch im Nebel).
+- **11c Nr. 19** Schloss-Symbol an angreifbarem Grenztor; Hinweis „Keine deiner Basen grenzt …“ liegt über dem Inhalt.
 - **11c Nr. 22** Stadt: außerhalb der Mauer nur die echte Außenkarte, Blick enger.
 - **11c Nr. 26** Zahlen (später): Produktion Spätspiel aufgebläht, Friedensschild gegen Edelstein-Einkommen prüfen.
 - **11c Nr. 27** Karte: Ecken ganz weit leicht dunkel, senkrechte Ketten weit schmaler, Leistung ganz weit.
@@ -25,7 +24,6 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
   (a App-Bild, c Doku, e Sortieren: 8.10. erledigt.)
 
 ## Prüfen (vermutlich erledigt, live ansehen)
-- 11c Nr. 1 Mitte/Thron ganz weit draußen auch im Nebel sichtbar (Übersicht ganz weit seit 7.10.).
 - 11c Nr. 2/4/5/8 Saison-Reset: Hauptstädte nur Zone 1, Pass/Ranglisten/Event-Stände neu – Thron-Punkte-Kappung bei
   Mitspielern prüfen; Mitspieler-Tempo nach dem Reset (30 Min. → 15–24 Basen?) mit Alexander besprechen.
 - 11c Nr. 14/25 Insel-Design – durch die Karte wie RoK ersetzt; Alexander zeigen.
@@ -33,11 +31,10 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - 11c Nr. 20 Helden-Fenster neu wie RoK – gebaut 7.10. (Heldenhalle neu, KI-Bilder), Alexander zeigen.
 
 ## Bekannte Reste im Code (klein)
-- `server.php` kürzt bei fremden Rallys `rally.an` [3]–[5]; die Felder [6] Skill-Anteil, [7] Helden-Anteil dort nachtragen.
 - Vorschau-Kampf des Spielers (`resolveAttack`, 02c): zusammengelegte Wellen gehen zur ersten Basis heim.
 - Drache/Kriegsherr-Angriffe auf Basen nehmen von Verteidigungs-Helden nur Angriff + Gefolge.
 - Münzen/Rohstoffe im Profil auf 1 Billiarde gedeckelt (Truppen 1e30) – bei Bedarf anheben.
-- Hauptbuch kennt Kisten aus dem Thron-Shop und Edelsteine statt Splitter noch nicht (nur mögliche Fehlalarme im Admin).
+- Hauptbuch: Edelsteine statt Splitter noch nicht geprüft (Thron-Shop-Kisten kennt es) (nur mögliche Fehlalarme im Admin).
 - Hauptbuch zählt keine Bauarbeiter-Plätze (gefälschtes Handy könnte mehrere Gebäude gleichzeitig bauen, voll bezahlt).
 - Auf dem Server liegen `baukunst.js`/`klein/baukunst.js` noch (beim nächsten Aufräumen löschen, mit Alexanders Ja).
 - Code-Kommentare verweisen auf „LIESMICH 11b A“ / „11c Punkt 30“ – gemeint ist jetzt `archiv.md` (beim nächsten Anfassen
