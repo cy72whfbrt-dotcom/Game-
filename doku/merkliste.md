@@ -50,6 +50,7 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
   `claude/spiel-anzeigen-6e8l5z`), fremdes Repo `-Open-source-pixel-art-game-project-built`.
 - Fremde Tabellen eines anderen Spiels in der Datenbank (`nutzer`, `mail`, `handel` …): löschen? (noch nicht gefragt)
 - Erfolge bleiben über den Reset (25/63) – so gewollt?
+- Kleines Handy 360 px (Spieltest 8.10.): Events-Kopf „0 / 6 heu…“ abgeschnitten, Invasions-Chip „We…“, Pass-Premium-Text unten halb verdeckt.
 
 ## Ideen (gemerkt, nicht gebaut)
 - Nachricht an alle / Welt-Ereignis auf Knopfdruck (Admin), Schatzkarten im Nebel, Wetter, Leuchttürme, Handel,
