@@ -18,3 +18,9 @@ Marsch-Köpfe/Sieg-Band am Kampfort, 360-px-Fixes.
 
 ## Später (Alexander)
 Bauarbeiter-Lücke im Hauptbuch (wichtig), Zahlen + Thron-Shop zusammen mit Alexander (zuletzt), Skins, Code-Check.
+
+## Nachtrag (8.10. abends)
+Fertig + geprüft: Heldenkiste 2–3 Helden, Wellen zur eigenen Basis, Werte zählen überall (Kriegsherr/Invasion), Goldring Hauptstadt
+(Bild karte_hauptstadt_ring.webp), Schloss an Toren, neue Fenster Basis/Angriff/Grenztor (Alexander: gut), Spähbericht „?“-Plätze,
+Teleport mit Lichtsäule (karte_lichtsaeule.webp). Offen: leerer Kasten unter Event-Band (Fix läuft), danach Endprüfung komplett.sh +
+Server-Tests (DB in scratchpad/srv – im neuen Chat neu einrichten) und neue Test-Vorschau. Nichts hochgeladen.
