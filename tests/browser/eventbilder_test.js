@@ -29,7 +29,7 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
     const TEMPO = '1 Min,5 Min,15 Min,1 Std,3 Std,8 Std,24 Std';
     if (/^shop/.test(a) && r.reihe !== 'Kisten|Event|Tempo|Schilde|Markt') fehler.push(w + ': Reiter-Reihenfolge ' + r.reihe);
     if (a === 'shopkisten' && r.gruppen !== 'Ausrüstung|Helden|Schlüssel') fehler.push(w + ': Kisten-Gruppen ' + r.gruppen);
-    if (a === 'shop' && r.gruppen !== 'Friedensschild|Teleporter|Beschleuniger|Splitter|Schlüssel') fehler.push(w + ': Event-Gruppen ' + r.gruppen);
+    if (a === 'shop' && r.gruppen !== 'Friedensschild|Teleporter|Beschleuniger|Schlüssel') fehler.push(w + ': Event-Gruppen ' + r.gruppen);
     if ((a === 'shop' || a === 'shoptempo') && r.zeiten.join() !== TEMPO) fehler.push(w + ': Beschleuniger nicht aufsteigend');
     if (a === 'lager' && !/2,5 Mio.*Schlüssel \d\/3.*Lila \d\/1/.test(r.grenze)) fehler.push(w + ': Lager-Tagesgrenze fehlt');
     if (a === 'karte' && (r.bahn < 3 || r.schuss)) fehler.push(w + ': Turm-Geschosse fehlen');

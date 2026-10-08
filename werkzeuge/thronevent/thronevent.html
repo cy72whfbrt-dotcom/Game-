@@ -270,7 +270,6 @@ const eventReiter = '<div class="ev-guthaben"><img src="' + B + EM + '.webp" alt
   gruppe('Friedensschild', [evWare('beute_schild', 'blau', 'Friedensschild', '0/2', 600, '8 Std'), evWare('beute_schild', 'lila', 'Friedensschild', '0/1', 1400, '24 Std')]) +
   gruppe('Teleporter', [evWare('ui_sym_verlegen', 'lila', 'Teleporter', '0/1', 1000)]) +
   gruppe('Beschleuniger', TEMPO.map(([z, g, m, l]) => evWare(BE(z), tempoR(z), 'Beschleuniger', l, m, z))) +
-  gruppe('Splitter', [evWare('beute_splitter', 'lila', 'Helden-Splitter ×10', '0/5', 400)]) +
   gruppe('Schlüssel', [evWare(S1, 'blau', 'Schlüssel', '1/10', 200), evWare(S2, 'lila', 'Epischer Schlüssel', '0/3', 1000)]);
 const reiter = { shopkisten: ['reiterKisten', kistenReiter], shoptempo: ['reiterTempo', tempoReiter] }[A] || ['reiterEvent', eventReiter];
 document.getElementById(reiter[0]).classList.add('active');
