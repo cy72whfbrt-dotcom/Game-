@@ -131,6 +131,22 @@ const M = path.resolve(__dirname, '../../werkzeuge/marschtest'), arbeit = proces
       await leer(); await p.evaluate(() => { MT.D.basen[0].schild = true; });
       await knopf('marsch');
       ok(await p.evaluate(() => !MT.D.basen[0].schild && MT.effekte.some(e => /Friedensschild ist gefallen, weil du angreifst/.test(e.text))), `${name} ${art}: dein Angriff lässt deinen Schild fallen`);
+      // Laufzeit wie travelDurationSeconds (6–60 s) und Weg über den Pass mit Maut (beim Losschicken bezahlt); Tor zu = kein Weg
+      await leer(); await knopf('marsch');
+      const lz = await p.evaluate(() => MT.armeen[0].dauer);
+      ok(Math.abs(lz - Math.hypot(5000, 25000 - 3600 - 7500) / 540) < 2, `${name} ${art}: Laufzeit Alex → Kevin wie im Spiel (Strecke ÷ 540/s)`, lz);
+      await leer(); await p.evaluate(() => { MT.D.muenzen = 2e6; MT.ERGEBNIS.pass(); });
+      const pa = await p.evaluate(() => { const a = MT.armeen[0]; return { ueber: !!a.ueber, dauer: a.dauer, muenzen: MT.D.muenzen, hinweis: MT.effekte.map(e => e.text).join('|') }; });
+      ok(pa.ueber && pa.dauer === 60 && pa.muenzen === 2e6 - 560000 && /Maut bezahlt: 560\.000 Münzen an Wulfgar/.test(pa.hinweis), `${name} ${art}: über den Pass: Knick-Linie, 60 s (gedeckelt), Maut 560.000 beim Losschicken`, pa);
+      await leer(); await p.click('#mehr-knopf'); await p.click('#tore'); await p.click('#mehr-knopf');
+      await p.evaluate(() => MT.ERGEBNIS.pass());
+      const tz = await p.evaluate(() => [MT.armeen.length, MT.effekte.some(e => /Tor ist geschlossen/.test(e.text))]);
+      ok(tz[0] === 0 && tz[1], `${name} ${art}: Tor zu: kein Marsch, Hinweis „Das Tor ist geschlossen“ (kein Warten am Tor)`, tz);
+      await p.click('#mehr-knopf'); await p.click('#tore'); await p.click('#mehr-knopf');
+      // Zurückrufen: so lange zurück, wie schon gelaufen
+      await leer(); await knopf('marsch'); await p.evaluate(() => { MT.tempo = 5; }); await p.waitForTimeout(1000);
+      const zr = await p.evaluate(() => { const a = MT.armeen[0], gel = MT.jetzt - a.t0; MT.waehlen(a); document.querySelector('[data-knopf="zurueck"]').click(); return [gel, a.dauer]; });
+      ok(Math.abs(zr[0] - zr[1]) < .5, `${name} ${art}: Zurückrufen: Rückweg so lange wie schon gelaufen`, zr);
       // Marsch zweimal: jeder nur mit den Truppen, die noch in der Basis sind (12,4 → 6,2 + 3,1 Mio.), nie doppelt
       await leer(); await knopf('marsch'); await knopf('marsch');
       const mz = await p.evaluate(() => MT.armeen.map(a => a.truppen));

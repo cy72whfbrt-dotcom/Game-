@@ -11,6 +11,7 @@ const MARSCH_DATEN = (() => {
     basis('mira', -12000, -8000, 'bund', '[NW]Mira_7', 'mira', 6, 3.6e6),
     basis('bjarne', 11000, -13000, 'bund', '[NW]Bjarne', 'bruno', 5, 2.9e6),
     basis('kevin', 5000, -19000, 'feind', '[RX]Kevin_93', 'hagen', 11, 8.1e6, { vert: 2e6, gold: 42e6, schutz: 12e6 }),
+    basis('wulf', 48745, 340018, 'feind', '[DK]Wulfgar', 'yrsa', 7, 3.1e6, { vert: 1e6, haupt: false }),   // hinter dem Pass (Gebiet 28)
     basis('turm', 17000, -27000, 'feind', '[RX]Kevin_93', 'hagen', 3, 2.4e6, { vert: .8e6, haupt: false }),   // ein Turm von Kevin: eroberbar
     basis('sturm', -10000, 22000, 'feind', '[RX]Sturmfaust', 'ragna', 8, 16.8e9),
   ];
@@ -19,5 +20,6 @@ const MARSCH_DATEN = (() => {
   const sp = KARTE_ZONEN.startplaetze; sp.splice(sp.findIndex(o => o.x === M.x && o.y === M.y), 1);   // (dort steht jetzt die eigene Burg)
   KARTE_ZONEN.barbaren.push({ x: lager.x, y: lager.y, gebiet: 27, stufe: lager.stufe });
   KARTE_ZONEN.felder.push({ x: feld.x, y: feld.y, gebiet: 27, art: 'holz', stufe: feld.stufe });
-  return { mitte: M, basen, lager, feld };
+  const pass = { x: 699257, y: -272032, besitzer: '[DK]Wulfgar', stufe: 3 };   // Pass 8 (Gebiet 27 → 28) mit Tor von Wulfgar, Maut-Stufe 3 (0,5)
+  return { mitte: M, basen, lager, feld, pass, muenzen: 2e6 };
 })();

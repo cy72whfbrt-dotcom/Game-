@@ -1056,6 +1056,9 @@ Kampfmusik, Belagerung, Rache-Knopf, Truppen-Event, Postfach. Erfolge geben nur 
   Gruppe 3 (Schild, Ziel inzwischen eigen): Friedensschild als Kuppel; Angriff prallt ab („Schild hält – Dein Angriff prallt ab“
   bzw. „X prallt ab“), keine Verluste, Truppen laufen heim (`welleHeim`); Warnung „Friedensschild hält – prallt ab“; wer angreift,
   verliert seinen Schild. Ziel gehört inzwischen dir: Truppen ziehen ein; Bündnis: kein Kampf, heim.
+  Gruppe 4 (Weg/Tempo wie `travelDurationSeconds`, `tollFor`): Laufzeit = Strecke ÷ 540/s, 6–60 s (vorher erfundenes Tempo);
+  Späher und Rally ohne erfundene ×1,8/×0,8; „Über den Pass“: Knick-Linie über Pass 8, Maut beim Losschicken (Stufe × 1000 je Truppe,
+  100 … 560.000, Hinweis mit Münz-Kachel), Tor zu = kein Weg (kein Warten am Tor); Zurückrufen: zurück so lange, wie schon gelaufen.
 
 ## 9. Fehlerliste (Alexander)
 Alle 19 Punkte vom 1.10. sind erledigt. Neue Fehler hier nummeriert eintragen.
