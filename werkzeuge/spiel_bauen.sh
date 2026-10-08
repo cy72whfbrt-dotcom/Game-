@@ -1,7 +1,7 @@
 #!/bin/bash
 # Setzt große Dateien aus ihren Teilen zusammen (in der Reihenfolge der Dateinamen) – Tabelle ZIELE unten:
 #   Game/spiel/*.js → Game/spiel.js · Game/bots/*.js → Game/bots.js · Game/buendnis/*.js → Game/buendnis.js
-#   Game/baukunst/*.js → Game/baukunst.js · Game/spielseite/*.php → Game/spiel.php · Game/server/*.php → Game/server.php
+#   Game/spielseite/*.php → Game/spiel.php · Game/server/*.php → Game/server.php
 # Bearbeitet wird NUR in den Teilen – die Dateien werden hier jedes Mal neu geschrieben.
 # Warum ein Zusammensetzen und keine vielen Dateien im Spiel: der Code ruft beim Laden Funktionen auf, die weiter hinten
 # stehen – das geht nur in EINER Datei. So bekommt das Spiel genau denselben Code wie vor dem Aufteilen (4.10./5.10.).
@@ -21,7 +21,6 @@ ZIELE=(
   "Game/spiel|Game/spiel.js|// ===== spiel.js – AUTOMATISCH ZUSAMMENGESETZT aus Game/spiel/*.js (werkzeuge/spiel_bauen.sh). NICHT hier ändern! ====="
   "Game/bots|Game/bots.js|"
   "Game/buendnis|Game/buendnis.js|"
-  "Game/baukunst|Game/baukunst.js|"
   "Game/spielseite|Game/spiel.php|"
   "Game/server|Game/server.php|"
 )

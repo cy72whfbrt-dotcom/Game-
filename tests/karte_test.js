@@ -9,12 +9,13 @@ try { execFileSync(path.join(G, 'werkzeuge/karte.sh'), ['pruefen'], { stdio: 'pi
 pruef(aktuell, 'KARTE.md ist aktuell (werkzeuge/karte.sh pruefen)');
 const karte = fs.readFileSync(path.join(G, 'KARTE.md'), 'utf8');
 const ziele = [...fs.readFileSync(path.join(G, 'werkzeuge/spiel_bauen.sh'), 'utf8').matchAll(/^\s*"(Game\/[^|"]+)\|(Game\/[^|"]+)\|/gm)];
-pruef(ziele.length >= 6, 'Tabelle ZIELE gelesen (' + ziele.length + ' Zieldateien)');
+pruef(ziele.length >= 5, 'Tabelle ZIELE gelesen (' + ziele.length + ' Zieldateien)');
 for (const [, ordner, ziel] of ziele) {
     pruef(!karte.includes('→ ' + ziel + ':') && !karte.includes('### ' + ziel + '\n') && !karte.includes('### ' + ziel + ' '), ziel + ' nicht doppelt in KARTE.md');
     pruef(karte.includes('## ' + ordner + '/ (Teile)'), ordner + '/ als Teile in KARTE.md');
 }
 pruef(/`marsch_welt` → Game\/server\/[^:]+\.php:\d+/.test(karte), 'marsch_welt zeigt auf den Teil in Game/server/');
-pruef(/`addMat` → Game\/baukunst\/[^:]+\.js:\d+/.test(karte), 'addMat zeigt auf den Teil in Game/baukunst/');
+pruef(/`bundOp` → Game\/buendnis\/[^:]+\.js:\d+/.test(karte), 'bundOp zeigt auf den Teil in Game/buendnis/');
+pruef(!/baukunst/.test(karte), 'keine 3D-Burg (baukunst) mehr in KARTE.md');
 console.log(fehler ? 'FEHLER: karte_test nicht bestanden' : 'OK: karte_test bestanden');
 process.exit(fehler);

@@ -271,10 +271,10 @@ pruefe('Startseite: Regel 10 Zeichen vorab', [strpos($ix, 'id="pwRegel" data-min
 pruefe('Startseite: Auge ist type=button', [strpos($ix, '<button type="button" class="auge"') !== false, substr_count($ix, '<button type="submit"')], [true, 5]);
 pruefe('Startseite: App-Link als Knopf, Spiel-Schrift', [strpos($ix, '<a class="knopf2" href="app/">') !== false, strpos($ix, 'Times New Roman') === false, strpos($ix, 'schrift/schrift.css') !== false && strpos($ix, 'fonts.googleapis') === false], [true, true, true]);   // (Cinzel/Inter selbst ausgeliefert, kein Google-Aufruf)
 pruefe('Startseite: kein Browser-Speicher, Skript nur mit Nonce + die Szene des Ladebilds', [preg_match('/localStorage|sessionStorage|indexedDB|document\.cookie/', $ix), substr_count($ix, '<script'), substr_count($ix, '<script nonce="<?= h(csp_nonce()) ?>">'), substr_count($ix, "<script src=\"<?= skript('ladebildschirm') ?>\"></script>")], [0, 2, 1, 1]);
-// CSP: fremde Skripte nur genau three.js (nicht ganz jsdelivr) – und genau die Datei, die die Spielseite einbindet
+// CSP: keine fremden Skripte mehr (3D-Burg mit three.js raus, 8.10.) – Spielseite lädt weder three.js noch baukunst.js
 $sh = file_get_contents(__DIR__ . '/../Game/server/02-sicherheit-datenlecks.php');
-pruefe('CSP nur three.js', [strpos($sh, "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js; script-src-attr") !== false, strpos($sh, 'https://cdn.jsdelivr.net;') !== false], [true, false]);
-pruefe('Spielseite bindet genau diese Datei ein', strpos(file_get_contents(__DIR__ . '/../Game/spielseite/08-dialoge-stadt-skripte.php'), 'data-three="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"') !== false, true);   // (lädt spiel.js nach dem ersten Bild: dreiDLaden)
+pruefe('CSP ohne fremde Skripte', [strpos($sh, "script-src 'self' 'nonce-\" . csp_nonce() . \"'; script-src-attr") !== false, strpos($sh, 'jsdelivr') !== false], [true, false]);
+pruefe('Spielseite ohne 3D-Burg', preg_match('/three|baukunst|spaeterLaden/', file_get_contents(__DIR__ . '/../Game/spiel.php')), 0);
 // Skript-Adressen (schneller laden, 6.10.): verkleinert über skript.php, wenn Game/klein/ aktuell ist – sonst das Original
 $g = __DIR__ . '/../Game';
 $sha = sha1_file("$g/spiel.js"); $frisch = strpos((string)@file_get_contents("$g/klein/spiel.js", false, null, 0, 160), "/* verkleinert aus spiel.js · $sha · ") === 0;

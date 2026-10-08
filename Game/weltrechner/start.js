@@ -263,7 +263,7 @@ async function los() {
         if (basen > 0 && spielN && (weltN || 15) !== spielN) ende(5, 'Karte passt nicht zur Welt: Welt ' + (weltN || 15) + ' × ' + (weltN || 15) + ', Spiel ' + spielN + ' × ' + spielN + ' Regionen – erst die Welt neu starten (werkzeuge/welt_neustart.php)');
     } catch (e) { log('Warnung: Grundlinie nicht lesbar (' + e.message + ')'); }
 
-    // Skripte des Spiels direkt von der Festplatte (gleicher Ordner) – fremde (3D) und baukunst.js braucht der Weltrechner nicht
+    // Skripte des Spiels direkt von der Festplatte (gleicher Ordner) – fremde braucht der Weltrechner nicht
     class Lader extends ResourceLoader {
         fetch(url) {
             const u = new URL(url);

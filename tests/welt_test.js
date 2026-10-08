@@ -6,7 +6,7 @@ let fehler = 0, n = 0;
 const pruefe = (name, ok) => { n++; if (!ok) { fehler++; console.log('FEHLER: ' + name); } };
 
 // 1) Jede Spiel-Datei ist gültiges JavaScript
-for (const d of ['spiel.js', 'bots.js', 'welt.js', 'aufbau.js', 'buendnis.js', 'haendler.js', 'speichern.js', 'ladebildschirm.js', 'baukunst.js', 'benachrichtigung.js', 'sw.js', 'weltrechner/start.js', 'weltrechner/push.js']) {
+for (const d of ['spiel.js', 'bots.js', 'welt.js', 'aufbau.js', 'buendnis.js', 'haendler.js', 'speichern.js', 'ladebildschirm.js', 'benachrichtigung.js', 'sw.js', 'weltrechner/start.js', 'weltrechner/push.js']) {
     try { execFileSync(process.execPath, ['--check', path.join(G, d)], { stdio: 'pipe' }); pruefe(d, true); } catch (e) { pruefe(d + ': ' + String(e.stderr).split('\n')[0], false); }
 }
 

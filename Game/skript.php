@@ -3,7 +3,7 @@
 // Gepackt (gzip), wenn der Browser es kann, und lange zwischengespeichert: die Adresse enthält die Version (?v=…), eine
 // neue Version hat eine neue Adresse (skript() in server.php baut sie). Nur die Namen aus der Liste – nie andere Dateien.
 // Ohne Datenbank, ohne Login: es sind dieselben Skripte, die jeder auch als Original (spiel.js …) laden kann.
-const SKRIPTE = ['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung', 'baukunst'];   // wie in werkzeuge/verkleinern.js
+const SKRIPTE = ['ladebildschirm', 'speichern', 'bots', 'welt', 'spiel', 'aufbau', 'buendnis', 'haendler', 'benachrichtigung'];   // wie in werkzeuge/verkleinern.js
 $name = $_GET['d'] ?? '';
 $datei = __DIR__ . '/klein/' . (is_string($name) ? $name : '') . '.js';
 if (!in_array($name, SKRIPTE, true) || !is_file($datei)) { http_response_code(404); header('Cache-Control: no-store'); exit; }

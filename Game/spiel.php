@@ -3021,8 +3021,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   </footer>
 </section>
 
-    <!-- 3D-Basen (three.js + baukunst.js): lädt spiel.js erst nach dem ersten Bild der Karte (dreiDLaden) – sie bremsen den Start nicht -->
-    <div id="spaeterLaden" hidden data-three="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js" data-sri="sha384-qOkzR5Ke/XkQxuGVJ9hpFEpDlcoLtWwVYhnJf06cLIZa2vaIptSqaubivErzmD5O" data-baukunst="<?= skript('baukunst') ?>"></div>
     <script src="<?= skript('bots') ?>"></script>
     <script src="<?= skript('welt') ?>"></script>
     <script src="<?= skript('spiel') ?>"></script>

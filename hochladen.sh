@@ -96,7 +96,7 @@ if [ "$1" = pruefen ]; then
   for f in $(cd Game && find . -name '*.php' | sed 's#^\./##' | sort); do
     [ "$f" = config.php ] && continue
     nur_server "$f" && continue
-    case "$f" in spiel/*|bots/*|buendnis/*|baukunst/*|spielseite/*|server/*) continue;; esac
+    case "$f" in spiel/*|bots/*|buendnis/*|spielseite/*|server/*) continue;; esac
     if nochmal ed_lesen "$f" "$T/zurueck" && text_gleich "Game/$f" "$T/zurueck"; then echo "gleich: $f"; else echo "ANDERS: $f"; ANDERS=1; fi
   done
   exit $ANDERS
@@ -116,7 +116,7 @@ fi
 
 # 3) Ordner Game anlegen (falls weg), WARTUNG an (niemand kommt ins Spiel, Spielende werden mit "Wartung" rausgebeten),
 #    dann alle Dateien hochladen
-werkzeuge/spiel_bauen.sh || abbruch "spiel.js/bots.js/buendnis.js/baukunst.js/spiel.php/server.php lassen sich nicht zusammensetzen"   # (bearbeitet wird in Game/spiel/, bots/, buendnis/, baukunst/, spielseite/, server/)
+werkzeuge/spiel_bauen.sh || abbruch "spiel.js/bots.js/buendnis.js/spiel.php/server.php lassen sich nicht zusammensetzen"   # (bearbeitet wird in Game/spiel/, bots/, buendnis/, spielseite/, server/)
 # Game/klein/ (verkleinerte Skripte) ist nicht im Git – spiel_bauen.sh hat es eben erzeugt; jede Datei muss da sein und passen
 node werkzeuge/verkleinern.js voll || abbruch "Game/klein/ unvollständig"
 nochmal ed_tun "" -F text= -F file=Game -F "button=new folder" || abbruch "Ordner Game nicht anlegbar"
@@ -128,7 +128,7 @@ for f in $(cd Game && find . -type f | sed 's#^\./##' | sort); do
   [ "$f" = config.php ] && continue
   nur_server "$f" && continue
   case "$f" in klein/*.neu) continue;; esac   # (entsteht gerade in einem anderen Bau-Lauf, werkzeuge/verkleinern.js)
-  case "$f" in spiel/*|bots/*|buendnis/*|baukunst/*|spielseite/*|server/*) continue;; esac   # (die Teile von spiel.js, bots.js, buendnis.js, baukunst.js, spiel.php, server.php – auf den Server kommen nur die zusammengesetzten Dateien)
+  case "$f" in spiel/*|bots/*|buendnis/*|spielseite/*|server/*) continue;; esac   # (die Teile von spiel.js, bots.js, buendnis.js, spiel.php, server.php – auf den Server kommen nur die zusammengesetzten Dateien)
   case "$f" in *.php) AENDERN="$AENDERN $f"; continue;; esac
   if [ -z "$ALLES" ] && { url_holen "$f" 2>/dev/null || url_holen "$f" 2>/dev/null; } && [ "$(sha1sum < "Game/$f")" = "$(sha1sum < "$T/url")" ]; then continue; fi   # (abgebrochen: gleich noch einmal)
   AENDERN="$AENDERN $f"
