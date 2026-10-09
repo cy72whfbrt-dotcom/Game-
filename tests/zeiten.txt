@@ -1,8 +1,8 @@
 # Dauer der Server-Tests in Sekunden (schreibt tests/server_tests.sh nach jedem grünen Test neu; danach verteilt es die Gruppen)
 absturz_test 64
-admin_test 19
-armee_test 82
+admin_test 10
+armee_test 83
 kiste_test 139
-klick_test 293
-schummel_test 766
-verst_test 288
+klick_test 271
+schummel_test 751
+verst_test 310
