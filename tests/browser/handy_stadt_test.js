@@ -18,6 +18,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
       closeAllPopups(); flashHint('', 1); coins = 1e13; gems = 1e7; updateHud();
       const o = {};
+      { const w = document.getElementById('cityWisch'), sh = document.getElementById('citySheet'), d = () => getComputedStyle(w).display, h0 = sh.hidden;   // „Wischen“ nie über einem Blatt
+        w.hidden = false; sh.hidden = true; const frei = d(); sh.hidden = false; o.wisch = { frei, blatt: d() }; sh.hidden = h0; w.hidden = true; }
       // 1) Rohstoff-Liste: auf, dann den Shop öffnen → zu
       document.getElementById('hudRoh').click(); await warte(200); const auf = !document.getElementById('rohDrop').hidden;
       document.getElementById('shopBtn').click(); await warte(400); o.roh = { auf, zuNachFenster: document.getElementById('rohDrop').hidden };
@@ -64,6 +66,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       o.forschung = { frage: /Wirklich\?/.test(fFrage), fNicht, fBezahlt, fKlein };
       return o;
     }).catch(e => ({ fehler: e.message }));
+    ok(r.wisch.frei !== 'none' && r.wisch.blatt === 'none', art + ': Hinweis „Wischen – mehr Gebäude“ verschwindet, solange ein Blatt offen ist', r.wisch);
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
     ok(r.roh.auf && r.roh.zuNachFenster, art + ': Rohstoff-Liste geht beim Öffnen eines Fensters zu', r.roh);

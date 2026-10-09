@@ -241,7 +241,7 @@
             if (fehlt > 0 && !hbZahlen(who, hb, wacheSehen(who), { g: fehlt })) { bleibt.push(k); continue; }
             x.sh -= k.sh; x.gd = nn(x.gd) - k.g; x.g = nn(x.g) - gSchon; n++;
         }
-        hb.kisteOffen = bleibt; hb.shKauf = B.filter(y => y.sh > 1e-6 && nn(y.gd) > 1e-6);
+        hb.kisteOffen = bleibt; hb.shKauf = B.filter(y => y.sh > 1e-6 && (y.warte || nn(y.gd) > 1e-6));
         for (let i = 0; i < n; i++) if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste');
     }
     WELT.kisteGekauft = function (who, c) {

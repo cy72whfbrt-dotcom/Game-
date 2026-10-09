@@ -120,13 +120,13 @@ function wanderArrive(now) {                          // the storm: same maths a
         spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallenAlle, won,
             onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
         addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold, defGear: fighterSnapshot('player', dHx), ...verstInfo });
-        flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
+        flashHint((capitalHolds ? name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
     }
     if (owner && owner !== 'player' && botById[owner] && botById[owner].mensch) {   // ein echter Spieler: der Bericht kommt bei ihm an (wie bei jedem Angriff)
         const t = islandTitle(tgt);
         evBericht(owner, { type: 'ev', ic: 'defense', gut: !won || capitalHolds, badge: capitalHolds ? 'Hält' : won ? 'Zerstört' : 'Verteidigt', title: wander.name + ' · ' + t,
             txt: fmtCompact(my) + ' gegen ' + fmtCompact(en + def) + (won && !capitalHolds ? ' · die Basis ist zerstört' : capitalHolds ? ' · die Garnison ist gefallen, die Hauptstadt hält' : ' · abgewehrt'), at: now },
-            capitalHolds ? wander.name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? wander.name + ' hat deine Basis ' + t + ' zerstört!' : 'Verteidigt! ' + wander.name + ' wurde bei ' + t + ' zurückgeschlagen.');
+            capitalHolds ? wander.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht.' : won ? wander.name + ' hat deine Basis ' + t + ' zerstört!' : 'Verteidigt! ' + wander.name + ' wurde bei ' + t + ' zurückgeschlagen.');
     }
     if (vs) verstBerichte(vs, { type: 'botAttack', botName: wander.name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, fallen, wounded: dwBesitzer,   // die Helfer: derselbe Bericht
         won, capitalHolds, defGear: owner ? fighterSnapshot(owner, dHx) : null, defName: owner === 'player' ? ((window.profileName && profileName.value) || 'Spieler') : (botById[owner] || {}).name, ...verstInfo });

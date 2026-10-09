@@ -116,7 +116,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const preise = await ev(async () => {   // Preise: reicht es → hell, sonst rot; nie grau; „10× 1.500“ passt in den Knopf
     const warte = ms => new Promise(f => setTimeout(f, ms)), farbe = b => getComputedStyle(b).color, o = {};
     closeAllPopups(); gems = 100000; updateHud(); document.getElementById('shopBtn').click(); await warte(800);
-    const alle = () => [...document.querySelectorAll('#shopPopup .ware-preis:not(.thron)')].filter(b => b.getBoundingClientRect().width);
+    const alle = () => [...document.querySelectorAll('#shopPopup .ware-preis:not(.thron):not(.ohne-g)')].filter(b => b.getBoundingClientRect().width);
     o.reich = alle().map(farbe); o.passt = alle().every(b => b.scrollWidth <= b.clientWidth + 1 && b.scrollHeight <= b.clientHeight + 1);
     o.kopf = document.getElementById('shopGemCount').textContent;
     gems = 0; renderShop(); await warte(200); o.arm = alle().map(farbe);

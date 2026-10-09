@@ -45,10 +45,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const e = await ev(async () => { inboxAdd({ src: 'gift', title: 'Tipptest', gems: 1, crate: 0 }); openGoals('reward'); await new Promise(f => setTimeout(f, 500)); const o = __t44('#goalsPopup [data-inbox]'); closeAllPopups(); return o; });
     ok(gross(e), art + ': Events „Abholen“ mit Tippfläche ≥ 44 px', e);
     // 4) Profil → Rangliste / Einstellungen mit echtem Tipp
-    await ev(() => closeAllPopups()); await tap('#hudPlayer'); await p.waitForTimeout(700);
-    const pr = { offen: await ev(() => isPanelOpen(profilePopup)) }; await tap('#tabBtnRank'); await p.waitForTimeout(700);
+    await ev(() => closeAllPopups()); const offen = sel => p.waitForFunction(sel => isPanelOpen(document.querySelector(sel)), sel, { timeout: 5000 }).then(() => true, () => false);
+    await tap('#hudPlayer');
+    const pr = { offen: await offen('#profilePopup') }; await tap('#tabBtnRank'); await offen('#rankPopup');
     pr.rang = await ev(() => isPanelOpen(document.getElementById('rankPopup')));
-    await ev(() => closeAllPopups()); await tap('#hudPlayer'); await p.waitForTimeout(700); await tap('#tabBtnSet'); await p.waitForTimeout(500);
+    await ev(() => closeAllPopups()); await tap('#hudPlayer'); await offen('#profilePopup'); await tap('#tabBtnSet');
+    await p.waitForFunction(() => profilePopup.dataset.tab === 'set', null, { timeout: 5000 }).catch(() => {});
     pr.set = await ev(() => isPanelOpen(profilePopup) && profilePopup.dataset.tab === 'set');
     ok(pr.offen && pr.rang && pr.set, art + ': Profil → Rangliste und Einstellungen öffnen sich mit echtem Tipp', pr);
     await ev(() => closeAllPopups());

@@ -83,6 +83,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(R && R.an.length === 2 && R.mehr.length === 1 && !R.mehr[0].offen && R.mehr[0].namen.includes(R.an[1]) && R.jeder.includes(R.an[0]), 'Rally: Anführer offen, Mitglied zugeklappt', R && [R.an, R.mehr, R.jeder]);
   ok(R && JSON.stringify(R.kampfkraft) === JSON.stringify(R.soll), 'Rally: Gesamt = Bericht', R && [R.kampfkraft, R.soll]);
   ok(R && R.truppen.every(n => n === 2) && R.helden >= 4 && R.ausr === 8, 'Rally: Truppen, Helden, Ausrüstung', R && [R.truppen, R.helden, R.ausr]);
+  ok(R && (R.band !== 'Geplündert' || (/geplündert/.test(R.ort) && /brennt/.test(R.ort) && !/hält/.test(R.ort))), 'Niederlage geplündert: Text passt zu Band + Brand (nicht „die Stadt hält“)', R && R.ort);
   ok(R && (R.band !== 'Geplündert' || (/brennt/.test(R.brennt) && R.beute.some(z => /^−/.test(z)))), 'Niederlage: „Hauptstadt brennt“ + Geraubt als Bild + Zahl', R && [R.brennt, R.beute]);
   ok(R && R.hinweise.some(h => /Krankenhaus/.test(h)) && R.knopf.some(k => /Verwundete heilen/.test(k)), 'Niederlage: Hinweise + Knopf „Verwundete heilen“', R && [R.hinweise, R.knopf]);
   ok(R && R.w <= 390 && R.sw <= R.cw, 'Rally: nichts ragt seitlich heraus', R && [R.w, R.sw, R.cw]);
