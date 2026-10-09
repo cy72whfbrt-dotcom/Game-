@@ -148,7 +148,8 @@ function refreshOpenCombatLog() {
 function renderCombatLog() {
     battleLogPopup.classList.toggle('has-entries', combatLog.length > 0 || activeMarchesEl.querySelector('.logRow') !== null);
     if (combatLog.length === 0) {
-        combatLogListEl.innerHTML = '<div class="logEmpty">' + icon('battlelog') + 'Noch keine Einträge.</div>';
+        combatLogListEl.innerHTML = '<div class="logEmpty log-leer"><img src="bilder/bericht_leer.webp" alt="" draggable="false"><b>Noch keine Kämpfe</b><span>Greif ein Barbaren-Lager an – hier steht danach dein Kampfbericht.</span>' +
+            '<button type="button" class="btn btn--primary" data-log-lager>' + icon('attack') + '<span>Barbaren-Lager angreifen</span></button></div>';   // leer: Bild + Weg zum nächsten Lager
         return;
     }
     let T;
@@ -547,6 +548,10 @@ const kampflogUmbauen = (function () {
     return umbauen;
 })();
 combatLogListEl.addEventListener('click', e => {   // ganze Karte antippbar: Details öffnen, sonst auf der Karte zeigen
+    if (e.target.closest('[data-log-lager]')) { const t = barbNearest(); if (!t) return flashHint('Kein Lager in erforschtem Gebiet – schick zuerst Späher in den Nebel.', 3500);   // leer: zum nächsten Lager
+        closeAllPopups(); const z = Math.max(mapState.zoom, .02);
+        if (!cityView.hidden) { cityMapReturn = { zoom: z, x: t.x, y: t.y }; closeCity(); } else flyTo(t.x, t.y, { zoom: z, screenY: viewH * .2 });   // (aus der Stadt: die Karte fliegt gleich zum Lager)
+        return openBarbSheet({ kind: 'camp', id: t.id }); }
     const row = e.target.closest('.logRow');
     if (row && row.parentElement === combatLogListEl && !e.target.closest('button, a, summary, details, input, .who-link, [data-profile]')) {
         const s = row.querySelector('summary'), z = row.querySelector('[data-logzeigen]');

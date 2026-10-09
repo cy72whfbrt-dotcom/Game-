@@ -46,7 +46,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const k = document.querySelector('#shopMarkt .ev-leer [data-markt-bauen]'); o.markt = !!k && passt(k) && !!document.querySelector('#shopMarkt .ev-leer > .icon'); o.ziel = k ? k.dataset.marktBauen : '';
     o.text = k ? k.innerText.trim() : '';
     store.remove('openWaterShieldStock'); openRucksack(); await warte(300);
-    o.leer = !document.querySelector('[data-rk-schild]') && document.querySelectorAll('#rkInhalt [data-rk-kauf="schild"]').length === 3;
+    rkTab = 'schild'; renderRucksack(); o.leer = !document.querySelector('[data-rk-schild]') && !!document.querySelector('#rkInhalt .rk-leer [data-rk-shop="shield"]');
     store.set('openWaterShieldStock', JSON.stringify({ 2: 1, 8: 0, 24: 0 })); renderRucksack(); await warte(200);
     o.voll = document.querySelectorAll('[data-rk-schild]').length === 1 && !!document.querySelector('[data-rk-schild="2"]'); store.remove('openWaterShieldStock');
     openShop('markt'); await warte(200); document.querySelector('#shopMarkt [data-markt-bauen]').click();

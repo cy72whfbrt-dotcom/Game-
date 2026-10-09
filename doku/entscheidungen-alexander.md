@@ -37,7 +37,7 @@ Ausführlich: Themen-Dateien; Wortlaut und Verlauf: `archiv.md`. Spätere Entsch
 ## 5.10.
 - Gemeinsame Kämpfe: jeder für sich (eigene Helden max. 2, Werte, Schild, Verluste, Krankenhaus, Gold-Satz „A“).
 - Boss mit Rally: jeder Teilnehmer bekommt den vollen Preis. Rally-Maut: wer nicht zahlen kann, bleibt draußen (B1).
-- Schummel-Schutz: Heilen kostet Münzen, Stufen-Belohnung ab Weltrechner-Stufe, Mehrfach/Sammeln 1 Edelstein, 10-Min.-
+- Schummel-Schutz: Heilen kostet Münzen, Stufen-Belohnung ab Weltrechner-Stufe, Mehrfach 5 Edelsteine (bis 10 Ziele), Sammeln 1 Edelstein, 10-Min.-
   Sperre für Einladungen/Warnungen, Truppen-Funde ≤ 300/Tag, Schummel-Verdacht nur als Nachricht (nie bremsen).
 - Fremde Werte erst nach dem Spähen (auch Münzen der Mitspieler). Verbündete helfen echten Spielern von selbst (A1),
   auch an der Hauptstadt („alle gleich behandeln“).

@@ -494,6 +494,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .logEmpty,.empty-state{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 12px;text-align:center;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
 .empty-state .icon{width:30px;height:30px;color:var(--gold-500)}
 .logEmpty .icon{width:22px;height:22px;color:var(--gold-500)}
+.log-leer{padding:24px 16px;gap:10px} .log-leer img{width:180px;max-width:60%;height:auto;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))} .log-leer b{font:700 var(--fs-16,16px)/1.2 var(--font-display);color:var(--gold-100)} .log-leer .btn{margin-top:4px} .log-leer .btn .icon{color:inherit}
 .empty-state b{font:600 var(--fs-13)/1.2 var(--font-display);letter-spacing:.04em;color:var(--tx-2)}
 .tag{display:inline-flex;align-items:center;height:16px;padding:0 5px;margin-left:6px;border-radius:var(--r-xs);font:600 9.5px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;vertical-align:2px}
 .tag--player{color:#cfe3ff;background:rgba(63,134,216,.2);border:1px solid rgba(140,192,255,.4)}

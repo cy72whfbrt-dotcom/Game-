@@ -269,17 +269,15 @@ function hhPartnerBlk(id) {                           // sein Paar: Partner, Bon
     return '<div class="hh-blk"><h3>Paar · ' + pp.pair.name + '</h3><div class="hh-pair ki-karte' + (own && heroOwned('player', id) ? ' is-on ki-karte--an' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + pp.id + '" class="' + (own ? '' : 'is-locked') + '">' + heroImg(pp.id) + '</button></span>' +
         '<span class="hh-pair-t"><b>mit ' + o.name + '</b><small>' + o.title + (own ? '' : ' · gesperrt') + ' · zusammen +' + HERO_PAIR_BONUS + ' %</small><em>' + pp.pair.story + '</em></span></div></div>';
 }
-function hhOhneHalle() {                            // noch keine Heldenhalle: nur der Hinweis (Splitter sammeln geht schon)
-    return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
-        '<p class="hh-hint hh-ohne-halle">Baue die Heldenhalle in deiner Stadt – erst dann kannst du Helden freischalten, aufwerten und mitschicken. Splitter aus Heldenkisten, Bossen und Aufgaben sammelst du schon jetzt.</p>';
-}
-function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (liveHtml(el, !heroHalle('player') ? hhOhneHalle() : hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
+function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (!heroHalle('player')) return closeHeroHall(); if (liveHtml(el, hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
 function heroHallLive() {                            // (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu zeichnen
     const el = document.getElementById('heroHall'); if (el.hidden) return;
     const sig = JSON.stringify(loadHeroes()) + '|' + hhCur + '|' + playerLvl + '|' + cityLevelSafe('heroes') + '|' + HEROES.map(h => heroBusy('player', h.id) ? 1 : 0).join('');
     if (sig !== el._sig) { el._sig = sig; renderHeroHall(); }
 }
-function openHeroHall(id) { const el = document.getElementById('heroHall'); hhCur = id || null; el.hidden = false; renderHeroHall(); el.scrollTop = 0; }
+function openHeroHall(id) {                          // ohne gebaute Heldenhalle: gar nicht auf, nur der Hinweis (kein leeres Fenster)
+    if (!heroHalle('player')) { flashHint('Baue zuerst die Heldenhalle in der Stadt.', 2500); return; }
+    const el = document.getElementById('heroHall'); hhCur = id || null; el.hidden = false; renderHeroHall(); el.scrollTop = 0; }
 function closeHeroHall() { document.getElementById('heroHall').hidden = true; hhCur = null; if (!document.getElementById('citySheet').hidden) renderCitySheet(); }
 document.getElementById('heroHall').addEventListener('click', e => {
     const el = document.getElementById('heroHall');

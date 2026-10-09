@@ -22,6 +22,8 @@ Markt, Marsch-Plätze, `burgFair`), `Game/spiel/08a-stadt-bauen.js` (`burgZeitTa
   Späherturm, Wachturm, T1–T5-Truppenstufen.
 - Kosten = 30 % der Burg-Kosten gleicher Stufe, Zeit 15 % der Burg-Zeit (mind. 10 s, höchstens 7 Tage); Krankenhaus
   26–40 × 1,15 je Stufe. Ein Bauarbeiter, 2. Bauarbeiter kaufbar (Edelsteine).
+  Bauarbeiter nur in der Stadt seitlich als Hammer „frei/alle“ (`updateCityBuilder`), Antippen klappt die Liste auf; bei offenem Fenster weg.
+  Gebäude-Schilder am Bildrand werden ganz ins Bild geschoben.
 - Holzfäller/Steinbruch/Eisenmine: Ertrag pro Stunde, +33 % je Stufe × Landschaft der Hauptstadt × Forschung „Ertrag“ ×
   `ROH_FAKTOR`; ohne Gebäude kommt von der Burg allein ~75/Std. Rohstoffe gibt es nur aus der Stadt und Sammel-Feldern.
 - Botschaft = Bündnis-Gebäude: Verstärkungs-Platz, Rally-Größe, Bündnis-Hilfen (siehe `buendnis.md`).

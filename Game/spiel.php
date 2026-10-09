@@ -1073,6 +1073,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .logEmpty,.empty-state{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 12px;text-align:center;font:500 var(--fs-12)/1.4 var(--font-ui);color:var(--tx-3)}
 .empty-state .icon{width:30px;height:30px;color:var(--gold-500)}
 .logEmpty .icon{width:22px;height:22px;color:var(--gold-500)}
+.log-leer{padding:24px 16px;gap:10px} .log-leer img{width:180px;max-width:60%;height:auto;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))} .log-leer b{font:700 var(--fs-16,16px)/1.2 var(--font-display);color:var(--gold-100)} .log-leer .btn{margin-top:4px} .log-leer .btn .icon{color:inherit}
 .empty-state b{font:600 var(--fs-13)/1.2 var(--font-display);letter-spacing:.04em;color:var(--tx-2)}
 .tag{display:inline-flex;align-items:center;height:16px;padding:0 5px;margin-left:6px;border-radius:var(--r-xs);font:600 9.5px/1 var(--font-ui);letter-spacing:.08em;text-transform:uppercase;vertical-align:2px}
 .tag--player{color:#cfe3ff;background:rgba(63,134,216,.2);border:1px solid rgba(140,192,255,.4)}
@@ -1516,6 +1517,7 @@ main .besch-ic,.besch-ic{width:22px;height:22px;object-fit:contain} #beschInhalt
 .daily .daily-days{margin-top:0}
 .daily-week{display:grid;gap:4px} .daily-week > div{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line-1);border-radius:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
 .daily-week b{min-width:42px;color:var(--tx-3);font-weight:600} .daily-week span{flex:1} .daily-week .icon{width:14px;height:14px;color:var(--gold-400)}
+.daily-week .daily-bk{flex:1;justify-content:flex-start;--bk:34px;gap:4px} .daily-week .bk{flex:none}
 .daily-week .is-today{border-color:var(--gold-300);color:var(--tx-1)} .daily-week .is-today b{color:var(--gold-100)} .daily-week .is-done{opacity:.55}
 .quests{display:flex;flex-direction:column;gap:8px}
 .quest{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
@@ -1593,9 +1595,15 @@ main .besch-ic,.besch-ic{width:22px;height:22px;object-fit:contain} #beschInhalt
 .city-head{position:absolute;left:0;right:0;top:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:calc(var(--safe-t) + 10px) 12px 10px;
   background:linear-gradient(180deg,rgba(6,8,12,.92),rgba(6,8,12,.55) 70%,transparent)}
 .city-title{flex:1;min-width:0}
-@media (max-width:599px){.city-builder{flex-basis:100%;justify-content:center}.cb-slot{padding:6px 9px}}
 .city-title h2{margin:2px 0 0;font:700 var(--fs-18,18px)/1.1 var(--font-display);color:var(--gold-100);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.city-builder{order:3;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.city-builder{position:absolute;left:10px;top:calc(100% + 6px);display:flex;align-items:flex-start;gap:6px;z-index:2}   /* Bauarbeiter seitlich unter dem Kopf: Hammer, aufgeklappt die Liste */
+body.has-panel .city-builder,.city:has(#citySheet:not([hidden])) .city-builder,body:has(#heroHall:not([hidden])) .city-builder{display:none}   /* nie über einem Fenster */
+.cb-knopf{position:relative;width:48px;height:48px;border-radius:50%;border:2px solid var(--gold-300);background:rgba(10,10,14,.8);display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
+.cb-knopf>svg.icon{width:32px;height:32px;background:url(bilder/ui_sym_bauarbeiter.webp) center/contain no-repeat}
+.cb-knopf>svg.icon>use{display:none}
+.cb-knopf b{position:absolute;right:-6px;bottom:-4px;min-width:26px;padding:1px 4px;border-radius:var(--r-pill);background:#3a2a10;border:1px solid var(--gold-300);font:700 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-2)}
+.cb-knopf.is-frei b{background:#1f5a2a;color:#fff}
+.cb-liste{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .cb-slot{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line-2);border-radius:var(--r-pill);background:rgba(10,10,14,.75);
   font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-2);white-space:nowrap;min-width:0}
 button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
@@ -1877,6 +1885,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim 
 /* Aufgaben, Abholfach, Events, Pass: kleine Kacheln in der Zeile */
 .quest-rew:has(.bk){padding:0;border:0;background:none;gap:3px} .quest-rew .bk{--bk:38px}
 .inbox-row .bk-raster{margin-top:4px}
+#xpNext{display:flex;align-items:center;gap:8px;flex-wrap:wrap} .xp-next-bk{justify-content:flex-start;--bk:44px}
 .daily-row .bk-raster{justify-content:flex-start;margin-top:4px}
 .kl-rss .bk-raster{--bk:46px;justify-content:flex-start;margin:4px 0 2px} .kl-rss.bk-an > .kl-rss-zeilen{display:none}
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}
@@ -1886,7 +1895,14 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim 
 .rk-inhalt{display:grid;gap:8px} .rk-liste{display:grid;gap:6px}
 .rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
 .rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}
-.rk-knopf{flex:none;min-width:96px;min-height:44px;gap:6px} .rk-knopf[data-rk-kauf]{min-width:132px} .rk-knopf .icon{width:14px;height:14px} .rk-preis{font:700 13px/1 var(--font-ui)}   /* „Kaufen ◆ 80“ wie im Shop */
+.rk-knopf{flex:none;min-width:96px;min-height:44px;gap:6px}
+.rk-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px} .rk-tabs button{min-width:0;overflow:hidden;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:0 4px;font-size:12px} .rk-tabs .icon{width:14px;height:14px;flex:none} .rk-tabs small{color:var(--gold-200);font-size:10px}
+@media (max-width:480px){.rk-tabs .icon{display:none} .rk-tabs button{padding:0 2px;font-size:11px}}
+.rk-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;--bk:56px}   /* 4–5 Kacheln je Reihe */
+.rk-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;border:1px solid transparent;border-radius:10px;background:none;cursor:pointer;min-width:0}
+.rk-item small{font:600 10px/1.15 var(--font-ui);color:var(--tx-2);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-item.is-on{border-color:var(--gold-300);background:color-mix(in srgb,var(--gold-300) 14%,transparent)}
+.rk-leer .btn{margin-top:6px}
 @media (max-width:899px) and (min-height:501px){ #rucksackPopup .pbody{gap:8px} .rk-fach{--bk:46px;padding:4px 8px} .rk-liste{gap:4px} }   /* Handy: enger, damit die Splitter-Reihe ganz im Fenster steht */
 .rk-splitter{--bk:56px;justify-content:flex-start;gap:8px} .rk-splitter .bk-mit{padding:0;border:0;background:none;cursor:pointer;min-height:44px}
 
@@ -3157,7 +3173,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <button id="cityBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-castle"/></svg></span><span class="act-t">Stadt betreten</span><span class="act-s">Hauptstadt ausbauen</span></button>
       <button id="upgradeBtn" class="act act--primary" type="button"><span class="act-ic"><svg class="icon"><use href="#i-upgrade"/></svg></span><span class="act-t">Aufwerten</span><span class="act-s" id="upgradeCostLabel">–</span></button>
       <button id="sendBtn" class="act" type="button"><span class="act-ic act-ic--send"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Senden</span><span class="act-s">Verstärken</span></button>
-      <button id="multiAttackBtn" class="act" type="button"><span class="act-ic act-ic--attack"><svg class="icon"><use href="#i-multiattack"/></svg></span><span class="act-t">Mehrfach</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="MULTI_ATTACK_GEM_COST">1</b></span></button>
+      <button id="multiAttackBtn" class="act" type="button"><span class="act-ic act-ic--attack"><svg class="icon"><use href="#i-multiattack"/></svg></span><span class="act-t">Mehrfach</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="MULTI_ATTACK_GEM_COST">5</b></span></button>
       <button id="recallBtn" class="act" type="button"><span class="act-ic act-ic--recall"><svg class="icon"><use href="#i-recall"/></svg></span><span class="act-t">Sammeln</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="RECALL_GEM_COST">1</b></span></button>
     </div>
   </div>

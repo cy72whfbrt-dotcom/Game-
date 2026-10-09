@@ -95,10 +95,15 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       cityOpenId = null; document.getElementById('citySheet').hidden = true; updateCityBuilder();
       flashHint('Der Drache ist erschienen! Urdrache Vharak kreist über dem Thron – nur alle zusammen können ihn besiegen.', 5000, true); await warte(400);
       const hb = document.getElementById('hint').getBoundingClientRect(), kb = document.getElementById('cityBuilder').getBoundingClientRect();
-      const hinweis = { frei: hb.top >= kb.bottom + 4, hint: Math.round(hb.top), knoepfe: Math.round(kb.bottom) };
+      const hinweis = { frei: hb.top >= kb.bottom + 4 || hb.left >= kb.right + 4 || hb.right <= kb.left - 4, hint: Math.round(hb.top), knoepfe: Math.round(kb.bottom) };
+      const kn = document.querySelector('#cityBuilder [data-cb-auf]'), bau = { zahl: kn && kn.textContent, liste: !!document.querySelector('#cityBuilder .cb-liste') };
+      kn.click(); bau.auf = !!document.querySelector('#cityBuilder .cb-liste .cb-slot'); kn.click();
+      cityOpenId = 'heroes'; renderCitySheet(); bau.zuMitFenster = document.getElementById('cityBuilder').getBoundingClientRect().height === 0;
+      cityOpenId = null; document.getElementById('citySheet').hidden = true;
       flashHint('', 1); cityOpenId = 'heroes'; renderCitySheet(); await warte(200);
-      return { kurz, krank, reiter, tabsZu, prozent, hinweis };
+      return { kurz, krank, reiter, tabsZu, prozent, hinweis, bau };
     });
+    ok(/^\d\/[12]$/.test(c.bau.zahl) && !c.bau.liste && c.bau.auf && c.bau.zuMitFenster, art + ': Bauarbeiter seitlich als Hammer „frei/alle“, Antippen klappt auf, bei offenem Fenster weg', c.bau);
     ok(c.kurz.join('|') === '1 T|1 T 1 m|1 T 1 h 1 m 1 s|0 s', art + ': Bauzeit kompakt ohne Nullen', c.kurz);
     ok(/Nächste Stufe: 25\u00a0%/.test(c.krank), art + ': Krankenhaus „Nächste Stufe“ mit Forschung (15 + 10 %)', c.krank);
     ok(c.reiter && c.tabsZu, art + ': Heldenhalle ungebaut ohne Reiter', c);

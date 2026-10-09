@@ -23,6 +23,7 @@
 /* Aufgaben, Abholfach, Events, Pass: kleine Kacheln in der Zeile */
 .quest-rew:has(.bk){padding:0;border:0;background:none;gap:3px} .quest-rew .bk{--bk:38px}
 .inbox-row .bk-raster{margin-top:4px}
+#xpNext{display:flex;align-items:center;gap:8px;flex-wrap:wrap} .xp-next-bk{justify-content:flex-start;--bk:44px}
 .daily-row .bk-raster{justify-content:flex-start;margin-top:4px}
 .kl-rss .bk-raster{--bk:46px;justify-content:flex-start;margin:4px 0 2px} .kl-rss.bk-an > .kl-rss-zeilen{display:none}
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}
@@ -32,7 +33,14 @@
 .rk-inhalt{display:grid;gap:8px} .rk-liste{display:grid;gap:6px}
 .rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
 .rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}
-.rk-knopf{flex:none;min-width:96px;min-height:44px;gap:6px} .rk-knopf[data-rk-kauf]{min-width:132px} .rk-knopf .icon{width:14px;height:14px} .rk-preis{font:700 13px/1 var(--font-ui)}   /* „Kaufen ◆ 80“ wie im Shop */
+.rk-knopf{flex:none;min-width:96px;min-height:44px;gap:6px}
+.rk-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px} .rk-tabs button{min-width:0;overflow:hidden;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:0 4px;font-size:12px} .rk-tabs .icon{width:14px;height:14px;flex:none} .rk-tabs small{color:var(--gold-200);font-size:10px}
+@media (max-width:480px){.rk-tabs .icon{display:none} .rk-tabs button{padding:0 2px;font-size:11px}}
+.rk-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;--bk:56px}   /* 4–5 Kacheln je Reihe */
+.rk-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;border:1px solid transparent;border-radius:10px;background:none;cursor:pointer;min-width:0}
+.rk-item small{font:600 10px/1.15 var(--font-ui);color:var(--tx-2);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-item.is-on{border-color:var(--gold-300);background:color-mix(in srgb,var(--gold-300) 14%,transparent)}
+.rk-leer .btn{margin-top:6px}
 @media (max-width:899px) and (min-height:501px){ #rucksackPopup .pbody{gap:8px} .rk-fach{--bk:46px;padding:4px 8px} .rk-liste{gap:4px} }   /* Handy: enger, damit die Splitter-Reihe ganz im Fenster steht */
 .rk-splitter{--bk:56px;justify-content:flex-start;gap:8px} .rk-splitter .bk-mit{padding:0;border:0;background:none;cursor:pointer;min-height:44px}
 

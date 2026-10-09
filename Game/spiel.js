@@ -5553,8 +5553,7 @@ function renderProfile(live) {                  // live = the per-second refresh
     setText(document.getElementById('xpNums'), fmtNum(playerXp) + ' / ' + fmtNum(xpNeeded) + ' XP');
     document.getElementById('xpFill').style.width = Math.min(100, Math.round(playerXp / xpNeeded * 100)) + '%';
     const nx = playerLvl + 1, nM = levelRewardCoins(nx), nT = levelRewardTroops(nx), nG = levelRewardGems(nx);   // Belohnung beim nächsten Aufstieg
-    liveHtml(document.getElementById('xpNext'), 'Belohnung für Stufe ' + nx + ': <b>+' + fmtCompact(nM) + '</b> ' + (nM === 1 ? 'Münze' : 'Münzen') + ', <b>+' + fmtCompact(nT) + '</b> ' + (nT === 1 ? 'Truppe' : 'Truppen') +
-        (nG ? ', <b>+' + nG + '</b> ' + (nG === 1 ? 'Edelstein' : 'Edelsteine') : ''));
+    liveHtml(document.getElementById('xpNext'), '<span class="xp-next-t">Belohnung für Stufe ' + nx + '</span>' + beuteRaster([{ a: 'coins', n: nM }, { a: 'tr', n: nT }, { a: 'gems', n: nG }], 'xp-next-bk'));   // Bild + Zahl
 
     setText(document.getElementById('kBases'), fmtNum(ownedIslands.size));   // (Truppen, Münzen, Edelsteine stehen oben im HUD)
     const hp = hourProduction('player');                 // alle Basen zusammen (mit Tempeln und Boni), pro Stunde – genau das kommt an
@@ -6459,7 +6458,8 @@ function refreshOpenCombatLog() {
 function renderCombatLog() {
     battleLogPopup.classList.toggle('has-entries', combatLog.length > 0 || activeMarchesEl.querySelector('.logRow') !== null);
     if (combatLog.length === 0) {
-        combatLogListEl.innerHTML = '<div class="logEmpty">' + icon('battlelog') + 'Noch keine Einträge.</div>';
+        combatLogListEl.innerHTML = '<div class="logEmpty log-leer"><img src="bilder/bericht_leer.webp" alt="" draggable="false"><b>Noch keine Kämpfe</b><span>Greif ein Barbaren-Lager an – hier steht danach dein Kampfbericht.</span>' +
+            '<button type="button" class="btn btn--primary" data-log-lager>' + icon('attack') + '<span>Barbaren-Lager angreifen</span></button></div>';   // leer: Bild + Weg zum nächsten Lager
         return;
     }
     let T;
@@ -6858,6 +6858,10 @@ const kampflogUmbauen = (function () {
     return umbauen;
 })();
 combatLogListEl.addEventListener('click', e => {   // ganze Karte antippbar: Details öffnen, sonst auf der Karte zeigen
+    if (e.target.closest('[data-log-lager]')) { const t = barbNearest(); if (!t) return flashHint('Kein Lager in erforschtem Gebiet – schick zuerst Späher in den Nebel.', 3500);   // leer: zum nächsten Lager
+        closeAllPopups(); const z = Math.max(mapState.zoom, .02);
+        if (!cityView.hidden) { cityMapReturn = { zoom: z, x: t.x, y: t.y }; closeCity(); } else flyTo(t.x, t.y, { zoom: z, screenY: viewH * .2 });   // (aus der Stadt: die Karte fliegt gleich zum Lager)
+        return openBarbSheet({ kind: 'camp', id: t.id }); }
     const row = e.target.closest('.logRow');
     if (row && row.parentElement === combatLogListEl && !e.target.closest('button, a, summary, details, input, .who-link, [data-profile]')) {
         const s = row.querySelector('summary'), z = row.querySelector('[data-logzeigen]');
@@ -8030,29 +8034,28 @@ function teleImRucksack() { return teleVorrat() + (tpGratis('player') ? 1 : 0); 
 function rkFach(b, name, txt, knopf) {               // eine Zeile: Kachel · Name + Text · Knopf
     return '<div class="rk-fach ki-karte">' + beuteKachel(b) + '<span class="rk-txt"><b>' + name + '</b><small>' + txt + '</small></span>' + knopf + '</div>';
 }
-function renderRucksack() {
+const RK_TABS = [['tempo', 'Tempo', 'hourglass', 'tempo'], ['schild', 'Schilde', 'shield', 'shield'], ['schl', 'Schlüssel', 'gem', 'gems'], ['sonst', 'Sonstiges', 'crate', 'gems']];   // [Reiter, Name, Symbol, Shop-Reiter]
+let rkTab = null, rkWahl = null;                   // Reiter (null: beim ersten Öffnen der erste mit Inhalt, dann bleibt er) und angetippte Kachel
+function rkSachen() {                              // je Reiter nur, was man besitzt: { k: Schlüssel, b: Kachel, name, txt, knopf }
+    const st = shieldStock(), nt = teleImRucksack(), knopf = (attr, t) => '<button type="button" class="btn btn--primary rk-knopf" ' + attr + '><span>' + t + '</span></button>';
+    return {
+        tempo: BESCH_DAUERN.filter(d => besch[d] > 0).map(d => ({ k: 'b' + d, b: { a: 'besch', n: besch[d], dauer: d }, name: 'Beschleuniger ' + beschText(d), txt: besch[d] + '× · beim Bauen und Forschen in der Stadt', knopf: knopf('data-rk-stadt', 'Zur Stadt') })),
+        schild: [2, 8, 24].filter(n => st[n] > 0).map(n => ({ k: 's' + n, b: { a: 'schild', n }, name: 'Schild ' + n + ' Std.', txt: st[n] + '× · die Zeit kommt zum laufenden Schild dazu', knopf: knopf('data-rk-schild="' + n + '"', 'Einsetzen'), n: st[n] })),
+        schl: [[1, schluessel1, 'Schlüssel', 'normale'], [2, schluessel2, 'Epischer Schlüssel', 'epische']].filter(x => x[1] > 0).map(([i, n, name, art]) => ({ k: 'k' + i, b: { a: 'schluessel' + i, n }, name, txt: n + '× · öffnet ' + art + ' Kisten', knopf: knopf('data-rk-shop="gems"', 'Kiste öffnen') })),
+        sonst: [].concat(nt ? [{ k: 'tele', b: { a: 'tele', n: nt }, name: 'Teleporter', txt: nt + '× im Rucksack' + (tpGratis('player') ? ' (1 gratis für neue Spieler)' : '') + ' · Hauptstadt umziehen', knopf: knopf('data-rk-tele', 'Benutzen') }] : [],
+            eventMuenzen > 0 ? [{ k: 'ev', b: { a: 'eventMuenzen', n: eventMuenzen }, name: 'Event-Münzen', txt: fmtNum(eventMuenzen) + ' · für den Event-Shop', knopf: knopf('data-rk-shop="ev"', 'Event-Shop') }] : [],
+            HEROES.map(x => [x, heroSt('player', x.id)]).filter(([, h]) => h && h.sh > 0).map(([x, h]) => ({ k: 'h' + x.id, b: { a: 'sh', n: h.sh, held: x.id }, name: 'Splitter ' + x.name, txt: h.sh + ' Splitter · für ' + escapeHtml(x.name), knopf: knopf('data-rk-held="' + x.id + '"', 'Zum Helden') })))
+    };
+}
+function renderRucksack() {                         // Raster aus Kacheln je Reiter (wie RoK): Antippen → unten „Benutzen“; leer → „Im Shop holen“
     if (!isPanelOpen(rucksackPopup)) return;
-    const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis(), st = shieldStock(), nt = teleImRucksack(), gratis = tpGratis('player');
+    const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis(), S = rkSachen();
+    const tab = rkTab = rkTab || (RK_TABS.find(t => S[t[0]].length) || RK_TABS[1])[0], L = S[tab], w = L.find(x => x.k === rkWahl) || L[0], def = RK_TABS.find(t => t[0] === tab);
     liveHtml(document.getElementById('rkSchildStand'), icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
-    const kaufen = (was, preis) => '<button type="button" class="btn btn--secondary rk-knopf" data-rk-kauf="' + was + '" aria-label="Kaufen für ' + fmtNum(preis) + ' Edelsteine"><span>Kaufen</span>' + icon('gem') + '<b class="rk-preis">' + fmtNum(preis) + '</b></button>';   // Preis wie im Shop
-    let h = '<div class="sect"><h4>Friedensschilde</h4><span class="sect-aside">Zeit kommt dazu</span></div><div class="rk-liste">' +
-        [2, 8, 24].map(n => rkFach({ a: 'schild', n }, 'Schild ' + n + ' Std.', st[n] + '× im Rucksack',
-            st[n] ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-schild="' + n + '"><span>Einsetzen</span></button>' : kaufen('schild', SHIELD_PRICES[n]))).join('') + '</div>';
-    h += '<div class="sect"><h4>Teleporter</h4><span class="sect-aside">Hauptstadt umziehen</span></div><div class="rk-liste">' +
-        rkFach({ a: 'tele', n: nt }, 'Teleporter', nt + '× im Rucksack' + (gratis ? ' (1 gratis für neue Spieler)' : ''),
-            nt ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-tele><span>Benutzen</span></button>' : kaufen('tele', TP_GEMS)) + '</div>';
-    h += '<div class="sect"><h4>Schlüssel &amp; Event-Münzen</h4><span class="sect-aside">Kisten · Event-Shop</span></div><div class="rk-liste">' +
-        rkFach({ a: 'schluessel1', n: schluessel1 }, 'Schlüssel', schluessel1 + '× · öffnet normale Kisten', '<button type="button" class="btn btn--primary rk-knopf" data-rk-shop="gems"><span>Kisten</span></button>') +
-        rkFach({ a: 'schluessel2', n: schluessel2 }, 'Epischer Schlüssel', schluessel2 + '× · öffnet epische Kisten', '<button type="button" class="btn btn--primary rk-knopf" data-rk-shop="gems"><span>Kisten</span></button>') +
-        rkFach({ a: 'eventMuenzen', n: eventMuenzen }, 'Event-Münzen', fmtNum(eventMuenzen) + ' · für den Event-Shop', '<button type="button" class="btn btn--secondary rk-knopf" data-rk-shop="ev"><span>Event-Shop</span></button>') + '</div>';
-    const bda = BESCH_DAUERN.filter(d => besch[d] > 0);
-    h += '<div class="sect"><h4>Beschleuniger</h4><span class="sect-aside">beim Bauen und Forschen</span></div>' + (bda.length
-        ? '<div class="bk-raster rk-splitter">' + bda.map(d => '<span class="bk-mit">' + beuteKachel({ a: 'besch', n: besch[d], dauer: d }) + '<small>' + beschText(d) + '</small></span>').join('') + '</div>'
-        : '<div class="empty-state lb-leer">' + icon('hourglass') + '<span><b>Keine Beschleuniger</b>Es gibt sie bei Events und im Shop (Tempo, Event).</span></div>');
-    const helden = HEROES.map(x => [x, heroSt('player', x.id)]).filter(([, s]) => s && s.sh > 0);
-    h += '<div class="sect"><h4>Helden-Splitter</h4><span class="sect-aside">Tipp → Held</span></div>' + (helden.length
-        ? '<div class="bk-raster rk-splitter">' + helden.map(([x, s]) => '<button type="button" class="bk-mit" data-rk-held="' + x.id + '" aria-label="' + escapeHtml(x.name) + ' öffnen">' + beuteKachel({ a: 'sh', n: s.sh, held: x.id }) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>'
-        : '<div class="empty-state lb-leer">' + icon('star') + '<span><b>Keine Splitter</b>Splitter gibt es aus Heldenkisten, Aufgaben und Events.</span></div>');
+    let h = '<div class="seg rk-tabs">' + RK_TABS.map(([k, t, ic]) => '<button type="button" data-rk-tab="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + icon(ic) + '<span>' + t + '</span>' + (S[k].length ? '<small>' + S[k].length + '</small>' : '') + '</button>').join('') + '</div>';
+    h += L.length ? '<div class="rk-raster">' + L.map(x => '<button type="button" class="rk-item' + (x === w ? ' is-on' : '') + '" data-rk-wahl="' + x.k + '" aria-label="' + escapeHtml(x.name) + '">' + beuteKachel(x.b) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>' +
+            '<div class="rk-liste">' + rkFach(w.b, escapeHtml(w.name), w.txt, w.knopf) + '</div>'
+        : '<div class="empty-state lb-leer rk-leer">' + icon(def[2]) + '<span><b>Nichts im Rucksack</b>Hol dir ' + def[1] + ' bei Events oder im Shop.</span><button type="button" class="btn btn--secondary rk-knopf" data-rk-shop="' + def[3] + '"><span>Im Shop holen</span></button></div>';
     liveHtml(document.getElementById('rkInhalt'), h);
 }
 function openRucksack() { closeAllPopups(); openPanel(rucksackPopup); renderRucksack(); }
@@ -8068,7 +8071,9 @@ rucksackPopup.addEventListener('click', e => {
     if (e.target.closest('[data-rk-tele]')) { if (!teleImRucksack()) return;
         closeAllPopups(); if (!cityView.hidden) closeCity(); recenterOnHome(true);
         flashHint('Tippe auf eine freie Stelle der Karte, dann „Teleportieren“ – das kostet 1 Teleporter.', 5000); return; }
-    const k = e.target.closest('[data-rk-kauf]'); if (k) { openShop('shield'); return; }
+    const t = e.target.closest('[data-rk-tab]'); if (t) { rkTab = t.dataset.rkTab; rkWahl = null; return renderRucksack(); }
+    const wa = e.target.closest('[data-rk-wahl]'); if (wa) { rkWahl = wa.dataset.rkWahl; return renderRucksack(); }
+    if (e.target.closest('[data-rk-stadt]')) { closeAllPopups(); return openCity(); }
     const rs = e.target.closest('[data-rk-shop]'); if (rs) { openShop(rs.dataset.rkShop); return; }
     const hd = e.target.closest('[data-rk-held]'); if (hd) { closePanel(rucksackPopup); openHeroHall(hd.dataset.rkHeld); }
 });
@@ -9471,15 +9476,17 @@ function closeCity() {
         fertig(); }, 650);
     return true;
 }
-let cityB2Armed = 0;                              // the buy button asks once more before 500 gems go
-function updateCityBuilder() {
-    const c = loadCity(), el = document.getElementById('cityBuilder'), now = Date.now();
-    liveHtml(el, [0, 1].map(i => { const b = c.builds[i];          // (jede Sekunde: neu geschrieben wird nur, was sich ändert – die Restzeit zählt von selbst)
+let cityB2Armed = 0, cityBauAuf = false;        // the buy button asks once more before 500 gems go; cityBauAuf: Bauarbeiter-Liste aufgeklappt
+function updateCityBuilder() {                   // seitlich in der Stadt: Hammer mit „frei/alle“, Antippen klappt die Bauarbeiter auf (wie RoK)
+    const c = loadCity(), el = document.getElementById('cityBuilder'), now = Date.now(), alle = c.builder2 ? 2 : 1;
+    const frei = Math.max(0, alle - c.builds.length);
+    liveHtml(el, '<button type="button" class="cb-knopf' + (frei ? ' is-frei' : '') + '" data-cb-auf aria-label="Bauarbeiter">' + icon('upgrade') + '<b>' + frei + '/' + alle + '</b></button>' +
+        (cityBauAuf ? '<div class="cb-liste">' + [0, 1].map(i => { const b = c.builds[i];          // (jede Sekunde: neu geschrieben wird nur, was sich ändert – die Restzeit zählt von selbst)
         if (b) return '<button type="button" class="cb-slot is-busy" data-cb-open="' + b.id + '">' + icon('hourglass') + '<span>' + cityDef(b.id).name + '</span><b>' + uhrHtml(b.endsAt) + '</b></button>';
         if (i === 0 || c.builder2) return '<span class="cb-slot">' + icon('check') + '<span>' + (c.builder2 ? (i + 1) + '. Bauarbeiter frei' : 'Bauarbeiter frei') + '</span></span>';
         return '<button type="button" class="cb-slot cb-buy' + (cityB2Armed > now ? ' is-armed' : '') + '" data-cb-buy>' + icon('plus') + '<span>' + (cityB2Armed > now ? 'Wirklich kaufen?' : '2. Bauarbeiter') + '</span><b>' + icon('gem') + CITY_BUILDER2_GEMS + '</b></button>';
-    }).join(''));
-    stadtKopf();   // (zwei Zeilen Bauarbeiter: der Hinweis rückt mit)
+    }).join('') + '</div>' : ''));
+    stadtKopf();   // (aufgeklappt: der Hinweis rückt darunter)
 }
 function cityBuyBuilder2() {
     const c = loadCity(); if (c.builder2) return;
@@ -9491,6 +9498,7 @@ function cityBuyBuilder2() {
     updateCityBuilder(); if (cityOpenId) renderCitySheet();
 }
 document.getElementById('cityBuilder').addEventListener('click', e => {
+    if (e.target.closest('[data-cb-auf]')) { cityBauAuf = !cityBauAuf; return updateCityBuilder(); }
     if (e.target.closest('[data-cb-buy]')) return cityBuyBuilder2();
     const o = e.target.closest('[data-cb-open]'); if (o) { cityOpenId = o.dataset.cbOpen === 'keep' ? '_keep' : o.dataset.cbOpen; cityPage = 'bau'; cityFocus(cityOpenId); renderCitySheet(); }   // opens that building's sheet (die Burg: ihr Fenster)
 });
@@ -9973,17 +9981,15 @@ function hhPartnerBlk(id) {                           // sein Paar: Partner, Bon
     return '<div class="hh-blk"><h3>Paar · ' + pp.pair.name + '</h3><div class="hh-pair ki-karte' + (own && heroOwned('player', id) ? ' is-on ki-karte--an' : '') + '"><span class="hh-pair-pics"><button type="button" data-hh="' + pp.id + '" class="' + (own ? '' : 'is-locked') + '">' + heroImg(pp.id) + '</button></span>' +
         '<span class="hh-pair-t"><b>mit ' + o.name + '</b><small>' + o.title + (own ? '' : ' · gesperrt') + ' · zusammen +' + HERO_PAIR_BONUS + ' %</small><em>' + pp.pair.story + '</em></span></div></div>';
 }
-function hhOhneHalle() {                            // noch keine Heldenhalle: nur der Hinweis (Splitter sammeln geht schon)
-    return '<div class="hh-head"><div class="emblem emblem--gold">' + icon('profile') + '</div><div class="phead-text"><div class="overline">Heldenhalle</div><h2>Helden</h2></div><button class="btn-x" type="button" data-hh-close aria-label="Schließen">' + icon('close') + '</button></div>' +
-        '<p class="hh-hint hh-ohne-halle">Baue die Heldenhalle in deiner Stadt – erst dann kannst du Helden freischalten, aufwerten und mitschicken. Splitter aus Heldenkisten, Bossen und Aufgaben sammelst du schon jetzt.</p>';
-}
-function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (liveHtml(el, !heroHalle('player') ? hhOhneHalle() : hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
+function renderHeroHall() { const el = document.getElementById('heroHall'); if (el.hidden) return; const top = el.scrollTop; if (!heroHalle('player')) return closeHeroHall(); if (liveHtml(el, hhCur ? hhHero(hhCur) : hhGrid())) el.scrollTop = top; }
 function heroHallLive() {                            // (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu zeichnen
     const el = document.getElementById('heroHall'); if (el.hidden) return;
     const sig = JSON.stringify(loadHeroes()) + '|' + hhCur + '|' + playerLvl + '|' + cityLevelSafe('heroes') + '|' + HEROES.map(h => heroBusy('player', h.id) ? 1 : 0).join('');
     if (sig !== el._sig) { el._sig = sig; renderHeroHall(); }
 }
-function openHeroHall(id) { const el = document.getElementById('heroHall'); hhCur = id || null; el.hidden = false; renderHeroHall(); el.scrollTop = 0; }
+function openHeroHall(id) {                          // ohne gebaute Heldenhalle: gar nicht auf, nur der Hinweis (kein leeres Fenster)
+    if (!heroHalle('player')) { flashHint('Baue zuerst die Heldenhalle in der Stadt.', 2500); return; }
+    const el = document.getElementById('heroHall'); hhCur = id || null; el.hidden = false; renderHeroHall(); el.scrollTop = 0; }
 function closeHeroHall() { document.getElementById('heroHall').hidden = true; hhCur = null; if (!document.getElementById('citySheet').hidden) renderCitySheet(); }
 document.getElementById('heroHall').addEventListener('click', e => {
     const el = document.getElementById('heroHall');
@@ -10148,9 +10154,9 @@ function stadtLeiste(an) {
     const b = document.getElementById('cityNavBtn'), l = b.querySelector('.nav-l'), u = b.querySelector('use');
     if (l) l.textContent = an ? 'Karte' : 'Stadt'; if (u) u.setAttribute('href', an ? '#i-flag' : '#i-castle'); b.classList.toggle('active', an);
 }
-function stadtKopf() {                          // Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
+function stadtKopf() {                          // Unterkante von Kopf und Bauarbeiter-Hammer → der Hinweis (Handy) liegt darunter
     if (!document.body.classList.contains('in-stadt')) return;
-    const u = Math.round(document.querySelector('.city-head').getBoundingClientRect().bottom);
+    const kb = document.getElementById('cityBuilder').getBoundingClientRect(), u = Math.round(Math.max(document.querySelector('.city-head').getBoundingClientRect().bottom, kb.height ? kb.bottom : 0));   // (der Bauarbeiter-Hammer zählt mit)
     if (u > 0 && u !== stadtKopfU) { stadtKopfU = u; document.body.style.setProperty('--stadt-kopf', u + 'px'); }
 }
 var stadtKopfU = 0;
@@ -10479,6 +10485,8 @@ function cityFrame(now) {
         const trifft = (p, q) => Math.abs(p.x - q.x) < (p.w + q.w) / 2 && Math.abs(p.y - q.y) < 40;
         for (const p of schilder) if (p.y + 18 > lr.top - 6 && p.x + p.w / 2 > lr.left && p.x - p.w / 2 < lr.right) {
             p.y = lr.top - 6 - 18; while (schilder.some(q => q !== p && trifft(p, q))) p.y -= 40; } }   // (nicht auf ein anderes Schild)
+    for (const p of schilder) { const w = citySchildBreite(cityCtx, p.s)[0];   // halb am Rand: ganz ins Bild (nicht „HELD…“)
+        if (p.x + w / 2 > 0 && p.x - w / 2 < W) p.x = Math.min(Math.max(p.x, w / 2 + 6), W - w / 2 - 6); }
     if (im) for (const p of schilder) {                                      // die Schilder zuletzt, über allem
         const an = cityOpenId === p.id || cityRingId === p.id, q = citySchild(g, p.s, p.x, p.y, an, now);
         if (q.x + q.w > 0 && q.x < W && q.y + q.h > 0 && q.y < H) cityNamen.push({ id: p.id, ...q });
@@ -12101,10 +12109,10 @@ function hideAllButtons() {
 }
 
 // Multi-Angriff: pick one of YOUR OWN bases, then tap any number of
-// enemy/neutral bases on the map to select them as targets, then
+// enemy/neutral bases on the map to select them as targets (bis zu 10), then
 // confirm once to launch all of them at the same time (troops
-// split evenly across the chosen targets). Costs 1 gem per use.
-const MULTI_ATTACK_GEM_COST = 1;
+// split evenly across the chosen targets). Kostet 5 Edelsteine je Einsatz.
+const MULTI_ATTACK_GEM_COST = 5, MULTI_ATTACK_MAX = 10;
 // "Truppen sammeln": for 1 gem, pulls every OTHER owned base within
 // this radius (world units) that still has troops back home to the
 // tapped base in one go - each one marches individually via the
@@ -12118,7 +12126,7 @@ let multiAttackHero = null, multiAttackHero2 = null;                            
 
 function updateMultiAttackBar() {
     const n = multiAttackTargets.length, go = Math.floor((islandTroops[multiAttackSourceId] || 0) * multiAttackShare);
-    setText(multiAttackLabel, n ? n + (n === 1 ? ' Ziel' : ' Ziele') + ' · je ' + fmtCompact(Math.floor(go / n)) + ' Truppen' : '0 Ziele ausgewählt · Basen antippen');   // (live: liveTick, die Truppen wachsen)
+    setText(multiAttackLabel, n ? n + (n === 1 ? ' Ziel' : ' Ziele') + ' (höchstens ' + MULTI_ATTACK_MAX + ') · je ' + fmtCompact(Math.floor(go / n)) + ' Truppen' : '0 Ziele ausgewählt · bis zu ' + MULTI_ATTACK_MAX + ' Basen antippen');   // (live: liveTick, die Truppen wachsen)
     for (const b of document.querySelectorAll('#multiAttackShare button')) b.classList.toggle('on', parseFloat(b.dataset.f) === multiAttackShare);
     const hb = document.getElementById('multiAttackHero');
     if (multiAttackHero && (!heroOwned('player', multiAttackHero) || heroBusy('player', multiAttackHero))) multiAttackHero = null;
@@ -13180,6 +13188,7 @@ function handleTap(screenX, screenY) {
             return;
         }
         const idx = multiAttackTargets.indexOf(island.id);
+        if (idx === -1 && multiAttackTargets.length >= MULTI_ATTACK_MAX) { flashHint('Höchstens ' + MULTI_ATTACK_MAX + ' Ziele auf einmal.', 2500); return; }
         if (idx === -1 && baseShieldedFor(island.id, 'player')) { flashHint(shieldBlockText(islandOwnerOf(island.id)), 3500); return; }
         if (idx === -1) {                                                    // a shut gate on the way: say so right away, not after "Angriffe starten"
             const hop = lastHop(source.landmassId, island.landmassId, 'player'), tl = tollFor(hop[0], hop[1], 1, 'player', island.id);
@@ -14588,16 +14597,17 @@ if (window.WELT) {
     const truppenVon = (id, n) => zahlOk(n) ? Math.floor(Math.min(n, islandTroops[id] || 0)) : 0;   // nie mehr, als die Basis hat
     // Wege wie auf dem Handy (dort prüft das Spiel sie in den Fenstern): Brücken, Pässe, fremde Tore – nie mehr nur „vertrauen“
     const wegOk = (who, vonLm, nachLm) => vonLm === nachLm || canReach(vonLm, nachLm, who);
-    // Mehrfachangriff / „Truppen sammeln“ (grp): zusammen EIN Marsch-Platz – kostet 1 Gem (wie am Handy, vorher hier gratis).
+    // Mehrfachangriff (höchstens MULTI_ATTACK_MAX Ziele, MULTI_ATTACK_GEM_COST Gems) / „Truppen sammeln“ (RECALL_GEM_COST) (grp): zusammen EIN Marsch-Platz (wie am Handy).
     // Gehört der Marsch zu einer schon laufenden Gruppe, ist sie bezahlt. Sonst ohne Gem: ein normaler Marsch (eigener Platz).
     function gruppeBezahlt(who, grp, src, nach) {
         if (!kennungOk(grp)) return null;
         if (AUF && AUF.gruppeLaeuft && AUF.gruppeLaeuft(who, grp, src)) {
+            if (src !== undefined && pendingAttacks.filter(a => werIstWer(a.attackerBotId) === who && a.grp === grp).length >= MULTI_ATTACK_MAX) return null;   // (11. Ziel: normaler Marsch)
             if (nach === undefined || pendingSends.some(s => werIstWer(s.senderBotId) === who && s.grp === grp && !s.back && s.toId === nach)) return grp;   // (sammeln: alle zur SELBEN Basis)
             return null; }
         const hb = hbDa(who); if (!hb) return grp;                        // (noch kein Hauptbuch: wie bisher)
-        if (hbZahlen(who, hb, wacheSehen(who), { g: MULTI_ATTACK_GEM_COST })) { saveBotState(); return grp; }
-        warnen(who, 'gems', (src !== undefined ? 'Mehrfachangriff' : 'Truppen sammeln') + ' ohne den Gem dafür – zählt als normaler Marsch.', 1); return null;
+        if (hbZahlen(who, hb, wacheSehen(who), { g: src !== undefined ? MULTI_ATTACK_GEM_COST : RECALL_GEM_COST })) { saveBotState(); return grp; }
+        warnen(who, 'gems', (src !== undefined ? 'Mehrfachangriff' : 'Truppen sammeln') + ' ohne die Gems dafür – zählt als normaler Marsch.', 1); return null;
     }
     const werIstWer = x => x || 'player';
     const BEFEHLE = {

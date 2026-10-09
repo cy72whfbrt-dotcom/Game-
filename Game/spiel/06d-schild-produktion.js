@@ -81,29 +81,28 @@ function teleImRucksack() { return teleVorrat() + (tpGratis('player') ? 1 : 0); 
 function rkFach(b, name, txt, knopf) {               // eine Zeile: Kachel · Name + Text · Knopf
     return '<div class="rk-fach ki-karte">' + beuteKachel(b) + '<span class="rk-txt"><b>' + name + '</b><small>' + txt + '</small></span>' + knopf + '</div>';
 }
-function renderRucksack() {
+const RK_TABS = [['tempo', 'Tempo', 'hourglass', 'tempo'], ['schild', 'Schilde', 'shield', 'shield'], ['schl', 'Schlüssel', 'gem', 'gems'], ['sonst', 'Sonstiges', 'crate', 'gems']];   // [Reiter, Name, Symbol, Shop-Reiter]
+let rkTab = null, rkWahl = null;                   // Reiter (null: beim ersten Öffnen der erste mit Inhalt, dann bleibt er) und angetippte Kachel
+function rkSachen() {                              // je Reiter nur, was man besitzt: { k: Schlüssel, b: Kachel, name, txt, knopf }
+    const st = shieldStock(), nt = teleImRucksack(), knopf = (attr, t) => '<button type="button" class="btn btn--primary rk-knopf" ' + attr + '><span>' + t + '</span></button>';
+    return {
+        tempo: BESCH_DAUERN.filter(d => besch[d] > 0).map(d => ({ k: 'b' + d, b: { a: 'besch', n: besch[d], dauer: d }, name: 'Beschleuniger ' + beschText(d), txt: besch[d] + '× · beim Bauen und Forschen in der Stadt', knopf: knopf('data-rk-stadt', 'Zur Stadt') })),
+        schild: [2, 8, 24].filter(n => st[n] > 0).map(n => ({ k: 's' + n, b: { a: 'schild', n }, name: 'Schild ' + n + ' Std.', txt: st[n] + '× · die Zeit kommt zum laufenden Schild dazu', knopf: knopf('data-rk-schild="' + n + '"', 'Einsetzen'), n: st[n] })),
+        schl: [[1, schluessel1, 'Schlüssel', 'normale'], [2, schluessel2, 'Epischer Schlüssel', 'epische']].filter(x => x[1] > 0).map(([i, n, name, art]) => ({ k: 'k' + i, b: { a: 'schluessel' + i, n }, name, txt: n + '× · öffnet ' + art + ' Kisten', knopf: knopf('data-rk-shop="gems"', 'Kiste öffnen') })),
+        sonst: [].concat(nt ? [{ k: 'tele', b: { a: 'tele', n: nt }, name: 'Teleporter', txt: nt + '× im Rucksack' + (tpGratis('player') ? ' (1 gratis für neue Spieler)' : '') + ' · Hauptstadt umziehen', knopf: knopf('data-rk-tele', 'Benutzen') }] : [],
+            eventMuenzen > 0 ? [{ k: 'ev', b: { a: 'eventMuenzen', n: eventMuenzen }, name: 'Event-Münzen', txt: fmtNum(eventMuenzen) + ' · für den Event-Shop', knopf: knopf('data-rk-shop="ev"', 'Event-Shop') }] : [],
+            HEROES.map(x => [x, heroSt('player', x.id)]).filter(([, h]) => h && h.sh > 0).map(([x, h]) => ({ k: 'h' + x.id, b: { a: 'sh', n: h.sh, held: x.id }, name: 'Splitter ' + x.name, txt: h.sh + ' Splitter · für ' + escapeHtml(x.name), knopf: knopf('data-rk-held="' + x.id + '"', 'Zum Helden') })))
+    };
+}
+function renderRucksack() {                         // Raster aus Kacheln je Reiter (wie RoK): Antippen → unten „Benutzen“; leer → „Im Shop holen“
     if (!isPanelOpen(rucksackPopup)) return;
-    const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis(), st = shieldStock(), nt = teleImRucksack(), gratis = tpGratis('player');
+    const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis(), S = rkSachen();
+    const tab = rkTab = rkTab || (RK_TABS.find(t => S[t[0]].length) || RK_TABS[1])[0], L = S[tab], w = L.find(x => x.k === rkWahl) || L[0], def = RK_TABS.find(t => t[0] === tab);
     liveHtml(document.getElementById('rkSchildStand'), icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
-    const kaufen = (was, preis) => '<button type="button" class="btn btn--secondary rk-knopf" data-rk-kauf="' + was + '" aria-label="Kaufen für ' + fmtNum(preis) + ' Edelsteine"><span>Kaufen</span>' + icon('gem') + '<b class="rk-preis">' + fmtNum(preis) + '</b></button>';   // Preis wie im Shop
-    let h = '<div class="sect"><h4>Friedensschilde</h4><span class="sect-aside">Zeit kommt dazu</span></div><div class="rk-liste">' +
-        [2, 8, 24].map(n => rkFach({ a: 'schild', n }, 'Schild ' + n + ' Std.', st[n] + '× im Rucksack',
-            st[n] ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-schild="' + n + '"><span>Einsetzen</span></button>' : kaufen('schild', SHIELD_PRICES[n]))).join('') + '</div>';
-    h += '<div class="sect"><h4>Teleporter</h4><span class="sect-aside">Hauptstadt umziehen</span></div><div class="rk-liste">' +
-        rkFach({ a: 'tele', n: nt }, 'Teleporter', nt + '× im Rucksack' + (gratis ? ' (1 gratis für neue Spieler)' : ''),
-            nt ? '<button type="button" class="btn btn--primary rk-knopf" data-rk-tele><span>Benutzen</span></button>' : kaufen('tele', TP_GEMS)) + '</div>';
-    h += '<div class="sect"><h4>Schlüssel &amp; Event-Münzen</h4><span class="sect-aside">Kisten · Event-Shop</span></div><div class="rk-liste">' +
-        rkFach({ a: 'schluessel1', n: schluessel1 }, 'Schlüssel', schluessel1 + '× · öffnet normale Kisten', '<button type="button" class="btn btn--primary rk-knopf" data-rk-shop="gems"><span>Kisten</span></button>') +
-        rkFach({ a: 'schluessel2', n: schluessel2 }, 'Epischer Schlüssel', schluessel2 + '× · öffnet epische Kisten', '<button type="button" class="btn btn--primary rk-knopf" data-rk-shop="gems"><span>Kisten</span></button>') +
-        rkFach({ a: 'eventMuenzen', n: eventMuenzen }, 'Event-Münzen', fmtNum(eventMuenzen) + ' · für den Event-Shop', '<button type="button" class="btn btn--secondary rk-knopf" data-rk-shop="ev"><span>Event-Shop</span></button>') + '</div>';
-    const bda = BESCH_DAUERN.filter(d => besch[d] > 0);
-    h += '<div class="sect"><h4>Beschleuniger</h4><span class="sect-aside">beim Bauen und Forschen</span></div>' + (bda.length
-        ? '<div class="bk-raster rk-splitter">' + bda.map(d => '<span class="bk-mit">' + beuteKachel({ a: 'besch', n: besch[d], dauer: d }) + '<small>' + beschText(d) + '</small></span>').join('') + '</div>'
-        : '<div class="empty-state lb-leer">' + icon('hourglass') + '<span><b>Keine Beschleuniger</b>Es gibt sie bei Events und im Shop (Tempo, Event).</span></div>');
-    const helden = HEROES.map(x => [x, heroSt('player', x.id)]).filter(([, s]) => s && s.sh > 0);
-    h += '<div class="sect"><h4>Helden-Splitter</h4><span class="sect-aside">Tipp → Held</span></div>' + (helden.length
-        ? '<div class="bk-raster rk-splitter">' + helden.map(([x, s]) => '<button type="button" class="bk-mit" data-rk-held="' + x.id + '" aria-label="' + escapeHtml(x.name) + ' öffnen">' + beuteKachel({ a: 'sh', n: s.sh, held: x.id }) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>'
-        : '<div class="empty-state lb-leer">' + icon('star') + '<span><b>Keine Splitter</b>Splitter gibt es aus Heldenkisten, Aufgaben und Events.</span></div>');
+    let h = '<div class="seg rk-tabs">' + RK_TABS.map(([k, t, ic]) => '<button type="button" data-rk-tab="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + icon(ic) + '<span>' + t + '</span>' + (S[k].length ? '<small>' + S[k].length + '</small>' : '') + '</button>').join('') + '</div>';
+    h += L.length ? '<div class="rk-raster">' + L.map(x => '<button type="button" class="rk-item' + (x === w ? ' is-on' : '') + '" data-rk-wahl="' + x.k + '" aria-label="' + escapeHtml(x.name) + '">' + beuteKachel(x.b) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>' +
+            '<div class="rk-liste">' + rkFach(w.b, escapeHtml(w.name), w.txt, w.knopf) + '</div>'
+        : '<div class="empty-state lb-leer rk-leer">' + icon(def[2]) + '<span><b>Nichts im Rucksack</b>Hol dir ' + def[1] + ' bei Events oder im Shop.</span><button type="button" class="btn btn--secondary rk-knopf" data-rk-shop="' + def[3] + '"><span>Im Shop holen</span></button></div>';
     liveHtml(document.getElementById('rkInhalt'), h);
 }
 function openRucksack() { closeAllPopups(); openPanel(rucksackPopup); renderRucksack(); }
@@ -119,7 +118,9 @@ rucksackPopup.addEventListener('click', e => {
     if (e.target.closest('[data-rk-tele]')) { if (!teleImRucksack()) return;
         closeAllPopups(); if (!cityView.hidden) closeCity(); recenterOnHome(true);
         flashHint('Tippe auf eine freie Stelle der Karte, dann „Teleportieren“ – das kostet 1 Teleporter.', 5000); return; }
-    const k = e.target.closest('[data-rk-kauf]'); if (k) { openShop('shield'); return; }
+    const t = e.target.closest('[data-rk-tab]'); if (t) { rkTab = t.dataset.rkTab; rkWahl = null; return renderRucksack(); }
+    const wa = e.target.closest('[data-rk-wahl]'); if (wa) { rkWahl = wa.dataset.rkWahl; return renderRucksack(); }
+    if (e.target.closest('[data-rk-stadt]')) { closeAllPopups(); return openCity(); }
     const rs = e.target.closest('[data-rk-shop]'); if (rs) { openShop(rs.dataset.rkShop); return; }
     const hd = e.target.closest('[data-rk-held]'); if (hd) { closePanel(rucksackPopup); openHeroHall(hd.dataset.rkHeld); }
 });

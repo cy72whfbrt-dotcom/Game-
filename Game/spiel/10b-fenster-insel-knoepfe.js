@@ -280,6 +280,7 @@ function handleTap(screenX, screenY) {
             return;
         }
         const idx = multiAttackTargets.indexOf(island.id);
+        if (idx === -1 && multiAttackTargets.length >= MULTI_ATTACK_MAX) { flashHint('Höchstens ' + MULTI_ATTACK_MAX + ' Ziele auf einmal.', 2500); return; }
         if (idx === -1 && baseShieldedFor(island.id, 'player')) { flashHint(shieldBlockText(islandOwnerOf(island.id)), 3500); return; }
         if (idx === -1) {                                                    // a shut gate on the way: say so right away, not after "Angriffe starten"
             const hop = lastHop(source.landmassId, island.landmassId, 'player'), tl = tollFor(hop[0], hop[1], 1, 'player', island.id);

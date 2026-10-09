@@ -83,7 +83,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       st.randnotiz = randnotiz.length > 1 && new Set(randnotiz).size === 1 ? randnotiz[0] : randnotiz;
       openCity(); await warte(2500);
       const hudU = box(document.getElementById('hud')).bottom; st.bauarbeiter = [...document.querySelectorAll('#cityBuilder .cb-slot')].filter(sicht).every(e => box(e).top >= hudU);
-      st.klein.push(...klein('#cityBuilder button.cb-slot')); closeCity(); await warte(1500);
+      st.klein.push(...klein('#cityBuilder button')); closeCity(); await warte(1500);
       return { tokens, hud, leiste, streifen, fenster, st };
     }).catch(e => ({ fehler: e.message }));
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);

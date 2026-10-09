@@ -61,31 +61,33 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};
     document.querySelector('[data-zum-rucksack]').click(); await warte(300);
     o.offen = isPanelOpen(rucksackPopup) && !isPanelOpen(shopPopup) && document.getElementById('rucksackBtn').classList.contains('active'); const em = document.querySelector('#rucksackPopup .rk-emblem'); o.kopf = !!em && em.complete && em.naturalWidth > 0;
-    const jetzt = serverJetzt(); store.set('openWaterShield', String(jetzt + 3600000)); shieldMemAt = 0; renderRucksack();
+    const jetzt = serverJetzt(); store.set('openWaterShield', String(jetzt + 3600000)); shieldMemAt = 0; rkTab = null; renderRucksack();
+    o.reiter = [...document.querySelectorAll('#rkInhalt [data-rk-tab]')].map(t => t.textContent.replace(/\d/g, '')).join() === 'Tempo,Schilde,Schlüssel,Sonstiges' && document.querySelector('#rkInhalt [data-rk-tab].on').dataset.rkTab === 'schild' && document.querySelectorAll('#rkInhalt .rk-raster .rk-item .bk').length === 1;
     document.querySelector('[data-rk-schild="2"]').click(); await warte(100);
     o.dazu = Math.round((shieldUntil() - jetzt) / 60000); o.weg = shieldStock()[2] === 0;
-    o.kaufen = !document.querySelector('[data-rk-schild]') && document.querySelectorAll('[data-rk-kauf="schild"]').length === 3;
-    o.tele = !!document.querySelector('[data-rk-tele]') && /1× im Rucksack/.test(document.getElementById('rkInhalt').innerText);
+    o.kaufen = !document.querySelector('[data-rk-schild]') && !document.querySelector('#rkInhalt .rk-raster') && !/Kaufen/.test(document.getElementById('rkInhalt').innerText) && !!document.querySelector('.rk-leer [data-rk-shop="shield"]');
+    document.querySelector('[data-rk-tab="sonst"]').click(); o.tele = !!document.querySelector('[data-rk-tele]') && /1× im Rucksack/.test(document.getElementById('rkInhalt').innerText);
     return o;
   });
   ok(c.offen && c.kopf, 'Shop „Rucksack ›“ öffnet den Rucksack (Leisten-Knopf leuchtet, Rucksack-Bild im Kopf)', c);
+  ok(c.reiter, 'Rucksack: Reiter Tempo/Schilde/Schlüssel/Sonstiges, Schilde als Kachel im Raster (nur was man hat)', c);
   ok(c.dazu >= 179 && c.dazu <= 181 && c.weg, 'Schild einsetzen: 1 Std. laufend + 2 Std. = 3 Std. (Zeit addiert), Schild aus dem Rucksack weg', c);
-  ok(c.kaufen && c.tele, 'Rucksack: ohne Schild „Kaufen“, Teleporter 1× mit „Benutzen“', c);
+  ok(c.kaufen && c.tele, 'Rucksack: ohne Schild kein „Kaufen“, sondern „Im Shop holen“; Teleporter 1× mit „Benutzen“', c);
   // E) Splitter je Held
   const e = await p.evaluate(async () => {
-    const warte = ms => new Promise(f => setTimeout(f, ms)), h = HEROES[0]; loadHeroes()[h.id].sh = 37; renderRucksack();
-    const k = document.querySelector('[data-rk-held="' + h.id + '"]'), o = { da: !!k, zahl: k && k.innerText.includes('37') };
-    k.click(); await warte(300); o.held = !document.getElementById('heroHall').hidden && hhCur === h.id && !isPanelOpen(rucksackPopup);
+    const warte = ms => new Promise(f => setTimeout(f, ms)), h = HEROES[0]; const ci = loadCity(); ci.levels.heroes = Math.max(1, ci.levels.heroes || 0); saveCity(); loadHeroes()[h.id].sh = 37; rkTab = 'sonst'; renderRucksack();
+    const k = document.querySelector('[data-rk-wahl="h' + h.id + '"]'), o = { da: !!k, zahl: k && k.innerText.includes('37') };
+    k.click(); document.querySelector('[data-rk-held="' + h.id + '"]').click(); await warte(300); o.held = !document.getElementById('heroHall').hidden && hhCur === h.id && !isPanelOpen(rucksackPopup);
     closeHeroHall(); openRucksack(); await warte(300); return o;
   });
-  ok(e.da && e.zahl && e.held, 'Splitter je Held als Kachel (Anzahl), Tipp öffnet den Helden', e);
+  ok(e.da && e.zahl && e.held, 'Splitter je Held als Kachel (Anzahl), Tipp → „Zum Helden“ öffnet ihn', e);
   await bild('fenster');
   // D) Teleporter benutzen
   const d0 = await p.evaluate(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};
     localStorage.setItem('openWaterWorldStart', String(Date.now() - 10 * 864e5)); for (const br of bridges) clearIslandOwner(br.gateId);
     pendingAttacks.length = 0; pendingSends.length = 0; pendingRetreats.length = 0; fieldMarches.length = 0; barbMarches.length = 0; barbState.camps = [];
-    document.querySelector('[data-rk-tele]').click(); await warte(200); o.zu = !isPanelOpen(rucksackPopup);
+    rkTab = 'sonst'; rkWahl = 'tele'; renderRucksack(); document.querySelector('[data-rk-tele]').click(); await warte(200); o.zu = !isPanelOpen(rucksackPopup);
     const cap = islandById[playerIslandId], lm = landmasses[cap.landmassId], frei = [];
     for (let x = lm.x - lm.shapeMaxR; x < lm.x + lm.shapeMaxR; x += 2500) for (let y = lm.y - lm.shapeMaxR; y < lm.y + lm.shapeMaxR; y += 2500)
       if (gebietAn(x, y) === lm.id && !tpPruefen('player', x, y)) frei.push([x, y]);
@@ -106,7 +108,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(/500/.test(k2) && d2.gems === 500 && d2.tele === 0, 'ohne Teleporter wie bisher 500 Edelsteine', { k2, d2 });
   // Gratis-Teleporter neuer Spieler: liegt als 1 Teleporter im Rucksack, geht vor dem gekauften
   const g = await p.evaluate(() => { store.set('openWaterNeulingBis', String(Date.now() + 36e5)); store.remove('openWaterTpGratis'); store.set('openWaterTeleporter', '1');
-    openRucksack(); return { n: teleImRucksack(), text: document.getElementById('rkInhalt').innerText }; });
+    rkTab = 'sonst'; rkWahl = null; openRucksack(); return { n: teleImRucksack(), text: document.getElementById('rkInhalt').innerText }; });
   ok(g.n === 2 && /2× im Rucksack/.test(g.text) && /gratis/.test(g.text), 'neuer Spieler: Gratis-Teleporter liegt (zusätzlich) im Rucksack', g);
   await p.evaluate(() => closeAllPopups());
   const k3 = await tippe(2), d3 = await bestaetigen();

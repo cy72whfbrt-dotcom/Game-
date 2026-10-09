@@ -85,11 +85,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const ox = W / 2 - c.x * c.z, oy = innerHeight / 2 - c.y * c.z; if (ox > .5 || oy > .5 || ox + CITY_BILD_W * c.z < W - .5 || oy + CITY_BILD_H * c.z < innerHeight - .5) raus.push('Bildrand');   // das Stadtbild deckt den Bildschirm
       const schilder = cityNamen.map(n => n.id), fehlen = [];
       for (const id of Object.keys(CITY_ORTE)) { cityFocus(id, true); cityFrame.drawn = 0; await new Promise(f => setTimeout(f, 120)); if (!cityNamen.some(n => n.id === id)) fehlen.push(id); }   // jedes Gebäude per Wischen mit Schild
-      cityFocus('_keep', true); return { z: Math.round(c.z * 100) / 100, raus, schilder, fehlen, bau: __t44('[data-cb-buy]') }; });
+      cityFocus('_keep', true); return { z: Math.round(c.z * 100) / 100, raus, schilder, fehlen, bau: __t44('[data-cb-auf]') }; });
     await bild('stadt');
     ok(!st.raus.length && st.schilder.includes('_keep'), art + ': Stadt-Start: das Stadtbild füllt den Bildschirm, die Burg mit Schild', st);
     ok(!st.fehlen.length, art + ': Stadt: jedes Gebäude per Wischen erreichbar, mit Namensschild', st);
-    if (st.bau.length) ok(gross(st.bau), art + ': „2. Bauarbeiter“ mit Tippfläche ≥ 44 px', st.bau);
+    if (st.bau.length) ok(gross(st.bau), art + ': Bauarbeiter-Hammer mit Tippfläche ≥ 44 px', st.bau);
     await ctx.close();
   }
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine');
