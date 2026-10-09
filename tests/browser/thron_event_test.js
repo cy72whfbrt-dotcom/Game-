@@ -51,9 +51,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     o.titel = { keys: TITLES.map(x => x.key).join(','), narr: Math.abs(mit / ohne - 1 / .95) < 1e-6, feld: TITLES[0].v };
     // Fenster: Chip Thron, Herrscher
     openGoals('thron'); const eb = document.getElementById('eventBody').textContent;
-    o.fenster2 = { titel: /Kampf um den Königsthron/.test(eb), raenge: document.querySelectorAll('#eventBody .rband').length, preis: /3\.000/.test(eb), herr: /Herrscher:/.test(eb), chip: !!goalsPopup.querySelector('[data-gtab="thron"] .ev-st') };
+    o.fenster2 = { titel: /Kampf um den Königsthron/.test(eb), raenge: document.querySelectorAll('#eventBody .rband').length, preis: /3\.000/.test(eb), herr: /Herrscher:/.test(eb), chip: !!goalsPopup.querySelector('[data-gtab="thron"] .ev-st'), kopf: !!document.querySelector('#eventBody .thron-kopf[src$="thron_kopf.webp"]') };
     openHerr(); const hb = document.getElementById('herrBody').textContent;
-    o.herrFenster = { kisten: /Kisten verschicken/.test(hb), titel: document.querySelectorAll('#herrBody [data-herr-titel]').length, angelegt: /automatisch angelegt/.test(hb) };
+    o.herrFenster = { kisten: /Kisten verschicken/.test(hb), titel: document.querySelectorAll('#herrBody [data-herr-titel]').length, angelegt: /automatisch angelegt/.test(hb), skin: !!document.querySelector('#herrBody .herr-skin[src$="skin_herrscherburg.webp"]') };
     closeAllPopups();
     // neues Event: Rangpunkte 0, übrige Kisten verfallen, der Herrscher bleibt bis zu seinem Ende
     auf(Date.now() - 1000); throneTick(); o.neu = { leer: Object.keys(ts.week).length === 0, kisten: ts.kisten, herr: rulerOwner() === 'player' };
@@ -74,8 +74,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.abholen.holz === 400000 && (r.abholen.vorl === 'Team C' || r.abholen.vorl >= 2200), 'Abholen: Holz in den Topf, Event-Münzen gutgeschrieben', r.abholen);
   ok(!r.kiste.selbst && !r.kiste.leer && r.kiste.gut && r.kiste.danach === 0 && !r.kiste.fremd && r.kiste.botBekam, 'Herrscher-Kisten: nicht an sich selbst, nur vorhandene, nur der Herrscher', r.kiste);
   ok(r.titel.keys === 'feldherr,burgvogt,schatz,narr' && r.titel.narr && r.titel.feld === .05, 'Titel: Feldherr/Burgvogt/Schatzmeister/Narr, Narr −5 % Marschtempo', r.titel);
-  ok(r.fenster2.titel && r.fenster2.raenge === 5 && r.fenster2.preis && r.fenster2.herr && r.fenster2.chip, 'Events-Fenster, Chip „Thron“: Event, 5 Rang-Bänder, Herrscher-Zeile', r.fenster2);
-  ok(r.herrFenster.kisten && r.herrFenster.titel === 4 && r.herrFenster.angelegt, 'Herrscher-Fenster: Titel vergeben, Kisten verschicken, Skin angelegt', r.herrFenster);
+  ok(r.fenster2.titel && r.fenster2.raenge === 5 && r.fenster2.preis && r.fenster2.herr && r.fenster2.chip && r.fenster2.kopf, 'Events-Fenster, Chip „Thron“: Kopfbild, Event, 5 Rang-Bänder, Herrscher-Zeile', r.fenster2);
+  ok(r.herrFenster.kisten && r.herrFenster.titel === 4 && r.herrFenster.angelegt && r.herrFenster.skin, 'Herrscher-Fenster: Titel vergeben, Kisten verschicken, Skin (Herrscherburg) angelegt', r.herrFenster);
   ok(r.neu.leer && r.neu.kisten === null && r.neu.herr, 'Neues Event: Rangpunkte 0, übrige Kisten verfallen, Herrscher bleibt seine Woche', r.neu);
   ok(!fe.length, 'keine Seitenfehler', [...new Set(fe)].slice(0, 5));
   await b.close();

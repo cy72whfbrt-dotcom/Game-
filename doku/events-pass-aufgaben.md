@@ -81,7 +81,7 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 - Jedes Event startet bei 0, übrige Herrscher-Kisten verfallen. So 22 Uhr `thronAuswertung` (nur Weltrechner): `THRON_PREISE`
   Platz 1/2/3/4–8, Teilnahme ab 500 – Münzen-Stunden + Gegenstände `b` [Art, Menge, Extra] über `evPreis` (Abholfach `src: 'thron'`,
   Abholen ruft `gibBelohnung`; Holz direkt in den Topf; Hauptbuch-Felder em/s1/s2/besch).
-- Platz 1 = Herrscher eine Woche (`rulerOwner()` = `thronHerrscher()`): +25 % Ertrag, Skin `skin_koenigsburg` + Krone auf der Karte,
+- Platz 1 = Herrscher eine Woche (`rulerOwner()` = `thronHerrscher()`): +25 % Ertrag, Skin `skin_herrscherburg` (Krone im Bild) auf der Karte,
   Rahmen `king` (ui_herrscher_rahmen), vergibt Titel (Feldherr +5 % Angriff, Burgvogt +5 % Verteidigung, Schatzmeister +10 % Ertrag,
   Narr −5 % Marschtempo; Abzeichen über dem Namensschild, `drawTitleBadges`), verschenkt 2 epische / 5 große / 10 Kisten
   (`herrKiste`, Befehl `thronKiste`; nicht an sich selbst; Mitspieler-Herrscher verschenken selbst, Bündnis zuerst).
