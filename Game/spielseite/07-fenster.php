@@ -40,6 +40,15 @@
 .herr-kopf{display:flex;gap:12px;align-items:center} .herr-kopf b{font:700 16px var(--font-display);color:var(--gold-100)} .herr-kopf small{display:block;color:var(--tx-3);font:500 11.5px/1.3 var(--font-ui)}
 .herr-bild{position:relative;width:64px;height:64px;flex:none;border-radius:50%;background:#1b2638;box-shadow:0 0 14px 4px rgba(255,210,90,.8)}
 .herr-bild img{position:absolute;inset:18%;width:64%;height:64%;border-radius:50%} .herr-bild .herr-rahmen{inset:-14%;width:128%;height:128%;border-radius:0}
+/* Herrscher-Ansage (06c herrAnsage): großes Banner nach dem Thron-Event, einmal je Spieler */
+.herr-ansage{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,10,20,.72);animation:herrAnsageEin .5s ease-out}
+.herr-ansage-karte{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;width:min(340px,100%);padding:56px 20px 20px;border-radius:18px;text-align:center;color:#fff3cf;
+  background:radial-gradient(circle at 50% 30%,#5a3d12,#24170a 70%);border:3px solid #e8b94a;box-shadow:0 0 40px 8px rgba(255,200,80,.55)}
+.herr-ansage-krone{position:absolute;top:-44px;width:96px;height:96px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}
+.herr-ansage .herr-bild{width:96px;height:96px}
+.herr-ansage small{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#f3cf74}
+.herr-ansage b{font-size:26px;line-height:1.15;word-break:break-word;text-shadow:0 2px 6px #000}
+@keyframes herrAnsageEin{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:none}}
 .herr-skin{width:72px;margin-left:auto;filter:drop-shadow(0 0 6px #ffd25a)}
 .herr-angelegt{display:flex;gap:8px;align-items:center;margin-top:10px;padding:7px 9px;border-radius:8px;background:rgba(255,200,80,.12);border:1px solid rgba(255,210,110,.5);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
 .herr-angelegt .haken{display:grid;place-items:center;flex:none;width:20px;height:20px;border-radius:50%;background:#3f9b48;color:#fff;font-weight:800}
@@ -291,6 +300,8 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
           <div class="p5-gruppe">Events</div>
           <label class="set-zeile"><span>Kriegsherr erschienen</span><input type="checkbox" data-push-art="boss"></label>
           <label class="set-zeile"><span>Ein Händler ist da<small>Wandernder Händler auf der Karte</small></span><input type="checkbox" data-push-art="haendler"></label>
+          <label class="set-zeile"><span>Thron-Event startet<small>Samstag eine Stunde vorher</small></span><input type="checkbox" data-push-art="thron"></label>
+          <label class="set-zeile"><span>Tages-Kiste bereit<small>Wochen-Event: neue Kisten-Stufe erreicht</small></span><input type="checkbox" data-push-art="tageskiste"></label>
           <div class="p5-gruppe">Stadt</div>
           <label class="set-zeile"><span>Sammler zurück</span><input type="checkbox" data-push-art="sammler"></label>
           <label class="set-zeile"><span>Bau fertig<small>Gebäude und Burg in deiner Stadt</small></span><input type="checkbox" data-push-art="bau"></label>

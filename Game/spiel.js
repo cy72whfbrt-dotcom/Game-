@@ -7733,6 +7733,7 @@ function herrKisteSenden(art, an) {                   // dein Knopf im Herrscher
 }
 function throneTick() {
     const now = Date.now(), ts = throneState; let dirty = false;
+    herrAnsage(now);
     if (!rechnet()) { throneUhren(now, ts); midAnzeige(now); return; }
     const f = thronFenster(now), an = f.start <= now;
     if (an && ts.ev !== f.start) { thronBeginn(ts, f.start, now); dirty = true; }
@@ -7757,6 +7758,21 @@ function throneUhren(now, ts) {
     for (const el of document.querySelectorAll('[data-throne-fire]')) el.textContent = clock(ts.nextFire - now);
 }
 setInterval(throneTick, 1000);
+// Herrscher-Ansage (Alexander 9.10.): nach der Auswertung (So 22 Uhr) einmal ein großes Banner mit Krone für jeden Spieler –
+// bis 2 Tage danach. openWaterHerrGesehen = seit wann der angesagte Herrscher herrscht (geht mit dem Profil, nicht doppelt).
+function herrAnsage(now) {
+    const h = thronHerrscher(now), seit = h && throneState.herr.seit;
+    if (SYSTEM || !splashFinished || !h || !(seit > now - 2 * 864e5) || +store.get('openWaterHerrGesehen') === seit || document.getElementById('herrAnsage')) return;
+    store.set('openWaterHerrGesehen', String(seit));
+    const ich = h === 'player', name = ich ? profileName.value || 'Du' : botById[h].name, el = document.createElement('div');
+    el.id = 'herrAnsage'; el.className = 'herr-ansage'; el.setAttribute('role', 'dialog');
+    el.innerHTML = '<div class="herr-ansage-karte"><img class="herr-ansage-krone" src="bilder/ui_sym_krone.webp" alt="">' +
+        '<span class="herr-bild"><img src="' + crestDataUrl(96, h) + '" alt=""><img class="herr-rahmen" src="bilder/ui_herrscher_rahmen.webp" alt=""></span>' +
+        '<small>Neuer Herrscher</small><b>' + escapeHtml(name) + '</b><span>' + (ich ? 'Du herrschst eine Woche über die Welt!' : 'herrscht eine Woche über die Welt.') + '</span>' +
+        '<button type="button" class="btn btn--primary btn--sm">Weiter</button></div>';
+    el.addEventListener('click', () => el.remove());
+    document.body.appendChild(el); sfx('crate');
+}
 function drawThroneShots(now) {                        // leuchtende Geschosse im Bogen von jedem Wachturm zum Thron
     if (!throneShots || !throneShots.length) return;
     const z = mapState.zoom, DUR = 1100;
@@ -8643,6 +8659,18 @@ function kisteOeffnen(id, anz, bt) {
     kistenZSetzen(z); sfx('crate'); saveGame(); saveProgression(); updateHud(); renderShop();
     beuteFenster(K.name, beute, { kiste: K.k, n: anz, unter: anz > 1 ? anz + ' Kisten geöffnet' : '' });
 }
+// ===== GRATIS-KISTE (Alexander 9.10.): alle 8 Std. eine kleine Kiste umsonst (oben im Reiter Kisten). Inhalt klein und zufällig –
+// das Hauptbuch hat dafür Spielraum (10d3 HB_TAG: 3 am Tag). openWaterGratisKiste = wann zuletzt geöffnet (geht mit dem Profil).
+const GRATIS_MS = 8 * 3600000;
+const GRATIS_INHALT = [{ w: 60, art: 'besch', n: 1, d: '5m' }, { w: 30, art: 'gems', n: 10 }, { w: 10, art: 'schluessel1', n: 1 }];   // Beschleuniger 5 Min · 10 Edelsteine · 1 Schlüssel
+function gratisAb() { const t = +store.get('openWaterGratisKiste') || 0; return t > 0 ? t + GRATIS_MS : 0; }   // ab wann die nächste bereit ist
+function gratisOeffnen() {
+    const now = serverJetzt(); if (gratisAb() > now) { flashHint('Die Gratis-Kiste ist noch nicht bereit.', 2500); return; }
+    store.set('openWaterGratisKiste', String(now));
+    const x = GRATIS_INHALT[seltenheitAus(GRATIS_INHALT.map(g => g.w))], b = gibBelohnung(x.art, x.n, x.d);
+    questProgress('crate', 1); sfx('crate'); saveGame(); saveProgression(); updateHud(); renderShop();
+    beuteFenster('Gratis-Kiste', b ? [b] : [], { kiste: 'aus', unter: 'Die nächste in 8 Std.' });
+}
 // ===== Bausteine der Reiter (wie die Test-Datei werkzeuge/thronevent ?a=shopkisten|shop|shoptempo): Gruppen mit Zwischenüberschrift, 3 Spalten
 const shopWare = (bild, r, name, unter, knoepfe, zeit, leer) => '<div class="ware ware--klein' + (leer ? ' leer' : '') + '" data-r="' + r + '"><span class="ware-bild"><img class="kiste-bild" src="bilder/' + bild + '.webp" alt="" draggable="false">' + (zeit ? '<b class="zeit">' + zeit + '</b>' : '') + '</span>' +
     '<span class="ware-txt"><b class="ware-name">' + name + '</b><small class="lim">' + unter + '</small></span><span class="ware-knoepfe">' + knoepfe + '</span></div>';
@@ -8659,7 +8687,9 @@ function renderKistenReiter() {
         return shopWare(KISTE_BILD[K.k] + '_zu', K.r, K.name, K.pity ? '<span class="pity">Lila sicher ' + (z[id] || 0) + '/' + KISTE_PITY + '</span>' : hab + ' Schlüssel da', kn); };
     const sw = s => shopWare(s === 2 ? 'beute_schluessel_episch' : 'beute_schluessel', s === 2 ? 'lila' : 'blau', s === 2 ? 'Epischer Schlüssel' : 'Schlüssel', schluesselVon(s) + ' da',
         gemKnopf('data-s-kauf="' + s + '"', 'schl:' + s, SCHLUESSEL_PREIS[s][0]));
-    liveHtml(document.getElementById('shopKisten'), shopGruppe('Ausrüstung', [ware('aus'), ware('ausE')]) + shopGruppe('Helden', [ware('held'), ware('heldE')]) + shopGruppe('Schlüssel', [sw(1), sw(2)]));
+    const ab = gratisAb(), bereit = ab <= serverJetzt();
+    const gratis = shopWare(KISTE_BILD.aus + '_zu', 'gruen', 'Gratis-Kiste', bereit ? 'Jetzt bereit!' : 'Nächste in ' + uhrHtml(ab), '<button type="button" class="ware-preis ohne-g" data-gratis' + (bereit ? '' : ' disabled') + '><b>' + (bereit ? 'Öffnen' : 'Gratis') + '</b></button>', '', !bereit);
+    liveHtml(document.getElementById('shopKisten'), shopGruppe('Alle 8 Std. gratis', [gratis]) + shopGruppe('Ausrüstung', [ware('aus'), ware('ausE')]) + shopGruppe('Helden', [ware('held'), ware('heldE')]) + shopGruppe('Schlüssel', [sw(1), sw(2)]));
 }
 // ===== EVENT-SHOP: nur mit Event-Münzen, je Woche ein Limit (füllt Montag 0 Uhr auf). Preise ≈ 2× Edelstein-Preis (05e BESCH_PREIS/SCHLUESSEL_PREIS)
 const EV_WAREN = [
@@ -8703,6 +8733,7 @@ function renderTempoReiter() {
             gemKnopf('data-tempo-kauf="' + d + '"', 'tempo:' + d, BESCH_PREIS[d][0]), beschText(d)))));
 }
 shopPopup.addEventListener('click', e => {
+    if (e.target.closest('[data-gratis]:not([disabled])')) { gratisOeffnen(); return; }
     const k = e.target.closest('[data-kiste]:not([disabled])'); if (k) { kisteOeffnen(k.dataset.kiste, +k.dataset.anz || 1, k); return; }
     const sk = e.target.closest('[data-s-kauf]'); if (sk) { const s = +sk.dataset.sKauf, g = SCHLUESSEL_PREIS[s][0];
         if (gems < g) { flashHint('Zu wenig Edelsteine – ' + (s === 2 ? 'ein Epischer Schlüssel' : 'ein Schlüssel') + ' kostet ' + fmtNum(g) + '.', 3000); return; }
@@ -14028,11 +14059,11 @@ if (window.WELT) {
         for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
-        g: 25 + questGemsTag(),                       // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42) – Event-Preise kommen als Nachricht (gIn)
+        g: 25 + questGemsTag() + 3 * 10,              // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42), Gratis-Kiste (3× höchstens 10, 06g) – Event-Preise kommen als Nachricht (gIn)
         k: 3 + 1 + 1 / 7,                             // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, epische Tageskiste
         kg: 27 / 7,                                   // davon „mind. Episch“ (Tag 7) als sicherer Kisten-Wert (Episch = 27)
         sh: HERO_SHARDS_DAY,                          // Splitter: Aufgaben-Bonus
-        em: 65, s1: 4.5, s2: 1.5, bm: 1000            // Gegenstände (05e): Event-Münzen nur aus dem Saison-Pass (Premium Stufe 6/18/42/54/66/78 je 150 = 900 je Pass; × HB_KAPPE_TAGE 14 = ein ganzer Pass – Event-Preise kommen als Nachricht, ggIn), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740)
+        em: 65, s1: 4.5 + 3, s2: 1.5, bm: 1000 + 3 * 5            // Gegenstände (05e): Event-Münzen nur aus dem Saison-Pass (Premium Stufe 6/18/42/54/66/78 je 150 = 900 je Pass; × HB_KAPPE_TAGE 14 = ein ganzer Pass – Event-Preise kommen als Nachricht, ggIn), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740); Gratis-Kiste (06g): je 8 Std. 1 Schlüssel oder 5 Min
     };
     const HB_ONLINE_STUNDE_G = 40;                    // Karten-Funde: 1–3 Gems, alle 20–45 s einer, 15 % davon Gems – nur solange er online ist
     const HB_KAPPE_TAGE = 14;                         // so viele Tage Spielraum sammeln sich höchstens an

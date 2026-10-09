@@ -6,7 +6,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 ## Index (Name → Datei:Zeile)
 
 - `abmelden` → Game/server/01-grundlagen-login.php:79
-- `abosHolen` → Game/weltrechner/push.js:168
+- `abosHolen` → Game/weltrechner/push.js:178
 - `academyLevel` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:3
 - `achCheck` → Game/spiel/05c-profil-erfolge-rangliste.js:114
 - `achCheckSoon` → Game/spiel/05c-profil-erfolge-rangliste.js:109
@@ -26,9 +26,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `addPoly` → Game/spiel/03a-karte-hintergrund.js:281
 - `addXp` → Game/spiel/02a-shop-stufen.js:254
 - `adminBefehl` → Game/spiel/10d5-welt-befehle.js:185
-- `adminMelden` → Game/weltrechner/push.js:209
-- `adminSenden` → Game/weltrechner/push.js:210
-- `afterBesch` → Game/spiel/06g-shop-gegenstaende.js:156
+- `adminMelden` → Game/weltrechner/push.js:219
+- `adminSenden` → Game/weltrechner/push.js:220
+- `afterBesch` → Game/spiel/06g-shop-gegenstaende.js:171
 - `afterSplash` → Game/spiel/06d-schild-produktion.js:398
 - `ago` → Game/spiel/05c-profil-erfolge-rangliste.js:188
 - `ago` → Game/spiel/05d-marsch-liste-kampfbericht.js:155
@@ -206,14 +206,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `berlinTeile` → Game/spiel/09f-saison.js:31
 - `berlinUm` → Game/spiel/09f-saison.js:32
 - `berlinZeit` → Game/spiel/03d-karte-ebenen-tagnacht.js:27
-- `beschAuto` → Game/spiel/06g-shop-gegenstaende.js:144
-- `beschBenutzen` → Game/spiel/06g-shop-gegenstaende.js:136
+- `beschAuto` → Game/spiel/06g-shop-gegenstaende.js:159
+- `beschBenutzen` → Game/spiel/06g-shop-gegenstaende.js:151
 - `beschBild` → Game/spiel/05e-belohnung.js:19
-- `beschLauf` → Game/spiel/06g-shop-gegenstaende.js:122
+- `beschLauf` → Game/spiel/06g-shop-gegenstaende.js:137
 - `beschMinuten` → Game/spiel/05e-belohnung.js:32
 - `beschR` → Game/spiel/05e-belohnung.js:18
 - `beschText` → Game/spiel/05e-belohnung.js:17
-- `beschWahl` → Game/spiel/06g-shop-gegenstaende.js:126
+- `beschWahl` → Game/spiel/06g-shop-gegenstaende.js:141
 - `besondere.createImageData` → Game/weltrechner/start.js:227
 - `besondere.createLinearGradient` → Game/weltrechner/start.js:225
 - `besondere.createPattern` → Game/weltrechner/start.js:226
@@ -226,7 +226,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bestRank` → Game/spiel/05a-profil-rahmen.js:42
 - `beute` → Game/spiel/02c-marsch-spaeher-ankunft.js:131
 - `beuteBild` → Game/spiel/05e-belohnung.js:65
-- `beuteBot` → Game/spiel/06c-thron-mitte.js:256
+- `beuteBot` → Game/spiel/06c-thron-mitte.js:272
 - `beuteChips` → Game/spiel/01a-grundlagen.js:209
 - `beuteFelder` → Game/spiel/09c-events-woche.js:97
 - `beuteFenster` → Game/spiel/05e-belohnung.js:104
@@ -401,12 +401,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botUseShield` → Game/bots/05-verteidigen-takt.js:100
 - `botVendetta` → Game/bots/02-kampf-karte.js:286
 - `botVhCare` → Game/bots/04-stand-stadt.js:184
-- `bountyCheck` → Game/spiel/06c-thron-mitte.js:287
-- `bountyGems` → Game/spiel/06c-thron-mitte.js:277
-- `bountyGrow` → Game/spiel/06c-thron-mitte.js:278
-- `bountyOf` → Game/spiel/06c-thron-mitte.js:276
-- `bountyPay` → Game/spiel/06c-thron-mitte.js:283
-- `bountyState` → Game/spiel/06c-thron-mitte.js:274
+- `bountyCheck` → Game/spiel/06c-thron-mitte.js:303
+- `bountyGems` → Game/spiel/06c-thron-mitte.js:293
+- `bountyGrow` → Game/spiel/06c-thron-mitte.js:294
+- `bountyOf` → Game/spiel/06c-thron-mitte.js:292
+- `bountyPay` → Game/spiel/06c-thron-mitte.js:299
+- `bountyState` → Game/spiel/06c-thron-mitte.js:290
 - `brand` → Game/spiel/08a-stadt-bauen.js:47
 - `brandSetzen` → Game/spiel/08a-stadt-bauen.js:48
 - `bremse` → Game/server/02-sicherheit-datenlecks.php:38
@@ -638,7 +638,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `clipHalf` → Game/spiel/03e-karte-kamera-eingabe.js:73
 - `clipToBox` → Game/spiel/03e-karte-kamera-eingabe.js:80
 - `clock` → Game/spiel/05d-marsch-liste-kampfbericht.js:50
-- `clock` → Game/spiel/06c-thron-mitte.js:151
+- `clock` → Game/spiel/06c-thron-mitte.js:152
 - `closeAllPopups` → Game/spiel/09e-fenster-insel.js:74
 - `closeArmySheet` → Game/spiel/09d-karte-armeen-wegmarken.js:209
 - `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:356
@@ -736,7 +736,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawTerritoriesInto` → Game/spiel/03a-karte-hintergrund.js:359
 - `drawThroneFx` → Game/spiel/03c-karte-wappen-thronplatz.js:289
 - `drawThronePlaza` → Game/spiel/03c-karte-wappen-thronplatz.js:230
-- `drawThroneShots` → Game/spiel/06c-thron-mitte.js:156
+- `drawThroneShots` → Game/spiel/06c-thron-mitte.js:172
 - `drawTitleBadges` → Game/spiel/03c-karte-wappen-thronplatz.js:366
 - `drawTorBild` → Game/spiel/03b-karte-basen-bilder.js:13
 - `drawToreImNebel` → Game/spiel/03b-karte-basen-bilder.js:39
@@ -761,7 +761,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `eigeneTruppenDazu` → Game/spiel/01a-grundlagen.js:25
 - `einschalten` → Game/benachrichtigung.js:81
 - `einstellungenZeigen` → Game/spiel/10c-start-einstellungen.js:144
-- `emKnopf` → Game/spiel/06g-shop-gegenstaende.js:54
+- `emKnopf` → Game/spiel/06g-shop-gegenstaende.js:66
 - `empireSnapshot` → Game/spiel/06d-schild-produktion.js:281
 - `ende` → Game/spiel/09c-events-woche.js:31
 - `ende` → Game/weltrechner/start.js:34
@@ -785,13 +785,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evChipStatus` → Game/spiel/09c-events-woche.js:291
 - `evDing` → Game/spiel/09c-events-woche.js:78
 - `eventsBereit` → Game/spiel/06b-pass-anleitung.js:172
-- `evGekauft` → Game/spiel/06g-shop-gegenstaende.js:75
+- `evGekauft` → Game/spiel/06g-shop-gegenstaende.js:89
 - `evHolBereit` → Game/spiel/09c-events-woche.js:170
 - `evHolen` → Game/spiel/09c-events-woche.js:197
 - `evHolKnopf` → Game/spiel/09c-events-woche.js:178
 - `evKachelnHtml` → Game/spiel/09c-events-woche.js:205
 - `evKarte` → Game/spiel/09c-events-woche.js:137
-- `evKaufen` → Game/spiel/06g-shop-gegenstaende.js:87
+- `evKaufen` → Game/spiel/06g-shop-gegenstaende.js:101
 - `evLagerHtml` → Game/spiel/09c-events-woche.js:255
 - `evLeisteHtml` → Game/spiel/09c-events-woche.js:185
 - `evLeistePos` → Game/spiel/09c-events-woche.js:179
@@ -803,12 +803,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evRangHtml` → Game/spiel/09c-events-woche.js:132
 - `evState` → Game/spiel/09c-events-woche.js:68
 - `evStunden` → Game/spiel/09c-events-woche.js:74
-- `evThronHtml` → Game/spiel/06c-thron-mitte.js:196
+- `evThronHtml` → Game/spiel/06c-thron-mitte.js:212
 - `evTick` → Game/spiel/09c-events-woche.js:120
 - `evTourHtml` → Game/spiel/09c-events-woche.js:252
 - `evUhr` → Game/spiel/09c-events-woche.js:130
 - `evWann` → Game/spiel/09c-events-woche.js:131
-- `evWocheAb` → Game/spiel/06g-shop-gegenstaende.js:74
+- `evWocheAb` → Game/spiel/06g-shop-gegenstaende.js:88
 - `exploreOwned` → Game/spiel/01e-kampf-werte-nebel-hud.js:58
 - `extraBild` → Game/spiel/03b-karte-basen-bilder.js:59
 - `extraHtml` → Game/aufbau.js:373
@@ -951,7 +951,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gateControlsHtml` → Game/spiel/10a-fenster-insel-vorschau.js:42
 - `gateOnRoute` → Game/spiel/01b-weltkarte.js:267
 - `gateSettings` → Game/spiel/01b-weltkarte.js:275
-- `geben` → Game/spiel/06c-thron-mitte.js:268
+- `geben` → Game/spiel/06c-thron-mitte.js:284
 - `gebietAn` → Game/spiel/01b-weltkarte.js:138
 - `gebietUmriss` → Game/spiel/01b-weltkarte.js:116
 - `gebietWeg` → Game/spiel/01b-weltkarte.js:170
@@ -961,7 +961,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gegenstSpeichern` → Game/spiel/05e-belohnung.js:30
 - `gehoert` → Game/spiel/10d1-welt-verbindung.js:95
 - `geldVon` → Game/aufbau.js:67
-- `gemKnopf` → Game/spiel/06g-shop-gegenstaende.js:51
+- `gemKnopf` → Game/spiel/06g-shop-gegenstaende.js:63
 - `gemsArmAus` → Game/spiel/05b-profil-truhe-skills.js:302
 - `gemsArmed` → Game/spiel/05b-profil-truhe-skills.js:301
 - `gemsWirklich` → Game/spiel/05b-profil-truhe-skills.js:292
@@ -992,6 +992,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `grantFreeCrate` → Game/spiel/06a-aufgaben.js:13
 - `grantLevelRewards` → Game/spiel/02a-shop-stufen.js:233
 - `grat` → Game/ladebildschirm.js:10
+- `gratisAb` → Game/spiel/06g-shop-gegenstaende.js:51
+- `gratisOeffnen` → Game/spiel/06g-shop-gegenstaende.js:52
 - `grenzAbstand` → Game/spiel/01b-weltkarte.js:129
 - `grenzAbstandWeit` → Game/spiel/01b-weltkarte.js:134
 - `grenzLaengen` → Game/spiel/03a-karte-hintergrund.js:144
@@ -1149,6 +1151,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroWouldFire` → Game/spiel/08c-helden-fenster.js:72
 - `heroWutZurueck` → Game/spiel/08c-helden-fenster.js:91
 - `heroZweitOk` → Game/spiel/08c-helden-fenster.js:84
+- `herrAnsage` → Game/spiel/06c-thron-mitte.js:159
 - `herrKiste` → Game/spiel/06c-thron-mitte.js:109
 - `herrKisteBot` → Game/spiel/06c-thron-mitte.js:116
 - `herrKisteSenden` → Game/spiel/06c-thron-mitte.js:123
@@ -1216,7 +1219,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `itemPct` → Game/spiel/02a-shop-stufen.js:32
 - `itemScore` → Game/spiel/02a-shop-stufen.js:29
 - `json_antwort` → Game/server/03-nebel-maersche-seite.php:133
-- `jwtFuer` → Game/weltrechner/push.js:178
+- `jwtFuer` → Game/weltrechner/push.js:188
 - `kampf` → Game/aufbau.js:232
 - `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:194
 - `kampfAufraeumen` → Game/spiel/04-kampf-ankunft.js:223
@@ -1366,19 +1369,19 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mbT` → Game/spiel/07a-kampf-schlachten.js:8
 - `meinAbo` → Game/benachrichtigung.js:36
 - `meinProfil` → Game/welt.js:218
-- `melder` → Game/weltrechner/push.js:156
+- `melder` → Game/weltrechner/push.js:166
 - `mensch` → Game/bots/02-kampf-karte.js:42
 - `mensch` → Game/weltrechner/push.js:68
 - `menschEintragen` → Game/welt.js:295
 - `menschenAktualisieren` → Game/welt.js:282
 - `merke` → Game/speichern.js:29
 - `merlons` → Game/spiel/06e-karte-nebel-paesse.js:179
-- `midAnzeige` → Game/spiel/06c-thron-mitte.js:322
-- `midFight` → Game/spiel/06c-thron-mitte.js:266
-- `midNotice` → Game/spiel/06c-thron-mitte.js:329
+- `midAnzeige` → Game/spiel/06c-thron-mitte.js:338
+- `midFight` → Game/spiel/06c-thron-mitte.js:282
+- `midNotice` → Game/spiel/06c-thron-mitte.js:345
 - `mine` → Game/spiel/08c-helden-fenster.js:110
 - `mini` → Game/spiel/05a-profil-rahmen.js:80
-- `minuten` → Game/weltrechner/push.js:122
+- `minuten` → Game/weltrechner/push.js:129
 - `missing` → Game/spiel/03a-karte-hintergrund.js:531
 - `mitspieler_kuerzen` → Game/server/02-sicherheit-datenlecks.php:137
 - `mix` → Game/spiel/03d-karte-ebenen-tagnacht.js:42
@@ -1467,9 +1470,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzVerstAnBasen` → Game/spiel/03f-marsch-bilder.js:283
 - `mzWarnung` → Game/spiel/03f-marsch-bilder.js:300
 - `mzWartetBeiMir` → Game/spiel/03f-marsch-bilder.js:145
-- `nachrichtBauen` → Game/weltrechner/push.js:124
+- `nachrichtBauen` → Game/weltrechner/push.js:131
 - `naechsterRang` → Game/spiel/05a-profil-rahmen.js:101
-- `name` → Game/spiel/06c-thron-mitte.js:227
+- `name` → Game/spiel/06c-thron-mitte.js:243
 - `name` → Game/weltrechner/push.js:69
 - `name_anfrage` → Game/server/06-speichern-push-konto.php:176
 - `name_erlaubt` → Game/server/02-sicherheit-datenlecks.php:48
@@ -1524,7 +1527,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:334
 - `openGoals` → Game/spiel/06a-aufgaben.js:327
 - `openHeroHall` → Game/spiel/08c-helden-fenster.js:282
-- `openHerr` → Game/spiel/06c-thron-mitte.js:224
+- `openHerr` → Game/spiel/06c-thron-mitte.js:240
 - `openIslandPopup` → Game/spiel/09e-fenster-insel.js:102
 - `openLookSheet` → Game/spiel/08b-stadt-burg-aussehen.js:64
 - `openMarkerSheet` → Game/spiel/09d-karte-armeen-wegmarken.js:304
@@ -1533,7 +1536,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openRucksack` → Game/spiel/06d-schild-produktion.js:109
 - `openRulerProfile` → Game/spiel/05c-profil-erfolge-rangliste.js:196
 - `openShop` → Game/spiel/06d-schild-produktion.js:169
-- `opts` → Game/spiel/06c-thron-mitte.js:229
+- `opts` → Game/spiel/06c-thron-mitte.js:245
 - `ortName` → Game/spiel/10a-fenster-insel-vorschau.js:36
 - `out` → Game/spiel/10c-start-einstellungen.js:32
 - `overHole` → Game/spiel/03a-karte-hintergrund.js:568
@@ -1719,7 +1722,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderActiveMarches` → Game/spiel/05d-marsch-liste-kampfbericht.js:47
 - `renderArmySheet` → Game/spiel/09d-karte-armeen-wegmarken.js:221
 - `renderAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:275
-- `renderBesch` → Game/spiel/06g-shop-gegenstaende.js:127
+- `renderBesch` → Game/spiel/06g-shop-gegenstaende.js:142
 - `renderChestEquipment` → Game/spiel/05b-profil-truhe-skills.js:46
 - `renderChestItemPopup` → Game/spiel/05b-profil-truhe-skills.js:189
 - `renderCitySheet` → Game/spiel/08b-stadt-burg-aussehen.js:143
@@ -1728,21 +1731,21 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderCrestCard` → Game/spiel/05a-profil-rahmen.js:71
 - `renderCrestEditor` → Game/spiel/05a-profil-rahmen.js:76
 - `renderEquipGrid` → Game/spiel/05b-profil-truhe-skills.js:7
-- `renderEventReiter` → Game/spiel/06g-shop-gegenstaende.js:79
+- `renderEventReiter` → Game/spiel/06g-shop-gegenstaende.js:93
 - `renderEvents` → Game/spiel/09c-events-woche.js:272
 - `renderGoalsSub` → Game/spiel/06a-aufgaben.js:325
 - `renderHeroHall` → Game/spiel/08c-helden-fenster.js:276
-- `renderHerr` → Game/spiel/06c-thron-mitte.js:225
+- `renderHerr` → Game/spiel/06c-thron-mitte.js:241
 - `renderInbox` → Game/spiel/06a-aufgaben.js:255
 - `renderKeep` → Game/aufbau.js:309
 - `renderKeepSheet` → Game/spiel/08b-stadt-burg-aussehen.js:4
 - `renderKistenChancen` → Game/spiel/06d-schild-produktion.js:127
-- `renderKistenReiter` → Game/spiel/06g-shop-gegenstaende.js:55
+- `renderKistenReiter` → Game/spiel/06g-shop-gegenstaende.js:67
 - `renderLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:113
 - `renderLook` → Game/spiel/05a-profil-rahmen.js:55
 - `renderLookSheet` → Game/spiel/08b-stadt-burg-aussehen.js:44
 - `renderLookTop` → Game/spiel/08b-stadt-burg-aussehen.js:38
-- `renderMidBar` → Game/spiel/06c-thron-mitte.js:301
+- `renderMidBar` → Game/spiel/06c-thron-mitte.js:317
 - `renderPass` → Game/spiel/06b-pass-anleitung.js:86
 - `renderPopup` → Game/spiel/10a-fenster-insel-vorschau.js:122
 - `renderProfile` → Game/spiel/05a-profil-rahmen.js:102
@@ -1754,7 +1757,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:58
 - `renderShop` → Game/spiel/06d-schild-produktion.js:155
 - `renderSkillGrid` → Game/spiel/05b-profil-truhe-skills.js:306
-- `renderTempoReiter` → Game/spiel/06g-shop-gegenstaende.js:101
+- `renderTempoReiter` → Game/spiel/06g-shop-gegenstaende.js:115
 - `renderTile` → Game/spiel/03a-karte-hintergrund.js:421
 - `repaintBackgroundRect` → Game/spiel/03a-karte-hintergrund.js:448
 - `requestRender` → Game/spiel/03e-karte-kamera-eingabe.js:381
@@ -1804,7 +1807,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rulerOwner` → Game/spiel/01d-helden-daten-herrscher.js:163
 - `runBotTick` → Game/bots/05-verteidigen-takt.js:335
 - `rund` → Game/spiel/08f-stadt-bild-zeichnen.js:20
-- `runde` → Game/weltrechner/push.js:219
+- `runde` → Game/weltrechner/push.js:229
 - `rundKnopf` → Game/spiel/10a-fenster-insel-vorschau.js:93
 - `runProductionTick` → Game/spiel/06d-schild-produktion.js:204
 - `S.beimSetzen` → Game/welt.js:316
@@ -1841,7 +1844,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `saveArmies` → Game/spiel/09d-karte-armeen-wegmarken.js:9
 - `saveBarb` → Game/spiel/09b-lager-tagesboss.js:20
 - `saveBotState` → Game/bots/04-stand-stadt.js:73
-- `saveBounty` → Game/spiel/06c-thron-mitte.js:275
+- `saveBounty` → Game/spiel/06c-thron-mitte.js:291
 - `saveCity` → Game/spiel/08a-stadt-bauen.js:75
 - `saveEv` → Game/spiel/09c-events-woche.js:70
 - `saveFields` → Game/spiel/09a-funde-felder.js:178
@@ -1881,12 +1884,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `seiteUmbauen` → Game/spiel/05d-marsch-liste-kampfbericht.js:408
 - `seltenheitAus` → Game/spiel/06g-shop-gegenstaende.js:17
 - `senden` → Game/speichern.js:160
-- `sendenAlle` → Game/weltrechner/push.js:200
-- `sendenAn` → Game/weltrechner/push.js:186
+- `sendenAlle` → Game/weltrechner/push.js:210
+- `sendenAn` → Game/weltrechner/push.js:196
 - `senkSchildX` → Game/spiel/03c-karte-wappen-thronplatz.js:149
 - `sentLossFor` → Game/spiel/03e-karte-kamera-eingabe.js:525
 - `server` → Game/benachrichtigung.js:20
-- `server` → Game/weltrechner/push.js:163
+- `server` → Game/weltrechner/push.js:173
 - `serverJetzt` → Game/spiel/03d-karte-ebenen-tagnacht.js:26
 - `setArmyPlace` → Game/spiel/09d-karte-armeen-wegmarken.js:284
 - `setBtnLabel` → Game/spiel/01a-grundlagen.js:138
@@ -1907,14 +1910,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `shieldLossReductionPct` → Game/spiel/04-kampf-ankunft.js:246
 - `shieldStock` → Game/spiel/08b-stadt-burg-aussehen.js:3
 - `shieldUntil` → Game/spiel/06d-schild-produktion.js:5
-- `shopGruppe` → Game/spiel/06g-shop-gegenstaende.js:50
-- `shopWare` → Game/spiel/06g-shop-gegenstaende.js:48
+- `shopGruppe` → Game/spiel/06g-shop-gegenstaende.js:62
+- `shopWare` → Game/spiel/06g-shop-gegenstaende.js:60
 - `showBattleTab` → Game/spiel/05d-marsch-liste-kampfbericht.js:13
 - `showChestFlash` → Game/spiel/05b-profil-truhe-skills.js:156
 - `showDailyModal` → Game/spiel/06a-aufgaben.js:62
 - `showGoalsTab` → Game/spiel/06a-aufgaben.js:315
 - `showProfileTab` → Game/spiel/05b-profil-truhe-skills.js:370
-- `showShopTab` → Game/spiel/06c-thron-mitte.js:181
+- `showShopTab` → Game/spiel/06c-thron-mitte.js:197
 - `showWelcome` → Game/spiel/06d-schild-produktion.js:354
 - `shrineMult` → Game/spiel/01e-kampf-werte-nebel-hud.js:215
 - `sicherung_anlegen` → Game/server/05-datenbank-welt.php:109
@@ -2036,18 +2039,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `throneShooters` → Game/spiel/06c-thron-mitte.js:42
 - `throneState` → Game/spiel/06c-thron-mitte.js:32
 - `throneTick` → Game/spiel/06c-thron-mitte.js:130
-- `throneUhren` → Game/spiel/06c-thron-mitte.js:150
+- `throneUhren` → Game/spiel/06c-thron-mitte.js:151
 - `throneVolley` → Game/spiel/06c-thron-mitte.js:70
 - `thronFenster` → Game/spiel/06c-thron-mitte.js:22
 - `thronHalter` → Game/spiel/06c-thron-mitte.js:31
 - `thronHerrscher` → Game/spiel/06c-thron-mitte.js:105
-- `thronKachel` → Game/spiel/06c-thron-mitte.js:189
+- `thronKachel` → Game/spiel/06c-thron-mitte.js:205
 - `thronKuppel` → Game/spiel/06c-thron-mitte.js:29
 - `thronKuppelText` → Game/spiel/06c-thron-mitte.js:30
 - `thronLaeuft` → Game/spiel/06c-thron-mitte.js:28
 - `thronOffenAb` → Game/spiel/01b-weltkarte.js:204
 - `thronPreisFuer` → Game/spiel/06c-thron-mitte.js:18
-- `thronPreisKacheln` → Game/spiel/06c-thron-mitte.js:191
+- `thronPreisKacheln` → Game/spiel/06c-thron-mitte.js:207
 - `thronPunkte` → Game/spiel/06c-thron-mitte.js:36
 - `tickPickups` → Game/spiel/09a-funde-felder.js:33
 - `tierFor` → Game/spiel/03c-karte-wappen-thronplatz.js:141
@@ -2196,8 +2199,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wanderDepart` → Game/spiel/07b-kriegsherr.js:66
 - `wanderTick` → Game/spiel/07b-kriegsherr.js:136
 - `warDays` → Game/spiel/05c-profil-erfolge-rangliste.js:7
-- `ware` → Game/spiel/06g-shop-gegenstaende.js:57
-- `ware` → Game/spiel/06g-shop-gegenstaende.js:81
+- `ware` → Game/spiel/06g-shop-gegenstaende.js:69
+- `ware` → Game/spiel/06g-shop-gegenstaende.js:95
 - `warnen` → Game/spiel/10d2-welt-schummelschutz.js:20
 - `warStat` → Game/spiel/05c-profil-erfolge-rangliste.js:8
 - `wartung` → Game/server/02-sicherheit-datenlecks.php:26
@@ -3668,30 +3671,31 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `herrKisteBot` :116 — ein Mitspieler als Herrscher: verschenkt seine Kisten nach und nach (Bündnis zu…
 - `herrKisteSenden` :123 — dein Knopf im Herrscher-Fenster
 - `throneTick` :130
-- `throneUhren` :150
-- `clock` :151
-- `drawThroneShots` :156 — leuchtende Geschosse im Bogen von jedem Wachturm zum Thron
-- `showShopTab` :181
-- `thronKachel` :189 — ---- Events-Fenster, Chip „Thron“: Ablauf, Rangliste (live bzw. letztes Wochene…
-- `thronPreisKacheln` :191 — ein Preis als Kacheln (Bild + Zahl)
-- `evThronHtml` :196
-- `openHerr` :224
-- `renderHerr` :225
-- `name` :227
-- `opts` :229
-- `beuteBot` :256 — Gegenstände für einen Mitspieler (Preise, Pass): Event-Münzen, Schlüssel, Besch…
-- `midFight` :266 — nach jedem Kampf um eine Basis: Punkte für den Krieger-Tag (überall)
-- `geben` :268 — gemeinsam (Rally, Verstärkung): jeder nach seinem Anteil – aTeile/dTeile = [[we…
-- `bountyState` :274
-- `saveBounty` :275
-- `bountyOf` :276
-- `bountyGems` :277
-- `bountyGrow` :278
-- `bountyPay` :283
-- `bountyCheck` :287 — a new ruler: whoever took the throne collects everything, the bounty starts aga…
-- `renderMidBar` :301
-- `midAnzeige` :322 — jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event …
-- `midNotice` :329 — das Kopfgeld auf dem Mega-Tempel
+- `throneUhren` :151
+- `clock` :152
+- `herrAnsage` :159 — Herrscher-Ansage (Alexander 9.10.): nach der Auswertung (So 22 Uhr) einmal ein …
+- `drawThroneShots` :172 — leuchtende Geschosse im Bogen von jedem Wachturm zum Thron
+- `showShopTab` :197
+- `thronKachel` :205 — ---- Events-Fenster, Chip „Thron“: Ablauf, Rangliste (live bzw. letztes Wochene…
+- `thronPreisKacheln` :207 — ein Preis als Kacheln (Bild + Zahl)
+- `evThronHtml` :212
+- `openHerr` :240
+- `renderHerr` :241
+- `name` :243
+- `opts` :245
+- `beuteBot` :272 — Gegenstände für einen Mitspieler (Preise, Pass): Event-Münzen, Schlüssel, Besch…
+- `midFight` :282 — nach jedem Kampf um eine Basis: Punkte für den Krieger-Tag (überall)
+- `geben` :284 — gemeinsam (Rally, Verstärkung): jeder nach seinem Anteil – aTeile/dTeile = [[we…
+- `bountyState` :290
+- `saveBounty` :291
+- `bountyOf` :292
+- `bountyGems` :293
+- `bountyGrow` :294
+- `bountyPay` :299
+- `bountyCheck` :303 — a new ruler: whoever took the throne collects everything, the bounty starts aga…
+- `renderMidBar` :317
+- `midAnzeige` :338 — jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event …
+- `midNotice` :345 — das Kopfgeld auf dem Mega-Tempel
 
 ### Game/spiel/06d-schild-produktion.js — Friedensschild, Willkommen zurück, Produktion
 - `shieldUntil` :5
@@ -3772,24 +3776,26 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kisteInhalt` :18 — eine Kiste öffnen → Kacheln; z: Zähler der epischen Kisten (wird hochgezählt/zu…
 - `frei` :28
 - `kisteOeffnen` :35
-- `shopWare` :48 — Bausteine der Reiter (wie die Test-Datei werkzeuge/thronevent ?a=shopkisten|sho…
-- `shopGruppe` :50 — Spalten = Anzahl (2–3): volle Breite
-- `gemKnopf` :51 — Preis in Edelsteinen (ab 500 nach dem ersten Tipp „Wirklich?“ – übersteht das N…
-- `emKnopf` :54
-- `renderKistenReiter` :55
-- `ware` :57
-- `evWocheAb` :74
-- `evGekauft` :75
-- `renderEventReiter` :79
-- `ware` :81
-- `evKaufen` :87
-- `renderTempoReiter` :101 — TEMPO: Beschleuniger für Edelsteine (gelten für Bauen und Forschen – nicht für …
-- `beschLauf` :122 — → der laufende Bau bzw. die Forschung (mit endsAt) oder null
-- `beschWahl` :126
-- `renderBesch` :127
-- `beschBenutzen` :136 — einen Beschleuniger der Dauer d auf das Ziel → true, wenn benutzt
-- `beschAuto` :144 — so wenig wie möglich verschwenden: erst der größte, der noch ganz hineinpasst, …
-- `afterBesch` :156
+- `gratisAb` :51
+- `gratisOeffnen` :52
+- `shopWare` :60 — Bausteine der Reiter (wie die Test-Datei werkzeuge/thronevent ?a=shopkisten|sho…
+- `shopGruppe` :62 — Spalten = Anzahl (2–3): volle Breite
+- `gemKnopf` :63 — Preis in Edelsteinen (ab 500 nach dem ersten Tipp „Wirklich?“ – übersteht das N…
+- `emKnopf` :66
+- `renderKistenReiter` :67
+- `ware` :69
+- `evWocheAb` :88
+- `evGekauft` :89
+- `renderEventReiter` :93
+- `ware` :95
+- `evKaufen` :101
+- `renderTempoReiter` :115 — TEMPO: Beschleuniger für Edelsteine (gelten für Bauen und Forschen – nicht für …
+- `beschLauf` :137 — → der laufende Bau bzw. die Forschung (mit endsAt) oder null
+- `beschWahl` :141
+- `renderBesch` :142
+- `beschBenutzen` :151 — einen Beschleuniger der Dauer d auf das Ziel → true, wenn benutzt
+- `beschAuto` :159 — so wenig wie möglich verschwenden: erst der größte, der noch ganz hineinpasst, …
+- `afterBesch` :171
 
 ### Game/spiel/07a-kampf-schlachten.js — Schlachten auf der Karte (auch Zuschauer-Anzeige) und Kampf-Effekte
 - `mbT` :8
@@ -4812,17 +4818,17 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mensch` :68
 - `name` :69
 - `titel` :70
-- `minuten` :122
-- `nachrichtBauen` :124 — Aus den gesammelten Meldungen eines Spielers EINE Benachrichtigung bauen (kurz,…
-- `melder` :156 — Der Melder: wird von start.js angelegt. holen = start.js-holen (mit Weltrechner…
-- `server` :163
-- `abosHolen` :168
-- `jwtFuer` :178
-- `sendenAn` :186 — an ein Gerät senden → 'ok' | 'weg' (Abo gibt es nicht mehr) | 'fehler'
-- `sendenAlle` :200 — an alle Geräte einer Liste senden (abgelaufene Abos austragen)
-- `adminMelden` :209 — Nachricht an die Admin-Konten (auch wenn sie gerade spielen) – geht mit der näc…
-- `adminSenden` :210
-- `runde` :219 — Jede Runde (alle 5 s aus start.js): neue Meldungen einsammeln und fällige senden
+- `minuten` :129
+- `nachrichtBauen` :131 — Aus den gesammelten Meldungen eines Spielers EINE Benachrichtigung bauen (kurz,…
+- `melder` :166 — Der Melder: wird von start.js angelegt. holen = start.js-holen (mit Weltrechner…
+- `server` :173
+- `abosHolen` :178
+- `jwtFuer` :188
+- `sendenAn` :196 — an ein Gerät senden → 'ok' | 'weg' (Abo gibt es nicht mehr) | 'fehler'
+- `sendenAlle` :210 — an alle Geräte einer Liste senden (abgelaufene Abos austragen)
+- `adminMelden` :219 — Nachricht an die Admin-Konten (auch wenn sie gerade spielen) – geht mit der näc…
+- `adminSenden` :220
+- `runde` :229 — Jede Runde (alle 5 s aus start.js): neue Meldungen einsammeln und fällige senden
 
 ### Game/weltrechner/start.js — weltrechner/start.js – der Weltrechner auf dem Server
 - `log` :32
