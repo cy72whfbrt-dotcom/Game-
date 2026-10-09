@@ -126,3 +126,4 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
   zurückrufbar; ohne eigene Basis kein Rückruf, ein Rückweg wartet (Truppen gehen nie verloren). Beim Zuschauer sind nur Späher
   beschleunigbar, die der Weltrechner kennt (`sc.wr`, kein Rückweg). Abholfach stapelt nur Münzen/Edelsteine/Splitter.
   Lager-Fenster zeigt den Tages-Rest der Beute; `barbSend` prüft Freischaltung und Tagesgrenzen selbst.
+- Rally-Kampfbericht bei Plünderung: Text „geplündert – Stadt brennt“ (passend zu Band/Brand), nicht „Beute“.

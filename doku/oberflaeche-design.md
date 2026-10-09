@@ -75,3 +75,4 @@ Million Lords, Lords Mobile – „sieht aus wie ein Spiel, nicht wie eine Liste
 ## Offen (Merkliste)
 - 11c Nr. 1 (Mitte im Nebel weit draußen), 10/11 (Angriffs- und Basis-Fenster wie ein Spiel), 15 (Spähbericht-Helden wie
   Kampfbericht), 17 (Tore/eigene Basen erkennbar), 19 (fremde Märsche mit Figur), 36a (Home-App-Bild neu).
+- Erfolgs-Meldungen erscheinen nacheinander (nie übereinander); Wisch-Hinweis in der Stadt ist bei offenem Fenster/Blatt aus.
