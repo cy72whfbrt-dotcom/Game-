@@ -329,7 +329,7 @@ body.in-stadt #citySheet > .city-bfoot{bottom:-14px;box-shadow:0 -10px 14px -8px
 body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96px)}
 @media (min-width:900px) and (min-height:501px){ body:has(#citySheet:not([hidden])) .toast.toast.toast{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto} }   /* Desktop: die Leiste steht unten in der Mitte, das Burg-Fenster reicht bis dort – der Hinweis oben statt über der Fußzeile */
 @media (max-width:899px),(max-height:500px){
-  body:has(#citySheet:not([hidden])) .toast.toast.toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-bd) + 104px)}   /* (.toast dreifach: geht vor die allgemeine Fenster-Regel in 02) */
+  body:has(#citySheet:not([hidden])) .toast.toast.toast{top:calc(var(--stadt-kopf,96px) + 6px);bottom:auto;z-index:calc(var(--z-sheet) + 1)}   /* oben über dem Fenster-Kopf, nie über Text oder Fußzeile (.toast dreifach: geht vor die allgemeine Fenster-Regel in 02) */
 }
 
 /* =====================================================================
@@ -417,6 +417,7 @@ body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96
 #battleLogPopup.has-entries{height:var(--sheet-max)}    /* live rows come and go every second: keep it steady once it has any */
 .panel--island{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-bd));z-index:var(--z-sheet);
   max-height:min(62dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
+.panel--island.ist-heiligtum{max-height:min(74dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)))}   /* Thron/Tempel: der Erklär-Text ganz zu sehen */
 .panel--item{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-bd));z-index:var(--z-modal);
   max-height:min(70dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
 .panel .sheet-grab + .phead{padding-top:4px}

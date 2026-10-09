@@ -81,14 +81,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `anyIn` → Game/spiel/03a-karte-hintergrund.js:501
 - `anzahl_teile` → Game/server/05-datenbank-welt.php:99
 - `anzeigeStufe` → Game/spiel/03a-karte-hintergrund.js:614
-- `apHeldChip` → Game/spiel/10a-fenster-insel-vorschau.js:265
+- `apHeldChip` → Game/spiel/10a-fenster-insel-vorschau.js:266
 - `api.clear` → Game/speichern.js:39
 - `api.getItem` → Game/speichern.js:36
 - `api.key` → Game/speichern.js:40
 - `api.removeItem` → Game/speichern.js:38
 - `api.setItem` → Game/speichern.js:37
 - `applyCrestAvatars` → Game/spiel/05a-profil-rahmen.js:94
-- `apQuelleText` → Game/spiel/10a-fenster-insel-vorschau.js:262
+- `apQuelleText` → Game/spiel/10a-fenster-insel-vorschau.js:263
 - `arch` → Game/spiel/06e-karte-nebel-paesse.js:192
 - `armee_sicht_setzen` → Game/server/05-datenbank-welt.php:310
 - `armeeSichtRunde` → Game/spiel/10d4-welt-nebel-server.js:74
@@ -141,7 +141,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `b64url` → Game/server/06-speichern-push-konto.php:74
 - `b64url_bytes` → Game/server/06-speichern-push-konto.php:104
 - `balken` → Game/spiel/09c-events-woche.js:245
-- `bannerModel` → Game/spiel/03b-karte-basen-bilder.js:298
+- `bannerModel` → Game/spiel/03b-karte-basen-bilder.js:299
 - `bannerSprite` → Game/spiel/03c-karte-wappen-thronplatz.js:126
 - `barbAlong` → Game/spiel/09b-lager-tagesboss.js:209
 - `barbArrive` → Game/spiel/09b-lager-tagesboss.js:122
@@ -181,14 +181,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `baseShieldedFor` → Game/spiel/06d-schild-produktion.js:52
 - `basesTxt` → Game/spiel/05c-profil-erfolge-rangliste.js:295
 - `basis_pfad` → Game/server/01-grundlagen-login.php:28
-- `basisBild` → Game/spiel/03b-karte-basen-bilder.js:65
-- `basisBildNr` → Game/spiel/03b-karte-basen-bilder.js:64
-- `basisBildRect` → Game/spiel/03b-karte-basen-bilder.js:89
-- `basisBreite` → Game/spiel/03b-karte-basen-bilder.js:80
-- `basisKreis` → Game/spiel/03b-karte-basen-bilder.js:85
-- `basisMip` → Game/spiel/03b-karte-basen-bilder.js:71
+- `basisBild` → Game/spiel/03b-karte-basen-bilder.js:66
+- `basisBildNr` → Game/spiel/03b-karte-basen-bilder.js:65
+- `basisBildRect` → Game/spiel/03b-karte-basen-bilder.js:90
+- `basisBreite` → Game/spiel/03b-karte-basen-bilder.js:81
+- `basisKreis` → Game/spiel/03b-karte-basen-bilder.js:86
+- `basisMip` → Game/spiel/03b-karte-basen-bilder.js:72
 - `basisRoh` → Game/aufbau.js:53
-- `basisSchilde` → Game/spiel/03b-karte-basen-bilder.js:161
+- `basisSchilde` → Game/spiel/03b-karte-basen-bilder.js:162
 - `bausch` → Game/ladebildschirm.js:120
 - `bauStufe` → Game/aufbau.js:244
 - `befehl_ablegen` → Game/server/05-datenbank-welt.php:227
@@ -249,7 +249,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bgShow` → Game/spiel/03a-karte-hintergrund.js:404
 - `bgWarm` → Game/spiel/03a-karte-hintergrund.js:431
 - `bild30` → Game/ladebildschirm.js:289
-- `bindTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:354
+- `bindTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:355
 - `bis` → Game/spiel/03c-karte-wappen-thronplatz.js:454
 - `bitHat` → Game/spiel/10d4-welt-nebel-server.js:18
 - `bitsZu` → Game/spiel/10d4-welt-nebel-server.js:17
@@ -705,18 +705,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawBarb` → Game/spiel/09b-lager-tagesboss.js:244
 - `drawBaseAuras` → Game/spiel/03c-karte-wappen-thronplatz.js:308
 - `drawBaseSparks` → Game/spiel/03c-karte-wappen-thronplatz.js:330
-- `drawBasisBild` → Game/spiel/03b-karte-basen-bilder.js:93
-- `drawBasisSchilder` → Game/spiel/03b-karte-basen-bilder.js:201
+- `drawBasisBild` → Game/spiel/03b-karte-basen-bilder.js:94
+- `drawBasisSchilder` → Game/spiel/03b-karte-basen-bilder.js:202
 - `drawBattleFx` → Game/spiel/07a-kampf-schlachten.js:168
-- `drawBrand` → Game/spiel/03b-karte-basen-bilder.js:281
-- `drawBuilding` → Game/spiel/03b-karte-basen-bilder.js:267
+- `drawBrand` → Game/spiel/03b-karte-basen-bilder.js:282
+- `drawBuilding` → Game/spiel/03b-karte-basen-bilder.js:268
 - `drawCrest` → Game/spiel/03c-karte-wappen-thronplatz.js:19
 - `drawCrown` → Game/spiel/07b-kriegsherr.js:183
 - `drawFog` → Game/spiel/06e-karte-nebel-paesse.js:108
 - `drawGatehouse` → Game/spiel/06e-karte-nebel-paesse.js:174
 - `drawGlyph` → Game/spiel/01a-grundlagen.js:244
-- `drawHaendler` → Game/haendler.js:152
-- `drawHauptstadtRing` → Game/spiel/03b-karte-basen-bilder.js:222
+- `drawHaendler` → Game/haendler.js:160
+- `drawHauptstadtRing` → Game/spiel/03b-karte-basen-bilder.js:223
 - `drawHeimWappen` → Game/spiel/06e-karte-nebel-paesse.js:239
 - `drawMap` → Game/spiel/03d-karte-ebenen-tagnacht.js:76
 - `drawMapBattles` → Game/spiel/07a-kampf-schlachten.js:87
@@ -729,7 +729,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawNacht` → Game/spiel/03d-karte-ebenen-tagnacht.js:54
 - `drawPasses` → Game/spiel/06e-karte-nebel-paesse.js:206
 - `drawPickups` → Game/spiel/09a-funde-felder.js:62
-- `drawPlatzhalter` → Game/spiel/03b-karte-basen-bilder.js:264
+- `drawPlatzhalter` → Game/spiel/03b-karte-basen-bilder.js:265
 - `drawResFields` → Game/spiel/09a-funde-felder.js:280
 - `drawRings` → Game/spiel/03c-karte-wappen-thronplatz.js:392
 - `drawRulerCrowns` → Game/spiel/07b-kriegsherr.js:193
@@ -739,8 +739,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawThroneShots` → Game/spiel/06c-thron-mitte.js:156
 - `drawTitleBadges` → Game/spiel/03c-karte-wappen-thronplatz.js:366
 - `drawTorBild` → Game/spiel/03b-karte-basen-bilder.js:13
-- `drawToreImNebel` → Game/spiel/03b-karte-basen-bilder.js:38
-- `drawTorSchloesser` → Game/spiel/03b-karte-basen-bilder.js:256
+- `drawToreImNebel` → Game/spiel/03b-karte-basen-bilder.js:39
+- `drawTorSchloesser` → Game/spiel/03b-karte-basen-bilder.js:257
 - `drawUebersichtZeichen` → Game/spiel/03b-karte-basen-bilder.js:25
 - `drawWander` → Game/spiel/07b-kriegsherr.js:146
 - `drawWorldFrame` → Game/spiel/06e-karte-nebel-paesse.js:3
@@ -809,7 +809,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evWann` → Game/spiel/09c-events-woche.js:119
 - `evWocheAb` → Game/spiel/06g-shop-gegenstaende.js:74
 - `exploreOwned` → Game/spiel/01e-kampf-werte-nebel-hud.js:58
-- `extraBild` → Game/spiel/03b-karte-basen-bilder.js:58
+- `extraBild` → Game/spiel/03b-karte-basen-bilder.js:59
 - `extraHtml` → Game/aufbau.js:373
 - `fade` → Game/spiel/10c-start-einstellungen.js:121
 - `fArt` → Game/spiel/09a-funde-felder.js:158
@@ -1003,18 +1003,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `h` → Game/admin.php:161
 - `h` → Game/index.php:54
 - `haendler_ware_ok` → Game/server/03-nebel-maersche-seite.php:107
-- `haendlerAt` → Game/haendler.js:178
-- `haendlerChip` → Game/haendler.js:212
-- `haendlerOeffnen` → Game/haendler.js:183
+- `haendlerAt` → Game/haendler.js:186
+- `haendlerChip` → Game/haendler.js:220
+- `haendlerOeffnen` → Game/haendler.js:191
 - `handleTap` → Game/spiel/10b-fenster-insel-knoepfe.js:247
 - `has` → Game/spiel/03a-karte-hintergrund.js:500
 - `HATCH_PX` → Game/spiel/03a-karte-hintergrund.js:348
 - `hatchPatterns` → Game/spiel/03a-karte-hintergrund.js:353
 - `hatchTile` → Game/spiel/03a-karte-hintergrund.js:349
-- `hauptBild` → Game/spiel/03b-karte-basen-bilder.js:210
-- `hauptPuls` → Game/spiel/03b-karte-basen-bilder.js:217
-- `hauptPulsWeiter` → Game/spiel/03b-karte-basen-bilder.js:219
-- `hauptRingBild` → Game/spiel/03b-karte-basen-bilder.js:216
+- `hauptBild` → Game/spiel/03b-karte-basen-bilder.js:211
+- `hauptPuls` → Game/spiel/03b-karte-basen-bilder.js:218
+- `hauptPulsWeiter` → Game/spiel/03b-karte-basen-bilder.js:220
+- `hauptRingBild` → Game/spiel/03b-karte-basen-bilder.js:217
 - `hauptstadtStufen` → Game/aufbau.js:488
 - `hauptVon` → Game/aufbau.js:486
 - `hauptVor` → Game/aufbau.js:487
@@ -1063,24 +1063,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hbVorrat` → Game/spiel/10d3-welt-hauptbuch.js:121
 - `hbWarte` → Game/spiel/10d3-welt-hauptbuch.js:169
 - `hbZahlen` → Game/spiel/10d3-welt-hauptbuch.js:126
-- `hdBefehl` → Game/haendler.js:118
-- `hdBild` → Game/haendler.js:151
+- `hdBefehl` → Game/haendler.js:126
+- `hdBild` → Game/haendler.js:159
 - `hdDa` → Game/haendler.js:36
 - `hdGekauft` → Game/haendler.js:39
-- `hdKaufen` → Game/haendler.js:82
-- `hdOffen` → Game/haendler.js:182
-- `hdOrt` → Game/haendler.js:44
+- `hdKaufen` → Game/haendler.js:90
+- `hdOffen` → Game/haendler.js:190
+- `hdOrt` → Game/haendler.js:52
+- `hdPlatz` → Game/haendler.js:44
 - `hdPreis` → Game/haendler.js:37
-- `hdRender` → Game/haendler.js:184
+- `hdRender` → Game/haendler.js:192
 - `hdSammeln` → Game/haendler.js:40
-- `hdSoeldner` → Game/haendler.js:81
+- `hdSoeldner` → Game/haendler.js:89
 - `hdSpeichern` → Game/haendler.js:35
 - `hdState` → Game/haendler.js:34
-- `hdTakt` → Game/haendler.js:54
+- `hdTakt` → Game/haendler.js:62
 - `hdWerName` → Game/haendler.js:41
 - `head` → Game/spiel/09d-karte-armeen-wegmarken.js:224
 - `heatAt` → Game/bots/02-kampf-karte.js:268
-- `heiligtumBild` → Game/spiel/03b-karte-basen-bilder.js:47
+- `heiligtumBild` → Game/spiel/03b-karte-basen-bilder.js:48
 - `heimWappenRect` → Game/spiel/06e-karte-nebel-paesse.js:235
 - `heimWappenSicht` → Game/spiel/06e-karte-nebel-paesse.js:234
 - `heimWellen` → Game/spiel/02c-marsch-spaeher-ankunft.js:184
@@ -1151,7 +1152,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `herrKisteBot` → Game/spiel/06c-thron-mitte.js:116
 - `herrKisteSenden` → Game/spiel/06c-thron-mitte.js:123
 - `herzSchreiben` → Game/weltrechner/start.js:65
-- `hfl` → Game/spiel/10a-fenster-insel-vorschau.js:438
+- `hfl` → Game/spiel/10a-fenster-insel-vorschau.js:439
 - `hhGrid` → Game/spiel/08c-helden-fenster.js:205
 - `hhHero` → Game/spiel/08c-helden-fenster.js:228
 - `hhOhneHalle` → Game/spiel/08c-helden-fenster.js:272
@@ -1192,7 +1193,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `inboxSave` → Game/spiel/06a-aufgaben.js:227
 - `infoKlapp` → Game/spiel/09c-events-woche.js:151
 - `init` → Game/spiel/10c-start-einstellungen.js:20
-- `inselMittig` → Game/spiel/10a-fenster-insel-vorschau.js:253
+- `inselMittig` → Game/spiel/10a-fenster-insel-vorschau.js:254
 - `inselOk` → Game/spiel/10d2-welt-schummelschutz.js:16
 - `inselOrtAnwenden` → Game/spiel/08d2-stadt-teleport.js:18
 - `inselOrtLaden` → Game/spiel/08d2-stadt-teleport.js:17
@@ -1552,7 +1553,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `paintPlate` → Game/spiel/03c-karte-wappen-thronplatz.js:80
 - `paketText` → Game/speichern.js:125
 - `panBy` → Game/spiel/03e-karte-kamera-eingabe.js:432
-- `parseTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:343
+- `parseTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:344
 - `partLines` → Game/spiel/05d-marsch-liste-kampfbericht.js:163
 - `partsFor` → Game/bots/02-kampf-karte.js:43
 - `passBump` → Game/spiel/06b-pass-anleitung.js:31
@@ -1581,8 +1582,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `passTruppen` → Game/spiel/06b-pass-anleitung.js:18
 - `passwort_anfrage` → Game/server/06-speichern-push-konto.php:159
 - `passXp` → Game/spiel/06b-pass-anleitung.js:32
-- `patchAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:415
-- `patchSendPreview` → Game/spiel/10a-fenster-insel-vorschau.js:395
+- `patchAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:416
+- `patchSendPreview` → Game/spiel/10a-fenster-insel-vorschau.js:396
 - `pathSoFar` → Game/spiel/02b-marsch-losschicken.js:216
 - `payGold` → Game/spiel/04-kampf-ankunft.js:266
 - `payToll` → Game/spiel/01b-weltkarte.js:288
@@ -1595,7 +1596,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `pickupVerdeckt` → Game/spiel/09a-funde-felder.js:13
 - `piecesPath` → Game/spiel/03a-karte-hintergrund.js:312
 - `pille` → Game/buendnis/04-fenster-karte-welt.js:344
-- `plane` → Game/haendler.js:163
+- `plane` → Game/haendler.js:171
 - `plateFw` → Game/spiel/03c-karte-wappen-thronplatz.js:62
 - `plateGeo` → Game/spiel/03c-karte-wappen-thronplatz.js:63
 - `plateText` → Game/spiel/03c-karte-wappen-thronplatz.js:76
@@ -1676,7 +1677,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questTempelGeht` → Game/spiel/06a-aufgaben.js:123
 - `queueHover` → Game/spiel/03e-karte-kamera-eingabe.js:362
 - `queueLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:103
-- `rahmenAufKarte` → Game/spiel/03b-karte-basen-bilder.js:131
+- `rahmenAufKarte` → Game/spiel/03b-karte-basen-bilder.js:132
 - `rahmenDef` → Game/spiel/05a-profil-rahmen.js:18
 - `rahmenHat` → Game/spiel/05a-profil-rahmen.js:22
 - `rahmenPlatzText` → Game/spiel/05a-profil-rahmen.js:19
@@ -1716,7 +1717,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderAchievements` → Game/spiel/05c-profil-erfolge-rangliste.js:124
 - `renderActiveMarches` → Game/spiel/05d-marsch-liste-kampfbericht.js:47
 - `renderArmySheet` → Game/spiel/09d-karte-armeen-wegmarken.js:221
-- `renderAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:274
+- `renderAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:275
 - `renderBesch` → Game/spiel/06g-shop-gegenstaende.js:127
 - `renderChestEquipment` → Game/spiel/05b-profil-truhe-skills.js:46
 - `renderChestItemPopup` → Game/spiel/05b-profil-truhe-skills.js:189
@@ -1748,7 +1749,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderRankings` → Game/spiel/05c-profil-erfolge-rangliste.js:293
 - `renderRecallPreview` → Game/spiel/10b-fenster-insel-knoepfe.js:56
 - `renderRucksack` → Game/spiel/06d-schild-produktion.js:84
-- `renderSendPreview` → Game/spiel/10a-fenster-insel-vorschau.js:364
+- `renderSendPreview` → Game/spiel/10a-fenster-insel-vorschau.js:365
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:58
 - `renderShop` → Game/spiel/06d-schild-produktion.js:155
 - `renderSkillGrid` → Game/spiel/05b-profil-truhe-skills.js:306
@@ -1771,7 +1772,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ribbon` → Game/spiel/02c-marsch-spaeher-ankunft.js:301
 - `ring` → Game/spiel/03c-karte-wappen-thronplatz.js:381
 - `ringBadge` → Game/spiel/03c-karte-wappen-thronplatz.js:385
-- `ringBild` → Game/spiel/03b-karte-basen-bilder.js:126
+- `ringBild` → Game/spiel/03b-karte-basen-bilder.js:127
 - `ringMult` → Game/spiel/01b-weltkarte.js:25
 - `ringNotice` → Game/spiel/10a-fenster-insel-vorschau.js:58
 - `ringStatusByOwner` → Game/spiel/04-kampf-ankunft.js:25
@@ -1858,9 +1859,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `schedule` → Game/spiel/10c-start-einstellungen.js:108
 - `schieb` → Game/spiel/03f-marsch-bilder.js:349
 - `schild` → Game/spiel/03c-karte-wappen-thronplatz.js:153
-- `schildBild` → Game/spiel/03b-karte-basen-bilder.js:136
-- `schildDaten` → Game/spiel/03b-karte-basen-bilder.js:118
-- `schildRect` → Game/spiel/03b-karte-basen-bilder.js:114
+- `schildBild` → Game/spiel/03b-karte-basen-bilder.js:137
+- `schildDaten` → Game/spiel/03b-karte-basen-bilder.js:119
+- `schildRect` → Game/spiel/03b-karte-basen-bilder.js:115
 - `schluesselTausch` → Game/welt.js:90
 - `schluesselVon` → Game/spiel/06g-shop-gegenstaende.js:14
 - `schnellerDrueber` → Game/spiel/02b-marsch-losschicken.js:262
@@ -1894,7 +1895,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `setScreen` → Game/spiel/03a-karte-hintergrund.js:5
 - `setShown` → Game/spiel/01e-kampf-werte-nebel-hud.js:232
 - `setText` → Game/spiel/01e-kampf-werte-nebel-hud.js:231
-- `setTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:353
+- `setTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:354
 - `setW` → Game/spiel/03a-karte-hintergrund.js:360
 - `setze_cookie` → Game/server/01-grundlagen-login.php:37
 - `setzen` → Game/spiel/01a-grundlagen.js:29
@@ -1919,7 +1920,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sicherung_gueltig` → Game/server/07-welt-puls.php:15
 - `sicherung_zurueck` → Game/server/05-datenbank-welt.php:142
 - `sicherungen_liste` → Game/server/05-datenbank-welt.php:135
-- `sicht` → Game/spiel/03b-karte-basen-bilder.js:163
+- `sicht` → Game/spiel/03b-karte-basen-bilder.js:164
 - `sicht_laden` → Game/server/05-datenbank-welt.php:302
 - `sicht_setzen` → Game/server/05-datenbank-welt.php:311
 - `sichtVon` → Game/spiel/01e-kampf-werte-nebel-hud.js:57
@@ -1929,9 +1930,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `sizeBackingStore` → Game/spiel/03e-karte-kamera-eingabe.js:401
 - `skillBonusText` → Game/spiel/04-kampf-ankunft.js:274
 - `skript` → Game/server/03-nebel-maersche-seite.php:145
-- `sliderToTroops` → Game/spiel/10a-fenster-insel-vorschau.js:341
+- `sliderToTroops` → Game/spiel/10a-fenster-insel-vorschau.js:342
 - `sofort` → Game/speichern.js:168
-- `sourceTroops` → Game/spiel/10a-fenster-insel-vorschau.js:275
+- `sourceTroops` → Game/spiel/10a-fenster-insel-vorschau.js:276
 - `spaeh` → Game/spiel/05d-marsch-liste-kampfbericht.js:491
 - `spaehAbgelaufen` → Game/spiel/02c-marsch-spaeher-ankunft.js:106
 - `spaehAlterText` → Game/spiel/02c-marsch-spaeher-ankunft.js:119
@@ -2000,8 +2001,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `strokeBox` → Game/spiel/03a-karte-hintergrund.js:609
 - `stufenTruppenMass` → Game/spiel/02a-shop-stufen.js:217
 - `stufenZahl` → Game/spiel/03a-karte-hintergrund.js:34
-- `stufenZahlBild` → Game/spiel/03b-karte-basen-bilder.js:178
-- `stufenZahlen` → Game/spiel/03b-karte-basen-bilder.js:189
+- `stufenZahlBild` → Game/spiel/03b-karte-basen-bilder.js:179
+- `stufenZahlen` → Game/spiel/03b-karte-basen-bilder.js:190
 - `suche` → Game/spiel/01b-weltkarte.js:258
 - `sumBox` → Game/spiel/03e-karte-kamera-eingabe.js:66
 - `syncPanelState` → Game/spiel/09e-fenster-insel.js:36
@@ -2062,9 +2063,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tollFor` → Game/spiel/01b-weltkarte.js:281
 - `tone` → Game/spiel/10c-start-einstellungen.js:58
 - `topf` → Game/welt.js:330
-- `torAngreifbar` → Game/spiel/03b-karte-basen-bilder.js:234
+- `torAngreifbar` → Game/spiel/03b-karte-basen-bilder.js:235
 - `torMitte` → Game/spiel/03b-karte-basen-bilder.js:5
-- `torSchloesser` → Game/spiel/03b-karte-basen-bilder.js:241
+- `torSchloesser` → Game/spiel/03b-karte-basen-bilder.js:242
 - `toSX` → Game/spiel/03a-karte-hintergrund.js:6
 - `totalCoinProductionPerTick` → Game/spiel/01e-kampf-werte-nebel-hud.js:216
 - `totalTroopProductionPerTick` → Game/spiel/01e-kampf-werte-nebel-hud.js:206
@@ -2082,8 +2083,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `travelDurationSeconds` → Game/spiel/02b-marsch-losschicken.js:23
 - `troopProductionMultiplier` → Game/spiel/04-kampf-ankunft.js:236
 - `troopsPerTick` → Game/spiel/01b-weltkarte.js:106
-- `troopsToSlider` → Game/spiel/10a-fenster-insel-vorschau.js:342
-- `trunc` → Game/spiel/03b-karte-basen-bilder.js:331
+- `troopsToSlider` → Game/spiel/10a-fenster-insel-vorschau.js:343
+- `trunc` → Game/spiel/03b-karte-basen-bilder.js:332
 - `truppenBekannt` → Game/spiel/01e-kampf-werte-nebel-hud.js:38
 - `truppenGeben` → Game/spiel/10d2-welt-schummelschutz.js:360
 - `truppenMitRest` → Game/spiel/06d-schild-produktion.js:201
@@ -2218,7 +2219,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `WELT.BEFEHLE.beitreten` → Game/spiel/10d5-welt-befehle.js:166
 - `WELT.BEFEHLE.feld` → Game/spiel/10d5-welt-befehle.js:130
 - `WELT.BEFEHLE.feldHeim` → Game/spiel/10d5-welt-befehle.js:137
-- `WELT.BEFEHLE.haendler` → Game/haendler.js:113
+- `WELT.BEFEHLE.haendler` → Game/haendler.js:121
 - `WELT.BEFEHLE.lager` → Game/spiel/10d5-welt-befehle.js:138
 - `WELT.BEFEHLE.schneller` → Game/spiel/10d5-welt-befehle.js:66
 - `WELT.BEFEHLE.senden` → Game/spiel/10d5-welt-befehle.js:43
@@ -2268,7 +2269,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `window.__stopSplashScene` → Game/ladebildschirm.js:335
 - `window.__weltBefehl` → Game/spiel/10d5-welt-befehle.js:214
 - `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:398
-- `window.__weltLaden` → Game/haendler.js:139
+- `window.__weltLaden` → Game/haendler.js:147
 - `window.__weltLaden` → Game/spiel/10d1-welt-verbindung.js:26
 - `window.__weltLaden` → Game/spiel/10d6-welt-nachrichten-start.js:120
 - `window.__weltLaden` → Game/spiel/10d6-welt-nachrichten-start.js:95
@@ -3175,39 +3176,39 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `torMitte` :5
 - `drawTorBild` :13 — (Bildschirm) Pass-Tor offen/zu; dunkel: noch im Nebel. Waagrechte Grenze: das P…
 - `drawUebersichtZeichen` :25 — Ganz weit (wie die Karten-Testdatei): Pass-Punkte in der Farbe ihrer Stufe (noc…
-- `drawToreImNebel` :38 — die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel…
-- `heiligtumBild` :47 — (Bildschirm) Königsthron bzw. Wachturm an seinem Weltpunkt, außerhalb des Thron…
-- `extraBild` :58
-- `basisBildNr` :64
-- `basisBild` :65 — das Bild nr (1–15), lädt beim ersten Mal alle 15
-- `basisMip` :71 — Bild nr, so oft halbiert, wie es noch ≥ px breit bleibt (klein flimmert es sons…
-- `basisBreite` :80 — Breite des Basis-Bilds in px, 0 = kein Bild
-- `basisKreis` :85 — Basis als Bild: Mitte (dy über dem Fußpunkt) und Halbmesser für Ringe/Kuppel – …
-- `basisBildRect` :89 — (Bildschirm) wo das Basis-Bild steht (ohne den leeren Rand unten) oder null
-- `drawBasisBild` :93 — (Bildschirm) → true, wenn das Bild gezeichnet ist
-- `schildRect` :114 — (Bildschirm) wo das Schild einer Basis steht
-- `schildDaten` :118 — → { art, wer, stufe, truppen }
-- `ringBild` :126 — geladenes Bild oder null (lädt beim ersten Mal)
-- `rahmenAufKarte` :131 — angelegter Rahmen des Besitzers (je 2 s gemerkt – jedes Bild fragt danach)
-- `schildBild` :136 — das fertige Schild, W px breit (Leinwand × dpr)
-- `basisSchilde` :161
-- `sicht` :163
-- `stufenZahlBild` :178 — Freie Basen (wie Barbaren/Felder in RoK): nur ein kleines, dezentes Abzeichen m…
-- `stufenZahlen` :189 — → [{ isl, x, y, c }] (Bildschirm, linke obere Ecke) der freien Basen im Bild
-- `drawBasisSchilder` :201 — nach allen Basen: Schilde und Stufen-Zahlen liegen obenauf
-- `hauptBild` :210 — geladenes Bild oder null (lädt beim ersten Mal; fehlt es, das Ersatz-Bild)
-- `hauptRingBild` :216
-- `hauptPuls` :217 — Deckkraft 0,55 ↔ 0,9 in 2 s (Akku sparen: fest 0,8)
-- `hauptPulsWeiter` :219 — der langsame Puls braucht nur ~8 Bilder/s (nicht die 30 der Märsche: schont das…
-- `drawHauptstadtRing` :222 — (Bildschirm) unter der Basis, vor den Gebäuden
-- `torAngreifbar` :234
-- `torSchloesser` :241 — → [{ id, x, y, w, h }] (Bildschirm) der Schlösser im Bild
-- `drawTorSchloesser` :256
-- `drawPlatzhalter` :264 — Alle Gebäude nur noch als KI-Bild (Alexander 8.10.: die alte 3D-Burg ist raus).…
-- `drawBuilding` :267 — screen space (setScreen active)
-- `drawBrand` :281 — Flammen auf den Dächern und Rauch, der aufsteigt
-- `bannerModel` :298
-- `trunc` :331
+- `drawToreImNebel` :39 — die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel…
+- `heiligtumBild` :48 — (Bildschirm) Königsthron bzw. Wachturm an seinem Weltpunkt, außerhalb des Thron…
+- `extraBild` :59
+- `basisBildNr` :65
+- `basisBild` :66 — das Bild nr (1–15), lädt beim ersten Mal alle 15
+- `basisMip` :72 — Bild nr, so oft halbiert, wie es noch ≥ px breit bleibt (klein flimmert es sons…
+- `basisBreite` :81 — Breite des Basis-Bilds in px, 0 = kein Bild
+- `basisKreis` :86 — Basis als Bild: Mitte (dy über dem Fußpunkt) und Halbmesser für Ringe/Kuppel – …
+- `basisBildRect` :90 — (Bildschirm) wo das Basis-Bild steht (ohne den leeren Rand unten) oder null
+- `drawBasisBild` :94 — (Bildschirm) → true, wenn das Bild gezeichnet ist
+- `schildRect` :115 — (Bildschirm) wo das Schild einer Basis steht
+- `schildDaten` :119 — → { art, wer, stufe, truppen }
+- `ringBild` :127 — geladenes Bild oder null (lädt beim ersten Mal)
+- `rahmenAufKarte` :132 — angelegter Rahmen des Besitzers (je 2 s gemerkt – jedes Bild fragt danach)
+- `schildBild` :137 — das fertige Schild, W px breit (Leinwand × dpr)
+- `basisSchilde` :162
+- `sicht` :164
+- `stufenZahlBild` :179 — Freie Basen (wie Barbaren/Felder in RoK): nur ein kleines, dezentes Abzeichen m…
+- `stufenZahlen` :190 — → [{ isl, x, y, c }] (Bildschirm, linke obere Ecke) der freien Basen im Bild
+- `drawBasisSchilder` :202 — nach allen Basen: Schilde und Stufen-Zahlen liegen obenauf
+- `hauptBild` :211 — geladenes Bild oder null (lädt beim ersten Mal; fehlt es, das Ersatz-Bild)
+- `hauptRingBild` :217
+- `hauptPuls` :218 — Deckkraft 0,55 ↔ 0,9 in 2 s (Akku sparen: fest 0,8)
+- `hauptPulsWeiter` :220 — der langsame Puls braucht nur ~8 Bilder/s (nicht die 30 der Märsche: schont das…
+- `drawHauptstadtRing` :223 — (Bildschirm) unter der Basis, vor den Gebäuden
+- `torAngreifbar` :235
+- `torSchloesser` :242 — → [{ id, x, y, w, h }] (Bildschirm) der Schlösser im Bild
+- `drawTorSchloesser` :257
+- `drawPlatzhalter` :265 — Alle Gebäude nur noch als KI-Bild (Alexander 8.10.: die alte 3D-Burg ist raus).…
+- `drawBuilding` :268 — screen space (setScreen active)
+- `drawBrand` :282 — Flammen auf den Dächern und Rauch, der aufsteigt
+- `bannerModel` :299
+- `trunc` :332
 
 ### Game/spiel/03c-karte-wappen-thronplatz.js — Wappen und der Thronplatz in der Mitte
 - `loadCrest` :7
@@ -3771,7 +3772,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `frei` :28
 - `kisteOeffnen` :35
 - `shopWare` :48 — Bausteine der Reiter (wie die Test-Datei werkzeuge/thronevent ?a=shopkisten|sho…
-- `shopGruppe` :50
+- `shopGruppe` :50 — Spalten = Anzahl (2–3): volle Breite
 - `gemKnopf` :51 — Preis in Edelsteinen (ab 500 nach dem ersten Tipp „Wirklich?“ – übersteht das N…
 - `emKnopf` :54
 - `renderKistenReiter` :55
@@ -4288,20 +4289,20 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `popupKopfBild` :108 — Kopf: Basen zeigen ihr Bild (wie auf der Karte), Tore das Tor – sonst das Symbol
 - `coordText` :121 — Presentation rewrite (design-spec §4.5). Which buttons show, when they are disa…
 - `renderPopup` :122
-- `inselMittig` :253 — Handy: die Basis immer mittig in den freien Teil der Karte über dem Fenster (un…
-- `apQuelleText` :262 — „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
-- `apHeldChip` :265 — eine Held-Karte: Bild (Hauptheld groß), Name, darunter klein Sterne/Hinweis
-- `renderAttackPreview` :274 — Attack preview. Built ONCE per (target, source, scouted, bonus); later calls (t…
-- `sourceTroops` :275
-- `sliderToTroops` :341
-- `troopsToSlider` :342
-- `parseTroopInput` :343
-- `setTroopInput` :353
-- `bindTroopInput` :354
-- `renderSendPreview` :364 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
-- `patchSendPreview` :395
-- `patchAttackPreview` :415 — Writes the live numbers of the attack preview (own force, enemy force when scou…
-- `hfl` :438
+- `inselMittig` :254 — Handy: die Basis immer mittig in den freien Teil der Karte über dem Fenster (un…
+- `apQuelleText` :263 — „Turm #23633 · 16,8 Bio. · reicht“ (die nächste steht vorn)
+- `apHeldChip` :266 — eine Held-Karte: Bild (Hauptheld groß), Name, darunter klein Sterne/Hinweis
+- `renderAttackPreview` :275 — Attack preview. Built ONCE per (target, source, scouted, bonus); later calls (t…
+- `sourceTroops` :276
+- `sliderToTroops` :342
+- `troopsToSlider` :343
+- `parseTroopInput` :344
+- `setTroopInput` :354
+- `bindTroopInput` :355
+- `renderSendPreview` :365 — Sending troops to your own base: like the attack, pick how many go (slider or 2…
+- `patchSendPreview` :396
+- `patchAttackPreview` :416 — Writes the live numbers of the attack preview (own force, enemy force when scou…
+- `hfl` :439
 
 ### Game/spiel/10b-fenster-insel-knoepfe.js — Insel-Fenster: Ausbau merken, Zurückrufen, Nebel antippen, Tippen auf die Karte
 - `ausbauMerken` :5
@@ -4657,21 +4658,22 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hdGekauft` :39
 - `hdSammeln` :40
 - `hdWerName` :41
-- `hdOrt` :44 — ---- Weltrechner: kommen, gehen, Mitspieler kaufen ----
-- `hdTakt` :54
-- `hdSoeldner` :81 — Söldner: eine Stunde Truppen-Ausbildung, mindestens 1.000 × WIRTSCHAFT_KOSTEN (…
-- `hdKaufen` :82 — (Weltrechner) bezahlen + Ware geben → '' oder der Grund
-- `WELT.BEFEHLE.haendler` :113
-- `hdBefehl` :118 — (Münzen eben erst bekommen? Sein Profil kommt alle 10 s – dann bis zu 4-mal 5 s…
-- `window.__weltLaden` :139
-- `hdBild` :151 — ---- Karte: der Karren (auch im Nebel sichtbar), antippen öffnet das Angebot --…
-- `drawHaendler` :152
-- `plane` :163
-- `haendlerAt` :178
-- `hdOffen` :182
-- `haendlerOeffnen` :183
-- `hdRender` :184
-- `haendlerChip` :212 — Hinweis unter dem HUD (renderMidBar in spiel.js holt ihn, wenn nichts Dringende…
+- `hdPlatz` :44 — ---- Weltrechner: kommen, gehen, Mitspieler kaufen ----
+- `hdOrt` :52 — ein freier Platz in einer bewohnten Region (nicht Mitte/Wächter)
+- `hdTakt` :62
+- `hdSoeldner` :89 — Söldner: eine Stunde Truppen-Ausbildung, mindestens 1.000 × WIRTSCHAFT_KOSTEN (…
+- `hdKaufen` :90 — (Weltrechner) bezahlen + Ware geben → '' oder der Grund
+- `WELT.BEFEHLE.haendler` :121
+- `hdBefehl` :126 — (Münzen eben erst bekommen? Sein Profil kommt alle 10 s – dann bis zu 4-mal 5 s…
+- `window.__weltLaden` :147
+- `hdBild` :159 — ---- Karte: der Karren (auch im Nebel sichtbar), antippen öffnet das Angebot --…
+- `drawHaendler` :160
+- `plane` :171
+- `haendlerAt` :186
+- `hdOffen` :190
+- `haendlerOeffnen` :191
+- `hdRender` :192
+- `haendlerChip` :220 — Hinweis unter dem HUD (renderMidBar in spiel.js holt ihn, wenn nichts Dringende…
 
 ### Game/index.php — index.php – Startseite: Anmelden oder Registrieren. Danach geht es ins Spiel (s…
 - Aktion `'neu'` :20
