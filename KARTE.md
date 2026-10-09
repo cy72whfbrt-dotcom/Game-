@@ -574,14 +574,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `chip` → Game/spiel/05b-profil-truhe-skills.js:9
 - `chipN` → Game/spiel/01a-grundlagen.js:203
 - `cityAnfHtml` → Game/spiel/08b-stadt-burg-aussehen.js:107
-- `cityBauId` → Game/spiel/08a-stadt-bauen.js:274
+- `cityBauId` → Game/spiel/08a-stadt-bauen.js:275
 - `cityBild` → Game/spiel/08e-stadt-bild-orte.js:24
 - `cityBildSetzen` → Game/spiel/08b-stadt-burg-aussehen.js:86
 - `cityBlocker` → Game/spiel/08a-stadt-bauen.js:109
 - `cityBuildOf` → Game/spiel/08a-stadt-bauen.js:74
 - `cityBuildsFix` → Game/spiel/08a-stadt-bauen.js:65
 - `cityBurgFehlt` → Game/spiel/08b-stadt-burg-aussehen.js:115
-- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:260
+- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:261
 - `cityClampBuild` → Game/spiel/08a-stadt-bauen.js:101
 - `cityClampCam` → Game/spiel/08e-stadt-bild-orte.js:34
 - `cityCost` → Game/spiel/08a-stadt-bauen.js:90
@@ -1721,7 +1721,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderChestEquipment` → Game/spiel/05b-profil-truhe-skills.js:46
 - `renderChestItemPopup` → Game/spiel/05b-profil-truhe-skills.js:189
 - `renderCitySheet` → Game/spiel/08b-stadt-burg-aussehen.js:143
-- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:275
+- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:276
 - `renderCombatLog` → Game/spiel/05d-marsch-liste-kampfbericht.js:148
 - `renderCrestCard` → Game/spiel/05a-profil-rahmen.js:71
 - `renderCrestEditor` → Game/spiel/05a-profil-rahmen.js:76
@@ -3861,9 +3861,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openCity` :214 — dann: läuft, sobald die Stadt da ist (z. B. die Burg öffnen) – nicht nach feste…
 - `closeCity` :232
 - `updateCityBuilder` :250 — seitlich in der Stadt: Hammer mit „frei/alle“, Antippen klappt die Bauarbeiter …
-- `cityBuyBuilder2` :260
-- `cityBauId` :274 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
-- `renderCitySheetTimer` :275
+- `cityBuyBuilder2` :261
+- `cityBauId` :275 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
+- `renderCitySheetTimer` :276
 
 ### Game/spiel/08b-stadt-burg-aussehen.js — Burg (Ausbau, Friedensschild) und Fenster Aussehen
 - `shieldStock` :3 — DEINE BURG (tap the castle in the city): upgrade it, switch on a Friedensschild
@@ -3993,7 +3993,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wert` :84 — (Auswahl offen: die Werte-Zeilen ruhen – so passt das Fenster am Handy ohne Scr…
 - `vhWaehlen` :91 — 1: Hauptheld, 2: Zweitheld (ohne Hauptheld kein Zweitheld – wie beim Angriff)
 - `stadtLeiste` :121 — Auch in der Stadt bleiben die obere Leiste (Münzen, Gems, Truppen, Rohstoffe) u…
-- `stadtKopf` :127 — Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
+- `stadtKopf` :127 — Unterkante von Kopf und Bauarbeiter-Hammer → der Hinweis (Handy) liegt darunter
 
 ### Game/spiel/08d2-stadt-teleport.js — Hauptstadt teleportieren (Platz prüfen, verlegen, Teleporter)
 - `inselOrtLaden` :17

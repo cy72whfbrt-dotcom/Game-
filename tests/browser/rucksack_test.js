@@ -75,7 +75,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(c.kaufen && c.tele, 'Rucksack: ohne Schild kein „Kaufen“, sondern „Im Shop holen“; Teleporter 1× mit „Benutzen“', c);
   // E) Splitter je Held
   const e = await p.evaluate(async () => {
-    const warte = ms => new Promise(f => setTimeout(f, ms)), h = HEROES[0]; loadHeroes()[h.id].sh = 37; rkTab = 'sonst'; renderRucksack();
+    const warte = ms => new Promise(f => setTimeout(f, ms)), h = HEROES[0]; const ci = loadCity(); ci.levels.heroes = Math.max(1, ci.levels.heroes || 0); saveCity(); loadHeroes()[h.id].sh = 37; rkTab = 'sonst'; renderRucksack();
     const k = document.querySelector('[data-rk-wahl="h' + h.id + '"]'), o = { da: !!k, zahl: k && k.innerText.includes('37') };
     k.click(); document.querySelector('[data-rk-held="' + h.id + '"]').click(); await warte(300); o.held = !document.getElementById('heroHall').hidden && hhCur === h.id && !isPanelOpen(rucksackPopup);
     closeHeroHall(); openRucksack(); await warte(300); return o;

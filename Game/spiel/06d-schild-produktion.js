@@ -82,7 +82,7 @@ function rkFach(b, name, txt, knopf) {               // eine Zeile: Kachel · Na
     return '<div class="rk-fach ki-karte">' + beuteKachel(b) + '<span class="rk-txt"><b>' + name + '</b><small>' + txt + '</small></span>' + knopf + '</div>';
 }
 const RK_TABS = [['tempo', 'Tempo', 'hourglass', 'tempo'], ['schild', 'Schilde', 'shield', 'shield'], ['schl', 'Schlüssel', 'gem', 'gems'], ['sonst', 'Sonstiges', 'crate', 'gems']];   // [Reiter, Name, Symbol, Shop-Reiter]
-let rkTab = null, rkWahl = null;                   // Reiter (null: der erste mit Inhalt) und angetippte Kachel
+let rkTab = null, rkWahl = null;                   // Reiter (null: beim ersten Öffnen der erste mit Inhalt, dann bleibt er) und angetippte Kachel
 function rkSachen() {                              // je Reiter nur, was man besitzt: { k: Schlüssel, b: Kachel, name, txt, knopf }
     const st = shieldStock(), nt = teleImRucksack(), knopf = (attr, t) => '<button type="button" class="btn btn--primary rk-knopf" ' + attr + '><span>' + t + '</span></button>';
     return {
@@ -97,7 +97,7 @@ function rkSachen() {                              // je Reiter nur, was man bes
 function renderRucksack() {                         // Raster aus Kacheln je Reiter (wie RoK): Antippen → unten „Benutzen“; leer → „Im Shop holen“
     if (!isPanelOpen(rucksackPopup)) return;
     const now = Date.now(), sh = shieldUntil() > now ? shieldUntil() : 0, neu = sh ? 0 : neulingBis(), S = rkSachen();
-    const tab = rkTab || (RK_TABS.find(t => S[t[0]].length) || RK_TABS[1])[0], L = S[tab], w = L.find(x => x.k === rkWahl) || L[0], def = RK_TABS.find(t => t[0] === tab);
+    const tab = rkTab = rkTab || (RK_TABS.find(t => S[t[0]].length) || RK_TABS[1])[0], L = S[tab], w = L.find(x => x.k === rkWahl) || L[0], def = RK_TABS.find(t => t[0] === tab);
     liveHtml(document.getElementById('rkSchildStand'), icon('shield') + '<span>' + (sh ? 'Friedensschild aktiv – noch ' + uhrHtml(sh) : neu > now ? 'Anfängerschutz – noch ' + uhrHtml(neu) + ' (oder bis 100.000 Truppen)' : 'Kein Schild aktiv.') + '</span>');
     let h = '<div class="seg rk-tabs">' + RK_TABS.map(([k, t, ic]) => '<button type="button" data-rk-tab="' + k + '"' + (k === tab ? ' class="on"' : '') + '>' + icon(ic) + '<span>' + t + '</span>' + (S[k].length ? '<small>' + S[k].length + '</small>' : '') + '</button>').join('') + '</div>';
     h += L.length ? '<div class="rk-raster">' + L.map(x => '<button type="button" class="rk-item' + (x === w ? ' is-on' : '') + '" data-rk-wahl="' + x.k + '" aria-label="' + escapeHtml(x.name) + '">' + beuteKachel(x.b) + '<small>' + escapeHtml(x.name) + '</small></button>').join('') + '</div>' +

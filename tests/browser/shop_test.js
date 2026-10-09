@@ -70,7 +70,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       // E) Kachel + Rucksack
       o.kachel = { s1: beuteKachel({ a: 'schluessel1', n: 3 }).includes('beute_schluessel.webp'), em: beuteKachel({ a: 'eventMuenzen', n: 500 }).includes('beute_eventmuenze'), b: /beute_beschleuniger_gross[\s\S]*24 Std/.test(beuteKachel({ a: 'besch', n: 1, dauer: '24h' })),
         gibt: JSON.stringify(gibBelohnung('besch', 1, '8h')), falsch: gibBelohnung('besch', 1, '7h') === null };
-      rkTab = 'tempo'; openRucksack(); await warte(200); const S = rkSachen();
+      schluessel2 = Math.max(1, schluessel2); rkTab = 'tempo'; openRucksack(); await warte(200); const S = rkSachen();
       o.rucksack = { schl: S.schl.some(x => x.name === 'Epischer Schlüssel'), em: S.sonst.some(x => x.k === 'ev'), besch: document.querySelectorAll('#rkInhalt .rk-raster .bk[data-beute="besch"]').length };
       return o;
     }).catch(e => ({ fehler: e.message }));

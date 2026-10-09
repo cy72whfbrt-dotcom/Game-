@@ -38,7 +38,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.waitForTimeout(500); await ev(() => { HEROES.forEach((h, i) => { const s = heroSt('player', h.id); if (s) s.sh = i < 4 ? 4 : 0; }); saveHeroes(); renderRucksack(); }); await p.waitForTimeout(300);   // (die Test-Vorschau setzt die Helden beim Start noch einmal)
     const rk = await ev(() => { rkTab = 'sonst'; rkWahl = null; renderRucksack(); const K = [...document.querySelectorAll('#rkInhalt .rk-raster .rk-item')], top0 = K.length && K[0].getBoundingClientRect().top;
       return { n: K.length, reihe: K.filter(k => Math.abs(k.getBoundingClientRect().top - top0) < 2).length, kauf: /Kaufen/.test(document.getElementById('rkInhalt').innerText), benutzen: !!document.querySelector('#rkInhalt [data-rk-tele]') }; });
-    ok(rk.n === 5 && rk.reihe >= 4 && rk.reihe <= 5 && !rk.kauf && rk.benutzen, art + ': Rucksack – Raster mit 4–5 Kacheln je Reihe (Teleporter + 4 Splitter), kein „Kaufen“, Teleporter „Benutzen“', rk);
+    ok(rk.n === 4 && rk.reihe === 4 && !rk.kauf, art + ': Rucksack – Raster mit 4 Kacheln in einer Reihe (4 Splitter), kein „Kaufen“', rk);
     if (art === 'Handy') { await ev(() => document.querySelector('#rkInhalt .rk-raster').scrollIntoView({ block: 'center' })); await p.waitForTimeout(150); const f = await frei('#rkInhalt .rk-raster'); ok(f >= 10, art + ': Rucksack – Kachel-Raster ganz im Fenster (nicht abgeschnitten)', f); }
     await bild('rucksack');
     const hRuck = await ev(() => Math.round(rucksackPopup.getBoundingClientRect().height));

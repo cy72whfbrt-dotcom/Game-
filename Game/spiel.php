@@ -1896,7 +1896,8 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim 
 .rk-fach{display:flex;align-items:center;gap:10px;padding:6px 8px;--bk:52px}
 .rk-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px} .rk-txt b{font:700 var(--fs-14,14px)/1.2 var(--font-ui);color:var(--tx-1)} .rk-txt small{font:500 12px/1.25 var(--font-ui);color:var(--tx-2)}
 .rk-knopf{flex:none;min-width:96px;min-height:44px;gap:6px}
-.rk-tabs{display:flex} .rk-tabs button{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:0 4px;font-size:12px} .rk-tabs .icon{width:14px;height:14px;flex:none} .rk-tabs small{color:var(--gold-200);font-size:10px}
+.rk-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px} .rk-tabs button{min-width:0;overflow:hidden;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:0 4px;font-size:12px} .rk-tabs .icon{width:14px;height:14px;flex:none} .rk-tabs small{color:var(--gold-200);font-size:10px}
+@media (max-width:480px){.rk-tabs .icon{display:none} .rk-tabs button{padding:0 2px;font-size:11px}}
 .rk-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;--bk:56px}   /* 4–5 Kacheln je Reihe */
 .rk-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;border:1px solid transparent;border-radius:10px;background:none;cursor:pointer;min-width:0}
 .rk-item small{font:600 10px/1.15 var(--font-ui);color:var(--tx-2);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

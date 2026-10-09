@@ -124,9 +124,9 @@ function stadtLeiste(an) {
     const b = document.getElementById('cityNavBtn'), l = b.querySelector('.nav-l'), u = b.querySelector('use');
     if (l) l.textContent = an ? 'Karte' : 'Stadt'; if (u) u.setAttribute('href', an ? '#i-flag' : '#i-castle'); b.classList.toggle('active', an);
 }
-function stadtKopf() {                          // Unterkante der Bauarbeiter-Zeile → der Hinweis (Handy) liegt darunter
+function stadtKopf() {                          // Unterkante von Kopf und Bauarbeiter-Hammer → der Hinweis (Handy) liegt darunter
     if (!document.body.classList.contains('in-stadt')) return;
-    const u = Math.round(document.querySelector('.city-head').getBoundingClientRect().bottom);
+    const kb = document.getElementById('cityBuilder').getBoundingClientRect(), u = Math.round(Math.max(document.querySelector('.city-head').getBoundingClientRect().bottom, kb.height ? kb.bottom : 0));   // (der Bauarbeiter-Hammer zählt mit)
     if (u > 0 && u !== stadtKopfU) { stadtKopfU = u; document.body.style.setProperty('--stadt-kopf', u + 'px'); }
 }
 var stadtKopfU = 0;
