@@ -41,7 +41,7 @@
 .herr-bild{position:relative;width:64px;height:64px;flex:none;border-radius:50%;background:#1b2638;box-shadow:0 0 14px 4px rgba(255,210,90,.8)}
 .herr-bild img{position:absolute;inset:18%;width:64%;height:64%;border-radius:50%} .herr-bild .herr-rahmen{inset:-14%;width:128%;height:128%;border-radius:0}
 /* Herrscher-Ansage (06c herrAnsage): großes Banner nach dem Thron-Event, einmal je Spieler */
-.herr-ansage{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,10,20,.72);animation:herrAnsageEin .5s ease-out}
+.herr-ansage{position:fixed;inset:0;z-index:calc(var(--z-toast) + 1);display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(6,10,20,.72);animation:herrAnsageEin .5s ease-out}
 .herr-ansage-karte{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;width:min(340px,100%);padding:56px 20px 20px;border-radius:18px;text-align:center;color:#fff3cf;
   background:radial-gradient(circle at 50% 30%,#5a3d12,#24170a 70%);border:3px solid #e8b94a;box-shadow:0 0 40px 8px rgba(255,200,80,.55)}
 .herr-ansage-krone{position:absolute;top:-44px;width:96px;height:96px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.6))}

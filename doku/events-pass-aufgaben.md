@@ -88,3 +88,5 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 - Events-Fenster Chip „Thron“ (`evThronHtml`, grüner Punkt = läuft), Herrscher-Fenster `#herrPopup` (`renderHerr`). Thron-Shop und
   Thron-Punkte als Währung sind weg; `earned`/`tpEarned` zählen nur noch für Saison-Rangliste und Erfolge. Pass gibt statt 150
   Thron-Punkten 150 Event-Münzen.
+- Herrscher-Ansage (`herrAnsage`, 06c): nach der Auswertung bis 2 Tage lang einmal je Spieler großes Banner mit Krone „Neuer
+  Herrscher: <Name>“ (`openWaterHerrGesehen` im Profil). Test `features_test`.

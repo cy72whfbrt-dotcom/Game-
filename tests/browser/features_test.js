@@ -39,7 +39,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     for (const w of [K.id, V.id]) if (bundVon(w)) bundOp(w, { op: 'verlassen' });
     botCoins[K.id] = 1e9; bundOp(K.id, { op: 'gruenden', name: 'Hilfeprobe', tag: 'HLP', offen: true }); const a = bundVon(K.id); bundOp(V.id, { op: 'beitreten', aid: a.id });
     const bs = loadBotState(), c = bs[K.id].city || (bs[K.id].city = { levels: {}, builds: [] }); c.levels = c.levels || {}; c.levels.embassy = 3; c.levels.keep = Math.max(c.levels.keep || 1, 10);
-    const now = Date.now(), dauer = hilfeDauer('bau', 'embassy', 4); c.builds = [{ id: 'embassy', to: 4, startedAt: now, endsAt: now + dauer }]; saveBotState();
+    const now = Date.now(), dauer = hilfeDauer('bau', 'embassy', 4); c.builds = [{ id: 'embassy', to: 4, startedAt: now, endsAt: now + 864e5 }]; saveBotState();
     const fehler = bundHilfeBitte(a, K.id, { was: 'bau', k: 'embassy', to: 4 }, now), hb = (a.hilfe || []).find(x => x.w === K.id);
     const e0 = c.builds[0].endsAt, ja = bundHelfen(a, V.id, hb.id, now), e1 = loadBotState()[K.id].city.builds[0].endsAt, nochmal = bundHelfen(a, V.id, hb.id, now);
     return { fehler, max: hb.max, ja, nochmal, weniger: e0 - e1, soll: Math.max(60000, dauer * .01) };

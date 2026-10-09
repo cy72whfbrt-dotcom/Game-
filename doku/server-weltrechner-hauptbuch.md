@@ -63,6 +63,8 @@ schicken Befehle. Wichtigste Dateien: `Game/server/` (7 Teile → `server.php`: 
 ## Push (Web-Push)
 - `weltrechner/push.js`, Service-Worker `Game/sw.js` nur für Push (einzige Browser-Ausnahme, Alexander erlaubt). Nur wenn man
   nicht im Spiel ist, höchstens 1/Min. Arten einzeln abschaltbar (`PUSH_ARTEN`, Einstellungen). iPhone nur als Home-App.
+- Arten: angriff, spaeher, verloren, boss, sammler, schild, hilfe, rally, haendler, bau, forschung, `thron` (Sa 9 Uhr: Thron-Event in
+  1 Std., einmal je Event), `tageskiste` (Wochen-Event: neue Tages-Kisten-Stufe, aus `evState.wo.kl`). Test `features_test`.
 - VAPID-Schlüssel in `weltrechner/vapid.php` (nie löschen, nie im Git). Abmelden trägt das Gerät aus.
 
 ## Admin, Wartung, Neustart
