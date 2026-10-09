@@ -129,8 +129,6 @@ function renderKistenChancen() {                   // „i“ im Kisten-Reiter: 
     liveHtml(document.getElementById('heroChestOdds'), [1, 2, 3, 4].map(r => chip(r, tot ? Math.round(pool.filter(h => h.r === r).reduce((a, h) => a + 5 - h.r, 0) / tot * 100) : 0)).join(''));
     liveHtml(document.getElementById('shopOddsE'), RARITY_EPISCH.map((w, r) => w ? chip(r, w) : '').join(''));
 }
-const KISTE_R = { aus: 'grau', held: 'blau', gross: 'gold', episch: 'lila', royal: 'lila' };
-function kisteBild(k) { return '<img class="kiste-bild" src="bilder/' + (KISTE_BILD[k] || KISTE_BILD.aus) + '_zu.webp" alt="" draggable="false">'; }   // KI-Bild der Kiste (zu)
 shopPopup.addEventListener('click', e => { const b = e.target.closest('[data-sinfo]'); if (!b) return;   // „i“: Erklärung/Chancen auf und zu
     const k = b.dataset.sinfo, auf = !shopInfoAuf.has(k); if (auf) shopInfoAuf.add(k); else shopInfoAuf.delete(k);
     b.setAttribute('aria-expanded', auf ? 'true' : 'false'); b.classList.toggle('on', auf);

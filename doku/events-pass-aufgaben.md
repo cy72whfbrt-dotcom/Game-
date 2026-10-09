@@ -2,7 +2,7 @@
 
 Alles im Fenster „Events“: Wochen-Event, Barbaren-Lager, Kriegsherr, Aufgaben, Erfolge, Saison-Pass, Abholen, dazu die
 Anleitung für neue Spieler. Alles rechnet der Weltrechner (Welt-Teil `openWaterEvents`, `evState.wo`), Zeiten = Berliner Zeit.
-Wichtigste Dateien: `Game/spiel/09c-events-drache.js` (Wochen-Event, Event-Fenster, `evPreis`, `evLeisteHtml`),
+Wichtigste Dateien: `Game/spiel/09c-events-woche.js` (Wochen-Event, Event-Fenster, `evPreis`, `evLeisteHtml`),
 `09b-lager-tagesboss.js` (Lager, Tagesboss), `07b-kriegsherr.js`, `06a-aufgaben.js` (`QUEST_STAT`, Abholfach), `06b-pass-anleitung.js`,
 `05c-profil-erfolge-rangliste.js` (`ACHIEVEMENTS`), `bots/` (Mitspieler machen mit). Gegenstände (Event-Münzen, Schlüssel 1/2,
 Beschleuniger, `gibBelohnung`) in `05e-belohnung.js`. Test: `wochenevent_test`. Vorbild: `werkzeuge/wochenevent/wochenevent.html`.

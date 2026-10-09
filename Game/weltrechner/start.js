@@ -16,7 +16,7 @@
 //   - zu viele Fehler pro Minute → beenden
 //   - Wartung → sauber beenden (kein Absturz)
 'use strict';
-process.env.TZ = process.env.TZ || 'Europe/Berlin';   // Tage, Wochen-Event, Invasion, Drache: deutsche Zeit (wie bei den Spielern)
+process.env.TZ = process.env.TZ || 'Europe/Berlin';   // Tage, Wochen-Event, Saison: deutsche Zeit (wie bei den Spielern)
 const fs = require('fs'), path = require('path'), os = require('os');
 
 const ORDNER = __dirname, GAME = path.join(__dirname, '..');

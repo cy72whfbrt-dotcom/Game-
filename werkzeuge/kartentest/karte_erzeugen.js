@@ -165,7 +165,7 @@ for (let id = 0; id < GEBIETE; id++) {
 }
 
 // 6) Tempel: in jedem Zone-4-Gebiet einer, an der Stelle am weitesten weg von allen Grenzen (Raster-Abstand), nicht nah an Pässen;
-//    abwechselnd Tempel im Felskessel und Wächter-Tempel (Bilder karte_tempel / karte_waechtertempel)
+//    abwechselnd Tempel im Felskessel und Wächter-Tempel (beide mit Bild karte_tempel)
 const abst = new Int16Array(N * N).fill(-1), schlange = [];
 for (let p = 0; p < N * N; p++) { const i = p % N, j = (p - i) / N;
   if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([a, b]) => an(i + a, j + b) !== L[p])) { abst[p] = 0; schlange.push(p); } }

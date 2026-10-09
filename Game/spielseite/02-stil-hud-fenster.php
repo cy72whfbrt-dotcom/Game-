@@ -16,7 +16,7 @@
 body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--gold-200),0 0 12px rgba(214,170,90,.5)}
 .hud-werte{flex:1 1 auto;min-width:0;height:var(--hud-h);display:flex;align-items:center;padding:0 var(--ab-1);
   background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-pill);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-/* der EINE Streifen unter der Werte-Zeile: alle Dauer-Hinweise (Wochen-Event, Kopfgeld, Thron, Invasion, Drache, Händler, Saison), einzeilig –
+/* der EINE Streifen unter der Werte-Zeile: alle Dauer-Hinweise (Wochen-Event, Kopfgeld, Thron, Händler, Saison), einzeilig –
    der dringendste sichtbar, der Rest als Zähler „+2“ (antippen klappt alle auf) */
 .midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 70px);right:calc(var(--safe-r) + 64px);
   display:flex;align-items:flex-start;gap:var(--ab-1);pointer-events:none}   /* (rechts frei: das Schild „Rohstoffe“ unter dem Würfel) */

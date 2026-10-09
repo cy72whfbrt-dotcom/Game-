@@ -171,7 +171,7 @@ b,strong{font-weight:600}
 body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--gold-200),0 0 12px rgba(214,170,90,.5)}
 .hud-werte{flex:1 1 auto;min-width:0;height:var(--hud-h);display:flex;align-items:center;padding:0 var(--ab-1);
   background:var(--glass);border:1px solid var(--line-2);border-radius:var(--r-pill);box-shadow:var(--sh-1);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-/* der EINE Streifen unter der Werte-Zeile: alle Dauer-Hinweise (Wochen-Event, Kopfgeld, Thron, Invasion, Drache, Händler, Saison), einzeilig –
+/* der EINE Streifen unter der Werte-Zeile: alle Dauer-Hinweise (Wochen-Event, Kopfgeld, Thron, Händler, Saison), einzeilig –
    der dringendste sichtbar, der Rest als Zähler „+2“ (antippen klappt alle auf) */
 .midbar{position:fixed;z-index:var(--z-hud);top:calc(var(--safe-t) + 14px + var(--hud-h));left:calc(var(--safe-l) + 70px);right:calc(var(--safe-r) + 64px);
   display:flex;align-items:flex-start;gap:var(--ab-1);pointer-events:none}   /* (rechts frei: das Schild „Rohstoffe“ unter dem Würfel) */
@@ -1845,7 +1845,7 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .anf .anf-geh{min-height:36px;padding:0 10px;gap:4px;white-space:nowrap}
 .anf .anf-geh::before{content:"";position:absolute;inset:-4px 0}   /* Tippfläche 44 px */
 .anf .anf-geh{position:relative} .anf .anf-geh .icon{width:13px;height:13px}
-body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) beim Überblenden nicht unter der Bauarbeiter-Zeile durchscheinen – hart getauscht */
+body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim Überblenden nicht unter der Bauarbeiter-Zeile durchscheinen – hart getauscht */
 /* Umlaut-Punkte über Großbuchstaben (Ä/Ö/Ü in Überschriften, Reitern, Versalien) nicht abschneiden: einzeilige Texte mit
    „…“ schneiden nur noch seitlich ab (overflow-x:clip), nach oben bleibt Platz – die Zeilenhöhe (oft 1) war kleiner als die Punkte hoch sind */
 @supports (overflow:clip) {
@@ -2331,7 +2331,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
   <button id="cityNavBtn" class="nav-btn" type="button" title="Stadt: Burg, Gebäude, Forschung, Helden, Rohstoffe"><svg class="icon"><use href="#i-castle"/></svg><span class="nav-l">Stadt</span></button>
   <button id="bundBtn" class="nav-btn" type="button" title="Bündnis"><svg class="icon"><use href="#i-bund"/></svg><span class="nav-l">Bündnis</span><span id="bundBadge" class="badge" style="display:none">0</span></button>
   <button id="battleLogBtn" class="nav-btn" type="button" title="Kampf: Märsche und Berichte"><svg class="icon"><use href="#i-battlelog"/></svg><span class="nav-l">Kampf</span><span id="battleLogBadge" class="badge" style="display:none">0</span></button>
-  <button id="goalsBtn" class="nav-btn" type="button" title="Events: Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Invasion, Drache, Boss"><svg class="icon"><use href="#i-event"/></svg><span class="nav-l">Events</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
+  <button id="goalsBtn" class="nav-btn" type="button" title="Events: Aufgaben, Belohnungen, Erfolge, Pass, Wochen-Event, Thron, Boss"><svg class="icon"><use href="#i-event"/></svg><span class="nav-l">Events</span><span id="goalsBadge" class="badge" style="display:none">0</span></button>
   <button id="rucksackBtn" class="nav-btn" type="button" title="Rucksack: Schilde, Teleporter, Splitter"><svg class="icon"><use href="#i-crate"/></svg><span class="nav-l">Rucksack</span></button>
   <button id="shopBtn" class="nav-btn" type="button" title="Shop: Kisten, Schilde, Teleporter, Thron, Händler, Markt"><svg class="icon"><use href="#i-shop"/></svg><span class="nav-l">Shop</span></button>
   <button id="profileBtn" class="nav-btn" type="button" title="Profil: Spieler, Ausrüstung, Fähigkeiten, Rangliste, Einstellungen"><svg class="icon"><use href="#i-profile"/></svg><span class="nav-l">Profil</span></button>
@@ -2509,7 +2509,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 .lg-grenze{display:flex;align-items:center;gap:8px} .lg-grenze .bk{--bk:30px;flex:none} .lg-grenze > span{flex:1;display:grid;gap:3px} .lg-grenze b{font:700 12.5px/1 var(--font-ui);color:#fff}
 .lg-grenze i{display:block;height:6px;border-radius:3px;background:linear-gradient(90deg,#e4c886 var(--p),rgba(255,255,255,.12) var(--p))}
 #eventBody > .btn[data-ev-hol]{width:100%;margin:0 0 8px}
-/* Lebensbalken (Tagesboss/Drache): die Zahl nie halb abgeschnitten – Höhe wächst mit der Schrift */
+/* Lebensbalken (Tagesboss): die Zahl nie halb abgeschnitten – Höhe wächst mit der Schrift */
 .barb-hp{height:auto;min-height:20px} .barb-hp span{line-height:1.35;padding:2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev-saison{margin-top:12px}.ev-saison .field-lines b{text-align:left;justify-content:flex-start}
 .lb-info summary{display:flex;align-items:center;gap:6px;min-height:44px;list-style:none;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-2)} .lb-info summary::-webkit-details-marker{display:none}
@@ -2802,7 +2802,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 </section>
 
 <!-- ============ EVENTS (Dock): 4 Reiter Aufgaben (Täglich, Erfolge) · Abholen (Abholfach + tägliche Belohnung) · Pass ·
-     Ereignisse (Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager) – alles nur hier ============ -->
+     Ereignisse (Wochen-Event, Thron, Tagesboss + Barbaren-Lager) – alles nur hier ============ -->
 <section id="goalsPopup" class="panel panel--sheet" role="dialog" aria-labelledby="goalsTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">

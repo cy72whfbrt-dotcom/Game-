@@ -309,7 +309,7 @@ button.cb-slot{position:relative} button.cb-slot::before{content:"";position:abs
 .anf .anf-geh{min-height:36px;padding:0 10px;gap:4px;white-space:nowrap}
 .anf .anf-geh::before{content:"";position:absolute;inset:-4px 0}   /* Tippfläche 44 px */
 .anf .anf-geh{position:relative} .anf .anf-geh .icon{width:13px;height:13px}
-body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Invasion …) beim Überblenden nicht unter der Bauarbeiter-Zeile durchscheinen – hart getauscht */
+body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim Überblenden nicht unter der Bauarbeiter-Zeile durchscheinen – hart getauscht */
 /* Umlaut-Punkte über Großbuchstaben (Ä/Ö/Ü in Überschriften, Reitern, Versalien) nicht abschneiden: einzeilige Texte mit
    „…“ schneiden nur noch seitlich ab (overflow-x:clip), nach oben bleibt Platz – die Zeilenhöhe (oft 1) war kleiner als die Punkte hoch sind */
 @supports (overflow:clip) {

@@ -100,10 +100,8 @@
         openWaterBarbMarches(v, d) { const t = tausch(d); for (const m of v || []) m.who = t(m.who); return v; },
         openWaterBarbWho(v, d) { return schluesselTausch(v, d); },
         openWaterDayBoss(v, d) { if (v) schluesselTausch(v.dmg, d); return v; },
-        openWaterEvents(v, d) {   // Events: Punkte der Invasion, Schaden und Angriffe beim Drachen, Punkte im Wochen-Event
+        openWaterEvents(v, d) {   // Events: Punkte im Wochen-Event
             if (!v) return v;
-            if (v.inv) { schluesselTausch(v.inv.pts, d); schluesselTausch(v.inv.wehr, d); }
-            if (v.dr) { schluesselTausch(v.dr.dmg, d); schluesselTausch(v.dr.hits, d); }
             if (v.wo) { schluesselTausch(v.wo.pts, d); schluesselTausch(v.wo.kb, d); if (v.wo.last) { const t = tausch(d); for (const e of v.wo.last.top || []) e[0] = t(e[0]); } }   // Wochen-Event (Mo–Fr)
             return v;
         },

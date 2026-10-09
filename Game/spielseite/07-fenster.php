@@ -130,7 +130,7 @@
 .lg-grenze{display:flex;align-items:center;gap:8px} .lg-grenze .bk{--bk:30px;flex:none} .lg-grenze > span{flex:1;display:grid;gap:3px} .lg-grenze b{font:700 12.5px/1 var(--font-ui);color:#fff}
 .lg-grenze i{display:block;height:6px;border-radius:3px;background:linear-gradient(90deg,#e4c886 var(--p),rgba(255,255,255,.12) var(--p))}
 #eventBody > .btn[data-ev-hol]{width:100%;margin:0 0 8px}
-/* Lebensbalken (Tagesboss/Drache): die Zahl nie halb abgeschnitten – Höhe wächst mit der Schrift */
+/* Lebensbalken (Tagesboss): die Zahl nie halb abgeschnitten – Höhe wächst mit der Schrift */
 .barb-hp{height:auto;min-height:20px} .barb-hp span{line-height:1.35;padding:2px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ev-saison{margin-top:12px}.ev-saison .field-lines b{text-align:left;justify-content:flex-start}
 .lb-info summary{display:flex;align-items:center;gap:6px;min-height:44px;list-style:none;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-2)} .lb-info summary::-webkit-details-marker{display:none}
@@ -423,7 +423,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
 </section>
 
 <!-- ============ EVENTS (Dock): 4 Reiter Aufgaben (Täglich, Erfolge) · Abholen (Abholfach + tägliche Belohnung) · Pass ·
-     Ereignisse (Wochen-Event, Invasion, Drache, Tagesboss + Barbaren-Lager) – alles nur hier ============ -->
+     Ereignisse (Wochen-Event, Thron, Tagesboss + Barbaren-Lager) – alles nur hier ============ -->
 <section id="goalsPopup" class="panel panel--sheet" role="dialog" aria-labelledby="goalsTitle">
   <span class="sheet-grab" aria-hidden="true"></span>
   <header class="phead">

@@ -1,4 +1,4 @@
-// Teil 09c-events-drache.js: Events: Wochen-Event (Mo–Fr, Tages-Kisten, Wochen-Rangliste), Event-Fenster, gemeinsame Event-Bausteine
+// Teil 09c-events-woche.js: Events: Wochen-Event (Mo–Fr, Tages-Kisten, Wochen-Rangliste), Event-Fenster, gemeinsame Event-Bausteine
 // ===== WOCHEN-EVENT (Alexander 8.10.): jede Woche gleich – Mo Bauherr · Di Krieger · Mi Sammeln · Do Boss-Jagd · Fr Helden-Tag.
 // Nur das Event des Tages zählt. Je Tag 5 Tages-Kisten (nach Punkten des Tages, nicht abgeholt → Abholfach), Wochen-Rangliste
 // (Mo–Fr zusammen), Auswertung Fr 20 Uhr ins Abholfach. Punkte zählt nur, wer rechnet (Weltrechner). Welt-Schlüssel: openWaterEvents (evState.wo).
