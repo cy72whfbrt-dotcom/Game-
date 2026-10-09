@@ -28,11 +28,11 @@
         for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
-        g: 25 + questGemsTag(),                       // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42) – Event-Preise kommen als Nachricht (gIn)
+        g: 25 + questGemsTag() + 3 * 10,              // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42), Gratis-Kiste (3× höchstens 10, 06g) – Event-Preise kommen als Nachricht (gIn)
         k: 3 + 1 + 1 / 7,                             // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, epische Tageskiste
         kg: 27 / 7,                                   // davon „mind. Episch“ (Tag 7) als sicherer Kisten-Wert (Episch = 27)
         sh: HERO_SHARDS_DAY,                          // Splitter: Aufgaben-Bonus
-        em: 65, s1: 4.5, s2: 1.5, bm: 1000            // Gegenstände (05e): Event-Münzen nur aus dem Saison-Pass (Premium Stufe 6/18/42/54/66/78 je 150 = 900 je Pass; × HB_KAPPE_TAGE 14 = ein ganzer Pass – Event-Preise kommen als Nachricht, ggIn), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740)
+        em: 65, s1: 4.5 + 3, s2: 1.5, bm: 1000 + 3 * 5            // Gegenstände (05e): Event-Münzen nur aus dem Saison-Pass (Premium Stufe 6/18/42/54/66/78 je 150 = 900 je Pass; × HB_KAPPE_TAGE 14 = ein ganzer Pass – Event-Preise kommen als Nachricht, ggIn), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740); Gratis-Kiste (06g): je 8 Std. 1 Schlüssel oder 5 Min
     };
     const HB_ONLINE_STUNDE_G = 40;                    // Karten-Funde: 1–3 Gems, alle 20–45 s einer, 15 % davon Gems – nur solange er online ist
     const HB_KAPPE_TAGE = 14;                         // so viele Tage Spielraum sammeln sich höchstens an

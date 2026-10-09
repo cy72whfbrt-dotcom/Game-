@@ -104,6 +104,13 @@ const BEOBACHTER = `(function () {
         (c.bau || []).forEach((b, i) => { const L = ((c.levels || {})[b] || (b === 'keep' ? 1 : 0)) + 1; fertig({ art: 'bau', name: (cityDef(b) || {}).name || 'Gebäude', stufe: L }, (c.bauBis || [])[i], 'b' + id + b + L); });
         const d = c.foLauf && AUF && AUF.FORSCHUNG.find(x => x.id === c.foLauf);
         if (d) { const L = ((M[id].profil.fo || {})[d.id] || 0) + 1; fertig({ art: 'forschung', name: d.name, stufe: L }, c.foBis, 'f' + id + d.id + L); } } } catch (e) {}
+    // Thron-Event startet in 1 Stunde (Sa 9 Uhr) – an alle echten Spieler, einmal je Event
+    try { const tf = thronFenster(jetzt), k = 't' + tf.start; if (tf.start > jetzt && tf.start - jetzt <= 3600000 && !neu.ev[k]) { neu.ev[k] = tf.start;
+        if (alt) for (const id in M) if (mensch(id)) raus.push({ an: id, art: 'thron', ankunft: tf.start }); } } catch (e) {}
+    // Tages-Kiste im Wochen-Event erreicht (09c woKisten: W.kl zählt die erreichten Stufen je Tag)
+    try { const kl = (evState.wo && evState.wo.kl) || {}; neu.kl = {};
+        for (const id in M) { if (!mensch(id) || !Array.isArray(kl[id])) continue; const n = kl[id].reduce((a, x) => a + (x || 0), 0); neu.kl[id] = n;
+            if (alt && alt.kl && n > (alt.kl[id] || 0)) raus.push({ an: id, art: 'tageskiste' }); } } catch (e) {}
     for (const e of (window.__bundPush || []).splice(0)) if (mensch(e.an) && alt) raus.push(e);   // Bündnis (buendnis.js): „Hilfe!“ eines Mitglieds, Rally gegen dich
     window.__pushMerker = neu;
     const online = {}; for (const id in M) online[id] = !!M[id].online;
@@ -144,11 +151,14 @@ function nachrichtBauen(liste, jetzt) {
     const bau = liste.filter(e => e.art === 'bau'), fo = liste.filter(e => e.art === 'forschung'), stufe = e => e.name + ' Stufe ' + e.stufe;
     if (bau.length) teile.push('Fertig gebaut: ' + bau.map(stufe).join(', ') + '.');
     if (fo.length) teile.push('Fertig erforscht: ' + fo.map(stufe).join(', ') + ' – das Labor ist frei.');
+    const thron = liste.filter(e => e.art === 'thron'), tk = liste.filter(e => e.art === 'tageskiste');
+    if (thron.length) teile.push('Das Thron-Event startet in ' + minuten(thron[0].ankunft - jetzt) + ' – erobere Thron und Wachtürme!');
+    if (tk.length) teile.push('Deine Tages-Kiste im Wochen-Event ist bereit – hol sie ab.');
     const hilfe = liste.filter(e => e.art === 'hilfe'), rally = liste.filter(e => e.art === 'rally');
     if (rally.length) { const r = rally[0]; teile.push('Rally gegen deine Basis ' + r.basis + ': ' + r.von + ' sammelt Truppen' + (r.ankunft > jetzt ? ' (Start in ' + minuten(r.ankunft - jetzt) + ')' : '') + '.'); }
     if (hilfe.length === 1) teile.push('Bündnis: ' + hilfe[0].von + ' ruft um Hilfe – ' + hilfe[0].basis + ' wird angegriffen.');
     else if (hilfe.length) teile.push('Bündnis: ' + hilfe.length + '-mal Hilfe gerufen (' + [...new Set(hilfe.map(h => h.von))].slice(0, 3).join(', ') + ').');
-    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : rally.length ? 'Rally gegen dich!' : hilfe.length ? 'Dein Bündnis braucht Hilfe' : spaeher.length ? 'Späher unterwegs' : aus.length ? 'Basis ausgespäht' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : haendler.length ? 'Ein Händler ist da' : bau.length ? 'Bau fertig' : fo.length ? 'Forschung fertig' : 'Sammler zurück';
+    const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : rally.length ? 'Rally gegen dich!' : hilfe.length ? 'Dein Bündnis braucht Hilfe' : spaeher.length ? 'Späher unterwegs' : aus.length ? 'Basis ausgespäht' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : haendler.length ? 'Ein Händler ist da' : bau.length ? 'Bau fertig' : fo.length ? 'Forschung fertig' : thron.length ? 'Thron-Event startet bald' : tk.length ? 'Tages-Kiste bereit' : 'Sammler zurück';
     return { titel, text: teile.join(' ').slice(0, 400), tag: 'open-water' };
 }
 

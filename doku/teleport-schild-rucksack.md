@@ -29,6 +29,8 @@ Wie man seine Hauptstadt versetzt, sich schützt und was im Rucksack liegt. Wich
   Antippen → unten die Zeile mit „Einsetzen“/„Benutzen“/„Zum Helden“…; Schild: die Zeit kommt zum laufenden Schild DAZU.
   Leerer Reiter → „Im Shop holen“. Keine Kaufen-Knöpfe im Rucksack.
 - Shop → Schilde: nur kaufen (eingesetzt wird im Rucksack); Teleporter 500 Edelsteine mit „Wirklich?“.
+- Shop → Kisten oben: **Gratis-Kiste** alle 8 Std. (`gratisOeffnen`, 06g; `openWaterGratisKiste` im Profil, Countdown): 60 %
+  Beschleuniger 5 Min, 30 % 10 Edelsteine, 10 % 1 Schlüssel. Hauptbuch-Spielraum `HB_TAG` (10d3) +30 Gems, +3 Schlüssel, +15 Min. Test `features_test`.
 
 ## Friedensschild
 - 2 / 8 / 24 Std. = 80 / 300 / 700 Edelsteine (`SHIELD_PRICES`, 700 mit „Wirklich?“), höchstens 8 Tage am Stück.

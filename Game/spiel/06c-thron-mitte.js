@@ -129,6 +129,7 @@ function herrKisteSenden(art, an) {                   // dein Knopf im Herrscher
 }
 function throneTick() {
     const now = Date.now(), ts = throneState; let dirty = false;
+    herrAnsage(now);
     if (!rechnet()) { throneUhren(now, ts); midAnzeige(now); return; }
     const f = thronFenster(now), an = f.start <= now;
     if (an && ts.ev !== f.start) { thronBeginn(ts, f.start, now); dirty = true; }
@@ -153,6 +154,21 @@ function throneUhren(now, ts) {
     for (const el of document.querySelectorAll('[data-throne-fire]')) el.textContent = clock(ts.nextFire - now);
 }
 setInterval(throneTick, 1000);
+// Herrscher-Ansage (Alexander 9.10.): nach der Auswertung (So 22 Uhr) einmal ein großes Banner mit Krone für jeden Spieler –
+// bis 2 Tage danach. openWaterHerrGesehen = seit wann der angesagte Herrscher herrscht (geht mit dem Profil, nicht doppelt).
+function herrAnsage(now) {
+    const h = thronHerrscher(now), seit = h && throneState.herr.seit;
+    if (SYSTEM || !splashFinished || !h || !(seit > now - 2 * 864e5) || +store.get('openWaterHerrGesehen') === seit || document.getElementById('herrAnsage')) return;
+    store.set('openWaterHerrGesehen', String(seit));
+    const ich = h === 'player', name = ich ? profileName.value || 'Du' : botById[h].name, el = document.createElement('div');
+    el.id = 'herrAnsage'; el.className = 'herr-ansage'; el.setAttribute('role', 'dialog');
+    el.innerHTML = '<div class="herr-ansage-karte"><img class="herr-ansage-krone" src="bilder/ui_sym_krone.webp" alt="">' +
+        '<span class="herr-bild"><img src="' + crestDataUrl(96, h) + '" alt=""><img class="herr-rahmen" src="bilder/ui_herrscher_rahmen.webp" alt=""></span>' +
+        '<small>Neuer Herrscher</small><b>' + escapeHtml(name) + '</b><span>' + (ich ? 'Du herrschst eine Woche über die Welt!' : 'herrscht eine Woche über die Welt.') + '</span>' +
+        '<button type="button" class="btn btn--primary btn--sm">Weiter</button></div>';
+    el.addEventListener('click', () => el.remove());
+    document.body.appendChild(el); sfx('crate');
+}
 function drawThroneShots(now) {                        // leuchtende Geschosse im Bogen von jedem Wachturm zum Thron
     if (!throneShots || !throneShots.length) return;
     const z = mapState.zoom, DUR = 1100;

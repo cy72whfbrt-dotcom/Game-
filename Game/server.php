@@ -1317,7 +1317,7 @@ function push_endpoint_ok($e) {
     $h = strtolower((string)($u['host'] ?? ''));
     return (bool)preg_match('/^(fcm\.googleapis\.com|([a-z0-9-]+\.)*push\.apple\.com|([a-z0-9-]+\.)*push\.services\.mozilla\.com|([a-z0-9-]+\.)*notify\.windows\.com)$/', $h);
 }
-const PUSH_ARTEN = ['angriff', 'spaeher', 'verloren', 'boss', 'sammler', 'schild', 'hilfe', 'rally', 'haendler', 'bau', 'forschung'];   // die Arten von Handy-Nachrichten (weltrechner/push.js)
+const PUSH_ARTEN = ['angriff', 'spaeher', 'verloren', 'boss', 'sammler', 'schild', 'hilfe', 'rally', 'haendler', 'bau', 'forschung', 'thron', 'tageskiste'];   // die Arten von Handy-Nachrichten (weltrechner/push.js)
 function push_anfrage($ich, $d, $aktion) {
     $l = lager();
     $s = push_schluessel();
