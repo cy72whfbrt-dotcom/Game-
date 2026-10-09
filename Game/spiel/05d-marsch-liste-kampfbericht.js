@@ -148,7 +148,7 @@ function refreshOpenCombatLog() {
 function renderCombatLog() {
     battleLogPopup.classList.toggle('has-entries', combatLog.length > 0 || activeMarchesEl.querySelector('.logRow') !== null);
     if (combatLog.length === 0) {
-        combatLogListEl.innerHTML = '<div class="logEmpty log-leer"><img src="bilder/karte_barbaren.webp" alt="" draggable="false"><b>Noch keine Kämpfe</b><span>Greif ein Barbaren-Lager an – hier steht danach dein Kampfbericht.</span>' +
+        combatLogListEl.innerHTML = '<div class="logEmpty log-leer"><img src="bilder/bericht_leer.webp" alt="" draggable="false"><b>Noch keine Kämpfe</b><span>Greif ein Barbaren-Lager an – hier steht danach dein Kampfbericht.</span>' +
             '<button type="button" class="btn btn--primary" data-log-lager>' + icon('attack') + '<span>Barbaren-Lager angreifen</span></button></div>';   // leer: Bild + Weg zum nächsten Lager
         return;
     }
