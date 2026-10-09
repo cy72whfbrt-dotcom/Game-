@@ -12567,7 +12567,8 @@ function bwWerte(L) {
 }
 // Kopf: Basen zeigen ihr Bild (wie auf der Karte), Tore das Tor – sonst das Symbol
 function popupKopfBild(island) {
-    const bild = island.type === 'tower' ? 'basis_' + String(basisBildNr(baseLevelOf(island))).padStart(2, '0') : island.type === 'gate' ? 'karte_tor_zu' : '';
+    const hn = island.type === 'tower' ? hauptBildNr(island) : 0;                      // Hauptstadt: eigenes Bild je Burg-Stufe (1–3)
+    const bild = island.type === 'megaTemple' ? 'thron_kopf' : hn ? 'basis_hauptstadt_' + hn : island.type === 'tower' ? 'basis_' + String(basisBildNr(baseLevelOf(island))).padStart(2, '0') : island.type === 'gate' ? 'karte_tor_zu' : '';
     let img = popupEmblem.querySelector('.bw-bild');
     if (!bild) { if (img) img.remove(); popupEmblem.classList.remove('emblem--bild'); return; }
     if (!img) { img = document.createElement('img'); img.className = 'bw-bild'; img.alt = ''; popupEmblem.prepend(img); }

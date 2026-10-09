@@ -41,7 +41,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const amAnfang = f.querySelector('.bf-kiste').getAttribute('src'), wackelt = f.classList.contains('is-wackeln');
     return { weg: g0 - gems, teile: Object.keys(inventory).length - i0, amAnfang, wackelt, bilder }; });
   await p.waitForTimeout(2600); const f1 = await fenster(); await bild('kiste_1x');
-  ok(s1.bilder === 6 && s1.weg === 100 && s1.teile === 1 && /kiste_ausruestung_zu/.test(s1.amAnfang) && s1.wackelt, 'Ausrüstungskiste 1×: 100 weg, 1 Teil, Kiste (KI-Bild) wackelt zuerst', s1);
+  ok(s1.bilder === 7 && s1.weg === 100 && s1.teile === 1 && /kiste_ausruestung_zu/.test(s1.amAnfang) && s1.wackelt, 'Ausrüstungskiste 1×: 100 weg, 1 Teil, Kiste (KI-Bild) wackelt zuerst', s1);
   ok(f1 && /kiste_ausruestung_offen/.test(f1.kiste) && f1.fertig && f1.kacheln === 1 && /^item:/.test(f1.arten[0]) && f1.voll, 'danach: Kiste offen, Strahlen, eine Kachel im Fenster', f1);
   await zu();
   // 4) 10×: „Wirklich?“ (1.500), dann genau 10 Teile und 1.500 weg; das Fenster fasst zusammen

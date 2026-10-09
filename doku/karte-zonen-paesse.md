@@ -50,6 +50,7 @@ Die Weltkarte ist EINE große Landkarte wie das RoK-Königreich: Gebiete in Zone
   ersetzt den Kranz (nie beides). Jede Hauptstadt (eigene + fremde) als `basis_hauptstadt_1/2/3` nach Burg-Stufe 1–8/9–16/17–25
   (`hauptBildNr`), 1,5× so groß (`HAUPT_GROSS`); Fahne/Schild in Besitzer-Farbe wie sonst. Ganz weit: Zonen-Nummer auf `zone_schild`,
   Pässe als `pass_tor` über dem Stufen-Punkt (`drawUebersichtZeichen`). Test `karte_ring_test`.
+  Insel-Fenster (10a `popupKopfBild`): Hauptstadt zeigt `basis_hauptstadt_N`, Königsthron `thron_kopf` als Kopfbild.
 - Grenztor, das du nicht angreifen kannst: Schloss `ui_sym_schloss` 30 px oben auf dem Tor, bei jedem Zoom gleich groß
   (`torSchloesser`/`drawTorSchloesser`; Fahnen und Märsche weichen aus). Regel wie der Angriffsknopf: keine eigene Basis grenzt
   an (`torAngreifbar` → `canReach`); eigene/Bündnis-Tore und Pässe mit Countdown ohne dieses Schloss.
