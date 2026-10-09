@@ -6427,6 +6427,146 @@ function kampfGearHtml(g) { if (!g) return '';
     return '<div class="logGear"><div class="logGearHead">Spieler-Stufe ' + g.lvl + (g.title ? ' · Titel ' + escapeHtml(g.title) : '') + '</div>' +
         '<div class="logGearItems">' + tiles + '</div>' + (heroes ? '<div class="logGearHeroes">' + heroes + '</div>' : '') +
         '<div class="logGearMeta">' + (g.items.some(it => RARITY_DEFS[it[1]]) ? '' : 'keine Ausrüstung angelegt<br>') + 'Fähigkeit Angriff ' + g.skills[0] + ' · Verteidigung ' + g.skills[1] + '<br>Mauer ' + g.city[0] + ' · Krankenhaus ' + g.city[1] + ' · Heldenhalle ' + g.city[2] + '</div></div>'; }
+// Kampfbericht (Angriff/Verteidigung) im neuen Aufbau (Alexander 9.10., Vorbild RoK): Band, Ort, Kräfte, VS, Truppen, Kampfkraft mit Quelle,
+// Helden, Ausrüstung & Stadt, jeder Spieler, Beute als Bild + Zahl, Hinweise, Knöpfe. Nur echte Zahlen aus dem Bericht.
+// Eigener Spieler und Gegner offen – weitere Rally-Mitglieder / Verstärkung zugeklappt.
+function kbSeiten(e) {
+    const bot = e.type === 'botAttack', z = v => Math.max(0, Math.round(v || 0)), summe = (L, k) => L.reduce((s, p) => s + z(p[k]), 0);
+    const ichW = e.meine && e.meine.w;
+    const truppenQuelle = L => L.length > 1 ? L.map(p => escapeHtml(p.name || '?') + ' ' + fmtNum(z(p.n))).join(' · ') : '';
+    // Angreifer: Anführer + Rally-Mitglieder (oder einer allein)
+    const aL = Array.isArray(e.angreifer) && e.angreifer.length > 1
+        ? e.angreifer.map((p, i) => ({ name: p.name || '?', rolle: i ? 'Rally-Mitglied' : 'Anführer', n: z(p.n), k: p.k, fallen: z(p.fallen), wounded: z(p.wounded), fled: z(p.fled), gear: p.gear, ich: !!ichW && p.w === ichW }))
+        : [{ name: bot ? e.botName || '?' : 'Du', rolle: 'Angreifer', n: z(bot ? (e.atkRaw !== undefined ? e.atkRaw : e.myTroops) : e.myTroops), gear: e.atkGear, ich: !bot,
+            fallen: z(bot ? (e.atkFallen || 0) - (e.atkWounded || 0) : e.attackerCasualties), wounded: z(bot ? e.atkWounded : e.wounded), fled: z(bot ? e.atkFled : e.won ? 0 : e.retreatSurvivors) }];
+    // Verteidiger: Besitzer + Verstärkung
+    const hL = Array.isArray(e.verst) ? e.verst : [], hWeg = hL.reduce((s, h) => s + z(h.fallen) + z(h.wounded), 0);
+    const besitzer = bot ? (e.rolle === 'helfer' ? e.defName || '?' : 'Du') : e.defenderName || 'Besatzung';
+    const vL = [{ name: besitzer, rolle: 'Besitzer', n: z(hL.length ? e.eigen : e.enemyTroops), gear: e.defGear, ich: bot && e.rolle !== 'helfer',
+        fallen: z(bot ? (e.fallen || 0) - (e.wounded || 0) : (e.defenderCasualties || 0) - (e.enemyWounded || 0) - hWeg), wounded: z(bot ? e.wounded : e.enemyWounded), fled: 0 },
+        ...hL.map(h => ({ name: h.name || '?', rolle: 'Verstärkung', n: z(h.n), k: h.k, fallen: z(h.fallen), wounded: z(h.wounded), fled: 0, gear: h.gear, ich: !!ichW && h.w === ichW }))];
+    const mitTitel = L => L.length > 1 ? ' (alle)' : '';
+    let aParts, vParts, aSum, vSum, gerettet = [];
+    if (bot) {
+        const raw = e.atkRaw, rest = raw !== undefined ? (e.myTroops || 0) - raw - (e.atkBonus || 0) : 0;
+        aSum = e.myTroops || 0;
+        aParts = [['Truppen' + mitTitel(aL), raw !== undefined ? raw : aSum, truppenQuelle(aL), 0], ...(e.atkParts || (raw !== undefined ? [e.atkBonus && ['Angriff-Bonus', e.atkBonus], rest && ['Titel', rest]] : []))];
+        vSum = (e.enemyTroops || 0) + (e.enemyDefense || 0);
+        vParts = [['Truppen' + mitTitel(vL), e.enemyTroops || 0, truppenQuelle(vL), 0], ...(e.defParts && e.defParts.length ? [[e.defParts[0][0], e.defParts[0][1], e.defParts[0][2], 0], ...e.defParts.slice(1)]
+            : [['Verteidigung', e.enemyDefense || 0, '', 0], e.armor && ['davon Rüstung', e.armor, '', 'd']])];
+    } else {
+        aSum = (e.myTroops || 0) + (e.attackBuff || 0);
+        aParts = [['Truppen' + mitTitel(aL), e.myTroops || 0, truppenQuelle(aL), 0], ...(e.atkParts || [['Fähigkeit Angriff', e.skillBuff || 0], e.titleBuff && ['Titel', e.titleBuff]])];
+        vSum = (e.enemyTroops || 0) + (e.enemyDefense || 0) + (e.defenseBuff || 0);
+        vParts = [['Truppen' + mitTitel(vL), e.enemyTroops || 0, truppenQuelle(vL), 0], ...(e.defParts && e.defParts.length ? [[e.defParts[0][0], e.defParts[0][1], e.defParts[0][2], 0], ...e.defParts.slice(1)]
+            : [['Verteidigung', e.enemyDefense || 0, '', 0], ['Verteidigung-Buff', e.defenseBuff || 0]])];
+        if (e.lossSaved) { const bern = Math.min(e.heroLossPct || 0, e.lossReductionPct), sh = e.lossReductionPct - bern, sBern = Math.round(e.lossSaved * bern / Math.max(1, e.lossReductionPct));   // Verluste gespart: Schild / Held
+            if (sh > 0) gerettet.push(['Schild −' + Math.round(sh) + ' %', e.lossSaved - sBern]); if (bern > 0) gerettet.push(['Held −' + Math.round(bern) + ' % Verluste', sBern]); }
+    }
+    const seite = (L, start, sum, parts, ger) => ({ spieler: L, start: z(start), gef: summe(L, 'fallen'), vw: summe(L, 'wounded'), fl: summe(L, 'fled'), sum, parts: parts.filter(Boolean), gerettet: ger });
+    const A = seite(aL, bot ? (e.atkRaw !== undefined ? e.atkRaw : e.myTroops) : e.myTroops, aSum, aParts, gerettet), V = seite(vL, e.enemyTroops, vSum, vParts, []);
+    if (bot && e.atkRaw === undefined) A.unbekannt = 1;                   // (Kriegsherr: nur die Stärke ist bekannt)
+    return { A, V, bot };
+}
+const kbArt = e => timeAgoLabel(e.at) + ' · ' + (e.type === 'attack' ? 'Angriff' : e.rolle === 'helfer' ? 'Verstärkung' : 'Verteidigung');   // Kopfzeile der Seite
+function kampfBerichtHtml(e, T, kopf) {                 // kopf: { band, gut, ziel, sub }
+    const S = kbSeiten(e), { A, V } = S, f = v => fmtNum(Math.round(v || 0)), B = 'bilder/', gut = kopf.gut;
+    const box = (h, sub, inh, kl) => '<div class="kb-box' + (kl ? ' ' + kl : '') + '"><div class="kb-h">' + h + '<small>' + (sub || '') + '</small></div>' + inh + '</div>';
+    const feindA = S.bot ? 1 : 0;                                          // ist der Angreifer der Gegner? (Verteidigung/Verstärkung: ja)
+    const istFeind = angr => angr ? feindA : !feindA;
+    const offen = L => L.filter((p, i) => !i || p.ich), weitere = L => L.filter((p, i) => i && !p.ich);
+    const kopfBild = p => { const h = p.gear && p.gear.hx && heroById(p.gear.hx.id); return h ? heroImg(h.id, 'h') : '<span class="h kb-leerkopf">?</span>'; };
+    const karte = (p, feind) => '<div class="kb-seite' + (feind ? ' feind' : '') + '"><div class="kb-kopf">' + kopfBild(p) + '<img class="w" src="' + B + 'ui_wappen.webp" alt="" draggable="false"></div>' +
+        '<div class="kb-name">' + escapeHtml(p.name) + '</div><div class="kb-sub">' + (p.gear ? 'Spieler-Stufe ' + f(p.gear.lvl) + (p.gear.title ? ' · Titel ' + escapeHtml(p.gear.title) : '') : escapeHtml(p.rolle)) + '</div></div>';
+    const pc = (x, s) => (s > 0 ? Math.min(100, 100 * x / s) : 0).toFixed(1) + '%';
+    const truppen = (s, t) => { const ue = Math.max(0, s.start - s.gef - s.vw - s.fl);
+        if (s.unbekannt) return '<div class="kb-tr"><div class="kb-h kb-h2">' + t + '</div><div class="kb-zahl"><div class="start"><span>Stärke</span><b>' + f(s.sum) + '</b></div><span style="grid-column:1/-1">Verluste nicht im Bericht</span></div></div>';
+        return '<div class="kb-tr"><div class="kb-h kb-h2">' + t + '</div><div class="kb-bar"><i class="ue" style="width:' + pc(ue, s.start) + '"></i><i class="vw" style="width:' + pc(s.vw, s.start) + '"></i><i class="tot" style="width:' + pc(s.gef, s.start) + '"></i><i class="fl" style="width:' + pc(s.fl, s.start) + '"></i></div>' +
+            '<div class="kb-zahl"><div class="start"><span>Start</span><b>' + f(s.start) + '</b></div>' +
+            '<span style="--c:#5fbf5a">Übrig</span><b data-kb="uebrig">' + f(ue) + '</b><span style="--c:#e0a83a">Verwundet</span><b data-kb="verwundet">' + f(s.vw) + '</b>' +
+            '<span style="--c:#d0504a">Gefallen</span><b data-kb="gefallen">' + f(s.gef) + '</b><span style="--c:#4f8fe0">Geflohen</span><b data-kb="geflohen">' + f(s.fl) + '</b>' +
+            (s.gerettet.length ? '<span class="kb-ger">Verluste gerettet:</span>' + s.gerettet.map(g => '<span style="--c:#9fd38a">' + g[0] + '</span><b>+' + f(g[1]) + '</b>').join('') : '') + '</div></div>'; };
+    const kraft = (s, vorn) => '<table class="kb-tab">' + s.parts.map(p => { const roh = p[3] === 0 || p[3] === 'd';
+        return '<tr class="' + (roh ? (p[3] === 'd' ? 'davon' : '') : p[1] < 0 ? 'minus' : 'plus') + '"><td>' + escapeHtml(p[0]) + (p[2] ? '<small>' + p[2] + '</small>' : '') + '</td><td>' + (roh ? '' : p[1] < 0 ? '−' : '+') + f(Math.abs(p[1])) + '</td></tr>'; }).join('') +
+        '<tr class="sum' + (vorn ? ' vorn' : '') + '"><td>Gesamt</td><td>' + f(s.sum) + '</td></tr></table>';
+    const leerHeld = (n, t) => '<div class="kb-held leer"><div class="q">?</div><div><div class="n"><b>' + n + '</b></div><div class="s">' + t + '</div></div></div>';
+    const heldKarte = x => { const hd = heroById(x.id); if (!hd) return ''; const rd = RARITY_DEFS[hd.r] || RARITY_DEFS[0];
+        return '<div class="kb-held" style="--rc:' + rd.color + '">' + heroImg(hd.id) + '<div><div class="n"><b>' + hd.name + '</b><small>' + rd.label + '</small></div>' +
+            '<div class="stern">' + heroStarTxt(x.q) + '</div><div class="s">' + (x.zweit ? 'Zweitheld · Werte und passive Fähigkeiten zu ' + Math.round(HERO_ZWEIT * 100) + ' %' : x.vh ? 'Verteidigungs-Held · aus der Mauer' : x.fired ? '<em>' + escapeHtml(x.skill || '') + ' gezündet</em>' : 'Aktive Fähigkeit nicht gezündet') + '</div></div>' +
+            ((x.lines || []).length ? '<div class="w">' + x.lines.map(l => '<span>' + escapeHtml(l[0]) + '<b>' + escapeHtml(l[1]) + '</b></span>').join('') + '</div>' : '') + '</div>'; };
+    const helden = (p, angr) => { const g = p.gear, hx = g && g.hx, L = hx ? [hx, ...(hx.h2 ? [hx.h2] : [])] : [];
+        const alt = g && !hx && (g.heroes || []).length ? g.heroes.map(x => { const hd = heroById(x[0]); return hd ? '<div class="kb-held" style="--rc:' + RARITY_DEFS[hd.r].color + '">' + heroImg(hd.id) + '<div><div class="n"><b>' + hd.name + '</b></div><div class="s">Stufe ' + x[1] + '</div></div></div>' : ''; }).join('') : '';   // (ältere Berichte)
+        if (alt) return alt;
+        return (L.length ? L.map(heldKarte).join('') : leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)')) + (L.length < 2 ? leerHeld('Kein Zweitheld', 'Platz frei') : ''); };
+    const gear = p => { const g = p.gear; if (!g) return '<div class="kb-meta"><span>Ausrüstung und Stadt nicht im Bericht</span></div>';
+        return '<div class="kb-gear">' + (g.items || []).map(it => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]], bild = BEUTE_SLOT[it[0]] || 'beute_waffe';
+            return rd ? '<span class="bk" data-r="' + rd.key + '" title="' + d.name + ' – ' + rd.label + ', Stufe ' + it[2] + '"><img src="' + B + bild + '.webp" alt="' + d.name + '" draggable="false">' + (it[3] ? '<i class="kb-st">' + '★'.repeat(it[3]) + '</i>' : '') + '<b>Stufe ' + it[2] + '</b></span>'
+                : '<span class="bk kb-gleer" data-r="grau" title="' + d.name + ' – leer"><img src="' + B + bild + '.webp" alt="' + d.name + '" draggable="false"><b>leer</b></span>'; }).join('') + '</div>' +
+            '<div class="kb-meta"><span>Fähigkeit Angriff<b>' + f((g.skills || [])[0]) + '</b></span><span>Fähigkeit Verteidigung<b>' + f((g.skills || [])[1]) + '</b></span>' +
+            '<span>Mauer<b>' + f((g.city || [])[0]) + '</b></span><span>Krankenhaus<b>' + f((g.city || [])[1]) + '</b></span><span>Heldenhalle<b>' + f((g.city || [])[2]) + '</b></span><span>Titel<b>' + (g.title ? escapeHtml(g.title) : '–') + '</b></span></div>'; };
+    const sh = (p, angr, mehr) => '<div class="kb-sh' + (istFeind(angr) ? ' feind' : '') + '">' + escapeHtml(p.name) + ' · ' + (mehr || p.rolle) + '</div>';
+    const alleN = A.spieler.reduce((s, p) => s + p.n, 0) || 1, beuteAnteil = !S.bot && e.won && A.spieler.length > 1;
+    const zeile = (p, angr) => '<div class="kb-sp' + (p.ich ? ' ich' : '') + '">' + kopfBild(p) + '<div><b>' + escapeHtml(p.name) + '</b><small>' + p.rolle + ' · ' + f(p.n) + ' Truppen' +
+        (p.k !== undefined && p.k !== p.n ? ' · eigene Werte ' + (p.k > p.n ? '+' : '−') + f(Math.abs(p.k - p.n)) : '') + (angr && beuteAnteil ? ' · Beute-Anteil ' + Math.round(100 * p.n / alleN) + ' %' : '') + '</small></div>' +
+        '<div class="z">' + f(Math.max(0, p.n - p.fallen - p.wounded - p.fled)) + '<small>−' + f(p.fallen) + ' / ' + f(p.wounded) + ' verw.' + (p.fled ? ' / ' + f(p.fled) + ' gefl.' : '') + '</small></div></div>';
+    const mehrBlock = (L, angr) => { const W = weitere(L); if (!W.length) return '';
+        return '<details class="kb-mehr"><summary>' + (angr ? 'Weitere Rally-Mitglieder' : 'Verstärkung') + ' · ' + W.length + '</summary>' +
+            W.map(p => zeile(p, angr) + sh(p, angr, 'Helden') + helden(p, angr) + sh(p, angr, 'Ausrüstung & Stadt') + gear(p)).join('') + '</details>'; };
+    const titelSeite = (s, angr) => (angr ? 'Angreifer' : 'Verteidiger') + ' · ' + s.spieler.map(p => escapeHtml(p.name)).join(' + ');
+    // Beute: Bild + Zahl (Kacheln aus 05e)
+    const r = e.plunderRoh || {}, roh = { coins: e.plunder || 0, holz: r.h || 0, stein: r.s || 0, eisen: r.e || 0 }, hatRoh = Object.values(roh).some(v => v > 0);
+    const kacheln = minus => beuteRaster(Object.keys(roh).map(a => ({ a, n: Math.round(roh[a]), minus })), 'kb-beute');
+    const extraK = (n, t) => n > 0 ? '<span class="kb-extra">' + beuteKachel({ a: 'coins', n: Math.round(n) }) + '<small>' + t + '</small></span>' : '';
+    let beute = '', beuteKopf = 'Beute', beuteSub = '';
+    if (!S.bot) {
+        const kill = extraK(e.killGold, 'für Kills');
+        if (e.won && hatRoh) { beute = kacheln(false) + (kill ? '<div class="bk-raster kb-beute">' + kill + '</div>' : '') + '<div class="kb-sh feind">Verlust ' + escapeHtml(V.spieler[0].name) + '</div>' + kacheln(true); beuteSub = 'kommt mit dem Marsch heim' + (A.spieler.length > 1 ? ' · nach Truppen geteilt' : ''); }
+        else if (kill) { beute = '<div class="bk-raster kb-beute">' + kill + '</div>'; beuteKopf = 'Belohnung'; }
+    } else {
+        const dg = extraK(e.defGold, 'Verteidigung');
+        if (e.won && hatRoh) { beute = kacheln(true); beuteKopf = 'Geraubt'; beuteSub = 'vom Gegner mitgenommen'; }
+        if (dg) { beute += '<div class="bk-raster kb-beute">' + dg + '</div>'; if (!beute.includes('data-minus')) beuteKopf = 'Belohnung'; }
+    }
+    if (e.plunderSafe && (beute || e.won)) beute += '<div class="kb-schutz"><img src="' + B + 'ui_fo_burgschutz.webp" alt="" draggable="false">Burg schützt ' + f(e.plunderSafe) + ' Münzen · ' + f(e.plunderSafe * ROH_JE_MUENZE) + ' je Rohstoff</div>';
+    if (e.killGold === undefined && e.attackGoldRate && !S.bot) beute += '<div class="kb-schutz">Angriff: Münzen +' + e.attackGoldRate.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + ' pro getöteter Truppe</div>';   // (ältere Berichte)
+    // Hinweise: Krankenhaus, Flucht
+    const hin = [], ich = e.meine && e.meine.fallen !== undefined && (e.rolle === 'mit' || Array.isArray(e.angreifer) || e.rolle === 'helfer') ? e.meine : null;
+    const hz = (bild, t) => hin.push('<div><img src="' + B + bild + '.webp" alt="" draggable="false"><span>' + t + '</span></div>');
+    if (!S.bot) {
+        const fl = ich ? ich.fled : e.retreatSurvivors, wd = ich ? ich.wounded : e.wounded;
+        if (!e.won && fl) hz('ui_sym_ziel', fmtNum(fl) + (ich ? ' deiner' : '') + ' Truppen konnten fliehen und kehren zurück');
+        if (wd) hz('ui_sym_verwundete', fmtNum(wd) + (ich ? ' deiner' : '') + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt');
+        if (e.enemyWounded) hz('ui_sym_verwundete', escapeHtml(e.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(e.enemyWounded) + ' Verwundete ins Krankenhaus');
+    } else {
+        const wd = e.rolle === 'helfer' ? ich && ich.wounded : e.wounded;
+        if (wd) hz('ui_sym_verwundete', fmtNum(wd) + (e.rolle === 'helfer' ? ' deiner' : '') + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt');
+        if (e.atkWounded) hz('ui_sym_verwundete', escapeHtml(e.botName) + ' bringt ' + fmtNum(e.atkWounded) + ' Verwundete ins Krankenhaus');
+        if (e.atkFled) hz('ui_sym_ziel', fmtNum(e.atkFled) + ' Truppen von ' + escapeHtml(e.botName) + ' fliehen zurück');
+    }
+    // Knöpfe: Sieg/Angriff → nochmal angreifen · Niederlage mit Verwundeten → heilen
+    const meineVerw = S.bot ? (e.rolle === 'helfer' ? ich && ich.wounded : e.wounded) : ich ? ich.wounded : e.wounded;
+    const isl = islandById[e.targetId], teilen = typeof bundTeilenKnopf === 'function' ? bundTeilenKnopf(e) : '';
+    const knopf = !S.bot && (e.won || !meineVerw) && isl ? '<button class="btn btn--danger btn--gefahr" type="button" data-kbangriff="' + isl.id + '">' + icon('attack') + '<span>Nochmal angreifen</span></button>'
+        : meineVerw ? '<button class="btn btn--primary btn--haupt" type="button" data-kbheilen="1">' + icon('plus') + '<span>Verwundete heilen</span></button>' : '';
+    const vorn = A.sum >= V.sum;
+    return '<div class="kb ' + (gut ? 'sieg' : 'niederlage') + '">' +
+        '<div class="kb-band"><img src="' + B + 'marsch_band_' + (gut ? 'sieg' : 'niederlage') + '.webp" alt="" draggable="false"><b>' + kopf.band + '</b></div>' +
+        '<div class="kb-ort"><b>' + kopf.ziel + '</b>' + (isl ? ' · ' + coordText(isl.x, isl.y) : '') + (kopf.sub ? '<br>' + kopf.sub : '') +
+            (isl ? '<div class="mini"><button type="button" class="btn btn--secondary btn--sm" data-logzeigen="' + isl.id + '">Zeigen</button>' + teilen + '</div>' : '') + '</div>' +
+        (e.capitalHolds ? '<div class="kb-brennt">' + (S.bot ? 'Deine Hauptstadt brennt' : 'Hauptstadt brennt') + '</div>' : '') +
+        box('Kräfte', 'wer war stärker', '<div class="kb-kraft"><div class="bar"><i style="width:' + pc(A.sum, A.sum + V.sum) + '"></i></div><div class="txt"><span>' + A.spieler.map(p => escapeHtml(p.name)).join(' + ') + '<small>Angriff</small>' + f(A.sum) + '</span>' +
+            '<span>' + V.spieler.map(p => escapeHtml(p.name)).join(' + ') + '<small>Verteidigung</small>' + f(V.sum) + '</span></div></div>') +
+        '<div class="kb-seiten">' + karte(offen(A.spieler).pop(), istFeind(true)) + '<div class="kb-vs">VS</div>' + karte(offen(V.spieler).pop(), istFeind(false)) + '</div>' +
+        box('Truppen', 'Verwundete gehen ins Krankenhaus', '<div class="kb-reihe">' + truppen(A, 'Angreifer') + truppen(V, 'Verteidiger') + '</div>') +
+        box('Kampfkraft', 'jeder Bonus mit Quelle', '<div class="kb-sh' + (feindA ? ' feind' : '') + '">' + titelSeite(A, true) + '</div>' + kraft(A, vorn) + '<div class="kb-sh' + (feindA ? '' : ' feind') + '">' + titelSeite(V, false) + '</div>' + kraft(V, !vorn)) +
+        box('Helden', 'Hauptheld · Zweitheld', [...offen(A.spieler).map(p => sh(p, true) + helden(p, true)), ...offen(V.spieler).map(p => sh(p, false) + helden(p, false))].join('')) +
+        box('Ausrüstung & Stadt', 'Stufe · Sterne · Seltenheit', [...offen(A.spieler).map(p => sh(p, true, p.gear ? 'Spieler-Stufe ' + f(p.gear.lvl) : '') + gear(p)), ...offen(V.spieler).map(p => sh(p, false, p.gear ? 'Spieler-Stufe ' + f(p.gear.lvl) : '') + gear(p))].join('')) +
+        (A.spieler.length > 1 || V.spieler.length > 1 ? box('Jeder Spieler', 'übrig · gefallen / verwundet', '<div class="kb-sh' + (feindA ? ' feind' : '') + '">' + titelSeite(A, true) + '</div>' + offen(A.spieler).map(p => zeile(p, true)).join('') + mehrBlock(A.spieler, true) +
+            '<div class="kb-sh' + (feindA ? '' : ' feind') + '">' + titelSeite(V, false) + '</div>' + offen(V.spieler).map(p => zeile(p, false)).join('') + mehrBlock(V.spieler, false), 'kb-jeder') : '') +
+        (beute ? box(beuteKopf, beuteSub, beute, 'kb-beutebox') : '') +
+        (hin.length ? box('Hinweise', '', '<div class="kb-hin">' + hin.join('') + '</div>') : '') +
+        (knopf || teilen ? '<div class="kb-knoepfe">' + (teilen ? teilen.replace('btn--ghost btn--sm', 'btn--secondary btn--haupt').replace('Im Bündnis teilen', 'Teilen') : '') + knopf + '</div>' : '') + '</div>';
+}
 const combatLogKey = e => e.at + '|' + e.type + '|' + (e.targetId ?? e.toId);
 // Re-renders the list while the panel is open: opened "Kampfdetails" stay open and the
 // rows the player is reading stay where they are when a new row is added on top.
@@ -6453,14 +6593,12 @@ function renderCombatLog() {
     }
     let T;
     const ago = e => timeAgoLabel(e.at);
-    const fmt1 = v => (v || 0).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     const fmtM = v => Math.abs(v || 0) >= 1e6 ? fmtCompact(v || 0) : fmtNum(v || 0);   // meta lines: "987,7 Mio."
     const fmtD = v => fmtNum(v || 0);   // detail cards
     const gearHtml = kampfGearHtml;
     const fieldHeroLine = e => [[e.attacker, e.hA], [e.defender, e.hD]].map(([n, t]) => t ? ' · ' + (n === 'Du' ? 'dein Held ' : escapeHtml(n) + ' mit ') + escapeHtml(t) : '').join('');   // who led out in the open
     const fieldHeroDet = e => e.hx ? '<details><summary>Dein Held</summary>' + gearHtml({ items: [], lvl: playerLvl, hx: e.hx, skills: [], city: [], heroOnly: 1 }) + '</details>' : undefined;
     const karte = (e, kind, ic, badge, title, sub, bar, chips, det) => logRowHtml(kind, ic, logBadge(badge[0], badge[1]) + title, sub, ago(e), (bar || '') + logChips(chips) + (det || ''));   // jede Karte gleich aufgebaut
-    const partLines = (parts, first) => (parts || []).map((q, i) => '<div class="logLine' + (first && !i ? '' : q[1] < 0 ? ' buff malus' : ' buff') + '"><span>' + escapeHtml(q[0]) + (q[2] ? '<small class="logSrc">' + escapeHtml(q[2]) + '</small>' : '') + '</span><span>' + (first && !i ? '' : q[1] < 0 ? '−' : '+') + fmtD(Math.abs(q[1])) + '</span></div>').join('');   // each bonus with where it comes from
     combatLogListEl.innerHTML = combatLog.map(entry => { try { return (entry => {   // (jeder Bericht für sich: ein kaputter blockiert nie die ganze Liste)
         T = id => (entry.names && entry.names[id]) || islandTitle(islandById[id]);
         if (entry.type === 'send') {
@@ -6547,105 +6685,28 @@ function renderCombatLog() {
         if (entry.type === 'retreat') {
             return karte(entry, 'retreat', 'recall', ['retreat', 'Zurück'], T(entry.toId), '', '', [['troops', chipN(entry.troops) + ' Truppen wieder daheim']]);
         }
+        const kbDet = (gut, band, sub) => '<details><summary>Kampfdetails</summary>' + kampfBerichtHtml(entry, T, { gut, band, ziel: T(entry.targetId), sub }) + '</details>';   // die ganze Seite (öffnet als eigene Seite)
         if (entry.type === 'botAttack') {
-            const fallen = entry.fallen;
-            const defSum = entry.enemyTroops + entry.enemyDefense;
-            const bdet = '<details><summary>Kampfdetails</summary>' +
-                '<div class="logCompare">' +
-                    '<div class="logSide">' +
-                        '<div class="logSideLabel">Angreifer · ' + whoLink(entry.botId || botIdByName[entry.botName], entry.botName) + (angreiferZeilen(entry, gearHtml) ? ' + ' + (entry.angreifer.length - 1) : '') + '</div>' +
-                        angreiferZeilen(entry, gearHtml) +
-                        (entry.atkParts ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' + partLines(entry.atkParts) :
-                         entry.atkRaw !== undefined ? '<div class="logLine"><span>Truppen</span><span>' + fmtD(entry.atkRaw) + '</span></div>' +
-                            (entry.atkBonus ? '<div class="logLine buff"><span>Angriff-Bonus</span><span>+' + fmtD(entry.atkBonus) + '</span></div>' : '') +
-                            (entry.myTroops - entry.atkRaw - entry.atkBonus ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.myTroops - entry.atkRaw - entry.atkBonus > 0 ? '+' : '−') + fmtD(Math.abs(entry.myTroops - entry.atkRaw - entry.atkBonus)) + '</span></div>' : '') : '') +
-                        '<div class="logSum' + (entry.won ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
-                        (entry.atkRaw !== undefined ? '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, entry.atkFallen - entry.atkWounded)) + '</span></div>' +
-                            (entry.atkWounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.atkWounded) + '</span></div>' : '') +
-                            (entry.atkFled ? '<div class="logLine"><span>Geflohen</span><span>' + fmtD(entry.atkFled) + '</span></div>' : '') : '') +
-                        gearHtml(entry.atkGear) +
-                    '</div>' +
-                    '<div class="logVsDivider">VS</div>' +
-                    '<div class="logSide">' +
-                        '<div class="logSideLabel">Verteidiger · ' + (entry.rolle === 'helfer' ? escapeHtml(entry.defName || '?') + ' + Verstärkung' : entry.verst ? 'Du + Verstärkung' : 'Du') + '</div>' +
-                        '<div class="logLine"><span>Truppen' + (entry.verst ? ' (alle)' : '') + '</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
-                        verstZeilen(entry, entry.rolle === 'helfer' ? (entry.defName || '?') : 'Deine', gearHtml) +
-                        (entry.defParts ? partLines(entry.defParts, true)
-                          : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
-                            (entry.armor ? '<div class="logLine buff"><span>davon Rüstung</span><span>+' + fmtD(entry.armor) + '</span></div>' : '')) +
-                        '<div class="logSum' + (entry.won ? '' : ' advantage') + '"><span>Gesamt</span><span>' + fmtD(defSum) + '</span></div>' +
-                        (entry.rolle === 'helfer' ? '' : '<div class="logCasualty"><span>' + (entry.verst ? 'Deine gefallen' : 'Gefallen') + '</span><span>−' + fmtD(Math.max(0, fallen - (entry.wounded || 0))) + '</span></div>' +
-                        (entry.wounded ? '<div class="logCasualty wounded"><span>' + (entry.verst ? 'Deine verwundet' : 'Verwundet') + '</span><span>' + fmtD(entry.wounded) + '</span></div>' : '')) +
-                        gearHtml(entry.defGear) +
-                    '</div>' +
-                '</div>' +
-                (entry.wounded ? '<div class="logRetreat logWounded">' + fmtNum(entry.wounded) + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
-                (entry.atkWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.botName) + ' bringt ' + fmtNum(entry.atkWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
-                (entry.atkFled ? '<div class="logRetreat">' + fmtNum(entry.atkFled) + ' Truppen von ' + escapeHtml(entry.botName) + ' fliehen zurück</div>' : '') +
-                (entry.defGold ? '<div class="logGold">Verteidigung: Münzen +' + fmtBig(entry.defGold) + ' Münzen</div>' : '') +
-                '</details>';
+            const fallen = entry.fallen, defSum = entry.enemyTroops + entry.enemyDefense;
             const bbar = logBalance(entry.myTroops, defSum, icon('attack') + escapeHtml(entry.botName) + ' ' + fmtM(entry.myTroops), fmtM(defSum) + ' ' + (entry.rolle === 'helfer' ? escapeHtml(entry.defName || '?') : 'Du') + icon('defense'), true);
-            if (entry.rolle === 'helfer') { const mh = entry.meine || {};   // deine Verstärkung bei einem Bündnis-Mitglied hat mitverteidigt
-                return karte(entry, entry.won ? 'loss' : 'win', 'defense', [entry.won ? 'loss' : 'win', 'Verstärkung'], T(entry.targetId), escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten'), bbar,
-                    [['troops', 'deine ' + chipN(mh.n) + ' Truppen'], ...verlustChips(mh.fallen, mh.wounded)], bdet); }
-            const wer = escapeHtml(entry.botName) + (angreiferZeilen(entry, gearHtml) ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
+            if (entry.rolle === 'helfer') { const mh = entry.meine || {}, sub = escapeHtml(entry.defName || '?') + ' gegen ' + escapeHtml(entry.botName) + ' · ' + (entry.won ? 'gefallen' : 'gehalten');   // deine Verstärkung bei einem Bündnis-Mitglied hat mitverteidigt
+                return karte(entry, entry.won ? 'loss' : 'win', 'defense', [entry.won ? 'loss' : 'win', 'Verstärkung'], T(entry.targetId), sub, bbar,
+                    [['troops', 'deine ' + chipN(mh.n) + ' Truppen'], ...verlustChips(mh.fallen, mh.wounded)], kbDet(!entry.won, entry.won ? 'Gefallen' : 'Gehalten', sub)); }
+            const wer = escapeHtml(entry.botName) + (Array.isArray(entry.angreifer) && entry.angreifer.length > 1 ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
             const bchips = [...verlustChips(Math.max(0, fallen - (entry.wounded || 0)), entry.wounded), ...beuteChips(entry, false), entry.defGold > 0 && ['coin', '+' + chipN(entry.defGold) + ' Münzen', 'gut']];
-            return entry.capitalHolds
-                ? karte(entry, 'loss', 'bot', ['loss', 'Geplündert'], T(entry.targetId), wer + ' hat die Garnison geschlagen – die Stadt hält', bbar, bchips, bdet)
-                : entry.won
-                ? karte(entry, 'loss', 'bot', ['loss', 'Verloren'], T(entry.targetId), wer + ' hat die Basis erobert', bbar, bchips, bdet)
-                : karte(entry, 'win', 'shield', ['win', 'Verteidigt'], T(entry.targetId), wer + ' zurückgeschlagen', bbar, bchips, bdet);
+            const [kind, ic, badge, sub] = entry.capitalHolds ? ['loss', 'bot', 'Geplündert', wer + ' hat die Garnison geschlagen – die Stadt hält'] : entry.won ? ['loss', 'bot', 'Verloren', wer + ' hat die Basis erobert'] : ['win', 'shield', 'Verteidigt', wer + ' zurückgeschlagen'];
+            return karte(entry, kind, ic, [kind, badge], T(entry.targetId), sub, bbar, bchips, kbDet(kind === 'win', badge, sub));
         }
-        // Everything each side brings to the fight, added up line by
-        // line into a "Gesamt" sum, side by side - so the two final
-        // numbers sit right next to each other and it's obvious at a
-        // glance who had the advantage (that side's sum is green).
-        const atkTotal = entry.myTroops + entry.attackBuff;
+        const atkTotal = entry.myTroops + entry.attackBuff, defTotal = entry.enemyTroops + entry.enemyDefense + entry.defenseBuff;
         const ich = entry.meine && entry.meine.fallen !== undefined && (entry.rolle === 'mit' || Array.isArray(entry.angreifer)) ? entry.meine : null;   // gemeinsam: deine eigenen Zahlen (geflohen, übrig, verwundet, gefallen)
-        const defTotal = entry.enemyTroops + entry.enemyDefense + entry.defenseBuff;
-        const details = '<details><summary>Kampfdetails</summary>' +
-            '<div class="logCompare">' +
-                '<div class="logSide">' +
-                    '<div class="logSideLabel">Angreifer' + (angreiferZeilen(entry, gearHtml) ? ' · gemeinsam' : '') + '</div>' +
-                    angreiferZeilen(entry, gearHtml) +
-                    '<div class="logLine"><span>Truppen' + (angreiferZeilen(entry, gearHtml) ? ' (alle)' : '') + '</span><span>' + fmtD(entry.myTroops) + '</span></div>' +
-                    (entry.atkParts ? partLines(entry.atkParts)
-                        : '<div class="logLine buff"><span>Fähigkeit Angriff</span><span>+' + fmtD(entry.skillBuff) + '</span></div>' +
-                          (entry.titleBuff ? '<div class="logLine buff"><span>Titel</span><span>' + (entry.titleBuff > 0 ? '+' : '−') + fmtD(Math.abs(entry.titleBuff)) + '</span></div>' : '')) +
-                    '<div class="logSum' + (atkTotal >= defTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(atkTotal) + '</span></div>' +
-                    '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(entry.attackerCasualties || 0) + '</span></div>' +
-                    (entry.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.wounded) + '</span></div>' : '') +
-                    (entry.lossSaved ? (() => { const bern = Math.min(entry.heroLossPct || 0, entry.lossReductionPct), sh = entry.lossReductionPct - bern, sBern = Math.round(entry.lossSaved * bern / Math.max(1, entry.lossReductionPct));
-                        return (sh > 0 ? '<div class="logLine buff"><span>Schild −' + Math.round(sh) + ' %</span><span>+' + fmtD(entry.lossSaved - sBern) + '</span></div>' : '') +
-                            (bern > 0 ? '<div class="logLine buff"><span>Held −' + Math.round(bern) + ' % Verluste</span><span>+' + fmtD(sBern) + '</span></div>' : ''); })() : '') +
-                    gearHtml(entry.atkGear) +
-                '</div>' +
-                '<div class="logVsDivider">VS</div>' +
-                '<div class="logSide">' +
-                    '<div class="logSideLabel">Verteidiger' + (entry.defenderName ? ' · ' + whoLink(entry.defenderId || botIdByName[entry.defenderName], entry.defenderName) : '') + '</div>' +
-                    '<div class="logLine"><span>Truppen' + (entry.verst ? ' (alle)' : '') + '</span><span>' + fmtD(entry.enemyTroops) + '</span></div>' +
-                    verstZeilen(entry, entry.defenderName || 'Besitzer', gearHtml) +
-                    (entry.defParts ? partLines(entry.defParts, true)
-                      : '<div class="logLine"><span>Verteidigung</span><span>' + fmtD(entry.enemyDefense) + '</span></div>' +
-                        '<div class="logLine buff"><span>Verteidigung-Buff</span><span>+' + fmtD(entry.defenseBuff) + '</span></div>') +
-                    '<div class="logSum' + (defTotal > atkTotal ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmtD(defTotal) + '</span></div>' +
-                    '<div class="logCasualty"><span>Gefallen</span><span>−' + fmtD(Math.max(0, (entry.defenderCasualties || 0) - (entry.enemyWounded || 0))) + '</span></div>' +
-                    (entry.enemyWounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmtD(entry.enemyWounded) + '</span></div>' : '') +
-                    gearHtml(entry.defGear) +
-                '</div>' +
-            '</div>' +
-            (entry.killGold ? '<div class="logGold">Angriff: Münzen +' + fmtBig(entry.killGold) + ' Münzen für getötete Truppen</div>' : entry.killGold === undefined && entry.attackGoldRate ? '<div class="logGold">Angriff: Münzen +' + fmt1(entry.attackGoldRate) + ' pro getöteter Truppe</div>' : '') +
-            (!entry.won && (ich ? ich.fled : entry.retreatSurvivors) ? '<div class="logRetreat">' + fmtNum(ich ? ich.fled : entry.retreatSurvivors) + (ich ? ' deiner' : '') + ' Truppen konnten fliehen und kehren zurück</div>' : '') +
-            ((ich ? ich.wounded : entry.wounded) ? '<div class="logRetreat logWounded">' + fmtNum(ich ? ich.wounded : entry.wounded) + (ich ? ' deiner' : '') + ' Verwundete gehen ins Krankenhaus – heile sie in der Stadt</div>' : '') +
-            (entry.enemyWounded ? '<div class="logRetreat logWounded">' + escapeHtml(entry.defenderName || 'Der Gegner') + ' bringt ' + fmtNum(entry.enemyWounded) + ' Verwundete ins Krankenhaus</div>' : '') +
-            '</details>';
         const meine = entry.meine || {}, ichUeb = ich && ich.rest !== undefined;   // (ältere Berichte: ohne rest/fled → die Zahlen des ganzen Kampfs)
-        return karte(entry, entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses', [entry.won ? 'win' : 'loss', entry.capitalHolds ? 'Geplündert' : entry.won ? 'Sieg' : 'Niederlage'], T(entry.targetId),
-            (entry.rolle === 'mit' ? 'Rally mit ' + escapeHtml(entry.fuehrer || '?') + ' · ' : angreiferZeilen(entry, gearHtml) ? entry.angreifer.length + ' Angreifer · ' : '') + 'von ' + T(entry.sourceId),
+        const badge = entry.capitalHolds ? 'Geplündert' : entry.won ? 'Sieg' : 'Niederlage';
+        const sub = (entry.rolle === 'mit' ? 'Rally mit ' + escapeHtml(entry.fuehrer || '?') + ' · ' : Array.isArray(entry.angreifer) && entry.angreifer.length > 1 ? entry.angreifer.length + ' Angreifer · ' : '') + 'von ' + T(entry.sourceId);
+        return karte(entry, entry.won ? 'win' : 'loss', entry.won ? 'level' : 'losses', [entry.won ? 'win' : 'loss', badge], T(entry.targetId), sub,
             logBalance(atkTotal, defTotal, icon('attack') + 'Du ' + fmtM(atkTotal), fmtM(defTotal) + ' ' + escapeHtml(entry.defenderName || 'Abwehr') + icon('defense')),
             [...(entry.rolle === 'mit' || ich ? verlustChips(meine.fallen, meine.wounded) : verlustChips(entry.attackerCasualties, entry.wounded)),
                 entry.won ? ['troops', chipN(ichUeb ? ich.rest : entry.remaining) + ' übrig'] : (ichUeb ? ich.fled : entry.retreatSurvivors) > 0 && ['recall', chipN(ichUeb ? ich.fled : entry.retreatSurvivors) + ' fliehen heim'],
-                ...beuteChips(entry, true), entry.killGold > 0 && ['coin', '+' + chipN(entry.killGold) + ' Münzen für Kills', 'gut']], details);
+                ...beuteChips(entry, true), entry.killGold > 0 && ['coin', '+' + chipN(entry.killGold) + ' Münzen für Kills', 'gut']], kbDet(!!entry.won, badge, sub));
     })(entry); } catch (err) { console.warn('Kampfbericht', err); return logRowHtml('loss', 'info', 'Kampfbericht', 'Dieser Bericht kann nicht angezeigt werden.', ''); }
     }).join('');
     [...combatLogListEl.children].forEach((row, i) => { const e = combatLog[i]; if (!e) return; row.dataset.key = combatLogKey(e);
@@ -6654,102 +6715,17 @@ function renderCombatLog() {
     try { kampflogUmbauen(); } catch (err) { console.warn('Kampfbericht', err); }   // neuer Aufbau: ein Fenster je Spieler
 }
 
-// ===== Kampfbericht im neuen Aufbau (Alexanders Design): jeder Spieler ein eigenes Fenster, alle Fenster gleich aufgebaut
-// (Truppen, Held, Grundverteidigung, Gesamt, Gefallen, Geflohen, Stufe, 2 Heldenplätze, Skills, Rohstoffe) – „Kampfdetails“ öffnet eine eigene Seite.
+// ===== Kampfbericht-Liste: Balken mit allen Namen, Spähbericht im eigenen Aufbau; „Kampfdetails“ öffnet eine eigene Seite
+// (Angriff/Verteidigung: der neue Kampfbericht aus kampfBerichtHtml).
 const kampflogUmbauen = (function () {
     const fmt = v => Math.round(v || 0).toLocaleString('de-DE'), kurz = v => Math.abs(v || 0) >= 1e6 ? fmtCompact(v || 0) : fmtNum(v || 0);   // (Balken: wie renderCombatLog)
     const ic = n => '<svg class="icon" aria-hidden="true"><use href="#i-' + n + '"></use></svg>';
     const zl = (a, b, kl, src) => '<div class="logLine' + (kl || '') + '"><span>' + a + (src ? '<small class="logSrc">' + src + '</small>' : '') + '</span><span>' + b + '</span></div>';
     const el = h => { const t = document.createElement('template'); t.innerHTML = h.trim(); return t.content.firstChild; };
     const leerHeld = (n, t) => '<div class="logHero kl-keinheld"><span class="ghero"><span class="kl-leer">?</span><span><b>' + n + '</b>' + (t ? '<small>' + t + '</small>' : '') + '</span></span></div>';
-    const leerGear = (stufe, angr) => '<div class="logGear"><div class="logGearHead">' + (stufe || 'Spieler-Stufe –') + '</div><div class="logGearItems">' +
-        [['weapon', 'Waffe'], ['armor', 'Rüstung'], ['shield', 'Schild'], ['boots', 'Stiefel']].map(([i, n]) => '<span class="gslot"><span class="tile empty" style="' + LEER_STIL + '" title="' + n + ' – leer">' + LEER_IC(ic(i)) + '</span></span>').join('') +
-        '</div><div class="logGearMeta">keine Ausrüstung angelegt<br>Fähigkeit Angriff – · Verteidigung –</div></div>';
     const textOf = n => (n && n.firstElementChild ? n.firstElementChild.textContent : '').trim();
 
-    // ein Fenster auf den immer gleichen Aufbau bringen
     const heldZeile = (mit, angr) => mit ? zl('Held', 'dabei', '', 'steckt in „Eigene Werte“') : zl('Held', '+0', '', angr ? 'ohne Held' : 'kein Verteidigungs-Held in der Mauer');   // gleich in Kampf- und Spähbericht
-    function normal(box, angr, roh, schutz, flucht) {                    // flucht: die Geflohenen DIESES Spielers (sonst 0)
-        const lines = () => [...box.querySelectorAll(':scope > .logLine, :scope > .logSum, :scope > .logCasualty')];
-        const truppen = lines().find(l => textOf(l).startsWith('Truppen'));
-        if (truppen) truppen.firstElementChild.firstChild.textContent = 'Truppen';
-        const mitHeld = !!box.querySelector('.logGear .logHero:not(.kl-keinheld)');
-        if (!lines().some(l => textOf(l).startsWith('Held'))) (truppen || box.firstElementChild).insertAdjacentHTML('afterend', heldZeile(mitHeld, angr));
-        const sum = box.querySelector(':scope > .logSum');
-        if (!lines().some(l => textOf(l).startsWith('Grundverteidigung')) && sum) sum.insertAdjacentHTML('beforebegin', zl('Grundverteidigung', '0', ' kl-null', 'zählt nur beim Besitzer der Basis'));
-        const cas = lines().filter(l => l.classList.contains('logCasualty'));
-        if (!cas.length && sum) sum.insertAdjacentHTML('afterend', '<div class="logCasualty kl-null"><span>Gefallen</span><span>–</span></div>');   // (steht nicht im Bericht)
-        const gefl = lines().find(l => textOf(l).startsWith('Geflohen'));
-        if (!gefl) { const c = lines().filter(l => l.classList.contains('logCasualty')).pop(); (c || sum).insertAdjacentHTML('afterend', zl('Geflohen', fmt(flucht || 0))); }
-        else if (flucht !== undefined) gefl.lastElementChild.textContent = fmt(flucht);   // (nur seine – nicht die der ganzen Rally)
-        let gear = box.querySelector(':scope > .logGear');
-        if (!gear) { box.insertAdjacentHTML('beforeend', leerGear('', angr)); gear = box.querySelector(':scope > .logGear'); }
-        let hs = gear.querySelector('.logGearHeroes');
-        if (!hs) { hs = el('<div class="logGearHeroes"></div>'); const meta = gear.querySelector('.logGearMeta'); meta ? gear.insertBefore(hs, meta) : gear.appendChild(hs); }
-        const helden = hs.querySelectorAll('.logHero');
-        if (helden.length === 0) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Hauptheld', angr ? 'Ohne Held losgeschickt' : 'Kein Verteidigungs-Held in der Mauer (oder er war unterwegs)'));
-        if (hs.querySelectorAll('.logHero').length === 1) hs.insertAdjacentHTML('beforeend', leerHeld('Kein Zweitheld', ''));
-        hs.querySelectorAll('.logHero').forEach(h => {                       // jeder Heldenplatz: dieselbe Reihenfolge, leere Zeilen („Fähigkeit –“) fallen weg
-            const L = [...h.querySelectorAll(':scope > .logLine')].map(l => { const r = [textOf(l), l.lastElementChild.textContent.trim()]; l.remove(); return r; });
-            const fest = ['Angriff', 'Verteidigung', 'Gefolge', 'Tempo'], rest = L.filter(l => !fest.includes(l[0]));
-            h.insertAdjacentHTML('beforeend', [...fest.map(n => L.find(l => l[0] === n) || [n, '–']), ...rest.slice(0, 3)].filter(([, b]) => b && b !== '–').map(([a, b]) => zl(a, b, ' buff')).join(''));
-        });
-        box.querySelectorAll(':scope > .kl-rss').forEach(x => x.remove());
-        const ROH = [['g', 'Münzen', 'coins'], ['h', 'Holz', 'holz'], ['s', 'Stein', 'stein'], ['e', 'Eisen', 'eisen']], kacheln = beuteRaster(ROH.map(([k, , a]) => ({ a, n: Math.abs(roh[k] || 0), minus: roh[k] < 0 })));   // Beute/Verlust als Kacheln (05e), die Zeilen bleiben für Vorleser
-        box.insertAdjacentHTML('beforeend', '<div class="kl-rss' + (kacheln ? ' bk-an' : '') + '"><div class="logGearHead">Rohstoffe</div>' + kacheln + '<div class="kl-rss-zeilen">' +
-            ROH.map(([k, n]) => { const v = roh[k] || 0;
-                return zl(n, (v > 0 ? '+' : v < 0 ? '−' : '') + fmt(Math.abs(v)), v > 0 ? ' buff' : v < 0 ? ' buff malus' : ''); }).join('') + '</div>' +
-            (schutz ? zl('<small class="logSrc">Burg schützt ' + fmt(schutz) + ' Münzen · ' + fmt(schutz * ROH_JE_MUENZE) + ' je Rohstoff</small>', '') : '') + '</div>');
-        return box;
-    }
-    const rohTeil = (beute, anteil, vz) => ({ g: vz * Math.round(beute.g * anteil), h: vz * Math.round(beute.h * anteil), s: vz * Math.round(beute.s * anteil), e: vz * Math.round(beute.e * anteil) });
-
-    // eine Seite (Angreifer oder Verteidiger) in Fenster je Spieler zerlegen
-    function seiteUmbauen(side, angr, liste, e, beute, schutz, sieg, gesamt) {   // gesamt: die echte Summe dieser Seite (aus dem Bericht – nie aus dem Text, der ab 10 Mio. abgekürzt ist)
-        const label = side.querySelector('.logSideLabel');
-        const gruppe = el('<div class="kl-gruppe ' + (angr ? 'kl-a' : 'kl-v') + '"></div>');
-        side.replaceWith(gruppe);
-        const spieler = Array.isArray(liste) && liste.length ? liste : null;
-        const sumEl = side.querySelector(':scope > .logSum');
-        const fluchtAlle = !angr || sieg ? 0 : e.type === 'attack' ? e.retreatSurvivors || 0 : e.atkFled || 0;   // (Geflohene des Angreifers – verloren)
-        if (!spieler) {                                                     // nur ein Spieler auf dieser Seite
-            const roh = angr ? (sieg ? beute : {}) : rohTeil(beute, 1, -1);
-            gruppe.appendChild(normal(side, angr, roh, angr ? 0 : schutz, fluchtAlle));
-            return;
-        }
-        // Zeilen der einzelnen Spieler (angreiferZeilen / verstZeilen) einsammeln und aus dem Fenster nehmen
-        const gearVon = {}; side.querySelectorAll(':scope > details.verst-det').forEach(d => { const n = d.querySelector('summary').textContent.split(':')[0].trim(); gearVon[n] = d.querySelector('.logGear'); d.remove(); });
-        const namen = new Set(spieler.map(p => p.name));
-        [...side.querySelectorAll(':scope > .logLine, :scope > .logCasualty')].forEach(l => { const t = textOf(l);
-            if (t.startsWith('· davon') || t.startsWith('Verstärkung ·') || namen.has(t) || (!angr && (t === 'Deine' || t === (e.defName || '') || t === (e.defenderName || '') || t === 'Besitzer'))) l.remove(); });
-        const andere = spieler.slice(angr ? 1 : 0), erster = angr ? spieler[0] : { name: label.textContent.replace(/^Verteidiger · /, '').replace(/ \+ .*$/, ''), n: e.eigen };
-        const summeAndere = andere.reduce((s, p) => s + (p.n || 0), 0), alleT = summeAndere + (erster.n || 0), staerkeAndere = andere.reduce((s, p) => s + (p.k !== undefined ? p.k : p.n || 0), 0);
-        // Fenster 1: Anführer / Besitzer (behält Held, Boni, Ausrüstung)
-        label.innerHTML = (angr ? 'Angreifer · ' : 'Verteidiger · ') + escapeHtml(erster.name || '?') + ' <small style="text-transform:none;letter-spacing:0">(' + (angr ? 'Anführer' : 'Besitzer') + ')</small>';
-        const tr = [...side.querySelectorAll(':scope > .logLine')].find(l => textOf(l).startsWith('Truppen')); if (tr) tr.lastElementChild.textContent = fmt(erster.n);
-        if (sumEl) sumEl.lastElementChild.textContent = fmt(gesamt - staerkeAndere);
-        // die Boni-Zeilen galten dem ganzen Kampf: im Fenster des Anführers steht nur, was ER mitbringt
-        side.querySelectorAll(':scope > .logLine.buff').forEach(l => l.remove());
-        const schon = angr ? 0 : Array.isArray(e.defParts) && e.defParts.length ? e.defParts[0][1] || 0 : (e.enemyDefense || 0) - andere.reduce((x, p) => x + (p.plus || 0), 0);   // (Grundverteidigung bzw. Verteidigung steht schon als eigene Zeile da – ohne Bericht-Teile steckt darin auch das Plus der Helfer)
-        const eig = gesamt - staerkeAndere - (erster.n || 0) - schon;
-        if (eig && tr) tr.insertAdjacentHTML('afterend', zl('Eigene Werte', (eig > 0 ? '+' : '−') + fmt(Math.abs(eig)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Rüstung, Fähigkeit Verteidigung, Mauer, Mauer-Held, Titel, Forschung'));
-        if (angr && erster.fallen !== undefined) { const c = side.querySelector(':scope > .logCasualty:not(.wounded)'); if (c) c.lastElementChild.textContent = '−' + fmt(erster.fallen);
-            const w = side.querySelector(':scope > .logCasualty.wounded'); if (w) { if (erster.wounded) w.lastElementChild.textContent = fmt(erster.wounded); else w.remove(); } }   // (nur seine – nicht die der ganzen Rally)
-        if (!angr && e.type === 'attack') { const weg = andere.reduce((x, p) => x + (p.fallen || 0) + (p.wounded || 0), 0), c = side.querySelector(':scope > .logCasualty:not(.wounded)');   // Besitzer: ohne die Verluste der Helfer (die stehen in ihren Fenstern)
-            if (c) c.lastElementChild.textContent = '−' + fmt(Math.max(0, (e.defenderCasualties || 0) - (e.enemyWounded || 0) - weg)); }
-        gruppe.appendChild(normal(side, angr, angr ? (sieg ? rohTeil(beute, (erster.n || 0) / Math.max(1, alleT), 1) : {}) : rohTeil(beute, 1, -1), angr ? 0 : schutz, angr ? (erster.fled !== undefined ? erster.fled : fluchtAlle) : 0));
-        // weitere Fenster: Rally-Mitglieder / Verstärkung
-        for (const p of andere) {
-            const b = el('<div class="logSide"><div class="logSideLabel">' + (angr ? 'Angreifer · ' : 'Verteidiger · ') + escapeHtml(p.name || '?') + ' <small style="text-transform:none;letter-spacing:0">(' + (angr ? 'Verbündeter' : 'Verstärkung') + ')</small></div>' +
-                zl('Truppen', fmt(p.n)) + (p.k !== undefined && p.k !== p.n ? zl('Eigene Werte', (p.k > p.n ? '+' : '−') + fmt(Math.abs(p.k - p.n)), ' buff', angr ? 'Held, Fähigkeit Angriff, Titel, Forschung' : 'Fähigkeit Verteidigung, Titel, Forschung') : '') +
-                '<div class="logSum' + (sumEl && sumEl.classList.contains('advantage') ? ' advantage' : '') + '"><span>Gesamt</span><span>' + fmt(p.k !== undefined ? p.k : p.n) + '</span></div>' +
-                '<div class="logCasualty"><span>Gefallen</span><span>−' + fmt(p.fallen || 0) + '</span></div>' +   // (fallen enthält die Verwundeten schon nicht)
-                (p.wounded ? '<div class="logCasualty wounded"><span>Verwundet</span><span>' + fmt(p.wounded) + '</span></div>' : '') + '</div>');
-            const g = gearVon[p.name]; if (g) b.appendChild(g);
-            gruppe.appendChild(normal(b, angr, angr && sieg ? rohTeil(beute, (p.n || 0) / Math.max(1, alleT), 1) : {}, 0, angr ? p.fled || 0 : 0));
-        }
-    }
-
     // Spähbericht (Vorbild RoK): oben die Verteidigung Teil für Teil wie im Kampfbericht, darunter kompakt Herr, Verteidigungs-Held,
     // Basis und Rohstoffe – nur was der Späher gefunden hat (keine Zeilen voller „–“); das Alter steht EINMAL oben in der Karte
     const block = (kopf, inhalt) => inhalt ? '<div class="kl-rss"><div class="logGearHead">' + kopf + '</div>' + inhalt + '</div>' : '';
@@ -6808,19 +6784,12 @@ const kampflogUmbauen = (function () {
             try {
                 if (e.type === 'scout') return spaeh(row, e);
                 if (e.type !== 'attack' && e.type !== 'botAttack') return;
-                const cmp = row.querySelector('.logCompare'); if (!cmp) return;
-                const r = e.plunderRoh || {}, beute = { g: e.plunder || 0, h: r.h || 0, s: r.s || 0, e: r.e || 0 };
-                const sides = [...cmp.querySelectorAll(':scope > .logSide')]; if (sides.length < 2) return;
                 const angrList = Array.isArray(e.angreifer) && e.angreifer.length > 1 ? e.angreifer : null;
                 const bal = row.querySelector('.logBalTxt'), namen = L => L.map(p => escapeHtml(p.name || '?')).join(' + ');   // Balken: alle Namen, nicht nur „Du“
                 const atkG = e.type === 'attack' ? (e.myTroops || 0) + (e.attackBuff || 0) : e.myTroops || 0;
                 const defG = e.type === 'attack' ? (e.enemyTroops || 0) + (e.enemyDefense || 0) + (e.defenseBuff || 0) : (e.enemyTroops || 0) + (e.enemyDefense || 0);
                 if (bal && angrList) { const s0 = bal.firstElementChild, sv = s0.querySelector('svg'); s0.innerHTML = (sv ? sv.outerHTML : '') + namen(angrList) + ' ' + kurz(atkG); }
                 if (bal && Array.isArray(e.verst) && e.verst.length) { const s1 = bal.lastElementChild, sv = s1.querySelector('svg'); s1.innerHTML = kurz(defG) + ' ' + escapeHtml(e.defenderName || e.defName || 'Du') + ' + ' + namen(e.verst) + (sv ? sv.outerHTML : ''); }
-                const vertList = Array.isArray(e.verst) && e.verst.length ? e.verst : null;
-                const sieg = !!e.won;
-                seiteUmbauen(sides[0], true, angrList, e, beute, 0, sieg, atkG);
-                seiteUmbauen(sides[1], false, vertList, e, sieg ? beute : { g: 0, h: 0, s: 0, e: 0 }, e.plunderSafe || 0, sieg, defG);
             } catch (err) { console.warn('Kampflog-Design', err); }
         });
     }
@@ -6831,14 +6800,24 @@ const kampflogUmbauen = (function () {
         '<div style="max-width:560px;margin:0 auto"><button type="button" class="btn btn--ghost btn--sm kl-zurueck" data-klzu>' + ic('back') + 'Zurück zum Kampflog</button></div><div class="logList" id="klInhalt"></div></div></div>');
     document.body.appendChild(seite);   // (Desktop: Fenster unter dem HUD, Inhalt rollt darin – 03 .kl-fenster)
     function oeffnen(row, art) {
-        const k = row.cloneNode(true), d = k.querySelector('details'); if (d) d.open = true;
-        const inh = seite.querySelector('#klInhalt'); inh.innerHTML = ''; inh.appendChild(k);
+        const inh = seite.querySelector('#klInhalt'), kb = row.querySelector('details > .kb'), e = combatLog.find(x => combatLogKey(x) === row.dataset.key);
+        let k;
+        if (kb) { k = el('<div class="logRow kb-row"></div>'); k.dataset.key = row.dataset.key; k.appendChild(kb.cloneNode(true)); }   // neuer Kampfbericht: nur die Seite, ohne die Karte der Liste
+        else { k = row.cloneNode(true); const d = k.querySelector('details'); if (d) d.open = true; }
+        inh.innerHTML = ''; inh.appendChild(k);
         const b = row.querySelector('.lt b'), t = b ? b.cloneNode(true) : null; if (t && t.querySelector('.lbadge')) t.querySelector('.lbadge').remove();
-        seite.querySelector('#klTitel').textContent = t ? t.textContent.trim() : 'Bericht';
-        seite.querySelector('#klArt').textContent = art || 'Kampfdetails';
+        seite.querySelector('#klTitel').textContent = kb ? 'Kampfbericht' : t ? t.textContent.trim() : 'Bericht';
+        seite.querySelector('#klArt').textContent = kb && e ? kbArt(e) : art || 'Kampfdetails';
         seite.hidden = false; seite.scrollTop = 0; inh.scrollTop = 0;
     }
-    seite.addEventListener('click', ev => { if (ev.target === seite || ev.target.closest('[data-klzu]')) { ev.preventDefault(); seite.hidden = true; } else if (ev.target.closest('.who-link, [data-profile]')) seite.hidden = true; });   // (Name antippen: das Profil soll nicht unsichtbar dahinter aufgehen)
+    const zeigen = id => { const isl = islandById[+id]; seite.hidden = true; if (!isl) return; battleLogCloseBtn.click(); flyTo(isl.x, isl.y); setTimeout(() => openIslandPopup(isl), 380); };   // (Nochmal angreifen: dort steht „Angreifen“)
+    seite.addEventListener('click', ev => { if (ev.target === seite || ev.target.closest('[data-klzu]')) { ev.preventDefault(); seite.hidden = true; return; }
+        if (ev.target.closest('.who-link, [data-profile]')) { seite.hidden = true; return; }   // (Name antippen: das Profil soll nicht unsichtbar dahinter aufgehen)
+        const z = ev.target.closest('[data-logzeigen], [data-kbangriff]'); if (z) { ev.preventDefault(); return zeigen(z.dataset.logzeigen || z.dataset.kbangriff); }
+        if (ev.target.closest('[data-kbheilen]')) { ev.preventDefault(); seite.hidden = true; battleLogCloseBtn.click(); openCity(() => { cityOpenId = 'hospital'; cityPage = 'nutz'; cityFocus('hospital'); renderCitySheet(); }); return; }   // ins Krankenhaus
+        const tl = ev.target.closest('[data-logteilen]'), row = tl && tl.closest('.logRow');   // teilen: wie der Knopf in der Liste
+        const orig = row && [...combatLogListEl.children].find(r => r.dataset.key === row.dataset.key), kn = orig && orig.querySelector('.lt [data-logteilen]');
+        if (kn) { ev.preventDefault(); kn.click(); } });
     combatLogListEl.addEventListener('click', ev => { const s = ev.target.closest('summary'); if (!s || !combatLogListEl.contains(s)) return;
         ev.preventDefault(); ev.stopPropagation(); oeffnen(s.closest('.logRow'), s.textContent.trim()); }, true);
     document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && !seite.hidden) seite.hidden = true; });
@@ -6877,7 +6856,7 @@ function refreshBattleLog() {             // live countdowns + the rows' relativ
     [...combatLogListEl.children].forEach((row, i) => { const e = combatLog[i];
         if (e && row.dataset.key === combatLogKey(e)) alter(row, e); });
     const offen = document.querySelector('.kl-seite:not([hidden]) #klInhalt > .logRow');   // die offene Bericht-Seite ebenso
-    if (offen) { const e = combatLog.find(x => combatLogKey(x) === offen.dataset.key); if (e) alter(offen, e); }
+    if (offen) { const e = combatLog.find(x => combatLogKey(x) === offen.dataset.key); if (e && offen.classList.contains('kb-row')) setText(document.getElementById('klArt'), kbArt(e)); else if (e) alter(offen, e); }
 }
 battleLogCloseBtn.addEventListener('click', () => {
     closePanel(battleLogPopup);
