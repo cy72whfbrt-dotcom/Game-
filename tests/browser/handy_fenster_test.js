@@ -99,7 +99,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const sp = [...document.querySelectorAll('#tabSet [data-sprung]')], pb = profilePopup.querySelector('.pbody');
     sp.find(x => x.dataset.sprung === 'setKonto').click(); const k = document.getElementById('setKonto').getBoundingClientRect().top - pb.getBoundingClientRect().top;
     return { gr, n, sprung: sp.map(x => x.textContent.trim()), h: Math.round(Math.min(...sp.map(x => x.getBoundingClientRect().height))), konto: Math.round(k), hilfe: !!document.querySelector('#tabSet details.p5-hilfe'), nochmal: document.getElementById('anleitungNochmal').getBoundingClientRect().height }; });
-  ok(p3.gr.join() === 'Angriff,Bündnis,Events,Stadt' && p3.n === 11, 'Einstellungen: Benachrichtigungen in Gruppen, alle 11 Schalter da (ohne Invasion/Drache)', p3);
+  ok(p3.gr.join() === 'Angriff,Bündnis,Events,Stadt' && p3.n === 13, 'Einstellungen: Benachrichtigungen in Gruppen, alle 13 Schalter da (ohne Invasion/Drache)', p3);
   ok(p3.sprung.join() === 'Benachrichtigungen,Ton & Grafik,Konto,Hilfe' && p3.h >= 44 && p3.konto >= -2 && p3.konto < 40, 'Einstellungen: Sprung-Knöpfe (≥ 44 px) springen zur Gruppe', p3);
   ok(p3.hilfe && p3.nochmal >= 30, 'Einstellungen: Hilfe-Text eingeklappt, „Anleitung noch mal“ sichtbar', p3);
   await ev(() => { profilePopup.querySelector('.pbody').scrollTop = 0; }); await p.waitForTimeout(200); await bild('n_einstellungen');
