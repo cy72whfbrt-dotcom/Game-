@@ -76,10 +76,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     try { resolveAttack({ sourceId: playerIslandId, targetId: w.T, rawTroops: 1, attackBonus: 0, atkTitle: 1, atkKraft: 1, startedAt: now - 1000, resolveAt: now, shieldLossReductionPct: 0, rewardGoldRate: 0 }); } catch (x) { out.A.kampfFehler = x.message; }
     const k = combatLog.find(x => x.type === 'attack' && x.targetId === w.T);
     out.A.kampf = k ? k.enemyDefense : null; out.A.kampfTeile = k ? k.defParts : null;
-    { const kr = k && reihe(k), G = kr ? [...kr.querySelectorAll('.logGear')].filter(g => g.querySelector('.tile')) : [];   // leere Ausrüstungs-Plätze: grau, „keine Ausrüstung angelegt“
-      const leer = kr ? [...kr.querySelectorAll('.logGear .tile.empty')] : [];
-      out.A.leerGear = { leer: leer.length, grau: leer.filter(t => t.querySelector('.kl-leer-ic') && /grayscale/.test(getComputedStyle(t).filter)).length,
-        alleLeer: G.filter(g => !g.querySelector('.tile:not(.empty)')).length, text: G.filter(g => !g.querySelector('.tile:not(.empty)') && /keine Ausrüstung angelegt/.test(g.textContent)).length }; }
+    { const kr = k && reihe(k), G = kr ? [...kr.querySelectorAll('.kb-gear')] : [];   // leere Ausrüstungs-Plätze: grau, „keine Ausrüstung angelegt“
+      const leer = kr ? [...kr.querySelectorAll('.kb-gear .bk.kb-gleer')] : [], ganz = G.filter(g => !g.querySelector('.bk:not(.kb-gleer)'));
+      out.A.leerGear = { leer: leer.length, grau: leer.filter(t => /grayscale/.test(getComputedStyle(t.querySelector('img')).filter)).length,
+        alleLeer: ganz.length, text: ganz.filter(g => g.nextElementSibling && /keine Ausrüstung angelegt/.test(g.nextElementSibling.textContent)).length }; }
     // B) Alter: 2 Std. alt → gelb „neu spähen?“, frisch → ohne
     e.at = Date.now() - 2 * 3600000; row = reihe(e);
     const chip = row && [...row.querySelectorAll('.lchip')].find(c => /gespäht vor/.test(c.textContent));

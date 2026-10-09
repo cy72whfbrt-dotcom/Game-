@@ -80,9 +80,15 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
 
 ## Kampfbericht und Spähbericht
 - Leer: Bild `bericht_leer` + Knopf „Barbaren-Lager angreifen“ (fliegt zum nächsten Lager, `barbNearest`).
-- Kampfbericht: AUFBAU bleibt (Alexander 6.10.), nur Aussehen darf sich ändern. Jede Karte: Abzeichen + Ort („Zeigen“),
-  Kräfte-Balken, Zahlen-Kästchen (rot gefallen, gelb verwundet, grün Beute als Kachel), „Kampfdetails“. Ein Fenster je
-  Spieler (Truppen, Held, Werte, Gefallen, Geflohen …). Jeder Bericht einzeln abgesichert („kann nicht angezeigt werden“).
+- Kampfbericht-Liste: jede Karte Abzeichen + Ort („Zeigen“), Kräfte-Balken (alle Namen), Zahlen-Kästchen, „Kampfdetails“.
+  Jeder Bericht einzeln abgesichert („kann nicht angezeigt werden“).
+- Kampfdetails (Angriff/Verteidigung) = eigene Seite nach Entwurf `werkzeuge/kampfbericht/` (Alexander 9.10., `kampfBerichtHtml`,
+  Daten `kbSeiten`): Band Sieg/Niederlage (KI-Bild), Ort + Zeigen/Teilen, „Hauptstadt brennt“, Kräfte, VS-Karten (Wappen
+  `ui_wappen` als Platzhalter), Truppen je Seite (Start/Übrig/Verwundet/Gefallen/Geflohen, Verluste gerettet), Kampfkraft
+  mit Quelle je Bonus + Gesamt, Helden (Haupt/Zweit, leer = „?“), Ausrüstung & Stadt (4 Kacheln, Fähigkeiten, Mauer,
+  Krankenhaus, Heldenhalle, Titel), Jeder Spieler (eigene Werte, Beute-Anteil), Beute/Geraubt als Bild + Zahl, Burg-Schutz,
+  Hinweise, Knöpfe „Nochmal angreifen“ (Insel-Fenster) bzw. „Verwundete heilen“ (Krankenhaus). Eigener Spieler + Gegner
+  offen, weitere Rally-Mitglieder/Verstärkung in `details.kb-mehr` (zu). Nur Zahlen aus dem Bericht, keine Kampfrunden.
 - Spähbericht kompakt (Vorbild RoK): Truppen, Verstärkung, Verteidigung Teil für Teil, „Verteidigung gesamt“ als EINE Zahl
   (`spaehGesamt`), Herr, Verteidigungs-Held, Basis, Rohstoffe (gegen Rohstoff-Schutz). Alter oben („Gespäht vor …“, ab
   30 Min. gelb `SPAEH_ALT_MS`). Kopf „Spieler-Stufe N · Basis Stufe M“. Gespähte Abwehr nutzt `spaehWerte`.
