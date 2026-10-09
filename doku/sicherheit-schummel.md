@@ -34,7 +34,7 @@ Login, Datenlecks, Server-Filter und was der Weltrechner gegen gefälschte Handy
   Fähigkeiten, Stadt, Forschung, Edelsteine, Münzen (auch der Mitspieler, `muenzen_kuerzen`) nur per Spähbericht.
 - Truppen fremder Basen nur für sichtbare Inseln (Server-Nebel). Fremde Märsche ohne Truppen/Held/Kampfwerte
   (`marsch_teil`); greift einer DICH an, kommt seine echte Stärke erst, wenn der Kampf läuft. Gemeinsame Angriffe sieht nur,
-  wer dabei ist. Bündnis-Chat, Verstärkungen und Bündnis-Logs nur fürs eigene Bündnis; fremde Rally-Einträge gekürzt
+  wer dabei ist. Bündnis-Chat, Verstärkungen und Bündnis-Logs, -Signale, -Geschenke, Beitritts-Anfragen und Einladungen nur fürs eigene Bündnis (bei fremden bleibt nur die eigene Anfrage/Einladung); fremde Rally-Einträge gekürzt
   (`rally.an` [3]–[5]; [6]/[7] noch nachtragen – offen).
 - Keine Gedanken der Mitspieler (Groll, Pläne, Handy-Zeiten), keine Login-Namen, kein Hauptbuch.
 
@@ -43,7 +43,8 @@ Login, Datenlecks, Server-Filter und was der Weltrechner gegen gefälschte Handy
   Truppen als da sind, Marsch-Plätze, geschenkte Truppen nur aus echten Quellen (Stufe, Thron-Shop, Krankenhaus, Fund,
   Admin, Händler, Pass, Aufgabe).
 - Keine Angriffe auf sich selbst (Gratis-EP), Tagesgrenzen beim Weltrechner, Bauherr-Rabatt nur mit Server-Zeit, Heilen
-  kostet Münzen, Stufen-Belohnung ab der Weltrechner-Stufe, Beschleunigen/Teleport/Fähigkeiten-Reset kosten im Hauptbuch.
+  kostet Münzen, Stufen-Belohnung ab der Weltrechner-Stufe, Beschleunigen/Teleport/Fähigkeiten-Reset kosten im Hauptbuch. Event-Shop: Wochen-Limit je Ware und zusammen (Woche ab Mo 0 Uhr Berlin, Server-Zeit) prüft das
+  Hauptbuch (`hbEvShop`, Profil `evs`) – darüber wird nicht bezahlt und gemeldet.
 - Rally-Warnung/Einladung/Beitritts-Anfrage/Bündnis-Einladung an dieselbe Person höchstens alle 10 Min.
 - Abgelehntes erscheint als „Auffälligkeit“ auf der Admin-Seite (`weltrechner/schummel.php`, höchstens 20 je Spieler).
 - Bewusst offen: das Handy rechnet weiter selbst (Weltrechner prüft Plausibilität); mehrere Gebäude gleichzeitig auf einem

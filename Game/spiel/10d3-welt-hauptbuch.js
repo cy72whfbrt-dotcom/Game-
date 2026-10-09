@@ -28,7 +28,7 @@
         for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
-        g: 25 + questGemsTag() + 3 * 10,              // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42), Gratis-Kiste (3× höchstens 10, 06g) – Event-Preise kommen als Nachricht (gIn)
+        g: 25 + questGemsTag() + 3 * 10,              // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (60), Gratis-Kiste (3× höchstens 10, 06g) – Event-Preise kommen als Nachricht (gIn)
         k: 3 + 1 + 1 / 7,                             // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, epische Tageskiste
         kg: 27 / 7,                                   // davon „mind. Episch“ (Tag 7) als sicherer Kisten-Wert (Episch = 27)
         sh: HERO_SHARDS_DAY,                          // Splitter: Aufgaben-Bonus
@@ -154,7 +154,7 @@
             const d = nn(q[k]) - nn(gg[k]); if (!(d < 0)) continue; const n = -d; gg[k] = nn(q[k]);
             if (k === 's1') { f.k = nn(f.k) + n; f.sh = nn(f.sh) + n * heldSh('hc1'); }
             else if (k === 's2') { f.k = nn(f.k) + n; f.kg = nn(f.kg) + n * kWert(3); f.sh = nn(f.sh) + n * heldSh('hcE'); }
-            else if (k === 'em') hb.gA = nn(hb.gA) + n / 2;
+            else if (k === 'em') hb.gA = nn(hb.gA) + hbEvShop(who, hb, p, n, now) / 2;
             else hb.bMin = nn(hb.bMin) + n;
         }
         for (const k in HB_GG) {
@@ -164,6 +164,19 @@
             if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d); }
             else { gg[k] = nn(q[k]); hbGut(hb, 'gg:' + k); }
         }
+    }
+    // Event-Shop (Alexander 9.10.): je Woche (ab Montag 0 Uhr Berlin, Server-Zeit) höchstens das Limit je Ware (Profil evs) und
+    // zusammen höchstens EV_EM_WOCHE Event-Münzen. Mehr wird nicht bezahlt (→ die Waren zählen nicht) und gemeldet.
+    // → wie viele der n ausgegebenen Event-Münzen zählen
+    function hbEvShop(who, hb, p, n, now) {
+        const w = evWocheAb(now); let e = hb.evw; if (!e || e.w !== w) e = hb.evw = { w, em: 0 };
+        const frei = Math.max(0, EV_EM_WOCHE() - e.em), gilt = Math.min(n, frei); e.em += n;
+        const q = p && p.evs, zuviel = [];
+        if (q && typeof q === 'object' && q.n && typeof q.n === 'object' && evWocheAb(nn(q.w) || now) === w)
+            for (const o of EV_WAREN) if (nn(q.n[o.id]) > o.lim) zuviel.push(o.name + (o.zeit ? ' ' + o.zeit : '') + ' ' + fz(nn(q.n[o.id])) + '/' + o.lim);
+        if (e.em > EV_EM_WOCHE()) zuviel.push(fz(e.em) + ' Event-Münzen ausgegeben, höchstens ' + fz(EV_EM_WOCHE()));
+        if (zuviel.length) hbWarte(who, hb, 'evshop', now, 'Event-Shop über dem Wochen-Limit: ' + zuviel.join(', ') + '.', n - gilt); else hbGut(hb, 'evshop');
+        return gilt;
     }
     // abgelehnt: erst nach 2 Min. (immer noch im Profil) eine Auffälligkeit – einmal
     function hbWarte(who, hb, key, now, text, wert) {

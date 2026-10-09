@@ -13,7 +13,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     // Kosten: alte Formel × 1/1800 × 1.000 (Münzen), Basis aufwerten gerundet und nie unter 1.000
     o.aufwerten = [upgradeCostRoh(1), upgradeCostRoh(50), Math.max(1000, niceRoundW(Math.round(120 * Math.pow(1.27, 49) * M)))];
     const bk = 1000 * Math.pow(1.75, 9), burg = AUF.stadtKosten('keep', 10);
-    o.burg = [burg.c === nm(bk * 2), burg.h === niceRound(Math.round(bk)), burg.e === niceRound(Math.round(bk * .5)), burg];   // (Holz/Stein/Eisen in RoK-Größe, 7.10.: 1.000 × 1,75 je Stufe)
+    o.burg = [burg.c === niceRound(Math.max(nm(bk * 2), .75 * 3600 * coinsPerTick(burgKartenStufe(10)))), burg.h === niceRound(Math.round(bk)), burg.e === niceRound(Math.round(bk * .5)), burg];   // (Münzen ab Burg 5 mind. 0,3–0,75 Std. Ertrag, 9.10.; Holz/Stein/Eisen in RoK-Größe, 7.10.: 1.000 × 1,75 je Stufe)
     o.schutz = [AUF.burgSchutzStufe(1), AUF.burgSchutzStufe(10), AUF.burgSchutzStufe(25)];
     const atk = AUF.FORSCHUNG.find(d => d.id === 'm_atk'), fk = AUF.foKosten(atk, 1);
     o.forschKosten = [fk.c === nm(3000 * Math.pow(1.6, atk.aka - 1)) && fk.h === niceRound(Math.round(1500 * Math.pow(1.6, atk.aka - 1))), fk];
@@ -54,7 +54,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(r.faktoren.every(Boolean), 'Faktoren: Ertrag 1/3600, Kosten 1/1800, Münzen × 1.000', r.faktoren);
   ok(r.aufwerten[0] === 1000 && r.aufwerten[1] === r.aufwerten[2] && r.aufwerten[1] > 1e6, 'Basis aufwerten: alte Kosten × 1.000 ÷ 1.800, gerundet (mindestens 1.000)', r.aufwerten);
-  ok(r.burg.slice(0, 3).every(Boolean), 'Burg-Kosten: Münzen × 1.000 ÷ 1.800, Holz/Eisen in RoK-Größe', r.burg[3]);
+  ok(r.burg.slice(0, 3).every(Boolean), 'Burg-Kosten: Münzen (Burg 10: 0,75 Std. Ertrag der Hauptstadt), Holz/Eisen in RoK-Größe', r.burg[3]);
   ok(r.schutz[0] === 5556 && r.schutz[1] === 555556 && r.schutz[2] === 55555556, 'Burg-Schutz Gold × 1.000 ÷ 1.800 (Stufe 1 / 10 / 25)', r.schutz);
   ok(r.schutzRoh[0] === Math.round(r.schutzRoh[1] * 1.8) && r.schutzRoh[0] >= 10000, 'Burg-Schutz Holz/Stein/Eisen × ROH_FAKTOR ÷ MUENZ_FAKTOR (Stufe 1: ~10.000)', r.schutzRoh);
   ok(r.forschKosten[0], 'Forschung Angriff Stufe 1: Münzen × 1.000 ÷ 1.800, Holz in RoK-Größe', r.forschKosten[1]);

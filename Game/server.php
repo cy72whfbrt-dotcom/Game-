@@ -177,6 +177,7 @@ function profil_bereinigen($text) {
         'earned' => $plus($p['earned'] ?? 0, 1e12), 'coins' => $plus($p['coins'] ?? 0, 1e15), 'gems' => isset($p['gems']) ? $plus($p['gems'], 1e13) : null,
         'stW' => isset($p['stW']) ? $plus($p['stW'], 1e9) : null,   // Gems in allen Sternen (Hauptbuch: Rückgabe beim Verkaufen)
         'gg' => is_array($p['gg'] ?? null) ? ['em' => $plus($p['gg']['em'] ?? 0, 1e9), 's1' => $plus($p['gg']['s1'] ?? 0, 1e6), 's2' => $plus($p['gg']['s2'] ?? 0, 1e6), 'bm' => $plus($p['gg']['bm'] ?? 0, 1e9)] : null,   // Event-Münzen, Schlüssel, Beschleuniger-Minuten (Hauptbuch hbGegenst)
+        'evs' => is_array($p['evs'] ?? null) ? ['w' => $plus($p['evs']['w'] ?? 0, 1e15), 'n' => $karte($p['evs']['n'] ?? [], function ($x) use ($plus) { return $plus($x, 1e6); }, 20)] : null,   // Event-Shop diese Woche (Hauptbuch hbEvShop)
         'tp' => isset($p['tp']) ? $plus($p['tp'], 1e12) : null,   // Thron-Punkte im Geldbeutel (Hauptbuch: Kappe beim Saison-Reset – nur der Weltrechner)
         'crest' => $cr ? array_map(function ($k) use ($cr, $zahl) { return (int)$zahl($cr[$k] ?? 0, 99); }, ['shape' => 'shape', 'div' => 'div', 'c1' => 'c1', 'c2' => 'c2', 'sym' => 'sym', 'ink' => 'ink']) : null,
     ], JSON_UNESCAPED_UNICODE);
@@ -331,7 +332,10 @@ function marsch_teil($k, $text, $ich, $eigen, $sieht = []) {
         foreach (array_keys((array)$v) as $aid) { $c = $v->$aid ?? null; if (!is_object($c) || !in_array($ich, (array)($c->mit ?? []), true)) unset($v->$aid); }
     } elseif ($k === 'openWaterBuendnisse') {                    // Rallys anderer Bündnisse: wohin und wann ja (Warnung „Gefahr“), wie viele Truppen nie
         $mein = null; foreach ((array)($v->b ?? []) as $aid => $a) if (is_object($a) && in_array($ich, (array)($a->mit ?? []), true)) $mein = (string)$aid;
-        foreach ((array)($v->b ?? []) as $aid => $a) if (is_object($a) && (string)$aid !== $mein) unset($a->log, $a->sig);
+        foreach ((array)($v->b ?? []) as $aid => $a) if (is_object($a) && (string)$aid !== $mein) {   // fremde Bündnisse: kein Log, keine Signale, Geschenke, fremden Anfragen/Einladungen
+            unset($a->log, $a->sig, $a->gesch);
+            foreach (['anfragen', 'einl'] as $f) if (isset($a->$f) && is_array($a->$f)) $a->$f = array_values(array_filter($a->$f, function ($q) use ($wer, $ich) { return is_object($q) && $wer($q, 'w') === $ich; }));   // (die eigene bleibt sichtbar)
+        }
         if (isset($v->r) && is_array($v->r)) foreach ($v->r as $r) if (is_object($r) && (string)($r->aid ?? '') !== $mein) {
             $r->n0 = 0; unset($r->held, $r->held2); if (isset($r->j) && is_array($r->j)) foreach ($r->j as $j) if (is_object($j)) { $j->n = 0; unset($j->held, $j->held2); } }
     } elseif ($k === 'openWaterVerstaerkung') {

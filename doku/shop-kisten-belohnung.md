@@ -39,7 +39,7 @@ Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (
 
 ## Shop (ein Fenster, Schaufenster-Stil)
 - Reiter: Kisten · Event (nur Event-Münzen: Schild 8/24 Std 600/1.400, Teleporter 1.000, Beschleuniger, Schlüssel; Woche-Limit,
-  füllt Montag 0 Uhr auf, `openWaterEvShop`) · Tempo (Beschleuniger für Edelsteine) · Schilde · Händler (nur solange einer da
+  füllt Montag 0 Uhr Berlin auf, `openWaterEvShop`, `evWocheAb`; Hauptbuch `hbEvShop` prüft Limit je Ware + Woche) · Tempo (Beschleuniger für Edelsteine) · Schilde · Händler (nur solange einer da
   ist) · Markt. Kein Thron-Reiter mehr. Oben Edelsteine + Event-Münzen. Gruppen mit Zwischenüberschrift (`.sort-kopf`), 3 Spalten. Waren als Karten in Seltenheitsfarbe, Preis-Knopf unten (Gold = Edelsteine, Navy =
   Thron-Punkte, zu wenig = grau mit roter Zahl). Am Handy alle Kisten ohne Scrollen. CSS-Block in spielseite/04.
 - Rucksack: Teleporter, Schilde u. a. Gegenstände (siehe `teleport-schild-rucksack.md`).
