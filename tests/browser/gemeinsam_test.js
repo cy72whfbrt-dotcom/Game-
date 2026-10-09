@@ -40,6 +40,6 @@ const D = process.argv[2]; const srv = http.createServer((q, r) => { const f = p
   ok('A (2 Wellen) + B in EINEM Kampf, C (fremd) eigener Kampf', mitte.length === 2 && mitte.some(m => m.an && m.an.length === 2 && m.an.includes(info.ids.A + ':4000000') && m.an.includes(info.ids.B + ':4000000') && m.n === 8000000));
   ok('Kampf entschieden', end.offen === 0);
   ok('A erobert und zieht ein, B geht mit seinem Anteil heim', end.besitzer === info.ids.A && !end.heim.some(h => h.startsWith(info.ids.A + ':')) && end.heim.some(h => h.startsWith(info.ids.B + ':')));
-  ok('Bericht zeigt Anna + Bert mit Truppen', html.includes('Anna') && html.includes('Bert') && html.includes('Anführer') && html.includes('Verbündeter'));
+  ok('Bericht zeigt Anna + Bert mit Truppen', html.includes('Anna') && html.includes('Bert') && html.includes('Anführer') && html.includes('Rally-Mitglied'));
   console.log('Fehler:', fe.length ? fe : 'keine'); await b.close(); srv.close();
 })();

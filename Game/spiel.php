@@ -1121,7 +1121,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .kb-gear .bk.kb-gleer > img{opacity:.25;filter:grayscale(1)} .kb-gear .bk.kb-gleer > b{color:var(--tx-3)}
 .kb-st{position:absolute;top:4px;left:0;right:0;text-align:center;color:#f3c64e;font:700 9px/1 var(--font-ui);font-style:normal;letter-spacing:.5px;text-shadow:0 1px 2px #000}
 .kb-meta{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:4px 10px;margin-top:8px;font:500 var(--fs-12,12px) var(--font-ui);color:var(--tx-3)}
-.kb-meta b{color:var(--tx-1);float:right}
+.kb-meta b{color:var(--tx-1);float:right} .kb-meta.kb-keine{display:block;text-align:center}
 .kb-sp{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:2px 8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font:500 var(--fs-12,12px) var(--font-ui);color:var(--tx-2)}
 .kb-sp > .h,.kb-sp > .hero-pic{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--gold-300);object-fit:cover;display:grid;place-items:center;background:#1b2638;color:#6a7282;font-weight:700}
 .kb-sp b{color:var(--tx-1)} .kb-sp.ich b{color:var(--gold-100)}

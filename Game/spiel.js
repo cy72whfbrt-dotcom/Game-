@@ -6502,6 +6502,7 @@ function kampfBerichtHtml(e, T, kopf) {                 // kopf: { band, gut, zi
         return '<div class="kb-gear">' + (g.items || []).map(it => { const d = EQUIPMENT_DEFS[it[0]], rd = RARITY_DEFS[it[1]], bild = BEUTE_SLOT[it[0]] || 'beute_waffe';
             return rd ? '<span class="bk" data-r="' + rd.key + '" title="' + d.name + ' – ' + rd.label + ', Stufe ' + it[2] + '"><img src="' + B + bild + '.webp" alt="' + d.name + '" draggable="false">' + (it[3] ? '<i class="kb-st">' + '★'.repeat(it[3]) + '</i>' : '') + '<b>Stufe ' + it[2] + '</b></span>'
                 : '<span class="bk kb-gleer" data-r="grau" title="' + d.name + ' – leer"><img src="' + B + bild + '.webp" alt="' + d.name + '" draggable="false"><b>leer</b></span>'; }).join('') + '</div>' +
+            ((g.items || []).some(it => RARITY_DEFS[it[1]]) ? '' : '<div class="kb-meta kb-keine">keine Ausrüstung angelegt</div>') +
             '<div class="kb-meta"><span>Fähigkeit Angriff<b>' + f((g.skills || [])[0]) + '</b></span><span>Fähigkeit Verteidigung<b>' + f((g.skills || [])[1]) + '</b></span>' +
             '<span>Mauer<b>' + f((g.city || [])[0]) + '</b></span><span>Krankenhaus<b>' + f((g.city || [])[1]) + '</b></span><span>Heldenhalle<b>' + f((g.city || [])[2]) + '</b></span><span>Titel<b>' + (g.title ? escapeHtml(g.title) : '–') + '</b></span></div>'; };
     const sh = (p, angr, mehr) => '<div class="kb-sh' + (istFeind(angr) ? ' feind' : '') + '">' + escapeHtml(p.name) + ' · ' + (mehr || p.rolle) + '</div>';
