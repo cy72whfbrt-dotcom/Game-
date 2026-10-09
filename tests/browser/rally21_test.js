@@ -39,8 +39,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } document.getElementById('battleLogBtn').click(); });
   await p.waitForTimeout(1200);
   const s = await p.$('#combatLogList summary'); if (s) { await s.click(); await p.waitForTimeout(400); }
-  const seite = await p.evaluate(() => { const x = document.querySelector('.kl-seite'); return x && !x.hidden ? [...x.querySelectorAll('.logSide')].map(l => [l.querySelector('.logSideLabel').textContent, l.querySelector('.logSum').lastElementChild.textContent, [...l.querySelectorAll('.kl-rss .logLine')].map(z => z.lastElementChild.textContent).join(' ')]) : null; });
-  ok(seite && seite.length === 3, 'Kampflog-Seite: 2 Angreifer-Fenster + Verteidiger, Rohstoffe je Fenster', seite);
+  const seite = await p.evaluate(() => { const x = document.querySelector('.kl-seite'); return x && !x.hidden ? { spieler: [...x.querySelectorAll('.kb-jeder .kb-sp')].map(l => l.textContent), raub: [...x.querySelectorAll('.kb-beutebox .bk b')].map(b => b.textContent), zu: [...x.querySelectorAll('details.kb-mehr')].map(d => d.open) } : null; });
+  ok(seite && seite.spieler.length === 3 && seite.raub.length === 4 && seite.raub.every(t => /^−/.test(t)) && seite.zu.join() === 'false', 'Kampfbericht-Seite: 2 Angreifer + Verteidiger (Mitglied zugeklappt), Geraubt als Kacheln', seite);
   const h = await p.evaluate(() => document.querySelector('.kl-seite').scrollHeight); await p.setViewportSize({ width: 390, height: Math.min(h, 14000) }); await p.waitForTimeout(300);
   await p.screenshot({ path: (process.argv[3] || require('os').tmpdir()) + '/rally21.png' });
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();

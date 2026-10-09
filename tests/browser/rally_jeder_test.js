@@ -106,14 +106,14 @@ const nah = (x, y, d) => Math.abs(x - y) <= (d === undefined ? 1 : d);
     const chips = document.querySelector('#combatLogList .logRow').innerText;
     document.querySelector('#combatLogList summary').click();
     const x = document.querySelector('.kl-seite'); const r = x && !x.hidden ? { chips, soll: chipN(600000), balken: document.querySelector('#combatLogList .logBalTxt').innerText,
-      fenster: [...x.querySelectorAll('.logSide')].map(l => ({ label: l.querySelector('.logSideLabel').textContent, sum: l.querySelector('.logSum').lastElementChild.textContent,
-        geflohen: ([...l.querySelectorAll(':scope > .logLine')].find(z => z.firstElementChild.textContent.trim().startsWith('Geflohen')) || { lastElementChild: { textContent: '?' } }).lastElementChild.textContent })) } : null;
+      gesamtA: x.querySelector('.kb-tab .sum td:last-child').textContent,
+      fenster: [...x.querySelectorAll('.kb-jeder .kb-sp')].map(l => ({ label: l.querySelector('small').textContent, geflohen: ((l.querySelector('.z small').textContent.match(/([\d.]+) gefl\./) || [0, '0'])[1]) })) } : null;
     x.querySelector('[data-klzu]').click(); return r; });
-  const ang = seite ? seite.fenster.filter(f => /^Angreifer/.test(f.label)) : [], zahl = t => Number(String(t).replace(/\D/g, ''));
-  ok(ang.length === 2 && zahl(ang[0].geflohen) === 600000 && zahl(ang[1].geflohen) === 400000, '6) Kampflog: Geflohen je Fenster (Alex 600.000, Emma 400.000)', ang);
+  const ang = seite ? seite.fenster.filter(f => /^(Anführer|Rally-Mitglied)/.test(f.label)) : [], zahl = t => Number(String(t).replace(/\D/g, ''));
+  ok(ang.length === 2 && zahl(ang[0].geflohen) === 600000 && zahl(ang[1].geflohen) === 400000, '6) Kampfbericht: Geflohen je Spieler (Alex 600.000, Emma 400.000)', ang);
   ok(seite && seite.chips.includes(seite.soll + ' fliehen heim'), '6) Alex sieht oben seine eigenen Geflohenen', seite && seite.chips.split('\n').slice(0, 6));
-  const summe = ang.reduce((s, f) => s + zahl(f.sum), 0), bal = seite ? Number((seite.balken.match(/([\d.,]+)\s*Mio\./) || [0, '0'])[1].replace(/\./g, '').replace(',', '.')) * 1e6 : 0;
-  ok(seite && Math.abs(summe - bal) < 1e5, '6) Summe der Angreifer-Fenster = Balken oben', { summe, balken: seite && seite.balken });
+  const summe = seite ? zahl(seite.gesamtA) : 0, bal = seite ? Number((seite.balken.match(/([\d.,]+)\s*Mio\./) || [0, '0'])[1].replace(/\./g, '').replace(',', '.')) * 1e6 : 0;
+  ok(seite && Math.abs(summe - bal) < 1e5, '6) Kampfkraft der Angreifer = Balken oben', { summe, balken: seite && seite.balken });
   // 7) Rammbock nach Anteil · 10) rallyAussortieren mit Skill-Anteil · 1) Aufräumen nach einem Fehler
   const r = await p.evaluate(() => { const T = __t, out = {};
     const fake = { rawTroops: 4e6, attackBonus: 1e6, hx: { def: 10 }, rally: { by: 'a', an: [['a', 0, 3e6], ['e', 0, 1e6, 1e6, { def: 30 }]] } };

@@ -45,8 +45,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } document.getElementById('battleLogBtn').click(); });
   await p.waitForTimeout(1200);
   const s = await p.$('#combatLogList summary'); if (s) { await s.click(); await p.waitForTimeout(400); }
-  const seite = await p.evaluate(() => { const x = document.querySelector('.kl-seite'); return x && !x.hidden ? { fenster: [...x.querySelectorAll('.logSideLabel')].map(l => l.textContent), gesamt: [...x.querySelectorAll('.logSum')].map(l => l.lastElementChild.textContent), w: document.documentElement.scrollWidth } : null; });
-  ok(seite && seite.fenster.length >= 4, 'Kampflog: eigene Seite, ein Fenster je Spieler', seite);
+  const seite = await p.evaluate(() => { const x = document.querySelector('.kl-seite'); return x && !x.hidden ? { spieler: [...x.querySelectorAll('.kb-jeder .kb-sp b')].map(l => l.textContent), gesamt: [...x.querySelectorAll('.kb-tab .sum td:last-child')].map(l => l.textContent), w: document.documentElement.scrollWidth } : null; });
+  ok(seite && seite.spieler.length >= 4 && seite.gesamt.length === 2, 'Kampfbericht: eigene Seite, jeder Spieler mit Zeile', seite);
   const h = await p.evaluate(() => document.querySelector('.kl-seite').scrollHeight); await p.setViewportSize({ width: 390, height: Math.min(h, 14000) }); await p.waitForTimeout(300);
   await p.screenshot({ path: (process.argv[3] || require('os').tmpdir()) + '/regel_seite.png' });
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();

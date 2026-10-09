@@ -51,11 +51,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       if (!isPanelOpen(battleLogPopup)) document.getElementById('battleLogBtn').click(); else renderCombatLog();
       document.querySelector('#combatLogList summary').click();
       const x = document.querySelector('.kl-seite'); const r = x && !x.hidden ? { titel: document.querySelector('#combatLogList .logRow .lt').innerText.split('\n').slice(0, 2).join(' | '), balken: document.querySelector('#combatLogList .logBalTxt').innerText.replace(/\n/g, ' / '),
-        fenster: [...x.querySelectorAll('.logSide')].map(l => [l.querySelector('.logSideLabel').textContent, l.querySelector('.logSum').lastElementChild.textContent, [...l.querySelectorAll('.kl-rss .logLine')].map(z => z.lastElementChild.textContent).join(' ')]) } : null;
+        gesamtA: x.querySelector('.kb-tab .sum td:last-child').textContent,
+        fenster: [...x.querySelectorAll('.kb-jeder .kb-sp')].map(l => [l.querySelector('b').textContent, l.querySelector('small').textContent]) } : null;
       x.querySelector('[data-klzu]').click(); return r; }, wer);
-    const summe = seite ? seite.fenster.filter(f => /^Angreifer/.test(f[0])).reduce((s, f) => s + Number(f[1].replace(/\D/g, '')), 0) : 0;
-    ok(seite && seite.fenster.length === 3 && /Anführer/.test(seite.fenster[0][0]) && /Verbündeter/.test(seite.fenster[1][0]), 'Kampflog von ' + wer + ': 3 Fenster (Alex, Emma, Verteidiger)', seite);
-    ok(seite && Math.abs(summe - Number((seite.balken.match(/([\d.,]+)\s*Mio\./) || [0, '0'])[1].replace(',', '.')) * 1e6) < 1e5, 'Kampflog von ' + wer + ': Summe der Fenster = Balken oben', { summe, balken: seite && seite.balken });
+    const summe = seite ? Number(seite.gesamtA.replace(/\D/g, '')) : 0;
+    ok(seite && seite.fenster.length === 3 && /^Anführer/.test(seite.fenster[0][1]) && /^Rally-Mitglied/.test(seite.fenster[1][1]) && /^Besitzer/.test(seite.fenster[2][1]), 'Kampfbericht von ' + wer + ': jeder Spieler (Alex, Emma, Verteidiger)', seite);
+    ok(seite && Math.abs(summe - Number((seite.balken.match(/([\d.,]+)\s*Mio\./) || [0, '0'])[1].replace(',', '.')) * 1e6) < 1e5, 'Kampfbericht von ' + wer + ': Kampfkraft der Angreifer = Balken oben', { summe, balken: seite && seite.balken });
   }
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
