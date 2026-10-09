@@ -16,16 +16,17 @@
     const truppenVon = (id, n) => zahlOk(n) ? Math.floor(Math.min(n, islandTroops[id] || 0)) : 0;   // nie mehr, als die Basis hat
     // Wege wie auf dem Handy (dort prüft das Spiel sie in den Fenstern): Brücken, Pässe, fremde Tore – nie mehr nur „vertrauen“
     const wegOk = (who, vonLm, nachLm) => vonLm === nachLm || canReach(vonLm, nachLm, who);
-    // Mehrfachangriff / „Truppen sammeln“ (grp): zusammen EIN Marsch-Platz – kostet 1 Gem (wie am Handy, vorher hier gratis).
+    // Mehrfachangriff (höchstens MULTI_ATTACK_MAX Ziele, MULTI_ATTACK_GEM_COST Gems) / „Truppen sammeln“ (RECALL_GEM_COST) (grp): zusammen EIN Marsch-Platz (wie am Handy).
     // Gehört der Marsch zu einer schon laufenden Gruppe, ist sie bezahlt. Sonst ohne Gem: ein normaler Marsch (eigener Platz).
     function gruppeBezahlt(who, grp, src, nach) {
         if (!kennungOk(grp)) return null;
         if (AUF && AUF.gruppeLaeuft && AUF.gruppeLaeuft(who, grp, src)) {
+            if (src !== undefined && pendingAttacks.filter(a => werIstWer(a.attackerBotId) === who && a.grp === grp).length >= MULTI_ATTACK_MAX) return null;   // (11. Ziel: normaler Marsch)
             if (nach === undefined || pendingSends.some(s => werIstWer(s.senderBotId) === who && s.grp === grp && !s.back && s.toId === nach)) return grp;   // (sammeln: alle zur SELBEN Basis)
             return null; }
         const hb = hbDa(who); if (!hb) return grp;                        // (noch kein Hauptbuch: wie bisher)
-        if (hbZahlen(who, hb, wacheSehen(who), { g: MULTI_ATTACK_GEM_COST })) { saveBotState(); return grp; }
-        warnen(who, 'gems', (src !== undefined ? 'Mehrfachangriff' : 'Truppen sammeln') + ' ohne den Gem dafür – zählt als normaler Marsch.', 1); return null;
+        if (hbZahlen(who, hb, wacheSehen(who), { g: src !== undefined ? MULTI_ATTACK_GEM_COST : RECALL_GEM_COST })) { saveBotState(); return grp; }
+        warnen(who, 'gems', (src !== undefined ? 'Mehrfachangriff' : 'Truppen sammeln') + ' ohne die Gems dafür – zählt als normaler Marsch.', 1); return null;
     }
     const werIstWer = x => x || 'player';
     const BEFEHLE = {

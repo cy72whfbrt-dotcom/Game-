@@ -59,3 +59,4 @@ Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (
 
 ## Offen (Merkliste)
 - 11c Nr. 31: Namensschild-Skins als KI-Bilder (später).
+- Auch Profil „Belohnung für Stufe N“ und die Tages-Woche (Events) zeigen Bild-Kacheln (`beuteRaster`).

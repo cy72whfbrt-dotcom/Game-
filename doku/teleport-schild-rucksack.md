@@ -24,8 +24,10 @@ Wie man seine Hauptstadt versetzt, sich schützt und was im Rucksack liegt. Wich
 - Tests `teleport_test` (mit Bilder-Ordner: Ablauf in 5 Bildern `teleport_fx_*`), `rucksack_test`.
 
 ## Rucksack (7.10.)
-- Eigener Knopf in der Leiste. Inhalt: Schilde (gekauft im Shop), Teleporter, Splitter je Held als Kacheln (Tipp öffnet den
-  Helden). Schild „Einsetzen“: die Zeit kommt zum laufenden Schild DAZU; ohne Schild „Kaufen“ → Shop.
+- Eigener Knopf in der Leiste. Raster aus Bild-Kacheln (Anzahl, Seltenheits-Rahmen), nur was man besitzt, Reiter Tempo
+  (Beschleuniger) · Schilde · Schlüssel · Sonstiges (Teleporter, Event-Münzen, Splitter je Held) – `rkSachen`, `RK_TABS`.
+  Antippen → unten die Zeile mit „Einsetzen“/„Benutzen“/„Zum Helden“…; Schild: die Zeit kommt zum laufenden Schild DAZU.
+  Leerer Reiter → „Im Shop holen“. Keine Kaufen-Knöpfe im Rucksack.
 - Shop → Schilde: nur kaufen (eingesetzt wird im Rucksack); Teleporter 500 Edelsteine mit „Wirklich?“.
 
 ## Friedensschild

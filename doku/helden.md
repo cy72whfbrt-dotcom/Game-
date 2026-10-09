@@ -7,7 +7,7 @@
 
 ## Grundregeln
 - Helden gibt es erst mit Heldenhalle Stufe 1 (`heroHalle`, für dich, Mitspieler und Weltrechner – 7.10.): ohne Halle
-  „Baue die Heldenhalle“, kein Freischalten/Aufwerten/Fähigkeiten, kein Held im Marsch; Splitter sammeln geht.
+  geht das Helden-Fenster gar nicht auf (Hinweis „Baue zuerst die Heldenhalle in der Stadt.“), kein Freischalten/Aufwerten/Fähigkeiten, kein Held im Marsch; Splitter sammeln geht.
 - Freischalten und Viertel-Sterne kosten Splitter; Fähigkeiten ≤ 1 Punkt je halbem Stern. Wut rechnet nur der Weltrechner;
   Wut kommt zurück bei Zurückrufen/Abprallen/2. Welle (`heroWutZurueck`).
 - Übrige Splitter eines Helden mit 5 Sternen 1:1 in Splitter für einen anderen tauschen (`heroDoSwap`, keine Edelsteine).

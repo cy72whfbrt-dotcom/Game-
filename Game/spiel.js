@@ -12092,10 +12092,10 @@ function hideAllButtons() {
 }
 
 // Multi-Angriff: pick one of YOUR OWN bases, then tap any number of
-// enemy/neutral bases on the map to select them as targets, then
+// enemy/neutral bases on the map to select them as targets (bis zu 10), then
 // confirm once to launch all of them at the same time (troops
-// split evenly across the chosen targets). Costs 1 gem per use.
-const MULTI_ATTACK_GEM_COST = 1;
+// split evenly across the chosen targets). Kostet 5 Edelsteine je Einsatz.
+const MULTI_ATTACK_GEM_COST = 5, MULTI_ATTACK_MAX = 10;
 // "Truppen sammeln": for 1 gem, pulls every OTHER owned base within
 // this radius (world units) that still has troops back home to the
 // tapped base in one go - each one marches individually via the
@@ -12109,7 +12109,7 @@ let multiAttackHero = null, multiAttackHero2 = null;                            
 
 function updateMultiAttackBar() {
     const n = multiAttackTargets.length, go = Math.floor((islandTroops[multiAttackSourceId] || 0) * multiAttackShare);
-    setText(multiAttackLabel, n ? n + (n === 1 ? ' Ziel' : ' Ziele') + ' · je ' + fmtCompact(Math.floor(go / n)) + ' Truppen' : '0 Ziele ausgewählt · Basen antippen');   // (live: liveTick, die Truppen wachsen)
+    setText(multiAttackLabel, n ? n + (n === 1 ? ' Ziel' : ' Ziele') + ' (höchstens ' + MULTI_ATTACK_MAX + ') · je ' + fmtCompact(Math.floor(go / n)) + ' Truppen' : '0 Ziele ausgewählt · bis zu ' + MULTI_ATTACK_MAX + ' Basen antippen');   // (live: liveTick, die Truppen wachsen)
     for (const b of document.querySelectorAll('#multiAttackShare button')) b.classList.toggle('on', parseFloat(b.dataset.f) === multiAttackShare);
     const hb = document.getElementById('multiAttackHero');
     if (multiAttackHero && (!heroOwned('player', multiAttackHero) || heroBusy('player', multiAttackHero))) multiAttackHero = null;
@@ -13170,6 +13170,7 @@ function handleTap(screenX, screenY) {
             return;
         }
         const idx = multiAttackTargets.indexOf(island.id);
+        if (idx === -1 && multiAttackTargets.length >= MULTI_ATTACK_MAX) { flashHint('Höchstens ' + MULTI_ATTACK_MAX + ' Ziele auf einmal.', 2500); return; }
         if (idx === -1 && baseShieldedFor(island.id, 'player')) { flashHint(shieldBlockText(islandOwnerOf(island.id)), 3500); return; }
         if (idx === -1) {                                                    // a shut gate on the way: say so right away, not after "Angriffe starten"
             const hop = lastHop(source.landmassId, island.landmassId, 'player'), tl = tollFor(hop[0], hop[1], 1, 'player', island.id);
@@ -14578,16 +14579,17 @@ if (window.WELT) {
     const truppenVon = (id, n) => zahlOk(n) ? Math.floor(Math.min(n, islandTroops[id] || 0)) : 0;   // nie mehr, als die Basis hat
     // Wege wie auf dem Handy (dort prüft das Spiel sie in den Fenstern): Brücken, Pässe, fremde Tore – nie mehr nur „vertrauen“
     const wegOk = (who, vonLm, nachLm) => vonLm === nachLm || canReach(vonLm, nachLm, who);
-    // Mehrfachangriff / „Truppen sammeln“ (grp): zusammen EIN Marsch-Platz – kostet 1 Gem (wie am Handy, vorher hier gratis).
+    // Mehrfachangriff (höchstens MULTI_ATTACK_MAX Ziele, MULTI_ATTACK_GEM_COST Gems) / „Truppen sammeln“ (RECALL_GEM_COST) (grp): zusammen EIN Marsch-Platz (wie am Handy).
     // Gehört der Marsch zu einer schon laufenden Gruppe, ist sie bezahlt. Sonst ohne Gem: ein normaler Marsch (eigener Platz).
     function gruppeBezahlt(who, grp, src, nach) {
         if (!kennungOk(grp)) return null;
         if (AUF && AUF.gruppeLaeuft && AUF.gruppeLaeuft(who, grp, src)) {
+            if (src !== undefined && pendingAttacks.filter(a => werIstWer(a.attackerBotId) === who && a.grp === grp).length >= MULTI_ATTACK_MAX) return null;   // (11. Ziel: normaler Marsch)
             if (nach === undefined || pendingSends.some(s => werIstWer(s.senderBotId) === who && s.grp === grp && !s.back && s.toId === nach)) return grp;   // (sammeln: alle zur SELBEN Basis)
             return null; }
         const hb = hbDa(who); if (!hb) return grp;                        // (noch kein Hauptbuch: wie bisher)
-        if (hbZahlen(who, hb, wacheSehen(who), { g: MULTI_ATTACK_GEM_COST })) { saveBotState(); return grp; }
-        warnen(who, 'gems', (src !== undefined ? 'Mehrfachangriff' : 'Truppen sammeln') + ' ohne den Gem dafür – zählt als normaler Marsch.', 1); return null;
+        if (hbZahlen(who, hb, wacheSehen(who), { g: src !== undefined ? MULTI_ATTACK_GEM_COST : RECALL_GEM_COST })) { saveBotState(); return grp; }
+        warnen(who, 'gems', (src !== undefined ? 'Mehrfachangriff' : 'Truppen sammeln') + ' ohne die Gems dafür – zählt als normaler Marsch.', 1); return null;
     }
     const werIstWer = x => x || 'player';
     const BEFEHLE = {

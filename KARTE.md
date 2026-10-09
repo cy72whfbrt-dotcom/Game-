@@ -25,7 +25,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `addInventoryItem` → Game/spiel/02a-shop-stufen.js:74
 - `addPoly` → Game/spiel/03a-karte-hintergrund.js:281
 - `addXp` → Game/spiel/02a-shop-stufen.js:254
-- `adminBefehl` → Game/spiel/10d5-welt-befehle.js:185
+- `adminBefehl` → Game/spiel/10d5-welt-befehle.js:186
 - `adminMelden` → Game/weltrechner/push.js:209
 - `adminSenden` → Game/weltrechner/push.js:210
 - `afterBesch` → Game/spiel/06g-shop-gegenstaende.js:156
@@ -1039,7 +1039,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hbHeldZeile` → Game/spiel/10d3-welt-hauptbuch.js:54
 - `hbItemWert` → Game/spiel/10d3-welt-hauptbuch.js:69
 - `hbKisteDazu` → Game/spiel/10d3-welt-hauptbuch.js:83
-- `hbKisteFrei` → Game/spiel/10d5-welt-befehle.js:234
+- `hbKisteFrei` → Game/spiel/10d5-welt-befehle.js:235
 - `hbKistenGesamt` → Game/spiel/10d3-welt-hauptbuch.js:66
 - `hbKistenGrenze` → Game/spiel/10d3-welt-hauptbuch.js:65
 - `hbKlemmen` → Game/spiel/10d3-welt-hauptbuch.js:350
@@ -2213,30 +2213,30 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `welcomeNachziehen` → Game/spiel/06d-schild-produktion.js:371
 - `welcomeRows` → Game/spiel/06d-schild-produktion.js:331
 - `welleHeim` → Game/spiel/04-kampf-ankunft.js:209
-- `WELT.BEFEHLE.angriff` → Game/spiel/10d5-welt-befehle.js:32
-- `WELT.BEFEHLE.armee` → Game/spiel/10d5-welt-befehle.js:147
-- `WELT.BEFEHLE.ausbau` → Game/spiel/10d5-welt-befehle.js:95
-- `WELT.BEFEHLE.beitreten` → Game/spiel/10d5-welt-befehle.js:166
-- `WELT.BEFEHLE.feld` → Game/spiel/10d5-welt-befehle.js:130
-- `WELT.BEFEHLE.feldHeim` → Game/spiel/10d5-welt-befehle.js:137
+- `WELT.BEFEHLE.angriff` → Game/spiel/10d5-welt-befehle.js:33
+- `WELT.BEFEHLE.armee` → Game/spiel/10d5-welt-befehle.js:148
+- `WELT.BEFEHLE.ausbau` → Game/spiel/10d5-welt-befehle.js:96
+- `WELT.BEFEHLE.beitreten` → Game/spiel/10d5-welt-befehle.js:167
+- `WELT.BEFEHLE.feld` → Game/spiel/10d5-welt-befehle.js:131
+- `WELT.BEFEHLE.feldHeim` → Game/spiel/10d5-welt-befehle.js:138
 - `WELT.BEFEHLE.haendler` → Game/haendler.js:121
-- `WELT.BEFEHLE.lager` → Game/spiel/10d5-welt-befehle.js:138
-- `WELT.BEFEHLE.schneller` → Game/spiel/10d5-welt-befehle.js:66
-- `WELT.BEFEHLE.senden` → Game/spiel/10d5-welt-befehle.js:43
-- `WELT.BEFEHLE.spaehen` → Game/spiel/10d5-welt-befehle.js:77
-- `WELT.BEFEHLE.teleport` → Game/spiel/10d5-welt-befehle.js:101
-- `WELT.BEFEHLE.thronKiste` → Game/spiel/10d5-welt-befehle.js:126
-- `WELT.BEFEHLE.titel` → Game/spiel/10d5-welt-befehle.js:120
-- `WELT.BEFEHLE.tor` → Game/spiel/10d5-welt-befehle.js:113
-- `WELT.BEFEHLE.truppen` → Game/spiel/10d5-welt-befehle.js:109
-- `WELT.BEFEHLE.vheld` → Game/spiel/10d5-welt-befehle.js:161
-- `WELT.BEFEHLE.zurueck` → Game/spiel/10d5-welt-befehle.js:54
+- `WELT.BEFEHLE.lager` → Game/spiel/10d5-welt-befehle.js:139
+- `WELT.BEFEHLE.schneller` → Game/spiel/10d5-welt-befehle.js:67
+- `WELT.BEFEHLE.senden` → Game/spiel/10d5-welt-befehle.js:44
+- `WELT.BEFEHLE.spaehen` → Game/spiel/10d5-welt-befehle.js:78
+- `WELT.BEFEHLE.teleport` → Game/spiel/10d5-welt-befehle.js:102
+- `WELT.BEFEHLE.thronKiste` → Game/spiel/10d5-welt-befehle.js:127
+- `WELT.BEFEHLE.titel` → Game/spiel/10d5-welt-befehle.js:121
+- `WELT.BEFEHLE.tor` → Game/spiel/10d5-welt-befehle.js:114
+- `WELT.BEFEHLE.truppen` → Game/spiel/10d5-welt-befehle.js:110
+- `WELT.BEFEHLE.vheld` → Game/spiel/10d5-welt-befehle.js:162
+- `WELT.BEFEHLE.zurueck` → Game/spiel/10d5-welt-befehle.js:55
 - `WELT.bericht` → Game/spiel/10d6-welt-nachrichten-start.js:20
-- `WELT.kisteGekauft` → Game/spiel/10d5-welt-befehle.js:246
+- `WELT.kisteGekauft` → Game/spiel/10d5-welt-befehle.js:247
 - `WELT.saisonKonto` → Game/spiel/10d3-welt-hauptbuch.js:423
-- `WELT.wache.gutschrift` → Game/spiel/10d5-welt-befehle.js:253
-- `WELT.wache.hilfe` → Game/spiel/10d5-welt-befehle.js:254
-- `WELT.wache.kann` → Game/spiel/10d5-welt-befehle.js:252
+- `WELT.wache.gutschrift` → Game/spiel/10d5-welt-befehle.js:254
+- `WELT.wache.hilfe` → Game/spiel/10d5-welt-befehle.js:255
+- `WELT.wache.kann` → Game/spiel/10d5-welt-befehle.js:253
 - `welt_antwort` → Game/server/07-welt-puls.php:170
 - `welt_antwort_text` → Game/server/07-welt-puls.php:167
 - `welt_entsperren` → Game/server/05-datenbank-welt.php:5
@@ -2254,7 +2254,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltteil_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:175
 - `weltZuClient` → Game/welt.js:141
 - `werIst` → Game/aufbau.js:122
-- `werIstWer` → Game/spiel/10d5-welt-befehle.js:30
+- `werIstWer` → Game/spiel/10d5-welt-befehle.js:31
 - `wert` → Game/spiel/08c-helden-fenster.js:241
 - `wert` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:84
 - `whoBases` → Game/spiel/05c-profil-erfolge-rangliste.js:161
@@ -2267,7 +2267,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `window.__owSpeicher.rauswurf` → Game/speichern.js:189
 - `window.__owSpeicher.roh` → Game/speichern.js:185
 - `window.__stopSplashScene` → Game/ladebildschirm.js:335
-- `window.__weltBefehl` → Game/spiel/10d5-welt-befehle.js:214
+- `window.__weltBefehl` → Game/spiel/10d5-welt-befehle.js:215
 - `window.__weltLaden` → Game/buendnis/04-fenster-karte-welt.js:398
 - `window.__weltLaden` → Game/haendler.js:147
 - `window.__weltLaden` → Game/spiel/10d1-welt-verbindung.js:26
@@ -4478,32 +4478,32 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heldOk` :15
 - `truppenVon` :16 — nie mehr, als die Basis hat
 - `wegOk` :18 — Wege wie auf dem Handy (dort prüft das Spiel sie in den Fenstern): Brücken, Päs…
-- `gruppeBezahlt` :21 — Mehrfachangriff / „Truppen sammeln“ (grp): zusammen EIN Marsch-Platz – kostet 1…
-- `werIstWer` :30
-- `WELT.BEFEHLE.angriff` :32
-- `WELT.BEFEHLE.senden` :43
-- `WELT.BEFEHLE.zurueck` :54 — umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
-- `WELT.BEFEHLE.schneller` :66 — die Gems zahlt er auf seinem Handy – 3B: das Hauptbuch zieht sie ab (kann er si…
-- `WELT.BEFEHLE.spaehen` :77 — 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit…
-- `WELT.BEFEHLE.ausbau` :95 — die Münzen zahlt er selbst – der Weltrechner prüft, ob er sie haben kann
-- `WELT.BEFEHLE.teleport` :101 — Hauptstadt an eine freie Stelle (08d tpPruefen) – nur echte Spieler
-- `WELT.BEFEHLE.truppen` :109 — geschenkte Truppen (Stufe, Thron-Shop, Krankenhaus, Fund, Admin) → Hauptstadt
-- `WELT.BEFEHLE.tor` :113
-- `WELT.BEFEHLE.titel` :120
-- `WELT.BEFEHLE.thronKiste` :126 — der Herrscher verschenkt eine Kiste (06c herrKiste prüft: Herrscher, noch da, n…
-- `WELT.BEFEHLE.feld` :130
-- `WELT.BEFEHLE.feldHeim` :137
-- `WELT.BEFEHLE.lager` :138
-- `WELT.BEFEHLE.armee` :147
-- `WELT.BEFEHLE.vheld` :161 — Verteidigungs-Helden in der Mauer: nur eigene Helden, Zweitheld erst ab Mauer 5…
-- `WELT.BEFEHLE.beitreten` :166 — ein neuer Spieler braucht seinen Platz auf der Karte
-- `adminBefehl` :185 — Vom Admin (kommt nur von admin.php – der Server legt es unter Spieler 0 ab): Ge…
-- `window.__weltBefehl` :214
-- `hbKisteFrei` :234
-- `WELT.kisteGekauft` :246
-- `WELT.wache.kann` :252
-- `WELT.wache.gutschrift` :253
-- `WELT.wache.hilfe` :254 — Bündnis-Hilfe: so viel schneller darf dieser Bau / diese Forschung fertig sein
+- `gruppeBezahlt` :21 — Mehrfachangriff (höchstens MULTI_ATTACK_MAX Ziele, MULTI_ATTACK_GEM_COST Gems) …
+- `werIstWer` :31
+- `WELT.BEFEHLE.angriff` :33
+- `WELT.BEFEHLE.senden` :44
+- `WELT.BEFEHLE.zurueck` :55 — umkehren: wie bei dir, nur als "Marsch zurück" dieses Spielers
+- `WELT.BEFEHLE.schneller` :67 — die Gems zahlt er auf seinem Handy – 3B: das Hauptbuch zieht sie ab (kann er si…
+- `WELT.BEFEHLE.spaehen` :78 — 3B: Erkundungs-Späher – der Weltrechner deckt seinen Nebel (auf dem Server) mit…
+- `WELT.BEFEHLE.ausbau` :96 — die Münzen zahlt er selbst – der Weltrechner prüft, ob er sie haben kann
+- `WELT.BEFEHLE.teleport` :102 — Hauptstadt an eine freie Stelle (08d tpPruefen) – nur echte Spieler
+- `WELT.BEFEHLE.truppen` :110 — geschenkte Truppen (Stufe, Thron-Shop, Krankenhaus, Fund, Admin) → Hauptstadt
+- `WELT.BEFEHLE.tor` :114
+- `WELT.BEFEHLE.titel` :121
+- `WELT.BEFEHLE.thronKiste` :127 — der Herrscher verschenkt eine Kiste (06c herrKiste prüft: Herrscher, noch da, n…
+- `WELT.BEFEHLE.feld` :131
+- `WELT.BEFEHLE.feldHeim` :138
+- `WELT.BEFEHLE.lager` :139
+- `WELT.BEFEHLE.armee` :148
+- `WELT.BEFEHLE.vheld` :162 — Verteidigungs-Helden in der Mauer: nur eigene Helden, Zweitheld erst ab Mauer 5…
+- `WELT.BEFEHLE.beitreten` :167 — ein neuer Spieler braucht seinen Platz auf der Karte
+- `adminBefehl` :186 — Vom Admin (kommt nur von admin.php – der Server legt es unter Spieler 0 ab): Ge…
+- `window.__weltBefehl` :215
+- `hbKisteFrei` :235
+- `WELT.kisteGekauft` :247
+- `WELT.wache.kann` :253
+- `WELT.wache.gutschrift` :254
+- `WELT.wache.hilfe` :255 — Bündnis-Hilfe: so viel schneller darf dieser Bau / diese Forschung fertig sein
 
 ### Game/spiel/10d6-welt-nachrichten-start.js — Nachrichten vom Weltrechner, Kampfbericht, Willkommen, Start (im Block „if (win…
 - `WELT.bericht` :20 — Kampfbericht an einen anderen echten Spieler (vom Weltrechner): Kennungen neutr…

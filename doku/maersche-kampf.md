@@ -7,7 +7,7 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
 `bots/02-kampf-karte.js` (`resolveBotAttack`), `buendnis/02-rally-geschenke.js` (`rallyWerte`, `kampfAnteile`).
 
 ## Losschicken
-- Arten: Angriff, Senden (eigene Basis), Mehrfachangriff/„Truppen sammeln“ (◆1, zählt als EIN Marsch-Platz, Kennung `grp`,
+- Arten: Angriff, Senden (eigene Basis), Mehrfachangriff (bis 10 Ziele, ◆5)/„Truppen sammeln“ (◆1); je zusammen als EIN Marsch-Platz, Kennung `grp`,
   nur vom selben Ort und zur selben Basis, innerhalb 60 s), Sammeln (Feld), Lager/Tagesboss/Drache/Invasion, Armee, Rally,
   Verstärkung, Späher.
 - Marsch-Plätze: 2 + Stufe der Labor-Forschung „Marsch-Plätze“ (`x_marsch`, Labor 5/10/16/22 → höchstens 6), geprüft in `marschPlatz` für dich, Mitspieler und beim Weltrechner.
@@ -79,6 +79,7 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
   Basis (`AUSGESPAEHT_PAUSE_MS`), höchstens 10 solche Einträge im Kampflog.
 
 ## Kampfbericht und Spähbericht
+- Leer: Bild `bericht_leer` + Knopf „Barbaren-Lager angreifen“ (fliegt zum nächsten Lager, `barbNearest`).
 - Kampfbericht: AUFBAU bleibt (Alexander 6.10.), nur Aussehen darf sich ändern. Jede Karte: Abzeichen + Ort („Zeigen“),
   Kräfte-Balken, Zahlen-Kästchen (rot gefallen, gelb verwundet, grün Beute als Kachel), „Kampfdetails“. Ein Fenster je
   Spieler (Truppen, Held, Werte, Gefallen, Geflohen …). Jeder Bericht einzeln abgesichert („kann nicht angezeigt werden“).

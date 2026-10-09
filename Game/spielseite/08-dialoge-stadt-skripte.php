@@ -128,7 +128,7 @@
       <button id="cityBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-castle"/></svg></span><span class="act-t">Stadt betreten</span><span class="act-s">Hauptstadt ausbauen</span></button>
       <button id="upgradeBtn" class="act act--primary" type="button"><span class="act-ic"><svg class="icon"><use href="#i-upgrade"/></svg></span><span class="act-t">Aufwerten</span><span class="act-s" id="upgradeCostLabel">–</span></button>
       <button id="sendBtn" class="act" type="button"><span class="act-ic act-ic--send"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Senden</span><span class="act-s">Verstärken</span></button>
-      <button id="multiAttackBtn" class="act" type="button"><span class="act-ic act-ic--attack"><svg class="icon"><use href="#i-multiattack"/></svg></span><span class="act-t">Mehrfach</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="MULTI_ATTACK_GEM_COST">1</b></span></button>
+      <button id="multiAttackBtn" class="act" type="button"><span class="act-ic act-ic--attack"><svg class="icon"><use href="#i-multiattack"/></svg></span><span class="act-t">Mehrfach</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="MULTI_ATTACK_GEM_COST">5</b></span></button>
       <button id="recallBtn" class="act" type="button"><span class="act-ic act-ic--recall"><svg class="icon"><use href="#i-recall"/></svg></span><span class="act-t">Sammeln</span><span class="act-s"><svg class="icon icon--gem"><use href="#i-gem"/></svg><b data-const="RECALL_GEM_COST">1</b></span></button>
     </div>
   </div>
