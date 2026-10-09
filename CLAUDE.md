@@ -21,7 +21,7 @@ jede Änderung in die passende Themen-Datei eintragen (aktueller Stand, keine Ge
   05a profil-rahmen · 05b profil-truhe-skills · 05c profil-erfolge-rangliste · 05d marsch-liste-kampfbericht · 05e belohnung (Kacheln, Kisten) ·
   06a aufgaben · 06b pass-anleitung · 06c thron-mitte · 06d schild-produktion · 06e karte-nebel-paesse · 07a kampf-schlachten ·
   07b kriegsherr · 08a stadt-bauen · 08b stadt-burg-aussehen · 08c helden-fenster · 08d1 stadt-gebaeude-wirkung · 08d2 stadt-teleport ·
-  08e stadt-bild-orte · 08f stadt-bild-zeichnen · 09a funde-felder · 09b lager-tagesboss · 09c events-drache · 09d karte-armeen-wegmarken ·
+  08e stadt-bild-orte · 08f stadt-bild-zeichnen · 09a funde-felder · 09b lager-tagesboss · 09c events-woche · 09d karte-armeen-wegmarken ·
   09e fenster-insel · 09f saison · 10a fenster-insel-vorschau · 10b fenster-insel-knoepfe · 10c start-einstellungen ·
   10d1 welt-verbindung · 10d2 welt-schummelschutz · 10d3 welt-hauptbuch · 10d4 welt-nebel-server · 10d5 welt-befehle (BEFEHLE) ·
   10d6 welt-nachrichten-start (10d2–10d6 liegen im Block `if (window.WELT)` aus 10d1 – nur zusammengesetzt gültiges JS).
