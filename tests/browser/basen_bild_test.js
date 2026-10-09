@@ -19,7 +19,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const h = islandById[playerIslandId], fremd = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && i.id !== h.id);
     const z = 0.012; mapState.zoom = z; mapState.offsetX = viewW / 2 - h.x * z; mapState.offsetY = viewH / 2 - h.y * z;
     const breiten = [], dr = ctx.drawImage, st = ctx.stroke; let ringe = [];
-    ctx.drawImage = function (im, x, y, w) { if (/basis_/.test(im.src || '')) breiten.push([im.src.match(/basis_(\d+)/)[1], Math.round(w)]); else if (im instanceof HTMLCanvasElement && BASIS_BILD.mip.some(m => m && m.includes(im))) breiten.push(['klein', Math.round(w)]); };
+    ctx.drawImage = function (im, x, y, w) { if (/basis_/.test(im.src || '')) breiten.push([im.src.match(/basis_(\d+|hauptstadt_\d)/)[1], Math.round(w)]); else if (im instanceof HTMLCanvasElement && BASIS_BILD.mip.some(m => m && m.includes(im))) breiten.push(['klein', Math.round(w)]); };
     ctx.stroke = function () { ringe.push(ctx.strokeStyle); };
     setScreen(ctx);
     const zeig = (isl, L) => { const alt = isl.neutralLevel, altL = islandLevels[isl.id]; isl.neutralLevel = L; islandLevels[isl.id] = L;
@@ -66,8 +66,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const zp = 0.02; mapState.zoom = zp; mapState.offsetX = viewW / 2 - h.x * zp; mapState.offsetY = viewH / 2 - h.y * zp;
     const tempel = islands.find(i => i.bildR), bilder = BASIS_BILD.img.slice(), kbf = KB.fertig; let gez = 0, ell = 0;
     ctx.drawImage = function () { gez++; }; const el = ctx.ellipse; ctx.ellipse = function () { ell++; return el.apply(this, arguments); };
+    const eb = window.extraBild; window.extraBild = n => /^basis_hauptstadt_/.test(n) ? null : eb(n);   // (die Hauptstadt hat ihr eigenes Bild: lädt auch noch)
     setScreen(ctx); BASIS_BILD.img.length = 0; KB.fertig = false;
-    drawBuilding(h, 'player', zp); drawBuilding(tempel, 'neutral', zp); o.laedt = { gez, ell };
+    drawBuilding(h, 'player', zp); drawBuilding(tempel, 'neutral', zp); o.laedt = { gez, ell }; window.extraBild = eb;
     BASIS_BILD.img.push(...bilder); KB.fertig = kbf; gez = 0; ell = 0; drawBuilding(h, 'player', zp); o.fertig = { gez, ell };
     ctx.drawImage = dr; ctx.ellipse = el;
     o.alt3D = ['buildingSprite', 'bkSprite', 'towerTier', 'BUILDING_SPRITES'].filter(n => { try { return typeof eval(n) !== 'undefined'; } catch (e) { return false; } });
@@ -77,7 +78,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.gezeichnet.every(Boolean) && r.breiten.length >= 2 && r.breiten[0][1] === r.breiten[1][1] && r.breiten[0][0] === '01' && r.breiten[1][0] === '15', 'alle Basen gleich groß (Stufe 1 und 100 gleich breit), anderes Bild', r.breiten);
   ok(r.heim && !r.ringHeim.length, 'eigene Basis weit: Bild ohne Ring (das Schild bleibt)', r.ringHeim);
   ok(r.weit === false, 'ganz weit: kein Bild (Punkte wie bisher)', r.weit);
-  ok(JSON.stringify(r.mittel) === '[true,true,false]' && r.mittelBreit[0] === 22 && r.mittelBreit[1] === 11, 'mittlerer Zoom: eigene Basis 22 px, freie in echter Größe (11 px), unter 10 px keine', [r.mittel, r.mittelBreit]);
+  ok(JSON.stringify(r.mittel) === '[true,true,false]' && r.mittelBreit[0] === 33 && r.mittelBreit[1] === 11, 'mittlerer Zoom: eigene Hauptstadt 22 px · 1,5 = 33 px, freie in echter Größe (11 px), unter 10 px keine', [r.mittel, r.mittelBreit]);
   ok(r.dicht.gezeigt >= 1 && r.dicht.gezeigt <= r.dicht.alle && !r.dicht.ueber && r.dicht.heim && r.dicht.tipp, 'dicht: Schilde (nur mit Besitzer) nie übereinander, eigenes bleibt, Tipp-Flächen = gezeigte', r.dicht);
   ok(r.dicht.frei === 0 && r.zahl.n > 3 && r.zahl.frei && r.zahl.klein && r.zahl.gemalt && r.zahl.stufe && r.zahl.tipp && r.zahl.weit === 0,
     'freie Basen: kein Namensschild, nur kleine Stufen-Zahl am Bild (ganz klein keine), Antippen trifft die Basis', [r.dicht.frei, r.zahl]);

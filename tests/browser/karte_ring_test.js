@@ -94,7 +94,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       flyTo(h.x, h.y, { zoom: z, instant: true }); let n = zeichne();
       o.bild = n.some(s => /^basis_hauptstadt_\d/.test(s)); o.alterSkin = n.some(s => /koenigsburg/.test(s));
       window.rulerOwner = () => 'player'; n = zeichne(); window.rulerOwner = ra; o.herr = n.some(s => /skin_herrscherburg/.test(s));
-      flyTo(h.x, h.y, { zoom: 0.0028, instant: true }); n = zeichne(); o.weit = { schild: n.filter(s => /zone_schild/.test(s)).length, tor: n.filter(s => /pass_tor/.test(s)).length };
+      flyTo(h.x, h.y, { zoom: minZoom, instant: true }); n = zeichne(); o.weit = { schild: n.filter(s => /zone_schild/.test(s)).length, tor: n.filter(s => /pass_tor/.test(s)).length };
       return o;
     });
     ok(e.nr.join() === '1,1,2,2,3,3' && e.freiNr === 0, tag + 'Hauptstadt-Bild nach Burg-Stufe (1–8/9–16/17–25), freie Basis nicht', e);
@@ -105,6 +105,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       for (const B of [1, 10, 20]) { await p.evaluate(B => { const h = islandById[playerIslandId], as = window.anzeigeStufe; window.anzeigeStufe = id => id === h.id ? B : as(id); flyTo(h.x, h.y, { zoom: maxZoom * .5, instant: true }); drawMap(); }, B);
         await p.waitForTimeout(500); await p.screenshot({ path: path.join(FOTO, 'hauptstadt_stufe' + B + '_' + bw + '.png') }); }
       await p.evaluate(() => { window.rulerOwner = () => 'player'; drawMap(); }); await p.waitForTimeout(500); await p.screenshot({ path: path.join(FOTO, 'herrscherburg_' + bw + '.png') });
+      await p.evaluate(() => { const h = islandById[playerIslandId]; flyTo(h.x, h.y, { zoom: minZoom * 1.5, instant: true }); drawMap(); }); await p.waitForTimeout(500); await p.screenshot({ path: path.join(FOTO, 'ganzweit_' + bw + '.png') });
       await p.waitForTimeout(800); await p.screenshot({ path: path.join(FOTO, 'hauptstadt_' + bw + '.png') });
       await p.evaluate(() => { const t = islands.filter(i => i.type === 'gate' && !torAngreifbar(i) && passOpensAt(bridgeOfGate(i)) <= Date.now()).pop(), tm = torMitte(t); flyTo(tm.x, tm.y, { zoom: maxZoom * .5, instant: true }); });
       await p.waitForTimeout(800); await p.screenshot({ path: path.join(FOTO, 'grenztor_' + bw + '.png') });
