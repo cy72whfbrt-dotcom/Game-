@@ -87,7 +87,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};
     localStorage.setItem('openWaterWorldStart', String(Date.now() - 10 * 864e5)); for (const br of bridges) clearIslandOwner(br.gateId);
     pendingAttacks.length = 0; pendingSends.length = 0; pendingRetreats.length = 0; fieldMarches.length = 0; barbMarches.length = 0; barbState.camps = [];
-    document.querySelector('[data-rk-tele]').click(); await warte(200); o.zu = !isPanelOpen(rucksackPopup);
+    rkTab = 'sonst'; rkWahl = 'tele'; renderRucksack(); document.querySelector('[data-rk-tele]').click(); await warte(200); o.zu = !isPanelOpen(rucksackPopup);
     const cap = islandById[playerIslandId], lm = landmasses[cap.landmassId], frei = [];
     for (let x = lm.x - lm.shapeMaxR; x < lm.x + lm.shapeMaxR; x += 2500) for (let y = lm.y - lm.shapeMaxR; y < lm.y + lm.shapeMaxR; y += 2500)
       if (gebietAn(x, y) === lm.id && !tpPruefen('player', x, y)) frei.push([x, y]);
