@@ -65,9 +65,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     store.set('openWaterQuests', JSON.stringify(alt)); questState = null; const aufg = loadQuests().list;
     return { e1, e5, vor3, nach3, zaehler, tr, trSoll: passTruppen(hp, 2), zweimal: (islandTroops[base] || 0) - t0 - tr, bonus6: gems - g6, kiste: Object.keys(inventory).length - inv0, bonusDa: loadQuests().bonusClaimed !== undefined,
       alt: [aufg.length, aufg[1].type, aufg[1].progress, new Set(aufg.map(t => t.type)).size] }; });
-  ok(r.e1.g === 3 && r.e1.c === r.e1.cSoll && r.e5.g === 8 && r.e5.c === r.e5.cSoll, 'Abholen: leicht 3 Edelsteine + 1 Std. Münzen, schwer 8 + 3 Std.', r);
+  ok(r.e1.g === 5 && r.e1.c === r.e1.cSoll && r.e5.g === 10 && r.e5.c === r.e5.cSoll, 'Abholen: leicht 5 Edelsteine + 1 Std. Münzen, schwer 10 + 3 Std.', r);
   ok(!r.vor3 && r.nach3 && r.zaehler >= 1 && r.tr === r.trSoll && r.tr >= 1 && r.zweimal === 0, 'Bonus bei 3 erledigt: 2 Std. Truppen in die Hauptstadt, nur einmal', r);
-  ok(r.bonus6 >= 10 && r.kiste >= 1, 'Bonus bei allen 6: Kiste + 10 Edelsteine (+ Splitter)', r);
+  ok(r.bonus6 >= 16 && r.kiste >= 1, 'Bonus bei allen 6: Kiste + 16 Edelsteine (+ Splitter)', r);
   ok(r.alt[0] === 6 && r.alt[1] === 'send' && r.alt[2] === 1 && r.alt[3] === 6, 'Liste von vorher (3 Aufgaben): bleibt und wird auf 6 aufgefüllt', r.alt);
   // 5) Fenster: 6 Aufgaben + 2 Bonus-Zeilen, „0 / 6 heute“, Kacheln mit Münzen
   await ev(() => { beuteFensterZu(); questState = null; store.set('openWaterQuests', ''); loadQuests(); closeAllPopups(); openGoals('daily'); });
