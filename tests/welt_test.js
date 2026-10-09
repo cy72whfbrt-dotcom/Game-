@@ -66,9 +66,9 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     // Bündnis-Geschenk für eine Heldenkiste (9.10.): Gems und Splitter kommen unter Last in GETRENNTEN Profilen → trotzdem genau ein Geschenk
     {
         const F = 600000, geschenkt = [];
-        const K = new Function('nn', 'KISTE_FRIST', 'hbZahlen', 'wacheSehen', 'bundGeschenk', stueck('    function gAusMerken', '    // Rohstoffe') +
+        const K = new Function('nn', 'KISTE_FRIST', 'WACHE_WARTEN_MS', 'hbZahlen', 'wacheSehen', 'bundGeschenk', stueck('    function gAusMerken', '    // Rohstoffe') +
             stueck('    // Beleg für eine Heldenkiste', '    // Helden: Splitter') + stueck('    function hbKisteFrei', '    WELT.kisteGekauft') + '; return { gAusMerken, hbBelegNeu, hbBelegGems };')(
-            nn, F, () => true, () => ({}), w => geschenkt.push(w));
+            nn, F, 60000, () => true, () => ({}), w => geschenkt.push(w));
         const schritt = (hb, m, now, gems, sh) => { m.g.vor = gems; K.gAusMerken(m, now); K.hbBelegGems('u1', hb, m, now); m.g.vor = 0; if (sh) K.hbBelegNeu('u1', hb, m, sh, 0, now); };
         let hb = { kisteOffen: [{ g: 500, sh: 20, t: 1000 }] }, m = { g: {} };
         schritt(hb, m, 1000, 500, 0); schritt(hb, m, 6000, 0, 20);
@@ -77,8 +77,8 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
         schritt(hb, m, 1000, 0, 20); schritt(hb, m, 6000, 300, 0); schritt(hb, m, 9000, 200, 0);
         pruefe('Heldenkiste: erst Splitter, dann Gems in Teilen → Geschenk', geschenkt.length === 2 && !hb.kisteOffen.length);
         hb = { kisteOffen: [{ g: 500, sh: 20, t: 1000 }] }; m = { g: {} };
-        schritt(hb, m, 1000, 0, 20); schritt(hb, m, 1000 + F + 1, 500, 0);
-        pruefe('Heldenkiste: Splitter und Gems mehr als 10 Min. auseinander → kein Geschenk', geschenkt.length === 2);
+        schritt(hb, m, 1000, 0, 20); schritt(hb, m, 1000 + 60001, 500, 0);
+        pruefe('Heldenkiste: Splitter und Gems Gems mehr als 60 s nach den Splittern → kein Geschenk', geschenkt.length === 2);
         hb = { kisteOffen: [{ g: 500, sh: 20, t: 1000 }, { g: 500, sh: 20, t: 1000 }] }; m = { g: {} };
         schritt(hb, m, 1000, 0, 20); schritt(hb, m, 2000, 500, 0); schritt(hb, m, 3000, 0, 0);
         pruefe('Heldenkiste: ein Kauf, zwei Befehle → nur ein Geschenk (Gems zählen einmal)', geschenkt.length === 3 && hb.kisteOffen.length === 1);

@@ -53,7 +53,7 @@ Welt-Teile `openWaterBuendnisse`, `openWaterBundChat`, `openWaterVerstaerkung`; 
   alle anderen Mitglieder bekommen ein kleines Geschenk ins Abholfach (5 % einer Stunden-Produktion, selten graue/grüne
   Kiste). Höchstens 5 je Mitglied/Tag, Kisten-Geschenke 3 je Geber/Tag. Nachricht `bundGeschenk` (nie Edelsteine/Splitter).
   Kisten-Beleg (`hbBelegNeu`/`hbBelegGems` 10d3, `gAusMerken` 10d2): Splitter und ausgegebene Gems dürfen in getrennten
-  Profilen kommen (innerhalb 10 Min. `KISTE_FRIST`); Splitter ohne Gems warten (`warte`), Gems zählen nur einmal.
+  Profilen kommen (innerhalb 10 Min. `KISTE_FRIST`); Splitter ohne Gems warten höchstens 60 s (`warte`), Gems zählen nur einmal.
 - Tempel-Bonus: hält ein Mitglied einen Tempel, produzieren alle mehr: +2 % je Tempel, Mega-Tempel +5 %, höchstens +12 %
   (Forschung „Tempel“ +10 % je Stufe darauf).
 - Gebiet: Basen färben die Karte zart; Mitglieder 10 % schneller zu Bündnis-Basen und in Gebieten mit ≥ 40 % Bündnis-Basen.

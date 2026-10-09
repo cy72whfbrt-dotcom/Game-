@@ -14351,14 +14351,14 @@ if (window.WELT) {
         hbSchildPruefen(who, hb, m, p, now, schildAlt);
     }
     // Beleg für eine Heldenkiste: neue Splitter + die dazu ausgegebenen Gems. Ohne Gems (noch nicht im Profil) wartet der Beleg
-    // (warte), hbBelegGems trägt sie nach (auch in Teilen) – Gems und Splitter zählen je nur einmal.
+    // (warte), hbBelegGems trägt sie bis 60 s nach (auch in Teilen) – Gems und Splitter zählen je nur einmal.
     function hbBelegNeu(who, hb, m, sh, g, now) {
         const L = (hb.shKauf || []).filter(x => now - x.t < KISTE_FRIST), gd = nn(m.gAus);
         L.push(gd > 1e-6 ? { sh, gd, g, t: now } : { sh, gd: 0, g, t: now, warte: 1 }); m.gAus = 0; hb.shKauf = L.slice(-20); hbKisteFrei(who, hb, now);
     }
     function hbBelegGems(who, hb, m, now) {
         if (!(nn(m.gAus) > 1e-6)) return;
-        const x = (hb.shKauf || []).filter(y => y.warte && now - y.t < KISTE_FRIST).pop(); if (!x) return;
+        const x = (hb.shKauf || []).filter(y => y.warte && now - y.t < WACHE_WARTEN_MS).pop(); if (!x) return;
         x.gd = nn(x.gd) + nn(m.gAus); m.gAus = 0; hbKisteFrei(who, hb, now);
     }
     // Helden: Splitter-Wert aller Helden höchstens so viel, wie er an Splittern bekommen haben kann (sicher + Spielraum + Heldenkisten)
