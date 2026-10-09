@@ -74,6 +74,8 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 ## Thron-Event (Mitte, `06c-thron-mitte.js`, Test `thron_event_test`)
 - Sa 10 – So 22 Uhr (`thronFenster`, Ortszeit). Sonst Kuppel über Thron + 4 Wachtürmen (`thronKuppel`): Start (02b), Ankunft (04,
   Truppen gehen heim), Armeen (09d), Mitspieler/Rally (03-angreifen, buendnis 03) sperren; Karte zeigt `karte_kuppel` (03b).
+- Thron + 4 Wachtürme (Tempel der Zone 4) sind immer bekannt: Bild auch im Nebel bei jedem Zoom (`drawUebersichtZeichen`), antippbar
+  (03e/09e). „Zum Königsthron“ fliegt so nah, dass der ganze Thron im Bild ist; Fenster darf dort höher sein (`ist-heiligtum`).
 - Alle 3 Min. Rangpunkte (`throneState.week`): Halter (`thronHalter`) 30, je Wachturm 15, Verstärkung beim verbündeten Halter 15.
   Alle 10 Min. schießt jeder Wachturm außerhalb des Bündnisses des Halters 2 % (Krankenhaus wie überall). Kopfgeld auf den Halter.
 - Jedes Event startet bei 0, übrige Herrscher-Kisten verfallen. So 22 Uhr `thronAuswertung` (nur Weltrechner): `THRON_PREISE`

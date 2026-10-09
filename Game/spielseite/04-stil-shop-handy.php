@@ -43,7 +43,7 @@
 .shop-i .icon{width:17px;height:17px;color:var(--gold-300)} .shop-i.on .icon{color:var(--gold-100)}
 .shop-info{padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)} .shop-info .mail-intro{margin:0} .shop-info .mail-intro + .mail-intro,.shop-info .odds + .mail-intro,.shop-info .throne-status + .mail-intro{margin-top:8px}
 .shop-info .mail-intro b{color:var(--gold-100);font-weight:600} .shop-info .odds{margin-top:6px}
-.waren{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .waren--3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px} .waren-teil{display:contents}
+.waren{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .waren--3{grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:8px} .waren-teil{display:contents}
 .ware{--c:var(--r-blau);--c1:#173459;--c2:#0c1626;--cr:#3b78bd;position:relative;display:flex;flex-direction:column;min-width:0;padding:8px 10px 0;overflow:hidden;text-align:center;border-radius:12px;
   background:radial-gradient(70% 55% at 50% 36%,color-mix(in srgb,var(--c) 45%,transparent),transparent 70%),linear-gradient(180deg,var(--c1),var(--c2));
   border:1.5px solid var(--cr);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.55),0 0 18px -4px color-mix(in srgb,var(--c) 60%,transparent)}

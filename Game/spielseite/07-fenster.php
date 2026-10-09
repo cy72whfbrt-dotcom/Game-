@@ -104,7 +104,7 @@
 .wo-band.p4{background:linear-gradient(90deg,#3d5a86,#6f93c8 60%,transparent)} .wo-band.p5{background:linear-gradient(90deg,#4a4033,#7a6a52 60%,transparent)}
 .wo-band img{width:22px;height:22px} .wo-band span{margin-left:auto;font-size:11px;font-weight:600}
 .wo-uhr{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;padding:6px;border-radius:8px;background:rgba(0,0,0,.3);border:1px solid var(--line-1);font:600 11px var(--font-ui);color:var(--tx-2)}
-.wo-uhr b{font:700 13px var(--font-display);color:var(--gold-100);letter-spacing:.5px} .wo-uhr .icon{width:14px;height:14px}
+.wo-uhr b{font:700 13px var(--font-ui);color:var(--gold-100)} .wo-uhr .icon{width:14px;height:14px}
 .wo-um{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;padding:3px;border-radius:10px;background:rgba(0,0,0,.35);border:1px solid var(--line-1)}
 .wo-um button{padding:6px;border:0;border-radius:8px;background:none;text-align:center;font:700 12px var(--font-ui);color:var(--tx-3);cursor:pointer} .wo-um button.an{color:#2a1c06;background:linear-gradient(180deg,#f6dc8a,#c99a3a);box-shadow:0 1px 3px #000}
 .wo-podest{display:grid;grid-template-columns:1fr 1.22fr 1fr;align-items:end;gap:6px;padding:14px 4px 0;background:radial-gradient(ellipse at 50% 30%,rgba(255,210,110,.18),transparent 70%)}
@@ -457,7 +457,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <div id="inboxList" class="inbox"></div>
       <div class="sect"><h4>Tägliche Belohnung</h4></div>
       <div id="dailyCard" class="daily"></div>
-      <div class="sect"><h4>Die Woche</h4><span class="sect-aside">verpasster Tag = Tag 1</span></div>
+      <div class="sect"><h4>Anmelde-Tage</h4><span class="sect-aside">verpasster Tag = Tag 1</span></div>
       <div id="dailyWeek" class="daily-week"></div>
     </div>
     <div class="mail-pane" data-gpane="ach" hidden>

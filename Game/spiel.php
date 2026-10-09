@@ -484,7 +484,7 @@ body.in-stadt #citySheet > .city-bfoot{bottom:-14px;box-shadow:0 -10px 14px -8px
 body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96px)}
 @media (min-width:900px) and (min-height:501px){ body:has(#citySheet:not([hidden])) .toast.toast.toast{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto} }   /* Desktop: die Leiste steht unten in der Mitte, das Burg-Fenster reicht bis dort – der Hinweis oben statt über der Fußzeile */
 @media (max-width:899px),(max-height:500px){
-  body:has(#citySheet:not([hidden])) .toast.toast.toast{top:auto;bottom:calc(var(--dock-h) + var(--safe-bd) + 104px)}   /* (.toast dreifach: geht vor die allgemeine Fenster-Regel in 02) */
+  body:has(#citySheet:not([hidden])) .toast.toast.toast{top:calc(var(--stadt-kopf,96px) + 6px);bottom:auto;z-index:calc(var(--z-sheet) + 1)}   /* oben über dem Fenster-Kopf, nie über Text oder Fußzeile (.toast dreifach: geht vor die allgemeine Fenster-Regel in 02) */
 }
 
 /* =====================================================================
@@ -572,6 +572,7 @@ body:has(#heroHall:not([hidden])) .toast{top:auto;bottom:calc(var(--safe-b) + 96
 #battleLogPopup.has-entries{height:var(--sheet-max)}    /* live rows come and go every second: keep it steady once it has any */
 .panel--island{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-bd));z-index:var(--z-sheet);
   max-height:min(62dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
+.panel--island.ist-heiligtum{max-height:min(74dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)))}   /* Thron/Tempel: der Erklär-Text ganz zu sehen */
 .panel--item{left:var(--safe-l);right:var(--safe-r);bottom:calc(var(--dock-h) + var(--safe-bd));z-index:var(--z-modal);
   max-height:min(70dvh,calc(100dvh - var(--dock-h) - var(--safe-bd) - var(--safe-t) - var(--hud-top-space)));border-radius:var(--r-lg) var(--r-lg) 0 0}
 .panel .sheet-grab + .phead{padding-top:4px}
@@ -1234,7 +1235,7 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
 .shop-i .icon{width:17px;height:17px;color:var(--gold-300)} .shop-i.on .icon{color:var(--gold-100)}
 .shop-info{padding:8px 10px;border-radius:var(--r-sm);background:var(--well);border:1px solid var(--line-1)} .shop-info .mail-intro{margin:0} .shop-info .mail-intro + .mail-intro,.shop-info .odds + .mail-intro,.shop-info .throne-status + .mail-intro{margin-top:8px}
 .shop-info .mail-intro b{color:var(--gold-100);font-weight:600} .shop-info .odds{margin-top:6px}
-.waren{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .waren--3{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px} .waren-teil{display:contents}
+.waren{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px} .waren--3{grid-template-columns:repeat(var(--n,3),minmax(0,1fr));gap:8px} .waren-teil{display:contents}
 .ware{--c:var(--r-blau);--c1:#173459;--c2:#0c1626;--cr:#3b78bd;position:relative;display:flex;flex-direction:column;min-width:0;padding:8px 10px 0;overflow:hidden;text-align:center;border-radius:12px;
   background:radial-gradient(70% 55% at 50% 36%,color-mix(in srgb,var(--c) 45%,transparent),transparent 70%),linear-gradient(180deg,var(--c1),var(--c2));
   border:1.5px solid var(--cr);box-shadow:inset 0 1px 0 rgba(255,255,255,.18),inset 0 0 0 1px rgba(0,0,0,.45),0 6px 16px rgba(0,0,0,.55),0 0 18px -4px color-mix(in srgb,var(--c) 60%,transparent)}
@@ -1811,7 +1812,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
 /* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
 /* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen zuerst, dann der Schild-Kasten */
-.city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}
+.city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;max-width:none;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}
 .city-sheet.cs-keep > #cityBStats{order:1} .city-sheet.cs-keep > #cityBNote.city-wirkung{order:2} .city-sheet.cs-keep > #cityBExtra{order:3}   /* Burg: Schild-Kasten unter den Voraussetzungen – nie halb unter dem festen Knopf (Handy) */
 .city-bfoot .btn{min-height:48px}
 .city-sheet .fo-go{position:sticky;bottom:0;z-index:3;width:100%;min-height:48px;box-shadow:0 0 0 10px #15161b}   /* Forschen: bleibt sichtbar, solange die Forschung offen ist */
@@ -2483,7 +2484,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 .wo-band.p4{background:linear-gradient(90deg,#3d5a86,#6f93c8 60%,transparent)} .wo-band.p5{background:linear-gradient(90deg,#4a4033,#7a6a52 60%,transparent)}
 .wo-band img{width:22px;height:22px} .wo-band span{margin-left:auto;font-size:11px;font-weight:600}
 .wo-uhr{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;padding:6px;border-radius:8px;background:rgba(0,0,0,.3);border:1px solid var(--line-1);font:600 11px var(--font-ui);color:var(--tx-2)}
-.wo-uhr b{font:700 13px var(--font-display);color:var(--gold-100);letter-spacing:.5px} .wo-uhr .icon{width:14px;height:14px}
+.wo-uhr b{font:700 13px var(--font-ui);color:var(--gold-100)} .wo-uhr .icon{width:14px;height:14px}
 .wo-um{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:6px;padding:3px;border-radius:10px;background:rgba(0,0,0,.35);border:1px solid var(--line-1)}
 .wo-um button{padding:6px;border:0;border-radius:8px;background:none;text-align:center;font:700 12px var(--font-ui);color:var(--tx-3);cursor:pointer} .wo-um button.an{color:#2a1c06;background:linear-gradient(180deg,#f6dc8a,#c99a3a);box-shadow:0 1px 3px #000}
 .wo-podest{display:grid;grid-template-columns:1fr 1.22fr 1fr;align-items:end;gap:6px;padding:14px 4px 0;background:radial-gradient(ellipse at 50% 30%,rgba(255,210,110,.18),transparent 70%)}
@@ -2836,7 +2837,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       <div id="inboxList" class="inbox"></div>
       <div class="sect"><h4>Tägliche Belohnung</h4></div>
       <div id="dailyCard" class="daily"></div>
-      <div class="sect"><h4>Die Woche</h4><span class="sect-aside">verpasster Tag = Tag 1</span></div>
+      <div class="sect"><h4>Anmelde-Tage</h4><span class="sect-aside">verpasster Tag = Tag 1</span></div>
       <div id="dailyWeek" class="daily-week"></div>
     </div>
     <div class="mail-pane" data-gpane="ach" hidden>

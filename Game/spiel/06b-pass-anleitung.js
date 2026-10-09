@@ -139,7 +139,7 @@ const anleitungNeutral = id => !islandOwnerOf(id) && !bossAt(id) && islandById[i
 const ANLEITUNG = [
     { t: 'Tippe auf deine Hauptstadt – die blaue Basis mit der Krone (der Kompass rechts bringt dich hin).', fertig: () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden
         || anleitungTat.attack || (anleitungInsel() && anleitungNeutral(popupIslandId)),   // schon bei einer neutralen Basis (oder angegriffen): gleich weiter zu Schritt 2
-      tipp: () => anleitungInsel() && popupIslandId !== playerIslandId ? 'Das ist nicht deine Hauptstadt. Schließe das Fenster (×) und tippe die blaue Basis mit der Krone an.' : null, puls: () => 'heim' },
+      tipp: () => anleitungInsel() && popupIslandId !== playerIslandId && !(islandById[popupIslandId] || {}).bildR ? 'Das ist nicht deine Hauptstadt. Schließe das Fenster (×) und tippe die blaue Basis mit der Krone an.' : null, puls: () => 'heim' },
     { t: 'Greif eine neutrale Basis in deiner Nähe an: tippe eine Basis mit dem Schild „Neutral“ an.', fertig: () => anleitungTat.attack,
       tipp: () => !anleitungInsel() ? null : popupIslandId === playerIslandId ? 'Gut! Schließe das Fenster (×) und tippe eine Basis mit „Neutral“ an.'
         : anleitungNeutral(popupIslandId) ? (anleitungAlleAusHaupt() ? 'Gut! Tippe „Angreifen“ – mit „Alle“ bleibt deine Hauptstadt ohne Truppen.' : 'Gut! Jetzt unten rechts auf „Angreifen“ tippen.') : 'Das ist keine neutrale Basis. Schließe das Fenster (×) und tippe eine Basis mit „Neutral“ an.',

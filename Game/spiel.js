@@ -3013,15 +3013,16 @@ function drawTorBild(island, open, z, dunkel) {
   const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
 }
 // Ganz weit (wie die Karten-Testdatei): Pass-Punkte in der Farbe ihrer Stufe (noch zu: blass), die Zonen-Nummern und Thron und
-// Tempel – auch unter dem Nebel (das Ziel aller ist immer zu sehen, wie RoK)
+// Tempel – auch unter dem Nebel und bei jedem Zoom (das Ziel aller ist immer zu sehen, wie RoK; antippbar, 03e)
 function drawUebersichtZeichen(z) {
-  if (z >= KARTE_BILD_ZOOM || !karteBilder()) return;
-  setScreen(ctx); const jetzt = Date.now(), r = viewW < 600 ? 6 : 5;
+  if (!karteBilder()) return;
+  setScreen(ctx);
+  for (const isl of islands) if (isl.bildR && !islandSeen(isl)) heiligtumBild(isl, z);
+  if (z >= KARTE_BILD_ZOOM) return; const jetzt = Date.now(), r = viewW < 600 ? 6 : 5;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 ' + (viewW < 600 ? 11 : 14) + 'px Georgia, serif'; ctx.lineJoin = 'round';
   for (const lm of landmasses) { if (lm.zone === ZONE_MITTE) continue; const t = lm.tier === 'guardian', x = toSX(lm.x), y = toSY(lm.y) + (t ? Math.max(HEILIGTUM_BREITE.guardian * z, 30) * .55 : 0);
     if (x < -20 || y < -20 || x > viewW + 20 || y > viewH + 20) continue;
     ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(lm.name, x, y); ctx.fillStyle = '#e4c886'; ctx.fillText(lm.name, x, y); }
-  for (const isl of islands) if (isl.bildR && !islandSeen(isl)) heiligtumBild(isl, z);
   for (const br of bridges) { const x = toSX(br.pass.x), y = toSY(br.pass.y); if (x < -10 || y < -10 || x > viewW + 10 || y > viewH + 10) continue;
     ctx.globalAlpha = passOpensAt(br) > jetzt ? .45 : 1; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[br.pass.stufe]; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = '#0c0f14'; ctx.stroke(); }
@@ -4314,7 +4315,7 @@ function pickIslandAtScreen(sx, sy) {
   }
   const w = screenToWorld(sx, sy), z = mapState.zoom; let best = null, bd = Infinity;
   for (const isl of islands) {                                                        // nearest base, min 22 CSS px hit radius
-    if (!islandSeen(isl)) continue;
+    if (!islandSeen(isl) && !isl.bildR) continue;                                   // (Thron und Tempel sind immer bekannt)
     const tm = torMitte(isl), d = Math.hypot((tm ? tm.x : isl.x) - w.x, (tm ? tm.y : isl.y) - w.y);   // (ein Pass-Tor tippt man auf sein Bild)
     if (d <= Math.max(tm ? tm.r : isl.bildR || isl.radius, 22 / z) && d < bd) { bd = d; best = isl; }
   }
@@ -7505,7 +7506,7 @@ const anleitungNeutral = id => !islandOwnerOf(id) && !bossAt(id) && islandById[i
 const ANLEITUNG = [
     { t: 'Tippe auf deine Hauptstadt – die blaue Basis mit der Krone (der Kompass rechts bringt dich hin).', fertig: () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden
         || anleitungTat.attack || (anleitungInsel() && anleitungNeutral(popupIslandId)),   // schon bei einer neutralen Basis (oder angegriffen): gleich weiter zu Schritt 2
-      tipp: () => anleitungInsel() && popupIslandId !== playerIslandId ? 'Das ist nicht deine Hauptstadt. Schließe das Fenster (×) und tippe die blaue Basis mit der Krone an.' : null, puls: () => 'heim' },
+      tipp: () => anleitungInsel() && popupIslandId !== playerIslandId && !(islandById[popupIslandId] || {}).bildR ? 'Das ist nicht deine Hauptstadt. Schließe das Fenster (×) und tippe die blaue Basis mit der Krone an.' : null, puls: () => 'heim' },
     { t: 'Greif eine neutrale Basis in deiner Nähe an: tippe eine Basis mit dem Schild „Neutral“ an.', fertig: () => anleitungTat.attack,
       tipp: () => !anleitungInsel() ? null : popupIslandId === playerIslandId ? 'Gut! Schließe das Fenster (×) und tippe eine Basis mit „Neutral“ an.'
         : anleitungNeutral(popupIslandId) ? (anleitungAlleAusHaupt() ? 'Gut! Tippe „Angreifen“ – mit „Alle“ bleibt deine Hauptstadt ohne Truppen.' : 'Gut! Jetzt unten rechts auf „Angreifen“ tippen.') : 'Das ist keine neutrale Basis. Schließe das Fenster (×) und tippe eine Basis mit „Neutral“ an.',
@@ -7819,7 +7820,7 @@ function evThronHtml() {
 document.getElementById('eventBody').addEventListener('click', e => {
     if (e.target.closest('[data-herr-auf]')) { openHerr(); return; }
     if (!e.target.closest('[data-thron-go]')) return;
-    const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650);
+    const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: clampZoom(viewW * .7 / HEILIGTUM_BREITE.megaTemple) }); setTimeout(() => openIslandPopup(m), 650);   // der ganze Thron im Bild (auch im Nebel, 03b)
 });
 // ---- Herrscher-Fenster: wer herrscht, Skin + Rahmen (automatisch), Titel, Kisten verschicken ----
 const herrPopup = document.getElementById('herrPopup');
@@ -7921,7 +7922,7 @@ midBar.addEventListener('click', e => { const c = e.target.closest('[data-mb]');
     if (c.dataset.mb === 'woche') { openGoals('tour'); return; }
     if (c.dataset.mb === 'thron') { openGoals('thron'); return; }
     if (c.dataset.mb.startsWith('ev-')) { openGoals(c.dataset.mb.slice(3)); return; }
-    const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650); });
+    const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: clampZoom(viewW * .7 / HEILIGTUM_BREITE.megaTemple) }); setTimeout(() => openIslandPopup(m), 650); });
 function midAnzeige(now) {                            // jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event im Events-Fenster
     renderMidBar();
     if (evOffen() && (goalsTab === 'tour' || goalsTab === 'thron') && now % 5000 < 1000) renderEvents();
@@ -8645,7 +8646,7 @@ function kisteOeffnen(id, anz, bt) {
 // ===== Bausteine der Reiter (wie die Test-Datei werkzeuge/thronevent ?a=shopkisten|shop|shoptempo): Gruppen mit Zwischenüberschrift, 3 Spalten
 const shopWare = (bild, r, name, unter, knoepfe, zeit, leer) => '<div class="ware ware--klein' + (leer ? ' leer' : '') + '" data-r="' + r + '"><span class="ware-bild"><img class="kiste-bild" src="bilder/' + bild + '.webp" alt="" draggable="false">' + (zeit ? '<b class="zeit">' + zeit + '</b>' : '') + '</span>' +
     '<span class="ware-txt"><b class="ware-name">' + name + '</b><small class="lim">' + unter + '</small></span><span class="ware-knoepfe">' + knoepfe + '</span></div>';
-const shopGruppe = (titel, waren) => '<div class="sort-kopf">' + titel + '</div><div class="waren waren--3">' + waren.join('') + '</div>';
+const shopGruppe = (titel, waren) => '<div class="sort-kopf">' + titel + '</div><div class="waren waren--3" style="--n:' + Math.max(2, Math.min(3, waren.length)) + '">' + waren.join('') + '</div>';   // Spalten = Anzahl (2–3): volle Breite
 function gemKnopf(daten, key, g, vor, leer) {        // Preis in Edelsteinen (ab 500 nach dem ersten Tipp „Wirklich?“ – übersteht das Neuzeichnen)
     return '<button type="button" class="ware-preis' + (gemsArmed(key) ? ' is-armed' : '') + '" ' + daten + (leer ? ' disabled' : '') + '>' + (gemsArmed(key) ? 'Wirklich? ' : vor || '') + icon('gem') + '<b>' + fmtNum(g) + '</b></button>';
 }
@@ -11369,6 +11370,18 @@ function beuteFelder(b) {                            // Gegenstände für das Ha
         else if (a === 'besch' && e && e.dauer) { o.besch = o.besch || {}; o.besch[e.dauer] = (o.besch[e.dauer] || 0) + n; } }
     return o;
 }
+function evPreisFach(e) {                           // Nachricht „evPreis“ (Weltrechner → Handy) → Eintrag fürs Abholfach (null: diese Stufe liegt schon dort)
+    const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
+    const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'woche', title = String(e.title || '').slice(0, 80);
+    const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
+    if (k && inboxList().some(x => x.k === k)) return null;               // (dieselbe Stufe nie zweimal im Fach)
+    const bis = typeof e.bis === 'number' && e.bis > Date.now() ? Math.min(e.bis, Date.now() + 864e5) : undefined;   // (Event-Stufe: bis zum Ende nur im Event abholbar, höchstens einen Tag)
+    const besch = e.besch && typeof e.besch === 'object' ? BESCH_DAUERN.find(d => e.besch[d] > 0) : undefined;   // Event-Münzen, Schlüssel, Beschleuniger (Wochen-Event, Lager)
+    const B_ART = ['eventMuenzen', 'schluessel1', 'schluessel2', 'besch', 'holz'], b = (Array.isArray(e.b) ? e.b : []).slice(0, 8)   // Gegenstände (Thron-Event): nur bekannte Arten
+        .filter(x => Array.isArray(x) && B_ART.includes(x[0]) && z(x[1], 1e9) > 0).map(([a, n, x]) => a === 'besch' ? [a, z(n, 1e9), { dauer: x && BESCH_DAUERN.includes(x.dauer) ? x.dauer : '1h' }] : [a, z(n, 1e9)]);
+    if (b.length) return { src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), k, bis, b };   // em/s1/s2/besch stehen dann auch in b (beuteFelder, nur fürs Hauptbuch): nur einmal auszahlen
+    return { src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), em: z(e.em, 1e5), s1: z(e.s1, 100), s2: z(e.s2, 100), besch, k, bis };
+}
 function evBericht(who, e, hint) {                    // ein kurzer Eintrag im Kampflog (dir direkt, echten Mitspielern über den Weltrechner)
     if (who === 'player') { addCombatLogEntry(e); if (hint) flashHint(hint, 4500); return; }
     if (window.WELT && botById[who] && botById[who].mensch) WELT.bericht(who, e, hint);
@@ -12045,7 +12058,7 @@ function closeAllPopups() {
 
 function openIslandPopup(island) {
     if (island && island.type === 'gate' && passOpensAt(bridgeOfGate(island)) > Date.now()) { flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(island)) - Date.now()) + '.', 3500); return; }   // (Pass mit Countdown: nur der Hinweis)
-    if (island && !islandSeen(island) && islandOwnerOf(island.id) !== 'player') { flashHint('Dieses Gebiet liegt im Nebel – schick zuerst einen Späher.', 3000); return; }
+    if (island && !islandSeen(island) && !island.bildR && islandOwnerOf(island.id) !== 'player') { flashHint('Dieses Gebiet liegt im Nebel – schick zuerst einen Späher.', 3000); return; }
     closeAllPopups();
     popupIslandId = island.id;
     popupView = 'menu'; popupMehr = false;
@@ -12628,7 +12641,8 @@ function renderPopup() {
     attackBtn.classList.toggle('mit-zeit', popupView === 'preview');   // Angriff: goldener Knopf „Losmarschieren“ mit der Marschzeit
     attackBtn.classList.toggle('btn--gold', popupView === 'preview');
     if (!menu || isOwned) attackBtn.classList.remove('is-grau');
-    popup.classList.toggle('fuss-rund', menu && !isOwned);              // fremde Basis: Spähen + Angreifen als runde Knöpfe
+    popup.classList.toggle('fuss-rund', menu && !isOwned);
+    popup.classList.toggle('ist-heiligtum', !!island.bildR);          // Thron/Tempel: längere Erklärung, Fenster darf höher sein (02)              // fremde Basis: Spähen + Angreifen als runde Knöpfe
     popupSub.classList.toggle('psub--zwei', menu);                       // Name/Stufe und Koordinaten in zwei Zeilen: nichts wird abgeschnitten
     if (menu) liveHtml(popupSub, subH + '<span class="num coord psub-ort">' + coordText(island.x, island.y) + '</span>');
     if (typeof bundInselfenster === 'function') bundInselfenster(island, popupView);               // Bündnis: Signale, Rally, Hilfe
@@ -14018,7 +14032,7 @@ if (window.WELT) {
         k: 3 + 1 + 1 / 7,                             // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, epische Tageskiste
         kg: 27 / 7,                                   // davon „mind. Episch“ (Tag 7) als sicherer Kisten-Wert (Episch = 27)
         sh: HERO_SHARDS_DAY,                          // Splitter: Aufgaben-Bonus
-        em: 1000, s1: 4.5, s2: 1.5, bm: 1000          // Gegenstände (05e): Event-Münzen (Woche höchstens 4.750), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740)
+        em: 65, s1: 4.5, s2: 1.5, bm: 1000            // Gegenstände (05e): Event-Münzen nur aus dem Saison-Pass (Premium Stufe 6/18/42/54/66/78 je 150 = 900 je Pass; × HB_KAPPE_TAGE 14 = ein ganzer Pass – Event-Preise kommen als Nachricht, ggIn), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740)
     };
     const HB_ONLINE_STUNDE_G = 40;                    // Karten-Funde: 1–3 Gems, alle 20–45 s einer, 15 % davon Gems – nur solange er online ist
     const HB_KAPPE_TAGE = 14;                         // so viele Tage Spielraum sammeln sich höchstens an
@@ -14216,7 +14230,7 @@ if (window.WELT) {
         if (Number.isFinite(hb.stW)) { if (10 * z[2] * (z[2] + 1) > hb.stW + 1e-6) return 'die Sterne sind nicht bezahlt'; sternG = 0; }   // (neues Handy: Sterne zahlt hbSterne – nicht doppelt)
         const freiK = Math.min(n, Math.floor(nn(hb.fr.k))), gems = (n - freiK) * CRATE_GEM_COST + sternG;
         if (gems > 0 && !hbZahlen(who, hb, m, { g: gems })) return n > freiK ? 'dafür hätte er ' + (N + n > 1 ? 'etwa ' + Math.round(N + n) : 'eine') + ' Kisten öffnen müssen, ' + fz(gems) + ' Gems fehlen' : 'die Sterne kosten ' + sternG + ' Gems';
-        hb.fr.k = nn(hb.fr.k) - freiK; hb.kN = N + n; if (n > 0) evPunkte('held', who, WO_PKT.kiste * n);   // (Helden-Tag: geöffnete Kisten) hb.sternG = nn(hb.sternG) + sternG;
+        hb.fr.k = nn(hb.fr.k) - freiK; hb.kN = N + n; if (n > 0) evPunkte('held', who, WO_PKT.kiste * n); hb.sternG = nn(hb.sternG) + sternG;   // (Helden-Tag: geöffnete Kisten)
         const ueber = Math.max(wert - hbKistenGrenze(hb.kN), gesamt - hbKistenGesamt(hb.kN)); if (ueber > 0) { const x = Math.min(ueber, Math.max(0, nn(hb.fr.kg))); hb.fr.kg = nn(hb.fr.kg) - x; hb.kG = Math.max(0, nn(hb.kG) - (ueber - x)); }   // die sichere Kiste ist verbraucht (zuerst aus fr.kg)
         A.push(z);
         for (let i = A.length - 1; i >= 0; i--) if (A.some((b, j) => j !== i && b[0] === A[i][0] && b[1] >= A[i][1] && b[2] >= A[i][2] && (b[1] > A[i][1] || b[2] > A[i][2] || j < i))) A.splice(i, 1);
@@ -14837,16 +14851,9 @@ if (window.WELT) {
     WELT.beiNachricht.push(function (e) { if (e && e.art === 'spaeh') spaehBericht(e); });   // Spähbericht vom Weltrechner (fremde Werte kennt nur er)
     WELT.beiNachricht.push(function (e) {             // Preis aus einem Event (Wochen-Event, Lager, Welt-Saison): ins Abholfach, auch Kisten
         if (!e || e.art !== 'evPreis') return;
-        const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
-        const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'woche', title = String(e.title || '').slice(0, 80);
         if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Platz (Ende einer Welt-Saison): der Saison-Rahmen, gleich angelegt (bis zum nächsten Saison-Ende)
-        const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
-        if (k && inboxList().some(x => x.k === k)) return;                     // (dieselbe Stufe nie zweimal im Fach)
-        const bis = typeof e.bis === 'number' && e.bis > Date.now() ? Math.min(e.bis, Date.now() + 864e5) : undefined;   // (Event-Stufe: bis zum Ende nur im Event abholbar, höchstens einen Tag)
-        const besch = e.besch && typeof e.besch === 'object' ? BESCH_DAUERN.find(d => e.besch[d] > 0) : undefined;   // Event-Münzen, Schlüssel, Beschleuniger (Wochen-Event, Lager)
-        const B_ART = ['eventMuenzen', 'schluessel1', 'schluessel2', 'besch', 'holz'], b = (Array.isArray(e.b) ? e.b : []).slice(0, 8)   // Gegenstände (Thron-Event): nur bekannte Arten
-            .filter(x => Array.isArray(x) && B_ART.includes(x[0]) && z(x[1], 1e9) > 0).map(([a, n, x]) => a === 'besch' ? [a, z(n, 1e9), { dauer: x && BESCH_DAUERN.includes(x.dauer) ? x.dauer : '1h' }] : [a, z(n, 1e9)]);
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), em: z(e.em, 1e5), s1: z(e.s1, 100), s2: z(e.s2, 100), besch, k, bis, b: b.length ? b : undefined }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
+        const x = evPreisFach(e); if (!x) return; const { title, bis } = x;
+        if (inboxAdd(x) || x.crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
 
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt

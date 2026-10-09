@@ -237,7 +237,8 @@ function renderPopup() {
     attackBtn.classList.toggle('mit-zeit', popupView === 'preview');   // Angriff: goldener Knopf „Losmarschieren“ mit der Marschzeit
     attackBtn.classList.toggle('btn--gold', popupView === 'preview');
     if (!menu || isOwned) attackBtn.classList.remove('is-grau');
-    popup.classList.toggle('fuss-rund', menu && !isOwned);              // fremde Basis: Spähen + Angreifen als runde Knöpfe
+    popup.classList.toggle('fuss-rund', menu && !isOwned);
+    popup.classList.toggle('ist-heiligtum', !!island.bildR);          // Thron/Tempel: längere Erklärung, Fenster darf höher sein (02)              // fremde Basis: Spähen + Angreifen als runde Knöpfe
     popupSub.classList.toggle('psub--zwei', menu);                       // Name/Stufe und Koordinaten in zwei Zeilen: nichts wird abgeschnitten
     if (menu) liveHtml(popupSub, subH + '<span class="num coord psub-ort">' + coordText(island.x, island.y) + '</span>');
     if (typeof bundInselfenster === 'function') bundInselfenster(island, popupView);               // Bündnis: Signale, Rally, Hilfe

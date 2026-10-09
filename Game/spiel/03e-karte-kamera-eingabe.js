@@ -367,7 +367,7 @@ function pickIslandAtScreen(sx, sy) {
   }
   const w = screenToWorld(sx, sy), z = mapState.zoom; let best = null, bd = Infinity;
   for (const isl of islands) {                                                        // nearest base, min 22 CSS px hit radius
-    if (!islandSeen(isl)) continue;
+    if (!islandSeen(isl) && !isl.bildR) continue;                                   // (Thron und Tempel sind immer bekannt)
     const tm = torMitte(isl), d = Math.hypot((tm ? tm.x : isl.x) - w.x, (tm ? tm.y : isl.y) - w.y);   // (ein Pass-Tor tippt man auf sein Bild)
     if (d <= Math.max(tm ? tm.r : isl.bildR || isl.radius, 22 / z) && d < bd) { bd = d; best = isl; }
   }

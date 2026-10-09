@@ -101,7 +101,7 @@ function closeAllPopups() {
 
 function openIslandPopup(island) {
     if (island && island.type === 'gate' && passOpensAt(bridgeOfGate(island)) > Date.now()) { flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(island)) - Date.now()) + '.', 3500); return; }   // (Pass mit Countdown: nur der Hinweis)
-    if (island && !islandSeen(island) && islandOwnerOf(island.id) !== 'player') { flashHint('Dieses Gebiet liegt im Nebel – schick zuerst einen Späher.', 3000); return; }
+    if (island && !islandSeen(island) && !island.bildR && islandOwnerOf(island.id) !== 'player') { flashHint('Dieses Gebiet liegt im Nebel – schick zuerst einen Späher.', 3000); return; }
     closeAllPopups();
     popupIslandId = island.id;
     popupView = 'menu'; popupMehr = false;

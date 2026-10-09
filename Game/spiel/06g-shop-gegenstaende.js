@@ -47,7 +47,7 @@ function kisteOeffnen(id, anz, bt) {
 // ===== Bausteine der Reiter (wie die Test-Datei werkzeuge/thronevent ?a=shopkisten|shop|shoptempo): Gruppen mit Zwischenüberschrift, 3 Spalten
 const shopWare = (bild, r, name, unter, knoepfe, zeit, leer) => '<div class="ware ware--klein' + (leer ? ' leer' : '') + '" data-r="' + r + '"><span class="ware-bild"><img class="kiste-bild" src="bilder/' + bild + '.webp" alt="" draggable="false">' + (zeit ? '<b class="zeit">' + zeit + '</b>' : '') + '</span>' +
     '<span class="ware-txt"><b class="ware-name">' + name + '</b><small class="lim">' + unter + '</small></span><span class="ware-knoepfe">' + knoepfe + '</span></div>';
-const shopGruppe = (titel, waren) => '<div class="sort-kopf">' + titel + '</div><div class="waren waren--3">' + waren.join('') + '</div>';
+const shopGruppe = (titel, waren) => '<div class="sort-kopf">' + titel + '</div><div class="waren waren--3" style="--n:' + Math.max(2, Math.min(3, waren.length)) + '">' + waren.join('') + '</div>';   // Spalten = Anzahl (2–3): volle Breite
 function gemKnopf(daten, key, g, vor, leer) {        // Preis in Edelsteinen (ab 500 nach dem ersten Tipp „Wirklich?“ – übersteht das Neuzeichnen)
     return '<button type="button" class="ware-preis' + (gemsArmed(key) ? ' is-armed' : '') + '" ' + daten + (leer ? ' disabled' : '') + '>' + (gemsArmed(key) ? 'Wirklich? ' : vor || '') + icon('gem') + '<b>' + fmtNum(g) + '</b></button>';
 }

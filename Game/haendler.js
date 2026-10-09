@@ -41,12 +41,20 @@ function hdSammeln(who) { const b = hdState.boost && hdState.boost[who]; return 
 const hdWerName = w => w === 'player' ? 'Du' : (botById[w] || {}).name || 'Jemand';
 
 // ---- Weltrechner: kommen, gehen, Mitspieler kaufen ----
+function hdPlatz(lm, frei) {                           // zufälliger Punkt auf dem Land, mit Abstand zu Basen
+    const r = lm.shapeMaxR || 0;
+    for (let v = 0; v < 40; v++) {
+        const x = lm.x + (Math.random() * 2 - 1) * r, y = lm.y + (Math.random() * 2 - 1) * r;
+        if (aufLand(lm, x, y) && !islands.some(i => Math.hypot(i.x - x, i.y - y) < frei)) return [x, y];
+    }
+    return null;
+}
 function hdOrt() {                                    // ein freier Platz in einer bewohnten Region (nicht Mitte/Wächter)
     const besetzt = []; for (const b of BOT_DEFS) for (const id of botOwnedIslands[b.id] || []) besetzt.push(id);
     for (let v = 0; v < 30; v++) {
         const isl = besetzt.length ? islandById[besetzt[Math.floor(Math.random() * besetzt.length)]] : islands[Math.floor(Math.random() * islands.length)];
         const lm = isl && landmasses[isl.landmassId]; if (!lm || lm.tier !== 'outer') continue;
-        const p = dekoPlaetze(lm, 1, Math.floor(Math.random() * 1e6), 1500)[0];
+        const p = hdPlatz(lm, 1500);
         if (p && !(typeof resFields !== 'undefined' && resFields.some(f => Math.hypot(f.x - p[0], f.y - p[1]) < 2500))) return { x: Math.round(p[0]), y: Math.round(p[1]), lm: lm.id };
     }
     return null;

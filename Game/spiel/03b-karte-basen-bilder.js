@@ -21,15 +21,16 @@ function drawTorBild(island, open, z, dunkel) {
   const h = w * KB.img[n].height / KB.img[n].width; ctx.drawImage(kbBild(n, w * dpr), mx - w / 2, my - h * KETTE_ACHSE[n], w, h);
 }
 // Ganz weit (wie die Karten-Testdatei): Pass-Punkte in der Farbe ihrer Stufe (noch zu: blass), die Zonen-Nummern und Thron und
-// Tempel – auch unter dem Nebel (das Ziel aller ist immer zu sehen, wie RoK)
+// Tempel – auch unter dem Nebel und bei jedem Zoom (das Ziel aller ist immer zu sehen, wie RoK; antippbar, 03e)
 function drawUebersichtZeichen(z) {
-  if (z >= KARTE_BILD_ZOOM || !karteBilder()) return;
-  setScreen(ctx); const jetzt = Date.now(), r = viewW < 600 ? 6 : 5;
+  if (!karteBilder()) return;
+  setScreen(ctx);
+  for (const isl of islands) if (isl.bildR && !islandSeen(isl)) heiligtumBild(isl, z);
+  if (z >= KARTE_BILD_ZOOM) return; const jetzt = Date.now(), r = viewW < 600 ? 6 : 5;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 ' + (viewW < 600 ? 11 : 14) + 'px Georgia, serif'; ctx.lineJoin = 'round';
   for (const lm of landmasses) { if (lm.zone === ZONE_MITTE) continue; const t = lm.tier === 'guardian', x = toSX(lm.x), y = toSY(lm.y) + (t ? Math.max(HEILIGTUM_BREITE.guardian * z, 30) * .55 : 0);
     if (x < -20 || y < -20 || x > viewW + 20 || y > viewH + 20) continue;
     ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(lm.name, x, y); ctx.fillStyle = '#e4c886'; ctx.fillText(lm.name, x, y); }
-  for (const isl of islands) if (isl.bildR && !islandSeen(isl)) heiligtumBild(isl, z);
   for (const br of bridges) { const x = toSX(br.pass.x), y = toSY(br.pass.y); if (x < -10 || y < -10 || x > viewW + 10 || y > viewH + 10) continue;
     ctx.globalAlpha = passOpensAt(br) > jetzt ? .45 : 1; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[br.pass.stufe]; ctx.fill();
     ctx.lineWidth = 2; ctx.strokeStyle = '#0c0f14'; ctx.stroke(); }

@@ -216,7 +216,7 @@ function evThronHtml() {
 document.getElementById('eventBody').addEventListener('click', e => {
     if (e.target.closest('[data-herr-auf]')) { openHerr(); return; }
     if (!e.target.closest('[data-thron-go]')) return;
-    const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650);
+    const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: clampZoom(viewW * .7 / HEILIGTUM_BREITE.megaTemple) }); setTimeout(() => openIslandPopup(m), 650);   // der ganze Thron im Bild (auch im Nebel, 03b)
 });
 // ---- Herrscher-Fenster: wer herrscht, Skin + Rahmen (automatisch), Titel, Kisten verschicken ----
 const herrPopup = document.getElementById('herrPopup');
@@ -318,7 +318,7 @@ midBar.addEventListener('click', e => { const c = e.target.closest('[data-mb]');
     if (c.dataset.mb === 'woche') { openGoals('tour'); return; }
     if (c.dataset.mb === 'thron') { openGoals('thron'); return; }
     if (c.dataset.mb.startsWith('ev-')) { openGoals(c.dataset.mb.slice(3)); return; }
-    const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: Math.max(mapState.zoom, 0.02) }); setTimeout(() => openIslandPopup(m), 650); });
+    const m = islandById[megaTempleId]; if (!m) return; closeAllPopups(); flyTo(m.x, m.y, { zoom: clampZoom(viewW * .7 / HEILIGTUM_BREITE.megaTemple) }); setTimeout(() => openIslandPopup(m), 650); });
 function midAnzeige(now) {                            // jede Sekunde (auch bei Zuschauern): die Leiste unter dem HUD, das Wochen-Event im Events-Fenster
     renderMidBar();
     if (evOffen() && (goalsTab === 'tour' || goalsTab === 'thron') && now % 5000 < 1000) renderEvents();
