@@ -1516,6 +1516,7 @@ main .besch-ic,.besch-ic{width:22px;height:22px;object-fit:contain} #beschInhalt
 .daily .daily-days{margin-top:0}
 .daily-week{display:grid;gap:4px} .daily-week > div{display:flex;align-items:center;gap:8px;padding:6px 10px;border:1px solid var(--line-1);border-radius:8px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
 .daily-week b{min-width:42px;color:var(--tx-3);font-weight:600} .daily-week span{flex:1} .daily-week .icon{width:14px;height:14px;color:var(--gold-400)}
+.daily-week .daily-bk{flex:1;justify-content:flex-start;--bk:34px;gap:4px} .daily-week .bk{flex:none}
 .daily-week .is-today{border-color:var(--gold-300);color:var(--tx-1)} .daily-week .is-today b{color:var(--gold-100)} .daily-week .is-done{opacity:.55}
 .quests{display:flex;flex-direction:column;gap:8px}
 .quest{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line-1);border-radius:var(--r-sm);background:rgba(0,0,0,.22)}
@@ -1883,6 +1884,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim 
 /* Aufgaben, Abholfach, Events, Pass: kleine Kacheln in der Zeile */
 .quest-rew:has(.bk){padding:0;border:0;background:none;gap:3px} .quest-rew .bk{--bk:38px}
 .inbox-row .bk-raster{margin-top:4px}
+#xpNext{display:flex;align-items:center;gap:8px;flex-wrap:wrap} .xp-next-bk{justify-content:flex-start;--bk:44px}
 .daily-row .bk-raster{justify-content:flex-start;margin-top:4px}
 .kl-rss .bk-raster{--bk:46px;justify-content:flex-start;margin:4px 0 2px} .kl-rss.bk-an > .kl-rss-zeilen{display:none}
 .bk[data-minus]{filter:grayscale(.5) drop-shadow(0 2px 3px rgba(0,0,0,.5))} .bk[data-minus] > b{color:#ff8d82}

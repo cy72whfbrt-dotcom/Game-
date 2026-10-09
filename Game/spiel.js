@@ -5542,8 +5542,7 @@ function renderProfile(live) {                  // live = the per-second refresh
     setText(document.getElementById('xpNums'), fmtNum(playerXp) + ' / ' + fmtNum(xpNeeded) + ' XP');
     document.getElementById('xpFill').style.width = Math.min(100, Math.round(playerXp / xpNeeded * 100)) + '%';
     const nx = playerLvl + 1, nM = levelRewardCoins(nx), nT = levelRewardTroops(nx), nG = levelRewardGems(nx);   // Belohnung beim nächsten Aufstieg
-    liveHtml(document.getElementById('xpNext'), 'Belohnung für Stufe ' + nx + ': <b>+' + fmtCompact(nM) + '</b> ' + (nM === 1 ? 'Münze' : 'Münzen') + ', <b>+' + fmtCompact(nT) + '</b> ' + (nT === 1 ? 'Truppe' : 'Truppen') +
-        (nG ? ', <b>+' + nG + '</b> ' + (nG === 1 ? 'Edelstein' : 'Edelsteine') : ''));
+    liveHtml(document.getElementById('xpNext'), '<span class="xp-next-t">Belohnung für Stufe ' + nx + '</span>' + beuteRaster([{ a: 'coins', n: nM }, { a: 'tr', n: nT }, { a: 'gems', n: nG }], 'xp-next-bk'));   // Bild + Zahl
 
     setText(document.getElementById('kBases'), fmtNum(ownedIslands.size));   // (Truppen, Münzen, Edelsteine stehen oben im HUD)
     const hp = hourProduction('player');                 // alle Basen zusammen (mit Tempeln und Boni), pro Stunde – genau das kommt an

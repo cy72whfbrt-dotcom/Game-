@@ -41,9 +41,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   // 3) Profil: Belohnung der nächsten Stufe verständlich, Einzahl richtig
   const pr = await ev(async () => {
     document.getElementById('profileBtn').click(); await new Promise(f => setTimeout(f, 400)); showProfileTab('info'); await new Promise(f => setTimeout(f, 300));
-    const t = document.getElementById('xpNext').textContent, n = playerLvl + 1; closeAllPopups();
-    return { t, m: levelRewardCoins(n), tr: levelRewardTroops(n), n };
+    const x = document.getElementById('xpNext'), t = x.textContent, n = playerLvl + 1, bk = [...x.querySelectorAll('.bk')].map(k => k.dataset.beute + ':' + (k.querySelector('b') || {}).textContent); closeAllPopups();
+    return { t, bk, m: levelRewardCoins(n), tr: levelRewardTroops(n), n };
   });
-  ok(new RegExp('^Belohnung für Stufe ' + pr.n + ': ').test(pr.t) && !/\b1 Münzen|\b1 Truppen/.test(pr.t.replace(/\+/g, '')) && /Münze/.test(pr.t) && /Truppe/.test(pr.t), 'Profil: „Belohnung für Stufe N: +… Münze(n), +… Truppe(n)“', pr);
+  ok(new RegExp('^Belohnung für Stufe ' + pr.n).test(pr.t) && pr.bk.some(k => k.startsWith('coins:')) && pr.bk.some(k => k.startsWith('tr:')), 'Profil: „Belohnung für Stufe N“ als Bild-Kacheln (Münzen, Truppen) mit Zahl', pr);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();
