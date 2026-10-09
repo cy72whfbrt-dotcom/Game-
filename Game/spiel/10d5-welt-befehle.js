@@ -59,7 +59,7 @@
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             if (pendingAttacks.includes(m)) heroWutZurueck(who, m.hx);   // (nicht gekämpft: die Wut bleibt)
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
-            const home = gehoert(fromId, who) ? fromId : botCapitalOf(who);
+            const home = gehoert(fromId, who) ? fromId : botCapitalOf(who); if (home === null || home === undefined) return;   // (keine Basis mehr: weiterlaufen statt Truppen verlieren)
             pendingSends.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + Math.max(1000, Math.min(now, m.resolveAt) - m.startedAt), senderBotId: who, back: true });
             saveGame(); saveProgression(); requestRender();
         },
@@ -125,7 +125,7 @@
         },
         thronKiste(who, b) {                          // der Herrscher verschenkt eine Kiste (06c herrKiste prüft: Herrscher, noch da, nicht an sich selbst)
             const an = kennungOk(b.wem) ? lokalId(b.wem) : null;
-            herrKiste(who, typeof b.art === 'string' ? b.art : '', an);   // (keine mehr da / kein Herrscher mehr: ein Wettlauf, kein Schummeln)
+            herrKiste(who, typeof b.kiste === 'string' ? b.kiste : '', an);   // (keine mehr da / kein Herrscher mehr: ein Wettlauf, kein Schummeln)
         },
         feld(who, b) {
             const f = (typeof b.feld === 'number' || typeof b.feld === 'string') ? resFields.find(x => x.id === b.feld) : null;

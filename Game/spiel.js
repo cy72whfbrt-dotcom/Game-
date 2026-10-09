@@ -1718,10 +1718,11 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     const target = islandById[targetId];
     const available = islandTroops[sourceId] || 0;
     const rawTroops = (troopsOverride !== undefined && troopsOverride !== null)
-        ? Math.max(0, Math.min(troopsOverride, available))
-        : available;
+        ? Math.max(0, Math.min(Math.floor(Number(troopsOverride)) || 0, Math.floor(available)))   // (ganze Truppen, kaputte Zahl: keine)
+        : Math.floor(available);
     if (!source || !target || rawTroops <= 0) return false;
     if (!attackerBotId && target.id === playerIslandId) return false;
+    if (islandOwnerOf(target.id) === (attackerBotId || 'player')) return false;   // nie die eigene Basis angreifen
     { const ow = islandOwnerOf(target.id); if (bundFreund(attackerBotId || 'player', ow)) { if (!attackerBotId) flashHint((botById[ow] || {}).name + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.', 3500); return false; } }   // Bündnis: gesperrt
     if (!attackerBotId && !islandSeen(target)) { flashHint('Dieses Ziel liegt im Nebel – schick zuerst einen Späher.', 3000); return false; }   // nichts im Nebel angreifen
     if (target.type === 'gate' && passOpensAt(bridgeOfGate(target)) > Date.now()) { if (!attackerBotId) flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(target)) - Date.now()) + '.', 4000); return false; }   // (Pass mit Countdown: nicht angreifbar)
@@ -1729,7 +1730,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     if (thronKuppel(target.id)) { if (!attackerBotId) flashHint(thronKuppelText(), 4000); return false; }   // Kuppel über Thron und Wachtürmen (außer im Thron-Event)
     if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
-    if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
+    if (tOwner && tOwner !== (attackerBotId || 'player') && shieldCovers(target) && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
     // (Hauptstädte kann man angreifen – Alexander 4.10. –, aber nie erobern: siehe resolveAttack / capitalHolds)
     const grp = naechsteGruppe;
     if (!canReach(source.landmassId, target.landmassId, attackerBotId || 'player')) {   // (für alle gleich: Spieler, Mitspieler, Rally, Weltrechner – nur über offene, eigene Pässe)
@@ -1788,25 +1789,26 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
 
 // "Truppen verschicken": same travel time as an attack, but a blue
 // march to one of the player's OWN towers that just merges in.
-function launchSend(fromId, toId, senderBotId, amount) {       // amount: how many go (default: all of them)
+function launchSend(fromId, toId, senderBotId, amount) {       // amount: how many go (default: all of them) → true, wenn sie losgehen
     const source = islandById[fromId];
     const target = islandById[toId];
-    const available = islandTroops[fromId] || 0;
-    const rawTroops = amount > 0 ? Math.min(Math.round(amount), available) : available;
-    if (!source || !target || rawTroops <= 0) return;
+    const available = Math.floor(islandTroops[fromId] || 0);
+    const rawTroops = amount === undefined || amount === null || amount === 0 ? available : Math.max(0, Math.min(Math.floor(Number(amount)) || 0, available));   // (ganze Truppen, kaputte Zahl: keine)
+    if (!source || !target || rawTroops <= 0) return false;
+    if (islandOwnerOf(toId) !== (senderBotId || 'player')) return false;   // nur zur eigenen Basis
     const grp = naechsteGruppe;
     if (!canReach(source.landmassId, target.landmassId, senderBotId || 'player')) {   // (für alle gleich – vorher schickte das Handy los, der Weltrechner lehnte still ab)
-        if (!senderBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return; }
-    if (!marschPlatz(senderBotId || 'player', grp)) return;          // Marsch-Plätze (Paket D)
+        if (!senderBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return false; }
+    if (!marschPlatz(senderBotId || 'player', grp)) return false;          // Marsch-Plätze (Paket D)
     if (!senderBotId && !rechnet()) {                             // Zuschauer: der Weltrechner schickt sie los
-        const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return;
+        const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return false;
         WELT.befehl('senden', { von: fromId, nach: toId, n: rawTroops, grp: grp || undefined });
         islandTroops[fromId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('s', { fromId, toId, troops: rawTroops, startedAt: t0, resolveAt: t0 + travelDurationSeconds(source, target) * 1000, senderBotId: null, grp: grp || undefined }); } questProgress('send', 1); sfx('send'); updateHud();
-        flashHint('Truppen unterwegs: ' + ortName(target) + '.'); return;
+        flashHint('Truppen unterwegs: ' + ortName(target) + '.'); return true;
     }
     const hop = lastHop(source.landmassId, target.landmassId, senderBotId || 'player');
-    if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return;
+    if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return false;
 
     islandTroops[fromId] = available - rawTroops; // troops march out, the rest stays
     const durationSec = travelDurationSeconds(source, target, senderBotId);
@@ -1828,6 +1830,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
         flashHint('Truppen unterwegs: ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
         renderActiveMarches();
     }
+    return true;
 }
 
 // ===== MARCH ORDERS: recall a column on the way, or speed it up with gems =====
@@ -1862,13 +1865,17 @@ function recallMarch(key) {                          // an attack or a send turn
     for (const [list, kind] of [[pendingAttacks, 'attack'], [pendingSends, 'send']]) {
         const m = list.find(x => marchKeyOf(x) === key); if (!m) continue;
         if (m.fightEndsAt) { flashHint('Die Truppen kämpfen schon – zu spät zum Zurückrufen.', 3000); return; }
+        if (m.rally) { flashHint('Eine Rally gehört allen, die mitmachen – sie kann nicht zurückgerufen werden.', 3500); return; }
+        if (m.back) return;                                                    // (geht schon heim)
+        const home0 = ownedIslands.has(m.sourceId ?? m.fromId) ? m.sourceId ?? m.fromId : rewardBaseId();
+        if (home0 === null || home0 === undefined) { flashHint('Du hast keine Basis mehr – die Truppen können nirgends hin zurück.', 3500); return; }   // (sonst wären sie weg)
         const fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
         const src = islandById[fromId], tgt = islandById[toId];
         const frac = Math.max(0, Math.min(1, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
         if (kind === 'attack') heroWutZurueck('player', m.hx);   // (nicht gekämpft: die Wut bleibt)
         list.splice(list.indexOf(m), 1);
         const walked = Math.max(1000, (Math.min(now, m.resolveAt) - m.startedAt));   // (wer vor dem Ziel gewartet hat, läuft nur den Weg zurück)
-        const home = ownedIslands.has(fromId) ? fromId : rewardBaseId();
+        const home = home0;
         pendingRetreats.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + walked, path: home === fromId ? pathSoFar(src, tgt, frac).reverse() : null });
         flashHint(fmtNum(troops) + ' Truppen kehren um – zurück in ' + fmtClock(Math.ceil(walked / 1000)) + '.', 3500);
         saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
@@ -1910,9 +1917,9 @@ let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschl
 function speedUpMarch(key, btn) {                    // halves the time still to go; the column keeps its place on the road
     const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (hin: auch beim Weltrechner, er schreibt den Bericht)
-    if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
+    if (sc) { if (!spaeherSchnell(sc)) return; const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
         if (!gemsWirklich('marsch:' + key, cost, btn)) return;
-        gems -= cost; if (!sc.back) alsBefehl('schneller', { keys: [key] }); const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
+        gems -= cost; alsBefehl('schneller', { keys: [key] }); const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
         flashHint('Späher beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return; }
     for (const list of [pendingAttacks, pendingSends, pendingRetreats, eigeneFeldBarb()]) {
@@ -1930,10 +1937,12 @@ function speedUpMarch(key, btn) {                    // halves the time still to
         feldBarbSpeichern(); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
     }
 }
+// Späher, die der Weltrechner kennt (sc.wr, 02c launchScout) – nur die lassen sich beim Zuschauer beschleunigen (sonst Gems ohne Wirkung)
+const spaeherSchnell = sc => rechnet() || (!sc.back && !!sc.wr);
 // "Alle schneller": halves the time left of every own column on the road at once (same price as one by one)
 function speedableMarches() {
     const now = Date.now();
-    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...pendingScouts, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
+    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...pendingScouts.filter(spaeherSchnell), ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
 function speedUpAll(btn) {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
@@ -1949,8 +1958,9 @@ function speedUpAll(btn) {
     feldBarbSpeichern(); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender();
 }
 function marchButtons(m, canRecall) {
-    const k = marchKeyOf(m);
-    return '<span class="mact">' + (canRecall ? '<button type="button" data-mact="recall" data-k="' + k + '" title="Zurückrufen">' + icon('recall') + 'Zurück</button>' : '') +
+    const k = marchKeyOf(m), r = canRecall ? '<button type="button" data-mact="recall" data-k="' + k + '" title="Zurückrufen">' + icon('recall') + 'Zurück</button>' : '';
+    if (pendingScouts.includes(m) && !spaeherSchnell(m)) return '<span class="mact">' + r + '</span>';   // (Späher ohne Weltrechner: nicht beschleunigbar)
+    return '<span class="mact">' + r +
         (gemsArmed('marsch:' + k) ? '<button type="button" class="is-armed" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">Wirklich? ' + icon('gem') + fmtNum(speedUpCost(m))   // Nachfrage ab 500 Gems übersteht das Neuzeichnen
             : '<button type="button" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">' + icon('hourglass') + 'Schneller · <b>' + speedUpCost(m) + '</b>' + icon('gem')) + '</button></span>';
 }
@@ -1972,7 +1982,8 @@ function resolveSend(send) {
                 pendingSends.push({ fromId: send.toId, toId: home, troops: send.troops, startedAt, resolveAt: startedAt + dur * 1000, senderBotId: sender, back: true });
                 if (typeof bundMelden === 'function') bundMelden(sender, islandTitle(target) + ' ist gefallen, bevor deine Truppen ankamen – ' + fmtNum(send.troops) + ' Truppen kehren nach ' + islandTitle(islandById[home]) + ' zurück.');
             } else islandTroops[home] = (islandTroops[home] || 0) + send.troops;
-        }
+        } else if (sender === 'player') pendingRetreats.push({ fromId: send.toId, toId: send.fromId, troops: send.troops, startedAt: Date.now(), resolveAt: Date.now() + 1000 });   // keine Basis mehr: sie warten unterwegs (resolveRetreat), bis wieder eine da ist
+        else console.warn('Verstärkung ohne Zuhause', sender, send.troops);
         saveGame(); saveProgression(); return;
     }
     islandTroops[send.toId] = (islandTroops[send.toId] || 0) + send.troops;
@@ -2034,8 +2045,8 @@ function launchScout(targetId, explore, at) {
     };
     pendingScouts.push(sc);
     const key = marchKeyOf(sc);                                                  // (Zurück/Schneller finden ihn beim Weltrechner über diese Kennung)
-    if (explore) alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined, key });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
-    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) alsBefehl('spaehen', { ziel: targetId, blick: 1, key });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
+    if (explore) sc.wr = alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined, key });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
+    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) sc.wr = alsBefehl('spaehen', { ziel: targetId, blick: 1, key });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
     questProgress('scout', 1);
     saveGame();
     saveProgression();
@@ -2349,7 +2360,7 @@ function resolveAttack(attack) {
 
 function resolveRetreat(retreat) {
     if (!ownedIslands.has(retreat.toId)) {          // home fell while they walked back: they go to a base that's still ours
-        const home = rewardBaseId(); if (home === null || home === undefined || !islandById[home]) return;
+        const home = rewardBaseId(); if (home === null || home === undefined || !islandById[home]) { retreat.resolveAt = Date.now() + 60000; pendingRetreats.push(retreat); return; }   // keine Basis mehr: sie warten, bis wieder eine da ist (nicht verlieren)
         retreat.toId = home;
     }
     const target = islandById[retreat.toId];
@@ -7245,7 +7256,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 const inboxFach = () => inboxList().filter(x => !(x.bis > Date.now()));   // das Abholfach zeigt Event-Belohnungen (bis) erst nach dem Event-/Tagesende
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
-const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
+const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild && !(x.tr > 0) && !(x.b && x.b.length) && !(x.em > 0) && !(x.s1 > 0) && !(x.s2 > 0) && !x.besch;   // eine Kiste, Truppen, Gegenstände, Event-Münzen/Schlüssel, Beschleuniger: eigener Eintrag (Stapel addiert nur Münzen/Edelsteine/Splitter)
 const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' }, thron: { ic: 'crown', t: 'Thron-Event' }, lager: { ic: 'attack', t: 'Barbaren-Lager' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none), em/s1/s2 (Event-Münzen, Schlüssel), besch (Beschleuniger-Dauer) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
@@ -7268,7 +7279,7 @@ function inboxClaim(id, aus) {                      // into your coffers - retur
     for (const [f, art] of [['em', 'eventMuenzen'], ['s1', 'schluessel1'], ['s2', 'schluessel2']]) if (x[f] > 0) { gibBelohnung(art, x[f]); got.push('+' + fmtNum(x[f]) + ' ' + BEUTE_ART[art].t); aus.push({ a: art, n: x[f] }); }
     if (BESCH_MIN[x.besch]) { gibBelohnung('besch', 1, { dauer: x.besch }); got.push('Beschleuniger ' + beschText(x.besch)); aus.push({ a: 'besch', dauer: x.besch, n: 1 }); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) { got.push(x.sh + ' Splitter ' + h.name); aus.push({ a: 'sh', n: x.sh, held: h.id }); } else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); aus.push({ a: 'gems', n: x.sh * 20 }); } }
-    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); aus.push({ a: 'tr', n: x.tr }); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0, em: 0, s1: 0, s2: 0, besch: undefined })); }   // no base right now: only the troops stay in the inbox
+    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); aus.push({ a: 'tr', n: x.tr }); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0, em: 0, s1: 0, s2: 0, besch: undefined, b: undefined })); }   // no base right now: only the troops stay in the inbox
     inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
 }
 function renderInbox() {
@@ -7728,7 +7739,7 @@ function herrKisteSenden(art, an) {                   // dein Knopf im Herrscher
     if (!an) { flashHint('Wähle zuerst, wer die Kiste bekommt.', 2500); return; }
     if (rechnet()) { if (!herrKiste('player', art, an)) { flashHint('Diese Kiste hast du nicht mehr.', 2500); return; } }
     else { const k = throneState.kisten; if (!(k && k[art] > 0)) { flashHint('Diese Kiste hast du nicht mehr.', 2500); return; }
-        alsBefehl('thronKiste', { art, wem: neutralId(an) }); k[art]--; }                // (Zuschauer: gleich zeigen, der Weltrechner verschickt)
+        alsBefehl('thronKiste', { kiste: art, wem: neutralId(an) }); k[art]--; }                // (Zuschauer: gleich zeigen, der Weltrechner verschickt; „kiste“, weil „art“ die Befehlsart ist)
     flashHint(HERR_KISTEN[art].name + ' an ' + fieldWhoName(an) + ' verschickt.', 3000); sfx('coin'); renderHerr();
 }
 function throneTick() {
@@ -10993,7 +11004,8 @@ function barbMine() { try { return barbMarches.filter(m => m.who === 'player'); 
 const dbossKind = b => DBOSS_KINDS.find(K => K.k === b.k) || DBOSS_KINDS[0];
 const dbossRanks = b => Object.entries(b.dmg || {}).sort((x, y) => y[1] - x[1]);
 function barbSend(who, homeId, k, tid, troops, hero, hero2) {  // troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero may lead them
-    const home = islandById[homeId], t = k === 'b' ? dbossEnsure() : barbCampById(tid); troops = Math.floor(troops); if (!home || !t || troops < 1) return false;
+    const home = islandById[homeId], t = k === 'b' ? dbossEnsure() : barbCampById(tid); troops = Math.min(Math.floor(troops), Math.floor(islandTroops[homeId] || 0)); if (!home || !t || !(troops >= 1)) return false;
+    if (k === 'b' ? barbRec(who).h >= dbossHitsMax() : !barbOpenFor(who, t.L) || barbLeft(who) <= 0) return false;   // (Absicherung: Tagesgrenzen und Freischaltung auch hier, nicht nur im Fenster)
     if (!marschPlatz(who)) return false;                                                      // Marsch-Plätze (Paket D)
     if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2), now = Date.now();
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
@@ -11211,6 +11223,10 @@ function barbAttackHtml(avail, need, src, lbl) {    // share, hero and the butto
         (heroSeg2Html('data-bhero2', barbHero, barbHero2) ? '<div class="seg hero-seg hero-seg2">' + heroSeg2Html('data-bhero2', barbHero, barbHero2) + '</div>' : '') +
         '<button class="btn btn--primary btn--sm" type="button" data-bgo' + (n < 1 ? ' disabled' : '') + '>' + icon('attack') + '<span>' + lbl + ' · ' + fmtCompact(n) + ' von ' + islandTitle(islandById[src]) + '</span></button>';
 }
+function lagerBeuteText(rec, L) {                    // was ein Sieg heute noch bringt (Rest bis zur Tagesgrenze, wie lagerBeute)
+    const m = Math.max(0, Math.min(lagerMuenzen(L), LAGER_GRENZE.m - (rec.m || 0))), k1 = L >= LAGER_S1_AB && (rec.k1 || 0) < LAGER_GRENZE.k1, k2 = L >= LAGER_S2_AB && (rec.k2 || 0) < LAGER_GRENZE.k2;
+    return [fmtCompact(m) + ' Münzen', k1 && k2 ? 'Schlüssel + Epischer Schlüssel' : k1 ? 'Schlüssel' : k2 ? 'Epischer Schlüssel' : ''].filter(Boolean).join(' · ');
+}
 function barbSheetHtml() {
     const v = barbView, rec = barbRec('player'), head = (ic, t) => '<div class="marker-head"><b>' + icon(ic) + ' ' + t + '</b><button class="btn-x" type="button" data-bclose aria-label="Schließen">' + icon('close') + '</button></div>';
     const b = dbossEnsure(), mid = '<b data-bclock>' + fmtDHMS(msToMidnight() / 1000) + '</b>';
@@ -11219,7 +11235,7 @@ function barbSheetHtml() {
         const open = barbOpenFor('player', c.L), left = barbLeft('player'), need = c.t * 1.15 / barbFa('player'), src = barbSource(c, need), rd = RARITY_DEFS[barbTier(c.L)];
         return head('attack', 'Barbaren-Lager <span class="barb-lv" style="--bc:' + rd.color + '">Stufe ' + c.L + '</span>') +
             '<div class="field-lines"><span>Krieger</span><b>' + fmtNum(c.t) + (c.t < c.max ? ' <small>von ' + fmtCompact(c.max) + '</small>' : '') + '</b>' +
-            '<span>Beute</span><b>' + fmtCompact(lagerMuenzen(c.L)) + ' Münzen' + (c.L >= LAGER_S2_AB ? ' · 2 Schlüssel' : c.L >= LAGER_S1_AB ? ' · Schlüssel' : '') + '</b>' +
+            '<span>Beute</span><b>' + lagerBeuteText(rec, c.L) + '</b>' +
             '<span>Tagesgrenze</span><b>' + fmtCompact(rec.m || 0) + ' / ' + fmtCompact(LAGER_GRENZE.m) + '</b>' +
             '<span>Heute</span><b>' + rec.n + ' / ' + barbTagMax() + ' heute</b>' +
             '<span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b></div>' +
@@ -12970,10 +12986,11 @@ function confirmRecall() {
     }
 
     if (!marschPlatz('player')) return;                                       // „Truppen sammeln“: zusammen EINE Aktion
-    gems -= RECALL_GEM_COST;
     naechsteGruppe = 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
-    for (const sourceId of sources) launchSend(sourceId, targetId, null, Math.max(1, Math.floor((islandTroops[sourceId] || 0) * f)));
+    let los = 0; for (const sourceId of sources) if (launchSend(sourceId, targetId, null, Math.max(1, Math.floor((islandTroops[sourceId] || 0) * f)))) los++;
     naechsteGruppe = null;
+    if (!los) return;                                                          // (keiner losgegangen: nichts bezahlen)
+    gems -= RECALL_GEM_COST;
     updateHud();
     saveGame();
     saveProgression();
@@ -14614,7 +14631,7 @@ if (window.WELT) {
             const now = Date.now(), fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
             if (pendingAttacks.includes(m)) heroWutZurueck(who, m.hx);   // (nicht gekämpft: die Wut bleibt)
             (pendingAttacks.includes(m) ? pendingAttacks : pendingSends).splice((pendingAttacks.includes(m) ? pendingAttacks : pendingSends).indexOf(m), 1);
-            const home = gehoert(fromId, who) ? fromId : botCapitalOf(who);
+            const home = gehoert(fromId, who) ? fromId : botCapitalOf(who); if (home === null || home === undefined) return;   // (keine Basis mehr: weiterlaufen statt Truppen verlieren)
             pendingSends.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + Math.max(1000, Math.min(now, m.resolveAt) - m.startedAt), senderBotId: who, back: true });
             saveGame(); saveProgression(); requestRender();
         },
@@ -14680,7 +14697,7 @@ if (window.WELT) {
         },
         thronKiste(who, b) {                          // der Herrscher verschenkt eine Kiste (06c herrKiste prüft: Herrscher, noch da, nicht an sich selbst)
             const an = kennungOk(b.wem) ? lokalId(b.wem) : null;
-            herrKiste(who, typeof b.art === 'string' ? b.art : '', an);   // (keine mehr da / kein Herrscher mehr: ein Wettlauf, kein Schummeln)
+            herrKiste(who, typeof b.kiste === 'string' ? b.kiste : '', an);   // (keine mehr da / kein Herrscher mehr: ein Wettlauf, kein Schummeln)
         },
         feld(who, b) {
             const f = (typeof b.feld === 'number' || typeof b.feld === 'string') ? resFields.find(x => x.id === b.feld) : null;

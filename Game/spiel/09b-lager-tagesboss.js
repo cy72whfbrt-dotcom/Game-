@@ -96,7 +96,8 @@ function barbMine() { try { return barbMarches.filter(m => m.who === 'player'); 
 const dbossKind = b => DBOSS_KINDS.find(K => K.k === b.k) || DBOSS_KINDS[0];
 const dbossRanks = b => Object.entries(b.dmg || {}).sort((x, y) => y[1] - x[1]);
 function barbSend(who, homeId, k, tid, troops, hero, hero2) {  // troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero may lead them
-    const home = islandById[homeId], t = k === 'b' ? dbossEnsure() : barbCampById(tid); troops = Math.floor(troops); if (!home || !t || troops < 1) return false;
+    const home = islandById[homeId], t = k === 'b' ? dbossEnsure() : barbCampById(tid); troops = Math.min(Math.floor(troops), Math.floor(islandTroops[homeId] || 0)); if (!home || !t || !(troops >= 1)) return false;
+    if (k === 'b' ? barbRec(who).h >= dbossHitsMax() : !barbOpenFor(who, t.L) || barbLeft(who) <= 0) return false;   // (Absicherung: Tagesgrenzen und Freischaltung auch hier, nicht nur im Fenster)
     if (!marschPlatz(who)) return false;                                                      // Marsch-Plätze (Paket D)
     if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2), now = Date.now();
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
@@ -314,6 +315,10 @@ function barbAttackHtml(avail, need, src, lbl) {    // share, hero and the butto
         (heroSeg2Html('data-bhero2', barbHero, barbHero2) ? '<div class="seg hero-seg hero-seg2">' + heroSeg2Html('data-bhero2', barbHero, barbHero2) + '</div>' : '') +
         '<button class="btn btn--primary btn--sm" type="button" data-bgo' + (n < 1 ? ' disabled' : '') + '>' + icon('attack') + '<span>' + lbl + ' · ' + fmtCompact(n) + ' von ' + islandTitle(islandById[src]) + '</span></button>';
 }
+function lagerBeuteText(rec, L) {                    // was ein Sieg heute noch bringt (Rest bis zur Tagesgrenze, wie lagerBeute)
+    const m = Math.max(0, Math.min(lagerMuenzen(L), LAGER_GRENZE.m - (rec.m || 0))), k1 = L >= LAGER_S1_AB && (rec.k1 || 0) < LAGER_GRENZE.k1, k2 = L >= LAGER_S2_AB && (rec.k2 || 0) < LAGER_GRENZE.k2;
+    return [fmtCompact(m) + ' Münzen', k1 && k2 ? 'Schlüssel + Epischer Schlüssel' : k1 ? 'Schlüssel' : k2 ? 'Epischer Schlüssel' : ''].filter(Boolean).join(' · ');
+}
 function barbSheetHtml() {
     const v = barbView, rec = barbRec('player'), head = (ic, t) => '<div class="marker-head"><b>' + icon(ic) + ' ' + t + '</b><button class="btn-x" type="button" data-bclose aria-label="Schließen">' + icon('close') + '</button></div>';
     const b = dbossEnsure(), mid = '<b data-bclock>' + fmtDHMS(msToMidnight() / 1000) + '</b>';
@@ -322,7 +327,7 @@ function barbSheetHtml() {
         const open = barbOpenFor('player', c.L), left = barbLeft('player'), need = c.t * 1.15 / barbFa('player'), src = barbSource(c, need), rd = RARITY_DEFS[barbTier(c.L)];
         return head('attack', 'Barbaren-Lager <span class="barb-lv" style="--bc:' + rd.color + '">Stufe ' + c.L + '</span>') +
             '<div class="field-lines"><span>Krieger</span><b>' + fmtNum(c.t) + (c.t < c.max ? ' <small>von ' + fmtCompact(c.max) + '</small>' : '') + '</b>' +
-            '<span>Beute</span><b>' + fmtCompact(lagerMuenzen(c.L)) + ' Münzen' + (c.L >= LAGER_S2_AB ? ' · 2 Schlüssel' : c.L >= LAGER_S1_AB ? ' · Schlüssel' : '') + '</b>' +
+            '<span>Beute</span><b>' + lagerBeuteText(rec, c.L) + '</b>' +
             '<span>Tagesgrenze</span><b>' + fmtCompact(rec.m || 0) + ' / ' + fmtCompact(LAGER_GRENZE.m) + '</b>' +
             '<span>Heute</span><b>' + rec.n + ' / ' + barbTagMax() + ' heute</b>' +
             '<span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b></div>' +

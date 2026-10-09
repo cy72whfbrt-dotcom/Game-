@@ -38,8 +38,8 @@ function launchScout(targetId, explore, at) {
     };
     pendingScouts.push(sc);
     const key = marchKeyOf(sc);                                                  // (Zurück/Schneller finden ihn beim Weltrechner über diese Kennung)
-    if (explore) alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined, key });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
-    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) alsBefehl('spaehen', { ziel: targetId, blick: 1, key });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
+    if (explore) sc.wr = alsBefehl('spaehen', { ziel: targetId, ex: at ? Math.round(at.x) : undefined, ey: at ? Math.round(at.y) : undefined, key });   // 3B: der Weltrechner deckt den Nebel auf dem Server mit auf
+    else if (fremdGeheim() && islandOwnerOf(targetId) && islandOwnerOf(targetId) !== 'player' && !bossAt(targetId)) sc.wr = alsBefehl('spaehen', { ziel: targetId, blick: 1, key });   // fremde Basis: den Bericht schreibt der Weltrechner (nur er kennt die Werte)
     questProgress('scout', 1);
     saveGame();
     saveProgression();
@@ -353,7 +353,7 @@ function resolveAttack(attack) {
 
 function resolveRetreat(retreat) {
     if (!ownedIslands.has(retreat.toId)) {          // home fell while they walked back: they go to a base that's still ours
-        const home = rewardBaseId(); if (home === null || home === undefined || !islandById[home]) return;
+        const home = rewardBaseId(); if (home === null || home === undefined || !islandById[home]) { retreat.resolveAt = Date.now() + 60000; pendingRetreats.push(retreat); return; }   // keine Basis mehr: sie warten, bis wieder eine da ist (nicht verlieren)
         retreat.toId = home;
     }
     const target = islandById[retreat.toId];

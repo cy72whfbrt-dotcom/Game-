@@ -114,3 +114,8 @@ die Marsch-/Kampf-Anzeige. Wichtigste Dateien: `Game/spiel/02b-marsch-losschicke
 - Fremde Märsche nur, wenn sie auf deine Basis zielen; Bündnis-Märsche zu dir (Rally, Hilfe, Verstärkung) und ihre
   Rückwege werden gezeichnet; Kämpfe zwischen anderen unsichtbar. Echte Zahlen des Angreifers erst, wenn er bei dir kämpft.
 - Testdatei nur für die Darstellung: `werkzeuge/marschtest/` (Regeln kommen immer aus dem Spiel, Test `marschtest_test`).
+- Absicherungen (Test `codecheck_test`): kein Angriff auf eigene Basen, `launchSend` nur zur eigenen Basis (gibt true/false),
+  ganze Truppen (kaputte Zahl = keine). „Truppen sammeln“ zahlt nur, wenn mindestens ein Marsch losgeht. Rally/Rückweg nicht
+  zurückrufbar; ohne eigene Basis kein Rückruf, ein Rückweg wartet (Truppen gehen nie verloren). Beim Zuschauer sind nur Späher
+  beschleunigbar, die der Weltrechner kennt (`sc.wr`, kein Rückweg). Abholfach stapelt nur Münzen/Edelsteine/Splitter.
+  Lager-Fenster zeigt den Tages-Rest der Beute; `barbSend` prüft Freischaltung und Tagesgrenzen selbst.

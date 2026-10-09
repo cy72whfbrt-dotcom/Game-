@@ -86,10 +86,11 @@ function confirmRecall() {
     }
 
     if (!marschPlatz('player')) return;                                       // „Truppen sammeln“: zusammen EINE Aktion
-    gems -= RECALL_GEM_COST;
     naechsteGruppe = 'r' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36);
-    for (const sourceId of sources) launchSend(sourceId, targetId, null, Math.max(1, Math.floor((islandTroops[sourceId] || 0) * f)));
+    let los = 0; for (const sourceId of sources) if (launchSend(sourceId, targetId, null, Math.max(1, Math.floor((islandTroops[sourceId] || 0) * f)))) los++;
     naechsteGruppe = null;
+    if (!los) return;                                                          // (keiner losgegangen: nichts bezahlen)
+    gems -= RECALL_GEM_COST;
     updateHud();
     saveGame();
     saveProgression();
