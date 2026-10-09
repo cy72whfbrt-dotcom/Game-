@@ -59,15 +59,61 @@
   .kb-k img { position: absolute; inset: 9% 9% 20%; width: 82%; height: 71%; object-fit: contain; filter: drop-shadow(0 2px 3px rgba(0,0,0,.6)); }
   .kb-k b { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center; font: 800 13px/1 var(--font-ui); color: #fff; text-shadow: 0 1px 2px #000, 0 0 4px #000; }
   .kb-k.minus b { color: #ffb4a8; }
-  .r-grau { --rc: #8a93a3; } .r-gruen { --rc: #5fbf5a; } .r-blau { --rc: #4f8fe0; } .r-lila { --rc: #a66be0; } .r-gold { --rc: #e4b44a; }
+  .r-grau { --rc: #8a93a3; } .r-gruen { --rc: #5fbf5a; } .r-blau { --rc: #4f8fe0; } .r-lila { --rc: #a66be0; } .r-gold { --rc: #e4b44a; } .r-rot { --rc: #ee5046; }
   .kb-schutz { margin-top: 8px; display: flex; gap: 6px; align-items: center; font: 500 11.5px/1.3 var(--font-ui); color: var(--tx-3); }
   .kb-schutz img { width: 22px; height: 22px; }
   .kb-tipp { display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 10px; background: rgba(214,170,90,.1); border: 1px solid rgba(214,170,90,.35); font: 500 12.5px/1.3 var(--font-ui); color: var(--tx-2); }
   .kb-tipp img { width: 34px; height: 34px; flex: none; }
   .kb-knoepfe { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; position: sticky; bottom: 0; padding: 8px 0 2px; background: linear-gradient(transparent, #12161f 30%); }
-  .kb-mehr { text-align: center; font: 600 12px var(--font-ui); color: var(--tx-3); }
-  .kb-mehr span { border-bottom: 1px dashed var(--line-2); }
   @media (min-width: 700px) { .panel--sheet { max-width: 560px; left: 50%; transform: translateX(-50%); } }
+  /* --- Version 2: alles aus dem heutigen Bericht --- */
+  .kb-ort .mini { display: inline-flex; gap: 6px; margin-left: 4px; vertical-align: middle; }
+  .kb-ort .mini button { height: 24px; padding: 0 8px; border-radius: 12px; border: 1px solid var(--line-2); background: rgba(0,0,0,.35); color: var(--gold-100); font: 600 11px var(--font-ui); }
+  .kb-brennt { margin: -4px auto 0; padding: 3px 10px; border-radius: 10px; background: rgba(200,60,40,.2); border: 1px solid rgba(230,110,80,.5); color: #ffb9a6; font: 700 11.5px var(--font-ui); }
+  .kb-kraft .bar { position: relative; height: 16px; border-radius: 8px; overflow: hidden; background: linear-gradient(90deg, #8f2a26, #d0504a); box-shadow: inset 0 0 0 1px rgba(255,255,255,.1); }
+  .kb-kraft .bar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(#7fd47a, #3f9a45); border-right: 2px solid #fff4d6; }
+  .kb-kraft .txt { display: flex; justify-content: space-between; margin-top: 5px; font: 700 12.5px var(--font-ui); color: var(--tx-1); }
+  .kb-kraft .txt small { display: block; font-weight: 500; color: var(--tx-3); font-size: 11px; }
+  .kb-kraft .txt span:last-child { text-align: right; }
+  .kb-tab { width: 100%; border-collapse: collapse; font: 500 12.5px/1.25 var(--font-ui); color: var(--tx-2); }
+  .kb-tab td { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.05); vertical-align: top; }
+  .kb-tab td:last-child { text-align: right; font-weight: 700; color: var(--tx-1); white-space: nowrap; padding-left: 8px; font-variant-numeric: tabular-nums; }
+  .kb-tab small { display: block; color: var(--tx-3); font-size: 10.5px; }
+  .kb-tab .plus td:last-child { color: var(--good, #9fd38a); } .kb-tab .minus td:last-child { color: #ff9c8c; }
+  .kb-tab .sum td { border-top: 1px solid var(--line-2); border-bottom: 0; font-weight: 700; color: var(--tx-1); padding-top: 6px; }
+  .kb-tab .sum.vorn td:last-child { color: #8fe08a; }
+  .kb-sh { display: flex; align-items: center; gap: 6px; margin: 10px 0 4px; font: 700 12px var(--font-display, serif); color: var(--gold-100); }
+  .kb-sh:first-of-type { margin-top: 0; }
+  .kb-sh.feind { color: #f2c6bc; }
+  .kb-sh::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--line-2), transparent); }
+  .kb-held { display: grid; grid-template-columns: 52px 1fr; gap: 4px 10px; padding: 8px; border-radius: 10px; border: 1px solid color-mix(in srgb, var(--rc) 60%, transparent); background: color-mix(in srgb, var(--rc) 8%, rgba(0,0,0,.25)); margin-bottom: 6px; }
+  .kb-held img { width: 52px; height: 52px; border-radius: 10px; border: 1.5px solid var(--rc); object-fit: cover; background: #1b2638; }
+  .kb-held .n { font: 700 13.5px var(--font-display, serif); color: var(--tx-1); }
+  .kb-held .n small { font: 600 11px var(--font-ui); color: var(--rc); margin-left: 4px; }
+  .kb-held .stern { color: #f3c64e; font-size: 12px; letter-spacing: 1px; }
+  .kb-held .s { font: 500 11.5px var(--font-ui); color: var(--tx-3); }
+  .kb-held .s em { color: #ffcf6a; font-style: normal; font-weight: 700; }
+  .kb-held .w { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
+  .kb-held .w span { padding: 2px 7px; border-radius: 9px; background: rgba(255,255,255,.05); border: 1px solid var(--line-1); font: 600 11px var(--font-ui); color: var(--tx-2); }
+  .kb-held .w span b { color: #9fd38a; margin-left: 3px; }
+  .kb-held.leer { --rc: #555c6a; grid-template-columns: 52px 1fr; opacity: .7; }
+  .kb-held.leer .q { width: 52px; height: 52px; border-radius: 10px; border: 1.5px dashed #6a7282; display: grid; place-items: center; font: 700 20px var(--font-ui); color: #6a7282; }
+  .kb-gear { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .kb-gear .kb-k b { font-size: 11.5px; }
+  .kb-gear .kb-k .st { position: absolute; top: 3px; left: 0; right: 0; text-align: center; color: #f3c64e; font-size: 9px; letter-spacing: .5px; text-shadow: 0 1px 2px #000; }
+  .kb-gear .kb-k.leer { --rc: #4a5160; } .kb-gear .kb-k.leer img { opacity: .25; filter: grayscale(1); }
+  .kb-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; margin-top: 8px; font: 500 12px var(--font-ui); color: var(--tx-3); }
+  .kb-meta b { color: var(--tx-1); float: right; }
+  .kb-sp { display: grid; grid-template-columns: 30px 1fr auto; gap: 2px 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.05); font: 500 12px var(--font-ui); color: var(--tx-2); }
+  .kb-sp img { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--gold-300); object-fit: cover; }
+  .kb-sp b { color: var(--tx-1); }
+  .kb-sp small { display: block; color: var(--tx-3); font-size: 10.5px; }
+  .kb-sp .z { text-align: right; font-weight: 700; color: var(--tx-1); }
+  .kb-sp .z small { color: #ff9c8c; }
+  .kb-hin { display: flex; flex-direction: column; gap: 6px; }
+  .kb-hin div { display: flex; gap: 8px; align-items: center; font: 500 12px/1.3 var(--font-ui); color: var(--tx-2); }
+  .kb-hin img { width: 26px; height: 26px; flex: none; }
+  .kb-zahl .ret span::before { background: #4f8fe0; }
 </style>
 </head>
 <body>
@@ -82,47 +128,7 @@
   <div class="pbody"><div class="kb" id="kb"></div></div>
 </section>
 <script src="symbole.js"></script>
-<script>
-const B = '../../Game/bilder/', f = n => n.toLocaleString('de-DE');
-const BSP = {
-  sieg: { sieg: 1, zeit: 'Heute 14:32 · Angriff', ort: 'Burg von <b>Graf Ulrich</b> · X 412 Y 238',
-    a: { name: 'Du (Alexander)', sub: 'Stufe 24 · Held Ragna', held: 'ragna', macht: 1840000, start: 85000, tot: 3120, vw: 9480 },
-    v: { name: 'Graf Ulrich', sub: 'Stufe 21 · Held Otto', held: 'otto', macht: 1310000, start: 72000, tot: 18400, vw: 30150 },
-    beute: [['muenzen', 412000, 'gold'], ['holz', 96500, 'blau'], ['stein', 88200, 'blau'], ['eisen', 41750, 'lila'], ['punkte', 2400, 'gruen'], ['splitter', 15, 'lila'], ['schluessel', 1, 'gold']],
-    knopf: ['Nochmal angreifen', 'btn--danger btn--gefahr', 'i-attack'] },
-  niederlage: { sieg: 0, zeit: 'Heute 09:05 · Verteidigung', ort: 'Deine Burg · X 120 Y 377',
-    a: { name: 'Herzogin Mara', sub: 'Stufe 27 · Held Sigrun', held: 'sigrun', macht: 2650000, start: 120000, tot: 6900, vw: 14100, feind: 1 },
-    v: { name: 'Du (Alexander)', sub: 'Stufe 24 · Held Bernhard', held: 'bernhard', macht: 1720000, start: 64000, tot: 21800, vw: 33900 },
-    beute: [['muenzen', -186000, 'gold'], ['holz', -42300, 'blau'], ['stein', -39800, 'blau'], ['eisen', -18600, 'lila']],
-    schutz: 'Burg hat 250.000 Münzen und 1.000.000 je Rohstoff geschützt',
-    tipp: 'Gegner war 54 % stärker. Verwundete im Lazarett heilen und einen Schild setzen.',
-    knopf: ['Verwundete heilen', 'btn--primary btn--haupt', 'i-upgrade'] }
-};
-const a = new URLSearchParams(location.search).get('a') || 'sieg', d = BSP[a] || BSP.sieg;
-document.querySelectorAll('#wahl a').forEach(x => x.classList.toggle('on', x.href.endsWith(a)));
-document.getElementById('kbZeit').textContent = d.zeit;
-const seite = (s, feind) => `<div class="kb-seite${feind ? ' feind' : ''}">
-  <div class="kb-kopf"><img class="h" src="${B}held_${s.held}_kopf.webp" alt=""><img class="w" src="${B}ui_wappen.webp" alt=""></div>
-  <div class="kb-name">${s.name}</div><div class="kb-sub">${s.sub}</div>
-  <div class="kb-macht"><svg><use href="#i-attack"/></svg>${f(s.macht)}</div></div>`;
-const balken = (s, t) => { const ue = s.start - s.tot - s.vw, p = x => (100 * x / s.start).toFixed(1) + '%';
-  return `<div><div class="kb-bar"><i class="ue" style="width:${p(ue)}"></i><i class="vw" style="width:${p(s.vw)}"></i><i class="tot" style="width:${p(s.tot)}"></i></div>
-  <div class="kb-zahl"><div class="start"><span style="--c:transparent">${t}</span><b>${f(s.start)}</b></div>
-  <span style="--c:#5fbf5a">Übrig</span><b>${f(ue)}</b><span style="--c:#e0a83a">Verwundet</span><b>${f(s.vw)}</b><span style="--c:#d0504a">Gefallen</span><b>${f(s.tot)}</b></div></div>`; };
-const kurz = z => z >= 1e6 ? (z / 1e6).toFixed(1).replace('.', ',') + ' Mio' : z >= 1e4 ? Math.round(z / 1000) + 'k' : f(z);
-const k = ([n, z, r]) => `<div class="kb-k r-${r}${z < 0 ? ' minus' : ''}"><img src="${B}beute_${n}.webp" alt=""><b>${z < 0 ? '−' : '+'}${kurz(Math.abs(z))}</b></div>`;
-document.getElementById('kb').className = 'kb ' + (d.sieg ? 'sieg' : 'niederlage');
-document.getElementById('kb').innerHTML =
-  `<div class="kb-band" style="--glow:${d.sieg ? 'rgba(240,190,80,.45)' : 'rgba(200,50,40,.45)'}"><img src="${B}marsch_band_${d.sieg ? 'sieg' : 'niederlage'}.webp" alt=""><b>${d.sieg ? 'SIEG' : 'NIEDERLAGE'}</b></div>
-  <div class="kb-ort">${d.ort}</div>
-  <div class="kb-seiten">${seite(d.a, d.a.feind)}<div class="kb-vs">VS</div>${seite(d.v, !d.a.feind)}</div>
-  <div class="kb-box"><div class="kb-h">Truppen<small>Angreifer · Verteidiger</small></div><div class="kb-reihe">${balken(d.a, 'Start')}${balken(d.v, 'Start')}</div></div>
-  <div class="kb-box"><div class="kb-h">${d.sieg ? 'Beute' : 'Geraubt'}<small>${d.sieg ? 'kommt mit dem Marsch heim' : 'vom Gegner mitgenommen'}</small></div>
-    <div class="kb-beute">${d.beute.map(k).join('')}</div>${d.schutz ? `<div class="kb-schutz"><img src="${B}ui_fo_burgschutz.webp" alt="">${d.schutz}</div>` : ''}</div>
-  ${d.tipp ? `<div class="kb-tipp"><img src="${B}ui_sym_verwundete.webp" alt="">${d.tipp}</div>` : ''}
-  <div class="kb-mehr"><span>Details: Helden, Boni, Ausrüstung ▾</span></div>
-  <div class="kb-knoepfe"><button class="btn btn--secondary btn--haupt" type="button">Teilen</button>
-    <button class="btn ${d.knopf[1]}" type="button"><svg class="icon"><use href="#${d.knopf[2]}"/></svg>${d.knopf[0]}</button></div>`;
-</script>
+<script src="kampfbericht_daten.js"></script>
+
 </body>
 </html>
