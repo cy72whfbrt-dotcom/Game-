@@ -43,7 +43,8 @@ Login, Datenlecks, Server-Filter und was der Weltrechner gegen gefälschte Handy
   Truppen als da sind, Marsch-Plätze, geschenkte Truppen nur aus echten Quellen (Stufe, Thron-Shop, Krankenhaus, Fund,
   Admin, Händler, Pass, Aufgabe).
 - Keine Angriffe auf sich selbst (Gratis-EP), Tagesgrenzen beim Weltrechner, Bauherr-Rabatt nur mit Server-Zeit, Heilen
-  kostet Münzen, Stufen-Belohnung ab der Weltrechner-Stufe, Beschleunigen/Teleport/Fähigkeiten-Reset kosten im Hauptbuch.
+  kostet Münzen, Stufen-Belohnung ab der Weltrechner-Stufe, Beschleunigen/Teleport/Fähigkeiten-Reset kosten im Hauptbuch. Event-Shop: Wochen-Limit je Ware und zusammen (Woche ab Mo 0 Uhr Berlin, Server-Zeit) prüft das
+  Hauptbuch (`hbEvShop`, Profil `evs`) – darüber wird nicht bezahlt und gemeldet.
 - Rally-Warnung/Einladung/Beitritts-Anfrage/Bündnis-Einladung an dieselbe Person höchstens alle 10 Min.
 - Abgelehntes erscheint als „Auffälligkeit“ auf der Admin-Seite (`weltrechner/schummel.php`, höchstens 20 je Spieler).
 - Bewusst offen: das Handy rechnet weiter selbst (Weltrechner prüft Plausibilität); mehrere Gebäude gleichzeitig auf einem

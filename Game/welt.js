@@ -231,6 +231,7 @@
             saison: parseInt(d.openWaterSaisonMein, 10) || 1,   // Welt-Saison dieses Spielstands (ein Profil von vor dem Reset zählt nicht)
             stats: P(d.openWaterStats) || {}, earned: thr.earned || 0, coins: parseFloat(d.openWaterCoins) || 0, gems: parseFloat(d.openWaterGems) || 0,   // (Gems sieht nur der Weltrechner – 3B: Hauptbuch)
             gg: gegenstProfil(P(d.openWaterGegenst)),   // Event-Münzen, Schlüssel, Beschleuniger (Minuten) – Hauptbuch hbGegenst
+            evs: P(d.openWaterEvShop),                 // Event-Shop: diese Woche gekauft { w, n: { Ware: Anzahl } } – Hauptbuch hbEvShop
             crest: P(d.openWaterCrest)
         };
     }

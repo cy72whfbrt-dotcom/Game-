@@ -8661,7 +8661,7 @@ function renderKistenReiter() {
         gemKnopf('data-s-kauf="' + s + '"', 'schl:' + s, SCHLUESSEL_PREIS[s][0]));
     liveHtml(document.getElementById('shopKisten'), shopGruppe('Ausrüstung', [ware('aus'), ware('ausE')]) + shopGruppe('Helden', [ware('held'), ware('heldE')]) + shopGruppe('Schlüssel', [sw(1), sw(2)]));
 }
-// ===== EVENT-SHOP: nur mit Event-Münzen, je Woche ein Limit (füllt Montag 0 Uhr auf). Preise ≈ 2× Edelstein-Preis (05e BESCH_PREIS/SCHLUESSEL_PREIS)
+// ===== EVENT-SHOP: nur mit Event-Münzen, je Woche ein Limit (füllt Montag 0 Uhr Berlin auf, Hauptbuch prüft es). Preise ≈ 2× Edelstein-Preis (05e BESCH_PREIS/SCHLUESSEL_PREIS)
 const EV_WAREN = [
     { id: 'schild8', g: 'Friedensschild', bild: 'beute_schild', r: 'blau', name: 'Friedensschild', zeit: '8 Std', em: 600, lim: 2 },
     { id: 'schild24', g: 'Friedensschild', bild: 'beute_schild', r: 'lila', name: 'Friedensschild', zeit: '24 Std', em: 1400, lim: 1 },
@@ -8670,18 +8670,26 @@ const EV_WAREN = [
     { id: 's1', g: 'Schlüssel', bild: 'beute_schluessel', r: 'blau', name: 'Schlüssel', em: SCHLUESSEL_PREIS[1][1], lim: SCHLUESSEL_PREIS[1][2] },
     { id: 's2', g: 'Schlüssel', bild: 'beute_schluessel_episch', r: 'lila', name: 'Epischer Schlüssel', em: SCHLUESSEL_PREIS[2][1], lim: SCHLUESSEL_PREIS[2][2] }
 ];
-function evWocheAb(t) { const d = new Date(t); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return d.getTime(); }   // Montag 0 Uhr dieser Woche
+// Woche ab Montag 0 Uhr Berlin (Server-Zeit, wie das Hauptbuch 10d3): Schlüssel = dieser Montag als UTC-Tag (gleich für alle Zeitzonen)
+const EV_BERLIN = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Berlin', hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', weekday: 'short' });
+function evBerlin(t) { const p = {}; for (const x of EV_BERLIN.formatToParts(new Date(t))) p[x.type] = x.value; return p; }
+function evWocheAb(t) { const p = evBerlin(t); return Date.UTC(+p.year, +p.month - 1, +p.day - ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(p.weekday)); }
+function evWocheEnde(t) {                         // nächster Montag 0 Uhr Berlin als echte Zeit (Winter-/Sommerzeit beachtet)
+    const K = evWocheAb(t) + 7 * 864e5, v = K - 72e5, p = evBerlin(v);
+    return K - (Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute) - Math.floor(v / 6e4) * 6e4);
+}
+const EV_EM_WOCHE = () => EV_WAREN.reduce((a, o) => a + o.em * o.lim, 0);   // so viele Event-Münzen gehen höchstens je Woche (Hauptbuch)
 function evGekauft() {
     let v = null; try { v = JSON.parse(store.get('openWaterEvShop')); } catch (e) {}
     const w = evWocheAb(serverJetzt()); return v && v.w === w && v.n && typeof v.n === 'object' ? v : { w, n: {} };
 }
 function renderEventReiter() {
-    const gk = evGekauft(), bis = new Date(gk.w); bis.setDate(bis.getDate() + 7);
+    const gk = evGekauft(), bis = evWocheEnde(serverJetzt());
     const ware = o => { const n = gk.n[o.id] || 0, voll = n >= o.lim;
         return shopWare(o.bild, o.r, o.name, voll ? 'ausverkauft' : 'Woche ' + n + '/' + o.lim, emKnopf('data-ev-kauf="' + o.id + '"', o.em, voll), o.zeit, voll); };
     const gr = []; for (const o of EV_WAREN) { let x = gr.find(g => g[0] === o.g); if (!x) gr.push(x = [o.g, []]); x[1].push(ware(o)); }
     liveHtml(document.getElementById('shopEvent'), '<div class="ev-guthaben"><img src="bilder/beute_eventmuenze.webp" alt=""><span><b>' + fmtNum(eventMuenzen) + '</b><br><small style="margin:0;text-align:left">Event-Münzen</small></span>' +
-        '<small>' + icon('hourglass') + ' füllt auf in<br><b>' + uhrHtml(bis.getTime()) + '</b> (Mo)</small></div>' + gr.map(g => shopGruppe(g[0], g[1])).join(''));
+        '<small>' + icon('hourglass') + ' füllt auf in<br><b>' + uhrHtml(bis) + '</b> (Mo)</small></div>' + gr.map(g => shopGruppe(g[0], g[1])).join(''));
 }
 function evKaufen(id) {
     const o = EV_WAREN.find(x => x.id === id); if (!o) return;
@@ -14157,7 +14165,7 @@ if (window.WELT) {
             const d = nn(q[k]) - nn(gg[k]); if (!(d < 0)) continue; const n = -d; gg[k] = nn(q[k]);
             if (k === 's1') { f.k = nn(f.k) + n; f.sh = nn(f.sh) + n * heldSh('hc1'); }
             else if (k === 's2') { f.k = nn(f.k) + n; f.kg = nn(f.kg) + n * kWert(3); f.sh = nn(f.sh) + n * heldSh('hcE'); }
-            else if (k === 'em') hb.gA = nn(hb.gA) + n / 2;
+            else if (k === 'em') hb.gA = nn(hb.gA) + hbEvShop(who, hb, p, n, now) / 2;
             else hb.bMin = nn(hb.bMin) + n;
         }
         for (const k in HB_GG) {
@@ -14167,6 +14175,19 @@ if (window.WELT) {
             if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d); }
             else { gg[k] = nn(q[k]); hbGut(hb, 'gg:' + k); }
         }
+    }
+    // Event-Shop (Alexander 9.10.): je Woche (ab Montag 0 Uhr Berlin, Server-Zeit) höchstens das Limit je Ware (Profil evs) und
+    // zusammen höchstens EV_EM_WOCHE Event-Münzen. Mehr wird nicht bezahlt (→ die Waren zählen nicht) und gemeldet.
+    // → wie viele der n ausgegebenen Event-Münzen zählen
+    function hbEvShop(who, hb, p, n, now) {
+        const w = evWocheAb(now); let e = hb.evw; if (!e || e.w !== w) e = hb.evw = { w, em: 0 };
+        const frei = Math.max(0, EV_EM_WOCHE() - e.em), gilt = Math.min(n, frei); e.em += n;
+        const q = p && p.evs, zuviel = [];
+        if (q && typeof q === 'object' && q.n && typeof q.n === 'object' && evWocheAb(nn(q.w) || now) === w)
+            for (const o of EV_WAREN) if (nn(q.n[o.id]) > o.lim) zuviel.push(o.name + (o.zeit ? ' ' + o.zeit : '') + ' ' + fz(nn(q.n[o.id])) + '/' + o.lim);
+        if (e.em > EV_EM_WOCHE()) zuviel.push(fz(e.em) + ' Event-Münzen ausgegeben, höchstens ' + fz(EV_EM_WOCHE()));
+        if (zuviel.length) hbWarte(who, hb, 'evshop', now, 'Event-Shop über dem Wochen-Limit: ' + zuviel.join(', ') + '.', n - gilt); else hbGut(hb, 'evshop');
+        return gilt;
     }
     // abgelehnt: erst nach 2 Min. (immer noch im Profil) eine Auffälligkeit – einmal
     function hbWarte(who, hb, key, now, text, wert) {

@@ -50,6 +50,19 @@ pruefe('Flicken auf fehlenden Eintrag wird erkannt', flickenAnwenden({ a: 1 }, {
     hb = hbLeer(); hb.hs.a = [1, 12, 0, 0, 0, 0, 0]; hb.shB = 95;
     pruefe('Hauptbuch: Helden nicht voll → keine Gems aus Splittern', H.hbSplitterGems(hb, { hs: { a: { own: true, q: 12 } } }, 100) === 0);
     pruefe('Hauptbuch: … außer sein Profil zeigt sie gerade voll', H.hbSplitterGems(hb, { hs: { a: { own: true, q: 20 } } }, 100) === 100);
+    // Event-Shop (9.10.): Woche ab Montag 0 Uhr Berlin; mehr als das Limit je Ware oder zusammen → nicht bezahlt + gemeldet
+    {
+        const s6g = fs.readFileSync(path.join(G, 'spiel', '06g-shop-gegenstaende.js'), 'utf8'), wo = s6g.slice(s6g.indexOf('const EV_BERLIN'), s6g.indexOf('const EV_EM_WOCHE'));
+        const WA = [{ id: 'tele', name: 'Teleporter', em: 1000, lim: 1 }, { id: 's1', name: 'Schlüssel', em: 200, lim: 10 }], gemeldet = [];
+        const E = new Function('nn', 'fz', 'EV_WAREN', 'EV_EM_WOCHE', 'hbWarte', 'hbGut', wo + stueck('    function hbEvShop', '    // abgelehnt') + '; return { hbEvShop, evWocheAb, evWocheEnde };')(
+            nn, String, WA, () => 3000, (w, hb, k, now, t) => gemeldet.push(t), (hb, k) => gemeldet.push('gut'));
+        const mo = Date.UTC(2026, 9, 11, 22, 30), so = Date.UTC(2026, 9, 11, 21, 30);   // Mo 12.10. 0:30 Berlin (Sommerzeit) / So 23:30 Berlin
+        pruefe('Event-Shop: Woche wechselt Montag 0 Uhr Berlin', E.evWocheAb(mo) === Date.UTC(2026, 9, 12) && E.evWocheAb(so) === Date.UTC(2026, 9, 5) && E.evWocheEnde(so) === Date.UTC(2026, 9, 11, 22));
+        const hb = {};
+        pruefe('Event-Shop: im Limit wird alles bezahlt', E.hbEvShop('u1', hb, { evs: { w: E.evWocheAb(mo), n: { tele: 1, s1: 5 } } }, 2000, mo) === 2000 && gemeldet.pop() === 'gut');
+        pruefe('Event-Shop: über dem Limit (Ware + Woche) nur der Rest bezahlt und gemeldet', E.hbEvShop('u1', hb, { evs: { w: E.evWocheAb(mo), n: { tele: 2, s1: 5 } } }, 2000, mo) === 1000 && /Teleporter 2\/1.*4000 Event-Münzen/.test(gemeldet.pop()));
+        pruefe('Event-Shop: neue Woche → wieder frei', E.hbEvShop('u1', hb, { evs: { w: E.evWocheAb(mo + 7 * 864e5), n: { tele: 1 } } }, 1000, mo + 7 * 864e5) === 1000 && gemeldet.pop() === 'gut');
+    }
     // Münz-Spielraum (Wirtschaft 5.10.): der feste Tages-Rest und die Mindest-Stunde × WIRTSCHAFT_KOSTEN (vorher 50.000 + 3 × 5.000),
     // Münzen seit 6.10. dazu × MUENZ_FAKTOR (wirtM); Truppen wirtK
     const WK = 1 / 1800, wirtK = n => Math.max(1, Math.round(n * WK)), wirtM = n => Math.max(1, Math.round(n * WK * 1000));
