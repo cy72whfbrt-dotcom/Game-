@@ -4,6 +4,7 @@
 const G = require('./gemeinsam');
 const { sql, warte, bis, ok, ende } = G;
 let UID = 0, AID = null;
+const nn0 = v => +v || 0;
 const hb = () => { const z = JSON.parse(sql(`SELECT zustand FROM ow_bots WHERE spieler_id=0 AND bot_id='u${UID}'`) || '{}'); return z.hb || {}; };
 const geschenke = () => { const v = JSON.parse(sql("SELECT wert FROM ow_spielstand WHERE spieler_id=0 AND schluessel='openWaterBuendnisse'") || '{}'); const a = v.b && v.b[AID]; return a && a.gesch && a.gesch.k ? (a.gesch.k['u' + UID] || 0) : 0; };
 const imBund = () => { const v = JSON.parse(sql("SELECT wert FROM ow_spielstand WHERE spieler_id=0 AND schluessel='openWaterBuendnisse'") || '{}'); const a = v.b && v.b[AID]; return !!a && (a.mit || []).includes('u' + UID); };
@@ -47,6 +48,7 @@ let b;
   }
   await bis(() => p.evaluate(() => { const a = bundVon('player'); return !!a && a.mit.length >= 2; }), 90000);
   ok('im Bündnis mit anderen', !!AID && await p.evaluate(() => { const a = bundVon('player'); return !!a && a.mit.length >= 2; }), AID);
+  if (!AID) { ok('ohne Bündnis kein weiterer Test', false, 'abgebrochen'); ende(); await b.close(); return; }
   // Weltrechner kennt die Gems (Profil nach dem Geschenk), Bündnis und Hauptbuch stehen in der Welt
   await verarbeitet(tGeschenk, 3);
   await bis(() => imBund() && hb().gU !== undefined, RUNDE);
@@ -67,14 +69,16 @@ let b;
   ok('Schild/anderer Kauf + gefälschte Befehle: KEIN Geschenk', geschenke() === g0, g0 + ' → ' + geschenke());
   ok('… sie warten nur (verfallen nach 10 Min.)', (hb().kisteOffen || []).length === 2, JSON.stringify((hb().kisteOffen || []).map(k => k.g)));
   // 3) zwei echte Käufe gleichzeitig (Epische Helden-Kiste 500) → genau zwei Geschenke (die gefälschten verbrauchen keinen Beleg doppelt)
-  const g1 = geschenke();
+  const g1 = geschenke(), h1 = hb();
   await p.evaluate(() => { const c = HERO_CHESTS.find(x => x.id === 'hcE'); for (let i = 0; i < 2; i++) { gems -= c.gems; heroChestOpen('player', c); } updateHud(); saveGame(); });
   const tEcht = Date.now();
   await verarbeitet(tEcht, 3);
+  const shB1 = nn0(h1.shB);
+  await bis(() => nn0(hb().shB) > shB1, RUNDE + 90000);   // erst Splitter im Hauptbuch (Beleg), dann aufs Geschenk warten
   await bis(() => geschenke() - g1 >= 2, RUNDE + 90000);   // (Weltrechner unter Last: bis zu 90 s länger warten – nicht mehr als 2 erlaubt, siehe unten)
   await G.pulse(5, 60000);   // (ein drittes käme gleich danach – auch das sehen)
   const g2 = geschenke(), h2 = hb();
-  ok('zwei echte Kisten → zwei Geschenke', g2 - g1 === 2, g1 + ' → ' + g2 + ' · offen ' + (h2.kisteOffen || []).length + ' · Belege ' + JSON.stringify(h2.shKauf));
+  ok('zwei echte Kisten → zwei Geschenke', g2 - g1 === 2, g1 + ' → ' + g2 + ' · offen ' + (h2.kisteOffen || []).length + ' · Belege ' + JSON.stringify(h2.shKauf) + ' · Splitter shB ' + shB1 + ' → ' + nn0(h2.shB) + ' · Gems ausgegeben gA ' + nn0(h1.gA) + ' → ' + nn0(h2.gA));
   ok('keine Gem-Alarme bei echten Käufen', auff('gems') === alarm0, alarm0 + ' → ' + auff('gems'));
   // 4) Neuladen + derselbe Befehl nochmal (verlorene Antwort) → nicht doppelt
   const cidAlt = await p.evaluate(() => { const c = HERO_CHESTS.find(x => x.id === 'hcE'); gems -= c.gems; heroChestOpen('player', c); updateHud(); saveGame(); return WELT.ausgang.length ? WELT.ausgang[WELT.ausgang.length - 1].cid : null; });

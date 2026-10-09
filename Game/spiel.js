@@ -13823,6 +13823,11 @@ if (window.WELT) {
         if (pw < lo) { k.vor = (now - k.vorT < WACHE_WARTEN_MS ? k.vor : 0) + (lo - pw); k.vorT = now; k.u = pw + flugPlus; }
         return 0;                                       // dazwischen: unklar, wie viel unterwegs schon drin ist – das Konto bleibt
     }
+    // Ausgegebene Gems für den Kisten-Beleg sammeln (unter Last kommen sie in mehreren Profilen), verfallen nach KISTE_FRIST
+    function gAusMerken(m, now) {
+        if (m.g.vor > 0) { m.gAus = (now - nn(m.gAusT) < KISTE_FRIST ? nn(m.gAus) : 0) + m.g.vor; m.gAusT = now; }
+        else if (now - nn(m.gAusT) >= KISTE_FRIST) m.gAus = 0;
+    }
     // Rohstoffe (Paket D, 3B): ein Konto je Rohstoff wie bei den Münzen = was der Weltrechner ihm geschickt hat. Mehr im Profil
     // (Markt-Kauf) geht nur im Spielraum pro Stunde (ROH_RAUM + ¼ Stunde seiner Einnahmen + Markt-Tageslimit), der Rest
     // ist auffällig und zählt nicht. Was sein Profil weniger zeigt, hat er ausgegeben (Topf hb.rA – bezahlt Burg, Gebäude,
@@ -13927,7 +13932,7 @@ if (window.WELT) {
             if (hb && p.gems != null) {                // (ein Profil ohne Gems – altes Handy – zählt hier nicht)
                 hbFreiDazu(who, hb, now);
                 const pg = nn(p.gems); let mg = kontoProfil(m.g, pg, P.g || 0, M.g || 0, now);
-                m.gAus = m.g.vor > 0 ? m.g.vor : 0;   // (Gems, die er in DIESEM Profil ausgegeben hat – Beleg für eine Heldenkiste)
+                gAusMerken(m, now); hbBelegGems(who, hb, m, now);   // (ausgegebene Gems – Beleg für eine Heldenkiste)
                 if (m.g.vor > 0) { hb.gA = nn(hb.gA) + m.g.vor; m.g.vor = 0; }
                 if (p.stW != null) hbSterne(who, hb, m, nn(p.stW));   // Sterne gekauft/verkauft (vor dem Prüfen der Gems: eine Rückgabe ist dann schon gedeckt)
                 if (mg > 0) {
@@ -14345,6 +14350,17 @@ if (window.WELT) {
         hbHeldenPruefen(who, hb, m, p, now);
         hbSchildPruefen(who, hb, m, p, now, schildAlt);
     }
+    // Beleg für eine Heldenkiste: neue Splitter + die dazu ausgegebenen Gems. Ohne Gems (noch nicht im Profil) wartet der Beleg
+    // (warte), hbBelegGems trägt sie nach (auch in Teilen) – Gems und Splitter zählen je nur einmal.
+    function hbBelegNeu(who, hb, m, sh, g, now) {
+        const L = (hb.shKauf || []).filter(x => now - x.t < KISTE_FRIST), gd = nn(m.gAus);
+        L.push(gd > 1e-6 ? { sh, gd, g, t: now } : { sh, gd: 0, g, t: now, warte: 1 }); m.gAus = 0; hb.shKauf = L.slice(-20); hbKisteFrei(who, hb, now);
+    }
+    function hbBelegGems(who, hb, m, now) {
+        if (!(nn(m.gAus) > 1e-6)) return;
+        const x = (hb.shKauf || []).filter(y => y.warte && now - y.t < KISTE_FRIST).pop(); if (!x) return;
+        x.gd = nn(x.gd) + nn(m.gAus); m.gAus = 0; hbKisteFrei(who, hb, now);
+    }
     // Helden: Splitter-Wert aller Helden höchstens so viel, wie er an Splittern bekommen haben kann (sicher + Spielraum + Heldenkisten)
     function hbHeldenPruefen(who, hb, m, p, now) {
         if (!p.hs || typeof p.hs !== 'object') return;
@@ -14362,7 +14378,7 @@ if (window.WELT) {
         let bedarf = wert(neu) - nn(hb.shB); const shVor = nn(hb.shB); let gBez = 0;
         if (bedarf > 0) { const aus = Math.min(bedarf, nn(hb.fr.sh)); hb.fr.sh = nn(hb.fr.sh) - aus; hb.shB = nn(hb.shB) + aus; bedarf -= aus;
             if (bedarf > 0 && hbZahlen(who, hb, m, { g: Math.ceil(bedarf * HB_SH_GEMS) })) { hb.shB += bedarf; gBez = Math.ceil(bedarf * HB_SH_GEMS); } }
-        if (hb.shB > shVor) { const L = (hb.shKauf || []).filter(x => now - x.t < KISTE_FRIST); L.push({ sh: hb.shB - shVor, gd: nn(m.gAus), g: gBez, t: now }); m.gAus = 0; hb.shKauf = L.slice(-20); hbKisteFrei(who, hb, now); }   // Splitter + Gems aus DEMSELBEN Profil: Beleg für eine Heldenkiste
+        if (hb.shB > shVor) hbBelegNeu(who, hb, m, hb.shB - shVor, gBez, now);
         if (wert(neu) <= nn(hb.shB) + 1e-6) { hbHeldPunkte(who, hb.hs, neu); hb.hs = Object.assign({}, hb.hs, neu); hbGut(hb, 'helden'); return; }
         let jetzt = Object.assign({}, hb.hs);          // sonst Held für Held, die billigsten Änderungen zuerst
         const zu = [];
@@ -14869,7 +14885,7 @@ if (window.WELT) {
             if (fehlt > 0 && !hbZahlen(who, hb, wacheSehen(who), { g: fehlt })) { bleibt.push(k); continue; }
             x.sh -= k.sh; x.gd = nn(x.gd) - k.g; x.g = nn(x.g) - gSchon; n++;
         }
-        hb.kisteOffen = bleibt; hb.shKauf = B.filter(y => y.sh > 1e-6 && nn(y.gd) > 1e-6);
+        hb.kisteOffen = bleibt; hb.shKauf = B.filter(y => y.sh > 1e-6 && (y.warte || nn(y.gd) > 1e-6));
         for (let i = 0; i < n; i++) if (typeof bundGeschenk === 'function') bundGeschenk(who, 'kiste');
     }
     WELT.kisteGekauft = function (who, c) {

@@ -155,6 +155,11 @@
         if (pw < lo) { k.vor = (now - k.vorT < WACHE_WARTEN_MS ? k.vor : 0) + (lo - pw); k.vorT = now; k.u = pw + flugPlus; }
         return 0;                                       // dazwischen: unklar, wie viel unterwegs schon drin ist – das Konto bleibt
     }
+    // Ausgegebene Gems für den Kisten-Beleg sammeln (unter Last kommen sie in mehreren Profilen), verfallen nach KISTE_FRIST
+    function gAusMerken(m, now) {
+        if (m.g.vor > 0) { m.gAus = (now - nn(m.gAusT) < KISTE_FRIST ? nn(m.gAus) : 0) + m.g.vor; m.gAusT = now; }
+        else if (now - nn(m.gAusT) >= KISTE_FRIST) m.gAus = 0;
+    }
     // Rohstoffe (Paket D, 3B): ein Konto je Rohstoff wie bei den Münzen = was der Weltrechner ihm geschickt hat. Mehr im Profil
     // (Markt-Kauf) geht nur im Spielraum pro Stunde (ROH_RAUM + ¼ Stunde seiner Einnahmen + Markt-Tageslimit), der Rest
     // ist auffällig und zählt nicht. Was sein Profil weniger zeigt, hat er ausgegeben (Topf hb.rA – bezahlt Burg, Gebäude,
@@ -259,7 +264,7 @@
             if (hb && p.gems != null) {                // (ein Profil ohne Gems – altes Handy – zählt hier nicht)
                 hbFreiDazu(who, hb, now);
                 const pg = nn(p.gems); let mg = kontoProfil(m.g, pg, P.g || 0, M.g || 0, now);
-                m.gAus = m.g.vor > 0 ? m.g.vor : 0;   // (Gems, die er in DIESEM Profil ausgegeben hat – Beleg für eine Heldenkiste)
+                gAusMerken(m, now); hbBelegGems(who, hb, m, now);   // (ausgegebene Gems – Beleg für eine Heldenkiste)
                 if (m.g.vor > 0) { hb.gA = nn(hb.gA) + m.g.vor; m.g.vor = 0; }
                 if (p.stW != null) hbSterne(who, hb, m, nn(p.stW));   // Sterne gekauft/verkauft (vor dem Prüfen der Gems: eine Rückgabe ist dann schon gedeckt)
                 if (mg > 0) {

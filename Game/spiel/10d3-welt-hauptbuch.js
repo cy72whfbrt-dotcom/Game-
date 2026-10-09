@@ -285,6 +285,17 @@
         hbHeldenPruefen(who, hb, m, p, now);
         hbSchildPruefen(who, hb, m, p, now, schildAlt);
     }
+    // Beleg für eine Heldenkiste: neue Splitter + die dazu ausgegebenen Gems. Ohne Gems (noch nicht im Profil) wartet der Beleg
+    // (warte), hbBelegGems trägt sie nach (auch in Teilen) – Gems und Splitter zählen je nur einmal.
+    function hbBelegNeu(who, hb, m, sh, g, now) {
+        const L = (hb.shKauf || []).filter(x => now - x.t < KISTE_FRIST), gd = nn(m.gAus);
+        L.push(gd > 1e-6 ? { sh, gd, g, t: now } : { sh, gd: 0, g, t: now, warte: 1 }); m.gAus = 0; hb.shKauf = L.slice(-20); hbKisteFrei(who, hb, now);
+    }
+    function hbBelegGems(who, hb, m, now) {
+        if (!(nn(m.gAus) > 1e-6)) return;
+        const x = (hb.shKauf || []).filter(y => y.warte && now - y.t < KISTE_FRIST).pop(); if (!x) return;
+        x.gd = nn(x.gd) + nn(m.gAus); m.gAus = 0; hbKisteFrei(who, hb, now);
+    }
     // Helden: Splitter-Wert aller Helden höchstens so viel, wie er an Splittern bekommen haben kann (sicher + Spielraum + Heldenkisten)
     function hbHeldenPruefen(who, hb, m, p, now) {
         if (!p.hs || typeof p.hs !== 'object') return;
@@ -302,7 +313,7 @@
         let bedarf = wert(neu) - nn(hb.shB); const shVor = nn(hb.shB); let gBez = 0;
         if (bedarf > 0) { const aus = Math.min(bedarf, nn(hb.fr.sh)); hb.fr.sh = nn(hb.fr.sh) - aus; hb.shB = nn(hb.shB) + aus; bedarf -= aus;
             if (bedarf > 0 && hbZahlen(who, hb, m, { g: Math.ceil(bedarf * HB_SH_GEMS) })) { hb.shB += bedarf; gBez = Math.ceil(bedarf * HB_SH_GEMS); } }
-        if (hb.shB > shVor) { const L = (hb.shKauf || []).filter(x => now - x.t < KISTE_FRIST); L.push({ sh: hb.shB - shVor, gd: nn(m.gAus), g: gBez, t: now }); m.gAus = 0; hb.shKauf = L.slice(-20); hbKisteFrei(who, hb, now); }   // Splitter + Gems aus DEMSELBEN Profil: Beleg für eine Heldenkiste
+        if (hb.shB > shVor) hbBelegNeu(who, hb, m, hb.shB - shVor, gBez, now);
         if (wert(neu) <= nn(hb.shB) + 1e-6) { hbHeldPunkte(who, hb.hs, neu); hb.hs = Object.assign({}, hb.hs, neu); hbGut(hb, 'helden'); return; }
         let jetzt = Object.assign({}, hb.hs);          // sonst Held für Held, die billigsten Änderungen zuerst
         const zu = [];
