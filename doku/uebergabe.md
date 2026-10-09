@@ -14,6 +14,14 @@ Erst lesen: `CLAUDE.md`, dann `doku/INDEX.md`. Offene Punkte: `doku/merkliste.md
 - MariaDB + Test-DB `owtest` im Container eingerichtet (Zugang nur lokal in scratchpad, nie ins Git;
   im neuen Container neu einrichten, siehe Kopf `tests/server_tests.sh`).
 
+## NÄCHSTER SCHRITT (wichtigste Aufgabe, Alexander 9.10.)
+Freunde (Erwachsene + Jugendliche) testeten ca. 1 Std.: „unübersichtlich, viel zu viel auf der Karte, wissen nicht
+was tun“. Verwirrt hat ALLES: volle Karte, zu viele Knöpfe/Fenster, kein klares Ziel. Die Anleitung unten (Schritt x/7)
+haben sie gar nicht wahrgenommen. Plan „Erste Stunde neu“: (1) Spieltester spielt als völlig neuer Spieler und notiert
+jede Verwirrung, (2) Designer: wie machen RoK/Whiteout die erste Stunde, (3) Test-Datei neuer Anfang: Karte klein mit
+Nebel (nur eigene Burg + 3–4 Ziele), EIN Ziel oben groß mit Pfeil statt Leiste unten, Knöpfe/Events/Shop/Bündnis/Helden
+erst nach und nach freischalten („Neu: …“), fremde Basen weit weg nur als Punkte. Alexander zeigt es dann den Freunden.
+
 ## Offene Fragen an Alexander (Empfehlung jeweils A)
 - 25 Gratis-Kiste-Inhalt: 60 % Beschleuniger 5 Min, 30 % 10 Edelsteine, 10 % 1 Schlüssel – A so / B mehr.
 - 26 Roter Punkt am Shop-Knopf, wenn Gratis-Kiste bereit – A ja.
