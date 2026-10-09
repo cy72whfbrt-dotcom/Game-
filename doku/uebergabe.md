@@ -1,25 +1,29 @@
-# Übergabe (Stand 8.10. abends)
+# Übergabe (Stand 9.10. abends)
 
 Erst lesen: `CLAUDE.md`, dann `doku/INDEX.md`. Offene Punkte: `doku/merkliste.md`.
 
 ## Stand
-- Branch `claude/neues-projekt-8agldl` = alles fertig + geprüft (Endprüfung: komplett.sh grün, Server-Tests grün außer
-  `kiste_test` = leere Test-Welt, bekannt). **Live: NICHTS hochgeladen** (Wartung; Alexander will erst weiterbauen).
-- Test-Vorschau (unbegrenzt): https://claude.ai/artifact/XPoQzPd5cwov4ybQTTWN93
-  (neu veröffentlichen: `vorschau_bauen.php <ordner> test`, Reset-Skript mit neuem `owVorschauStand` vor
-  `klein/ladebildschirm.js`, Publish mit `url` + `root` + nur geänderten `files`).
-- Server-Tests brauchen MariaDB: im neuen Container neu einrichten (Endprüfer kann das, siehe `tests/server_tests.sh`-Kopf).
+- Haupt-Branch `claude/neues-projekt-8agldl` = alles fertig + geprüft (komplett.sh + Server-Tests mit MariaDB grün,
+  letzte Funde behoben). **Live: NICHTS hochgeladen** – Hochladen + Welt-Neustart erst, wenn Alexander es sagt
+  (beim Hochladen alte `baukunst.js` auf dem Server löschen, danach `werkzeuge/nach_hochladen.sh`).
+- Neu seit 8.10.: Wochen-Event Mo–Fr (Tages-Kisten, Rangliste Fr 20 Uhr), Thron-Event Sa 10–So 22 (Kuppel, Türme,
+  Herrscher, Titel, Kisten), Lager neu (feste Münzen + Schlüssel, Tagesgrenze 2,5 Mio), Shop (Kisten 1×/10×, Event,
+  Tempo, Gratis-Kiste 8 Std.), Schlüssel/Beschleuniger/Event-Münzen, Rucksack-Raster, Marsch-Plätze über Labor,
+  neuer Kampfbericht, Hauptstadt-Bilder je Stufe, Herrscherburg, Burg-Münzkosten höher, Aufgaben 60 Edelsteine,
+  Push „Thron startet“/„Tages-Kiste bereit“, Herrscher-Ansage, Code-Check-Fixes, alter Code raus.
+- MariaDB + Test-DB `owtest` im Container eingerichtet (Zugang nur lokal in scratchpad, nie ins Git;
+  im neuen Container neu einrichten, siehe Kopf `tests/server_tests.sh`).
 
-## Nächste Schritte (mit Alexander besprechen, erst reden, dann starten)
-1. Zahlen + Thron-Shop zusammen mit Alexander (eigene Frage-Runde, viel zu ändern).
-2. Wichtig später: Hauptbuch zählt keine Bauarbeiter-Plätze (Schummel-Lücke).
-3. Später: Namensschild-Skins, kompletter Code-Check / alter Code raus.
-4. Hochladen + Welt-Neustart nur wenn Alexander es sagt (nicht danach fragen) (neue Karte braucht neue Welt), danach `werkzeuge/nach_hochladen.sh`,
-   Live-Wächter-Routine trig_01Qoa3CR2p5twrXZEv5Uvahh aktivieren, alte `baukunst.js` auf dem Server löschen.
+## Offene Fragen an Alexander (Empfehlung jeweils A)
+- 25 Gratis-Kiste-Inhalt: 60 % Beschleuniger 5 Min, 30 % 10 Edelsteine, 10 % 1 Schlüssel – A so / B mehr.
+- 26 Roter Punkt am Shop-Knopf, wenn Gratis-Kiste bereit – A ja.
+- 27 Bauzeit Burg 11–20 geglättet (1/1,5/2/3/4,5/6,5/9/13/17,5 T) – A so lassen / B nur Burg 14.
+- 28 Pass-Tor-Symbole ganz weit größer – A ja.
+- Kampfbericht: Bilder für Feind-Wappen + VS fehlen (Prompts: scratchpad/kampfbericht/PROMPTS.md – im neuen Chat neu schreiben).
 
-## Offene Fragen an Alexander
-- Ansehen: Ladebild/Login, Heldenhalle, Saison-Reset.
+## Später (Merkliste)
+Helden-Event, Namensschild-Skins, Tages-Kisten-Bilder je Tag, Wachturm-Fahne in Bündnisfarbe, Ladebild mit Thron.
 
 ## Arbeitsweise, die gut lief
-Erst reden → Test-Datei/Fotos zeigen → Alexander sagt Ja → einbauen. Fotos immer mit normalen Zahlen (Vorschau ohne „test“).
-Designer prüft Fotos vor Alexander; Überlappungs-Tests (`fenster_neu_test`, `karte_ring_test`) streng halten.
+Test-Datei zuerst → Alexander sagt Ja → 2–3 Programmierer parallel (Worktrees) → Zusammenführer → Spieltester +
+Endprüfer am Ende. Gemeinsame Namen vorab in einem Bauplan festlegen.
