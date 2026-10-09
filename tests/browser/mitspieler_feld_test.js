@@ -8,10 +8,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] });
   const ctx = await b.newContext({ ...devices['iPhone 13'] }), p = await ctx.newPage(); const fe = [];
   p.on('pageerror', e => fe.push(e.message));
-  await ctx.addInitScript(() => {             // vor dem Laden (nur einmal, wenn der Test es anfordert): einen Mitspieler aus dem gespeicherten Besitz streichen = „neu dazugekommen“
-    try { const neu = localStorage.getItem('testNeuerMitspieler'); if (!neu) return; localStorage.removeItem('testNeuerMitspieler');
-      const r = JSON.parse(localStorage.getItem('openWaterBotOwnedIslands')); delete r[neu]; localStorage.setItem('openWaterBotOwnedIslands', JSON.stringify(r)); } catch (e) {}
-  });
   await p.goto('file://' + path.resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(9000);
   await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof armyBotWatch === 'function' && islands.length && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
   const ev = (f, a) => p.evaluate(f, a);
@@ -22,6 +18,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const lange = Date.now() + 1e9; for (const d of BOT_DEFS) botNextAt[d.id] = lange;   // (keiner zieht nebenher)
     const mitTurm = BOT_DEFS.filter(d => !d.mensch && [...botOwnedIslands[d.id]].some(id => islandById[id].type === 'tower' && !bossAt(id)));
     const X = mitTurm[0], Y = mitTurm.find(d => d !== X && d.id !== X.id);
+    store.set('openWaterNeulingBis', '0'); store.set('openWaterShield', '0'); shieldMemAt = 0;   // (eigener Schutz aus, wie rally21)
     for (const d of [X, Y]) { if (bundVon(d.id)) bundOp(d.id, { op: 'verlassen' }); const s = loadBotState()[d.id]; s.shieldUntil = 0; s.neuBis = 0; }
     const yb = islandById[[...botOwnedIslands[Y.id]].find(id => islandById[id].type === 'tower' && !bossAt(id))];
     islandTroops[yb.id] = 1e6;
@@ -106,6 +103,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     saveGameNow(); flushBotState(); localStorage.setItem('testNeuerMitspieler', C.id);
     return { A: A.id, B: B.id, C: C.id };
   });
+  const schnapp = await ev(() => Object.assign({}, localStorage));   // Stand vor dem Neuladen (unter Last ist localStorage danach manchmal leer)
+  await ctx.addInitScript(sn => {             // vor dem Neuladen: leeren Speicher wiederherstellen, dann einen Mitspieler aus dem Besitz streichen = „neu dazugekommen“
+    try { if (!localStorage.getItem('openWaterBotOwnedIslands')) for (const k in sn) localStorage.setItem(k, sn[k]);
+      const neu = localStorage.getItem('testNeuerMitspieler'); if (!neu) return; localStorage.removeItem('testNeuerMitspieler');
+      const r = JSON.parse(localStorage.getItem('openWaterBotOwnedIslands')); delete r[neu]; localStorage.setItem('openWaterBotOwnedIslands', JSON.stringify(r)); } catch (e) {}
+  }, schnapp);
   await p.reload(); await p.waitForTimeout(6000);
   await p.waitForFunction(() => typeof BOT_DEFS !== 'undefined' && typeof botOwnedIslands !== 'undefined' && islands.length, null, { timeout: 60000, polling: 500 }).catch(() => {});
   const n = await ev(v => ({ A: botOwnedIslands[v.A].size, B: botOwnedIslands[v.B].size, C: botOwnedIslands[v.C].size, outA: loadBotState()[v.A].outAt > 0 }), v);
