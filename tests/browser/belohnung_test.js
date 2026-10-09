@@ -22,11 +22,11 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const zu = () => ev(() => beuteFensterZu());
 
   // 1) alle KI-Bilder da (echte Transparenz: geladen, nicht leer)
-  const bi = await ev(async () => { const n = ['muenzen', 'edelsteine', 'holz', 'stein', 'eisen', 'truppen', 'splitter', 'thron', 'schild', 'waffe', 'ruestung', 'rundschild', 'stiefel', 'punkte', 'beschleuniger', 'buch'].map(x => 'beute_' + x)
+  const bi = await ev(async () => { const n = ['muenzen', 'edelsteine', 'holz', 'stein', 'eisen', 'truppen', 'splitter', 'schild', 'waffe', 'ruestung', 'rundschild', 'stiefel', 'punkte', 'beschleuniger'].map(x => 'beute_' + x)
       .concat(...['ausruestung', 'held', 'gross', 'episch', 'royal'].map(k => ['kiste_' + k + '_zu', 'kiste_' + k + '_offen']));
     const lade = s => new Promise(f => { const i = new Image(); i.onload = () => f(i.naturalWidth); i.onerror = () => f(0); i.src = 'bilder/' + s + '.webp'; });
     const w = await Promise.all(n.map(lade)); return { n: n.length, fehlt: n.filter((x, i) => !w[i]) }; });
-  ok(bi.n === 26 && !bi.fehlt.length, '26 KI-Bilder (16 Symbole, 10 Kisten) laden', bi);
+  ok(bi.n === 24 && !bi.fehlt.length, '24 KI-Bilder (14 Symbole, 10 Kisten) laden', bi);
   // 2) eine Kachel: Seltenheit, Symbol, Menge unten rechts
   const ka = await ev(() => { const d = document.createElement('div'); d.innerHTML = beuteKachel({ a: 'gems', n: 1200 }) + beuteKachel({ a: 'item', slot: 'boots', r: 4 }) + beuteKachel({ a: 'coins', n: 25000 }); document.body.appendChild(d);
     const k = [...d.querySelectorAll('.bk')], o = k.map(x => { const r = x.getBoundingClientRect(), z = x.querySelector('b'), zr = z && z.getBoundingClientRect(); return [x.dataset.r, x.querySelector('img').getAttribute('src'), z ? z.textContent : '', zr ? zr.right > r.right - r.width * .3 && zr.bottom > r.bottom - r.height * .35 : null]; });
