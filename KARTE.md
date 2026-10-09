@@ -271,7 +271,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `BOT_GOAL_VAL.healed` → Game/bots/06-aussehen-felder-barbaren.js:23
 - `BOT_GOAL_VAL.saisonTop` → Game/bots/06-aussehen-felder-barbaren.js:25
 - `BOT_GOAL_VAL.temples` → Game/bots/06-aussehen-felder-barbaren.js:19
-- `bot_namen` → Game/server/03-nebel-maersche-seite.php:97
+- `bot_namen` → Game/server/03-nebel-maersche-seite.php:100
 - `botActOf` → Game/bots/02-kampf-karte.js:451
 - `botAerger` → Game/bots/05-verteidigen-takt.js:21
 - `botAergerNote` → Game/bots/05-verteidigen-takt.js:18
@@ -418,7 +418,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bt` → Game/speichern.js:196
 - `buildForest` → Game/spiel/03a-karte-hintergrund.js:240
 - `buildTerritoryChunk` → Game/spiel/03a-karte-hintergrund.js:275
-- `bund_geschenk_ok` → Game/server/03-nebel-maersche-seite.php:114
+- `bund_geschenk_ok` → Game/server/03-nebel-maersche-seite.php:117
 - `bundAerger` → Game/buendnis/03-mitspieler.js:137
 - `bundAlleMelden` → Game/buendnis/01-daten-regeln.js:115
 - `bundAngriffKraft` → Game/buendnis/03-mitspieler.js:245
@@ -635,7 +635,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `clampCentre` → Game/spiel/03e-karte-kamera-eingabe.js:129
 - `clampZoom` → Game/spiel/03e-karte-kamera-eingabe.js:19
 - `clearIslandOwner` → Game/spiel/01e-kampf-werte-nebel-hud.js:167
-- `client_ip` → Game/server/03-nebel-maersche-seite.php:120
+- `client_ip` → Game/server/03-nebel-maersche-seite.php:123
 - `clientZuWelt` → Game/welt.js:178
 - `clipHalf` → Game/spiel/03e-karte-kamera-eingabe.js:73
 - `clipToBox` → Game/spiel/03e-karte-kamera-eingabe.js:80
@@ -1005,7 +1005,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gruppeLaeuft` → Game/aufbau.js:134
 - `h` → Game/admin.php:161
 - `h` → Game/index.php:54
-- `haendler_ware_ok` → Game/server/03-nebel-maersche-seite.php:107
+- `haendler_ware_ok` → Game/server/03-nebel-maersche-seite.php:110
 - `haendlerAt` → Game/haendler.js:186
 - `haendlerChip` → Game/haendler.js:220
 - `haendlerOeffnen` → Game/haendler.js:191
@@ -1090,7 +1090,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heimWellen` → Game/spiel/02c-marsch-spaeher-ankunft.js:184
 - `heldOk` → Game/spiel/10d5-welt-befehle.js:15
 - `heldZeile` → Game/spiel/05d-marsch-liste-kampfbericht.js:371
-- `herkunft_ok` → Game/server/03-nebel-maersche-seite.php:126
+- `herkunft_ok` → Game/server/03-nebel-maersche-seite.php:129
 - `heroBaseCtx` → Game/spiel/08c-helden-fenster.js:66
 - `heroBusy` → Game/spiel/08c-helden-fenster.js:109
 - `heroById` → Game/spiel/08c-helden-fenster.js:21
@@ -1217,7 +1217,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `itemLevelUpCost` → Game/spiel/02a-shop-stufen.js:34
 - `itemPct` → Game/spiel/02a-shop-stufen.js:32
 - `itemScore` → Game/spiel/02a-shop-stufen.js:29
-- `json_antwort` → Game/server/03-nebel-maersche-seite.php:133
+- `json_antwort` → Game/server/03-nebel-maersche-seite.php:136
 - `jwtFuer` → Game/weltrechner/push.js:178
 - `kampf` → Game/aufbau.js:232
 - `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:194
@@ -1347,9 +1347,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `marktHtml` → Game/aufbau.js:385
 - `marktLimit` → Game/aufbau.js:255
 - `marktTausch` → Game/aufbau.js:261
-- `marsch_fehlt` → Game/server/03-nebel-maersche-seite.php:75
+- `marsch_fehlt` → Game/server/03-nebel-maersche-seite.php:78
 - `marsch_teil` → Game/server/03-nebel-maersche-seite.php:36
-- `marsch_welt` → Game/server/03-nebel-maersche-seite.php:79
+- `marsch_welt` → Game/server/03-nebel-maersche-seite.php:82
 - `marschBelegt` → Game/aufbau.js:123
 - `marschFrei` → Game/aufbau.js:143
 - `marschGrenze` → Game/aufbau.js:120
@@ -1488,7 +1488,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nebel_flicken` → Game/server/03-nebel-maersche-seite.php:23
 - `nebel_sieht` → Game/server/03-nebel-maersche-seite.php:10
 - `nebel_teil` → Game/server/03-nebel-maersche-seite.php:17
-- `nebel_welt` → Game/server/03-nebel-maersche-seite.php:90
+- `nebel_welt` → Game/server/03-nebel-maersche-seite.php:93
 - `nebelLandPfade` → Game/spiel/06e-karte-nebel-paesse.js:86
 - `nebelRunde` → Game/spiel/10d4-welt-nebel-server.js:39
 - `nebelVomServer` → Game/spiel/01e-kampf-werte-nebel-hud.js:37
@@ -1932,7 +1932,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `size` → Game/bots/05-verteidigen-takt.js:300
 - `sizeBackingStore` → Game/spiel/03e-karte-kamera-eingabe.js:401
 - `skillBonusText` → Game/spiel/04-kampf-ankunft.js:274
-- `skript` → Game/server/03-nebel-maersche-seite.php:145
+- `skript` → Game/server/03-nebel-maersche-seite.php:148
 - `sliderToTroops` → Game/spiel/10a-fenster-insel-vorschau.js:342
 - `sofort` → Game/speichern.js:168
 - `sourceTroops` → Game/spiel/10a-fenster-insel-vorschau.js:276
@@ -1974,7 +1974,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spielraumNehmen` → Game/spiel/10d2-welt-schummelschutz.js:73
 - `spielraumTag` → Game/spiel/10d2-welt-schummelschutz.js:72
 - `spielraumTeile` → Game/spiel/10d2-welt-schummelschutz.js:63
-- `spielseite_vorbereiten` → Game/server/03-nebel-maersche-seite.php:159
+- `spielseite_vorbereiten` → Game/server/03-nebel-maersche-seite.php:162
 - `spielVersion` → Game/spiel/10c-start-einstellungen.js:156
 - `splashDone` → Game/spiel/06d-schild-produktion.js:400
 - `stadtBlende` → Game/spiel/08a-stadt-bauen.js:212
@@ -2253,7 +2253,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltNachholen` → Game/spiel/06d-schild-produktion.js:289
 - `weltNameSetzen` → Game/spiel/04-kampf-ankunft.js:332
 - `weltrechner_schluessel` → Game/server/01-grundlagen-login.php:54
-- `weltrechner_seite` → Game/server/03-nebel-maersche-seite.php:209
+- `weltrechner_seite` → Game/server/03-nebel-maersche-seite.php:212
 - `weltteil_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:175
 - `weltZuClient` → Game/welt.js:141
 - `werIst` → Game/aufbau.js:122
@@ -2747,18 +2747,18 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nebel_teil` :17 — ganzer Teil (Objekt Insel → Zahl): nur sichtbare Inseln
 - `nebel_flicken` :23 — Flicken eines solchen Teils: neue/geänderte Werte nur für sichtbare Inseln (Weg…
 - `marsch_teil` :36
-- `marsch_fehlt` :75 — $s: Sicht (für die eigenen Basen), $uid: der Spieler. Teile, die nur als Flicke…
-- `marsch_welt` :79
-- `nebel_welt` :90 — ein Welt-Stand (setzen/flicken) für einen Spieler mit Sicht $s filtern
-- `bot_namen` :97 — Die Namen aller Mitspieler (fest in bots.js): id => Name – 60 feste und 90 aus …
-- `haendler_ware_ok` :107 — Ware vom wandernden Händler (haendler.js): höchstens 10 Splitter, eine Kiste bi…
-- `bund_geschenk_ok` :114 — Bündnis-Geschenk (buendnis.js): nur Münzen, Truppen und höchstens eine graue/gr…
-- `client_ip` :120 — (IPv6: das ganze /64-Netz zählt als eine Adresse – sonst wechselt man einfach d…
-- `herkunft_ok` :126 — Kommt ein Formular / eine Anfrage wirklich von dieser Seite? (fremde Seiten dür…
-- `json_antwort` :133
-- `skript` :145 — Adresse eines Spiel-Skripts für die Spielseite: verkleinert über skript.php (ge…
-- `spielseite_vorbereiten` :159 — Spielseite vorbereiten (spiel.php) ===== Login prüfen, auf die letzte Sicherung…
-- `weltrechner_seite` :209 — Die Spielseite für den Weltrechner: kein eigener Spielstand, keine Basis – nur …
+- `marsch_fehlt` :78 — $s: Sicht (für die eigenen Basen), $uid: der Spieler. Teile, die nur als Flicke…
+- `marsch_welt` :82
+- `nebel_welt` :93 — ein Welt-Stand (setzen/flicken) für einen Spieler mit Sicht $s filtern
+- `bot_namen` :100 — Die Namen aller Mitspieler (fest in bots.js): id => Name – 60 feste und 90 aus …
+- `haendler_ware_ok` :110 — Ware vom wandernden Händler (haendler.js): höchstens 10 Splitter, eine Kiste bi…
+- `bund_geschenk_ok` :117 — Bündnis-Geschenk (buendnis.js): nur Münzen, Truppen und höchstens eine graue/gr…
+- `client_ip` :123 — (IPv6: das ganze /64-Netz zählt als eine Adresse – sonst wechselt man einfach d…
+- `herkunft_ok` :129 — Kommt ein Formular / eine Anfrage wirklich von dieser Seite? (fremde Seiten dür…
+- `json_antwort` :136
+- `skript` :148 — Adresse eines Spiel-Skripts für die Spielseite: verkleinert über skript.php (ge…
+- `spielseite_vorbereiten` :162 — Spielseite vorbereiten (spiel.php) ===== Login prüfen, auf die letzte Sicherung…
+- `weltrechner_seite` :212 — Die Spielseite für den Weltrechner: kein eigener Spielstand, keine Basis – nur …
 
 ### Game/server/04-datenbank-spieler.php — MysqlLager: Tabellen, Spieler, Sitzungen, Spielstand, Bremse, Namen
 - `MysqlLager->tx_anfang` :10

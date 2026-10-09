@@ -198,6 +198,11 @@ pruefe('fremde Rally: Truppen geheim', [$m['r'][1]['n0'], $m['r'][1]['j'][0]['n'
 pruefe('fremde Rally: Ziel bleibt (Warnung)', $m['r'][1]['t'], 5);
 pruefe('fremdes Bündnis: Log weg', isset($m['b']['a2']['log']), false);
 pruefe('eigenes Bündnis: Log bleibt', $m['b']['a1']['log'][0]['t'], 'meins');
+$bd = json_encode(['b' => ['a1' => ['mit' => ['u3'], 'anfragen' => [['w' => 'bot2', 'at' => 1]], 'gesch' => ['tag' => 'x']],
+    'a2' => ['mit' => ['bot7'], 'anfragen' => [['w' => 'bot9', 'at' => 1], ['w' => 'u3', 'at' => 2]], 'einl' => [['w' => 'bot8', 'at' => 1], ['w' => 'u3', 'at' => 3]], 'gesch' => ['tag' => 'x', 'n' => ['bot7' => 2]]]]]);
+$m = json_decode(marsch_teil('openWaterBuendnisse', $bd, 'u3', []), true);
+pruefe('fremdes Bündnis: nur die eigene Anfrage/Einladung bleibt', [$m['b']['a2']['anfragen'], $m['b']['a2']['einl']], [[['w' => 'u3', 'at' => 2]], [['w' => 'u3', 'at' => 3]]]);
+pruefe('fremdes Bündnis: Geschenke weg, eigenes bleibt ganz', [isset($m['b']['a2']['gesch']), $m['b']['a1']['anfragen'][0]['w'], $m['b']['a1']['gesch']['tag']], [false, 'bot2', 'x']);
 
 // Puls: Marsch-Teile, die nur als Flicken kamen, aus demselben festen Stand (vorgeladen) – kein Nachladen (hier ohne Datenbank)
 $mw = ['setzen' => (object)['openWaterArmies' => '[]'], 'flicken' => (object)['openWaterPendingSends' => [['x']], 'openWaterArmies' => [['y']], 'islandTroops' => [['z']]]];
