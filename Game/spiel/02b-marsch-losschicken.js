@@ -99,10 +99,11 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     const target = islandById[targetId];
     const available = islandTroops[sourceId] || 0;
     const rawTroops = (troopsOverride !== undefined && troopsOverride !== null)
-        ? Math.max(0, Math.min(troopsOverride, available))
-        : available;
+        ? Math.max(0, Math.min(Math.floor(Number(troopsOverride)) || 0, Math.floor(available)))   // (ganze Truppen, kaputte Zahl: keine)
+        : Math.floor(available);
     if (!source || !target || rawTroops <= 0) return false;
     if (!attackerBotId && target.id === playerIslandId) return false;
+    if (islandOwnerOf(target.id) === (attackerBotId || 'player')) return false;   // nie die eigene Basis angreifen
     { const ow = islandOwnerOf(target.id); if (bundFreund(attackerBotId || 'player', ow)) { if (!attackerBotId) flashHint((botById[ow] || {}).name + ' ist in deinem Bündnis – Mitglieder greifen sich nicht an.', 3500); return false; } }   // Bündnis: gesperrt
     if (!attackerBotId && !islandSeen(target)) { flashHint('Dieses Ziel liegt im Nebel – schick zuerst einen Späher.', 3000); return false; }   // nichts im Nebel angreifen
     if (target.type === 'gate' && passOpensAt(bridgeOfGate(target)) > Date.now()) { if (!attackerBotId) flashHint('Der Pass ist noch verschlossen – er öffnet in ' + fmtPassWait(passOpensAt(bridgeOfGate(target)) - Date.now()) + '.', 4000); return false; }   // (Pass mit Countdown: nicht angreifbar)
@@ -110,7 +111,7 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
     if (thronKuppel(target.id)) { if (!attackerBotId) flashHint(thronKuppelText(), 4000); return false; }   // Kuppel über Thron und Wachtürmen (außer im Thron-Event)
     if (!attackerBotId) { const tw = islandOwnerOf(target.id); if (tw && botById[tw] && botById[tw].mensch) neulingEnde('Dein Anfängerschutz ist vorbei – du hast einen echten Spieler angegriffen.'); }
     const tOwner = islandOwnerOf(target.id);
-    if (tOwner && tOwner !== (attackerBotId || 'player') && target.type === 'tower' && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
+    if (tOwner && tOwner !== (attackerBotId || 'player') && shieldCovers(target) && ownerShielded(tOwner)) { if (!attackerBotId) flashHint(shieldBlockText(tOwner), 4000); return false; }   // the Friedensschild
     // (Hauptstädte kann man angreifen – Alexander 4.10. –, aber nie erobern: siehe resolveAttack / capitalHolds)
     const grp = naechsteGruppe;
     if (!canReach(source.landmassId, target.landmassId, attackerBotId || 'player')) {   // (für alle gleich: Spieler, Mitspieler, Rally, Weltrechner – nur über offene, eigene Pässe)
@@ -169,25 +170,26 @@ function launchAttack(sourceId, targetId, attackerBotId, troopsOverride, heldWun
 
 // "Truppen verschicken": same travel time as an attack, but a blue
 // march to one of the player's OWN towers that just merges in.
-function launchSend(fromId, toId, senderBotId, amount) {       // amount: how many go (default: all of them)
+function launchSend(fromId, toId, senderBotId, amount) {       // amount: how many go (default: all of them) → true, wenn sie losgehen
     const source = islandById[fromId];
     const target = islandById[toId];
-    const available = islandTroops[fromId] || 0;
-    const rawTroops = amount > 0 ? Math.min(Math.round(amount), available) : available;
-    if (!source || !target || rawTroops <= 0) return;
+    const available = Math.floor(islandTroops[fromId] || 0);
+    const rawTroops = amount === undefined || amount === null || amount === 0 ? available : Math.max(0, Math.min(Math.floor(Number(amount)) || 0, available));   // (ganze Truppen, kaputte Zahl: keine)
+    if (!source || !target || rawTroops <= 0) return false;
+    if (islandOwnerOf(toId) !== (senderBotId || 'player')) return false;   // nur zur eigenen Basis
     const grp = naechsteGruppe;
     if (!canReach(source.landmassId, target.landmassId, senderBotId || 'player')) {   // (für alle gleich – vorher schickte das Handy los, der Weltrechner lehnte still ab)
-        if (!senderBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return; }
-    if (!marschPlatz(senderBotId || 'player', grp)) return;          // Marsch-Plätze (Paket D)
+        if (!senderBotId) flashHint(wegGrund(source.landmassId, target.landmassId, 'player') || 'Kein Weg nach ' + islandTitle(target) + ' – ein fremdes Tor liegt dazwischen. Erobere das Tor (oder eins deines Bündnisses), dann geht es.', 5000); return false; }
+    if (!marschPlatz(senderBotId || 'player', grp)) return false;          // Marsch-Plätze (Paket D)
     if (!senderBotId && !rechnet()) {                             // Zuschauer: der Weltrechner schickt sie los
-        const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return;
+        const vh = lastHop(source.landmassId, target.landmassId, 'player'); if (!mautVorab(vh[0], vh[1], rawTroops)) return false;
         WELT.befehl('senden', { von: fromId, nach: toId, n: rawTroops, grp: grp || undefined });
         islandTroops[fromId] = available - rawTroops;
         { const t0 = Date.now(); vorlaeufigDazu('s', { fromId, toId, troops: rawTroops, startedAt: t0, resolveAt: t0 + travelDurationSeconds(source, target) * 1000, senderBotId: null, grp: grp || undefined }); } questProgress('send', 1); sfx('send'); updateHud();
-        flashHint('Truppen unterwegs: ' + ortName(target) + '.'); return;
+        flashHint('Truppen unterwegs: ' + ortName(target) + '.'); return true;
     }
     const hop = lastHop(source.landmassId, target.landmassId, senderBotId || 'player');
-    if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return;
+    if (!payToll(hop[0], hop[1], rawTroops, senderBotId || 'player')) return false;
 
     islandTroops[fromId] = available - rawTroops; // troops march out, the rest stays
     const durationSec = travelDurationSeconds(source, target, senderBotId);
@@ -209,6 +211,7 @@ function launchSend(fromId, toId, senderBotId, amount) {       // amount: how ma
         flashHint('Truppen unterwegs: ' + ortName(target) + ' · ca. ' + fmtClock(durationSec));
         renderActiveMarches();
     }
+    return true;
 }
 
 // ===== MARCH ORDERS: recall a column on the way, or speed it up with gems =====
@@ -243,13 +246,17 @@ function recallMarch(key) {                          // an attack or a send turn
     for (const [list, kind] of [[pendingAttacks, 'attack'], [pendingSends, 'send']]) {
         const m = list.find(x => marchKeyOf(x) === key); if (!m) continue;
         if (m.fightEndsAt) { flashHint('Die Truppen kämpfen schon – zu spät zum Zurückrufen.', 3000); return; }
+        if (m.rally) { flashHint('Eine Rally gehört allen, die mitmachen – sie kann nicht zurückgerufen werden.', 3500); return; }
+        if (m.back) return;                                                    // (geht schon heim)
+        const home0 = ownedIslands.has(m.sourceId ?? m.fromId) ? m.sourceId ?? m.fromId : rewardBaseId();
+        if (home0 === null || home0 === undefined) { flashHint('Du hast keine Basis mehr – die Truppen können nirgends hin zurück.', 3500); return; }   // (sonst wären sie weg)
         const fromId = m.sourceId ?? m.fromId, toId = m.targetId ?? m.toId, troops = m.rawTroops ?? m.troops;
         const src = islandById[fromId], tgt = islandById[toId];
         const frac = Math.max(0, Math.min(1, (now - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt)));
         if (kind === 'attack') heroWutZurueck('player', m.hx);   // (nicht gekämpft: die Wut bleibt)
         list.splice(list.indexOf(m), 1);
         const walked = Math.max(1000, (Math.min(now, m.resolveAt) - m.startedAt));   // (wer vor dem Ziel gewartet hat, läuft nur den Weg zurück)
-        const home = ownedIslands.has(fromId) ? fromId : rewardBaseId();
+        const home = home0;
         pendingRetreats.push({ fromId: toId, toId: home, troops, startedAt: now, resolveAt: now + walked, path: home === fromId ? pathSoFar(src, tgt, frac).reverse() : null });
         flashHint(fmtNum(troops) + ' Truppen kehren um – zurück in ' + fmtClock(Math.ceil(walked / 1000)) + '.', 3500);
         saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
@@ -291,9 +298,9 @@ let speedUpZuletzt = 0;                               // (ein Doppel-Tipp beschl
 function speedUpMarch(key, btn) {                    // halves the time still to go; the column keeps its place on the road
     const now = Date.now(); if (now - speedUpZuletzt < 600) return; speedUpZuletzt = now;
     const sc = pendingScouts.find(x => marchKeyOf(x) === key);                // ein Späher (hin: auch beim Weltrechner, er schreibt den Bericht)
-    if (sc) { const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
+    if (sc) { if (!spaeherSchnell(sc)) return; const rem = sc.resolveAt - now; if (rem < 1500) return; const cost = speedUpCost(sc); if (gems < cost) { flashHint('Zu wenig Edelsteine – Beschleunigen kostet ' + cost + '.', 3000); return; }
         if (!gemsWirklich('marsch:' + key, cost, btn)) return;
-        gems -= cost; if (!sc.back) alsBefehl('schneller', { keys: [key] }); const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
+        gems -= cost; alsBefehl('schneller', { keys: [key] }); const p = Math.max(0, Math.min(.99, (now - sc.startedAt) / Math.max(1, sc.resolveAt - sc.startedAt)));
         sc.resolveAt = now + rem / 2; sc.startedAt = sc.resolveAt - (rem / 2) / (1 - p);
         flashHint('Späher beschleunigt – noch ' + fmtClock(Math.ceil(rem / 2000)) + '.', 2500); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return; }
     for (const list of [pendingAttacks, pendingSends, pendingRetreats, eigeneFeldBarb()]) {
@@ -311,10 +318,12 @@ function speedUpMarch(key, btn) {                    // halves the time still to
         feldBarbSpeichern(); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender(); return;
     }
 }
+// Späher, die der Weltrechner kennt (sc.wr, 02c launchScout) – nur die lassen sich beim Zuschauer beschleunigen (sonst Gems ohne Wirkung)
+const spaeherSchnell = sc => rechnet() || (!sc.back && !!sc.wr);
 // "Alle schneller": halves the time left of every own column on the road at once (same price as one by one)
 function speedableMarches() {
     const now = Date.now();
-    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...pendingScouts, ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
+    return [...pendingAttacks.filter(a => !a.attackerBotId), ...pendingSends.filter(x => !x.senderBotId), ...pendingRetreats, ...pendingScouts.filter(spaeherSchnell), ...eigeneFeldBarb()].filter(m => !m.fightEndsAt && !m.vorlaeufig && m.resolveAt - now >= 1500);
 }
 function speedUpAll(btn) {
     if (Date.now() - speedUpZuletzt < 600) return; speedUpZuletzt = Date.now();
@@ -330,8 +339,9 @@ function speedUpAll(btn) {
     feldBarbSpeichern(); updateHud(); saveGame(); saveProgression(); renderActiveMarches(); requestRender();
 }
 function marchButtons(m, canRecall) {
-    const k = marchKeyOf(m);
-    return '<span class="mact">' + (canRecall ? '<button type="button" data-mact="recall" data-k="' + k + '" title="Zurückrufen">' + icon('recall') + 'Zurück</button>' : '') +
+    const k = marchKeyOf(m), r = canRecall ? '<button type="button" data-mact="recall" data-k="' + k + '" title="Zurückrufen">' + icon('recall') + 'Zurück</button>' : '';
+    if (pendingScouts.includes(m) && !spaeherSchnell(m)) return '<span class="mact">' + r + '</span>';   // (Späher ohne Weltrechner: nicht beschleunigbar)
+    return '<span class="mact">' + r +
         (gemsArmed('marsch:' + k) ? '<button type="button" class="is-armed" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">Wirklich? ' + icon('gem') + fmtNum(speedUpCost(m))   // Nachfrage ab 500 Gems übersteht das Neuzeichnen
             : '<button type="button" data-mact="speed" data-k="' + k + '" title="Restzeit halbieren">' + icon('hourglass') + 'Schneller · <b>' + speedUpCost(m) + '</b>' + icon('gem')) + '</button></span>';
 }
@@ -353,7 +363,8 @@ function resolveSend(send) {
                 pendingSends.push({ fromId: send.toId, toId: home, troops: send.troops, startedAt, resolveAt: startedAt + dur * 1000, senderBotId: sender, back: true });
                 if (typeof bundMelden === 'function') bundMelden(sender, islandTitle(target) + ' ist gefallen, bevor deine Truppen ankamen – ' + fmtNum(send.troops) + ' Truppen kehren nach ' + islandTitle(islandById[home]) + ' zurück.');
             } else islandTroops[home] = (islandTroops[home] || 0) + send.troops;
-        }
+        } else if (sender === 'player') pendingRetreats.push({ fromId: send.toId, toId: send.fromId, troops: send.troops, startedAt: Date.now(), resolveAt: Date.now() + 1000 });   // keine Basis mehr: sie warten unterwegs (resolveRetreat), bis wieder eine da ist
+        else console.warn('Verstärkung ohne Zuhause', sender, send.troops);
         saveGame(); saveProgression(); return;
     }
     islandTroops[send.toId] = (islandTroops[send.toId] || 0) + send.troops;

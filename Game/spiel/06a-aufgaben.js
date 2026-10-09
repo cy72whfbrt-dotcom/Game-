@@ -226,7 +226,7 @@ function inboxList() { if (!inboxState) { try { inboxState = JSON.parse(store.ge
 const inboxFach = () => inboxList().filter(x => !(x.bis > Date.now()));   // das Abholfach zeigt Event-Belohnungen (bis) erst nach dem Event-/Tagesende
 function inboxSave() { store.set('openWaterInbox', JSON.stringify(inboxList())); }
 const INBOX_PILE = { fight: 1, bounty: 1 };   // these pile up in one entry each
-const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild;   // a crate keeps its own entry (one entry holds one crate)
+const inboxPiles = x => !!INBOX_PILE[x.src] && !(x.crate >= 0) && !(x.kiste >= 0) && !x.schild && !(x.tr > 0) && !(x.b && x.b.length) && !(x.em > 0) && !(x.s1 > 0) && !(x.s2 > 0) && !x.besch;   // eine Kiste, Truppen, Gegenstände, Event-Münzen/Schlüssel, Beschleuniger: eigener Eintrag (Stapel addiert nur Münzen/Edelsteine/Splitter)
 const INBOX_SRC = { gift: { ic: 'gem', t: 'Geschenk' }, fight: { ic: 'attack', t: 'Kampfbeute' }, woche: { ic: 'rank', t: 'Wochen-Event' }, wboss: { ic: 'star', t: 'Kriegsherr' }, bounty: { ic: 'losses', t: 'Kopfgeld' }, haendler: { ic: 'coin', t: 'Händler' }, saison: { ic: 'crown', t: 'Welt-Saison' }, thron: { ic: 'crown', t: 'Thron-Event' }, lager: { ic: 'attack', t: 'Barbaren-Lager' } };
 function inboxAdd(o) {                              // o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none), em/s1/s2 (Event-Münzen, Schlüssel), besch (Beschleuniger-Dauer) } - all fights' spoils pile up in one entry
     o = Object.assign({ gems: 0, coins: 0, sh: 0, crate: -1, tr: 0, n: 1 }, o); o.gems = Math.round(o.gems); o.coins = Math.round(o.coins); o.tr = Math.round(o.tr);
@@ -249,7 +249,7 @@ function inboxClaim(id, aus) {                      // into your coffers - retur
     for (const [f, art] of [['em', 'eventMuenzen'], ['s1', 'schluessel1'], ['s2', 'schluessel2']]) if (x[f] > 0) { gibBelohnung(art, x[f]); got.push('+' + fmtNum(x[f]) + ' ' + BEUTE_ART[art].t); aus.push({ a: art, n: x[f] }); }
     if (BESCH_MIN[x.besch]) { gibBelohnung('besch', 1, { dauer: x.besch }); got.push('Beschleuniger ' + beschText(x.besch)); aus.push({ a: 'besch', dauer: x.besch, n: 1 }); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) { got.push(x.sh + ' Splitter ' + h.name); aus.push({ a: 'sh', n: x.sh, held: h.id }); } else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); aus.push({ a: 'gems', n: x.sh * 20 }); } }
-    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); aus.push({ a: 'tr', n: x.tr }); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0, em: 0, s1: 0, s2: 0, besch: undefined })); }   // no base right now: only the troops stay in the inbox
+    if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); aus.push({ a: 'tr', n: x.tr }); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0, em: 0, s1: 0, s2: 0, besch: undefined, b: undefined })); }   // no base right now: only the troops stay in the inbox
     inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
 }
 function renderInbox() {

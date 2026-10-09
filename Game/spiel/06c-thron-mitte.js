@@ -124,7 +124,7 @@ function herrKisteSenden(art, an) {                   // dein Knopf im Herrscher
     if (!an) { flashHint('Wähle zuerst, wer die Kiste bekommt.', 2500); return; }
     if (rechnet()) { if (!herrKiste('player', art, an)) { flashHint('Diese Kiste hast du nicht mehr.', 2500); return; } }
     else { const k = throneState.kisten; if (!(k && k[art] > 0)) { flashHint('Diese Kiste hast du nicht mehr.', 2500); return; }
-        alsBefehl('thronKiste', { art, wem: neutralId(an) }); k[art]--; }                // (Zuschauer: gleich zeigen, der Weltrechner verschickt)
+        alsBefehl('thronKiste', { kiste: art, wem: neutralId(an) }); k[art]--; }                // (Zuschauer: gleich zeigen, der Weltrechner verschickt; „kiste“, weil „art“ die Befehlsart ist)
     flashHint(HERR_KISTEN[art].name + ' an ' + fieldWhoName(an) + ' verschickt.', 3000); sfx('coin'); renderHerr();
 }
 function throneTick() {

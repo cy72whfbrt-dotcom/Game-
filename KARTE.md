@@ -61,9 +61,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `anfKosten` → Game/spiel/08b-stadt-burg-aussehen.js:101
 - `anfZeile` → Game/spiel/08b-stadt-burg-aussehen.js:96
 - `angreiferZeilen` → Game/spiel/01a-grundlagen.js:195
-- `angriffQuellen` → Game/spiel/10b-fenster-insel-knoepfe.js:122
-- `angriffReicht` → Game/spiel/10b-fenster-insel-knoepfe.js:127
-- `angriffStart` → Game/spiel/10b-fenster-insel-knoepfe.js:133
+- `angriffQuellen` → Game/spiel/10b-fenster-insel-knoepfe.js:123
+- `angriffReicht` → Game/spiel/10b-fenster-insel-knoepfe.js:128
+- `angriffStart` → Game/spiel/10b-fenster-insel-knoepfe.js:134
 - `anleitung` → Game/spiel/06b-pass-anleitung.js:165
 - `anleitungAbgeholt` → Game/spiel/06b-pass-anleitung.js:171
 - `anleitungAlleAusHaupt` → Game/spiel/06b-pass-anleitung.js:163
@@ -143,37 +143,37 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `balken` → Game/spiel/09c-events-woche.js:257
 - `bannerModel` → Game/spiel/03b-karte-basen-bilder.js:299
 - `bannerSprite` → Game/spiel/03c-karte-wappen-thronplatz.js:126
-- `barbAlong` → Game/spiel/09b-lager-tagesboss.js:209
-- `barbArrive` → Game/spiel/09b-lager-tagesboss.js:122
-- `barbAt` → Game/spiel/09b-lager-tagesboss.js:201
-- `barbAttackHtml` → Game/spiel/09b-lager-tagesboss.js:309
+- `barbAlong` → Game/spiel/09b-lager-tagesboss.js:210
+- `barbArrive` → Game/spiel/09b-lager-tagesboss.js:123
+- `barbAt` → Game/spiel/09b-lager-tagesboss.js:202
+- `barbAttackHtml` → Game/spiel/09b-lager-tagesboss.js:310
 - `barbCampById` → Game/spiel/09b-lager-tagesboss.js:23
-- `barbCrate` → Game/spiel/09b-lager-tagesboss.js:111
+- `barbCrate` → Game/spiel/09b-lager-tagesboss.js:112
 - `barbFa` → Game/spiel/09b-lager-tagesboss.js:30
-- `barbFight` → Game/spiel/09b-lager-tagesboss.js:117
-- `barbHome` → Game/spiel/09b-lager-tagesboss.js:109
-- `barbK` → Game/spiel/09b-lager-tagesboss.js:200
+- `barbFight` → Game/spiel/09b-lager-tagesboss.js:118
+- `barbHome` → Game/spiel/09b-lager-tagesboss.js:110
+- `barbK` → Game/spiel/09b-lager-tagesboss.js:201
 - `barbLeft` → Game/spiel/09b-lager-tagesboss.js:27
 - `barbLoad` → Game/spiel/09b-lager-tagesboss.js:18
 - `barbMine` → Game/spiel/09b-lager-tagesboss.js:95
-- `barbNearest` → Game/spiel/09b-lager-tagesboss.js:350
+- `barbNearest` → Game/spiel/09b-lager-tagesboss.js:355
 - `barbOpenFor` → Game/spiel/09b-lager-tagesboss.js:28
 - `barbOut` → Game/spiel/09b-lager-tagesboss.js:25
 - `barbPt` → Game/spiel/09b-lager-tagesboss.js:29
 - `barbRec` → Game/spiel/09b-lager-tagesboss.js:24
-- `barbScreen` → Game/spiel/09b-lager-tagesboss.js:199
+- `barbScreen` → Game/spiel/09b-lager-tagesboss.js:200
 - `barbSend` → Game/spiel/09b-lager-tagesboss.js:98
-- `barbShareNow` → Game/spiel/09b-lager-tagesboss.js:307
-- `barbShareOf` → Game/spiel/09b-lager-tagesboss.js:308
-- `barbShares` → Game/spiel/09b-lager-tagesboss.js:306
-- `barbSheetHtml` → Game/spiel/09b-lager-tagesboss.js:317
-- `barbSheetRefresh` → Game/spiel/09b-lager-tagesboss.js:357
-- `barbSource` → Game/spiel/09b-lager-tagesboss.js:300
+- `barbShareNow` → Game/spiel/09b-lager-tagesboss.js:308
+- `barbShareOf` → Game/spiel/09b-lager-tagesboss.js:309
+- `barbShares` → Game/spiel/09b-lager-tagesboss.js:307
+- `barbSheetHtml` → Game/spiel/09b-lager-tagesboss.js:322
+- `barbSheetRefresh` → Game/spiel/09b-lager-tagesboss.js:362
+- `barbSource` → Game/spiel/09b-lager-tagesboss.js:301
 - `barbSpawn` → Game/spiel/09b-lager-tagesboss.js:45
 - `barbSpot` → Game/spiel/09b-lager-tagesboss.js:33
 - `barbStufeZone` → Game/spiel/09b-lager-tagesboss.js:32
 - `barbTagMax` → Game/spiel/09b-lager-tagesboss.js:26
-- `barbTick` → Game/spiel/09b-lager-tagesboss.js:185
+- `barbTick` → Game/spiel/09b-lager-tagesboss.js:186
 - `barbTier` → Game/spiel/09b-lager-tagesboss.js:6
 - `barbTroopsOf` → Game/spiel/09b-lager-tagesboss.js:5
 - `baseDefenseForLevel` → Game/spiel/01b-weltkarte.js:94
@@ -641,7 +641,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `clock` → Game/spiel/06c-thron-mitte.js:151
 - `closeAllPopups` → Game/spiel/09e-fenster-insel.js:74
 - `closeArmySheet` → Game/spiel/09d-karte-armeen-wegmarken.js:209
-- `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:356
+- `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:361
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:232
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:74
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:362
@@ -681,12 +681,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `dailyNextDay` → Game/spiel/06a-aufgaben.js:30
 - `dailyRewardLabel` → Game/spiel/06a-aufgaben.js:35
 - `dbossEnsure` → Game/spiel/09b-lager-tagesboss.js:54
-- `dbossHit` → Game/spiel/09b-lager-tagesboss.js:150
+- `dbossHit` → Game/spiel/09b-lager-tagesboss.js:151
 - `dbossKind` → Game/spiel/09b-lager-tagesboss.js:96
 - `dbossOnMap` → Game/spiel/09b-lager-tagesboss.js:73
-- `dbossPayout` → Game/spiel/09b-lager-tagesboss.js:174
+- `dbossPayout` → Game/spiel/09b-lager-tagesboss.js:175
 - `dbossRanks` → Game/spiel/09b-lager-tagesboss.js:97
-- `dbossSprite` → Game/spiel/09b-lager-tagesboss.js:214
+- `dbossSprite` → Game/spiel/09b-lager-tagesboss.js:215
 - `decayed` → Game/bots/02-kampf-karte.js:259
 - `defeatBoss` → Game/spiel/07b-kriegsherr.js:16
 - `defenseForLevel` → Game/spiel/01b-weltkarte.js:98
@@ -702,7 +702,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawArmies` → Game/spiel/09d-karte-armeen-wegmarken.js:165
 - `drawArmyCamps` → Game/spiel/09d-karte-armeen-wegmarken.js:176
 - `drawBackground` → Game/spiel/03a-karte-hintergrund.js:491
-- `drawBarb` → Game/spiel/09b-lager-tagesboss.js:244
+- `drawBarb` → Game/spiel/09b-lager-tagesboss.js:245
 - `drawBaseAuras` → Game/spiel/03c-karte-wappen-thronplatz.js:308
 - `drawBaseSparks` → Game/spiel/03c-karte-wappen-thronplatz.js:330
 - `drawBasisBild` → Game/spiel/03b-karte-basen-bilder.js:94
@@ -905,8 +905,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fogKey` → Game/spiel/01e-kampf-werte-nebel-hud.js:7
 - `fogLandCells` → Game/spiel/01e-kampf-werte-nebel-hud.js:8
 - `fogMask` → Game/spiel/06e-karte-nebel-paesse.js:54
-- `fogPointAt` → Game/spiel/10b-fenster-insel-knoepfe.js:221
-- `fogPromptHit` → Game/spiel/10b-fenster-insel-knoepfe.js:242
+- `fogPointAt` → Game/spiel/10b-fenster-insel-knoepfe.js:222
+- `fogPromptHit` → Game/spiel/10b-fenster-insel-knoepfe.js:243
 - `fogSet` → Game/spiel/01e-kampf-werte-nebel-hud.js:22
 - `fogTexture` → Game/spiel/06e-karte-nebel-paesse.js:28
 - `foKosten` → Game/aufbau.js:192
@@ -1007,7 +1007,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `haendlerAt` → Game/haendler.js:186
 - `haendlerChip` → Game/haendler.js:220
 - `haendlerOeffnen` → Game/haendler.js:191
-- `handleTap` → Game/spiel/10b-fenster-insel-knoepfe.js:247
+- `handleTap` → Game/spiel/10b-fenster-insel-knoepfe.js:248
 - `has` → Game/spiel/03a-karte-hintergrund.js:500
 - `HATCH_PX` → Game/spiel/03a-karte-hintergrund.js:348
 - `hatchPatterns` → Game/spiel/03a-karte-hintergrund.js:353
@@ -1260,6 +1260,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `lage` → Game/ladebildschirm.js:20
 - `lager` → Game/server/01-grundlagen-login.php:43
 - `lagerBeute` → Game/spiel/09b-lager-tagesboss.js:12
+- `lagerBeuteText` → Game/spiel/09b-lager-tagesboss.js:318
 - `lagerMuenzen` → Game/spiel/09b-lager-tagesboss.js:11
 - `LAND_BOX` → Game/spiel/03e-karte-kamera-eingabe.js:62
 - `landmassAtWorld` → Game/spiel/09d-karte-armeen-wegmarken.js:12
@@ -1269,7 +1270,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `lastJeKern` → Game/weltrechner/start.js:60
 - `launchAttack` → Game/spiel/02b-marsch-losschicken.js:97
 - `launchScout` → Game/spiel/02c-marsch-spaeher-ankunft.js:19
-- `launchSend` → Game/spiel/02b-marsch-losschicken.js:172
+- `launchSend` → Game/spiel/02b-marsch-losschicken.js:173
 - `layoutBanners` → Game/spiel/03c-karte-wappen-thronplatz.js:150
 - `lazarettPlus` → Game/aufbau.js:241
 - `leaveAtBoot` → Game/spiel/06d-schild-produktion.js:287
@@ -1333,8 +1334,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `maleNebel` → Game/ladebildschirm.js:207
 - `mapBattleShake` → Game/spiel/07a-kampf-schlachten.js:104
 - `mapFocusPoint` → Game/spiel/03e-karte-kamera-eingabe.js:445
-- `marchButtons` → Game/spiel/02b-marsch-losschicken.js:332
-- `marchKeyOf` → Game/spiel/02b-marsch-losschicken.js:215
+- `marchButtons` → Game/spiel/02b-marsch-losschicken.js:341
+- `marchKeyOf` → Game/spiel/02b-marsch-losschicken.js:218
 - `marchPath` → Game/spiel/03c-karte-wappen-thronplatz.js:448
 - `marchPointAt` → Game/spiel/03c-karte-wappen-thronplatz.js:481
 - `marchTapAt` → Game/spiel/03f-marsch-bilder.js:359
@@ -1518,7 +1519,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `onPointerEnd` → Game/spiel/03e-karte-kamera-eingabe.js:319
 - `onViewportResize` → Game/spiel/03e-karte-kamera-eingabe.js:409
 - `openArmySheet` → Game/spiel/09d-karte-armeen-wegmarken.js:208
-- `openBarbSheet` → Game/spiel/09b-lager-tagesboss.js:355
+- `openBarbSheet` → Game/spiel/09b-lager-tagesboss.js:360
 - `openChestItemPopup` → Game/spiel/05b-profil-truhe-skills.js:182
 - `openCity` → Game/spiel/08a-stadt-bauen.js:214
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:334
@@ -1585,7 +1586,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `passXp` → Game/spiel/06b-pass-anleitung.js:32
 - `patchAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:416
 - `patchSendPreview` → Game/spiel/10a-fenster-insel-vorschau.js:396
-- `pathSoFar` → Game/spiel/02b-marsch-losschicken.js:216
+- `pathSoFar` → Game/spiel/02b-marsch-losschicken.js:219
 - `payGold` → Game/spiel/04-kampf-ankunft.js:266
 - `payToll` → Game/spiel/01b-weltkarte.js:288
 - `pct` → Game/ladebildschirm.js:329
@@ -1703,7 +1704,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `raus.push` → Game/spiel/10d2-welt-schummelschutz.js:145
 - `rauswurf` → Game/speichern.js:111
 - `reach` → Game/bots/05-verteidigen-takt.js:176
-- `recallMarch` → Game/spiel/02b-marsch-losschicken.js:225
+- `recallMarch` → Game/spiel/02b-marsch-losschicken.js:228
 - `recallSources` → Game/spiel/10b-fenster-insel-knoepfe.js:46
 - `recenterOnHome` → Game/spiel/03e-karte-kamera-eingabe.js:196
 - `rechnerStatus` → Game/spiel/10d1-welt-verbindung.js:10
@@ -1764,7 +1765,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `resolveBotAttack` → Game/bots/02-kampf-karte.js:21
 - `resolveRetreat` → Game/spiel/02c-marsch-spaeher-ankunft.js:354
 - `resolveScout` → Game/spiel/02c-marsch-spaeher-ankunft.js:149
-- `resolveSend` → Game/spiel/02b-marsch-losschicken.js:339
+- `resolveSend` → Game/spiel/02b-marsch-losschicken.js:349
 - `retreatPct` → Game/spiel/02c-marsch-spaeher-ankunft.js:181
 - `retreatSecs` → Game/spiel/02c-marsch-spaeher-ankunft.js:182
 - `retreatSurvivorsPreview` → Game/spiel/02c-marsch-spaeher-ankunft.js:183
@@ -1797,7 +1798,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rohVon` → Game/aufbau.js:29
 - `rohWacheProfil` → Game/spiel/10d2-welt-schummelschutz.js:164
 - `routeFor` → Game/spiel/01b-weltkarte.js:216
-- `row` → Game/spiel/09b-lager-tagesboss.js:336
+- `row` → Game/spiel/09b-lager-tagesboss.js:341
 - `row` → Game/spiel/09c-events-woche.js:134
 - `rr` → Game/spiel/03a-karte-hintergrund.js:610
 - `rueckzuegeZuClient` → Game/welt.js:202
@@ -1865,8 +1866,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `schildRect` → Game/spiel/03b-karte-basen-bilder.js:115
 - `schluesselTausch` → Game/welt.js:90
 - `schluesselVon` → Game/spiel/06g-shop-gegenstaende.js:14
-- `schnellerDrueber` → Game/spiel/02b-marsch-losschicken.js:262
-- `schnellerMerken` → Game/spiel/02b-marsch-losschicken.js:261
+- `schnellerDrueber` → Game/spiel/02b-marsch-losschicken.js:269
+- `schnellerMerken` → Game/spiel/02b-marsch-losschicken.js:268
 - `schonBezahlt` → Game/spiel/10d2-welt-schummelschutz.js:386
 - `schutzText` → Game/aufbau.js:108
 - `schutzVon` → Game/spiel/08a-stadt-bauen.js:31
@@ -1944,6 +1945,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spaeherBlickHtml` → Game/spiel/02c-marsch-spaeher-ankunft.js:125
 - `spaeherHeim` → Game/spiel/02c-marsch-spaeher-ankunft.js:145
 - `spaeherMehr` → Game/aufbau.js:419
+- `spaeherSchnell` → Game/spiel/02b-marsch-losschicken.js:322
 - `spaeherTempo` → Game/aufbau.js:240
 - `spaeherVon` → Game/spiel/10d1-welt-verbindung.js:103
 - `spaeherWeg` → Game/spiel/01b-weltkarte.js:256
@@ -1961,10 +1963,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spawnBattleFx` → Game/spiel/07a-kampf-schlachten.js:154
 - `spawnMapBattle` → Game/spiel/07a-kampf-schlachten.js:12
 - `spawnWander` → Game/spiel/07b-kriegsherr.js:54
-- `speedableMarches` → Game/spiel/02b-marsch-losschicken.js:315
-- `speedUpAll` → Game/spiel/02b-marsch-losschicken.js:319
-- `speedUpCost` → Game/spiel/02b-marsch-losschicken.js:289
-- `speedUpMarch` → Game/spiel/02b-marsch-losschicken.js:291
+- `speedableMarches` → Game/spiel/02b-marsch-losschicken.js:324
+- `speedUpAll` → Game/spiel/02b-marsch-losschicken.js:328
+- `speedUpCost` → Game/spiel/02b-marsch-losschicken.js:296
+- `speedUpMarch` → Game/spiel/02b-marsch-losschicken.js:298
 - `speichern_anfrage` → Game/server/06-speichern-push-konto.php:6
 - `spieler_liste` → Game/server/05-datenbank-welt.php:324
 - `spielerTakt` → Game/aufbau.js:277
@@ -2011,7 +2013,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `szene` → Game/ladebildschirm.js:252
 - `tagLicht` → Game/spiel/03d-karte-ebenen-tagnacht.js:34
 - `tal` → Game/ladebildschirm.js:35
-- `tapFog` → Game/spiel/10b-fenster-insel-knoepfe.js:227
+- `tapFog` → Game/spiel/10b-fenster-insel-knoepfe.js:228
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:240
@@ -2172,8 +2174,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `visibleIslands` → Game/spiel/03d-karte-ebenen-tagnacht.js:3
 - `vorAltern` → Game/spiel/10d2-welt-schummelschutz.js:187
 - `vorhangZeigen` → Game/speichern.js:86
-- `vorlaeufigDazu` → Game/spiel/02b-marsch-losschicken.js:274
-- `vorlaeufigDrueber` → Game/spiel/02b-marsch-losschicken.js:278
+- `vorlaeufigDazu` → Game/spiel/02b-marsch-losschicken.js:281
+- `vorlaeufigDrueber` → Game/spiel/02b-marsch-losschicken.js:285
 - `W.befehl` → Game/welt.js:533
 - `W.deltaBasis` → Game/welt.js:380
 - `W.deltaJetzt` → Game/welt.js:373
@@ -3063,20 +3065,21 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `addCombatLogEntry` :65
 - `marschPlatz` :94 — troopsOverride lets the player send only part of a base's garrison (chosen via …
 - `launchAttack` :97
-- `launchSend` :172 — "Truppen verschicken": same travel time as an attack, but a blue march to one o…
-- `marchKeyOf` :215 — MARCH ORDERS: recall a column on the way, or speed it up with gems
-- `pathSoFar` :216 — the stretch of the route already walked, from the start to where the column is …
-- `recallMarch` :225 — an attack or a send turns round where it is and walks home
-- `schnellerMerken` :261
-- `schnellerDrueber` :262
-- `vorlaeufigDazu` :274
-- `vorlaeufigDrueber` :278
-- `speedUpCost` :289
-- `speedUpMarch` :291 — halves the time still to go; the column keeps its place on the road
-- `speedableMarches` :315 — "Alle schneller": halves the time left of every own column on the road at once …
-- `speedUpAll` :319
-- `marchButtons` :332
-- `resolveSend` :339
+- `launchSend` :173 — "Truppen verschicken": same travel time as an attack, but a blue march to one o…
+- `marchKeyOf` :218 — MARCH ORDERS: recall a column on the way, or speed it up with gems
+- `pathSoFar` :219 — the stretch of the route already walked, from the start to where the column is …
+- `recallMarch` :228 — an attack or a send turns round where it is and walks home
+- `schnellerMerken` :268
+- `schnellerDrueber` :269
+- `vorlaeufigDazu` :281
+- `vorlaeufigDrueber` :285
+- `speedUpCost` :296
+- `speedUpMarch` :298 — halves the time still to go; the column keeps its place on the road
+- `spaeherSchnell` :322 — Späher, die der Weltrechner kennt (sc.wr, 02c launchScout) – nur die lassen sic…
+- `speedableMarches` :324 — "Alle schneller": halves the time left of every own column on the road at once …
+- `speedUpAll` :328
+- `marchButtons` :341
+- `resolveSend` :349
 
 ### Game/spiel/02c-marsch-spaeher-ankunft.js — Späher und Späherbericht, Ankunft der Angriffe (resolveAttack), Rückzug
 - `nearestOwnedIslandTo` :8 — "Spähen": no troops needed, but a scout still takes time to reach the target - …
@@ -3593,7 +3596,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `inboxList` :223
 - `inboxFach` :226 — das Abholfach zeigt Event-Belohnungen (bis) erst nach dem Event-/Tagesende
 - `inboxSave` :227
-- `inboxPiles` :229 — a crate keeps its own entry (one entry holds one crate)
+- `inboxPiles` :229 — eine Kiste, Truppen, Gegenstände, Event-Münzen/Schlüssel, Beschleuniger: eigene…
 - `inboxAdd` :231 — o: { src, title?, gems, coins, sh (hero shards), crate (lowest rarity, -1 none)…
 - `inboxBeute` :238 — was im Fach liegt, als Kacheln (05e)
 - `inboxClaim` :242 — into your coffers - returns what you got (aus: Belohnungs-Kacheln dazu)
@@ -4100,30 +4103,31 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `dbossKind` :96
 - `dbossRanks` :97
 - `barbSend` :98 — troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero may lead th…
-- `barbHome` :109 — the survivors walk home
-- `barbCrate` :111 — a gear crate: yours into the inventory, theirs into their spares
-- `barbFight` :117 — out in the open: (troops + Gefolge) × Angriff (+ hero) × title against the camp…
-- `barbArrive` :122
-- `dbossHit` :150 — every attack takes life off the boss (at most 5 %); a quarter of those who stru…
-- `dbossPayout` :174 — the boss falls: alle, die trafen, bekommen den Erfolg (Belohnung gibt es nur im…
-- `barbTick` :185
-- `barbScreen` :199
-- `barbK` :200
-- `barbAt` :201 — → { kind: 'boss' } or { kind: 'camp', id } under a tap
-- `barbAlong` :209 — the point q (0-1) along a screen polyline
-- `dbossSprite` :214 — each boss drawn once into a small image
-- `drawBarb` :244
-- `barbSource` :300 — your base for this march: the nearest one that has enough, else the one with th…
-- `barbShares` :306
-- `barbShareNow` :307
-- `barbShareOf` :308
-- `barbAttackHtml` :309 — share, hero and the button
-- `barbSheetHtml` :317
-- `row` :336
-- `barbNearest` :350 — the closest camp you may attack, the highest level first
-- `openBarbSheet` :355
-- `closeBarbSheet` :356
-- `barbSheetRefresh` :357
+- `barbHome` :110 — the survivors walk home
+- `barbCrate` :112 — a gear crate: yours into the inventory, theirs into their spares
+- `barbFight` :118 — out in the open: (troops + Gefolge) × Angriff (+ hero) × title against the camp…
+- `barbArrive` :123
+- `dbossHit` :151 — every attack takes life off the boss (at most 5 %); a quarter of those who stru…
+- `dbossPayout` :175 — the boss falls: alle, die trafen, bekommen den Erfolg (Belohnung gibt es nur im…
+- `barbTick` :186
+- `barbScreen` :200
+- `barbK` :201
+- `barbAt` :202 — → { kind: 'boss' } or { kind: 'camp', id } under a tap
+- `barbAlong` :210 — the point q (0-1) along a screen polyline
+- `dbossSprite` :215 — each boss drawn once into a small image
+- `drawBarb` :245
+- `barbSource` :301 — your base for this march: the nearest one that has enough, else the one with th…
+- `barbShares` :307
+- `barbShareNow` :308
+- `barbShareOf` :309
+- `barbAttackHtml` :310 — share, hero and the button
+- `lagerBeuteText` :318 — was ein Sieg heute noch bringt (Rest bis zur Tagesgrenze, wie lagerBeute)
+- `barbSheetHtml` :322
+- `row` :341
+- `barbNearest` :355 — the closest camp you may attack, the highest level first
+- `openBarbSheet` :360
+- `closeBarbSheet` :361
+- `barbSheetRefresh` :362
 
 ### Game/spiel/09c-events-woche.js — Events: Wochen-Event (Mo–Fr, Tages-Kisten, Wochen-Rangliste), Event-Fenster, ge…
 - `woWin` :28 — diese oder (nach Fr 20 Uhr) nächste Woche, Mo 0:00 – Fr 20:00: { on, start, end…
@@ -4312,13 +4316,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `recallSources` :46
 - `renderRecallPreview` :56 — "Sammeln": first a preview - how many bases, how many troops, and which share o…
 - `confirmRecall` :79
-- `angriffQuellen` :122 — Angriff: eigene Basen mit Truppen, die hinkommen – die nächste (kürzester Weg) …
-- `angriffReicht` :127 — Reicht eine Basis mit allen Truppen (ohne Held) gegen das gespähte Ziel? – gere…
-- `angriffStart` :133 — Vorausgewählt: die nächste Basis mit genug Truppen; reicht keine, die mit den m…
-- `fogPointAt` :221 — a fogged spot on land under the finger
-- `tapFog` :227
-- `fogPromptHit` :242 — → 'go' (the button), 'off' (elsewhere)
-- `handleTap` :247
+- `angriffQuellen` :123 — Angriff: eigene Basen mit Truppen, die hinkommen – die nächste (kürzester Weg) …
+- `angriffReicht` :128 — Reicht eine Basis mit allen Truppen (ohne Held) gegen das gespähte Ziel? – gere…
+- `angriffStart` :134 — Vorausgewählt: die nächste Basis mit genug Truppen; reicht keine, die mit den m…
+- `fogPointAt` :222 — a fogged spot on land under the finger
+- `tapFog` :228
+- `fogPromptHit` :243 — → 'go' (the button), 'off' (elsewhere)
+- `handleTap` :248
 
 ### Game/spiel/10c-start-einstellungen.js — Ladebild, Musik, Einstellungen, Live-Anzeige
 - `Music` :8 — LOADING SCREEN ===== Shown from the first paint (markup + CSS); the bar runs to…

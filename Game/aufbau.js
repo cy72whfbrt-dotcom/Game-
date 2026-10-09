@@ -201,7 +201,7 @@ function foSperre(who, d) {                                    // warum diese Fo
     if (L > d.max) return 'Fertig erforscht.';
     if (aka < foAkaFuer(d, L)) return 'Braucht Labor Stufe ' + foAkaFuer(d, L) + '.';
     if (d.vor && foStufe(who, d.vor) < 1) return 'Braucht zuerst „' + FO_BY[d.vor].name + '“.';
-    if (c.foRun && !FO_BY[c.foRun.id]) c.foRun = null;           // (alter Spielstand: diese Forschung gibt es nicht mehr – Wachturm, T2–T5)
+    if (c.foRun && !FO_BY[c.foRun.id]) { c.foRun = null; if (who === 'player') saveCity(); else saveBotState(); }   // (alter Spielstand: diese Forschung gibt es nicht mehr – Wachturm, T2–T5) – aufgeräumt auch gespeichert
     if (c.foRun) return 'Das Labor forscht schon (' + FO_BY[c.foRun.id].name + ').';
     return null;
 }

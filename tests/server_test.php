@@ -99,6 +99,8 @@ pruefe('Befehl vheld mit HTML', befehl_ok(['art' => 'vheld', 'h1' => '<b>']), fa
 // Teleport (Merkliste 33): Befehl geht durch (Stelle darf negativ sein), ist ein bezahlter Befehl, kaputte Werte nicht
 pruefe('Befehl teleport', befehl_ok(['art' => 'teleport', 'x' => -123456, 'y' => 98765, 'gratis' => false, 'at' => 1]), true);
 pruefe('Befehl teleport bezahlt', in_array('teleport', BEFEHLE_BEZAHLT, true), true);
+// Herrscher-Kisten (06c herrKiste): Befehl „thronKiste“ geht durch, ist kein bezahlter Befehl
+pruefe('Befehl thronKiste', [befehl_ok(['art' => 'thronKiste', 'kiste' => 'gold', 'wem' => 'u7']), in_array('thronKiste', BEFEHLE_BEZAHLT, true)], [true, false]);
 pruefe('Befehl teleport mit HTML', befehl_ok(['art' => 'teleport', 'x' => '<b>', 'y' => 1]), false);
 $b = json_decode(weltteil_fuer_spieler('openWaterBotState', '{"bot1":{"lvl":3,"vh":["brunhild","sigrun"]},"u3":{"lvl":3,"vh":["ida",null]}}', 'u3'), true);
 pruefe('vh: fremd weg, eigener bleibt', [isset($b['bot1']['vh']), $b['u3']['vh'][0] ?? null], [false, 'ida']);
