@@ -17,7 +17,7 @@ Erst lesen: `CLAUDE.md`, dann `doku/INDEX.md`. Offene Punkte: `doku/merkliste.md
 ## NÄCHSTER SCHRITT (wichtigste Aufgabe, Alexander 9.10.)
 Freunde (Erwachsene + Jugendliche) testeten ca. 1 Std.: „unübersichtlich, viel zu viel auf der Karte, wissen nicht
 was tun“. Verwirrt hat ALLES: volle Karte, zu viele Knöpfe/Fenster, kein klares Ziel. Die Anleitung unten (Schritt x/7)
-haben sie gar nicht wahrgenommen. Plan „Erste Stunde neu“: (1) Spieltester spielt als völlig neuer Spieler und notiert
+haben sie gar nicht wahrgenommen. Es fängt SCHON BEIM REINKOMMEN an (Ladebild, Login, erster Bildschirm: „viel zu viel“) – dort beginnen. Plan „Erste Stunde neu“: (1) Spieltester spielt als völlig neuer Spieler und notiert
 jede Verwirrung, (2) Designer: wie machen RoK/Whiteout die erste Stunde, (3) Test-Datei neuer Anfang: Karte klein mit
 Nebel (nur eigene Burg + 3–4 Ziele), EIN Ziel oben groß mit Pfeil statt Leiste unten, Knöpfe/Events/Shop/Bündnis/Helden
 erst nach und nach freischalten („Neu: …“), fremde Basen weit weg nur als Punkte. Alexander zeigt es dann den Freunden.
