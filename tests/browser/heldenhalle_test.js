@@ -16,7 +16,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const H = loadHeroes(); Object.assign(H.sigrun, { own: true, q: 4, sk: [0, 0, 0, 0], sh: 500 }); Object.assign(H.ida, { own: false, q: 0, sk: [0, 0, 0, 0], sh: 500 }); saveHeroes();
     const ziel = islands.find(i => i.id !== playerIslandId), src = islandById[playerIslandId];
     openHeroHall(); const el = document.getElementById('heroHall');
-    out.hinweis = /Baue die Heldenhalle/.test(el.textContent); out.karten = el.querySelectorAll('.hh-card').length;
+    out.zu = el.hidden; out.hinweis = /Baue zuerst die Heldenhalle/.test(document.getElementById('hint').textContent);
     out.owned = heroOwned('player', 'sigrun'); out.pick = heroPickBest('player', src, ziel, 1000); out.launch = heroLaunch('player', 'sigrun', src, ziel, 1000);
     out.unlock = heroDoUnlock('player', 'ida'); out.step = heroDoStep('player', 'sigrun'); out.skill = heroDoSkill('player', 'sigrun', 0); out.cando = HEROES.some(h => heroCanDo('player', h.id));
     const sh = loadHeroes().ida.sh; heroGrantShards('player', 10, 'ida'); out.splitter = loadHeroes().ida.sh - sh;   // Heldenkiste: Splitter sammeln geht
@@ -28,7 +28,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     out.mitOwned = heroOwned('player', 'sigrun'); out.mitPick = heroPickBest('player', src, ziel, 1000); out.mitUnlock = heroDoUnlock('player', 'ida');
     return out;
   });
-  ok(R.hinweis && R.karten === 0, 'ohne Halle: Helden-Fenster zeigt „Baue die Heldenhalle“', R);
+  ok(R.zu && R.hinweis, 'ohne Halle: Helden-Fenster bleibt zu, Hinweis „Baue zuerst die Heldenhalle“', R);
   ok(!R.owned && R.pick === null && R.launch === null, 'ohne Halle: kein Held im Marsch', R);
   ok(!R.unlock && !R.step && !R.skill && !R.cando, 'ohne Halle: kein Freischalten, Aufwerten, keine Fähigkeit', R);
   ok(R.splitter === 10, 'ohne Halle: Splitter sammeln (Heldenkiste) geht', R.splitter);

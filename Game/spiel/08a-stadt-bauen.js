@@ -246,15 +246,16 @@ function closeCity() {
         fertig(); }, 650);
     return true;
 }
-let cityB2Armed = 0;                              // the buy button asks once more before 500 gems go
-function updateCityBuilder() {
-    const c = loadCity(), el = document.getElementById('cityBuilder'), now = Date.now();
-    liveHtml(el, [0, 1].map(i => { const b = c.builds[i];          // (jede Sekunde: neu geschrieben wird nur, was sich ändert – die Restzeit zählt von selbst)
+let cityB2Armed = 0, cityBauAuf = false;        // the buy button asks once more before 500 gems go; cityBauAuf: Bauarbeiter-Liste aufgeklappt
+function updateCityBuilder() {                   // seitlich in der Stadt: Hammer mit „frei/alle“, Antippen klappt die Bauarbeiter auf (wie RoK)
+    const c = loadCity(), el = document.getElementById('cityBuilder'), now = Date.now(), alle = c.builder2 ? 2 : 1;
+    const frei = Math.max(0, alle - c.builds.length);
+    liveHtml(el, '<button type="button" class="cb-knopf' + (frei ? ' is-frei' : '') + '" data-cb-auf aria-label="Bauarbeiter">' + icon('upgrade') + '<b>' + frei + '/' + alle + '</b></button>' +
+        (cityBauAuf ? '<div class="cb-liste">' + [0, 1].map(i => { const b = c.builds[i];          // (jede Sekunde: neu geschrieben wird nur, was sich ändert – die Restzeit zählt von selbst)
         if (b) return '<button type="button" class="cb-slot is-busy" data-cb-open="' + b.id + '">' + icon('hourglass') + '<span>' + cityDef(b.id).name + '</span><b>' + uhrHtml(b.endsAt) + '</b></button>';
         if (i === 0 || c.builder2) return '<span class="cb-slot">' + icon('check') + '<span>' + (c.builder2 ? (i + 1) + '. Bauarbeiter frei' : 'Bauarbeiter frei') + '</span></span>';
         return '<button type="button" class="cb-slot cb-buy' + (cityB2Armed > now ? ' is-armed' : '') + '" data-cb-buy>' + icon('plus') + '<span>' + (cityB2Armed > now ? 'Wirklich kaufen?' : '2. Bauarbeiter') + '</span><b>' + icon('gem') + CITY_BUILDER2_GEMS + '</b></button>';
-    }).join(''));
-    stadtKopf();   // (zwei Zeilen Bauarbeiter: der Hinweis rückt mit)
+    }).join('') + '</div>' : ''));
 }
 function cityBuyBuilder2() {
     const c = loadCity(); if (c.builder2) return;
@@ -266,6 +267,7 @@ function cityBuyBuilder2() {
     updateCityBuilder(); if (cityOpenId) renderCitySheet();
 }
 document.getElementById('cityBuilder').addEventListener('click', e => {
+    if (e.target.closest('[data-cb-auf]')) { cityBauAuf = !cityBauAuf; return updateCityBuilder(); }
     if (e.target.closest('[data-cb-buy]')) return cityBuyBuilder2();
     const o = e.target.closest('[data-cb-open]'); if (o) { cityOpenId = o.dataset.cbOpen === 'keep' ? '_keep' : o.dataset.cbOpen; cityPage = 'bau'; cityFocus(cityOpenId); renderCitySheet(); }   // opens that building's sheet (die Burg: ihr Fenster)
 });

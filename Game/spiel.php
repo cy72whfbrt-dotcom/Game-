@@ -1593,9 +1593,15 @@ main .besch-ic,.besch-ic{width:22px;height:22px;object-fit:contain} #beschInhalt
 .city-head{position:absolute;left:0;right:0;top:0;display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:calc(var(--safe-t) + 10px) 12px 10px;
   background:linear-gradient(180deg,rgba(6,8,12,.92),rgba(6,8,12,.55) 70%,transparent)}
 .city-title{flex:1;min-width:0}
-@media (max-width:599px){.city-builder{flex-basis:100%;justify-content:center}.cb-slot{padding:6px 9px}}
 .city-title h2{margin:2px 0 0;font:700 var(--fs-18,18px)/1.1 var(--font-display);color:var(--gold-100);letter-spacing:.04em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.city-builder{order:3;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.city-builder{position:absolute;left:10px;top:calc(100% + 6px);display:flex;align-items:flex-start;gap:6px;z-index:2}   /* Bauarbeiter seitlich unter dem Kopf: Hammer, aufgeklappt die Liste */
+body.has-panel .city-builder,.city:has(#citySheet:not([hidden])) .city-builder,body:has(#heroHall:not([hidden])) .city-builder{display:none}   /* nie über einem Fenster */
+.cb-knopf{position:relative;width:48px;height:48px;border-radius:50%;border:2px solid var(--gold-300);background:rgba(10,10,14,.8);display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
+.cb-knopf>svg.icon{width:32px;height:32px;background:url(bilder/ui_sym_bauarbeiter.webp) center/contain no-repeat}
+.cb-knopf>svg.icon>use{display:none}
+.cb-knopf b{position:absolute;right:-6px;bottom:-4px;min-width:26px;padding:1px 4px;border-radius:var(--r-pill);background:#3a2a10;border:1px solid var(--gold-300);font:700 var(--fs-11)/1.2 var(--font-ui);color:var(--tx-2)}
+.cb-knopf.is-frei b{background:#1f5a2a;color:#fff}
+.cb-liste{display:flex;flex-direction:column;align-items:flex-start;gap:6px}
 .cb-slot{display:flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line-2);border-radius:var(--r-pill);background:rgba(10,10,14,.75);
   font:600 var(--fs-11)/1 var(--font-ui);color:var(--tx-2);white-space:nowrap;min-width:0}
 button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}

@@ -574,14 +574,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `chip` → Game/spiel/05b-profil-truhe-skills.js:9
 - `chipN` → Game/spiel/01a-grundlagen.js:203
 - `cityAnfHtml` → Game/spiel/08b-stadt-burg-aussehen.js:107
-- `cityBauId` → Game/spiel/08a-stadt-bauen.js:272
+- `cityBauId` → Game/spiel/08a-stadt-bauen.js:274
 - `cityBild` → Game/spiel/08e-stadt-bild-orte.js:24
 - `cityBildSetzen` → Game/spiel/08b-stadt-burg-aussehen.js:86
 - `cityBlocker` → Game/spiel/08a-stadt-bauen.js:109
 - `cityBuildOf` → Game/spiel/08a-stadt-bauen.js:74
 - `cityBuildsFix` → Game/spiel/08a-stadt-bauen.js:65
 - `cityBurgFehlt` → Game/spiel/08b-stadt-burg-aussehen.js:115
-- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:259
+- `cityBuyBuilder2` → Game/spiel/08a-stadt-bauen.js:260
 - `cityClampBuild` → Game/spiel/08a-stadt-bauen.js:101
 - `cityClampCam` → Game/spiel/08e-stadt-bild-orte.js:34
 - `cityCost` → Game/spiel/08a-stadt-bauen.js:90
@@ -645,7 +645,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:232
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:74
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:362
-- `closeHeroHall` → Game/spiel/08c-helden-fenster.js:283
+- `closeHeroHall` → Game/spiel/08c-helden-fenster.js:281
 - `closeIslandPopup` → Game/spiel/09e-fenster-insel.js:111
 - `closeLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:126
 - `closeLookSheet` → Game/spiel/08b-stadt-burg-aussehen.js:68
@@ -1096,7 +1096,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroChestOpen` → Game/spiel/06d-schild-produktion.js:136
 - `heroChestPool` → Game/spiel/06d-schild-produktion.js:126
 - `heroChestTeile` → Game/spiel/06d-schild-produktion.js:143
-- `heroChipHtml` → Game/spiel/08c-helden-fenster.js:320
+- `heroChipHtml` → Game/spiel/08c-helden-fenster.js:318
 - `heroConvert` → Game/spiel/08c-helden-fenster.js:5
 - `heroDefCut` → Game/spiel/01e-kampf-werte-nebel-hud.js:139
 - `heroDefPart` → Game/spiel/01e-kampf-werte-nebel-hud.js:149
@@ -1115,7 +1115,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroGefOf` → Game/spiel/08c-helden-fenster.js:50
 - `heroGrantShards` → Game/spiel/08c-helden-fenster.js:128
 - `heroHalle` → Game/spiel/08c-helden-fenster.js:24
-- `heroHallLive` → Game/spiel/08c-helden-fenster.js:277
+- `heroHallLive` → Game/spiel/08c-helden-fenster.js:273
 - `heroImg` → Game/spiel/08c-helden-fenster.js:203
 - `heroIn` → Game/spiel/08c-helden-fenster.js:108
 - `heroLaunch` → Game/spiel/08c-helden-fenster.js:86
@@ -1137,8 +1137,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `heroRageUp` → Game/spiel/08c-helden-fenster.js:94
 - `heroReportOf` → Game/spiel/01e-kampf-werte-nebel-hud.js:107
 - `heroSave` → Game/spiel/08c-helden-fenster.js:25
-- `heroSeg2Html` → Game/spiel/08c-helden-fenster.js:313
-- `heroSegHtml` → Game/spiel/08c-helden-fenster.js:308
+- `heroSeg2Html` → Game/spiel/08c-helden-fenster.js:311
+- `heroSegHtml` → Game/spiel/08c-helden-fenster.js:306
 - `heroSkillVal` → Game/spiel/08c-helden-fenster.js:32
 - `heroSt` → Game/spiel/08c-helden-fenster.js:22
 - `heroStarNum` → Game/spiel/08c-helden-fenster.js:29
@@ -1156,7 +1156,6 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hfl` → Game/spiel/10a-fenster-insel-vorschau.js:439
 - `hhGrid` → Game/spiel/08c-helden-fenster.js:205
 - `hhHero` → Game/spiel/08c-helden-fenster.js:228
-- `hhOhneHalle` → Game/spiel/08c-helden-fenster.js:272
 - `hhPairs` → Game/spiel/08c-helden-fenster.js:220
 - `hhPartnerBlk` → Game/spiel/08c-helden-fenster.js:267
 - `hhStars` → Game/spiel/08c-helden-fenster.js:200
@@ -1523,7 +1522,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `openCity` → Game/spiel/08a-stadt-bauen.js:214
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:334
 - `openGoals` → Game/spiel/06a-aufgaben.js:327
-- `openHeroHall` → Game/spiel/08c-helden-fenster.js:282
+- `openHeroHall` → Game/spiel/08c-helden-fenster.js:278
 - `openHerr` → Game/spiel/06c-thron-mitte.js:224
 - `openIslandPopup` → Game/spiel/09e-fenster-insel.js:102
 - `openLookSheet` → Game/spiel/08b-stadt-burg-aussehen.js:64
@@ -1723,7 +1722,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderChestEquipment` → Game/spiel/05b-profil-truhe-skills.js:46
 - `renderChestItemPopup` → Game/spiel/05b-profil-truhe-skills.js:189
 - `renderCitySheet` → Game/spiel/08b-stadt-burg-aussehen.js:143
-- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:273
+- `renderCitySheetTimer` → Game/spiel/08a-stadt-bauen.js:275
 - `renderCombatLog` → Game/spiel/05d-marsch-liste-kampfbericht.js:148
 - `renderCrestCard` → Game/spiel/05a-profil-rahmen.js:71
 - `renderCrestEditor` → Game/spiel/05a-profil-rahmen.js:76
@@ -1731,7 +1730,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderEventReiter` → Game/spiel/06g-shop-gegenstaende.js:79
 - `renderEvents` → Game/spiel/09c-events-woche.js:272
 - `renderGoalsSub` → Game/spiel/06a-aufgaben.js:325
-- `renderHeroHall` → Game/spiel/08c-helden-fenster.js:276
+- `renderHeroHall` → Game/spiel/08c-helden-fenster.js:272
 - `renderHerr` → Game/spiel/06c-thron-mitte.js:225
 - `renderInbox` → Game/spiel/06a-aufgaben.js:255
 - `renderKeep` → Game/aufbau.js:309
@@ -3861,10 +3860,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `stadtBlende` :209 — die Stadt über der Karte ein-/ausblenden
 - `openCity` :214 — dann: läuft, sobald die Stadt da ist (z. B. die Burg öffnen) – nicht nach feste…
 - `closeCity` :232
-- `updateCityBuilder` :250
-- `cityBuyBuilder2` :259
-- `cityBauId` :272 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
-- `renderCitySheetTimer` :273
+- `updateCityBuilder` :250 — seitlich in der Stadt: Hammer mit „frei/alle“, Antippen klappt die Bauarbeiter …
+- `cityBuyBuilder2` :260
+- `cityBauId` :274 — das Burg-Fenster heißt '_keep', ihr Ausbau 'keep'
+- `renderCitySheetTimer` :275
 
 ### Game/spiel/08b-stadt-burg-aussehen.js — Burg (Ausbau, Friedensschild) und Fenster Aussehen
 - `shieldStock` :3 — DEINE BURG (tap the castle in the city): upgrade it, switch on a Friedensschild
@@ -3966,14 +3965,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wert` :241
 - `hhSwapHtml` :262 — übrige Splitter umtauschen: Ziel wählen, alle auf einmal (1:1)
 - `hhPartnerBlk` :267 — sein Paar: Partner, Bonus, gemeinsame Geschichte
-- `hhOhneHalle` :272 — noch keine Heldenhalle: nur der Hinweis (Splitter sammeln geht schon)
-- `renderHeroHall` :276
-- `heroHallLive` :277 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
-- `openHeroHall` :282
-- `closeHeroHall` :283
-- `heroSegHtml` :308 — the hero choice for an attack, an army or a field march: the ones you have, wit…
-- `heroSeg2Html` :313 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
-- `heroChipHtml` :320 — profile + report: a hero with rarity and stars
+- `renderHeroHall` :272
+- `heroHallLive` :273 — (liveTick) neue Splitter, Wut, Stufe, „unterwegs“: nur bei einer Änderung neu z…
+- `openHeroHall` :278 — ohne gebaute Heldenhalle: gar nicht auf, nur der Hinweis (kein leeres Fenster)
+- `closeHeroHall` :281
+- `heroSegHtml` :306 — the hero choice for an attack, an army or a field march: the ones you have, wit…
+- `heroSeg2Html` :311 — der Zweitheld (Paket E): erst mit Hauptheld; der passende Partner steht vorn un…
+- `heroChipHtml` :318 — profile + report: a hero with rarity and stars
 
 ### Game/spiel/08d1-stadt-gebaeude-wirkung.js — Wirkung der Gebäude (Labor, Schmiede, Lazarett), Mauer-Helden, Stadt-Leiste
 - `academyLevel` :3 — ---- building effects ----
