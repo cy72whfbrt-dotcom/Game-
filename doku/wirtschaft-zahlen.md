@@ -57,7 +57,7 @@ Regel (CLAUDE.md): Zahlen immer aus Spieler-Sicht prüfen und mit RoK vergleiche
 - Kampf-Gold je Kill: Fähigkeiten „Angriff/Verteidigung: Münzen“ (`SKILL_DEFS`), Held-Anteil (`killGoldRate`, `fieldGold`),
   Anzeige „je 1.000 Kills“.
 - Ausrüstung: Wirkung (Wert + 6) × 0,15 % (grau 1 ≈ 1 %), Zerlegen 5 + Wert Punkte.
-- Edelsteine je Tag aus Aufgaben 42, Wochenkette 150/Woche; Pass frei 360, Premium 950 je Saison.
+- Edelsteine je Tag aus Aufgaben 60 (2 × (5 + 7 + 10) + 16 Bonus; Hauptbuch-Spielraum folgt questGemsTag), Wochenkette 150/Woche; Pass frei 360, Premium 950 je Saison.
 
 ## Offen (Merkliste)
 - 11c Nr. 26: Produktion im Spätspiel aufgebläht, Friedensschild-Preise gegen Einkommen prüfen (Teile durch 7.10. erledigt).

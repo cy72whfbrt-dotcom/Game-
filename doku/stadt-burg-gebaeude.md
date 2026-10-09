@@ -8,9 +8,11 @@ Markt, Marsch-Plätze, `burgFair`), `Game/spiel/08a-stadt-bauen.js` (`burgZeitTa
 ## Burg
 - Eigene Burg-Stufe 1–25 (`city.levels.keep`); die Hauptstadt auf der Karte folgt ihr (Anzeige = Burg-Stufe, intern × 4).
   Kein „Aufwerten“ der Hauptstadt draußen, nur über die Burg. Andere Basen draußen: sofort mit Münzen, ohne Bauzeit.
-- Bauzeit als Tabelle (`burgZeitTab`, Alexander 7.10.): 1→2 10 s … 10→11 12 Std., ab 11 steil bis 45 Tage (24→25).
+- Bauzeit als Tabelle (`burgZeitTab`, Alexander 7.10.): 1→2 10 s … 10→11 12 Std., ab 11 steil (je Stufe × 1,3–1,5, 13→14 3 Tage, kein Doppelsprung) bis 45 Tage (24→25).
   Burg 10 am ersten Tag, Burg 18 nach ~35 Tagen, Burg 25 nach ~231 Tagen (~4 Saisons). Burg 25 NICHT in einer Saison.
 - Kosten `burgBasis` = 1.000 × 1,75 je Stufe bis 10, danach × 1,6 (Burg 2: 1.000 Holz / 1.100 Münzen; Burg 25 ~110 Mio. Holz),
+- Burg-Münzen (9.10.): ab Burg 5 mindestens 0,3 … 0,75 Std. Münz-Ertrag der Hauptstadt (`burgMuenzStd`, ab Burg 10 0,75 Std.;
+  Burg 24→25 ≈ 4,4 Mrd.), Burg 1–4 wie bisher. Gebäude: 0,6 × `burgBasis` (unverändert). Test `burg_tempo_test`.
   Münzen + Holz + Stein + Eisen. Mit Edelsteinen schneller (1 je Minute, ab 500 „Wirklich?“).
 - Schaltet frei: Gebäude höchstens bis zur Burg-Stufe; Markt ab Burg 4, Botschaft ab 5.
 - Burg-Schutz: so viel von jedem Rohstoff ist vor Beute sicher – Münzen `burgSchutz`, Holz/Stein/Eisen `burgSchutzRoh`

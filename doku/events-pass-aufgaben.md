@@ -50,8 +50,8 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 - Ansicht: lange waagrechte Leiste (oben Premium, Mitte Stufe, unten Frei) mit Belohnungs-Kacheln. Heißt „Saison-Pass“. Kleines Handy (360×640): Kacheln kleiner, Premium-Reihe ohne Krone – ganz im Fenster (Test handy_360).
 
 ## Aufgaben
-- 6 am Tag (2 leicht / 2 mittel / 2 schwer: 3/5/8 Edelsteine + 1/2/3 Std. Münzen); Bonus bei 3 (2 Std. Truppen) und bei
-  allen 6 (Kiste, 10 Edelsteine, 5 Splitter) – 42 Edelsteine am Tag. Nur was heute geht (Bündnis, Gebäude, Tagesboss
+- 6 am Tag (2 leicht / 2 mittel / 2 schwer: 5/7/10 Edelsteine + 1/2/3 Std. Münzen); Bonus bei 3 (2 Std. Truppen) und bei
+  allen 6 (Kiste, 16 Edelsteine, 5 Splitter) – 60 Edelsteine am Tag. Nur was heute geht (Bündnis, Gebäude, Tagesboss
   nur donnerstags; Tempel-Aufgabe erst wenn Zone 4 offen, Thron-Aufgabe ab Tag 7). Zähler `QUEST_STAT` (auch vom Weltrechner).
   Weltrechner: Truppen-Quelle `aufgabe` höchstens 2 in 24 Std., Münz-Topf 12 Std. am Tag.
 

@@ -1,5 +1,5 @@
 // Tagesaufgaben (7.10., Event-Zahlen): 6 am Tag (2 leicht, 2 mittel, 2 schwer), je 3/5/8 Edelsteine + 1/2/3 Std. Münzen, Bonus bei 3
-// (2 Std. Truppen) und bei allen 6 (Kiste, 10 Edelsteine, Splitter) – 42 Edelsteine am Tag; 14 neue Arten, nur was heute geht;
+// (2 Std. Truppen) und bei allen 6 (Kiste, 16 Edelsteine, Splitter) – 60 Edelsteine am Tag; 14 neue Arten, nur was heute geht;
 // sie zählen über die Zähler (statBump, auch vom Weltrechner) und die Knöpfe im Spiel. Argument 3: Ordner für ein Handy-Foto.
 const { chromium, devices } = require('playwright');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x).slice(0, 300) : ''));
@@ -22,7 +22,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(w.n.join() === '6' && w.stufen.join() === '001122' && !w.doppelt, '6 Aufgaben: 2 leicht, 2 mittel, 2 schwer, keine doppelt', w);
   ok(w.neu === 21 && w.arten === w.moeglich && !w.leichtTT, '21 Arten: alle, die heute gehen, werden gewürfelt, Tempel/Thron nie leicht', w);
   ok((w.bundDa || !w.bund) && (w.bossHeute || !w.boss), 'nur was heute geht: Bündnis, Tagesboss', w);
-  ok(w.gemsTag === 42, 'Edelsteine am Tag: 2 × (3 + 5 + 8) + 10 = 42', w.gemsTag);
+  ok(w.gemsTag === 60, 'Edelsteine am Tag: 2 × (5 + 7 + 10) + 16 = 60', w.gemsTag);
   // 1b) Tempel (Zone 4, Pässe ab Tag 4) und Thron (ab Tag 7) nur, wenn sie heute angreifbar werden
   const tt = await ev(() => {
     const s0 = store.get('openWaterWorldStart'), tag = d => { store.set('openWaterWorldStart', String(Date.now() - (d - 1) * 86400000)); WEG_MERK.clear(); };

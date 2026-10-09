@@ -58,7 +58,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   console.log(JSON.stringify(r));
   ok(!r.fehlt, 'Gebiet gefunden', r.fehlt);
-  ok(r.a && r.a.tag1 === r.a.soll && r.a.soll === 42 && r.a.tag7 === r.a.soll, '(a) Tagesaufgaben: 42 Edelsteine wie bei dir, auch am 7. Tag (keine Wochenkette mehr)', r.a);
+  ok(r.a && r.a.tag1 === r.a.soll && r.a.soll === 60 && r.a.tag7 === r.a.soll, '(a) Tagesaufgaben: 60 Edelsteine wie bei dir, auch am 7. Tag (keine Wochenkette mehr)', r.a);
   ok(r.zielTp === 500, '(b) mit 10 Basen: Spar-Ziel 500 (Teleport)', r.zielTp);
   ok(r.b && r.b.gems >= 500 && !r.b.kisteUnter && r.b.bezahlbar && r.b.tage <= 14, '(b) spart auf 500, keine Kiste darunter', r.b);
   ok(r.b && r.b.tp && r.b.tp.tp && r.b.tp.nah && r.b.tp.bezahlt === 500, '(b) danach Teleport für 500 (neben den eigenen Turm)', r.b && r.b.tp);

@@ -134,10 +134,10 @@ function questStadtGeht(art) {
     } catch (e) { return true; }
 }
 var QUEST_TIER = [0, 0, 1, 1, 2, 2];                  // 6 am Tag: 2 leicht, 2 mittel, 2 schwer
-var QUEST_GEMS = [3, 5, 8], QUEST_COIN_H = [1, 2, 3];  // je Stufe: Edelsteine + so viele Stunden Münzen
+var QUEST_GEMS = [5, 7, 10], QUEST_COIN_H = [1, 2, 3];  // je Stufe: Edelsteine + so viele Stunden Münzen
 var QUEST_BONUS3 = { n: 3, tr: 2 };                    // Bonus bei 3 erledigt: 2 Stunden Truppen
-var QUEST_BONUS = { crates: 1, gems: 10 };             // Bonus bei allen 6 (+ Helden-Splitter)
-const questGemsTag = () => QUEST_TIER.reduce((a, st) => a + QUEST_GEMS[st], 0) + QUEST_BONUS.gems;   // Edelsteine am Tag (Hauptbuch: 42)
+var QUEST_BONUS = { crates: 1, gems: 16 };             // Bonus bei allen 6 (+ Helden-Splitter)
+const questGemsTag = () => QUEST_TIER.reduce((a, st) => a + QUEST_GEMS[st], 0) + QUEST_BONUS.gems;   // Edelsteine am Tag (Hauptbuch: 60)
 var questState = null;
 const questGeht = k => { const d = QUEST_DEFS[k]; try { return !d.geht || !!d.geht(); } catch (e) { return false; } };
 function questNeu(type, st) { return { type, st, target: QUEST_DEFS[type].steps[st], progress: 0, gems: QUEST_GEMS[st], h: QUEST_COIN_H[st], claimed: false }; }

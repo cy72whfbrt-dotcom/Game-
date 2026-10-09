@@ -80,15 +80,18 @@ function cityDef(id) { return id === 'keep' ? KEEP_DEF : CITY_BUILDINGS.find(b =
 // (Funktionen statt Konstanten: loadCity kürzt Bauten evtl. schon beim Laden früherer Teile)
 function burgZeitTab(L) {
     const T = 86400, Z = [10, 60, 300, 900, 1800, 3600, 7200, 14400, 28800, 43200,   // 1 → 2 … 10 → 11
-        T, 1.5 * T, 2 * T, 4 * T, 6 * T, 8 * T, 11 * T, 14 * T, 18 * T,                 // 11 → 12 … 19 → 20
+        T, 1.5 * T, 2 * T, 3 * T, 4.5 * T, 6.5 * T, 9 * T, 13 * T, 17.5 * T,          // 11 → 12 … 19 → 20 (9.10.: ohne Doppelsprung, je × 1,3–1,5)
         22 * T, 27 * T, 32 * T, 38 * T, 45 * T];                                         // 20 → 21 … 24 → 25
     return Z[Math.max(1, Math.min(Z.length, L | 0 || 1)) - 1];
 }
 // Grundwert der Burg-Kosten (Holz; Stein 0,8 ×, Eisen 0,5 ×, Münzen 2 × in wirtM): 1.000 · 1,75 je Stufe bis 10, danach × 1,6 – Burg 25 ≈ 110 Mio. Holz
 function burgBasis(L) { return 1000 * Math.pow(1.75, Math.min(Math.max(1, L), 10) - 1) * Math.pow(1.6, Math.max(0, L - 10)); }
+// Burg-Münzen (Alexander 9.10.): ab Burg 5 so viel wie 0,3 … 0,75 Std. Münz-Ertrag der Hauptstadt (Burg 1–4 wie bisher)
+const burgMuenzStd = L => L < 5 ? 0 : Math.min(.75, .1 * (L - 2));
+const burgKartenStufe = L => Math.round(1 + (Math.max(1, Math.min(25, L)) - 1) * (MAX_BASE_LEVEL - 1) / 24);   // wie burgKarte (aufbau.js)
 function stadtFaktor(L) { return L >= 25 ? Math.pow(1.15, L - 24) : 1; }   // (nur das Krankenhaus geht über 25: Burg 24 + 15 % je Stufe)
 function cityCost(id, level) {                    // coins to go from `level` to level + 1 (Münzen: wirtM)
-    if (id === 'keep') return niceRound(wirtM(2 * burgBasis(level)));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
+    if (id === 'keep') return niceRound(Math.max(wirtM(2 * burgBasis(level)), burgMuenzStd(level) * 3600 * coinsPerTick(burgKartenStufe(level))));   // Burg-Stufe (dazu Rohstoffe: aufbau.js)
     return niceRound(wirtM(.6 * burgBasis(Math.min(24, level)) * stadtFaktor(level)));   // Gebäude: 30 % der Burg derselben Stufe
 }
 function cityTimeRoh(id, level) {                 // build time for level -> level + 1 – auch der Weltrechner prüft damit (Hauptbuch)

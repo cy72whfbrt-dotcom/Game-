@@ -12,13 +12,14 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.waitForTimeout(1500);
   const r = await p.evaluate(() => {
     const o = {}, T = 86400, sum = (a, z) => { let s = 0; for (let L = a; L < z; L++) s += cityTimeRoh('keep', L); return s; };
-    o.zeit = { z2: cityTimeRoh('keep', 1), bis10: sum(1, 10) / 3600, bis18: sum(1, 18) / T, bis25: sum(1, 25) / T, z25: cityTimeRoh('keep', 24) / T, gleich: AUF.burgZeitRoh(15) === cityTimeRoh('keep', 15) };
+    o.zeit = { z2: cityTimeRoh('keep', 1), bis10: sum(1, 10) / 3600, bis18: sum(1, 18) / T, bis25: sum(1, 25) / T, z25: cityTimeRoh('keep', 24) / T, sprung: Math.max(...Array.from({ length: 23 }, (_, i) => cityTimeRoh('keep', i + 2) / cityTimeRoh('keep', i + 1)).slice(10)), gleich: AUF.burgZeitRoh(15) === cityTimeRoh('keep', 15) };
     const k = L => AUF.stadtKosten('keep', L);
     o.burg = { b2: k(1), b5: k(4), b25: k(24) };
     let steigt = true; for (let L = 2; L < 25; L++) for (const x of ['c', 'h', 's', 'e']) if (!(k(L)[x] > k(L - 1)[x])) steigt = false;
     o.steigt = steigt;
+    o.muenzStd = [2, 4, 5, 10, 13, 20, 24].map(L => Math.round(k(L).c / (3600 * coinsPerTick(burgKartenStufe(L))) * 100) / 100);   // Burg-Münzen in Std. Ertrag der Hauptstadt
     const g = AUF.stadtKosten('academy', 9), bk = k(9);
-    o.geb = { h: g.h / bk.h, c: g.c / bk.c, t: cityTimeRoh('academy', 15) / cityTimeRoh('keep', 15), erst: cityTimeRoh('academy', 0), t25: cityTimeRoh('academy', 24) / T };
+    o.geb = { h: g.h / bk.h, c: g.c / niceRound(wirtM(2 * burgBasis(9))), t: cityTimeRoh('academy', 15) / cityTimeRoh('keep', 15), erst: cityTimeRoh('academy', 0), t25: cityTimeRoh('academy', 24) / T };
     o.kh = { c40: AUF.stadtKosten('hospital', 39).c, c25: AUF.stadtKosten('hospital', 24).c, t40: cityTimeRoh('hospital', 39) / T };
     o.roh = [AUF.rohJeStunde ? 1 : 0, Math.round(rohGebStunde(25) / rohGebStunde(24) * 100) / 100];
     o.lager = [1, 4, 10, 25].map(L => [barbTroopsOf(L), lagerMuenzen(L)]);
@@ -33,10 +34,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.zeit.bis10 <= 24, 'Burg 10 am ersten Tag (Grundzeit ≤ 24 Std.)', r.zeit.bis10);
   ok(r.zeit.bis18 <= 56, 'Burg-Tempo: Summe Bauzeit bis Burg 18 ≤ 56 Tage (eine Saison)', r.zeit.bis18);
   ok(r.zeit.bis25 > 56 * 3, 'Burg-Tempo: Burg 25 erst nach mehreren Saisons (> 56 Tage, Ziel ~4 Saisons)', r.zeit.bis25);
+  ok(r.zeit.sprung <= 1.6, 'Burg-Bauzeit ab Burg 11: kein Doppelsprung (13 → 14: 3 Tage, je Stufe höchstens × 1,6)', r.zeit.sprung);
   ok(r.zeit.z25 === 45 && r.zeit.gleich, 'Burg 24 → 25: 45 Tage, aufbau.js nimmt dieselbe Tabelle', r.zeit);
   ok(r.burg.b2.h === 1000 && r.burg.b2.c >= 1000 && r.burg.b2.c <= 1200, 'Burg 2 kostet 1.000 Holz, ~1.100 Münzen', r.burg.b2);
   ok(r.burg.b5.h >= 5000 && r.burg.b5.h <= 6000, 'Burg 5: ~5.400 Holz', r.burg.b5);
   ok(r.burg.b25.h >= 100e6 && r.burg.b25.h <= 120e6, 'Burg 25: ~110 Mio. Holz (vorher 5,6 Mrd.)', r.burg.b25);
+  ok(r.muenzStd.slice(0, 2).every(h => h < .15) && r.muenzStd[2] >= .25 && r.muenzStd.slice(3).every(h => h >= .5 && h <= 1), 'Burg-Münzen: Burg 1–4 billig, ab 5 steigend, ab 10 etwa 0,75 Std. Ertrag der Hauptstadt', r.muenzStd);
   ok(r.steigt, 'Burg-Kosten steigen jede Stufe (Münzen, Holz, Stein, Eisen)');
   ok(Math.abs(r.geb.h - .3) < .03 && Math.abs(r.geb.c - .3) < .03 && Math.abs(r.geb.t - .15) < .001, 'Gebäude: 30 % Kosten, 15 % Zeit der Burg gleicher Stufe', r.geb);
   ok(r.geb.erst === 10 && r.geb.t25 > 6 && r.geb.t25 <= 7, 'Gebäude: Stufe 1 in 10 s, 24 → 25 ≈ 6,8 Tage', r.geb);

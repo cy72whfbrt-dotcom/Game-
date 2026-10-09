@@ -28,7 +28,7 @@
         for (const x of ['c', 'h', 's', 'e']) a[x] = Math.min(a[x], n[x] === undefined ? a[x] : n[x]); return a; }
     const HB_SLOTS = Object.keys(EQUIPMENT_DEFS);
     const HB_TAG = {                                  // Spielraum pro Tag – je Quelle die Grenze aus dem Spiel
-        g: 25 + questGemsTag(),                       // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (42) – Event-Preise kommen als Nachricht (gIn)
+        g: 25 + questGemsTag(),                       // Gems: Tagesbelohnung (höchstens 25), 6 Aufgaben + Bonus (60) – Event-Preise kommen als Nachricht (gIn)
         k: 3 + 1 + 1 / 7,                             // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, epische Tageskiste
         kg: 27 / 7,                                   // davon „mind. Episch“ (Tag 7) als sicherer Kisten-Wert (Episch = 27)
         sh: HERO_SHARDS_DAY,                          // Splitter: Aufgaben-Bonus

@@ -37,7 +37,7 @@ NIE „Bot“ oder „KI“ (sie sind „Spieler“). Wichtigste Dateien: `Game/
 - Kisten, Heldenkisten, Beschleunigen, Helden-Reset nur aus dem, was über dem Spar-Ziel liegt (`botSparZiel`): Teleport 500
   (ab 8 Basen), Premium-Pass (Saison läuft noch ≥ 7 Tage), 2. Baumeister – je Gruppe verschieden (`BOT_SPAR`). Pass und
   Baumeister kaufen sie, sobald es reicht. Rest 50 Edelsteine (`BOT_GEMS_REST`); Sterne und Schilde bleiben dringend.
-- Edelsteine aus Aufgaben wie du (`questGemsTag` = 42, alle 7 Tage + 150 Wochenkette). Test `mitspieler_sparen_test`.
+- Edelsteine aus Aufgaben wie du (`questGemsTag` = 60, alle 7 Tage + 150 Wochenkette). Test `mitspieler_sparen_test`.
 
 ## Stadt, Helden, Forschung
 - Bauen Burg und Gebäude mit gleichen Kosten, forschen nach Spielstil (`BOT_FO_LIEBER`, neue Labor-23-Forschungen zuletzt),
