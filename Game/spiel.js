@@ -1050,7 +1050,7 @@ function islandOwnerOf(islandId) {
 // (if anyone) owns it - neutral islands use their fixed generated
 // stats, an owned island uses its real garrison and level.
 // ===== HERRSCHER DER MEERE =====
-// Platz 1 des letzten Thron-Events (06c) herrscht eine Woche: Krone auf jedem Namensschild, Königsburg-Skin,
+// Platz 1 des letzten Thron-Events (06c) herrscht eine Woche: Krone auf jedem Namensschild, Herrscherburg-Skin,
 // +25 % Münzen und Truppen auf allen Basen, vergibt die Titel. Wer gerade den Thron hält: thronHalter() (06c).
 const RULER_BONUS = 1.25;
 const megaTempleId = (islands.find(i => i.type === 'megaTemple') || {}).id;
@@ -3029,14 +3029,17 @@ function drawUebersichtZeichen(z) {
   if (!karteBilder()) return;
   setScreen(ctx);
   for (const isl of islands) if (isl.bildR && !islandSeen(isl)) heiligtumBild(isl, z);
-  if (z >= KARTE_BILD_ZOOM) return; const jetzt = Date.now(), r = viewW < 600 ? 6 : 5;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 ' + (viewW < 600 ? 11 : 14) + 'px Georgia, serif'; ctx.lineJoin = 'round';
+  if (z >= KARTE_BILD_ZOOM) return; const jetzt = Date.now(), r = viewW < 600 ? 6 : 5, klein = viewW < 600;
+  const zs = extraBild('zone_schild'), pt = extraBild('pass_tor'), sw = klein ? 26 : 32, pw = klein ? 22 : 26;   // Zonen-Nummer auf dem Schild, Pass als Tor (KI-Bilder, 9.10.)
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 ' + (klein ? 12 : 15) + 'px Georgia, serif'; ctx.lineJoin = 'round';
   for (const lm of landmasses) { if (lm.zone === ZONE_MITTE) continue; const t = lm.tier === 'guardian', x = toSX(lm.x), y = toSY(lm.y) + (t ? Math.max(HEILIGTUM_BREITE.guardian * z, 30) * .55 : 0);
     if (x < -20 || y < -20 || x > viewW + 20 || y > viewH + 20) continue;
-    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(lm.name, x, y); ctx.fillStyle = '#e4c886'; ctx.fillText(lm.name, x, y); }
+    if (zs) { const sh = sw * zs.height / zs.width; ctx.drawImage(zs, x - sw / 2, y - sh / 2, sw, sh); }
+    ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(10,12,16,.8)'; ctx.strokeText(lm.name, x, y); ctx.fillStyle = zs ? '#ffe7a8' : '#e4c886'; ctx.fillText(lm.name, x, y); }
   for (const br of bridges) { const x = toSX(br.pass.x), y = toSY(br.pass.y); if (x < -10 || y < -10 || x > viewW + 10 || y > viewH + 10) continue;
     ctx.globalAlpha = passOpensAt(br) > jetzt ? .45 : 1; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = PASS_FARBE[br.pass.stufe]; ctx.fill();
-    ctx.lineWidth = 2; ctx.strokeStyle = '#0c0f14'; ctx.stroke(); }
+    ctx.lineWidth = 2; ctx.strokeStyle = '#0c0f14'; ctx.stroke();
+    if (pt) { const ph = pw * pt.height / pt.width; ctx.drawImage(pt, x - pw / 2, y - ph - r + 2, pw, ph); } }   // (der Punkt in Stufen-Farbe bleibt als Fuß)
   ctx.globalAlpha = 1;
 }
 function drawToreImNebel(view, z) {                                            // die Kette hat an jedem Tor eine Lücke: auch unerforschte Tore zeigen (der Nebel liegt darüber)
@@ -3081,30 +3084,38 @@ function basisMip(nr, px) {                                                    /
     i++; }
   return m[i];
 }
+// Hauptstädte (eigene und fremde, Alexander 9.10.): eigenes Bild je Burg-Stufe (1–8 / 9–16 / 17–25), 1,5× so groß; die Fahnen-/Schildfarbe bleibt.
+const HAUPT_GROSS = 1.5;
+function hauptBildNr(island) {                                                 // 1–3 bei einer Hauptstadt mit Besitzer, sonst 0
+  if (!(island.id === playerIslandId || isCapital(island.id)) || !islandOwnerOf(island.id)) return 0;
+  const B = anzeigeStufe(island.id); return B <= 8 ? 1 : B <= 16 ? 2 : 3;
+}
+function basisBildVon(island) {                                                // geladenes Bild der Basis (Hauptstadt: ihr eigenes) oder null
+  const hn = hauptBildNr(island); return hn ? extraBild('basis_hauptstadt_' + hn) : basisBild(basisBildNr(baseLevelOf(island)));
+}
 function basisBreite(island, z) {                                              // Breite des Basis-Bilds in px, 0 = kein Bild
-  const w = BASIS_BREITE * z; if (w >= BASIS_MIN_PX) return w;
+  const f = hauptBildNr(island) ? HAUPT_GROSS : 1, w = BASIS_BREITE * z; if (w >= BASIS_MIN_PX) return w * f;
   if (z < TOR_PUNKT_ZOOM) return 0;
-  return islandOwnerOf(island.id) ? BASIS_MIN_PX : w >= BASIS_KLEIN_PX ? w : 0;
+  return islandOwnerOf(island.id) ? BASIS_MIN_PX * f : w >= BASIS_KLEIN_PX ? w : 0;
 }
 function basisKreis(isl, z) {                                                 // Basis als Bild: Mitte (dy über dem Fußpunkt) und Halbmesser für Ringe/Kuppel – sonst null
-  const w = isl.type === 'tower' ? basisBreite(isl, z) : 0, im = w && basisBild(basisBildNr(baseLevelOf(isl)));
+  const w = isl.type === 'tower' ? basisBreite(isl, z) : 0, im = w && basisBildVon(isl);
   return im ? { dy: w * im.height / im.width * .22, r: w * .42 } : null;
 }
 function basisBildRect(island, z) {                                            // (Bildschirm) wo das Basis-Bild steht (ohne den leeren Rand unten) oder null
-  const w = basisBreite(island, z), im = w && basisBild(basisBildNr(baseLevelOf(island))); if (!im) return null;
+  const w = basisBreite(island, z), im = w && basisBildVon(island); if (!im) return null;
   const h = w * im.height / im.width; return { x: toSX(island.x) - w / 2, y: toSY(island.y) - h * .72, w, h: h * .89 };
 }
 function drawBasisBild(island, ownerKey, z) {                                  // (Bildschirm) → true, wenn das Bild gezeichnet ist
   const w = basisBreite(island, z); if (!w) return false;
-  const nr = basisBildNr(baseLevelOf(island)), im = basisBild(nr); if (!im) return false;
+  const hn = hauptBildNr(island), im = basisBildVon(island); if (!im) return false;
   const h = w * im.height / im.width, x = toSX(island.x), y = toSY(island.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return true;
-  const hr = rulerOwner(), sk = hr && (island.id === playerIslandId || isCapital(island.id)) && islandOwnerOf(island.id) === hr && extraBild('skin_koenigsburg');
-  if (sk) { const W = w * 1.15, H = W * sk.height / sk.width, kr = extraBild('ui_sym_krone');   // der Herrscher: Königsburg mit Goldschein, die Krone darüber
-    ctx.save(); ctx.shadowColor = 'rgba(255,210,90,.9)'; ctx.shadowBlur = Math.min(30, W * .12); ctx.drawImage(sk, x - W / 2, y - H * .72, W, H); ctx.restore();
-    if (kr) { const kw = W * .3; ctx.drawImage(kr, x - kw / 2, y - H * .72 - kw * .6, kw, kw * kr.height / kr.width); } }
-  else ctx.drawImage(basisMip(nr, w * dpr), x - w / 2, y - h * .72, w, h);
-  if ((island.id === playerIslandId || isCapital(island.id)) && brennt(island.id)) drawBrand(x, y - h * .3, w / 64);   // eine geplünderte Hauptstadt brennt
+  const hr = rulerOwner(), sk = hr && hn && islandOwnerOf(island.id) === hr && extraBild('skin_herrscherburg');
+  if (sk) { const W = w * 1.1, H = W * sk.height / sk.width;                   // der Herrscher: Herrscherburg mit Goldschein (Krone im Bild)
+    ctx.save(); ctx.shadowColor = 'rgba(255,210,90,.9)'; ctx.shadowBlur = Math.min(30, W * .12); ctx.drawImage(sk, x - W / 2, y - H * .72, W, H); ctx.restore(); }
+  else ctx.drawImage(hn ? im : basisMip(basisBildNr(baseLevelOf(island)), w * dpr), x - w / 2, y - h * .72, w, h);
+  if (hn && brennt(island.id)) drawBrand(x, y - h * .3, w / 64);   // eine geplünderte Hauptstadt brennt
   return true;
 }
 // Namensschild unter jeder Basis mit Besitzer (Alexander 7.10., wie im alten Spiel; freie: nur die Stufen-Zahl, 8.10.): 70 % so breit wie das Basis-Bild, mittig direkt darunter
@@ -3116,7 +3127,7 @@ const SCHILD_ANTEIL = .7, SCHILD_MIN = 90, SCHILD_ZAHL = 96, SCHILD_ZOOM = BASIS
 const SCHILD_FARBE = { player: '#8cc0ff', ally: '#86e09a', bot: '#ff8d82', neutral: '#eadfc4' };
 const SCHILD_MERK = new Map();
 function schildRect(island, z) {                                               // (Bildschirm) wo das Schild einer Basis steht
-  const w = BASIS_BREITE * z, im = basisBild(basisBildNr(baseLevelOf(island))), h = im ? w * im.height / im.width : w;
+  const w = BASIS_BREITE * z, im = basisBildVon(island), h = im ? w * (hauptBildNr(island) ? HAUPT_GROSS : 1) * im.height / im.width : w;
   const W = Math.max(SCHILD_MIN, Math.floor(SCHILD_ANTEIL * w / 8) * 8), H = W * 159 / 512; return { x: toSX(island.x) - W / 2, y: toSY(island.y) + h * .17, w: W, h: H };   // (das Bild hat unten einen leeren Rand)
 }
 function schildDaten(island) {                                                 // → { art, wer, stufe, truppen }
@@ -3225,7 +3236,7 @@ function hauptPulsWeiter() {                                                   /
 }
 function drawHauptstadtRing(z, now) {                                           // (Bildschirm) unter der Basis, vor den Gebäuden
   const heim = islandById[playerIslandId]; if (!heim || islandOwnerOf(heim.id) !== 'player') return;
-  if (rulerOwner() === 'player') return;                                       // Herrscher: sein Skin (skin_koenigsburg) ersetzt den Kranz – nie beides übereinander
+  if (rulerOwner() === 'player') return;                                       // Herrscher: sein Skin (skin_herrscherburg) ersetzt den Kranz – nie beides übereinander
   const bw = basisBreite(heim, z), k = 1 - heimWappenSicht(z), im = hauptRingBild(); if (!bw || k <= 0 || !im) return;
   const w = bw * 1.6, h = w * im.height / im.width, x = toSX(heim.x), y = toSY(heim.y);
   if (x + w < 0 || x - w > viewW || y + h < 0 || y - h > viewH) return;
@@ -7832,7 +7843,7 @@ function evThronHtml() {
     const now = Date.now(), f = thronFenster(now), an = f.start <= now, ts = throneState, hd = thronHalter(), h = thronHerrscher(now);
     const live = an && ts.ev === f.start, list = live ? evRang(ts.week) : (ts.letzte || []), mi = list.findIndex(e => e[0] === 'player'), inc = throneIncome('player');
     const ablauf = '<div class="thron-ablauf"><div' + (an ? '' : ' class="jetzt"') + '><b>Mo – Fr</b>Wochen-Event</div><div><b>Fr</b>Auswertung</div><div' + (an ? ' class="jetzt"' : '') + '><b>Sa 10 – So 22</b>Thron-Event</div></div>';
-    return '<div class="barb-card ev-card is-tour thron-karte"><div class="barb-ct"><b>' + icon('crown') + ' Kampf um den Königsthron</b><small>' + (an ? 'Läuft · endet in ' + evUhr(f.end) : 'Beginnt ' + evWann(f.start) + ' · in ' + evUhr(f.start)) + '</small></div>' + ablauf +
+    return '<div class="barb-card ev-card is-tour thron-karte"><img class="thron-kopf" src="bilder/thron_kopf.webp" alt=""><div class="barb-ct"><b>' + icon('crown') + ' Kampf um den Königsthron</b><small>' + (an ? 'Läuft · endet in ' + evUhr(f.end) : 'Beginnt ' + evWann(f.start) + ' · in ' + evUhr(f.start)) + '</small></div>' + ablauf +
         (an ? '<div class="field-lines"><span>Dein Platz</span><b>' + (mi >= 0 ? (mi + 1) + ' · ' + fmtNum(list[mi][1]) + ' Punkte' : '– · 0 Punkte') + '</b><span>Du hältst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere einen Turm') + '</b>' +
             '<span>Thron hält</span><b>' + (hd ? escapeHtml(fieldWhoName(hd)) : 'niemand') + '</b><span>Nächste Punkte</span><b data-throne-pts>' + fmtClock(Math.max(0, ts.nextPts - now) / 1000) + '</b></div>'
             : '<div class="kuppel-satz">' + icon('shield') + '<span>Bis Samstag 10 Uhr liegt über dem Thron und über jedem Wachturm eine Kuppel – niemand kann angreifen.</span></div>') +
@@ -7865,8 +7876,8 @@ function renderHerr() {
     setText(document.getElementById('herrSub'), h ? 'bis ' + evWann(ts.herr.bis) : 'noch niemand');
     el.innerHTML = !h ? '<div class="inbox-empty">Noch kein Herrscher – wer beim Thron-Event (Sa 10 – So 22 Uhr) Platz 1 holt, herrscht eine Woche.</div>' :
         '<div class="herr-kopf"><span class="herr-bild"><img src="' + crestDataUrl(96, h) + '" alt=""><img class="herr-rahmen" src="bilder/ui_herrscher_rahmen.webp" alt=""></span>' +
-            '<div><b>' + escapeHtml(name(h)) + '</b><small>Herrscher bis ' + evWann(ts.herr.bis) + ' · Skin „Königsburg“ · +' + Math.round((RULER_BONUS - 1) * 100) + ' % Münzen und Truppen</small></div>' +
-            '<img class="herr-skin" src="bilder/skin_koenigsburg.webp" alt=""></div>' +
+            '<div><b>' + escapeHtml(name(h)) + '</b><small>Herrscher bis ' + evWann(ts.herr.bis) + ' · Skin „Herrscherburg“ · +' + Math.round((RULER_BONUS - 1) * 100) + ' % Münzen und Truppen</small></div>' +
+            '<img class="herr-skin" src="bilder/skin_herrscherburg.webp" alt=""></div>' +
         '<div class="herr-angelegt"><span class="haken">✓</span><span>Skin und Rahmen werden automatisch angelegt, solange ' + (ich ? 'du' : 'der Herrscher') + ' herrscht.</span><b>Angelegt</b></div>' +
         '<div class="sect"><h4>Titel</h4><span class="sect-aside">' + (ich ? 'vergibst du' : 'vergibt der Herrscher') + '</span></div>' +
         TITLES.map(x => '<div class="herr-titel"><img src="bilder/ui_titel_' + (x.key === 'schatz' ? 'schatzmeister' : x.key) + '.webp" alt=""><div>' + x.name + '<small' + (x.good ? '' : ' class="boese"') + '>' + x.desc + '</small></div>' +
@@ -9254,7 +9265,7 @@ function checkRuler() {             // announces a change of ruler once
     const lost = lastGoodTitle && r !== 'player' ? ' Dein Titel „' + lastGoodTitle.name + '“ ist verfallen, der ' + (lastGoodTitle.good ? 'Goldring' : 'rote Ring') + ' ist weg.' : ''; lastGoodTitle = null;
     if (r === 'player') statBump('throne');
     if (r && r !== 'player' && botById[r]) { const bs = loadBotState()[r]; bs.stats = bs.stats || {}; bs.stats.ruled = 1; saveBotState(); }
-    if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen, Königsburg mit Krone auf der Karte.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
+    if (r === 'player') { flashHint('Du bist Herrscher der Meere! +25 % Münzen und Truppen, Herrscherburg auf der Karte.', 6000); spawnBattleFx(megaTempleId, true, 'Herrscher!', 'Herrscher der Meere'); }
     else if (was === 'player') flashHint('Du hast den Mega-Tempel verloren – die Krone und der blutrot-goldene Ring sind weg!', 5000);
     else if (r && botById[r]) flashHint(botById[r].name + ' ist jetzt Herrscher der Meere!' + lost, lost ? 6000 : 4000);
     else if (lost) flashHint(lost.trim(), 5000);

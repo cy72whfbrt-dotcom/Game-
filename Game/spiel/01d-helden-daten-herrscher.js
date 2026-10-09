@@ -156,7 +156,7 @@ function islandOwnerOf(islandId) {
 // (if anyone) owns it - neutral islands use their fixed generated
 // stats, an owned island uses its real garrison and level.
 // ===== HERRSCHER DER MEERE =====
-// Platz 1 des letzten Thron-Events (06c) herrscht eine Woche: Krone auf jedem Namensschild, Königsburg-Skin,
+// Platz 1 des letzten Thron-Events (06c) herrscht eine Woche: Krone auf jedem Namensschild, Herrscherburg-Skin,
 // +25 % Münzen und Truppen auf allen Basen, vergibt die Titel. Wer gerade den Thron hält: thronHalter() (06c).
 const RULER_BONUS = 1.25;
 const megaTempleId = (islands.find(i => i.type === 'megaTemple') || {}).id;

@@ -2426,6 +2426,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 .thron-ablauf b{display:block;color:var(--tx-2);font-size:11px} .thron-ablauf div.jetzt{border-color:var(--gold-300);background:rgba(214,170,90,.14)} .thron-ablauf div.jetzt b{color:var(--gold-100)}
 .kuppel-satz{display:flex;gap:8px;align-items:center;padding:6px 8px;margin:6px 0;border-radius:8px;background:rgba(90,160,255,.1);border:1px solid rgba(150,210,255,.35);font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)}
 .thron-karte > .btn{width:100%;margin-top:8px}
+.thron-kopf{display:block;width:100%;max-height:160px;object-fit:contain;margin:0 0 6px;filter:drop-shadow(0 4px 10px rgba(0,0,0,.45))}
 .thron-herr-zeile{display:flex;align-items:center;gap:10px;width:100%;margin:10px 0 0;padding:8px 10px;border-radius:10px;background:rgba(255,200,80,.12);border:1px solid rgba(255,210,110,.5);color:var(--tx-1);font:600 var(--fs-13)/1.25 var(--font-ui);text-align:left;cursor:pointer}
 .thron-herr-zeile img{width:28px;height:28px} .thron-herr-zeile small{display:block;color:var(--tx-3);font-size:11px}
 .rang{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}

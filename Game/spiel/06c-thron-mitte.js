@@ -213,7 +213,7 @@ function evThronHtml() {
     const now = Date.now(), f = thronFenster(now), an = f.start <= now, ts = throneState, hd = thronHalter(), h = thronHerrscher(now);
     const live = an && ts.ev === f.start, list = live ? evRang(ts.week) : (ts.letzte || []), mi = list.findIndex(e => e[0] === 'player'), inc = throneIncome('player');
     const ablauf = '<div class="thron-ablauf"><div' + (an ? '' : ' class="jetzt"') + '><b>Mo – Fr</b>Wochen-Event</div><div><b>Fr</b>Auswertung</div><div' + (an ? ' class="jetzt"' : '') + '><b>Sa 10 – So 22</b>Thron-Event</div></div>';
-    return '<div class="barb-card ev-card is-tour thron-karte"><div class="barb-ct"><b>' + icon('crown') + ' Kampf um den Königsthron</b><small>' + (an ? 'Läuft · endet in ' + evUhr(f.end) : 'Beginnt ' + evWann(f.start) + ' · in ' + evUhr(f.start)) + '</small></div>' + ablauf +
+    return '<div class="barb-card ev-card is-tour thron-karte"><img class="thron-kopf" src="bilder/thron_kopf.webp" alt=""><div class="barb-ct"><b>' + icon('crown') + ' Kampf um den Königsthron</b><small>' + (an ? 'Läuft · endet in ' + evUhr(f.end) : 'Beginnt ' + evWann(f.start) + ' · in ' + evUhr(f.start)) + '</small></div>' + ablauf +
         (an ? '<div class="field-lines"><span>Dein Platz</span><b>' + (mi >= 0 ? (mi + 1) + ' · ' + fmtNum(list[mi][1]) + ' Punkte' : '– · 0 Punkte') + '</b><span>Du hältst</span><b>' + (inc ? '+' + inc + ' alle 3 Min.' : 'nichts – erobere einen Turm') + '</b>' +
             '<span>Thron hält</span><b>' + (hd ? escapeHtml(fieldWhoName(hd)) : 'niemand') + '</b><span>Nächste Punkte</span><b data-throne-pts>' + fmtClock(Math.max(0, ts.nextPts - now) / 1000) + '</b></div>'
             : '<div class="kuppel-satz">' + icon('shield') + '<span>Bis Samstag 10 Uhr liegt über dem Thron und über jedem Wachturm eine Kuppel – niemand kann angreifen.</span></div>') +
@@ -246,8 +246,8 @@ function renderHerr() {
     setText(document.getElementById('herrSub'), h ? 'bis ' + evWann(ts.herr.bis) : 'noch niemand');
     el.innerHTML = !h ? '<div class="inbox-empty">Noch kein Herrscher – wer beim Thron-Event (Sa 10 – So 22 Uhr) Platz 1 holt, herrscht eine Woche.</div>' :
         '<div class="herr-kopf"><span class="herr-bild"><img src="' + crestDataUrl(96, h) + '" alt=""><img class="herr-rahmen" src="bilder/ui_herrscher_rahmen.webp" alt=""></span>' +
-            '<div><b>' + escapeHtml(name(h)) + '</b><small>Herrscher bis ' + evWann(ts.herr.bis) + ' · Skin „Königsburg“ · +' + Math.round((RULER_BONUS - 1) * 100) + ' % Münzen und Truppen</small></div>' +
-            '<img class="herr-skin" src="bilder/skin_koenigsburg.webp" alt=""></div>' +
+            '<div><b>' + escapeHtml(name(h)) + '</b><small>Herrscher bis ' + evWann(ts.herr.bis) + ' · Skin „Herrscherburg“ · +' + Math.round((RULER_BONUS - 1) * 100) + ' % Münzen und Truppen</small></div>' +
+            '<img class="herr-skin" src="bilder/skin_herrscherburg.webp" alt=""></div>' +
         '<div class="herr-angelegt"><span class="haken">✓</span><span>Skin und Rahmen werden automatisch angelegt, solange ' + (ich ? 'du' : 'der Herrscher') + ' herrscht.</span><b>Angelegt</b></div>' +
         '<div class="sect"><h4>Titel</h4><span class="sect-aside">' + (ich ? 'vergibst du' : 'vergibt der Herrscher') + '</span></div>' +
         TITLES.map(x => '<div class="herr-titel"><img src="bilder/ui_titel_' + (x.key === 'schatz' ? 'schatzmeister' : x.key) + '.webp" alt=""><div>' + x.name + '<small' + (x.good ? '' : ' class="boese"') + '>' + x.desc + '</small></div>' +

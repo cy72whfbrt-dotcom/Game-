@@ -2,6 +2,7 @@
 // A) Goldring unter der EIGENEN Hauptstadt (Bild karte_hauptstadt_ring, fehlt es: marsch_ring_gold), Puls 0,55 ↔ 0,9, nicht 30 Bilder/s (Akku sparen: fest 0,8, kein Puls)
 // B) Namensschild der Hauptstadt mit Krone (nur die eigene), ganz weit nur Krone + Ring (kein Wappen)
 // C) Schloss auf Toren, die du nicht angreifen kannst (keine deiner Basen grenzt an, wie der Angriffsknopf 10b); angreifbar/eigen: keins
+// E) Hauptstadt als eigenes Bild je Burg-Stufe (1–8/9–16/17–25), 1,5× so groß; Herrscher: skin_herrscherburg; ganz weit Zonen-Schild + Pass-Tor
 // D) Schloss bei jedem Zoom gleich groß, oben auf dem Tor; nichts überlappt (Schilde, Fahnen, Schlösser) – 360/390/1280, nah und weit
 //   node tests/browser/karte_ring_test.js <vorschau> [fotoordner]
 const { chromium } = require('playwright');
@@ -15,7 +16,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.goto('file://' + VS + '/index.html', { timeout: 120000 }); await p.waitForTimeout(6000);
     await p.waitForFunction(() => typeof karteBilder === 'function' && karteBilder() && KB.fertig, null, { timeout: 60000, polling: 500 }).catch(() => {});
     await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
-      window.islandSeen = () => true; window.isExplored = () => true; hauptRingBild(); hauptBild('ui_sym_krone'); hauptBild('ui_sym_schloss'); });
+      window.islandSeen = () => true; window.isExplored = () => true; hauptRingBild(); hauptBild('ui_sym_krone'); hauptBild('ui_sym_schloss');
+      for (const n of ['basis_hauptstadt_1', 'basis_hauptstadt_2', 'basis_hauptstadt_3', 'skin_herrscherburg', 'zone_schild', 'pass_tor']) extraBild(n); });
     await p.waitForTimeout(1500);
     const r = await p.evaluate(() => {
       const h = islandById[playerIslandId], d = i => Math.hypot(i.x - h.x, i.y - h.y), o = {};
@@ -83,7 +85,27 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const zs = r.zoom.filter(x => x.torPx >= 16);
     ok(zs.length >= 3 && zs.every(x => x.h === 30 && x.mitteX && x.ueber && x.gemalt), tag + 'Schloss bei jedem Zoom 30 px, mittig oben auf dem Tor', r.zoom);
     ok(r.zoom.every(x => x.zu === 0), tag + 'nichts überlappt (Schloss, Schilde, Fahnen)', r.zoom.map(x => x.zu));
+    const e = await p.evaluate(() => {
+      const h = islandById[playerIslandId], o = {}, as = window.anzeigeStufe, ra = window.rulerOwner;
+      const zeichne = () => { const od = ctx.drawImage, n = []; ctx.drawImage = function (im) { n.push((im && im.src) || ''); return od.apply(this, arguments); }; drawMap(); ctx.drawImage = od; return n.map(s => s.split('/').pop()); };
+      o.nr = [1, 8, 9, 16, 17, 25].map(B => { window.anzeigeStufe = id => id === h.id ? B : as(id); return hauptBildNr(h); }); window.anzeigeStufe = as;
+      const frei = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id)), z = maxZoom * .5;
+      o.gross = +(basisBreite(h, z) / basisBreite(frei, z)).toFixed(2); o.freiNr = hauptBildNr(frei);
+      flyTo(h.x, h.y, { zoom: z, instant: true }); let n = zeichne();
+      o.bild = n.some(s => /^basis_hauptstadt_\d/.test(s)); o.alterSkin = n.some(s => /koenigsburg/.test(s));
+      window.rulerOwner = () => 'player'; n = zeichne(); window.rulerOwner = ra; o.herr = n.some(s => /skin_herrscherburg/.test(s));
+      flyTo(h.x, h.y, { zoom: minZoom, instant: true }); n = zeichne(); o.weit = { schild: n.filter(s => /zone_schild/.test(s)).length, tor: n.filter(s => /pass_tor/.test(s)).length };
+      return o;
+    });
+    ok(e.nr.join() === '1,1,2,2,3,3' && e.freiNr === 0, tag + 'Hauptstadt-Bild nach Burg-Stufe (1–8/9–16/17–25), freie Basis nicht', e);
+    ok(e.gross === 1.5 && e.bild && !e.alterSkin, tag + 'Hauptstadt 1,5× so groß, als basis_hauptstadt_* gezeichnet', e);
+    ok(e.herr, tag + 'Herrscher: skin_herrscherburg', e);
+    ok(e.weit.schild > 3 && e.weit.tor > 3, tag + 'ganz weit: Zonen-Nummern auf zone_schild, Pässe mit pass_tor', e.weit);
     if (FOTO) {
+      for (const B of [1, 10, 20]) { await p.evaluate(B => { const h = islandById[playerIslandId], as = window.anzeigeStufe; window.anzeigeStufe = id => id === h.id ? B : as(id); flyTo(h.x, h.y, { zoom: maxZoom * .5, instant: true }); drawMap(); }, B);
+        await p.waitForTimeout(500); await p.screenshot({ path: path.join(FOTO, 'hauptstadt_stufe' + B + '_' + bw + '.png') }); }
+      await p.evaluate(() => { window.rulerOwner = () => 'player'; drawMap(); }); await p.waitForTimeout(500); await p.screenshot({ path: path.join(FOTO, 'herrscherburg_' + bw + '.png') });
+      await p.evaluate(() => { const h = islandById[playerIslandId]; flyTo(h.x, h.y, { zoom: minZoom * 1.5, instant: true }); drawMap(); }); await p.waitForTimeout(500); await p.screenshot({ path: path.join(FOTO, 'ganzweit_' + bw + '.png') });
       await p.waitForTimeout(800); await p.screenshot({ path: path.join(FOTO, 'hauptstadt_' + bw + '.png') });
       await p.evaluate(() => { const t = islands.filter(i => i.type === 'gate' && !torAngreifbar(i) && passOpensAt(bridgeOfGate(i)) <= Date.now()).pop(), tm = torMitte(t); flyTo(tm.x, tm.y, { zoom: maxZoom * .5, instant: true }); });
       await p.waitForTimeout(800); await p.screenshot({ path: path.join(FOTO, 'grenztor_' + bw + '.png') });
