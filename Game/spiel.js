@@ -6091,7 +6091,7 @@ function achCheck() {                                                        // 
     if (achLookSet && achLookSet.late) { delete achLookSet.late; if (achDone(ACHIEVEMENTS.find(a => a.id === 'city5')) && !achLookSet.includes('city5')) achLookSet.push('city5'); store.set('openWaterAchLook', JSON.stringify(achLookSet)); }
     const ready = achClaimable();
     if (achKnown === null) achKnown = new Set(ready.map(a => a.id));
-    if (!achFensterOffen() && !hintFrisch()) for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg: ' + a.name + ' – ' + a.gems + ' Edelsteine unter „Events“', 4500); sfx('crown'); }   // (frischer Hinweis wie „Truppen geheilt“: der Erfolg kommt eine Runde später)
+    if (!achFensterOffen() && !hintFrisch()) for (const a of ready) if (!achKnown.has(a.id)) { achKnown.add(a.id); flashHint('Erfolg: ' + a.name + ' – ' + a.gems + ' Edelsteine unter „Events“', 4500); sfx('crown'); break; }   // je Runde nur einer, die anderen folgen nacheinander (frischer Hinweis wie „Truppen geheilt“: der Erfolg kommt eine Runde später)
     updateGoalsBadge(ready.length);
     if (isPanelOpen(goalsPopup) && goalsTab === 'ach') renderAchievements();
 }
@@ -6717,7 +6717,7 @@ function renderCombatLog() {
                     [['troops', 'deine ' + chipN(mh.n) + ' Truppen'], ...verlustChips(mh.fallen, mh.wounded)], kbDet(!entry.won, entry.won ? 'Gefallen' : 'Gehalten', sub)); }
             const wer = escapeHtml(entry.botName) + (Array.isArray(entry.angreifer) && entry.angreifer.length > 1 ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
             const bchips = [...verlustChips(Math.max(0, fallen - (entry.wounded || 0)), entry.wounded), ...beuteChips(entry, false), entry.defGold > 0 && ['coin', '+' + chipN(entry.defGold) + ' Münzen', 'gut']];
-            const [kind, ic, badge, sub] = entry.capitalHolds ? ['loss', 'bot', 'Geplündert', wer + ' hat die Garnison geschlagen – die Stadt hält'] : entry.won ? ['loss', 'bot', 'Verloren', wer + ' hat die Basis erobert'] : ['win', 'shield', 'Verteidigt', wer + ' zurückgeschlagen'];
+            const [kind, ic, badge, sub] = entry.capitalHolds ? ['loss', 'bot', 'Geplündert', wer + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht'] : entry.won ? ['loss', 'bot', 'Verloren', wer + ' hat die Basis erobert'] : ['win', 'shield', 'Verteidigt', wer + ' zurückgeschlagen'];
             return karte(entry, kind, ic, [kind, badge], T(entry.targetId), sub, bbar, bchips, kbDet(kind === 'win', badge, sub));
         }
         const atkTotal = entry.myTroops + entry.attackBuff, defTotal = entry.enemyTroops + entry.enemyDefense + entry.defenseBuff;
@@ -9166,13 +9166,13 @@ function wanderArrive(now) {                          // the storm: same maths a
         spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallenAlle, won,
             onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
         addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold, defGear: fighterSnapshot('player', dHx), ...verstInfo });
-        flashHint((capitalHolds ? name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
+        flashHint((capitalHolds ? name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
     }
     if (owner && owner !== 'player' && botById[owner] && botById[owner].mensch) {   // ein echter Spieler: der Bericht kommt bei ihm an (wie bei jedem Angriff)
         const t = islandTitle(tgt);
         evBericht(owner, { type: 'ev', ic: 'defense', gut: !won || capitalHolds, badge: capitalHolds ? 'Hält' : won ? 'Zerstört' : 'Verteidigt', title: wander.name + ' · ' + t,
             txt: fmtCompact(my) + ' gegen ' + fmtCompact(en + def) + (won && !capitalHolds ? ' · die Basis ist zerstört' : capitalHolds ? ' · die Garnison ist gefallen, die Hauptstadt hält' : ' · abgewehrt'), at: now },
-            capitalHolds ? wander.name + ' hat die Garnison deiner Hauptstadt geschlagen – die Stadt hält.' : won ? wander.name + ' hat deine Basis ' + t + ' zerstört!' : 'Verteidigt! ' + wander.name + ' wurde bei ' + t + ' zurückgeschlagen.');
+            capitalHolds ? wander.name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht.' : won ? wander.name + ' hat deine Basis ' + t + ' zerstört!' : 'Verteidigt! ' + wander.name + ' wurde bei ' + t + ' zurückgeschlagen.');
     }
     if (vs) verstBerichte(vs, { type: 'botAttack', botName: wander.name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, fallen, wounded: dwBesitzer,   // die Helfer: derselbe Bericht
         won, capitalHolds, defGear: owner ? fighterSnapshot(owner, dHx) : null, defName: owner === 'player' ? ((window.profileName && profileName.value) || 'Spieler') : (botById[owner] || {}).name, ...verstInfo });

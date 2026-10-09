@@ -28,6 +28,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     bs.goals = {}; for (let i = 0; i < 80; i++) botClaimGoals(bot); out.botHat = ['burg5', 'burg10', 'burg15', 'fo10'].filter(id => bs.goals[id]).length;
     // Fenster: Erfolge zeigen die neuen Karten ohne kaputte Werte
     openGoals('ach'); renderAchievements(); const t = document.getElementById('goalsPopup').innerText;
+    closeAllPopups(); const neu = achClaimable().map(x => x.id); achKnown = new Set(); hintEl.textContent = ''; achCheck();   // mehrere neu: nacheinander, nie übereinander
+    out.einzeln = { neu: neu.length, gezeigt: achKnown.size, text: /^Erfolg: /.test(hintEl.textContent) }; hintEl.textContent = ''; achCheck(); out.einzeln.danach = achKnown.size;
+    openGoals('ach');
     out.text = { burg: /Burgherr|Schlossherr/.test(t), schlecht: /undefined|NaN|\[object/.test(t) };
     return out;
   });
@@ -41,6 +44,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(r.altWeg === 0, 'Erfolge für Drache/Invasion sind raus (Events 8.10.)', r.altWeg);
   ok(r.saison[0] === 1 && r.saison[1] && r.saisonBot === 2, 'Saison-Titel zählen (du und Mitspieler, jeder einmal)', { du: r.saison, bot: r.saisonBot });
   ok(r.bot[0] === 15 && r.bot[1] === 13 && r.botHat === 4, 'Mitspieler: gleiche Burg-/Forschungs-Erfolge', { werte: r.bot, abgeholt: r.botHat });
+  ok(r.einzeln.neu >= 2 && r.einzeln.gezeigt === 1 && r.einzeln.text && r.einzeln.danach === 2, 'Mehrere neue Erfolge: je Runde eine Meldung, die nächste danach', r.einzeln);
   ok(r.text.burg && !r.text.schlecht, 'Erfolge-Fenster zeigt die Hauptstadt-Erfolge sauber', r.text);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

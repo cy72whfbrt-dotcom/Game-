@@ -396,7 +396,7 @@ function renderCombatLog() {
                     [['troops', 'deine ' + chipN(mh.n) + ' Truppen'], ...verlustChips(mh.fallen, mh.wounded)], kbDet(!entry.won, entry.won ? 'Gefallen' : 'Gehalten', sub)); }
             const wer = escapeHtml(entry.botName) + (Array.isArray(entry.angreifer) && entry.angreifer.length > 1 ? ' (gemeinsam, ' + entry.angreifer.length + ' Angreifer)' : '');
             const bchips = [...verlustChips(Math.max(0, fallen - (entry.wounded || 0)), entry.wounded), ...beuteChips(entry, false), entry.defGold > 0 && ['coin', '+' + chipN(entry.defGold) + ' Münzen', 'gut']];
-            const [kind, ic, badge, sub] = entry.capitalHolds ? ['loss', 'bot', 'Geplündert', wer + ' hat die Garnison geschlagen – die Stadt hält'] : entry.won ? ['loss', 'bot', 'Verloren', wer + ' hat die Basis erobert'] : ['win', 'shield', 'Verteidigt', wer + ' zurückgeschlagen'];
+            const [kind, ic, badge, sub] = entry.capitalHolds ? ['loss', 'bot', 'Geplündert', wer + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht'] : entry.won ? ['loss', 'bot', 'Verloren', wer + ' hat die Basis erobert'] : ['win', 'shield', 'Verteidigt', wer + ' zurückgeschlagen'];
             return karte(entry, kind, ic, [kind, badge], T(entry.targetId), sub, bbar, bchips, kbDet(kind === 'win', badge, sub));
         }
         const atkTotal = entry.myTroops + entry.attackBuff, defTotal = entry.enemyTroops + entry.enemyDefense + entry.defenseBuff;

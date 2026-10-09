@@ -99,6 +99,7 @@ button.cb-slot{cursor:pointer;-webkit-tap-highlight-color:transparent}
 /* Stadt im Stil von Rise of Kingdoms (Alexander 4.10.): runde Knöpfe am Gebäude, Bild, Voraussetzungen, Forschungs-Baum */
 .city-wisch{position:absolute;left:50%;top:37%;z-index:2;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:var(--r-pill);background:rgba(6,8,12,.72);border:1px solid var(--line-2);color:var(--gold-100);font:600 var(--fs-14,14px)/1.2 var(--font-ui);white-space:nowrap;pointer-events:none;transform:translateX(-50%);animation:city-wisch 1.6s ease-in-out infinite}
 .city-wisch[hidden]{display:none} .city-wisch-r{transform:scaleX(-1)}   /* Handy: beim ersten Betreten – die Stadt geht links und rechts weiter */
+body:has(.panel.is-open,#citySheet:not([hidden]),#lookSheet:not([hidden]),#heroHall:not([hidden])) .city-wisch{display:none}   /* nie über einem offenen Fenster/Blatt */
 @keyframes city-wisch{50%{transform:translateX(calc(-50% + 10px))}}
 .city-ring{position:absolute;left:0;top:0;z-index:2;width:0;height:0;pointer-events:none}
 .city-ring[hidden]{display:none}
