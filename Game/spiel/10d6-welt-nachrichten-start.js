@@ -40,16 +40,9 @@
     WELT.beiNachricht.push(function (e) { if (e && e.art === 'spaeh') spaehBericht(e); });   // Spähbericht vom Weltrechner (fremde Werte kennt nur er)
     WELT.beiNachricht.push(function (e) {             // Preis aus einem Event (Wochen-Event, Lager, Welt-Saison): ins Abholfach, auch Kisten
         if (!e || e.art !== 'evPreis') return;
-        const z = (v, max) => typeof v === 'number' && Number.isFinite(v) && v > 0 ? Math.min(max, Math.round(v)) : 0;
-        const crate = Number.isInteger(e.crate) && e.crate >= 0 && e.crate <= 4 ? e.crate : -1, src = INBOX_SRC[e.src] ? e.src : 'woche', title = String(e.title || '').slice(0, 80);
         if (saisonTitel(e.titel)) saisonTitelGeben(e.titel);   // Saison-Platz (Ende einer Welt-Saison): der Saison-Rahmen, gleich angelegt (bis zum nächsten Saison-Ende)
-        const k = typeof e.k === 'string' ? e.k.slice(0, 80) : undefined;   // (Stufe einer Event-Leiste: zeigt das Event-Fenster als „Abholen“)
-        if (k && inboxList().some(x => x.k === k)) return;                     // (dieselbe Stufe nie zweimal im Fach)
-        const bis = typeof e.bis === 'number' && e.bis > Date.now() ? Math.min(e.bis, Date.now() + 864e5) : undefined;   // (Event-Stufe: bis zum Ende nur im Event abholbar, höchstens einen Tag)
-        const besch = e.besch && typeof e.besch === 'object' ? BESCH_DAUERN.find(d => e.besch[d] > 0) : undefined;   // Event-Münzen, Schlüssel, Beschleuniger (Wochen-Event, Lager)
-        const B_ART = ['eventMuenzen', 'schluessel1', 'schluessel2', 'besch', 'holz'], b = (Array.isArray(e.b) ? e.b : []).slice(0, 8)   // Gegenstände (Thron-Event): nur bekannte Arten
-            .filter(x => Array.isArray(x) && B_ART.includes(x[0]) && z(x[1], 1e9) > 0).map(([a, n, x]) => a === 'besch' ? [a, z(n, 1e9), { dauer: x && BESCH_DAUERN.includes(x.dauer) ? x.dauer : '1h' }] : [a, z(n, 1e9)]);
-        if (inboxAdd({ src, title, gems: z(e.gems, 5000), sh: z(e.sh, 100), crate, coins: z(e.coins, 1e12), tr: z(e.tr, 1e12), em: z(e.em, 1e5), s1: z(e.s1, 100), s2: z(e.s2, 100), besch, k, bis, b: b.length ? b : undefined }) || crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
+        const x = evPreisFach(e); if (!x) return; const { title, bis } = x;
+        if (inboxAdd(x) || x.crate >= 0 || e.sh > 0 || e.tr > 0) { sfx('coin'); flashHint(title + (bis ? ': im Event abholen.' : ': dein Preis liegt unter Events → Belohnung.') + (saisonTitel(e.titel) && saisonRahmenFuer(saisonTitel(e.titel).platz) ? ' Neuer Rahmen: „' + saisonRahmenFuer(saisonTitel(e.titel).platz).name + '“ (bis zum nächsten Saison-Ende).' : ''), 6000); }
 
     });
     WELT.beiNachricht.push(function (e) {             // Nebel freischalten (vom Admin): die ganze Karte ist aufgedeckt

@@ -10,7 +10,7 @@ let toreOffen = true;
 
 // ===== Bilder (wie 03a: halbierte Fassungen, damit verkleinert nichts flimmert) =====
 const DATEIEN = ['boden_aussen', 'boden_mitte', 'boden_innen', 'boden_sand', 'kette_quer1', 'kette_quer2', 'kette_hoch1', 'kette_hoch2',
-  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'barbaren', 'feld_holz', 'feld_stein', 'feld_eisen', 'feld_gold', 'feld_edelstein', 'tempel', 'waechtertempel', 'thron'];   // (thron: aus dem KI-Blatt ausgeschnitten, liegt hier im Ordner)
+  'kette_knoten', 'tor_zu', 'tor_offen', 'tor_senk_zu', 'tor_senk_offen', 'barbaren', 'feld_holz', 'feld_stein', 'feld_eisen', 'feld_gold', 'feld_edelstein', 'tempel', 'wachturm', 'thron_neu'];   // (Thron und Wachturm wie im Spiel, 03b HEILIGTUM_BILD)
 const KB = { img: {}, mip: {}, muster: {}, fertig: false };
 let offen = DATEIEN.length;
 for (const n of DATEIEN) { const im = new Image();
@@ -46,8 +46,8 @@ const ZONEN_TOENUNG = { 1: .35, 2: .45, 3: .3, 4: .55, 5: .25 };   // so stark l
 // Boden je Zone über der Grundkachel (data.boden): [weitere Kachel, Deckkraft, Farbschicht] – Nachbar-Ringe sehen deutlich anders aus
 const BODEN_DAZU = { 3: [null, 0, 'rgba(110,88,58,.24)'], 4: ['innen', .35, 'rgba(34,44,22,.30)'] };   // 3 gedämpfte Wüste · 4 karg-oliv (Mitte: braune Erde)
 const WEG = { lang: 13000, breit: 2400 };              // Weg durchs Quer-Tor: so weit in beide Gebiete, so breit
-const TEMPEL = { breit: 38000, ax: .5, ay: .6, minPx: 30 };   // Tempel in Zone 4 (halb so breit wie der Thron; ganz weit nie kleiner als minPx)
-const THRON = { breit: 80000, ax: .5, ay: .56, minPx: 64 };   // Thron-Tempel in der Mitte (Welt-Breite; ganz weit nie kleiner als minPx)
+const TEMPEL = { breit: 38000, ax: .5, ay: .6, minPx: 30 }, WACHTURM = { breit: 38000, ax: .5, ay: .84, minPx: 30 };   // Tempel in Zone 4 (halb so breit wie der Thron; ganz weit nie kleiner als minPx)
+const THRON = { breit: 80000, ax: .5, ay: .64, minPx: 64 };   // Thron-Tempel in der Mitte (Welt-Breite; ganz weit nie kleiner als minPx)
 const PASS_FARBE = { 1: '#5cbf62', 2: '#3fc2a4', 3: '#e2c069', 4: '#4f9ef2', 5: '#e8a640' };   // je Stufe (Zone, in die der Pass führt)
 function zufall(seed) { return () => { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
   t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -181,8 +181,8 @@ function zeichnen() {
     startMarken(v);
     if (z >= STUFE_ZOOM) stufenZahlen(da);
   }
-  for (const t of KD.tempel) heiligtum(t.art, t, TEMPEL);
-  heiligtum('thron', KD.thron, THRON);
+  for (const t of KD.tempel) t.art === 'waechtertempel' ? heiligtum('wachturm', t, WACHTURM) : heiligtum('tempel', t, TEMPEL);
+  heiligtum('thron_neu', KD.thron, THRON);
   if (z < BILD_ZOOM) { dingePunkte(); namen(); passPunkte(); }
   ctx.setTransform(1, 0, 0, 1, 0, 0);
   document.getElementById('info').classList.toggle('kurz', z >= BILD_ZOOM);   // die Legende nur ganz weit (nah bleibt die Karte frei)

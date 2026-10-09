@@ -32,7 +32,7 @@
         k: 3 + 1 + 1 / 7,                             // Kisten: Tagesbelohnung (bis 3), Aufgaben-Bonus, epische Tageskiste
         kg: 27 / 7,                                   // davon „mind. Episch“ (Tag 7) als sicherer Kisten-Wert (Episch = 27)
         sh: HERO_SHARDS_DAY,                          // Splitter: Aufgaben-Bonus
-        em: 1000, s1: 4.5, s2: 1.5, bm: 1000          // Gegenstände (05e): Event-Münzen (Woche höchstens 4.750), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740)
+        em: 65, s1: 4.5, s2: 1.5, bm: 1000            // Gegenstände (05e): Event-Münzen nur aus dem Saison-Pass (Premium Stufe 6/18/42/54/66/78 je 150 = 900 je Pass; × HB_KAPPE_TAGE 14 = ein ganzer Pass – Event-Preise kommen als Nachricht, ggIn), Schlüssel (Lager 3 + 1 am Tag, Tages-Kisten), Beschleuniger-Minuten (Tages-Kisten 740)
     };
     const HB_ONLINE_STUNDE_G = 40;                    // Karten-Funde: 1–3 Gems, alle 20–45 s einer, 15 % davon Gems – nur solange er online ist
     const HB_KAPPE_TAGE = 14;                         // so viele Tage Spielraum sammeln sich höchstens an
@@ -230,7 +230,7 @@
         if (Number.isFinite(hb.stW)) { if (10 * z[2] * (z[2] + 1) > hb.stW + 1e-6) return 'die Sterne sind nicht bezahlt'; sternG = 0; }   // (neues Handy: Sterne zahlt hbSterne – nicht doppelt)
         const freiK = Math.min(n, Math.floor(nn(hb.fr.k))), gems = (n - freiK) * CRATE_GEM_COST + sternG;
         if (gems > 0 && !hbZahlen(who, hb, m, { g: gems })) return n > freiK ? 'dafür hätte er ' + (N + n > 1 ? 'etwa ' + Math.round(N + n) : 'eine') + ' Kisten öffnen müssen, ' + fz(gems) + ' Gems fehlen' : 'die Sterne kosten ' + sternG + ' Gems';
-        hb.fr.k = nn(hb.fr.k) - freiK; hb.kN = N + n; if (n > 0) evPunkte('held', who, WO_PKT.kiste * n);   // (Helden-Tag: geöffnete Kisten) hb.sternG = nn(hb.sternG) + sternG;
+        hb.fr.k = nn(hb.fr.k) - freiK; hb.kN = N + n; if (n > 0) evPunkte('held', who, WO_PKT.kiste * n); hb.sternG = nn(hb.sternG) + sternG;   // (Helden-Tag: geöffnete Kisten)
         const ueber = Math.max(wert - hbKistenGrenze(hb.kN), gesamt - hbKistenGesamt(hb.kN)); if (ueber > 0) { const x = Math.min(ueber, Math.max(0, nn(hb.fr.kg))); hb.fr.kg = nn(hb.fr.kg) - x; hb.kG = Math.max(0, nn(hb.kG) - (ueber - x)); }   // die sichere Kiste ist verbraucht (zuerst aus fr.kg)
         A.push(z);
         for (let i = A.length - 1; i >= 0; i--) if (A.some((b, j) => j !== i && b[0] === A[i][0] && b[1] >= A[i][1] && b[2] >= A[i][2] && (b[1] > A[i][1] || b[2] > A[i][2] || j < i))) A.splice(i, 1);
