@@ -647,7 +647,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:362
 - `closeHeroHall` → Game/spiel/08c-helden-fenster.js:281
 - `closeIslandPopup` → Game/spiel/09e-fenster-insel.js:111
-- `closeLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:126
+- `closeLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:128
 - `closeLookSheet` → Game/spiel/08b-stadt-burg-aussehen.js:68
 - `closeMarkerSheet` → Game/spiel/09d-karte-armeen-wegmarken.js:313
 - `closePanel` → Game/spiel/09e-fenster-insel.js:35
@@ -1288,7 +1288,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:134
 - `levelRewardCoins` → Game/spiel/02a-shop-stufen.js:220
 - `levelRewardGems` → Game/spiel/02a-shop-stufen.js:223
-- `levelRewardText` → Game/spiel/08f-stadt-bild-zeichnen.js:98
+- `levelRewardText` → Game/spiel/08f-stadt-bild-zeichnen.js:100
 - `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:214
 - `levelUpItem` → Game/spiel/02a-shop-stufen.js:161
 - `liste` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:75
@@ -1675,7 +1675,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questStat` → Game/spiel/06a-aufgaben.js:119
 - `questTempelGeht` → Game/spiel/06a-aufgaben.js:123
 - `queueHover` → Game/spiel/03e-karte-kamera-eingabe.js:362
-- `queueLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:103
+- `queueLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:105
 - `rahmenAufKarte` → Game/spiel/03b-karte-basen-bilder.js:132
 - `rahmenDef` → Game/spiel/05a-profil-rahmen.js:18
 - `rahmenHat` → Game/spiel/05a-profil-rahmen.js:22
@@ -1736,7 +1736,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderKeepSheet` → Game/spiel/08b-stadt-burg-aussehen.js:4
 - `renderKistenChancen` → Game/spiel/06d-schild-produktion.js:128
 - `renderKistenReiter` → Game/spiel/06g-shop-gegenstaende.js:55
-- `renderLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:113
+- `renderLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:115
 - `renderLook` → Game/spiel/05a-profil-rahmen.js:55
 - `renderLookSheet` → Game/spiel/08b-stadt-burg-aussehen.js:44
 - `renderLookTop` → Game/spiel/08b-stadt-burg-aussehen.js:38
@@ -4028,10 +4028,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `citySchild` :18 — → {x, y, w, h}; x/y = Mitte des Schilds
 - `rund` :20
 - `cityFrame` :45 — ---- ein Bild ----
-- `levelRewardText` :98
-- `queueLevelUpModal` :103
-- `renderLevelUpModal` :113
-- `closeLevelUpModal` :126
+- `levelRewardText` :100
+- `queueLevelUpModal` :105
+- `renderLevelUpModal` :115
+- `closeLevelUpModal` :128
 
 ### Game/spiel/09a-funde-felder.js — Funde auf der Karte und Ressourcenfelder
 - `pickupAmount` :6

@@ -10473,6 +10473,8 @@ function cityFrame(now) {
         const trifft = (p, q) => Math.abs(p.x - q.x) < (p.w + q.w) / 2 && Math.abs(p.y - q.y) < 40;
         for (const p of schilder) if (p.y + 18 > lr.top - 6 && p.x + p.w / 2 > lr.left && p.x - p.w / 2 < lr.right) {
             p.y = lr.top - 6 - 18; while (schilder.some(q => q !== p && trifft(p, q))) p.y -= 40; } }   // (nicht auf ein anderes Schild)
+    for (const p of schilder) { const w = citySchildBreite(cityCtx, p.s)[0];   // halb am Rand: ganz ins Bild (nicht „HELD…“)
+        if (p.x + w / 2 > 0 && p.x - w / 2 < W) p.x = Math.min(Math.max(p.x, w / 2 + 6), W - w / 2 - 6); }
     if (im) for (const p of schilder) {                                      // die Schilder zuletzt, über allem
         const an = cityOpenId === p.id || cityRingId === p.id, q = citySchild(g, p.s, p.x, p.y, an, now);
         if (q.x + q.w > 0 && q.x < W && q.y + q.h > 0 && q.y < H) cityNamen.push({ id: p.id, ...q });
