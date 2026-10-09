@@ -23,12 +23,24 @@ let b;
   await bis(() => p.evaluate(() => !!document.getElementById('wkName')), 15000);
   await G.willkommen(p, 'Kistentest');
   UID = G.spielerId(NAME);
-  console.log(G.geschenk(UID, 12000, 0));
+  console.log(G.geschenk(UID, 12000, 50000));   // Münzen: reicht zum Gründen, falls kein offenes Bündnis Platz hat
   await bis(() => p.evaluate(() => inboxList().length > 0), 30000);   // das Geschenk ist im Postfach
   await p.evaluate(() => { for (const x of inboxList().slice()) inboxClaim(x.id); });
   const tGeschenk = Date.now();
   // einem offenen Bündnis mit Mitgliedern beitreten (Geschenke gehen an die anderen)
   AID = await p.evaluate(() => { const a = Object.values(bund.b).filter(x => x.offen && x.mit.length >= 1 && x.mit.length < BUND.MAX).sort((x, y) => y.mit.length - x.mit.length)[0]; if (!a) return null; bundBefehl('beitreten', { aid: a.id }); return a.id; });
+  if (!AID) {   // alle Mitspieler-Bündnisse voll/geschlossen: selbst gründen, ein zweiter echter Spieler tritt bei
+    const k = Date.now().toString(36).slice(-4).toUpperCase().replace(/[^A-Z]/g, 'K');
+    await p.evaluate(k => bundBefehl('gruenden', { name: 'Kiste' + k, tag: k.slice(0, 4), farbe: 0, zeichen: 0, offen: true }), k);
+    await bis(() => p.evaluate(() => !!bundVon('player')), 90000);
+    AID = await p.evaluate(() => { const a = bundVon('player'); return a ? a.id : null; });
+    const p2 = await G.rein(b, NAME + 'b', { neu: true, fehler, warte: 0 });
+    await bereit(p2);
+    await bis(() => p2.evaluate(() => !!document.getElementById('wkName')), 15000);
+    await G.willkommen(p2, 'Kistenfreund');
+    await bis(() => p2.evaluate(a => !!bund.b[a], AID), 90000);
+    await p2.evaluate(a => bundBefehl('beitreten', { aid: a }), AID);
+  }
   await bis(() => p.evaluate(() => { const a = bundVon('player'); return !!a && a.mit.length >= 2; }), 90000);
   ok('im Bündnis mit anderen', !!AID && await p.evaluate(() => { const a = bundVon('player'); return !!a && a.mit.length >= 2; }), AID);
   // Weltrechner kennt die Gems (Profil nach dem Geschenk), Bündnis und Hauptbuch stehen in der Welt
