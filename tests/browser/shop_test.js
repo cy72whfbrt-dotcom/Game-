@@ -77,7 +77,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(!r.fehler, art + ': Szenen laufen', r.fehler);
     if (r.fehler) { await ctx.close(); continue; }
     ok(r.reiter === 'Kisten,Event,Tempo,Schilde,Markt' && r.em, art + ': Reiter Kisten · Event · Tempo · Schilde · Markt (kein Thron), oben Event-Münzen', r);
-    ok(r.kisten.karten === 6 && r.kisten.gruppen === 'Ausrüstung,Helden,Schlüssel' && r.kisten.preise === '1100/1000 1500/5000 1100/1000 1500/5000', art + ': Kisten in Gruppen, ohne Schlüssel 100/500 Edelsteine (10×: 1.000/5.000)', r.kisten);
+    ok(r.kisten.karten === 7 && r.kisten.gruppen === 'Alle 8 Std. gratis,Ausrüstung,Helden,Schlüssel' && r.kisten.preise === '1100/1000 1500/5000 1100/1000 1500/5000', art + ': Kisten in Gruppen, ohne Schlüssel 100/500 Edelsteine (10×: 1.000/5.000)', r.kisten);
     ok(r.ausGems.weg === 100 && r.ausGems.teil === 1, art + ': Ausrüstungs-Kiste mit Edelsteinen: 100 weg, 1 Teil', r.ausGems);
     ok(r.ausS.gemsWeg === 0 && r.ausS.s1 === 2 && r.ausS.teile === 10, art + ': 10× mit Schlüsseln: 10 Schlüssel weg, keine Edelsteine, 10 Teile', r.ausS);
     ok(r.heldS.gemsWeg === 0 && r.heldS.s1 === 1, art + ': Helden-Kiste mit Schlüssel', r.heldS);
