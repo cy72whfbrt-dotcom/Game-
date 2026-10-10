@@ -14,13 +14,12 @@ Erst lesen: `CLAUDE.md`, dann `doku/INDEX.md`. Offene Punkte: `doku/merkliste.md
 - MariaDB + Test-DB `owtest` im Container eingerichtet (Zugang nur lokal in scratchpad, nie ins Git;
   im neuen Container neu einrichten, siehe Kopf `tests/server_tests.sh`).
 
-## NÄCHSTER SCHRITT (wichtigste Aufgabe, Alexander 9.10.)
-Freunde (Erwachsene + Jugendliche) testeten ca. 1 Std.: „unübersichtlich, viel zu viel auf der Karte, wissen nicht
-was tun“. Verwirrt hat ALLES: volle Karte, zu viele Knöpfe/Fenster, kein klares Ziel. Die Anleitung unten (Schritt x/7)
-haben sie gar nicht wahrgenommen. Es fängt SCHON BEIM REINKOMMEN an (Ladebild, Login, erster Bildschirm: „viel zu viel“) – dort beginnen. Plan „Erste Stunde neu“: (1) Spieltester spielt als völlig neuer Spieler und notiert
-jede Verwirrung, (2) Designer: wie machen RoK/Whiteout die erste Stunde, (3) Test-Datei neuer Anfang: Karte klein mit
-Nebel (nur eigene Burg + 3–4 Ziele), EIN Ziel oben groß mit Pfeil statt Leiste unten, Knöpfe/Events/Shop/Bündnis/Helden
-erst nach und nach freischalten („Neu: …“), fremde Basen weit weg nur als Punkte. Alexander zeigt es dann den Freunden.
+## NÄCHSTER SCHRITT (Alexander 10.10.)
+Neues geführtes Tutorial Burg 1–3 ist IM SPIEL (Game/spiel/10c2-tutorial.js, Drehbuch in doku/events-pass-aufgaben.md):
+alte Anleitung raus, neuer Spieler sieht fast nichts, Finger/Loch/Berater, 23 Schritte bis Burg 3, eigenes Lager Stufe 1
+neben der Hauptstadt, Freischaltung Bündnis B4 / Events B5 / Teleport+Thron B6, „Tutorial noch mal“ in Einstellungen,
+Start-Rohstoffe 5.000/3.000/1.800. Grund: Freunde fanden das Spiel „viel zu viel“ (schon beim Reinkommen).
+Offen: Bilder einstieg_finger, einstieg_berater, banner_neu (Platzhalter); Alexander zeigt es den Freunden → Rückmeldung.
 
 ## Offene Fragen an Alexander (Empfehlung jeweils A)
 - 25 Gratis-Kiste-Inhalt: 60 % Beschleuniger 5 Min, 30 % 10 Edelsteine, 10 % 1 Schlüssel – A so / B mehr.
