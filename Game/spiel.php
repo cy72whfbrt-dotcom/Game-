@@ -444,12 +444,14 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 /* Tutorial (10c2): dunkel mit Loch – vier Teile um das Loch fangen die Tipps, das Loch selbst lässt sie zum echten Element durch */
 .tut{position:fixed;inset:0;z-index:59;pointer-events:none}   /* über Fenstern, Stadt und Heldenhalle (≤ 58), unter Belohnungs-Fenstern (60+) und dem Hinweis */
 .tut[hidden]{display:none}
-.tut-d{position:absolute;background:rgba(5,8,15,.58);pointer-events:auto}
-.tut.is-hell .tut-d{background:rgba(5,8,15,.3)}   /* Rohstoffe erklären: die eigene Hauptstadt gut sichtbar dahinter */
+.tut.durch,.tut.durch *{pointer-events:none!important}   /* kurz durchsichtig für Tipps: was liegt unter dem Dunkel? */
+.tut-d{position:absolute;background:rgba(5,6,8,.55);pointer-events:auto}   /* Handlungs-Schritt: die Spielwelt bleibt gut sichtbar */
+.tut.is-hell .tut-d{background:rgba(5,6,8,.4)}   /* Erklär-Schritt (nur „Weiter“, Rohstoffe): heller – die eigene Hauptstadt dahinter */
 .tut.is-frei .tut-d{background:none}   /* warten (Marsch, Bau): man sieht alles, tippen geht trotzdem nicht */
-.tut-loch{position:absolute;border-radius:14px;pointer-events:none;box-shadow:0 0 0 3px rgba(242,214,138,.75),0 0 18px 6px rgba(242,214,138,.4);animation:tut-glanz 1.6s ease-in-out infinite}
+.tut-loch{position:absolute;box-sizing:border-box;border:2px solid var(--gold-300);border-radius:14px;pointer-events:none;box-shadow:0 0 0 4px rgba(212,173,102,.25),0 0 24px rgba(240,223,176,.45);animation:tut-glanz 1.2s ease-in-out infinite}
+.tut-loch.rund{border-radius:50%}   /* Basis/Lager auf der Karte */
 .tut-sperre{position:absolute;pointer-events:auto}
-@keyframes tut-glanz{50%{box-shadow:0 0 0 3px rgba(242,214,138,1),0 0 26px 10px rgba(242,214,138,.55)}}
+@keyframes tut-glanz{50%{box-shadow:0 0 0 7px rgba(212,173,102,.4),0 0 30px rgba(240,223,176,.6)}}   /* Puls nur im Schein: das Loch bleibt im Bild */
 /* Finger: Platzhalter, bis das KI-Bild einstieg_finger.webp kommt (zeigt nach oben aufs Loch) */
 .tut-finger{position:absolute;width:54px;height:54px;pointer-events:none;animation:tut-tipp 1s ease-in-out infinite}
 .tut-finger::before{content:"";position:absolute;left:18px;top:0;width:18px;height:34px;border-radius:9px 9px 4px 4px;background:linear-gradient(90deg,#f2d68a,#c99a3e);border:2px solid #5a3d0e}
@@ -460,18 +462,21 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px);max-width:440px;
   display:flex;align-items:flex-end;gap:6px;pointer-events:none}
 .tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 34px)}   /* unter „Überspringen“ */
-.tut-figur{flex:none;width:64px;height:80px;border-radius:32px 32px 10px 10px;border:2px solid var(--gold-300);background:url(bilder/held_aldric_kopf.webp) center/cover,linear-gradient(#24365c,#0f1a2e)}
-.tut-blase{flex:1;min-width:0;margin-bottom:18px;padding:10px 14px;border-radius:12px 12px 12px 2px;background:#f3e6c4;color:#24170a;box-shadow:0 3px 10px #000a;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
-.tut-blase p{margin:0;font:600 17px/1.3 Georgia,serif}
+.tut-figur{position:relative;z-index:1;flex:none;width:76px;height:92px;margin-right:-14px;border-radius:38px 38px 10px 10px;border:2px solid var(--gold-300);background:url(bilder/held_aldric_kopf.webp) center/cover,linear-gradient(#24365c,#0f1a2e);box-shadow:0 4px 12px rgba(0,0,0,.45)}   /* überlappt die Blasen-Ecke */
+.tut-blase{flex:1;min-width:0;margin-bottom:18px;padding:14px 16px 14px 22px;border:2px solid var(--gold-400);border-radius:14px 14px 14px 2px;background:#f3e6c4;color:#2a1d0e;box-shadow:0 6px 18px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:8px;pointer-events:auto}   /* immer voll deckend */
+.tut-blase p{margin:0;font:600 17px/1.35 Georgia,serif}
+.tut-name{position:absolute;top:-11px;left:18px;padding:1px 9px;border:1px solid var(--gold-500);border-radius:6px;background:var(--ink-3);color:#f0dfb0;font:700 12px/1.4 Georgia,serif;font-variant:small-caps;letter-spacing:.08em}
+@media (min-width:900px) and (min-height:501px){ .tut-berater{max-width:520px} .tut-blase{max-width:420px} .tut-figur{width:96px;height:116px;border-radius:48px 48px 12px 12px} }
 .tut-frage{align-self:flex-end}
 .tut-blase:has(> #tutWeiter:not([hidden])){padding-bottom:22px}   /* „Weiter“ hängt unten an der Blase: keine eigene Zeile, die Blase bleibt flach */
 .tut-blase > #tutWeiter{position:absolute;right:12px;bottom:-16px;filter:drop-shadow(0 2px 4px #0008)}
 .tut-frage{display:flex;gap:8px} .tut-frage[hidden]{display:none}
 .tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
-  border:1px solid var(--line-2);background:rgba(0,0,0,.6);color:var(--tx-2);font:600 12px var(--font-ui);pointer-events:auto}
+  border:1px solid var(--line-2);background:rgba(10,12,16,.6);color:var(--tx-2);font:600 13px var(--font-ui);pointer-events:auto}
 .tut-weg[hidden]{display:none}
-/* Teilschritt-Zähler („2/5“), Warte-Balken */
-.tut-blase{position:relative} .tut-zaehler{position:absolute;top:-10px;right:10px;padding:1px 8px;border-radius:9px;background:#5a3d0e;color:#f3e6c4;font:700 12px/1.4 Georgia,serif} .tut-zaehler[hidden]{display:none}
+/* Teilschritte als Punkte (aktiv Gold), Warte-Balken */
+.tut-blase{position:relative} .tut-zaehler{position:absolute;top:7px;right:10px;display:flex;gap:4px} .tut-zaehler[hidden]{display:none}
+.tut-zaehler i{width:6px;height:6px;border-radius:50%;background:var(--ink-5);box-shadow:inset 0 0 0 1px #0004} .tut-zaehler i.an{background:var(--gold-300)}
 .tut-fort{display:block;height:8px;border-radius:4px;background:#d6c39a;box-shadow:inset 0 1px 2px #0006;overflow:hidden} .tut-fort[hidden]{display:none}
 .tut-fort i{display:block;height:100%;width:0;background:linear-gradient(#f2d68a,#c99a3e);transition:width .25s linear}
 /* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt (oben an der Leiste) */
@@ -493,7 +498,10 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tw-los{height:54px;border:0;cursor:pointer;font:700 19px Georgia,serif;color:#3a2203;text-shadow:0 1px 0 #fbe7a3;background:url(bilder/ui_k_gold.webp) center/100% 100% no-repeat;filter:drop-shadow(0 3px 6px #000a)}
 .tut-d,.tut-loch,.tut-sperre{transition:left .3s ease,top .3s ease,width .3s ease,height .3s ease}   /* Loch und Finger gleiten zum nächsten Ziel */
 .tut-finger{transition:left .3s ease,top .3s ease}
-.tut-berater.rein .tut-blase{animation:tut-rein .3s ease-out} @keyframes tut-rein{from{opacity:0;transform:translateY(10px) scale(.97)}}
+.tut-berater.rein .tut-blase{animation:tut-rein .18s ease-out} @keyframes tut-rein{from{opacity:0;transform:translateY(8px)}}
+.tut-freude{position:fixed;z-index:61;transform:translate(-50%,-100%);font:700 18px/1.2 Georgia,serif;color:#f0dfb0;white-space:nowrap;pointer-events:none;
+  text-shadow:0 0 3px #000,0 1px 2px #000,0 0 8px rgba(0,0,0,.8);animation:tut-freude 1.2s ease-out forwards}   /* Freude-Moment: steigt am Ziel auf */
+@keyframes tut-freude{0%{opacity:0;translate:0 10px;scale:.8}15%{opacity:1;translate:0 0;scale:1.05}70%{opacity:1}100%{opacity:0;translate:0 -40px;scale:1}}
 .tut-banner{position:fixed;left:50%;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 8px);z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
   background:linear-gradient(#e9c46d,#b8862c);color:#2a1a05;font:800 17px var(--font-display);white-space:nowrap;box-shadow:0 4px 18px #000c;pointer-events:none}
 .tut-banner[hidden]{display:none} .tut-banner.an{animation:tut-banner 2.6s ease forwards}
@@ -502,8 +510,11 @@ body.tut-an #hint{display:none!important}   /* im Tutorial ruhen die normalen Hi
 /* Rohstoffe oben, die noch fehlen: unsichtbar, aber an ihrem Platz – jede Kapsel behält ihre normale Größe (Münzen nie über die ganze Breite) */
 body.tz-roh #hudRoh,body.tz-truppen #hud .res--troop,body.tz-gems #hud .res--gem{visibility:hidden}
 body.tz-leiste #cornerButtons{visibility:hidden}   /* noch kein Knopf frei: keine leere Leiste */
-#cornerButtons.tut-neu{animation:tut-leiste .5s ease-out} @keyframes tut-leiste{from{opacity:0;translate:0 24px}}
-.nav-btn.tut-neu{animation:tut-knopf .7s ease-out} @keyframes tut-knopf{from{opacity:0;scale:.4}60%{opacity:1;scale:1.15}}
+#cornerButtons.tut-neu{animation:tut-leiste .5s ease-out} @keyframes tut-leiste{from{opacity:0}}
+.nav-btn.tut-neu,#hud .res.tut-neu{animation:tut-knopf 1.5s ease-out} @keyframes tut-knopf{0%{opacity:0;scale:.3;filter:drop-shadow(0 0 0 #f0dfb0)}25%{opacity:1;scale:1.18;filter:drop-shadow(0 0 12px #f0dfb0)}40%{scale:1}100%{filter:drop-shadow(0 0 0 transparent)}}   /* neu: fliegt ein und glüht */
+.nav-btn.tut-neuer::after{content:"NEU";position:absolute;top:0;left:calc(50% + 6px);padding:0 4px;border-radius:4px;background:#9b2f2f;color:#f0dfb0;font:700 11px/15px var(--font-ui);box-shadow:0 1px 3px #000a}   /* bis er einmal getippt wurde */
+body.tut-an #citySpeedBtn{display:none!important}   /* Edelstein-Knopf „Fertig für …“: im Tutorial nur der Beschleuniger */
+@media (max-width:899px) and (min-height:501px){ body.tut-schmal .nav{left:50%;right:auto;width:min(calc(100% - 16px),calc(var(--tut-n,1) * 88px + 48px));translate:-50% 0} }   /* Leiste nur so breit wie ihre Knöpfe */
 /* Was ein neuer Spieler noch nicht hat, ist ganz weg (10c2 tutFrei: body.tz-<teil>) */
 body.tz-stadt #cityNavBtn,body.tz-kampf #battleLogBtn,body.tz-events #goalsBtn,body.tz-shop #shopBtn,
 body.tz-profil #profileBtn,body.tz-rucksack #rucksackBtn,body.tz-aufgaben #goalsGruppen [data-ggrp="aufgaben"],body.tz-karte #mapControls,
@@ -2517,7 +2528,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
   <div class="tut-d" data-tut-d="o"></div><div class="tut-d" data-tut-d="u"></div><div class="tut-d" data-tut-d="l"></div><div class="tut-d" data-tut-d="r"></div>
   <div id="tutLoch" class="tut-loch" hidden></div><div id="tutSperre" class="tut-sperre" hidden></div>
   <div id="tutFinger" class="tut-finger" hidden></div>
-  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><span id="tutZaehler" class="tut-zaehler" hidden></span><p id="tutSatz"></p><span id="tutFort" class="tut-fort" hidden><i></i></span>
+  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><b class="tut-name">Aldric</b><span id="tutZaehler" class="tut-zaehler" hidden></span><p id="tutSatz"></p><span id="tutFort" class="tut-fort" hidden><i></i></span>
     <button id="tutWeiter" class="btn btn--primary btn--sm" type="button" hidden>Weiter</button>
     <span id="tutFrage" class="tut-frage" hidden><button id="tutJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="tutNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span></div></div>
   <button id="tutWeg" class="tut-weg" type="button">Überspringen</button>
@@ -2526,7 +2537,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
   <div class="tw-karte">
     <div class="tw-band"><h2 id="twTitel">Willkommen in Open Water</h2></div>
     <div class="tw-text"><div class="tw-held"></div>
-      <p>Das Meer ist weit, und überall liegen Inseln. Bau deine Stadt, erobere neue Basen und herrsche am Ende vom Thron in der Mitte!</p></div>
+      <p>Ich bin Aldric, dein Berater. Das Meer gehört dem, der den Thron in der Mitte hält – fangen wir mit deiner Stadt an!</p></div>
     <label id="twNameZeile" class="tw-name" hidden><span>Wie heißt du, Kapitän?</span><input id="twName" maxlength="16" autocomplete="off" spellcheck="false"><em id="twFehler"></em></label>
     <button id="twLos" class="tw-los" type="button">Los geht's</button>
   </div>

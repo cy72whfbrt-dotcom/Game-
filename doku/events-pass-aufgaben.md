@@ -64,23 +64,32 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 - Nur neue Spieler (`__OW.neu` bzw. ganz frischer Stand); alte Stände ohne `openWaterTutorial` sehen alles wie bisher.
   Auch offline (normale Vorschau, frischer Speicher). Test-Vorschauen (`vorschau_bauen.php … test` / `ohnetutorial`, alle_tests.sh)
   setzen `window.__owOhneTutorial` – dort startet es offline nicht. Tages-Belohnung erst nach dem Tutorial (`maybeShowDaily`).
-- Zuerst Willkommen (`#tutWillkommen`, Titelbild, Band, Aldric, 2 Sätze Geschichte, „Los geht's“, `tut.w`). Ohne Server (`!__OW`)
+- Zuerst Willkommen (`#tutWillkommen`, Titelbild, Band, Aldric stellt sich vor, „Los geht's“, `tut.w`). Ohne Server (`!__OW`)
   mit Namensfeld (max. 16 Zeichen, Vorschlag „Kapitän 123“ → `openWaterPlayerName`); mit Server kommt der Name aus der Anmeldung.
-- 26 Schritte (`TUT`) im echten Spiel: dunkel, Loch auf dem echten Element (Knopf, Stadt-Schild, Basis), Finger, Berater mit
-  1–2 Sätzen (was + warum), Blase blendet ein, Loch/Finger gleiten; nur das Loch nimmt Tipps. Belohnungs-Fenster gehen vor. Erklär-Schritte nur mit „Weiter“. Ablauf: Münzen → Holz → Stein → Eisen → Edelsteine
+- 27 Schritte (`TUT`, Drehbuch `scratchpad/design_tutorial2.md`) im echten Spiel: abgedunkelt (Handlung .55, Erklär-Schritt .40), Loch
+  auf dem echten Element (Knopf, Stadt-Schild, rund auf Basis/Lager), Finger, Berater „Aldric“ (Namensschild) mit 1–2 Sätzen mit
+  echten Zahlen aus dem Spiel (Kosten `stadtKosten`, Rohstoffe, Lager-Barbaren/-Münzen, Münzen/Std. einer Basis, Truppen). Jeder
+  Teilschritt (Stadt → Schild → Bauen, Knopf → Reiter → Ziel, Angriff) hat seinen eigenen Satz und Punkte (`tutT`, `tutBauT`, `tutReihe`);
+  Bau läuft: „Noch N Sekunden …“ mit Balken. Fertig gebaut: Freude-Moment (`freude`: „+N Holz pro Stunde“, „Burg 2!“ steigt am Ziel auf).
+  Blase immer voll deckend (blendet nur bei neuem Teilschritt ein), bleibt im Schritt auf ihrer Seite; Fenster unten offen: Blase oben.
+  Nur das Loch nimmt Tipps. Belohnungs-Fenster gehen vor. Erklär-Schritte nur mit „Weiter“. Ablauf: Münzen → Holz → Stein → Eisen → Edelsteine
   (je ein Schritt mit Loch; Edelsteine nur in ihrem Schritt sichtbar, `zeig`; vorher kein Knopf unten) → Holzfäller (Stadt-Knopf kommt) (+ Geschenk 2 Beschleuniger)
   → Beschleunigen → Steinbruch → Eisenmine → Burg 2 → Karte → eigenes Barbaren-Lager Stufe 1 angreifen → Kampfbericht → Beute
   abholen → neutrale Basis erobern (keine in Reichweite: nur erklärt) → Truppen
   → Heldenhalle → Helden-Kiste (+ 2 Schlüssel) → Angriff mit Held → Gratis-Kiste → Ausrüstungs-Kiste → anlegen → Rucksack →
-  Burg 3 (mit Beschleuniger) → Labor + Forschung → Aufgaben. Ende: 10 Edelsteine + Kiste ins Abholfach.
-- Sichtprüfung (`tutZeigen`): Ziele auf Karte/Stadt (`fokus`) erst mit Loch+Finger, wenn sie ganz im Bild stehen (≥ 24 px Rand, nicht
-  unter Kopf/Leiste/Blase) und die Kamera ruht; sonst alle 1,5 s neu hinfliegen (`flyTo`, Ziel bei 42 % Höhe, max. 4×). Loch nie über
+  Burg 3 (mit Beschleuniger) → Labor + Forschung → Aufgaben. Truppen/Held warten, bis der Angriff angekommen ist; Kampfbericht
+  erst nach 2,5 s (`ruhe`: „Lager besiegt“ zuerst). Ende: 100 Edelsteine + Kiste (`TUT_GEMS`), gleich abgeholt im Fenster „Rundgang geschafft!“,
+  danach Aldric „Gut gemacht …“ und die tägliche Belohnung.
+- Sichtprüfung (`tutZeigen`): Ziele auf Karte/Stadt (`fokus`) mit Loch+Finger, sobald sie im Bild stehen (nicht unter Kopf/Leiste/Blase)
+  und Karte/Stadt-Kamera ruhen; sonst gleich hinfahren (`flyTo`/`cityFocus`, max. 4×; ändert Hinfahren nichts – Bildrand –, gilt es so). Loch nie über
   den Bildrand (nach innen geschoben). Blase: die Seite, deren Rechteck (mit Berater-Bild) das Loch nicht überdeckt. Rohstoffe: Loch nur um Bild+Zahl.
 - Angriffs-Schritte (`tutAngriff`): Satz je Teilschritt mit Zähler („2/5“): Karte → Basis → „Angreifen“ → Held-Feld/Held wählen → Losmarschieren;
   ohne freien Helden ehrlich „ohne Helden los“. Warten (Bau, Marsch): „Kurz warten – …“ mit Balken (`fort`). Hängt ein Schritt
   > 20 s ohne Ziel: „Weiter“ als Notausgang. Kein Fortschrittsband oben. Rohstoff-Schritte (`nah`): Kamera nah auf die eigene
   Hauptstadt (`tutHeim`, schon beim Willkommen), weniger abgedunkelt (`.is-hell`). Zoom-/Kompass-Knöpfe erst nach dem Tutorial (`tz-karte`).
-  „Neu: …“-Banner oben an der Leiste. Burg 3: ein offener Rucksack geht zu (Desktop), der Beschleuniger-Hinweis erst am Burg-Fenster.
+  Neue Knöpfe: fliegen ein, glühen, Schild „NEU“ bis zum ersten Tipp (`tutRein`, `.tut-neuer`); neue Kapseln oben fliegen ein. Das Banner
+  „Neu: …“ nur nach dem Tutorial (Burg-Stufe). Im Tutorial ruhen normale Hinweise (auch über Geschenk-Fenstern), der Edelstein-Knopf
+  „Fertig für …“ ist weg; Leiste unten nur so breit wie ihre Knöpfe (Handy, `body.tut-schmal`). Burg 3: ein offener Rucksack geht zu (Desktop).
 - Rohstoff-Kapseln oben, die noch fehlen, sind nur unsichtbar (`visibility`, Platz bleibt): jede Kapsel hat immer ihre normale Größe.
   Ohne freien Knopf ist die Leiste unten weg (`body.tz-leiste`); der erste Knopf blendet sie ein (`tutRein`).
 - Knöpfe kommen nach und nach („Neu: …“, `body.tz-<teil>` blendet aus, Stil in 02); die Leiste unten verteilt
@@ -90,9 +99,9 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   bekommt eines der Stufe 1 nahe der Hauptstadt (`c.fuer`); nur er darf es angreifen (`barbFuerOk`, auch Mitspieler/Befehle).
 - Profil → Einstellungen → „Tutorial noch mal“ (ohne Geschenke/Belohnung). Normale Hinweise oben ruhen im Tutorial (`body.tut-an`).
 - „Überspringen“ fragt im Spiel, danach alles sichtbar. Das Welt-Namensfenster ruht im Tutorial. Tägliche Belohnung erst danach.
-- Hauptbuch: Spielraum am Anfang `fr.bm 2`, `fr.s1 2` (Geschenke). Start-Rohstoffe 5.000/3.000/1.800 (aufbau.js `ROH_START`): Tutorial braucht
+- Hauptbuch: Spielraum am Anfang `fr.g 100`, `fr.k 1`, `fr.bm 2`, `fr.s1 2` (Geschenke + Belohnung). Start-Rohstoffe 5.000/3.000/1.800 (aufbau.js `ROH_START`): Tutorial braucht
   4.120/2.200/1.380 + 1. Forschung – kein Warten bis Burg 3.
-- Platzhalter-Bilder: `einstieg_finger`, `einstieg_berater` (jetzt Helden-Kopf), `banner_neu`. Test `tutorial_test`.
+- Platzhalter-Bilder: `einstieg_finger` (jetzt CSS-Pilz, Prompt in der Vorgabe), `einstieg_berater` (jetzt Helden-Kopf). Test `tutorial_test`.
 
 ## Offen
 - 11c Nr. 5: alte Event-Ranglisten/Wochen-Punkte beim Reset (prüfen, ob erledigt).

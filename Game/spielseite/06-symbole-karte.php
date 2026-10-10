@@ -131,7 +131,7 @@
   <div class="tut-d" data-tut-d="o"></div><div class="tut-d" data-tut-d="u"></div><div class="tut-d" data-tut-d="l"></div><div class="tut-d" data-tut-d="r"></div>
   <div id="tutLoch" class="tut-loch" hidden></div><div id="tutSperre" class="tut-sperre" hidden></div>
   <div id="tutFinger" class="tut-finger" hidden></div>
-  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><span id="tutZaehler" class="tut-zaehler" hidden></span><p id="tutSatz"></p><span id="tutFort" class="tut-fort" hidden><i></i></span>
+  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><b class="tut-name">Aldric</b><span id="tutZaehler" class="tut-zaehler" hidden></span><p id="tutSatz"></p><span id="tutFort" class="tut-fort" hidden><i></i></span>
     <button id="tutWeiter" class="btn btn--primary btn--sm" type="button" hidden>Weiter</button>
     <span id="tutFrage" class="tut-frage" hidden><button id="tutJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="tutNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span></div></div>
   <button id="tutWeg" class="tut-weg" type="button">Überspringen</button>
@@ -140,7 +140,7 @@
   <div class="tw-karte">
     <div class="tw-band"><h2 id="twTitel">Willkommen in Open Water</h2></div>
     <div class="tw-text"><div class="tw-held"></div>
-      <p>Das Meer ist weit, und überall liegen Inseln. Bau deine Stadt, erobere neue Basen und herrsche am Ende vom Thron in der Mitte!</p></div>
+      <p>Ich bin Aldric, dein Berater. Das Meer gehört dem, der den Thron in der Mitte hält – fangen wir mit deiner Stadt an!</p></div>
     <label id="twNameZeile" class="tw-name" hidden><span>Wie heißt du, Kapitän?</span><input id="twName" maxlength="16" autocomplete="off" spellcheck="false"><em id="twFehler"></em></label>
     <button id="twLos" class="tw-los" type="button">Los geht's</button>
   </div>

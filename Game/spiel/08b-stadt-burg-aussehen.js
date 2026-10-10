@@ -151,7 +151,7 @@ function renderCitySheet() {                       // (läuft auch jede Sekunde 
     cityBildSetzen(id, lvl);
     setText(document.getElementById('cityBOver'), 'Gebäude');
     setText(document.getElementById('cityBName'), def.name);
-    liveHtml(document.getElementById('cityBLevel'), lvl ? cityStufeHtml(lvl, max, cityMaxLevel(id)) : 'Noch nicht gebaut');
+    liveHtml(document.getElementById('cityBLevel'), lvl ? cityStufeHtml(lvl, max, cityMaxLevel(id)) : cityBuildOf(c, id) ? 'Wird gebaut' : 'Noch nicht gebaut');   // (läuft der erste Bau: kein Widerspruch zu „Ausbau auf Stufe 1“)
     setText(document.getElementById('cityBDesc'), def.desc.replace(/Burg-Stufe (\d+)/g, 'Burg-\u2060Stufe\u00a0$1'));   // („ab Burg-Stufe 4“ bricht nie am Bindestrich um)
     const note = document.getElementById('cityBNote'), up = document.getElementById('cityUpgradeBtn'), sp = document.getElementById('citySpeedBtn');
     const bld = cityBuildOf(c, id), building = !!bld, blocker = cityBlocker(id);

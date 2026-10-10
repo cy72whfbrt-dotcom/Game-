@@ -23,12 +23,12 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   });
   // ---- einmal ganz durchspielen: jeder Tipp ins Loch; prüft dabei: Loch ganz im Bild (≥ 2 px), Blase deckt es nie, Teilschritte mit eigenem Satz ----
   const spielen = async (p, W, H, mitNeuladen) => {
-    const gesehen = [], banner = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '';
+    const gesehen = [], banner = new Set(), neuer = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '';
     for (let i = 0; i < 900; i++) {
       const z = await p.evaluate(() => {
         const el = id => document.getElementById(id), r = e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2, w: q.width, h: q.height, l: q.left, t: q.top, r: q.right, b: q.bottom }; };
         const bn = el('tutBanner'); const o = { s: tut.s, k: (TUT[tut.s] || {}).k, fertig: !!tut.fertig, banner: bn.hidden ? '' : bn.textContent, satz: el('tutSatz').textContent,
-          zl: el('tutZaehler').hidden ? '' : el('tutZaehler').textContent };
+          zl: el('tutZaehler').hidden ? '' : el('tutZaehler').dataset.teil, neuer: [...document.querySelectorAll('.tut-neuer')].map(e => e.id) };
         const bf = document.querySelector('#beuteFenster:not([hidden]) .bf-ok'), mod = ['levelUpBtn', 'rewardModalBtn'].map(el).find(x => x && x.offsetParent);
         if (bf || mod) return { ...o, modal: bf ? '.bf-ok' : '#' + mod.id };
         if (el('tut').hidden) return o;
@@ -37,7 +37,7 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
         return o;
       });
       if (z.fertig) break;
-      if (z.banner) banner.add(z.banner);
+      if (z.banner) banner.add(z.banner); for (const n of z.neuer || []) neuer.add(n);
       if (z.k === 'held') { heldSaetze.add(z.satz); if (z.zl) zaehler.add(z.zl); }
       if (z.s !== alt) {                                     // neuer Schritt: Foto, merken
         alt = z.s; schritte++; await p.waitForTimeout(500);
@@ -71,7 +71,7 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
       }
       await p.waitForTimeout(500);                           // warten (Bau, Marsch, Kamera)
     }
-    return { gesehen, banner, schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler] };
+    return { gesehen, banner, neuer: [...neuer], schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler] };
   };
   const pruefSicht = (r, wo) => {
     ok(!r.probleme.length, wo + ': bei jedem Schritt ist das Ziel ganz im Bild und die Blase liegt nie darüber', r.probleme.slice(0, 6));
@@ -94,18 +94,19 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   ok(lg.da && lg.L === 1 && lg.weit < 20000 && lg.fremd === false && lg.nochDa, 'neuer Spieler hat sein Barbaren-Lager Stufe 1 nahe der Hauptstadt – ein Mitspieler darf es nicht angreifen', lg);
   const s0 = await p.evaluate(() => tut.s); await p.mouse.click(10, 420); await p.waitForTimeout(400);
   ok(await p.evaluate(() => tut.s) === s0 && await p.evaluate(() => isPanelOpen(goalsPopup) || !cityView.hidden) === false, 'Tipp neben das Loch tut nichts');
-  const r1 = await spielen(p, 390, 844, true), { gesehen, banner, schritte, hinweis } = r1;
+  const r1 = await spielen(p, 390, 844, true), { gesehen, banner, neuer, schritte, hinweis } = r1;
   pruefSicht(r1, '390×844');
   const ende = await p.evaluate(() => ({ fertig: !!tut.fertig, alles: !!tut.alles, burg: loadCity().levels.keep, held: Object.values(equippedItems).some(Boolean), helden: HEROES.filter(h => heroOwned('player', h.id)).length,
-    frei: tut.frei, geschenk: inboxList().some(x => x.title === 'Tutorial geschafft'), tz: [...document.body.classList].filter(c => c.startsWith('tz-')), gespeichert: JSON.parse(store.get('openWaterTutorial')).fertig === true,
+    frei: tut.frei, geschenk: (f => !f.hidden && /Rundgang/.test(f.textContent) && /100/.test(f.textContent))(document.getElementById('beuteFenster')) && !inboxList().some(x => x.title === 'Tutorial geschafft'), tz: [...document.body.classList].filter(c => c.startsWith('tz-')), gespeichert: JSON.parse(store.get('openWaterTutorial')).fertig === true,
     lumber: loadCity().levels.lumber, quarry: loadCity().levels.quarry, mine: loadCity().levels.mine, academy: loadCity().levels.academy, heroes: loadCity().levels.heroes }));
   if (bilder) await p.screenshot({ path: path.join(bilder, 't99_ende.png') });
   ok(ende.fertig && !ende.alles && ende.burg === 3 && ende.gespeichert, 'Tutorial komplett durchgespielt bis Burg 3 (' + schritte + ' Schritte)', { ende, gesehen });
   ok(ende.lumber && ende.quarry && ende.mine && ende.academy && ende.heroes && ende.held && ende.helden > 0, 'unterwegs gebaut: Holzfäller, Steinbruch, Eisenmine, Heldenhalle, Labor; Ausrüstung angelegt, Helden da', ende);
-  ok(ende.geschenk, 'am Ende: Belohnung im Abholfach', ende);
+  ok(ende.geschenk, 'am Ende: 100 Edelsteine gleich abgeholt, als Bild + Zahl („Rundgang geschafft!“)', ende);
   ok(gesehen.includes('lager') && gesehen.indexOf('lager') < gesehen.indexOf('bericht'), 'erster Angriff = das eigene Barbaren-Lager, danach Kampfbericht', gesehen);
   ok(hinweis === 'none', 'im Tutorial liegt kein normaler Hinweis über Sprechblase oder „Überspringen“', hinweis);
-  ok(banner.size >= 4 && ['stadt', 'kampf', 'events', 'truppen', 'shop', 'profil', 'rucksack', 'aufgaben'].every(k => ende.frei.includes(k)), 'Teile kommen nach und nach dazu (mit „Neu: …“)', { banner: [...banner], frei: ende.frei });
+  ok(!banner.size && ['cityNavBtn', 'battleLogBtn', 'goalsBtn', 'shopBtn', 'rucksackBtn'].every(k => neuer.includes(k)) && ['stadt', 'kampf', 'events', 'truppen', 'shop', 'profil', 'rucksack', 'aufgaben'].every(k => ende.frei.includes(k)),
+    'Teile kommen nach und nach dazu: neuer Knopf fliegt ein und trägt „NEU“ (kein Banner im Tutorial)', { banner: [...banner], neuer, frei: ende.frei });
   ok(['bund', 'rang', 'events2', 'welt'].every(k => ende.tz.includes('tz-' + k)) && !ende.tz.includes('tz-shop'), 'nach dem Tutorial (Burg 3): Bündnis, Rangliste, Events, Teleport noch zu – der Rest da', ende.tz);
   const dk = await p.evaluate(() => { const nav = document.getElementById('cornerButtons').getBoundingClientRect(), x = [...document.querySelectorAll('#cornerButtons .nav-btn')].filter(e => e.getClientRects().length).map(e => { const q = e.getBoundingClientRect(); return q.left + q.width / 2; });
     const d = x.slice(1).map((v, i) => v - x[i]); return { n: x.length, d: d.map(Math.round), links: Math.round(x[0] - nav.left), rechts: Math.round(nav.right - x[x.length - 1]) }; });
