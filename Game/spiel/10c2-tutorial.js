@@ -76,7 +76,7 @@ function tutFenster(panel, knopf) { return isPanelOpen(panel) ? null : $t(knopf)
 
 // ---- die Schritte (Drehbuch) ----
 const TUT = [
-    { k: 'roh', neu: ['stadt', 'roh'], satz: 'Oben siehst du Münzen, Holz, Stein und Eisen. Damit baust du alles.', ziel: () => ({ el: $t('hudRoh') }) },
+    { k: 'roh', neu: ['stadt', 'roh'], satz: 'Oben siehst du Münzen, Holz, Stein und Eisen. Damit baust du alles.', ziel: () => ({ el: document.querySelector('#hud .hud-werte') }) },
     { k: 'holz', satz: 'Bau zuerst den Holzfäller – er bringt jede Stunde Holz.', vor: () => tutGeschenk('b', 'Geschenk für dich', [['besch', 2, { dauer: '1m' }]]),
       ziel: () => tutGeb('lumber'), fertig: () => tutStufe('lumber') > 0 || tutBaut('lumber') },
     { k: 'tempo', bleib: true, satz: 'Mit einem Beschleuniger ist der Bau sofort fertig. Probier es!', ziel: () => tutBesch('lumber'), fertig: () => tutStufe('lumber') > 0 },

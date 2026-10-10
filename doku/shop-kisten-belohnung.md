@@ -54,7 +54,7 @@ Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (
 - Der rote Punkt am Events-Knopf öffnet zuerst „Abholen“, wenn dort etwas liegt.
 
 ## Tägliche Belohnung, Stufen-Belohnung
-- Tagesbelohnung + Wochenkette (verpasster Tag = Tag 1); beim allerersten Start erst nach der Anleitung.
+- Tagesbelohnung + Wochenkette (verpasster Tag = Tag 1); beim allerersten Start erst nach dem Tutorial.
 - Stufen-Belohnung: siehe `wirtschaft-zahlen.md`; startet beim Weltrechner bei SEINER Stufe (nie der vom Handy).
 
 ## Offen (Merkliste)

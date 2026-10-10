@@ -14,7 +14,7 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
   const zu = () => ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } try { if (!document.getElementById('heroHall').hidden) closeHeroHall(); } catch (e) {} document.querySelectorAll('.marker-sheet:not([hidden])').forEach(x => x.hidden = true); });
   const klick = s => ev(s => document.querySelector(s).click(), s);
   await zu();
-  const pruef = async (name) => { const t = await ev(() => [...document.querySelectorAll('.panel.is-open, #citySheet:not([hidden]), #armySheet:not([hidden]), .marker-sheet:not([hidden]), #midBar, #anleitung:not([hidden])')].map(e => e.innerText).join('\n')); for (const z of t.split('\n')) if (SCHLECHT.test(z)) texte.push(name + ' → ' + z.trim().slice(0, 140)); return t.length; };
+  const pruef = async (name) => { const t = await ev(() => [...document.querySelectorAll('.panel.is-open, #citySheet:not([hidden]), #armySheet:not([hidden]), .marker-sheet:not([hidden]), #midBar')].map(e => e.innerText).join('\n')); for (const z of t.split('\n')) if (SCHLECHT.test(z)) texte.push(name + ' → ' + z.trim().slice(0, 140)); return t.length; };
   const out = { fenster: {} };
   const PANELS = [['#bundBtn', 'bundPopup', '#bundPopup [data-btab]'], ['#battleLogBtn', 'battleLogPopup', '#battleLogPopup [data-ktab]'], ['#goalsBtn', 'goalsPopup', '#goalsPopup [data-gtab]'], ['#shopBtn', 'shopPopup', '#shopPopup [data-stab]'], ['#profileBtn', 'profilePopup', '#profilePopup [id^=tabBtn]']];
   for (const [btn, pan, tabs] of PANELS) {
@@ -75,9 +75,6 @@ const srv = http.createServer((q, r) => { const f = path.join(D, decodeURICompon
   out.events = await ev(() => ({ woche: woOn(), heute: (woHeute() || {}).name || 'frei', chip: document.getElementById('midBar').innerText.replace(/\n/g, ' ').slice(0, 80) }));
   wo = 'wochen-event'; out.wochenEvent = await ev(async () => { openGoals('tour'); await new Promise(r => setTimeout(r, 500)); return { tage: document.querySelectorAll('#eventBody .wo-tage > button').length, kisten: document.querySelectorAll('#eventBody .evl-k').length }; }).catch(e => 'FEHLER ' + e.message);
   await pruef('woche'); await p.screenshot({ path: path.join(OUT, 'z_woche.png') });
-  // Anleitung als neuer Spieler
-  wo = 'anleitung'; await ev(() => { document.querySelectorAll('.panel.is-open').forEach(x => closePanel(x)); document.getElementById('armySheet').hidden = true; anleitung.schritt = 0; }); await p.waitForTimeout(1500);
-  out.anleitung = await ev(() => document.getElementById('anleitungText').textContent);
   console.log(JSON.stringify(out, null, 1));
   console.log('Text-Auffälligkeiten:', texte.length ? [...new Set(texte)].slice(0, 40) : 'keine');
   console.log('Fehler:', fehler.length ? [...new Set(fehler)].slice(0, 20) : 'keine'); await b.close(); srv.close();

@@ -1,6 +1,5 @@
-// Gesamt-Spieltest 6.10. (fix-st2), Handy (390×844) + Desktop: Tippflächen ≥ 44 px (sichtbar kleiner erlaubt: Rohstoffe, Anleitung-×,
-// „Spähen“, Prozent-Chips, „Abholen“, „2. Bauarbeiter“, Kartenknöpfe), Anleitung Schritt 2 + Angriff mit „Alle“ aus der Hauptstadt sagt
-// „… bleibt deine Hauptstadt ohne Truppen“ (nur Hinweis; das Fenster bleibt ≤ 55 % hoch), Profil → Rangliste/Einstellungen mit echtem Tipp, Heldenkisten: Tipp auf die ganze Karte fragt „Wirklich?“
+// Gesamt-Spieltest 6.10. (fix-st2), Handy (390×844) + Desktop: Tippflächen ≥ 44 px (sichtbar kleiner erlaubt: Rohstoffe,
+// „Spähen“, Prozent-Chips, „Abholen“, „2. Bauarbeiter“, Kartenknöpfe), Angriff aus der Hauptstadt (das Fenster bleibt ≤ 55 % hoch), Profil → Rangliste/Einstellungen mit echtem Tipp, Heldenkisten: Tipp auf die ganze Karte fragt „Wirklich?“
 // (ab 500), Wochen-Event-Chip springt nicht, wenn der Rang erscheint, Stadt: Stadtbild füllt den Bildschirm, jedes Gebäude erreichbar, Funde auf der Karte
 // beschriftet und nie auf einem Namensschild. Bilder in den Arbeitsordner (process.argv[3]), wenn angegeben.
 const { chromium, devices } = require('playwright');
@@ -23,22 +22,17 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
         return { sicht: Math.round(r.width) + 'x' + Math.round(r.height), w, h }; };
       window.__t44 = sel => [...document.querySelectorAll(sel)].filter(x => x.offsetParent).map(x => window.__tipp(x)).filter(Boolean); });
     const gross = L => L.length > 0 && L.every(t => t.w >= 42 && t.h >= 42);   // (±21 px um die Mitte = 44 px Fläche)
-    // 1) Karte: Rohstoffe, Kartenknöpfe; Anleitung-×
-    const k = await ev(() => { const a = document.getElementById('anleitung'); a.hidden = false; const o = { roh: __t44('#hudRoh [data-roh]'), ctl: __t44('.mapctl button'), x: __t44('#anleitungWeg') }; a.hidden = true; return o; });
-    ok(gross(k.roh) && gross(k.ctl) && gross(k.x), art + ': Rohstoffe, Kartenknöpfe und Anleitung-× mit Tippfläche ≥ 44 px', k);
-    // 2) Angriff aus der Hauptstadt mit „Alle“: Hinweis; „Spähen“ und Prozent-Chips ≥ 44 px
+    // 1) Karte: Rohstoffe, Kartenknöpfe
+    const k = await ev(() => ({ roh: __t44('#hudRoh [data-roh]'), ctl: __t44('.mapctl button') }));
+    ok(gross(k.roh) && gross(k.ctl), art + ': Rohstoffe und Kartenknöpfe mit Tippfläche ≥ 44 px', k);
+    // 2) Angriff aus der Hauptstadt: „Spähen“ und Prozent-Chips ≥ 44 px
     const a = await ev(async () => { const w = ms => new Promise(f => setTimeout(f, ms)), h = islandById[playerIslandId];
       const nb = islands.filter(i => !islandOwnerOf(i.id) && !bossAt(i.id) && i.type !== 'megaTemple').sort((x, y) => Math.hypot(x.x - h.x, x.y - h.y) - Math.hypot(y.x - h.x, y.y - h.y))[0];
       scoutedIslands.delete(nb.id); islandTroops[playerIslandId] = Math.max(1000, islandTroops[playerIslandId] || 0); openIslandPopup(nb); attackBtn.click(); await w(400);
-      const s0 = anleitung.schritt, an = document.getElementById('anleitung'); anleitung.schritt = 1;
-      const leer = () => { anleitungZeigen(); return /bleibt deine Hauptstadt ohne Truppen/.test(document.getElementById('anleitungText').textContent); };
-      const o = { quelle: previewSourceId === playerIslandId, alle: leer(), spaeh: __t44('.ap-spaehen'), chips: __t44('[data-preview="quick"] button') };
-      popupStats.querySelector('[data-preview="quick"] [data-f=".5"]').click(); await w(100); o.halb = leer();
-      popupStats.querySelector('[data-preview="quick"] [data-f="1"]').click(); await w(100); o.wieder = leer();
-      o.truppen = islandTroops[playerIslandId] > 0; const tx = document.getElementById('anleitungText');
-      o.zeilen = Math.round(tx.getBoundingClientRect().height / parseFloat(getComputedStyle(tx).lineHeight)); o.ganz = tx.scrollHeight <= tx.clientHeight + 1; o.text = tx.textContent; anleitung.schritt = s0; anleitungZeigen(); an.hidden = true; return o; });
+      const o = { quelle: previewSourceId === playerIslandId, spaeh: __t44('.ap-spaehen'), chips: __t44('[data-preview="quick"] button') };
+      o.truppen = islandTroops[playerIslandId] > 0; return o; });
     await bild('angriff');
-    ok(a.quelle && a.alle && !a.halb && a.wieder && a.truppen && a.zeilen <= 4 && a.ganz, art + ': Anleitung + Angriff mit „Alle“ aus der Hauptstadt: Hinweis „… bleibt deine Hauptstadt ohne Truppen“ (bei 50 % nicht, nichts abgezogen, ganz in ≤ 4 Zeilen)', a);
+    ok(a.quelle && a.truppen, art + ': Angriff aus der Hauptstadt vorbereitet (nichts abgezogen)', a);
     ok(gross(a.spaeh) && gross(a.chips), art + ': „Spähen“ und 25/50/75 %/Alle mit Tippfläche ≥ 44 px', { spaeh: a.spaeh, chips: a.chips });
     await ev(() => closeAllPopups());
     // 3) Events: „Abholen“ ≥ 44 px

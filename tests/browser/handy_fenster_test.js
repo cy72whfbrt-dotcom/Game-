@@ -11,7 +11,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.goto('file://' + path.resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(6000);
   await p.waitForFunction(() => typeof AUF !== 'undefined' && AUF && typeof bundOp === 'function' && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
   const ev = (f, a) => p.evaluate(f, a), bild = async n => { if (process.argv[3]) await p.screenshot({ path: path.join(process.argv[3], n + '.png') }); };
-  const zu = () => ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } const a = document.getElementById('anleitung'); if (a) a.hidden = true; });
+  const zu = () => ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } });
   await zu();
   // Reiter: eine Zeile, Beschriftung ganz zu sehen, mind. 44 px hoch
   const reiter = sel => ev(sel => [...document.querySelectorAll(sel)].filter(x => x.offsetParent).map(x => { const r = x.getBoundingClientRect(), s = x.querySelector('span');
@@ -98,10 +98,10 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const gr = [...document.querySelectorAll('#pushArten .p5-gruppe')].map(x => x.textContent), n = document.querySelectorAll('#pushArten [data-push-art]').length;
     const sp = [...document.querySelectorAll('#tabSet [data-sprung]')], pb = profilePopup.querySelector('.pbody');
     sp.find(x => x.dataset.sprung === 'setKonto').click(); const k = document.getElementById('setKonto').getBoundingClientRect().top - pb.getBoundingClientRect().top;
-    return { gr, n, sprung: sp.map(x => x.textContent.trim()), h: Math.round(Math.min(...sp.map(x => x.getBoundingClientRect().height))), konto: Math.round(k), hilfe: !!document.querySelector('#tabSet details.p5-hilfe'), nochmal: document.getElementById('anleitungNochmal').getBoundingClientRect().height }; });
+    return { gr, n, sprung: sp.map(x => x.textContent.trim()), h: Math.round(Math.min(...sp.map(x => x.getBoundingClientRect().height))), konto: Math.round(k), hilfe: !!document.querySelector('#tabSet details.p5-hilfe') }; });
   ok(p3.gr.join() === 'Angriff,Bündnis,Events,Stadt' && p3.n === 13, 'Einstellungen: Benachrichtigungen in Gruppen, alle 13 Schalter da (ohne Invasion/Drache)', p3);
   ok(p3.sprung.join() === 'Benachrichtigungen,Ton & Grafik,Konto,Hilfe' && p3.h >= 44 && p3.konto >= -2 && p3.konto < 40, 'Einstellungen: Sprung-Knöpfe (≥ 44 px) springen zur Gruppe', p3);
-  ok(p3.hilfe && p3.nochmal >= 30, 'Einstellungen: Hilfe-Text eingeklappt, „Anleitung noch mal“ sichtbar', p3);
+  ok(p3.hilfe, 'Einstellungen: Hilfe-Text eingeklappt', p3);
   await ev(() => { profilePopup.querySelector('.pbody').scrollTop = 0; }); await p.waitForTimeout(200); await bild('n_einstellungen');
   ok(fe.length === 0, 'keine JS-Fehler', fe.slice(0, 3));
   await b.close();

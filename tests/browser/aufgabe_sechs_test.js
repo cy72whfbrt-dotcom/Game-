@@ -9,7 +9,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html'); await p.waitForTimeout(6000);
   await p.waitForFunction(() => typeof AUF !== 'undefined' && AUF && typeof BOT_DEFS !== 'undefined' && islandById[playerIslandId], null, { timeout: 60000, polling: 500 }).catch(() => {});
   const ev = (f, a) => p.evaluate(f, a);
-  await ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } anleitung.schritt = ANLEITUNG.length; });
+  await ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } });
   // 1) neue Listen: 6, Stufen 0 0 1 1 2 2, keine doppelt, Tempel/Thron nie leicht, Bündnis nur mit Bündnis, Tagesboss nur donnerstags
   const w = await ev(() => {
     const o = { n: new Set(), stufen: new Set(), doppelt: 0, leichtTT: 0, bund: 0, boss: 0, arten: new Set(), gemsTag: questGemsTag(), neu: Object.keys(QUEST_DEFS).length, moeglich: Object.keys(QUEST_DEFS).filter(questGeht).length };

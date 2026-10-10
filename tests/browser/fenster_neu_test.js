@@ -17,7 +17,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.waitForTimeout(3000);
     const ev = (f, a) => p.evaluate(f, a), bild = async n => { if (process.argv[3]) await p.screenshot({ path: path.join(process.argv[3], art + '_' + n + '.png') }); };
     await ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
-      try { anleitung.schritt = ANLEITUNG.length; } catch (e) {} const a = document.getElementById('anleitung'); if (a) a.hidden = true;
       closeAllPopups(); gems = 3000; coins = 250000;   // (normale Zahlen, wie ein Spieler)
       const c = loadCity(); c.levels.heroes = Math.max(1, c.levels.heroes || 0); saveCity();
       const hs = loadHeroes(); HEROES.forEach((h, i) => { if (hs[h.id]) hs[h.id].own = i < 3; }); });

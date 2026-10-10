@@ -71,7 +71,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(knopf.vor.aus && /ui_k_grau/.test(knopf.vor.bild) && (!knopf.an || /ui_k_rot/.test(knopf.bild)), 'Verkaufen: gesperrt grau, frei rot', knopf);
   await bild('kacheln');
-  // 4) Events → Aufgaben (Listen-Karten, Symbole) und Anleitung (Hinweisbox)
+  // 4) Events → Aufgaben (Listen-Karten, Symbole)
   const ziele = await ev(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms));
     closeAllPopups(); openGoals(); await warte(800);
@@ -81,12 +81,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   });
   ok(ziele.offen && ziele.sym && ziele.rahmen, 'Events: Symbole als Bild, derselbe Bild-Rahmen', ziele);
   await bild('aufgaben');
-  const anl = await ev(async () => {
-    closeAllPopups(); anleitung.schritt = 0; anleitungFrage = false; anleitungZeigen(); await new Promise(f => setTimeout(f, 400));
-    const a = document.getElementById('anleitung');
-    return { sicht: !a.hidden, bild: /ui_hinweis/.test(getComputedStyle(a).borderImageSource) };
-  });
-  ok(anl.sicht && anl.bild, 'Anleitung: Hinweisbox mit Rolle als Bild', anl);
   // 5) Aufstieg: Strahlen, Wappen, Lorbeer
   const auf = await ev(async () => {
     const m = document.getElementById('levelUpModal'); document.getElementById('levelUpLevel').textContent = '2'; m.hidden = false;

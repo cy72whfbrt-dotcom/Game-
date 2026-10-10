@@ -19,7 +19,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const r = await p.evaluate(async () => {
       const warte = ms => new Promise(f => setTimeout(f, ms)), ganz = e => !!e && e.scrollWidth <= e.clientWidth + 1;
       for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
-      try { anleitung.schritt = ANLEITUNG.length; } catch (e) {}
       closeAllPopups(); gems = 1e5; coins = 1e9;
       const sichtbar = e => !!e && e.offsetParent !== null && getComputedStyle(e).display !== 'none';
       const knoepfe = () => [...document.querySelectorAll('#popupActions > .act')].filter(sichtbar);

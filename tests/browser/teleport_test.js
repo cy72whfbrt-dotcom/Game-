@@ -66,8 +66,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const m = await tippe(); await p.waitForTimeout(600);
   ok(m.auf && m.knoepfe.length === 3 && /Teleportieren/.test(m.knoepfe[0]) && /500/.test(m.knoepfe[0]) && /Markierung/.test(m.knoepfe[1]) && /Truppen/.test(m.knoepfe[2]), 'Tipp auf freies Feld: Menü mit Teleportieren (500), Markierung, Truppen hierher', m);
   if (bilder) await p.screenshot({ path: path.join(bilder, 'teleport_menue.png') });
-  const an = await p.evaluate(() => { const el = document.getElementById('anleitung'), h = el.hidden; el.hidden = false; const r = getComputedStyle(el).display; el.hidden = h; return r; });
-  ok(an === 'none', 'Feld-Menü offen: Anfänger-Anleitung ausgeblendet', an);
   const t1 = await p.evaluate(() => { const vor = [islandById[playerIslandId].x, islandById[playerIslandId].y], g0 = gems; document.querySelector('#feldRing [data-fring="tp"]').click();
     return { gleich: islandById[playerIslandId].x === vor[0], text: document.querySelector('#feldRing [data-fring="tp"]').textContent, gems: g0 - gems }; });
   ok(t1.gleich && /Hierher teleportieren\?/.test(t1.text) && t1.gems === 0, 'erster Tipp: nur „Hierher teleportieren?“ – noch nichts passiert', t1);

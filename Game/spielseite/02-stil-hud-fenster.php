@@ -303,7 +303,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 /* Berater mit Sprechblase: Platzhalter-Kopf, bis einstieg_berater.webp kommt; nie über dem Loch (.oben) */
 .tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px);max-width:440px;
   display:flex;align-items:flex-end;gap:6px;pointer-events:none}
-.tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 8px)}
+.tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 34px)}   /* unter „Überspringen“ */
 .tut-figur{flex:none;width:64px;height:80px;border-radius:32px 32px 10px 10px;border:2px solid var(--gold-300);background:url(bilder/held_aldric_kopf.webp) center/cover,linear-gradient(#24365c,#0f1a2e)}
 .tut-blase{flex:1;min-width:0;margin-bottom:18px;padding:9px 12px;border-radius:12px 12px 12px 2px;background:#f3e6c4;color:#24170a;box-shadow:0 3px 10px #000a;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
 .tut-blase p{margin:0;font:600 15px/1.3 Georgia,serif}
@@ -312,7 +312,6 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
   border:1px solid var(--line-2);background:rgba(0,0,0,.6);color:var(--tx-2);font:600 12px var(--font-ui);pointer-events:auto}
 .tut-weg[hidden]{display:none}
-.tut-berater.oben ~ .tut-weg{top:auto;bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px)}   /* Berater oben: „Überspringen“ unten */
 /* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt */
 .tut-banner{position:fixed;left:50%;top:calc(var(--safe-t,0px) + 96px);z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
   background:linear-gradient(#e9c46d,#b8862c);color:#2a1a05;font:800 17px var(--font-display);white-space:nowrap;box-shadow:0 4px 18px #000c;pointer-events:none}

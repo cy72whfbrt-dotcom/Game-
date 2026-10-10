@@ -15,7 +15,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const warte = ms => new Promise(f => setTimeout(f, ms)), box = e => e.getBoundingClientRect(), sicht = e => !!e && e.offsetParent !== null && getComputedStyle(e).visibility !== 'hidden';
       const ueber = (a, c) => a.left < c.right && c.left < a.right && a.top < c.bottom && c.top < a.bottom;
       for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
-      document.getElementById('anleitung').hidden = true; closeAllPopups(); flashHint('', 1);
+      closeAllPopups(); flashHint('', 1);
       // 1) Grundwerte
       const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
       const tokens = { ab: ['--ab-1', '--ab-2', '--ab-3', '--ab-4'].map(v), fs: ['--fs-11', '--fs-13', '--fs-15', '--fs-17', '--fs-22', '--fs-9', '--fs-10'].map(v),

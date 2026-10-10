@@ -1,9 +1,9 @@
-# Events, Saison-Pass, Aufgaben, Erfolge, Anleitung
+# Events, Saison-Pass, Aufgaben, Erfolge, Tutorial
 
 Alles im Fenster „Events“: Wochen-Event, Barbaren-Lager, Kriegsherr, Aufgaben, Erfolge, Saison-Pass, Abholen, dazu die
-Anleitung für neue Spieler. Alles rechnet der Weltrechner (Welt-Teil `openWaterEvents`, `evState.wo`), Zeiten = Berliner Zeit.
+Tutorial für neue Spieler. Alles rechnet der Weltrechner (Welt-Teil `openWaterEvents`, `evState.wo`), Zeiten = Berliner Zeit.
 Wichtigste Dateien: `Game/spiel/09c-events-woche.js` (Wochen-Event, Event-Fenster, `evPreis`, `evLeisteHtml`),
-`09b-lager-tagesboss.js` (Lager, Tagesboss), `07b-kriegsherr.js`, `06a-aufgaben.js` (`QUEST_STAT`, Abholfach), `06b-pass-anleitung.js`,
+`09b-lager-tagesboss.js` (Lager, Tagesboss), `07b-kriegsherr.js`, `06a-aufgaben.js` (`QUEST_STAT`, Abholfach), `06b-pass-anleitung.js`, `10c2-tutorial.js`,
 `05c-profil-erfolge-rangliste.js` (`ACHIEVEMENTS`), `bots/` (Mitspieler machen mit). Gegenstände (Event-Münzen, Schlüssel 1/2,
 Beschleuniger, `gibBelohnung`) in `05e-belohnung.js`. Test: `wochenevent_test`. Vorbild: `werkzeuge/wochenevent/wochenevent.html`.
 
@@ -60,12 +60,18 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   Langzeit-Ziele bleiben (1.000 Eroberungen, Thron 10 Std., Burg 25 …), „Großreich“ = 100 Basen gleichzeitig.
   Mitspieler gleich (`BOT_GOAL_VAL`).
 
-## Anleitung (neue Spieler, 7 Schritte)
-- Schritte unten am Bildschirm, nächster nötiger Knopf pulsiert (`body[data-anl-puls]`); Schritt 7 erklärt Knöpfe ohne
-  Text. Text passt zum offenen Fenster; liegt nie über Knöpfen/Fenstern (Handy unter dem HUD, bis 4 Zeilen).
-- Schritt 6 zählt erst nach echtem Abholen. „×“ fragt „Wirklich überspringen?“. Profil → Einstellungen → „Anleitung noch
-  mal“; Belohnung (10 Edelsteine) nur beim ersten Mal. Tägliche Belohnung erst nach der Anleitung.
-- Stand liegt im Spielstand auf dem Server (`openWaterAnleitung`), nie im Browser. Test `anleitung_test`.
+## Tutorial (neue Spieler, Burg 1 → 3) – `10c2-tutorial.js`
+- Nur neue Spieler (`__OW.neu` bzw. ganz frischer Stand); alte Stände ohne `openWaterTutorial` sehen alles wie bisher.
+- 21 Schritte (`TUT`) im echten Spiel: dunkel, Loch auf dem echten Element (Knopf, Stadt-Schild, Basis), Finger, Berater mit
+  1–2 Sätzen; nur das Loch nimmt Tipps. Belohnungs-Fenster gehen vor. Ablauf: Rohstoffe → Holzfäller (+ Geschenk 2 Beschleuniger)
+  → Beschleunigen → Steinbruch → Eisenmine → Burg 2 → Karte → neutrale Basis angreifen → Kampfbericht → Beute abholen → Truppen
+  → Heldenhalle → Helden-Kiste (+ 2 Schlüssel) → Angriff mit Held → Gratis-Kiste → Ausrüstungs-Kiste → anlegen → Rucksack →
+  Burg 3 (mit Beschleuniger) → Labor + Forschung → Aufgaben. Ende: 10 Edelsteine + Kiste ins Abholfach.
+- Knöpfe kommen nach und nach („Neu: …“, `body.tz-<teil>` blendet aus, Stil in 02). Danach nach Burg-Stufe (`TUT_BURG`):
+  Bündnis + Rangliste ab 4, Events (Pass, Erfolge, Ereignisse, Mitte-Leiste) ab 5, Teleport/Thron ab 6.
+- „Überspringen“ fragt im Spiel, danach alles sichtbar. Kein Namens-Fenster (Name aus der Anmeldung). Tägliche Belohnung erst danach.
+- Hauptbuch: Spielraum am Anfang `fr.bm 2`, `fr.s1 2` (Geschenke). Start-Rohstoffe 4.500/2.500/1.500 (aufbau.js `ROH_START`).
+- Platzhalter-Bilder: `einstieg_finger`, `einstieg_berater` (jetzt Helden-Kopf), `banner_neu`. Test `tutorial_test`.
 
 ## Offen
 - 11c Nr. 5: alte Event-Ranglisten/Wochen-Punkte beim Reset (prüfen, ob erledigt).

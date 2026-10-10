@@ -20,7 +20,7 @@ Wie man seine Hauptstadt versetzt, sich schützt und was im Rucksack liegt. Wich
 - Effekt (`teleportFx`/`tpFxZeichnen`, 08d2, gezeichnet aus `drawBattleFx`): goldene Lichtsäule `bilder/karte_lichtsaeule.webp`
   (Bodenkreis auf dem neuen Platz; fehlt das Bild: Lichtband + `ui_strahlen.webp`), Staub/Funken am Boden, alte Stelle verblasst;
   `FX_MS` 2,6 s, Band „Hauptstadt – hierher teleportiert“ die ganze Zeit lesbar; `tpBandOrt` setzt es so, dass es kein Basisschild, nicht die Leiste
-  und nicht die Anleitung berührt (erst unter der Basis, dann über der Säule, zuletzt vor der Säule). Kaum Bewegung (Akku).
+  und nichts berührt (erst unter der Basis, dann über der Säule, zuletzt vor der Säule). Kaum Bewegung (Akku).
 - Tests `teleport_test` (mit Bilder-Ordner: Ablauf in 5 Bildern `teleport_fx_*`), `rucksack_test`.
 
 ## Rucksack (7.10.)

@@ -12,7 +12,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.waitForFunction(() => typeof bundOeffnen === 'function' && typeof islands !== 'undefined' && islands.length && islandById[playerIslandId], null, { timeout: 90000, polling: 500 }).catch(() => {});
   await p.waitForTimeout(3000);
   const ev = f => p.evaluate(f).catch(e => ({ fehler: e.message }));
-  await ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } if (typeof anleitung !== 'undefined') anleitung.schritt = ANLEITUNG.length; });
+  await ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } });
   // 1) Events → Abholen: Abholfach leer, tägliche Belohnung bereit → der Satz oben sagt das; nach dem Abholen der alte Satz
   const e = await ev(async () => {
     const warte = ms => new Promise(f => setTimeout(f, ms));

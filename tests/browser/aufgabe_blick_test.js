@@ -1,5 +1,5 @@
 // Blick „mit den Augen eines Spielers“ (6.10.), Bereiche B/E/G/I: neuer Spieler ohne „Willkommen zurück“ und ohne Tagesbelohnung beim
-// ersten Start (erst Anleitung), Tagesbelohnung zeigt, was es gibt; Events: Welt-Saison nur in den letzten 3 Tagen oben in jedem Reiter,
+// ersten Start (erst das Tutorial), Tagesbelohnung zeigt, was es gibt; Events: Welt-Saison nur in den letzten 3 Tagen oben in jedem Reiter,
 // sonst unten im Wochen-Event, alle Ereignis-Chips ganz im Bild (390 px), Pass ohne zweite Saison-Nummer, Abholen leer = eine Zeile;
 // Rangliste: Zeile antippen öffnet das Profil, Thron-Punkte-Erklärung zum Aufklappen, leer kompakt; Heldenhalle: genug Splitter →
 // Karte oben mit „Freischalten“ (antippen schaltet frei), Stern als 4 Viertel. Handy 390 px + Desktop. Bilder in process.argv[3].
@@ -9,15 +9,16 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
 (async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] }), bilder = process.argv[3];
   const p = await (await b.newContext({ ...devices['iPhone 13'], viewport: { width: 390, height: 844 } })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));
+  await p.addInitScript(() => { window.__OW = { neu: true, nameGewaehlt: true }; });   // ganz neu: Tutorial
   await p.goto('file://' + path.resolve(process.argv[2]) + '/index.html', { timeout: 120000 });
   await p.waitForFunction(() => typeof AUF !== 'undefined' && AUF && typeof openGoals === 'function' && typeof islandById !== 'undefined' && islandById[playerIslandId], null, { timeout: 90000, polling: 500 }).catch(() => {});
   await p.waitForTimeout(4000);
   const ev = (f, a) => p.evaluate(f, a).catch(e => ({ fehler: e.message }));
   const bild = async n => { if (bilder) await p.screenshot({ path: path.join(bilder, 'blick_' + n + '.png') }).catch(() => {}); };
-  // B) erster Start: nur die Anleitung – kein leeres „Willkommen zurück“, keine Tagesbelohnung davor
-  const s = await ev(() => ({ welcome: !document.getElementById('welcomeModal').hidden, daily: !document.getElementById('dailyModal').hidden, anl: !document.getElementById('anleitung').hidden, schritt: anleitung.schritt, wf: !!welcomeFrom }));
-  ok(!s.welcome && !s.wf && !s.daily && s.anl && s.schritt === 0, 'Erster Start: nur Anleitung Schritt 1 (kein „Willkommen zurück“, Tagesbelohnung erst später)', s);
-  const d = await ev(() => { anleitung.schritt = ANLEITUNG.length; showDailyModal();
+  // B) erster Start: nur das Tutorial – kein leeres „Willkommen zurück“, keine Tagesbelohnung davor
+  const s = await ev(() => ({ welcome: !document.getElementById('welcomeModal').hidden, daily: !document.getElementById('dailyModal').hidden, anl: !document.getElementById('tut').hidden, schritt: tut.s, wf: !!welcomeFrom }));
+  ok(!s.welcome && !s.wf && !s.daily && s.anl && s.schritt === 0, 'Erster Start: nur Tutorial Schritt 1 (kein „Willkommen zurück“, Tagesbelohnung erst später)', s);
+  const d = await ev(() => { tut.fertig = tut.alles = true; tutZeigen(); showDailyModal();   // (Tutorial übersprungen: ab hier alles sichtbar)
     const o = { rows: [...document.querySelectorAll('#dailyModalRewards li')].map(li => li.title || li.innerText.replace(/\s+/g, ' ')), tage: document.querySelectorAll('#dailyModalDays .daily-day').length, heute: !!document.querySelector('#dailyModalDays .is-today') };
     return o; });
   await bild('daily');

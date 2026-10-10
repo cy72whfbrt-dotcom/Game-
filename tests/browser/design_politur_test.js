@@ -20,7 +20,7 @@ srv.listen(0, '127.0.0.1', async () => {
     const r = await p.evaluate(async () => {
       const warte = ms => new Promise(f => setTimeout(f, ms)), o = {}, txt = el => el ? el.textContent : '';
       for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
-      document.getElementById('anleitung').hidden = true; closeAllPopups(); await document.fonts.ready;
+      closeAllPopups(); await document.fonts.ready;
       // 1) Stadt: Burg – Schutz, Fuß-Knopf; Holzfäller ungebaut
       cityShow(); await warte(300); const C = loadCity(); C.builds = []; C.levels.lumber = 0; C.levels.keep = 1;
       coins = 0; Object.assign(AUF.rohVon('player'), { h: 0, s: 0, e: 0 });

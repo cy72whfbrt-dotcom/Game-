@@ -6,7 +6,7 @@
 // E) Events → Abholen: „Tag 1: … / Bereit zum Abholen“ klebt nicht am linken Rand
 // F) Desktop: Hinweis bei offenem Basis-Fenster liegt nicht über dem Fenster (z. B. „Zum Verlegen brauchst du …“)
 // G) Marsch-Meldungen ohne falsches „zu Neutrale Basis“: „Späher unterwegs: Neutrale Basis …“
-// H–M) Fix-Runde 2: Anleitung Schritt 6 im Events-Fenster sichtbar · Krankenhaus „Fehlt: … Münzen“, Verwundete einzeilig, „geheilt“ bleibt ·
+// I–M) Fix-Runde 2: Krankenhaus „Fehlt: … Münzen“, Verwundete einzeilig, „geheilt“ bleibt ·
 //   Bündnis ohne Welt-Verbindung meldet sich · „Gründen“ sichtbar · Spähen „Neutrale Basis“/„Kampf“, „Zeigen“-Knopf · Feld zu weit: Tipp „näher“
 //   node tests/browser/fenster_fein_test.js <vorschau> [bilder]
 const { chromium, devices } = require('playwright');
@@ -25,10 +25,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.waitForFunction(() => typeof islands !== 'undefined' && islands.length && islandById[playerIslandId] && typeof renderRucksack === 'function', null, { timeout: 90000, polling: 500 }).catch(() => {});
     await p.waitForTimeout(3000);
     await p.evaluate(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal', 'titleModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
-      document.querySelectorAll('body > div').forEach(d => { if (d.style.zIndex === '100000') d.remove(); }); closeAllPopups(); flashHint('', 1);
-      anleitung.schritt = 0; anleitungZeigen(); });
+      document.querySelectorAll('body > div').forEach(d => { if (d.style.zIndex === '100000') d.remove(); }); closeAllPopups(); flashHint('', 1); });
     const bild = async n => { if (bilder) await p.screenshot({ path: path.join(bilder, art.toLowerCase() + '_' + n + '.png') }); };
-    await bild('anleitung'); await p.evaluate(() => { anleitung.schritt = ANLEITUNG.length; anleitungZeigen(); });   // (Bild: Anleitung Schritt 1, ganz lesbar)
     const ev = (f, a) => p.evaluate(f, a);
     // „frei“: Abstand vom Ende des Elements bis zum unteren Rand des Fensterinhalts (≥ 30: nicht unter der Blende)
     const frei = sel => ev(sel => { const pb = document.querySelector('.panel.is-open > .pbody'), e = document.querySelector(sel); return pb && e ? Math.round(pb.getBoundingClientRect().bottom - e.getBoundingClientRect().bottom) : null; }, sel);
@@ -87,13 +85,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       try { launchScout(n.id); } finally { flashHint = alt; } return seen.join(' | '); });
     ok(sp && /Späher unterwegs: Neutrale Basis/.test(sp) && !/unterwegs zu Neutrale/.test(sp), art + ': Späher-Meldung „Späher unterwegs: Neutrale Basis …“', sp);
     // --- Fix-Runde 2 (Spieltest r2a/r2b) ---
-    // H) Anleitung Schritt 6: im offenen Events-Fenster sichtbar (Hinweis „Abholen“), nicht über dem Fenster
-    const an = await ev(async () => { closeAllPopups(); flashHint('', 1); anleitung.schritt = 5; openGoals(); showGoalsTab('reward'); await new Promise(f => setTimeout(f, 500)); anleitungZeigen();
-      const el = document.getElementById('anleitung'), r = el.getBoundingClientRect(), q = goalsPopup.getBoundingClientRect();
-      const o = { sicht: !el.hidden && r.height > 0 && getComputedStyle(el).visibility !== 'hidden', ueber: r.left < q.right && r.right > q.left && r.top < q.bottom && r.bottom > q.top, t: el.textContent };
-      closeAllPopups(); anleitung.schritt = ANLEITUNG.length; anleitungZeigen(); return o; });
-    await bild('anleitung_events');
-    ok(an.sicht && !an.ueber && /Abholen/.test(an.t), art + ': Anleitung Schritt 6 im Events-Fenster sichtbar und nicht darüber', an);
     // I) Krankenhaus „Heilen“: zu wenig Münzen → „Fehlt: … Münzen“; „1.000 / 1.422“ in einer Zeile; „Truppen geheilt“ bleibt stehen (Erfolg kommt später)
     const kh = await ev(async () => { openCity(); await new Promise(f => setTimeout(f, 1500)); const c = loadCity(); c.levels.hospital = 3; c.wounded = 1000; saveCity(); coins = 50000;
       cityPage = 'nutz'; cityOpenId = 'hospital'; renderCitySheet(); await new Promise(f => setTimeout(f, 900));   // (Fenster fertig aufgeklappt)

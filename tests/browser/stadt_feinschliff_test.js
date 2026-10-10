@@ -1,7 +1,7 @@
 // Stadt-Feinschliff (Spieltest 7.10.): „Stadt betreten“ ohne Konsolenfehler (Klick-Ereignis kam als „dann“ in openCity),
 // Heldenkarte „Freischalten“ mit Kosten und ganz in der Karte, Viertelstern als Tortenstück, Erfolgs-Hinweis am Handy erst
 // nach dem Fenster, Burg-Blatt: letzte Karte über dem festen Knopf lesbar, Stadt-Schilder nie unter der unteren Leiste.
-// Fix-Runde 3: Wisch-Hinweis (Handy), Burg-Blatt ohne halbe Karte, Wartezeit am „Fehlt“-Knopf, gleiche Zahlen, Helden-Reiter, Hinweis unter der Anleitung.
+// Fix-Runde 3: Wisch-Hinweis (Handy), Burg-Blatt ohne halbe Karte, Wartezeit am „Fehlt“-Knopf, gleiche Zahlen, Helden-Reiter.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -66,7 +66,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       return o;
     }));
     // Fix-Runde 3 (Spieltest r3): B Burg-Blatt beim Öffnen ohne halb verdeckte Karte · C „Fehlt“ mit Wartezeit · E gesperrter Held ohne
-    // „Macht Gesperrt“, Gefolge nur über 0 · F „Helden“ öffnet gleich die Halle · G hast/brauchst gleich geschrieben · H Hinweis unter der Anleitung
+    // „Macht Gesperrt“, Gefolge nur über 0 · F „Helden“ öffnet gleich die Halle · G hast/brauchst gleich geschrieben
     const f3 = await p.evaluate(async () => {
       const warte = ms => new Promise(f => setTimeout(f, ms)), o = {};
       closeHeroHall(); cityOpenId = 'keep'; cityPage = 'bau'; loadCity().builds = []; coins = 0; renderCitySheet(); await warte(300);
@@ -87,16 +87,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       o.macht = document.querySelector('#heroHall .hh-unten').textContent;
       o.gefolge = HEROES.every(x => hhHero(x.id).includes('<span>Gefolge</span>') === heroStats('player', x.id).gef > 0);
       closeHeroHall(); cityOpenId = null; sh.hidden = true;
-      if (innerWidth < 900) { closeCity(); await warte(1500);   // Handy: Basis-Fenster offen, Anleitung oben – der Hinweis steht darunter
-        const a = document.getElementById('anleitung'); openIslandPopup(islandById[playerIslandId]); a.hidden = false; flashHint('Der Drache ist erschienen! Urdrache Vharak kreist über dem Thron – nur alle zusammen können ihn besiegen.', 5000); await warte(400);
-        o.anl = Math.round(a.getBoundingClientRect().bottom); o.hinweis = Math.round(hintEl.getBoundingClientRect().top); }
       return o; });
     ok(!f3.halb, art + ': Burg-Blatt beim Öffnen – keine Karte halb unter dem festen Knopf', f3.halb);
     ok(/^Fehlt: .*Münzen$/.test(f3.knopf) && /^in ~\d+ (Min\.|Std\.|Tagen)$/.test(f3.warte) && f3.warteVoll === '', art + ': „Fehlt: … Münzen“ mit Wartezeit darunter (nur wenn etwas fehlt)', [f3.knopf, f3.warte, f3.warteVoll]);
     ok(f3.zahlen.length >= 4 && f3.zahlen.every(z => /^\d{1,3}(\.\d{3})* \/ \d{1,3}(\.\d{3})*$/.test(z)), art + ': Voraussetzungen hast/brauchst gleich geschrieben (998.912 / 1.100)', f3.zahlen);
     ok(f3.extra === '' && f3.halle && f3.seite === 'bau', art + ': Heldenhalle „Helden“ öffnet gleich die Helden (kein doppeltes „Helden öffnen“)', f3);
     ok(!/Gesperrt|Macht/.test(f3.macht) && f3.gefolge, art + ': gesperrter Held ohne „Macht Gesperrt“, Gefolge nur über 0', f3.macht);
-    if (art === 'Handy') ok(f3.hinweis >= f3.anl, art + ': Hinweis beim Angriff unter der Anleitung, nicht dahinter', { anl: f3.anl, hinweis: f3.hinweis });
     ok(r.geprueft > 0 && !r.schilder.length, art + ': kein Stadt-Schild unter der unteren Leiste', { geprueft: r.geprueft, drunter: r.schilder });
     ok(r.burg.schutz, art + ': Burg-Blatt zeigt die Anfängerschutz-Karte');
     ok(r.burg.frei, art + ': Burg-Blatt ganz unten – letzte Karte über dem festen Knopf', r.burg);

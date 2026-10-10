@@ -24,7 +24,7 @@ srv.listen(0, '127.0.0.1', async () => {
     const r = await p.evaluate(async () => {
       const warte = ms => new Promise(f => setTimeout(f, ms)), cs = (e, pe) => getComputedStyle(e, pe);
       for (const id of ['welcomeModal', 'dailyModal']) { const m = document.getElementById(id); if (m) m.hidden = true; }
-      document.getElementById('anleitung').hidden = true; closeAllPopups();
+      closeAllPopups();
       await document.fonts.ready;
       const schrift = { cinzel: document.fonts.check('600 17px Cinzel'), inter: document.fonts.check('400 13px Inter'),
         geladen: [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family.replace(/"/g, '')) };

@@ -13,7 +13,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   await p.waitForTimeout(3000);
   const ev = (f, a) => p.evaluate(f, a).catch(e => ({ fehler: e.message }));
   const bild = async n => { if (bilder) await p.screenshot({ path: path.join(bilder, n + '.png') }).catch(() => {}); };
-  await ev(() => { anleitung.schritt = ANLEITUNG.length; for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } closeAllPopups(); flashHint('', 1); });
+  await ev(() => { for (const id of ['welcomeModal', 'dailyModal', 'levelUpModal']) { const m = document.getElementById(id); if (m) m.hidden = true; } closeAllPopups(); flashHint('', 1); });
   const fenster = () => ev(() => { const f = document.getElementById('beuteFenster'); if (!f || f.hidden) return null;
     const k = [...f.querySelectorAll('.bf-inhalt .bk')];
     return { titel: f.querySelector('#bfTitel').textContent, kiste: f.classList.contains('mit-kiste') ? f.querySelector('.bf-kiste').getAttribute('src') : '', fertig: f.classList.contains('is-fertig'),

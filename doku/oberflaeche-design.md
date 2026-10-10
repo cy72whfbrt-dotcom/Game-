@@ -56,7 +56,7 @@ Million Lords, Lords Mobile – „sieht aus wie ein Spiel, nicht wie eine Liste
   Einstellungen; Rangliste als eigenes Fenster (Macht, Eroberungen, Titel, Thron-Punkte, Hauptstadt). Name = Konto-Name,
   wenn keiner eingetragen.
 - Einstellungen: Benachrichtigungen (Gruppen Angriff/Bündnis/Events/Stadt), Ton & Grafik (Akku sparen), Konto (Name,
-  Passwort, Abmelden), Hilfe, Version, „Anleitung noch mal“.
+  Passwort, Abmelden), Hilfe, Version.
 
 ## Aussehen (Kosmetik)
 - Nur noch Wappen und Rahmen (Marsch-, Basis-, Ring-Skins raus). Rahmen = Titel + Ring in einem, nicht kaufbar: Saison-Rahmen
