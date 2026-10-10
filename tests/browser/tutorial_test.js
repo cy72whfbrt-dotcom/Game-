@@ -106,6 +106,17 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   const alt3 = await p.evaluate(() => ({ tut, tz: [...document.body.classList].filter(c => c.startsWith('tz-')), weg: document.getElementById('tut').hidden })), s3 = await sichtbar(p);
   ok(!alt3.tut && !alt3.tz.length && alt3.weg && s3.unten.length >= 6 && s3.oben.some(x => /gem/.test(x)), 'alter Spieler: kein Tutorial, alles sichtbar wie bisher', { alt3, s3 });
   await c3.close();
+  // ---- 4) normale Vorschau (ohne „ohnetutorial“), frischer Speicher, kein Server: Tutorial startet, Tages-Belohnung erst danach ----
+  const fs = require('fs'), v4 = fs.mkdtempSync(path.join(bilder || path.dirname(path.resolve(process.argv[2])), 'tut_vorschau_'));
+  fs.cpSync(process.argv[2], v4, { recursive: true });
+  fs.writeFileSync(v4 + '/index.html', fs.readFileSync(v4 + '/index.html', 'utf8').replace(/<script>window\.__owOhneTutorial = true;<\/script>\s*/, ''));
+  const c4 = await b.newContext(HANDY); p = await c4.newPage(); p.on('pageerror', e => fe.push(e.message));
+  await p.goto('file://' + v4 + '/index.html', { timeout: 120000 });
+  await p.waitForFunction(() => typeof tutZeigen === 'function' && typeof islands !== 'undefined' && islands.length, null, { timeout: 90000, polling: 500 });
+  await p.waitForTimeout(4000);
+  const st4 = await p.evaluate(() => ({ ow: !!window.__OW, laeuft: tutLaeuft(), s: tut && tut.s, sicht: !document.getElementById('tut').hidden, tag: !document.getElementById('dailyModal').hidden })), s4 = await sichtbar(p);
+  ok(!st4.ow && st4.laeuft && st4.s === 0 && st4.sicht && !st4.tag && s4.unten.join() === 'cityNavBtn', 'normale Vorschau, frischer Speicher: Tutorial ab Schritt 1, keine Tages-Belohnung, unten nur „Stadt“', { st4, s4 });
+  await c4.close(); fs.rmSync(v4, { recursive: true, force: true });
   ok(!fe.length, 'keine Skript-Fehler', fe.slice(0, 5));
   await b.close();
 })();

@@ -18,6 +18,10 @@ $html = preg_replace_callback("/<\?= skript\('([a-z]+)'\) \?>/", function ($m) u
         ? 'klein/' . $m[1] . '.js?v=' . substr($sha, 0, 12) : $m[1] . '.js?v=' . filemtime($q); }, $html);
 foreach (['welt.js', 'benachrichtigung.js'] as $weg) $html = preg_replace('#\s*<script[^>]*src="(klein/)?' . preg_quote($weg, '#') . '[^"]*"[^>]*></script>#', '', $html);   // brauchen den Server
 if (strpos($html, '<?') !== false) stopp('noch PHP in spiel.php');
+if (in_array('test', $argv, true) || in_array('ohnetutorial', $argv, true)) {   // Tests: kein Tutorial für den frischen Offline-Spieler (10c2)
+    $html = preg_replace('#(<script src="(?:klein/)?bots\.js[^"]*"></script>)#', '<script>window.__owOhneTutorial = true;</script>' . "\n" . '    $1', $html, 1);
+    if (strpos($html, '__owOhneTutorial') === false) stopp('Tutorial-Schalter nicht eingebaut');
+}
 if (in_array('test', $argv, true)) {   // Test-Modus (kein Nebel, fast unbegrenzt alles) – nur für die Vorschau
     copy(__DIR__ . '/vorschau_test.js', $ziel . '/testmodus.js');
     $html = preg_replace('#(<script src="(?:klein/)?haendler\.js[^"]*"></script>)#', '$1' . "\n" . '    <script src="testmodus.js"></script>', $html, 1);

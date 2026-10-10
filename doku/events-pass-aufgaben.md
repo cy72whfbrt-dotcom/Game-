@@ -62,6 +62,8 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 
 ## Tutorial (neue Spieler, Burg 1 → 3) – `10c2-tutorial.js`
 - Nur neue Spieler (`__OW.neu` bzw. ganz frischer Stand); alte Stände ohne `openWaterTutorial` sehen alles wie bisher.
+  Auch offline (normale Vorschau, frischer Speicher). Test-Vorschauen (`vorschau_bauen.php … test` / `ohnetutorial`, alle_tests.sh)
+  setzen `window.__owOhneTutorial` – dort startet es offline nicht. Tages-Belohnung erst nach dem Tutorial (`maybeShowDaily`).
 - 21 Schritte (`TUT`) im echten Spiel: dunkel, Loch auf dem echten Element (Knopf, Stadt-Schild, Basis), Finger, Berater mit
   1–2 Sätzen; nur das Loch nimmt Tipps. Belohnungs-Fenster gehen vor. Ablauf: Rohstoffe → Holzfäller (+ Geschenk 2 Beschleuniger)
   → Beschleunigen → Steinbruch → Eisenmine → Burg 2 → Karte → eigenes Barbaren-Lager Stufe 1 angreifen → Kampfbericht → Beute

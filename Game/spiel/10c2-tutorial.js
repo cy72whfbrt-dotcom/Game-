@@ -14,7 +14,8 @@ const TUT_ICON = { stadt: 'castle', roh: 'wood', kampf: 'battlelog', events: 'sh
 const TUT_ENDE = ['karte', 'gems', 'shopmehr'];                  // dazu am Ende des Tutorials
 const TUT_BURG = { bund: 4, rang: 4, events2: 5, welt: 6 };      // danach: ab dieser Burg-Stufe (Vorgabe-Tabelle design_einstieg.md, an die echten Gebäude angepasst)
 var tut = (() => { try { const v = JSON.parse(store.get('openWaterTutorial')); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } })();
-if (!tut && !SYSTEM && window.__OW && (__OW.neu || (playerLvl <= 1 && (loadCity().levels.keep || 1) <= 1 && CITY_BUILDINGS.every(b => !loadCity().levels[b.id]))))
+const tutFrisch = () => playerLvl <= 1 && (loadCity().levels.keep || 1) <= 1 && CITY_BUILDINGS.every(b => !loadCity().levels[b.id]);
+if (!tut && !SYSTEM && (window.__OW ? __OW.neu || tutFrisch() : !window.__owOhneTutorial && tutFrisch()))   // auch offline (Vorschau); Test-Vorschauen schalten es ab
     tut = { s: 0, frei: [], g: {}, t0: Date.now(), neu: true };   // (ganz neu – auch wenn er vor dem ersten Speichern neu lädt)
 function tutLaeuft() { return !!(tut && tut.neu && !tut.fertig); }
 function tutSpeichern() { store.set('openWaterTutorial', JSON.stringify(tut)); }
