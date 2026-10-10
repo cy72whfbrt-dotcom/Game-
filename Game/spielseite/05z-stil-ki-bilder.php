@@ -64,7 +64,7 @@ body:has(> #splash:not(.is-leaving)) :is(#hud,#cornerButtons,#mapControls,#midBa
   .nav{left:calc(var(--safe-l) + 8px);right:calc(var(--safe-r) + 8px);bottom:var(--safe-bd);height:var(--dock-h);padding:0 24px;background:none;align-items:center;grid-template-columns:repeat(6,minmax(44px,56px));justify-content:center;column-gap:2px;
     border-image-width:7px 22px 5px 22px}
   /* Ring und Symbol als Hintergrund des Knopfs (nicht des SVG – Safari setzt ein SVG-Hintergrundbild nicht mittig); das SVG bleibt als Platzhalter */
-  .nav{align-items:stretch}
+  .nav{align-items:stretch;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:1fr;justify-content:stretch}   /* nur die sichtbaren Knöpfe, gleichmäßig über die ganze Leiste (versteckte lassen keine Lücke) */
   .nav-btn{--ki-gr:auto 20px;justify-content:flex-start;padding:7px 0 5px;background:var(--ki-bild,none) center 13px/var(--ki-gr) no-repeat,var(--ui-rund) center 7px/32px 32px no-repeat}   /* zwischen oberem und unterem Leistenrand */
   .nav-btn.active,.nav-btn:hover{background:var(--ki-bild,none) center 13px/var(--ki-gr) no-repeat,var(--ui-rund-an) center 7px/32px 32px no-repeat}
   .nav-btn > .icon,.nav-btn.active > .icon,.nav-btn:hover > .icon{width:32px;height:32px;background:none}

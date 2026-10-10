@@ -313,7 +313,26 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   border:1px solid var(--line-2);background:rgba(0,0,0,.6);color:var(--tx-2);font:600 12px var(--font-ui);pointer-events:auto}
 .tut-weg[hidden]{display:none}
 /* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt */
-.tut-banner{position:fixed;left:50%;top:40%;z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
+.tw{position:fixed;inset:0;z-index:62;display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(var(--safe-b,0px) + 28px);
+  background:linear-gradient(transparent 35%,rgba(5,8,15,.85)),url(bilder/titel_hoch.jpg) center/cover #0b1424}   /* Willkommen vor dem Tutorial (10c2) */
+.tw[hidden]{display:none}
+@media (min-aspect-ratio:1/1){ .tw{align-items:center;background-image:linear-gradient(90deg,transparent 30%,rgba(5,8,15,.75)),url(bilder/titel_quer.jpg);justify-content:flex-end;padding-right:6vw} }
+.tw-karte{position:relative;width:100%;max-width:400px;padding:34px 18px 18px;border:2px solid #c9a227;border-radius:16px;background:linear-gradient(#f6ecd2,#e8d6a8);
+  color:#24170a;box-shadow:0 14px 40px #000c;display:flex;flex-direction:column;gap:12px;animation:tw-rein .5s ease-out}
+@keyframes tw-rein{from{opacity:0;transform:translateY(30px)}}
+.tw-band{position:absolute;left:-22px;right:-22px;top:-34px;height:62px;display:flex;align-items:center;justify-content:center;background:url(bilder/ui_band_gold.webp) center/100% 100% no-repeat}
+.tw-band h2{margin:-10px 0 0;font:700 19px/1 Georgia,serif;color:#4a2c05;text-shadow:0 1px 0 #fbe7a3;white-space:nowrap}
+.tw-text{display:flex;gap:10px;align-items:flex-end}
+.tw-held{flex:none;width:86px;height:112px;margin:-8px 0 -6px -6px;background:url(bilder/held_aldric.webp) center top/contain no-repeat}
+.tw-text p{margin:0;font:600 15px/1.35 Georgia,serif}
+.tw-name{display:flex;flex-direction:column;gap:5px;font:600 14px Georgia,serif} .tw-name[hidden]{display:none}
+.tw-name input{width:100%;box-sizing:border-box;padding:10px 12px;font:600 17px Georgia,serif;color:#24170a;background:#fffaf0;border:2px solid #b8913a;border-radius:10px}
+.tw-name em{min-height:0;color:#a33a2a;font-style:normal;font-size:13px} .tw-name em:empty{display:none}
+.tw-los{height:54px;border:0;cursor:pointer;font:700 19px Georgia,serif;color:#3a2203;text-shadow:0 1px 0 #fbe7a3;background:url(bilder/ui_k_gold.webp) center/100% 100% no-repeat;filter:drop-shadow(0 3px 6px #000a)}
+.tut-d,.tut-loch,.tut-sperre{transition:left .3s ease,top .3s ease,width .3s ease,height .3s ease}   /* Loch und Finger gleiten zum nächsten Ziel */
+.tut-finger{transition:left .3s ease,top .3s ease}
+.tut-berater.rein .tut-blase{animation:tut-rein .3s ease-out} @keyframes tut-rein{from{opacity:0;transform:translateY(10px) scale(.97)}}
+.tut-banner{position:fixed;left:50%;top:20%;z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
   background:linear-gradient(#e9c46d,#b8862c);color:#2a1a05;font:800 17px var(--font-display);white-space:nowrap;box-shadow:0 4px 18px #000c;pointer-events:none}
 .tut-banner[hidden]{display:none} .tut-banner.an{animation:tut-banner 2.6s ease forwards}
 @keyframes tut-banner{0%{opacity:0;transform:translateX(-50%) scale(.6)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%,80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0}}

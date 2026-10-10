@@ -17,6 +17,7 @@ var tut = (() => { try { const v = JSON.parse(store.get('openWaterTutorial')); r
 const tutFrisch = () => playerLvl <= 1 && (loadCity().levels.keep || 1) <= 1 && CITY_BUILDINGS.every(b => !loadCity().levels[b.id]);
 if (!tut && !SYSTEM && (window.__OW ? __OW.neu || tutFrisch() : !window.__owOhneTutorial && tutFrisch()))   // auch offline (Vorschau); Test-Vorschauen schalten es ab
     tut = { s: 0, frei: [], g: {}, t0: Date.now(), neu: true };   // (ganz neu – auch wenn er vor dem ersten Speichern neu lädt)
+if (tut && tut.s > 0 && !tut.w) tut.w = 1;                       // (Stände von vor dem Willkommen: nicht noch mal begrüßen)
 function tutLaeuft() { return !!(tut && tut.neu && !tut.fertig); }
 function tutSpeichern() { store.set('openWaterTutorial', JSON.stringify(tut)); }
 const tutTat = {};                                               // was im laufenden Schritt passiert ist (Angriff, Kiste, „Weiter“)
@@ -89,14 +90,18 @@ function tutFenster(panel, knopf) { return isPanelOpen(panel) ? null : $t(knopf)
 
 // ---- die Schritte (Drehbuch) ----
 const TUT = [
-    { k: 'roh', neu: ['stadt', 'roh'], satz: 'Oben siehst du Münzen, Holz, Stein und Eisen. Damit baust du alles.', ziel: () => ({ el: document.querySelector('#hud .hud-werte') }) },
-    { k: 'holz', satz: 'Bau zuerst den Holzfäller – er bringt jede Stunde Holz.', vor: () => tutGeschenk('b', 'Geschenk für dich', [['besch', 2, { dauer: '1m' }]]),
+    { k: 'muenzen', satz: 'Das sind deine Münzen. Damit bezahlst du Forschung, Helden und vieles mehr.', ziel: () => ({ el: document.querySelector('#hud .res--coin') }) },
+    { k: 'r_holz', neu: ['roh'], satz: 'Holz brauchst du für fast jedes Gebäude.', ziel: () => ({ el: document.querySelector('#hud .res--h') }) },
+    { k: 'r_stein', satz: 'Stein macht deine Gebäude und die Burg größer.', ziel: () => ({ el: document.querySelector('#hud .res--s') }) },
+    { k: 'r_eisen', satz: 'Eisen brauchst du für starke Gebäude und Forschung.', ziel: () => ({ el: document.querySelector('#hud .res--e') }) },
+    { k: 'r_gems', zeig: 'gems', satz: 'Edelsteine sind selten und wertvoll. Damit geht alles schneller. Du bekommst sie später als Belohnung.', ziel: () => ({ el: document.querySelector('#hud .res--gem') }) },
+    { k: 'holz', neu: ['stadt'], satz: 'Bau zuerst den Holzfäller. Er bringt dir jede Stunde Holz – ohne Holz kein Bauen.', vor: () => tutGeschenk('b', 'Geschenk für dich', [['besch', 2, { dauer: '1m' }]]),
       ziel: () => tutGeb('lumber'), fertig: () => tutStufe('lumber') > 0 || tutBaut('lumber') },
-    { k: 'tempo', bleib: true, satz: 'Mit einem Beschleuniger ist der Bau sofort fertig. Probier es!', ziel: () => tutBesch('lumber'), fertig: () => tutStufe('lumber') > 0 },
-    { k: 'stein', satz: 'Jetzt der Steinbruch – für Stein.', ziel: () => tutBau('quarry'), fertig: () => tutStufe('quarry') > 0 },
-    { k: 'eisen', satz: 'Und die Eisenmine – für Eisen.', ziel: () => tutBau('mine'), fertig: () => tutStufe('mine') > 0 },
-    { k: 'burg2', satz: 'Deine Hauptstadt nimmst du immer mit – sie ist das Wichtigste. Bau die Burg aus!', ziel: () => tutBau('keep'), fertig: () => tutStufe('keep') >= 2 },
-    { k: 'karte', satz: 'Draußen auf der Karte warten neue Basen.', ziel: tutZurKarte, fertig: () => cityView.hidden },
+    { k: 'tempo', bleib: true, satz: 'Bauen braucht Zeit. Mit einem Beschleuniger ist es sofort fertig – probier es!', ziel: () => tutBesch('lumber'), fertig: () => tutStufe('lumber') > 0 },
+    { k: 'stein', satz: 'Jetzt der Steinbruch. Er bringt jede Stunde Stein für größere Gebäude.', ziel: () => tutBau('quarry'), fertig: () => tutStufe('quarry') > 0 },
+    { k: 'eisen', satz: 'Und die Eisenmine. Eisen brauchst du für Forschung und starke Gebäude.', ziel: () => tutBau('mine'), fertig: () => tutStufe('mine') > 0 },
+    { k: 'burg2', satz: 'Die Burg ist das Herz deiner Hauptstadt. Jede Stufe bringt neue Gebäude – bau sie aus!', ziel: () => tutBau('keep'), fertig: () => tutStufe('keep') >= 2 },
+    { k: 'karte', satz: 'Draußen auf der Karte warten neue Basen und Beute. Geh zur Karte!', ziel: tutZurKarte, fertig: () => cityView.hidden },
     { k: 'lager', satz: 'Draußen lagern Barbaren. Greif ihr Lager an – das bringt Münzen!', ziel: tutLager, fertig: () => barbMarches.some(m => m.who === 'player' && !m.back) || tutTat.lager },
     { k: 'marsch', satz: 'Deine Truppen marschieren. Gleich kommt der Kampf …', ziel: () => ({ warte: 'Deine Truppen marschieren. Gleich kommt der Kampf …' }),
       fertig: () => combatLog.some(e => e.type !== 'ausgespaeht' && e.at >= tut.t0 - 2000) || rechnet() && !barbMarches.some(m => m.who === 'player' && !m.back) && Date.now() - tut.t0 > 3000 || Date.now() - tut.t0 > 300000 },
@@ -106,16 +111,16 @@ const TUT = [
       ziel: () => tutFenster(goalsPopup, 'goalsBtn') || (goalsTab !== 'reward' ? document.querySelector('[data-ggrp="abholen"]') : document.querySelector('#inboxList [data-inbox]')) },
     { k: 'basis', satz: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde. Erobere diese neutrale Basis!', ziel: () => tutAngriff('z1'), fertig: () => tutTat.angriff },
     { k: 'truppen', neu: ['truppen'], satz: 'Truppen wachsen von selbst – in jeder Basis, jede Stunde. Eine Kaserne brauchst du nicht.', ziel: () => ({ el: document.querySelector('#hud .res--troop') }) },
-    { k: 'halle', satz: 'In der Heldenhalle leben deine Helden. Bau sie!', ziel: () => tutBau('heroes'), fertig: () => tutStufe('heroes') > 0 },
+    { k: 'halle', satz: 'In der Heldenhalle leben deine Helden. Bau sie – Helden machen Angriffe stärker.', ziel: () => tutBau('heroes'), fertig: () => tutStufe('heroes') > 0 },
     { k: 'kiste', neu: ['shop'], satz: 'Zwei Schlüssel für dich! Öffne damit eine Helden-Kiste.', vor: () => tutGeschenk('k', 'Geschenk für dich', [['schluessel1', 2]]),
       ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('#shopTabs [data-stab="gems"]:not(.active)') || (schluessel1 ? document.querySelector('[data-kiste="held"][data-anz="1"]') : 'weiter'),
       fertig: () => tutTat.kiste_held },
     { k: 'held', satz: 'Ein Held macht deinen Angriff stärker. Wähl einen Helden und greif an!', ziel: () => tutAngriff('z2', true), fertig: () => tutTat.heldAngriff || tutTat.ok },
     { k: 'gratis', satz: 'Im Shop gibt es alle 8 Stunden eine Kiste umsonst. Öffne sie!', fertig: () => gratisAb() > serverJetzt(),
       ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('#shopTabs [data-stab="gems"]:not(.active)') || document.querySelector('#shopKisten [data-gratis]') },
-    { k: 'ausruestung', bleib: true, satz: 'Mit dem zweiten Schlüssel: eine Ausrüstungs-Kiste.', fertig: () => tutTat.kiste_aus || Object.keys(inventory).length > 0,
+    { k: 'ausruestung', bleib: true, satz: 'Öffne mit dem zweiten Schlüssel eine Ausrüstungs-Kiste. Ausrüstung macht deine Truppen stärker.', fertig: () => tutTat.kiste_aus || Object.keys(inventory).length > 0,
       ziel: () => tutFenster(shopPopup, 'shopBtn') || (schluessel1 ? document.querySelector('[data-kiste="aus"][data-anz="1"]') : 'weiter') },
-    { k: 'anlegen', neu: ['profil'], satz: 'Ausrüstung macht deine Truppen stärker. Leg sie an!', fertig: () => Object.values(equippedItems).some(Boolean),
+    { k: 'anlegen', neu: ['profil'], satz: 'Leg die Ausrüstung an. Erst dann wirkt sie.', fertig: () => Object.values(equippedItems).some(Boolean),
       ziel: () => isPanelOpen(chestItemPopup) ? tutSicht(chestItemEquipBtn) : (isPanelOpen(profilePopup) ? null : tutSicht($t('profileBtn')) || $t('hudPlayer')) ||   // (Handy: Profil über das Spielerbild oben)
          (profilePopup.dataset.tab !== 'equip' ? $t('tabBtnEquip') : document.querySelector('#chestInventoryGrid .tile[data-id]')) },
     { k: 'rucksack', neu: ['rucksack'], satz: 'Im Rucksack liegen deine Sachen. Nimm den Beschleuniger mit in die Stadt.', fertig: () => !cityView.hidden || tutTat.ok,
@@ -123,7 +128,7 @@ const TUT = [
     { k: 'burg3', satz: 'Burg 3! Jede Stufe bringt mehr Truppen und neue Gebäude.', ziel: () => tutBaut('keep') ? tutBesch('keep') : tutGeb('keep'), fertig: () => tutStufe('keep') >= 3 },
     { k: 'labor', satz: 'Im Labor forschst du – damit wird alles stärker. Bau es und starte eine Forschung.', fertig: () => !!loadCity().foRun || tutTat.ok,
       ziel: () => tutStufe('academy') ? tutGeb('academy', 'nutz') : tutBau('academy') },
-    { k: 'aufgaben', neu: ['aufgaben'], satz: 'Jeden Tag gibt es neue Aufgaben mit Belohnung. Jetzt spielst du frei – Bündnis und Events kommen bald!',
+    { k: 'aufgaben', neu: ['aufgaben'], satz: 'Jeden Tag gibt es neue Aufgaben mit Belohnung. Jetzt spielst du frei – viel Spaß!',
       ziel: () => tutFenster(goalsPopup, 'goalsBtn') || document.querySelector('[data-ggrp="aufgaben"]:not(.active)') || 'weiter' }
 ];
 
@@ -138,7 +143,8 @@ function tutGeschenk(g, titel, liste) {
 function tutBurgFrei() { const B = AUF ? AUF.burgStufe('player') : 1; return Object.keys(TUT_BURG).filter(k => B >= TUT_BURG[k]); }
 let tutFreiAlt = null;
 function tutFrei() {
-    const gesperrt = tut && tut.neu && !tut.alles, frei = gesperrt ? new Set([...tut.frei, ...(tut.fertig ? tutBurgFrei() : [])]) : null;
+    const zeig = tutLaeuft() && tut.w && TUT[tut.s] && TUT[tut.s].zeig;   // (nur in diesem Schritt kurz zeigen, z. B. Edelsteine)
+    const gesperrt = tut && tut.neu && !tut.alles, frei = gesperrt ? new Set([...tut.frei, ...(tut.fertig ? tutBurgFrei() : []), ...(zeig ? [zeig] : [])]) : null;
     for (const k of TUT_TEILE) document.body.classList.toggle('tz-' + k, !!gesperrt && !frei.has(k));
     if (!gesperrt) return;
     const neu = tutFreiAlt ? [...frei].filter(k => !tutFreiAlt.has(k) && TUT_NAME[k]) : [];
@@ -190,6 +196,7 @@ function tutZeigen() {
     tutFrei();
     document.body.classList.toggle('tut-an', tutLaeuft() && !tutPause());   // (normale Hinweise oben ruhen solange: nie über Sprechblase oder „Überspringen“)
     if (!tutLaeuft()) { el.hidden = true; if (tutUhr) { clearInterval(tutUhr); tutUhr = setInterval(tutFrei, 5000); } return; }   // fertig: nur noch die Burg-Stufen freischalten
+    if (tutWillkommen()) { el.hidden = true; return; }
     if (tutPause()) { el.hidden = true; return; }
     const S = TUT[tut.s];
     let weiter = false; try { weiter = !!(tutTat.ok || (S.fertig && S.fertig())); } catch (e) {}
@@ -208,12 +215,35 @@ function tutZeigen() {
     if (!fi.hidden) { const cx = (loch.l + loch.r) / 2, unten = loch.b + 60 < H - 70; Object.assign(fi.style, { left: Math.round(cx - 27) + 'px', top: Math.round(unten ? loch.b - 14 : loch.t - 40) + 'px' }); fi.classList.toggle('oben', !unten); }
     const be = $t('tutBerater');
     be.classList.toggle('oben', !!r && (loch.t + loch.b) / 2 > H * .5);       // nie über dem Loch
-    setText($t('tutSatz'), tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.warte || z.satz || S.satz);
+    const satz = tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.warte || z.satz || S.satz;
+    if ($t('tutSatz').textContent !== satz) { setText($t('tutSatz'), satz); be.classList.remove('rein'); void be.offsetWidth; be.classList.add('rein'); }   // neuer Satz: Blase blendet weich ein
     $t('tutWeiter').hidden = tutFrage || !ok; $t('tutFrage').hidden = !tutFrage; $t('tutWeg').hidden = tutFrage;
 }
+// ---- Willkommen (vor Schritt 1): Titelbild, kurze Geschichte, ohne Server auch der Name ----
+const TUT_NAME_MAX = 16;
+function tutWillkommen() {                                       // true, solange das Willkommen offen ist
+    const w = $t('tutWillkommen'); if (!w) return false;
+    const an = tutLaeuft() && !tut.w; w.hidden = !an;
+    if (an && !w.dataset.an) {
+        w.dataset.an = '1';
+        const mitName = !window.__OW;                            // mit Server kommt der Name aus der Anmeldung
+        $t('twNameZeile').hidden = !mitName;
+        if (mitName) $t('twName').value = (store.get('openWaterPlayerName') || 'Kapitän ' + (100 + Math.floor(Math.random() * 900))).slice(0, TUT_NAME_MAX);
+    }
+    return an;
+}
+$t('twLos').addEventListener('click', () => {
+    if (!$t('twNameZeile').hidden) {
+        const n = $t('twName').value.replace(/\s+/g, ' ').slice(0, TUT_NAME_MAX).trim();
+        if (!n) { setText($t('twFehler'), 'Bitte gib einen Namen ein.'); return; }
+        store.set('openWaterPlayerName', n); profileName.value = n; try { updateHudPlayer(); } catch (e) {}
+    }
+    tut.w = 1; tutSpeichern(); sfx('upgrade'); tutStarten();
+});
+$t('twName').addEventListener('keydown', e => { if (e.key === 'Enter') $t('twLos').click(); });
 function tutStarten() {
     if (!tut) return;
-    if (tutLaeuft() && !tut.frei.length && tut.s === 0) tutStart();   // ganz am Anfang: „Neu: Stadt, Rohstoffe“
+    if (tutLaeuft() && tut.w && !tut.g.s0 && tut.s === 0) { tut.g.s0 = 1; tutStart(); }   // ganz am Anfang (nach dem Willkommen)
     tutZeigen(); if (!tutUhr) tutUhr = setInterval(tutLaeuft() ? tutZeigen : tutFrei, tutLaeuft() ? 250 : 5000);
 }
 $t('tutWeiter').addEventListener('click', () => { tutTat.ok = true; tutZeigen(); });
@@ -224,7 +254,7 @@ $t('tutJa').addEventListener('click', () => {
     flashHint('Tutorial übersprungen – jetzt siehst du alles.', 3500); setTimeout(maybeShowDaily, 1500);
 });
 $t('tutNochmal').addEventListener('click', () => {               // Profil → Einstellungen: von vorn (ohne Geschenke und Belohnung; Gebautes zählt gleich als erledigt)
-    tut = { s: 0, frei: [], g: { b: 1, k: 1 }, t0: Date.now(), neu: true, belohnt: true, nochmal: true }; tutFreiAlt = null; tutFrage = false;
+    tut = { s: 0, frei: [], g: { b: 1, k: 1 }, t0: Date.now(), neu: true, w: 1, belohnt: true, nochmal: true }; tutFreiAlt = null; tutFrage = false;
     for (const k of Object.keys(tutTat)) delete tutTat[k];
     if (tutUhr) { clearInterval(tutUhr); tutUhr = 0; }
     closeAllPopups(); tutStarten();

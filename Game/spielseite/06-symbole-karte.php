@@ -136,6 +136,15 @@
     <span id="tutFrage" class="tut-frage" hidden><button id="tutJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="tutNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span></div></div>
   <button id="tutWeg" class="tut-weg" type="button">Überspringen</button>
 </div>
+<div id="tutWillkommen" class="tw" role="dialog" aria-modal="true" aria-labelledby="twTitel" hidden>
+  <div class="tw-karte">
+    <div class="tw-band"><h2 id="twTitel">Willkommen in Open Water</h2></div>
+    <div class="tw-text"><div class="tw-held"></div>
+      <p>Das Meer ist weit, und überall liegen Inseln. Bau deine Stadt, erobere neue Basen und herrsche am Ende vom Thron in der Mitte!</p></div>
+    <label id="twNameZeile" class="tw-name" hidden><span>Wie heißt du, Kapitän?</span><input id="twName" maxlength="16" autocomplete="off" spellcheck="false"><em id="twFehler"></em></label>
+    <button id="twLos" class="tw-los" type="button">Los geht's</button>
+  </div>
+</div>
 <div id="tutBanner" class="tut-banner" role="status" hidden></div>
 
 <!-- Multi-attack floating bar (JS sets style.display='flex') -->

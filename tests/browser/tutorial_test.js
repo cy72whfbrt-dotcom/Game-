@@ -24,9 +24,13 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   // ---- 1) neuer Spieler: einmal ganz durch ----
   const ctx = await b.newContext(HANDY); let p = await ctx.newPage(); p.on('pageerror', e => fe.push(e.message));
   await laden(p, NEU);
+  const wk = await p.evaluate(() => ({ an: !document.getElementById('tutWillkommen').hidden, name: !document.getElementById('twNameZeile').hidden, tut: !document.getElementById('tut').hidden, unten: [...document.querySelectorAll('#cornerButtons .nav-btn')].filter(e => e.getClientRects().length).length }));
+  ok(wk.an && !wk.name && !wk.tut && !wk.unten, 'zuerst das Willkommen (mit Server ohne Namensfeld), darunter nichts zu tippen', wk);
+  if (bilder) await p.screenshot({ path: path.join(bilder, 't00_willkommen.png') });
+  await p.click('#twLos'); await p.waitForTimeout(600);
   const start = await sichtbar(p), st0 = await p.evaluate(() => ({ s: tut.s, laeuft: tutLaeuft(), sicht: !document.getElementById('tut').hidden, willkommen: !!document.getElementById('wkName') }));
   ok(st0.laeuft && st0.s === 0 && st0.sicht && !st0.willkommen, 'neuer Spieler: Tutorial läuft ab Schritt 1, kein Namens-Fenster (Name aus der Anmeldung)', st0);
-  ok(start.unten.join() === 'cityNavBtn' && !start.oben.some(x => /gem|troop/.test(x)) && start.karte.every(x => !/marker|army/.test(x)), 'am Anfang fast nichts: unten nur „Stadt“, oben keine Edelsteine/Truppen, keine Wegmarke/Armee', start);
+  ok(!start.unten.length && !start.oben.some(x => /gem|troop/.test(x)) && start.karte.every(x => !/marker|army/.test(x)), 'am Anfang fast nichts: unten keine Knöpfe, oben keine Edelsteine/Truppen, keine Wegmarke/Armee', start);
   const lg = await p.evaluate(() => { const c = barbState.camps.find(x => x.fuer === 'player'), h = islandById[playerIslandId], bot = BOT_DEFS[0].id, cap = botCapitalOf(bot);
     const vor = islandTroops[cap]; islandTroops[cap] = Math.max(vor || 0, 5000); const fremd = c ? barbSend(bot, cap, 'c', c.id, 1000) : null; islandTroops[cap] = vor;
     return { da: !!c, L: c && c.L, weit: c && Math.round(Math.hypot(c.x - h.x, c.y - h.y)), fremd, nochDa: !!(c && barbCampById(c.id)) }; });
@@ -64,6 +68,8 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
     if (z.modal) { await p.click(z.modal); await p.waitForTimeout(300); continue; }
     if (z.weiter) { await p.mouse.click(z.weiter.x, z.weiter.y); await p.waitForTimeout(400); continue; }
     if (z.loch) {
+      const fest = await p.evaluate(() => new Promise(f => { const q = () => JSON.stringify(document.getElementById('tutLoch').getBoundingClientRect()), a = q(); setTimeout(() => f(a === q()), 350); }));
+      if (!fest) continue;                                 // (Loch gleitet noch zum Ziel)
       if (z.ueber) { ok(false, 'Loch in Schritt ' + z.k + ' ist zugedeckt', z); break; }
       await p.mouse.click(z.loch.x, z.loch.y); await p.waitForTimeout(700); continue;
     }
@@ -80,16 +86,20 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   ok(hinweis === 'none', 'im Tutorial liegt kein normaler Hinweis über Sprechblase oder „Überspringen“', hinweis);
   ok(banner.size >= 4 && ['stadt', 'kampf', 'events', 'truppen', 'shop', 'profil', 'rucksack', 'aufgaben'].every(k => ende.frei.includes(k)), 'Teile kommen nach und nach dazu (mit „Neu: …“)', { banner: [...banner], frei: ende.frei });
   ok(['bund', 'rang', 'events2', 'welt'].every(k => ende.tz.includes('tz-' + k)) && !ende.tz.includes('tz-shop'), 'nach dem Tutorial (Burg 3): Bündnis, Rangliste, Events, Teleport noch zu – der Rest da', ende.tz);
+  const dk = await p.evaluate(() => { const nav = document.getElementById('cornerButtons').getBoundingClientRect(), x = [...document.querySelectorAll('#cornerButtons .nav-btn')].filter(e => e.getClientRects().length).map(e => { const q = e.getBoundingClientRect(); return q.left + q.width / 2; });
+    const d = x.slice(1).map((v, i) => v - x[i]); return { n: x.length, d: d.map(Math.round), links: Math.round(x[0] - nav.left), rechts: Math.round(nav.right - x[x.length - 1]) }; });
+  ok(dk.n >= 5 && Math.max(...dk.d) - Math.min(...dk.d) <= 2 && Math.abs(dk.links - dk.rechts) <= 3, 'Handy-Leiste: Bündnis noch versteckt – die sichtbaren Knöpfe gleichmäßig über die ganze Leiste, keine Lücke', dk);
   const b4 = await p.evaluate(async () => { const c = loadCity(); c.levels.keep = 5; saveCity(); tutFrei(); await new Promise(f => setTimeout(f, 300)); return { tz: [...document.body.classList].filter(c => c.startsWith('tz-')), banner: document.getElementById('tutBanner').textContent }; });
   ok(!b4.tz.includes('tz-bund') && !b4.tz.includes('tz-events2') && b4.tz.includes('tz-welt') && /Bündnis/.test(b4.banner), 'Burg 5: Bündnis und Events kommen dazu (mit „Neu: …“), Teleport erst ab Burg 6', b4);
   const nm = await p.evaluate(async () => { beuteFensterZu(); for (const id of ['levelUpModal', 'rewardModal', 'dailyModal']) document.getElementById(id).hidden = true;   // (offene Belohnungs-Fenster: das Tutorial wartet sonst)
     const s1 = schluessel1, g0 = inboxList().filter(x => x.title === 'Tutorial geschafft').length; document.getElementById('tutNochmal').click();
-    await new Promise(f => setTimeout(f, 1000)); document.getElementById('tutWeiter').click(); await new Promise(f => setTimeout(f, 2500));
+    for (let i = 0; i < 8; i++) { await new Promise(f => setTimeout(f, 700)); const w = document.getElementById('tutWeiter'); if (!w.hidden) w.click(); }
+    await new Promise(f => setTimeout(f, 2500));
     return { laeuft: tutLaeuft(), s: tut.s, lager: TUT.findIndex(x => x.k === 'lager'), belohnt: tut.belohnt, keineGeschenke: schluessel1 === s1 && !document.querySelector('#beuteFenster:not([hidden])'), g0 }; });
   ok(nm.laeuft && nm.belohnt && nm.keineGeschenke && nm.s >= nm.lager - 1, '„Tutorial noch mal“ (Einstellungen): läuft von vorn, Gebautes zählt als erledigt, keine zweiten Geschenke', nm);
   await ctx.close();
   // ---- 2) Überspringen: erst fragen, „Weiter lernen“ bleibt, „Überspringen“ zeigt alles ----
-  const c2 = await b.newContext(HANDY); p = await c2.newPage(); p.on('pageerror', e => fe.push(e.message)); await laden(p, NEU);
+  const c2 = await b.newContext(HANDY); p = await c2.newPage(); p.on('pageerror', e => fe.push(e.message)); await laden(p, NEU); await p.click('#twLos'); await p.waitForTimeout(400);
   await p.click('#tutWeg'); await p.waitForTimeout(300);
   const fr = await p.evaluate(() => ({ frage: !document.getElementById('tutFrage').hidden, satz: document.getElementById('tutSatz').textContent, laeuft: tutLaeuft() }));
   await p.click('#tutNein'); await p.waitForTimeout(300);
@@ -114,8 +124,31 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   await p.goto('file://' + v4 + '/index.html', { timeout: 120000 });
   await p.waitForFunction(() => typeof tutZeigen === 'function' && typeof islands !== 'undefined' && islands.length, null, { timeout: 90000, polling: 500 });
   await p.waitForTimeout(4000);
-  const st4 = await p.evaluate(() => ({ ow: !!window.__OW, laeuft: tutLaeuft(), s: tut && tut.s, sicht: !document.getElementById('tut').hidden, tag: !document.getElementById('dailyModal').hidden })), s4 = await sichtbar(p);
-  ok(!st4.ow && st4.laeuft && st4.s === 0 && st4.sicht && !st4.tag && s4.unten.join() === 'cityNavBtn', 'normale Vorschau, frischer Speicher: Tutorial ab Schritt 1, keine Tages-Belohnung, unten nur „Stadt“', { st4, s4 });
+  const st4 = await p.evaluate(() => ({ ow: !!window.__OW, laeuft: tutLaeuft(), s: tut && tut.s, wk: !document.getElementById('tutWillkommen').hidden, name: !document.getElementById('twNameZeile').hidden,
+    vorschlag: document.getElementById('twName').value, tut: !document.getElementById('tut').hidden, tag: !document.getElementById('dailyModal').hidden })), s4 = await sichtbar(p);
+  ok(!st4.ow && st4.laeuft && st4.s === 0 && st4.wk && st4.name && st4.vorschlag.length > 0 && st4.vorschlag.length <= 16 && !st4.tut && !st4.tag && !s4.unten.length,
+    'normale Vorschau, frischer Speicher: Willkommen mit Namensfeld (Vorschlag), keine Tages-Belohnung, unten nichts', { st4, s4 });
+  await p.fill('#twName', '   '); await p.click('#twLos'); await p.waitForTimeout(300);
+  const leer = await p.evaluate(() => ({ wk: !document.getElementById('tutWillkommen').hidden, f: document.getElementById('twFehler').textContent }));
+  ok(leer.wk && leer.f, 'leerer Name: Willkommen bleibt, mit Hinweis', leer);
+  await p.fill('#twName', 'Seeräuberin Ida 12345'); await p.click('#twLos'); await p.waitForTimeout(800);
+  const nm4 = await p.evaluate(() => ({ name: store.get('openWaterPlayerName'), wk: !document.getElementById('tutWillkommen').hidden, w: tut.w }));
+  ok(nm4.name === 'Seeräuberin Ida' && !nm4.wk && nm4.w, 'Name (max. 16 Zeichen) steht im Spielstand, Willkommen zu', nm4);
+  const roh = [];
+  for (let i = 0; i < 5; i++) {
+    const z = await p.evaluate(() => { const l = document.getElementById('tutLoch').getBoundingClientRect(), x = l.left + l.width / 2, y = l.top + l.height / 2;
+      const t = document.getElementById('tut'); t.hidden = true; const e = document.elementFromPoint(x, y); t.hidden = false;
+      const res = e && e.closest('.res'); return { k: TUT[tut.s].k, satz: document.getElementById('tutSatz').textContent, weiter: !document.getElementById('tutWeiter').hidden,
+        res: res ? res.className.replace('res ', '') : '', stadt: !!document.getElementById('cityNavBtn').getClientRects().length, stadtOffen: !cityView.hidden }; });
+    roh.push(z);
+    if (bilder && i < 2) await p.screenshot({ path: path.join(bilder, 'v_' + z.k + '.png') });
+    await p.waitForTimeout(1200); ok(await p.evaluate(k => TUT[tut.s].k === k, z.k), 'Ressourcen-Schritt „' + z.k + '“ springt nicht von selbst weiter');
+    await p.click('#tutWeiter'); await p.waitForTimeout(500);
+  }
+  ok(roh.map(x => x.k).join() === 'muenzen,r_holz,r_stein,r_eisen,r_gems' && roh.every(x => x.weiter && x.satz && !x.stadt && !x.stadtOffen)
+    && ['res--coin', 'res--h', 'res--s', 'res--e', 'res--gem'].every((c, i) => roh[i].res.includes(c)), 'Ressourcen einzeln erklärt (Loch auf Münzen, Holz, Stein, Eisen, Edelsteine), je mit „Weiter“; Stadt/Bauen noch zu', roh);
+  const nach4 = await p.evaluate(() => ({ k: TUT[tut.s].k, gem: !!document.querySelector('#hud .res--gem').getClientRects().length, stadt: !!document.getElementById('cityNavBtn').getClientRects().length }));
+  ok(nach4.k === 'holz' && !nach4.gem && nach4.stadt, 'erst danach: Bauen (Stadt-Knopf kommt), Edelsteine wieder weg', nach4);
   await c4.close(); fs.rmSync(v4, { recursive: true, force: true });
   ok(!fe.length, 'keine Skript-Fehler', fe.slice(0, 5));
   await b.close();
