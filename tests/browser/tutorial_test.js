@@ -1,6 +1,6 @@
 // Tutorial für neue Spieler (10c2, Alexander 10.10.): im echten Spiel von Burg 1 bis Burg 3 durchspielen – jeder Tipp geht als echter
 // Klick in das Loch im Dunkel (Stadt-Schilder, Basen auf der Karte, Knöpfe in den echten Fenstern), Belohnungs-Fenster werden mit „OK“ zu.
-// Prüft: am Anfang fast nichts zu sehen (nur Münzen + „Stadt“), Tipp neben das Loch tut nichts, jeder Schritt bringt sein „Neu: …“,
+// Prüft: eigenes Lager Stufe 1 (nur für ihn), am Anfang fast nichts zu sehen (nur Münzen + „Stadt“), Tipp neben das Loch tut nichts, jeder Schritt bringt sein „Neu: …“,
 // Neuladen mittendrin bleibt beim Schritt, am Ende Burg 3 + Belohnung im Abholfach, Bündnis/Events erst später (Burg-Stufe);
 // „Überspringen“ fragt erst (im Spiel) und zeigt dann alles; ein alter Spieler (ohne Tutorial-Stand) sieht alles wie bisher.
 // Handy 390×844. Fotos je Schritt (t01_<schritt>.png …) in process.argv[3], wenn angegeben.
@@ -27,9 +27,13 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   const start = await sichtbar(p), st0 = await p.evaluate(() => ({ s: tut.s, laeuft: tutLaeuft(), sicht: !document.getElementById('tut').hidden, willkommen: !!document.getElementById('wkName') }));
   ok(st0.laeuft && st0.s === 0 && st0.sicht && !st0.willkommen, 'neuer Spieler: Tutorial läuft ab Schritt 1, kein Namens-Fenster (Name aus der Anmeldung)', st0);
   ok(start.unten.join() === 'cityNavBtn' && !start.oben.some(x => /gem|troop/.test(x)) && start.karte.every(x => !/marker|army/.test(x)), 'am Anfang fast nichts: unten nur „Stadt“, oben keine Edelsteine/Truppen, keine Wegmarke/Armee', start);
+  const lg = await p.evaluate(() => { const c = barbState.camps.find(x => x.fuer === 'player'), h = islandById[playerIslandId], bot = BOT_DEFS[0].id, cap = botCapitalOf(bot);
+    const vor = islandTroops[cap]; islandTroops[cap] = Math.max(vor || 0, 5000); const fremd = c ? barbSend(bot, cap, 'c', c.id, 1000) : null; islandTroops[cap] = vor;
+    return { da: !!c, L: c && c.L, weit: c && Math.round(Math.hypot(c.x - h.x, c.y - h.y)), fremd, nochDa: !!(c && barbCampById(c.id)) }; });
+  ok(lg.da && lg.L === 1 && lg.weit < 20000 && lg.fremd === false && lg.nochDa, 'neuer Spieler hat sein Barbaren-Lager Stufe 1 nahe der Hauptstadt – ein Mitspieler darf es nicht angreifen', lg);
   const s0 = await p.evaluate(() => tut.s); await p.mouse.click(10, 420); await p.waitForTimeout(400);
   ok(await p.evaluate(() => tut.s) === s0 && await p.evaluate(() => isPanelOpen(goalsPopup) || !cityView.hidden) === false, 'Tipp neben das Loch tut nichts');
-  const gesehen = [], banner = new Set(); let neu = false, alt = -1, schritte = 0;
+  const gesehen = [], banner = new Set(); let neu = false, alt = -1, schritte = 0, hinweis = '';
   for (let i = 0; i < 900; i++) {
     const z = await p.evaluate(() => {
       const el = id => document.getElementById(id), r = e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2, w: q.width, h: q.height }; };
@@ -38,7 +42,8 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
       if (bf || mod) return { ...o, modal: bf ? '.bf-ok' : '#' + mod.id };
       if (el('tut').hidden) return o;
       if (!el('tutWeiter').hidden) return { ...o, weiter: r(el('tutWeiter')) };
-      if (!el('tutLoch').hidden && !el('tutFinger').hidden) return { ...o, loch: r(el('tutLoch')), ueber: !!document.elementFromPoint(r(el('tutLoch')).x, r(el('tutLoch')).y).closest('#tut') };
+      if (!el('tutLoch').hidden && !el('tutFinger').hidden) { const l = r(el('tutLoch')); if (l.x < 0 || l.y < 0 || l.x > innerWidth || l.y > innerHeight) return o;   // (Kamera fliegt noch)
+        return { ...o, loch: l, ueber: !!(document.elementFromPoint(l.x, l.y) || { closest: () => 1 }).closest('#tut') }; }
       return o;
     });
     if (z.fertig) break;
@@ -47,6 +52,7 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
       alt = z.s; schritte++; await p.waitForTimeout(500);
       if (bilder) await p.screenshot({ path: path.join(bilder, 't' + String(z.s + 1).padStart(2, '0') + '_' + z.k + '.png') });
       gesehen.push(z.k);
+      if (z.k === 'stein') hinweis = await p.evaluate(() => { flashHint('Test-Hinweis', 3000); const h = getComputedStyle(document.getElementById('hint')).display; flashHint('', 1); return h; });
       if (z.k === 'karte' && !neu) {                       // Neuladen mittendrin: gleicher Schritt, gleiche Knöpfe
         neu = true; const vor = await p.evaluate(() => JSON.stringify(tut)), sv = await sichtbar(p);
         await p.reload(); await p.waitForFunction(() => typeof tutZeigen === 'function' && typeof islands !== 'undefined' && islands.length, null, { timeout: 90000 }); await p.waitForTimeout(3000);
@@ -70,10 +76,16 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   ok(ende.fertig && !ende.alles && ende.burg === 3 && ende.gespeichert, 'Tutorial komplett durchgespielt bis Burg 3 (' + schritte + ' Schritte)', { ende, gesehen });
   ok(ende.lumber && ende.quarry && ende.mine && ende.academy && ende.heroes && ende.held && ende.helden > 0, 'unterwegs gebaut: Holzfäller, Steinbruch, Eisenmine, Heldenhalle, Labor; Ausrüstung angelegt, Helden da', ende);
   ok(ende.geschenk, 'am Ende: Belohnung im Abholfach', ende);
+  ok(gesehen.includes('lager') && gesehen.indexOf('lager') < gesehen.indexOf('bericht'), 'erster Angriff = das eigene Barbaren-Lager, danach Kampfbericht', gesehen);
+  ok(hinweis === 'none', 'im Tutorial liegt kein normaler Hinweis über Sprechblase oder „Überspringen“', hinweis);
   ok(banner.size >= 4 && ['stadt', 'kampf', 'events', 'truppen', 'shop', 'profil', 'rucksack', 'aufgaben'].every(k => ende.frei.includes(k)), 'Teile kommen nach und nach dazu (mit „Neu: …“)', { banner: [...banner], frei: ende.frei });
   ok(['bund', 'rang', 'events2', 'welt'].every(k => ende.tz.includes('tz-' + k)) && !ende.tz.includes('tz-shop'), 'nach dem Tutorial (Burg 3): Bündnis, Rangliste, Events, Teleport noch zu – der Rest da', ende.tz);
   const b4 = await p.evaluate(async () => { const c = loadCity(); c.levels.keep = 5; saveCity(); tutFrei(); await new Promise(f => setTimeout(f, 300)); return { tz: [...document.body.classList].filter(c => c.startsWith('tz-')), banner: document.getElementById('tutBanner').textContent }; });
   ok(!b4.tz.includes('tz-bund') && !b4.tz.includes('tz-events2') && b4.tz.includes('tz-welt') && /Bündnis/.test(b4.banner), 'Burg 5: Bündnis und Events kommen dazu (mit „Neu: …“), Teleport erst ab Burg 6', b4);
+  const nm = await p.evaluate(async () => { const s1 = schluessel1, g0 = inboxList().filter(x => x.title === 'Tutorial geschafft').length; document.getElementById('tutNochmal').click();
+    await new Promise(f => setTimeout(f, 1000)); document.getElementById('tutWeiter').click(); await new Promise(f => setTimeout(f, 2500));
+    return { laeuft: tutLaeuft(), s: tut.s, lager: TUT.findIndex(x => x.k === 'lager'), belohnt: tut.belohnt, keineGeschenke: schluessel1 === s1 && !document.querySelector('#beuteFenster:not([hidden])'), g0 }; });
+  ok(nm.laeuft && nm.belohnt && nm.keineGeschenke && nm.s >= nm.lager, '„Tutorial noch mal“ (Einstellungen): läuft von vorn, Gebautes zählt als erledigt, keine zweiten Geschenke', nm);
   await ctx.close();
   // ---- 2) Überspringen: erst fragen, „Weiter lernen“ bleibt, „Überspringen“ zeigt alles ----
   const c2 = await b.newContext(HANDY); p = await c2.newPage(); p.on('pageerror', e => fe.push(e.message)); await laden(p, NEU);

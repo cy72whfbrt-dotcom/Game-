@@ -331,6 +331,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       </form>
       <form action="index.php?aus=1" method="post" class="set-ab"><button class="btn btn--secondary btn--sm" type="submit">Abmelden</button></form>
       <div class="sect" id="setHilfe"><h4>Hilfe</h4></div>
+      <div class="set-knoepfe"><button id="tutNochmal" class="btn btn--secondary btn--sm" type="button">Tutorial noch mal</button></div>
       <details class="set-hilfe p5-hilfe">
         <summary>Wo finde ich was?</summary>
         <p><b>Stadt</b> → Burg (deine Hauptstadt-Stufe), Gebäude, Holz/Stein/Eisen, Forschung, Krankenhaus, Helden.</p>

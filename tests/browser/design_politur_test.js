@@ -14,6 +14,7 @@ srv.listen(0, '127.0.0.1', async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9', '--proxy-bypass-list=127.0.0.1'] }); const fe = [];
   for (const [art, opt] of [['Handy', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }], ['Desktop', { viewport: { width: 1280, height: 800 } }]]) {
     const p = await (await b.newContext(opt)).newPage(); p.on('pageerror', e => fe.push(e.message));
+    await p.clock.install({ time: new Date('2026-10-07T10:00:00Z') });   // Uhr fest auf einen Mittwoch: das Wochen-Event läuft (am Wochenende ist es vorbei)
     await p.goto('http://127.0.0.1:' + srv.address().port + '/index.html', { timeout: 120000 });
     await p.waitForFunction(() => typeof islands !== 'undefined' && islands.length && typeof playerIslandId !== 'undefined' && islandById[playerIslandId] && typeof AUF !== 'undefined' && AUF && typeof bundOeffnen === 'function', null, { timeout: 90000, polling: 500 }).catch(() => {});
     await p.waitForTimeout(2000);

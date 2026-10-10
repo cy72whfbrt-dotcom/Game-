@@ -8,6 +8,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
 (async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] }), bilder = process.argv[3];
   const p = await (await b.newContext({ ...devices['iPhone 13'], viewport: { width: 390, height: 844 } })).newPage(); const fe = []; p.on('pageerror', e => fe.push(e.message));
+  await p.clock.install({ time: new Date('2026-10-07T10:00:00Z') });   // Uhr fest auf einen Mittwoch: das Wochen-Event läuft (am Wochenende ist es vorbei)
   await p.goto('file://' + path.resolve(process.argv[2]) + '/index.html', { timeout: 120000 });
   await p.waitForFunction(() => typeof AUF !== 'undefined' && AUF && typeof openShop === 'function' && typeof islandById !== 'undefined' && islandById[playerIslandId], null, { timeout: 90000, polling: 500 }).catch(() => {});
   await p.waitForTimeout(3000);

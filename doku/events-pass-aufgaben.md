@@ -64,13 +64,18 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 - Nur neue Spieler (`__OW.neu` bzw. ganz frischer Stand); alte Stände ohne `openWaterTutorial` sehen alles wie bisher.
 - 21 Schritte (`TUT`) im echten Spiel: dunkel, Loch auf dem echten Element (Knopf, Stadt-Schild, Basis), Finger, Berater mit
   1–2 Sätzen; nur das Loch nimmt Tipps. Belohnungs-Fenster gehen vor. Ablauf: Rohstoffe → Holzfäller (+ Geschenk 2 Beschleuniger)
-  → Beschleunigen → Steinbruch → Eisenmine → Burg 2 → Karte → neutrale Basis angreifen → Kampfbericht → Beute abholen → Truppen
+  → Beschleunigen → Steinbruch → Eisenmine → Burg 2 → Karte → eigenes Barbaren-Lager Stufe 1 angreifen → Kampfbericht → Beute
+  abholen → neutrale Basis erobern (keine in Reichweite: nur erklärt) → Truppen
   → Heldenhalle → Helden-Kiste (+ 2 Schlüssel) → Angriff mit Held → Gratis-Kiste → Ausrüstungs-Kiste → anlegen → Rucksack →
   Burg 3 (mit Beschleuniger) → Labor + Forschung → Aufgaben. Ende: 10 Edelsteine + Kiste ins Abholfach.
 - Knöpfe kommen nach und nach („Neu: …“, `body.tz-<teil>` blendet aus, Stil in 02). Danach nach Burg-Stufe (`TUT_BURG`):
   Bündnis + Rangliste ab 4, Events (Pass, Erfolge, Ereignisse, Mitte-Leiste) ab 5, Teleport/Thron ab 6.
+- Lager für Neue (09b `barbNeulingLager`, rechnet der Weltrechner): wer noch kein Lager besiegt hat und höchstens Burg 3 ist,
+  bekommt eines der Stufe 1 nahe der Hauptstadt (`c.fuer`); nur er darf es angreifen (`barbFuerOk`, auch Mitspieler/Befehle).
+- Profil → Einstellungen → „Tutorial noch mal“ (ohne Geschenke/Belohnung). Normale Hinweise oben ruhen im Tutorial (`body.tut-an`).
 - „Überspringen“ fragt im Spiel, danach alles sichtbar. Kein Namens-Fenster (Name aus der Anmeldung). Tägliche Belohnung erst danach.
-- Hauptbuch: Spielraum am Anfang `fr.bm 2`, `fr.s1 2` (Geschenke). Start-Rohstoffe 4.500/2.500/1.500 (aufbau.js `ROH_START`).
+- Hauptbuch: Spielraum am Anfang `fr.bm 2`, `fr.s1 2` (Geschenke). Start-Rohstoffe 5.000/3.000/1.800 (aufbau.js `ROH_START`): Tutorial braucht
+  4.120/2.200/1.380 + 1. Forschung – kein Warten bis Burg 3.
 - Platzhalter-Bilder: `einstieg_finger`, `einstieg_berater` (jetzt Helden-Kopf), `banner_neu`. Test `tutorial_test`.
 
 ## Offen

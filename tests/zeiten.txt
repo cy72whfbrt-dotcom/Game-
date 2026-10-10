@@ -3,6 +3,6 @@ absturz_test 64
 admin_test 19
 armee_test 77
 kiste_test 373
-klick_test 436
+klick_test 253
 schummel_test 819
 verst_test 391

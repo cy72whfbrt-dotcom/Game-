@@ -26,14 +26,28 @@ const barbOut = (who, k) => barbMarches.filter(m => m.who === who && !m.back && 
 const barbTagMax = () => BARB_DAY, dbossHitsMax = () => DBOSS_HITS;
 const barbLeft = who => Math.max(0, barbTagMax() - barbRec(who).n - barbOut(who));
 const barbOpenFor = (who, L) => L <= barbRec(who).b + 1;
+// Lager für Neue (Alexander 10.10.): wer noch kein Lager besiegt hat und höchstens Burg 3 ist, bekommt eines der Stufe 1 nahe der Hauptstadt (c.fuer = er) –
+// nur er darf es angreifen. Im Netz heißt man selbst beim Weltrechner 'u<Nummer>', auf dem eigenen Handy 'player'.
+const barbIch = who => who === 'player' && window.__OW && __OW.uid && !SYSTEM ? 'u' + __OW.uid : who;
+const barbFuerOk = (c, who) => !c.fuer || c.fuer === barbIch(who) || (c.fuer === 'player' && who === 'player');
+function barbNeulingLager(now) {                     // (nur wer rechnet) jedem Neuen sein Lager der Stufe 1
+    const neue = (SYSTEM ? [] : ['player']).concat(BOT_DEFS.filter(b => b.mensch).map(b => b.id));
+    for (const who of neue) {
+        if (barbRec(who).b > 0 || (AUF && AUF.burgStufe(who) > 3) || barbState.camps.some(c => c.fuer === who)) continue;
+        const cap = islandById[who === 'player' ? playerIslandId : botCapitalOf(who)], lm = cap && landmasses[cap.landmassId]; if (!lm) continue;
+        let p = null, pd = Infinity; for (let i = 0; i < 16; i++) { const q = barbSpot(lm, Math.random, 1, { x: cap.x, y: cap.y, R: ISLAND_RADIUS * (8 + i) }); if (!q) continue; const d = Math.hypot(q.x - cap.x, q.y - cap.y); if (d > ISLAND_RADIUS * 5 && d < pd) { pd = d; p = q; } }   // so nah wie möglich, nicht auf der Burg
+        if (!p) continue;
+        const t = barbTroopsOf(1); barbState.camps.push({ id: 'c' + (barbState.n++), x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, L: 1, t, max: t, until: now + 24 * 36e5, fuer: who });
+    }
+}
 const barbPt = o => ({ id: 'barb' + (o.id || o.tid || 'b'), x: o.x, y: o.y, landmassId: o.lm, radius: ISLAND_RADIUS * .6 });
 const barbFa = who => (1 + fieldAtkPct(who) / 100) * titleMult(who, 'attack') * (AUF ? AUF.kampf(who, 'a') : 1);
 const BARB_LMS = landmasses.filter(l => l.zone <= 4);   // Zone 1–4 (die Mitte nicht)
 const barbStufeZone = (z, r) => Math.min(BARB_MAX_L, 1 + (z - 1) * 6 + Math.floor(r() * (z === 4 ? 7 : 6)));   // Stufe nach der Zone (wie die Karten-Testdatei): 1–6 außen … 19–25 in Zone 4
-function barbSpot(lm, r, edge) {                    // a free place on the land: clear of bases, fields, other camps and the boss (edge: room to the shore)
+function barbSpot(lm, r, edge, um) {                // a free place on the land: clear of bases, fields, other camps and the boss (edge: room to the shore; um {x, y, R}: nur in diesem Umkreis)
     const e = ISLAND_RADIUS * (edge || 1);
     for (let t = 0; t < 30; t++) {
-        const x = lm.x + (r() * 2 - 1) * lm.shapeMaxR * .85, y = lm.y + (r() * 2 - 1) * lm.shapeMaxR * .85;
+        const m = um || { x: lm.x, y: lm.y, R: lm.shapeMaxR * .85 }, x = m.x + (r() * 2 - 1) * m.R, y = m.y + (r() * 2 - 1) * m.R;
         if (!aufLand(lm, x, y) || [[e, 0], [-e, 0], [0, e], [0, -e]].some(([dx, dy]) => !aufLand(lm, x + dx, y + dy)) || (islandsByLandmass[lm.id] || []).some(i => Math.hypot(i.x - x, i.y - y) < ISLAND_RADIUS * 3)) continue;
         if (resFields.some(f => f.landmassId === lm.id && Math.hypot(f.x - x, f.y - y) < ISLAND_RADIUS * 2.2) || barbState.camps.some(c => Math.hypot(c.x - x, c.y - y) < ISLAND_RADIUS * 3)) continue;
         if (dayBoss && Math.hypot(dayBoss.x - x, dayBoss.y - y) < ISLAND_RADIUS * 5) continue;
@@ -97,7 +111,7 @@ const dbossKind = b => DBOSS_KINDS.find(K => K.k === b.k) || DBOSS_KINDS[0];
 const dbossRanks = b => Object.entries(b.dmg || {}).sort((x, y) => y[1] - x[1]);
 function barbSend(who, homeId, k, tid, troops, hero, hero2) {  // troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero may lead them
     const home = islandById[homeId], t = k === 'b' ? dbossEnsure() : barbCampById(tid); troops = Math.min(Math.floor(troops), Math.floor(islandTroops[homeId] || 0)); if (!home || !t || !(troops >= 1)) return false;
-    if (k === 'b' ? barbRec(who).h >= dbossHitsMax() : !barbOpenFor(who, t.L) || barbLeft(who) <= 0) return false;   // (Absicherung: Tagesgrenzen und Freischaltung auch hier, nicht nur im Fenster)
+    if (k === 'b' ? barbRec(who).h >= dbossHitsMax() : !barbOpenFor(who, t.L) || !barbFuerOk(t, who) || barbLeft(who) <= 0) return false;   // (Absicherung: Tagesgrenzen und Freischaltung auch hier, nicht nur im Fenster)
     if (!marschPlatz(who)) return false;                                                      // Marsch-Plätze (Paket D)
     if (hero && (!heroOwned(who, hero) || heroBusy(who, hero))) hero = null; hero2 = heroZweitOk(who, hero, hero2); const mx = heroMarchFx(who, hero, false, hero2), now = Date.now();
     islandTroops[homeId] = Math.max(0, (islandTroops[homeId] || 0) - troops);
@@ -190,6 +204,7 @@ function barbTick() {
         barbState.next = now + 10000; let k = barbState.camps.length < BARB_WANT * .5 ? BARB_WANT : 2;
         if (barbState.camps.some(c => c.until < now)) { const aim = new Set(barbMarches.map(m => m.tid)); barbState.camps = barbState.camps.filter(c => !(c.until < now) || aim.has(c.id)); }   // old camps move on (unless someone is on the way)
         while (k-- > 0 && barbState.camps.length < BARB_WANT) barbSpawn();
+        barbNeulingLager(now);
         dbossEnsure(); saveBarb(now); requestRender();
     }
     for (const el of document.querySelectorAll('[data-bclock]')) el.textContent = fmtDHMS(msToMidnight() / 1000);
@@ -324,6 +339,7 @@ function barbSheetHtml() {
     const b = dbossEnsure(), mid = '<b data-bclock>' + fmtDHMS(msToMidnight() / 1000) + '</b>';
     if (v.kind === 'camp') {
         const c = barbCampById(v.id); if (!c) return head('attack', 'Barbaren-Lager') + '<div class="notice">' + icon('check') + '<span>Dieses Lager ist schon geräumt.</span></div>';
+        if (!barbFuerOk(c, 'player')) return head('attack', 'Barbaren-Lager') + '<div class="notice">' + icon('lock') + '<span>Dieses Lager gehört einem neuen Spieler – nur er darf es angreifen.</span></div>';
         const open = barbOpenFor('player', c.L), left = barbLeft('player'), need = c.t * 1.15 / barbFa('player'), src = barbSource(c, need), rd = RARITY_DEFS[barbTier(c.L)];
         return head('attack', 'Barbaren-Lager <span class="barb-lv" style="--bc:' + rd.color + '">Stufe ' + c.L + '</span>') +
             '<div class="field-lines"><span>Krieger</span><b>' + fmtNum(c.t) + (c.t < c.max ? ' <small>von ' + fmtCompact(c.max) + '</small>' : '') + '</b>' +
@@ -354,7 +370,7 @@ function barbSheetHtml() {
 }
 function barbNearest() {                            // the closest camp you may attack, the highest level first
     const home = islandById[rewardBaseId() ?? playerIslandId]; if (!home) return null; const best = barbRec('player').b;
-    let pick = null, ps = -Infinity; for (const c of barbState.camps) { if (c.L > best + 1 || !isCellOpen(c.x, c.y)) continue; const s = c.L * 3 - Math.hypot(c.x - home.x, c.y - home.y) / 4000; if (s > ps) { ps = s; pick = c; } }
+    let pick = null, ps = -Infinity; for (const c of barbState.camps) { if (c.L > best + 1 || !barbFuerOk(c, 'player') || !isCellOpen(c.x, c.y)) continue; const s = c.L * 3 - Math.hypot(c.x - home.x, c.y - home.y) / 4000; if (s > ps) { ps = s; pick = c; } }
     return pick;
 }
 function openBarbSheet(v) { if (barbSheetEl.hidden) [barbHero, barbHero2] = heroLetzte(); barbView = v; liveHtml(barbSheetEl, barbSheetHtml()); barbSheetEl.hidden = false; }

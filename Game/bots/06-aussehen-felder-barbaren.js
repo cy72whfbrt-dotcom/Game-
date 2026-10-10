@@ -286,7 +286,7 @@ function botBarbHunt(bot) {                               // the strongest camp 
     const kennt = botKennt(bot.id), reach = new Set((reachableLandmassIds[b.landmassId] || [b.landmassId]).filter(l => (l === b.landmassId || landmassesConnected(b.landmassId, l)) && kennt.has(l)));
     const taken = new Set(barbMarches.filter(m => !m.back && m.k === 'c').map(m => m.tid));
     const cand = []; let pick = null;
-    for (const c of barbState.camps) if (c.L <= best + 1 && !taken.has(c.id) && c.t * 1.3 / fa <= have) cand.push([c.L * 3 - Math.hypot(c.x - b.x, c.y - b.y) / 4000, c]);
+    for (const c of barbState.camps) if (c.L <= best + 1 && barbFuerOk(c, bot.id) && !taken.has(c.id) && c.t * 1.3 / fa <= have) cand.push([c.L * 3 - Math.hypot(c.x - b.x, c.y - b.y) / 4000, c]);
     cand.sort((x, y) => y[0] - x[0]);
     for (const [, c] of cand.slice(0, 6)) if (reach.has(c.lm) || canReach(b.landmassId, c.lm, bot.id)) { pick = c; break; }   // the next ones first, further ones over the bridges
     if (!pick) return false;

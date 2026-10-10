@@ -57,6 +57,8 @@ function tutInsel(id) {                                          // eine Basis a
     return { r: { x: toSX(i.x) - r, y: toSY(i.y) - r, w: 2 * r, h: 2 * r } };
 }
 let tutFlug = -1;
+const TUT_OHNE = { z1: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde. Sobald eine freie Basis in Reichweite ist, erobere sie – die Hauptstadt bleibt das Wichtigste.',
+    z2: 'Bei jedem Angriff kannst du einen Helden mitschicken – er macht ihn stärker.' };
 const tutZurKarte = () => tutSicht($t('cityCloseBtn')) || $t('cityNavBtn');   // (Handy: der Stadt-Knopf unten heißt dann „Karte“)
 function tutNeutral(ohne) {                                      // die nächste neutrale, sichtbare Basis (nicht die schon angegriffene)
     const h = islandById[playerIslandId], weg = new Set([ohne, ...pendingAttacks.filter(a => !a.attackerBotId).map(a => a.targetId)]);
@@ -65,7 +67,7 @@ function tutNeutral(ohne) {                                      // die nächste
 }
 function tutAngriff(feld, held) {                                // Basis antippen → Angreifen → (Held wählen) → Angreifen
     if (tut[feld] === undefined || (!isPanelOpen(popup) && islandOwnerOf(tut[feld]))) { tut[feld] = tutNeutral(tut.z1); tutSpeichern(); }
-    const id = tut[feld]; if (id === undefined) return 'weiter';   // (keine Basis in Sicht: weiter)
+    const id = tut[feld]; if (id === undefined) return { weiter: true, satz: TUT_OHNE[feld] };   // (keine Basis in Reichweite: nur erklären)
     if (isPanelOpen(popup) && popupIslandId !== id) return $t('closeBtn');
     if (isPanelOpen(popup)) {
         if (held && popupView === 'preview' && !previewHero) return tutSicht(document.querySelector('#islandPopup [data-hero]:not([data-hero=""]):not([disabled])'))
@@ -73,6 +75,14 @@ function tutAngriff(feld, held) {                                // Basis antipp
         return tutSicht(attackBtn);
     }
     return tutInsel(id);
+}
+function tutLager() {                                           // das eigene Lager der Stufe 1 (09b barbNeulingLager) antippen → Angreifen
+    if (!barbSheetEl.hidden && barbView && barbView.kind === 'camp') return document.querySelector('#barbSheet [data-bgo]:not([disabled])') || document.querySelector('#barbSheet [data-bclose]');
+    const h = islandById[playerIslandId], c = barbState.camps.filter(x => x.fuer && barbFuerOk(x, 'player'))[0] || barbNearest();
+    if (!c) return { weiter: true, satz: 'Barbaren-Lager bringen Münzen. Gerade ist keines in deiner Nähe – schau später auf der Karte.' };
+    if (!cityView.hidden) return tutZurKarte();
+    if (tutFlug !== tut.s) { tutFlug = tut.s; flyTo(c.x, c.y, { zoom: Math.max(mapState.zoom, .02) }); }
+    const k = barbK(), p = barbScreen(c), r = Math.max(24, 22 * k); return { r: { x: p.x - r, y: p.y - r - 4 * k, w: 2 * r, h: 2 * r } };
 }
 function tutFenster(panel, knopf) { return isPanelOpen(panel) ? null : $t(knopf); }   // Fenster zu: der Knopf, der es öffnet
 
@@ -86,23 +96,24 @@ const TUT = [
     { k: 'eisen', satz: 'Und die Eisenmine – für Eisen.', ziel: () => tutBau('mine'), fertig: () => tutStufe('mine') > 0 },
     { k: 'burg2', satz: 'Deine Hauptstadt nimmst du immer mit – sie ist das Wichtigste. Bau die Burg aus!', ziel: () => tutBau('keep'), fertig: () => tutStufe('keep') >= 2 },
     { k: 'karte', satz: 'Draußen auf der Karte warten neue Basen.', ziel: tutZurKarte, fertig: () => cityView.hidden },
-    { k: 'angriff', satz: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde. Greif diese neutrale Basis an!', ziel: () => tutAngriff('z1'), fertig: () => tutTat.angriff || tutTat.ok },
+    { k: 'lager', satz: 'Draußen lagern Barbaren. Greif ihr Lager an – das bringt Münzen!', ziel: tutLager, fertig: () => barbMarches.some(m => m.who === 'player' && !m.back) || tutTat.lager },
     { k: 'marsch', satz: 'Deine Truppen marschieren. Gleich kommt der Kampf …', ziel: () => ({ warte: 'Deine Truppen marschieren. Gleich kommt der Kampf …' }),
-      fertig: () => combatLog.some(e => e.type !== 'ausgespaeht' && e.at >= tut.t0 - 2000) || Date.now() - tut.t0 > 300000 },
+      fertig: () => combatLog.some(e => e.type !== 'ausgespaeht' && e.at >= tut.t0 - 2000) || rechnet() && !barbMarches.some(m => m.who === 'player' && !m.back) && Date.now() - tut.t0 > 3000 || Date.now() - tut.t0 > 300000 },
     { k: 'bericht', neu: ['kampf'], satz: 'Hier steht jeder Kampf: wer gewonnen hat und was du bekommst.',
       ziel: () => tutFenster(battleLogPopup, 'battleLogBtn') || document.querySelector('#battleTabs [data-ktab="berichte"]:not(.active)') || 'weiter' },
-    { k: 'beute', neu: ['events'], satz: 'Deine Beute liegt im Abholfach. Hol sie ab!', fertig: () => !inboxFach().some(x => x.src === 'fight'),
+    { k: 'beute', neu: ['events'], satz: 'Deine Beute liegt im Abholfach. Hol sie ab!', fertig: () => !inboxFach().length,
       ziel: () => tutFenster(goalsPopup, 'goalsBtn') || (goalsTab !== 'reward' ? document.querySelector('[data-ggrp="abholen"]') : document.querySelector('#inboxList [data-inbox]')) },
+    { k: 'basis', satz: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde. Erobere diese neutrale Basis!', ziel: () => tutAngriff('z1'), fertig: () => tutTat.angriff },
     { k: 'truppen', neu: ['truppen'], satz: 'Truppen wachsen von selbst – in jeder Basis, jede Stunde. Eine Kaserne brauchst du nicht.', ziel: () => ({ el: document.querySelector('#hud .res--troop') }) },
     { k: 'halle', satz: 'In der Heldenhalle leben deine Helden. Bau sie!', ziel: () => tutBau('heroes'), fertig: () => tutStufe('heroes') > 0 },
     { k: 'kiste', neu: ['shop'], satz: 'Zwei Schlüssel für dich! Öffne damit eine Helden-Kiste.', vor: () => tutGeschenk('k', 'Geschenk für dich', [['schluessel1', 2]]),
-      ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('#shopTabs [data-stab="gems"]:not(.active)') || document.querySelector('[data-kiste="held"][data-anz="1"]'),
+      ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('#shopTabs [data-stab="gems"]:not(.active)') || (schluessel1 ? document.querySelector('[data-kiste="held"][data-anz="1"]') : 'weiter'),
       fertig: () => tutTat.kiste_held },
     { k: 'held', satz: 'Ein Held macht deinen Angriff stärker. Wähl einen Helden und greif an!', ziel: () => tutAngriff('z2', true), fertig: () => tutTat.heldAngriff || tutTat.ok },
     { k: 'gratis', satz: 'Im Shop gibt es alle 8 Stunden eine Kiste umsonst. Öffne sie!', fertig: () => gratisAb() > serverJetzt(),
       ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('#shopTabs [data-stab="gems"]:not(.active)') || document.querySelector('#shopKisten [data-gratis]') },
     { k: 'ausruestung', bleib: true, satz: 'Mit dem zweiten Schlüssel: eine Ausrüstungs-Kiste.', fertig: () => tutTat.kiste_aus || Object.keys(inventory).length > 0,
-      ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('[data-kiste="aus"][data-anz="1"]') },
+      ziel: () => tutFenster(shopPopup, 'shopBtn') || (schluessel1 ? document.querySelector('[data-kiste="aus"][data-anz="1"]') : 'weiter') },
     { k: 'anlegen', neu: ['profil'], satz: 'Ausrüstung macht deine Truppen stärker. Leg sie an!', fertig: () => Object.values(equippedItems).some(Boolean),
       ziel: () => isPanelOpen(chestItemPopup) ? tutSicht(chestItemEquipBtn) : (isPanelOpen(profilePopup) ? null : tutSicht($t('profileBtn')) || $t('hudPlayer')) ||   // (Handy: Profil über das Spielerbild oben)
          (profilePopup.dataset.tab !== 'equip' ? $t('tabBtnEquip') : document.querySelector('#chestInventoryGrid .tile[data-id]')) },
@@ -157,13 +168,14 @@ function tutStart() {
 function tutEnde() {
     tut.fertig = true; for (const k of TUT_ENDE) if (!tut.frei.includes(k)) tut.frei.push(k);
     tutSpeichern(); tutFrei(); tutZeigen(); closeAllPopups();
-    inboxAdd({ src: 'gift', title: 'Tutorial geschafft', gems: 10, crate: 0 });
-    flashHint('Geschafft! Unter „Events“ → Abholen wartet deine Belohnung. Viel Spaß!', 6000);
+    if (!tut.belohnt) { tut.belohnt = true; tutSpeichern(); inboxAdd({ src: 'gift', title: 'Tutorial geschafft', gems: 10, crate: 0 }); }   // (die Belohnung nur beim ersten Mal)
+    flashHint(tut.nochmal ? 'Tutorial geschafft. Viel Spaß!' : 'Geschafft! Unter „Events“ → Abholen wartet deine Belohnung. Viel Spaß!', 6000);
     setTimeout(maybeShowDaily, 1500);                            // jetzt erst die tägliche Belohnung
 }
 function tutZiel(z) {                                            // → { rect, weiter, warte }
     if (!z) return {};
     if (z === 'weiter') return { weiter: true };
+    if (z.weiter) return { weiter: true, satz: z.satz };
     if (z.warte) return { warte: z.warte };
     if (z.r) return { rect: { left: z.r.x, top: z.r.y, width: z.r.w, height: z.r.h } };
     const el = z.el || z; if (!(el instanceof Element) || !tutSicht(el)) return {};
@@ -175,10 +187,11 @@ function tutZiel(z) {                                            // → { rect, 
 function tutZeigen() {
     const el = $t('tut'); if (!el) return;
     tutFrei();
+    document.body.classList.toggle('tut-an', tutLaeuft() && !tutPause());   // (normale Hinweise oben ruhen solange: nie über Sprechblase oder „Überspringen“)
     if (!tutLaeuft()) { el.hidden = true; if (tutUhr) { clearInterval(tutUhr); tutUhr = setInterval(tutFrei, 5000); } return; }   // fertig: nur noch die Burg-Stufen freischalten
     if (tutPause()) { el.hidden = true; return; }
     const S = TUT[tut.s];
-    let weiter = false; try { weiter = !!(S.fertig ? S.fertig() : tutTat.ok); } catch (e) {}
+    let weiter = false; try { weiter = !!(tutTat.ok || (S.fertig && S.fertig())); } catch (e) {}
     if (weiter) { sfx('upgrade'); tutWeiter(); if (!tutLaeuft()) return; return tutZeigen(); }
     let z = {}; try { z = tutZiel(S.ziel()); } catch (e) {}
     el.hidden = false;
@@ -194,7 +207,7 @@ function tutZeigen() {
     if (!fi.hidden) { const cx = (loch.l + loch.r) / 2, unten = loch.b + 60 < H - 70; Object.assign(fi.style, { left: Math.round(cx - 27) + 'px', top: Math.round(unten ? loch.b - 14 : loch.t - 40) + 'px' }); fi.classList.toggle('oben', !unten); }
     const be = $t('tutBerater');
     be.classList.toggle('oben', !!r && (loch.t + loch.b) / 2 > H * .5);       // nie über dem Loch
-    setText($t('tutSatz'), tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.warte || S.satz);
+    setText($t('tutSatz'), tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.warte || z.satz || S.satz);
     $t('tutWeiter').hidden = tutFrage || !ok; $t('tutFrage').hidden = !tutFrage; $t('tutWeg').hidden = tutFrage;
 }
 function tutStarten() {
@@ -209,7 +222,15 @@ $t('tutJa').addEventListener('click', () => {
     tutFrage = false; tut.fertig = true; tut.alles = true; tutSpeichern(); tutZeigen();
     flashHint('Tutorial übersprungen – jetzt siehst du alles.', 3500); setTimeout(maybeShowDaily, 1500);
 });
+$t('tutNochmal').addEventListener('click', () => {               // Profil → Einstellungen: von vorn (ohne Geschenke und Belohnung; Gebautes zählt gleich als erledigt)
+    tut = { s: 0, frei: [], g: { b: 1, k: 1 }, t0: Date.now(), neu: true, belohnt: true, nochmal: true }; tutFreiAlt = null; tutFrage = false;
+    for (const k of Object.keys(tutTat)) delete tutTat[k];
+    if (tutUhr) { clearInterval(tutUhr); tutUhr = 0; }
+    closeAllPopups(); tutStarten();
+});
 // was die Schritte mitbekommen müssen: Angriff (mit Held?), geöffnete Kisten
+barbSend = (alt => function (who) { const r = alt.apply(this, arguments); if (r && who === 'player') tutTat.lager = true; return r; })(barbSend);   // (im Netz: der Befehl ans Lager)
+alsBefehl = (alt => function (art) { const r = alt.apply(this, arguments); if (r && art === 'lager') tutTat.lager = true; return r; })(alsBefehl);
 if (typeof questProgress === 'function') questProgress = (alt => function (t) { if (t === 'attack') { tutTat.angriff = true; if (nextAttackHero) tutTat.heldAngriff = true; } return alt.apply(this, arguments); })(questProgress);
 kisteOeffnen = (alt => function (id) { const r = alt.apply(this, arguments); if (($t('beuteFenster') || {}).hidden === false) tutTat['kiste_' + id] = true; return r; })(kisteOeffnen);
 if (tut) { tutFrei(); afterSplash(() => setTimeout(tutStarten, 600)); }

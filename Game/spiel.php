@@ -472,6 +472,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   background:linear-gradient(#e9c46d,#b8862c);color:#2a1a05;font:800 17px var(--font-display);white-space:nowrap;box-shadow:0 4px 18px #000c;pointer-events:none}
 .tut-banner[hidden]{display:none} .tut-banner.an{animation:tut-banner 2.6s ease forwards}
 @keyframes tut-banner{0%{opacity:0;transform:translateX(-50%) scale(.6)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%,80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0}}
+body.tut-an #hint{display:none!important}   /* im Tutorial ruhen die normalen Hinweise (10c2) */
 /* Was ein neuer Spieler noch nicht hat, ist ganz weg (10c2 tutFrei: body.tz-<teil>) */
 body.tz-stadt #cityNavBtn,body.tz-roh #hudRoh,body.tz-kampf #battleLogBtn,body.tz-events #goalsBtn,body.tz-truppen #hud .res--troop,body.tz-shop #shopBtn,
 body.tz-profil #profileBtn,body.tz-rucksack #rucksackBtn,body.tz-aufgaben #goalsGruppen [data-ggrp="aufgaben"],body.tz-karte :is(#markerBtn,#armyBtn),
@@ -2839,6 +2840,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       </form>
       <form action="index.php?aus=1" method="post" class="set-ab"><button class="btn btn--secondary btn--sm" type="submit">Abmelden</button></form>
       <div class="sect" id="setHilfe"><h4>Hilfe</h4></div>
+      <div class="set-knoepfe"><button id="tutNochmal" class="btn btn--secondary btn--sm" type="button">Tutorial noch mal</button></div>
       <details class="set-hilfe p5-hilfe">
         <summary>Wo finde ich was?</summary>
         <p><b>Stadt</b> → Burg (deine Hauptstadt-Stufe), Gebäude, Holz/Stein/Eisen, Forschung, Krankenhaus, Helden.</p>

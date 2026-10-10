@@ -69,6 +69,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const T = r.tore;
   ok(T.guardian && T.guardian[0] >= 3e4 && T.throne && T.throne[0] >= 150000 && T.throne[1] >= 50000 && T.border[0] >= 5000 && T.border[1] <= 20000, 'Tore: Wächter 30.000, Thron mind. 150.000 + 50.000, Grenze 5.000–20.000', T);
   ok(r.tempel.mega >= 5e5 && r.tempel.waechter >= 6e4 && r.tempel.normal[1] === 0, 'Tempel: Mega 500.000, Wächter 60.000 (Zonen wie RoK: nur Thron + die Tempel in Zone 4)', r.tempel);
-  ok(r.bot.k && r.bot.h > 30 && r.bot.start === '{"h":4500,"s":2500,"e":1500}', 'Mitspieler: gleiche Kosten, Ertrag, Start-Rohstoffe', r.bot);
+  ok(r.bot.k && r.bot.h > 30 && r.bot.start === '{"h":5000,"s":3000,"e":1800}', 'Mitspieler: gleiche Kosten, Ertrag, Start-Rohstoffe', r.bot);
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
 })();

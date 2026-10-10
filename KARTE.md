@@ -115,7 +115,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `attackFlatBonus` → Game/spiel/04-kampf-ankunft.js:252
 - `attackParts` → Game/spiel/01e-kampf-werte-nebel-hud.js:123
 - `attackSpeedMultiplier` → Game/spiel/02b-marsch-losschicken.js:14
-- `AUF.rohJeStunde` → Game/aufbau.js:518
+- `AUF.rohJeStunde` → Game/aufbau.js:519
 - `auffaelligSammeln` → Game/weltrechner/start.js:136
 - `aufgabe` → Game/buendnis/01-daten-regeln.js:252
 - `aufLand` → Game/spiel/01b-weltkarte.js:67
@@ -133,37 +133,40 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `balken` → Game/spiel/09c-events-woche.js:257
 - `bannerModel` → Game/spiel/03b-karte-basen-bilder.js:310
 - `bannerSprite` → Game/spiel/03c-karte-wappen-thronplatz.js:126
-- `barbAlong` → Game/spiel/09b-lager-tagesboss.js:210
-- `barbArrive` → Game/spiel/09b-lager-tagesboss.js:123
-- `barbAt` → Game/spiel/09b-lager-tagesboss.js:202
-- `barbAttackHtml` → Game/spiel/09b-lager-tagesboss.js:310
+- `barbAlong` → Game/spiel/09b-lager-tagesboss.js:225
+- `barbArrive` → Game/spiel/09b-lager-tagesboss.js:137
+- `barbAt` → Game/spiel/09b-lager-tagesboss.js:217
+- `barbAttackHtml` → Game/spiel/09b-lager-tagesboss.js:325
 - `barbCampById` → Game/spiel/09b-lager-tagesboss.js:23
-- `barbCrate` → Game/spiel/09b-lager-tagesboss.js:112
-- `barbFa` → Game/spiel/09b-lager-tagesboss.js:30
-- `barbFight` → Game/spiel/09b-lager-tagesboss.js:118
-- `barbHome` → Game/spiel/09b-lager-tagesboss.js:110
-- `barbK` → Game/spiel/09b-lager-tagesboss.js:201
+- `barbCrate` → Game/spiel/09b-lager-tagesboss.js:126
+- `barbFa` → Game/spiel/09b-lager-tagesboss.js:44
+- `barbFight` → Game/spiel/09b-lager-tagesboss.js:132
+- `barbFuerOk` → Game/spiel/09b-lager-tagesboss.js:32
+- `barbHome` → Game/spiel/09b-lager-tagesboss.js:124
+- `barbIch` → Game/spiel/09b-lager-tagesboss.js:31
+- `barbK` → Game/spiel/09b-lager-tagesboss.js:216
 - `barbLeft` → Game/spiel/09b-lager-tagesboss.js:27
 - `barbLoad` → Game/spiel/09b-lager-tagesboss.js:18
-- `barbMine` → Game/spiel/09b-lager-tagesboss.js:95
-- `barbNearest` → Game/spiel/09b-lager-tagesboss.js:355
+- `barbMine` → Game/spiel/09b-lager-tagesboss.js:109
+- `barbNearest` → Game/spiel/09b-lager-tagesboss.js:371
+- `barbNeulingLager` → Game/spiel/09b-lager-tagesboss.js:33
 - `barbOpenFor` → Game/spiel/09b-lager-tagesboss.js:28
 - `barbOut` → Game/spiel/09b-lager-tagesboss.js:25
-- `barbPt` → Game/spiel/09b-lager-tagesboss.js:29
+- `barbPt` → Game/spiel/09b-lager-tagesboss.js:43
 - `barbRec` → Game/spiel/09b-lager-tagesboss.js:24
-- `barbScreen` → Game/spiel/09b-lager-tagesboss.js:200
-- `barbSend` → Game/spiel/09b-lager-tagesboss.js:98
-- `barbShareNow` → Game/spiel/09b-lager-tagesboss.js:308
-- `barbShareOf` → Game/spiel/09b-lager-tagesboss.js:309
-- `barbShares` → Game/spiel/09b-lager-tagesboss.js:307
-- `barbSheetHtml` → Game/spiel/09b-lager-tagesboss.js:322
-- `barbSheetRefresh` → Game/spiel/09b-lager-tagesboss.js:362
-- `barbSource` → Game/spiel/09b-lager-tagesboss.js:301
-- `barbSpawn` → Game/spiel/09b-lager-tagesboss.js:45
-- `barbSpot` → Game/spiel/09b-lager-tagesboss.js:33
-- `barbStufeZone` → Game/spiel/09b-lager-tagesboss.js:32
+- `barbScreen` → Game/spiel/09b-lager-tagesboss.js:215
+- `barbSend` → Game/spiel/09b-lager-tagesboss.js:112
+- `barbShareNow` → Game/spiel/09b-lager-tagesboss.js:323
+- `barbShareOf` → Game/spiel/09b-lager-tagesboss.js:324
+- `barbShares` → Game/spiel/09b-lager-tagesboss.js:322
+- `barbSheetHtml` → Game/spiel/09b-lager-tagesboss.js:337
+- `barbSheetRefresh` → Game/spiel/09b-lager-tagesboss.js:378
+- `barbSource` → Game/spiel/09b-lager-tagesboss.js:316
+- `barbSpawn` → Game/spiel/09b-lager-tagesboss.js:59
+- `barbSpot` → Game/spiel/09b-lager-tagesboss.js:47
+- `barbStufeZone` → Game/spiel/09b-lager-tagesboss.js:46
 - `barbTagMax` → Game/spiel/09b-lager-tagesboss.js:26
-- `barbTick` → Game/spiel/09b-lager-tagesboss.js:186
+- `barbTick` → Game/spiel/09b-lager-tagesboss.js:200
 - `barbTier` → Game/spiel/09b-lager-tagesboss.js:6
 - `barbTroopsOf` → Game/spiel/09b-lager-tagesboss.js:5
 - `baseDefenseForLevel` → Game/spiel/01b-weltkarte.js:94
@@ -178,10 +181,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `basisBreite` → Game/spiel/03b-karte-basen-bilder.js:93
 - `basisKreis` → Game/spiel/03b-karte-basen-bilder.js:98
 - `basisMip` → Game/spiel/03b-karte-basen-bilder.js:75
-- `basisRoh` → Game/aufbau.js:53
+- `basisRoh` → Game/aufbau.js:54
 - `basisSchilde` → Game/spiel/03b-karte-basen-bilder.js:173
 - `bausch` → Game/ladebildschirm.js:120
-- `bauStufe` → Game/aufbau.js:244
+- `bauStufe` → Game/aufbau.js:245
 - `befehl_ablegen` → Game/server/05-datenbank-welt.php:227
 - `befehl_ok` → Game/server/02-sicherheit-datenlecks.php:121
 - `befehlBezahlt` → Game/spiel/10d2-welt-schummelschutz.js:393
@@ -278,7 +281,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botBestRarity` → Game/bots/04-stand-stadt.js:219
 - `botBld` → Game/bots/04-stand-stadt.js:76
 - `botBountyReward` → Game/bots/06-aussehen-felder-barbaren.js:55
-- `botBurgWert` → Game/aufbau.js:468
+- `botBurgWert` → Game/aufbau.js:469
 - `botById` → Game/welt.js:372
 - `botCanCross` → Game/bots/01-spieler.js:116
 - `botCapitalMoveOk` → Game/bots/05-verteidigen-takt.js:165
@@ -297,7 +300,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botDefend` → Game/bots/05-verteidigen-takt.js:34
 - `botDropShield` → Game/bots/06-aussehen-felder-barbaren.js:60
 - `botFails` → Game/bots/02-kampf-karte.js:280
-- `botForschung` → Game/aufbau.js:446
+- `botForschung` → Game/aufbau.js:447
 - `botFreeSlots` → Game/bots/03-angreifen.js:35
 - `botFrei` → Game/bots/02-kampf-karte.js:329
 - `botGather` → Game/bots/04-stand-stadt.js:324
@@ -331,7 +334,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botLoyal` → Game/bots/02-kampf-karte.js:382
 - `botMarchMult` → Game/bots/04-stand-stadt.js:217
 - `botMarginFor` → Game/bots/02-kampf-karte.js:412
-- `botMarkt` → Game/aufbau.js:459
+- `botMarkt` → Game/aufbau.js:460
 - `botMidPull` → Game/bots/02-kampf-karte.js:292
 - `botMigrateV2` → Game/bots/04-stand-stadt.js:34
 - `botMood` → Game/bots/03-angreifen.js:14
@@ -355,13 +358,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botRespawn` → Game/bots/05-verteidigen-takt.js:316
 - `botRespects` → Game/bots/02-kampf-karte.js:384
 - `botRevengeLaunched` → Game/bots/02-kampf-karte.js:244
-- `botRohWunsch` → Game/aufbau.js:474
+- `botRohWunsch` → Game/aufbau.js:475
 - `botRulerTitles` → Game/bots/05-verteidigen-takt.js:294
 - `botSampleSources` → Game/bots/04-stand-stadt.js:363
 - `botSchaetzAngriff` → Game/bots/05-verteidigen-takt.js:27
 - `botSchaetzArmee` → Game/bots/05-verteidigen-takt.js:32
-- `botschaftGeschenk` → Game/aufbau.js:246
-- `botschaftTempo` → Game/aufbau.js:245
+- `botschaftGeschenk` → Game/aufbau.js:247
+- `botschaftTempo` → Game/aufbau.js:246
 - `botScouting` → Game/bots/02-kampf-karte.js:432
 - `botScoutLos` → Game/bots/03-angreifen.js:67
 - `botScoutsArrive` → Game/bots/03-angreifen.js:74
@@ -376,7 +379,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `botSpart` → Game/bots/04-stand-stadt.js:89
 - `botSparZiel` → Game/bots/04-stand-stadt.js:91
 - `botSpendSkills` → Game/bots/04-stand-stadt.js:57
-- `botStadtFix` → Game/aufbau.js:438
+- `botStadtFix` → Game/aufbau.js:439
 - `botStat` → Game/bots/06-aussehen-felder-barbaren.js:52
 - `botStrategic` → Game/bots/02-kampf-karte.js:311
 - `botStyle` → Game/bots/03-angreifen.js:18
@@ -537,17 +540,17 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bundZielVon` → Game/buendnis/03-mitspieler.js:15
 - `burg` → Game/ladebildschirm.js:55
 - `burgBasis` → Game/spiel/08a-stadt-bauen.js:88
-- `burgFair` → Game/aufbau.js:176
+- `burgFair` → Game/aufbau.js:177
 - `burgFairWer` → Game/spiel/09f-saison.js:168
-- `burgKarte` → Game/aufbau.js:486
+- `burgKarte` → Game/aufbau.js:487
 - `burgKartenStufe` → Game/spiel/08a-stadt-bauen.js:91
-- `burgKosten` → Game/aufbau.js:97
+- `burgKosten` → Game/aufbau.js:98
 - `burgKostenAlt` → Game/spiel/10d3-welt-hauptbuch.js:26
 - `burgMuenzStd` → Game/spiel/08a-stadt-bauen.js:90
-- `burgSchutz` → Game/aufbau.js:106
-- `burgSchutzRoh` → Game/aufbau.js:107
-- `burgSchutzStufe` → Game/aufbau.js:105
-- `burgStufe` → Game/aufbau.js:93
+- `burgSchutz` → Game/aufbau.js:107
+- `burgSchutzRoh` → Game/aufbau.js:108
+- `burgSchutzStufe` → Game/aufbau.js:106
+- `burgStufe` → Game/aufbau.js:94
 - `burgZeitAlt` → Game/spiel/10d3-welt-hauptbuch.js:25
 - `burgZeitTab` → Game/spiel/08a-stadt-bauen.js:81
 - `bwWerte` → Game/spiel/10a-fenster-insel-vorschau.js:104
@@ -635,7 +638,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `clock` → Game/spiel/06c-thron-mitte.js:152
 - `closeAllPopups` → Game/spiel/09e-fenster-insel.js:74
 - `closeArmySheet` → Game/spiel/09d-karte-armeen-wegmarken.js:209
-- `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:361
+- `closeBarbSheet` → Game/spiel/09b-lager-tagesboss.js:377
 - `closeCity` → Game/spiel/08a-stadt-bauen.js:235
 - `closeDailyModal` → Game/spiel/06a-aufgaben.js:74
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:362
@@ -674,13 +677,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `dailyGoalCount` → Game/spiel/06a-aufgaben.js:217
 - `dailyNextDay` → Game/spiel/06a-aufgaben.js:30
 - `dailyRewardLabel` → Game/spiel/06a-aufgaben.js:35
-- `dbossEnsure` → Game/spiel/09b-lager-tagesboss.js:54
-- `dbossHit` → Game/spiel/09b-lager-tagesboss.js:151
-- `dbossKind` → Game/spiel/09b-lager-tagesboss.js:96
-- `dbossOnMap` → Game/spiel/09b-lager-tagesboss.js:73
-- `dbossPayout` → Game/spiel/09b-lager-tagesboss.js:175
-- `dbossRanks` → Game/spiel/09b-lager-tagesboss.js:97
-- `dbossSprite` → Game/spiel/09b-lager-tagesboss.js:215
+- `dbossEnsure` → Game/spiel/09b-lager-tagesboss.js:68
+- `dbossHit` → Game/spiel/09b-lager-tagesboss.js:165
+- `dbossKind` → Game/spiel/09b-lager-tagesboss.js:110
+- `dbossOnMap` → Game/spiel/09b-lager-tagesboss.js:87
+- `dbossPayout` → Game/spiel/09b-lager-tagesboss.js:189
+- `dbossRanks` → Game/spiel/09b-lager-tagesboss.js:111
+- `dbossSprite` → Game/spiel/09b-lager-tagesboss.js:230
 - `decayed` → Game/bots/02-kampf-karte.js:259
 - `defeatBoss` → Game/spiel/07b-kriegsherr.js:16
 - `defenseForLevel` → Game/spiel/01b-weltkarte.js:98
@@ -696,7 +699,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `drawArmies` → Game/spiel/09d-karte-armeen-wegmarken.js:165
 - `drawArmyCamps` → Game/spiel/09d-karte-armeen-wegmarken.js:176
 - `drawBackground` → Game/spiel/03a-karte-hintergrund.js:491
-- `drawBarb` → Game/spiel/09b-lager-tagesboss.js:245
+- `drawBarb` → Game/spiel/09b-lager-tagesboss.js:260
 - `drawBaseAuras` → Game/spiel/03c-karte-wappen-thronplatz.js:308
 - `drawBaseSparks` → Game/spiel/03c-karte-wappen-thronplatz.js:330
 - `drawBasisBild` → Game/spiel/03b-karte-basen-bilder.js:106
@@ -749,8 +752,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `edgeDist` → Game/spiel/03a-karte-hintergrund.js:244
 - `effectiveDefense` → Game/spiel/01e-kampf-werte-nebel-hud.js:67
 - `effectiveTroops` → Game/spiel/01e-kampf-werte-nebel-hud.js:59
-- `effektText` → Game/aufbau.js:334
-- `eigeneFeldBarb` → Game/spiel/09b-lager-tagesboss.js:77
+- `effektText` → Game/aufbau.js:335
+- `eigeneFeldBarb` → Game/spiel/09b-lager-tagesboss.js:91
 - `eigeneTruppen` → Game/buendnis/01-daten-regeln.js:459
 - `eigeneTruppenDazu` → Game/spiel/01a-grundlagen.js:25
 - `einschalten` → Game/benachrichtigung.js:81
@@ -766,7 +769,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ereignis_ablegen` → Game/server/05-datenbank-welt.php:260
 - `ereignisse_abholen` → Game/server/05-datenbank-welt.php:261
 - `ereignisse_verbucht` → Game/server/05-datenbank-welt.php:269
-- `ertrag` → Game/aufbau.js:236
+- `ertrag` → Game/aufbau.js:237
 - `escapeHtml` → Game/spiel/05c-profil-erfolge-rangliste.js:263
 - `EV_EM_WOCHE` → Game/spiel/06g-shop-gegenstaende.js:96
 - `EV_SZENE.rally` → Game/spiel/09c-events-woche.js:147
@@ -807,7 +810,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evWocheEnde` → Game/spiel/06g-shop-gegenstaende.js:92
 - `exploreOwned` → Game/spiel/01e-kampf-werte-nebel-hud.js:58
 - `extraBild` → Game/spiel/03b-karte-basen-bilder.js:62
-- `extraHtml` → Game/aufbau.js:374
+- `extraHtml` → Game/aufbau.js:375
 - `extraK` → Game/spiel/05d-marsch-liste-kampfbericht.js:220
 - `fade` → Game/spiel/10c-start-einstellungen.js:121
 - `fArt` → Game/spiel/09a-funde-felder.js:158
@@ -815,8 +818,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fehler` → Game/weltrechner/start.js:160
 - `fehlgeschlagen` → Game/speichern.js:141
 - `feld` → Game/buendnis/04-fenster-karte-welt.js:150
-- `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:78
-- `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:79
+- `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:92
+- `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:93
 - `feldBericht` → Game/spiel/09a-funde-felder.js:253
 - `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:220
 - `feldKampfBild` → Game/spiel/03f-marsch-bilder.js:536
@@ -889,14 +892,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fmtPassWait` → Game/spiel/01b-weltkarte.js:311
 - `fmtStunde` → Game/spiel/01e-kampf-werte-nebel-hud.js:230
 - `fo` → Game/spiel/10c-start-einstellungen.js:57
-- `foAkaFuer` → Game/aufbau.js:171
-- `foBaum` → Game/aufbau.js:349
-- `foBedingt` → Game/aufbau.js:348
-- `foDetail` → Game/aufbau.js:357
-- `foFertig` → Game/aufbau.js:217
+- `foAkaFuer` → Game/aufbau.js:172
+- `foBaum` → Game/aufbau.js:350
+- `foBedingt` → Game/aufbau.js:349
+- `foDetail` → Game/aufbau.js:358
+- `foFertig` → Game/aufbau.js:218
 - `fogBlob` → Game/spiel/06e-karte-nebel-paesse.js:48
-- `foGems` → Game/aufbau.js:227
-- `foGesamt` → Game/aufbau.js:191
+- `foGems` → Game/aufbau.js:228
+- `foGesamt` → Game/aufbau.js:192
 - `foGesamtZiel` → Game/spiel/05c-profil-erfolge-rangliste.js:35
 - `fogKey` → Game/spiel/01e-kampf-werte-nebel-hud.js:7
 - `fogLandCells` → Game/spiel/01e-kampf-werte-nebel-hud.js:8
@@ -905,17 +908,17 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `fogPromptHit` → Game/spiel/10b-fenster-insel-knoepfe.js:243
 - `fogSet` → Game/spiel/01e-kampf-werte-nebel-hud.js:22
 - `fogTexture` → Game/spiel/06e-karte-nebel-paesse.js:28
-- `foKosten` → Game/aufbau.js:192
+- `foKosten` → Game/aufbau.js:193
 - `FONT` → Game/spiel/03c-karte-wappen-thronplatz.js:59
 - `foPunkte` → Game/spiel/05c-profil-erfolge-rangliste.js:276
 - `forgeLevel` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:4
-- `foSperre` → Game/aufbau.js:198
-- `foStart` → Game/aufbau.js:208
-- `foStufe` → Game/aufbau.js:188
-- `foSumme` → Game/aufbau.js:190
-- `foWert` → Game/aufbau.js:189
-- `foZeit` → Game/aufbau.js:197
-- `foZeitRoh` → Game/aufbau.js:196
+- `foSperre` → Game/aufbau.js:199
+- `foStart` → Game/aufbau.js:209
+- `foStufe` → Game/aufbau.js:189
+- `foSumme` → Game/aufbau.js:191
+- `foWert` → Game/aufbau.js:190
+- `foZeit` → Game/aufbau.js:198
+- `foZeitRoh` → Game/aufbau.js:197
 - `frame` → Game/spiel/03e-karte-kamera-eingabe.js:382
 - `frameIslandInView` → Game/spiel/03e-karte-kamera-eingabe.js:480
 - `free` → Game/spiel/01c-basen-spielstand.js:46
@@ -924,7 +927,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `frei` → Game/spiel/03f-marsch-bilder.js:561
 - `frei` → Game/spiel/06g-shop-gegenstaende.js:28
 - `freierStartplatz` → Game/spiel/01c-basen-spielstand.js:160
-- `freiText` → Game/aufbau.js:303
+- `freiText` → Game/aufbau.js:304
 - `fremd_kuerzen` → Game/server/02-sicherheit-datenlecks.php:157
 - `fremd_wert` → Game/server/02-sicherheit-datenlecks.php:152
 - `fremdGeheim` → Game/spiel/01a-grundlagen.js:16
@@ -958,7 +961,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gegenstProfil` → Game/welt.js:213
 - `gegenstSpeichern` → Game/spiel/05e-belohnung.js:30
 - `gehoert` → Game/spiel/10d1-welt-verbindung.js:95
-- `geldVon` → Game/aufbau.js:67
+- `geldVon` → Game/aufbau.js:68
 - `gemKnopf` → Game/spiel/06g-shop-gegenstaende.js:63
 - `gemsArmAus` → Game/spiel/05b-profil-truhe-skills.js:302
 - `gemsArmed` → Game/spiel/05b-profil-truhe-skills.js:301
@@ -1000,7 +1003,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `grow` → Game/spiel/03a-karte-hintergrund.js:329
 - `grow` → Game/spiel/03a-karte-hintergrund.js:339
 - `gruppeBezahlt` → Game/spiel/10d5-welt-befehle.js:21
-- `gruppeLaeuft` → Game/aufbau.js:134
+- `gruppeLaeuft` → Game/aufbau.js:135
 - `h` → Game/admin.php:161
 - `h` → Game/index.php:54
 - `haendler_ware_ok` → Game/server/03-nebel-maersche-seite.php:110
@@ -1017,9 +1020,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hauptPuls` → Game/spiel/03b-karte-basen-bilder.js:229
 - `hauptPulsWeiter` → Game/spiel/03b-karte-basen-bilder.js:231
 - `hauptRingBild` → Game/spiel/03b-karte-basen-bilder.js:228
-- `hauptstadtStufen` → Game/aufbau.js:489
-- `hauptVon` → Game/aufbau.js:487
-- `hauptVor` → Game/aufbau.js:488
+- `hauptstadtStufen` → Game/aufbau.js:490
+- `hauptVon` → Game/aufbau.js:488
+- `hauptVor` → Game/aufbau.js:489
 - `HB_ACH` → Game/spiel/10d3-welt-hauptbuch.js:45
 - `hbAusProfil` → Game/spiel/10d3-welt-hauptbuch.js:417
 - `hbBauten` → Game/spiel/10d3-welt-hauptbuch.js:42
@@ -1187,7 +1190,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hospitalPlatz` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:7
 - `hospitalTake` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:10
 - `hourProduction` → Game/spiel/06c-thron-mitte.js:44
-- `hudRoh` → Game/aufbau.js:283
+- `hudRoh` → Game/aufbau.js:284
 - `icon` → Game/spiel/01a-grundlagen.js:119
 - `img.onload` → Game/ladebildschirm.js:295
 - `impulse` → Game/spiel/10c-start-einstellungen.js:18
@@ -1225,7 +1228,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `json_antwort` → Game/server/03-nebel-maersche-seite.php:136
 - `jwtFuer` → Game/weltrechner/push.js:188
 - `kacheln` → Game/spiel/05d-marsch-liste-kampfbericht.js:219
-- `kampf` → Game/aufbau.js:232
+- `kampf` → Game/aufbau.js:233
 - `kampfAnteile` → Game/buendnis/02-rally-geschenke.js:194
 - `kampfAufraeumen` → Game/spiel/04-kampf-ankunft.js:223
 - `kampfBerichtHtml` → Game/spiel/05d-marsch-liste-kampfbericht.js:172
@@ -1235,7 +1238,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kampfHeimTeile` → Game/bots/02-kampf-karte.js:16
 - `kampfKey` → Game/spiel/07a-kampf-schlachten.js:39
 - `kampfTeile` → Game/buendnis/02-rally-geschenke.js:184
-- `kannZahlen` → Game/aufbau.js:68
+- `kannZahlen` → Game/aufbau.js:69
 - `karte` → Game/spiel/05d-marsch-liste-kampfbericht.js:179
 - `karte` → Game/spiel/05d-marsch-liste-kampfbericht.js:303
 - `karte` → Game/spiel/08c-helden-fenster.js:208
@@ -1260,20 +1263,20 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `kisteVonR` → Game/spiel/05e-belohnung.js:49
 - `klippe` → Game/ladebildschirm.js:51
 - `knopf` → Game/buendnis/04-fenster-karte-welt.js:92
-- `knoten` → Game/aufbau.js:352
+- `knoten` → Game/aufbau.js:353
 - `konten_gueltig` → Game/server/07-welt-puls.php:23
 - `konten_zurueck` → Game/server/05-datenbank-welt.php:185
 - `konto` → Game/spiel/10d2-welt-schummelschutz.js:27
 - `kontoProfil` → Game/spiel/10d2-welt-schummelschutz.js:152
 - `kopfBild` → Game/spiel/05d-marsch-liste-kampfbericht.js:178
-- `kostenHtml` → Game/aufbau.js:76
+- `kostenHtml` → Game/aufbau.js:77
 - `kraft` → Game/buendnis/03-mitspieler.js:408
 - `kraft` → Game/spiel/05d-marsch-liste-kampfbericht.js:189
 - `kWert` → Game/spiel/10d3-welt-hauptbuch.js:64
 - `lage` → Game/ladebildschirm.js:20
 - `lager` → Game/server/01-grundlagen-login.php:43
 - `lagerBeute` → Game/spiel/09b-lager-tagesboss.js:12
-- `lagerBeuteText` → Game/spiel/09b-lager-tagesboss.js:318
+- `lagerBeuteText` → Game/spiel/09b-lager-tagesboss.js:333
 - `lagerMuenzen` → Game/spiel/09b-lager-tagesboss.js:11
 - `LAND_BOX` → Game/spiel/03e-karte-kamera-eingabe.js:62
 - `landmassAtWorld` → Game/spiel/09d-karte-armeen-wegmarken.js:12
@@ -1285,7 +1288,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `launchScout` → Game/spiel/02c-marsch-spaeher-ankunft.js:19
 - `launchSend` → Game/spiel/02b-marsch-losschicken.js:173
 - `layoutBanners` → Game/spiel/03c-karte-wappen-thronplatz.js:150
-- `lazarettPlus` → Game/aufbau.js:241
+- `lazarettPlus` → Game/aufbau.js:242
 - `leaveAtBoot` → Game/spiel/06d-schild-produktion.js:288
 - `leer.clear` → Game/speichern.js:56
 - `leer.getItem` → Game/speichern.js:53
@@ -1354,24 +1357,24 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `marchTapAt` → Game/spiel/03f-marsch-bilder.js:359
 - `markerAt` → Game/spiel/09d-karte-armeen-wegmarken.js:303
 - `markers` → Game/spiel/09d-karte-armeen-wegmarken.js:300
-- `marktGebuehr` → Game/aufbau.js:254
-- `marktHeute` → Game/aufbau.js:260
-- `marktHtml` → Game/aufbau.js:386
-- `marktLimit` → Game/aufbau.js:255
-- `marktTausch` → Game/aufbau.js:261
+- `marktGebuehr` → Game/aufbau.js:255
+- `marktHeute` → Game/aufbau.js:261
+- `marktHtml` → Game/aufbau.js:387
+- `marktLimit` → Game/aufbau.js:256
+- `marktTausch` → Game/aufbau.js:262
 - `marsch_fehlt` → Game/server/03-nebel-maersche-seite.php:78
 - `marsch_teil` → Game/server/03-nebel-maersche-seite.php:36
 - `marsch_welt` → Game/server/03-nebel-maersche-seite.php:82
-- `marschBelegt` → Game/aufbau.js:123
-- `marschFrei` → Game/aufbau.js:143
-- `marschGrenze` → Game/aufbau.js:120
-- `marschOk` → Game/aufbau.js:144
+- `marschBelegt` → Game/aufbau.js:124
+- `marschFrei` → Game/aufbau.js:144
+- `marschGrenze` → Game/aufbau.js:121
+- `marschOk` → Game/aufbau.js:145
 - `marschPlatz` → Game/spiel/02b-marsch-losschicken.js:94
 - `marschStrecke` → Game/spiel/02b-marsch-losschicken.js:18
-- `marschTempo` → Game/aufbau.js:239
+- `marschTempo` → Game/aufbau.js:240
 - `marschUhr` → Game/spiel/01a-grundlagen.js:145
-- `marschUmkehren` → Game/spiel/09b-lager-tagesboss.js:80
-- `marschVoll` → Game/aufbau.js:145
+- `marschUmkehren` → Game/spiel/09b-lager-tagesboss.js:94
+- `marschVoll` → Game/aufbau.js:146
 - `marschVon` → Game/spiel/10d1-welt-verbindung.js:100
 - `mautJeTruppe` → Game/spiel/01b-weltkarte.js:280
 - `mautVorab` → Game/spiel/01b-weltkarte.js:304
@@ -1507,7 +1510,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `nebelRunde` → Game/spiel/10d4-welt-nebel-server.js:39
 - `nebelVomServer` → Game/spiel/01e-kampf-werte-nebel-hud.js:37
 - `nebelWeit` → Game/spiel/06e-karte-nebel-paesse.js:84
-- `nebelWeite` → Game/aufbau.js:242
+- `nebelWeite` → Game/aufbau.js:243
 - `nebelWelt` → Game/spiel/06e-karte-nebel-paesse.js:94
 - `neu` → Game/ladebildschirm.js:233
 - `neu` → Game/spiel/03a-karte-hintergrund.js:150
@@ -1534,7 +1537,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `onPointerEnd` → Game/spiel/03e-karte-kamera-eingabe.js:319
 - `onViewportResize` → Game/spiel/03e-karte-kamera-eingabe.js:409
 - `openArmySheet` → Game/spiel/09d-karte-armeen-wegmarken.js:208
-- `openBarbSheet` → Game/spiel/09b-lager-tagesboss.js:360
+- `openBarbSheet` → Game/spiel/09b-lager-tagesboss.js:376
 - `openChestItemPopup` → Game/spiel/05b-profil-truhe-skills.js:182
 - `openCity` → Game/spiel/08a-stadt-bauen.js:217
 - `openFieldSheet` → Game/spiel/09a-funde-felder.js:334
@@ -1749,7 +1752,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderHeroHall` → Game/spiel/08c-helden-fenster.js:272
 - `renderHerr` → Game/spiel/06c-thron-mitte.js:241
 - `renderInbox` → Game/spiel/06a-aufgaben.js:255
-- `renderKeep` → Game/aufbau.js:309
+- `renderKeep` → Game/aufbau.js:310
 - `renderKeepSheet` → Game/spiel/08b-stadt-burg-aussehen.js:4
 - `renderKistenChancen` → Game/spiel/06d-schild-produktion.js:128
 - `renderKistenReiter` → Game/spiel/06g-shop-gegenstaende.js:67
@@ -1797,22 +1800,22 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rkSachen` → Game/spiel/06d-schild-produktion.js:86
 - `rnd` → Game/spiel/07a-kampf-schlachten.js:157
 - `rng` → Game/ladebildschirm.js:7
-- `roh` → Game/aufbau.js:20
-- `rohBuchen` → Game/aufbau.js:58
-- `rohDazu` → Game/aufbau.js:35
-- `rohDropMalen` → Game/aufbau.js:290
-- `rohGebStunde` → Game/aufbau.js:45
-- `rohLeer` → Game/aufbau.js:18
-- `rohRegion` → Game/aufbau.js:24
-- `rohSauber` → Game/aufbau.js:19
-- `rohSpeichern` → Game/aufbau.js:21
-- `rohStd` → Game/aufbau.js:109
-- `rohStunde` → Game/aufbau.js:46
-- `rohUmschalten` → Game/aufbau.js:296
-- `rohVon` → Game/aufbau.js:29
+- `roh` → Game/aufbau.js:21
+- `rohBuchen` → Game/aufbau.js:59
+- `rohDazu` → Game/aufbau.js:36
+- `rohDropMalen` → Game/aufbau.js:291
+- `rohGebStunde` → Game/aufbau.js:46
+- `rohLeer` → Game/aufbau.js:19
+- `rohRegion` → Game/aufbau.js:25
+- `rohSauber` → Game/aufbau.js:20
+- `rohSpeichern` → Game/aufbau.js:22
+- `rohStd` → Game/aufbau.js:110
+- `rohStunde` → Game/aufbau.js:47
+- `rohUmschalten` → Game/aufbau.js:297
+- `rohVon` → Game/aufbau.js:30
 - `rohWacheProfil` → Game/spiel/10d2-welt-schummelschutz.js:169
 - `routeFor` → Game/spiel/01b-weltkarte.js:216
-- `row` → Game/spiel/09b-lager-tagesboss.js:341
+- `row` → Game/spiel/09b-lager-tagesboss.js:357
 - `row` → Game/spiel/09c-events-woche.js:134
 - `rr` → Game/spiel/03a-karte-hintergrund.js:610
 - `rueckzuegeZuClient` → Game/welt.js:202
@@ -1850,7 +1853,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `salvageItem` → Game/spiel/02a-shop-stufen.js:132
 - `salvageItems` → Game/spiel/02a-shop-stufen.js:145
 - `salvagePoints` → Game/spiel/02a-shop-stufen.js:33
-- `sammelTempo` → Game/aufbau.js:237
+- `sammelTempo` → Game/aufbau.js:238
 - `sauber` → Game/server/02-sicherheit-datenlecks.php:29
 - `sauber_json` → Game/server/02-sicherheit-datenlecks.php:35
 - `saveArmies` → Game/spiel/09d-karte-armeen-wegmarken.js:9
@@ -1883,7 +1886,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `schnellerDrueber` → Game/spiel/02b-marsch-losschicken.js:269
 - `schnellerMerken` → Game/spiel/02b-marsch-losschicken.js:268
 - `schonBezahlt` → Game/spiel/10d2-welt-schummelschutz.js:391
-- `schutzText` → Game/aufbau.js:108
+- `schutzText` → Game/aufbau.js:109
 - `schutzVon` → Game/spiel/08a-stadt-bauen.js:31
 - `scoutNote` → Game/bots/03-angreifen.js:103
 - `scoutNotesFlush` → Game/bots/03-angreifen.js:108
@@ -1958,9 +1961,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spaeherBlick` → Game/spiel/02c-marsch-spaeher-ankunft.js:53
 - `spaeherBlickHtml` → Game/spiel/02c-marsch-spaeher-ankunft.js:125
 - `spaeherHeim` → Game/spiel/02c-marsch-spaeher-ankunft.js:145
-- `spaeherMehr` → Game/aufbau.js:420
+- `spaeherMehr` → Game/aufbau.js:421
 - `spaeherSchnell` → Game/spiel/02b-marsch-losschicken.js:322
-- `spaeherTempo` → Game/aufbau.js:240
+- `spaeherTempo` → Game/aufbau.js:241
 - `spaeherVon` → Game/spiel/10d1-welt-verbindung.js:103
 - `spaeherWeg` → Game/spiel/01b-weltkarte.js:256
 - `spaehGeaendert` → Game/spiel/02c-marsch-spaeher-ankunft.js:93
@@ -1983,7 +1986,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `speedUpMarch` → Game/spiel/02b-marsch-losschicken.js:298
 - `speichern_anfrage` → Game/server/06-speichern-push-konto.php:6
 - `spieler_liste` → Game/server/05-datenbank-welt.php:324
-- `spielerTakt` → Game/aufbau.js:277
+- `spielerTakt` → Game/aufbau.js:278
 - `spielraumFrei` → Game/spiel/10d2-welt-schummelschutz.js:95
 - `spielraumNehmen` → Game/spiel/10d2-welt-schummelschutz.js:73
 - `spielraumTag` → Game/spiel/10d2-welt-schummelschutz.js:72
@@ -1992,13 +1995,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `spielVersion` → Game/spiel/10c-start-einstellungen.js:156
 - `splashDone` → Game/spiel/06d-schild-produktion.js:401
 - `stadtBlende` → Game/spiel/08a-stadt-bauen.js:212
-- `stadtCap` → Game/aufbau.js:117
-- `stadtCapB` → Game/aufbau.js:116
+- `stadtCap` → Game/aufbau.js:118
+- `stadtCapB` → Game/aufbau.js:117
 - `stadtFaktor` → Game/spiel/08a-stadt-bauen.js:92
 - `stadtKopf` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:127
-- `stadtKosten` → Game/aufbau.js:111
+- `stadtKosten` → Game/aufbau.js:112
 - `stadtLeiste` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:121
-- `stadtVon` → Game/aufbau.js:89
+- `stadtVon` → Game/aufbau.js:90
 - `staerke` → Game/spiel/06d-schild-produktion.js:21
 - `starGemCost` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:16
 - `starRefund` → Game/spiel/02a-shop-stufen.js:131
@@ -2031,12 +2034,12 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:240
-- `teil` → Game/spiel/10c2-tutorial.js:188
+- `teil` → Game/spiel/10c2-tutorial.js:201
 - `teleImRucksack` → Game/spiel/06d-schild-produktion.js:80
 - `teleportFx` → Game/spiel/08d2-stadt-teleport.js:97
 - `teleportOrt` → Game/spiel/08d2-stadt-teleport.js:72
 - `teleVorrat` → Game/spiel/06d-schild-produktion.js:79
-- `tempelPlus` → Game/aufbau.js:243
+- `tempelPlus` → Game/aufbau.js:244
 - `templeBaseMult` → Game/spiel/01b-weltkarte.js:48
 - `templeBonusLine` → Game/spiel/10a-fenster-insel-vorschau.js:75
 - `templeHoldMultiplier` → Game/spiel/01c-basen-spielstand.js:269
@@ -2098,7 +2101,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tpPruefen` → Game/spiel/08d2-stadt-teleport.js:49
 - `tpSaeuleBild` → Game/spiel/08d2-stadt-teleport.js:89
 - `tpVerlegen` → Game/spiel/08d2-stadt-teleport.js:67
-- `traglast` → Game/aufbau.js:238
+- `traglast` → Game/aufbau.js:239
 - `travelDurationSeconds` → Game/spiel/02b-marsch-losschicken.js:23
 - `troopProductionMultiplier` → Game/spiel/04-kampf-ankunft.js:236
 - `troopsPerTick` → Game/spiel/01b-weltkarte.js:106
@@ -2116,30 +2119,31 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `turm` → Game/spiel/01c-basen-spielstand.js:167
 - `turm` → Game/spiel/09f-saison.js:133
 - `tut` → Game/spiel/10c2-tutorial.js:16
-- `tutAngriff` → Game/spiel/10c2-tutorial.js:66
-- `tutBanner` → Game/spiel/10c2-tutorial.js:135
+- `tutAngriff` → Game/spiel/10c2-tutorial.js:68
+- `tutBanner` → Game/spiel/10c2-tutorial.js:146
 - `tutBau` → Game/spiel/10c2-tutorial.js:41
 - `tutBaut` → Game/spiel/10c2-tutorial.js:25
 - `tutBesch` → Game/spiel/10c2-tutorial.js:45
-- `tutBurgFrei` → Game/spiel/10c2-tutorial.js:126
-- `tutEnde` → Game/spiel/10c2-tutorial.js:157
-- `tutFenster` → Game/spiel/10c2-tutorial.js:77
-- `tutFrei` → Game/spiel/10c2-tutorial.js:128
+- `tutBurgFrei` → Game/spiel/10c2-tutorial.js:137
+- `tutEnde` → Game/spiel/10c2-tutorial.js:168
+- `tutFenster` → Game/spiel/10c2-tutorial.js:87
+- `tutFrei` → Game/spiel/10c2-tutorial.js:139
 - `tutGeb` → Game/spiel/10c2-tutorial.js:28
-- `tutGeschenk` → Game/spiel/10c2-tutorial.js:119
+- `tutGeschenk` → Game/spiel/10c2-tutorial.js:130
 - `tutInsel` → Game/spiel/10c2-tutorial.js:52
 - `tutLaeuft` → Game/spiel/10c2-tutorial.js:19
-- `tutNeutral` → Game/spiel/10c2-tutorial.js:61
-- `tutPause` → Game/spiel/10c2-tutorial.js:144
+- `tutLager` → Game/spiel/10c2-tutorial.js:79
+- `tutNeutral` → Game/spiel/10c2-tutorial.js:63
+- `tutPause` → Game/spiel/10c2-tutorial.js:155
 - `tutSicht` → Game/spiel/10c2-tutorial.js:23
 - `tutSpeichern` → Game/spiel/10c2-tutorial.js:20
-- `tutStart` → Game/spiel/10c2-tutorial.js:151
-- `tutStarten` → Game/spiel/10c2-tutorial.js:200
+- `tutStart` → Game/spiel/10c2-tutorial.js:162
+- `tutStarten` → Game/spiel/10c2-tutorial.js:213
 - `tutStufe` → Game/spiel/10c2-tutorial.js:24
-- `tutWeiter` → Game/spiel/10c2-tutorial.js:146
-- `tutZeigen` → Game/spiel/10c2-tutorial.js:175
-- `tutZiel` → Game/spiel/10c2-tutorial.js:164
-- `tutZurKarte` → Game/spiel/10c2-tutorial.js:60
+- `tutWeiter` → Game/spiel/10c2-tutorial.js:157
+- `tutZeigen` → Game/spiel/10c2-tutorial.js:187
+- `tutZiel` → Game/spiel/10c2-tutorial.js:175
+- `tutZurKarte` → Game/spiel/10c2-tutorial.js:62
 - `u` → Game/ladebildschirm.js:47
 - `uebersicht` → Game/server/05-datenbank-welt.php:336
 - `uebertragen` → Game/speichern.js:147
@@ -2299,7 +2303,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weltrechner_seite` → Game/server/03-nebel-maersche-seite.php:212
 - `weltteil_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:176
 - `weltZuClient` → Game/welt.js:141
-- `werIst` → Game/aufbau.js:122
+- `werIst` → Game/aufbau.js:123
 - `werIstWer` → Game/spiel/10d5-welt-befehle.js:31
 - `wert` → Game/spiel/08c-helden-fenster.js:241
 - `wert` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:84
@@ -2375,7 +2379,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `yesterdayKey` → Game/spiel/06a-aufgaben.js:9
 - `zahl` → Game/admin.php:164
 - `zahl` → Game/weltrechner/start.js:199
-- `zahlen` → Game/aufbau.js:69
+- `zahlen` → Game/aufbau.js:70
 - `zahlOderNull` → Game/spiel/10d2-welt-schummelschutz.js:41
 - `zahlOk` → Game/spiel/10d2-welt-schummelschutz.js:15
 - `zeichne` → Game/ladebildschirm.js:242
@@ -4148,46 +4152,49 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `barbTagMax` :26
 - `barbLeft` :27
 - `barbOpenFor` :28
-- `barbPt` :29
-- `barbFa` :30
-- `barbStufeZone` :32 — Stufe nach der Zone (wie die Karten-Testdatei): 1–6 außen … 19–25 in Zone 4
-- `barbSpot` :33 — a free place on the land: clear of bases, fields, other camps and the boss (edg…
-- `barbSpawn` :45 — a third near you, 40 % near someone else, the rest anywhere – die Stufe kommt a…
-- `dbossEnsure` :54 — today's boss (nur donnerstags, sonst null): the kind turns every week, the plac…
-- `dbossOnMap` :73
-- `eigeneFeldBarb` :77 — Zurückrufen und Beschleunigen auch hier (wie Angriff/Senden): hin = Zurück + Sc…
-- `feldBarbMarsch` :78
-- `feldBarbSpeichern` :79
-- `marschUmkehren` :80 — ein Marsch zu Lager/Boss/Feld kehrt um, wo er gerade ist – zurück so lange, wie…
-- `barbMine` :95
-- `dbossKind` :96
-- `dbossRanks` :97
-- `barbSend` :98 — troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero may lead th…
-- `barbHome` :110 — the survivors walk home
-- `barbCrate` :112 — a gear crate: yours into the inventory, theirs into their spares
-- `barbFight` :118 — out in the open: (troops + Gefolge) × Angriff (+ hero) × title against the camp…
-- `barbArrive` :123
-- `dbossHit` :151 — every attack takes life off the boss (at most 5 %); a quarter of those who stru…
-- `dbossPayout` :175 — the boss falls: alle, die trafen, bekommen den Erfolg (Belohnung gibt es nur im…
-- `barbTick` :186
-- `barbScreen` :200
-- `barbK` :201
-- `barbAt` :202 — → { kind: 'boss' } or { kind: 'camp', id } under a tap
-- `barbAlong` :210 — the point q (0-1) along a screen polyline
-- `dbossSprite` :215 — each boss drawn once into a small image
-- `drawBarb` :245
-- `barbSource` :301 — your base for this march: the nearest one that has enough, else the one with th…
-- `barbShares` :307
-- `barbShareNow` :308
-- `barbShareOf` :309
-- `barbAttackHtml` :310 — share, hero and the button
-- `lagerBeuteText` :318 — was ein Sieg heute noch bringt (Rest bis zur Tagesgrenze, wie lagerBeute)
-- `barbSheetHtml` :322
-- `row` :341
-- `barbNearest` :355 — the closest camp you may attack, the highest level first
-- `openBarbSheet` :360
-- `closeBarbSheet` :361
-- `barbSheetRefresh` :362
+- `barbIch` :31 — Lager für Neue (Alexander 10.10.): wer noch kein Lager besiegt hat und höchsten…
+- `barbFuerOk` :32
+- `barbNeulingLager` :33 — (nur wer rechnet) jedem Neuen sein Lager der Stufe 1
+- `barbPt` :43
+- `barbFa` :44
+- `barbStufeZone` :46 — Stufe nach der Zone (wie die Karten-Testdatei): 1–6 außen … 19–25 in Zone 4
+- `barbSpot` :47 — a free place on the land: clear of bases, fields, other camps and the boss (edg…
+- `barbSpawn` :59 — a third near you, 40 % near someone else, the rest anywhere – die Stufe kommt a…
+- `dbossEnsure` :68 — today's boss (nur donnerstags, sonst null): the kind turns every week, the plac…
+- `dbossOnMap` :87
+- `eigeneFeldBarb` :91 — Zurückrufen und Beschleunigen auch hier (wie Angriff/Senden): hin = Zurück + Sc…
+- `feldBarbMarsch` :92
+- `feldBarbSpeichern` :93
+- `marschUmkehren` :94 — ein Marsch zu Lager/Boss/Feld kehrt um, wo er gerade ist – zurück so lange, wie…
+- `barbMine` :109
+- `dbossKind` :110
+- `dbossRanks` :111
+- `barbSend` :112 — troops leave a base for a camp (k 'c') or the boss (k 'b') - a hero may lead th…
+- `barbHome` :124 — the survivors walk home
+- `barbCrate` :126 — a gear crate: yours into the inventory, theirs into their spares
+- `barbFight` :132 — out in the open: (troops + Gefolge) × Angriff (+ hero) × title against the camp…
+- `barbArrive` :137
+- `dbossHit` :165 — every attack takes life off the boss (at most 5 %); a quarter of those who stru…
+- `dbossPayout` :189 — the boss falls: alle, die trafen, bekommen den Erfolg (Belohnung gibt es nur im…
+- `barbTick` :200
+- `barbScreen` :215
+- `barbK` :216
+- `barbAt` :217 — → { kind: 'boss' } or { kind: 'camp', id } under a tap
+- `barbAlong` :225 — the point q (0-1) along a screen polyline
+- `dbossSprite` :230 — each boss drawn once into a small image
+- `drawBarb` :260
+- `barbSource` :316 — your base for this march: the nearest one that has enough, else the one with th…
+- `barbShares` :322
+- `barbShareNow` :323
+- `barbShareOf` :324
+- `barbAttackHtml` :325 — share, hero and the button
+- `lagerBeuteText` :333 — was ein Sieg heute noch bringt (Rest bis zur Tagesgrenze, wie lagerBeute)
+- `barbSheetHtml` :337
+- `row` :357
+- `barbNearest` :371 — the closest camp you may attack, the highest level first
+- `openBarbSheet` :376
+- `closeBarbSheet` :377
+- `barbSheetRefresh` :378
 
 ### Game/spiel/09c-events-woche.js — Events: Wochen-Event (Mo–Fr, Tages-Kisten, Wochen-Rangliste), Event-Fenster, ge…
 - `woWin` :28 — diese oder (nach Fr 20 Uhr) nächste Woche, Mo 0:00 – Fr 20:00: { on, start, end…
@@ -4439,22 +4446,23 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutBau` :41 — bauen oder aufwerten; läuft der Bau: warten (mit Beschleuniger, wenn einer da i…
 - `tutBesch` :45 — ein laufender Bau: Beschleuniger benutzen
 - `tutInsel` :52 — eine Basis auf der Karte (die Kamera fliegt einmal hin)
-- `tutZurKarte` :60 — (Handy: der Stadt-Knopf unten heißt dann „Karte“)
-- `tutNeutral` :61 — die nächste neutrale, sichtbare Basis (nicht die schon angegriffene)
-- `tutAngriff` :66 — Basis antippen → Angreifen → (Held wählen) → Angreifen
-- `tutFenster` :77
-- `tutGeschenk` :119 — ---- Geschenke: Bild + Zahl im Beute-Fenster (einmal je Schlüssel g) ----
-- `tutBurgFrei` :126 — ---- Freischalten: was fehlt, ist ganz weg (body.tz-<teil>) ----
-- `tutFrei` :128
-- `tutBanner` :135 — „Neu: …“ (Platzhalter bis banner_neu.webp kommt)
-- `tutPause` :144 — ein Belohnungs-Fenster geht vor
-- `tutWeiter` :146 — nächster Schritt: aufräumen, Neues freischalten, vorher-Aktion
-- `tutStart` :151
-- `tutEnde` :157
-- `tutZiel` :164 — → { rect, weiter, warte }
-- `tutZeigen` :175
-- `teil` :188
-- `tutStarten` :200
+- `tutZurKarte` :62 — (Handy: der Stadt-Knopf unten heißt dann „Karte“)
+- `tutNeutral` :63 — die nächste neutrale, sichtbare Basis (nicht die schon angegriffene)
+- `tutAngriff` :68 — Basis antippen → Angreifen → (Held wählen) → Angreifen
+- `tutLager` :79 — das eigene Lager der Stufe 1 (09b barbNeulingLager) antippen → Angreifen
+- `tutFenster` :87
+- `tutGeschenk` :130 — ---- Geschenke: Bild + Zahl im Beute-Fenster (einmal je Schlüssel g) ----
+- `tutBurgFrei` :137 — ---- Freischalten: was fehlt, ist ganz weg (body.tz-<teil>) ----
+- `tutFrei` :139
+- `tutBanner` :146 — „Neu: …“ (Platzhalter bis banner_neu.webp kommt)
+- `tutPause` :155 — ein Belohnungs-Fenster geht vor
+- `tutWeiter` :157 — nächster Schritt: aufräumen, Neues freischalten, vorher-Aktion
+- `tutStart` :162
+- `tutEnde` :168
+- `tutZiel` :175 — → { rect, weiter, warte }
+- `tutZeigen` :187
+- `teil` :201
+- `tutStarten` :213
 
 ### Game/spiel/10d1-welt-verbindung.js — Die eine Welt: Verbindung zu welt.js, Zuschauer übernehmen Welt-Teile, Späher a…
 - `rechnerStatus` :10 — (welt.js meldet jede Änderung von „rechner“)
@@ -4650,92 +4658,92 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zahl` :164
 
 ### Game/aufbau.js — aufbau.js – Paket D „Aufbau“ (wie Rise of Kingdoms): Burg-Stufe, Rohstoffe, neu…
-- `rohLeer` :18
-- `rohSauber` :19
-- `roh` :20
-- `rohSpeichern` :21
-- `rohRegion` :24 — jede Region etwas anders: Landschaft × eine feste Laune der Region (0,8 … 1,2)
-- `rohVon` :29 — der Rohstoff-Topf: deiner (privat) oder der eines anderen (in der Welt, Mitspie…
-- `rohDazu` :35 — d: {h, s, e} (auch negativ, nie unter 0)
-- `rohGebStunde` :45
-- `rohStunde` :46 — was ein Reich in einer Stunde an Rohstoffen macht (Anzeige, Markt, Schummel-Sch…
-- `basisRoh` :53
-- `rohBuchen` :58
-- `geldVon` :67 — Kosten { c: Münzen, h, s, e }: reicht es? bezahlen
-- `kannZahlen` :68
-- `zahlen` :69
-- `kostenHtml` :76 — Münzen + Rohstoffe, was fehlt rot
-- `stadtVon` :89 — (Truppen-Stufen T1–T5 gibt es nicht mehr – Alexander 4.10.: „alles raus“)
-- `burgStufe` :93
-- `burgKosten` :97 — Die Burg ist die Hauptstadt (Alexander 4.10.): wächst über mehrere Saisons. Jed…
-- `burgSchutzStufe` :105 — Burg-Schutz (statt Lager): so viel von jedem Rohstoff (Gold, Holz, Stein, Eisen…
-- `burgSchutz` :106 — (+ Forschung Burg-Schutz+) – Gold
-- `burgSchutzRoh` :107 — je Holz, Stein, Eisen
-- `schutzText` :108 — Anzeige: glatt (10.000 statt 10.001)
-- `rohStd` :109 — Rohstoffe pro Stunde: ganze Zahl (nie „55,6“)
-- `stadtKosten` :111 — alles für ein Gebäude von Stufe L auf L + 1 (Burg: eigene Tabelle)
-- `stadtCapB` :116
-- `stadtCap` :117
-- `marschGrenze` :120 — Marsch-Plätze: so viele Aktionen gleichzeitig (Angriff, Verstärkung, Sammeln, L…
-- `werIst` :122
-- `marschBelegt` :123
-- `gruppeLaeuft` :134 — gehört dieser Angriff zu einem gerade gestarteten Mehrfachangriff?
-- `marschFrei` :143
-- `marschOk` :144
-- `marschVoll` :145
-- `foAkaFuer` :171 — Stufe L braucht diese Labor-Stufe
-- `burgFair` :176 — Burg fair (Alexander 6.10. A): beim ersten Saison-Reset danach EINMAL jede Burg…
-- `foStufe` :188
-- `foWert` :189
-- `foSumme` :190 — alle erforschten Stufen (Erfolge, Rangliste „Hauptstadt“)
-- `foGesamt` :191
-- `foKosten` :192 — Stufe L erforschen
-- `foZeitRoh` :196
-- `foZeit` :197
-- `foSperre` :198 — warum diese Forschung gerade nicht geht (oder null)
-- `foStart` :208 — → '' oder warum nicht
-- `foFertig` :217 — läuft eine Forschung ab (oder sofort: mit Gems), wird sie gutgeschrieben
-- `foGems` :227
-- `kampf` :232 — -------------------------------------------------------------------------------…
-- `ertrag` :236 — Münzen und Rohstoffe der Basen
-- `sammelTempo` :237
-- `traglast` :238
-- `marschTempo` :239 — (+ Marschtempo II)
-- `spaeherTempo` :240
-- `lazarettPlus` :241 — (+ Krankenhaus II)
-- `nebelWeite` :242
-- `tempelPlus` :243 — (früher Tempelschrein)
-- `bauStufe` :244
-- `botschaftTempo` :245 — Hilfe und Rally zu Bündnis-Mitgliedern
-- `botschaftGeschenk` :246
-- `marktGebuehr` :254 — Stufe 1: 24 %, ab Stufe 20: 5 %
-- `marktLimit` :255 — Münz-Wert pro Tag und Richtung (wie alle Münz-Kosten wirtM – die
-- `marktHeute` :260
-- `marktTausch` :261 — art 'k' = kaufen (Münzen → Rohstoff), 'v' = verkaufen; → '' oder warum nicht
-- `spielerTakt` :277 — -------------------------------------------------------------------------------…
-- `hudRoh` :283
-- `rohDropMalen` :290 — die Blase unter der angetippten Rohstoff-Kapsel: Bestand und Ertrag/Std.
-- `rohUmschalten` :296 — x: welche Kapsel (gleiche nochmal = zu); zu nach 3 s von selbst
-- `freiText` :303 — was die Burg-Stufe B freischaltet
-- `renderKeep` :309 — das Burg-Fenster (Burg in der Stadt antippen)
-- `effektText` :334
-- `foBedingt` :348
-- `foBaum` :349
-- `knoten` :352
-- `foDetail` :357
-- `extraHtml` :374
-- `marktHtml` :386 — Shop → Markt: Rohstoffe gegen Münzen (die Stufe des Markt-Gebäudes bestimmt Geb…
-- `spaeherMehr` :420 — Spähbericht: der Späher sieht alles (Alexander 4.10.) – Burg, Rohstoffe (und wi…
-- `botStadtFix` :438 — fehlende Felder (alte Spielstände): Burg 1, keine Forschung, Start-Rohstoffe
-- `botForschung` :446 — fertig? sonst: die nächste, die zum Spielstil passt und bezahlbar ist (behält R…
-- `botMarkt` :459 — fehlt ein Rohstoff, kauft er ihn auf dem Markt – nur mit Münzen, die er übrig h…
-- `botBurgWert` :468 — wie dringend die Burg ist (kleiner = eher): sobald ein Gebäude anstößt
-- `botRohWunsch` :474 — Sammeln: welcher Rohstoff fehlt am meisten? (für die Wahl des Feldes)
-- `burgKarte` :486 — -------------------------------------------------------------------------------…
-- `hauptVon` :487
-- `hauptVor` :488 — je Herr: { id: Hauptstadt, vor: ihre eigene Stufe }
-- `hauptstadtStufen` :489
-- `AUF.rohJeStunde` :518
+- `rohLeer` :19
+- `rohSauber` :20
+- `roh` :21
+- `rohSpeichern` :22
+- `rohRegion` :25 — jede Region etwas anders: Landschaft × eine feste Laune der Region (0,8 … 1,2)
+- `rohVon` :30 — der Rohstoff-Topf: deiner (privat) oder der eines anderen (in der Welt, Mitspie…
+- `rohDazu` :36 — d: {h, s, e} (auch negativ, nie unter 0)
+- `rohGebStunde` :46
+- `rohStunde` :47 — was ein Reich in einer Stunde an Rohstoffen macht (Anzeige, Markt, Schummel-Sch…
+- `basisRoh` :54
+- `rohBuchen` :59
+- `geldVon` :68 — Kosten { c: Münzen, h, s, e }: reicht es? bezahlen
+- `kannZahlen` :69
+- `zahlen` :70
+- `kostenHtml` :77 — Münzen + Rohstoffe, was fehlt rot
+- `stadtVon` :90 — (Truppen-Stufen T1–T5 gibt es nicht mehr – Alexander 4.10.: „alles raus“)
+- `burgStufe` :94
+- `burgKosten` :98 — Die Burg ist die Hauptstadt (Alexander 4.10.): wächst über mehrere Saisons. Jed…
+- `burgSchutzStufe` :106 — Burg-Schutz (statt Lager): so viel von jedem Rohstoff (Gold, Holz, Stein, Eisen…
+- `burgSchutz` :107 — (+ Forschung Burg-Schutz+) – Gold
+- `burgSchutzRoh` :108 — je Holz, Stein, Eisen
+- `schutzText` :109 — Anzeige: glatt (10.000 statt 10.001)
+- `rohStd` :110 — Rohstoffe pro Stunde: ganze Zahl (nie „55,6“)
+- `stadtKosten` :112 — alles für ein Gebäude von Stufe L auf L + 1 (Burg: eigene Tabelle)
+- `stadtCapB` :117
+- `stadtCap` :118
+- `marschGrenze` :121 — Marsch-Plätze: so viele Aktionen gleichzeitig (Angriff, Verstärkung, Sammeln, L…
+- `werIst` :123
+- `marschBelegt` :124
+- `gruppeLaeuft` :135 — gehört dieser Angriff zu einem gerade gestarteten Mehrfachangriff?
+- `marschFrei` :144
+- `marschOk` :145
+- `marschVoll` :146
+- `foAkaFuer` :172 — Stufe L braucht diese Labor-Stufe
+- `burgFair` :177 — Burg fair (Alexander 6.10. A): beim ersten Saison-Reset danach EINMAL jede Burg…
+- `foStufe` :189
+- `foWert` :190
+- `foSumme` :191 — alle erforschten Stufen (Erfolge, Rangliste „Hauptstadt“)
+- `foGesamt` :192
+- `foKosten` :193 — Stufe L erforschen
+- `foZeitRoh` :197
+- `foZeit` :198
+- `foSperre` :199 — warum diese Forschung gerade nicht geht (oder null)
+- `foStart` :209 — → '' oder warum nicht
+- `foFertig` :218 — läuft eine Forschung ab (oder sofort: mit Gems), wird sie gutgeschrieben
+- `foGems` :228
+- `kampf` :233 — -------------------------------------------------------------------------------…
+- `ertrag` :237 — Münzen und Rohstoffe der Basen
+- `sammelTempo` :238
+- `traglast` :239
+- `marschTempo` :240 — (+ Marschtempo II)
+- `spaeherTempo` :241
+- `lazarettPlus` :242 — (+ Krankenhaus II)
+- `nebelWeite` :243
+- `tempelPlus` :244 — (früher Tempelschrein)
+- `bauStufe` :245
+- `botschaftTempo` :246 — Hilfe und Rally zu Bündnis-Mitgliedern
+- `botschaftGeschenk` :247
+- `marktGebuehr` :255 — Stufe 1: 24 %, ab Stufe 20: 5 %
+- `marktLimit` :256 — Münz-Wert pro Tag und Richtung (wie alle Münz-Kosten wirtM – die
+- `marktHeute` :261
+- `marktTausch` :262 — art 'k' = kaufen (Münzen → Rohstoff), 'v' = verkaufen; → '' oder warum nicht
+- `spielerTakt` :278 — -------------------------------------------------------------------------------…
+- `hudRoh` :284
+- `rohDropMalen` :291 — die Blase unter der angetippten Rohstoff-Kapsel: Bestand und Ertrag/Std.
+- `rohUmschalten` :297 — x: welche Kapsel (gleiche nochmal = zu); zu nach 3 s von selbst
+- `freiText` :304 — was die Burg-Stufe B freischaltet
+- `renderKeep` :310 — das Burg-Fenster (Burg in der Stadt antippen)
+- `effektText` :335
+- `foBedingt` :349
+- `foBaum` :350
+- `knoten` :353
+- `foDetail` :358
+- `extraHtml` :375
+- `marktHtml` :387 — Shop → Markt: Rohstoffe gegen Münzen (die Stufe des Markt-Gebäudes bestimmt Geb…
+- `spaeherMehr` :421 — Spähbericht: der Späher sieht alles (Alexander 4.10.) – Burg, Rohstoffe (und wi…
+- `botStadtFix` :439 — fehlende Felder (alte Spielstände): Burg 1, keine Forschung, Start-Rohstoffe
+- `botForschung` :447 — fertig? sonst: die nächste, die zum Spielstil passt und bezahlbar ist (behält R…
+- `botMarkt` :460 — fehlt ein Rohstoff, kauft er ihn auf dem Markt – nur mit Münzen, die er übrig h…
+- `botBurgWert` :469 — wie dringend die Burg ist (kleiner = eher): sobald ein Gebäude anstößt
+- `botRohWunsch` :475 — Sammeln: welcher Rohstoff fehlt am meisten? (für die Wahl des Feldes)
+- `burgKarte` :487 — -------------------------------------------------------------------------------…
+- `hauptVon` :488
+- `hauptVor` :489 — je Herr: { id: Hauptstadt, vor: ihre eigene Stufe }
+- `hauptstadtStufen` :490
+- `AUF.rohJeStunde` :519
 
 ### Game/benachrichtigung.js — benachrichtigung.js – „Benachrichtigungen erlauben“ im Profil (Web-Push aufs Ha…
 - `hinweis` :17
