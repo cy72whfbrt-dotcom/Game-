@@ -104,8 +104,7 @@ function teleportFx(cap, ax, ay) {
 }
 function tpBandOrt(f, sx, sy, saeule) {        // → [x, sy] für mzErgebnisBand: Band (samt Unterzeile) auf keinem Basisschild, nicht auf der Säule, im Bild
     const bw = Math.min(viewW >= 700 ? 300 : 230, viewW * .6), im = mzBild('marsch_band_sieg'), bh = im ? bw * im.height / im.width : 60, hb = bh + 22, z = mapState.zoom;
-    const an = document.getElementById('anleitung'), ar = an && !an.hidden ? an.getBoundingClientRect() : null;
-    const oben = 110, unten = Math.min(viewH - 70, ar && ar.height ? ar.top - 6 : viewH);   // (nicht unter der Leiste oben / unten, nicht unter der Anleitung)
+    const oben = 110, unten = viewH - 70;                                    // (nicht unter der Leiste oben / unten)
     const schilde = islands.filter(i => i.type === 'tower' && islandOwnerOf(i.id) && Math.abs(toSX(i.x) - sx) < viewW && Math.abs(toSY(i.y) - sy) < viewH).map(i => schildRect(i, z));
     const xs = [sx, sx - bw * .6, sx + bw * .6].map(v => Math.max(bw / 2 + 4, Math.min(viewW - bw / 2 - 4, v))), ys = [];
     for (let d = 0; d < 400; d += 12) ys.push(sy + 130 + d, sy - saeule - hb / 2 - 10 - d);   // erst unter der Basis, dann über der Säule, dann weiter weg

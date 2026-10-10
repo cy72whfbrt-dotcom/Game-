@@ -126,9 +126,17 @@
 
 <!-- Toast: text-only, JS writes textContent. Empty = hidden. -->
 <div id="hint" class="toast" role="status" aria-live="polite"></div>
-<div id="anleitung" class="anleitung" role="status" hidden><span id="anleitungSchritt" class="anleitung-n"></span><span id="anleitungText" class="anleitung-t"></span><button id="anleitungWeg" class="btn-x" type="button" aria-label="Anleitung überspringen"><svg class="icon"><use href="#i-close"/></svg></button>
-  <span id="anleitungFrage" class="anleitung-k" hidden><button id="anleitungJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="anleitungNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span>
-  <button id="anleitungOk" class="btn btn--primary btn--sm anleitung-ok" type="button" hidden>Verstanden</button></div>
+<!-- Tutorial für neue Spieler (10c2): Dunkel aus vier Teilen um das Loch (fangen die Tipps), Finger, Berater mit 1–2 Sätzen, „Überspringen“ fragt erst -->
+<div id="tut" class="tut" hidden>
+  <div class="tut-d" data-tut-d="o"></div><div class="tut-d" data-tut-d="u"></div><div class="tut-d" data-tut-d="l"></div><div class="tut-d" data-tut-d="r"></div>
+  <div id="tutLoch" class="tut-loch" hidden></div><div id="tutSperre" class="tut-sperre" hidden></div>
+  <div id="tutFinger" class="tut-finger" hidden></div>
+  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><p id="tutSatz"></p>
+    <button id="tutWeiter" class="btn btn--primary btn--sm" type="button" hidden>Weiter</button>
+    <span id="tutFrage" class="tut-frage" hidden><button id="tutJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="tutNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span></div></div>
+  <button id="tutWeg" class="tut-weg" type="button">Überspringen</button>
+</div>
+<div id="tutBanner" class="tut-banner" role="status" hidden></div>
 
 <!-- Multi-attack floating bar (JS sets style.display='flex') -->
 <div id="multiAttackBar" class="mabar">

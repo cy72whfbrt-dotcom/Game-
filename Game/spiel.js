@@ -3539,7 +3539,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   for (const it of items) bannerHitRects.push({ id: it.isl.id, x: it.rect.x, y: it.rect.y, w: it.rect.w, h: it.rect.h });
   return items;
 }
-const BANNER_UNTER = ['hud', 'midBar', 'mapControls', 'anleitung', 'cornerButtons'];   // Leisten über der Karte: Fahnen darunter blass
+const BANNER_UNTER = ['hud', 'midBar', 'mapControls', 'cornerButtons'];   // Leisten über der Karte: Fahnen darunter blass
 function leistenRects() {                                                      // (Bildschirm) die Leisten über der Karte
   const cv = canvas.getBoundingClientRect(), unter = [];
   for (const id of BANNER_UNTER) { const el = document.getElementById(id); if (!el || el.hidden) continue; const b = el.getBoundingClientRect(); if (b.width && b.height) unter.push({ x: b.left - cv.left, y: b.top - cv.top, w: b.width, h: b.height }); }
@@ -7079,7 +7079,7 @@ function claimDaily() {
     gems += r.gems;
     dailyState = { last: todayKey(), day };
     store.set('openWaterDaily', JSON.stringify(dailyState));
-    saveGame(); saveProgression(); updateHud(); updateGoalsBadge(); anleitungAbgeholt();
+    saveGame(); saveProgression(); updateHud(); updateGoalsBadge();
     return { day, gems: r.gems, items };
 }
 function dailyBeute(r) { return [{ a: 'kiste', k: r.epic ? 'royal' : 'aus', n: r.crates, r: r.epic ? 3 : 0, min: !!r.epic }, { a: 'gems', n: r.gems }]; }
@@ -7212,7 +7212,7 @@ function questProgress(type, n) {
 function claimQuest(i) {
     const q = loadQuests(), t = q.list[i];
     if (!t || t.claimed || t.progress < t.target) return;
-    t.claimed = true; passBump('quest'); anleitungAbgeholt();
+    t.claimed = true; passBump('quest');
     const c = t.h > 0 ? passMuenzen(hourProduction('player'), t.h) : 0; gems += t.gems; coins += c;   // (Münzen: so viel, wie dein Reich in t.h Stunden macht – der Weltrechner kennt den Topf)
     saveQuests(); saveGame(); updateHud();
     beuteFenster('Aufgabe erledigt', [{ a: 'gems', n: t.gems }, { a: 'coins', n: c }], { unter: QUEST_DEFS[t.type].text(t.target) });
@@ -7223,7 +7223,7 @@ const questBonus3Bereit = q => !q.bonus3 && questFertigN(q) >= QUEST_BONUS3.n;
 function claimQuestBonus3() {                          // 3 Aufgaben abgeholt: Truppen in die Hauptstadt (der Weltrechner prüft: einmal am Tag)
     const q = loadQuests(), b = rewardBaseId(); if (!questBonus3Bereit(q)) return;
     if (b === null) { flashHint('Truppen brauchen eine eigene Basis – erst dann abholbar.', 3000); return; }
-    const n = passTruppen(hourProduction('player'), QUEST_BONUS3.tr); q.bonus3 = true; eigeneTruppenDazu(b, n, 'aufgabe'); anleitungAbgeholt();
+    const n = passTruppen(hourProduction('player'), QUEST_BONUS3.tr); q.bonus3 = true; eigeneTruppenDazu(b, n, 'aufgabe');
     saveQuests(); saveGame(); updateHud(); sfx('coin');
     beuteFenster('Bonus: 3 erledigt', [{ a: 'tr', n }], { unter: fmtCompact(n) + ' Truppen in ' + islandTitle(islandById[b]) });
     renderQuestPanel(); updateGoalsBadge();
@@ -7231,7 +7231,7 @@ function claimQuestBonus3() {                          // 3 Aufgaben abgeholt: T
 function claimQuestBonus() {
     const q = loadQuests();
     if (q.bonusClaimed || !q.list.every(t => t.claimed)) return;
-    q.bonusClaimed = true; passBump('questBonus'); anleitungAbgeholt();
+    q.bonusClaimed = true; passBump('questBonus');
     const items = [];
     for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
     gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY); if (!shH) gems += HERO_SHARDS_DAY * 20;   // (alle Helden voll)
@@ -7275,7 +7275,7 @@ function inboxClaim(id, aus) {                      // into your coffers - retur
     if (BESCH_MIN[x.besch]) { gibBelohnung('besch', 1, { dauer: x.besch }); got.push('Beschleuniger ' + beschText(x.besch)); aus.push({ a: 'besch', dauer: x.besch, n: 1 }); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) { got.push(x.sh + ' Splitter ' + h.name); aus.push({ a: 'sh', n: x.sh, held: h.id }); } else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); aus.push({ a: 'gems', n: x.sh * 20 }); } }
     if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); aus.push({ a: 'tr', n: x.tr }); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0, em: 0, s1: 0, s2: 0, besch: undefined, b: undefined })); }   // no base right now: only the troops stay in the inbox
-    inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
+    inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) return got.join(', ');
 }
 function renderInbox() {
     const L = inboxFach(), el = document.getElementById('inboxList'); if (!el) return;
@@ -7427,7 +7427,7 @@ function passClaim(list) {                                // [[season, level, pr
         const rs = passRewardAt(l, pr); if (rs.some(r => r.k === 'tr') && rewardBaseId() === null) { ohneBasis = true; continue; }   // Truppen brauchen eine Basis – die Stufe wartet
         arr.push(l); for (const r of rs) { if (r.k === 'royal' || (r.k === 'crate' && !kiste)) kiste = r.k === 'royal' ? 'royal' : 'aus'; got.push(passGive('player', r, aus, { s: n, l, p: pr ? 1 : 0 }) || 'Belohnung'); } }
     if (!got.length) { if (ohneBasis) flashHint('Truppen brauchen eine eigene Basis – erst dann abholbar.', 3000); return; }
-    passSave(); saveGame(); saveProgression(); updateHud(); sfx('crate'); anleitungAbgeholt();
+    passSave(); saveGame(); saveProgression(); updateHud(); sfx('crate');
     if (aus.length) beuteFenster('Saison-Pass', aus, { kiste, unter: got.length > 1 ? got.length + ' Belohnungen abgeholt' : '' });
     else flashHint(got.join(' · '), 4000);
     renderPass(); updateGoalsBadge();
@@ -7497,110 +7497,13 @@ setInterval(() => { if (isPanelOpen(goalsPopup) && goalsTab === 'pass') passLeft
 setInterval(() => { const n = passNo(Date.now()), ps = passLoad(); if (ps.n !== n) { ps.n = n; passPrune(); passSave(); if (isPanelOpen(goalsPopup) && goalsTab === 'pass') renderPass(); } updateGoalsBadge(); }, 60000);   // a new season while the game stays open
 passPrune();
 function maybeShowDaily() {
-    if (anleitung.schritt < ANLEITUNG.length) return;     // nie mitten in der Anleitung (Spieltest 6.10.): erst danach – abholen geht in Schritt 6 unter „Events“
+    if (tutLaeuft()) return;                              // nie mitten im Tutorial (10c2): erst danach
     if (!dailyClaimable() || !document.getElementById('dailyModal').hidden || (isPanelOpen(goalsPopup) && goalsTab === 'reward')) return;   // an open Belohnung tab shows it already
     const busy = !document.getElementById('levelUpModal').hidden || !document.getElementById('rewardModal').hidden || (typeof welcomeFrom !== 'undefined' && welcomeFrom) || (document.getElementById('welcomeModal') && !document.getElementById('welcomeModal').hidden);
     if (busy) { setTimeout(maybeShowDaily, 1500); return; }
     showDailyModal();
 }
 afterSplash(() => setTimeout(maybeShowDaily, 500));
-
-// ===== ANLEITUNG für neue Spieler (Idee 45): 7 kurze Schritte unten am Bildschirm, jeder hakt sich von selbst ab =====
-// Der Stand liegt im Spielstand auf dem Server (store → speichern.js), nicht im Browser. Je Schritt: t Text, fertig, tipp (Text je
-// nach Lage), puls (der nächste nötige Knopf pulsiert: body[data-anl-puls], Stil in 02), stadt (gilt in der Stadt), ok (Knopf „Verstanden“).
-const anleitungNeutral = id => !islandOwnerOf(id) && !bossAt(id) && islandById[id].type !== 'megaTemple';
-const ANLEITUNG = [
-    { t: 'Tippe auf deine Hauptstadt – die blaue Basis mit der Krone (der Kompass rechts bringt dich hin).', fertig: () => (isPanelOpen(popup) && popupIslandId === playerIslandId) || !cityView.hidden
-        || anleitungTat.attack || (anleitungInsel() && anleitungNeutral(popupIslandId)),   // schon bei einer neutralen Basis (oder angegriffen): gleich weiter zu Schritt 2
-      tipp: () => anleitungInsel() && popupIslandId !== playerIslandId && !(islandById[popupIslandId] || {}).bildR ? 'Das ist nicht deine Hauptstadt. Schließe das Fenster (×) und tippe die blaue Basis mit der Krone an.' : null, puls: () => 'heim' },
-    { t: 'Greif eine neutrale Basis in deiner Nähe an: tippe eine Basis mit dem Schild „Neutral“ an.', fertig: () => anleitungTat.attack,
-      tipp: () => !anleitungInsel() ? null : popupIslandId === playerIslandId ? 'Gut! Schließe das Fenster (×) und tippe eine Basis mit „Neutral“ an.'
-        : anleitungNeutral(popupIslandId) ? (anleitungAlleAusHaupt() ? 'Gut! Tippe „Angreifen“ – mit „Alle“ bleibt deine Hauptstadt ohne Truppen.' : 'Gut! Jetzt unten rechts auf „Angreifen“ tippen.') : 'Das ist keine neutrale Basis. Schließe das Fenster (×) und tippe eine Basis mit „Neutral“ an.',
-      puls: () => anleitungInsel() && anleitungNeutral(popupIslandId) ? 'angriff' : '' },
-    { t: 'Werte eine eroberte Basis auf: tippe deine neue (blaue) Basis an.', fertig: () => anleitungTat.upgrade, tipp: () => {
-        const eigene = [...ownedIslands].some(id => id !== playerIslandId);
-        if (!anleitungInsel()) return eigene ? null : 'Warte, bis dein Angriff angekommen ist und die Basis dir gehört – dann tippe sie an.';
-        const id = popupIslandId;
-        return id === playerIslandId ? 'Die Hauptstadt wächst über die Burg in der Stadt. Schließe das Fenster (×) und tippe deine neue Basis an.'
-            : islandOwnerOf(id) === 'player' ? 'Gut! Jetzt auf „Aufwerten“ tippen.' : 'Das ist nicht deine Basis. Schließe das Fenster (×) und tippe deine eigene (blaue) Basis an.'; },
-      puls: () => anleitungInsel() && popupIslandId !== playerIslandId && islandOwnerOf(popupIslandId) === 'player' ? 'aufwerten' : '' },
-    { t: 'Öffne die Stadt (unten links) und baue den Holzfäller – Holz brauchst du für deine Burg.', stadt: true, fertig: () => { const c = loadCity(); return (c.levels.lumber || 0) > 0 || (c.builds || []).some(b => b.id === 'lumber'); },
-      puls: () => !cityView.hidden ? (cityOpenId === 'lumber' ? 'bauen' : '') : anleitungInsel() && popupIslandId === playerIslandId ? 'stadtfenster' : 'stadt' },
-    { t: 'Schick Truppen zum Sammeln: tippe auf der Karte ein Feld an (Goldmine, Holz, Stein, Eisen …).', fertig: () => fieldMarches.some(m => m.who === 'player') || Object.values(fieldState || {}).some(st => st && st.occ && st.occ.who === 'player'),
-      puls: () => document.getElementById('fieldSheet').hidden ? '' : 'sammeln' },
-    { t: 'Hol dir deine Belohnungen unter „Events“ (unten).', fertig: () => anleitungTat.abgeholt || (isPanelOpen(goalsPopup) && !eventsBereit()),   // (nichts abholbereit: dann reicht das Öffnen)
-      tipp: () => isPanelOpen(goalsPopup) ? 'Tippe auf „Abholen“ – die Zahl an einem Reiter zeigt, wo noch etwas wartet.' : null, puls: () => isPanelOpen(goalsPopup) ? 'abholen' : 'events' },
-    { t: 'Knöpfe rechts: Kompass = zur Hauptstadt · Fahne = Wegmarke · Schild = Armee aufstellen · Lupen = näher, weiter. Oben Holz, Stein, Eisen antippen = Ertrag pro Stunde.', fertig: () => anleitungTat.knoepfe, puls: () => 'knoepfe', ok: true }
-];
-const anleitungTat = {};
-const anleitungAlleAusHaupt = () => popupView === 'preview' && previewSourceId === playerIslandId && (islandTroops[playerIslandId] || 0) > 0 && (previewAttackTroops || 0) >= (islandTroops[playerIslandId] || 0);   // nur ein Hinweis, keine Regel
-const anleitungInsel = () => isPanelOpen(popup) && popupIslandId !== null && popupIslandId !== undefined && islandById[popupIslandId];
-var anleitung = (() => { try { return JSON.parse(store.get('openWaterAnleitung')) || null; } catch (e) { return null; } })();
-if (!anleitung) { const neu = !!((window.__OW && window.__OW.neu) || playerLvl <= 2); anleitung = { schritt: neu ? 0 : ANLEITUNG.length, belohnt: !neu }; }   // wer schon spielt, sieht sie nicht
-else if (anleitung.belohnt === undefined) { anleitung.belohnt = anleitung.schritt >= 6; if (anleitung.belohnt) anleitung.schritt = ANLEITUNG.length; }   // (alter Stand mit 6 Schritten: fertig bleibt fertig)
-if (typeof questProgress === 'function') questProgress = (alt => function (t) { if (t === 'upgrade' || t === 'attack') anleitungTat[t] = true; return alt.apply(this, arguments); })(questProgress);
-if (typeof claimAch === 'function') claimAch = (alt => function () { const n = alt.apply(this, arguments); if (n) anleitungAbgeholt(); return n; })(claimAch);
-if (typeof renderPopup === 'function') renderPopup = (alt => function () { alt.apply(this, arguments); anleitungFenster(); })(renderPopup);
-function anleitungAbgeholt() { anleitungTat.abgeholt = true; }        // jede Abhol-Stelle unter „Events“ meldet sich hier (Schritt 6 zählt erst danach)
-function eventsBereit() { return dailyGoalCount() + (dailyClaimable() ? 1 : 0) + inboxList().length + achReadyN + passReadyAll().length; }   // alles Abholbereite (die Zahl an „Events“)
-function anleitungSpeichern() { store.set('openWaterAnleitung', JSON.stringify(anleitung)); }
-function anleitungPuls(k) { if ((document.body.dataset.anlPuls || '') !== k) document.body.dataset.anlPuls = k; }
-function anleitungFenster() {                             // Hauptstadt-Fenster: ein Satz, was es zeigt (solange die Anleitung läuft)
-    const n = document.getElementById('popupAnleitung'); if (n) n.hidden = SYSTEM || anleitung.schritt >= ANLEITUNG.length || popupIslandId !== playerIslandId || popupView !== 'menu';
-}
-{ const a = document.getElementById('anleitung');           // ihre Höhe als --anl-h: steht sie oben (Handy, Basis-Fenster offen), kommt der Hinweis darunter (02)
-    if (a && window.ResizeObserver) new ResizeObserver(() => { if (a.offsetHeight) document.documentElement.style.setProperty('--anl-h', a.offsetHeight + 'px'); }).observe(a); }
-let anleitungUhr = 0, anleitungFrage = false;             // Frage: „Wirklich überspringen?“ steht gerade da
-function anleitungZeigen() {
-    const el = document.getElementById('anleitung'); if (!el) return;
-    if (SYSTEM || anleitung.schritt >= ANLEITUNG.length) { el.hidden = true; anleitungPuls(''); anleitungFenster(); if (anleitungUhr) { clearInterval(anleitungUhr); anleitungUhr = 0; } return; }   // fertig: nicht mehr jede Sekunde nachsehen
-    if (document.getElementById('wkName') || ['welcomeModal', 'dailyModal', 'levelUpModal', 'rewardModal'].some(id => { const m = document.getElementById(id); return m && !m.hidden; })) { el.hidden = true; anleitungPuls(''); return; }   // erst Name/Begrüßung
-    let weiter = false; try { weiter = !!ANLEITUNG[anleitung.schritt].fertig(); } catch (e) {}
-    if (weiter) {
-        anleitung.schritt++; delete anleitungTat.abgeholt; sfx('upgrade');   // (Abholen zählt nur im Schritt, in dem es passiert)
-        if (anleitung.schritt >= ANLEITUNG.length) {
-            const erstesMal = !anleitung.belohnt; anleitung.belohnt = true; anleitungSpeichern(); el.hidden = true; anleitungPuls(''); anleitungFenster();
-            if (erstesMal) { inboxAdd({ src: 'gift', title: 'Anleitung geschafft', gems: 10, crate: 0 }); flashHint('Geschafft! Unter „Events“ → Abholfach wartet eine kleine Belohnung. Viel Spaß!', 6000); }
-            else flashHint('Anleitung geschafft. Viel Spaß!', 4000);   // (die Belohnung gibt es nur beim ersten Mal)
-            setTimeout(maybeShowDaily, 1500);                 // jetzt erst die tägliche Belohnung (falls noch nicht abgeholt)
-            return;
-        }
-        anleitungSpeichern();
-    }
-    const s = ANLEITUNG[anleitung.schritt], inStadt = !cityView.hidden && !s.stadt;
-    let puls = ''; try { puls = (s.puls && s.puls()) || ''; } catch (e) {}
-    anleitungPuls(anleitungFrage || inStadt ? '' : puls);
-    el.hidden = !document.getElementById('citySheet').hidden || inStadt;   // in der Stadt nur beim Holzfäller-Schritt, ein Gebäude-Fenster geht vor
-    if (el.hidden) return;
-    let txt = null; try { txt = s.tipp && s.tipp(); } catch (e) {}
-    setText(document.getElementById('anleitungSchritt'), 'Schritt ' + (anleitung.schritt + 1) + '/' + ANLEITUNG.length);
-    setText(document.getElementById('anleitungText'), anleitungFrage ? 'Anleitung wirklich überspringen? Unter Profil → Einstellungen kannst du sie jederzeit noch mal starten.' : txt || s.t);
-    el.classList.toggle('is-frage', anleitungFrage); el.classList.toggle('is-ok', !anleitungFrage && !!s.ok);
-    document.getElementById('anleitungFrage').hidden = !anleitungFrage; document.getElementById('anleitungOk').hidden = anleitungFrage || !s.ok; document.getElementById('anleitungWeg').hidden = anleitungFrage;
-    el.classList.toggle('is-events', anleitung.schritt === 5 && isPanelOpen(goalsPopup));   // Schritt 6 gilt im Events-Fenster: dort sichtbar bleiben (sonst blendet ein großes Fenster sie aus)
-    const fenster = [...document.querySelectorAll('.panel.is-open, .marker-sheet:not([hidden]), #heroHall:not([hidden])')].map(f => f.getBoundingClientRect()).filter(r => r.height > 0).sort((x, y) => x.top - y.top)[0];
-    el.style.bottom = fenster ? Math.round(innerHeight - fenster.top + 10) + 'px' : ''; el.style.right = '';   // ein Fenster ist offen: direkt darüber, damit seine Knöpfe frei bleiben
-    const oben = Math.max(0, document.getElementById('hud').getBoundingClientRect().bottom), ctl = document.getElementById('mapControls').getBoundingClientRect();
-    let sicht = !fenster || fenster.top - 10 - el.offsetHeight >= oben;
-    if (!sicht && fenster.left - el.getBoundingClientRect().left >= 330) {                // Desktop: Fenster rechts – links daneben unten, vor den Kartenknöpfen
-        el.style.bottom = ''; el.style.right = Math.round(innerWidth - Math.min(fenster.left, ctl.width ? ctl.left : fenster.left) + 10) + 'px'; sicht = true;
-    }
-    el.style.visibility = sicht ? '' : 'hidden';                                          // kein Platz über oder neben dem Fenster: lieber gar nicht als auf den Knöpfen
-}
-function anleitungStarten() { anleitungZeigen(); if (!anleitungUhr && anleitung.schritt < ANLEITUNG.length) anleitungUhr = setInterval(anleitungZeigen, 1000); }
-document.getElementById('anleitungWeg').addEventListener('click', () => { anleitungFrage = true; anleitungZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
-document.getElementById('anleitungNein').addEventListener('click', () => { anleitungFrage = false; anleitungZeigen(); });
-document.getElementById('anleitungJa').addEventListener('click', () => {
-    anleitungFrage = false; anleitung.schritt = ANLEITUNG.length; anleitungSpeichern(); anleitungZeigen(); setTimeout(maybeShowDaily, 1500);   // (übersprungen: die tägliche Belohnung kommt jetzt)
-    flashHint('Anleitung übersprungen – unter Profil → Einstellungen kannst du sie noch mal starten.', 3500);
-});
-document.getElementById('anleitungOk').addEventListener('click', () => { anleitungTat.knoepfe = true; anleitungZeigen(); });
-document.getElementById('anleitungNochmal').addEventListener('click', () => {   // Profil → Einstellungen → „Anleitung noch mal“
-    for (const k of Object.keys(anleitungTat)) delete anleitungTat[k];
-    anleitung = { schritt: 0, belohnt: !!anleitung.belohnt, nochmal: true }; anleitungFrage = false; anleitungSpeichern();
-    closeAllPopups(); anleitungStarten();
-});
-afterSplash(() => setTimeout(anleitungStarten, 1500));
 
 // Shop: buy gem crates, opens straight into a result readout.
 const shopBtn = document.getElementById('shopBtn');
@@ -10298,8 +10201,7 @@ function teleportFx(cap, ax, ay) {
 }
 function tpBandOrt(f, sx, sy, saeule) {        // → [x, sy] für mzErgebnisBand: Band (samt Unterzeile) auf keinem Basisschild, nicht auf der Säule, im Bild
     const bw = Math.min(viewW >= 700 ? 300 : 230, viewW * .6), im = mzBild('marsch_band_sieg'), bh = im ? bw * im.height / im.width : 60, hb = bh + 22, z = mapState.zoom;
-    const an = document.getElementById('anleitung'), ar = an && !an.hidden ? an.getBoundingClientRect() : null;
-    const oben = 110, unten = Math.min(viewH - 70, ar && ar.height ? ar.top - 6 : viewH);   // (nicht unter der Leiste oben / unten, nicht unter der Anleitung)
+    const oben = 110, unten = viewH - 70;                                    // (nicht unter der Leiste oben / unten)
     const schilde = islands.filter(i => i.type === 'tower' && islandOwnerOf(i.id) && Math.abs(toSX(i.x) - sx) < viewW && Math.abs(toSY(i.y) - sy) < viewH).map(i => schildRect(i, z));
     const xs = [sx, sx - bw * .6, sx + bw * .6].map(v => Math.max(bw / 2 + 4, Math.min(viewW - bw / 2 - 4, v))), ys = [];
     for (let d = 0; d < 400; d += 12) ys.push(sy + 130 + d, sy - saeule - hb / 2 - 10 - d);   // erst unter der Basis, dann über der Säule, dann weiter weg
@@ -13558,6 +13460,214 @@ function liveTick() {
 }
 setInterval(liveTick, 1000);
 
+// ===== TUTORIAL (Alexander 10.10., Drehbuch scratchpad/tutorial/DREHBUCH.md) =====
+// Ein neuer Spieler sieht zuerst fast nichts: oben Münzen, unten keine Knöpfe. Jeder Schritt zeigt mit dem Finger auf ein ECHTES
+// Element (Knopf, Gebäude-Schild in der Stadt, Basis auf der Karte); nur dort nimmt das Dunkel Tipps an. Was ein Schritt braucht,
+// kommt mit „Neu: …“ dazu (body.tz-<teil> blendet aus, Stil in 02). Bündnis, Events, Teleport … erst nach dem Tutorial, nach Burg-Stufe.
+// Stand im Spielstand (openWaterTutorial, geht mit dem Profil): { s Schritt, frei [Teile], t0 Start des Schritts, z1/z2 Ziel-Basen,
+// g Geschenke gegeben, fertig, alles (übersprungen: alles sichtbar) }. Alte Spielstände ohne diesen Wert sehen alles wie bisher.
+// Geschenke über die normalen Wege (gibBelohnung, Abholfach) – das Hauptbuch hat dafür Spielraum (10d3 hbNeu: fr.bm, fr.s1).
+// Bilder: Finger (einstieg_finger), Berater (einstieg_berater) und Banner (banner_neu) sind noch Platzhalter (Stil 02).
+const TUT_TEILE = ['stadt', 'roh', 'kampf', 'events', 'truppen', 'shop', 'profil', 'rucksack', 'aufgaben', 'karte', 'gems', 'shopmehr', 'bund', 'rang', 'events2', 'welt'];
+const TUT_NAME = { stadt: 'Stadt', roh: 'Rohstoffe', kampf: 'Kampf', events: 'Abholen', truppen: 'Truppen', shop: 'Shop', profil: 'Profil', rucksack: 'Rucksack',
+    aufgaben: 'Aufgaben', bund: 'Bündnis', rang: 'Rangliste', events2: 'Events', welt: 'Teleport und Thron' };
+const TUT_ICON = { stadt: 'castle', roh: 'wood', kampf: 'battlelog', events: 'shop', truppen: 'troops', shop: 'shop', profil: 'profile', rucksack: 'crate', aufgaben: 'flag', bund: 'bund', rang: 'crown', events2: 'event', welt: 'send' };
+const TUT_ENDE = ['karte', 'gems', 'shopmehr'];                  // dazu am Ende des Tutorials
+const TUT_BURG = { bund: 4, rang: 4, events2: 5, welt: 6 };      // danach: ab dieser Burg-Stufe (Vorgabe-Tabelle design_einstieg.md, an die echten Gebäude angepasst)
+var tut = (() => { try { const v = JSON.parse(store.get('openWaterTutorial')); return v && typeof v === 'object' ? v : null; } catch (e) { return null; } })();
+if (!tut && !SYSTEM && window.__OW && (__OW.neu || (playerLvl <= 1 && (loadCity().levels.keep || 1) <= 1 && CITY_BUILDINGS.every(b => !loadCity().levels[b.id]))))
+    tut = { s: 0, frei: [], g: {}, t0: Date.now(), neu: true };   // (ganz neu – auch wenn er vor dem ersten Speichern neu lädt)
+function tutLaeuft() { return !!(tut && tut.neu && !tut.fertig); }
+function tutSpeichern() { store.set('openWaterTutorial', JSON.stringify(tut)); }
+const tutTat = {};                                               // was im laufenden Schritt passiert ist (Angriff, Kiste, „Weiter“)
+const $t = id => document.getElementById(id);
+const tutSicht = el => el && el.getClientRects().length && el.getBoundingClientRect().width > 0 ? el : null;
+const tutStufe = id => id === 'keep' ? loadCity().levels.keep || 1 : loadCity().levels[id] || 0;
+const tutBaut = id => !!cityBuildOf(loadCity(), id);
+
+// ---- Ziele: was der Finger zeigt (Element, Rechteck {r} oder {warte: Satz}) ----
+function tutGeb(id, seite) {                                     // ein Gebäude: Stadt-Knopf → Schild → runder Knopf → Knopf im Fenster
+    const key = id === 'keep' ? '_keep' : id;
+    if (cityView.hidden) return $t('cityNavBtn');
+    const sh = $t('citySheet');
+    if (!sh.hidden) {
+        if (cityOpenId !== key) return $t('citySheetClose');
+        if (seite === 'nutz') return cityPage !== 'nutz' ? document.querySelector('#cityTabs [data-cpage="nutz"]') : document.querySelector('#citySheet .fo-go:not([disabled])') || 'weiter';
+        return tutSicht($t('cityUpgradeBtn'));
+    }
+    if (cityRingId === key) return document.querySelector('#cityRing [data-cring="' + (seite || 'bau') + '"]');
+    const n = cityNamen.find(x => x.id === key); if (n) return { r: n };
+    cityFocus(key); return null;
+}
+function tutBau(id, satzBau) {                                   // bauen oder aufwerten; läuft der Bau: warten (mit Beschleuniger, wenn einer da ist)
+    if (tutBaut(id)) return satzBau || { warte: 'Der Bau läuft – gleich fertig.' };
+    return tutGeb(id);
+}
+function tutBesch(id) {                                          // ein laufender Bau: Beschleuniger benutzen
+    if (isPanelOpen(beschPopup)) return document.querySelector('#beschPopup [data-besch-d]');
+    if (!beschMinuten()) return { warte: 'Der Bau läuft – gleich fertig.' };
+    const key = id === 'keep' ? '_keep' : id;
+    if (!$t('citySheet').hidden && cityOpenId === key) return tutSicht($t('cityBeschBtn')) || { warte: 'Der Bau läuft – gleich fertig.' };
+    return tutGeb(id);
+}
+function tutInsel(id) {                                          // eine Basis auf der Karte (die Kamera fliegt einmal hin)
+    const i = islandById[id]; if (!i) return null;
+    if (!cityView.hidden) return $t('cityCloseBtn');
+    if (tutFlug !== tut.s) { tutFlug = tut.s; flyTo(i.x, i.y); }
+    const r = Math.max(26, ISLAND_RADIUS * mapState.zoom * 1.2);
+    return { r: { x: toSX(i.x) - r, y: toSY(i.y) - r, w: 2 * r, h: 2 * r } };
+}
+let tutFlug = -1;
+function tutNeutral(ohne) {                                      // die nächste neutrale, sichtbare Basis (nicht die schon angegriffene)
+    const h = islandById[playerIslandId], weg = new Set([ohne, ...pendingAttacks.filter(a => !a.attackerBotId).map(a => a.targetId)]);
+    return (islands.filter(i => i.id !== playerIslandId && !weg.has(i.id) && !islandOwnerOf(i.id) && !bossAt(i.id) && i.type === 'tower' && islandSeen(i) && canReach(h.landmassId, i.landmassId))
+        .sort((a, b) => Math.hypot(a.x - h.x, a.y - h.y) - Math.hypot(b.x - h.x, b.y - h.y))[0] || {}).id;
+}
+function tutAngriff(feld, held) {                                // Basis antippen → Angreifen → (Held wählen) → Angreifen
+    if (tut[feld] === undefined || (!isPanelOpen(popup) && islandOwnerOf(tut[feld]))) { tut[feld] = tutNeutral(tut.z1); tutSpeichern(); }
+    const id = tut[feld]; if (id === undefined) return 'weiter';   // (keine Basis in Sicht: weiter)
+    if (isPanelOpen(popup) && popupIslandId !== id) return $t('closeBtn');
+    if (isPanelOpen(popup)) {
+        if (held && popupView === 'preview' && !previewHero) return document.querySelector('#islandPopup [data-hero]:not([data-hero=""]):not([disabled])') || tutSicht(attackBtn);
+        return tutSicht(attackBtn);
+    }
+    return tutInsel(id);
+}
+function tutFenster(panel, knopf) { return isPanelOpen(panel) ? null : $t(knopf); }   // Fenster zu: der Knopf, der es öffnet
+
+// ---- die Schritte (Drehbuch) ----
+const TUT = [
+    { k: 'roh', neu: ['stadt', 'roh'], satz: 'Oben siehst du Münzen, Holz, Stein und Eisen. Damit baust du alles.', ziel: () => ({ el: $t('hudRoh') }) },
+    { k: 'holz', satz: 'Bau zuerst den Holzfäller – er bringt jede Stunde Holz.', vor: () => tutGeschenk('b', 'Geschenk für dich', [['besch', 2, { dauer: '1m' }]]),
+      ziel: () => tutGeb('lumber'), fertig: () => tutStufe('lumber') > 0 || tutBaut('lumber') },
+    { k: 'tempo', bleib: true, satz: 'Mit einem Beschleuniger ist der Bau sofort fertig. Probier es!', ziel: () => tutBesch('lumber'), fertig: () => tutStufe('lumber') > 0 },
+    { k: 'stein', satz: 'Jetzt der Steinbruch – für Stein.', ziel: () => tutBau('quarry'), fertig: () => tutStufe('quarry') > 0 },
+    { k: 'eisen', satz: 'Und die Eisenmine – für Eisen.', ziel: () => tutBau('mine'), fertig: () => tutStufe('mine') > 0 },
+    { k: 'burg2', satz: 'Deine Hauptstadt nimmst du immer mit – sie ist das Wichtigste. Bau die Burg aus!', ziel: () => tutBau('keep'), fertig: () => tutStufe('keep') >= 2 },
+    { k: 'karte', satz: 'Draußen auf der Karte warten neue Basen.', ziel: () => $t('cityCloseBtn'), fertig: () => cityView.hidden },
+    { k: 'angriff', satz: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde. Greif diese neutrale Basis an!', ziel: () => tutAngriff('z1'), fertig: () => tutTat.angriff || tutTat.ok },
+    { k: 'marsch', satz: 'Deine Truppen marschieren. Gleich kommt der Kampf …', ziel: () => ({ warte: 'Deine Truppen marschieren. Gleich kommt der Kampf …' }),
+      fertig: () => combatLog.some(e => e.type !== 'ausgespaeht' && e.at >= tut.t0 - 2000) || Date.now() - tut.t0 > 300000 },
+    { k: 'bericht', neu: ['kampf'], satz: 'Hier steht jeder Kampf: wer gewonnen hat und was du bekommst.',
+      ziel: () => tutFenster(battleLogPopup, 'battleLogBtn') || document.querySelector('#battleTabs [data-ktab="berichte"]:not(.active)') || 'weiter' },
+    { k: 'beute', neu: ['events'], satz: 'Deine Beute liegt im Abholfach. Hol sie ab!', fertig: () => !inboxFach().some(x => x.src === 'fight'),
+      ziel: () => tutFenster(goalsPopup, 'goalsBtn') || (goalsTab !== 'reward' ? document.querySelector('[data-ggrp="abholen"]') : document.querySelector('#inboxList [data-inbox]')) },
+    { k: 'truppen', neu: ['truppen'], satz: 'Truppen wachsen von selbst – in jeder Basis, jede Stunde. Eine Kaserne brauchst du nicht.', ziel: () => ({ el: document.querySelector('#hud .res--troop') }) },
+    { k: 'halle', satz: 'In der Heldenhalle leben deine Helden. Bau sie!', ziel: () => tutBau('heroes'), fertig: () => tutStufe('heroes') > 0 },
+    { k: 'kiste', neu: ['shop'], satz: 'Zwei Schlüssel für dich! Öffne damit eine Helden-Kiste.', vor: () => tutGeschenk('k', 'Geschenk für dich', [['schluessel1', 2]]),
+      ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('#shopTabs [data-stab="gems"]:not(.active)') || document.querySelector('[data-kiste="held"][data-anz="1"]'),
+      fertig: () => tutTat.kiste_held },
+    { k: 'held', satz: 'Ein Held macht deinen Angriff stärker. Wähl einen Helden und greif an!', ziel: () => tutAngriff('z2', true), fertig: () => tutTat.heldAngriff || tutTat.ok },
+    { k: 'gratis', satz: 'Im Shop gibt es alle 8 Stunden eine Kiste umsonst. Öffne sie!', fertig: () => gratisAb() > serverJetzt(),
+      ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('#shopTabs [data-stab="gems"]:not(.active)') || document.querySelector('#shopKisten [data-gratis]') },
+    { k: 'ausruestung', bleib: true, satz: 'Mit dem zweiten Schlüssel: eine Ausrüstungs-Kiste.', fertig: () => tutTat.kiste_aus || Object.keys(inventory).length > 0,
+      ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('[data-kiste="aus"][data-anz="1"]') },
+    { k: 'anlegen', neu: ['profil'], satz: 'Ausrüstung macht deine Truppen stärker. Leg sie an!', fertig: () => Object.values(equippedItems).some(Boolean),
+      ziel: () => isPanelOpen(chestItemPopup) ? tutSicht(chestItemEquipBtn) : tutFenster(profilePopup, 'profileBtn') || (profilePopup.dataset.tab !== 'equip' ? $t('tabBtnEquip') : document.querySelector('#chestInventoryGrid .tile[data-id]')) },
+    { k: 'rucksack', neu: ['rucksack'], satz: 'Im Rucksack liegen deine Sachen. Nimm den Beschleuniger mit in die Stadt.', fertig: () => !cityView.hidden || tutTat.ok,
+      ziel: () => tutFenster(rucksackPopup, 'rucksackBtn') || document.querySelector('#rkInhalt [data-rk-stadt]') || document.querySelector('#rkInhalt [data-rk-tab="tempo"]:not(.on)') || 'weiter' },
+    { k: 'burg3', satz: 'Burg 3! Jede Stufe bringt mehr Truppen und neue Gebäude.', ziel: () => tutBaut('keep') ? tutBesch('keep') : tutGeb('keep'), fertig: () => tutStufe('keep') >= 3 },
+    { k: 'labor', satz: 'Im Labor forschst du – damit wird alles stärker. Bau es und starte eine Forschung.', fertig: () => !!loadCity().foRun || tutTat.ok,
+      ziel: () => tutStufe('academy') ? tutGeb('academy', 'nutz') : tutBau('academy') },
+    { k: 'aufgaben', neu: ['aufgaben'], satz: 'Jeden Tag gibt es neue Aufgaben mit Belohnung. Jetzt spielst du frei – Bündnis und Events kommen bald!',
+      ziel: () => tutFenster(goalsPopup, 'goalsBtn') || document.querySelector('[data-ggrp="aufgaben"]:not(.active)') || 'weiter' }
+];
+
+// ---- Geschenke: Bild + Zahl im Beute-Fenster (einmal je Schlüssel g) ----
+function tutGeschenk(g, titel, liste) {
+    if (tut.g[g]) return; tut.g[g] = 1; tutSpeichern();
+    const aus = liste.map(([a, n, e]) => gibBelohnung(a, n, e)).filter(Boolean);
+    saveGame(); saveProgression(); updateHud(); beuteFenster(titel, aus, {});
+}
+
+// ---- Freischalten: was fehlt, ist ganz weg (body.tz-<teil>) ----
+function tutBurgFrei() { const B = AUF ? AUF.burgStufe('player') : 1; return Object.keys(TUT_BURG).filter(k => B >= TUT_BURG[k]); }
+let tutFreiAlt = null;
+function tutFrei() {
+    const gesperrt = tut && tut.neu && !tut.alles, frei = gesperrt ? new Set([...tut.frei, ...(tut.fertig ? tutBurgFrei() : [])]) : null;
+    for (const k of TUT_TEILE) document.body.classList.toggle('tz-' + k, !!gesperrt && !frei.has(k));
+    if (!gesperrt) return;
+    const neu = tutFreiAlt ? [...frei].filter(k => !tutFreiAlt.has(k) && TUT_NAME[k]) : [];
+    tutFreiAlt = frei; if (neu.length) tutBanner(neu);
+}
+function tutBanner(teile) {                                      // „Neu: …“ (Platzhalter bis banner_neu.webp kommt)
+    const b = $t('tutBanner'); if (!b) return;
+    liveHtml(b, icon(TUT_ICON[teile[0]] || 'star') + '<span>Neu: ' + teile.map(k => TUT_NAME[k]).join(', ') + '</span>');
+    b.hidden = false; b.classList.remove('an'); void b.offsetWidth; b.classList.add('an');
+    clearTimeout(tutBanner.uhr); tutBanner.uhr = setTimeout(() => { b.hidden = true; }, 2600);
+}
+
+// ---- Anzeige: Dunkel mit Loch (vier Teile drumherum fangen die Tipps), Finger, Berater ----
+const TUT_PAUSE = ['levelUpModal', 'rewardModal', 'dailyModal', 'welcomeModal', 'beuteFenster'];
+const tutPause = () => !!$t('wkName') || TUT_PAUSE.some(id => { const m = $t(id); return m && !m.hidden; });   // ein Belohnungs-Fenster geht vor
+let tutUhr = 0, tutFrage = false;
+function tutWeiter() {                                           // nächster Schritt: aufräumen, Neues freischalten, vorher-Aktion
+    tut.s++; tut.t0 = Date.now(); for (const k of Object.keys(tutTat)) delete tutTat[k];
+    if (tut.s >= TUT.length) return tutEnde();
+    tutStart();
+}
+function tutStart() {
+    const S = TUT[tut.s];
+    if (!S.bleib) { closeAllPopups(); closePanel(beschPopup); if (!cityView.hidden) { cityRingZu(); cityOpenId = null; $t('citySheet').hidden = true; } }
+    for (const k of S.neu || []) if (!tut.frei.includes(k)) tut.frei.push(k);
+    tutSpeichern(); tutFrei(); if (S.vor) S.vor();
+}
+function tutEnde() {
+    tut.fertig = true; for (const k of TUT_ENDE) if (!tut.frei.includes(k)) tut.frei.push(k);
+    tutSpeichern(); tutFrei(); tutZeigen(); closeAllPopups();
+    inboxAdd({ src: 'gift', title: 'Tutorial geschafft', gems: 10, crate: 0 });
+    flashHint('Geschafft! Unter „Events“ → Abholen wartet deine Belohnung. Viel Spaß!', 6000);
+    setTimeout(maybeShowDaily, 1500);                            // jetzt erst die tägliche Belohnung
+}
+function tutZiel(z) {                                            // → { rect, weiter, warte }
+    if (!z) return {};
+    if (z === 'weiter') return { weiter: true };
+    if (z.warte) return { warte: z.warte };
+    if (z.r) return { rect: { left: z.r.x, top: z.r.y, width: z.r.w, height: z.r.h } };
+    const el = z.el || z; if (!(el instanceof Element) || !tutSicht(el)) return {};
+    return { rect: el.getBoundingClientRect(), nurZeigen: !!z.el };
+}
+function tutZeigen() {
+    const el = $t('tut'); if (!el) return;
+    tutFrei();
+    if (!tutLaeuft()) { el.hidden = true; if (tutUhr) { clearInterval(tutUhr); tutUhr = setInterval(tutFrei, 5000); } return; }   // fertig: nur noch die Burg-Stufen freischalten
+    if (tutPause()) { el.hidden = true; return; }
+    const S = TUT[tut.s];
+    let weiter = false; try { weiter = !!(S.fertig ? S.fertig() : tutTat.ok); } catch (e) {}
+    if (weiter) { sfx('upgrade'); tutWeiter(); if (!tutLaeuft()) return; return tutZeigen(); }
+    let z = {}; try { z = tutZiel(S.ziel()); } catch (e) {}
+    el.hidden = false;
+    const W = innerWidth, H = innerHeight, r = z.rect, ok = !!(z.weiter || z.nurZeigen);
+    el.classList.toggle('is-frei', !!z.warte);                   // warten (Marsch, Bau): nicht abdunkeln, nur nichts antippen
+    const loch = r ? { l: Math.max(0, r.left - 8), t: Math.max(0, r.top - 8), r: Math.min(W, r.left + r.width + 8), b: Math.min(H, r.top + r.height + 8) } : { l: 0, t: H, r: 0, b: H };
+    const teil = (n, l, t, w, h) => { const d = el.querySelector('[data-tut-d="' + n + '"]'), s = [l, t, w, h].map(v => Math.max(0, Math.round(v)) + 'px');
+        if (d.dataset.s !== s.join()) { d.dataset.s = s.join(); Object.assign(d.style, { left: s[0], top: s[1], width: s[2], height: s[3] }); } };
+    teil('o', 0, 0, W, loch.t); teil('u', 0, loch.b, W, H - loch.b); teil('l', 0, loch.t, loch.l, loch.b - loch.t); teil('r', loch.r, loch.t, W - loch.r, loch.b - loch.t);
+    const sp = $t('tutSperre'), lo = $t('tutLoch'); sp.hidden = !(r && z.nurZeigen); lo.hidden = !r;   // nur gezeigt (Weiter-Knopf): das Loch nimmt keine Tipps
+    for (const x of [sp, lo]) Object.assign(x.style, { left: loch.l + 'px', top: loch.t + 'px', width: loch.r - loch.l + 'px', height: loch.b - loch.t + 'px' });
+    const fi = $t('tutFinger'); fi.hidden = !r || z.nurZeigen;
+    if (!fi.hidden) { const cx = (loch.l + loch.r) / 2, unten = loch.b + 60 < H - 70; Object.assign(fi.style, { left: Math.round(cx - 27) + 'px', top: Math.round(unten ? loch.b - 14 : loch.t - 40) + 'px' }); fi.classList.toggle('oben', !unten); }
+    const be = $t('tutBerater');
+    be.classList.toggle('oben', !!r && (loch.t + loch.b) / 2 > H * .5);       // nie über dem Loch
+    setText($t('tutSatz'), tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.warte || S.satz);
+    $t('tutWeiter').hidden = tutFrage || !ok; $t('tutFrage').hidden = !tutFrage; $t('tutWeg').hidden = tutFrage;
+}
+function tutStarten() {
+    if (!tut) return;
+    if (tutLaeuft() && !tut.frei.length && tut.s === 0) tutStart();   // ganz am Anfang: „Neu: Stadt, Rohstoffe“
+    tutZeigen(); if (!tutUhr) tutUhr = setInterval(tutLaeuft() ? tutZeigen : tutFrei, tutLaeuft() ? 250 : 5000);
+}
+$t('tutWeiter').addEventListener('click', () => { tutTat.ok = true; tutZeigen(); });
+$t('tutWeg').addEventListener('click', () => { tutFrage = true; tutZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
+$t('tutNein').addEventListener('click', () => { tutFrage = false; tutZeigen(); });
+$t('tutJa').addEventListener('click', () => {
+    tutFrage = false; tut.fertig = true; tut.alles = true; tutSpeichern(); tutZeigen();
+    flashHint('Tutorial übersprungen – jetzt siehst du alles.', 3500); setTimeout(maybeShowDaily, 1500);
+});
+// was die Schritte mitbekommen müssen: Angriff (mit Held?), geöffnete Kisten
+if (typeof questProgress === 'function') questProgress = (alt => function (t) { if (t === 'attack') { tutTat.angriff = true; if (nextAttackHero) tutTat.heldAngriff = true; } return alt.apply(this, arguments); })(questProgress);
+kisteOeffnen = (alt => function (id) { const r = alt.apply(this, arguments); if (($t('beuteFenster') || {}).hidden === false) tutTat['kiste_' + id] = true; return r; })(kisteOeffnen);
+if (tut) { tutFrei(); afterSplash(() => setTimeout(tutStarten, 600)); }
 // ===================================================================================================================
 // ===== DIE EINE WELT: Verbindung zu welt.js =====
 // ===================================================================================================================
@@ -14148,8 +14258,8 @@ if (window.WELT) {
     function hbKisteDazu(hb, minR) { hb.kN = nn(hb.kN) + 1; if (minR >= 3) hb.kG = nn(hb.kG) + kWert(minR); }
     function hbNeu(who, now, p, frisch) {
         const hb = { v: HB_V, t0: frisch ? now : 0, st: {}, fo: {}, foT: frisch ? now : 0, tb: 1, gear: {}, kN: 0, kG: 0, hs: hbHeldenStart(), shB: 0,
-            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 10, k: 1, kg: 0, sh: 0, schild: 0 }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
-            schild: 0, w: {}, sp: [] };                // (fr am Anfang: die Anleitung gibt einmal 10 Gems + 1 Kiste)
+            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 10, k: 1, kg: 0, sh: 0, schild: 0, bm: 2, s1: 2 }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
+            schild: 0, w: {}, sp: [] };                // (fr am Anfang: das Tutorial gibt einmal 10 Gems + 1 Kiste, 2 Beschleuniger-Minuten, 2 Schlüssel – 10c2)
         for (const id of hbBauten()) hb.st[id] = [id === 'keep' ? 1 : 0, hb.t0];
         for (const s of HB_SLOTS) hb.gear[s] = [];
         if (!frisch && p) {                            // ein Spielstand von vor 3B: einmal so übernehmen, wie sein Handy es sagt
@@ -14956,7 +15066,7 @@ if (window.WELT) {
         else if (e.sh > 0 || e.crate >= 0 || e.tr > 0) flashHint('Ein Geschenk liegt für dich bereit – Events → Belohnung.', 4500);
     });
     // Willkommen: einmal den Namen wählen
-    if (!window.__OW || !__OW.nameGewaehlt) afterSplash(() => setTimeout(willkommenFenster, 400));
+    if ((!window.__OW || !__OW.nameGewaehlt) && !tutLaeuft()) afterSplash(() => setTimeout(willkommenFenster, 400));   // (im Tutorial nicht: der Name kommt aus der Anmeldung)
     function willkommenFenster() {
         const v = document.createElement('div');
         v.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,20,36,.8);font-family:Georgia,serif';

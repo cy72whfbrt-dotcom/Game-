@@ -54,7 +54,7 @@ function claimDaily() {
     gems += r.gems;
     dailyState = { last: todayKey(), day };
     store.set('openWaterDaily', JSON.stringify(dailyState));
-    saveGame(); saveProgression(); updateHud(); updateGoalsBadge(); anleitungAbgeholt();
+    saveGame(); saveProgression(); updateHud(); updateGoalsBadge();
     return { day, gems: r.gems, items };
 }
 function dailyBeute(r) { return [{ a: 'kiste', k: r.epic ? 'royal' : 'aus', n: r.crates, r: r.epic ? 3 : 0, min: !!r.epic }, { a: 'gems', n: r.gems }]; }
@@ -187,7 +187,7 @@ function questProgress(type, n) {
 function claimQuest(i) {
     const q = loadQuests(), t = q.list[i];
     if (!t || t.claimed || t.progress < t.target) return;
-    t.claimed = true; passBump('quest'); anleitungAbgeholt();
+    t.claimed = true; passBump('quest');
     const c = t.h > 0 ? passMuenzen(hourProduction('player'), t.h) : 0; gems += t.gems; coins += c;   // (Münzen: so viel, wie dein Reich in t.h Stunden macht – der Weltrechner kennt den Topf)
     saveQuests(); saveGame(); updateHud();
     beuteFenster('Aufgabe erledigt', [{ a: 'gems', n: t.gems }, { a: 'coins', n: c }], { unter: QUEST_DEFS[t.type].text(t.target) });
@@ -198,7 +198,7 @@ const questBonus3Bereit = q => !q.bonus3 && questFertigN(q) >= QUEST_BONUS3.n;
 function claimQuestBonus3() {                          // 3 Aufgaben abgeholt: Truppen in die Hauptstadt (der Weltrechner prüft: einmal am Tag)
     const q = loadQuests(), b = rewardBaseId(); if (!questBonus3Bereit(q)) return;
     if (b === null) { flashHint('Truppen brauchen eine eigene Basis – erst dann abholbar.', 3000); return; }
-    const n = passTruppen(hourProduction('player'), QUEST_BONUS3.tr); q.bonus3 = true; eigeneTruppenDazu(b, n, 'aufgabe'); anleitungAbgeholt();
+    const n = passTruppen(hourProduction('player'), QUEST_BONUS3.tr); q.bonus3 = true; eigeneTruppenDazu(b, n, 'aufgabe');
     saveQuests(); saveGame(); updateHud(); sfx('coin');
     beuteFenster('Bonus: 3 erledigt', [{ a: 'tr', n }], { unter: fmtCompact(n) + ' Truppen in ' + islandTitle(islandById[b]) });
     renderQuestPanel(); updateGoalsBadge();
@@ -206,7 +206,7 @@ function claimQuestBonus3() {                          // 3 Aufgaben abgeholt: T
 function claimQuestBonus() {
     const q = loadQuests();
     if (q.bonusClaimed || !q.list.every(t => t.claimed)) return;
-    q.bonusClaimed = true; passBump('questBonus'); anleitungAbgeholt();
+    q.bonusClaimed = true; passBump('questBonus');
     const items = [];
     for (let i = 0; i < QUEST_BONUS.crates; i++) items.push(grantFreeCrate(0));
     gems += QUEST_BONUS.gems; const shH = heroGrantShards('player', HERO_SHARDS_DAY); if (!shH) gems += HERO_SHARDS_DAY * 20;   // (alle Helden voll)
@@ -250,7 +250,7 @@ function inboxClaim(id, aus) {                      // into your coffers - retur
     if (BESCH_MIN[x.besch]) { gibBelohnung('besch', 1, { dauer: x.besch }); got.push('Beschleuniger ' + beschText(x.besch)); aus.push({ a: 'besch', dauer: x.besch, n: 1 }); }
     if (x.sh) { const h = heroGrantShards('player', x.sh); if (h) { got.push(x.sh + ' Splitter ' + h.name); aus.push({ a: 'sh', n: x.sh, held: h.id }); } else { gems += x.sh * 20; got.push('+' + x.sh * 20 + ' Edelsteine (alle Helden voll)'); aus.push({ a: 'gems', n: x.sh * 20 }); } }
     if (x.tr) { const b = rewardBaseId(); if (b !== null) { eigeneTruppenDazu(b, x.tr, 'geschenk'); got.push('+' + fmtCompact(x.tr) + ' Truppen'); aus.push({ a: 'tr', n: x.tr }); } else L.splice(i, 0, Object.assign({}, x, { gems: 0, coins: 0, sh: 0, crate: -1, kiste: -1, schild: 0, em: 0, s1: 0, s2: 0, besch: undefined, b: undefined })); }   // no base right now: only the troops stay in the inbox
-    inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) anleitungAbgeholt(); return got.join(', ');
+    inboxSave(); saveGame(); saveProgression(); updateHud(); if (got.length) return got.join(', ');
 }
 function renderInbox() {
     const L = inboxFach(), el = document.getElementById('inboxList'); if (!el) return;

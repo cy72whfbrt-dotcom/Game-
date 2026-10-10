@@ -194,7 +194,7 @@ function layoutBanners(visible, z, selectedId) {  // places every nameplate (set
   for (const it of items) bannerHitRects.push({ id: it.isl.id, x: it.rect.x, y: it.rect.y, w: it.rect.w, h: it.rect.h });
   return items;
 }
-const BANNER_UNTER = ['hud', 'midBar', 'mapControls', 'anleitung', 'cornerButtons'];   // Leisten über der Karte: Fahnen darunter blass
+const BANNER_UNTER = ['hud', 'midBar', 'mapControls', 'cornerButtons'];   // Leisten über der Karte: Fahnen darunter blass
 function leistenRects() {                                                      // (Bildschirm) die Leisten über der Karte
   const cv = canvas.getBoundingClientRect(), unter = [];
   for (const id of BANNER_UNTER) { const el = document.getElementById(id); if (!el || el.hidden) continue; const b = el.getBoundingClientRect(); if (b.width && b.height) unter.push({ x: b.left - cv.left, y: b.top - cv.top, w: b.width, h: b.height }); }

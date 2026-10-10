@@ -12,7 +12,7 @@
 // ---------------------------------------------------------------------------------------------------------------
 const ROH = ['h', 's', 'e'];
 const ROH_DEF = { h: { name: 'Holz', icon: 'wood', col: '#c08a4c' }, s: { name: 'Stein', icon: 'stone', col: '#aab3bd' }, e: { name: 'Eisen', icon: 'iron', col: '#8fb6e0' } };
-const ROH_START = { h: wirtR(3000), s: wirtR(2000), e: wirtR(500) };   // so viel hat jeder am Anfang (auch alte Spielstände ohne Rohstoffe) – in RoK-Größe wie die Kosten (Z1, 6.10.)
+const ROH_START = { h: wirtR(4500), s: wirtR(2500), e: wirtR(1500) };   // so viel hat jeder am Anfang (auch alte Spielstände ohne Rohstoffe) – reicht mit den Gebäuden des Tutorials bis Burg 3 (10.10.)
 const ROH_BIOM = { green: { h: 1, s: .5, e: .25 }, sand: { h: .3, s: 1, e: .5 }, snow: { h: .45, s: .6, e: 1 },   // Wiese: Holz · Wüste: Stein · Schnee/Gebirge: Eisen
     ice: { h: .2, s: .5, e: 1.3 }, volcano: { h: .15, s: 1.2, e: 1.1 }, swamp: { h: 1.3, s: .3, e: .3 } };   // (Paket C) Eis: viel Eisen · Vulkan: Stein + Eisen · Sumpf: viel Holz
 const rohLeer = () => ({ h: 0, s: 0, e: 0 });
@@ -324,6 +324,7 @@ function renderKeep() {                                        // das Burg-Fenst
     setBtnLabel(up, max ? 'Höchste Stufe' : 'Burg aufwerten'); setText(document.getElementById('cityUpTime'), max ? '' : fmtDuration(cityTimeSec('keep', B)));
     up.disabled = max || !!blk || !!bau || !kannZahlen('player', k); up.title = blk || ''; up.style.display = bau ? 'none' : '';
     sp.style.display = bau ? '' : 'none'; if (bau) renderCitySheetTimer();
+    document.getElementById('cityBeschBtn').style.display = bau && beschMinuten() > 0 ? '' : 'none';   // Beschleuniger aus dem Rucksack (06g) – auch für die Burg
     const belegt = marschBelegt('player');
     liveHtml(document.getElementById('cityBExtra'),
         '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Schutz</span><b>' + schutzText(burgSchutzRoh('player')) + ' je Rohstoff · ' + schutzText(burgSchutz('player')) + ' Münzen</b></div></div>' +

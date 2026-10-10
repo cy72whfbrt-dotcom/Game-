@@ -12,7 +12,7 @@
                    (schon dran: KI_KARTE unten – .quest, .ach, .logRow, .stat, .inbox-row, …)
      Knöpfe        .btn--primary Gold (gedrückt ui_k_gold_an) · .btn--secondary Dunkel · .btn--danger Rot · :disabled Grau · .chip Schildchen
      Kacheln       [data-r="grau|gruen|blau|lila|gold|rot"] ui_kachel_* · .tile.empty ui_platz
-     Hinweis       .anleitung ui_hinweis (Rolle links) · .notice wie Listen-Karte
+     Hinweis       .notice wie Listen-Karte (ui_hinweis ist frei – früher die Anleitung)
      Balken        .pass-bar/.ach-sum-bar/.ki-balken Rahmen ui_balken (Füllung <i> bleibt Code)
      Symbole       automatisch: <svg class="icon"><use href="#i-…"> → bilder/ui_sym_*.webp (Liste unten)
    ===================================================================== */
@@ -139,11 +139,9 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 [data-r="lila"]{--ki-kachel:url(bilder/ui_kachel_lila.webp)} [data-r="gold"]{--ki-kachel:url(bilder/ui_kachel_gold.webp)} [data-r="rot"]{--ki-kachel:url(bilder/ui_kachel_rot.webp)}
 .tile.empty{border:0;background:url(bilder/ui_platz.webp) center/100% 100% no-repeat}
 
-/* ---------------- Listen-Karten, Hinweisbox (Anleitung), Balken ---------------- */
+/* ---------------- Listen-Karten, Balken ---------------- */
 .ach{border:0;border-style:solid;background:none;border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch}
 .ach.is-ready{border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch}
-.anleitung{border:0;border-style:solid;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding-left:18px;
-  border-image:url(bilder/ui_hinweis.webp) 30 20 30 80 fill / 10px 7px 10px 20px stretch}
 .pass-bar,.ach-sum-bar{height:12px;padding:3px 11px;border-radius:0;background:none;border-style:solid;border-width:0;overflow:visible;
   border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch} .pass-bar i,.ach-sum-bar i{border-radius:3px}
 

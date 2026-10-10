@@ -286,28 +286,44 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
-.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 66px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text ganz, höchstens 4 Zeilen), Knöpfe darunter; rechts 10 px Luft zu den Kartenknöpfen */
-  background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.anleitung[hidden]{display:none}
-.anleitung-n{width:min-content;font:700 10px/1.15 var(--font-ui);color:var(--gold-200);text-align:center}   /* „Schritt“ über „1/7“: schmal */
-.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}   /* immer ganz lesbar, kein „…“ (Spieltest 7.10.) */
-#anleitungWeg{position:relative;width:32px;height:32px;align-self:center} #anleitungWeg::before{content:"";position:absolute;inset:-7px}   /* (sichtbar 32 px, Tippfläche 44 px – ab der Innenkante: 1 px Rand dazu) */
-/* Handy: mit offenem Basis-Fenster oben unter dem HUD statt direkt über dem Fenster – dort steht die Basis (inselMittig) */
-@media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important}
-  body:has(#islandPopup.is-open):has(#anleitung:not([hidden])) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--anl-h,64px) + 8px)} }   /* der Hinweis (z. B. „Der Drache ist erschienen“) dann darunter, nie hinter der Anleitung (--anl-h: 06b) */
-.anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
-.anleitung-ok{grid-column:1/-1;justify-self:end}
-body.has-sheet .anleitung:not(.is-events){display:none}   /* (Schritt 6 „Abholen“ bleibt im Events-Fenster sichtbar: 06b) */
-body:has(#feldRing:not([hidden])) .anleitung{display:none}   /* (Feld-Menü auf der Karte offen: Anleitung kurz weg) */
-/* Anleitung: der nächste nötige Knopf pulsiert (06b anleitungZeigen setzt body[data-anl-puls]) */
-@keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
-body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapControls button,#hudRoh),
-body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
-body[data-anl-puls="stadt"] #cityNavBtn > .icon,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
-body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn > .icon,
-body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus3],[data-bonus],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
-  {animation:anl-puls 1.4s ease-out infinite}
+/* Tutorial (10c2): dunkel mit Loch – vier Teile um das Loch fangen die Tipps, das Loch selbst lässt sie zum echten Element durch */
+.tut{position:fixed;inset:0;z-index:59;pointer-events:none}   /* über Fenstern, Stadt und Heldenhalle (≤ 58), unter Belohnungs-Fenstern (60+) und dem Hinweis */
+.tut[hidden]{display:none}
+.tut-d{position:absolute;background:rgba(5,8,15,.7);pointer-events:auto}
+.tut.is-frei .tut-d{background:none}   /* warten (Marsch, Bau): man sieht alles, tippen geht trotzdem nicht */
+.tut-loch{position:absolute;border-radius:14px;pointer-events:none;box-shadow:0 0 0 3px rgba(242,214,138,.75),0 0 18px 6px rgba(242,214,138,.4);animation:tut-glanz 1.6s ease-in-out infinite}
+.tut-sperre{position:absolute;pointer-events:auto}
+@keyframes tut-glanz{50%{box-shadow:0 0 0 3px rgba(242,214,138,1),0 0 26px 10px rgba(242,214,138,.55)}}
+/* Finger: Platzhalter, bis das KI-Bild einstieg_finger.webp kommt (zeigt nach oben aufs Loch) */
+.tut-finger{position:absolute;width:54px;height:54px;pointer-events:none;animation:tut-tipp 1s ease-in-out infinite}
+.tut-finger::before{content:"";position:absolute;left:18px;top:0;width:18px;height:34px;border-radius:9px 9px 4px 4px;background:linear-gradient(90deg,#f2d68a,#c99a3e);border:2px solid #5a3d0e}
+.tut-finger::after{content:"";position:absolute;left:8px;top:26px;width:38px;height:26px;border-radius:10px 10px 14px 14px;background:linear-gradient(90deg,#f2d68a,#c99a3e);border:2px solid #5a3d0e}
+.tut-finger.oben{transform:rotate(180deg);animation-name:tut-tipp2}
+@keyframes tut-tipp{50%{translate:0 8px}} @keyframes tut-tipp2{50%{translate:0 -8px}}
+/* Berater mit Sprechblase: Platzhalter-Kopf, bis einstieg_berater.webp kommt; nie über dem Loch (.oben) */
+.tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px);max-width:440px;
+  display:flex;align-items:flex-end;gap:6px;pointer-events:none}
+.tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 8px)}
+.tut-figur{flex:none;width:64px;height:80px;border-radius:32px 32px 10px 10px;border:2px solid var(--gold-300);background:url(bilder/held_aldric_kopf.webp) center/cover,linear-gradient(#24365c,#0f1a2e)}
+.tut-blase{flex:1;min-width:0;margin-bottom:18px;padding:9px 12px;border-radius:12px 12px 12px 2px;background:#f3e6c4;color:#24170a;box-shadow:0 3px 10px #000a;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+.tut-blase p{margin:0;font:600 15px/1.3 Georgia,serif}
+.tut-blase > .btn,.tut-frage{align-self:flex-end}
+.tut-frage{display:flex;gap:8px} .tut-frage[hidden]{display:none}
+.tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
+  border:1px solid var(--line-2);background:rgba(0,0,0,.6);color:var(--tx-2);font:600 12px var(--font-ui);pointer-events:auto}
+.tut-weg[hidden]{display:none}
+.tut-berater.oben ~ .tut-weg{top:auto;bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px)}   /* Berater oben: „Überspringen“ unten */
+/* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt */
+.tut-banner{position:fixed;left:50%;top:calc(var(--safe-t,0px) + 96px);z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
+  background:linear-gradient(#e9c46d,#b8862c);color:#2a1a05;font:800 17px var(--font-display);white-space:nowrap;box-shadow:0 4px 18px #000c;pointer-events:none}
+.tut-banner[hidden]{display:none} .tut-banner.an{animation:tut-banner 2.6s ease forwards}
+@keyframes tut-banner{0%{opacity:0;transform:translateX(-50%) scale(.6)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%,80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0}}
+/* Was ein neuer Spieler noch nicht hat, ist ganz weg (10c2 tutFrei: body.tz-<teil>) */
+body.tz-stadt #cityNavBtn,body.tz-roh #hudRoh,body.tz-kampf #battleLogBtn,body.tz-events #goalsBtn,body.tz-truppen #hud .res--troop,body.tz-shop #shopBtn,
+body.tz-profil #profileBtn,body.tz-rucksack #rucksackBtn,body.tz-aufgaben #goalsGruppen [data-ggrp="aufgaben"],body.tz-karte :is(#markerBtn,#armyBtn),
+body.tz-gems #hud .res--gem,body.tz-shopmehr #shopTabs [data-stab]:not([data-stab="gems"]),body.tz-bund #bundBtn,body.tz-rang #tabBtnRank,
+body.tz-events2 :is(#goalsGruppen [data-ggrp="pass"],#goalsGruppen [data-ggrp="ereignisse"],#goalsTabs [data-gtab="ach"],#midBar),
+body.tz-welt :is(#teleportBtn,#titleBtn,#feldRing [data-fring="tp"]){display:none!important}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
 @keyframes toast-in{from{opacity:0;translate:0 -6px}}

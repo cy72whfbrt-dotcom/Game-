@@ -441,28 +441,44 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
-.anleitung{position:fixed;z-index:var(--z-toast);left:calc(var(--safe-l,0px) + 10px);right:calc(var(--safe-r,0px) + 66px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 14px);
-  max-width:420px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 8px;padding:6px 6px 6px 10px;   /* Schritt · Text · × in einer Zeile (Text ganz, höchstens 4 Zeilen), Knöpfe darunter; rechts 10 px Luft zu den Kartenknöpfen */
-  background:var(--glass);border:1px solid var(--gold-300);border-radius:var(--r-sm);box-shadow:var(--sh-2);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
-.anleitung[hidden]{display:none}
-.anleitung-n{width:min-content;font:700 10px/1.15 var(--font-ui);color:var(--gold-200);text-align:center}   /* „Schritt“ über „1/7“: schmal */
-.anleitung-t{font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-1)}   /* immer ganz lesbar, kein „…“ (Spieltest 7.10.) */
-#anleitungWeg{position:relative;width:32px;height:32px;align-self:center} #anleitungWeg::before{content:"";position:absolute;inset:-7px}   /* (sichtbar 32 px, Tippfläche 44 px – ab der Innenkante: 1 px Rand dazu) */
-/* Handy: mit offenem Basis-Fenster oben unter dem HUD statt direkt über dem Fenster – dort steht die Basis (inselMittig) */
-@media (max-width:899px) and (min-height:501px){ body:has(#islandPopup.is-open) .anleitung{top:calc(var(--safe-t) + var(--hud-top-space));bottom:auto!important}
-  body:has(#islandPopup.is-open):has(#anleitung:not([hidden])) .toast{top:calc(var(--safe-t) + var(--hud-top-space) + var(--anl-h,64px) + 8px)} }   /* der Hinweis (z. B. „Der Drache ist erschienen“) dann darunter, nie hinter der Anleitung (--anl-h: 06b) */
-.anleitung-k{grid-column:1/-1;display:flex;justify-content:flex-end;gap:8px}
-.anleitung-ok{grid-column:1/-1;justify-self:end}
-body.has-sheet .anleitung:not(.is-events){display:none}   /* (Schritt 6 „Abholen“ bleibt im Events-Fenster sichtbar: 06b) */
-body:has(#feldRing:not([hidden])) .anleitung{display:none}   /* (Feld-Menü auf der Karte offen: Anleitung kurz weg) */
-/* Anleitung: der nächste nötige Knopf pulsiert (06b anleitungZeigen setzt body[data-anl-puls]) */
-@keyframes anl-puls{0%,100%{box-shadow:0 0 0 0 rgba(240,200,110,.85)}60%{box-shadow:0 0 0 9px rgba(240,200,110,0)}}
-body[data-anl-puls="heim"] #homeBtn,body[data-anl-puls="knoepfe"] :is(#mapControls button,#hudRoh),
-body[data-anl-puls="angriff"] #attackBtn,body[data-anl-puls="aufwerten"] #upgradeBtn,
-body[data-anl-puls="stadt"] #cityNavBtn > .icon,body[data-anl-puls="stadtfenster"] #cityBtn,body[data-anl-puls="bauen"] #cityUpgradeBtn,
-body[data-anl-puls="sammeln"] #fieldSheet [data-fsend],body[data-anl-puls="events"] #goalsBtn > .icon,
-body[data-anl-puls="abholen"] #goalsPopup :is([data-daily],[data-quest],[data-bonus3],[data-bonus],[data-inbox],[data-inbox-all],[data-ach],[data-ach-all],[data-pass-l],[data-pass-all],[data-pass-old]):not(:disabled)
-  {animation:anl-puls 1.4s ease-out infinite}
+/* Tutorial (10c2): dunkel mit Loch – vier Teile um das Loch fangen die Tipps, das Loch selbst lässt sie zum echten Element durch */
+.tut{position:fixed;inset:0;z-index:59;pointer-events:none}   /* über Fenstern, Stadt und Heldenhalle (≤ 58), unter Belohnungs-Fenstern (60+) und dem Hinweis */
+.tut[hidden]{display:none}
+.tut-d{position:absolute;background:rgba(5,8,15,.7);pointer-events:auto}
+.tut.is-frei .tut-d{background:none}   /* warten (Marsch, Bau): man sieht alles, tippen geht trotzdem nicht */
+.tut-loch{position:absolute;border-radius:14px;pointer-events:none;box-shadow:0 0 0 3px rgba(242,214,138,.75),0 0 18px 6px rgba(242,214,138,.4);animation:tut-glanz 1.6s ease-in-out infinite}
+.tut-sperre{position:absolute;pointer-events:auto}
+@keyframes tut-glanz{50%{box-shadow:0 0 0 3px rgba(242,214,138,1),0 0 26px 10px rgba(242,214,138,.55)}}
+/* Finger: Platzhalter, bis das KI-Bild einstieg_finger.webp kommt (zeigt nach oben aufs Loch) */
+.tut-finger{position:absolute;width:54px;height:54px;pointer-events:none;animation:tut-tipp 1s ease-in-out infinite}
+.tut-finger::before{content:"";position:absolute;left:18px;top:0;width:18px;height:34px;border-radius:9px 9px 4px 4px;background:linear-gradient(90deg,#f2d68a,#c99a3e);border:2px solid #5a3d0e}
+.tut-finger::after{content:"";position:absolute;left:8px;top:26px;width:38px;height:26px;border-radius:10px 10px 14px 14px;background:linear-gradient(90deg,#f2d68a,#c99a3e);border:2px solid #5a3d0e}
+.tut-finger.oben{transform:rotate(180deg);animation-name:tut-tipp2}
+@keyframes tut-tipp{50%{translate:0 8px}} @keyframes tut-tipp2{50%{translate:0 -8px}}
+/* Berater mit Sprechblase: Platzhalter-Kopf, bis einstieg_berater.webp kommt; nie über dem Loch (.oben) */
+.tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px);max-width:440px;
+  display:flex;align-items:flex-end;gap:6px;pointer-events:none}
+.tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 8px)}
+.tut-figur{flex:none;width:64px;height:80px;border-radius:32px 32px 10px 10px;border:2px solid var(--gold-300);background:url(bilder/held_aldric_kopf.webp) center/cover,linear-gradient(#24365c,#0f1a2e)}
+.tut-blase{flex:1;min-width:0;margin-bottom:18px;padding:9px 12px;border-radius:12px 12px 12px 2px;background:#f3e6c4;color:#24170a;box-shadow:0 3px 10px #000a;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+.tut-blase p{margin:0;font:600 15px/1.3 Georgia,serif}
+.tut-blase > .btn,.tut-frage{align-self:flex-end}
+.tut-frage{display:flex;gap:8px} .tut-frage[hidden]{display:none}
+.tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
+  border:1px solid var(--line-2);background:rgba(0,0,0,.6);color:var(--tx-2);font:600 12px var(--font-ui);pointer-events:auto}
+.tut-weg[hidden]{display:none}
+.tut-berater.oben ~ .tut-weg{top:auto;bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px)}   /* Berater oben: „Überspringen“ unten */
+/* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt */
+.tut-banner{position:fixed;left:50%;top:calc(var(--safe-t,0px) + 96px);z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
+  background:linear-gradient(#e9c46d,#b8862c);color:#2a1a05;font:800 17px var(--font-display);white-space:nowrap;box-shadow:0 4px 18px #000c;pointer-events:none}
+.tut-banner[hidden]{display:none} .tut-banner.an{animation:tut-banner 2.6s ease forwards}
+@keyframes tut-banner{0%{opacity:0;transform:translateX(-50%) scale(.6)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%,80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0}}
+/* Was ein neuer Spieler noch nicht hat, ist ganz weg (10c2 tutFrei: body.tz-<teil>) */
+body.tz-stadt #cityNavBtn,body.tz-roh #hudRoh,body.tz-kampf #battleLogBtn,body.tz-events #goalsBtn,body.tz-truppen #hud .res--troop,body.tz-shop #shopBtn,
+body.tz-profil #profileBtn,body.tz-rucksack #rucksackBtn,body.tz-aufgaben #goalsGruppen [data-ggrp="aufgaben"],body.tz-karte :is(#markerBtn,#armyBtn),
+body.tz-gems #hud .res--gem,body.tz-shopmehr #shopTabs [data-stab]:not([data-stab="gems"]),body.tz-bund #bundBtn,body.tz-rang #tabBtnRank,
+body.tz-events2 :is(#goalsGruppen [data-ggrp="pass"],#goalsGruppen [data-ggrp="ereignisse"],#goalsTabs [data-gtab="ach"],#midBar),
+body.tz-welt :is(#teleportBtn,#titleBtn,#feldRing [data-fring="tp"]){display:none!important}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */
 @media (max-width:899px),(max-height:500px){ body.in-stadt:not(.has-sheet) .toast{top:calc(var(--stadt-kopf,96px) + 10px)} }
 @keyframes toast-in{from{opacity:0;translate:0 -6px}}
@@ -1458,7 +1474,6 @@ main .besch-ic,.besch-ic{width:22px;height:22px;object-fit:contain} #beschInhalt
   .res{flex:0 0 auto;max-width:none;padding:0 var(--ab-2)}   /* pills size to their value: no ellipsis on "999,9 Tsd." */
   .res b{min-width:max-content}
   .mapctl{bottom:calc(var(--safe-b) + 10px)}
-  .anleitung{left:calc(var(--rail-w) + var(--safe-l) + 10px);bottom:calc(var(--safe-b) + 10px)}   /* neben der Leiste, nie darüber */
   .mabar{left:calc(var(--rail-w) + var(--safe-l) + 10px);bottom:calc(var(--safe-b) + 10px);right:calc(var(--safe-r) + 60px)}
   body.is-multi .mapctl{display:flex;bottom:calc(var(--safe-b) + 10px)}
   .toast{left:calc(50% + var(--rail-w) / 2)}
@@ -2051,7 +2066,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim 
                    (schon dran: KI_KARTE unten – .quest, .ach, .logRow, .stat, .inbox-row, …)
      Knöpfe        .btn--primary Gold (gedrückt ui_k_gold_an) · .btn--secondary Dunkel · .btn--danger Rot · :disabled Grau · .chip Schildchen
      Kacheln       [data-r="grau|gruen|blau|lila|gold|rot"] ui_kachel_* · .tile.empty ui_platz
-     Hinweis       .anleitung ui_hinweis (Rolle links) · .notice wie Listen-Karte
+     Hinweis       .notice wie Listen-Karte (ui_hinweis ist frei – früher die Anleitung)
      Balken        .pass-bar/.ach-sum-bar/.ki-balken Rahmen ui_balken (Füllung <i> bleibt Code)
      Symbole       automatisch: <svg class="icon"><use href="#i-…"> → bilder/ui_sym_*.webp (Liste unten)
    ===================================================================== */
@@ -2178,11 +2193,9 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 [data-r="lila"]{--ki-kachel:url(bilder/ui_kachel_lila.webp)} [data-r="gold"]{--ki-kachel:url(bilder/ui_kachel_gold.webp)} [data-r="rot"]{--ki-kachel:url(bilder/ui_kachel_rot.webp)}
 .tile.empty{border:0;background:url(bilder/ui_platz.webp) center/100% 100% no-repeat}
 
-/* ---------------- Listen-Karten, Hinweisbox (Anleitung), Balken ---------------- */
+/* ---------------- Listen-Karten, Balken ---------------- */
 .ach{border:0;border-style:solid;background:none;border-image:url(bilder/ui_karte.webp) 24 fill / 8px stretch}
 .ach.is-ready{border-image:url(bilder/ui_karte_an.webp) 24 fill / 8px stretch}
-.anleitung{border:0;border-style:solid;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;padding-left:18px;
-  border-image:url(bilder/ui_hinweis.webp) 30 20 30 80 fill / 10px 7px 10px 20px stretch}
 .pass-bar,.ach-sum-bar{height:12px;padding:3px 11px;border-radius:0;background:none;border-style:solid;border-width:0;overflow:visible;
   border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch} .pass-bar i,.ach-sum-bar i{border-radius:3px}
 
@@ -2468,9 +2481,17 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 
 <!-- Toast: text-only, JS writes textContent. Empty = hidden. -->
 <div id="hint" class="toast" role="status" aria-live="polite"></div>
-<div id="anleitung" class="anleitung" role="status" hidden><span id="anleitungSchritt" class="anleitung-n"></span><span id="anleitungText" class="anleitung-t"></span><button id="anleitungWeg" class="btn-x" type="button" aria-label="Anleitung überspringen"><svg class="icon"><use href="#i-close"/></svg></button>
-  <span id="anleitungFrage" class="anleitung-k" hidden><button id="anleitungJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="anleitungNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span>
-  <button id="anleitungOk" class="btn btn--primary btn--sm anleitung-ok" type="button" hidden>Verstanden</button></div>
+<!-- Tutorial für neue Spieler (10c2): Dunkel aus vier Teilen um das Loch (fangen die Tipps), Finger, Berater mit 1–2 Sätzen, „Überspringen“ fragt erst -->
+<div id="tut" class="tut" hidden>
+  <div class="tut-d" data-tut-d="o"></div><div class="tut-d" data-tut-d="u"></div><div class="tut-d" data-tut-d="l"></div><div class="tut-d" data-tut-d="r"></div>
+  <div id="tutLoch" class="tut-loch" hidden></div><div id="tutSperre" class="tut-sperre" hidden></div>
+  <div id="tutFinger" class="tut-finger" hidden></div>
+  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><p id="tutSatz"></p>
+    <button id="tutWeiter" class="btn btn--primary btn--sm" type="button" hidden>Weiter</button>
+    <span id="tutFrage" class="tut-frage" hidden><button id="tutJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="tutNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span></div></div>
+  <button id="tutWeg" class="tut-weg" type="button">Überspringen</button>
+</div>
+<div id="tutBanner" class="tut-banner" role="status" hidden></div>
 
 <!-- Multi-attack floating bar (JS sets style.display='flex') -->
 <div id="multiAttackBar" class="mabar">
@@ -2819,7 +2840,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
       </form>
       <form action="index.php?aus=1" method="post" class="set-ab"><button class="btn btn--secondary btn--sm" type="submit">Abmelden</button></form>
       <div class="sect" id="setHilfe"><h4>Hilfe</h4></div>
-      <div class="set-knoepfe"><button id="anleitungNochmal" class="btn btn--secondary btn--sm" type="button">Anleitung noch mal</button></div>
       <details class="set-hilfe p5-hilfe">
         <summary>Wo finde ich was?</summary>
         <p><b>Stadt</b> → Burg (deine Hauptstadt-Stufe), Gebäude, Holz/Stein/Eisen, Forschung, Krankenhaus, Helden.</p>
@@ -3269,7 +3289,6 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
   </header>
   <div class="pbody">
     <div id="popupStats" class="popup-stats"></div>
-    <div id="popupAnleitung" class="notice notice--gold" hidden><svg class="icon"><use href="#i-info"/></svg><span>Hier stehen deine Truppen. Mit ihnen greifst du an und sammelst.</span></div>
     <div id="popupBund"></div>
     <div id="popupActions" class="actgrid">
       <button id="teleportBtn" class="act act--city" type="button" style="display:none"><span class="act-ic act-ic--city"><svg class="icon"><use href="#i-send"/></svg></span><span class="act-t">Teleportieren</span><span class="act-s">1 Teleporter</span></button>

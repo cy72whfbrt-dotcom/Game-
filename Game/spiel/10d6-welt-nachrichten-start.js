@@ -55,7 +55,7 @@
         else if (e.sh > 0 || e.crate >= 0 || e.tr > 0) flashHint('Ein Geschenk liegt für dich bereit – Events → Belohnung.', 4500);
     });
     // Willkommen: einmal den Namen wählen
-    if (!window.__OW || !__OW.nameGewaehlt) afterSplash(() => setTimeout(willkommenFenster, 400));
+    if ((!window.__OW || !__OW.nameGewaehlt) && !tutLaeuft()) afterSplash(() => setTimeout(willkommenFenster, 400));   // (im Tutorial nicht: der Name kommt aus der Anmeldung)
     function willkommenFenster() {
         const v = document.createElement('div');
         v.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(8,20,36,.8);font-family:Georgia,serif';
