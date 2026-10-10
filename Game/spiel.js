@@ -10005,7 +10005,7 @@ function cityVergleich(id, L) {                    // Gebäude-Fenster „Jetzt 
 }
 function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
-    if (id === 'heroes') return lvl ? '' : '<small class="keep-note">Baue die Heldenhalle – erst dann kannst du Helden freischalten, aufwerten und mitschicken.</small>' +   // gebaut: der Reiter „Helden“ öffnet sie (08b)
+    if (id === 'heroes') return lvl ? '' : '<small class="keep-note">' + (cityBuildOf(loadCity(), 'heroes') ? 'Die Heldenhalle wird gebaut – danach' : 'Baue die Heldenhalle – erst dann') + ' kannst du Helden freischalten, aufwerten und mitschicken.</small>' +   // (läuft der Bau: kein „Baue …“)   // gebaut: der Reiter „Helden“ öffnet sie (08b)
         '<button type="button" class="btn btn--secondary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + cityHeldenBadge() + '</button>';
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
     if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
@@ -13530,12 +13530,13 @@ const tutZahl = n => fmtNum(Math.round(n));
 const tutUnd = l => l.length > 1 ? l.slice(0, -1).join(', ') + ' und ' + l[l.length - 1] : l[0] || '';
 const tutKost = (id, L) => { const k = AUF ? AUF.stadtKosten(id, L === undefined ? tutStufe(id) : L) : { c: cityCost(id, tutStufe(id)) };   // „330 Münzen und 90 Holz“ (echte Kosten)
     return tutUnd([[k.c, 'Münzen'], [k.h, 'Holz'], [k.s, 'Stein'], [k.e, 'Eisen']].filter(x => x[0] > 0).map(x => tutZahl(x[0]) + ' ' + x[1])); };
+const tutSek = n => n === 1 ? '1 Sekunde' : n + ' Sekunden';
 const tutRest = id => { const b = cityBuildOf(loadCity(), id); return b ? Math.max(1, Math.ceil((b.endsAt - Date.now()) / 1000)) : 0; };
 const tutDauer = sek => sek < 60 ? sek + ' Sekunden' : Math.round(sek / 60) === 1 ? '1 Minute' : Math.round(sek / 60) + ' Minuten';
 const tutRoh = x => AUF ? Math.round(AUF.rohJeStunde(x, Math.max(1, tutStufe({ h: 'lumber', s: 'quarry', e: 'mine' }[x])))) : 0;   // Rohstoff pro Stunde (mit Gebäude Stufe 1)
 const tutHeld = () => { const h = HEROES.find(x => heroOwned('player', x.id)); return h ? h.name : 'dein Held'; };
 function tutBauT(id, t) {                                        // bauen/aufwerten: Stadt → Schild → Bauen → (läuft) warten; t: { stadt, schild, bauen, warte(Sek.) }
-    if (tutBaut(id)) return { ...tutBauWarte(id), satz: t.warte ? t.warte(tutRest(id)) : 'Noch ' + tutRest(id) + ' Sekunden …' };
+    if (tutBaut(id)) return { ...tutBauWarte(id), satz: t.warte ? t.warte(tutRest(id)) : 'Noch ' + tutSek(tutRest(id)) + ' …' };
     const z = tutGeb(id);
     if (z === $t('cityNavBtn')) return tutT(1, 3, z, t.stadt || 'Tipp auf „Stadt“.');
     if (z === $t('citySheetClose')) return tutT(2, 3, z, 'Das ist das falsche Gebäude – schließ das Fenster.');
@@ -13544,7 +13545,7 @@ function tutBauT(id, t) {                                        // bauen/aufwer
 }
 function tutBeschT(id, satz) {                                   // ein Bau läuft: Beschleuniger drauf (Knopf → 1-Min.-Kachel)
     const z = tutBesch(id);
-    if (z && z.warte) return { ...z, satz: 'Noch ' + tutRest(id) + ' Sekunden …' };
+    if (z && z.warte) return { ...z, satz: 'Noch ' + tutSek(tutRest(id)) + ' …' };
     return isPanelOpen(beschPopup) ? tutT(2, 2, z, 'Tipp den Beschleuniger – sofort fertig!') : tutT(1, 2, z, satz);
 }
 function tutReihe(teile) {                                       // Knopf → Reiter → Ziel: das erste noch nicht erledigte Teil [Ziel oder null, Satz]
@@ -13582,10 +13583,10 @@ function tutAngriff(feld, held) {                                // Karte → Ba
     const id = tut[feld]; if (id === undefined) return { weiter: true, satz: TUT_OHNE[feld] };   // (keine Basis in Reichweite: nur erklären)
     const von = held ? 5 : 4, T = (n, ziel, satz) => tutT(n, von, ziel, satz), H = tutHeld();
     const proStd = tutZahl(proStunde(coinsPerTick(islandLevels[id] || 1) * playerCoinMult()));
-    if (!cityView.hidden) return T(1, tutZurKarte(), held ? 'Probier ' + H + ' gleich aus – geh zur Karte.' : 'Eine freie Basis bringt dir +' + proStd + ' Münzen pro Stunde. Geh zur Karte.');
+    if (!cityView.hidden) return T(1, tutZurKarte(), held ? 'Dein erster Held ist ' + H + '. Nimm den Helden gleich mit in einen Angriff – geh zur Karte.' : 'Eine freie Basis bringt dir +' + proStd + ' Münzen pro Stunde. Geh zur Karte.');
     if (isPanelOpen(popup) && popupIslandId !== id) return T(2, $t('closeBtn'), 'Das ist die falsche Basis – schließ das Fenster.');
     if (isPanelOpen(popup)) {
-        if (popupView !== 'preview') return T(3, tutSicht(attackBtn), held ? 'Tipp auf „Angreifen“.' : tutZahl(islandTroops[id] || 0) + ' Verteidiger – tipp auf „Angreifen“.');
+        if (popupView !== 'preview') return T(3, tutSicht(attackBtn), held ? 'Tipp auf „Angreifen“.' : 'Wie stark sie ist, zeigt erst ein Späher. Deine Truppen sind viele – tipp auf „Angreifen“.');
         if (held && !previewHero) {
             const chip = tutSicht(document.querySelector('#islandPopup [data-hero]:not([data-hero=""]):not([disabled])'));
             if (chip) { const h = HEROES.find(x => x.id === chip.dataset.hero); return T(4, chip, 'Wähl ' + (h ? h.name : H) + '.'); }
@@ -13603,7 +13604,8 @@ function tutLager() {                                           // das eigene La
     const c = barbState.camps.filter(x => x.fuer && barbFuerOk(x, 'player'))[0] || barbNearest();
     if (!c) return { weiter: true, satz: 'Barbaren-Lager bringen Münzen. Gerade ist keines in deiner Nähe – schau später auf der Karte.' };
     if (!cityView.hidden) return tutT(1, 2, tutZurKarte(), 'Tipp auf „Karte“.');
-    const hin = () => flyTo(c.x, c.y, { zoom: Math.max(mapState.zoom, .02), screenY: viewH * .42 });
+    const h = islandById[playerIslandId], d = Math.hypot(c.x - h.x, c.y - h.y) || 1;   // Kamera: Hauptstadt und Lager zusammen im Bild (dazu ein paar Basen)
+    const hin = () => flyTo((c.x + h.x) / 2, (c.y + h.y) / 2, { zoom: Math.min(maxZoom, Math.max(.008, .5 * Math.min(viewW, viewH * .55) / d)), screenY: viewH * .45 });
     if (tutFlug !== tut.s) { tutFlug = tut.s; hin(); }
     const k = barbK(), p = barbScreen(c), r = Math.max(24, 22 * k);
     return tutT(1, 2, { r: { x: p.x - r, y: p.y - r - 4 * k, w: 2 * r, h: 2 * r }, rund: true, fokus: hin },
@@ -13611,14 +13613,15 @@ function tutLager() {                                           // das eigene La
 }
 function tutMarschWarte() {                                      // Marsch zum Lager: warten, mit Fortschritt
     const m = barbMarches.find(x => x.who === 'player' && !x.back);
-    return { warte: m ? 'Deine Truppen marschieren – noch ' + Math.max(1, Math.ceil((m.resolveAt - Date.now()) / 1000)) + ' Sekunden bis zum Lager.' : 'Gleich kommt der Kampf …',
+    return { warte: m ? 'Deine Truppen marschieren – noch ' + tutSek(Math.max(1, Math.ceil((m.resolveAt - Date.now()) / 1000))) + ' bis zum Lager.' : 'Gleich kommt der Kampf …',
         fort: m ? (Date.now() - m.startedAt) / Math.max(1, m.resolveAt - m.startedAt) : 1 };
 }
 function tutFenster(panel, knopf) { return isPanelOpen(panel) ? null : $t(knopf); }   // Fenster zu: der Knopf, der es öffnet
 
 // ---- die Schritte (Drehbuch scratchpad/design_tutorial2.md): Satz (auch als Funktion: Zahlen live aus dem Spiel), Ziel, fertig, freude (schwebt auf) ----
 const tutBurgK = () => AUF ? AUF.stadtKosten('keep', 1) : {}, tutRohJetzt = x => tutZahl((AUF && AUF.rohVon('player') || {})[x] || 0);
-const tutUnterwegs = () => pendingAttacks.filter(a => !a.attackerBotId && a.resolveAt > Date.now());   // eigene Angriffe unterwegs
+const tutAngriffe = () => pendingAttacks.filter(a => !a.attackerBotId && a.resolveAt > Date.now());   // eigene Angriffe unterwegs
+const tutUnterwegs = () => [...tutAngriffe(), ...pendingRetreats.filter(r => r.resolveAt > Date.now())];   // dazu Truppen auf dem Heimweg
 const TUT = [
     { k: 'muenzen', nah: 1, satz: () => 'Das sind deine ' + tutZahl(Math.floor(coins)) + ' Münzen. Jeder Bau und jede Forschung kostet welche – gib sie klug aus.', ziel: () => ({ el: document.querySelector('#hud .res--coin') }) },
     { k: 'r_holz', nah: 1, neu: ['roh'], satz: () => 'Holz ist dein wichtigstes Baumaterial – ' + tutRohJetzt('h') + ' hast du. Gleich baust du dir einen Holzfäller, dann kommt jede Stunde neues.', ziel: () => ({ el: document.querySelector('#hud .res--h') }) },
@@ -13626,17 +13629,17 @@ const TUT = [
     { k: 'r_eisen', nah: 1, satz: () => 'Eisen ist am knappsten – nur ' + tutRohJetzt('e') + '. Die Burg braucht es: allein Burg 2 kostet ' + tutZahl(tutBurgK().e || 0) + ' Eisen.', ziel: () => ({ el: document.querySelector('#hud .res--e') }) },
     { k: 'r_gems', nah: 1, zeig: 'gems', satz: () => 'Edelsteine sind das Seltenste im Spiel – ' + (gems >= 1 ? 'du hast ' + tutZahl(Math.floor(gems)) + '.' : 'du hast noch keine.') + (tut.belohnt ? '' : ' Am Ende dieses Rundgangs schenke ich dir welche.'),
       ziel: () => ({ el: document.querySelector('#hud .res--gem') }) },
-    { k: 'holz', neu: ['stadt'], vor: () => tutGeschenk('b', 'Geschenk von Aldric', [['besch', 2, { dauer: '1m' }]]), fertig: () => tutStufe('lumber') > 0 || tutBaut('lumber'),
+    { k: 'holz', neu: ['stadt'], vor: () => tutGeschenk('b', 'Geschenk', [['besch', 2, { dauer: '1m' }]]), fertig: () => tutStufe('lumber') > 0 || tutBaut('lumber'),
       ziel: () => tutBauT('lumber', { stadt: 'Ohne Holz steht alles still. Tipp auf „Stadt“.', schild: 'Hier ist der Platz für den Holzfäller – tipp drauf.', bauen: 'Kostet nur ' + tutKost('lumber') + '. Tipp auf „Bauen“!' }) },
-    { k: 'tempo', bleib: true, fertig: () => tutStufe('lumber') > 0, freude: () => '+' + tutZahl(tutRoh('h')) + ' Holz pro Stunde',
+    { k: 'tempo', bleib: true, bau: 'lumber', fertig: () => tutStufe('lumber') > 0, freude: () => '+' + tutZahl(tutRoh('h')) + ' Holz pro Stunde',
       ziel: () => tutBeschT('lumber', tutDauer(tutRest('lumber')) + ' sind zu lang für einen Feldherrn! Nimm einen Beschleuniger – sofort fertig.') },
-    { k: 'stein', fertig: () => tutStufe('quarry') > 0, freude: () => '+' + tutZahl(tutRoh('s')) + ' Stein pro Stunde',
+    { k: 'stein', bau: 'quarry', fertig: () => tutStufe('quarry') > 0, freude: () => '+' + tutZahl(tutRoh('s')) + ' Stein pro Stunde',
       ziel: () => tutBauT('quarry', { schild: 'Jetzt Stein: Bau den Steinbruch – ' + tutKost('quarry') + '.', bauen: 'Jetzt Stein: Bau den Steinbruch – ' + tutKost('quarry') + '.',
-          warte: n => 'Noch ' + n + ' Sekunden – dann bricht er jede Stunde ' + tutZahl(AUF ? AUF.rohJeStunde('s', 1) : 0) + ' Stein.' }) },
-    { k: 'eisen', fertig: () => tutStufe('mine') > 0, freude: () => '+' + tutZahl(tutRoh('e')) + ' Eisen pro Stunde',
+          warte: n => 'Noch ' + tutSek(n) + ' – dann bricht er jede Stunde ' + tutZahl(AUF ? AUF.rohJeStunde('s', 1) : 0) + ' Stein.' }) },
+    { k: 'eisen', bau: 'mine', fertig: () => tutStufe('mine') > 0, freude: () => '+' + tutZahl(tutRoh('e')) + ' Eisen pro Stunde',
       ziel: () => tutBauT('mine', { schild: 'Fehlt nur noch Eisen: Bau die Eisenmine.', bauen: 'Die Eisenmine kostet ' + tutKost('mine') + '. Tipp auf „Bauen“!',
-          warte: n => 'Noch ' + n + ' Sekunden – dann laufen alle drei Rohstoffe von allein.' }) },
-    { k: 'burg2', fertig: () => tutStufe('keep') >= 2, freude: () => 'Burg 2!',
+          warte: n => 'Noch ' + tutSek(n) + ' – dann laufen alle drei Rohstoffe von allein.' }) },
+    { k: 'burg2', bau: '_keep', fertig: () => tutStufe('keep') >= 2, freude: () => 'Burg 2!',
       ziel: () => tutBauT('keep', { schild: 'Die Burg bestimmt, wie hoch alles wachsen darf. Tipp auf die Burg.', bauen: tutKost('keep') + ' – du hast genug. Bau aus!' }) },
     { k: 'karte', satz: 'Deine Stadt steht. Jetzt raus aufs Meer – tipp auf „Karte“!', ziel: tutZurKarte, fertig: () => cityView.hidden },
     { k: 'lager', ziel: tutLager, fertig: () => barbMarches.some(m => m.who === 'player' && !m.back) || tutTat.lager },
@@ -13648,17 +13651,18 @@ const TUT = [
       satz: () => { const m = inboxFach().reduce((a, x) => a + (x.coins || 0), 0); return m ? tutZahl(m) + ' Münzen warten im Abholfach – dein erster Kriegsgewinn. Hol sie dir!' : 'Deine Beute liegt im Abholfach. Hol sie dir!'; },
       ziel: () => tutReihe([[tutFenster(goalsPopup, 'goalsBtn')], [goalsTab !== 'reward' ? document.querySelector('[data-ggrp="abholen"]') : null], [document.querySelector('#inboxList [data-inbox]')]]) },
     { k: 'basis', ziel: () => tutAngriff('z1'), fertig: () => tutTat.angriff },
-    { k: 'truppen', neu: ['truppen'], satz: () => 'Das sind deine Truppen: ' + tutZahl(totalTroops()) + '. Sie wachsen in jeder Basis von allein – eine Kaserne brauchst du nicht.',
-      ziel: () => { const u = tutUnterwegs()[0];                 // (erst, wenn der Angriff angekommen ist: sonst stehen oben nur die, die zu Hause blieben)
-          if (u && Date.now() - tut.t0 < 120000) return { warte: 'Deine Truppen marschieren zur Basis – noch ' + Math.max(1, Math.ceil((u.resolveAt - Date.now()) / 1000)) + ' Sekunden.', fort: (Date.now() - u.startedAt) / Math.max(1, u.resolveAt - u.startedAt) };
+    { k: 'truppen', neu: ['truppen'], satz: () => { const heim = tutUnterwegs().reduce((a, x) => a + (x.rawTroops || x.troops || 0), 0);   // (Kapsel oben = nur die zu Hause)
+          return (heim ? 'Oben stehen deine Truppen zu Hause: ' + tutZahl(totalTroops()) + ' – ' + tutZahl(heim) + ' sind noch unterwegs.' : 'Das sind deine Truppen: ' + tutZahl(totalTroops()) + '.') + ' Sie wachsen in jeder Basis von allein – eine Kaserne brauchst du nicht.'; },
+      ziel: () => { const u = tutAngriffe()[0];                 // (erst, wenn der Angriff angekommen ist: sonst stehen oben nur die, die zu Hause blieben)
+          if (u && Date.now() - tut.t0 < 120000) return { warte: 'Deine Truppen marschieren zur Basis – noch ' + tutSek(Math.max(1, Math.ceil((u.resolveAt - Date.now()) / 1000))) + '.', fort: (Date.now() - u.startedAt) / Math.max(1, u.resolveAt - u.startedAt) };
           return { el: document.querySelector('#hud .res--troop') }; } },
-    { k: 'halle', fertig: () => tutStufe('heroes') > 0, freude: () => 'Heldenhalle Stufe 1',
+    { k: 'halle', bau: 'heroes', fertig: () => tutStufe('heroes') > 0, freude: () => 'Heldenhalle Stufe 1',
       ziel: () => tutBauT('heroes', { stadt: 'Helden führen deine Truppen und machen jeden Angriff stärker. Tipp auf „Stadt“.', schild: 'Bau die Heldenhalle – ' + tutKost('heroes') + '.', bauen: 'Bau die Heldenhalle – ' + tutKost('heroes') + '.' }) },
-    { k: 'kiste', neu: ['shop'], satz: 'Öffne mit einem Schlüssel die Helden-Kiste.', vor: () => tutGeschenk('k', 'Geschenk von Aldric', [['schluessel1', 2]]), fertig: () => tutTat.kiste_held,
+    { k: 'kiste', neu: ['shop'], satz: 'Öffne mit einem Schlüssel die Helden-Kiste.', vor: () => tutGeschenk('k', 'Geschenk', [['schluessel1', 2]]), fertig: () => tutTat.kiste_held,
       ziel: () => tutReihe([[tutFenster(shopPopup, 'shopBtn'), 'Zwei Schlüssel von mir! Tipp auf „Shop“.'], [document.querySelector('#shopTabs [data-stab="gems"]:not(.active)'), 'Tipp auf „Kisten“.'],
           [schluessel1 ? document.querySelector('[data-kiste="held"][data-anz="1"]') : null, 'Öffne mit einem Schlüssel die Helden-Kiste.']]) },
     { k: 'held', ziel: () => { const u = tutUnterwegs()[0];
-          return u && Date.now() - tut.t0 < 120000 ? { warte: 'Deine Truppen sind noch unterwegs – noch ' + Math.max(1, Math.ceil((u.resolveAt - Date.now()) / 1000)) + ' Sekunden.', fort: (Date.now() - u.startedAt) / Math.max(1, u.resolveAt - u.startedAt) } : tutAngriff('z2', true); }, fertig: () => tutTat.heldAngriff || tutTat.ok },
+          return u && Date.now() - tut.t0 < 120000 ? { warte: 'Deine Truppen sind noch unterwegs – noch ' + tutSek(Math.max(1, Math.ceil((u.resolveAt - Date.now()) / 1000))) + '.', fort: (Date.now() - u.startedAt) / Math.max(1, u.resolveAt - u.startedAt) } : tutAngriff('z2', true); }, fertig: () => tutTat.heldAngriff || tutTat.ok },
     { k: 'gratis', satz: 'Alle 8 Stunden schenkt dir der Shop eine Kiste – öffne sie!', fertig: () => gratisAb() > serverJetzt(),
       ziel: () => tutReihe([[tutFenster(shopPopup, 'shopBtn'), 'Alle 8 Stunden schenkt dir der Shop eine Kiste. Tipp auf „Shop“.'], [document.querySelector('#shopTabs [data-stab="gems"]:not(.active)'), 'Tipp auf „Kisten“.'],
           [document.querySelector('#shopKisten [data-gratis]'), 'Die erste Gratis-Kiste ist jetzt bereit – öffne sie!']]) },
@@ -13666,12 +13670,12 @@ const TUT = [
       ziel: () => tutReihe([[tutFenster(shopPopup, 'shopBtn'), 'Tipp auf „Shop“.'],
           [schluessel1 ? document.querySelector('[data-kiste="aus"][data-anz="1"]') : null, 'Mit dem zweiten Schlüssel öffnest du die Ausrüstungs-Kiste. Ausrüstung macht deine Truppen stärker.']]) },
     { k: 'anlegen', neu: ['profil'], satz: 'Leg die Ausrüstung an – erst dann wirkt sie.', fertig: () => Object.values(equippedItems).some(Boolean),
-      ziel: () => { if (isPanelOpen(chestItemPopup)) return tutT(3, 3, tutSicht(chestItemEquipBtn), 'Tipp auf „Anlegen“.');
+      ziel: () => { if (isPanelOpen(chestItemPopup)) return tutT(3, 3, tutSicht(chestItemEquipBtn), 'Tipp auf „Ausrüsten“.');
           if (!isPanelOpen(profilePopup)) { const pb = tutSicht($t('profileBtn')); return tutT(1, 3, pb || $t('hudPlayer'), 'Im Rucksack nützt sie nichts – leg sie an! ' + (pb ? 'Tipp auf „Profil“.' : 'Tipp auf dein Wappen oben links.')); }   // (Handy: Profil über das Spielerbild oben)
-          return profilePopup.dataset.tab !== 'equip' ? tutT(2, 3, $t('tabBtnEquip'), 'Tipp auf „Ausrüstung“.') : tutT(3, 3, document.querySelector('#chestInventoryGrid .tile[data-id]'), 'Tipp das neue Teil und dann „Anlegen“.'); } },
+          return profilePopup.dataset.tab !== 'equip' ? tutT(2, 3, $t('tabBtnEquip'), 'Tipp auf „Ausrüstung“.') : tutT(3, 3, document.querySelector('#chestInventoryGrid .tile[data-id]'), 'Tipp das neue Teil und dann „Ausrüsten“.'); } },
     { k: 'rucksack', neu: ['rucksack'], satz: 'Im Rucksack liegt noch ein Beschleuniger. Nimm ihn mit in die Stadt – gleich brauchst du ihn.', fertig: () => !cityView.hidden || tutTat.ok,
       ziel: () => tutFenster(rucksackPopup, 'rucksackBtn') || document.querySelector('#rkInhalt [data-rk-stadt]') || document.querySelector('#rkInhalt [data-rk-tab="tempo"]:not(.on)') || 'weiter' },
-    { k: 'burg3', fertig: () => tutStufe('keep') >= 3, freude: () => 'Burg 3! Gebäude jetzt bis Stufe 3',   // (Desktop: der Rucksack lag sonst über dem Burg-Fenster)
+    { k: 'burg3', bau: '_keep', fertig: () => tutStufe('keep') >= 3, freude: () => 'Burg 3! Gebäude jetzt bis Stufe 3',   // (Desktop: der Rucksack lag sonst über dem Burg-Fenster)
       ziel: () => { if (isPanelOpen(rucksackPopup)) closePanel(rucksackPopup);
           return tutBaut('keep') ? tutBeschT('keep', 'Jetzt den Beschleuniger drauf – sofort fertig!')
               : tutBauT('keep', { schild: 'Burg 3 dauert ' + tutDauer(cityTimeSec('keep', tutStufe('keep'))) + '. Tipp auf die Burg und dann „Aufwerten“.', bauen: 'Burg 3 kostet ' + tutKost('keep') + '. Tipp auf „Aufwerten“.' }); } },
@@ -13742,7 +13746,7 @@ function tutEnde() {
     if (!tut.belohnt) {                                          // die Belohnung nur beim ersten Mal: gleich abgeholt, als Bild + Zahl (Hauptbuch-Spielraum fr.g, 10d3)
         tut.belohnt = true; tutSpeichern(); inboxAdd({ src: 'gift', title: 'Tutorial geschafft', gems: TUT_GEMS, crate: 0 });
         const x = inboxList().find(e => e.title === 'Tutorial geschafft'), aus = [];
-        if (x && inboxClaim(x.id, aus)) { sfx('coin'); beuteFenster('Rundgang geschafft!', aus, { kiste: kisteVonR(0) }); renderInbox(); updateGoalsBadge(); }
+        if (x && inboxClaim(x.id, aus)) { sfx('coin'); beuteFenster('Geschafft!', aus, { kiste: kisteVonR(0) }); renderInbox(); updateGoalsBadge(); }
     }
     const name = (store.get('openWaterPlayerName') || '').trim(), danach = () => {   // Aldric zum Schluss, erst nach dem Geschenk-Fenster; dann die tägliche Belohnung
         if (tutPause()) return setTimeout(danach, 500);
@@ -13772,10 +13776,12 @@ function tutZiel(z) {                                            // → { rect, 
 const tutDeckt = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;   // zwei Rechtecke {l,t,r,b} überlappen
 const tutBox = e => { const q = e.getBoundingClientRect(); return { l: q.left, t: q.top, r: q.right, b: q.bottom }; };
 let tutLetzt = null;                                             // das letzte Loch (dort schwebt die Freude auf)
-function tutFreude(text) {                                       // Freude-Moment: Satz/Zahl steigt am Ziel auf (1,2 s)
-    if (!text) return; const d = document.createElement('div'), r = tutLetzt;
+function tutFreude(text, bau) {                                  // Freude-Moment: Satz/Zahl steigt am Gebäude-Schild (sonst am letzten Ziel) auf, nie über der Blase
+    if (!text) return; const d = document.createElement('div'), n = bau && cityNamen.find(x => x.id === bau), b = tutBox($t('tutBerater'));
+    let x = n ? n.x + n.w / 2 : tutLetzt ? (tutLetzt.l + tutLetzt.r) / 2 : innerWidth / 2, y = n ? n.y : tutLetzt ? tutLetzt.t : innerHeight * .45;
+    if (y < 90 || (x > b.l - 60 && x < b.r + 60 && y > b.t - 10 && y < b.b + 50)) { x = innerWidth / 2; y = innerHeight * .4; }
     d.className = 'tut-freude'; d.textContent = text;
-    Object.assign(d.style, { left: Math.round(r ? (r.l + r.r) / 2 : innerWidth / 2) + 'px', top: Math.round(r ? Math.max(70, r.t) : innerHeight * .45) + 'px' });
+    Object.assign(d.style, { left: Math.round(Math.min(innerWidth - 120, Math.max(120, x))) + 'px', top: Math.round(y) + 'px' });
     document.body.appendChild(d); setTimeout(() => d.remove(), 1300);
 }
 let tutBlaseNeu = true, tutFokusVor = null, tutAlt = null, tutLochAn = false, tutFokusZeit = 0, tutFokusN = 0, tutOhneSeit = 0, tutSchrittAlt = -1;
@@ -13788,22 +13794,24 @@ function tutZeigen() {
     if (tutPause()) { el.hidden = true; return; }
     const S = TUT[tut.s];
     let weiter = false; try { weiter = !!(tutTat.ok || (S.fertig && S.fertig())); } catch (e) {}
-    if (weiter) { sfx('upgrade'); try { if (S.freude) tutFreude(S.freude()); } catch (e) {} tutWeiter(); if (!tutLaeuft()) return; return tutZeigen(); }
+    if (weiter) { sfx('upgrade'); try { if (S.freude) tutFreude(S.freude(), S.bau); } catch (e) {} tutWeiter(); if (!tutLaeuft()) return; return tutZeigen(); }
     let z = {}; try { z = tutZiel(S.ziel()); } catch (e) {}
     el.hidden = false;
     const W = innerWidth, H = innerHeight, jetzt = Date.now(), be = $t('tutBerater');
     if (tutSchrittAlt !== tut.s) { tutSchrittAlt = tut.s; tutOhneSeit = jetzt; tutFokusN = 0; tutAlt = tutFokusVor = null; tutBlaseNeu = true; }
     if (S.ruhe && jetzt - tut.t0 < S.ruhe) { el.hidden = true; return; }   // erst das Spiel zeigen lassen (z. B. „Lager besiegt“), dann Aldric
     if (S.nah && tutFlug !== tut.s && cityView.hidden) { tutFlug = tut.s; tutHeim(); }
-    el.classList.toggle('is-hell', !!(S.nah || z.nurZeigen || z.weiter));   // Erklär-Schritt (nur „Weiter“): heller (Handlung: etwas dunkler)
+    el.classList.toggle('is-hell', !!(S.nah || z.nurZeigen || z.weiter || z.rund));   // (auch Karten-Ziele: Burg, Lager und Basen gut sichtbar)   // Erklär-Schritt (nur „Weiter“): heller (Handlung: etwas dunkler)
     let r = z.rect ? { l: z.rect.left - 8, t: z.rect.top - 8, r: z.rect.left + z.rect.width + 8, b: z.rect.top + z.rect.height + 8 } : null;
     // Blase: die Seite nehmen, die das Loch nicht überdeckt (ganzes Rechteck mit Berater-Bild, nicht nur die Mitte)
-    const war = be.classList.contains('oben'); be.classList.remove('oben'); const bu = tutBox(be); be.classList.add('oben'); const bo = tutBox(be);
+    const war = be.classList.contains('oben'); be.style.marginTop = ''; be.classList.remove('oben'); const bu = tutBox(be); be.classList.add('oben'); const bo0 = tutBox(be); let bo = bo0;
+    const kopfF = Math.max(0, ...[...document.querySelectorAll('.panel')].filter(p => isPanelOpen(p)).map(p => { const h = p.querySelector('.phead'), q = h && h.getBoundingClientRect();   // offenes Fenster: Blase oben erst unter seiner Kopfzeile (Titel + X frei)
+        return q && q.width && q.top < bo.b && q.right > bo.l && q.left < bo.r ? q.bottom : 0; }));
+    let dy = kopfF && kopfF + 6 + bo.b - bo.t < H - 90 ? kopfF + 6 - bo.t : 0; if (dy > 0) bo = { l: bo.l, r: bo.r, t: bo.t + dy, b: bo.b + dy };
     const unten = !$t('citySheet').hidden || ['islandPopup', 'shopPopup', 'goalsPopup', 'battleLogPopup', 'profilePopup', 'rucksackPopup'].some(id => { const x = $t(id); return x && isPanelOpen(x); });   // ein Fenster unten offen: seine Knöpfe frei lassen
     let oben = r ? (tutBlaseNeu ? (r.t + r.b) / 2 > H * .5 : war) : unten || (!tutBlaseNeu && war);   // (im selben Schritt bleibt die Blase auf ihrer Seite, solange sie nichts verdeckt)
     if (r && tutDeckt(oben ? bo : bu, r) && !tutDeckt(oben ? bu : bo, r)) oben = !oben;
     tutBlaseNeu = false;
-    be.classList.toggle('oben', oben);
     if (r && z.fokus) {                                          // Ziel auf Karte/Stadt: erst zeigen, wenn es ganz im Bild steht und die Kamera ruht
         const kopf = Math.max(...['hud', 'tutWeg'].map(id => { const x = $t(id); return x && tutSicht(x) ? x.getBoundingClientRect().bottom : 0; }));
         const nav = $t('cornerButtons'), fuss = nav && tutSicht(nav) ? nav.getBoundingClientRect().top : H;
@@ -13815,6 +13823,9 @@ function tutZeigen() {
         if (!drin && !fest && (ruht || !tutFokusN) && tutFokusN < 4 && jetzt - tutFokusZeit > 900) { tutFokusZeit = jetzt; tutFokusN++; tutFokusVor = r; z.fokus(); tutAlt = null; }   // (gleich hin, sonst noch einmal – nach 4 Versuchen gilt es so)
         if (jetzt - tutFokusZeit < 350 || !(drin && (ruht || tutLochAn)) && !(ruht && (tutFokusN >= 4 || fest))) r = null;   // (erst ausrollen lassen; schon gezeigt und noch drin: kein Flackern)
     }
+    if (r && tutDeckt(oben ? bo : bu, r) && !tutDeckt(oben ? bu : bo, r)) oben = !oben;   // (nach der Kamera: das endgültige Loch nie unter der Blase)
+    if (r && dy > 0 && tutDeckt(oben ? bo : bu, r) && !tutDeckt(bo0, r)) { oben = true; dy = 0; }   // (unter der Kopfzeile läge sie auf dem Loch: dann doch ganz oben)
+    be.classList.toggle('oben', oben); be.style.marginTop = oben && dy > 0 ? dy + 'px' : '';
     tutLochAn = !!r; if (r) tutLetzt = r;
     if (r) {                                                     // Loch nie über den Bildrand: nach innen schieben
         const w = Math.min(r.r - r.l, W - 4), hh = Math.min(r.b - r.t, H - 4);

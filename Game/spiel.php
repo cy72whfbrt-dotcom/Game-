@@ -468,7 +468,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-name{position:absolute;top:-11px;left:18px;padding:1px 9px;border:1px solid var(--gold-500);border-radius:6px;background:var(--ink-3);color:#f0dfb0;font:700 12px/1.4 Georgia,serif;font-variant:small-caps;letter-spacing:.08em}
 @media (min-width:900px) and (min-height:501px){ .tut-berater{max-width:520px} .tut-blase{max-width:420px} .tut-figur{width:96px;height:116px;border-radius:48px 48px 12px 12px} }
 .tut-frage{align-self:flex-end}
-.tut-blase:has(> #tutWeiter:not([hidden])){padding-bottom:22px}   /* „Weiter“ hängt unten an der Blase: keine eigene Zeile, die Blase bleibt flach */
+.tut-blase:has(> #tutWeiter:not([hidden])){padding-bottom:26px}   /* „Weiter“ hängt unten an der Blase: keine eigene Zeile, die Blase bleibt flach */
 .tut-blase > #tutWeiter{position:absolute;right:12px;bottom:-16px;filter:drop-shadow(0 2px 4px #0008)}
 .tut-frage{display:flex;gap:8px} .tut-frage[hidden]{display:none}
 .tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
@@ -488,7 +488,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   color:#24170a;box-shadow:0 14px 40px #000c;display:flex;flex-direction:column;gap:12px;animation:tw-rein .5s ease-out}
 @keyframes tw-rein{from{opacity:0;transform:translateY(30px)}}
 .tw-band{position:absolute;left:-22px;right:-22px;top:-34px;height:62px;display:flex;align-items:center;justify-content:center;background:url(bilder/ui_band_gold.webp) center/100% 100% no-repeat}
-.tw-band h2{margin:-10px 0 0;font:700 19px/1 Georgia,serif;color:#4a2c05;text-shadow:0 1px 0 #fbe7a3;white-space:nowrap}
+.tw-band h2{margin:-10px 0 0;font:700 17px/1 Georgia,serif;color:#4a2c05;text-shadow:0 1px 0 #fbe7a3;white-space:nowrap}
 .tw-text{display:flex;gap:10px;align-items:flex-end}
 .tw-held{flex:none;width:86px;height:112px;margin:-8px 0 -6px -6px;background:url(bilder/held_aldric.webp) center top/contain no-repeat}
 .tw-text p{margin:0;font:600 15px/1.35 Georgia,serif}
@@ -514,6 +514,7 @@ body.tz-leiste #cornerButtons{visibility:hidden}   /* noch kein Knopf frei: kein
 .nav-btn.tut-neu,#hud .res.tut-neu{animation:tut-knopf 1.5s ease-out} @keyframes tut-knopf{0%{opacity:0;scale:.3;filter:drop-shadow(0 0 0 #f0dfb0)}25%{opacity:1;scale:1.18;filter:drop-shadow(0 0 12px #f0dfb0)}40%{scale:1}100%{filter:drop-shadow(0 0 0 transparent)}}   /* neu: fliegt ein und glüht */
 .nav-btn.tut-neuer::after{content:"NEU";position:absolute;top:0;left:calc(50% + 6px);padding:0 4px;border-radius:4px;background:#9b2f2f;color:#f0dfb0;font:700 11px/15px var(--font-ui);box-shadow:0 1px 3px #000a}   /* bis er einmal getippt wurde */
 body.tut-an #citySpeedBtn{display:none!important}   /* Edelstein-Knopf „Fertig für …“: im Tutorial nur der Beschleuniger */
+body.tut-an .panel--item{z-index:58}   /* Gegenstand-Fenster (Ausrüsten) im Tutorial unter dem Dunkel: Loch und Finger liegen darüber */
 @media (max-width:899px) and (min-height:501px){ body.tut-schmal .nav{left:50%;right:auto;width:min(calc(100% - 16px),calc(var(--tut-n,1) * 88px + 48px));translate:-50% 0} }   /* Leiste nur so breit wie ihre Knöpfe */
 /* Was ein neuer Spieler noch nicht hat, ist ganz weg (10c2 tutFrei: body.tz-<teil>) */
 body.tz-stadt #cityNavBtn,body.tz-kampf #battleLogBtn,body.tz-events #goalsBtn,body.tz-shop #shopBtn,
@@ -2362,7 +2363,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
   .panel--island:has(.ap-oben) .ptitle{font-size:15px;margin:0} #popupStats:has(.ap-oben){gap:4px} .panel--island:has(.ap-oben) .pfoot{padding-top:6px;padding-bottom:6px}
   .ap-oben .force{padding-top:4px!important;padding-bottom:4px!important}
   .panel--island:has(.ap-oben) .pbody{padding-top:6px;padding-bottom:4px} .panel--island:has(.ap-oben) .phead{padding-bottom:6px} .ap-truppen .slider{margin-top:0;margin-bottom:0} }   /* kleines Handy: Zeit steht im Knopf, Truppen im Feld, Kraft bei „Angriff“, Helden-Wirkung beim Draufzeigen */
-@media (max-width:380px){ .ap-oben{grid-template-columns:76px minmax(0,1fr)} .ap-oben .ap-hchip.ap-hchip--gross{width:76px;height:94px} .ap-oben .ap-hchip.ap-hchip--klein{width:76px} }
+@media (max-width:380px){ .ap-oben{grid-template-columns:76px minmax(0,1fr)} .ap-oben.ap-oben--ohne{grid-template-columns:minmax(0,1fr)} .ap-oben .ap-hchip.ap-hchip--gross{width:76px;height:94px} .ap-oben .ap-hchip.ap-hchip--klein{width:76px} }
 .ap-held{display:flex;flex-direction:column;gap:4px}
 .ap-hchip.ap-hchip--gross{flex:none;width:96px;height:118px;padding:0;flex-direction:column;justify-content:flex-end;align-items:stretch;overflow:hidden;
   border:3px solid transparent;border-image:url(bilder/ui_kachel_gold.webp) 30 fill / 3px stretch;background:#0f1217}

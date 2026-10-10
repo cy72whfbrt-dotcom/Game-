@@ -266,7 +266,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
   .panel--island:has(.ap-oben) .ptitle{font-size:15px;margin:0} #popupStats:has(.ap-oben){gap:4px} .panel--island:has(.ap-oben) .pfoot{padding-top:6px;padding-bottom:6px}
   .ap-oben .force{padding-top:4px!important;padding-bottom:4px!important}
   .panel--island:has(.ap-oben) .pbody{padding-top:6px;padding-bottom:4px} .panel--island:has(.ap-oben) .phead{padding-bottom:6px} .ap-truppen .slider{margin-top:0;margin-bottom:0} }   /* kleines Handy: Zeit steht im Knopf, Truppen im Feld, Kraft bei „Angriff“, Helden-Wirkung beim Draufzeigen */
-@media (max-width:380px){ .ap-oben{grid-template-columns:76px minmax(0,1fr)} .ap-oben .ap-hchip.ap-hchip--gross{width:76px;height:94px} .ap-oben .ap-hchip.ap-hchip--klein{width:76px} }
+@media (max-width:380px){ .ap-oben{grid-template-columns:76px minmax(0,1fr)} .ap-oben.ap-oben--ohne{grid-template-columns:minmax(0,1fr)} .ap-oben .ap-hchip.ap-hchip--gross{width:76px;height:94px} .ap-oben .ap-hchip.ap-hchip--klein{width:76px} }
 .ap-held{display:flex;flex-direction:column;gap:4px}
 .ap-hchip.ap-hchip--gross{flex:none;width:96px;height:118px;padding:0;flex-direction:column;justify-content:flex-end;align-items:stretch;overflow:hidden;
   border:3px solid transparent;border-image:url(bilder/ui_kachel_gold.webp) 30 fill / 3px stretch;background:#0f1217}

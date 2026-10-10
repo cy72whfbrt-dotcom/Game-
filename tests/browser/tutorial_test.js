@@ -61,7 +61,9 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
             blase: b.left < q.right && q.left < b.right && b.top < q.bottom && q.top < b.bottom, ueber: !!(document.elementFromPoint(x, y) || { closest: () => 1 }).closest('#tut') }; });
         if (l.weg || !l.w) continue;                           // (inzwischen anderes Fenster)
         if (l.l < 0 || l.t < 0 || l.r > W || l.b > H) probleme.push(z.k + ': Loch außerhalb ' + [l.l, l.t, l.r, l.b].map(Math.round));
-        if (l.blase) probleme.push(z.k + ': Blase über dem Loch');
+        if (l.blase && await (async () => { await p.waitForTimeout(800);   // (Loch gleitet noch, Fenster fährt noch auf: nach dem Gleiten nochmal messen)
+          return p.evaluate(() => { const q = document.getElementById('tutLoch').getBoundingClientRect(), b = document.getElementById('tutBerater').getBoundingClientRect();
+            return !document.getElementById('tutLoch').hidden && b.left < q.right && q.left < b.right && b.top < q.bottom && q.top < b.bottom; }); })()) probleme.push(z.k + ': Blase über dem Loch');
         if (l.ueber) {                                       // (gleitet gerade: kurz warten, dann muss es frei sein)
           await p.waitForTimeout(800);
           if (await p.evaluate(() => { const q = document.getElementById('tutLoch').getBoundingClientRect(), e = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return !document.getElementById('tutLoch').hidden && !!(e && e.closest('#tut')); })) { ok(false, 'Loch in Schritt ' + z.k + ' ist zugedeckt', l); break; }
@@ -69,6 +71,9 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
         }
         await p.mouse.click(l.x, l.y); await p.waitForTimeout(700); continue;
       }
+      if (['marsch', 'truppen', 'held'].includes(z.k)) await p.evaluate(() => {   // Märsche vorspulen (der Test hat 15 Min.): bleibt 1 s Weg, Fortschritt passt
+        if (document.getElementById('tutFort').hidden) return; const t = Date.now(), vor = x => { const d = x.resolveAt - t - 1000; if (d > 0) { x.resolveAt -= d; x.startedAt -= d; } };
+        pendingAttacks.filter(a => !a.attackerBotId).forEach(vor); pendingRetreats.forEach(vor); barbMarches.filter(m => m.who === 'player' && !m.back).forEach(vor); });
       await p.waitForTimeout(500);                           // warten (Bau, Marsch, Kamera)
     }
     return { gesehen, banner, neuer: [...neuer], schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler] };
@@ -97,12 +102,12 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   const r1 = await spielen(p, 390, 844, true), { gesehen, banner, neuer, schritte, hinweis } = r1;
   pruefSicht(r1, '390×844');
   const ende = await p.evaluate(() => ({ fertig: !!tut.fertig, alles: !!tut.alles, burg: loadCity().levels.keep, held: Object.values(equippedItems).some(Boolean), helden: HEROES.filter(h => heroOwned('player', h.id)).length,
-    frei: tut.frei, geschenk: (f => !f.hidden && /Rundgang/.test(f.textContent) && /100/.test(f.textContent))(document.getElementById('beuteFenster')) && !inboxList().some(x => x.title === 'Tutorial geschafft'), tz: [...document.body.classList].filter(c => c.startsWith('tz-')), gespeichert: JSON.parse(store.get('openWaterTutorial')).fertig === true,
+    frei: tut.frei, geschenk: (f => !f.hidden && /Geschafft/.test(f.textContent) && /100/.test(f.textContent))(document.getElementById('beuteFenster')) && !inboxList().some(x => x.title === 'Tutorial geschafft'), tz: [...document.body.classList].filter(c => c.startsWith('tz-')), gespeichert: JSON.parse(store.get('openWaterTutorial')).fertig === true,
     lumber: loadCity().levels.lumber, quarry: loadCity().levels.quarry, mine: loadCity().levels.mine, academy: loadCity().levels.academy, heroes: loadCity().levels.heroes }));
   if (bilder) await p.screenshot({ path: path.join(bilder, 't99_ende.png') });
   ok(ende.fertig && !ende.alles && ende.burg === 3 && ende.gespeichert, 'Tutorial komplett durchgespielt bis Burg 3 (' + schritte + ' Schritte)', { ende, gesehen });
   ok(ende.lumber && ende.quarry && ende.mine && ende.academy && ende.heroes && ende.held && ende.helden > 0, 'unterwegs gebaut: Holzfäller, Steinbruch, Eisenmine, Heldenhalle, Labor; Ausrüstung angelegt, Helden da', ende);
-  ok(ende.geschenk, 'am Ende: 100 Edelsteine gleich abgeholt, als Bild + Zahl („Rundgang geschafft!“)', ende);
+  ok(ende.geschenk, 'am Ende: 100 Edelsteine gleich abgeholt, als Bild + Zahl („Geschafft!“)', ende);
   ok(gesehen.includes('lager') && gesehen.indexOf('lager') < gesehen.indexOf('bericht'), 'erster Angriff = das eigene Barbaren-Lager, danach Kampfbericht', gesehen);
   ok(hinweis === 'none', 'im Tutorial liegt kein normaler Hinweis über Sprechblase oder „Überspringen“', hinweis);
   ok(!banner.size && ['cityNavBtn', 'battleLogBtn', 'goalsBtn', 'shopBtn', 'rucksackBtn'].every(k => neuer.includes(k)) && ['stadt', 'kampf', 'events', 'truppen', 'shop', 'profil', 'rucksack', 'aufgaben'].every(k => ende.frei.includes(k)),
@@ -140,6 +145,10 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   await c3.close();
   // ---- 5) kleines Handy 375×667: einmal ganz durch, Ziel immer ganz im Bild ----
   const c5 = await b.newContext({ ...HANDY, viewport: { width: 375, height: 667 } }); p = await c5.newPage(); p.on('pageerror', e => fe.push(e.message)); await laden(p, NEU); await p.click('#twLos'); await p.waitForTimeout(600);
+  const ap = await p.evaluate(async () => { const hm = islandById[playerIslandId], t = islands.filter(i => !islandOwnerOf(i.id) && i.type === 'tower').sort((a, b) => Math.hypot(a.x - hm.x, a.y - hm.y) - Math.hypot(b.x - hm.x, b.y - hm.y))[0];
+    openIslandPopup(t); attackBtn.click(); await new Promise(f => setTimeout(f, 400)); const o = document.querySelector('#islandPopup .ap-oben--ohne'), k = document.querySelector('#islandPopup .ap-oben--ohne > .ap-kopf');
+    const r = o && k ? [Math.round(o.getBoundingClientRect().width), Math.round(k.getBoundingClientRect().width)] : null; closeAllPopups(); return r; });
+  ok(ap && ap[1] >= ap[0] * .9, '375×667: Angriffsfenster ohne Held nutzt die ganze Breite (nicht in eine schmale Spalte gequetscht)', ap);
   const r5 = await spielen(p, 375, 667, false); pruefSicht(r5, '375×667');
   ok(await p.evaluate(() => !!tut.fertig && loadCity().levels.keep === 3), '375×667: Tutorial bis Burg 3 durchgespielt', r5.gesehen);
   await c5.close();

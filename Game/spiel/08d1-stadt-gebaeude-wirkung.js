@@ -39,7 +39,7 @@ function cityVergleich(id, L) {                    // Gebäude-Fenster „Jetzt 
 }
 function cityExtraHtml(id, lvl) {
     if (AUF && ['academy', 'market'].includes(id)) return AUF.extraHtml(id, lvl);   // Forschung, Markt (aufbau.js)
-    if (id === 'heroes') return lvl ? '' : '<small class="keep-note">Baue die Heldenhalle – erst dann kannst du Helden freischalten, aufwerten und mitschicken.</small>' +   // gebaut: der Reiter „Helden“ öffnet sie (08b)
+    if (id === 'heroes') return lvl ? '' : '<small class="keep-note">' + (cityBuildOf(loadCity(), 'heroes') ? 'Die Heldenhalle wird gebaut – danach' : 'Baue die Heldenhalle – erst dann') + ' kannst du Helden freischalten, aufwerten und mitschicken.</small>' +   // (läuft der Bau: kein „Baue …“)   // gebaut: der Reiter „Helden“ öffnet sie (08b)
         '<button type="button" class="btn btn--secondary btn--grow hh-open" data-hero-open>' + icon('profile') + '<span>Helden öffnen</span>' + cityHeldenBadge() + '</button>';
     if (id === 'embassy' && lvl && typeof verstHtml === 'function') return verstHtml();   // Botschaft: Verstärkung (buendnis.js)
     if (id === 'wall') return vhHtml(lvl);                                                 // Verteidigungs-Helden
