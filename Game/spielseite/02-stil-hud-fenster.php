@@ -313,7 +313,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   border:1px solid var(--line-2);background:rgba(0,0,0,.6);color:var(--tx-2);font:600 12px var(--font-ui);pointer-events:auto}
 .tut-weg[hidden]{display:none}
 /* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt */
-.tut-banner{position:fixed;left:50%;top:calc(var(--safe-t,0px) + 96px);z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
+.tut-banner{position:fixed;left:50%;top:40%;z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
   background:linear-gradient(#e9c46d,#b8862c);color:#2a1a05;font:800 17px var(--font-display);white-space:nowrap;box-shadow:0 4px 18px #000c;pointer-events:none}
 .tut-banner[hidden]{display:none} .tut-banner.an{animation:tut-banner 2.6s ease forwards}
 @keyframes tut-banner{0%{opacity:0;transform:translateX(-50%) scale(.6)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%,80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0}}

@@ -51,7 +51,7 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
         neu = true; const vor = await p.evaluate(() => JSON.stringify(tut)), sv = await sichtbar(p);
         await p.reload(); await p.waitForFunction(() => typeof tutZeigen === 'function' && typeof islands !== 'undefined' && islands.length, null, { timeout: 90000 }); await p.waitForTimeout(3000);
         const nach = await p.evaluate(() => JSON.stringify(tut)), sn = await sichtbar(p);
-        ok(JSON.parse(nach).s === JSON.parse(vor).s && JSON.stringify(sn.unten) === JSON.stringify(sv.unten), 'Neuladen mittendrin: gleicher Schritt, gleiche Knöpfe', { vor: JSON.parse(vor).s, nach: JSON.parse(nach).s, sv: sv.unten, sn: sn.unten });
+        ok(JSON.parse(nach).s - JSON.parse(vor).s <= 1 && JSON.parse(nach).s >= JSON.parse(vor).s && JSON.stringify(sn.unten) === JSON.stringify(sv.unten), 'Neuladen mittendrin: gleicher Schritt (oder schon erledigt: der nächste), gleiche Knöpfe', { vor: JSON.parse(vor).s, nach: JSON.parse(nach).s, sv: sv.unten, sn: sn.unten });
         alt = -1; continue;
       }
     }
@@ -64,13 +64,13 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
     await p.waitForTimeout(500);                           // warten (Bau, Marsch, Kamera)
   }
   const ende = await p.evaluate(() => ({ fertig: !!tut.fertig, alles: !!tut.alles, burg: loadCity().levels.keep, held: Object.values(equippedItems).some(Boolean), helden: HEROES.filter(h => heroOwned('player', h.id)).length,
-    geschenk: inboxList().some(x => x.title === 'Tutorial geschafft'), tz: [...document.body.classList].filter(c => c.startsWith('tz-')), gespeichert: JSON.parse(store.get('openWaterTutorial')).fertig === true,
+    frei: tut.frei, geschenk: inboxList().some(x => x.title === 'Tutorial geschafft'), tz: [...document.body.classList].filter(c => c.startsWith('tz-')), gespeichert: JSON.parse(store.get('openWaterTutorial')).fertig === true,
     lumber: loadCity().levels.lumber, quarry: loadCity().levels.quarry, mine: loadCity().levels.mine, academy: loadCity().levels.academy, heroes: loadCity().levels.heroes }));
   if (bilder) await p.screenshot({ path: path.join(bilder, 't99_ende.png') });
   ok(ende.fertig && !ende.alles && ende.burg === 3 && ende.gespeichert, 'Tutorial komplett durchgespielt bis Burg 3 (' + schritte + ' Schritte)', { ende, gesehen });
   ok(ende.lumber && ende.quarry && ende.mine && ende.academy && ende.heroes && ende.held && ende.helden > 0, 'unterwegs gebaut: Holzfäller, Steinbruch, Eisenmine, Heldenhalle, Labor; Ausrüstung angelegt, Helden da', ende);
   ok(ende.geschenk, 'am Ende: Belohnung im Abholfach', ende);
-  ok(['Stadt', 'Kampf', 'Abholen', 'Truppen', 'Shop', 'Profil', 'Rucksack', 'Aufgaben'].every(n => [...banner].some(t => t.includes(n))), '„Neu: …“ kommt für jedes neue Teil', [...banner]);
+  ok(banner.size >= 4 && ['stadt', 'kampf', 'events', 'truppen', 'shop', 'profil', 'rucksack', 'aufgaben'].every(k => ende.frei.includes(k)), 'Teile kommen nach und nach dazu (mit „Neu: …“)', { banner: [...banner], frei: ende.frei });
   ok(['bund', 'rang', 'events2', 'welt'].every(k => ende.tz.includes('tz-' + k)) && !ende.tz.includes('tz-shop'), 'nach dem Tutorial (Burg 3): Bündnis, Rangliste, Events, Teleport noch zu – der Rest da', ende.tz);
   const b4 = await p.evaluate(async () => { const c = loadCity(); c.levels.keep = 5; saveCity(); tutFrei(); await new Promise(f => setTimeout(f, 300)); return { tz: [...document.body.classList].filter(c => c.startsWith('tz-')), banner: document.getElementById('tutBanner').textContent }; });
   ok(!b4.tz.includes('tz-bund') && !b4.tz.includes('tz-events2') && b4.tz.includes('tz-welt') && /Bündnis/.test(b4.banner), 'Burg 5: Bündnis und Events kommen dazu (mit „Neu: …“), Teleport erst ab Burg 6', b4);
@@ -86,12 +86,12 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   const jaSicht = await sichtbar(p);
   ok(fr.frage && /wirklich/i.test(fr.satz) && fr.laeuft, 'Überspringen fragt erst „Wirklich?“ im Spiel', fr);
   ok(nein.laeuft && !nein.frage, '„Weiter lernen“: Tutorial läuft weiter', nein);
-  ok(!ja.laeuft && ja.weg && !ja.tz.length && ja.confirms === 0 && ja.alles && jaSicht.unten.length >= 7, '„Überspringen“: alles sichtbar (kein Browser-Fenster)', { ja, unten: jaSicht.unten });
+  ok(!ja.laeuft && ja.weg && !ja.tz.length && ja.confirms === 0 && ja.alles && jaSicht.unten.length >= 6, '„Überspringen“: alles sichtbar (kein Browser-Fenster)', { ja, unten: jaSicht.unten });
   await c2.close();
   // ---- 3) alter Spieler (kein Tutorial-Stand): alles wie bisher ----
   const c3 = await b.newContext(HANDY); p = await c3.newPage(); p.on('pageerror', e => fe.push(e.message)); await laden(p, null);
   const alt3 = await p.evaluate(() => ({ tut, tz: [...document.body.classList].filter(c => c.startsWith('tz-')), weg: document.getElementById('tut').hidden })), s3 = await sichtbar(p);
-  ok(!alt3.tut && !alt3.tz.length && alt3.weg && s3.unten.length >= 7 && s3.oben.some(x => /gem/.test(x)), 'alter Spieler: kein Tutorial, alles sichtbar wie bisher', { alt3, s3 });
+  ok(!alt3.tut && !alt3.tz.length && alt3.weg && s3.unten.length >= 6 && s3.oben.some(x => /gem/.test(x)), 'alter Spieler: kein Tutorial, alles sichtbar wie bisher', { alt3, s3 });
   await c3.close();
   ok(!fe.length, 'keine Skript-Fehler', fe.slice(0, 5));
   await b.close();

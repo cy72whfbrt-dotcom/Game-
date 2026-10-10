@@ -13512,12 +13512,13 @@ function tutBesch(id) {                                          // ein laufende
 }
 function tutInsel(id) {                                          // eine Basis auf der Karte (die Kamera fliegt einmal hin)
     const i = islandById[id]; if (!i) return null;
-    if (!cityView.hidden) return $t('cityCloseBtn');
+    if (!cityView.hidden) return tutZurKarte();
     if (tutFlug !== tut.s) { tutFlug = tut.s; flyTo(i.x, i.y); }
     const r = Math.max(26, ISLAND_RADIUS * mapState.zoom * 1.2);
     return { r: { x: toSX(i.x) - r, y: toSY(i.y) - r, w: 2 * r, h: 2 * r } };
 }
 let tutFlug = -1;
+const tutZurKarte = () => tutSicht($t('cityCloseBtn')) || $t('cityNavBtn');   // (Handy: der Stadt-Knopf unten heißt dann „Karte“)
 function tutNeutral(ohne) {                                      // die nächste neutrale, sichtbare Basis (nicht die schon angegriffene)
     const h = islandById[playerIslandId], weg = new Set([ohne, ...pendingAttacks.filter(a => !a.attackerBotId).map(a => a.targetId)]);
     return (islands.filter(i => i.id !== playerIslandId && !weg.has(i.id) && !islandOwnerOf(i.id) && !bossAt(i.id) && i.type === 'tower' && islandSeen(i) && canReach(h.landmassId, i.landmassId))
@@ -13528,7 +13529,8 @@ function tutAngriff(feld, held) {                                // Basis antipp
     const id = tut[feld]; if (id === undefined) return 'weiter';   // (keine Basis in Sicht: weiter)
     if (isPanelOpen(popup) && popupIslandId !== id) return $t('closeBtn');
     if (isPanelOpen(popup)) {
-        if (held && popupView === 'preview' && !previewHero) return document.querySelector('#islandPopup [data-hero]:not([data-hero=""]):not([disabled])') || tutSicht(attackBtn);
+        if (held && popupView === 'preview' && !previewHero) return tutSicht(document.querySelector('#islandPopup [data-hero]:not([data-hero=""]):not([disabled])'))
+            || document.querySelector('#islandPopup [data-held-auf="1"]') || tutSicht(attackBtn);   // Held-Feld öffnen → einen Helden wählen
         return tutSicht(attackBtn);
     }
     return tutInsel(id);
@@ -13544,7 +13546,7 @@ const TUT = [
     { k: 'stein', satz: 'Jetzt der Steinbruch – für Stein.', ziel: () => tutBau('quarry'), fertig: () => tutStufe('quarry') > 0 },
     { k: 'eisen', satz: 'Und die Eisenmine – für Eisen.', ziel: () => tutBau('mine'), fertig: () => tutStufe('mine') > 0 },
     { k: 'burg2', satz: 'Deine Hauptstadt nimmst du immer mit – sie ist das Wichtigste. Bau die Burg aus!', ziel: () => tutBau('keep'), fertig: () => tutStufe('keep') >= 2 },
-    { k: 'karte', satz: 'Draußen auf der Karte warten neue Basen.', ziel: () => $t('cityCloseBtn'), fertig: () => cityView.hidden },
+    { k: 'karte', satz: 'Draußen auf der Karte warten neue Basen.', ziel: tutZurKarte, fertig: () => cityView.hidden },
     { k: 'angriff', satz: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde. Greif diese neutrale Basis an!', ziel: () => tutAngriff('z1'), fertig: () => tutTat.angriff || tutTat.ok },
     { k: 'marsch', satz: 'Deine Truppen marschieren. Gleich kommt der Kampf …', ziel: () => ({ warte: 'Deine Truppen marschieren. Gleich kommt der Kampf …' }),
       fertig: () => combatLog.some(e => e.type !== 'ausgespaeht' && e.at >= tut.t0 - 2000) || Date.now() - tut.t0 > 300000 },
@@ -13563,7 +13565,8 @@ const TUT = [
     { k: 'ausruestung', bleib: true, satz: 'Mit dem zweiten Schlüssel: eine Ausrüstungs-Kiste.', fertig: () => tutTat.kiste_aus || Object.keys(inventory).length > 0,
       ziel: () => tutFenster(shopPopup, 'shopBtn') || document.querySelector('[data-kiste="aus"][data-anz="1"]') },
     { k: 'anlegen', neu: ['profil'], satz: 'Ausrüstung macht deine Truppen stärker. Leg sie an!', fertig: () => Object.values(equippedItems).some(Boolean),
-      ziel: () => isPanelOpen(chestItemPopup) ? tutSicht(chestItemEquipBtn) : tutFenster(profilePopup, 'profileBtn') || (profilePopup.dataset.tab !== 'equip' ? $t('tabBtnEquip') : document.querySelector('#chestInventoryGrid .tile[data-id]')) },
+      ziel: () => isPanelOpen(chestItemPopup) ? tutSicht(chestItemEquipBtn) : (isPanelOpen(profilePopup) ? null : tutSicht($t('profileBtn')) || $t('hudPlayer')) ||   // (Handy: Profil über das Spielerbild oben)
+         (profilePopup.dataset.tab !== 'equip' ? $t('tabBtnEquip') : document.querySelector('#chestInventoryGrid .tile[data-id]')) },
     { k: 'rucksack', neu: ['rucksack'], satz: 'Im Rucksack liegen deine Sachen. Nimm den Beschleuniger mit in die Stadt.', fertig: () => !cityView.hidden || tutTat.ok,
       ziel: () => tutFenster(rucksackPopup, 'rucksackBtn') || document.querySelector('#rkInhalt [data-rk-stadt]') || document.querySelector('#rkInhalt [data-rk-tab="tempo"]:not(.on)') || 'weiter' },
     { k: 'burg3', satz: 'Burg 3! Jede Stufe bringt mehr Truppen und neue Gebäude.', ziel: () => tutBaut('keep') ? tutBesch('keep') : tutGeb('keep'), fertig: () => tutStufe('keep') >= 3 },
@@ -13625,7 +13628,10 @@ function tutZiel(z) {                                            // → { rect, 
     if (z.warte) return { warte: z.warte };
     if (z.r) return { rect: { left: z.r.x, top: z.r.y, width: z.r.w, height: z.r.h } };
     const el = z.el || z; if (!(el instanceof Element) || !tutSicht(el)) return {};
-    return { rect: el.getBoundingClientRect(), nurZeigen: !!z.el };
+    const q = el.getBoundingClientRect(), $tut = $t('tut'), h = (x, y) => { $tut.hidden = true; const e = document.elementFromPoint(x, y); $tut.hidden = false; return e; };
+    const mitte = h(q.left + q.width / 2, q.top + q.height / 2);   // verdeckt (Kopf/Leiste) oder halb draußen: in die Mitte der Liste rollen
+    if (el.closest('.panel, .city-sheet') && !(mitte && (mitte === el || el.contains(mitte)))) { el.scrollIntoView({ block: 'center' }); return { rect: el.getBoundingClientRect(), nurZeigen: !!z.el }; }
+    return { rect: q, nurZeigen: !!z.el };
 }
 function tutZeigen() {
     const el = $t('tut'); if (!el) return;
