@@ -68,8 +68,10 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
     if (z.modal) { await p.click(z.modal); await p.waitForTimeout(300); continue; }
     if (z.weiter) { await p.mouse.click(z.weiter.x, z.weiter.y); await p.waitForTimeout(400); continue; }
     if (z.loch) {
-      const fest = await p.evaluate(() => new Promise(f => { const q = () => JSON.stringify(document.getElementById('tutLoch').getBoundingClientRect()), a = q(); setTimeout(() => f(a === q()), 350); }));
-      if (!fest) continue;                                 // (Loch gleitet noch zum Ziel)
+      await p.waitForTimeout(350);                         // (Loch gleitet zum Ziel)
+      Object.assign(z, await p.evaluate(() => { const q = document.getElementById('tutLoch').getBoundingClientRect(), l = { x: q.left + q.width / 2, y: q.top + q.height / 2, w: q.width, h: q.height };   // (nach dem Gleiten neu messen)
+        return { loch: l, ueber: !!(document.elementFromPoint(l.x, l.y) || { closest: () => 1 }).closest('#tut') }; }));
+      if (!z.loch.w || z.loch.x < 0 || z.loch.y < 0 || z.loch.x > 390 || z.loch.y > 844 || await p.evaluate(() => document.getElementById('tut').hidden || document.getElementById('tutLoch').hidden)) continue;   // (inzwischen anderes Fenster/Kamera)
       if (z.ueber) { ok(false, 'Loch in Schritt ' + z.k + ' ist zugedeckt', z); break; }
       await p.mouse.click(z.loch.x, z.loch.y); await p.waitForTimeout(700); continue;
     }
