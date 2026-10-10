@@ -3,7 +3,7 @@
 // Prüft: eigenes Lager Stufe 1 (nur für ihn), am Anfang fast nichts zu sehen (nur Münzen + „Stadt“), Tipp neben das Loch tut nichts, jeder Schritt bringt sein „Neu: …“,
 // Neuladen mittendrin bleibt beim Schritt, am Ende Burg 3 + Belohnung im Abholfach, Bündnis/Events erst später (Burg-Stufe);
 // „Überspringen“ fragt erst (im Spiel) und zeigt dann alles; ein alter Spieler (ohne Tutorial-Stand) sieht alles wie bisher.
-// Handy 390×844. Fotos je Schritt (t01_<schritt>.png …) in process.argv[3], wenn angegeben.
+// Ziel immer ganz im Bild, Blase nie darüber, Teilschritte mit Zähler, Band oben. Handy 390×844 und 375×667. Fotos je Schritt (t390_01_<schritt>.png …) in process.argv[3], wenn angegeben.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -21,6 +21,59 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
     const da = s => [...document.querySelectorAll(s)].filter(e => e.getClientRects().length && e.getBoundingClientRect().width > 0).map(e => e.id || e.className.split(' ')[1] || e.className);
     return { unten: da('#cornerButtons .nav-btn'), oben: da('#hud .res'), karte: da('#mapControls button') };
   });
+  // ---- einmal ganz durchspielen: jeder Tipp ins Loch; prüft dabei: Loch ganz im Bild (≥ 2 px), Blase deckt es nie, Teilschritte mit eigenem Satz ----
+  const spielen = async (p, W, H, mitNeuladen) => {
+    const gesehen = [], banner = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '', band = '';
+    for (let i = 0; i < 900; i++) {
+      const z = await p.evaluate(() => {
+        const el = id => document.getElementById(id), r = e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2, w: q.width, h: q.height, l: q.left, t: q.top, r: q.right, b: q.bottom }; };
+        const bn = el('tutBanner'); const o = { s: tut.s, k: (TUT[tut.s] || {}).k, fertig: !!tut.fertig, banner: bn.hidden ? '' : bn.textContent, satz: el('tutSatz').textContent,
+          zl: el('tutZaehler').hidden ? '' : el('tutZaehler').textContent, band: (el('tutBand').querySelector('.an') || {}).textContent || '' };
+        const bf = document.querySelector('#beuteFenster:not([hidden]) .bf-ok'), mod = ['levelUpBtn', 'rewardModalBtn'].map(el).find(x => x && x.offsetParent);
+        if (bf || mod) return { ...o, modal: bf ? '.bf-ok' : '#' + mod.id };
+        if (el('tut').hidden) return o;
+        if (!el('tutWeiter').hidden) return { ...o, weiter: r(el('tutWeiter')) };
+        if (!el('tutLoch').hidden && !el('tutFinger').hidden) return { ...o, loch: r(el('tutLoch')) };
+        return o;
+      });
+      if (z.fertig) break;
+      if (z.banner) banner.add(z.banner);
+      if (z.k === 'held') { heldSaetze.add(z.satz); if (z.zl) zaehler.add(z.zl); }
+      if (z.s !== alt) {                                     // neuer Schritt: Foto, merken
+        alt = z.s; schritte++; await p.waitForTimeout(500);
+        if (bilder) await p.screenshot({ path: path.join(bilder, 't' + W + '_' + String(z.s + 1).padStart(2, '0') + '_' + z.k + '.png') });
+        gesehen.push(z.k); band += z.band[0] || '';
+        if (z.k === 'stein') hinweis = await p.evaluate(() => { flashHint('Test-Hinweis', 3000); const h = getComputedStyle(document.getElementById('hint')).display; flashHint('', 1); return h; });
+        if (z.k === 'karte' && !neu) {                       // Neuladen mittendrin: gleicher Schritt, gleiche Knöpfe
+          neu = true; const vor = await p.evaluate(() => JSON.stringify(tut)), sv = await sichtbar(p);
+          await p.reload(); await p.waitForFunction(() => typeof tutZeigen === 'function' && typeof islands !== 'undefined' && islands.length, null, { timeout: 90000 }); await p.waitForTimeout(3000);
+          const nach = await p.evaluate(() => JSON.stringify(tut)), sn = await sichtbar(p);
+          ok(JSON.parse(nach).s - JSON.parse(vor).s <= 1 && JSON.parse(nach).s >= JSON.parse(vor).s && JSON.stringify(sn.unten) === JSON.stringify(sv.unten), 'Neuladen mittendrin: gleicher Schritt (oder schon erledigt: der nächste), gleiche Knöpfe', { vor: JSON.parse(vor).s, nach: JSON.parse(nach).s, sv: sv.unten, sn: sn.unten });
+          alt = -1; continue;
+        }
+      }
+      if (z.modal) { await p.click(z.modal); await p.waitForTimeout(300); continue; }
+      if (z.weiter) { await p.mouse.click(z.weiter.x, z.weiter.y); await p.waitForTimeout(400); continue; }
+      if (z.loch) {
+        await p.waitForTimeout(350);                         // (Loch gleitet zum Ziel; danach neu messen)
+        const l = await p.evaluate(() => { const q = document.getElementById('tutLoch').getBoundingClientRect(), b = document.getElementById('tutBerater').getBoundingClientRect(), x = q.left + q.width / 2, y = q.top + q.height / 2;
+          return { x, y, w: q.width, l: q.left, t: q.top, r: q.right, b: q.bottom, weg: document.getElementById('tut').hidden || document.getElementById('tutLoch').hidden,
+            blase: b.left < q.right && q.left < b.right && b.top < q.bottom && q.top < b.bottom, ueber: !!(document.elementFromPoint(x, y) || { closest: () => 1 }).closest('#tut') }; });
+        if (l.weg || !l.w) continue;                           // (inzwischen anderes Fenster)
+        if (l.l < 0 || l.t < 0 || l.r > W || l.b > H) probleme.push(z.k + ': Loch außerhalb ' + [l.l, l.t, l.r, l.b].map(Math.round));
+        if (l.blase) probleme.push(z.k + ': Blase über dem Loch');
+        if (l.ueber) { ok(false, 'Loch in Schritt ' + z.k + ' ist zugedeckt', l); break; }
+        await p.mouse.click(l.x, l.y); await p.waitForTimeout(700); continue;
+      }
+      await p.waitForTimeout(500);                           // warten (Bau, Marsch, Kamera)
+    }
+    return { gesehen, banner, schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler], band };
+  };
+  const pruefSicht = (r, wo) => {
+    ok(!r.probleme.length, wo + ': bei jedem Schritt ist das Ziel ganz im Bild und die Blase liegt nie darüber', r.probleme.slice(0, 6));
+    ok(r.heldSaetze.length >= 3 && r.heldSaetze.some(x => /Karte/.test(x)) && r.heldSaetze.some(x => /Basis/.test(x)) && r.zaehler.some(x => /^\d\/5$/.test(x)), wo + ': Schritt „Held“ sagt je Teilschritt, was zu tun ist (mit Zähler x/5)', { s: r.heldSaetze, z: r.zaehler });
+    ok(/^B+K+A+H+A+$/.test(r.band), wo + ': Band oben: Bauen · Karte · Angriff · Helden · Ausrüstung der Reihe nach', r.band);
+  };
   // ---- 1) neuer Spieler: einmal ganz durch ----
   const ctx = await b.newContext(HANDY); let p = await ctx.newPage(); p.on('pageerror', e => fe.push(e.message));
   await laden(p, NEU);
@@ -37,46 +90,8 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   ok(lg.da && lg.L === 1 && lg.weit < 20000 && lg.fremd === false && lg.nochDa, 'neuer Spieler hat sein Barbaren-Lager Stufe 1 nahe der Hauptstadt – ein Mitspieler darf es nicht angreifen', lg);
   const s0 = await p.evaluate(() => tut.s); await p.mouse.click(10, 420); await p.waitForTimeout(400);
   ok(await p.evaluate(() => tut.s) === s0 && await p.evaluate(() => isPanelOpen(goalsPopup) || !cityView.hidden) === false, 'Tipp neben das Loch tut nichts');
-  const gesehen = [], banner = new Set(); let neu = false, alt = -1, schritte = 0, hinweis = '';
-  for (let i = 0; i < 900; i++) {
-    const z = await p.evaluate(() => {
-      const el = id => document.getElementById(id), r = e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2, w: q.width, h: q.height }; };
-      const bn = el('tutBanner'); const o = { s: tut.s, k: (TUT[tut.s] || {}).k, fertig: !!tut.fertig, banner: bn.hidden ? '' : bn.textContent, satz: el('tutSatz').textContent };
-      const bf = document.querySelector('#beuteFenster:not([hidden]) .bf-ok'), mod = ['levelUpBtn', 'rewardModalBtn'].map(el).find(x => x && x.offsetParent);
-      if (bf || mod) return { ...o, modal: bf ? '.bf-ok' : '#' + mod.id };
-      if (el('tut').hidden) return o;
-      if (!el('tutWeiter').hidden) return { ...o, weiter: r(el('tutWeiter')) };
-      if (!el('tutLoch').hidden && !el('tutFinger').hidden) { const l = r(el('tutLoch')); if (l.x < 0 || l.y < 0 || l.x > innerWidth || l.y > innerHeight) return o;   // (Kamera fliegt noch)
-        return { ...o, loch: l, ueber: !!(document.elementFromPoint(l.x, l.y) || { closest: () => 1 }).closest('#tut') }; }
-      return o;
-    });
-    if (z.fertig) break;
-    if (z.banner) banner.add(z.banner);
-    if (z.s !== alt) {                                     // neuer Schritt: Foto (Handy), merken
-      alt = z.s; schritte++; await p.waitForTimeout(500);
-      if (bilder) await p.screenshot({ path: path.join(bilder, 't' + String(z.s + 1).padStart(2, '0') + '_' + z.k + '.png') });
-      gesehen.push(z.k);
-      if (z.k === 'stein') hinweis = await p.evaluate(() => { flashHint('Test-Hinweis', 3000); const h = getComputedStyle(document.getElementById('hint')).display; flashHint('', 1); return h; });
-      if (z.k === 'karte' && !neu) {                       // Neuladen mittendrin: gleicher Schritt, gleiche Knöpfe
-        neu = true; const vor = await p.evaluate(() => JSON.stringify(tut)), sv = await sichtbar(p);
-        await p.reload(); await p.waitForFunction(() => typeof tutZeigen === 'function' && typeof islands !== 'undefined' && islands.length, null, { timeout: 90000 }); await p.waitForTimeout(3000);
-        const nach = await p.evaluate(() => JSON.stringify(tut)), sn = await sichtbar(p);
-        ok(JSON.parse(nach).s - JSON.parse(vor).s <= 1 && JSON.parse(nach).s >= JSON.parse(vor).s && JSON.stringify(sn.unten) === JSON.stringify(sv.unten), 'Neuladen mittendrin: gleicher Schritt (oder schon erledigt: der nächste), gleiche Knöpfe', { vor: JSON.parse(vor).s, nach: JSON.parse(nach).s, sv: sv.unten, sn: sn.unten });
-        alt = -1; continue;
-      }
-    }
-    if (z.modal) { await p.click(z.modal); await p.waitForTimeout(300); continue; }
-    if (z.weiter) { await p.mouse.click(z.weiter.x, z.weiter.y); await p.waitForTimeout(400); continue; }
-    if (z.loch) {
-      await p.waitForTimeout(350);                         // (Loch gleitet zum Ziel)
-      Object.assign(z, await p.evaluate(() => { const q = document.getElementById('tutLoch').getBoundingClientRect(), l = { x: q.left + q.width / 2, y: q.top + q.height / 2, w: q.width, h: q.height };   // (nach dem Gleiten neu messen)
-        return { loch: l, ueber: !!(document.elementFromPoint(l.x, l.y) || { closest: () => 1 }).closest('#tut') }; }));
-      if (!z.loch.w || z.loch.x < 0 || z.loch.y < 0 || z.loch.x > 390 || z.loch.y > 844 || await p.evaluate(() => document.getElementById('tut').hidden || document.getElementById('tutLoch').hidden)) continue;   // (inzwischen anderes Fenster/Kamera)
-      if (z.ueber) { ok(false, 'Loch in Schritt ' + z.k + ' ist zugedeckt', z); break; }
-      await p.mouse.click(z.loch.x, z.loch.y); await p.waitForTimeout(700); continue;
-    }
-    await p.waitForTimeout(500);                           // warten (Bau, Marsch, Kamera)
-  }
+  const r1 = await spielen(p, 390, 844, true), { gesehen, banner, schritte, hinweis } = r1;
+  pruefSicht(r1, '390×844');
   const ende = await p.evaluate(() => ({ fertig: !!tut.fertig, alles: !!tut.alles, burg: loadCity().levels.keep, held: Object.values(equippedItems).some(Boolean), helden: HEROES.filter(h => heroOwned('player', h.id)).length,
     frei: tut.frei, geschenk: inboxList().some(x => x.title === 'Tutorial geschafft'), tz: [...document.body.classList].filter(c => c.startsWith('tz-')), gespeichert: JSON.parse(store.get('openWaterTutorial')).fertig === true,
     lumber: loadCity().levels.lumber, quarry: loadCity().levels.quarry, mine: loadCity().levels.mine, academy: loadCity().levels.academy, heroes: loadCity().levels.heroes }));
@@ -118,6 +133,11 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   const alt3 = await p.evaluate(() => ({ tut, tz: [...document.body.classList].filter(c => c.startsWith('tz-')), weg: document.getElementById('tut').hidden })), s3 = await sichtbar(p);
   ok(!alt3.tut && !alt3.tz.length && alt3.weg && s3.unten.length >= 6 && s3.oben.some(x => /gem/.test(x)), 'alter Spieler: kein Tutorial, alles sichtbar wie bisher', { alt3, s3 });
   await c3.close();
+  // ---- 5) kleines Handy 375×667: einmal ganz durch, Ziel immer ganz im Bild ----
+  const c5 = await b.newContext({ ...HANDY, viewport: { width: 375, height: 667 } }); p = await c5.newPage(); p.on('pageerror', e => fe.push(e.message)); await laden(p, NEU); await p.click('#twLos'); await p.waitForTimeout(600);
+  const r5 = await spielen(p, 375, 667, false); pruefSicht(r5, '375×667');
+  ok(await p.evaluate(() => !!tut.fertig && loadCity().levels.keep === 3), '375×667: Tutorial bis Burg 3 durchgespielt', r5.gesehen);
+  await c5.close();
   // ---- 4) normale Vorschau (ohne „ohnetutorial“), frischer Speicher, kein Server: Tutorial startet, Tages-Belohnung erst danach ----
   const fs = require('fs'), v4 = fs.mkdtempSync(path.join(bilder || path.dirname(path.resolve(process.argv[2])), 'tut_vorschau_'));
   fs.cpSync(process.argv[2], v4, { recursive: true });

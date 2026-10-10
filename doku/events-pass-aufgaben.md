@@ -73,6 +73,13 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   abholen → neutrale Basis erobern (keine in Reichweite: nur erklärt) → Truppen
   → Heldenhalle → Helden-Kiste (+ 2 Schlüssel) → Angriff mit Held → Gratis-Kiste → Ausrüstungs-Kiste → anlegen → Rucksack →
   Burg 3 (mit Beschleuniger) → Labor + Forschung → Aufgaben. Ende: 10 Edelsteine + Kiste ins Abholfach.
+- Sichtprüfung (`tutZeigen`): Ziele auf Karte/Stadt (`fokus`) erst mit Loch+Finger, wenn sie ganz im Bild stehen (≥ 24 px Rand, nicht
+  unter Kopf/Band/Leiste/Blase) und die Kamera ruht; sonst alle 1,5 s neu hinfliegen (`flyTo`, Ziel bei 42 % Höhe, max. 4×). Loch nie über
+  den Bildrand (nach innen geschoben). Blase: die Seite, deren Rechteck (mit Berater-Bild) das Loch nicht überdeckt. Rohstoffe: Loch nur um Bild+Zahl.
+- Angriffs-Schritte (`tutAngriff`): Satz je Teilschritt mit Zähler („2/5“): Karte → Basis → „Angreifen“ → Held-Feld/Held wählen → Losmarschieren;
+  ohne freien Helden ehrlich „ohne Helden los“. Warten (Bau, Marsch): „Kurz warten – …“ mit Balken (`fort`). Hängt ein Schritt
+  > 20 s ohne Ziel: „Weiter“ als Notausgang. Band oben (`#tutBand`): Bauen · Karte · Angriff · Helden · Ausrüstung (`TUT_ETAPPE`).
+  „Neu: …“-Banner oben an der Leiste. Burg 3: ein offener Rucksack geht zu (Desktop), der Beschleuniger-Hinweis erst am Burg-Fenster.
 - Knöpfe kommen nach und nach („Neu: …“, `body.tz-<teil>` blendet aus, Stil in 02); die Leiste unten verteilt
   auf dem Handy nur die sichtbaren Knöpfe gleichmäßig (05z, keine Lücke). Danach nach Burg-Stufe (`TUT_BURG`):
   Bündnis + Rangliste ab 4, Events (Pass, Erfolge, Ereignisse, Mitte-Leiste) ab 5, Teleport/Thron ab 6.

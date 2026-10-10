@@ -467,7 +467,14 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
   border:1px solid var(--line-2);background:rgba(0,0,0,.6);color:var(--tx-2);font:600 12px var(--font-ui);pointer-events:auto}
 .tut-weg[hidden]{display:none}
-/* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt */
+/* Teilschritt-Zähler („2/5“), Warte-Balken, Fortschrittsband oben (5 Etappen) */
+.tut-blase{position:relative} .tut-zaehler{position:absolute;top:-10px;right:10px;padding:1px 8px;border-radius:9px;background:#5a3d0e;color:#f3e6c4;font:700 12px/1.4 Georgia,serif} .tut-zaehler[hidden]{display:none}
+.tut-fort{display:block;height:8px;border-radius:4px;background:#d6c39a;box-shadow:inset 0 1px 2px #0006;overflow:hidden} .tut-fort[hidden]{display:none}
+.tut-fort i{display:block;height:100%;width:0;background:linear-gradient(#f2d68a,#c99a3e);transition:width .25s linear}
+.tut-band{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 112px);max-width:440px;display:flex;gap:3px;pointer-events:none}
+.tut-band span{flex:1 1 0;min-width:0;padding:4px 2px;border:1px solid #5a3d0e;border-radius:6px;background:rgba(10,14,24,.75);color:#a99a7a;font:600 11px/1.2 Georgia,serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tut-band span.ok{color:#e9d9a8} .tut-band span.an{background:linear-gradient(#f2d68a,#c99a3e);color:#2a1a05;font-weight:800;box-shadow:0 0 10px rgba(242,214,138,.6)}
+/* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt (oben an der Leiste) */
 .tw{position:fixed;inset:0;z-index:62;display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(var(--safe-b,0px) + 28px);
   background:linear-gradient(transparent 35%,rgba(5,8,15,.85)),url(bilder/titel_hoch.jpg) center/cover #0b1424}   /* Willkommen vor dem Tutorial (10c2) */
 .tw[hidden]{display:none}
@@ -487,7 +494,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-d,.tut-loch,.tut-sperre{transition:left .3s ease,top .3s ease,width .3s ease,height .3s ease}   /* Loch und Finger gleiten zum nächsten Ziel */
 .tut-finger{transition:left .3s ease,top .3s ease}
 .tut-berater.rein .tut-blase{animation:tut-rein .3s ease-out} @keyframes tut-rein{from{opacity:0;transform:translateY(10px) scale(.97)}}
-.tut-banner{position:fixed;left:50%;top:20%;z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
+.tut-banner{position:fixed;left:50%;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 8px);z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
   background:linear-gradient(#e9c46d,#b8862c);color:#2a1a05;font:800 17px var(--font-display);white-space:nowrap;box-shadow:0 4px 18px #000c;pointer-events:none}
 .tut-banner[hidden]{display:none} .tut-banner.an{animation:tut-banner 2.6s ease forwards}
 @keyframes tut-banner{0%{opacity:0;transform:translateX(-50%) scale(.6)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%,80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0}}
@@ -2505,9 +2512,10 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
   <div class="tut-d" data-tut-d="o"></div><div class="tut-d" data-tut-d="u"></div><div class="tut-d" data-tut-d="l"></div><div class="tut-d" data-tut-d="r"></div>
   <div id="tutLoch" class="tut-loch" hidden></div><div id="tutSperre" class="tut-sperre" hidden></div>
   <div id="tutFinger" class="tut-finger" hidden></div>
-  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><p id="tutSatz"></p>
+  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><span id="tutZaehler" class="tut-zaehler" hidden></span><p id="tutSatz"></p><span id="tutFort" class="tut-fort" hidden><i></i></span>
     <button id="tutWeiter" class="btn btn--primary btn--sm" type="button" hidden>Weiter</button>
     <span id="tutFrage" class="tut-frage" hidden><button id="tutJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="tutNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span></div></div>
+  <div id="tutBand" class="tut-band" aria-label="Tutorial-Fortschritt"></div>
   <button id="tutWeg" class="tut-weg" type="button">Überspringen</button>
 </div>
 <div id="tutWillkommen" class="tw" role="dialog" aria-modal="true" aria-labelledby="twTitel" hidden>

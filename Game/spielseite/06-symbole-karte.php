@@ -131,9 +131,10 @@
   <div class="tut-d" data-tut-d="o"></div><div class="tut-d" data-tut-d="u"></div><div class="tut-d" data-tut-d="l"></div><div class="tut-d" data-tut-d="r"></div>
   <div id="tutLoch" class="tut-loch" hidden></div><div id="tutSperre" class="tut-sperre" hidden></div>
   <div id="tutFinger" class="tut-finger" hidden></div>
-  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><p id="tutSatz"></p>
+  <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><span id="tutZaehler" class="tut-zaehler" hidden></span><p id="tutSatz"></p><span id="tutFort" class="tut-fort" hidden><i></i></span>
     <button id="tutWeiter" class="btn btn--primary btn--sm" type="button" hidden>Weiter</button>
     <span id="tutFrage" class="tut-frage" hidden><button id="tutJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="tutNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span></div></div>
+  <div id="tutBand" class="tut-band" aria-label="Tutorial-Fortschritt"></div>
   <button id="tutWeg" class="tut-weg" type="button">Überspringen</button>
 </div>
 <div id="tutWillkommen" class="tw" role="dialog" aria-modal="true" aria-labelledby="twTitel" hidden>
