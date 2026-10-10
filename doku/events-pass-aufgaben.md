@@ -72,15 +72,15 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   Teilschritt (Stadt → Schild → Bauen, Knopf → Reiter → Ziel, Angriff) hat seinen eigenen Satz und Punkte (`tutT`, `tutBauT`, `tutReihe`);
   Bau läuft: „Noch N Sekunden …“ mit Balken. Fertig gebaut: Freude-Moment (`freude`: „+N Holz pro Stunde“, „Burg 2!“ steigt am Ziel auf).
   Blase immer voll deckend (blendet nur bei neuem Teilschritt ein), bleibt im Schritt auf ihrer Seite, nie auf dem Loch; offenes Fenster:
-  Blase oben unter seiner Kopfzeile (Titel + X frei). Gegenstand-Fenster („Ausrüsten“) liegt im Tutorial unter dem Dunkel (z 58). Lager: Kamera zeigt
+  kleine Blase (`.klein`), sonst oben unter seiner Kopfzeile (Titel + X frei), ohne Loch unten (Gebäude-Fenster: oben); „Weiter“ in eigener Zeile. Fährt die Kamera noch: „…“ statt Befehl. Gegenstand-Fenster („Ausrüsten“) liegt im Tutorial unter dem Dunkel (z 58). Lager: Kamera zeigt
   Hauptstadt + Lager; Karten-Ziele heller (.40).
   Nur das Loch nimmt Tipps. Belohnungs-Fenster gehen vor. Erklär-Schritte nur mit „Weiter“. Ablauf: Münzen → Holz → Stein → Eisen → Edelsteine
   (je ein Schritt mit Loch; Edelsteine nur in ihrem Schritt sichtbar, `zeig`; vorher kein Knopf unten) → Holzfäller (Stadt-Knopf kommt) (+ Geschenk 2 Beschleuniger)
   → Beschleunigen → Steinbruch → Eisenmine → Burg 2 → Karte → eigenes Barbaren-Lager Stufe 1 angreifen → Kampfbericht → Beute
   abholen → neutrale Basis erobern (keine in Reichweite: nur erklärt) → Truppen
   → Heldenhalle → Helden-Kiste (+ 2 Schlüssel) → Angriff mit Held → Gratis-Kiste → Ausrüstungs-Kiste → anlegen → Rucksack →
-  Burg 3 (mit Beschleuniger) → Labor + Forschung → Aufgaben. Truppen-Schritt wartet, bis der Angriff angekommen ist (Satz nennt
-  „zu Hause“ + „unterwegs“), Held-Schritt auch auf den Heimweg (`pendingRetreats`); Verteidiger nur mit Späher (sonst keine Zahl); Kampfbericht
+  Burg 3 (mit Beschleuniger) → Labor + Forschung → Aufgaben. Truppen-Schritt wartet, bis der Kampf um die Basis entschieden ist (Satz:
+  „Du hast N Truppen – X in deinen Basen, Y unterwegs“), Held-Schritt auch auf den Heimweg (`pendingRetreats`); Verteidiger nur mit Späher (sonst keine Zahl); Kampfbericht
   erst nach 2,5 s (`ruhe`: „Lager besiegt“ zuerst). Ende: 100 Edelsteine + Kiste (`TUT_GEMS`), gleich abgeholt im Fenster „Geschafft!“,
   danach Aldric „Gut gemacht …“ und die tägliche Belohnung.
 - Sichtprüfung (`tutZeigen`): Ziele auf Karte/Stadt (`fokus`) mit Loch+Finger, sobald sie im Bild stehen (nicht unter Kopf/Leiste/Blase)
@@ -104,7 +104,7 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 - „Überspringen“ fragt im Spiel, danach alles sichtbar. Das Welt-Namensfenster ruht im Tutorial. Tägliche Belohnung erst danach.
 - Hauptbuch: Spielraum am Anfang `fr.g 100`, `fr.k 1`, `fr.bm 2`, `fr.s1 2` (Geschenke + Belohnung). Start-Rohstoffe 5.000/3.000/1.800 (aufbau.js `ROH_START`): Tutorial braucht
   4.120/2.200/1.380 + 1. Forschung – kein Warten bis Burg 3.
-- Platzhalter-Bilder: `einstieg_finger` (jetzt CSS-Pilz, Prompt in der Vorgabe), `einstieg_berater` (jetzt Helden-Kopf). Test `tutorial_test`.
+- Platzhalter-Bilder: `einstieg_finger` (jetzt CSS-Pilz, Prompt in der Vorgabe), `einstieg_berater` (jetzt Helden-Kopf). Tests `tutorial_test` (390, Rest) und `tutorial_klein_test` (375×667); Warten (Bau, Marsch) spult der Test vor.
 
 ## Offen
 - 11c Nr. 5: alte Event-Ranglisten/Wochen-Punkte beim Reset (prüfen, ob erledigt).

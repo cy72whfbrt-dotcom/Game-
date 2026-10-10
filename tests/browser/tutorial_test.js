@@ -3,12 +3,13 @@
 // Prüft: eigenes Lager Stufe 1 (nur für ihn), am Anfang fast nichts zu sehen (nur Münzen + „Stadt“), Tipp neben das Loch tut nichts, jeder Schritt bringt sein „Neu: …“,
 // Neuladen mittendrin bleibt beim Schritt, am Ende Burg 3 + Belohnung im Abholfach, Bündnis/Events erst später (Burg-Stufe);
 // „Überspringen“ fragt erst (im Spiel) und zeigt dann alles; ein alter Spieler (ohne Tutorial-Stand) sieht alles wie bisher.
-// Ziel immer ganz im Bild, Blase nie darüber, Teilschritte mit Zähler; Rohstoff-Kapseln behalten ihren Platz, leere Leiste/Zoom-Knöpfe weg, Kamera nah auf der Hauptstadt. Handy 390×844 und 375×667. Fotos je Schritt (t390_01_<schritt>.png …) in process.argv[3], wenn angegeben.
+// Ziel immer ganz im Bild, Blase nie darüber (375×667: tutorial_klein_test), Teilschritte mit Zähler; Rohstoff-Kapseln behalten ihren Platz, leere Leiste/Zoom-Knöpfe weg, Kamera nah auf der Hauptstadt. Handy 390×844 und 375×667. Fotos je Schritt (t390_01_<schritt>.png …) in process.argv[3], wenn angegeben.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
 const NEU = () => { window.__OW = { neu: true, nameGewaehlt: true }; window.__confirms = 0; window.confirm = () => { window.__confirms++; return true; }; };
 const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } };
+const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur das kleine Handy (375×667) – jede Hälfte bleibt unter 15 Min.
 (async () => {
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] }), fe = [], bilder = process.argv[3], url = 'file://' + path.resolve(process.argv[2]) + '/index.html';
   const laden = async (p, vorher) => {
@@ -23,7 +24,7 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   });
   // ---- einmal ganz durchspielen: jeder Tipp ins Loch; prüft dabei: Loch ganz im Bild (≥ 2 px), Blase deckt es nie, Teilschritte mit eigenem Satz ----
   const spielen = async (p, W, H, mitNeuladen) => {
-    const gesehen = [], banner = new Set(), neuer = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '';
+    const gesehen = [], banner = new Set(), neuer = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '', truppen = null;
     for (let i = 0; i < 900; i++) {
       const z = await p.evaluate(() => {
         const el = id => document.getElementById(id), r = e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2, w: q.width, h: q.height, l: q.left, t: q.top, r: q.right, b: q.bottom }; };
@@ -53,6 +54,9 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
         }
       }
       if (z.modal) { await p.click(z.modal); await p.waitForTimeout(300); continue; }
+      if (z.weiter && z.k === 'truppen' && !truppen) truppen = await p.evaluate(() => { const zahl = (document.getElementById('tutSatz').textContent.match(/Du hast ([\d.]+) Truppen/) || [])[1];
+        const alle = totalTroops() + pendingAttacks.filter(a => !a.attackerBotId).reduce((a, x) => a + x.rawTroops, 0) + pendingRetreats.reduce((a, x) => a + x.troops, 0);
+        return { satz: zahl ? +zahl.replace(/\./g, '') : null, alle, kapsel: document.getElementById('troopCount').textContent }; });
       if (z.weiter) { await p.mouse.click(z.weiter.x, z.weiter.y); await p.waitForTimeout(400); continue; }
       if (z.loch) {
         await p.waitForTimeout(350);                         // (Loch gleitet zum Ziel; danach neu messen)
@@ -71,19 +75,23 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
         }
         await p.mouse.click(l.x, l.y); await p.waitForTimeout(700); continue;
       }
-      if (['marsch', 'truppen', 'held'].includes(z.k)) await p.evaluate(() => {   // Märsche vorspulen (der Test hat 15 Min.): bleibt 1 s Weg, Fortschritt passt
-        if (document.getElementById('tutFort').hidden) return; const t = Date.now(), vor = x => { const d = x.resolveAt - t - 1000; if (d > 0) { x.resolveAt -= d; x.startedAt -= d; } };
-        pendingAttacks.filter(a => !a.attackerBotId).forEach(vor); pendingRetreats.forEach(vor); barbMarches.filter(m => m.who === 'player' && !m.back).forEach(vor); });
+      await p.evaluate(() => {                               // Warten (Marsch, Bau) vorspulen – der Test hat 15 Min.: bleibt 1 s, Fortschritt passt
+        if (document.getElementById('tutFort').hidden) return; const t = Date.now(), vor = (x, e, s) => { const d = x[e] - t - 1000; if (d > 0) { x[e] -= d; x[s] -= d; } };
+        pendingAttacks.filter(a => !a.attackerBotId).forEach(a => vor(a, 'resolveAt', 'startedAt')); pendingRetreats.forEach(r => vor(r, 'resolveAt', 'startedAt'));
+        barbMarches.filter(m => m.who === 'player' && !m.back).forEach(m => vor(m, 'resolveAt', 'startedAt')); loadCity().builds.forEach(b => vor(b, 'endsAt', 'startedAt')); });
       await p.waitForTimeout(500);                           // warten (Bau, Marsch, Kamera)
     }
-    return { gesehen, banner, neuer: [...neuer], schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler] };
+    return { gesehen, banner, neuer: [...neuer], schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler], truppen };
   };
   const pruefSicht = (r, wo) => {
+    ok(r.truppen && r.truppen.satz === r.truppen.alle, wo + ': Schritt „Truppen“ nennt die echte Zahl aller Truppen des Spielers (Basen + unterwegs)', r.truppen);
     ok(!r.probleme.length, wo + ': bei jedem Schritt ist das Ziel ganz im Bild und die Blase liegt nie darüber', r.probleme.slice(0, 6));
     ok(r.heldSaetze.length >= 3 && r.heldSaetze.some(x => /Karte/.test(x)) && r.heldSaetze.some(x => /Basis/.test(x)) && r.zaehler.some(x => /^\d\/5$/.test(x)), wo + ': Schritt „Held“ sagt je Teilschritt, was zu tun ist (mit Zähler x/5)', { s: r.heldSaetze, z: r.zaehler });
   };
+  let p;
+  if (!KLEIN) {
   // ---- 1) neuer Spieler: einmal ganz durch ----
-  const ctx = await b.newContext(HANDY); let p = await ctx.newPage(); p.on('pageerror', e => fe.push(e.message));
+  const ctx = await b.newContext(HANDY); p = await ctx.newPage(); p.on('pageerror', e => fe.push(e.message));
   await laden(p, NEU);
   const wk = await p.evaluate(() => ({ an: !document.getElementById('tutWillkommen').hidden, name: !document.getElementById('twNameZeile').hidden, tut: !document.getElementById('tut').hidden, unten: [...document.querySelectorAll('#cornerButtons .nav-btn')].filter(e => e.getClientRects().length).length }));
   ok(wk.an && !wk.name && !wk.tut && !wk.unten, 'zuerst das Willkommen (mit Server ohne Namensfeld), darunter nichts zu tippen', wk);
@@ -143,6 +151,8 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   const alt3 = await p.evaluate(() => ({ tut, tz: [...document.body.classList].filter(c => c.startsWith('tz-')), weg: document.getElementById('tut').hidden })), s3 = await sichtbar(p);
   ok(!alt3.tut && !alt3.tz.length && alt3.weg && s3.unten.length >= 6 && s3.oben.some(x => /gem/.test(x)), 'alter Spieler: kein Tutorial, alles sichtbar wie bisher', { alt3, s3 });
   await c3.close();
+  }
+  if (KLEIN) {
   // ---- 5) kleines Handy 375×667: einmal ganz durch, Ziel immer ganz im Bild ----
   const c5 = await b.newContext({ ...HANDY, viewport: { width: 375, height: 667 } }); p = await c5.newPage(); p.on('pageerror', e => fe.push(e.message)); await laden(p, NEU); await p.click('#twLos'); await p.waitForTimeout(600);
   const ap = await p.evaluate(async () => { const hm = islandById[playerIslandId], t = islands.filter(i => !islandOwnerOf(i.id) && i.type === 'tower').sort((a, b) => Math.hypot(a.x - hm.x, a.y - hm.y) - Math.hypot(b.x - hm.x, b.y - hm.y))[0];
@@ -152,6 +162,8 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   const r5 = await spielen(p, 375, 667, false); pruefSicht(r5, '375×667');
   ok(await p.evaluate(() => !!tut.fertig && loadCity().levels.keep === 3), '375×667: Tutorial bis Burg 3 durchgespielt', r5.gesehen);
   await c5.close();
+  }
+  if (!KLEIN) {
   // ---- 4) normale Vorschau (ohne „ohnetutorial“), frischer Speicher, kein Server: Tutorial startet, Tages-Belohnung erst danach ----
   const fs = require('fs'), v4 = fs.mkdtempSync(path.join(bilder || path.dirname(path.resolve(process.argv[2])), 'tut_vorschau_'));
   fs.cpSync(process.argv[2], v4, { recursive: true });
@@ -190,6 +202,7 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   const nach4 = await p.evaluate(() => ({ k: TUT[tut.s].k, gem: getComputedStyle(document.querySelector('#hud .res--gem')).visibility !== 'hidden', leiste: getComputedStyle(document.getElementById('cornerButtons')).visibility, stadt: !!document.getElementById('cityNavBtn').getClientRects().length }));
   ok(nach4.k === 'holz' && !nach4.gem && nach4.stadt && nach4.leiste === 'visible', 'erst danach: Bauen (Stadt-Knopf kommt, mit ihm die Leiste), Edelsteine wieder weg', nach4);
   await c4.close(); fs.rmSync(v4, { recursive: true, force: true });
+  }
   ok(!fe.length, 'keine Skript-Fehler', fe.slice(0, 5));
   await b.close();
 })();

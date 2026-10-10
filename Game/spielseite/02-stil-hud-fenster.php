@@ -313,8 +313,9 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-name{position:absolute;top:-11px;left:18px;padding:1px 9px;border:1px solid var(--gold-500);border-radius:6px;background:var(--ink-3);color:#f0dfb0;font:700 12px/1.4 Georgia,serif;font-variant:small-caps;letter-spacing:.08em}
 @media (min-width:900px) and (min-height:501px){ .tut-berater{max-width:520px} .tut-blase{max-width:420px} .tut-figur{width:96px;height:116px;border-radius:48px 48px 12px 12px} }
 .tut-frage{align-self:flex-end}
-.tut-blase:has(> #tutWeiter:not([hidden])){padding-bottom:26px}   /* „Weiter“ hängt unten an der Blase: keine eigene Zeile, die Blase bleibt flach */
-.tut-blase > #tutWeiter{position:absolute;right:12px;bottom:-16px;filter:drop-shadow(0 2px 4px #0008)}
+.tut-blase > #tutWeiter{align-self:flex-end;margin:-2px 0 -4px}   /* „Weiter“ in der Blase, eigene Zeile rechts */
+.tut-berater.klein .tut-figur{width:56px;height:68px;border-radius:28px 28px 8px 8px}   /* Fenster offen: kleine Blase, passt meist über das Fenster */
+.tut-berater.klein .tut-blase{padding:9px 12px 9px 18px;margin-bottom:10px} .tut-berater.klein .tut-blase p{font-size:15px}
 .tut-frage{display:flex;gap:8px} .tut-frage[hidden]{display:none}
 .tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
   border:1px solid var(--line-2);background:rgba(10,12,16,.6);color:var(--tx-2);font:600 13px var(--font-ui);pointer-events:auto}

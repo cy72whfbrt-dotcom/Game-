@@ -13620,7 +13620,7 @@ function tutFenster(panel, knopf) { return isPanelOpen(panel) ? null : $t(knopf)
 
 // ---- die Schritte (Drehbuch scratchpad/design_tutorial2.md): Satz (auch als Funktion: Zahlen live aus dem Spiel), Ziel, fertig, freude (schwebt auf) ----
 const tutBurgK = () => AUF ? AUF.stadtKosten('keep', 1) : {}, tutRohJetzt = x => tutZahl((AUF && AUF.rohVon('player') || {})[x] || 0);
-const tutAngriffe = () => pendingAttacks.filter(a => !a.attackerBotId && a.resolveAt > Date.now());   // eigene Angriffe unterwegs
+const tutAngriffe = () => pendingAttacks.filter(a => !a.attackerBotId);   // eigene Angriffe: unterwegs oder im Kampf (fightEndsAt)
 const tutUnterwegs = () => [...tutAngriffe(), ...pendingRetreats.filter(r => r.resolveAt > Date.now())];   // dazu Truppen auf dem Heimweg
 const TUT = [
     { k: 'muenzen', nah: 1, satz: () => 'Das sind deine ' + tutZahl(Math.floor(coins)) + ' Münzen. Jeder Bau und jede Forschung kostet welche – gib sie klug aus.', ziel: () => ({ el: document.querySelector('#hud .res--coin') }) },
@@ -13645,16 +13645,17 @@ const TUT = [
     { k: 'lager', ziel: tutLager, fertig: () => barbMarches.some(m => m.who === 'player' && !m.back) || tutTat.lager },
     { k: 'marsch', ziel: tutMarschWarte,
       fertig: () => combatLog.some(e => e.type !== 'ausgespaeht' && e.at >= tut.t0 - 2000) || rechnet() && !barbMarches.some(m => m.who === 'player' && !m.back) && Date.now() - tut.t0 > 3000 || Date.now() - tut.t0 > 300000 },
-    { k: 'bericht', neu: ['kampf'], ruhe: 2500, satz: () => (combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '') + 'Im Kampfbericht steht, wie viele du verloren hast und was du erbeutet hast.',
+    { k: 'bericht', neu: ['kampf'], ruhe: 2500, satz: () => (combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '') + 'Im Bericht siehst du deine Verluste und die Beute.',
       ziel: () => tutReihe([[tutFenster(battleLogPopup, 'battleLogBtn'), 'Tipp auf „Kampf“.'], [document.querySelector('#battleTabs [data-ktab="berichte"]:not(.active)'), 'Tipp auf „Berichte“.']]) },
     { k: 'beute', neu: ['events'], fertig: () => !inboxFach().length,
       satz: () => { const m = inboxFach().reduce((a, x) => a + (x.coins || 0), 0); return m ? tutZahl(m) + ' Münzen warten im Abholfach – dein erster Kriegsgewinn. Hol sie dir!' : 'Deine Beute liegt im Abholfach. Hol sie dir!'; },
       ziel: () => tutReihe([[tutFenster(goalsPopup, 'goalsBtn')], [goalsTab !== 'reward' ? document.querySelector('[data-ggrp="abholen"]') : null], [document.querySelector('#inboxList [data-inbox]')]]) },
     { k: 'basis', ziel: () => tutAngriff('z1'), fertig: () => tutTat.angriff },
-    { k: 'truppen', neu: ['truppen'], satz: () => { const heim = tutUnterwegs().reduce((a, x) => a + (x.rawTroops || x.troops || 0), 0);   // (Kapsel oben = nur die zu Hause)
-          return (heim ? 'Oben stehen deine Truppen zu Hause: ' + tutZahl(totalTroops()) + ' – ' + tutZahl(heim) + ' sind noch unterwegs.' : 'Das sind deine Truppen: ' + tutZahl(totalTroops()) + '.') + ' Sie wachsen in jeder Basis von allein – eine Kaserne brauchst du nicht.'; },
-      ziel: () => { const u = tutAngriffe()[0];                 // (erst, wenn der Angriff angekommen ist: sonst stehen oben nur die, die zu Hause blieben)
-          if (u && Date.now() - tut.t0 < 120000) return { warte: 'Deine Truppen marschieren zur Basis – noch ' + tutSek(Math.max(1, Math.ceil((u.resolveAt - Date.now()) / 1000))) + '.', fort: (Date.now() - u.startedAt) / Math.max(1, u.resolveAt - u.startedAt) };
+    { k: 'truppen', neu: ['truppen'], satz: () => { const d = totalTroops(), u = tutUnterwegs().reduce((a, x) => a + (x.rawTroops || x.troops || 0), 0);   // (Kapsel oben = die in deinen Basen)
+          return (u ? 'Du hast ' + tutZahl(d + u) + ' Truppen – ' + tutZahl(d) + ' in deinen Basen, ' + tutZahl(u) + ' unterwegs.' : 'Du hast ' + tutZahl(d) + ' Truppen in deinen Basen.') + ' Sie wachsen von allein – eine Kaserne brauchst du nicht.'; },
+      ziel: () => { const u = tutAngriffe()[0], t = Date.now();     // (erst, wenn der Kampf um die Basis entschieden ist: dann stehen sie in deinen Basen)
+          if (u && t - tut.t0 < 120000) return u.resolveAt > t ? { warte: 'Deine Truppen marschieren zur Basis – noch ' + tutSek(Math.max(1, Math.ceil((u.resolveAt - t) / 1000))) + '.', fort: (t - u.startedAt) / Math.max(1, u.resolveAt - u.startedAt) }
+              : { warte: 'Deine Truppen kämpfen um die Basis …', fort: u.fightEndsAt ? (t - u.resolveAt) / Math.max(1, u.fightEndsAt - u.resolveAt) : .5 };
           return { el: document.querySelector('#hud .res--troop') }; } },
     { k: 'halle', bau: 'heroes', fertig: () => tutStufe('heroes') > 0, freude: () => 'Heldenhalle Stufe 1',
       ziel: () => tutBauT('heroes', { stadt: 'Helden führen deine Truppen und machen jeden Angriff stärker. Tipp auf „Stadt“.', schild: 'Bau die Heldenhalle – ' + tutKost('heroes') + '.', bauen: 'Bau die Heldenhalle – ' + tutKost('heroes') + '.' }) },
@@ -13804,12 +13805,13 @@ function tutZeigen() {
     el.classList.toggle('is-hell', !!(S.nah || z.nurZeigen || z.weiter || z.rund));   // (auch Karten-Ziele: Burg, Lager und Basen gut sichtbar)   // Erklär-Schritt (nur „Weiter“): heller (Handlung: etwas dunkler)
     let r = z.rect ? { l: z.rect.left - 8, t: z.rect.top - 8, r: z.rect.left + z.rect.width + 8, b: z.rect.top + z.rect.height + 8 } : null;
     // Blase: die Seite nehmen, die das Loch nicht überdeckt (ganzes Rechteck mit Berater-Bild, nicht nur die Mitte)
+    const offen = [...document.querySelectorAll('.panel')].filter(p => isPanelOpen(p)); be.classList.toggle('klein', offen.length > 0);   // Fenster offen: kleine Blase (passt meist darüber)
     const war = be.classList.contains('oben'); be.style.marginTop = ''; be.classList.remove('oben'); const bu = tutBox(be); be.classList.add('oben'); const bo0 = tutBox(be); let bo = bo0;
-    const kopfF = Math.max(0, ...[...document.querySelectorAll('.panel')].filter(p => isPanelOpen(p)).map(p => { const h = p.querySelector('.phead'), q = h && h.getBoundingClientRect();   // offenes Fenster: Blase oben erst unter seiner Kopfzeile (Titel + X frei)
+    const kopfF = Math.max(0, ...offen.map(p => { const h = p.querySelector('.phead'), q = h && h.getBoundingClientRect();   // offenes Fenster: Blase oben erst unter seiner Kopfzeile (Titel + X frei)
         return q && q.width && q.top < bo.b && q.right > bo.l && q.left < bo.r ? q.bottom : 0; }));
     let dy = kopfF && kopfF + 6 + bo.b - bo.t < H - 90 ? kopfF + 6 - bo.t : 0; if (dy > 0) bo = { l: bo.l, r: bo.r, t: bo.t + dy, b: bo.b + dy };
-    const unten = !$t('citySheet').hidden || ['islandPopup', 'shopPopup', 'goalsPopup', 'battleLogPopup', 'profilePopup', 'rucksackPopup'].some(id => { const x = $t(id); return x && isPanelOpen(x); });   // ein Fenster unten offen: seine Knöpfe frei lassen
-    let oben = r ? (tutBlaseNeu ? (r.t + r.b) / 2 > H * .5 : war) : unten || (!tutBlaseNeu && war);   // (im selben Schritt bleibt die Blase auf ihrer Seite, solange sie nichts verdeckt)
+    const stadtF = !$t('citySheet').hidden;   // ohne Loch: Gebäude-Fenster offen → Blase oben (seine Knöpfe frei), anderes Fenster → unten (Kopf und erste Zeilen frei)
+    let oben = r ? (tutBlaseNeu ? (r.t + r.b) / 2 > H * .5 : war) : stadtF || !offen.length && !tutBlaseNeu && war;   // (im selben Schritt bleibt die Blase auf ihrer Seite, solange sie nichts verdeckt)
     if (r && tutDeckt(oben ? bo : bu, r) && !tutDeckt(oben ? bu : bo, r)) oben = !oben;
     tutBlaseNeu = false;
     if (r && z.fokus) {                                          // Ziel auf Karte/Stadt: erst zeigen, wenn es ganz im Bild steht und die Kamera ruht
@@ -13843,7 +13845,7 @@ function tutZeigen() {
     for (const x of [sp, lo]) Object.assign(x.style, { left: loch.l + 'px', top: loch.t + 'px', width: loch.r - loch.l + 'px', height: loch.b - loch.t + 'px' });
     const fi = $t('tutFinger'); fi.hidden = !r || z.nurZeigen;
     if (!fi.hidden) { const cx = (loch.l + loch.r) / 2, unten = loch.b + 60 < H - 70; Object.assign(fi.style, { left: Math.round(Math.min(W - 56, Math.max(2, cx - 27))) + 'px', top: Math.round(unten ? loch.b - 14 : loch.t - 40) + 'px' }); fi.classList.toggle('oben', !unten); }
-    const satz = tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.satz || z.warte || (typeof S.satz === 'function' ? S.satz() : S.satz) || '';
+    const satz = tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.fokus && !r ? '…' : z.satz || z.warte || (typeof S.satz === 'function' ? S.satz() : S.satz) || '';   // (Kamera fährt noch: erst mit Loch der Befehl)
     setText($t('tutSatz'), satz);
     const key = tut.s + '|' + (z.teil || '') + '|' + !!z.warte + '|' + tutFrage;   // neuer Schritt/Teilschritt: Blase blendet kurz ein (nicht bei jeder Zahl, die sich ändert)
     if (be.dataset.k !== key) { be.dataset.k = key; be.classList.remove('rein'); void be.offsetWidth; be.classList.add('rein'); }
