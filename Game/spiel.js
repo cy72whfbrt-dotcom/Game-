@@ -10886,7 +10886,7 @@ function barbNeulingLager(now) {                     // (nur wer rechnet) jedem 
     for (const who of neue) {
         if (barbRec(who).b > 0 || (AUF && AUF.burgStufe(who) > 3) || barbState.camps.some(c => c.fuer === who)) continue;
         const cap = islandById[who === 'player' ? playerIslandId : botCapitalOf(who)], lm = cap && landmasses[cap.landmassId]; if (!lm) continue;
-        let p = null, pd = Infinity; for (let i = 0; i < 16; i++) { const q = barbSpot(lm, Math.random, 1, { x: cap.x, y: cap.y, R: ISLAND_RADIUS * (8 + i) }); if (!q) continue; const d = Math.hypot(q.x - cap.x, q.y - cap.y); if (d > ISLAND_RADIUS * 5 && d < pd) { pd = d; p = q; } }   // so nah wie möglich, nicht auf der Burg
+        let p = null, pd = Infinity; for (let i = 0; i < 16; i++) { const q = barbSpot(lm, Math.random, 1, { x: cap.x, y: cap.y, R: ISLAND_RADIUS * (12 + i) }); if (!q) continue; const d = Math.hypot(q.x - cap.x, q.y - cap.y); if (d > ISLAND_RADIUS * 9 && d < pd) { pd = d; p = q; } }   // so nah wie möglich, aber neben (nicht auf) der großen Hauptstadt
         if (!p) continue;
         const t = barbTroopsOf(1); barbState.camps.push({ id: 'c' + (barbState.n++), x: Math.round(p.x), y: Math.round(p.y), lm: lm.id, L: 1, t, max: t, until: now + 24 * 36e5, fuer: who });
     }

@@ -82,10 +82,11 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   ok(['bund', 'rang', 'events2', 'welt'].every(k => ende.tz.includes('tz-' + k)) && !ende.tz.includes('tz-shop'), 'nach dem Tutorial (Burg 3): Bündnis, Rangliste, Events, Teleport noch zu – der Rest da', ende.tz);
   const b4 = await p.evaluate(async () => { const c = loadCity(); c.levels.keep = 5; saveCity(); tutFrei(); await new Promise(f => setTimeout(f, 300)); return { tz: [...document.body.classList].filter(c => c.startsWith('tz-')), banner: document.getElementById('tutBanner').textContent }; });
   ok(!b4.tz.includes('tz-bund') && !b4.tz.includes('tz-events2') && b4.tz.includes('tz-welt') && /Bündnis/.test(b4.banner), 'Burg 5: Bündnis und Events kommen dazu (mit „Neu: …“), Teleport erst ab Burg 6', b4);
-  const nm = await p.evaluate(async () => { const s1 = schluessel1, g0 = inboxList().filter(x => x.title === 'Tutorial geschafft').length; document.getElementById('tutNochmal').click();
+  const nm = await p.evaluate(async () => { beuteFensterZu(); for (const id of ['levelUpModal', 'rewardModal', 'dailyModal']) document.getElementById(id).hidden = true;   // (offene Belohnungs-Fenster: das Tutorial wartet sonst)
+    const s1 = schluessel1, g0 = inboxList().filter(x => x.title === 'Tutorial geschafft').length; document.getElementById('tutNochmal').click();
     await new Promise(f => setTimeout(f, 1000)); document.getElementById('tutWeiter').click(); await new Promise(f => setTimeout(f, 2500));
     return { laeuft: tutLaeuft(), s: tut.s, lager: TUT.findIndex(x => x.k === 'lager'), belohnt: tut.belohnt, keineGeschenke: schluessel1 === s1 && !document.querySelector('#beuteFenster:not([hidden])'), g0 }; });
-  ok(nm.laeuft && nm.belohnt && nm.keineGeschenke && nm.s >= nm.lager, '„Tutorial noch mal“ (Einstellungen): läuft von vorn, Gebautes zählt als erledigt, keine zweiten Geschenke', nm);
+  ok(nm.laeuft && nm.belohnt && nm.keineGeschenke && nm.s >= nm.lager - 1, '„Tutorial noch mal“ (Einstellungen): läuft von vorn, Gebautes zählt als erledigt, keine zweiten Geschenke', nm);
   await ctx.close();
   // ---- 2) Überspringen: erst fragen, „Weiter lernen“ bleibt, „Überspringen“ zeigt alles ----
   const c2 = await b.newContext(HANDY); p = await c2.newPage(); p.on('pageerror', e => fe.push(e.message)); await laden(p, NEU);

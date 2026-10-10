@@ -7,6 +7,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const b = await chromium.launch({ args: ['--proxy-server=http://127.0.0.1:9'] }); const fe = [], foto = process.env.OW_FOTO;
   for (const [art, opt] of [['Handy 360', { ...devices['iPhone 13'], viewport: { width: 360, height: 640 } }], ['Handy 390', { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }], ['Desktop', { viewport: { width: 1366, height: 768 } }]]) {
     const ctx = await b.newContext(opt), p = await ctx.newPage(); p.on('pageerror', e => fe.push(e.message));
+    await p.addInitScript(() => { const D = Date, d = D.UTC(2026, 9, 7, 10) - D.now(); Date = class extends D { constructor(...a) { super(...(a.length ? a : [D.now() + d])); } static now() { return D.now() + d; } }; });   // Uhr auf einen Mittwoch: das Wochen-Event läuft (am Wochenende ist es vorbei)
     await p.goto('file://' + require('path').resolve(process.argv[2]) + '/index.html', { timeout: 120000 });
     await p.waitForFunction(() => typeof islands !== 'undefined' && islands.length && typeof playerIslandId !== 'undefined' && islandById[playerIslandId] && typeof evChips === 'function', null, { timeout: 90000, polling: 500 }).catch(() => {});
     await p.waitForTimeout(3000);
