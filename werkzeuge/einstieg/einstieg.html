@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Einstieg Klick-Probe</title>
+<link rel="stylesheet" href="../../Game/schrift/schrift.css">
+<!-- Stil + Symbole wie im Spiel (aus werkzeuge/thronevent/, neu holen mit stil_holen.sh) -->
+<link rel="stylesheet" href="../thronevent/spiel_stil.css">
+<style>
+  /* Nur Klick-Probe zum Zeigen (neuer Spieler, Vorgabe design_einstieg.md): Zahlen sind Vorschlag, nicht im Spiel. */
+  :root { --navy: #0f1a2e; --gold: #d4a84b; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #05080f; color: var(--gold-100); font-family: var(--font-ui); }
+  #welt { position: fixed; inset: 0; max-width: 520px; margin: 0 auto; overflow: hidden; background: #22301c url(../../Game/bilder/karte_boden_innen.webp) center/cover; }
+  .seite { position: absolute; inset: 0; }
+  .weg { display: none !important; }
+  /* Titel */
+  #titel { background: #000 url(../../Game/bilder/titel_hoch.jpg) center/cover; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 120px; z-index: 30; }
+  .gold-knopf { min-width: 150px; height: 48px; padding: 0 22px; border-radius: 12px; border: 2px solid #f2d68a; background: linear-gradient(#e9c46d, #b8862c); color: #2a1a05; font: 800 17px var(--font-display); box-shadow: 0 4px 14px #000a; }
+  .gold-knopf.gruen { background: linear-gradient(#7fdc6a, #3a9a2c); border-color: #b9f2a8; color: #0b2205; }
+  /* Name + Wappen */
+  #namen { background: rgba(5,8,15,.55) url(../../Game/bilder/titel_hoch.jpg) center/cover; background-blend-mode: multiply; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; z-index: 29; }
+  #namen h2 { margin: 0; font: 700 22px var(--font-display); text-shadow: 0 2px 4px #000; }
+  #namen input { width: 240px; height: 46px; border-radius: 10px; border: 2px solid var(--gold); background: var(--navy); color: #f3e6c4; font: 600 18px var(--font-ui); text-align: center; }
+  #wappen { display: flex; gap: 10px; padding: 6px; }
+  #wappen img { width: 58px; height: 58px; border-radius: 12px; border: 2px solid transparent; background: rgba(0,0,0,.4); }
+  #wappen img.an { border-color: #f2d68a; box-shadow: 0 0 12px #f2d68a; }
+  /* Oben: nur Wappen + Burg-Stufe + 1 Rohstoff */
+  #oben { position: absolute; top: 0; left: 0; right: 0; height: 52px; display: flex; align-items: center; gap: 8px; padding: 0 10px; background: linear-gradient(#05080fdd, #05080f00); z-index: 5; }
+  #oben .wap { width: 36px; height: 36px; }
+  #oben b { font: 700 14px var(--font-display); }
+  .res { display: flex; align-items: center; gap: 4px; padding: 3px 9px 3px 4px; border-radius: 14px; background: rgba(0,0,0,.55); border: 1px solid var(--line-2); font: 700 13px var(--font-ui); }
+  .res img { width: 22px; height: 22px; }
+  #stufe { font: 700 12px var(--font-ui); color: var(--tx-2); }
+  /* Stadt */
+  .ort { position: absolute; transform: translate(-50%, -50%); text-align: center; }
+  .ort img { display: block; margin: 0 auto; filter: drop-shadow(0 6px 8px #000a); }
+  .ort span { display: inline-block; margin-top: -6px; padding: 1px 8px; border-radius: 8px; background: rgba(0,0,0,.65); font: 700 11px var(--font-ui); white-space: nowrap; }
+  #burg { left: 50%; top: 38%; } #burg img { width: 190px; }
+  #platz { left: 26%; top: 62%; } #platz img { width: 82px; opacity: .85; }
+  .plopp { animation: plopp .5s ease-out; }
+  @keyframes plopp { 0% { transform: translate(-50%,-50%) scale(.3); } 70% { transform: translate(-50%,-50%) scale(1.12); } 100% { transform: translate(-50%,-50%) scale(1); } }
+  .uhr { position: absolute; left: 50%; top: -6px; transform: translateX(-50%); padding: 2px 8px; border-radius: 8px; background: #0f1a2e; border: 1px solid var(--gold); font: 700 11px var(--font-ui); white-space: nowrap; }
+  /* Karte */
+  #karte { background: #1d2a18 url(../../Game/bilder/karte_boden_aussen.webp) center/cover; }
+  #nebel { position: absolute; inset: 0; background: radial-gradient(circle at 50% 46%, transparent 0 120px, rgba(40,48,60,.92) 175px); pointer-events: none; }
+  #kBurg { left: 42%; top: 50%; } #kBurg img { width: 92px; }
+  #kBarbar { left: 66%; top: 40%; } #kBarbar img { width: 70px; }
+  #kampf { position: absolute; left: 54%; top: 45%; transform: translate(-50%,-50%); width: 120px; }
+  #kampf img { width: 120px; animation: dreh 1.2s linear infinite; }
+  @keyframes dreh { to { transform: rotate(360deg); } }
+  /* Unten-Leiste: Knöpfe kommen nach und nach */
+  #unten { position: absolute; left: 0; right: 0; bottom: 0; height: 74px; display: flex; justify-content: center; gap: 18px; align-items: center; background: linear-gradient(#05080f00, #05080fee 40%); z-index: 5; }
+  .dock { width: 60px; display: flex; flex-direction: column; align-items: center; font: 700 10.5px var(--font-ui); color: var(--gold-100); background: none; border: 0; padding: 0; }
+  .dock img { width: 46px; height: 46px; }
+  /* Ziel-Leiste */
+  #ziel { position: absolute; left: 16px; right: 16px; bottom: 82px; height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 8px; border-radius: 12px; background: rgba(15,26,46,.92); border: 2px solid var(--gold); box-shadow: 0 4px 16px #000a; z-index: 5; animation: federn .3s ease-out; }
+  #ziel img { width: 40px; height: 40px; } #ziel span { flex: 1; font: 600 15px Georgia, serif; color: #f3e6c4; }
+  #ziel button { height: 36px; min-width: 0; padding: 0 12px; font-size: 14px; }
+  @keyframes federn { 0% { transform: scale(.9); } 70% { transform: scale(1.05); } 100% { transform: scale(1); } }
+  /* Kleines Fenster (Bauen, Ausbauen, Angriff) */
+  #fenster { position: absolute; left: 16px; right: 16px; bottom: 90px; padding: 14px; border-radius: 14px; background: rgba(15,26,46,.96); border: 2px solid var(--gold); z-index: 6; text-align: center; }
+  #fenster h3 { margin: 0 0 8px; font: 700 18px var(--font-display); }
+  #fenster .zeile { display: flex; justify-content: center; gap: 10px; align-items: center; margin-bottom: 12px; font: 600 13px var(--font-ui); color: var(--tx-2); }
+  #fenster .zeile img { width: 56px; }
+  /* Beute: Bild-Kachel + Zahl */
+  .kacheln { display: flex; justify-content: center; gap: 10px; margin: 6px 0 14px; }
+  .kachel { position: relative; width: 72px; height: 72px; border-radius: 10px; background: url(../../Game/bilder/ui_kachel_gold.webp) center/cover; }
+  .kachel.blau { background-image: url(../../Game/bilder/ui_kachel_blau.webp); }
+  .kachel img { position: absolute; inset: 8px; width: 56px; height: 56px; }
+  .kachel b { position: absolute; right: 4px; bottom: 2px; font: 800 14px var(--font-ui); color: #fff; text-shadow: 0 1px 2px #000, 0 0 3px #000; }
+  /* Dunkel mit rundem Loch: nur das Loch nimmt Tipps an */
+  #dunkel { position: absolute; inset: 0; z-index: 35; }
+  #loch { position: absolute; border-radius: 50%; box-shadow: 0 0 0 2000px rgba(5,8,15,.7), 0 0 0 4px rgba(242,214,138,.55), 0 0 18px 8px rgba(242,214,138,.35); pointer-events: none; transition: all .35s ease; }
+  #finger { position: absolute; width: 54px; height: 54px; z-index: 36; pointer-events: none; transition: left .35s, top .35s; animation: tipp 1s ease-in-out infinite; }
+  /* Platzhalter bis KI-Bild einstieg_finger.png kommt */
+  #finger::before { content: ""; position: absolute; left: 18px; top: 0; width: 18px; height: 34px; border-radius: 9px 9px 4px 4px; background: linear-gradient(90deg, #f2d68a, #c99a3e); border: 2px solid #5a3d0e; }
+  #finger::after { content: ""; position: absolute; left: 8px; top: 26px; width: 38px; height: 26px; border-radius: 10px 10px 14px 14px; background: linear-gradient(90deg, #f2d68a, #c99a3e); border: 2px solid #5a3d0e; }
+  @keyframes tipp { 0%,100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
+  /* Berater mit Sprechblase (Platzhalter bis einstieg_berater.png kommt) */
+  #berater { position: absolute; left: 8px; bottom: 150px; right: 70px; display: flex; align-items: flex-end; gap: 6px; z-index: 37; pointer-events: none; }
+  #berater .figur { width: 76px; height: 96px; flex: none; border-radius: 38px 38px 10px 10px; background: url(../../Game/bilder/held_aldric_kopf.webp) center/cover, linear-gradient(#24365c, #0f1a2e); border: 2px solid var(--gold); }
+  #berater p { margin: 0 0 30px; padding: 9px 12px; border-radius: 12px 12px 12px 2px; background: #f3e6c4; color: #24170a; font: 600 15px/1.3 Georgia, serif; box-shadow: 0 3px 10px #000a; }
+  #berater.oben { bottom: auto; top: 90px; }
+  /* „Neu: …“-Banner (Platzhalter bis banner_neu.png kommt) */
+  #banner { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); z-index: 38; padding: 10px 26px; border-radius: 6px; background: linear-gradient(#e9c46d, #b8862c); color: #2a1a05; font: 800 17px var(--font-display); white-space: nowrap; box-shadow: 0 4px 18px #000c; animation: banner 2.2s ease forwards; pointer-events: none; }
+  #banner img { width: 26px; vertical-align: middle; margin-right: 6px; }
+  @keyframes banner { 0% { opacity: 0; transform: translateX(-50%) scale(.6); } 12% { opacity: 1; transform: translateX(-50%) scale(1.08); } 20%, 80% { transform: translateX(-50%) scale(1); opacity: 1; } 100% { opacity: 0; } }
+  /* Rand-Knöpfe: Überspringen + Neu starten */
+  #rand { position: absolute; top: 58px; right: 8px; z-index: 40; display: flex; gap: 4px; }
+  #rand button { height: 24px; padding: 0 7px; opacity: .8; border-radius: 8px; border: 1px solid var(--line-2); background: rgba(0,0,0,.6); color: var(--tx-2); font: 600 11px var(--font-ui); }
+  #frage { position: absolute; inset: 0; z-index: 41; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
+  #frage > div { width: 280px; padding: 16px; border-radius: 14px; background: var(--navy); border: 2px solid var(--gold); text-align: center; font: 600 15px var(--font-ui); }
+  #frage .knoepfe { display: flex; gap: 10px; justify-content: center; margin-top: 12px; }
+  #frage .gold-knopf { min-width: 100px; height: 40px; font-size: 14px; }
+  /* Was kommt wann */
+  #wann { position: absolute; left: 16px; right: 16px; top: 64px; z-index: 7; padding: 12px; border-radius: 14px; background: rgba(15,26,46,.97); border: 2px solid var(--gold); }
+  #wann h3 { margin: 0 0 8px; font: 700 16px var(--font-display); text-align: center; }
+  #wann table { width: 100%; border-collapse: collapse; font: 600 12.5px var(--font-ui); }
+  #wann td { padding: 5px 4px; border-top: 1px solid var(--line-1); color: var(--tx-2); }
+  #wann td:first-child { color: var(--gold-100); white-space: nowrap; }
+  #wann tr.da td { color: #8fdc7a; }
+</style>
+</head>
+<body>
+<div id="welt">
+  <div id="titel" class="seite"><button class="gold-knopf" id="startKnopf">Spielen</button></div>
+  <div id="namen" class="seite weg">
+    <h2>Wie heißt du, Herrscher?</h2>
+    <input id="name" maxlength="16" placeholder="Dein Name" autocomplete="off">
+    <div id="wappen"></div>
+    <button class="gold-knopf" id="nameOk">OK</button>
+  </div>
+  <div id="stadt" class="seite weg">
+    <div class="ort" id="burg"><img id="burgBild" src="../../Game/bilder/basis_hauptstadt_1.webp" alt=""><span>Burg</span></div>
+    <div class="ort" id="platz"><img src="../../Game/bilder/ui_sym_bauarbeiter.webp" alt=""><span>Bauplatz</span></div>
+  </div>
+  <div id="karte" class="seite weg">
+    <div class="ort" id="kBurg"><img src="../../Game/bilder/basis_hauptstadt_2.webp" alt=""><span id="kName">Du</span></div>
+    <div class="ort" id="kBarbar"><img src="../../Game/bilder/karte_barbaren.webp" alt=""><span>Barbar Stufe 1</span></div>
+    <div id="kampf" class="weg"><img src="../../Game/bilder/marsch_kampf_kreis.webp" alt=""></div>
+    <div id="nebel"></div>
+  </div>
+  <div id="oben" class="weg"><img class="wap" id="obenWappen" src="../../Game/bilder/ui_wappen.webp" alt=""><b id="obenName"></b><span id="stufe">Burg 1</span><span id="roh"></span></div>
+  <div id="ziel" class="weg"><img src="../../Game/bilder/ui_sym_burg.webp" alt=""><span id="zielText"></span><button class="gold-knopf" id="zielKnopf">Was kommt?</button></div>
+  <div id="unten" class="weg"></div>
+  <div id="fenster" class="weg"></div>
+  <div id="wann" class="weg"></div>
+  <div id="dunkel" class="weg"><div id="loch"></div></div>
+  <div id="finger" class="weg"></div>
+  <div id="berater" class="weg"><div class="figur"></div><p id="satz"></p></div>
+  <div id="rand"><button id="weiter">Überspringen</button><button id="neu">Neu starten</button></div>
+</div>
+<script>
+// Klick-Probe Einstieg: ein Schritt nach dem anderen, nur das Loch im Dunkel nimmt Tipps an.
+const $ = id => document.getElementById(id), B = n => '../../Game/bilder/' + n + '.webp';
+const zeig = (id, an = true) => $(id).classList.toggle('weg', !an);
+let s, schritt;
+const WAPPEN = [0, 130, 220, 300];   // ein Wappen-Bild, gefärbt
+const ROH = { muenzen: 'ui_res_muenzen', holz: 'ui_res_holz', truppen: 'ui_res_truppen' };
+function neuStart() {
+  s = { name: '', wappen: 0, burg: 1, roh: { muenzen: 1200 }, knoepfe: [], fertig: false };
+  ['namen', 'stadt', 'karte', 'oben', 'ziel', 'unten', 'fenster', 'wann', 'kampf', 'frage'].forEach(id => $(id) && zeig(id, false));
+  $('burgBild').src = B('basis_hauptstadt_1'); $('platz').querySelector('img').src = B('ui_sym_bauarbeiter'); $('platz').querySelector('span').textContent = 'Bauplatz';
+  zeig('titel'); zeig('rand'); $('weiter').textContent = 'Überspringen';
+  $('wappen').innerHTML = WAPPEN.map((h, i) => `<img src="${B('ui_wappen')}" data-i="${i}" style="filter:hue-rotate(${h}deg)" alt="">`).join('');
+  oben(); unten(); geh(0);
+}
+function oben() {
+  $('obenName').textContent = s.name; $('stufe').textContent = 'Burg ' + s.burg; $('obenWappen').style.filter = `hue-rotate(${WAPPEN[s.wappen]}deg)`;
+  // Höchstens 1 Rohstoff sichtbar: der zuletzt dazugekommene
+  const k = Object.keys(s.roh).pop();
+  $('roh').innerHTML = `<span class="res"><img src="${B(ROH[k])}" alt="">${s.roh[k].toLocaleString('de-DE')}</span>`;
+}
+function unten() {
+  const D = { stadt: ['ui_dock_burg', 'Stadt'], karte: ['ui_kompass', 'Karte'] };
+  $('unten').innerHTML = s.knoepfe.map(k => `<button class="dock" id="dock_${k}"><img src="${B(D[k][0])}" alt="">${D[k][1]}</button>`).join('');
+  $('dock_stadt') && ($('dock_stadt').onclick = () => ansicht('stadt'));
+  $('dock_karte') && ($('dock_karte').onclick = () => ansicht('karte'));
+}
+function knopfNeu(k, text, bild) { s.knoepfe.push(k); zeig('unten'); unten(); banner(text, bild); }
+function banner(text, bild) {
+  const alt = $('banner'); alt && alt.remove();
+  $('welt').insertAdjacentHTML('beforeend', `<div id="banner"><img src="${B(bild)}" alt="">Neu: ${text}</div>`);
+  setTimeout(() => { const b = $('banner'); b && b.remove(); }, 2300);
+}
+function ansicht(n) { zeig('stadt', n === 'stadt'); zeig('karte', n === 'karte'); }
+function fenster(html) { $('fenster').innerHTML = html; zeig('fenster', !!html); }
+// Geänderter Rohstoff rückt nach hinten (oben steht immer nur der zuletzt geänderte)
+function roh(k, n) { const w = (s.roh[k] || 0) + n; delete s.roh[k]; s.roh[k] = w; oben(); }
+
+// Schritte: ziel() = Element mit dem Loch, satz = 1 Satz des Beraters, tipp() = was beim Tippen ins Loch passiert
+const SCHRITTE = [
+  { ziel: () => $('startKnopf'), tipp: () => { zeig('titel', false); zeig('namen'); } },
+  { ziel: () => $('name'), satz: 'Wie heißt du, Herrscher?', oben: 1, tipp: () => { $('name').focus(); if (!$('name').value) $('name').value = 'Herrscher'; } },
+  { ziel: () => $('wappen'), satz: 'Wähle dein Wappen.', oben: 1, tipp: e => { const i = e && e.target && e.target.dataset ? e.target.dataset.i : undefined; wappenWahl(i === undefined ? 1 : +i); } },
+  { ziel: () => $('nameOk'), satz: 'Gut! Jetzt in deine Stadt.', oben: 1, tipp: () => { s.name = $('name').value.trim() || 'Herrscher'; zeig('namen', false); zeig('stadt'); zeig('oben'); oben(); s.knoepfe = ['stadt']; zeig('unten'); unten(); } },
+  { ziel: () => $('platz'), satz: 'Hier bauen wir einen Holzfäller.', tipp: () => fenster(`<h3>Holzfäller</h3><div class="zeile"><img src="${B('beute_holz')}" alt="">Bringt Holz für die Burg.</div><button class="gold-knopf" id="bauen">Bauen</button>`) },
+  { ziel: () => $('bauen'), satz: 'Tippe auf Bauen.', tipp: () => { fenster(''); roh('muenzen', -200); bauZeit('platz', 'Holzfäller'); fenster(`<h3>Holzfäller wird gebaut</h3><div class="zeile"><img src="${B('ui_sym_zeit')}" alt="" style="width:36px">noch 0:30</div><button class="gold-knopf gruen" id="gratis"><img src="${B('beute_beschleuniger_klein')}" alt="" style="width:26px;vertical-align:middle"> Beschleuniger nutzen</button>`); } },
+  { ziel: () => $('gratis'), satz: 'Hier, ein Beschleuniger – ein Geschenk.', tipp: () => { fenster(''); fertigBau('platz', 'karte_feld_holz', 'Holzfäller'); roh('holz', 500); banner('Holz', 'beute_holz'); } },
+  { ziel: () => $('burg'), satz: 'Jetzt die Burg auf Stufe 2!', tipp: () => fenster(`<h3>Burg → Stufe 2</h3><div class="zeile"><span class="res"><img src="${B('ui_res_holz')}" alt="">400</span><span class="res"><img src="${B('ui_res_muenzen')}" alt="">600</span></div><button class="gold-knopf" id="ausbauen">Ausbauen</button>`) },
+  { ziel: () => $('ausbauen'), satz: 'Tippe auf Ausbauen.', tipp: () => { fenster(''); roh('muenzen', -600); roh('holz', -400); s.burg = 2; $('burgBild').src = B('basis_hauptstadt_2'); plopp('burg'); roh('truppen', 50); } },
+  { ziel: () => $('roh'), satz: 'Deine Burg bildet von selbst Truppen aus.', tipp: () => knopfNeu('karte', 'Karte', 'ui_kompass'), warte: 2400 },
+  { ziel: () => $('dock_karte'), satz: 'Draußen lauert ein Barbar.', tipp: () => { $('kName').textContent = s.name; ansicht('karte'); } },
+  { ziel: () => $('kBarbar'), satz: 'Greif ihn an!', tipp: () => fenster(`<h3>Barbar Stufe 1</h3><div class="zeile"><img src="${B('karte_barbaren')}" alt="">Deine 50 Soldaten gegen 20 Barbaren</div><button class="gold-knopf" id="angriff">Angreifen</button>`) },
+  { ziel: () => $('angriff'), satz: 'Los geht\'s!', tipp: () => { fenster(''); kampf(); }, warte: 3600 },
+  { ziel: () => $('abholen'), satz: 'Gut gemacht! Hier ist deine Beute.', tipp: () => { fenster(''); roh('holz', 800); roh('muenzen', 1500); zeig('kBarbar', false); ansicht('stadt'); ende(); } },
+];
+function wappenWahl(i) { s.wappen = i; [...$('wappen').children].forEach((w, j) => w.classList.toggle('an', j === i)); }
+function plopp(id) { const e = $(id); e.classList.remove('plopp'); void e.offsetWidth; e.classList.add('plopp'); }
+function bauZeit(id, name) { $(id).insertAdjacentHTML('beforeend', '<div class="uhr">0:30</div>'); $(id).querySelector('span').textContent = name; }
+function fertigBau(id, bild, name) { const e = $(id); e.querySelector('.uhr') && e.querySelector('.uhr').remove(); e.querySelector('img').src = B(bild); e.querySelector('img').style.opacity = 1; e.querySelector('span').textContent = name; plopp(id); }
+function kampf() {
+  zeig('kampf'); zeig('berater', false); zeig('finger', false); $('loch').style.width = '0px';
+  setTimeout(() => {
+    zeig('kampf', false);
+    fenster(`<h3><img src="${B('marsch_band_sieg')}" alt="" style="width:220px;display:block;margin:0 auto">Sieg!</h3><div class="kacheln"><div class="kachel"><img src="${B('beute_holz')}" alt=""><b>800</b></div><div class="kachel"><img src="${B('beute_muenzen')}" alt=""><b>1.500</b></div><div class="kachel blau"><img src="${B('beute_beschleuniger_klein')}" alt=""><b>5 Min</b></div></div><button class="gold-knopf gruen" id="abholen">Abholen</button>`);
+  }, 3500);
+}
+// Was kommt wann (aus der Vorgabe)
+const WANN = [['Burg 2', 'Karte, erster Angriff', true], ['1. Sieg', 'Erster Held geschenkt'], ['Burg 3', 'Bündnis + Chat'], ['Burg 4', 'Shop, Edelsteine'], ['Burg 5', 'Aufgaben, Rucksack, Rangliste'], ['Burg 6–7', 'Events, Pass, Tagesboss'], ['Burg 8+', 'Saison, Thron, Teleport']];
+function ende() {
+  s.fertig = true; zeig('dunkel', false); zeig('finger', false); zeig('berater', false); $('weiter').textContent = 'Fertig';
+  $('zielText').textContent = 'Nächstes Ziel: Burg 3'; zeig('ziel'); plopp('burg');
+  $('wann').innerHTML = '<h3>Was kommt wann</h3><table>' + WANN.map(([a, b, d]) => `<tr${d ? ' class="da"' : ''}><td>${a}</td><td>${b}${d ? ' ✓' : ''}</td></tr>`).join('') + '</table><div style="text-align:center;margin-top:10px"><button class="gold-knopf" id="wannZu" style="height:38px">Verstanden</button></div>';
+  $('zielKnopf').onclick = () => zeig('wann', $('wann').classList.contains('weg'));
+  $('wannZu').onclick = () => zeig('wann', false);
+}
+function geh(n) {
+  schritt = n; const st = SCHRITTE[n];
+  if (!st) return ende();
+  zeig('dunkel'); requestAnimationFrame(() => setTimeout(() => setze(st), 30));
+}
+function setze(st) {
+  const e = st.ziel(); if (!e) return;
+  const r = e.getBoundingClientRect(), w = $('welt').getBoundingClientRect();
+  // Loch = Ziel + Rand; breite Ziele (Knopf, Feld) bekommen ein abgerundetes Loch statt eines riesigen Kreises
+  const bw = Math.max(56, r.width + 16), bh = Math.max(56, r.height + 16), rund = bw / bh < 1.4, d = rund ? Math.max(bw, bh) : bh;
+  const lw = rund ? d : bw, cx = r.left - w.left + r.width / 2, cy = r.top - w.top + r.height / 2;
+  Object.assign($('loch').style, { width: lw + 'px', height: d + 'px', left: cx - lw / 2 + 'px', top: cy - d / 2 + 'px', borderRadius: rund ? '50%' : d / 2 + 'px' });
+  zeig('finger'); Object.assign($('finger').style, { left: cx - 14 + 'px', top: cy + Math.min(d / 2, r.height / 2 + 6) - 4 + 'px' });
+  zeig('berater', !!st.satz); $('satz').textContent = st.satz || '';
+  // Berater nicht übers Loch legen
+  $('berater').classList.toggle('oben', !!st.oben || cy > w.height * .55);
+  s.loch = { cx: cx + w.left, cy: cy + w.top, rx: lw / 2, ry: d / 2 };
+}
+// Nur Tipps ins Loch zählen; das Ziel darunter bekommt den Tipp
+$('dunkel').addEventListener('click', ev => {
+  const l = s.loch; if (!l) return;
+  if (Math.abs(ev.clientX - l.cx) > l.rx || Math.abs(ev.clientY - l.cy) > l.ry) return;
+  const st = SCHRITTE[schritt]; s.loch = null; zeig('finger', false);
+  zeig('dunkel', false); const unter = document.elementFromPoint(ev.clientX, ev.clientY); zeig('dunkel');
+  st.tipp({ target: unter });
+  setTimeout(() => geh(schritt + 1), st.warte || 120);
+});
+$('weiter').onclick = () => {
+  if (s.fertig) return;
+  zeig('frage');
+};
+$('welt').insertAdjacentHTML('beforeend', '<div id="frage" class="weg"><div>Anleitung wirklich überspringen?<div class="knoepfe"><button class="gold-knopf" id="jaWeg">Ja</button><button class="gold-knopf" id="neinWeg">Nein</button></div></div></div>');
+$('neinWeg').onclick = () => zeig('frage', false);
+$('jaWeg').onclick = () => {
+  zeig('frage', false); zeig('titel', false); zeig('namen', false); fenster(''); zeig('kampf', false);
+  s.name = s.name || 'Herrscher'; s.burg = 2; s.roh = { muenzen: 2500 }; s.knoepfe = ['stadt', 'karte'];
+  $('burgBild').src = B('basis_hauptstadt_2'); fertigBau('platz', 'karte_feld_holz', 'Holzfäller');
+  ansicht('stadt'); zeig('oben'); oben(); zeig('unten'); unten(); ende();
+};
+$('neu').onclick = neuStart;
+window.__einstieg = { schritt: () => schritt, zustand: () => s };
+neuStart();
+</script>
+</body>
+</html>
