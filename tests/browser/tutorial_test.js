@@ -62,7 +62,11 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
         if (l.weg || !l.w) continue;                           // (inzwischen anderes Fenster)
         if (l.l < 0 || l.t < 0 || l.r > W || l.b > H) probleme.push(z.k + ': Loch außerhalb ' + [l.l, l.t, l.r, l.b].map(Math.round));
         if (l.blase) probleme.push(z.k + ': Blase über dem Loch');
-        if (l.ueber) { ok(false, 'Loch in Schritt ' + z.k + ' ist zugedeckt', l); break; }
+        if (l.ueber) {                                       // (gleitet gerade: kurz warten, dann muss es frei sein)
+          await p.waitForTimeout(800);
+          if (await p.evaluate(() => { const q = document.getElementById('tutLoch').getBoundingClientRect(), e = document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2); return !document.getElementById('tutLoch').hidden && !!(e && e.closest('#tut')); })) { ok(false, 'Loch in Schritt ' + z.k + ' ist zugedeckt', l); break; }
+          continue;
+        }
         await p.mouse.click(l.x, l.y); await p.waitForTimeout(700); continue;
       }
       await p.waitForTimeout(500);                           // warten (Bau, Marsch, Kamera)

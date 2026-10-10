@@ -13539,6 +13539,7 @@ function tutInsel(id) {                                          // eine Basis a
 let tutFlug = -1;
 const TUT_OHNE = { z1: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde. Sobald eine freie Basis in Reichweite ist, erobere sie – die Hauptstadt bleibt das Wichtigste.',
     z2: 'Bei jedem Angriff kannst du einen Helden mitschicken – er macht ihn stärker.' };
+const TUT_ZWECK = { z1: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde.', z2: 'Ein Held macht deinen Angriff stärker.' };
 const tutZurKarte = () => tutSicht($t('cityCloseBtn')) || $t('cityNavBtn');   // (Handy: der Stadt-Knopf unten heißt dann „Karte“)
 function tutNeutral(ohne) {                                      // die nächste neutrale, sichtbare Basis (nicht die schon angegriffene)
     const h = islandById[playerIslandId], weg = new Set([ohne, ...pendingAttacks.filter(a => !a.attackerBotId).map(a => a.targetId)]);
@@ -13548,7 +13549,7 @@ function tutNeutral(ohne) {                                      // die nächste
 function tutAngriff(feld, held) {                                // Karte → Basis antippen → Angreifen → (Held wählen) → Losmarschieren; je Teilschritt ein eigener Satz mit Zähler
     if (tut[feld] === undefined || (!isPanelOpen(popup) && islandOwnerOf(tut[feld]))) { tut[feld] = tutNeutral(tut.z1); tutSpeichern(); }
     const id = tut[feld]; if (id === undefined) return { weiter: true, satz: TUT_OHNE[feld] };   // (keine Basis in Reichweite: nur erklären)
-    const von = held ? 5 : 4, T = (n, ziel, satz) => ({ ziel, satz, n, von });
+    const von = held ? 5 : 4, T = (n, ziel, satz) => ({ ziel, satz: n <= 2 ? TUT_ZWECK[feld] + ' ' + satz : satz, n, von });   // (am Anfang: wozu)
     if (!cityView.hidden) return T(1, tutZurKarte(), 'Geh zur Karte.');
     if (isPanelOpen(popup) && popupIslandId !== id) return T(2, $t('closeBtn'), 'Das ist die falsche Basis – schließ das Fenster.');
     if (isPanelOpen(popup)) {
@@ -13693,7 +13694,7 @@ function tutZiel(z) {                                            // → { rect, 
 }
 const tutDeckt = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;   // zwei Rechtecke {l,t,r,b} überlappen
 const tutBox = e => { const q = e.getBoundingClientRect(); return { l: q.left, t: q.top, r: q.right, b: q.bottom }; };
-let tutAlt = null, tutFokusZeit = 0, tutFokusN = 0, tutOhneSeit = 0, tutSchrittAlt = -1;
+let tutAlt = null, tutLochAn = false, tutFokusZeit = 0, tutFokusN = 0, tutOhneSeit = 0, tutSchrittAlt = -1;
 function tutZeigen() {
     const el = $t('tut'); if (!el) return;
     tutFrei();
@@ -13724,8 +13725,9 @@ function tutZeigen() {
         const drin = r.l >= 24 && r.r <= W - 24 && r.t >= kopf + 24 && r.b <= fuss - 24 && !tutDeckt(oben ? bo : bu, r);
         tutAlt = r;
         if (!drin && ruht && tutFokusN < 4 && jetzt - tutFokusZeit > 1500) { tutFokusZeit = jetzt; tutFokusN++; z.fokus(); }   // (noch einmal hin – nach 4 Versuchen gilt es so)
-        if (!ruht || (!drin && tutFokusN < 4)) r = null;
+        if (jetzt - tutFokusZeit < 1200 || !(drin && (ruht || tutLochAn)) && !(ruht && tutFokusN >= 4)) r = null;   // (nach dem Hinfliegen erst ausrollen lassen)   // (schon gezeigt und noch drin: kein Flackern bei kleinen Bewegungen)
     }
+    tutLochAn = !!r;
     if (r) {                                                     // Loch nie über den Bildrand: nach innen schieben
         const w = Math.min(r.r - r.l, W - 4), hh = Math.min(r.b - r.t, H - 4);
         const l = Math.min(Math.max(2, r.l), W - 2 - w), t = Math.min(Math.max(2, r.t), H - 2 - hh); r = { l, t, r: l + w, b: t + hh };

@@ -318,6 +318,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-fort i{display:block;height:100%;width:0;background:linear-gradient(#f2d68a,#c99a3e);transition:width .25s linear}
 .tut-band{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 112px);max-width:440px;display:flex;gap:3px;pointer-events:none}
 .tut-band span{flex:1 1 0;min-width:0;padding:4px 2px;border:1px solid #5a3d0e;border-radius:6px;background:rgba(10,14,24,.75);color:#a99a7a;font:600 11px/1.2 Georgia,serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:400px){ .tut-band span{font-size:10px;padding:4px 1px} }
 .tut-band span.ok{color:#e9d9a8} .tut-band span.an{background:linear-gradient(#f2d68a,#c99a3e);color:#2a1a05;font-weight:800;box-shadow:0 0 10px rgba(242,214,138,.6)}
 /* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt (oben an der Leiste) */
 .tw{position:fixed;inset:0;z-index:62;display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(var(--safe-b,0px) + 28px);
