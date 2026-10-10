@@ -7,6 +7,7 @@
 // g Geschenke gegeben, fertig, alles (übersprungen: alles sichtbar) }. Alte Spielstände ohne diesen Wert sehen alles wie bisher.
 // Geschenke über die normalen Wege (gibBelohnung, Abholfach) – das Hauptbuch hat dafür Spielraum (10d3 hbNeu: fr.bm, fr.s1).
 // Bilder: Finger (einstieg_finger), Berater (einstieg_berater) und Banner (banner_neu) sind noch Platzhalter (Stil 02).
+const TUT_KNOPF = { stadt: 'cityNavBtn', kampf: 'battleLogBtn', events: 'goalsBtn', rucksack: 'rucksackBtn', shop: 'shopBtn', profil: 'profileBtn', bund: 'bundBtn' };   // Teile mit Knopf in der Leiste unten
 const TUT_TEILE = ['stadt', 'roh', 'kampf', 'events', 'truppen', 'shop', 'profil', 'rucksack', 'aufgaben', 'karte', 'gems', 'shopmehr', 'bund', 'rang', 'events2', 'welt'];
 const TUT_NAME = { stadt: 'Stadt', roh: 'Rohstoffe', kampf: 'Kampf', events: 'Abholen', truppen: 'Truppen', shop: 'Shop', profil: 'Profil', rucksack: 'Rucksack',
     aufgaben: 'Aufgaben', bund: 'Bündnis', rang: 'Rangliste', events2: 'Events', welt: 'Teleport und Thron' };
@@ -22,7 +23,7 @@ function tutLaeuft() { return !!(tut && tut.neu && !tut.fertig); }
 function tutSpeichern() { store.set('openWaterTutorial', JSON.stringify(tut)); }
 const tutTat = {};                                               // was im laufenden Schritt passiert ist (Angriff, Kiste, „Weiter“)
 const $t = id => document.getElementById(id);
-const tutSicht = el => el && el.getClientRects().length && el.getBoundingClientRect().width > 0 ? el : null;
+const tutSicht = el => el && el.getClientRects().length && el.getBoundingClientRect().width > 0 && getComputedStyle(el).visibility !== 'hidden' ? el : null;
 const tutStufe = id => id === 'keep' ? loadCity().levels.keep || 1 : loadCity().levels[id] || 0;
 const tutBaut = id => !!cityBuildOf(loadCity(), id);
 
@@ -60,6 +61,9 @@ function tutInsel(id) {                                          // eine Basis a
     return { r: { x: toSX(i.x) - r, y: toSY(i.y) - r, w: 2 * r, h: 2 * r }, fokus: () => flyTo(i.x, i.y, { screenY: viewH * .42 }) };
 }
 let tutFlug = -1;
+function tutHeim(sofort) {                                       // Kamera nah auf die eigene Hauptstadt („deine Stadt“), über der Sprechblase
+    const h = islandById[playerIslandId]; if (h) flyTo(h.x, h.y, { zoom: maxZoom, screenY: viewH * .45, instant: !!sofort });
+}
 const TUT_OHNE = { z1: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde. Sobald eine freie Basis in Reichweite ist, erobere sie – die Hauptstadt bleibt das Wichtigste.',
     z2: 'Bei jedem Angriff kannst du einen Helden mitschicken – er macht ihn stärker.' };
 const TUT_ZWECK = { z1: 'Mehr Basen = mehr Truppen und mehr Gold pro Stunde.', z2: 'Ein Held macht deinen Angriff stärker.' };
@@ -105,11 +109,11 @@ function tutFenster(panel, knopf) { return isPanelOpen(panel) ? null : $t(knopf)
 
 // ---- die Schritte (Drehbuch) ----
 const TUT = [
-    { k: 'muenzen', satz: 'Das sind deine Münzen. Damit bezahlst du Forschung, Helden und vieles mehr.', ziel: () => ({ el: document.querySelector('#hud .res--coin') }) },
-    { k: 'r_holz', neu: ['roh'], satz: 'Holz brauchst du für fast jedes Gebäude.', ziel: () => ({ el: document.querySelector('#hud .res--h') }) },
-    { k: 'r_stein', satz: 'Stein macht deine Gebäude und die Burg größer.', ziel: () => ({ el: document.querySelector('#hud .res--s') }) },
-    { k: 'r_eisen', satz: 'Eisen brauchst du für starke Gebäude und Forschung.', ziel: () => ({ el: document.querySelector('#hud .res--e') }) },
-    { k: 'r_gems', zeig: 'gems', satz: 'Edelsteine sind selten und wertvoll. Damit geht alles schneller. Du bekommst sie später als Belohnung.', ziel: () => ({ el: document.querySelector('#hud .res--gem') }) },
+    { k: 'muenzen', nah: 1, satz: 'Das sind deine Münzen. Damit bezahlst du Forschung, Helden und vieles mehr.', ziel: () => ({ el: document.querySelector('#hud .res--coin') }) },
+    { k: 'r_holz', nah: 1, neu: ['roh'], satz: 'Holz brauchst du für fast jedes Gebäude.', ziel: () => ({ el: document.querySelector('#hud .res--h') }) },
+    { k: 'r_stein', nah: 1, satz: 'Stein macht deine Gebäude und die Burg größer.', ziel: () => ({ el: document.querySelector('#hud .res--s') }) },
+    { k: 'r_eisen', nah: 1, satz: 'Eisen brauchst du für starke Gebäude und Forschung.', ziel: () => ({ el: document.querySelector('#hud .res--e') }) },
+    { k: 'r_gems', nah: 1, zeig: 'gems', satz: 'Edelsteine sind selten und wertvoll. Damit geht alles schneller. Du bekommst sie später als Belohnung.', ziel: () => ({ el: document.querySelector('#hud .res--gem') }) },
     { k: 'holz', neu: ['stadt'], satz: 'Bau zuerst den Holzfäller. Er bringt dir jede Stunde Holz – ohne Holz kein Bauen.', vor: () => tutGeschenk('b', 'Geschenk für dich', [['besch', 2, { dauer: '1m' }]]),
       ziel: () => tutGeb('lumber'), fertig: () => tutStufe('lumber') > 0 || tutBaut('lumber') },
     { k: 'tempo', bleib: true, satz: 'Bauen braucht Zeit. Mit einem Beschleuniger ist es sofort fertig – probier es!', ziel: () => tutBesch('lumber'), fertig: () => tutStufe('lumber') > 0 },
@@ -162,9 +166,16 @@ function tutFrei() {
     const zeig = tutLaeuft() && tut.w && TUT[tut.s] && TUT[tut.s].zeig;   // (nur in diesem Schritt kurz zeigen, z. B. Edelsteine)
     const gesperrt = tut && tut.neu && !tut.alles, frei = gesperrt ? new Set([...tut.frei, ...(tut.fertig ? tutBurgFrei() : []), ...(zeig ? [zeig] : [])]) : null;
     for (const k of TUT_TEILE) document.body.classList.toggle('tz-' + k, !!gesperrt && !frei.has(k));
+    const leer = !!gesperrt && !Object.keys(TUT_KNOPF).some(k => frei.has(k)), bc = document.body.classList;   // noch kein Knopf frei: Leiste ganz weg
+    if (bc.contains('tz-leiste') && !leer) tutRein($t('cornerButtons'));
+    bc.toggle('tz-leiste', leer);
     if (!gesperrt) return;
     const neu = tutFreiAlt ? [...frei].filter(k => !tutFreiAlt.has(k) && TUT_NAME[k]) : [];
-    tutFreiAlt = frei; if (neu.length) tutBanner(neu);
+    tutFreiAlt = frei; if (neu.length) { tutBanner(neu); for (const k of neu) tutRein($t(TUT_KNOPF[k])); }
+}
+function tutRein(e) {                                            // neuer Knopf (oder die Leiste): kurz einblenden
+    if (!e) return; e.classList.remove('tut-neu'); void e.offsetWidth; e.classList.add('tut-neu');
+    setTimeout(() => e.classList.remove('tut-neu'), 900);
 }
 function tutBanner(teile) {                                      // „Neu: …“ (Platzhalter bis banner_neu.webp kommt)
     const b = $t('tutBanner'); if (!b) return;
@@ -195,8 +206,6 @@ function tutEnde() {
     flashHint(tut.nochmal ? 'Tutorial geschafft. Viel Spaß!' : 'Geschafft! Unter „Events“ → Abholen wartet deine Belohnung. Viel Spaß!', 6000);
     setTimeout(maybeShowDaily, 1500);                            // jetzt erst die tägliche Belohnung
 }
-const TUT_ETAPPE = [['Bauen', 'muenzen'], ['Karte', 'karte'], ['Angriff', 'basis'], ['Helden', 'halle'], ['Ausrüstung', 'gratis']];   // Fortschrittsband oben: ab welchem Schritt
-function tutEtappe() { let e = 0; TUT_ETAPPE.forEach(([, k], i) => { if (TUT.findIndex(x => x.k === k) <= tut.s) e = i; }); return e; }
 function tutZiel(z) {                                            // → { rect, weiter, warte, fort, satz, teil, fokus }
     if (!z) return {};
     if (z.ziel !== undefined) return { ...tutZiel(z.ziel), satz: z.satz, teil: z.n + '/' + z.von };   // Teilschritt (Angriff): eigener Satz + Zähler
@@ -206,7 +215,7 @@ function tutZiel(z) {                                            // → { rect, 
     if (z.r) return { rect: { left: z.r.x, top: z.r.y, width: z.r.w, height: z.r.h }, fokus: z.fokus };
     const el = z.el || z; if (!(el instanceof Element) || !tutSicht(el)) return {};
     const q = el.getBoundingClientRect(), $tut = $t('tut'), h = (x, y) => { $tut.hidden = true; const e = document.elementFromPoint(x, y); $tut.hidden = false; return e; };
-    if (el.classList.contains('res')) {                          // Rohstoff oben: nur Bild + Zahl (Handy: die Kapsel geht sonst über die ganze Breite)
+    if (el.classList.contains('res') || el.classList.contains('nav-btn')) {   // Rohstoff oben / Knopf unten: nur Bild + Zahl bzw. Schrift (ein einzelner Knopf geht sonst über die ganze Leiste)
         const t = [...el.children].filter(tutSicht).map(x => x.getBoundingClientRect());
         if (t.length) { const l = Math.min(...t.map(x => x.left)), o = Math.min(...t.map(x => x.top)), r = Math.max(...t.map(x => x.right)), u = Math.max(...t.map(x => x.bottom));
             return { rect: { left: l, top: Math.min(o, q.top), width: r - l, height: Math.max(u, q.bottom) - Math.min(o, q.top) }, nurZeigen: !!z.el }; }
@@ -232,9 +241,8 @@ function tutZeigen() {
     el.hidden = false;
     const W = innerWidth, H = innerHeight, jetzt = Date.now(), be = $t('tutBerater');
     if (tutSchrittAlt !== tut.s) { tutSchrittAlt = tut.s; tutOhneSeit = jetzt; tutFokusN = 0; tutAlt = null; }
-    // Band oben: 5 Etappen, die aktuelle hervorgehoben
-    const et = tutEtappe(), band = $t('tutBand'), bandHtml = TUT_ETAPPE.map(([n], i) => '<span class="' + (i < et ? 'ok' : i === et ? 'an' : '') + '">' + n + '</span>').join('');
-    if (band.dataset.e !== String(et)) { band.dataset.e = String(et); liveHtml(band, bandHtml); }
+    if (S.nah && tutFlug !== tut.s && cityView.hidden) { tutFlug = tut.s; tutHeim(); }
+    el.classList.toggle('is-hell', !!S.nah);
     let r = z.rect ? { l: z.rect.left - 8, t: z.rect.top - 8, r: z.rect.left + z.rect.width + 8, b: z.rect.top + z.rect.height + 8 } : null;
     // Blase: die Seite nehmen, die das Loch nicht überdeckt (ganzes Rechteck mit Berater-Bild, nicht nur die Mitte)
     be.classList.remove('oben'); const bu = tutBox(be); be.classList.add('oben'); const bo = tutBox(be);
@@ -242,7 +250,7 @@ function tutZeigen() {
     if (r && tutDeckt(oben ? bo : bu, r) && !tutDeckt(oben ? bu : bo, r)) oben = !oben;
     be.classList.toggle('oben', oben);
     if (r && z.fokus) {                                          // Ziel auf Karte/Stadt: erst zeigen, wenn es ganz im Bild steht und die Kamera ruht
-        const kopf = Math.max(...['hud', 'tutBand', 'tutWeg'].map(id => { const x = $t(id); return x && tutSicht(x) ? x.getBoundingClientRect().bottom : 0; }));
+        const kopf = Math.max(...['hud', 'tutWeg'].map(id => { const x = $t(id); return x && tutSicht(x) ? x.getBoundingClientRect().bottom : 0; }));
         const nav = $t('cornerButtons'), fuss = nav && tutSicht(nav) ? nav.getBoundingClientRect().top : H;
         const ruht = !cameraFlight && tutAlt && Math.abs(tutAlt.l - r.l) < 2 && Math.abs(tutAlt.t - r.t) < 2;
         const drin = r.l >= 24 && r.r <= W - 24 && r.t >= kopf + 24 && r.b <= fuss - 24 && !tutDeckt(oben ? bo : bu, r);
@@ -279,7 +287,7 @@ function tutWillkommen() {                                       // true, solang
     const w = $t('tutWillkommen'); if (!w) return false;
     const an = tutLaeuft() && !tut.w; w.hidden = !an;
     if (an && !w.dataset.an) {
-        w.dataset.an = '1';
+        w.dataset.an = '1'; tutHeim(true);                       // (dahinter wartet schon die eigene Stadt, groß)
         const mitName = !window.__OW;                            // mit Server kommt der Name aus der Anmeldung
         $t('twNameZeile').hidden = !mitName;
         if (mitName) $t('twName').value = (store.get('openWaterPlayerName') || 'Kapitän ' + (100 + Math.floor(Math.random() * 900))).slice(0, TUT_NAME_MAX);

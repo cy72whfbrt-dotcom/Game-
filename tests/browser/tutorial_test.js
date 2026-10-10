@@ -3,7 +3,7 @@
 // Prüft: eigenes Lager Stufe 1 (nur für ihn), am Anfang fast nichts zu sehen (nur Münzen + „Stadt“), Tipp neben das Loch tut nichts, jeder Schritt bringt sein „Neu: …“,
 // Neuladen mittendrin bleibt beim Schritt, am Ende Burg 3 + Belohnung im Abholfach, Bündnis/Events erst später (Burg-Stufe);
 // „Überspringen“ fragt erst (im Spiel) und zeigt dann alles; ein alter Spieler (ohne Tutorial-Stand) sieht alles wie bisher.
-// Ziel immer ganz im Bild, Blase nie darüber, Teilschritte mit Zähler, Band oben. Handy 390×844 und 375×667. Fotos je Schritt (t390_01_<schritt>.png …) in process.argv[3], wenn angegeben.
+// Ziel immer ganz im Bild, Blase nie darüber, Teilschritte mit Zähler; Rohstoff-Kapseln behalten ihren Platz, leere Leiste/Zoom-Knöpfe weg, Kamera nah auf der Hauptstadt. Handy 390×844 und 375×667. Fotos je Schritt (t390_01_<schritt>.png …) in process.argv[3], wenn angegeben.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
@@ -18,17 +18,17 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
     await p.waitForTimeout(3000);
   };
   const sichtbar = p => p.evaluate(() => {   // was ein Spieler sieht: Knöpfe unten, Werte oben, Karten-Knöpfe
-    const da = s => [...document.querySelectorAll(s)].filter(e => e.getClientRects().length && e.getBoundingClientRect().width > 0).map(e => e.id || e.className.split(' ')[1] || e.className);
-    return { unten: da('#cornerButtons .nav-btn'), oben: da('#hud .res'), karte: da('#mapControls button') };
+    const da = s => [...document.querySelectorAll(s)].filter(e => e.getClientRects().length && e.getBoundingClientRect().width > 0 && getComputedStyle(e).visibility !== 'hidden').map(e => e.id || e.className.split(' ')[1] || e.className);
+    return { unten: da('#cornerButtons .nav-btn'), oben: da('#hud .res'), karte: da('#mapControls button'), leiste: getComputedStyle(document.getElementById('cornerButtons')).visibility };
   });
   // ---- einmal ganz durchspielen: jeder Tipp ins Loch; prüft dabei: Loch ganz im Bild (≥ 2 px), Blase deckt es nie, Teilschritte mit eigenem Satz ----
   const spielen = async (p, W, H, mitNeuladen) => {
-    const gesehen = [], banner = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '', band = '';
+    const gesehen = [], banner = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '';
     for (let i = 0; i < 900; i++) {
       const z = await p.evaluate(() => {
         const el = id => document.getElementById(id), r = e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2, w: q.width, h: q.height, l: q.left, t: q.top, r: q.right, b: q.bottom }; };
         const bn = el('tutBanner'); const o = { s: tut.s, k: (TUT[tut.s] || {}).k, fertig: !!tut.fertig, banner: bn.hidden ? '' : bn.textContent, satz: el('tutSatz').textContent,
-          zl: el('tutZaehler').hidden ? '' : el('tutZaehler').textContent, band: (el('tutBand').querySelector('.an') || {}).textContent || '' };
+          zl: el('tutZaehler').hidden ? '' : el('tutZaehler').textContent };
         const bf = document.querySelector('#beuteFenster:not([hidden]) .bf-ok'), mod = ['levelUpBtn', 'rewardModalBtn'].map(el).find(x => x && x.offsetParent);
         if (bf || mod) return { ...o, modal: bf ? '.bf-ok' : '#' + mod.id };
         if (el('tut').hidden) return o;
@@ -42,7 +42,7 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
       if (z.s !== alt) {                                     // neuer Schritt: Foto, merken
         alt = z.s; schritte++; await p.waitForTimeout(500);
         if (bilder) await p.screenshot({ path: path.join(bilder, 't' + W + '_' + String(z.s + 1).padStart(2, '0') + '_' + z.k + '.png') });
-        gesehen.push(z.k); band += z.band[0] || '';
+        gesehen.push(z.k);
         if (z.k === 'stein') hinweis = await p.evaluate(() => { flashHint('Test-Hinweis', 3000); const h = getComputedStyle(document.getElementById('hint')).display; flashHint('', 1); return h; });
         if (z.k === 'karte' && !neu) {                       // Neuladen mittendrin: gleicher Schritt, gleiche Knöpfe
           neu = true; const vor = await p.evaluate(() => JSON.stringify(tut)), sv = await sichtbar(p);
@@ -71,12 +71,11 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
       }
       await p.waitForTimeout(500);                           // warten (Bau, Marsch, Kamera)
     }
-    return { gesehen, banner, schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler], band };
+    return { gesehen, banner, schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler] };
   };
   const pruefSicht = (r, wo) => {
     ok(!r.probleme.length, wo + ': bei jedem Schritt ist das Ziel ganz im Bild und die Blase liegt nie darüber', r.probleme.slice(0, 6));
     ok(r.heldSaetze.length >= 3 && r.heldSaetze.some(x => /Karte/.test(x)) && r.heldSaetze.some(x => /Basis/.test(x)) && r.zaehler.some(x => /^\d\/5$/.test(x)), wo + ': Schritt „Held“ sagt je Teilschritt, was zu tun ist (mit Zähler x/5)', { s: r.heldSaetze, z: r.zaehler });
-    ok(/^B+K+A+H+A+$/.test(r.band), wo + ': Band oben: Bauen · Karte · Angriff · Helden · Ausrüstung der Reihe nach', r.band);
   };
   // ---- 1) neuer Spieler: einmal ganz durch ----
   const ctx = await b.newContext(HANDY); let p = await ctx.newPage(); p.on('pageerror', e => fe.push(e.message));
@@ -87,7 +86,8 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   await p.click('#twLos'); await p.waitForTimeout(600);
   const start = await sichtbar(p), st0 = await p.evaluate(() => ({ s: tut.s, laeuft: tutLaeuft(), sicht: !document.getElementById('tut').hidden, willkommen: !!document.getElementById('wkName') }));
   ok(st0.laeuft && st0.s === 0 && st0.sicht && !st0.willkommen, 'neuer Spieler: Tutorial läuft ab Schritt 1, kein Namens-Fenster (Name aus der Anmeldung)', st0);
-  ok(!start.unten.length && !start.oben.some(x => /gem|troop/.test(x)) && start.karte.every(x => !/marker|army/.test(x)), 'am Anfang fast nichts: unten keine Knöpfe, oben keine Edelsteine/Truppen, keine Wegmarke/Armee', start);
+  ok(!start.unten.length && !start.oben.some(x => /gem|troop/.test(x)) && start.karte.every(x => !/marker|army/.test(x)), 'am Anfang fast nichts: unten keine Knöpfe, oben keine Edelsteine/Truppen, keine Zoom-Knöpfe/Wegmarke/Armee', start);
+  ok(start.leiste === 'hidden', 'ohne Knopf keine leere Leiste unten', start.leiste);
   const lg = await p.evaluate(() => { const c = barbState.camps.find(x => x.fuer === 'player'), h = islandById[playerIslandId], bot = BOT_DEFS[0].id, cap = botCapitalOf(bot);
     const vor = islandTroops[cap]; islandTroops[cap] = Math.max(vor || 0, 5000); const fremd = c ? barbSend(bot, cap, 'c', c.id, 1000) : null; islandTroops[cap] = vor;
     return { da: !!c, L: c && c.L, weit: c && Math.round(Math.hypot(c.x - h.x, c.y - h.y)), fremd, nochDa: !!(c && barbCampById(c.id)) }; });
@@ -164,7 +164,9 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   for (let i = 0; i < 5; i++) {
     const z = await p.evaluate(() => { const l = document.getElementById('tutLoch').getBoundingClientRect(), x = l.left + l.width / 2, y = l.top + l.height / 2;
       const t = document.getElementById('tut'); t.hidden = true; const e = document.elementFromPoint(x, y); t.hidden = false;
-      const res = e && e.closest('.res'); return { k: TUT[tut.s].k, satz: document.getElementById('tutSatz').textContent, weiter: !document.getElementById('tutWeiter').hidden,
+      const res = e && e.closest('.res'), m = document.querySelector('#hud .res--coin').getBoundingClientRect(), h = islandById[playerIslandId];
+      return { muenze: [m.left, m.width].map(Math.round).join(), nah: mapState.zoom >= maxZoom * .9 && toSX(h.x) > 0 && toSX(h.x) < innerWidth && toSY(h.y) > innerHeight * .2 && toSY(h.y) < innerHeight * .7,
+        hell: document.getElementById('tut').classList.contains('is-hell'), k: TUT[tut.s].k, satz: document.getElementById('tutSatz').textContent, weiter: !document.getElementById('tutWeiter').hidden,
         res: res ? res.className.replace('res ', '') : '', stadt: !!document.getElementById('cityNavBtn').getClientRects().length, stadtOffen: !cityView.hidden }; });
     roh.push(z);
     if (bilder && i < 2) await p.screenshot({ path: path.join(bilder, 'v_' + z.k + '.png') });
@@ -173,8 +175,10 @@ const HANDY = { ...devices['iPhone 13'], viewport: { width: 390, height: 844 } }
   }
   ok(roh.map(x => x.k).join() === 'muenzen,r_holz,r_stein,r_eisen,r_gems' && roh.every(x => x.weiter && x.satz && !x.stadt && !x.stadtOffen)
     && ['res--coin', 'res--h', 'res--s', 'res--e', 'res--gem'].every((c, i) => roh[i].res.includes(c)), 'Ressourcen einzeln erklärt (Loch auf Münzen, Holz, Stein, Eisen, Edelsteine), je mit „Weiter“; Stadt/Bauen noch zu', roh);
-  const nach4 = await p.evaluate(() => ({ k: TUT[tut.s].k, gem: !!document.querySelector('#hud .res--gem').getClientRects().length, stadt: !!document.getElementById('cityNavBtn').getClientRects().length }));
-  ok(nach4.k === 'holz' && !nach4.gem && nach4.stadt, 'erst danach: Bauen (Stadt-Knopf kommt), Edelsteine wieder weg', nach4);
+  ok(roh.every(x => x.muenze === roh[0].muenze) && +roh[0].muenze.split(',')[1] < 390 / 3, 'Münz-Kapsel behält Größe und Platz, auch wenn nur sie zu sehen ist (nie über die ganze Breite)', roh.map(x => x.muenze));
+  ok(roh.every(x => x.nah && x.hell), 'Rohstoff-Schritte: Kamera nah auf der eigenen Hauptstadt, weniger abgedunkelt', roh.map(x => [x.nah, x.hell]));
+  const nach4 = await p.evaluate(() => ({ k: TUT[tut.s].k, gem: getComputedStyle(document.querySelector('#hud .res--gem')).visibility !== 'hidden', leiste: getComputedStyle(document.getElementById('cornerButtons')).visibility, stadt: !!document.getElementById('cityNavBtn').getClientRects().length }));
+  ok(nach4.k === 'holz' && !nach4.gem && nach4.stadt && nach4.leiste === 'visible', 'erst danach: Bauen (Stadt-Knopf kommt, mit ihm die Leiste), Edelsteine wieder weg', nach4);
   await c4.close(); fs.rmSync(v4, { recursive: true, force: true });
   ok(!fe.length, 'keine Skript-Fehler', fe.slice(0, 5));
   await b.close();

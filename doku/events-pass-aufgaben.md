@@ -74,12 +74,15 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   → Heldenhalle → Helden-Kiste (+ 2 Schlüssel) → Angriff mit Held → Gratis-Kiste → Ausrüstungs-Kiste → anlegen → Rucksack →
   Burg 3 (mit Beschleuniger) → Labor + Forschung → Aufgaben. Ende: 10 Edelsteine + Kiste ins Abholfach.
 - Sichtprüfung (`tutZeigen`): Ziele auf Karte/Stadt (`fokus`) erst mit Loch+Finger, wenn sie ganz im Bild stehen (≥ 24 px Rand, nicht
-  unter Kopf/Band/Leiste/Blase) und die Kamera ruht; sonst alle 1,5 s neu hinfliegen (`flyTo`, Ziel bei 42 % Höhe, max. 4×). Loch nie über
+  unter Kopf/Leiste/Blase) und die Kamera ruht; sonst alle 1,5 s neu hinfliegen (`flyTo`, Ziel bei 42 % Höhe, max. 4×). Loch nie über
   den Bildrand (nach innen geschoben). Blase: die Seite, deren Rechteck (mit Berater-Bild) das Loch nicht überdeckt. Rohstoffe: Loch nur um Bild+Zahl.
 - Angriffs-Schritte (`tutAngriff`): Satz je Teilschritt mit Zähler („2/5“): Karte → Basis → „Angreifen“ → Held-Feld/Held wählen → Losmarschieren;
   ohne freien Helden ehrlich „ohne Helden los“. Warten (Bau, Marsch): „Kurz warten – …“ mit Balken (`fort`). Hängt ein Schritt
-  > 20 s ohne Ziel: „Weiter“ als Notausgang. Band oben (`#tutBand`): Bauen · Karte · Angriff · Helden · Ausrüstung (`TUT_ETAPPE`).
+  > 20 s ohne Ziel: „Weiter“ als Notausgang. Kein Fortschrittsband oben. Rohstoff-Schritte (`nah`): Kamera nah auf die eigene
+  Hauptstadt (`tutHeim`, schon beim Willkommen), weniger abgedunkelt (`.is-hell`). Zoom-/Kompass-Knöpfe erst nach dem Tutorial (`tz-karte`).
   „Neu: …“-Banner oben an der Leiste. Burg 3: ein offener Rucksack geht zu (Desktop), der Beschleuniger-Hinweis erst am Burg-Fenster.
+- Rohstoff-Kapseln oben, die noch fehlen, sind nur unsichtbar (`visibility`, Platz bleibt): jede Kapsel hat immer ihre normale Größe.
+  Ohne freien Knopf ist die Leiste unten weg (`body.tz-leiste`); der erste Knopf blendet sie ein (`tutRein`).
 - Knöpfe kommen nach und nach („Neu: …“, `body.tz-<teil>` blendet aus, Stil in 02); die Leiste unten verteilt
   auf dem Handy nur die sichtbaren Knöpfe gleichmäßig (05z, keine Lücke). Danach nach Burg-Stufe (`TUT_BURG`):
   Bündnis + Rangliste ab 4, Events (Pass, Erfolge, Ereignisse, Mitte-Leiste) ab 5, Teleport/Thron ab 6.

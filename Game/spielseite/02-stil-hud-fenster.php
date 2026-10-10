@@ -289,7 +289,8 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 /* Tutorial (10c2): dunkel mit Loch – vier Teile um das Loch fangen die Tipps, das Loch selbst lässt sie zum echten Element durch */
 .tut{position:fixed;inset:0;z-index:59;pointer-events:none}   /* über Fenstern, Stadt und Heldenhalle (≤ 58), unter Belohnungs-Fenstern (60+) und dem Hinweis */
 .tut[hidden]{display:none}
-.tut-d{position:absolute;background:rgba(5,8,15,.7);pointer-events:auto}
+.tut-d{position:absolute;background:rgba(5,8,15,.58);pointer-events:auto}
+.tut.is-hell .tut-d{background:rgba(5,8,15,.3)}   /* Rohstoffe erklären: die eigene Hauptstadt gut sichtbar dahinter */
 .tut.is-frei .tut-d{background:none}   /* warten (Marsch, Bau): man sieht alles, tippen geht trotzdem nicht */
 .tut-loch{position:absolute;border-radius:14px;pointer-events:none;box-shadow:0 0 0 3px rgba(242,214,138,.75),0 0 18px 6px rgba(242,214,138,.4);animation:tut-glanz 1.6s ease-in-out infinite}
 .tut-sperre{position:absolute;pointer-events:auto}
@@ -305,21 +306,19 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   display:flex;align-items:flex-end;gap:6px;pointer-events:none}
 .tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 34px)}   /* unter „Überspringen“ */
 .tut-figur{flex:none;width:64px;height:80px;border-radius:32px 32px 10px 10px;border:2px solid var(--gold-300);background:url(bilder/held_aldric_kopf.webp) center/cover,linear-gradient(#24365c,#0f1a2e)}
-.tut-blase{flex:1;min-width:0;margin-bottom:18px;padding:9px 12px;border-radius:12px 12px 12px 2px;background:#f3e6c4;color:#24170a;box-shadow:0 3px 10px #000a;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
-.tut-blase p{margin:0;font:600 15px/1.3 Georgia,serif}
-.tut-blase > .btn,.tut-frage{align-self:flex-end}
+.tut-blase{flex:1;min-width:0;margin-bottom:18px;padding:10px 14px;border-radius:12px 12px 12px 2px;background:#f3e6c4;color:#24170a;box-shadow:0 3px 10px #000a;display:flex;flex-direction:column;gap:8px;pointer-events:auto}
+.tut-blase p{margin:0;font:600 17px/1.3 Georgia,serif}
+.tut-frage{align-self:flex-end}
+.tut-blase:has(> #tutWeiter:not([hidden])){padding-bottom:22px}   /* „Weiter“ hängt unten an der Blase: keine eigene Zeile, die Blase bleibt flach */
+.tut-blase > #tutWeiter{position:absolute;right:12px;bottom:-16px;filter:drop-shadow(0 2px 4px #0008)}
 .tut-frage{display:flex;gap:8px} .tut-frage[hidden]{display:none}
 .tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
   border:1px solid var(--line-2);background:rgba(0,0,0,.6);color:var(--tx-2);font:600 12px var(--font-ui);pointer-events:auto}
 .tut-weg[hidden]{display:none}
-/* Teilschritt-Zähler („2/5“), Warte-Balken, Fortschrittsband oben (5 Etappen) */
+/* Teilschritt-Zähler („2/5“), Warte-Balken */
 .tut-blase{position:relative} .tut-zaehler{position:absolute;top:-10px;right:10px;padding:1px 8px;border-radius:9px;background:#5a3d0e;color:#f3e6c4;font:700 12px/1.4 Georgia,serif} .tut-zaehler[hidden]{display:none}
 .tut-fort{display:block;height:8px;border-radius:4px;background:#d6c39a;box-shadow:inset 0 1px 2px #0006;overflow:hidden} .tut-fort[hidden]{display:none}
 .tut-fort i{display:block;height:100%;width:0;background:linear-gradient(#f2d68a,#c99a3e);transition:width .25s linear}
-.tut-band{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 112px);max-width:440px;display:flex;gap:3px;pointer-events:none}
-.tut-band span{flex:1 1 0;min-width:0;padding:4px 2px;border:1px solid #5a3d0e;border-radius:6px;background:rgba(10,14,24,.75);color:#a99a7a;font:600 11px/1.2 Georgia,serif;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media (max-width:400px){ .tut-band span{font-size:10px;padding:4px 1px} }
-.tut-band span.ok{color:#e9d9a8} .tut-band span.an{background:linear-gradient(#f2d68a,#c99a3e);color:#2a1a05;font-weight:800;box-shadow:0 0 10px rgba(242,214,138,.6)}
 /* „Neu: …“ – Platzhalter, bis banner_neu.webp kommt (oben an der Leiste) */
 .tw{position:fixed;inset:0;z-index:62;display:flex;align-items:flex-end;justify-content:center;padding:16px 16px calc(var(--safe-b,0px) + 28px);
   background:linear-gradient(transparent 35%,rgba(5,8,15,.85)),url(bilder/titel_hoch.jpg) center/cover #0b1424}   /* Willkommen vor dem Tutorial (10c2) */
@@ -345,10 +344,15 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-banner[hidden]{display:none} .tut-banner.an{animation:tut-banner 2.6s ease forwards}
 @keyframes tut-banner{0%{opacity:0;transform:translateX(-50%) scale(.6)}12%{opacity:1;transform:translateX(-50%) scale(1.08)}20%,80%{opacity:1;transform:translateX(-50%) scale(1)}100%{opacity:0}}
 body.tut-an #hint{display:none!important}   /* im Tutorial ruhen die normalen Hinweise (10c2) */
+/* Rohstoffe oben, die noch fehlen: unsichtbar, aber an ihrem Platz – jede Kapsel behält ihre normale Größe (Münzen nie über die ganze Breite) */
+body.tz-roh #hudRoh,body.tz-truppen #hud .res--troop,body.tz-gems #hud .res--gem{visibility:hidden}
+body.tz-leiste #cornerButtons{visibility:hidden}   /* noch kein Knopf frei: keine leere Leiste */
+#cornerButtons.tut-neu{animation:tut-leiste .5s ease-out} @keyframes tut-leiste{from{opacity:0;translate:0 24px}}
+.nav-btn.tut-neu{animation:tut-knopf .7s ease-out} @keyframes tut-knopf{from{opacity:0;scale:.4}60%{opacity:1;scale:1.15}}
 /* Was ein neuer Spieler noch nicht hat, ist ganz weg (10c2 tutFrei: body.tz-<teil>) */
-body.tz-stadt #cityNavBtn,body.tz-roh #hudRoh,body.tz-kampf #battleLogBtn,body.tz-events #goalsBtn,body.tz-truppen #hud .res--troop,body.tz-shop #shopBtn,
-body.tz-profil #profileBtn,body.tz-rucksack #rucksackBtn,body.tz-aufgaben #goalsGruppen [data-ggrp="aufgaben"],body.tz-karte :is(#markerBtn,#armyBtn),
-body.tz-gems #hud .res--gem,body.tz-shopmehr #shopTabs [data-stab]:not([data-stab="gems"]),body.tz-bund #bundBtn,body.tz-rang #tabBtnRank,
+body.tz-stadt #cityNavBtn,body.tz-kampf #battleLogBtn,body.tz-events #goalsBtn,body.tz-shop #shopBtn,
+body.tz-profil #profileBtn,body.tz-rucksack #rucksackBtn,body.tz-aufgaben #goalsGruppen [data-ggrp="aufgaben"],body.tz-karte #mapControls,
+body.tz-shopmehr #shopTabs [data-stab]:not([data-stab="gems"]),body.tz-bund #bundBtn,body.tz-rang #tabBtnRank,
 body.tz-events2 :is(#goalsGruppen [data-ggrp="pass"],#goalsGruppen [data-ggrp="ereignisse"],#goalsTabs [data-gtab="ach"],#midBar),
 body.tz-welt :is(#teleportBtn,#titleBtn,#feldRing [data-fring="tp"]){display:none!important}
 /* in der Stadt (Handy): der Hinweis erst unter der Bauarbeiter-Zeile – nie über ihren Knöpfen (--stadt-kopf: Unterkante, 08d stadtKopf) */

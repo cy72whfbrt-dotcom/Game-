@@ -134,7 +134,6 @@
   <div id="tutBerater" class="tut-berater"><div class="tut-figur"></div><div class="tut-blase"><span id="tutZaehler" class="tut-zaehler" hidden></span><p id="tutSatz"></p><span id="tutFort" class="tut-fort" hidden><i></i></span>
     <button id="tutWeiter" class="btn btn--primary btn--sm" type="button" hidden>Weiter</button>
     <span id="tutFrage" class="tut-frage" hidden><button id="tutJa" class="btn btn--secondary btn--sm" type="button">Überspringen</button><button id="tutNein" class="btn btn--primary btn--sm" type="button">Weiter lernen</button></span></div></div>
-  <div id="tutBand" class="tut-band" aria-label="Tutorial-Fortschritt"></div>
   <button id="tutWeg" class="tut-weg" type="button">Überspringen</button>
 </div>
 <div id="tutWillkommen" class="tw" role="dialog" aria-modal="true" aria-labelledby="twTitel" hidden>
