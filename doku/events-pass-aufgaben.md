@@ -71,8 +71,13 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   echten Zahlen aus dem Spiel (Kosten `stadtKosten`, Rohstoffe, Lager-Barbaren/-Münzen, Münzen/Std. einer Basis, Truppen). Jeder
   Teilschritt (Stadt → Schild → Bauen, Knopf → Reiter → Ziel, Angriff) hat seinen eigenen Satz und Punkte (`tutT`, `tutBauT`, `tutReihe`);
   Bau läuft: „Noch N Sekunden …“ mit Balken. Fertig gebaut: Freude-Moment (`freude`: „+N Holz pro Stunde“, „Burg 2!“ steigt am Ziel auf).
-  Blase immer voll deckend (blendet nur bei neuem Teilschritt ein), bleibt im Schritt auf ihrer Seite, nie auf dem Loch; offenes Fenster:
-  kleine Blase (`.klein`), sonst oben unter seiner Kopfzeile (Titel + X frei), ohne Loch unten (Gebäude-Fenster: oben); „Weiter“ in eigener Zeile. Fährt die Kamera noch: „…“ statt Befehl. Gegenstand-Fenster („Ausrüsten“) liegt im Tutorial unter dem Dunkel (z 58). Lager: Kamera zeigt
+  Blase ruhig (Menschen-Test `tutorial_mensch_test`): feste Seite je Bildschirm-Lage (`tutLage`): Karte/Stadt, Heldenhalle, Kampfdetails
+  unten; offenes Fenster (Panel, Gebäude-, Lager-Fenster) oben unter „Überspringen“, kleine Blase (`.klein`), das Fenster wird so gekürzt,
+  dass es erst darunter beginnt (`tutKuerzen`, Inhalt rollt; nie über Fenster-Inhalt). Seite wechselt nur, wenn die Blase sonst das Loch
+  deckte (Stadt-Schild: schon vorher aus der End-Lage, `tutStadtY`), und bleibt dann im Schritt. Im Schritt wird die Blase nur größer
+  (`tutSeg.h`; `platz`: Platz für den späteren Satz + „Weiter“), Blase blendet nur bei Erscheinen/Seitenwechsel ein (nur Deckkraft),
+  neuer Satz blendet weich über (`.tausch`). Fenster auf/zu: Blase im selben Bild (MutationObserver + gleich nach jedem Tipp). „Weiter“
+  in eigener Zeile. Gegenstand-Fenster („Ausrüsten“) liegt im Tutorial unter dem Dunkel (z 58). Lager: Kamera zeigt
   Hauptstadt + Lager; Karten-Ziele heller (.40).
   Nur das Loch nimmt Tipps. Belohnungs-Fenster gehen vor. Erklär-Schritte nur mit „Weiter“. Erklär-Teilschritte („so liest du das“, `tutE`,
   abgehakt in `tut.e`, „Weiter“ beendet den Schritt nicht): Bau-Info im Holzfäller-Fenster (Ertrag + Kosten), Angriffsleiste (Regler,
@@ -86,18 +91,23 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   → Heldenhalle → Helden-Kiste (+ 2 Schlüssel) → Angriff mit Held → Gratis-Kiste → Ausrüstungs-Kiste → anlegen → Rucksack →
   Burg 3 (mit Beschleuniger) → Labor + Forschung → Aufgaben. Truppen-Schritt wartet, bis der Kampf um die Basis entschieden ist (Satz:
   „Du hast N Truppen – X in deinen Basen, Y unterwegs“), Held-Schritt auch auf den Heimweg (`pendingRetreats`); Verteidiger nur mit Späher (sonst keine Zahl); Kampfbericht
-  erst nach 2,5 s (`ruhe`: „Lager besiegt“ zuerst). Ende: 100 Edelsteine + Kiste (`TUT_GEMS`), gleich abgeholt im Fenster „Geschafft!“,
-  danach Aldric „Gut gemacht …“ und die tägliche Belohnung.
+  erst nach 2,5 s (`ruhe`: „Lager besiegt“ zuerst; Satz nennt Gefallene + Münzen im Abholfach). Gratis-Kiste erst, wenn der Angriff mit
+  dem Helden entschieden ist. Ende: 100 Edelsteine + Kiste (`TUT_GEMS`), gleich abgeholt („Geschafft! Wie versprochen:“), danach Aldric
+  „Gut gemacht … Nächstes Ziel: Burg 4 …“ und erst danach die tägliche Belohnung.
 - Flüssig (11.10., Messung `scratchpad/tutflink/MESSUNG.md`): Loch springt zum Ziel (kein Gleiten über die Seite, kurzes Zusammenziehen
   nur mit scale/opacity), Glanz und Knopf-Einflug nur mit opacity/scale. Kein Loch, solange die Stadt umblendet (`cityBusy`) oder das
   Ziel/sein Fenster noch einfährt (`tutFaehrt`: laufende Animationen mit Lage-Eigenschaften); dann nach 80 ms nochmal (`tutBald`).
-  Nach jedem Tipp ist das Loch verbraucht (Sperre drüber) und wird nach 30 ms neu bestimmt – nie ein zweiter Tipp ins alte Ziel
-  (Doppeltipp auf „Karte“ öffnete sonst die Stadt wieder). Takt sonst 250 ms. Finger: in Fenstern zuerst seitlich, dann unten/oben –
+  Nach jedem Tipp ist das Loch verbraucht (Sperre drüber); das nächste Loch und „Weiter“ erst 300 ms nach dem letzten Tipp
+  (`TUT_SPERRE`: ein Doppeltipp überspringt nichts). Ist das Loch noch nicht da (Fenster fährt ein), wirkt ein Tipp genau aufs Ziel
+  trotzdem (`tutZielEl`, wird weitergereicht). Takt sonst 250 ms; `tutBald` holt den früheren Wunsch vor. Finger: in Fenstern zuerst seitlich, dann unten/oben –
   jeweils die erste Stelle, an der nichts steht (Knopf, Bild, Zahl, Text); Erklär-Löcher im Fenster oben/unten 20 px Rand.
   Überspringen sitzt in der Heldenhalle neben dem X (nicht über den Reitern).
 - Sichtprüfung (`tutZeigen`): Ziele auf Karte/Stadt (`fokus`) mit Loch+Finger, sobald sie im Bild stehen (nicht unter Kopf/Leiste/Blase)
-  und Karte/Stadt-Kamera ruhen; sonst gleich hinfahren (`flyTo`/`cityFocus`, max. 4×; ändert Hinfahren nichts – Bildrand –, gilt es so). Loch nie über
-  den Bildrand (nach innen geschoben). Blase: die Seite, deren Rechteck (mit Berater-Bild) das Loch nicht überdeckt. Rohstoffe: Loch nur um Bild+Zahl.
+  und Karte/Stadt-Kamera ruhen; sonst gleich hinfahren (`flyTo`/`cityFocus`, max. 4×; ändert Hinfahren nichts – Bildrand –, gilt es so),
+  spätestens nach 1,2 s Loch trotzdem (kein „…“ mehr; nur ab der Helden-Kiste kurz „…“, dann „Einen Moment …“). Loch nie über den
+  Bildrand (nach innen geschoben). Erklär-Löcher mit mehreren Kästen im Fenster werden ins Bild gerollt (`tutRoller`). Finger nie unter der Blase. Rohstoffe: Loch nur um Bild+Zahl.
+- Labor: reicht es nicht für die erste Forschung (Burg 3 verbraucht die Rohstoffe), nennt Aldric die fehlenden Mengen, Loch auf den
+  Voraussetzungen + grauem „Forschen“, dann „Weiter“. Bau-Teilschritte: Stadt → Schild → runder Knopf („Tipp auf „Bauen“/„Aufwerten“) → Fenster-Knopf.
 - Angriffs-Schritte (`tutAngriff`): Satz je Teilschritt mit Zähler („2/5“): Karte → Basis → „Angreifen“ → Held-Feld/Held wählen → Losmarschieren;
   ohne freien Helden ehrlich „ohne Helden los“. Warten (Bau, Marsch): „Kurz warten – …“ mit Balken (`fort`). Hängt ein Schritt
   > 20 s ohne Ziel: „Weiter“ als Notausgang. Kein Fortschrittsband oben. Rohstoff-Schritte (`nah`): Kamera nah auf die eigene

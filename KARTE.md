@@ -2177,14 +2177,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutSpeichern` → Game/spiel/10c2-tutorial.js:25
 - `tutStadtY` → Game/spiel/10c2-tutorial.js:46
 - `tutStart` → Game/spiel/10c2-tutorial.js:312
-- `tutStarten` → Game/spiel/10c2-tutorial.js:516
+- `tutStarten` → Game/spiel/10c2-tutorial.js:519
 - `tutStufe` → Game/spiel/10c2-tutorial.js:29
 - `tutT` → Game/spiel/10c2-tutorial.js:56
 - `tutUmriss` → Game/spiel/10c2-tutorial.js:372
 - `tutUnd` → Game/spiel/10c2-tutorial.js:61
 - `tutUnterwegs` → Game/spiel/10c2-tutorial.js:160
 - `tutWeiter` → Game/spiel/10c2-tutorial.js:307
-- `tutWillkommen` → Game/spiel/10c2-tutorial.js:496
+- `tutWillkommen` → Game/spiel/10c2-tutorial.js:499
 - `tutZahl` → Game/spiel/10c2-tutorial.js:60
 - `tutZeigen` → Game/spiel/10c2-tutorial.js:402
 - `tutZiel` → Game/spiel/10c2-tutorial.js:338
@@ -4551,8 +4551,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutZeigen` :402
 - `deckt` :426
 - `teil` :457
-- `tutWillkommen` :496 — true, solange das Willkommen offen ist
-- `tutStarten` :516
+- `tutWillkommen` :499 — true, solange das Willkommen offen ist
+- `tutStarten` :519
 
 ### Game/spiel/10d1-welt-verbindung.js — Die eine Welt: Verbindung zu welt.js, Zuschauer übernehmen Welt-Teile, Späher a…
 - `rechnerStatus` :10 — (welt.js meldet jede Änderung von „rechner“)

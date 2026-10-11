@@ -130,11 +130,12 @@ const pause = () => 600 + Math.round(zufall() * 900);
   const erklSchritte = [...new Set(L.filter(x => !x.aus && x.weiter).map(x => x.k + ' ' + x.teil))], erklOhne = [...new Set(L.filter(x => !x.aus && x.weiter && x.teil && !x.loch && dauer(x) > 1000).map(x => x.k + ' ' + x.teil))];
   ok(erkl.length && !erklOhne.length, 'Erklär-Teilschritte („Weiter“): Loch sichtbar auf dem erklärten Bereich', { mitLoch: [...new Set(erkl.map(x => x.k + ' ' + x.teil))], ohneLoch: erklOhne, alle: erklSchritte.length });
   const ohneZahl = t => t.replace(/[\d.,]+/g, '#');             // (Zahlen zählen hoch: derselbe Satz)
-  const blitz = []; for (let i = 1; i < L.length - 1; i++) { const x = L[i]; if (x.aus || x.satz === '…' || !x.satz || dauer(x) >= 350) continue;   // ein Satz, der nur kurz aufblitzt (übersprungen/flackert)
-    const sx = ohneZahl(x.satz), lang = y => !y.aus && ohneZahl(y.satz || '') === sx && dauer(y) >= 350;
-    if (L.slice(0, i).some(lang) || L.slice(i + 1).some(lang)) continue;   // (der Satz kommt sonst richtig vor)
+  const R = []; for (const x of L) { const sx = x.aus ? '' : ohneZahl(x.satz || ''), v = R[R.length - 1]; if (v && v.sx === sx) v.bis = x.bis; else R.push({ ...x, sx }); }   // ein Satz am Stück (Loch/Blase dürfen sich dabei bewegen)
+  const blitz = []; for (let i = 1; i < R.length - 1; i++) { const x = R[i]; if (x.aus || x.satz === '…' || !x.satz || dauer(x) >= 350) continue;   // ein Satz, der nur kurz aufblitzt (übersprungen/flackert)
+    const lang = y => !y.aus && y.sx === x.sx && dauer(y) >= 350;
+    if (R.slice(0, i).some(lang) || R.slice(i + 1).some(lang)) continue;   // (der Satz kommt sonst richtig vor)
     if (/^Noch \d|noch \d+ Sekunde|Restzeit: noch/.test(x.satz)) continue;   // (Countdown)
-    blitz.push({ k: x.k, teil: x.teil, ms: Math.round(dauer(x)), satz: x.satz.slice(0, 50), davor: (L[i - 1].satz || '').slice(0, 40), danach: (L[i + 1].satz || '').slice(0, 40) }); }
+    blitz.push({ k: x.k, teil: x.teil, ms: Math.round(dauer(x)), satz: x.satz.slice(0, 50), davor: (R[i - 1].satz || '').slice(0, 40), danach: (R[i + 1].satz || '').slice(0, 40) }); }
   ok(!blitz.length, 'kein Satz blitzt nur kurz auf (nichts übersprungen, kein Flackern)', blitz.slice(0, 8));
   // neues Einblenden der Blase nur, wenn sie neu erscheint (vorher weg) oder auf die andere Seite wechselt – nicht, wenn nur der Text wechselt
   const reinFalsch = M.rein.filter(r => r.falsch).map(r => ({ s: r.s, satz: r.satz.slice(0, 40) }));   // (vorher schon zu sehen, auf derselben Seite)

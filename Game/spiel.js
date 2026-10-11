@@ -13984,8 +13984,11 @@ function tutZeigen() {
     if (z.teil && zl.dataset.teil !== z.teil) { zl.dataset.teil = z.teil; const [n, von] = z.teil.split('/').map(Number); liveHtml(zl, Array.from({ length: von }, (x, i) => '<i class="' + (i < n ? 'an' : '') + '"></i>').join('')); }
     const fb = $t('tutFort'); fb.hidden = tutFrage || z.fort === undefined; if (z.fort !== undefined) fb.firstChild.style.width = Math.round(100 * Math.min(1, Math.max(0, z.fort))) + '%';
     $t('tutWeiter').hidden = tutFrage || !ok; $t('tutFrage').hidden = !tutFrage; $t('tutWeg').hidden = tutFrage;
-    const bl = be.querySelector('.tut-blase'), wb = $t('tutWeiter'), platz = S.platz && wb.hidden;   // (wächst nur: der Satz bleibt stehen; S.platz: „Weiter“ kommt später – Platz schon jetzt)
-    bl.style.minHeight = ''; if (platz) wb.hidden = false; tutSeg.h = Math.max(tutSeg.h, bl.offsetHeight); if (platz) wb.hidden = true; bl.style.minHeight = tutSeg.h + 'px';
+    const bl = be.querySelector('.tut-blase'), wb = $t('tutWeiter'), ps = $t('tutSatz');   // (wächst nur: der Satz bleibt stehen)
+    bl.style.minHeight = ''; tutSeg.h = Math.max(tutSeg.h, bl.offsetHeight);
+    if (S.platz && wb.hidden) { const f = fb.hidden, t = ps.textContent; wb.hidden = false; fb.hidden = true; try { ps.textContent = S.satz(); } catch (e) {}   // S.platz: nach dem Warten kommt Satz + „Weiter“ – Platz dafür schon jetzt
+        tutSeg.h = Math.max(tutSeg.h, bl.offsetHeight); wb.hidden = true; fb.hidden = f; ps.textContent = t; }
+    bl.style.minHeight = tutSeg.h + 'px';
     const bb = tutBox(be); tutKuerzen(fe, bb.b + 6);
     const fi = $t('tutFinger'); fi.hidden = !r || z.nurZeigen || z.zeigNur; tutErkl = z.erkl || null;
     if (!fi.hidden) {                                            // Finger: im Fenster seitlich (über und unter Knöpfen stehen dort oft Zahlen), sonst von unten, notfalls von oben/der Seite – nie unter der Blase
@@ -14033,6 +14036,8 @@ $t('tutWeiter').addEventListener('click', () => { if (Date.now() - tutTippZeit <
 document.addEventListener('click', e => { if (!tutLaeuft()) return;   // nach jedem Tipp: das Loch ist verbraucht (kein zweiter Tipp ins alte Ziel), gleich das nächste
     const lo = $t('tutLoch'); if (!e.target.closest('#tut')) { tutTippZeit = Date.now(); tutZielEl = null; if (!lo.hidden) { $t('tutSperre').hidden = false; lo.hidden = true; $t('tutFinger').hidden = true; } }
     tutZeigen(); tutBald(30); });                                   // (gleich: ein neues Fenster bekommt die Blase im selben Bild, nicht ein Bild später)
+new MutationObserver(rs => { if (tutLaeuft() && !$t('tut').hidden && rs.some(r => r.target.matches && r.target.matches('.panel, #citySheet, #barbSheet, .kl-seite, #heroHall'))) tutZeigen(); })   // Fenster geht auf/zu (auch ohne Tipp, z. B. nach dem Tippen auf die Karte): Blase im selben Bild an ihren Platz
+    .observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class', 'hidden'] });
 $t('tut').addEventListener('click', e => {                        // Loch noch nicht da (Fenster fährt ein): ein Tipp genau aufs Ziel wirkt trotzdem
     const z = tutZielEl; if (!z || !z.isConnected || !e.target.closest('.tut-d, #tutSperre') || cityBusy || Date.now() - tutTippZeit < TUT_SPERRE || !tutSicht(z)) return;
     const q = z.getBoundingClientRect(); if (e.clientX >= q.left && e.clientX <= q.right && e.clientY >= q.top && e.clientY <= q.bottom) z.click(); });
