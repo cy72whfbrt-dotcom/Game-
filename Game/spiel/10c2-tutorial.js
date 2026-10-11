@@ -142,7 +142,7 @@ function tutLager() {                                           // das eigene La
     const c = barbState.camps.filter(x => x.fuer && barbFuerOk(x, 'player'))[0] || barbNearest();
     if (!c) return { weiter: true, satz: 'Barbaren-Lager bringen Münzen. Gerade ist keines in deiner Nähe – schau später auf der Karte.' };
     const h = islandById[playerIslandId], d = Math.hypot(c.x - h.x, c.y - h.y) || 1;   // Kamera: Hauptstadt und Lager zusammen im Bild (dazu ein paar Basen)
-    const hin = () => flyTo((c.x + h.x) / 2, (c.y + h.y) / 2, { zoom: Math.min(maxZoom, Math.max(.008, .5 * Math.min(viewW, viewH * .55) / d)), screenY: viewH * .36 });   // (über der Blase unten)
+    const hin = () => flyTo((c.x + h.x) / 2, (c.y + h.y) / 2, { zoom: Math.min(maxZoom, Math.max(.008, .5 * Math.min(viewW, viewH * .55) / d)), screenY: viewH * .3 });   // (über der Blase unten)
     if (tutFlug !== tut.s) { tutFlug = tut.s; hin(); }
     const k = barbK(), p = barbScreen(c), r = Math.max(24, 22 * k);
     return tutT(1, 2, { r: { x: p.x - r, y: p.y - r - 4 * k, w: 2 * r, h: 2 * r }, rund: true, fokus: hin },
@@ -444,7 +444,8 @@ function tutZeigen() {
     be.style.top = ''; be.classList.remove('oben'); const bu = tutBox(be); be.classList.add('oben'); const bo = tutBox(be); be.classList.toggle('oben', tutSeg.oben);
     const deckt = q => tutDeckt(tutSeg.oben ? bo : bu, q), seite = q => { if (deckt(q) && !tutDeckt(tutSeg.oben ? bu : bo, q)) { tutSeg.oben = !tutSeg.oben; be.classList.toggle('oben', tutSeg.oben); } };
     if (z.endY !== undefined) seite({ l: 0, r: W, t: z.endY - 40, b: z.endY + 130 });   // Stadt-Schild (+ runde Knöpfe darunter): die Seite gleich passend wählen (nicht erst nach dem Hinfahren springen)
-    if (r && !z.fokus && !tutLochAn && lage !== 'fenster') seite(r);   // (Ziel fährt noch ein: Seite schon jetzt, bevor die Blase sichtbar woanders steht)
+    const gleitet = z.el && z.el.closest && z.el.closest('#cityRing') && cityCam && cityCam.tx !== undefined;   // (die Stadt gleitet noch zum Gebäude – der runde Knopf wandert mit)
+    if (r && !z.fokus && !tutLochAn && lage !== 'fenster' && !gleitet && !(z.el && tutFaehrt(z.el))) seite(r);   // (Ziel fährt noch ein: Seite schon jetzt, bevor die Blase sichtbar woanders steht)
     if (r && z.fokus) {                                          // Ziel auf Karte/Stadt: erst zeigen, wenn es ganz im Bild steht und die Kamera ruht – spätestens nach 1,2 s trotzdem
         const kopf = Math.max(...['hud', 'tutWeg'].map(id => { const x = $t(id); return x && tutSicht(x) ? x.getBoundingClientRect().bottom : 0; }));
         const nav = $t('cornerButtons'), fuss = nav && tutSicht(nav) ? nav.getBoundingClientRect().top : H;
@@ -457,7 +458,7 @@ function tutZeigen() {
         const sicht = r.r > 0 && r.l < W && r.b > kopf && r.t < fuss, lange = sicht && jetzt - tutFokusAb > 800;   // (nie lange ohne Loch: ein Spieler wartet sonst vor „nichts“)
         if (!lange && (jetzt - tutFokusZeit < 350 || !(drin && (ruht || tutLochAn)) && !(ruht && (tutFokusN >= 4 || fest)))) r = null;   // (erst ausrollen lassen; schon gezeigt und noch drin: kein Flackern)
     }
-    if (r && (cityBusy || z.el && tutFaehrt(z.el) || z.el && z.el.closest && z.el.closest('#cityRing') && cityCam && cityCam.tx !== undefined)) r = null;   // (auch: die Stadt gleitet noch zum Gebäude – der runde Knopf wandert mit)   // Stadt blendet um, Fenster fährt noch ein: erst danach das Loch (ein Tipp genau aufs Ziel geht trotzdem durch, s. u.)
+    if (r && (cityBusy || gleitet || z.el && tutFaehrt(z.el))) r = null;   // Stadt blendet um, Fenster fährt noch ein: erst danach das Loch (ein Tipp genau aufs Ziel geht trotzdem durch, s. u.)
     const innen = q => { const w = Math.min(q.r - q.l, W - 4), hh = Math.min(q.b - q.t, H - 4), l = Math.min(Math.max(2, q.l), W - 2 - w), t = Math.min(Math.max(2, q.t), H - 2 - hh); return { l, t, r: l + w, b: t + hh }; };
     if (r) r = innen(r);                                         // Loch nie über den Bildrand: nach innen schieben (vor der Seitenwahl – so wie es gezeigt wird)
     const fw = r && z.el && z.el.closest && z.el.closest('.panel, .city-sheet, #barbSheet');   // Ziel im Fenster: Loch nicht über den Fensterrand (nicht über Leiste oder Karte)

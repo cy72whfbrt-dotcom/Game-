@@ -1216,7 +1216,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `inboxSave` → Game/spiel/06a-aufgaben.js:234
 - `infoKlapp` → Game/spiel/09c-events-woche.js:163
 - `init` → Game/spiel/10c-start-einstellungen.js:20
-- `innen` → Game/spiel/10c2-tutorial.js:461
+- `innen` → Game/spiel/10c2-tutorial.js:462
 - `inselMittig` → Game/spiel/10a-fenster-insel-vorschau.js:258
 - `inselOk` → Game/spiel/10d2-welt-schummelschutz.js:16
 - `inselOrtAnwenden` → Game/spiel/08d2-stadt-teleport.js:18
@@ -2054,7 +2054,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:253
-- `teil` → Game/spiel/10c2-tutorial.js:477
+- `teil` → Game/spiel/10c2-tutorial.js:478
 - `teleImRucksack` → Game/spiel/06d-schild-produktion.js:80
 - `teleportFx` → Game/spiel/08d2-stadt-teleport.js:97
 - `teleportOrt` → Game/spiel/08d2-stadt-teleport.js:72
@@ -2187,14 +2187,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutSpeichern` → Game/spiel/10c2-tutorial.js:25
 - `tutStadtY` → Game/spiel/10c2-tutorial.js:46
 - `tutStart` → Game/spiel/10c2-tutorial.js:317
-- `tutStarten` → Game/spiel/10c2-tutorial.js:542
+- `tutStarten` → Game/spiel/10c2-tutorial.js:543
 - `tutStufe` → Game/spiel/10c2-tutorial.js:29
 - `tutT` → Game/spiel/10c2-tutorial.js:56
 - `tutUmriss` → Game/spiel/10c2-tutorial.js:391
 - `tutUnd` → Game/spiel/10c2-tutorial.js:61
 - `tutUnterwegs` → Game/spiel/10c2-tutorial.js:161
 - `tutWeiter` → Game/spiel/10c2-tutorial.js:312
-- `tutWillkommen` → Game/spiel/10c2-tutorial.js:522
+- `tutWillkommen` → Game/spiel/10c2-tutorial.js:523
 - `tutZahl` → Game/spiel/10c2-tutorial.js:60
 - `tutZeigen` → Game/spiel/10c2-tutorial.js:421
 - `tutZiel` → Game/spiel/10c2-tutorial.js:354
@@ -4568,10 +4568,10 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutKuerzen` :416 — offene Fenster beginnen erst unter der Blase (nie wieder länger, solange sie of…
 - `tutZeigen` :421
 - `deckt` :445
-- `innen` :461
-- `teil` :477
-- `tutWillkommen` :522 — true, solange das Willkommen offen ist
-- `tutStarten` :542
+- `innen` :462
+- `teil` :478
+- `tutWillkommen` :523 — true, solange das Willkommen offen ist
+- `tutStarten` :543
 
 ### Game/spiel/10d1-welt-verbindung.js — Die eine Welt: Verbindung zu welt.js, Zuschauer übernehmen Welt-Teile, Späher a…
 - `rechnerStatus` :10 — (welt.js meldet jede Änderung von „rechner“)
