@@ -20,7 +20,7 @@ const BUND = {
     GESCHENKE_TAG: 5, KISTEN_TAG: 3,                          // pro Mitglied höchstens 5 Geschenke am Tag · pro Geber 3 Kisten-Geschenke
     TEMPEL_PCT: 2, MEGA_PCT: 5, BONUS_MAX: 12,                // Tempel-Bonus: +2 % je Tempel, Mega-Tempel +5 %, höchstens +12 %
     GEBIET_TEMPO: 1.1,                                        // im eigenen Gebiet 10 % schneller
-    FARBEN: ['#c0392b', '#2e86c1', '#27ae60', '#8e44ad', '#d68910', '#16a085', '#e84393', '#5d6d7e', '#b7950b', '#d35400', '#a3e635', '#f4f1e8'],   // 12 klar verschiedene (vorher zweimal Lila und Türkis)
+    FARBEN: ['#c0392b', '#2e86c1', '#27ae60', '#8e44ad', '#d68910', '#16a085', '#e84393', '#5d6d7e', '#6e2c00', '#d35400', '#a3e635', '#f4f1e8'],   // 12 klar verschiedene (vorher zweimal Lila, Türkis und Gold)
     ZEICHEN: ['crown', 'star', 'shield', 'attack', 'temple', 'castle', 'flag', 'troops']
 };
 const BUND_SIGNALE = {
@@ -1433,8 +1433,8 @@ function bundObenZeichnen() {
         feld('Name', '<input id="bdName" maxlength="20" placeholder="3–20 Buchstaben" autocomplete="off">') + feld('Kürzel', '<input id="bdTag" maxlength="4" placeholder="2–4 Buchstaben" autocomplete="off" class="bd-tag">') +
         feld('Farbe', '<div class="bd-farben" id="bdFarben">' + BUND.FARBEN.map((f, i) => '<button type="button" data-farbe="' + i + '" style="--bf:' + f + '"' + (i === 0 ? ' class="on"' : '') + ' aria-label="Farbe ' + (i + 1) + '"></button>').join('') + '</div>') +
         feld('Zeichen', '<div class="bd-zeichen" id="bdZeichen">' + BUND.ZEICHEN.map((z, i) => '<button type="button" data-zeichen="' + i + '"' + (i === 0 ? ' class="on"' : '') + '>' + icon(z) + '</button>').join('') + '</div>') +
-        '<label class="set-zeile"><span>Offen für alle<small>sonst nur auf Anfrage</small></span><input type="checkbox" id="bdOffen" checked></label>' +
-        '<button type="button" class="btn btn--primary bd-gf-los" data-bact="gruenden">' + icon('flag') + '<span class="lbl">Gründen</span><span class="cost">' + preis + '</span></button><p class="bd-fehler" id="bdFehler"></p></div>';
+        '<div class="bd-gf-fuss"><label class="set-zeile"><span>Offen für alle<small>sonst nur auf Anfrage</small></span><input type="checkbox" id="bdOffen" checked></label>' +   // unten fest (Handy): eine Leiste, nichts halb dahinter
+        '<button type="button" class="btn btn--primary bd-gf-los" data-bact="gruenden">' + icon('flag') + '<span class="lbl">Gründen</span><span class="cost">' + preis + '</span></button><p class="bd-fehler" id="bdFehler"></p></div></div>';
     bundVorschau(); bundGruendenKnopf();
 }
 function bundGruendenKnopf() {                                     // zu wenig Münzen: grau mit „Fehlt: … Münzen“ (wie die Gebäude) statt gold

@@ -18,6 +18,9 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
 - **11c Nr. 32** Zahlen aus Spieler-Sicht: Thron-Shop „10 Truppen“ für 200 Punkte, Schild Stufe 1 „+0,2 %“, Späh-Bericht
   über fremden Spieler zeigt eigene Helden (prüfen), Burg-Schutz-Zahl Späh- vs. Burg-Fenster.
 - **11c Nr. 34** Teleport-Animation (Lichtsäule/Staub, später).
+- **Spieltest 11.10.** Tutorial: rundes Loch um Lager/Basis (`tutLoch.rund`) – die Abdunkelung sind 4 eckige Teile um das
+  Rechteck (10c2 `teil('o'…)`), darum leuchten die Ecken als heller Kasten. Fix in 10c2/`.tut*` (z. B. Abdunkelung als
+  `box-shadow: 0 0 0 100vmax` am runden Loch statt der 4 Teile). Gehört zum Tutorial-Programmierer.
 - **11c Nr. 36** Aufräumen: (b) kompletter Code-Check, (d) alter Code raus (gefunden nur `BAND` in 03a).
   (a App-Bild, c Doku, e Sortieren: 8.10. erledigt.)
 

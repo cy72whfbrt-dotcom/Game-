@@ -18,7 +18,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const fremd = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && i.id !== z.id), alt = botOwnerIndex.get(fremd.id);
     botOwnerIndex.set(fremd.id, A.id); const fn = bundZielName(fremd); if (alt) botOwnerIndex.set(fremd.id, alt); else botOwnerIndex.delete(fremd.id);   // (nur für den Namen kurz besetzt)
     return { A: A.id, cap: botCapitalOf(A.id), z: z.id, titel: islandTitle(z), name: bundZielName(z), fremd: fn }; });
-  ok(/^Turm #/.test(v.titel) && /^Neutrale Basis · X \d+ · Y \d+$/.test(v.name), 'Neutraler Turm: „Neutrale Basis · X … · Y …“ statt Rohnummer', v);
+  ok(/^Basis Stufe\u00a0\d+$/.test(v.titel) && /^Neutrale Basis · X \d+ · Y \d+$/.test(v.name), 'Neutraler Turm: „Neutrale Basis · X … · Y …“ statt Rohnummer', v);
   ok(v.fremd === 'Basis von Kevin_Langername_93', 'Besetzter Turm: „Basis von <Besitzer>“', v.fremd);
   await p.evaluate(z => { bundWahl = { mode: 'rally', t: z, min: 3, f: 1 }; bundOeffnen('rally'); }, v.z); await p.waitForTimeout(800);
   const t = await p.evaluate(() => { const e = document.querySelector('.bd-wahl h4'); return e ? e.textContent : ''; });

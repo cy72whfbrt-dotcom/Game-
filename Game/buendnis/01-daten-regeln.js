@@ -21,7 +21,7 @@ const BUND = {
     GESCHENKE_TAG: 5, KISTEN_TAG: 3,                          // pro Mitglied höchstens 5 Geschenke am Tag · pro Geber 3 Kisten-Geschenke
     TEMPEL_PCT: 2, MEGA_PCT: 5, BONUS_MAX: 12,                // Tempel-Bonus: +2 % je Tempel, Mega-Tempel +5 %, höchstens +12 %
     GEBIET_TEMPO: 1.1,                                        // im eigenen Gebiet 10 % schneller
-    FARBEN: ['#c0392b', '#2e86c1', '#27ae60', '#8e44ad', '#d68910', '#16a085', '#e84393', '#5d6d7e', '#b7950b', '#d35400', '#a3e635', '#f4f1e8'],   // 12 klar verschiedene (vorher zweimal Lila und Türkis)
+    FARBEN: ['#c0392b', '#2e86c1', '#27ae60', '#8e44ad', '#d68910', '#16a085', '#e84393', '#5d6d7e', '#6e2c00', '#d35400', '#a3e635', '#f4f1e8'],   // 12 klar verschiedene (vorher zweimal Lila, Türkis und Gold)
     ZEICHEN: ['crown', 'star', 'shield', 'attack', 'temple', 'castle', 'flag', 'troops']
 };
 const BUND_SIGNALE = {

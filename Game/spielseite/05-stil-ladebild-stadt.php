@@ -283,7 +283,8 @@ body:has(.panel.is-open,#citySheet:not([hidden]),#lookSheet:not([hidden]),#heroH
 .bd-tag::placeholder{text-transform:none;letter-spacing:normal}
 #bdZeichen{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;justify-items:center} #bdZeichen button{width:100%;max-width:44px;height:auto;aspect-ratio:1}
 #bdFarben{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-items:center} #bdFarben button{width:34px;height:34px}
-.bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1;box-shadow:0 -14px 12px -2px rgba(13,15,21,.94),0 6px 0 0 rgba(13,15,21,.94)} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
+.bd-gf-fuss{position:sticky;bottom:0;z-index:1;display:grid;gap:8px;margin:0 -10px -10px;padding:10px;border-radius:0 0 var(--r-lg) var(--r-lg);background:#11141b;box-shadow:0 -12px 12px -6px #11141b}
+.bd-gf-los{width:100%;min-height:48px;gap:8px} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
 /* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
 /* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen zuerst, dann der Schild-Kasten */
 .city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;max-width:none;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}

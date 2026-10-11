@@ -56,7 +56,12 @@ Million Lords, Lords Mobile – „sieht aus wie ein Spiel, nicht wie eine Liste
   Einstellungen; Rangliste als eigenes Fenster (Macht, Eroberungen, Titel, Thron-Punkte, Hauptstadt). Name = Konto-Name,
   wenn keiner eingetragen.
 - Einstellungen: Benachrichtigungen (Gruppen Angriff/Bündnis/Events/Stadt), Ton & Grafik (Akku sparen), Konto (Name,
-  Passwort, Abmelden), Hilfe, Version.
+  Passwort, Abmelden), Hilfe; ganz unten klein „Version …“ (nur für Rückfragen).
+- Aktive Wahl-Knöpfe/Chips (gold, `ui_k_gold`) ohne Hintergrundfarbe – sonst ein dunkles Viereck hinter den runden Ecken.
+- Stadt: die runden Knöpfe am Gebäude stehen unter dem Schild, unten an der Leiste ganz darüber – nie auf dem Schild.
+- Burg-Fenster: „Fällt nie · Sieger nimmt 10 %“ direkt unter dem Schutz, Abstand zu „schaltet frei“. Lager-Fenster:
+  Zeilen in `--tx-2` (lesbar). Bericht-Namen „Stufe 1“ mit geschütztem Leerzeichen (kein Umbruch).
+- Bündnis gründen: 12 klar verschiedene Farben; „Offen für alle“ + „Gründen“ in einer festen Leiste unten (Handy).
 
 ## Aussehen (Kosmetik)
 - Nur noch Wappen und Rahmen (Marsch-, Basis-, Ring-Skins raus). Rahmen = Titel + Ring in einem, nicht kaufbar: Saison-Rahmen
