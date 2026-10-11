@@ -93,7 +93,7 @@ function tutInsel(id) {                                          // eine Basis a
     const r = Math.max(26, ISLAND_RADIUS * mapState.zoom * 1.2);
     return { r: { x: toSX(i.x) - r, y: toSY(i.y) - r, w: 2 * r, h: 2 * r }, rund: true, fokus: () => flyTo(i.x, i.y, { screenY: viewH * .42 }) };
 }
-let tutFlug = -1;
+let tutFlug = -1, tutRollt = -1;
 function tutHeim(sofort) {                                       // Kamera nah auf die eigene Hauptstadt („deine Stadt“), über der Sprechblase
     const h = islandById[playerIslandId]; if (h) flyTo(h.x, h.y, { zoom: Math.min(maxZoom, viewH * .3 / BASIS_BREITE), screenY: viewH * .45, instant: !!sofort });   // (Desktop: die Burg ganz im Bild)
 }
@@ -182,8 +182,9 @@ const TUT = [
       fertig: () => combatLog.some(e => e.type !== 'ausgespaeht' && e.at >= tut.t0 - 2000) || rechnet() && !barbMarches.some(m => m.who === 'player' && !m.back) && Date.now() - tut.t0 > 3000 || Date.now() - tut.t0 > 300000 },
     { k: 'bericht', neu: ['kampf'], ruhe: 2500, satz: () => (combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '') + 'Im Bericht siehst du deine Verluste und die Beute.',
       ziel: () => { const kd = $t('klInhalt'), sieg = combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '';
-          if (kd && !kd.closest('.kl-seite').hidden) return tutT(4, 4, { els: [kd.querySelector('.logCompare') || kd, kd.querySelector('.logGold')] },   // die Kampfdetails sind offen: was steht da?
-              'Oben du, darunter die Barbaren: wer gekämpft hat und wer gefallen ist – ganz unten deine Beute. Deine Basen ersetzen Gefallene: jede bringt jede Stunde neue Truppen.');
+          if (kd && !kd.closest('.kl-seite').hidden) { const v = kd.querySelector('.logCompare') || kd;   // die Kampfdetails sind offen: was steht da?
+              if (tutRollt !== tut.s) { tutRollt = tut.s; v.scrollIntoView({ block: 'start' }); }   // (ganz nach oben: darunter Platz für Aldric – kleines Handy)
+              return tutT(4, 4, { els: [v, kd.querySelector('.logGold')] }, 'Oben du, darunter die Barbaren, ganz unten die Beute. Gefallene ersetzen deine Basen: jede bringt stündlich neue Truppen.'); }
           return tutReihe([[tutFenster(battleLogPopup, 'battleLogBtn'), sieg + 'Tipp auf „Kampf“.'], [document.querySelector('#battleTabs [data-ktab="berichte"]:not(.active)'), 'Tipp auf „Berichte“.'],
               [tutSicht(combatLogListEl.querySelector('.logRow details > summary')), 'Das ist dein Kampfbericht. Tipp auf „Kampfdetails“ – da steht alles genau.']], 4); } },
     { k: 'beute', neu: ['events'], fertig: () => !inboxFach().length,
