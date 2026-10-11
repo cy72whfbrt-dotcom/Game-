@@ -89,15 +89,17 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       // 7) Shop: alle Reiter gleich hoch
       const hs = {}; for (const tb of ['gems', 'markt']) { openShop(tb); await warte(300); hs[tb] = Math.round(rr(shopPopup).height); } o.shop = hs; closeAllPopups();
       // 8) Sieg-Band: nie über dem Hinweis
-      const ins = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && !i.guardian && !bossAt(i.id) && i.id !== t.id) || t;
+      const ins = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && !i.guardian && !bossAt(i.id) && i.id !== t.id && isCellOpen(i.x, i.y)) || t;
       mapState.offsetX = innerWidth / 2 - ins.x * mapState.zoom; mapState.offsetY = 190 - ins.y * mapState.zoom; requestRender(); await warte(200);
+      const echtBand = mzErgebnisBand; let gezeichnet = null;   // die wirklich gezeichneten Bänder mitschreiben
+      mzErgebnisBand = function () { const q = echtBand.apply(this, arguments); gezeichnet = q; return q; };
       flashHint('Sieg bei ' + islandTitle(ins) + '! 4.443 übrig.', 6000); spawnBattleFx(ins.id, true, 'Sieg', 'Basis erobert'); await warte(1200);
-      const proben = [];   // 10 Proben je nach einem Bild: liegt das Band über dem Hinweis, muss der Hinweis zurücktreten (ein Bild Verzug erlaubt)
-      for (let n = 0; n < 10 && battleFx.length; n++) { await new Promise(f => requestAnimationFrame(() => requestAnimationFrame(f)));
-        const ht = rr(hintEl), fx = battleFx[battleFx.length - 1], sx = fx.x * mapState.zoom + mapState.offsetX, sy = fx.y * mapState.zoom + mapState.offsetY;
-        ctx.save(); const band = mzErgebnisBand(fx, 0, 1, sx, sy); ctx.restore();
-        proben.push(schnitt(ht, { left: band.x - band.w / 2, right: band.x + band.w / 2, top: band.y - band.h / 2, bottom: band.y + band.h / 2 }) > 0 && !hintEl.classList.contains('toast--zurueck')); }
-      o.band = { proben: proben.length, darueber: proben.filter(Boolean).length };
+      const proben = [], deck = [];   // 10 Proben je nach einem Bild: liegt das gezeichnete Band über dem Hinweis, muss der Hinweis zurücktreten (ein Bild Verzug erlaubt)
+      for (let n = 0; n < 10 && battleFx.length; n++) { gezeichnet = null; await new Promise(f => requestAnimationFrame(() => requestAnimationFrame(f))); const band = gezeichnet; if (!band) continue;
+        const h = rr(hintEl), oben = band.y - (band.h - 22) / 2, uh = Math.min(h.bottom, oben + band.h) - Math.max(h.top, oben), ub = Math.min(h.right, band.x + band.w / 2) - Math.max(h.left, band.x - band.w / 2);
+        if (uh > 0 && ub > 0) deck.push(Math.round(uh) + (hintEl.classList.contains('toast--zurueck') ? 'z' : ''));
+        proben.push(uh > 0 && ub > 0 && !hintEl.classList.contains('toast--zurueck')); }   // (Rückgabe: y = Mitte des Bands, h = Band + 22 px Unterzeile)
+      mzErgebnisBand = echtBand; o.band = { proben: proben.length, darueber: proben.filter(Boolean).length, deck };
       return o;
     });
     const d = r.daily;
