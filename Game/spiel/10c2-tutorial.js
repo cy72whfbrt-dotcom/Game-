@@ -408,7 +408,7 @@ function tutZeigen() {
     lo.dataset.k = lk;
     for (const x of [sp, lo]) Object.assign(x.style, { left: loch.l + 'px', top: loch.t + 'px', width: loch.r - loch.l + 'px', height: loch.b - loch.t + 'px' });
     const fi = $t('tutFinger'); fi.hidden = !r || z.nurZeigen || z.zeigNur; tutErkl = z.erkl || null;
-    if (!fi.hidden) { const cx = (loch.l + loch.r) / 2, imFenster = z.el && z.el.closest && z.el.closest('.panel, .city-sheet, .kl-seite'), unten = loch.b + 60 < H - 70 && !(imFenster && loch.t > 150);   // (im Fenster von oben: darunter stehen oft Zahlen) Object.assign(fi.style, { left: Math.round(Math.min(W - 56, Math.max(2, cx - 27))) + 'px', top: Math.round(unten ? loch.b - 14 : loch.t - 40) + 'px' }); fi.classList.toggle('oben', !unten); }
+    if (!fi.hidden) { const cx = (loch.l + loch.r) / 2, imFenster = z.el && z.el.closest && z.el.closest('.panel, .city-sheet, .kl-seite'), unten = loch.b + 60 < H - 70 && !(imFenster && loch.t > 150); Object.assign(fi.style, { left: Math.round(Math.min(W - 56, Math.max(2, cx - 27))) + 'px', top: Math.round(unten ? loch.b - 14 : loch.t - 40) + 'px' }); fi.classList.toggle('oben', !unten); }   // (im Fenster von oben: darunter stehen oft Zahlen)
     const satz = tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.fokus && !r ? '…' : z.satz || z.warte || (typeof S.satz === 'function' ? S.satz() : S.satz) || '';   // (Kamera fährt noch: erst mit Loch der Befehl)
     setText($t('tutSatz'), satz);
     const key = tut.s + '|' + (z.teil || '') + '|' + !!z.warte + '|' + tutFrage;   // neuer Schritt/Teilschritt: Blase blendet kurz ein (nicht bei jeder Zahl, die sich ändert)
