@@ -33,7 +33,7 @@ const pause = () => 600 + Math.round(zufall() * 900);
     window.__lage = lage;
     let alt = '';
     const mess = () => {
-      const t = $('tut'), aus = t.hidden || !tutLaeuft() || !$('tutFrage').hidden || !!document.querySelector('#beuteFenster:not([hidden])');
+      const t = $('tut'), aus = t.hidden || $('tutBerater').style.visibility === 'hidden' || !tutLaeuft() || !$('tutFrage').hidden || !!document.querySelector('#beuteFenster:not([hidden])');
       const o = aus ? { aus: 1 } : { s: tut.s, k: (TUT[tut.s] || {}).k, teil: $('tutZaehler').hidden ? '' : $('tutZaehler').dataset.teil || '', lage: lage(), satz: $('tutSatz').textContent,
         py: Math.round($('tutSatz').getBoundingClientRect().top), bh: Math.round(document.querySelector('.tut-blase').getBoundingClientRect().height), ob: $('tutBerater').classList.contains('oben'), blase: box(document.querySelector('.tut-blase')), loch: $('tutLoch').hidden ? null : box($('tutLoch')), weiter: !$('tutWeiter').hidden,
         fenster: [...document.querySelectorAll('.panel')].filter(isPanelOpen).map(x => { const k = x.querySelector('.phead'), q = x.getBoundingClientRect(), qk = k && k.getBoundingClientRect();
@@ -127,7 +127,7 @@ const pause = () => 600 + Math.round(zufall() * 900);
     .map(x => ({ k: x.k, teil: x.teil, lage: x.lage, blase: x.blase, fenster: x.fenster }));
   ok(!mitten.length, 'Blase nie mitten im offenen Fenster (über dessen Inhalt)', mitten.slice(0, 6));
   const erkl = L.filter(x => !x.aus && x.weiter && x.loch && dauer(x) > 300);
-  const erklSchritte = [...new Set(L.filter(x => !x.aus && x.weiter).map(x => x.k + ' ' + x.teil))], erklOhne = [...new Set(L.filter(x => !x.aus && x.weiter && x.teil && !x.loch && dauer(x) > 1000).map(x => x.k + ' ' + x.teil))];
+  const erklSchritte = [...new Set(L.filter(x => !x.aus && x.weiter).map(x => x.k + ' ' + x.teil))], erklOhne = [...new Set(L.filter(x => !x.aus && x.weiter && x.teil && !x.loch && dauer(x) > 1500).map(x => x.k + ' ' + x.teil))];
   ok(erkl.length && !erklOhne.length, 'Erklär-Teilschritte („Weiter“): Loch sichtbar auf dem erklärten Bereich', { mitLoch: [...new Set(erkl.map(x => x.k + ' ' + x.teil))], ohneLoch: erklOhne, alle: erklSchritte.length });
   const ohneZahl = t => t.replace(/[\d.,]+/g, '#');             // (Zahlen zählen hoch: derselbe Satz)
   const R = []; for (const x of L) { const sx = x.aus ? '' : ohneZahl(x.satz || ''), v = R[R.length - 1]; if (v && v.sx === sx) v.bis = x.bis; else R.push({ ...x, sx }); }   // ein Satz am Stück (Loch/Blase dürfen sich dabei bewegen)

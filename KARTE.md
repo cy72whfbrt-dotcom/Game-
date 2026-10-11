@@ -2045,7 +2045,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:253
-- `teil` → Game/spiel/10c2-tutorial.js:457
+- `teil` → Game/spiel/10c2-tutorial.js:458
 - `teleImRucksack` → Game/spiel/06d-schild-produktion.js:80
 - `teleportFx` → Game/spiel/08d2-stadt-teleport.js:97
 - `teleportOrt` → Game/spiel/08d2-stadt-teleport.js:72
@@ -2177,14 +2177,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutSpeichern` → Game/spiel/10c2-tutorial.js:25
 - `tutStadtY` → Game/spiel/10c2-tutorial.js:46
 - `tutStart` → Game/spiel/10c2-tutorial.js:312
-- `tutStarten` → Game/spiel/10c2-tutorial.js:519
+- `tutStarten` → Game/spiel/10c2-tutorial.js:522
 - `tutStufe` → Game/spiel/10c2-tutorial.js:29
 - `tutT` → Game/spiel/10c2-tutorial.js:56
 - `tutUmriss` → Game/spiel/10c2-tutorial.js:372
 - `tutUnd` → Game/spiel/10c2-tutorial.js:61
 - `tutUnterwegs` → Game/spiel/10c2-tutorial.js:160
 - `tutWeiter` → Game/spiel/10c2-tutorial.js:307
-- `tutWillkommen` → Game/spiel/10c2-tutorial.js:499
+- `tutWillkommen` → Game/spiel/10c2-tutorial.js:502
 - `tutZahl` → Game/spiel/10c2-tutorial.js:60
 - `tutZeigen` → Game/spiel/10c2-tutorial.js:402
 - `tutZiel` → Game/spiel/10c2-tutorial.js:338
@@ -4550,9 +4550,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutKuerzen` :397 — offene Fenster beginnen erst unter der Blase (nie wieder länger, solange sie of…
 - `tutZeigen` :402
 - `deckt` :426
-- `teil` :457
-- `tutWillkommen` :499 — true, solange das Willkommen offen ist
-- `tutStarten` :519
+- `teil` :458
+- `tutWillkommen` :502 — true, solange das Willkommen offen ist
+- `tutStarten` :522
 
 ### Game/spiel/10d1-welt-verbindung.js — Die eine Welt: Verbindung zu welt.js, Zuschauer übernehmen Welt-Teile, Späher a…
 - `rechnerStatus` :10 — (welt.js meldet jede Änderung von „rechner“)

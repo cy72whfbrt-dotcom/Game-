@@ -212,7 +212,7 @@ const TUT = [
     { k: 'helden', bleib: true, fertig: () => tutGesehen('halle') || !tutStufe('heroes') || !HEROES.some(h => heroOwned('player', h.id)),
       ziel: () => { const H = HEROES.find(h => heroOwned('player', h.id));
           if (!$t('heroHall').hidden) { const k = document.querySelector('#heroHall .hh-card[data-hh="' + H.id + '"]');
-              return k ? tutE('halle', { el: k }, 'Das ist ' + H.name + '. Die Sterne zeigen, wie stark ein Held ist – Splitter aus Helden-Kisten bringen mehr.', 2, 2) : 'weiter'; }
+              return k ? tutE('halle', { el: k }, 'Das ist ' + H.name + '. Die Sterne zeigen, wie stark ein Held ist – Splitter aus Helden-Kisten bringen mehr.', 2, 2) : null; }   // (Karte kommt gleich)
           const z = tutGeb('heroes', 'nutz');
           if (z && z.dataset && (z.dataset.cring || z.dataset.cpage)) return tutT(1, 2, z, 'Fertig! Tipp auf „Helden“.');
           return tutT(1, 2, z, z === $t('cityNavBtn') ? 'Schau dir deine Helden an. Tipp auf „Stadt“.' : z === $t('citySheetClose') ? 'Schließ das Fenster.' : 'Tipp auf die Heldenhalle.'); } },
@@ -420,11 +420,12 @@ function tutZeigen() {
     let r = z.rect ? { l: z.rect.left - 8, t: z.rect.top - rv, r: z.rect.left + z.rect.width + 8, b: z.rect.top + z.rect.height + rv } : null;
     // Blase: feste Seite je Lage (oben: unter „Überspringen“); beide Lagen einmal ausmessen (ganzes Rechteck mit Berater-Bild)
     const lage = tutLage(), fe = lage === 'fenster' ? tutFensterOffen() : [];
-    if (tutSeg.k !== tut.s + '|' + lage) tutSeg = { k: tut.s + '|' + lage, oben: lage === 'fenster', h: 0 };
+    if (tutSeg.k !== tut.s + '|' + lage) tutSeg = { k: tut.s + '|' + lage, oben: lage === 'fenster', h: 0, t0: jetzt };
     be.classList.toggle('klein', lage === 'fenster');             // Fenster offen: kleine Blase
     be.classList.remove('oben'); const bu = tutBox(be); be.classList.add('oben'); const bo = tutBox(be); be.classList.toggle('oben', tutSeg.oben);
     const deckt = q => tutDeckt(tutSeg.oben ? bo : bu, q), seite = q => { if (deckt(q) && !tutDeckt(tutSeg.oben ? bu : bo, q)) { tutSeg.oben = !tutSeg.oben; be.classList.toggle('oben', tutSeg.oben); } };
-    if (z.endY !== undefined && !tutLochAn) seite({ l: 0, r: W, t: z.endY - 40, b: z.endY + 40 });   // Stadt-Schild: die Seite gleich passend wählen (nicht erst nach dem Hinfahren springen)
+    if (z.endY !== undefined && !tutLochAn) seite({ l: 0, r: W, t: z.endY - 40, b: z.endY + 130 });   // Stadt-Schild (+ runde Knöpfe darunter): die Seite gleich passend wählen (nicht erst nach dem Hinfahren springen)
+    if (r && !z.fokus && !tutLochAn && lage !== 'fenster') seite(r);   // (Ziel fährt noch ein: Seite schon jetzt, bevor die Blase sichtbar woanders steht)
     if (r && z.fokus) {                                          // Ziel auf Karte/Stadt: erst zeigen, wenn es ganz im Bild steht und die Kamera ruht – spätestens nach 1,2 s trotzdem
         const kopf = Math.max(...['hud', 'tutWeg'].map(id => { const x = $t(id); return x && tutSicht(x) ? x.getBoundingClientRect().bottom : 0; }));
         const nav = $t('cornerButtons'), fuss = nav && tutSicht(nav) ? nav.getBoundingClientRect().top : H;
@@ -466,9 +467,11 @@ function tutZeigen() {
     setText($t('tutSatz'), satz);
     const key = tut.s + '|' + (z.teil || '') + '|' + !!z.warte + '|' + tutFrage;   // neuer Schritt/Teilschritt: nur der Text blendet weich über (nicht bei jeder Zahl, die sich ändert)
     if (be.dataset.k !== key) { be.dataset.k = key; const p = $t('tutSatz'); p.classList.remove('tausch'); void p.offsetWidth; p.classList.add('tausch'); }
+    const leer = !tutSeg.da && !z.rect && !z.weiter && !z.warte && z.endY === undefined && !tutFrage && jetzt - tutSeg.t0 < 800;   // neue Lage, Ziel noch nicht da: Blase kurz noch nicht zeigen (sonst steht sie erst woanders)
+    be.style.visibility = leer ? 'hidden' : ''; tutSeg.da = tutSeg.da || !leer; if (leer) { tutDa = false; tutBald(80); }
     const sk = String(tutSeg.oben);                              // die Blase selbst blendet nur ein, wenn sie neu kommt oder die Seite wechselt
-    if (!tutDa || be.dataset.lage !== sk) { be.dataset.lage = sk; be.classList.remove('rein'); void be.offsetWidth; be.classList.add('rein'); }
-    tutDa = true;
+    if (!leer && (!tutDa || be.dataset.lage !== sk)) { be.dataset.lage = sk; be.classList.remove('rein'); void be.offsetWidth; be.classList.add('rein'); }
+    tutDa = !leer;
     const zl = $t('tutZaehler'); zl.hidden = tutFrage || !z.teil;   // Teilschritte als Punkte (aktiv Gold)
     if (z.teil && zl.dataset.teil !== z.teil) { zl.dataset.teil = z.teil; const [n, von] = z.teil.split('/').map(Number); liveHtml(zl, Array.from({ length: von }, (x, i) => '<i class="' + (i < n ? 'an' : '') + '"></i>').join('')); }
     const fb = $t('tutFort'); fb.hidden = tutFrage || z.fort === undefined; if (z.fort !== undefined) fb.firstChild.style.width = Math.round(100 * Math.min(1, Math.max(0, z.fort))) + '%';
