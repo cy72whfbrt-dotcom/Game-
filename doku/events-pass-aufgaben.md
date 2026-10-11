@@ -92,7 +92,9 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   nur mit scale/opacity), Glanz und Knopf-Einflug nur mit opacity/scale. Kein Loch, solange die Stadt umblendet (`cityBusy`) oder das
   Ziel/sein Fenster noch einfährt (`tutFaehrt`: laufende Animationen mit Lage-Eigenschaften); dann nach 80 ms nochmal (`tutBald`).
   Nach jedem Tipp ist das Loch verbraucht (Sperre drüber) und wird nach 30 ms neu bestimmt – nie ein zweiter Tipp ins alte Ziel
-  (Doppeltipp auf „Karte“ öffnete sonst die Stadt wieder). Takt sonst 250 ms.
+  (Doppeltipp auf „Karte“ öffnete sonst die Stadt wieder). Takt sonst 250 ms. Finger: in Fenstern zuerst seitlich, dann unten/oben –
+  jeweils die erste Stelle, an der nichts steht (Knopf, Bild, Zahl, Text); Erklär-Löcher im Fenster oben/unten 20 px Rand.
+  Überspringen sitzt in der Heldenhalle neben dem X (nicht über den Reitern).
 - Sichtprüfung (`tutZeigen`): Ziele auf Karte/Stadt (`fokus`) mit Loch+Finger, sobald sie im Bild stehen (nicht unter Kopf/Leiste/Blase)
   und Karte/Stadt-Kamera ruhen; sonst gleich hinfahren (`flyTo`/`cityFocus`, max. 4×; ändert Hinfahren nichts – Bildrand –, gilt es so). Loch nie über
   den Bildrand (nach innen geschoben). Blase: die Seite, deren Rechteck (mit Berater-Bild) das Loch nicht überdeckt. Rohstoffe: Loch nur um Bild+Zahl.

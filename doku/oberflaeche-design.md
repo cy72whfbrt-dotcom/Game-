@@ -73,7 +73,10 @@ Million Lords, Lords Mobile – „sieht aus wie ein Spiel, nicht wie eine Liste
   spiel.js fertig). `finishSplash` (10c) wartet darauf, höchstens 25 s, mindestens 2,6 s. Gleich danach `BILDER_BALD` (Helden,
   Kisten, Ausrüstung, ~1,7 MB, auch entpackt; das Tutorial wartet ab „Kiste“ notfalls mit „…“, `tutBilderDa`). Danach
   `bilderNachladen`: übrige Bilder aus den Stilen + Helden einzeln im Leerlauf (nur Browser-Zwischenspeicher, nichts gespeichert;
-  ohne Titelbilder, nicht bei „Daten sparen“).
+  ohne Titelbilder, nicht bei „Daten sparen“). Auf dem Balken läuft ein Lichtschein (nur transform/opacity: bewegt sich auch, während
+  das Spiel die Welt baut). Start schneller (11.10.): Nebel-Felder je Zeile gerechnet (`fogLandCells`, gleiches Ergebnis), Basen-Raster
+  mit Zahl-Schlüsseln (01c), Weichzeichner der Boden-Masken ohne Randprüfung je Punkt, Übersichtskarte füllt nur das Rechteck je Gebiet;
+  in der Vorschau verteilt das Ladebild die ersten Mitspieler-Züge (1–9 s, sonst alle im ersten Takt).
 - Stadtbild: steht die Kamera, wird der Hintergrund (Bild + Schleier) einmal groß gezeichnet und danach 1:1 kopiert (`cityFrame.hinten`);
   pro Bild nur Schilder und Hammer neu.
 - App für den Startbildschirm: `Game/app/` (Manifest, Logo, iPhone-Anleitung). Statusleiste „black“, Leiste füllt die
