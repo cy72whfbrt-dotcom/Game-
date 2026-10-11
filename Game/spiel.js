@@ -1322,11 +1322,11 @@ updateHud();
 // global bonus. Skills: bought with skill points earned by capturing
 // towers, same idea, separate currency.
 const EQUIPMENT_DEFS = {
-  weapon: { icon: 'weapon', name: 'Waffe',   desc: 'Truppenproduktion', pct: 2 },
-  armor:  { icon: 'armor',  name: 'Rüstung', desc: 'Verteidigung aller Basen', pct: 2 },
-  shield: { icon: 'shield', name: 'Schild',  desc: 'weniger Truppenverlust bei Sieg', pct: 2 },
-  boots:  { icon: 'boots',  name: 'Stiefel', desc: 'Münzproduktion', pct: 2 }
-};
+  weapon: { icon: 'weapon', name: 'Waffe',   g: 'f',  desc: 'Truppenproduktion', pct: 2 },
+  armor:  { icon: 'armor',  name: 'Rüstung', g: 'f',  desc: 'Verteidigung aller Basen', pct: 2 },
+  shield: { icon: 'shield', name: 'Schild',  g: 'm',  desc: 'weniger Truppenverlust bei Sieg', pct: 2 },
+  boots:  { icon: 'boots',  name: 'Stiefel', g: 'pl', desc: 'Münzproduktion', pct: 2 }
+};   // g: Geschlecht für „Epische Waffe“ / „Epischer Schild“ / „Epische Stiefel“ (rarWort)
 const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
   troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },
@@ -1357,6 +1357,9 @@ const RARITY_DEFS = [
   { key: 'gold',  name: 'Gold',  label: 'Legendär',     color: '#eab24a' },
   { key: 'rot',   name: 'Rot',   label: 'Mythisch',     color: '#ee5046' }
 ];
+const RAR_ENDUNG = { f: 'e', m: 'er', n: 'es', pl: 'e' };
+function rarWort(r, nomen, g) { return (RARITY_DEFS[r] || RARITY_DEFS[0]).label + RAR_ENDUNG[g || 'f'] + ' ' + nomen; }   // Seltenheit vor dem Wort: „Epische Kiste“, „Gewöhnlicher Schild“
+function rarTeil(r, slot) { const d = EQUIPMENT_DEFS[slot] || { name: 'Ausrüstung', g: 'f' }; return rarWort(r, d.name, d.g); }   // ein Ausrüstungs-Teil: „Seltene Waffe“
 const ITEM_MAX_LEVEL = 20;
 const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen (seit 2.10. auch kein Preis mehr mit „mind. Legendär“)
 const CRATE_GEM_COST = 100;  // Ausrüstungs-Kiste: 1 Schlüssel oder 100 Edelsteine (Alexander 8.10.; Hauptbuch rechnet je Kiste damit)
@@ -2314,7 +2317,7 @@ function resolveAttack(attack) {
     addXp(kampfEp(won ? totalStrength : defenderCasualties, playerLvl, totalStrength, myTroops));
     heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
     scoutedIslands.add(target.id);
-    const ribbon = () => spawnBattleFx(target.id, won, capitalHolds ? 'Geplündert' : won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', capitalHolds ? 'die Hauptstadt hält' : won ? (/^Turm #/.test(islandTitle(target)) ? 'Basis' : islandTitle(target)) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
+    const ribbon = () => spawnBattleFx(target.id, won, capitalHolds ? 'Geplündert' : won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', capitalHolds ? 'die Hauptstadt hält' : won ? (basisOhneName(target) ? 'Basis' : islandTitle(target)) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
     finishMapBattle(attack, { hero: attack.hero || null, sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',   // fights the player watches play out on the map
             my: myTroops, myLoss: myTroops - (won ? remaining : retreatSurvivors), en: originalEnemyTroops,
             enLoss: won ? originalEnemyTroops : defenderCasualties, won, onEnd: ribbon });
@@ -2359,7 +2362,7 @@ function resolveAttack(attack) {
         WELT.bericht(targetOwner, { type: 'botAttack', botName: meinName, botId: 'player', targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: atkBonus,
             atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner, dHx), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense,
             wounded: enemyWounded || 0, fallen: defWeg, won, capitalHolds, defGold: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, ...verstInfo },
-            capitalHolds ? meinName + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? meinName + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + meinName + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
+            capitalHolds ? meinName + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? meinName + ' hat ' + deineBasis(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + meinName + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
 
     flashHint(capitalHolds ? 'Die Hauptstadt von ' + botById[targetOwner].name + ' brennt – ihre Garnison ist gefallen, ' + fmtCompact(remaining) + ' Truppen kehren mit der Beute zurück' + (beuteText(plunder) ? ': ' + beuteText(plunder) + '.' : '.') : (won
@@ -5085,12 +5088,21 @@ function mzKampfFern(tx, ty, rt) {                      // weit draußen: kleine
 }
 
 // ===== Sieg / Niederlage: kleines Band (KI-Bild) am Bildrand, weg vom Ziel – verdeckt keine Köpfe und Zahlen =====
+var mzBandDeckt = false;                                 // ein Ergebnis-Band liegt gerade über dem Hinweis (Toast)
+function mzObenFrei() {                                  // was oben nicht verdeckt werden darf: Rohstoff-Leiste, Event-Chip, der Hinweis
+  const out = [];
+  for (const id of ['hud', 'hint', 'midBar']) { const el = document.getElementById(id); if (!el) continue;
+    const r = el.getBoundingClientRect(); if (r.width && r.height) out.push({ x: r.left, y: r.top, w: r.width, h: r.height }); }   // (leer/versteckt: Größe 0)
+  return out;
+}
 function mzErgebnisBand(f, alpha, scale, sx, sy) {      // → Mitte des Bands
   const im = mzBild(f.good ? 'marsch_band_sieg' : 'marsch_band_niederlage'), bw = Math.min(viewW >= 700 ? 300 : 230, viewW * .6);
   const bh = im ? bw * im.height / im.width : 60, x = Math.max(bw / 2 + 4, Math.min(viewW - bw / 2 - 4, sx));
   const y0 = sy - 70 - bh / 2 - f.stack * (bh + 8), hb = bh + (f.sub ? 22 : 0), im0 = v => Math.max(bh / 2 + 4, Math.min(viewH - hb + bh / 2 - 4, v));   // über dem Kampfort (mehrere stapeln nach oben)
-  const frei = v => !mzAnzeige.koepfe.some(k => k.art !== 'tafel' && overlap({ x: x - bw / 2, y: v - bh / 2, w: bw, h: hb }, k) > 0);   // (Band samt Unterzeile verdeckt keinen Kopf/Chip)
-  const y = [0, -1, 1, -2, 2, -3, 3, -4, 4].map(i => im0(y0 + i * 24)).find(frei) ?? im0(y0);
+  const oben = mzObenFrei(), rect = v => ({ x: x - bw / 2, y: v - bh / 2, w: bw, h: hb });
+  const frei = v => !mzAnzeige.koepfe.some(k => k.art !== 'tafel' && overlap(rect(v), k) > 0) && !oben.some(k => overlap(rect(v), k) > 0);   // (Band samt Unterzeile verdeckt keinen Kopf/Chip, nicht die Leiste oben und keinen Hinweis)
+  const y = [0, -1, 1, -2, 2, -3, 3, -4, 4, 5, 6, 7, 8].map(i => im0(y0 + i * 24)).find(frei) ?? im0(y0);
+  if (!frei(y)) mzBandDeckt = true;                                     // kein freier Platz: der Hinweis tritt so lange zurück (drawBattleFx)
   ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(scale, scale);
   if (im) ctx.drawImage(im, -bw / 2, -bh / 2, bw, bh);
   const titel = f.label.toUpperCase(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -6425,7 +6437,7 @@ function renderActiveMarches() {
     }
     const bm = barbMine();                            // Barbaren-Lager and Tagesboss: out and back like every march
     for (const m of bm) { const sec = Math.max(0, Math.ceil((m.resolveAt - Date.now()) / 1000)), c = m.k === 'c' && barbCampById(m.tid), L = m.L || (c && c.L), hd = m.hero && heroById(m.hero);
-        const tgt = m.k === 'b' ? (m.name || 'Tagesboss') : 'Barbaren-Lager' + (L ? ' · Stufe ' + L : '');
+        const tgt = m.k === 'b' ? (m.name || 'Tagesboss') : 'Barbaren-Lager' + (L ? ' · Stufe\u00a0' + L : '');
         rows.push(m.back ? logRowHtml('retreat', 'recall', fmtNum(m.troops) + ' Truppen kehren zurück', 'von ' + tgt + ' nach ' + T(m.homeId), clock(sec), marchButtons(m, false))
             : logRowHtml('attack', m.k === 'b' ? 'crown' : 'attack', 'Angriff auf ' + tgt, 'von ' + T(m.homeId) + ' · ' + fmtNum(m.troops) + ' Truppen' + (hd ? ' · ' + hd.name + (m.hero2 && heroById(m.hero2) ? ' & ' + heroById(m.hero2).name : '') : ''), clock(sec), marchButtons(m, true))); }
     const fm = (typeof fieldMarches !== 'undefined' ? fieldMarches : []).filter(m => m.who === 'player');   // Sammler: hin und zurück
@@ -6679,7 +6691,7 @@ function renderCombatLog() {
             const extra = [entry.gold > 0 && ['coin', '+' + chipN(entry.gold) + ' Münzen', 'gut'], entry.crate && ['crate', escapeHtml(entry.crate), 'gut'], entry.sh && ['star', escapeHtml(entry.sh), 'gut']];
             if (boss) return karte(entry, 'win', 'crown', ['win', 'Tagesboss'], escapeHtml(entry.name), von.replace(/^ · /, ''), '',
                 [['attack', chipN(entry.dmg) + ' Schaden', 'gut'], ['crown', 'noch ' + chipN(entry.left) + ' Leben'], entry.rank && ['rank', 'Platz ' + entry.rank + ' von ' + entry.of], ...verl, ...extra], det);
-            return karte(entry, entry.won ? 'win' : 'loss', 'attack', [entry.won ? 'win' : 'loss', entry.won ? 'Besiegt' : 'Abgewehrt'], 'Barbaren-Lager · Stufe ' + entry.L, von.replace(/^ · /, ''),
+            return karte(entry, entry.won ? 'win' : 'loss', 'attack', [entry.won ? 'win' : 'loss', entry.won ? 'Besiegt' : 'Abgewehrt'], 'Barbaren-Lager · Stufe\u00a0' + entry.L, von.replace(/^ · /, ''),
                 tr === undefined ? '' : logBalance(entry.atk, entry.def, icon('attack') + 'Du ' + fmtM(entry.atk), fmtM(entry.def) + ' Lager' + icon('defense')),
                 [...verl, ...extra, entry.up && ['check', 'Stufe ' + entry.open + ' frei', 'gut'], !entry.won && entry.left && ['troops', 'noch ' + chipN(entry.left) + ' im Lager']], det);
         }
@@ -6958,7 +6970,7 @@ function beuteR(b) {                                // Seltenheit der Kachel: ei
     const d = BEUTE_ART[b.a]; return d && d.r >= 0 ? d.r : 0;
 }
 function beuteName(b) {
-    if (b.a === 'item') return (RARITY_DEFS[beuteR(b)] || RARITY_DEFS[0]).label + ' ' + ((EQUIPMENT_DEFS[b.slot] || {}).name || 'Ausrüstung');
+    if (b.a === 'item') return rarTeil(beuteR(b), b.slot);
     if (b.a === 'kiste') return KISTE_NAME[b.k || 'aus'] + (b.min ? ' (mind. ' + RARITY_DEFS[b.r].label + ')' : '');
     if (b.a === 'sh' && b.held && typeof heroById === 'function' && heroById(b.held)) return 'Splitter ' + heroById(b.held).name;
     if (b.a === 'schild') return 'Friedensschild ' + b.n + ' Std.';
@@ -6971,12 +6983,12 @@ function beuteBild(b) {
     if (b.a === 'besch' && BESCH_MIN[b.dauer]) return beschBild(b.dauer);
     return (BEUTE_ART[b.a] || BEUTE_ART.gems).b;
 }
-function beuteMenge(b) {                            // unten rechts: Anzahl (Schild: Stunden); ein einzelnes Teil/eine Kiste ohne Zahl; ohneZahl: steht daneben
+function beuteMenge(b) {                            // unten rechts: Anzahl (Schild: Stunden); ein einzelnes Teil/eine Kiste ohne Zahl (mitZahl: doch „1“); ohneZahl: steht daneben
     if (b.ohneZahl) return '';
-    if (b.minus) return '−' + (b.n >= 1e4 ? fmtCompact(b.n) : fmtNum(b.n));
+    if (b.minus) return '−' + (b.n >= 1e4 ? fmtHud(b.n) : fmtNum(b.n));
     if (b.a === 'schild') return b.n + ' h';
-    if ((b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen') && !(b.n > 1)) return '';
-    return b.n >= 1e4 ? fmtCompact(b.n) : fmtNum(b.n || 1);
+    if ((b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen') && !(b.n > 1) && !b.mitZahl) return '';
+    return b.n >= 1e4 ? fmtHud(b.n) : fmtNum(b.n || 1);   // (ab 10.000 kurz wie oben im HUD: 154,6K – passt auf jede Kachel)
 }
 function beuteKachel(b, tag) {                      // tag: 'li' in Listen (Tages-, Stufen-, Boss-Fenster), sonst span
     tag = tag || 'span'; const r = beuteR(b), m = beuteMenge(b), name = beuteName(b);
@@ -6984,7 +6996,7 @@ function beuteKachel(b, tag) {                      // tag: 'li' in Listen (Tage
     return '<' + tag + ' class="bk" data-r="' + (RARITY_DEFS[r] || RARITY_DEFS[0]).key + '" data-beute="' + b.a + '"' + (b.minus ? ' data-minus' : '') + ' title="' + escapeHtml(name + (m ? ' · ' + m : '')) + '">' +
         '<img src="bilder/' + beuteBild(b) + '.webp" alt="' + escapeHtml(name) + '" draggable="false">' + held + (b.a === 'besch' && BESCH_MIN[b.dauer] ? '<i class="bk-zeit">' + beschText(b.dauer) + '</i>' : '') + (m ? '<b>' + m + '</b>' : '') + '</' + tag + '>';
 }
-function beuteZusammen(liste) {                     // gleiche Sachen in eine Kachel (10 Kisten: „3 × Episch Waffe“)
+function beuteZusammen(liste) {                     // gleiche Sachen in eine Kachel (10 Kisten: „3 × Epische Waffe“)
     const out = [], idx = {};
     for (const b of liste) { if (!b || !(b.n > 0 || b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen')) continue;
         const k = [b.a, beuteR(b), b.slot || '', b.held || '', b.k || '', b.dauer || '', b.a === 'schild' ? b.n : '', b.minus ? 1 : ''].join('|');
@@ -6997,8 +7009,8 @@ function beuteRaster(liste, cls, mitNamen) {        // Reihe von Kacheln; mitNam
     return '<div class="bk-raster' + (cls ? ' ' + cls : '') + '">' + L.map((b, i) => mitNamen ? '<span class="bk-mit" style="--i:' + i + '">' + beuteKachel(b) + '<small>' + escapeHtml(beuteName(b)) + '</small></span>' : beuteKachel(b)).join('') + '</div>';
 }
 function itemBeute(it) { return { a: 'item', slot: it.slot, r: it.rarity }; }   // ein Ausrüstungs-Teil als Kachel
-function beuteLis(liste, el) {                      // Kacheln als <li> in die Listen der Fenster (Tag, Stufe, Kriegsherr) – kommen nacheinander
-    el.innerHTML = beuteZusammen(liste).map(b => beuteKachel(b, 'li')).join('');
+function beuteLis(liste, el, mitNamen) {            // Kacheln als <li> in die Listen der Fenster (Tag, Stufe, Kriegsherr) – kommen nacheinander; mitNamen: Name darunter
+    el.innerHTML = beuteZusammen(liste).map(b => mitNamen ? '<li class="bk-mit">' + beuteKachel(b) + '<small>' + escapeHtml(beuteName(b)) + '</small></li>' : beuteKachel(b, 'li')).join('');
     [...el.children].forEach((li, i) => { li.style.animationDelay = (120 + i * 110) + 'ms'; });
 }
 
@@ -7115,15 +7127,22 @@ function closeDailyModal() {
     if (isPanelOpen(goalsPopup)) { renderQuestPanel(); updateGoalsBadge(); if (goalsTab === 'reward') renderInbox(); }   // (der Satz oben nennt die tägliche Belohnung nur, solange sie wartet)
     return true;
 }
+function dailyErhalten(res) {                     // nach dem Abholen: was es gab – Bild, Name und Zahl je Sache, ein Knopf „Weiter“
+    document.getElementById('dailyModalTitle').textContent = 'Tag ' + res.day;
+    document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
+    document.getElementById('dailyModalLabel').textContent = 'Erhalten';
+    beuteLis([...res.items.map(it => Object.assign(itemBeute(it), { mitZahl: true })), { a: 'gems', n: res.gems }], document.getElementById('dailyModalRewards'), true);
+    const btn = document.getElementById('dailyModalBtn');
+    btn.dataset.state = 'done'; btn.querySelector('span').textContent = 'Weiter';
+    dailyModal.hidden = false;
+}
+function dailySofort() { const res = claimDaily(); if (res) dailyErhalten(res); }   // „Abholen“ im Events-Fenster: sofort abholen (kein zweites „Abholen“)
 document.getElementById('dailyModalBtn').addEventListener('click', () => {
     const btn = document.getElementById('dailyModalBtn');
     if (btn.dataset.state !== 'claim') { closeDailyModal(); return; }
     const res = claimDaily();
     if (!res) { closeDailyModal(); return; }
-    document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
-    document.getElementById('dailyModalLabel').textContent = 'Erhalten';
-    beuteLis([...res.items.map(itemBeute), { a: 'gems', n: res.gems }], document.getElementById('dailyModalRewards'));
-    btn.dataset.state = 'done'; btn.querySelector('span').textContent = 'Weiter';
+    dailyErhalten(res);
 });
 dailyModal.addEventListener('click', e => { if (e.target === dailyModal) closeDailyModal(); });
 
@@ -7373,7 +7392,7 @@ document.getElementById('goalsTabs').addEventListener('click', e => { const b = 
 document.getElementById('goalsGruppen').addEventListener('click', e => { const b = e.target.closest('[data-ggrp]'); if (!b) return; const g = b.dataset.ggrp;   // Reiter: der zuletzt offene Unterreiter
     showGoalsTab(goalsGrpLetzt[g] || GOALS_GRP[g][0]); });
 goalsPopup.addEventListener('click', e => {
-    const b = e.target.closest('button'); if (b && b.hasAttribute('data-daily')) return showDailyModal();   // Belohnung: the quick-claim window does the rest
+    const b = e.target.closest('button'); if (b && b.hasAttribute('data-daily')) return dailySofort();   // Belohnung: ein Tipp holt ab, das Fenster zeigt, was es gab
     if (!b || !e.target.closest('[data-gpane="daily"]')) return;
     if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
     else if (b.hasAttribute('data-bonus3')) claimQuestBonus3();
@@ -7431,7 +7450,7 @@ function passGive(who, r, aus, schl) {                    // one reward to anyon
     if (r.k === 'shield') { if (b) { b.shields = b.shields || {}; b.shields[n] = (b.shields[n] || 0) + 1; } else { const st = shieldStock(); st[n] = (st[n] || 0) + 1; store.set('openWaterShieldStock', JSON.stringify(st)); } aus.push({ a: 'schild', n }); return 'Friedensschild ' + n + ' h'; }
     if (r.k === 'crate' || r.k === 'royal') { const t = [];
         for (let i = 0; i < n; i++) { const rr = r.k === 'royal' ? Math.max(3, pickRandomRarity()) : pickRandomRarity(), slot = pickRandomSlot();
-            if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); aus.push({ a: 'item', slot, r: rr }); questProgress('crate', 1); t.push(RARITY_DEFS[rr].label + ' ' + EQUIPMENT_DEFS[slot].name); } } return t.join(', '); }
+            if (b) b.spare[slot][rr]++; else { addInventoryItem(slot, rr, 1); aus.push({ a: 'item', slot, r: rr }); questProgress('crate', 1); t.push(rarTeil(rr, slot)); } } return t.join(', '); }
     return '';
 }
 function passClaim(list) {                                // [[season, level, premium], …] → hand out, one hint
@@ -8883,7 +8902,7 @@ function spawnBattleFx(islandId, good, label, sub) {
 }
 const FX_MS = 2600;
 function drawBattleFx(now) {       // screen space (setScreen active)
-    battleFx = battleFx.filter(f => now - f.born < FX_MS);
+    battleFx = battleFx.filter(f => now - f.born < FX_MS); mzBandDeckt = false;
     for (const f of battleFx) {
         const ms = now - f.born;
         const sx = f.x * mapState.zoom + mapState.offsetX, sy = f.y * mapState.zoom + mapState.offsetY;
@@ -8959,6 +8978,7 @@ function drawBattleFx(now) {       // screen space (setScreen active)
         ctx.restore();
     }
     if (battleFx.length) liveAnimation = true;
+    if (hintEl.classList.contains('toast--zurueck') !== mzBandDeckt) hintEl.classList.toggle('toast--zurueck', mzBandDeckt);   // Sieg-Band und Hinweis nacheinander, nie übereinander
 }
 
 // ===== BOSS AUF DER KARTE: nur noch der Kriegsherr (Wanderboss) in seinem Lager. (Der Weltboss Drachenturm/Piratenfestung ist seit 2.10. raus.)
@@ -9038,7 +9058,7 @@ function wanderDepart(now) {                          // off to the next base: o
     if (!best) { wander.campUntil = now + 30000; return; }
     const dist = Math.hypot(best.isl.x - here.x, best.isl.y - here.y);
     Object.assign(wander, { from: here.id, to: best.isl.id, at: null, departAt: now, arriveAt: now + Math.max(20000, Math.min(150000, dist / (BASE_ATTACK_SPEED * .6) * 1000)) });
-    if (islandOwnerOf(best.isl.id) === 'player') flashHint(wander.name + ' marschiert auf deine Basis ' + islandTitle(best.isl) + ' zu!', 5000);
+    if (islandOwnerOf(best.isl.id) === 'player') flashHint(wander.name + ' marschiert auf ' + deineBasis(best.isl) + ' zu!', 5000);
     saveWander(); requestRender();
 }
 function wanderArrive(now) {                          // the storm: same maths as any attack; a win razes the base and he camps there
@@ -9082,7 +9102,7 @@ function wanderArrive(now) {                          // the storm: same maths a
         spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallenAlle, won,
             onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
         addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold, defGear: fighterSnapshot('player', dHx), ...verstInfo });
-        flashHint((capitalHolds ? name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
+        flashHint((capitalHolds ? name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht.' : won ? name + ' hat ' + deineBasis(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
     }
     if (owner && owner !== 'player' && botById[owner] && botById[owner].mensch) {   // ein echter Spieler: der Bericht kommt bei ihm an (wie bei jedem Angriff)
         const t = islandTitle(tgt);
@@ -10450,7 +10470,7 @@ function cityFrame(now) {
         if (p.id === cityRingId) { const el = document.getElementById('cityRing'), nav = document.getElementById('cornerButtons'), unten = (nav ? nav.getBoundingClientRect().top : H) - 8,
                 oben = (document.querySelector('.city-head') || { getBoundingClientRect: () => ({ bottom: 90 }) }).getBoundingClientRect().bottom + 8;
             let rx = Math.max(110, Math.min(W - 110, p.x)), ry = p.y;                            // die runden Knöpfe folgen dem Schild – ganz im Bild zwischen Kopf und Leiste:
-            if (ry + 62 + 29 + 24 > unten) ry = Math.min(p.y - 50, unten - 62 - 29 - 24);       // reicht der Bogen unter die Leiste, steht er über dem Schild
+            if (ry + 62 + 29 + 24 > unten) ry = Math.min(p.y - 18 - 6 - 22 - 29 - 62, unten - 62 - 29 - 24);   // reicht der Bogen unter die Leiste, steht er ganz über dem Schild (Knopf + Beschriftung, nie darauf)
             ry = Math.max(oben + 29 - 62 + 40, ry);
             const tf = 'translate(' + Math.round(rx) + 'px,' + Math.round(ry) + 'px)';
             if (el.style.transform !== tf) el.style.transform = tf; if (el.style.visibility) el.style.visibility = ''; }
@@ -11217,7 +11237,7 @@ function barbSheetHtml() {
             '<div class="field-lines"><span>Krieger</span><b>' + fmtNum(c.t) + (c.t < c.max ? ' <small>von ' + fmtCompact(c.max) + '</small>' : '') + '</b>' +
             '<span>Beute</span><b>' + lagerBeuteText(rec, c.L) + '</b>' +
             '<span>Tagesgrenze</span><b>' + fmtCompact(rec.m || 0) + ' / ' + fmtCompact(LAGER_GRENZE.m) + '</b>' +
-            '<span>Heute</span><b>' + rec.n + ' / ' + barbTagMax() + ' heute</b>' +
+            '<span>Heute</span><b>' + rec.n + ' / ' + barbTagMax() + '</b>' +
             '<span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b></div>' +
             (!open ? '<div class="notice">' + icon('lock') + '<span>Erst ein Lager der Stufe ' + (c.L - 1) + ' besiegen – dann ist Stufe ' + c.L + ' dran.</span></div>' :
              left <= 0 ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Für heute genug: ' + barbTagMax() + ' / ' + barbTagMax() + ' heute. Neue Lager in ' + mid + '.</span></div>' :
@@ -11913,12 +11933,13 @@ function drawMarkers() {                                                     // 
 }
 // ===== FREIES FELD (Merkliste 33): Tipp auf freies Land → runde Knöpfe: Teleportieren · Markierung · Truppen hierher =====
 let feldRing = null;                                                        // { x, y, lm } die angetippte Stelle (Welt)
+const FR_OBEN = 190;                                                        // darüber (px vom Bildrand) stehen die Knöpfe unter der Stelle
 function feldRingAuf(sx, sy) {                                              // → true, wenn dort freies Land ist
     const w = screenToWorld(sx, sy), lm = landmassAtWorld(w.x, w.y); if (!lm) return false;
     const el = document.getElementById('feldRing');
     const kn = [['tp', 'ui_sym_verlegen', 'Teleportieren', tpPreisHtml()], ['mark', 'ui_k_nadel', 'Markierung', ''], ['arm', 'ui_armee', 'Truppen hierher', '']];
     feldRing = { x: w.x, y: w.y, lm: lm.id };
-    el.innerHTML = kn.map(([p, b, t, z], i) => '<button type="button" class="cr-btn" data-fring="' + p + '" style="--x:' + (i - 1) * 84 + 'px;--y:' + (i === 1 ? -92 : -58) + 'px;--d:' + i * 40 + 'ms"><span class="fr-ic" style="--b:url(bilder/' + b + '.webp)"></span><small>' + t + (z ? ' ' + z : '') + '</small></button>').join('');
+    el.innerHTML = kn.map(([p, b, t, z], i) => '<button type="button" class="cr-btn" data-fring="' + p + '" style="--x:' + (i - 1) * 84 + 'px;--y:' + (i === 1 ? -92 : -58) + 'px;--yu:' + (i === 1 ? 102 : 68) + 'px;--d:' + i * 40 + 'ms"><span class="fr-ic" style="--b:url(bilder/' + b + '.webp)"></span><small>' + t + (z ? ' ' + z : '') + '</small></button>').join('');
     el.hidden = false; feldRingFrame(); requestRender(); return true;
 }
 function tpPreisHtml() { return teleImRucksack() ? '1 Teleporter' : icon('gem') + fmtNum(TP_GEMS); }   // ein Teleporter im Rucksack (auch der gratis) geht vor Edelsteinen
@@ -11926,7 +11947,8 @@ function feldRingZu() { if (!feldRing) return; feldRing = null; document.getElem
 function feldRingFrame() {                                                  // (jedes Bild) die Knöpfe folgen der Stelle, dort eine Nadel
     if (!feldRing) return;
     const z = mapState.zoom, x = feldRing.x * z + mapState.offsetX, y = feldRing.y * z + mapState.offsetY, el = document.getElementById('feldRing');
-    el.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)';
+    el.classList.toggle('fr-unten', y < FR_OBEN);                           // oben am Rand: Knöpfe unter die Stelle (nie über die Rohstoff-Leiste)
+    el.style.transform = 'translate(' + Math.round(Math.min(Math.max(x, 100), viewW - 100)) + 'px,' + Math.round(y) + 'px)';   // (seitlich ganz im Bild)
     setScreen(ctx); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, y, 9, 3.5, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#f3d27a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 16, 6.5, 0, 0, Math.PI * 2); ctx.stroke();
 }
@@ -11984,7 +12006,7 @@ function isUiElement(target) {
 }
 const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', rucksackPopup: 'rucksackBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
 function isPanelOpen(el) { return el.classList.contains('is-open'); }
-function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); syncPanelState(); }
+function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); feldRingZu(); syncPanelState(); }   // (die runden Knöpfe eines Karten-Felds schließen, sobald ein Fenster aufgeht)
 function closePanel(el) { el.classList.remove('is-open'); syncPanelState(); }
 function syncPanelState() {
   const open = [...document.querySelectorAll('.panel.is-open')];
@@ -12420,8 +12442,7 @@ updateHudPlayer();
 
 // Renders whichever screen (menu or the upgrade preview) is
 // currently active - never performs any game action itself.
-// Temples/Mega-Tempel get their own name instead of "Turm #N" -
-// regular towers keep the numbering players already know.
+// Temples/Mega-Tempel get their own name; a regular base is „Basis Stufe N“ (keine technische Nummer)
 function islandTitle(island) {
     const boss = bossAt(island.id); if (boss) return boss.name;
     if (island.type === 'megaTemple') return 'Königsthron';
@@ -12430,11 +12451,15 @@ function islandTitle(island) {
     if (island.type === 'gate') return island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor';
     if (island.id === playerIslandId) return 'Hauptstadt';
     for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === island.id) return 'Hauptstadt von ' + bot.name;
-    return 'Turm #' + (island.id + 1);
+    return 'Basis Stufe\u00a0' + baseLevelOf(island);
 }
-// Name für Spieler statt „Turm #N“: „Deine Basis“ / „Basis von …“ / „Neutrale Basis“ (+ Ort, wenn nicht ohneOrt)
+const basisOhneName = island => /^Basis Stufe/.test(islandTitle(island));   // eine normale Basis (kein Tempel, Tor, keine Hauptstadt)
+function deineBasis(island, dativ) {                                         // „deine Basis Stufe 3“ / „deine Hauptstadt“ / „deine Basis Wachturm“ (dativ: „deiner …“)
+    const t = islandTitle(island); return (dativ ? 'deiner ' : 'deine ') + (basisOhneName(island) || t === 'Hauptstadt' ? t : 'Basis ' + t);
+}
+// Name für Spieler statt „Basis Stufe N“: „Deine Basis“ / „Basis von …“ / „Neutrale Basis“ (+ Ort, wenn nicht ohneOrt)
 function ortName(island, ohneOrt) {
-    const t = islandTitle(island); if (!/^Turm #/.test(t)) return t;
+    const t = islandTitle(island); if (!basisOhneName(island)) return t;
     const ow = islandOwnerOf(island.id), n = ow === 'player' ? 'Deine Basis' : ow ? 'Basis von ' + ((botById[ow] || {}).name || 'Unbekannt') : 'Neutrale Basis';
     return ohneOrt ? n : n + ' · ' + coordText(island.x, island.y);
 }
@@ -12617,7 +12642,7 @@ function renderPopup() {
                 (thronKuppel(island.id) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + thronKuppelText() + '</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (rulerOwner() ? escapeHtml(fieldWhoName(rulerOwner())) + (rulerOwner() === 'player' ? ' bist' : ' ist') + ' Herrscher und verteilt die Titel.' : 'Noch kein Herrscher.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Herrscher</button></div>' : '') +
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Königsthron: im Thron-Event (Sa 10 – So 22 Uhr) alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte für den Halter. Die Wachtürme schießen alle 10 Min. darauf. Platz 1 am Ende wird eine Woche Herrscher.' : island.guardian ? 'Wachturm: 3-facher Tempel-Bonus und im Thron-Event alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht zum Bündnis des Halters, schießt er alle 10 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
-                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
+                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + rarWort(WANDER_CRATE, 'Kiste') + ' + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
                 (scoutEnRoute && scouted ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
                     ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));
@@ -14789,7 +14814,7 @@ if (window.WELT) {
             const z = [Math.max(0, Math.min(5, g.r | 0)), Math.max(1, Math.min(ITEM_MAX_LEVEL, g.lvl | 0 || 1)), Math.max(0, Math.min(STAR_MAX, g.st | 0))], A = hb.gear[s] || (hb.gear[s] = []);
             if (A.some(a => a[0] === z[0] && a[1] >= z[1] && a[2] >= z[2])) { hbGut(hb, 'gear:' + s); continue; }
             const grund = hbGearNeu(who, hb, m, s, z, forge);
-            if (grund) hbWarte(who, hb, 'gear:' + s, now, EQUIPMENT_DEFS[s].name + ' ' + RARITY_DEFS[z[0]].label + ' Stufe ' + z[1] + (z[2] ? ' mit ' + z[2] + ' Sternen' : '') + ': ' + grund + '.', z[0] + 1);
+            if (grund) hbWarte(who, hb, 'gear:' + s, now, rarTeil(z[0], s) + ' Stufe ' + z[1] + (z[2] ? ' mit ' + z[2] + ' Sternen' : '') + ': ' + grund + '.', z[0] + 1);
             else hbGut(hb, 'gear:' + s);
         }
         hbHeldenPruefen(who, hb, m, p, now);

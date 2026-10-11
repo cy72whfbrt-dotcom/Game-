@@ -131,15 +131,15 @@ function minuten(ms) { const m = Math.floor(ms / 60000); return m < 1 ? 'weniger
 function nachrichtBauen(liste, jetzt) {
     const angriffe = liste.filter(e => e.art === 'angriff'), verloren = liste.filter(e => e.art === 'verloren'), spaeher = liste.filter(e => e.art === 'spaeher' && !e.fertig);
     const aus = liste.filter(e => e.art === 'spaeher' && e.fertig);   // fertig: der Späher war schon da (Kampflog „… hat deine Basis ausgespäht“)
-    const teile = [];
-    if (angriffe.length === 1) { const a = angriffe[0]; teile.push(a.von + ' greift deine Basis ' + a.basis + ' an (Ankunft in ' + minuten(a.ankunft - jetzt) + ').'); }
+    const teile = [], ba = b => /^(Basis|Hauptstadt)\b/.test(b || '') ? b : 'Basis ' + b;   // „Basis Stufe 3“ steht schon als Name da: kein „Basis Basis …“
+    if (angriffe.length === 1) { const a = angriffe[0]; teile.push(a.von + ' greift deine ' + ba(a.basis) + ' an (Ankunft in ' + minuten(a.ankunft - jetzt) + ').'); }
     else if (angriffe.length) { const erst = Math.min(...angriffe.map(a => a.ankunft)), wer = [...new Set(angriffe.map(a => a.von))];
         teile.push(angriffe.length + ' Angriffe auf deine Basen (' + wer.slice(0, 3).join(', ') + (wer.length > 3 ? ' …' : '') + '), der erste kommt in ' + minuten(erst - jetzt) + '.'); }
-    if (verloren.length === 1) { const v = verloren[0]; teile.push('Basis ' + v.basis + ' verloren' + (v.von ? ' an ' + v.von : '') + '.'); }
+    if (verloren.length === 1) { const v = verloren[0]; teile.push(ba(v.basis) + ' verloren' + (v.von ? ' an ' + v.von : '') + '.'); }
     else if (verloren.length) teile.push(verloren.length + ' Basen verloren (' + verloren.slice(0, 3).map(v => v.basis).join(', ') + (verloren.length > 3 ? ' …' : '') + ').');
-    if (spaeher.length === 1) teile.push('Ein Späher von ' + spaeher[0].von + ' ist unterwegs zu deiner Basis ' + spaeher[0].basis + '.');
+    if (spaeher.length === 1) teile.push('Ein Späher von ' + spaeher[0].von + ' ist unterwegs zu deiner ' + ba(spaeher[0].basis) + '.');
     else if (spaeher.length) { const wer = [...new Set(spaeher.map(s => s.von))]; teile.push(spaeher.length + ' Späher sind unterwegs zu deinen Basen (' + wer.slice(0, 3).join(', ') + (wer.length > 3 ? ' …' : '') + ').'); }
-    if (aus.length === 1) teile.push(aus[0].von + ' hat deine Basis ' + aus[0].basis + ' ausgespäht – rechne mit einem Angriff.');
+    if (aus.length === 1) teile.push(aus[0].von + ' hat deine ' + ba(aus[0].basis) + ' ausgespäht – rechne mit einem Angriff.');
     else if (aus.length) { const wer = [...new Set(aus.map(s => s.von))]; teile.push(aus.length + ' deiner Basen wurden ausgespäht (' + wer.slice(0, 3).join(', ') + (wer.length > 3 ? ' …' : '') + ') – rechne mit Angriffen.'); }
     const boss = liste.filter(e => e.art === 'boss'), sammler = liste.filter(e => e.art === 'sammler'), schild = liste.filter(e => e.art === 'schild');
     if (boss.length) teile.push(boss.map(b => b.von + ' ist erschienen (' + b.basis + ').').join(' '));
@@ -155,7 +155,7 @@ function nachrichtBauen(liste, jetzt) {
     if (thron.length) teile.push('Das Thron-Event startet in ' + minuten(thron[0].ankunft - jetzt) + ' – erobere Thron und Wachtürme!');
     if (tk.length) teile.push('Deine Tages-Kiste im Wochen-Event ist bereit – hol sie ab.');
     const hilfe = liste.filter(e => e.art === 'hilfe'), rally = liste.filter(e => e.art === 'rally');
-    if (rally.length) { const r = rally[0]; teile.push('Rally gegen deine Basis ' + r.basis + ': ' + r.von + ' sammelt Truppen' + (r.ankunft > jetzt ? ' (Start in ' + minuten(r.ankunft - jetzt) + ')' : '') + '.'); }
+    if (rally.length) { const r = rally[0]; teile.push('Rally gegen deine ' + ba(r.basis) + ': ' + r.von + ' sammelt Truppen' + (r.ankunft > jetzt ? ' (Start in ' + minuten(r.ankunft - jetzt) + ')' : '') + '.'); }
     if (hilfe.length === 1) teile.push('Bündnis: ' + hilfe[0].von + ' ruft um Hilfe – ' + hilfe[0].basis + ' wird angegriffen.');
     else if (hilfe.length) teile.push('Bündnis: ' + hilfe.length + '-mal Hilfe gerufen (' + [...new Set(hilfe.map(h => h.von))].slice(0, 3).join(', ') + ').');
     const titel = angriffe.length ? 'Angriff auf deine Basis!' : verloren.length ? 'Basis verloren' : rally.length ? 'Rally gegen dich!' : hilfe.length ? 'Dein Bündnis braucht Hilfe' : spaeher.length ? 'Späher unterwegs' : aus.length ? 'Basis ausgespäht' : boss.length ? 'Ein Boss ist erschienen' : schild.length ? 'Friedensschild' : haendler.length ? 'Ein Händler ist da' : bau.length ? 'Bau fertig' : fo.length ? 'Forschung fertig' : thron.length ? 'Thron-Event startet bald' : tk.length ? 'Tages-Kiste bereit' : 'Sammler zurück';

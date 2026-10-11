@@ -93,7 +93,7 @@ function ausgespaeht(an, von, zielId) {
     const e = { type: 'ausgespaeht', botId: von, botName: wer.name, targetId: zielId };
     if (an === 'player') { addCombatLogEntry(e); scoutNote('back', von, zielId); return; }
     if (!(botById[an] && botById[an].mensch) || !window.WELT || typeof WELT.bericht !== 'function') return;
-    WELT.bericht(an, e, wer.name + ' hat deine Basis ' + islandTitle(t) + ' ausgespäht – rechne mit einem Angriff.');
+    WELT.bericht(an, e, wer.name + ' hat ' + deineBasis(t) + ' ausgespäht – rechne mit einem Angriff.');
     if (typeof bundPush === 'function') bundPush(an, { art: 'spaeher', fertig: 1, von: wer.name, basis: islandTitle(t) });   // (Warteschlange für weltrechner/push.js)
 }
 
@@ -109,9 +109,9 @@ function scoutNotesFlush() {
     scoutNoteTimer = null;
     const names = l => { const u = [...new Set(l.map(x => botById[x.botId].name))]; return u.slice(0, 3).join(', ') + (u.length > 3 ? ' …' : ''); };
     const go = scoutNotes.go.splice(0), back = scoutNotes.back.splice(0), msgs = [];
-    if (go.length === 1) msgs.push('Ein Späher von ' + botById[go[0].botId].name + ' ist unterwegs zu deiner Basis ' + islandTitle(islandById[go[0].targetId]) + '.');
+    if (go.length === 1) msgs.push('Ein Späher von ' + botById[go[0].botId].name + ' ist unterwegs zu ' + deineBasis(islandById[go[0].targetId], true) + '.');
     else if (go.length) msgs.push(go.length + ' Späher sind unterwegs zu deinen Basen (' + names(go) + ').');
-    if (back.length === 1) msgs.push(botById[back[0].botId].name + ' hat deine Basis ' + islandTitle(islandById[back[0].targetId]) + ' ausgespäht – rechne mit einem Angriff.');
+    if (back.length === 1) msgs.push(botById[back[0].botId].name + ' hat ' + deineBasis(islandById[back[0].targetId]) + ' ausgespäht – rechne mit einem Angriff.');
     else if (back.length) msgs.push(back.length + ' deiner Basen wurden ausgespäht (' + names(back) + ') – rechne mit Angriffen.');
     if (msgs.length) flashHint(msgs.join(' '), 4500);
 }

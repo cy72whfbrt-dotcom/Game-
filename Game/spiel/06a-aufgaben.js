@@ -77,15 +77,22 @@ function closeDailyModal() {
     if (isPanelOpen(goalsPopup)) { renderQuestPanel(); updateGoalsBadge(); if (goalsTab === 'reward') renderInbox(); }   // (der Satz oben nennt die tägliche Belohnung nur, solange sie wartet)
     return true;
 }
+function dailyErhalten(res) {                     // nach dem Abholen: was es gab – Bild, Name und Zahl je Sache, ein Knopf „Weiter“
+    document.getElementById('dailyModalTitle').textContent = 'Tag ' + res.day;
+    document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
+    document.getElementById('dailyModalLabel').textContent = 'Erhalten';
+    beuteLis([...res.items.map(it => Object.assign(itemBeute(it), { mitZahl: true })), { a: 'gems', n: res.gems }], document.getElementById('dailyModalRewards'), true);
+    const btn = document.getElementById('dailyModalBtn');
+    btn.dataset.state = 'done'; btn.querySelector('span').textContent = 'Weiter';
+    dailyModal.hidden = false;
+}
+function dailySofort() { const res = claimDaily(); if (res) dailyErhalten(res); }   // „Abholen“ im Events-Fenster: sofort abholen (kein zweites „Abholen“)
 document.getElementById('dailyModalBtn').addEventListener('click', () => {
     const btn = document.getElementById('dailyModalBtn');
     if (btn.dataset.state !== 'claim') { closeDailyModal(); return; }
     const res = claimDaily();
     if (!res) { closeDailyModal(); return; }
-    document.getElementById('dailyModalDays').innerHTML = dailyDaysHtml();
-    document.getElementById('dailyModalLabel').textContent = 'Erhalten';
-    beuteLis([...res.items.map(itemBeute), { a: 'gems', n: res.gems }], document.getElementById('dailyModalRewards'));
-    btn.dataset.state = 'done'; btn.querySelector('span').textContent = 'Weiter';
+    dailyErhalten(res);
 });
 dailyModal.addEventListener('click', e => { if (e.target === dailyModal) closeDailyModal(); });
 
@@ -335,7 +342,7 @@ document.getElementById('goalsTabs').addEventListener('click', e => { const b = 
 document.getElementById('goalsGruppen').addEventListener('click', e => { const b = e.target.closest('[data-ggrp]'); if (!b) return; const g = b.dataset.ggrp;   // Reiter: der zuletzt offene Unterreiter
     showGoalsTab(goalsGrpLetzt[g] || GOALS_GRP[g][0]); });
 goalsPopup.addEventListener('click', e => {
-    const b = e.target.closest('button'); if (b && b.hasAttribute('data-daily')) return showDailyModal();   // Belohnung: the quick-claim window does the rest
+    const b = e.target.closest('button'); if (b && b.hasAttribute('data-daily')) return dailySofort();   // Belohnung: ein Tipp holt ab, das Fenster zeigt, was es gab
     if (!b || !e.target.closest('[data-gpane="daily"]')) return;
     if (b.dataset.quest !== undefined) claimQuest(+b.dataset.quest);
     else if (b.hasAttribute('data-bonus3')) claimQuestBonus3();

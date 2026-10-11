@@ -329,8 +329,8 @@ function renderKeep() {                                        // das Burg-Fenst
     const belegt = marschBelegt('player');
     liveHtml(document.getElementById('cityBExtra'),
         '<div class="keep-h">Jetzt</div><div class="auf-grid"><div><span>Marsch-Plätze</span><b>' + belegt + ' / ' + marschGrenze('player') + ' belegt</b></div><div><span>Gebäude</span><b>bis Stufe ' + stadtCap('player', 'wall') + '</b></div><div><span>Schutz</span><b>' + schutzText(burgSchutzRoh('player')) + ' je Rohstoff · ' + schutzText(burgSchutz('player')) + ' Münzen</b></div></div>' +
-        (max ? '' : '<div class="keep-h">Burg-Stufe ' + (B + 1) + ' schaltet frei</div><ul class="auf-frei">' + freiText(B + 1).map(t => '<li>' + icon('check') + t + '</li>').join('') + '</ul>') +
-        '<small class="keep-note">Fällt nie · Sieger nimmt ' + Math.round(HAUPT_BEUTE * 100) + ' % über dem Schutz</small>');
+        '<small class="keep-note">Fällt nie · Sieger nimmt ' + Math.round(HAUPT_BEUTE * 100) + ' % über dem Schutz</small>' +   // (gehört zum Schutz – direkt darunter)
+        (max ? '' : '<div class="keep-h keep-frei">Burg-Stufe ' + (B + 1) + ' schaltet frei</div><ul class="auf-frei">' + freiText(B + 1).map(t => '<li>' + icon('check') + t + '</li>').join('') + '</ul>'));
 }
 function effektText(id, lvl) {
     if (id === 'academy') return (lvl ? 'Forschung bis Labor-Stufe ' + lvl + ' · Truppen laufen +' + lvl * 2 + ' % schneller.' : 'Baue das Labor, um zu forschen.') + (lvl < CITY_MAX_LEVEL ? ' Nächste Stufe: mehr Forschung, +' + (lvl + 1) * 2 + ' % Tempo.' : '');

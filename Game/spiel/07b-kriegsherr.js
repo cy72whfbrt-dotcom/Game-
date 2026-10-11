@@ -76,7 +76,7 @@ function wanderDepart(now) {                          // off to the next base: o
     if (!best) { wander.campUntil = now + 30000; return; }
     const dist = Math.hypot(best.isl.x - here.x, best.isl.y - here.y);
     Object.assign(wander, { from: here.id, to: best.isl.id, at: null, departAt: now, arriveAt: now + Math.max(20000, Math.min(150000, dist / (BASE_ATTACK_SPEED * .6) * 1000)) });
-    if (islandOwnerOf(best.isl.id) === 'player') flashHint(wander.name + ' marschiert auf deine Basis ' + islandTitle(best.isl) + ' zu!', 5000);
+    if (islandOwnerOf(best.isl.id) === 'player') flashHint(wander.name + ' marschiert auf ' + deineBasis(best.isl) + ' zu!', 5000);
     saveWander(); requestRender();
 }
 function wanderArrive(now) {                          // the storm: same maths as any attack; a win razes the base and he camps there
@@ -120,7 +120,7 @@ function wanderArrive(now) {                          // the storm: same maths a
         spawnMapBattle({ sourceId: from, targetId: tgt.id, atk: 'boss', def: 'mine', my, myLoss: my - wander.troops, en, enLoss: fallenAlle, won,
             onEnd: () => spawnBattleFx(tgt.id, !won || capitalHolds, capitalHolds ? 'Hauptstadt hält' : won ? 'Basis verloren' : 'Verteidigt', capitalHolds ? 'Garnison gefallen' : won ? 'von ' + name : name + ' abgewehrt') });
         addCombatLogEntry({ type: 'botAttack', botName: name, targetId: tgt.id, myTroops: my, enemyTroops: en, enemyDefense: def, wounded, armor: armorDefenseFor(tgt.id), fallen, won, capitalHolds, defGold: wGold, defGear: fighterSnapshot('player', dHx), ...verstInfo });
-        flashHint((capitalHolds ? name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht.' : won ? name + ' hat deine Basis ' + islandTitle(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
+        flashHint((capitalHolds ? name + ' hat deine Hauptstadt geplündert – die Garnison ist gefallen, die Stadt brennt, fällt aber nicht.' : won ? name + ' hat ' + deineBasis(tgt) + ' zerstört!' : 'Verteidigt! ' + name + ' wurde bei ' + islandTitle(tgt) + ' zurückgeschlagen.') + (wounded ? ' ' + fmtCompact(wounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
     }
     if (owner && owner !== 'player' && botById[owner] && botById[owner].mensch) {   // ein echter Spieler: der Bericht kommt bei ihm an (wie bei jedem Angriff)
         const t = islandTitle(tgt);

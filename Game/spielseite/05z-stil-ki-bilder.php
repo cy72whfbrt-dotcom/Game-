@@ -163,7 +163,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 :is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border-radius:0!important;box-shadow:none;
   border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
 #goalsTabs.p5-chips{gap:4px;padding-left:8px;padding-right:8px} #goalsTabs .p5-chip{padding:0 8px;gap:4px}   /* 5 Ereignis-Chips (mit Lager) passen auch ins schmale Desktop-Fenster */
-:is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
+:is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important;background:none;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
 :is(.seg:not(.hero-seg) > button):disabled{border-image:url(bilder/ui_k_grau.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
 .ki-balken{border-style:solid;border-width:0;border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch}
 /* Wappen-Feld im Fenster-Kopf (.emblem): Item-Platz statt gezeichnetem Kasten; Stufe als Schildchen */
@@ -206,6 +206,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 /* Tipp auf ein freies Feld der Karte (Merkliste 33): runde KI-Knöpfe im Bogen wie am Gebäude (.cr-btn), Stelle = Nadel auf der Karte */
 .feld-ring{position:fixed;left:0;top:0;z-index:44;width:0;height:0;pointer-events:none}
 .feld-ring[hidden]{display:none}
+.feld-ring.fr-unten .cr-btn{--y:var(--yu)!important}   /* Stelle oben am Rand: Bogen nach unten (--yu), nicht über die Rohstoff-Leiste */
 .feld-ring .cr-btn{border:0;border-radius:50%;background:var(--ui-rund) center/100% 100% no-repeat;box-shadow:0 4px 12px rgba(0,0,0,.5)}
 .feld-ring .cr-btn.is-armed{background-image:var(--ui-rund-an)}
 .feld-ring .fr-ic{width:34px;height:34px;background:var(--b) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}

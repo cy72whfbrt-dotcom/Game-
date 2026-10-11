@@ -112,7 +112,7 @@ body:has(.panel.is-open,#citySheet:not([hidden]),#lookSheet:not([hidden]),#heroH
   box-shadow:0 4px 12px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,236,190,.35);animation:cr-pop .28s var(--ease-out) both;animation-delay:var(--d,0ms)}
 .cr-btn .icon{width:26px;height:26px;color:var(--gold-100)}
 .cr-btn small{position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:var(--r-pill);background:rgba(10,8,6,.86);border:1px solid var(--line-2);
-  font:700 10px/1.2 var(--font-ui);color:var(--gold-100);white-space:nowrap}
+  font:700 11px/1.2 var(--font-ui);color:var(--gold-100);white-space:nowrap}
 .cr-btn:active{transform:translate(var(--x),var(--y)) scale(.92)}
 @keyframes cr-pop{from{opacity:0;transform:translate(0,0) scale(.4)}to{opacity:1;transform:translate(var(--x),var(--y)) scale(1)}}
 .city-bicon:has(canvas){width:88px;height:88px;border-radius:var(--r-md,12px);background:radial-gradient(circle at 50% 60%,#3b4a2c,#141a10 78%);overflow:hidden}
@@ -283,7 +283,7 @@ body:has(.panel.is-open,#citySheet:not([hidden]),#lookSheet:not([hidden]),#heroH
 .bd-tag::placeholder{text-transform:none;letter-spacing:normal}
 #bdZeichen{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;justify-items:center} #bdZeichen button{width:100%;max-width:44px;height:auto;aspect-ratio:1}
 #bdFarben{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-items:center} #bdFarben button{width:34px;height:34px}
-.bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
+.bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1;box-shadow:0 -14px 12px -2px rgba(13,15,21,.94),0 6px 0 0 rgba(13,15,21,.94)} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
 /* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
 /* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen zuerst, dann der Schild-Kasten */
 .city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;max-width:none;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}

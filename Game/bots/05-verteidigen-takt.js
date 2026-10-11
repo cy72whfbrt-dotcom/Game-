@@ -214,7 +214,7 @@ function botCapitalNotice(bot, alt, toId) {             // only news if it happe
     const near = isl => { for (const l of reachableLandmassIds[isl.landmassId] || [isl.landmassId]) for (const i of islandsByLandmass[l] || [])
         if (ownedIslands.has(i.id) && Math.hypot(i.x - isl.x, i.y - isl.y) < ISLAND_RADIUS * 40) return true; return false; };
     const cap = botCapitalOf(bot.id), nt = near(islandById[toId]), nf = near(alt);
-    if (nt) flashHint(bot.name + ' ist mit der Hauptstadt neben Turm #' + (toId + 1) + ' teleportiert – nah bei dir.', 5500);
+    if (nt) flashHint(bot.name + ' ist mit der Hauptstadt neben ' + ortName(islandById[toId], true) + ' teleportiert – nah bei dir.', 5500);
     else if (nf) flashHint(bot.name + ' ist mit der Hauptstadt weg teleportiert.', 5000);
     if ((nt || nf) && islandSeen(islandById[cap])) spawnBattleFx(cap, false, 'Hauptstadt', 'hierher teleportiert');
     if (isPanelOpen(popup) && popupIslandId === cap) renderPopup(); }

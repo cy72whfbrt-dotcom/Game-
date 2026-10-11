@@ -344,12 +344,13 @@ function drawMarkers() {                                                     // 
 }
 // ===== FREIES FELD (Merkliste 33): Tipp auf freies Land → runde Knöpfe: Teleportieren · Markierung · Truppen hierher =====
 let feldRing = null;                                                        // { x, y, lm } die angetippte Stelle (Welt)
+const FR_OBEN = 190;                                                        // darüber (px vom Bildrand) stehen die Knöpfe unter der Stelle
 function feldRingAuf(sx, sy) {                                              // → true, wenn dort freies Land ist
     const w = screenToWorld(sx, sy), lm = landmassAtWorld(w.x, w.y); if (!lm) return false;
     const el = document.getElementById('feldRing');
     const kn = [['tp', 'ui_sym_verlegen', 'Teleportieren', tpPreisHtml()], ['mark', 'ui_k_nadel', 'Markierung', ''], ['arm', 'ui_armee', 'Truppen hierher', '']];
     feldRing = { x: w.x, y: w.y, lm: lm.id };
-    el.innerHTML = kn.map(([p, b, t, z], i) => '<button type="button" class="cr-btn" data-fring="' + p + '" style="--x:' + (i - 1) * 84 + 'px;--y:' + (i === 1 ? -92 : -58) + 'px;--d:' + i * 40 + 'ms"><span class="fr-ic" style="--b:url(bilder/' + b + '.webp)"></span><small>' + t + (z ? ' ' + z : '') + '</small></button>').join('');
+    el.innerHTML = kn.map(([p, b, t, z], i) => '<button type="button" class="cr-btn" data-fring="' + p + '" style="--x:' + (i - 1) * 84 + 'px;--y:' + (i === 1 ? -92 : -58) + 'px;--yu:' + (i === 1 ? 102 : 68) + 'px;--d:' + i * 40 + 'ms"><span class="fr-ic" style="--b:url(bilder/' + b + '.webp)"></span><small>' + t + (z ? ' ' + z : '') + '</small></button>').join('');
     el.hidden = false; feldRingFrame(); requestRender(); return true;
 }
 function tpPreisHtml() { return teleImRucksack() ? '1 Teleporter' : icon('gem') + fmtNum(TP_GEMS); }   // ein Teleporter im Rucksack (auch der gratis) geht vor Edelsteinen
@@ -357,7 +358,8 @@ function feldRingZu() { if (!feldRing) return; feldRing = null; document.getElem
 function feldRingFrame() {                                                  // (jedes Bild) die Knöpfe folgen der Stelle, dort eine Nadel
     if (!feldRing) return;
     const z = mapState.zoom, x = feldRing.x * z + mapState.offsetX, y = feldRing.y * z + mapState.offsetY, el = document.getElementById('feldRing');
-    el.style.transform = 'translate(' + Math.round(x) + 'px,' + Math.round(y) + 'px)';
+    el.classList.toggle('fr-unten', y < FR_OBEN);                           // oben am Rand: Knöpfe unter die Stelle (nie über die Rohstoff-Leiste)
+    el.style.transform = 'translate(' + Math.round(Math.min(Math.max(x, 100), viewW - 100)) + 'px,' + Math.round(y) + 'px)';   // (seitlich ganz im Bild)
     setScreen(ctx); ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(x, y, 9, 3.5, 0, 0, Math.PI * 2); ctx.fill();
     ctx.strokeStyle = '#f3d27a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y, 16, 6.5, 0, 0, Math.PI * 2); ctx.stroke();
 }

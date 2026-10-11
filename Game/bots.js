@@ -276,7 +276,7 @@ function resolveBotAttack(attack) {
             type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,
             atkGear: fighterSnapshot(bot.id, attack.hx), defGear: fighterSnapshot(targetOwner, dHx), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, wounded: dw || 0,
             fallen: defWeg, won, capitalHolds, defGold: dg, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, defName: (botById[targetOwner] || {}).name, ...(parts || {}), ...verstInfo, ...atkInfo },
-            capitalHolds ? bot.name + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
+            capitalHolds ? bot.name + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? bot.name + ' hat ' + deineBasis(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
     if (vs) verstBerichte(vs, { type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,   // die Helfer: derselbe Bericht
         atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner, dHx) : null, enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: dwBesitzer,
@@ -321,7 +321,7 @@ function resolveBotAttack(attack) {
         flashHint((capitalHolds
             ? bot.name + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.'
             : won
-            ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!'
+            ? bot.name + ' hat ' + deineBasis(target) + ' erobert!'
             : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.') + (defWounded ? ' ' + fmtCompact(defWounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
         renderActiveMarches();
         if (isPanelOpen(popup) && popupIslandId === target.id) renderPopup();
@@ -668,7 +668,7 @@ function ausgespaeht(an, von, zielId) {
     const e = { type: 'ausgespaeht', botId: von, botName: wer.name, targetId: zielId };
     if (an === 'player') { addCombatLogEntry(e); scoutNote('back', von, zielId); return; }
     if (!(botById[an] && botById[an].mensch) || !window.WELT || typeof WELT.bericht !== 'function') return;
-    WELT.bericht(an, e, wer.name + ' hat deine Basis ' + islandTitle(t) + ' ausgespäht – rechne mit einem Angriff.');
+    WELT.bericht(an, e, wer.name + ' hat ' + deineBasis(t) + ' ausgespäht – rechne mit einem Angriff.');
     if (typeof bundPush === 'function') bundPush(an, { art: 'spaeher', fertig: 1, von: wer.name, basis: islandTitle(t) });   // (Warteschlange für weltrechner/push.js)
 }
 
@@ -684,9 +684,9 @@ function scoutNotesFlush() {
     scoutNoteTimer = null;
     const names = l => { const u = [...new Set(l.map(x => botById[x.botId].name))]; return u.slice(0, 3).join(', ') + (u.length > 3 ? ' …' : ''); };
     const go = scoutNotes.go.splice(0), back = scoutNotes.back.splice(0), msgs = [];
-    if (go.length === 1) msgs.push('Ein Späher von ' + botById[go[0].botId].name + ' ist unterwegs zu deiner Basis ' + islandTitle(islandById[go[0].targetId]) + '.');
+    if (go.length === 1) msgs.push('Ein Späher von ' + botById[go[0].botId].name + ' ist unterwegs zu ' + deineBasis(islandById[go[0].targetId], true) + '.');
     else if (go.length) msgs.push(go.length + ' Späher sind unterwegs zu deinen Basen (' + names(go) + ').');
-    if (back.length === 1) msgs.push(botById[back[0].botId].name + ' hat deine Basis ' + islandTitle(islandById[back[0].targetId]) + ' ausgespäht – rechne mit einem Angriff.');
+    if (back.length === 1) msgs.push(botById[back[0].botId].name + ' hat ' + deineBasis(islandById[back[0].targetId]) + ' ausgespäht – rechne mit einem Angriff.');
     else if (back.length) msgs.push(back.length + ' deiner Basen wurden ausgespäht (' + names(back) + ') – rechne mit Angriffen.');
     if (msgs.length) flashHint(msgs.join(' '), 4500);
 }
@@ -1496,7 +1496,7 @@ function botCapitalNotice(bot, alt, toId) {             // only news if it happe
     const near = isl => { for (const l of reachableLandmassIds[isl.landmassId] || [isl.landmassId]) for (const i of islandsByLandmass[l] || [])
         if (ownedIslands.has(i.id) && Math.hypot(i.x - isl.x, i.y - isl.y) < ISLAND_RADIUS * 40) return true; return false; };
     const cap = botCapitalOf(bot.id), nt = near(islandById[toId]), nf = near(alt);
-    if (nt) flashHint(bot.name + ' ist mit der Hauptstadt neben Turm #' + (toId + 1) + ' teleportiert – nah bei dir.', 5500);
+    if (nt) flashHint(bot.name + ' ist mit der Hauptstadt neben ' + ortName(islandById[toId], true) + ' teleportiert – nah bei dir.', 5500);
     else if (nf) flashHint(bot.name + ' ist mit der Hauptstadt weg teleportiert.', 5000);
     if ((nt || nf) && islandSeen(islandById[cap])) spawnBattleFx(cap, false, 'Hauptstadt', 'hierher teleportiert');
     if (isPanelOpen(popup) && popupIslandId === cap) renderPopup(); }
@@ -1759,7 +1759,7 @@ function botArmyRally(bot, target, need, srcList) {
     armies.push(a); let sent = 0;
     for (const id of helpers) { const n = frei(id); if (armySendFrom(a, id, n)) sent += n; }
     if (!sent) { armies = armies.filter(x => x !== a); return false; }
-    if (islandOwnerOf(target.id) === 'player') flashHint(bot.name + ' sammelt eine Armee vor deiner Basis ' + islandTitle(target) + '.', 4500);
+    if (islandOwnerOf(target.id) === 'player') flashHint(bot.name + ' sammelt eine Armee vor ' + deineBasis(target, true) + '.', 4500);
     saveArmies(); requestRender(); return true;
 }
 
@@ -1799,7 +1799,7 @@ function botArmyRethink(bot, a, atk, needS, now) {
     }
     if (best) {                                                                   // a base it can take: turn towards that one
         const was = islandById[a.t]; a.t = best.id; a.until = Math.max(a.until, now + 5 * 60000);
-        if (islandOwnerOf(best.id) === 'player') flashHint('Die Armee von ' + bot.name + ' schwenkt um – ihr neues Ziel ist deine Basis ' + islandTitle(best) + '!', 4500);
+        if (islandOwnerOf(best.id) === 'player') flashHint('Die Armee von ' + bot.name + ' schwenkt um – ihr neues Ziel ist ' + deineBasis(best) + '!', 4500);
         else if (was && islandOwnerOf(was.id) === 'player') flashHint(bot.name + ' kommt an ' + islandTitle(was) + ' nicht vorbei und sucht sich ein anderes Ziel.', 3500);
         saveArmies(); return true;
     }
@@ -1821,7 +1821,7 @@ function botArmyMerge(bot) {
         if (Math.hypot(small.x - big.x, small.y - big.y) > ISLAND_RADIUS * 40 || !routeFor(small.lm, big.lm, bot.id)) continue;
         if (armyMove(small, { kind: 'army', id: big.id, x: big.x, y: big.y, lm: big.lm })) continue;
         big.until = Math.max(big.until || 0, Date.now() + 8 * 60000); big.calls = Math.max(0, (big.calls || 0) - 1);
-        const t = islandById[big.t]; if (t && islandOwnerOf(t.id) === 'player') flashHint(bot.name + ' vereint zwei Armeen vor deiner Basis ' + islandTitle(t) + '.', 4500);
+        const t = islandById[big.t]; if (t && islandOwnerOf(t.id) === 'player') flashHint(bot.name + ' vereint zwei Armeen vor ' + deineBasis(t, true) + '.', 4500);
         saveArmies(); return true;
     }
     return false;

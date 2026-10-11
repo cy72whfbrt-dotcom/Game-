@@ -19,6 +19,9 @@ const RARITY_DEFS = [
   { key: 'gold',  name: 'Gold',  label: 'Legendär',     color: '#eab24a' },
   { key: 'rot',   name: 'Rot',   label: 'Mythisch',     color: '#ee5046' }
 ];
+const RAR_ENDUNG = { f: 'e', m: 'er', n: 'es', pl: 'e' };
+function rarWort(r, nomen, g) { return (RARITY_DEFS[r] || RARITY_DEFS[0]).label + RAR_ENDUNG[g || 'f'] + ' ' + nomen; }   // Seltenheit vor dem Wort: „Epische Kiste“, „Gewöhnlicher Schild“
+function rarTeil(r, slot) { const d = EQUIPMENT_DEFS[slot] || { name: 'Ausrüstung', g: 'f' }; return rarWort(r, d.name, d.g); }   // ein Ausrüstungs-Teil: „Seltene Waffe“
 const ITEM_MAX_LEVEL = 20;
 const RARITY_DROP_WEIGHTS = [60, 25, 11, 4, 0, 0]; // grau..rot – Gold und Rot gibt es NICHT aus Kisten (2.10.), nur durch Zusammenlegen (seit 2.10. auch kein Preis mehr mit „mind. Legendär“)
 const CRATE_GEM_COST = 100;  // Ausrüstungs-Kiste: 1 Schlüssel oder 100 Edelsteine (Alexander 8.10.; Hauptbuch rechnet je Kiste damit)

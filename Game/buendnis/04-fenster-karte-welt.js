@@ -166,7 +166,7 @@ function bundVorschau() {                                         // Gründen: s
     const box = document.getElementById('bdVorschau'); if (!box) return;
     const n = document.getElementById('bdName').value.trim(), t = document.getElementById('bdTag').value.trim();
     const farbe = +((bundUnten.querySelector('#bdFarben .on') || {}).dataset || {}).farbe || 0, zeichen = +((bundUnten.querySelector('#bdZeichen .on') || {}).dataset || {}).zeichen || 0;
-    box.innerHTML = bundZeichenHtml({ farbe, zeichen }, true) + '<div><b>[' + escapeHtml(t || '…') + '] ' + escapeHtml(n || 'Dein Bündnis') + '</b><small>So sehen dich die anderen auf der Karte und in der Liste.</small></div>';
+    box.innerHTML = bundZeichenHtml({ farbe, zeichen }, true) + '<div><b>' + (t ? '[' + escapeHtml(t) + '] ' : '') + escapeHtml(n || 'Dein Bündnis') + '</b><small>So sehen dich die anderen auf der Karte und in der Liste.</small></div>';
 }
 // Auswahl: Rally starten (Ziel t) · bei einer Rally mitmachen (rid) · Hilfe senden (nach)
 function bundQuellen(ziel, frist, toreEgal) {                     // eigene Basen, die ziel erreichen (frist: rechtzeitig bis dahin; toreEgal: Rally beitreten)

@@ -20,7 +20,7 @@ const BUND = {
     GESCHENKE_TAG: 5, KISTEN_TAG: 3,                          // pro Mitglied höchstens 5 Geschenke am Tag · pro Geber 3 Kisten-Geschenke
     TEMPEL_PCT: 2, MEGA_PCT: 5, BONUS_MAX: 12,                // Tempel-Bonus: +2 % je Tempel, Mega-Tempel +5 %, höchstens +12 %
     GEBIET_TEMPO: 1.1,                                        // im eigenen Gebiet 10 % schneller
-    FARBEN: ['#c0392b', '#2e86c1', '#27ae60', '#8e44ad', '#d68910', '#16a085', '#e84393', '#5d6d7e', '#b7950b', '#d35400', '#1abc9c', '#7d3c98'],
+    FARBEN: ['#c0392b', '#2e86c1', '#27ae60', '#8e44ad', '#d68910', '#16a085', '#e84393', '#5d6d7e', '#b7950b', '#d35400', '#a3e635', '#f4f1e8'],   // 12 klar verschiedene (vorher zweimal Lila und Türkis)
     ZEICHEN: ['crown', 'star', 'shield', 'attack', 'temple', 'castle', 'flag', 'troops']
 };
 const BUND_SIGNALE = {
@@ -77,8 +77,8 @@ function bundVon(who) { const id = who && bundIdx.get(who); return id ? bund.b[i
 function bundVerbuendet(a, b) { if (!a || !b || a === b) return false; const x = bundIdx.get(a); return !!x && x === bundIdx.get(b); }
 function bundTagVon(who) { const a = bundVon(who); return a ? a.tag : ''; }
 function bundName(w) { return w === 'player' ? ((window.profileName && profileName.value) || 'Du') : (botById[w] || {}).name || 'Jemand'; }
-function bundZielName(isl) {                                                  // Ziel wie auf der Karte: Besitzer bzw. „Neutrale Basis“ statt „Turm #N“
-    const t = islandTitle(isl); if (!/^Turm #/.test(t)) return t;
+function bundZielName(isl) {                                                  // Ziel wie auf der Karte: Besitzer bzw. „Neutrale Basis“ statt „Basis Stufe N“
+    const t = islandTitle(isl); if (!basisOhneName(isl)) return t;
     const ow = islandOwnerOf(isl.id); return ow ? 'Basis von ' + bundName(ow) : 'Neutrale Basis · ' + coordText(isl.x, isl.y);
 }
 function bundBasenText(w) { const n = whoBases(w); return fmtNum(n) + (n === 1 ? ' Basis' : ' Basen'); }
@@ -1446,7 +1446,7 @@ function bundVorschau() {                                         // Gründen: s
     const box = document.getElementById('bdVorschau'); if (!box) return;
     const n = document.getElementById('bdName').value.trim(), t = document.getElementById('bdTag').value.trim();
     const farbe = +((bundUnten.querySelector('#bdFarben .on') || {}).dataset || {}).farbe || 0, zeichen = +((bundUnten.querySelector('#bdZeichen .on') || {}).dataset || {}).zeichen || 0;
-    box.innerHTML = bundZeichenHtml({ farbe, zeichen }, true) + '<div><b>[' + escapeHtml(t || '…') + '] ' + escapeHtml(n || 'Dein Bündnis') + '</b><small>So sehen dich die anderen auf der Karte und in der Liste.</small></div>';
+    box.innerHTML = bundZeichenHtml({ farbe, zeichen }, true) + '<div><b>' + (t ? '[' + escapeHtml(t) + '] ' : '') + escapeHtml(n || 'Dein Bündnis') + '</b><small>So sehen dich die anderen auf der Karte und in der Liste.</small></div>';
 }
 // Auswahl: Rally starten (Ziel t) · bei einer Rally mitmachen (rid) · Hilfe senden (nach)
 function bundQuellen(ziel, frist, toreEgal) {                     // eigene Basen, die ziel erreichen (frist: rechtzeitig bis dahin; toreEgal: Rally beitreten)

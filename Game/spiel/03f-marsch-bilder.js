@@ -554,12 +554,21 @@ function mzKampfFern(tx, ty, rt) {                      // weit draußen: kleine
 }
 
 // ===== Sieg / Niederlage: kleines Band (KI-Bild) am Bildrand, weg vom Ziel – verdeckt keine Köpfe und Zahlen =====
+var mzBandDeckt = false;                                 // ein Ergebnis-Band liegt gerade über dem Hinweis (Toast)
+function mzObenFrei() {                                  // was oben nicht verdeckt werden darf: Rohstoff-Leiste, Event-Chip, der Hinweis
+  const out = [];
+  for (const id of ['hud', 'hint', 'midBar']) { const el = document.getElementById(id); if (!el) continue;
+    const r = el.getBoundingClientRect(); if (r.width && r.height) out.push({ x: r.left, y: r.top, w: r.width, h: r.height }); }   // (leer/versteckt: Größe 0)
+  return out;
+}
 function mzErgebnisBand(f, alpha, scale, sx, sy) {      // → Mitte des Bands
   const im = mzBild(f.good ? 'marsch_band_sieg' : 'marsch_band_niederlage'), bw = Math.min(viewW >= 700 ? 300 : 230, viewW * .6);
   const bh = im ? bw * im.height / im.width : 60, x = Math.max(bw / 2 + 4, Math.min(viewW - bw / 2 - 4, sx));
   const y0 = sy - 70 - bh / 2 - f.stack * (bh + 8), hb = bh + (f.sub ? 22 : 0), im0 = v => Math.max(bh / 2 + 4, Math.min(viewH - hb + bh / 2 - 4, v));   // über dem Kampfort (mehrere stapeln nach oben)
-  const frei = v => !mzAnzeige.koepfe.some(k => k.art !== 'tafel' && overlap({ x: x - bw / 2, y: v - bh / 2, w: bw, h: hb }, k) > 0);   // (Band samt Unterzeile verdeckt keinen Kopf/Chip)
-  const y = [0, -1, 1, -2, 2, -3, 3, -4, 4].map(i => im0(y0 + i * 24)).find(frei) ?? im0(y0);
+  const oben = mzObenFrei(), rect = v => ({ x: x - bw / 2, y: v - bh / 2, w: bw, h: hb });
+  const frei = v => !mzAnzeige.koepfe.some(k => k.art !== 'tafel' && overlap(rect(v), k) > 0) && !oben.some(k => overlap(rect(v), k) > 0);   // (Band samt Unterzeile verdeckt keinen Kopf/Chip, nicht die Leiste oben und keinen Hinweis)
+  const y = [0, -1, 1, -2, 2, -3, 3, -4, 4, 5, 6, 7, 8].map(i => im0(y0 + i * 24)).find(frei) ?? im0(y0);
+  if (!frei(y)) mzBandDeckt = true;                                     // kein freier Platz: der Hinweis tritt so lange zurück (drawBattleFx)
   ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.scale(scale, scale);
   if (im) ctx.drawImage(im, -bw / 2, -bh / 2, bw, bh);
   const titel = f.label.toUpperCase(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';

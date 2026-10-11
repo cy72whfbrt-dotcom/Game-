@@ -265,11 +265,11 @@ updateHud();
 // global bonus. Skills: bought with skill points earned by capturing
 // towers, same idea, separate currency.
 const EQUIPMENT_DEFS = {
-  weapon: { icon: 'weapon', name: 'Waffe',   desc: 'Truppenproduktion', pct: 2 },
-  armor:  { icon: 'armor',  name: 'Rüstung', desc: 'Verteidigung aller Basen', pct: 2 },
-  shield: { icon: 'shield', name: 'Schild',  desc: 'weniger Truppenverlust bei Sieg', pct: 2 },
-  boots:  { icon: 'boots',  name: 'Stiefel', desc: 'Münzproduktion', pct: 2 }
-};
+  weapon: { icon: 'weapon', name: 'Waffe',   g: 'f',  desc: 'Truppenproduktion', pct: 2 },
+  armor:  { icon: 'armor',  name: 'Rüstung', g: 'f',  desc: 'Verteidigung aller Basen', pct: 2 },
+  shield: { icon: 'shield', name: 'Schild',  g: 'm',  desc: 'weniger Truppenverlust bei Sieg', pct: 2 },
+  boots:  { icon: 'boots',  name: 'Stiefel', g: 'pl', desc: 'Münzproduktion', pct: 2 }
+};   // g: Geschlecht für „Epische Waffe“ / „Epischer Schild“ / „Epische Stiefel“ (rarWort)
 const SKILL_DEFS = {
   speed:       { icon: 'hourglass', name: 'Geschwindigkeit',    desc: 'schnellere Produktion und Märsche', msPerLevel: 40, max: 10 },
   troops:      { icon: 'troops',    name: 'Truppenherstellung', desc: 'Truppenproduktion', pct: 3, max: 50 },

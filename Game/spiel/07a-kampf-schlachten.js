@@ -166,7 +166,7 @@ function spawnBattleFx(islandId, good, label, sub) {
 }
 const FX_MS = 2600;
 function drawBattleFx(now) {       // screen space (setScreen active)
-    battleFx = battleFx.filter(f => now - f.born < FX_MS);
+    battleFx = battleFx.filter(f => now - f.born < FX_MS); mzBandDeckt = false;
     for (const f of battleFx) {
         const ms = now - f.born;
         const sx = f.x * mapState.zoom + mapState.offsetX, sy = f.y * mapState.zoom + mapState.offsetY;
@@ -242,5 +242,6 @@ function drawBattleFx(now) {       // screen space (setScreen active)
         ctx.restore();
     }
     if (battleFx.length) liveAnimation = true;
+    if (hintEl.classList.contains('toast--zurueck') !== mzBandDeckt) hintEl.classList.toggle('toast--zurueck', mzBandDeckt);   // Sieg-Band und Hinweis nacheinander, nie übereinander
 }
 

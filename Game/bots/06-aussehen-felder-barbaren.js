@@ -111,7 +111,7 @@ function botArmyRally(bot, target, need, srcList) {
     armies.push(a); let sent = 0;
     for (const id of helpers) { const n = frei(id); if (armySendFrom(a, id, n)) sent += n; }
     if (!sent) { armies = armies.filter(x => x !== a); return false; }
-    if (islandOwnerOf(target.id) === 'player') flashHint(bot.name + ' sammelt eine Armee vor deiner Basis ' + islandTitle(target) + '.', 4500);
+    if (islandOwnerOf(target.id) === 'player') flashHint(bot.name + ' sammelt eine Armee vor ' + deineBasis(target, true) + '.', 4500);
     saveArmies(); requestRender(); return true;
 }
 
@@ -151,7 +151,7 @@ function botArmyRethink(bot, a, atk, needS, now) {
     }
     if (best) {                                                                   // a base it can take: turn towards that one
         const was = islandById[a.t]; a.t = best.id; a.until = Math.max(a.until, now + 5 * 60000);
-        if (islandOwnerOf(best.id) === 'player') flashHint('Die Armee von ' + bot.name + ' schwenkt um – ihr neues Ziel ist deine Basis ' + islandTitle(best) + '!', 4500);
+        if (islandOwnerOf(best.id) === 'player') flashHint('Die Armee von ' + bot.name + ' schwenkt um – ihr neues Ziel ist ' + deineBasis(best) + '!', 4500);
         else if (was && islandOwnerOf(was.id) === 'player') flashHint(bot.name + ' kommt an ' + islandTitle(was) + ' nicht vorbei und sucht sich ein anderes Ziel.', 3500);
         saveArmies(); return true;
     }
@@ -173,7 +173,7 @@ function botArmyMerge(bot) {
         if (Math.hypot(small.x - big.x, small.y - big.y) > ISLAND_RADIUS * 40 || !routeFor(small.lm, big.lm, bot.id)) continue;
         if (armyMove(small, { kind: 'army', id: big.id, x: big.x, y: big.y, lm: big.lm })) continue;
         big.until = Math.max(big.until || 0, Date.now() + 8 * 60000); big.calls = Math.max(0, (big.calls || 0) - 1);
-        const t = islandById[big.t]; if (t && islandOwnerOf(t.id) === 'player') flashHint(bot.name + ' vereint zwei Armeen vor deiner Basis ' + islandTitle(t) + '.', 4500);
+        const t = islandById[big.t]; if (t && islandOwnerOf(t.id) === 'player') flashHint(bot.name + ' vereint zwei Armeen vor ' + deineBasis(t, true) + '.', 4500);
         saveArmies(); return true;
     }
     return false;

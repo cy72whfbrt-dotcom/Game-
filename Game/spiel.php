@@ -375,7 +375,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .marker-sheet{position:fixed;z-index:45;left:50%;bottom:calc(var(--dock-h) + var(--safe-bd) + 14px);transform:translateX(-50%);width:min(360px,calc(100vw - 24px));padding:12px;border-radius:12px;
   background:var(--glass-strong,#141820);border:1px solid var(--line-3);box-shadow:var(--sh-2);font-family:var(--font-ui);display:flex;flex-direction:column;gap:8px}
 .marker-sheet[hidden]{display:none}
-.field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-3)} .field-lines b{color:var(--tx-1);text-align:right} .field-fort{grid-column:1/-1;display:grid;gap:3px} .field-fort small{text-align:right;font-variant-numeric:tabular-nums}
+.field-lines{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font:500 var(--fs-12)/1.3 var(--font-ui);color:var(--tx-2)} .field-lines b{color:var(--tx-1);text-align:right} .field-fort{grid-column:1/-1;display:grid;gap:3px} .field-fort small{text-align:right;font-variant-numeric:tabular-nums}
 .field-sheet .marker-head b{display:inline-flex;align-items:center;gap:6px} .field-sheet .marker-head .icon{width:16px;height:16px} .field-sheet .btn{justify-content:center}
 .barb-sheet{max-height:calc(100vh - var(--dock-h) - var(--safe-bd) - 120px);overflow-y:auto} .field-lines small{color:var(--tx-3);font-weight:500}
 .barb-lv{padding:2px 7px;border-radius:999px;border:1px solid var(--bc);color:var(--bc);font:700 var(--fs-11)/1.2 var(--font-ui)}
@@ -440,6 +440,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
   -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);animation:toast-in var(--dur-2) var(--ease-out)}
 .toast::before{content:"";position:absolute;left:11px;top:50%;width:6px;height:6px;margin-top:-3px;transform:rotate(45deg);background:var(--gold-300);box-shadow:0 0 6px rgba(214,170,90,.6)}
 .toast:empty{display:none}
+.toast--zurueck{opacity:0;transition:opacity .2s}   /* ein Sieg-/Niederlage-Band liegt gerade dort (07a) – danach kommt der Hinweis wieder */
 .toast--lang{display:block;-webkit-line-clamp:none}   /* langer Hinweis (Saison): ganz lesbar, Umbruch statt „…“ */
 /* Tutorial (10c2): dunkel mit Loch – vier Teile um das Loch fangen die Tipps, das Loch selbst lässt sie zum echten Element durch */
 .tut{position:fixed;inset:0;z-index:59;pointer-events:none}   /* über Fenstern, Stadt und Heldenhalle (≤ 58), unter Belohnungs-Fenstern (60+) und dem Hinweis */
@@ -1033,6 +1034,7 @@ body.in-stadt .city-sheet{bottom:calc(var(--dock-h) + var(--safe-bd));padding-bo
 .forge-tabs{display:flex;flex-wrap:wrap;margin:8px 0} .forge-tabs button{display:inline-flex;align-items:center;gap:4px} .forge-tabs .icon{width:14px;height:14px} .forge-on{font-style:normal;font-size:var(--fs-12);color:var(--gold-300)}
 .keep-h{margin:12px 0 6px;font:700 var(--fs-12)/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--tx-2)}
 .keep-note{display:block;margin-top:6px;color:var(--tx-2)}
+.keep-h.keep-frei{margin-top:20px}   /* Abstand zum Schutz-Kasten: der Leuchtrahmen um „schaltet frei“ deckt ihn nicht */
 .skin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
 .skin-card{display:grid;justify-items:center;gap:2px;padding:6px 4px 8px;border:1px solid var(--line-2);border-radius:8px;background:rgba(255,255,255,.03);color:var(--tx-1);cursor:pointer} .skin-card.on{border-color:var(--gold-300);box-shadow:0 0 0 1px var(--gold-300)}
 .skin-card canvas{width:60px;height:66px} .skin-card small{display:inline-flex;align-items:center;gap:3px;color:var(--tx-2)} .skin-card .icon{width:12px;height:12px}
@@ -1382,7 +1384,6 @@ input::placeholder,textarea::placeholder{font-weight:400;font-size:min(1em,var(-
    (Verlauf, Rahmen, Leuchten), gezeichnete Truhe, Name groß, Inhalt eine Zeile, Preis-Knopf unten über die volle Breite
    (Gold = Edelsteine, Navy = Thron-Punkte). Die Epische Kiste groß über beide Spalten. Erklärungen hinter „i“. */
 #shopPopup.panel--sheet{--sheet-max:calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd))}   /* (Handy: mehr Platz, damit alle Kisten ohne Scrollen passen) */
-@media (max-width:899px) and (min-height:501px){ #shopPopup.panel--sheet:has([data-spane="markt"]:not([hidden])){--sheet-max:min(70dvh,calc(100dvh - var(--safe-t) - var(--hud-top-space) - var(--dock-h) - var(--safe-bd)))} }   /* Markt (kurz): so hoch wie die anderen Fenster, keine leere Fläche */
 #shopPopup .phead{min-height:56px;padding-bottom:8px} #shopPopup .phead .overline{display:none} #shopPopup .emblem{width:38px;height:38px}
 #shopPopup .phead-text{display:flex;align-items:center;gap:10px;min-width:0} #shopPopup .ptitle{margin:0;flex:none} #shopPopup .psub{min-width:0}
 #shopPopup .psub small{display:none}   /* (nur Zahl + Zeichen – „Edelsteine“ steht im title) */
@@ -1806,7 +1807,7 @@ body:has(.panel.is-open,#citySheet:not([hidden]),#lookSheet:not([hidden]),#heroH
   box-shadow:0 4px 12px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,236,190,.35);animation:cr-pop .28s var(--ease-out) both;animation-delay:var(--d,0ms)}
 .cr-btn .icon{width:26px;height:26px;color:var(--gold-100)}
 .cr-btn small{position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);padding:2px 7px;border-radius:var(--r-pill);background:rgba(10,8,6,.86);border:1px solid var(--line-2);
-  font:700 10px/1.2 var(--font-ui);color:var(--gold-100);white-space:nowrap}
+  font:700 11px/1.2 var(--font-ui);color:var(--gold-100);white-space:nowrap}
 .cr-btn:active{transform:translate(var(--x),var(--y)) scale(.92)}
 @keyframes cr-pop{from{opacity:0;transform:translate(0,0) scale(.4)}to{opacity:1;transform:translate(var(--x),var(--y)) scale(1)}}
 .city-bicon:has(canvas){width:88px;height:88px;border-radius:var(--r-md,12px);background:radial-gradient(circle at 50% 60%,#3b4a2c,#141a10 78%);overflow:hidden}
@@ -1977,7 +1978,7 @@ body:has(.panel.is-open,#citySheet:not([hidden]),#lookSheet:not([hidden]),#heroH
 .bd-tag::placeholder{text-transform:none;letter-spacing:normal}
 #bdZeichen{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;justify-items:center} #bdZeichen button{width:100%;max-width:44px;height:auto;aspect-ratio:1}
 #bdFarben{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;justify-items:center} #bdFarben button{width:34px;height:34px}
-.bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
+.bd-gf-los{width:100%;min-height:48px;gap:8px;position:sticky;bottom:6px;z-index:1;box-shadow:0 -14px 12px -2px rgba(13,15,21,.94),0 6px 0 0 rgba(13,15,21,.94)} .bd-gf-los .cost{margin-left:auto;display:inline-flex;align-items:center;gap:4px}   /* Handy: „Gründen“ bleibt unten im Fenster sichtbar */
 /* ===== 11b F (P4): Stadt, Burg, Labor, Helden, Shop übersichtlich ===== */
 /* Gebäude-Fenster: Haupt-Knopf fest unten (nie unter dem Falz); Burg: Voraussetzungen zuerst, dann der Schild-Kasten */
 .city-sheet > .city-bfoot{order:5;position:sticky;bottom:0;z-index:3;margin:0 -14px;max-width:none;padding:10px 14px;background:var(--noise),var(--panel-bg);border-top:1px solid var(--line-1)}
@@ -2034,7 +2035,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim 
 .bk > img.bk-held{left:5%;top:5%;width:40%;height:40%;border-radius:50%;object-fit:cover;border:1.5px solid #f6e7bf;background:#1b2638;filter:none}
 .bk > b{position:absolute;right:7%;bottom:5%;font:800 calc(var(--bk,60px) * .22)/1 var(--font-ui);color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap;
   text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 1px #000,-1px 0 1px #000,0 -1px 1px #000}
-.bk > i.bk-zeit{position:absolute;left:6%;top:5%;font:800 calc(var(--bk,60px) * .17)/1 var(--font-ui);font-style:normal;color:#ffe7a8;white-space:nowrap;text-shadow:0 0 2px #000,0 1px 2px #000}   /* Beschleuniger: Dauer oben links */
+.bk > i.bk-zeit{position:absolute;left:50%;top:11%;transform:translateX(-50%);padding:1px 4px;border-radius:4px;background:rgba(8,10,14,.72);font:800 calc(var(--bk,60px) * .16)/1.1 var(--font-ui);font-style:normal;color:#ffe7a8;white-space:nowrap;text-shadow:0 1px 1px #000}   /* Beschleuniger: Dauer oben mittig im Rahmen (nicht auf der Kante) */
 .bk-raster{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 .bk-klein{--bk:40px;gap:4px} .bk-mini{--bk:32px;gap:3px;justify-content:flex-start}
 .bk-mit{display:flex;flex-direction:column;align-items:center;gap:3px;width:calc(var(--bk,60px) + 16px)}
@@ -2042,6 +2043,8 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim 
 /* Listen in den Fenstern (Tag, Stufe, Kriegsherr): Kacheln nebeneinander statt Zeilen */
 .lvlup-rewards:has(> .bk){flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px}
 .lvlup-rewards > li.bk{display:block;padding:0;border:0;border-radius:0;background:var(--ki-kachel) center/100% 100% no-repeat;--bk:58px}
+.lvlup-rewards:has(> .bk-mit){flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px} .lvlup-rewards > li.bk-mit{padding:0;border:0;border-radius:0;background:none;--bk:58px;width:96px;gap:5px}   /* Tages-Belohnung „Erhalten“: Bild + Name */
+.lvlup-rewards > li.bk-mit > .bk{flex:none} .lvlup-rewards > li.bk-mit small{font-size:12px;color:var(--tx-1)}
 /* Aufgaben, Abholfach, Events, Pass: kleine Kacheln in der Zeile */
 .quest-rew:has(.bk){padding:0;border:0;background:none;gap:3px} .quest-rew .bk{--bk:38px}
 .inbox-row .bk-raster{margin-top:4px}
@@ -2060,7 +2063,7 @@ body.in-stadt .midbar{visibility:hidden}   /* Karten-Hinweise (Events …) beim 
 @media (max-width:480px){.rk-tabs .icon{display:none} .rk-tabs button{padding:0 2px;font-size:11px}}
 .rk-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;--bk:56px}   /* 4–5 Kacheln je Reihe */
 .rk-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;border:1px solid transparent;border-radius:10px;background:none;cursor:pointer;min-width:0}
-.rk-item small{font:600 10px/1.15 var(--font-ui);color:var(--tx-2);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-item small{font:600 10px/1.15 var(--font-ui);color:var(--tx-2);text-align:center;max-width:100%;min-height:2.3em;overflow-wrap:anywhere;hyphens:auto}   /* voller Name, notfalls 2 Zeilen („Splitter / Brunhild“) */
 .rk-item.is-on{border-color:var(--gold-300);background:color-mix(in srgb,var(--gold-300) 14%,transparent)}
 .rk-leer .btn{margin-top:6px}
 @media (max-width:899px) and (min-height:501px){ #rucksackPopup .pbody{gap:8px} .rk-fach{--bk:46px;padding:4px 8px} .rk-liste{gap:4px} }   /* Handy: enger, damit die Splitter-Reihe ganz im Fenster steht */
@@ -2270,7 +2273,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 :is(.p5-chip,.seg:not(.hero-seg) > button,.look-title,.marker-presets button,.set-wahl button){border-radius:0!important;box-shadow:none;
   border-image:url(bilder/ui_k_chip.webp) 26 fill / 9px stretch!important}
 #goalsTabs.p5-chips{gap:4px;padding-left:8px;padding-right:8px} #goalsTabs .p5-chip{padding:0 8px;gap:4px}   /* 5 Ereignis-Chips (mit Lager) passen auch ins schmale Desktop-Fenster */
-:is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
+:is(.p5-chip.active,.seg:not(.hero-seg) > button.on,.look-title.on,.marker-presets button.on,.set-wahl button.on){border-image:url(bilder/ui_k_gold.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important;background:none;color:#2a1904;text-shadow:0 1px 0 rgba(255,236,190,.5)}
 :is(.seg:not(.hero-seg) > button):disabled{border-image:url(bilder/ui_k_grau.webp) 30 40 30 40 fill / 9px 12px 9px 12px stretch!important}
 .ki-balken{border-style:solid;border-width:0;border-image:url(bilder/ui_balken.webp) 12 40 12 40 fill / 5px 14px 5px 14px stretch}
 /* Wappen-Feld im Fenster-Kopf (.emblem): Item-Platz statt gezeichnetem Kasten; Stufe als Schildchen */
@@ -2313,6 +2316,7 @@ svg.icon:has(> use[href="#i-castle"]){--ki-sym:url(bilder/ui_sym_burg.webp)} svg
 /* Tipp auf ein freies Feld der Karte (Merkliste 33): runde KI-Knöpfe im Bogen wie am Gebäude (.cr-btn), Stelle = Nadel auf der Karte */
 .feld-ring{position:fixed;left:0;top:0;z-index:44;width:0;height:0;pointer-events:none}
 .feld-ring[hidden]{display:none}
+.feld-ring.fr-unten .cr-btn{--y:var(--yu)!important}   /* Stelle oben am Rand: Bogen nach unten (--yu), nicht über die Rohstoff-Leiste */
 .feld-ring .cr-btn{border:0;border-radius:50%;background:var(--ui-rund) center/100% 100% no-repeat;box-shadow:0 4px 12px rgba(0,0,0,.5)}
 .feld-ring .cr-btn.is-armed{background-image:var(--ui-rund-an)}
 .feld-ring .fr-ic{width:34px;height:34px;background:var(--b) center/contain no-repeat;filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
@@ -2769,6 +2773,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 .p5-gruppe{margin:12px 0 4px;font:700 11px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)}
 .p5-gruppe:first-child{margin-top:4px}
 #tabSet .set-zeile{min-height:44px}
+.set-version{margin:18px 0 4px;text-align:center;font:500 10px/1.2 var(--font-ui);color:var(--tx-4)}   /* klein und unauffällig – nur für Rückfragen */
 #tabSet .set-zeile input{width:24px;height:24px}
 #tabSet .set-knoepfe .btn,#tabSet .set-ab .btn,#tabSet .set-pw .btn,#pushKnopf{min-height:44px}
 .p5-hilfe summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-1)}
@@ -2913,8 +2918,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
         <p><b>Profil</b> → Spieler (Aussehen, Rangliste), Ausrüstung, Fähigkeiten, Einstellungen.</p>
         <p><b>Karte</b> → Basis antippen: angreifen, Truppen senden, aufwerten. Felder: sammeln. Mitte: wer den Mega-Tempel hält, herrscht.</p>
       </details>
-      <div class="sect"><h4>Info</h4></div>
-      <div class="kv"><div><span>Version</span><b id="setVersion"></b></div></div>
+      <p class="set-version">Version <span id="setVersion"></span></p>
     </div>
 
   </div>
