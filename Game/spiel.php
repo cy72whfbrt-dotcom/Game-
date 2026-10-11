@@ -515,7 +515,7 @@ body.tz-leiste #cornerButtons{visibility:hidden}   /* noch kein Knopf frei: kein
 .nav-btn.tut-neu,#hud .res.tut-neu{animation:tut-knopf .6s ease-out} @keyframes tut-knopf{0%{opacity:0;scale:.3}25%{opacity:1;scale:1.18}100%{scale:1}}   /* neu: fliegt ein (nur scale/opacity) */
 .nav-btn.tut-neuer::after{content:"NEU";position:absolute;top:0;left:calc(50% + 6px);padding:0 4px;border-radius:4px;background:#9b2f2f;color:#f0dfb0;font:700 11px/15px var(--font-ui);box-shadow:0 1px 3px #000a}   /* bis er einmal getippt wurde */
 body.tut-an #citySpeedBtn{display:none!important}   /* Edelstein-Knopf „Fertig für …“: im Tutorial nur der Beschleuniger */
-body.tut-an .panel--item{z-index:58}   /* Gegenstand-Fenster (Ausrüsten) im Tutorial unter dem Dunkel: Loch und Finger liegen darüber */
+body.tut-an .panel--item,body.tut-an .kl-seite{z-index:58}   /* Gegenstand-Fenster (Ausrüsten) im Tutorial unter dem Dunkel: Loch und Finger liegen darüber */
 @media (max-width:899px) and (min-height:501px){ body.tut-schmal .nav{left:50%;right:auto;width:min(calc(100% - 16px),calc(var(--tut-n,1) * 88px + 48px));translate:-50% 0} }   /* Leiste nur so breit wie ihre Knöpfe */
 /* Was ein neuer Spieler noch nicht hat, ist ganz weg (10c2 tutFrei: body.tz-<teil>) */
 body.tz-stadt #cityNavBtn,body.tz-kampf #battleLogBtn,body.tz-events #goalsBtn,body.tz-shop #shopBtn,
