@@ -121,7 +121,7 @@ local function muenzePlatzieren(m)
 		platz = plaetze[zufall:NextInteger(1, #plaetze)]
 	end
 	local versatz = Vector3.new(zufall:NextNumber(-6, 6), 0, zufall:NextNumber(-6, 6))
-	m.Teil.CFrame = CFrame.new(platz.Pos + versatz) * CFrame.Angles(0, 0, math.rad(90))
+	m.Teil.CFrame = CFrame.new(platz.Pos + versatz)
 	m.Teil.Transparency = 0
 	m.Aktiv = true
 end
@@ -230,7 +230,8 @@ for eiName, stand in staende do
 			return
 		end
 		if not hatGebiet(profil, ei.Gebiet) then
-			return melden(spieler, "Schalte zuerst das Gebiet frei!")
+			melden(spieler, "Schalte zuerst das Gebiet frei!")
+			return
 		end
 		if (root.Position - stand.Teil.Position).Magnitude > Config.EiAbstand then
 			return
@@ -238,13 +239,16 @@ for eiName, stand in staende do
 		local paesse = Shop.paesse(spieler)
 		local jetzt = os.clock()
 		if jetzt - (letztesEi[spieler] or -math.huge) < Logik.brueteZeit(paesse) then
-			return melden(spieler, "Das Ei brütet noch …")
+			melden(spieler, "Das Ei brütet noch …")
+			return
 		end
 		if anzahl(profil.Haustiere) >= Logik.maxInventar(paesse) then
-			return melden(spieler, "Inventar voll! Lege Haustiere zusammen oder gib welche frei.")
+			melden(spieler, "Inventar voll! Lege Haustiere zusammen oder gib welche frei.")
+			return
 		end
 		if not Logik.kannKaufen(profil.Muenzen, ei.Preis) then
-			return melden(spieler, "Nicht genug Münzen!")
+			melden(spieler, "Nicht genug Münzen!")
+			return
 		end
 		letztesEi[spieler] = jetzt
 		profil.Muenzen -= ei.Preis
@@ -265,11 +269,13 @@ for gebiet, tor in tore do
 			return
 		end
 		if not hatGebiet(profil, gebiet - 1) then
-			return melden(spieler, "Schalte zuerst das Gebiet davor frei!")
+			melden(spieler, "Schalte zuerst das Gebiet davor frei!")
+			return
 		end
 		local preis = Config.Gebiete[gebiet].Preis
 		if not Logik.kannKaufen(profil.Muenzen, preis) then
-			return melden(spieler, "Du brauchst " .. Logik.kurzZahl(preis) .. " Münzen.")
+			melden(spieler, "Du brauchst " .. Logik.kurzZahl(preis) .. " Münzen.")
+			return
 		end
 		profil.Muenzen -= preis
 		table.insert(profil.Gebiete, gebiet)
