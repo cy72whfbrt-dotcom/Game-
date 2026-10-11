@@ -68,10 +68,12 @@ Million Lords, Lords Mobile – „sieht aus wie ein Spiel, nicht wie eine Liste
 ## Startseite und Ladebild
 - `index.php` dunkel/Gold im Spielstil, Felder ohne Autofill-Gelb, Regeln unter den Feldern, Auge-Knopf. KI-Titelbild
   (`bilder/titel_hoch.jpg`/`titel_quer.jpg`) hinter Ladebild und Startseite; Ladebild nur Tipp-Zeile + Balken.
-- Ladebild lädt UND entpackt (`img.decode()`) alle Bilder für Start und Tutorial (`ladebildschirm.js` `BILDER_START`, ~185 Bilder,
-  4,8 MB, 6 gleichzeitig, `fetchPriority low` – Skripte zuerst); der Balken zeigt den echten Stand (4 % + 90 % × geladen, 100 % wenn
-  spiel.js fertig). `finishSplash` (10c) wartet darauf, höchstens 25 s, mindestens 2,6 s. Danach `bilderNachladen`: übrige Bilder aus den
-  Stilen + alle Helden einzeln im Leerlauf (nur Browser-Zwischenspeicher, nichts gespeichert; ohne Titelbilder, nicht bei „Daten sparen“).
+- Ladebild lädt UND entpackt (`img.decode()`) die Bilder der ersten Minuten (`ladebildschirm.js` `BILDER_START`, ~3,6 MB,
+  6 gleichzeitig, `fetchPriority low` – Skripte zuerst); der Balken zeigt den echten Stand (4 % + 90 % × geladen, 100 % wenn
+  spiel.js fertig). `finishSplash` (10c) wartet darauf, höchstens 25 s, mindestens 2,6 s. Gleich danach `BILDER_BALD` (Helden,
+  Kisten, Ausrüstung, ~1,7 MB, auch entpackt; das Tutorial wartet ab „Kiste“ notfalls mit „…“, `tutBilderDa`). Danach
+  `bilderNachladen`: übrige Bilder aus den Stilen + Helden einzeln im Leerlauf (nur Browser-Zwischenspeicher, nichts gespeichert;
+  ohne Titelbilder, nicht bei „Daten sparen“).
 - Stadtbild: steht die Kamera, wird der Hintergrund (Bild + Schleier) einmal groß gezeichnet und danach 1:1 kopiert (`cityFrame.hinten`);
   pro Bild nur Schilder und Hammer neu.
 - App für den Startbildschirm: `Game/app/` (Manifest, Logo, iPhone-Anleitung). Statusleiste „black“, Leiste füllt die

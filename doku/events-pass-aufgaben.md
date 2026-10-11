@@ -114,8 +114,9 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 - „Überspringen“ fragt im Spiel, danach alles sichtbar. Das Welt-Namensfenster ruht im Tutorial. Tägliche Belohnung erst danach.
 - Hauptbuch: Spielraum am Anfang `fr.g 100`, `fr.k 1`, `fr.bm 2`, `fr.s1 2` (Geschenke + Belohnung). Start-Rohstoffe 5.000/3.000/1.800 (aufbau.js `ROH_START`): Tutorial braucht
   4.120/2.200/1.380 + 1. Forschung – kein Warten bis Burg 3.
-- Bilder: was Start und Tutorial zeigen, lädt und entpackt das Ladebild vorab (`ladebildschirm.js` `BILDER_START`; Test: im Tutorial
-  wird kein Bild nachgeladen, das dort fehlt) – neue Bilder im Tutorial dort eintragen.
+- Bilder: was Start und Tutorial zeigen, lädt und entpackt das Ladebild vorab (`ladebildschirm.js` `BILDER_START`, ab der Helden-Kiste
+  `BILDER_BALD` gleich danach; fehlt dort noch etwas, wartet der Schritt mit „…“). Test: im Tutorial wird kein Bild nachgeladen, das
+  in den Listen fehlt – neue Bilder im Tutorial dort eintragen.
 - Platzhalter-Bilder: `einstieg_finger` (jetzt CSS-Pilz, Prompt in der Vorgabe), `einstieg_berater` (jetzt Helden-Kopf). Tests `tutorial_test` (390, Rest) und `tutorial_klein_test` (375×667); Warten (Bau, Marsch) spult der Test vor.
 
 ## Offen
