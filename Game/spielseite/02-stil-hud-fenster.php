@@ -290,12 +290,13 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut{position:fixed;inset:0;z-index:59;pointer-events:none}   /* über Fenstern, Stadt und Heldenhalle (≤ 58), unter Belohnungs-Fenstern (60+) und dem Hinweis */
 .tut[hidden]{display:none}
 .tut.durch,.tut.durch *{pointer-events:none!important}   /* kurz durchsichtig für Tipps: was liegt unter dem Dunkel? */
-.tut-d{position:absolute;background:rgba(5,6,8,.55);pointer-events:auto}   /* Handlungs-Schritt: die Spielwelt bleibt gut sichtbar */
-.tut.is-hell .tut-d{background:rgba(5,6,8,.4)}   /* Erklär-Schritt (nur „Weiter“, Rohstoffe): heller – die eigene Hauptstadt dahinter */
-.tut.is-frei .tut-d{background:none}   /* warten (Marsch, Bau): man sieht alles, tippen geht trotzdem nicht */
+.tut{--tut-dunkel:rgba(5,6,8,.55)} .tut-d{position:absolute;background:var(--tut-dunkel);pointer-events:auto}   /* Handlungs-Schritt: die Spielwelt bleibt gut sichtbar */
+.tut.is-hell{--tut-dunkel:rgba(5,6,8,.4)}   /* Erklär-Schritt (nur „Weiter“, Rohstoffe): heller – die eigene Hauptstadt dahinter */
+.tut.is-frei{--tut-dunkel:transparent}   /* warten (Marsch, Bau): man sieht alles, tippen geht trotzdem nicht */
 .tut-loch{position:absolute;box-sizing:border-box;border:2px solid var(--gold-300);border-radius:14px;pointer-events:none;box-shadow:0 0 0 4px rgba(212,173,102,.25),0 0 24px rgba(240,223,176,.45)}
 .tut-loch::after{content:"";position:absolute;inset:-2px;border-radius:inherit;box-shadow:0 0 0 7px rgba(212,173,102,.4),0 0 30px rgba(240,223,176,.6);opacity:0;animation:tut-glanz 1.2s ease-in-out infinite}
 .tut-loch.rund{border-radius:50%}   /* Basis/Lager auf der Karte */
+.tut-loch.rund::before{content:"";position:absolute;inset:-2px;background:radial-gradient(circle closest-side,transparent calc(100% - 1px),var(--tut-dunkel) 100%)}   /* rundes Loch: die Ecken des Rechtecks auch abdunkeln (kein heller eckiger Fleck) */
 .tut-loch.neu{animation:tut-loch-rein .22s ease-out} @keyframes tut-loch-rein{from{opacity:0;scale:1.08}}   /* neues Ziel: springt hin und zieht sich zusammen (nur scale/opacity) */
 .tut-sperre{position:absolute;pointer-events:auto}
 @keyframes tut-glanz{50%{opacity:1}}   /* Puls nur im Schein (Deckkraft des Scheins, kein Neuzeichnen): das Loch bleibt im Bild */
@@ -308,7 +309,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 @keyframes tut-tipp3{50%{translate:8px 0}} @keyframes tut-tipp4{50%{translate:-8px 0}}
 @keyframes tut-tipp{50%{translate:0 8px}} @keyframes tut-tipp2{50%{translate:0 -8px}}
 /* Berater mit Sprechblase: Platzhalter-Kopf, bis einstieg_berater.webp kommt; nie über dem Loch (.oben) */
-.tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px);max-width:440px;
+.tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 26px);max-width:440px;
   display:flex;align-items:flex-end;gap:6px;pointer-events:none}
 .tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 34px);align-items:flex-start}   /* unter „Überspringen“; Blase oben bündig (kurzer Satz rutscht nicht nach unten) */
 .tut-figur{position:relative;z-index:1;flex:none;width:76px;height:92px;margin-right:-14px;border-radius:38px 38px 10px 10px;border:2px solid var(--gold-300);background:url(bilder/held_aldric_kopf.webp) center/cover,linear-gradient(#24365c,#0f1a2e);box-shadow:0 4px 12px rgba(0,0,0,.45)}   /* überlappt die Blasen-Ecke */

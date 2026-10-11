@@ -385,7 +385,7 @@ function tutFreude(text, bau) {                                  // Freude-Momen
 let tutFokusVor = null, tutAlt = null, tutLochAn = false, tutFokusZeit = 0, tutFokusN = 0, tutOhneSeit = 0, tutSchrittAlt = -1, tutFokusAb = 0;
 // Blase ruhig (Alexander 11.10.: „Texte hüpfen“): je Bildschirm-Lage eine feste Seite – Karte/Stadt, Heldenhalle, Kampfdetails: unten; offenes Fenster: oben,
 // das Fenster rückt darunter (kürzer, sein Inhalt rollt). Die Seite wechselt nur, wenn die Blase sonst das Loch deckte; im Schritt wird sie nur größer, nie kleiner.
-let tutSeg = { k: '' }, tutDa = false, tutTippZeit = 0, tutZielEl = null;
+let tutSeg = { k: '' }, tutDa = false, tutBildAb = 0, tutTippZeit = 0, tutZielEl = null;
 const tutKurz = new Set();                                       // Fenster, die gerade unter der Blase gekürzt sind
 const TUT_SPERRE = 300;                                          // nach einem Tipp so lange kein neues Ziel (ein Doppeltipp springt nicht weiter)
 const tutFensterOffen = () => [...document.querySelectorAll('.panel.is-open'), ...(!cityView.hidden && !$t('citySheet').hidden ? [$t('citySheet')] : []), ...(!barbSheetEl.hidden ? [barbSheetEl] : [])];
@@ -409,7 +409,7 @@ function tutZeigen() {
     let weiter = false; try { weiter = !!(tutTat.ok || (S.fertig && S.fertig())); } catch (e) {}
     if (weiter) { sfx('upgrade'); try { if (S.freude) tutFreude(S.freude(), S.bau); } catch (e) {} tutWeiter(); if (!tutLaeuft()) return; return tutZeigen(); }
     let z = {}; try { z = tutZiel(S.ziel()); } catch (e) {}
-    if (tut.s >= TUT_BALD && !tutBilderDa() && Date.now() - tut.t0 < 20000) { z = { warte: Date.now() - tut.t0 < 1200 ? '…' : 'Einen Moment – gleich geht es weiter.', fort: 0 }; tutBald(200); }   // (Helden-/Kisten-Bilder noch nicht entpackt: kurz warten statt ins Leere zeigen)
+    if (tut.s >= TUT_BALD && !tutBilderDa() && Date.now() - tut.t0 < 20000) { tutBildAb = tutBildAb || Date.now(); z = { warte: Date.now() - tutBildAb < 1200 ? '…' : 'Einen Moment – gleich geht es weiter.', fort: 0 }; tutBald(200); } else tutBildAb = 0;   // (Helden-/Kisten-Bilder noch nicht entpackt: kurz warten statt ins Leere zeigen)
     el.hidden = false;
     const W = innerWidth, H = innerHeight, jetzt = Date.now(), be = $t('tutBerater');
     if (tutSchrittAlt !== tut.s) { tutSchrittAlt = tut.s; tutOhneSeit = jetzt; tutFokusN = 0; tutAlt = tutFokusVor = null; tutFokusAb = 0; }
@@ -439,6 +439,8 @@ function tutZeigen() {
         if (!lange && (jetzt - tutFokusZeit < 350 || !(drin && (ruht || tutLochAn)) && !(ruht && (tutFokusN >= 4 || fest)))) r = null;   // (erst ausrollen lassen; schon gezeigt und noch drin: kein Flackern)
     }
     if (r && (cityBusy || z.el && tutFaehrt(z.el))) r = null;   // Stadt blendet um, Fenster fährt noch ein: erst danach das Loch (ein Tipp genau aufs Ziel geht trotzdem durch, s. u.)
+    const innen = q => { const w = Math.min(q.r - q.l, W - 4), hh = Math.min(q.b - q.t, H - 4), l = Math.min(Math.max(2, q.l), W - 2 - w), t = Math.min(Math.max(2, q.t), H - 2 - hh); return { l, t, r: l + w, b: t + hh }; };
+    if (r) r = innen(r);                                         // Loch nie über den Bildrand: nach innen schieben (vor der Seitenwahl – so wie es gezeigt wird)
     if (r && lage === 'fenster' && deckt(r)) { const ob = bo.b + 2; if (z.rect && z.rect.top >= ob - 4) r.t = Math.max(r.t, ob); else r = null; }   // (Fenster rückt erst unter die Blase)
     if (r && jetzt - tutTippZeit < TUT_SPERRE) { r = null; tutBald(TUT_SPERRE + 20 - (jetzt - tutTippZeit)); }   // gerade getippt: das nächste Loch erst gleich (kein Doppeltipp hinein)
     if (!r && (cityBusy || z.el || z.fokus)) tutBald(80);
@@ -446,10 +448,6 @@ function tutZeigen() {
     if (r || !z.fokus) tutFokusAb = 0;
     tutZielEl = !r && z.el && !z.nurZeigen && !z.zeigNur && !cityBusy ? z.el : null;
     tutLochAn = !!r; if (r) tutLetzt = r;
-    if (r) {                                                     // Loch nie über den Bildrand: nach innen schieben
-        const w = Math.min(r.r - r.l, W - 4), hh = Math.min(r.b - r.t, H - 4);
-        const l = Math.min(Math.max(2, r.l), W - 2 - w), t = Math.min(Math.max(2, r.t), H - 2 - hh); r = { l, t, r: l + w, b: t + hh };
-    }
     if (r || z.weiter || z.nurZeigen) tutOhneSeit = jetzt;
     const not = !r && !z.weiter && !(z.warte && z.fort < 1) && jetzt - tutOhneSeit > 20000;   // hängt der Schritt ohne Ziel (nicht beim Warten mit Fortschritt): „Weiter“ als Notausgang
     const ok = !!(z.weiter || z.nurZeigen || not);

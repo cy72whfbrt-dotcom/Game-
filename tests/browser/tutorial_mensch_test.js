@@ -35,7 +35,7 @@ const pause = () => 600 + Math.round(zufall() * 900);
     const mess = () => {
       const t = $('tut'), aus = t.hidden || $('tutBerater').style.visibility === 'hidden' || !tutLaeuft() || !$('tutFrage').hidden || !!document.querySelector('#beuteFenster:not([hidden])');
       const o = aus ? { aus: 1 } : { s: tut.s, k: (TUT[tut.s] || {}).k, teil: $('tutZaehler').hidden ? '' : $('tutZaehler').dataset.teil || '', lage: lage(), satz: $('tutSatz').textContent,
-        py: Math.round($('tutSatz').getBoundingClientRect().top), bh: Math.round(document.querySelector('.tut-blase').getBoundingClientRect().height), ob: $('tutBerater').classList.contains('oben'), blase: box(document.querySelector('.tut-blase')), loch: $('tutLoch').hidden ? null : box($('tutLoch')), weiter: !$('tutWeiter').hidden,
+        py: Math.round($('tutSatz').getBoundingClientRect().top), bh: Math.round(document.querySelector('.tut-blase').getBoundingClientRect().height), ob: $('tutBerater').classList.contains('oben'), blase: box(document.querySelector('.tut-blase')), berater: box($('tutBerater')), loch: $('tutLoch').hidden ? null : box($('tutLoch')), weiter: !$('tutWeiter').hidden,
         fenster: [...document.querySelectorAll('.panel')].filter(isPanelOpen).map(x => { const k = x.querySelector('.phead'), q = x.getBoundingClientRect(), qk = k && k.getBoundingClientRect();
           return [Math.round(q.left), Math.round(Math.max(q.top, qk ? qk.bottom : q.top)), Math.round(q.right), Math.round(q.bottom)]; })[0] || null };
       const j = JSON.stringify(o); if (j !== alt) { alt = j; M.log.push({ t: performance.now(), ...o }); }
@@ -121,8 +121,8 @@ const pause = () => 600 + Math.round(zufall() * 900);
     g = { key, py: x.py }; }
   ok(!spr.length, 'Satz bleibt in jedem Schritt an seinem Platz (Blase springt nicht zwischen oben/unten/Mitte, Text hüpft nicht)', { n: spr.length, bsp: spr.slice(0, 8) });
   const deckt = (a, q) => a && q && a[0] < q[2] && q[0] < a[2] && a[1] < q[3] && q[1] < a[3];
-  const ueber = L.filter(x => !x.aus && x.loch && dauer(x) > 300 && deckt(x.blase, x.loch)).map(x => ({ k: x.k, teil: x.teil, blase: x.blase, loch: x.loch }));
-  ok(!ueber.length, 'Blase liegt nie über dem Loch', ueber.slice(0, 6));
+  const ueber = L.filter(x => !x.aus && x.loch && dauer(x) > 300 && deckt(x.berater, x.loch)).map(x => ({ k: x.k, teil: x.teil, berater: x.berater, loch: x.loch }));
+  ok(!ueber.length, 'Blase (mit Aldric-Bild) liegt nie über dem Loch', ueber.slice(0, 6));
   const mitten = L.filter(x => !x.aus && x.fenster && /^fenster:/.test(x.lage) && dauer(x) > 400 && x.blase[1] > x.fenster[1] + 30 && x.blase[3] < x.fenster[3] - 30 && x.blase[0] < x.fenster[2] && x.fenster[0] < x.blase[2])
     .map(x => ({ k: x.k, teil: x.teil, lage: x.lage, blase: x.blase, fenster: x.fenster }));
   ok(!mitten.length, 'Blase nie mitten im offenen Fenster (über dessen Inhalt)', mitten.slice(0, 6));
