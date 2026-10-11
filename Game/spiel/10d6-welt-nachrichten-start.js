@@ -16,6 +16,21 @@
         updateHud(); saveGame(); saveProgression();
     });
 
+    // Korrektur vom Weltrechner (10d2 korrSenden): was das Handy länger mehr zeigte, als möglich ist, kommt weg – Münzen, Gems,
+    // Rohstoffe, Event-Münzen, Schlüssel, Beschleuniger (die größten zuerst), Stufe höchstens die aus den EP
+    WELT.beiNachricht.push(function (e) {
+        if (!e || e.art !== 'korrektur') return;
+        const minus = v => Number.isFinite(v) && v < 0 ? v : 0;
+        coins = Math.max(0, coins + minus(e.coins)); gems = Math.max(0, gems + minus(e.gems));
+        if (e.res && AUF) { const r = {}; for (const k of ['h', 's', 'e']) r[k] = minus(e.res[k]); AUF.rohDazu('player', r); }
+        if (e.gg) { const g = e.gg; eventMuenzen = Math.max(0, eventMuenzen + minus(g.em)); schluessel1 = Math.max(0, schluessel1 + minus(g.s1)); schluessel2 = Math.max(0, schluessel2 + minus(g.s2));
+            let r = -minus(g.bm); for (const d of BESCH_DAUERN.slice().reverse()) { const n = Math.min(besch[d] || 0, Math.floor(r / BESCH_MIN[d])); besch[d] = (besch[d] || 0) - n; r -= n * BESCH_MIN[d]; }
+            const rest = r > 0 && BESCH_DAUERN.find(d => besch[d] > 0 && BESCH_MIN[d] >= r); if (rest) besch[rest]--;   // (der Rest: der kleinste, der reicht – das bisschen mehr zählt im Hauptbuch als benutzt)
+            gegenstSpeichern(); }
+        if (Number.isInteger(e.lvl) && e.lvl >= 1 && playerLvl > e.lvl) { playerLvl = e.lvl; playerXp = Math.min(playerXp, xpNeededForLevel(e.lvl) - 1); }
+        updateHud(); saveGame(); saveProgression();
+    });
+
     // Kampfbericht an einen anderen echten Spieler (vom Weltrechner): Kennungen neutral, er rechnet sie für sich um
     WELT.bericht = function (an, eintrag, hint) {
         if (!an || !botById[an] || !botById[an].mensch) return;

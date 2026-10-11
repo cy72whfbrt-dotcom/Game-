@@ -88,7 +88,7 @@
     }
     function hbNeu(who, now, p, frisch) {
         const hb = { v: HB_V, t0: frisch ? now : 0, st: {}, fo: {}, foT: frisch ? now : 0, tb: 1, gear: {}, kN: 0, kG: 0, hs: hbHeldenStart(), shB: 0,
-            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 100, k: 1, kg: 0, sh: 0, schild: 0, bm: 2, s1: 2, r: hbTutRoh() }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
+            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, gg: frisch ? { em: 0, s1: 0, s2: 0, bm: 0 } : undefined, fr: { g: 100, k: 1, kg: 0, sh: 0, schild: 0, bm: 2, s1: 2, r: hbTutRoh() }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
             schild: 0, w: {}, sp: [] };                // (fr am Anfang: das Tutorial gibt einmal 100 Gems + 1 Kiste, 2 Beschleuniger-Minuten, 2 Schlüssel, Rohstoffe für die erste Forschung – 10c2)
         for (const id of hbBauten()) hb.st[id] = [id === 'keep' ? 1 : 0, hb.t0];
         for (const s of HB_SLOTS) hb.gear[s] = [];
@@ -152,8 +152,8 @@
     const HB_G_JE_BM = Math.min(...BESCH_DAUERN.map(d => BESCH_PREIS[d][0] / BESCH_MIN[d]));   // Gems je Beschleuniger-Minute (bester Shop-Preis)
     const HB_GG = { em: 0, s1: SCHLUESSEL_PREIS[1][0], s2: SCHLUESSEL_PREIS[2][0], bm: HB_G_JE_BM }, HB_GG_NAME = { em: 'Event-Münzen', s1: 'Schlüssel', s2: 'Epische Schlüssel', bm: 'Beschleuniger-Minuten' };
     function hbGegenst(who, hb, p, m, now) {
-        const q = p && p.gg; if (!q || typeof q !== 'object') return;
-        const gg = hb.gg; if (!gg) { hb.gg = { em: nn(q.em), s1: nn(q.s1), s2: nn(q.s2), bm: nn(q.bm) }; return; }   // erstes Mal: gilt, was er hat
+        const q = p && p.gg; if (!q || typeof q !== 'object') { if (!hb.gg && p && p.gg === null) hb.gg = { em: 0, s1: 0, s2: 0, bm: 0 }; return; }   // (null: er hatte noch nie einen Gegenstand – vorher galt dann sein nächstes Profil, auch erfundene 500 Schlüssel)
+        const gg = hb.gg; if (!gg) { hb.gg = { em: nn(q.em), s1: nn(q.s1), s2: nn(q.s2), bm: nn(q.bm) }; return; }   // erstes Mal (Spielstand von vor dem Hauptbuch): gilt, was er hat
         const ein = hb.ggIn || (hb.ggIn = {}), f = hb.fr, heldSh = c => (HERO_CHESTS.find(x => x.id === c) || { sh: 0 }).sh;
         for (const k in HB_GG) {
             const d = nn(q[k]) - nn(gg[k]); if (!(d < 0)) continue; const n = -d; gg[k] = nn(q[k]);
@@ -166,7 +166,8 @@
             let d = nn(q[k]) - nn(gg[k]); if (!(d > 0)) { hbGut(hb, 'gg:' + k); continue; } const roh = d;
             for (const t of [ein, f]) { const x = Math.min(d, nn(t[k])); t[k] = nn(t[k]) - x; d -= x; }
             if (d > 0 && HB_GG[k] > 0 && hbZahlen(who, hb, m, { g: d * HB_GG[k] })) d = 0;
-            if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d); }
+            if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d);
+                if (hb.w['gg:' + k] === -1) { hb.w['gg:' + k] = -2; korrSenden(who, m, { gg: { [k]: -Math.floor(d) } }, now); } }   // (nach 2 Min. gemeldet: sein Handy bekommt einmal die Korrektur – 10d2)
             else { gg[k] = nn(q[k]); hbGut(hb, 'gg:' + k); }
         }
     }
@@ -261,10 +262,12 @@
         hbFreiDazu(who, hb, now);
         hbGegenst(who, hb, p, m, now);                 // (vor den Bauten: benutzte Beschleuniger kürzen deren Bauzeit)
         const pl = (p.city && p.city.levels) || {}, will = id => Math.min(hbMax(id), Math.floor(nn(pl[id])));
+        if (p.city && p.city.b2 && !hb.b2) {           // zweiter Bauarbeiter: nur gekauft (CITY_BUILDER2_GEMS) – vorher genügte das Profil (zwei Bauten gleichzeitig gratis)
+            if (hbZahlen(who, hb, m, { g: CITY_BUILDER2_GEMS })) { hb.b2 = 1; hbGut(hb, 'b2'); }
+            else hbWarte(who, hb, 'b2', now, 'Zweiter Bauarbeiter ohne die ' + CITY_BUILDER2_GEMS + ' Gems – es baut weiter nur einer.', CITY_BUILDER2_GEMS); }
         for (let runde = 0, weiter = true; weiter && runde < 80; runde++) { weiter = false;
             for (const id of hbBauten()) if (will(id) > hb.st[id][0] && hbStadtSchritt(who, hb, m, id, now) === 'ok') weiter = true; }
         if (p.city && Array.isArray(p.city.bau)) {                    // (neue Handys schicken mit, was gerade gebaut wird)
-            if (p.city.b2) hb.b2 = 1;
             const lauf = p.city.bau.slice(0, hb.b2 ? 2 : 1), ruhe = hb.ruhe || (hb.ruhe = {});
             for (const id of hbBauten()) if (!lauf.includes(id) && will(id) <= hb.st[id][0]) ruhe[id] = now;   // frei und nichts offen: ein neuer Bau beginnt frühestens jetzt
             if (!p.city.foLauf && AUF && AUF.FORSCHUNG.every(d => Math.min(d.max, Math.floor(nn((p.fo || {})[d.id]))) <= (hb.fo[d.id] | 0))) hb.foRuhe = now;

@@ -14105,7 +14105,7 @@ $t('tutJa').addEventListener('click', () => {
     flashHint('Tutorial übersprungen – jetzt siehst du alles.', 3500); setTimeout(maybeShowDaily, 1500);
 });
 $t('tutNochmal').addEventListener('click', () => {               // Profil → Einstellungen: von vorn (ohne Geschenke und Belohnung; Gebautes zählt gleich als erledigt)
-    tut = { s: 0, frei: [], g: { b: 1, k: 1 }, t0: Date.now(), neu: true, w: 1, belohnt: true, nochmal: true }; tutFreiAlt = null; tutFrage = false;
+    tut = { s: 0, frei: [], g: { b: 1, k: 1, f: 1 }, t0: Date.now(), neu: true, w: 1, belohnt: true, nochmal: true }; tutFreiAlt = null; tutFrage = false;   // (alle Geschenke schon gegeben – auch die Rohstoffe für die erste Forschung)
     for (const k of Object.keys(tutTat)) delete tutTat[k];
     if (tutUhr) { clearInterval(tutUhr); tutUhr = 0; }
     closeAllPopups(); tutStarten();
@@ -14382,6 +14382,24 @@ if (window.WELT) {
         if (pw < lo) { k.vor = (now - k.vorT < WACHE_WARTEN_MS ? k.vor : 0) + (lo - pw); k.vorT = now; k.u = pw + flugPlus; }
         return 0;                                       // dazwischen: unklar, wie viel unterwegs schon drin ist – das Konto bleibt
     }
+    // Korrektur (Alexander 11.10.: „gehackte Münzen dürfen im echten Spiel nicht bleiben“): zeigt sein Handy über mehrere Profile
+    // länger als KORR_MS mehr Münzen, Gems, Rohstoffe oder eine höhere Stufe, als möglich ist, schickt der Weltrechner eine Nachricht
+    // „korrektur“ (coins/gems/res: −zu viel, lvl: höchstens) – sein Handy zieht es ab und speichert. Kurze Sprünge (Nachricht
+    // unterwegs, ein Puls später bezahlt) sind vorher wieder weg – ehrliche Spieler merken nichts. Bis sein Handy die Korrektur
+    // verbucht hat, zählt sie als unterwegs (m.flug M): das Konto bleibt beim Möglichen, keine zweite Warnung.
+    const KORR_MS = 120000;
+    function korrFaellig(m, k, zuviel, now) {
+        const z = m.korr || (m.korr = {});
+        if (!(zuviel >= 1)) { delete z[k]; return false; }
+        if (!z[k]) { z[k] = now; return false; }
+        if (now - z[k] < KORR_MS) return false;
+        delete z[k]; return true;
+    }
+    function korrSenden(who, m, e, now) {
+        const M = {}; if (e.coins) M.c = -e.coins; if (e.gems) M.g = -e.gems; for (const k in e.res || {}) M[k] = -e.res[k];
+        if (Object.keys(M).length) m.flug.push({ t: now, n: 0, P: {}, M });
+        WELT.nachricht(parseInt(String(who).slice(1), 10), Object.assign({ art: 'korrektur' }, e));
+    }
     // Ausgegebene Gems für den Kisten-Beleg sammeln (unter Last kommen sie in mehreren Profilen), verfallen nach KISTE_FRIST
     function gAusMerken(m, now) {
         if (m.g.vor > 0) { m.gAus = (now - nn(m.gAusT) < KISTE_FRIST ? nn(m.gAus) : 0) + m.g.vor; m.gAusT = now; }
@@ -14402,6 +14420,7 @@ if (window.WELT) {
         while (m.rsr.length && now - m.rsr[0].t > 3600000) m.rsr.shift();
         let lim = 0, preis = 0; try { lim = AUF ? AUF.marktLimit(who) / AUF.MARKT_WERT : 0; preis = lim ? AUF.MARKT_WERT * (1 + AUF.marktGebuehr(AUF.marktStufe(who))) : 0; } catch (e) {}
         const d = wd(who), heute = todayKey(); if (d && (!d.rm || d.rm.t !== heute)) d.rm = { t: heute, n: 0 };   // Markt-Käufe heute (alle drei Rohstoffe zusammen, wie am Handy – überlebt Neustarts)
+        const zuviel = {};
         for (const k of ROHK) {
             const pr = nn(p.res[k]), kk = m.rk[k]; let mehr = kontoProfil(kk, pr, P[k] || 0, M[k] || 0, now);
             if (kk.vor > 0) { if (hb) hb.rA[k] = nn(hb.rA[k]) + kk.vor; kk.vor = 0; }      // ausgegeben → Topf
@@ -14413,8 +14432,10 @@ if (window.WELT) {
                 const markt = Math.min(mehr, Math.floor(lim - d.rm.n));
                 if (markt > 0 && hbZahlen(who, hb, m, { c: Math.ceil(markt * preis) })) { d.rm.n += markt; mehr -= markt; saveBotState(); } }
             if (mehr >= 1) { kk.u = pr - mehr; warnen(who, 'rohstoffe', AUF.ROH_DEF[k].name + ' springt: das Handy sagt ' + fz(pr) + ', möglich wären höchstens ' + fz(pr - mehr) + '.', mehr);
-                (m.rDeckel || (m.rDeckel = {}))[k] = pr - mehr; }   // (in der Welt nur, was möglich ist – hbKlemmen deckelt gleich – sonst holt ein anderer die erfundenen Rohstoffe als Beute)
+                (m.rDeckel || (m.rDeckel = {}))[k] = pr - mehr; zuviel[k] = mehr; }   // (in der Welt nur, was möglich ist – hbKlemmen deckelt gleich – sonst holt ein anderer die erfundenen Rohstoffe als Beute)
         }
+        let korr = null; for (const k of ROHK) if (korrFaellig(m, 'r' + k, zuviel[k] || 0, now)) (korr || (korr = {}))[k] = -Math.floor(zuviel[k]);
+        if (korr) korrSenden(who, m, { res: korr }, now);
     }
     // Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → Topf hb.cA (bezahlt Bauen/Forschen im Hauptbuch)
     function vorAltern(who, m, now) { if (m.c.vor > 0 && now - m.c.vorT > WACHE_WARTEN_MS) { const hb = hbDa(who); if (hb) hb.cA = nn(hb.cA) + m.c.vor; m.c.vor = 0; } }
@@ -14466,6 +14487,7 @@ if (window.WELT) {
             m.prof = p;
             const pl = Math.max(1, Math.floor(nn(p.lvl) || 1));
             if (pl > m.lvl + 1) warnen(who, 'stufe', 'Stufe springt: das Handy sagt Stufe ' + pl + ', mit seinen EP geht höchstens Stufe ' + m.lvl + '.', pl - m.lvl);
+            const kz = {}; if (korrFaellig(m, 'lvl', pl > m.lvl + 1 ? 1 : 0, now)) kz.lvl = m.lvl;
             // (3B: die Stufe kommt nur aus den EP, die der Weltrechner schickt – sein Balken gilt beim ersten Sehen als voll,
             //  darum ist m.lvl nie kleiner als die echte Stufe; ein Profil hebt sie nicht mehr an)
             m.lvlLog.push({ t: now, l: Math.min(pl, m.lvl) }); while (m.lvlLog.length > 1 && now - m.lvlLog[0].t > 3600000) m.lvlLog.shift();
@@ -14473,15 +14495,16 @@ if (window.WELT) {
             const cP = P.c || 0, cM = M.c || 0, wP = P.w || 0, wM = M.w || 0;
             // Münzen: mehr als möglich → erst ein Admin-Geschenk (sicher bekannt), dann der Spielraum, der Rest ist auffällig
             vorAltern(who, m, now);
-            const pc = nn(p.coins); let mehr = kontoProfil(m.c, pc, cP, cM, now);
+            const pc = nn(p.coins); let mehr = kontoProfil(m.c, pc, cP, cM, now), cz = 0;
             if (mehr > 0) {
                 const roh = mehr;
                 if (d.gC > 0) { const g = Math.min(d.gC, mehr); d.gC -= g; mehr -= g; saveBotState(); }
                 const nimm = Math.min(mehr, spielraumFrei(who, m)); spielraumNehmen(who, m, nimm); mehr -= nimm;
                 if (mehr > 0) mehr -= muenzGutscheine(who, mehr, d);   // Saison-Pass und Thron-Shop zahlen Münzen auf einmal aus (z. B. „Alle abholen“)
                 m.c.u = pc - mehr;
-                if (mehr >= 1) warnen(who, 'muenzen', 'Münzen springen: +' + fz(roh) + ' mehr als erwartet, möglich wären höchstens +' + fz(roh - mehr) + '.', mehr);
+                if (mehr >= 1) { warnen(who, 'muenzen', 'Münzen springen: +' + fz(roh) + ' mehr als erwartet, möglich wären höchstens +' + fz(roh - mehr) + '.', mehr); cz = mehr; }
             }
+            if (korrFaellig(m, 'c', cz, now)) kz.coins = -Math.floor(cz);
             // Verwundete (entstehen nur in Kämpfen, die der Weltrechner rechnet)
             const pw = nn(p.wounded), ew = m.w.u, wm2 = kontoProfil(m.w, pw, wP, wM, now);
             if (wm2 > 0) { m.w.u = ew;                  // mehr als möglich zählt NIE (vorher blieben bis 5 % je Profil stehen – das summierte sich)
@@ -14495,14 +14518,17 @@ if (window.WELT) {
                 gAusMerken(m, now); hbBelegGems(who, hb, m, now);   // (ausgegebene Gems – Beleg für eine Heldenkiste)
                 if (m.g.vor > 0) { hb.gA = nn(hb.gA) + m.g.vor; m.g.vor = 0; }
                 if (p.stW != null) hbSterne(who, hb, m, nn(p.stW));   // Sterne gekauft/verkauft (vor dem Prüfen der Gems: eine Rückgabe ist dann schon gedeckt)
+                let gz = 0;
                 if (mg > 0) {
                     const roh = mg;
                     for (const q of ['gIn', 'sternG']) { const x = Math.min(mg, nn(hb[q])); hb[q] = nn(hb[q]) - x; mg -= x; }
                     mg -= hbSplitterGems(hb, p, mg);
                     { const x = Math.min(mg, nn(hb.fr.g)); hb.fr.g -= x; mg -= x; }
-                    if (mg >= 1) { m.g.u = pg - mg; warnen(who, 'gems', 'Gems springen: +' + fz(roh) + ' mehr als erwartet, möglich wären höchstens +' + fz(roh - mg) + '.', mg); }
+                    if (mg >= 1) { m.g.u = pg - mg; warnen(who, 'gems', 'Gems springen: +' + fz(roh) + ' mehr als erwartet, möglich wären höchstens +' + fz(roh - mg) + '.', mg); gz = mg; }
                 }
+                if (korrFaellig(m, 'g', gz, now)) kz.gems = -Math.floor(gz);
             }
+            if (Object.keys(kz).length) korrSenden(who, m, kz, now);
             rohWacheProfil(who, m, p, P, M, now);
         }
         if (m.geeicht) { d.u = Math.round(m.c.u); d.w = Math.round(m.w.u); flugMerken(d, m); }   // für den nächsten Start merken (geht mit der Welt mit)
@@ -14713,7 +14739,7 @@ if (window.WELT) {
     }
     function hbNeu(who, now, p, frisch) {
         const hb = { v: HB_V, t0: frisch ? now : 0, st: {}, fo: {}, foT: frisch ? now : 0, tb: 1, gear: {}, kN: 0, kG: 0, hs: hbHeldenStart(), shB: 0,
-            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 100, k: 1, kg: 0, sh: 0, schild: 0, bm: 2, s1: 2, r: hbTutRoh() }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
+            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, gg: frisch ? { em: 0, s1: 0, s2: 0, bm: 0 } : undefined, fr: { g: 100, k: 1, kg: 0, sh: 0, schild: 0, bm: 2, s1: 2, r: hbTutRoh() }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
             schild: 0, w: {}, sp: [] };                // (fr am Anfang: das Tutorial gibt einmal 100 Gems + 1 Kiste, 2 Beschleuniger-Minuten, 2 Schlüssel, Rohstoffe für die erste Forschung – 10c2)
         for (const id of hbBauten()) hb.st[id] = [id === 'keep' ? 1 : 0, hb.t0];
         for (const s of HB_SLOTS) hb.gear[s] = [];
@@ -14777,8 +14803,8 @@ if (window.WELT) {
     const HB_G_JE_BM = Math.min(...BESCH_DAUERN.map(d => BESCH_PREIS[d][0] / BESCH_MIN[d]));   // Gems je Beschleuniger-Minute (bester Shop-Preis)
     const HB_GG = { em: 0, s1: SCHLUESSEL_PREIS[1][0], s2: SCHLUESSEL_PREIS[2][0], bm: HB_G_JE_BM }, HB_GG_NAME = { em: 'Event-Münzen', s1: 'Schlüssel', s2: 'Epische Schlüssel', bm: 'Beschleuniger-Minuten' };
     function hbGegenst(who, hb, p, m, now) {
-        const q = p && p.gg; if (!q || typeof q !== 'object') return;
-        const gg = hb.gg; if (!gg) { hb.gg = { em: nn(q.em), s1: nn(q.s1), s2: nn(q.s2), bm: nn(q.bm) }; return; }   // erstes Mal: gilt, was er hat
+        const q = p && p.gg; if (!q || typeof q !== 'object') { if (!hb.gg && p && p.gg === null) hb.gg = { em: 0, s1: 0, s2: 0, bm: 0 }; return; }   // (null: er hatte noch nie einen Gegenstand – vorher galt dann sein nächstes Profil, auch erfundene 500 Schlüssel)
+        const gg = hb.gg; if (!gg) { hb.gg = { em: nn(q.em), s1: nn(q.s1), s2: nn(q.s2), bm: nn(q.bm) }; return; }   // erstes Mal (Spielstand von vor dem Hauptbuch): gilt, was er hat
         const ein = hb.ggIn || (hb.ggIn = {}), f = hb.fr, heldSh = c => (HERO_CHESTS.find(x => x.id === c) || { sh: 0 }).sh;
         for (const k in HB_GG) {
             const d = nn(q[k]) - nn(gg[k]); if (!(d < 0)) continue; const n = -d; gg[k] = nn(q[k]);
@@ -14791,7 +14817,8 @@ if (window.WELT) {
             let d = nn(q[k]) - nn(gg[k]); if (!(d > 0)) { hbGut(hb, 'gg:' + k); continue; } const roh = d;
             for (const t of [ein, f]) { const x = Math.min(d, nn(t[k])); t[k] = nn(t[k]) - x; d -= x; }
             if (d > 0 && HB_GG[k] > 0 && hbZahlen(who, hb, m, { g: d * HB_GG[k] })) d = 0;
-            if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d); }
+            if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d);
+                if (hb.w['gg:' + k] === -1) { hb.w['gg:' + k] = -2; korrSenden(who, m, { gg: { [k]: -Math.floor(d) } }, now); } }   // (nach 2 Min. gemeldet: sein Handy bekommt einmal die Korrektur – 10d2)
             else { gg[k] = nn(q[k]); hbGut(hb, 'gg:' + k); }
         }
     }
@@ -14886,10 +14913,12 @@ if (window.WELT) {
         hbFreiDazu(who, hb, now);
         hbGegenst(who, hb, p, m, now);                 // (vor den Bauten: benutzte Beschleuniger kürzen deren Bauzeit)
         const pl = (p.city && p.city.levels) || {}, will = id => Math.min(hbMax(id), Math.floor(nn(pl[id])));
+        if (p.city && p.city.b2 && !hb.b2) {           // zweiter Bauarbeiter: nur gekauft (CITY_BUILDER2_GEMS) – vorher genügte das Profil (zwei Bauten gleichzeitig gratis)
+            if (hbZahlen(who, hb, m, { g: CITY_BUILDER2_GEMS })) { hb.b2 = 1; hbGut(hb, 'b2'); }
+            else hbWarte(who, hb, 'b2', now, 'Zweiter Bauarbeiter ohne die ' + CITY_BUILDER2_GEMS + ' Gems – es baut weiter nur einer.', CITY_BUILDER2_GEMS); }
         for (let runde = 0, weiter = true; weiter && runde < 80; runde++) { weiter = false;
             for (const id of hbBauten()) if (will(id) > hb.st[id][0] && hbStadtSchritt(who, hb, m, id, now) === 'ok') weiter = true; }
         if (p.city && Array.isArray(p.city.bau)) {                    // (neue Handys schicken mit, was gerade gebaut wird)
-            if (p.city.b2) hb.b2 = 1;
             const lauf = p.city.bau.slice(0, hb.b2 ? 2 : 1), ruhe = hb.ruhe || (hb.ruhe = {});
             for (const id of hbBauten()) if (!lauf.includes(id) && will(id) <= hb.st[id][0]) ruhe[id] = now;   // frei und nichts offen: ein neuer Bau beginnt frühestens jetzt
             if (!p.city.foLauf && AUF && AUF.FORSCHUNG.every(d => Math.min(d.max, Math.floor(nn((p.fo || {})[d.id]))) <= (hb.fo[d.id] | 0))) hb.foRuhe = now;
@@ -15479,6 +15508,21 @@ if (window.WELT) {
         if (e.sh) { const hs = loadHeroes(); for (const h in e.sh) if (hs[h]) hs[h].sh = Math.max(0, (hs[h].sh || 0) + e.sh[h]); saveHeroes(); }
         if (e.stats) for (const k in e.stats) if (STAT_NAMEN[k] && Number.isFinite(e.stats[k]) && e.stats[k] > 0 && e.stats[k] <= 1e6) { statBump(STAT_NAMEN[k], e.stats[k]); if (k === 'caps') questProgress('capture', e.stats[k]); }   // (Tagesaufgabe „Erobere …“ auch für echte Spieler)
         if (e.res && AUF) AUF.rohDazu('player', e.res);                          // Holz, Stein, Eisen (Produktion, Sammeln)
+        updateHud(); saveGame(); saveProgression();
+    });
+
+    // Korrektur vom Weltrechner (10d2 korrSenden): was das Handy länger mehr zeigte, als möglich ist, kommt weg – Münzen, Gems,
+    // Rohstoffe, Event-Münzen, Schlüssel, Beschleuniger (die größten zuerst), Stufe höchstens die aus den EP
+    WELT.beiNachricht.push(function (e) {
+        if (!e || e.art !== 'korrektur') return;
+        const minus = v => Number.isFinite(v) && v < 0 ? v : 0;
+        coins = Math.max(0, coins + minus(e.coins)); gems = Math.max(0, gems + minus(e.gems));
+        if (e.res && AUF) { const r = {}; for (const k of ['h', 's', 'e']) r[k] = minus(e.res[k]); AUF.rohDazu('player', r); }
+        if (e.gg) { const g = e.gg; eventMuenzen = Math.max(0, eventMuenzen + minus(g.em)); schluessel1 = Math.max(0, schluessel1 + minus(g.s1)); schluessel2 = Math.max(0, schluessel2 + minus(g.s2));
+            let r = -minus(g.bm); for (const d of BESCH_DAUERN.slice().reverse()) { const n = Math.min(besch[d] || 0, Math.floor(r / BESCH_MIN[d])); besch[d] = (besch[d] || 0) - n; r -= n * BESCH_MIN[d]; }
+            const rest = r > 0 && BESCH_DAUERN.find(d => besch[d] > 0 && BESCH_MIN[d] >= r); if (rest) besch[rest]--;   // (der Rest: der kleinste, der reicht – das bisschen mehr zählt im Hauptbuch als benutzt)
+            gegenstSpeichern(); }
+        if (Number.isInteger(e.lvl) && e.lvl >= 1 && playerLvl > e.lvl) { playerLvl = e.lvl; playerXp = Math.min(playerXp, xpNeededForLevel(e.lvl) - 1); }
         updateHud(); saveGame(); saveProgression();
     });
 

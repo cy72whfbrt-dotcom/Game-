@@ -561,7 +561,7 @@ $t('tutJa').addEventListener('click', () => {
     flashHint('Tutorial übersprungen – jetzt siehst du alles.', 3500); setTimeout(maybeShowDaily, 1500);
 });
 $t('tutNochmal').addEventListener('click', () => {               // Profil → Einstellungen: von vorn (ohne Geschenke und Belohnung; Gebautes zählt gleich als erledigt)
-    tut = { s: 0, frei: [], g: { b: 1, k: 1 }, t0: Date.now(), neu: true, w: 1, belohnt: true, nochmal: true }; tutFreiAlt = null; tutFrage = false;
+    tut = { s: 0, frei: [], g: { b: 1, k: 1, f: 1 }, t0: Date.now(), neu: true, w: 1, belohnt: true, nochmal: true }; tutFreiAlt = null; tutFrage = false;   // (alle Geschenke schon gegeben – auch die Rohstoffe für die erste Forschung)
     for (const k of Object.keys(tutTat)) delete tutTat[k];
     if (tutUhr) { clearInterval(tutUhr); tutUhr = 0; }
     closeAllPopups(); tutStarten();

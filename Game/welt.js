@@ -242,7 +242,8 @@
     function profilZuBot(p, alt, id) {
         const b = profilZuBotRoh(p, alt);
         if (SYSTEM && id && typeof W.klemmen === 'function') { try { W.klemmen(id, b, p || {}, alt); } catch (e) { console.warn('Hauptbuch:', e); } }
-        else if (alt && alt.hbK) { b.hbK = 1; for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles']) if (alt[k] !== undefined) b[k] = alt[k]; }
+        else if (alt && alt.hbK) { b.hbK = 1; for (const k of ['lvl', 'skills', 'gear', 'city', 'hs', 'shieldUntil', 'frames', 'titles']) if (alt[k] !== undefined) b[k] = alt[k];
+            if (alt.stats) b.stats = Object.assign(b.stats, { caps: alt.stats.caps || 0, tpEarned: alt.stats.tpEarned || 0 }); }   // (Rangliste: die Zahlen der Welt, nicht die seines Profils)
         return b;
     }
     function profilZuBotRoh(p, alt) {
@@ -268,8 +269,9 @@
         b.frames = Array.isArray(lk.frames) ? lk.frames.slice(0, 60) : lk.frame ? [lk.frame] : []; b.titles = Array.isArray(lk.titles) ? lk.titles.slice(0, 60) : lk.title ? [lk.title] : [];   // (altes Profil ohne Listen: der angelegte wie bisher; beim Weltrechner gegen das Hauptbuch geklemmt: hbRahmen)
         b.lookFrame = lk.frame || null;
         const st = p.stats || {};
-        b.stats = Object.assign({}, b.stats || {}, { caps: st.captures || 0, pvp: st.pvpWins || 0, defs: st.defends || 0, bosses: st.bosses || 0,
-            tpEarned: SYSTEM ? ((alt && alt.stats && alt.stats.tpEarned) || (b.stats && b.stats.tpEarned) || 0) : p.earned || 0 });   // (der Weltrechner zählt die Thron-Punkte selbst – nie, was das Handy behauptet)
+        const ws = (alt && alt.stats) || {};   // (Eroberungen und Thron-Punkte stehen in der Rangliste: der Weltrechner zählt sie selbst – nie, was das Handy behauptet)
+        b.stats = Object.assign({}, b.stats || {}, { caps: SYSTEM ? ws.caps || 0 : st.captures || 0, pvp: st.pvpWins || 0, defs: st.defends || 0, bosses: st.bosses || 0,
+            tpEarned: SYSTEM ? ws.tpEarned || 0 : p.earned || 0 });
         b.achLook = b.achLook || []; b.goals = b.goals || {};
         return b;
     }

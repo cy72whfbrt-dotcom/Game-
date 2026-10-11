@@ -23,6 +23,8 @@
 #   kiste_test (7,5) Bündnis-Kiste: Geschenk nur bei echter Heldenkiste
 #   verst_test (5,5) Verstärkung über Server + Weltrechner (hin, sichtbar nur fürs Bündnis, zurück)
 #   schummel_test (11) verändertes Handy: Münzen/Holz erfinden, Gebäude ohne Bauzeit – nichts davon in der Welt
+#   hacker_test (8) Hacker in der Konsole: alle Werte, gefälschte/doppelte Befehle, Bauarbeiter, Tutorial mehrmals – Welt sauber,
+#                   sein Handy nach ~2 Min. zurückgesetzt (Korrektur), ein ehrlicher Spieler ohne Hinweise
 #   klick_test (7,5) neuer Spieler: alle Fenster/Knöpfe, Angriff, Bau, neu laden, keine Schummel-Hinweise
 # Gruppen: nach tests/zeiten.txt verteilt (längster Test zuerst in die bisher kürzeste Gruppe → ungefähr gleich lang);
 #   nach jedem grünen Test wird seine Dauer dort aktualisiert (fehlt eine Zeit: Schätzung ZEIT_SCHAETZUNG unten).
@@ -48,19 +50,19 @@ A="${1:?Aufruf: tests/server_tests.sh <arbeitsordner> [test …]}"; A=$(cd "$A" 
 
 # Tabelle BETROFFEN: Datei-Muster (wie bei case, Pfad ab Projekt-Ordner) → Server-Tests, die davon abhängen
 BETROFFEN=(
-  "Game/server.php|Game/server/*|Game/speichern.js            → klick_test admin_test absturz_test schummel_test"
+  "Game/server.php|Game/server/*|Game/speichern.js            → klick_test admin_test absturz_test schummel_test hacker_test"
   "Game/admin.php|Game/index.php                              → admin_test absturz_test"
   "Game/spiel.php|Game/spielseite/*|Game/skript.php|werkzeuge/verkleinern.js|werkzeuge/terser.js|Game/ladebildschirm.js|Game/aufbau.js|Game/haendler.js|Game/sw.js|Game/app/* → klick_test"
-  "Game/welt.js                                               → klick_test verst_test armee_test schummel_test"
-  "Game/weltrechner/*                                         → absturz_test schummel_test verst_test kiste_test armee_test"
+  "Game/welt.js                                               → klick_test verst_test armee_test schummel_test hacker_test"
+  "Game/weltrechner/*                                         → absturz_test schummel_test verst_test kiste_test armee_test hacker_test"
   "Game/buendnis/*|Game/buendnis.js                           → verst_test kiste_test klick_test"
   "Game/bots/*|Game/bots.js                                   → armee_test verst_test klick_test"
-  "Game/spiel/10d*                                            → schummel_test absturz_test verst_test kiste_test"
+  "Game/spiel/10d*|Game/spiel/10c2*                           → schummel_test absturz_test verst_test kiste_test hacker_test"
   "Game/spiel/09f*|*saison*                                   → admin_test absturz_test"
   "Game/spiel/05b*                                            → kiste_test"
   "Game/spiel/01e*|Game/spiel/06e*|Game/spiel/09d*            → armee_test"
   "Game/spiel/*|Game/spiel.js                                 → klick_test"
-  "tests/server/gemeinsam.js|tests/server_tests.sh|werkzeuge/server_starten.sh → absturz_test admin_test armee_test kiste_test verst_test schummel_test klick_test"
+  "tests/server/gemeinsam.js|tests/server_tests.sh|werkzeuge/server_starten.sh → absturz_test admin_test armee_test kiste_test verst_test schummel_test hacker_test klick_test"
   "tests/server/geschenk.sh                                   → kiste_test verst_test klick_test"
 )
 if [ "$1" = betroffen ]; then
@@ -80,15 +82,15 @@ if [ "$1" = betroffen ]; then
     done
   done
   set --
-  for t in klick_test verst_test absturz_test armee_test kiste_test admin_test schummel_test; do [[ "$WAHL" == *" $t "* ]] && set -- "$@" "$t"; done
+  for t in klick_test verst_test absturz_test armee_test kiste_test admin_test schummel_test hacker_test; do [[ "$WAHL" == *" $t "* ]] && set -- "$@" "$t"; done
   echo "== $(echo $DATEIEN | wc -w) Dateien ($BEREICH + ohne Commit) → Tests ${*:-keine}"
   [ $# = 0 ] && { echo "keine betroffenen Server-Tests"; exit 0; }
   BETR_AUSWAHL="$*"; set --
 fi
 
 # Gruppen nach Dauer verteilen (Sekunden aus tests/zeiten.txt, sonst Schätzung): längster zuerst in die kürzeste Gruppe
-ALLE_TESTS="klick_test verst_test absturz_test armee_test kiste_test admin_test schummel_test"
-declare -A ZEIT_SCHAETZUNG=([klick_test]=300 [verst_test]=240 [absturz_test]=60 [armee_test]=60 [kiste_test]=240 [admin_test]=30 [schummel_test]=660)
+ALLE_TESTS="klick_test verst_test absturz_test armee_test kiste_test admin_test schummel_test hacker_test"
+declare -A ZEIT_SCHAETZUNG=([klick_test]=300 [verst_test]=240 [absturz_test]=60 [armee_test]=60 [kiste_test]=240 [admin_test]=30 [schummel_test]=660 [hacker_test]=480)
 declare -A ZEIT
 for t in $ALLE_TESTS; do ZEIT[$t]=${ZEIT_SCHAETZUNG[$t]}; done
 while read -r t s; do [[ "$t" == *_test && "$s" =~ ^[0-9]+$ ]] && ZEIT[$t]=$s; done < <(grep -v '^#' "$G/tests/zeiten.txt" 2>/dev/null)
@@ -103,7 +105,7 @@ verteilen() {   # $1 = Zahl der Gruppen, danach die Tests → GRUPPEN
   GRUPPEN_SEK=("${SUM[@]}")
 }
 if [ $# -gt 0 ]; then GRUPPEN=("$*"); GRUPPEN_SEK=()
-elif [ "${OW_TEST_GRUPPEN:-3}" = 1 ]; then GRUPPEN=("absturz_test admin_test armee_test kiste_test verst_test schummel_test klick_test"); GRUPPEN_SEK=()
+elif [ "${OW_TEST_GRUPPEN:-3}" = 1 ]; then GRUPPEN=("absturz_test admin_test armee_test kiste_test verst_test schummel_test hacker_test klick_test"); GRUPPEN_SEK=()
 else verteilen "${OW_TEST_GRUPPEN:-3}" ${BETR_AUSWAHL:-$ALLE_TESTS}; fi
 if [ -n "$OW_TROCKEN" ]; then
   for i in "${!GRUPPEN[@]}"; do echo "Gruppe $((i + 1)): ${GRUPPEN[i]}${GRUPPEN_SEK[i]:+ (≈ $((GRUPPEN_SEK[i] / 60)):$(printf %02d $((GRUPPEN_SEK[i] % 60))) Min.)}"; done

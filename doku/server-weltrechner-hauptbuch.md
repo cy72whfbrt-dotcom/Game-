@@ -58,7 +58,8 @@ schicken Befehle. Wichtigste Dateien: `Game/server/` (7 Teile → `server.php`: 
 - Rohstoff-Deckel für das ganze Profil (`m.rDeckelP`), Münz-Spielraum (`spielraumTeile`), Markt (`wache.rm`), Funde ≤ 300
   Truppen-Funde/Tag (`wache.fund`), Thron-Kisten `hb.thK`, Bündnis-Kiste `hb.kaufG`, Stern-Edelsteine `stW`.
 - Nach Zurückspielen gleicht der Weltrechner das Hauptbuch einmal je Spieler an (`ow_welt_info.zurueck`).
-- Schummel-Verdacht: ab 5 Auffälligkeiten/Std. eine Push an die Admin-Konten – nie automatisch bremsen.
+- Schummel-Verdacht: ab 5 Auffälligkeiten/Std. eine Push an die Admin-Konten – nie automatisch bremsen. Was das Handy über 2 Min.
+  zu viel zeigt (Münzen, Gems, Rohstoffe, Stufe, Gegenstände), setzt die Nachricht `korrektur` zurück (`sicherheit-schummel.md`).
 
 ## Push (Web-Push)
 - `weltrechner/push.js`, Service-Worker `Game/sw.js` nur für Push (einzige Browser-Ausnahme, Alexander erlaubt). Nur wenn man

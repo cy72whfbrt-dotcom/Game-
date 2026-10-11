@@ -47,6 +47,15 @@ Login, Datenlecks, Server-Filter und was der Weltrechner gegen gefälschte Handy
   Hauptbuch (`hbEvShop`, Profil `evs`) – darüber wird nicht bezahlt und gemeldet.
 - Rally-Warnung/Einladung/Beitritts-Anfrage/Bündnis-Einladung an dieselbe Person höchstens alle 10 Min.
 - Abgelehntes erscheint als „Auffälligkeit“ auf der Admin-Seite (`weltrechner/schummel.php`, höchstens 20 je Spieler).
-- Bewusst offen: das Handy rechnet weiter selbst (Weltrechner prüft Plausibilität); mehrere Gebäude gleichzeitig auf einem
-  gefälschten Handy (voll bezahlt); Armeen/Felder im Nebel stehen noch in den Daten.
-- Tests: `tests/server/schummel_test.js`, `php tests/server_test.php`, `fremd_test`.
+- Korrektur (11.10.): zeigt ein Handy über 2 Min. (mehrere Profile) mehr Münzen, Gems, Holz/Stein/Eisen oder eine höhere Stufe,
+  als möglich ist, schickt der Weltrechner die Nachricht `korrektur` (10d2 `korrFaellig`/`korrSenden`, Handy 10d6) – das Handy
+  zieht das Zuviel ab und speichert (auch beim Server weg). Dasselbe für Schlüssel, Beschleuniger, Event-Münzen, sobald das
+  Hauptbuch sie meldet (`hbGegenst`). Bis das Handy sie verbucht hat, zählt sie als unterwegs (`m.flug`): keine zweite Warnung.
+  Gebäude, Forschung, Ausrüstung, Fähigkeiten, Rahmen setzt das Handy nicht zurück (Welt nimmt nur das Hauptbuch).
+- Zweiter Bauarbeiter zählt im Hauptbuch nur bezahlt (`hb.b2`, 500 Gems) – vorher genügte das Profil. Wer noch nie einen
+  Gegenstand hatte (Profil `gg` null), startet im Hauptbuch bei 0 (vorher galt sein nächstes Profil, auch erfundene Schlüssel).
+- Rangliste: Eroberungen und Thron-Punkte zählt der Weltrechner selbst (welt.js `profilZuBotRoh`), andere Handys nehmen die der
+  Welt (`hbK`) – nie, was das Profil behauptet.
+- Bewusst offen: das Handy rechnet weiter selbst (Weltrechner prüft Plausibilität); Armeen/Felder im Nebel stehen noch in den Daten.
+- Tests: `tests/server/schummel_test.js`, `tests/server/hacker_test.js` (Konsolen-Angriffe, Korrektur, ehrlicher Zeuge),
+  `php tests/server_test.php`, `fremd_test`.

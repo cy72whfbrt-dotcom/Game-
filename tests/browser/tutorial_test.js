@@ -159,8 +159,8 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
     const s1 = schluessel1, g0 = inboxList().filter(x => x.title === 'Tutorial geschafft').length; document.getElementById('tutNochmal').click();
     for (let i = 0; i < 8; i++) { await new Promise(f => setTimeout(f, 700)); const w = document.getElementById('tutWeiter'); if (!w.hidden) w.click(); }
     await new Promise(f => setTimeout(f, 2500));
-    return { laeuft: tutLaeuft(), s: tut.s, lager: TUT.findIndex(x => x.k === 'lager'), belohnt: tut.belohnt, keineGeschenke: schluessel1 === s1 && !document.querySelector('#beuteFenster:not([hidden])'), g0 }; });
-  ok(nm.laeuft && nm.belohnt && nm.keineGeschenke && nm.s >= nm.lager - 1, '„Tutorial noch mal“ (Einstellungen): läuft von vorn, Gebautes zählt als erledigt, keine zweiten Geschenke', nm);
+    return { laeuft: tutLaeuft(), s: tut.s, lager: TUT.findIndex(x => x.k === 'lager'), belohnt: tut.belohnt, keineGeschenke: schluessel1 === s1 && !document.querySelector('#beuteFenster:not([hidden])'), g0, gF: tut.g.f }; });
+  ok(nm.laeuft && nm.belohnt && nm.keineGeschenke && nm.gF === 1 && nm.s >= nm.lager - 1, '„Tutorial noch mal“ (Einstellungen): läuft von vorn, Gebautes zählt als erledigt, keine zweiten Geschenke (auch nicht die Rohstoffe für die erste Forschung)', nm);
   await ctx.close();
   // ---- 2) Überspringen: erst fragen, „Weiter lernen“ bleibt, „Überspringen“ zeigt alles ----
   const c2 = await b.newContext(HANDY); p = await c2.newPage(); p.on('pageerror', e => fe.push(e.message)); await laden(p, NEU); await p.click('#twLos'); await p.waitForTimeout(400);
