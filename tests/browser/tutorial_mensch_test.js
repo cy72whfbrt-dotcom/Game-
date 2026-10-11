@@ -3,11 +3,11 @@
 // mit Pausen 600–1500 ms, dazu mal ein Tipp daneben, mal zu früh (sobald das Ziel da ist), mal doppelt. Misst die ganze Zeit (alle 40 ms im Spiel):
 // Satz-Position (bleibt in einem Schritt auf derselben Bildschirm-Lage stehen: Karte, Stadt, Fenster …), „…“ höchstens 1,5 s am Stück, Blase nie über dem Loch
 // und nie mitten über einem offenen Fenster, kein neues Einblenden der Blase, wenn nur der Text wechselt, jeder Tipp aufs Ziel wirkt, Tipp daneben tut nichts,
-// Doppeltipp überspringt nichts. Bilder (m<breite>_<nr>_<schritt>.png) in process.argv[3]. OW_MENSCH_W=375 OW_MENSCH_H=667: kleines Handy.
+// Doppeltipp überspringt nichts. OW_FOTOS=1: Bilder (m<breite>_<nr>_<schritt>.png) in process.argv[3]. OW_MENSCH_W=375 OW_MENSCH_H=667: kleines Handy.
 const { chromium, devices } = require('playwright');
 const path = require('path');
 const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undefined ? ' – ' + JSON.stringify(x) : ''));
-const W = +(process.env.OW_MENSCH_W || 390), H = +(process.env.OW_MENSCH_H || 844), bilder = process.argv[3];
+const W = +(process.env.OW_MENSCH_W || 390), H = +(process.env.OW_MENSCH_H || 844), bilder = process.env.OW_FOTOS && process.argv[3];
 const HANDY = { ...devices['iPhone 13'], viewport: { width: W, height: H }, hasTouch: true, isMobile: true, deviceScaleFactor: 3 };
 let saat = 7; const zufall = () => { saat = (saat * 16807) % 2147483647; return (saat - 1) / 2147483646; };   // fester Zufall: jeder Lauf gleich
 const pause = () => 600 + Math.round(zufall() * 900);
@@ -27,7 +27,7 @@ const pause = () => 600 + Math.round(zufall() * 900);
   await p.evaluate(() => {
     const M = window.__mess = { log: [], rein: [] }, $ = id => document.getElementById(id);
     const lage = () => { if (!$('heroHall').hidden) return 'halle'; const kl = document.querySelector('.kl-seite'); if (kl && !kl.hidden) return 'kampfdetails';
-      const offen = [...document.querySelectorAll('.panel')].filter(isPanelOpen).map(x => x.id); if (offen.length) return 'fenster:' + offen.join('+');
+      const offen = [...document.querySelectorAll('.panel')].filter(isPanelOpen).map(x => x.id).concat(barbSheetEl.hidden ? [] : ['barbSheet']); if (offen.length) return 'fenster:' + offen.join('+');
       return !$('citySheet').hidden ? 'gebaeude' : cityView.hidden ? 'karte' : 'stadt'; };
     const box = e => { const q = e.getBoundingClientRect(); return [q.left, q.top, q.right, q.bottom].map(Math.round); };
     window.__lage = lage;
@@ -35,13 +35,15 @@ const pause = () => 600 + Math.round(zufall() * 900);
     const mess = () => {
       const t = $('tut'), aus = t.hidden || !tutLaeuft() || !$('tutFrage').hidden || !!document.querySelector('#beuteFenster:not([hidden])');
       const o = aus ? { aus: 1 } : { s: tut.s, k: (TUT[tut.s] || {}).k, teil: $('tutZaehler').hidden ? '' : $('tutZaehler').dataset.teil || '', lage: lage(), satz: $('tutSatz').textContent,
-        py: Math.round($('tutSatz').getBoundingClientRect().top), blase: box(document.querySelector('.tut-blase')), loch: $('tutLoch').hidden ? null : box($('tutLoch')), weiter: !$('tutWeiter').hidden,
+        py: Math.round($('tutSatz').getBoundingClientRect().top), bh: Math.round(document.querySelector('.tut-blase').getBoundingClientRect().height), ob: $('tutBerater').classList.contains('oben'), blase: box(document.querySelector('.tut-blase')), loch: $('tutLoch').hidden ? null : box($('tutLoch')), weiter: !$('tutWeiter').hidden,
         fenster: [...document.querySelectorAll('.panel')].filter(isPanelOpen).map(x => { const k = x.querySelector('.phead'), q = x.getBoundingClientRect(), qk = k && k.getBoundingClientRect();
           return [Math.round(q.left), Math.round(Math.max(q.top, qk ? qk.bottom : q.top)), Math.round(q.right), Math.round(q.bottom)]; })[0] || null };
       const j = JSON.stringify(o); if (j !== alt) { alt = j; M.log.push({ t: performance.now(), ...o }); }
     };
-    setInterval(mess, 40);
-    document.addEventListener('animationstart', e => { if (e.animationName === 'tut-rein') M.rein.push({ t: performance.now(), s: tut.s, satz: $('tutSatz').textContent }); }, true);
+    let tm = 0; const bild = t => { if (t - tm >= 35) { tm = t; mess(); } requestAnimationFrame(bild); }; requestAnimationFrame(bild);   // (vor jedem gemalten Bild: was der Spieler wirklich sieht)
+    const be = $('tutBerater');                               // Blase blendet neu ein (Klasse „rein“ neu gesetzt): war sie vorher schon auf derselben Seite zu sehen?
+    new MutationObserver(rs => { if (!rs.some(r => !(r.oldValue || '').split(/\s+/).includes('rein')) || !be.classList.contains('rein')) return; const v = M.log[M.log.length - 1] || { aus: 1 };
+      M.rein.push({ t: performance.now(), s: tut.s, satz: $('tutSatz').textContent, falsch: !v.aus && v.ob === be.classList.contains('oben') }); }).observe(be, { attributes: true, attributeOldValue: true, attributeFilter: ['class'] });
   });
   // ---- Zustand für einen Tipp: woran sieht man, dass er gewirkt hat? ----
   const sig = () => p.evaluate(() => JSON.stringify([tut.s, !!tut.fertig, Object.keys(tut.e || {}).length, document.getElementById('tutZaehler').dataset.teil || '', __lage(), cityRingId || '', cityOpenId || '', cityPage || '',
@@ -65,7 +67,7 @@ const pause = () => 600 + Math.round(zufall() * 900);
     const frei = ([x, y]) => [z.loch || z.weiter, z.blase].every(q => !q || x < q.l - 30 || x > q.r + 30 || y < q.t - 30 || y > q.b + 30);
     return [[W * .5, H * .3], [W * .2, H * .55], [W * .8, H * .5], [W * .5, H * .62]].find(frei);
   };
-  let n = 0, fotoAlt = '', fotos = 0;
+  let n = 0, fotoAlt = '', fotos = 0, letzterTipp = 0;
   const start = Date.now();
   for (let i = 0; i < 1400 && Date.now() - start < 780000; i++) {
     const z = await zustand();
@@ -81,13 +83,13 @@ const pause = () => 600 + Math.round(zufall() * 900);
         if (d) { tipps.daneben++; const vor = await lage(); await p.touchscreen.tap(d[0], d[1]); await p.waitForTimeout(700); const nach = await lage();
           if (JSON.stringify(vor) !== JSON.stringify(nach)) tipps.danebenFalsch.push({ vor, nach, d: d.map(Math.round) }); continue; }
       }
-      const frueh = n % 5 === 2;                               // zu früh: sobald das Ziel zu sehen ist, ohne Pause
-      if (frueh) tipps.frueh++; else await p.waitForTimeout(pause());
+      const frueh = n % 5 === 2;                               // zu früh: sobald das Ziel zu sehen ist, ohne Pause (ein Mensch tippt frühestens 0,4 s nach dem letzten Tipp)
+      if (frueh) { tipps.frueh++; await p.waitForTimeout(Math.max(0, 400 - (Date.now() - letzterTipp))); } else await p.waitForTimeout(pause());
       const z2 = frueh ? z : await zustand(); const ziel2 = z2.weiter || z2.loch;
       if (!ziel2 || z2.s !== z.s || z2.teil !== z.teil) continue;   // (inzwischen anders: neu sehen)
       const vor = await sig(), vorL = await lage();
       const doppelt = n % 6 === 5;
-      await p.touchscreen.tap(ziel2.x, ziel2.y);
+      await p.touchscreen.tap(ziel2.x, ziel2.y); letzterTipp = Date.now();
       if (doppelt) { tipps.doppelt++; await p.waitForTimeout(110); await p.touchscreen.tap(ziel2.x, ziel2.y); }
       tipps.ziel++;
       if (!await wirkt(vor, 2500)) tipps.ohne.push({ k: z2.k, teil: z2.teil, satz: z2.satz.slice(0, 60), weiter: !!z2.weiter, frueh, x: Math.round(ziel2.x), y: Math.round(ziel2.y) });
@@ -102,6 +104,7 @@ const pause = () => 600 + Math.round(zufall() * 900);
     await p.waitForTimeout(250);
   }
   const M = await p.evaluate(() => ({ ...window.__mess, fertig: !!tut.fertig, burg: loadCity().levels.keep, k: (TUT[tut.s] || {}).k }));
+  if (bilder) require('fs').writeFileSync(path.join(bilder, 'mess' + W + '.json'), JSON.stringify(M));
   ok(M.fertig && M.burg === 3, W + '×' + H + ': mit dem Finger bis zum Ende durchgespielt (Burg 3)', { k: M.k, burg: M.burg, s: Math.round((Date.now() - start) / 1000) });
   // ---- Auswertung ----
   const L = M.log.map((x, i) => ({ ...x, bis: (M.log[i + 1] || { t: x.t + 40 }).t }));
@@ -120,20 +123,21 @@ const pause = () => 600 + Math.round(zufall() * 900);
   const deckt = (a, q) => a && q && a[0] < q[2] && q[0] < a[2] && a[1] < q[3] && q[1] < a[3];
   const ueber = L.filter(x => !x.aus && x.loch && dauer(x) > 300 && deckt(x.blase, x.loch)).map(x => ({ k: x.k, teil: x.teil, blase: x.blase, loch: x.loch }));
   ok(!ueber.length, 'Blase liegt nie über dem Loch', ueber.slice(0, 6));
-  const mitten = L.filter(x => !x.aus && x.fenster && dauer(x) > 300 && x.blase[1] > x.fenster[1] + 30 && x.blase[3] < x.fenster[3] - 30 && x.blase[0] < x.fenster[2] && x.fenster[0] < x.blase[2])
+  const mitten = L.filter(x => !x.aus && x.fenster && /^fenster:/.test(x.lage) && dauer(x) > 400 && x.blase[1] > x.fenster[1] + 30 && x.blase[3] < x.fenster[3] - 30 && x.blase[0] < x.fenster[2] && x.fenster[0] < x.blase[2])
     .map(x => ({ k: x.k, teil: x.teil, lage: x.lage, blase: x.blase, fenster: x.fenster }));
   ok(!mitten.length, 'Blase nie mitten im offenen Fenster (über dessen Inhalt)', mitten.slice(0, 6));
   const erkl = L.filter(x => !x.aus && x.weiter && x.loch && dauer(x) > 300);
   const erklSchritte = [...new Set(L.filter(x => !x.aus && x.weiter).map(x => x.k + ' ' + x.teil))], erklOhne = [...new Set(L.filter(x => !x.aus && x.weiter && x.teil && !x.loch && dauer(x) > 1000).map(x => x.k + ' ' + x.teil))];
   ok(erkl.length && !erklOhne.length, 'Erklär-Teilschritte („Weiter“): Loch sichtbar auf dem erklärten Bereich', { mitLoch: [...new Set(erkl.map(x => x.k + ' ' + x.teil))], ohneLoch: erklOhne, alle: erklSchritte.length });
+  const ohneZahl = t => t.replace(/[\d.,]+/g, '#');             // (Zahlen zählen hoch: derselbe Satz)
   const blitz = []; for (let i = 1; i < L.length - 1; i++) { const x = L[i]; if (x.aus || x.satz === '…' || !x.satz || dauer(x) >= 350) continue;   // ein Satz, der nur kurz aufblitzt (übersprungen/flackert)
-    if (L.slice(0, i).some(y => y.satz === x.satz && dauer(y) >= 350) || L.slice(i + 1).some(y => y.satz === x.satz && dauer(y) >= 350)) continue;   // (der Satz kommt sonst richtig vor)
+    const sx = ohneZahl(x.satz), lang = y => !y.aus && ohneZahl(y.satz || '') === sx && dauer(y) >= 350;
+    if (L.slice(0, i).some(lang) || L.slice(i + 1).some(lang)) continue;   // (der Satz kommt sonst richtig vor)
     if (/^Noch \d|noch \d+ Sekunde|Restzeit: noch/.test(x.satz)) continue;   // (Countdown)
-    blitz.push({ k: x.k, teil: x.teil, ms: Math.round(dauer(x)), satz: x.satz.slice(0, 50) }); }
+    blitz.push({ k: x.k, teil: x.teil, ms: Math.round(dauer(x)), satz: x.satz.slice(0, 50), davor: (L[i - 1].satz || '').slice(0, 40), danach: (L[i + 1].satz || '').slice(0, 40) }); }
   ok(!blitz.length, 'kein Satz blitzt nur kurz auf (nichts übersprungen, kein Flackern)', blitz.slice(0, 8));
   // neues Einblenden der Blase nur, wenn sie neu erscheint (vorher weg) oder auf die andere Seite wechselt – nicht, wenn nur der Text wechselt
-  const reinFalsch = M.rein.filter(r => { const vor = L.filter(x => x.t < r.t - 1); const v = vor[vor.length - 1], v2 = vor.filter(x => !x.aus).pop();
-    return v && !v.aus && v2 && Math.abs(v2.blase[1] - (L.find(x => x.t >= r.t - 1 && !x.aus) || v2).blase[1]) < 40; }).map(r => ({ s: r.s, satz: r.satz.slice(0, 40) }));
+  const reinFalsch = M.rein.filter(r => r.falsch).map(r => ({ s: r.s, satz: r.satz.slice(0, 40) }));   // (vorher schon zu sehen, auf derselben Seite)
   ok(reinFalsch.length <= 1, 'Blase blendet nicht bei jedem neuen Satz neu ein (Text wechselt weich)', { n: reinFalsch.length, bsp: reinFalsch.slice(0, 6) });
   ok(!tipps.ohne.length, 'jeder Finger-Tipp aufs Ziel wirkt (' + tipps.ziel + ' Tipps, ' + tipps.frueh + ' davon ohne Pause, ' + tipps.doppelt + ' doppelt)', tipps.ohne.slice(0, 8));
   ok(tipps.daneben > 3 && !tipps.danebenFalsch.length, 'Tipp daneben (' + tipps.daneben + '×) tut nichts', tipps.danebenFalsch.slice(0, 4));

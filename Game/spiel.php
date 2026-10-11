@@ -465,7 +465,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 /* Berater mit Sprechblase: Platzhalter-Kopf, bis einstieg_berater.webp kommt; nie über dem Loch (.oben) */
 .tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px);max-width:440px;
   display:flex;align-items:flex-end;gap:6px;pointer-events:none}
-.tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 34px)}   /* unter „Überspringen“ */
+.tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 34px);align-items:flex-start}   /* unter „Überspringen“; Blase oben bündig (kurzer Satz rutscht nicht nach unten) */
 .tut-figur{position:relative;z-index:1;flex:none;width:76px;height:92px;margin-right:-14px;border-radius:38px 38px 10px 10px;border:2px solid var(--gold-300);background:url(bilder/held_aldric_kopf.webp) center/cover,linear-gradient(#24365c,#0f1a2e);box-shadow:0 4px 12px rgba(0,0,0,.45)}   /* überlappt die Blasen-Ecke */
 .tut-blase{flex:1;min-width:0;margin-bottom:18px;padding:14px 16px 14px 22px;border:2px solid var(--gold-400);border-radius:14px 14px 14px 2px;background:#f3e6c4;color:#2a1d0e;box-shadow:0 6px 18px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:8px;pointer-events:auto}   /* immer voll deckend */
 .tut-blase p{margin:0;font:600 17px/1.35 Georgia,serif}
@@ -503,7 +503,7 @@ body:has(#heroHall:not([hidden])) .tut-weg{top:calc(var(--safe-t,0px) + 18px);ri
 .tw-name input{width:100%;box-sizing:border-box;padding:10px 12px;font:600 17px Georgia,serif;color:#24170a;background:#fffaf0;border:2px solid #b8913a;border-radius:10px}
 .tw-name em{min-height:0;color:#a33a2a;font-style:normal;font-size:13px} .tw-name em:empty{display:none}
 .tw-los{height:54px;border:0;cursor:pointer;font:700 19px Georgia,serif;color:#3a2203;text-shadow:0 1px 0 #fbe7a3;background:url(bilder/ui_k_gold.webp) center/100% 100% no-repeat;filter:drop-shadow(0 3px 6px #000a)}
-.tut-berater.rein .tut-blase{animation:tut-rein .18s ease-out} @keyframes tut-rein{from{opacity:0;transform:translateY(8px)}}
+.tut-berater.rein .tut-blase{animation:tut-rein .18s ease-out} @keyframes tut-rein{from{opacity:0}}   /* nur Deckkraft: der Text hüpft nie */
 .tut-blase p.tausch{animation:tut-tausch .25s ease-out} @keyframes tut-tausch{from{opacity:.15}}   /* neuer Satz: nur der Text blendet über, die Blase bleibt stehen */
 .tut-freude{position:fixed;z-index:61;transform:translate(-50%,-100%);font:700 18px/1.2 Georgia,serif;color:#f0dfb0;white-space:nowrap;pointer-events:none;
   text-shadow:0 0 3px #000,0 1px 2px #000,0 0 8px rgba(0,0,0,.8);animation:tut-freude 1.2s ease-out forwards}   /* Freude-Moment: steigt am Ziel auf */
