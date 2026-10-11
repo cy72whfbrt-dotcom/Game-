@@ -92,9 +92,12 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
       const ins = islands.find(i => i.type === 'tower' && !islandOwnerOf(i.id) && !i.guardian && !bossAt(i.id) && i.id !== t.id) || t;
       mapState.offsetX = innerWidth / 2 - ins.x * mapState.zoom; mapState.offsetY = 190 - ins.y * mapState.zoom; requestRender(); await warte(200);
       flashHint('Sieg bei ' + islandTitle(ins) + '! 4.443 übrig.', 6000); spawnBattleFx(ins.id, true, 'Sieg', 'Basis erobert'); await warte(1200);
-      const ht = rr(hintEl), fx = battleFx[battleFx.length - 1], sx = fx.x * mapState.zoom + mapState.offsetX, sy = fx.y * mapState.zoom + mapState.offsetY;
-      ctx.save(); const band = mzErgebnisBand(fx, 0, 1, sx, sy); ctx.restore();
-      o.band = { deckt: schnitt(ht, { left: band.x - band.w / 2, right: band.x + band.w / 2, top: band.y - band.h / 2, bottom: band.y + band.h / 2 }) > 0, weg: hintEl.classList.contains('toast--zurueck') };
+      const proben = [];   // 10 Proben je nach einem Bild: liegt das Band über dem Hinweis, muss der Hinweis zurücktreten (ein Bild Verzug erlaubt)
+      for (let n = 0; n < 10 && battleFx.length; n++) { await new Promise(f => requestAnimationFrame(() => requestAnimationFrame(f)));
+        const ht = rr(hintEl), fx = battleFx[battleFx.length - 1], sx = fx.x * mapState.zoom + mapState.offsetX, sy = fx.y * mapState.zoom + mapState.offsetY;
+        ctx.save(); const band = mzErgebnisBand(fx, 0, 1, sx, sy); ctx.restore();
+        proben.push(schnitt(ht, { left: band.x - band.w / 2, right: band.x + band.w / 2, top: band.y - band.h / 2, bottom: band.y + band.h / 2 }) > 0 && !hintEl.classList.contains('toast--zurueck')); }
+      o.band = { proben: proben.length, darueber: proben.filter(Boolean).length };
       return o;
     });
     const d = r.daily;
@@ -115,7 +118,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(r.feld.vorher && !r.feld.nachher, art + ': Karten-Knöpfe gehen zu, sobald ein Fenster aufgeht', r.feld);
     ok(r.feldOben.length === 3 && r.feldOben.every(v => v >= 0), art + ': Tipp ganz oben – Knöpfe unter der Rohstoff-Leiste', r.feldOben);
     ok(Math.abs(r.shop.gems - r.shop.markt) <= 2, art + ': Shop – „Markt“ so hoch wie „Kisten“', r.shop);
-    ok(!r.band.deckt || r.band.weg, art + ': Sieg-Band liegt nicht unter dem Hinweis (ausgewichen oder Hinweis tritt zurück)', r.band);
+    ok(r.band.proben >= 5 && r.band.darueber <= 1, art + ': Sieg-Band liegt nicht unter dem Hinweis (ausgewichen oder Hinweis tritt zurück)', r.band);
     await ctx.close();
   }
   console.log('Fehler:', fe.length ? [...new Set(fe)].slice(0, 5) : 'keine'); await b.close();
