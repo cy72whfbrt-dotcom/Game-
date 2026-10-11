@@ -13681,8 +13681,9 @@ const TUT = [
     { k: 'bericht', neu: ['kampf'], ruhe: 2500, satz: () => (combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '') + 'Im Bericht siehst du deine Verluste und die Beute.',
       ziel: () => { const kd = $t('klInhalt'), sieg = combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '';
           if (kd && !kd.closest('.kl-seite').hidden) { const v = kd.querySelector('.logCompare') || kd;   // die Kampfdetails sind offen: was steht da?
-              if (tutRollt !== tut.s) { tutRollt = tut.s; v.scrollIntoView({ block: 'start' }); }   // (ganz nach oben: darunter Platz für Aldric – kleines Handy)
-              return tutT(4, 4, { els: [v, kd.querySelector('.logGold')] }, 'Oben du, darunter die Barbaren, ganz unten die Beute. Gefallene ersetzen deine Basen: jede bringt stündlich neue Truppen.'); }
+              const g = kd.querySelector('.logGold') || v, sk = kd.closest('.kl-seite');   // (kleines Handy: hochrollen, bis unten Platz für Aldric ist – oben bleibt „Überspringen“ frei)
+              if (tutRollt !== tut.s) { tutRollt = tut.s; const q = v.getBoundingClientRect(); if (g.getBoundingClientRect().bottom > innerHeight - 230) sk.scrollTop += Math.max(0, q.top - 110); }
+              return tutT(4, 4, { els: [v, g] }, 'Oben du, darunter die Barbaren, ganz unten die Beute. Deine Basen ersetzen Gefallene: jede bringt stündlich neue Truppen.'); }
           return tutReihe([[tutFenster(battleLogPopup, 'battleLogBtn'), sieg + 'Tipp auf „Kampf“.'], [document.querySelector('#battleTabs [data-ktab="berichte"]:not(.active)'), 'Tipp auf „Berichte“.'],
               [tutSicht(combatLogListEl.querySelector('.logRow details > summary')), 'Das ist dein Kampfbericht. Tipp auf „Kampfdetails“ – da steht alles genau.']], 4); } },
     { k: 'beute', neu: ['events'], fertig: () => !inboxFach().length,
