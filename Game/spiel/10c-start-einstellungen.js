@@ -215,7 +215,8 @@ function bilderNachladen() {
     const css = l => { for (const r of l) { if (r.cssRules) css(r.cssRules); for (const m of (r.cssText || '').matchAll(/bilder\/[\w-]+\.(?:webp|jpg|png)/g)) url.add(m[0]); } };
     for (const st of document.styleSheets) { try { css(st.cssRules); } catch (e) {} }
     for (const h of HEROES) { url.add(heroPic(h.id)); url.add(heroPic(h.id, true)); }
-    const rest = [...url].filter(u => !schon.has(u)), nach = v ? v.nach = new Set() : new Set();   // (nach: was hier geholt wird – der Test zählt es nicht als „im Tutorial nachgeladen“)
+    const rest = [...url].filter(u => !schon.has(u) && !/titel_/.test(u));   // (Titelbilder: das passende hat das Ladebild schon)
+    const nach = v ? v.nach = new Set() : new Set();   // (was hier geholt wird – der Test zählt es nicht als „im Tutorial nachgeladen“)
     const ruhe = f => window.requestIdleCallback ? requestIdleCallback(f, { timeout: 3000 }) : setTimeout(f, 300);
     const naechstes = () => { const u = rest.shift(); if (!u) return; nach.add(u); const im = new Image(); try { im.fetchPriority = 'low'; } catch (e) {}
         im.onload = im.onerror = () => ruhe(naechstes); im.src = u; };

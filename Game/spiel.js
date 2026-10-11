@@ -13438,7 +13438,8 @@ function bilderNachladen() {
     const css = l => { for (const r of l) { if (r.cssRules) css(r.cssRules); for (const m of (r.cssText || '').matchAll(/bilder\/[\w-]+\.(?:webp|jpg|png)/g)) url.add(m[0]); } };
     for (const st of document.styleSheets) { try { css(st.cssRules); } catch (e) {} }
     for (const h of HEROES) { url.add(heroPic(h.id)); url.add(heroPic(h.id, true)); }
-    const rest = [...url].filter(u => !schon.has(u)), nach = v ? v.nach = new Set() : new Set();   // (nach: was hier geholt wird – der Test zählt es nicht als „im Tutorial nachgeladen“)
+    const rest = [...url].filter(u => !schon.has(u) && !/titel_/.test(u));   // (Titelbilder: das passende hat das Ladebild schon)
+    const nach = v ? v.nach = new Set() : new Set();   // (was hier geholt wird – der Test zählt es nicht als „im Tutorial nachgeladen“)
     const ruhe = f => window.requestIdleCallback ? requestIdleCallback(f, { timeout: 3000 }) : setTimeout(f, 300);
     const naechstes = () => { const u = rest.shift(); if (!u) return; nach.add(u); const im = new Image(); try { im.fetchPriority = 'low'; } catch (e) {}
         im.onload = im.onerror = () => ruhe(naechstes); im.src = u; };
@@ -13628,7 +13629,7 @@ function tutAngriff(feld, held) {                                // Karte → Ba
 function tutLager() {                                           // das eigene Lager der Stufe 1 (09b barbNeulingLager) antippen → Angreifen
     if (!cityView.hidden) return tutT(1, 2, tutZurKarte(), 'Tipp auf „Karte“.');   // (zuerst: ein Lager-Fenster unter der Stadt ist nicht zu sehen)
     if (!barbSheetEl.hidden && barbView && barbView.kind === 'camp') { const b = document.querySelector('#barbSheet [data-bgo]:not([disabled])');
-        return b ? tutT(2, 2, b, 'Das schaffst du locker. Tipp auf „Angreifen“!') : tutT(2, 2, document.querySelector('#barbSheet [data-bclose]'), 'Schließ das Fenster.'); }
+        return b ? tutT(2, 2, b, 'Barbaren wehren sich – Verluste sind normal, die Beute lohnt sich. Tipp auf „Angreifen“!') : tutT(2, 2, document.querySelector('#barbSheet [data-bclose]'), 'Schließ das Fenster.'); }
     const c = barbState.camps.filter(x => x.fuer && barbFuerOk(x, 'player'))[0] || barbNearest();
     if (!c) return { weiter: true, satz: 'Barbaren-Lager bringen Münzen. Gerade ist keines in deiner Nähe – schau später auf der Karte.' };
     const h = islandById[playerIslandId], d = Math.hypot(c.x - h.x, c.y - h.y) || 1;   // Kamera: Hauptstadt und Lager zusammen im Bild (dazu ein paar Basen)
@@ -13650,7 +13651,7 @@ const tutBurgK = () => AUF ? AUF.stadtKosten('keep', 1) : {}, tutRohJetzt = x =>
 const tutAngriffe = () => pendingAttacks.filter(a => !a.attackerBotId);   // eigene Angriffe: unterwegs oder im Kampf (fightEndsAt)
 const tutUnterwegs = () => [...tutAngriffe(), ...pendingRetreats.filter(r => r.resolveAt > Date.now())];   // dazu Truppen auf dem Heimweg
 const TUT = [
-    { k: 'muenzen', nah: 1, satz: () => 'Das sind deine ' + tutZahl(Math.floor(coins)) + ' Münzen. Jeder Bau und jede Forschung kostet welche – gib sie klug aus.', ziel: () => ({ el: document.querySelector('#hud .res--coin') }) },
+    { k: 'muenzen', nah: 1, satz: () => 'Das sind deine ' + tutZahl(Math.floor(coins)) + ' Münzen. Bald werden es viel mehr – du brauchst sie für Burg-Stufen, Forschung und Helden.', ziel: () => ({ el: document.querySelector('#hud .res--coin') }) },
     { k: 'r_holz', nah: 1, neu: ['roh'], satz: () => 'Holz ist dein wichtigstes Baumaterial – ' + tutRohJetzt('h') + ' hast du. Gleich baust du dir einen Holzfäller, dann kommt jede Stunde neues.', ziel: () => ({ el: document.querySelector('#hud .res--h') }) },
     { k: 'r_stein', nah: 1, satz: () => 'Stein und Eisen brauchst du für die Burg: Burg 2 kostet ' + tutZahl(tutBurgK().s || 0) + ' Stein und ' + tutZahl(tutBurgK().e || 0) + ' Eisen. Eisen ist am knappsten.',
       ziel: () => ({ els: [document.querySelector('#hud .res--s'), document.querySelector('#hud .res--e')] }) },
@@ -13680,7 +13681,7 @@ const TUT = [
     { k: 'bericht', neu: ['kampf'], ruhe: 2500, satz: () => (combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '') + 'Im Bericht siehst du deine Verluste und die Beute.',
       ziel: () => { const kd = $t('klInhalt'), sieg = combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '';
           if (kd && !kd.closest('.kl-seite').hidden) return tutT(4, 4, { els: [kd.querySelector('.logCompare') || kd, kd.querySelector('.logGold')] },   // die Kampfdetails sind offen: was steht da?
-              'Links du, rechts die Barbaren: wie viele gekämpft haben, gefallen und verwundet sind. Darunter deine Beute.');
+              'Oben du, darunter die Barbaren: wer gekämpft hat und wer gefallen ist – ganz unten deine Beute. Gefallene ersetzen deine Basen: sie bringen jede Stunde neue Truppen.');
           return tutReihe([[tutFenster(battleLogPopup, 'battleLogBtn'), sieg + 'Tipp auf „Kampf“.'], [document.querySelector('#battleTabs [data-ktab="berichte"]:not(.active)'), 'Tipp auf „Berichte“.'],
               [tutSicht(combatLogListEl.querySelector('.logRow details > summary')), 'Das ist dein Kampfbericht. Tipp auf „Kampfdetails“ – da steht alles genau.']], 4); } },
     { k: 'beute', neu: ['events'], fertig: () => !inboxFach().length,
@@ -13731,7 +13732,8 @@ const TUT = [
     { k: 'aufgaben', neu: ['aufgaben'], satz: 'Unter „Events“ findest du jeden Tag neue Aufgaben mit Belohnung. So wächst du am schnellsten.',
       ziel: () => { if (!isPanelOpen(goalsPopup)) return tutT(1, 3, $t('goalsBtn'), 'Unter „Events“ findest du jeden Tag neue Aufgaben mit Belohnung. Tipp auf „Events“.');
           const tab = document.querySelector('[data-ggrp="aufgaben"]:not(.active)'); if (tab) return tutT(2, 3, tab, 'Tipp auf „Aufgaben“ – so wächst du am schnellsten.');
-          const ab = tutSicht(document.querySelector('#questList [data-quest]')), q = tutSicht(document.querySelector('#questList .quest'));
+          const ab = tutSicht(document.querySelector('#questList [data-quest]')), q = [...document.querySelectorAll('#questList .quest:not(.is-claimed)')].filter(tutSicht)   // (die mit dem vollsten Balken: da sieht man ihn)
+              .sort((x, y) => (parseFloat(y.querySelector('.quest-bar i')?.style.getPropertyValue('--p')) || 0) - (parseFloat(x.querySelector('.quest-bar i')?.style.getPropertyValue('--p')) || 0))[0];
           return ab ? tutT(3, 3, ab, 'Die hast du schon geschafft – hol dir die Belohnung!') : q ? tutT(3, 3, { el: q }, 'Der Balken zeigt, wie weit du bist. Rechts steht die Belohnung.') : 'weiter'; } }
 ];
 

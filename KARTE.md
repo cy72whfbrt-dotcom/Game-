@@ -824,7 +824,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:92
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:93
 - `feldBericht` → Game/spiel/09a-funde-felder.js:253
-- `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:232
+- `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:233
 - `feldKampfBild` → Game/spiel/03f-marsch-bilder.js:536
 - `feldMult` → Game/spiel/09a-funde-felder.js:171
 - `feldRingAuf` → Game/spiel/09d-karte-armeen-wegmarken.js:347
@@ -1316,9 +1316,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:214
 - `levelUpItem` → Game/spiel/02a-shop-stufen.js:161
 - `liste` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:75
-- `liveBald` → Game/spiel/10c-start-einstellungen.js:244
+- `liveBald` → Game/spiel/10c-start-einstellungen.js:245
 - `liveHtml` → Game/spiel/01a-grundlagen.js:150
-- `liveTick` → Game/spiel/10c-start-einstellungen.js:248
+- `liveTick` → Game/spiel/10c-start-einstellungen.js:249
 - `liveUhren` → Game/spiel/01a-grundlagen.js:168
 - `lkBuy` → Game/spiel/08b-stadt-burg-aussehen.js:33
 - `lkCard` → Game/spiel/08b-stadt-burg-aussehen.js:26
@@ -1493,7 +1493,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzWartetBeiMir` → Game/spiel/03f-marsch-bilder.js:145
 - `nachrichtBauen` → Game/weltrechner/push.js:131
 - `naechsterRang` → Game/spiel/05a-profil-rahmen.js:101
-- `naechstes` → Game/spiel/10c-start-einstellungen.js:220
+- `naechstes` → Game/spiel/10c-start-einstellungen.js:221
 - `name` → Game/spiel/06c-thron-mitte.js:243
 - `name` → Game/weltrechner/push.js:69
 - `name_anfrage` → Game/server/06-speichern-push-konto.php:176
@@ -1537,7 +1537,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `noteBattle` → Game/bots/02-kampf-karte.js:261
 - `oeffnen` → Game/spiel/05d-marsch-liste-kampfbericht.js:504
 - `offen` → Game/spiel/05d-marsch-liste-kampfbericht.js:177
-- `offen` → Game/spiel/10c-start-einstellungen.js:251
+- `offen` → Game/spiel/10c-start-einstellungen.js:252
 - `offene_befehle` → Game/server/05-datenbank-welt.php:229
 - `offenePaesse` → Game/spiel/01b-weltkarte.js:215
 - `onPointerEnd` → Game/spiel/03e-karte-kamera-eingabe.js:319
@@ -1825,7 +1825,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `row` → Game/spiel/09c-events-woche.js:134
 - `rr` → Game/spiel/03a-karte-hintergrund.js:610
 - `rueckzuegeZuClient` → Game/welt.js:202
-- `ruhe` → Game/spiel/10c-start-einstellungen.js:219
+- `ruhe` → Game/spiel/10c-start-einstellungen.js:220
 - `rulerOwner` → Game/spiel/01d-helden-daten-herrscher.js:163
 - `runBotTick` → Game/bots/05-verteidigen-takt.js:335
 - `rund` → Game/spiel/08f-stadt-bild-zeichnen.js:20
@@ -2040,8 +2040,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapFog` → Game/spiel/10b-fenster-insel-knoepfe.js:228
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
-- `teil` → Game/spiel/10c-start-einstellungen.js:252
-- `teil` → Game/spiel/10c2-tutorial.js:402
+- `teil` → Game/spiel/10c-start-einstellungen.js:253
+- `teil` → Game/spiel/10c2-tutorial.js:403
 - `teleImRucksack` → Game/spiel/06d-schild-produktion.js:80
 - `teleportFx` → Game/spiel/08d2-stadt-teleport.js:97
 - `teleportOrt` → Game/spiel/08d2-stadt-teleport.js:72
@@ -2128,27 +2128,27 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tut` → Game/spiel/10c2-tutorial.js:19
 - `tutAngriff` → Game/spiel/10c2-tutorial.js:108
 - `tutAngriffe` → Game/spiel/10c2-tutorial.js:153
-- `tutBald` → Game/spiel/10c2-tutorial.js:335
-- `tutBanner` → Game/spiel/10c2-tutorial.js:272
+- `tutBald` → Game/spiel/10c2-tutorial.js:336
+- `tutBanner` → Game/spiel/10c2-tutorial.js:273
 - `tutBaut` → Game/spiel/10c2-tutorial.js:30
 - `tutBauT` → Game/spiel/10c2-tutorial.js:64
 - `tutBauWarte` → Game/spiel/10c2-tutorial.js:46
 - `tutBesch` → Game/spiel/10c2-tutorial.js:82
 - `tutBeschT` → Game/spiel/10c2-tutorial.js:73
-- `tutBox` → Game/spiel/10c2-tutorial.js:337
-- `tutBurgFrei` → Game/spiel/10c2-tutorial.js:249
+- `tutBox` → Game/spiel/10c2-tutorial.js:338
+- `tutBurgFrei` → Game/spiel/10c2-tutorial.js:250
 - `tutBurgK` → Game/spiel/10c2-tutorial.js:152
 - `tutDauer` → Game/spiel/10c2-tutorial.js:61
-- `tutDeckt` → Game/spiel/10c2-tutorial.js:336
+- `tutDeckt` → Game/spiel/10c2-tutorial.js:337
 - `tutE` → Game/spiel/10c2-tutorial.js:54
-- `tutEnde` → Game/spiel/10c2-tutorial.js:295
-- `tutFaehrt` → Game/spiel/10c2-tutorial.js:332
+- `tutEnde` → Game/spiel/10c2-tutorial.js:296
+- `tutFaehrt` → Game/spiel/10c2-tutorial.js:333
 - `tutFenster` → Game/spiel/10c2-tutorial.js:149
-- `tutFrei` → Game/spiel/10c2-tutorial.js:251
-- `tutFreude` → Game/spiel/10c2-tutorial.js:339
+- `tutFrei` → Game/spiel/10c2-tutorial.js:252
+- `tutFreude` → Game/spiel/10c2-tutorial.js:340
 - `tutFrisch` → Game/spiel/10c2-tutorial.js:20
 - `tutGeb` → Game/spiel/10c2-tutorial.js:33
-- `tutGeschenk` → Game/spiel/10c2-tutorial.js:242
+- `tutGeschenk` → Game/spiel/10c2-tutorial.js:243
 - `tutGesehen` → Game/spiel/10c2-tutorial.js:53
 - `tutHeim` → Game/spiel/10c2-tutorial.js:97
 - `tutHeld` → Game/spiel/10c2-tutorial.js:63
@@ -2158,25 +2158,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutLager` → Game/spiel/10c2-tutorial.js:131
 - `tutMarschWarte` → Game/spiel/10c2-tutorial.js:144
 - `tutNeutral` → Game/spiel/10c2-tutorial.js:103
-- `tutPause` → Game/spiel/10c2-tutorial.js:281
+- `tutPause` → Game/spiel/10c2-tutorial.js:282
 - `tutReihe` → Game/spiel/10c2-tutorial.js:78
-- `tutRein` → Game/spiel/10c2-tutorial.js:268
+- `tutRein` → Game/spiel/10c2-tutorial.js:269
 - `tutRest` → Game/spiel/10c2-tutorial.js:60
 - `tutRoh` → Game/spiel/10c2-tutorial.js:62
 - `tutSek` → Game/spiel/10c2-tutorial.js:59
 - `tutSicht` → Game/spiel/10c2-tutorial.js:28
 - `tutSpeichern` → Game/spiel/10c2-tutorial.js:25
-- `tutStart` → Game/spiel/10c2-tutorial.js:288
-- `tutStarten` → Game/spiel/10c2-tutorial.js:443
+- `tutStart` → Game/spiel/10c2-tutorial.js:289
+- `tutStarten` → Game/spiel/10c2-tutorial.js:444
 - `tutStufe` → Game/spiel/10c2-tutorial.js:29
 - `tutT` → Game/spiel/10c2-tutorial.js:51
 - `tutUnd` → Game/spiel/10c2-tutorial.js:56
 - `tutUnterwegs` → Game/spiel/10c2-tutorial.js:154
-- `tutWeiter` → Game/spiel/10c2-tutorial.js:283
-- `tutWillkommen` → Game/spiel/10c2-tutorial.js:423
+- `tutWeiter` → Game/spiel/10c2-tutorial.js:284
+- `tutWillkommen` → Game/spiel/10c2-tutorial.js:424
 - `tutZahl` → Game/spiel/10c2-tutorial.js:55
-- `tutZeigen` → Game/spiel/10c2-tutorial.js:348
-- `tutZiel` → Game/spiel/10c2-tutorial.js:310
+- `tutZeigen` → Game/spiel/10c2-tutorial.js:349
+- `tutZiel` → Game/spiel/10c2-tutorial.js:311
 - `tutZurKarte` → Game/spiel/10c2-tutorial.js:102
 - `u` → Game/ladebildschirm.js:47
 - `uebersicht` → Game/server/05-datenbank-welt.php:336
@@ -4468,13 +4468,13 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `finishSplash` :190
 - `bilderNachladen` :212 — Nach dem Ladebild: die übrigen Bilder der Oberfläche (aus den Stilen) und alle …
 - `css` :215
-- `ruhe` :219
-- `naechstes` :220
-- `feldErlaubt` :232 — Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefe…
-- `liveBald` :244 — neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
-- `liveTick` :248
-- `offen` :251
-- `teil` :252
+- `ruhe` :220
+- `naechstes` :221
+- `feldErlaubt` :233 — Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefe…
+- `liveBald` :245 — neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
+- `liveTick` :249
+- `offen` :252
+- `teil` :253
 
 ### Game/spiel/10c2-tutorial.js — Tutorial für neue Spieler (Burg 1 → 3) im echten Spiel: dunkel mit Loch, Finger…
 - `tut` :19
@@ -4513,25 +4513,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutBurgK` :152 — ---- die Schritte (Drehbuch scratchpad/design_tutorial2.md): Satz (auch als Fun…
 - `tutAngriffe` :153 — eigene Angriffe: unterwegs oder im Kampf (fightEndsAt)
 - `tutUnterwegs` :154 — dazu Truppen auf dem Heimweg
-- `tutGeschenk` :242 — ---- Geschenke: Bild + Zahl im Beute-Fenster (einmal je Schlüssel g) ----
-- `tutBurgFrei` :249 — ---- Freischalten: was fehlt, ist ganz weg (body.tz-<teil>) ----
-- `tutFrei` :251
-- `tutRein` :268 — neuer Knopf, neue Kapsel (oder die Leiste): kurz einblenden
-- `tutBanner` :272 — „Neu: …“ (Platzhalter bis banner_neu.webp kommt)
-- `tutPause` :281 — ein Belohnungs-Fenster geht vor
-- `tutWeiter` :283 — nächster Schritt: aufräumen, Neues freischalten, vorher-Aktion
-- `tutStart` :288
-- `tutEnde` :295
-- `tutZiel` :310 — → { rect, weiter, warte, fort, satz, teil, fokus }
-- `tutFaehrt` :332 — Ziel (oder sein Fenster) fährt noch ein
-- `tutBald` :335
-- `tutDeckt` :336 — zwei Rechtecke {l,t,r,b} überlappen
-- `tutBox` :337
-- `tutFreude` :339 — Freude-Moment: Satz/Zahl steigt am Gebäude-Schild (sonst am letzten Ziel) auf, …
-- `tutZeigen` :348
-- `teil` :402
-- `tutWillkommen` :423 — true, solange das Willkommen offen ist
-- `tutStarten` :443
+- `tutGeschenk` :243 — ---- Geschenke: Bild + Zahl im Beute-Fenster (einmal je Schlüssel g) ----
+- `tutBurgFrei` :250 — ---- Freischalten: was fehlt, ist ganz weg (body.tz-<teil>) ----
+- `tutFrei` :252
+- `tutRein` :269 — neuer Knopf, neue Kapsel (oder die Leiste): kurz einblenden
+- `tutBanner` :273 — „Neu: …“ (Platzhalter bis banner_neu.webp kommt)
+- `tutPause` :282 — ein Belohnungs-Fenster geht vor
+- `tutWeiter` :284 — nächster Schritt: aufräumen, Neues freischalten, vorher-Aktion
+- `tutStart` :289
+- `tutEnde` :296
+- `tutZiel` :311 — → { rect, weiter, warte, fort, satz, teil, fokus }
+- `tutFaehrt` :333 — Ziel (oder sein Fenster) fährt noch ein
+- `tutBald` :336
+- `tutDeckt` :337 — zwei Rechtecke {l,t,r,b} überlappen
+- `tutBox` :338
+- `tutFreude` :340 — Freude-Moment: Satz/Zahl steigt am Gebäude-Schild (sonst am letzten Ziel) auf, …
+- `tutZeigen` :349
+- `teil` :403
+- `tutWillkommen` :424 — true, solange das Willkommen offen ist
+- `tutStarten` :444
 
 ### Game/spiel/10d1-welt-verbindung.js — Die eine Welt: Verbindung zu welt.js, Zuschauer übernehmen Welt-Teile, Späher a…
 - `rechnerStatus` :10 — (welt.js meldet jede Änderung von „rechner“)
