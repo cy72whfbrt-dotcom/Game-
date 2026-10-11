@@ -54,6 +54,7 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   allen 6 (Kiste, 16 Edelsteine, 5 Splitter) – 60 Edelsteine am Tag. Nur was heute geht (Bündnis, Gebäude, Tagesboss
   nur donnerstags; Tempel-Aufgabe erst wenn Zone 4 offen, Thron-Aufgabe ab Tag 7). Zähler `QUEST_STAT` (auch vom Weltrechner).
   Weltrechner: Truppen-Quelle `aufgabe` höchstens 2 in 24 Std., Münz-Topf 12 Std. am Tag.
+  „Schwer“ nie mit einem Klick: Forschung, Heilen, Markt, Rally, Zusammenlegen, Verstärkung nur leicht/mittel (`steps[2]` 0), Bauen 1/2/3.
 
 ## Erfolge
 - Geben nur Edelsteine. Hauptstadt-Erfolge (Burg 5/10/15/20/25, Labor, Saison-Top-10); hohe
@@ -74,8 +75,8 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   Blase ruhig (Menschen-Test `tutorial_mensch_test`): feste Seite je Bildschirm-Lage (`tutLage`): Karte/Stadt, Heldenhalle, Kampfdetails
   unten; offenes Fenster (Panel, Gebäude-, Lager-Fenster) oben unter „Überspringen“, kleine Blase (`.klein`), das Fenster wird so gekürzt,
   dass es erst darunter beginnt (`tutKuerzen`, Inhalt rollt; nie über Fenster-Inhalt). Seite wechselt nur, wenn die Blase sonst das Loch
-  deckte (Stadt-Schild: schon vorher aus der End-Lage, `tutStadtY`), und bleibt dann im Schritt. Im Schritt wird die Blase nur größer
-  (`tutSeg.h`; `platz`: Platz für den späteren Satz + „Weiter“), Blase blendet nur bei Erscheinen/Seitenwechsel ein (nur Deckkraft),
+  deckte (Stadt-Schild: schon vorher aus der End-Lage, `tutStadtY`), und bleibt dann im Schritt. Die Blase ist oben verankert (unten: fester Platz
+  `--tut-res` über der Leiste) und so hoch wie ihr Text – der Satz steht still; Fenster darunter rechnen mit dem festen Platz (verrutschen nicht). Sie blendet nur bei Erscheinen/Seitenwechsel ein (nur Deckkraft),
   neuer Satz blendet weich über (`.tausch`). Fenster auf/zu: Blase im selben Bild (MutationObserver + gleich nach jedem Tipp). „Weiter“
   in eigener Zeile. Gegenstand-Fenster („Ausrüsten“) liegt im Tutorial unter dem Dunkel (z 58). Lager: Kamera zeigt
   Hauptstadt + Lager; Karten-Ziele heller (.40).
@@ -104,10 +105,14 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   Überspringen sitzt in der Heldenhalle neben dem X (nicht über den Reitern).
 - Sichtprüfung (`tutZeigen`): Ziele auf Karte/Stadt (`fokus`) mit Loch+Finger, sobald sie im Bild stehen (nicht unter Kopf/Leiste/Blase)
   und Karte/Stadt-Kamera ruhen; sonst gleich hinfahren (`flyTo`/`cityFocus`, max. 4×; ändert Hinfahren nichts – Bildrand –, gilt es so),
-  spätestens nach 1,2 s Loch trotzdem (kein „…“ mehr; nur ab der Helden-Kiste kurz „…“, dann „Einen Moment …“). Loch nie über den
-  Bildrand (nach innen geschoben). Erklär-Löcher mit mehreren Kästen im Fenster werden ins Bild gerollt (`tutRoller`). Finger nie unter der Blase. Rohstoffe: Loch nur um Bild+Zahl.
-- Labor: reicht es nicht für die erste Forschung (Burg 3 verbraucht die Rohstoffe), nennt Aldric die fehlenden Mengen, Loch auf den
-  Voraussetzungen + grauem „Forschen“, dann „Weiter“. Bau-Teilschritte: Stadt → Schild → runder Knopf („Tipp auf „Bauen“/„Aufwerten“) → Fenster-Knopf.
+  spätestens nach 0,8 s Loch trotzdem (kein „…“ mehr; nur ab der Helden-Kiste kurz „…“, dann „Einen Moment …“). Loch nie über den
+  Bildrand (nach innen geschoben). Erklär-Löcher mit mehreren Kästen im Fenster werden ins Bild gerollt, zwischen feste Leisten wie „Bauen“/„Forschen“ (`tutInsBild`); Loch nie über den Fensterrand. Knopf unten: rundes Loch; Finger nie auf Stadt-Schildern, auf der Karte von der eigenen Burg weg. Finger nie unter der Blase. Rohstoffe: Loch nur um Bild+Zahl.
+- Labor: reicht es nicht für die erste Forschung (Burg 3 verbraucht die Rohstoffe), schenkt Aldric einmal genau die fehlenden
+  Holz/Stein/Eisen (Beute-Fenster „Dir fehlt noch etwas – hier, von mir!“, `tut.g.f`, `gibBelohnung` holz/stein/eisen); dann Loch auf
+  „Forschen“, weiter erst, wenn sie läuft. Weltrechner: Spielraum `hb.fr.r` (10d3 `hbTutRoh`: höchstens die Kosten einer ersten
+  Forschung), verbraucht in `rohWacheProfil` (10d2) vor dem Stunden-Spielraum. Reicht es danach noch nicht: Aldric nennt, was fehlt, + „Weiter“.
+- Bau-Teilschritte: Stadt → Schild → runder Knopf („Tipp auf „Bauen“/„Aufwerten““) → Fenster-Knopf; der runde Knopf steht unter dem
+  Schild oder (kein Platz bis zur Leiste) direkt daneben (08f). Burg 2/3: großer Freude-Moment mit Bild, danach kurze Ruhe (`ruhe`).
 - Angriffs-Schritte (`tutAngriff`): Satz je Teilschritt mit Zähler („2/5“): Karte → Basis → „Angreifen“ → Held-Feld/Held wählen → Losmarschieren;
   ohne freien Helden ehrlich „ohne Helden los“. Warten (Bau, Marsch): „Kurz warten – …“ mit Balken (`fort`). Hängt ein Schritt
   > 20 s ohne Ziel: „Weiter“ als Notausgang. Kein Fortschrittsband oben. Rohstoff-Schritte (`nah`): Kamera nah auf die eigene

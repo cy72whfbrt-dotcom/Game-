@@ -81,10 +81,15 @@
         return x;
     }
     function hbKisteDazu(hb, minR) { hb.kN = nn(hb.kN) + 1; if (minR >= 3) hb.kG = nn(hb.kG) + kWert(minR); }
+    function hbTutRoh() {                                // Tutorial-Geschenk Rohstoffe: höchstens die Kosten einer ersten Forschung (Labor 1, Stufe 1)
+        const r = { h: 0, s: 0, e: 0 }; if (!AUF) return r;
+        for (const d of AUF.FORSCHUNG) if (d.aka === 1) { const k = AUF.foKosten(d, 1); for (const x of ROHK) r[x] = Math.max(r[x], nn(k[x])); }
+        return r;
+    }
     function hbNeu(who, now, p, frisch) {
         const hb = { v: HB_V, t0: frisch ? now : 0, st: {}, fo: {}, foT: frisch ? now : 0, tb: 1, gear: {}, kN: 0, kG: 0, hs: hbHeldenStart(), shB: 0,
-            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 100, k: 1, kg: 0, sh: 0, schild: 0, bm: 2, s1: 2 }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
-            schild: 0, w: {}, sp: [] };                // (fr am Anfang: das Tutorial gibt einmal 100 Gems + 1 Kiste, 2 Beschleuniger-Minuten, 2 Schlüssel – 10c2)
+            gA: 0, cA: 0, rA: { h: 0, s: 0, e: 0 }, gIn: 0, sternG: 0, fr: { g: 100, k: 1, kg: 0, sh: 0, schild: 0, bm: 2, s1: 2, r: hbTutRoh() }, frT: frisch ? now : 0, thK: frisch ? 0 : undefined, ach: 0, lvG: 1, pass: 0, passF: 0,
+            schild: 0, w: {}, sp: [] };                // (fr am Anfang: das Tutorial gibt einmal 100 Gems + 1 Kiste, 2 Beschleuniger-Minuten, 2 Schlüssel, Rohstoffe für die erste Forschung – 10c2)
         for (const id of hbBauten()) hb.st[id] = [id === 'keep' ? 1 : 0, hb.t0];
         for (const s of HB_SLOTS) hb.gear[s] = [];
         if (!frisch && p) {                            // ein Spielstand von vor 3B: einmal so übernehmen, wie sein Handy es sagt

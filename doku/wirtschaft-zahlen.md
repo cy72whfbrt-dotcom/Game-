@@ -17,7 +17,7 @@ Regel (CLAUDE.md): Zahlen immer aus Spieler-Sicht prüfen und mit RoK vergleiche
 
 ## Start (Alexander 6.10./8.10.)
 - Neue Spieler, Mitspieler und jede neue Saison: 5.000 Truppen (`PLAYER_START_TROOPS`, 01c), 10.000 Münzen
-  (`PLAYER_START_COINS`), Rohstoffe 3.000 Holz / 2.000 Stein / 500 Eisen (`ROH_START`).
+  (`PLAYER_START_COINS`), Rohstoffe 5.000 Holz / 3.000 Stein / 1.800 Eisen (`ROH_START`).
 
 ## Ertrag
 - Basis Stufe 1: 15 Truppen/Std. (7.10.) und 10.000 Münzen/Std.; Basis-Ertrag × 1,15 je Stufe bis 100.

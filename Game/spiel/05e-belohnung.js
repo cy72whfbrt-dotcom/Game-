@@ -40,6 +40,7 @@ function gibBelohnung(art, menge, extra) {
     else if (art === 'besch') { const d = extra && (typeof extra === 'string' ? extra : extra.dauer); if (!BESCH_MIN[d]) return null; besch[d] += n; gegenstSpeichern(); return { a: 'besch', n, dauer: d }; }
     else if (art === 'gems') { gems += n; saveGame(); updateHud(); return { a: 'gems', n }; }
     else if (art === 'coins') { coins += n; saveGame(); updateHud(); return { a: 'coins', n }; }
+    else if (art === 'holz' || art === 'stein' || art === 'eisen') { if (!AUF) return null; AUF.rohDazu('player', { [art[0]]: n }); return { a: art, n }; }   // Rohstoff-Geschenk (Tutorial: was für die erste Forschung fehlt)
     else return null;
     gegenstSpeichern(); return { a: art, n };
 }

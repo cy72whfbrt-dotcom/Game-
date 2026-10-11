@@ -93,8 +93,14 @@ function cityFrame(now) {
         cityHitRects.push({ id: p.id, ...q, cx: p.x, cy: p.y });
         if (p.id === cityRingId) { const el = document.getElementById('cityRing'), nav = document.getElementById('cornerButtons'), unten = (nav ? nav.getBoundingClientRect().top : H) - 8,
                 oben = (document.querySelector('.city-head') || { getBoundingClientRect: () => ({ bottom: 90 }) }).getBoundingClientRect().bottom + 8;
-            let rx = Math.max(110, Math.min(W - 110, p.x)), ry = p.y;                            // die runden Knöpfe folgen dem Schild – ganz im Bild zwischen Kopf und Leiste:
-            if (ry + 62 + 29 + 24 > unten) ry = Math.min(p.y - 18 - 6 - 22 - 29 - 62, unten - 62 - 29 - 24);   // reicht der Bogen unter die Leiste, steht er ganz über dem Schild (Knopf + Beschriftung, nie darauf)
+            const n = el.children.length || 1, halb = (n - 1) * 46 + 44, sw = q.w / 2;               // (halbe Breite des Bogens mit Beschriftung)
+            let rx = Math.max(halb, Math.min(W - halb, p.x)), ry = p.y;                          // die runden Knöpfe folgen dem Schild – ganz im Bild zwischen Kopf und Leiste:
+            if (ry + 62 + 29 + 24 > unten) {                                                     // reicht der Bogen unter die Leiste: direkt neben das Schild (nicht 70 px darüber auf andere Schilder)
+                const rechts = p.x + sw + 8 + halb, links = p.x - sw - 8 - halb;
+                const neben = Math.min(q.y + q.h / 2 - 10 - 62, unten - 62 - 29 - 24);         // (Knopf auf Höhe des Schilds, Beschriftung über der Leiste)
+                if (rechts + halb <= W) { rx = rechts; ry = neben; } else if (links - halb >= 0) { rx = links; ry = neben; }
+                else ry = Math.min(p.y - 18 - 6 - 22 - 29 - 62, unten - 62 - 29 - 24);           // (kein Platz daneben: ganz über dem Schild – Knopf + Beschriftung, nie darauf)
+            }
             ry = Math.max(oben + 29 - 62 + 40, ry);
             const tf = 'translate(' + Math.round(rx) + 'px,' + Math.round(ry) + 'px)';
             if (el.style.transform !== tf) el.style.transform = tf; if (el.style.visibility) el.style.visibility = ''; }

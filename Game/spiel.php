@@ -420,6 +420,7 @@ body:has(#profilePopup.is-open) .hud-me .avatar-ring{box-shadow:0 0 0 2px var(--
 .mapctl button:disabled{color:var(--tx-4);cursor:default}
 .mapctl button + button{border-top:1px solid var(--line-1)}
 .mapctl .icon{width:18px;height:18px}
+.mapctl button[data-wort]{position:relative} .mapctl button[data-wort]::after{content:attr(data-wort);position:absolute;right:calc(100% + 4px);top:50%;transform:translateY(-50%);font:600 11px/1 var(--font-ui);color:#f0dfb0;text-shadow:0 0 3px #000,0 1px 2px #000;white-space:nowrap;pointer-events:none}   /* Karten-Knöpfe ohne eindeutiges Bild: kurzes Wort daneben */
 @media (pointer:coarse){
   /* bigger finger targets, same visuals */
   .btn-x,.mapctl button{position:relative}
@@ -465,9 +466,9 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 @keyframes tut-tipp3{50%{translate:8px 0}} @keyframes tut-tipp4{50%{translate:-8px 0}}
 @keyframes tut-tipp{50%{translate:0 8px}} @keyframes tut-tipp2{50%{translate:0 -8px}}
 /* Berater mit Sprechblase: Platzhalter-Kopf, bis einstieg_berater.webp kommt; nie über dem Loch (.oben) */
-.tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 26px);max-width:440px;
-  display:flex;align-items:flex-end;gap:6px;pointer-events:none}
-.tut-berater.oben{bottom:auto;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 34px);align-items:flex-start}   /* unter „Überspringen“; Blase oben bündig (kurzer Satz rutscht nicht nach unten) */
+.tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);--tut-res:186px;top:calc(100% - var(--dock-h,64px) - var(--safe-bd,0px) - 26px - var(--tut-res));max-width:440px;
+  display:flex;align-items:flex-start;gap:6px;pointer-events:none}   /* oben verankert (fester Platz --tut-res über der Leiste): der Satz steht still, die Blase ist so hoch wie ihr Text */
+.tut-berater.oben{top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) + 34px)}   /* unter „Überspringen“ */
 .tut-figur{position:relative;z-index:1;flex:none;width:76px;height:92px;margin-right:-14px;border-radius:38px 38px 10px 10px;border:2px solid var(--gold-300);background:url(bilder/held_aldric_kopf.webp) center/cover,linear-gradient(#24365c,#0f1a2e);box-shadow:0 4px 12px rgba(0,0,0,.45)}   /* überlappt die Blasen-Ecke */
 .tut-blase{flex:1;min-width:0;margin-bottom:18px;padding:14px 16px 14px 22px;border:2px solid var(--gold-400);border-radius:14px 14px 14px 2px;background:#f3e6c4;color:#2a1d0e;box-shadow:0 6px 18px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:8px;pointer-events:auto}   /* immer voll deckend */
 .tut-blase p{margin:0;font:600 17px/1.35 Georgia,serif}
@@ -475,7 +476,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 @media (min-width:900px) and (min-height:501px){ .tut-berater{max-width:520px} .tut-blase{max-width:420px} .tut-figur{width:96px;height:116px;border-radius:48px 48px 12px 12px} }
 .tut-frage{align-self:flex-end}
 .tut-blase > #tutWeiter{align-self:flex-end;margin:-2px 0 -4px}   /* „Weiter“ in der Blase, eigene Zeile rechts */
-.tut-berater.klein .tut-figur{width:56px;height:68px;border-radius:28px 28px 8px 8px}   /* Fenster offen: kleine Blase, passt meist über das Fenster */
+.tut-berater.klein{--tut-res:140px} .tut-berater.klein .tut-figur{width:56px;height:68px;border-radius:28px 28px 8px 8px}   /* Fenster offen: kleine Blase, passt meist über das Fenster */
 .tut-berater.klein .tut-blase{padding:9px 12px 9px 18px;margin-bottom:10px} .tut-berater.klein .tut-blase p{font-size:15px}
 .tut-frage{display:flex;gap:8px} .tut-frage[hidden]{display:none}
 .tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
@@ -484,7 +485,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 body:has(#heroHall:not([hidden])) .tut-weg{top:calc(var(--safe-t,0px) + 18px);right:calc(var(--safe-r,0px) + 72px)}   /* Heldenhalle: neben dem X, nicht über den Reitern */
 /* Teilschritte als Punkte (aktiv Gold), Warte-Balken */
 .tut-blase{position:relative} .tut-zaehler{position:absolute;top:5px;right:10px;display:flex;gap:4px} .tut-zaehler[hidden]{display:none}
-.tut-zaehler:not([hidden]) + p{padding-top:6px}   /* Punkte nie am Text */
+.tut-blase > p{padding-top:6px}   /* Platz für die Punkte, immer (der Satz rutscht nicht, wenn sie kommen) */
 .tut-zaehler i{width:6px;height:6px;border-radius:50%;background:var(--ink-5);box-shadow:inset 0 0 0 1px #0004} .tut-zaehler i.an{background:var(--gold-300)}
 .tut-fort{display:block;height:8px;border-radius:4px;background:#d6c39a;box-shadow:inset 0 1px 2px #0006;overflow:hidden} .tut-fort[hidden]{display:none}
 .tut-fort i{display:block;height:100%;width:0;background:linear-gradient(#f2d68a,#c99a3e);transition:width .25s linear}
@@ -510,6 +511,7 @@ body:has(#heroHall:not([hidden])) .tut-weg{top:calc(var(--safe-t,0px) + 18px);ri
 .tut-freude{position:fixed;z-index:61;transform:translate(-50%,-100%);font:700 18px/1.2 Georgia,serif;color:#f0dfb0;white-space:nowrap;pointer-events:none;
   text-shadow:0 0 3px #000,0 1px 2px #000,0 0 8px rgba(0,0,0,.8);animation:tut-freude 1.2s ease-out forwards}   /* Freude-Moment: steigt am Ziel auf */
 @keyframes tut-freude{0%{opacity:0;translate:0 10px;scale:.8}15%{opacity:1;translate:0 0;scale:1.05}70%{opacity:1}100%{opacity:0;translate:0 -40px;scale:1}}
+.tut-freude.gross{display:flex;align-items:center;gap:8px;font-size:24px;animation-duration:2.2s} .tut-freude .icon{width:34px;height:34px;color:var(--gold-200);filter:drop-shadow(0 1px 3px #000)}   /* Burg-Stufe, Ausrüsten: großer Moment mit Bild */
 .tut-banner{position:fixed;left:50%;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 8px);z-index:81;display:flex;align-items:center;gap:8px;padding:10px 26px;border-radius:6px;transform:translateX(-50%);
   background:linear-gradient(#e9c46d,#b8862c);color:#2a1a05;font:800 17px var(--font-display);white-space:nowrap;box-shadow:0 4px 18px #000c;pointer-events:none}
 .tut-banner[hidden]{display:none} .tut-banner.an{animation:tut-banner 2.6s ease forwards}
@@ -521,6 +523,8 @@ body.tz-leiste #cornerButtons{visibility:hidden}   /* noch kein Knopf frei: kein
 #cornerButtons.tut-neu{animation:tut-leiste .5s ease-out} @keyframes tut-leiste{from{opacity:0}}
 .nav-btn.tut-neu,#hud .res.tut-neu{animation:tut-knopf .6s ease-out} @keyframes tut-knopf{0%{opacity:0;scale:.3}25%{opacity:1;scale:1.18}100%{scale:1}}   /* neu: fliegt ein (nur scale/opacity) */
 .nav-btn.tut-neuer::after{content:"NEU";position:absolute;top:0;left:calc(50% + 6px);padding:0 4px;border-radius:4px;background:#9b2f2f;color:#f0dfb0;font:700 11px/15px var(--font-ui);box-shadow:0 1px 3px #000a}   /* bis er einmal getippt wurde */
+body.tut-an:has(.kl-seite:not([hidden])) .tut-weg{display:none}   /* Kampfdetails im Tutorial: „Überspringen“ läge auf der Tafel (danach wieder da) */
+body.tz-gems #shopPopup .pill--gem,body.tz-events2 #shopPopup .pill--em{display:none}   /* Shop-Kopf im Tutorial: nur, was schon freigeschaltet ist (keine „0“ ohne Erklärung) */
 body.tut-an #citySpeedBtn{display:none!important}   /* Edelstein-Knopf „Fertig für …“: im Tutorial nur der Beschleuniger */
 body.tut-an .panel--item,body.tut-an .kl-seite{z-index:58}   /* Gegenstand-Fenster (Ausrüsten) im Tutorial unter dem Dunkel: Loch und Finger liegen darüber */
 body.tut-an .kl-seite{padding-bottom:60vh}   /* Kampfdetails im Tutorial: lässt sich ganz hochrollen – darunter Platz für Aldric */
@@ -2523,9 +2527,9 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 <div id="mapControls" class="mapctl" role="group" aria-label="Kartensteuerung">
   <button id="zoomInBtn" type="button" aria-label="Hineinzoomen"><svg class="icon"><use href="#i-plus"/></svg></button>
   <button id="zoomOutBtn" type="button" aria-label="Herauszoomen"><svg class="icon"><use href="#i-minus"/></svg></button>
-  <button id="homeBtn" type="button" aria-label="Zur Heimat"><svg class="icon"><use href="#i-home"/></svg></button>
-  <button id="markerBtn" type="button" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
-  <button id="armyBtn" type="button" aria-label="Armee aufstellen"><svg class="icon"><use href="#i-troops"/></svg></button>
+  <button id="homeBtn" type="button" data-wort="Heimat" aria-label="Zur Heimat"><svg class="icon"><use href="#i-home"/></svg></button>
+  <button id="markerBtn" type="button" data-wort="Marke" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
+  <button id="armyBtn" type="button" data-wort="Armee" aria-label="Armee aufstellen"><svg class="icon"><use href="#i-troops"/></svg></button>
 </div>
 <div id="armySheet" class="marker-sheet field-sheet" hidden></div>
 <div id="fieldSheet" class="marker-sheet field-sheet" hidden></div>
@@ -2584,6 +2588,7 @@ body:has(#islandPopup.is-open) .toast.toast:not(:empty){display:-webkit-box;-web
 #profilePopup #profileTabs.tabs,#rankTabs.tabs{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:auto}   /* Breite nach dem Text: „Einstellungen“, „Thron-Punkte“ bekommen mehr Platz, stoßen nicht an den Rand */
 #battleTabs.tabs{grid-template-columns:repeat(2,minmax(0,1fr))}
 .p5-reiter .tab .badge{position:absolute;top:4px;right:8px}
+#profilePopup > .pbody{padding-bottom:20px}   /* Einstellungen: die letzte Knopf-Reihe (Ton) ganz sichtbar, nicht unter dem Rahmen */
 @media (min-height:501px),(orientation:portrait){
   .p5-reiter .tab,#profilePopup #profileTabs .tab{min-height:48px;font-size:12px}
 }

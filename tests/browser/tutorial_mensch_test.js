@@ -103,9 +103,10 @@ const pause = () => 600 + Math.round(zufall() * 900);
       barbMarches.filter(m => m.who === 'player' && !m.back).forEach(m => vor(m, 'resolveAt', 'startedAt')); loadCity().builds.forEach(x => vor(x, 'endsAt', 'startedAt')); });
     await p.waitForTimeout(250);
   }
-  const M = await p.evaluate(() => ({ ...window.__mess, fertig: !!tut.fertig, burg: loadCity().levels.keep, k: (TUT[tut.s] || {}).k }));
+  const M = await p.evaluate(() => ({ ...window.__mess, fertig: !!tut.fertig, burg: loadCity().levels.keep, k: (TUT[tut.s] || {}).k, fo: !!loadCity().foRun || Object.values(loadCity().fo || {}).some(v => v > 0), gf: tut.g.f }));
   if (bilder) require('fs').writeFileSync(path.join(bilder, 'mess' + W + '.json'), JSON.stringify(M));
   ok(M.fertig && M.burg === 3, W + '×' + H + ': mit dem Finger bis zum Ende durchgespielt (Burg 3)', { k: M.k, burg: M.burg, s: Math.round((Date.now() - start) / 1000) });
+  ok(M.fo && M.gf === 1, 'die erste Forschung läuft am Ende wirklich (fehlende Rohstoffe einmal geschenkt)', { fo: M.fo, gf: M.gf });
   // ---- Auswertung ----
   const L = M.log.map((x, i) => ({ ...x, bis: (M.log[i + 1] || { t: x.t + 40 }).t }));
   const dauer = x => x.bis - x.t;
@@ -127,7 +128,7 @@ const pause = () => 600 + Math.round(zufall() * 900);
     .map(x => ({ k: x.k, teil: x.teil, lage: x.lage, blase: x.blase, fenster: x.fenster }));
   ok(!mitten.length, 'Blase nie mitten im offenen Fenster (über dessen Inhalt)', mitten.slice(0, 6));
   const erkl = L.filter(x => !x.aus && x.weiter && x.loch && dauer(x) > 300);
-  const erklSchritte = [...new Set(L.filter(x => !x.aus && x.weiter).map(x => x.k + ' ' + x.teil))], erklOhne = [...new Set(L.filter(x => !x.aus && x.weiter && x.teil && !x.loch && dauer(x) > 1500).map(x => x.k + ' ' + x.teil))];
+  const erklSchritte = [...new Set(L.filter(x => !x.aus && x.weiter).map(x => x.k + ' ' + x.teil))], erklOhne = [...new Set(L.filter(x => !x.aus && x.weiter && !x.loch && dauer(x) > 1500).map(x => x.k + ' ' + x.teil))];   // (auch kein „Weiter“ als Notausgang: der Schritt hing)
   ok(erkl.length && !erklOhne.length, 'Erklär-Teilschritte („Weiter“): Loch sichtbar auf dem erklärten Bereich', { mitLoch: [...new Set(erkl.map(x => x.k + ' ' + x.teil))], ohneLoch: erklOhne, alle: erklSchritte.length });
   const ohneZahl = t => t.replace(/[\d.,]+/g, '#');             // (Zahlen zählen hoch: derselbe Satz)
   const R = []; for (const x of L) { const sx = x.aus ? '' : ohneZahl(x.satz || ''), v = R[R.length - 1]; if (v && v.sx === sx) v.bis = x.bis; else R.push({ ...x, sx }); }   // ein Satz am Stück (Loch/Blase dürfen sich dabei bewegen)

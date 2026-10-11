@@ -40,6 +40,8 @@ Stand: 8.10. Bei „prüfen“ war der Punkt laut Git-Verlauf schon angegangen, 
   der Datei auf `doku/…` umstellen).
 
 ## Fragen an Alexander (offen)
+- Wirtschaft: Münzen am Anfang 10–30× mehr als Stadtkosten, Engpass Holz/Stein/Eisen; Vorschlag RoK-Art: Aufgaben geben Holz+Stein
+  (1/2/3 Std. Ertrag, Mindestwerte) statt Münzen – Analyse `scratchpad/AUFGABEN_ZAHLEN.md`. Noch nicht entschieden.
 - GitHub aufräumen (macht Alexander selbst): Default-Branch `claude/neues-projekt-8agldl`, alte Branches löschen
   (`claude/chat-session-k7ozkc`, `claude/aaa-rpg-character-vfx-9ydhnc`, `claude/game-server-setup-0n2gbr`,
   `claude/login-finance-dashboard-89et7f`, `claude/office-login-game-server-u7tgrc`, `claude/rpg-player-effects-design-kxqmsb`,

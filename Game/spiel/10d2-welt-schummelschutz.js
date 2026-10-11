@@ -179,6 +179,7 @@
             const pr = nn(p.res[k]), kk = m.rk[k]; let mehr = kontoProfil(kk, pr, P[k] || 0, M[k] || 0, now);
             if (kk.vor > 0) { if (hb) hb.rA[k] = nn(hb.rA[k]) + kk.vor; kk.vor = 0; }      // ausgegeben → Topf
             if (mehr <= 0) continue;
+            const tr = hb && hb.fr && hb.fr.r; if (tr && tr[k] > 0) { const x = Math.min(mehr, tr[k]); tr[k] -= x; mehr -= x; if (mehr <= 0) continue; }   // Tutorial-Geschenk (einmal, gedeckelt: hbTutRoh)
             const stunde = m.rEin.reduce((a, x) => a + x[k], 0), raum = Math.max(0, ROH_RAUM + .25 * Math.max(stunde, (m.rHp0 || {})[k] || 0) - m.rsr.reduce((a, x) => a + (x[k] || 0), 0));
             const nimm = Math.min(mehr, raum); if (nimm > 0) m.rsr.push({ t: now, [k]: nimm }); mehr -= nimm;
             if (mehr > 0 && d && hb && lim > d.rm.n) {     // Markt-Kauf: höchstens das Tageslimit – und die Münzen dafür werden abgebucht (vorher: jede Stunde neu und gratis)

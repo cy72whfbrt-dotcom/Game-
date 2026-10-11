@@ -23,6 +23,9 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   ok(w.neu === 21 && w.arten === w.moeglich && !w.leichtTT, '21 Arten: alle, die heute gehen, werden gewürfelt, Tempel/Thron nie leicht', w);
   ok((w.bundDa || !w.bund) && (w.bossHeute || !w.boss), 'nur was heute geht: Bündnis, Tagesboss', w);
   ok(w.gemsTag === 60, 'Edelsteine am Tag: 2 × (5 + 7 + 10) + 16 = 60', w.gemsTag);
+  const schwer = await ev(() => { const o = { einKlick: [], hart: [] }; for (const [k, d] of Object.entries(QUEST_DEFS)) { if (d.steps[2] > 0 && d.steps[2] <= 1 && !['tempel'].includes(k)) o.einKlick.push(k); if (d.steps[2] > 0) o.hart.push(k); }
+    o.bau = QUEST_DEFS.bau.steps.join(); for (let i = 0; i < 80; i++) { questState = null; store.set('openWaterQuests', ''); for (const t of loadQuests().list) if (t.st === 2 && t.target <= 1 && t.type !== 'tempel') o.einKlick.push('gewuerfelt:' + t.type); } return o; });
+  ok(!schwer.einKlick.length && schwer.bau === '1,2,3' && schwer.hart.length >= 8, '„schwer“ (3 Std. Ertrag) nie mit einem Klick: Forschung, Heilen, Markt, Rally, Zusammenlegen, Verstärkung nur leicht/mittel; Bauen 1/2/3', schwer);
   // 1b) Tempel (Zone 4, Pässe ab Tag 4) und Thron (ab Tag 7) nur, wenn sie heute angreifbar werden
   const tt = await ev(() => {
     const s0 = store.get('openWaterWorldStart'), tag = d => { store.set('openWaterWorldStart', String(Date.now() - (d - 1) * 86400000)); WEG_MERK.clear(); };

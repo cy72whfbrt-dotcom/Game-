@@ -108,9 +108,9 @@
 <div id="mapControls" class="mapctl" role="group" aria-label="Kartensteuerung">
   <button id="zoomInBtn" type="button" aria-label="Hineinzoomen"><svg class="icon"><use href="#i-plus"/></svg></button>
   <button id="zoomOutBtn" type="button" aria-label="Herauszoomen"><svg class="icon"><use href="#i-minus"/></svg></button>
-  <button id="homeBtn" type="button" aria-label="Zur Heimat"><svg class="icon"><use href="#i-home"/></svg></button>
-  <button id="markerBtn" type="button" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
-  <button id="armyBtn" type="button" aria-label="Armee aufstellen"><svg class="icon"><use href="#i-troops"/></svg></button>
+  <button id="homeBtn" type="button" data-wort="Heimat" aria-label="Zur Heimat"><svg class="icon"><use href="#i-home"/></svg></button>
+  <button id="markerBtn" type="button" data-wort="Marke" aria-label="Wegmarke setzen"><svg class="icon"><use href="#i-flag"/></svg></button>
+  <button id="armyBtn" type="button" data-wort="Armee" aria-label="Armee aufstellen"><svg class="icon"><use href="#i-troops"/></svg></button>
 </div>
 <div id="armySheet" class="marker-sheet field-sheet" hidden></div>
 <div id="fieldSheet" class="marker-sheet field-sheet" hidden></div>
