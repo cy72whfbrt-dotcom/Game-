@@ -13828,8 +13828,8 @@ function tutZiel(z) {                                            // → { rect, 
     return { rect: q, nurZeigen: !!z.el, el };
 }
 const TUT_LAGE = /^(transform|translate|scale|rotate|top|left|right|bottom|width|height|margin)/;   // Animationen, die ein Ziel verschieben
-const tutFaehrt = el => !!document.getAnimations && document.getAnimations().some(a => { const t = a.effect && a.effect.target;   // Ziel (oder sein Fenster) fährt noch ein
-    return a.playState === 'running' && t && t.contains && t.contains(el) && isFinite(a.effect.getComputedTiming().endTime) && a.effect.getKeyframes().some(k => Object.keys(k).some(n => TUT_LAGE.test(n))); });
+const tutFaehrt = el => !!document.getAnimations && document.getAnimations().some(a => { const t = a.effect && a.effect.target, z = t && a.effect.getComputedTiming();   // Ziel (oder sein Fenster) fährt noch ein
+    return a.playState === 'running' && t && t.contains && t.contains(el) && isFinite(z.endTime) && !(z.progress >= .6) && a.effect.getKeyframes().some(k => Object.keys(k).some(n => TUT_LAGE.test(n))); });   // (ab 60 % steht es fast: Loch schon zeigen)
 let tutBaldUhr = 0;
 function tutBald(ms) { if (!tutBaldUhr) tutBaldUhr = setTimeout(() => { tutBaldUhr = 0; if (tutLaeuft()) tutZeigen(); }, ms); }   // gleich noch mal nachsehen (nicht erst beim nächsten Takt)
 const tutDeckt = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;   // zwei Rechtecke {l,t,r,b} überlappen
