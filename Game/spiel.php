@@ -1724,9 +1724,8 @@ main .besch-ic,.besch-ic{width:22px;height:22px;object-fit:contain} #beschInhalt
 .splash-pct{font:700 var(--fs-12)/1 var(--font-ui);color:#f0d69a;font-variant-numeric:tabular-nums;letter-spacing:.04em;text-shadow:0 1px 4px rgba(0,0,0,.9)}
 .splash-bar{position:relative;width:100%;height:4px;border-radius:2px;background:rgba(0,0,0,.5);box-shadow:0 0 0 1px rgba(212,173,102,.45)}   /* (Rand als Schatten: die Füllung hat die volle Breite der Spur → Prozent stimmt) */
 .splash-bar i{position:absolute;left:0;top:0;bottom:0;width:0;border-radius:2px;background:linear-gradient(90deg,#a27832,#e4c886 70%,#fff3cf);box-shadow:0 0 8px rgba(236,190,110,.6);
-  animation:sp-load 6s cubic-bezier(.15,.75,.3,1) forwards}
+  transition:width .3s ease-out}   /* echter Stand: ladebildschirm.js bilderVorab (Bilder geladen + entpackt) */
 .splash-bar i::after{content:"";position:absolute;right:-3px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#fff8e0;box-shadow:0 0 8px 2px rgba(255,214,140,.9)}
-@keyframes sp-load{to{width:72%}}   /* (langsam auslaufend: der Balken steht nicht still, solange das Spiel noch lädt) */
 .splash.is-done .splash-bar i{animation:none;width:100%;transition:width .6s ease-out}
 /* desktop: logo top left like a poster, bar centred */
 @media (min-width:900px) and (min-aspect-ratio:11/10){.splash{align-items:stretch;padding:15vh 4vw calc(var(--safe-b) + 56px)}.splash-top{align-items:flex-start;text-align:left}

@@ -13414,24 +13414,36 @@ document.addEventListener('click', e => { const bt = e.target.closest && e.targe
     const sp = document.getElementById('splash');
     if (!sp) return;
     const skip = navigator.webdriver && !window.__FORCE_SPLASH;          // automated tests
-    if (skip) { if (window.__stopSplashScene) window.__stopSplashScene(); sp.remove(); splashDone(); return; }
-    const statusEl = document.getElementById('splashStatus');   // (Tipps und Prozent laufen im eigenen Skript des Ladebilds)
-    const steps = ['Welt wird erschaffen …', 'Inseln werden besiedelt …', 'Truppen werden gerüstet …', 'Bereit'];
-    const wait = Math.max(0, 2600 - performance.now());
-    steps.slice(1, 3).forEach((t, i) => setTimeout(() => { statusEl.textContent = t; }, wait * (i + 1) / 3));
-    setTimeout(() => {
+    if (skip) { if (window.__stopSplashScene) window.__stopSplashScene(); sp.remove(); splashDone(); bilderNachladen(); return; }
+    const statusEl = document.getElementById('splashStatus');   // (Tipps, Prozent und Bilder-Stand laufen im eigenen Skript des Ladebilds)
+    const wait = Math.max(0, 2600 - performance.now()), bilder = window.__bilderVorab && window.__bilderVorab.fertig;   // erst, wenn die Bilder für Start + Tutorial da und entpackt sind (höchstens 25 s)
+    Promise.all([new Promise(r => setTimeout(r, wait)), bilder && Promise.race([bilder, new Promise(r => setTimeout(r, 25000))])]).then(() => {
         const fill = document.getElementById('splashFill');
         fill.style.width = getComputedStyle(fill).width;             // freeze the CSS animation where it is …
         sp.classList.add('is-done');
         requestAnimationFrame(() => { fill.style.width = '100%'; }); // … and finish from there
         setTimeout(() => {
-            statusEl.textContent = steps[3];                         // „Bereit“ erst, wenn der Balken voll ist
+            statusEl.textContent = 'Bereit';                         // „Bereit“ erst, wenn der Balken voll ist
             sp.classList.add('is-leaving');
-            splashDone();
+            splashDone(); bilderNachladen();
             setTimeout(() => { if (window.__stopSplashScene) window.__stopSplashScene(); sp.remove(); }, 800);
         }, 900);
-    }, wait);
+    });
 })();
+// Nach dem Ladebild: die übrigen Bilder der Oberfläche (aus den Stilen) und alle Helden in Ruhe in den Browser-Zwischenspeicher holen –
+// eins nach dem anderen, nur wenn nichts los ist (nicht entpackt: das macht der Browser beim ersten Zeigen). Nichts wird gespeichert.
+function bilderNachladen() {
+    const v = window.__bilderVorab, schon = new Set(v ? v.liste : []), url = new Set();
+    if (SYSTEM || (navigator.connection && navigator.connection.saveData)) return;
+    const css = l => { for (const r of l) { if (r.cssRules) css(r.cssRules); for (const m of (r.cssText || '').matchAll(/bilder\/[\w-]+\.(?:webp|jpg|png)/g)) url.add(m[0]); } };
+    for (const st of document.styleSheets) { try { css(st.cssRules); } catch (e) {} }
+    for (const h of HEROES) { url.add(heroPic(h.id)); url.add(heroPic(h.id, true)); }
+    const rest = [...url].filter(u => !schon.has(u)), nach = v ? v.nach = new Set() : new Set();   // (nach: was hier geholt wird – der Test zählt es nicht als „im Tutorial nachgeladen“)
+    const ruhe = f => window.requestIdleCallback ? requestIdleCallback(f, { timeout: 3000 }) : setTimeout(f, 300);
+    const naechstes = () => { const u = rest.shift(); if (!u) return; nach.add(u); const im = new Image(); try { im.fetchPriority = 'low'; } catch (e) {}
+        im.onload = im.onerror = () => ruhe(naechstes); im.src = u; };
+    setTimeout(() => ruhe(naechstes), 8000);
+}
 
 exploreOwned();                          // Nebel: the land around every own base is always known
 renderActiveMarches();

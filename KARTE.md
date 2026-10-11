@@ -243,6 +243,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bgShow` → Game/spiel/03a-karte-hintergrund.js:404
 - `bgWarm` → Game/spiel/03a-karte-hintergrund.js:431
 - `bild30` → Game/ladebildschirm.js:289
+- `bilderNachladen` → Game/spiel/10c-start-einstellungen.js:212
+- `bilderVorab` → Game/ladebildschirm.js:351
 - `bindTroopInput` → Game/spiel/10a-fenster-insel-vorschau.js:356
 - `bis` → Game/spiel/03c-karte-wappen-thronplatz.js:454
 - `bitHat` → Game/spiel/10d4-welt-nebel-server.js:18
@@ -670,6 +672,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `crestKeyOf` → Game/spiel/03c-karte-wappen-thronplatz.js:52
 - `crestPath` → Game/spiel/03c-karte-wappen-thronplatz.js:13
 - `csp_nonce` → Game/server/02-sicherheit-datenlecks.php:13
+- `css` → Game/spiel/10c-start-einstellungen.js:215
 - `currentRank` → Game/spiel/05a-profil-rahmen.js:64
 - `dailyBeute` → Game/spiel/06a-aufgaben.js:60
 - `dailyClaimable` → Game/spiel/06a-aufgaben.js:29
@@ -821,7 +824,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `feldBarbMarsch` → Game/spiel/09b-lager-tagesboss.js:92
 - `feldBarbSpeichern` → Game/spiel/09b-lager-tagesboss.js:93
 - `feldBericht` → Game/spiel/09a-funde-felder.js:253
-- `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:220
+- `feldErlaubt` → Game/spiel/10c-start-einstellungen.js:232
 - `feldKampfBild` → Game/spiel/03f-marsch-bilder.js:536
 - `feldMult` → Game/spiel/09a-funde-felder.js:171
 - `feldRingAuf` → Game/spiel/09d-karte-armeen-wegmarken.js:347
@@ -1313,9 +1316,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:214
 - `levelUpItem` → Game/spiel/02a-shop-stufen.js:161
 - `liste` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:75
-- `liveBald` → Game/spiel/10c-start-einstellungen.js:232
+- `liveBald` → Game/spiel/10c-start-einstellungen.js:244
 - `liveHtml` → Game/spiel/01a-grundlagen.js:150
-- `liveTick` → Game/spiel/10c-start-einstellungen.js:236
+- `liveTick` → Game/spiel/10c-start-einstellungen.js:248
 - `liveUhren` → Game/spiel/01a-grundlagen.js:168
 - `lkBuy` → Game/spiel/08b-stadt-burg-aussehen.js:33
 - `lkCard` → Game/spiel/08b-stadt-burg-aussehen.js:26
@@ -1490,6 +1493,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `mzWartetBeiMir` → Game/spiel/03f-marsch-bilder.js:145
 - `nachrichtBauen` → Game/weltrechner/push.js:131
 - `naechsterRang` → Game/spiel/05a-profil-rahmen.js:101
+- `naechstes` → Game/spiel/10c-start-einstellungen.js:220
 - `name` → Game/spiel/06c-thron-mitte.js:243
 - `name` → Game/weltrechner/push.js:69
 - `name_anfrage` → Game/server/06-speichern-push-konto.php:176
@@ -1533,7 +1537,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `noteBattle` → Game/bots/02-kampf-karte.js:261
 - `oeffnen` → Game/spiel/05d-marsch-liste-kampfbericht.js:504
 - `offen` → Game/spiel/05d-marsch-liste-kampfbericht.js:177
-- `offen` → Game/spiel/10c-start-einstellungen.js:239
+- `offen` → Game/spiel/10c-start-einstellungen.js:251
 - `offene_befehle` → Game/server/05-datenbank-welt.php:229
 - `offenePaesse` → Game/spiel/01b-weltkarte.js:215
 - `onPointerEnd` → Game/spiel/03e-karte-kamera-eingabe.js:319
@@ -1821,6 +1825,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `row` → Game/spiel/09c-events-woche.js:134
 - `rr` → Game/spiel/03a-karte-hintergrund.js:610
 - `rueckzuegeZuClient` → Game/welt.js:202
+- `ruhe` → Game/spiel/10c-start-einstellungen.js:219
 - `rulerOwner` → Game/spiel/01d-helden-daten-herrscher.js:163
 - `runBotTick` → Game/bots/05-verteidigen-takt.js:335
 - `rund` → Game/spiel/08f-stadt-bild-zeichnen.js:20
@@ -2035,7 +2040,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapFog` → Game/spiel/10b-fenster-insel-knoepfe.js:228
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
-- `teil` → Game/spiel/10c-start-einstellungen.js:240
+- `teil` → Game/spiel/10c-start-einstellungen.js:252
 - `teil` → Game/spiel/10c2-tutorial.js:371
 - `teleImRucksack` → Game/spiel/06d-schild-produktion.js:80
 - `teleportFx` → Game/spiel/08d2-stadt-teleport.js:97
@@ -2286,6 +2291,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `weich` → Game/spiel/03a-karte-hintergrund.js:78
 - `weich` → Game/spiel/08a-stadt-bauen.js:208
 - `weight` → Game/bots/04-stand-stadt.js:291
+- `weiter` → Game/ladebildschirm.js:362
 - `welcomeListHtml` → Game/spiel/06d-schild-produktion.js:368
 - `welcomeNachziehen` → Game/spiel/06d-schild-produktion.js:371
 - `welcomeRows` → Game/spiel/06d-schild-produktion.js:331
@@ -2411,6 +2417,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `zahlOk` → Game/spiel/10d2-welt-schummelschutz.js:15
 - `zeichne` → Game/ladebildschirm.js:242
 - `zeichne` → Game/spiel/03f-marsch-bilder.js:267
+- `zeig` → Game/ladebildschirm.js:356
 - `zeige` → Game/speichern.js:65
 - `zeigen` → Game/benachrichtigung.js:50
 - `zeigen` → Game/spiel/05d-marsch-liste-kampfbericht.js:515
@@ -4457,11 +4464,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `einstellungenZeigen` :144 — EINSTELLUNGEN (Profil → Einstellungen): Benachrichtigungen (benachrichtigung.js…
 - `spielVersion` :156 — Version: Zeit von spiel.js auf dem Server (window.__OW.version) – sonst aus der…
 - `finishSplash` :190
-- `feldErlaubt` :220 — Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefe…
-- `liveBald` :232 — neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
-- `liveTick` :236
-- `offen` :239
-- `teil` :240
+- `bilderNachladen` :212 — Nach dem Ladebild: die übrigen Bilder der Oberfläche (aus den Stilen) und alle …
+- `css` :215
+- `ruhe` :219
+- `naechstes` :220
+- `feldErlaubt` :232 — Nichts markieren und kein Kopieren-Menü beim langen Drücken (außer in Eingabefe…
+- `liveBald` :244 — neue Daten: gleich nachziehen, aber höchstens 1× pro Sekunde
+- `liveTick` :248
+- `offen` :251
+- `teil` :252
 
 ### Game/spiel/10c2-tutorial.js — Tutorial für neue Spieler (Burg 1 → 3) im echten Spiel: dunkel mit Loch, Finger…
 - `tut` :19
@@ -4872,6 +4883,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `img.onload` :295
 - `pct` :329
 - `window.__stopSplashScene` :335
+- `bilderVorab` :351
+- `zeig` :356
+- `weiter` :362
 
 ### Game/skript.php — skript.php – liefert die verkleinerten Spiel-Skripte aus Game/klein/ (entstehen…
 
