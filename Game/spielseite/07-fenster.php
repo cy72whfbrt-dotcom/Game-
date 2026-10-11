@@ -198,6 +198,7 @@
 .p5-gruppe{margin:12px 0 4px;font:700 11px/1 var(--font-ui);letter-spacing:.1em;text-transform:uppercase;color:var(--gold-200)}
 .p5-gruppe:first-child{margin-top:4px}
 #tabSet .set-zeile{min-height:44px}
+.set-version{margin:18px 0 4px;text-align:center;font:500 10px/1.2 var(--font-ui);color:var(--tx-4)}   /* klein und unauffällig – nur für Rückfragen */
 #tabSet .set-zeile input{width:24px;height:24px}
 #tabSet .set-knoepfe .btn,#tabSet .set-ab .btn,#tabSet .set-pw .btn,#pushKnopf{min-height:44px}
 .p5-hilfe summary{min-height:44px;display:flex;align-items:center;cursor:pointer;font:600 13px/1.2 var(--font-ui);color:var(--tx-1)}
@@ -342,8 +343,7 @@ button.rp-bund{position:relative} button.rp-bund::before{content:"";position:abs
         <p><b>Profil</b> → Spieler (Aussehen, Rangliste), Ausrüstung, Fähigkeiten, Einstellungen.</p>
         <p><b>Karte</b> → Basis antippen: angreifen, Truppen senden, aufwerten. Felder: sammeln. Mitte: wer den Mega-Tempel hält, herrscht.</p>
       </details>
-      <div class="sect"><h4>Info</h4></div>
-      <div class="kv"><div><span>Version</span><b id="setVersion"></b></div></div>
+      <p class="set-version">Version <span id="setVersion"></span></p>
     </div>
 
   </div>

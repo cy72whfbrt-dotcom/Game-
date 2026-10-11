@@ -1,7 +1,7 @@
 // Fenster-Feinschliff aus dem Spieltest 7.10. (Vorschau ohne Server, Handy 390×844 + Desktop 1440×900):
 // A) Rucksack: „Kaufen“ zeigt den Preis mit Edelstein (wie im Shop); Handy: eine Splitter-Reihe (4 Helden) steht ganz im Fenster (nicht unter der Blende)
 // B) Pass (Handy): die Premium-Reihe steht ganz im Fenster
-// C) Shop „Markt“ (Handy): so hoch wie die anderen Fenster (keine leere Fläche); „Kisten“ bleibt die hohe Ausnahme
+// C) Shop „Markt“ (Handy): so hoch wie die anderen Shop-Reiter (das Fenster springt beim Reiterwechsel nicht)
 // D) Reiter Rangliste („Thron-Punkte“) und Profil („Einstellungen“): Text ≥ 8 px vom Rand
 // E) Events → Abholen: „Tag 1: … / Bereit zum Abholen“ klebt nicht am linken Rand
 // F) Desktop: Hinweis bei offenem Basis-Fenster liegt nicht über dem Fenster (z. B. „Zum Verlegen brauchst du …“)
@@ -39,7 +39,6 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     ok(rk.n === 4 && rk.reihe === 4 && !rk.kauf, art + ': Rucksack – Raster mit 4 Kacheln in einer Reihe (4 Splitter), kein „Kaufen“', rk);
     if (art === 'Handy') { await ev(() => document.querySelector('#rkInhalt .rk-raster').scrollIntoView({ block: 'center' })); await p.waitForTimeout(150); const f = await frei('#rkInhalt .rk-raster'); ok(f >= 10, art + ': Rucksack – Kachel-Raster ganz im Fenster (nicht abgeschnitten)', f); }
     await bild('rucksack');
-    const hRuck = await ev(() => Math.round(rucksackPopup.getBoundingClientRect().height));
     // B) Pass
     await ev(() => { closeAllPopups(); openGoals(); showGoalsTab('pass'); }); await p.waitForTimeout(500);
     if (art === 'Handy') { const f = await frei('#passPane .pass-prem'); ok(f >= 30, art + ': Pass – Premium-Reihe ganz im Fenster', f); }
@@ -49,13 +48,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const tag = await ev(() => { const r = document.querySelector('#dailyCard .daily-row'), t = r && r.querySelector('.daily-txt'); return r && t ? Math.round(t.getBoundingClientRect().left - r.getBoundingClientRect().left) : null; });
     await bild('abholen');
     ok(tag >= 8, art + ': Abholen – „Tag 1 …“ mit Abstand zum linken Rand (≥ 8 px)', tag);
-    // C) Markt so hoch wie die anderen Fenster (Handy), Kisten bleibt höher
+    // C) Markt so hoch wie die anderen Shop-Reiter (Spieltest 11.10.: Höhe sprang beim Reiter „Markt“)
     await ev(() => { closeAllPopups(); openShop('markt'); }); await p.waitForTimeout(400);
     const hMarkt = await ev(() => Math.round(shopPopup.getBoundingClientRect().height));
     await bild('markt');
     await ev(() => { showShopTab('gems'); }); await p.waitForTimeout(400);
     const hKisten = await ev(() => Math.round(shopPopup.getBoundingClientRect().height));
-    if (art === 'Handy') ok(Math.abs(hMarkt - hRuck) <= 2 && hKisten > hMarkt + 40, art + ': Shop „Markt“ so hoch wie andere Fenster, „Kisten“ höher', { hMarkt, hRuck, hKisten });
+    if (art === 'Handy') ok(Math.abs(hMarkt - hKisten) <= 2, art + ': Shop „Markt“ so hoch wie „Kisten“ (kein Sprung beim Reiterwechsel)', { hMarkt, hKisten });
     // D) Reiter: Text nie am Rand
     const rand = sel => ev(sel => [...document.querySelectorAll(sel)].filter(x => x.offsetParent).map(x => { const a = x.getBoundingClientRect(), s = x.querySelector('span'), q = s.getBoundingClientRect();
       return { t: s.textContent, l: Math.round(q.left - a.left), r: Math.round(a.right - q.right), voll: s.scrollWidth <= s.clientWidth }; }), sel);

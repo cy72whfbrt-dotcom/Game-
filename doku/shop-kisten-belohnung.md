@@ -10,6 +10,9 @@ Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (
   (`ui_kachel_*` je Seltenheit, KI-Symbol `bilder/beute_*.webp`, Menge unten rechts) – nie nur Text „+120.000 Münzen“.
   Gilt in Shop, Aufgaben, Erfolgen, Tagesbelohnung, Abholfach, Pass, Stufe, Kriegsherr, Event-Preisen,
   Kampfbericht (Rohstoffe). Bilder schneiden: `werkzeuge/beute_bilder_schneiden.py`.
+  Zahl auf der Kachel ab 10.000 kurz wie im HUD (`fmtHud`: 154K, 2,5M) – passt auch auf kleine Kacheln.
+- Seltenheit + Gegenstand immer grammatisch: `rarTeil(r, slot)` / `rarWort(r, nomen, g)` („Epische Waffe“, „Gewöhnlicher
+  Schild“, „Seltene Stiefel“; Geschlecht `g` in `EQUIPMENT_DEFS`).
 - Jeder Kauf ab 500 Edelsteinen erst nach „Wirklich? N Edelsteine“ (zweiter Tipp nach > 450 ms, binnen 4 s,
   `gemsWirklich`, `gemsArmed`) – auch Beschleunigen, Forschung fertig, Premium-Pass, Schild 700, Teleport.
 - Wörter: im Spiel „Edelsteine“ und „Fähigkeiten“ (nie „Gems“/„Skills“); Code-Namen bleiben. „Münzen“ statt „Gold“
@@ -18,7 +21,7 @@ Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (
 ## Gegenstände (gemeinsam für alle Events, 05e)
 - Spielstand `openWaterGegenst`: `eventMuenzen`, `schluessel1`, `schluessel2`, `besch` {'1m','5m','15m','1h','3h','8h','24h'}.
   Gutschreiben nur über `gibBelohnung(art, menge, extra)` (Arten `eventMuenzen`, `schluessel1/2`, `besch` mit Dauer, `gems`, `coins`)
-  → Kachel-Angabe. Kacheln: beute_eventmuenze, beute_schluessel(_episch), beute_beschleuniger_klein/mittel/gross (Dauer oben links).
+  → Kachel-Angabe. Kacheln: beute_eventmuenze, beute_schluessel(_episch), beute_beschleuniger_klein/mittel/gross (Dauer oben mittig im Rahmen).
 - Preise in 05e: `SCHLUESSEL_PREIS` (100/500 Edelsteine, 200/1.000 Event-Münzen, Woche 10/3), `BESCH_PREIS` (Edelsteine, Event-Münzen, Limit).
 - Beschleuniger kürzen Bauen und Forschen (Knopf im Gebäude-Fenster und im Labor → Fenster `beschPopup`, einzeln oder
   „Passend benutzen“); nicht Truppen. Heilen geht sofort mit Münzen – dort keiner.
@@ -55,6 +58,9 @@ Markt, Gegenstände. Wichtigste Dateien: `Game/spiel/06g-shop-gegenstaende.js` (
 
 ## Tägliche Belohnung, Stufen-Belohnung
 - Tagesbelohnung + Wochenkette (verpasster Tag = Tag 1); beim allerersten Start erst nach dem Tutorial.
+  „Abholen“ im Events-Fenster holt mit EINEM Tipp ab (`dailySofort`); das Fenster zeigt dann „Erhalten“ mit Bild + Name +
+  Zahl je Sache (`beuteLis(…, mitNamen)`, `mitZahl`) und „Weiter“. Das Fenster beim Spielstart: „Abholen“, dann „Weiter“.
+- Shop: alle Reiter gleich hoch (auch „Markt“ – das Fenster springt beim Reiterwechsel nicht).
 - Stufen-Belohnung: siehe `wirtschaft-zahlen.md`; startet beim Weltrechner bei SEINER Stufe (nie der vom Handy).
 
 ## Offen (Merkliste)

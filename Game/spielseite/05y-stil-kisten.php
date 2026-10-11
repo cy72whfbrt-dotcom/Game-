@@ -12,7 +12,7 @@
 .bk > img.bk-held{left:5%;top:5%;width:40%;height:40%;border-radius:50%;object-fit:cover;border:1.5px solid #f6e7bf;background:#1b2638;filter:none}
 .bk > b{position:absolute;right:7%;bottom:5%;font:800 calc(var(--bk,60px) * .22)/1 var(--font-ui);color:#fff;font-variant-numeric:tabular-nums;white-space:nowrap;
   text-shadow:0 0 2px #000,0 1px 2px #000,1px 0 1px #000,-1px 0 1px #000,0 -1px 1px #000}
-.bk > i.bk-zeit{position:absolute;left:6%;top:5%;font:800 calc(var(--bk,60px) * .17)/1 var(--font-ui);font-style:normal;color:#ffe7a8;white-space:nowrap;text-shadow:0 0 2px #000,0 1px 2px #000}   /* Beschleuniger: Dauer oben links */
+.bk > i.bk-zeit{position:absolute;left:50%;top:11%;transform:translateX(-50%);padding:1px 4px;border-radius:4px;background:rgba(8,10,14,.72);font:800 calc(var(--bk,60px) * .16)/1.1 var(--font-ui);font-style:normal;color:#ffe7a8;white-space:nowrap;text-shadow:0 1px 1px #000}   /* Beschleuniger: Dauer oben mittig im Rahmen (nicht auf der Kante) */
 .bk-raster{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
 .bk-klein{--bk:40px;gap:4px} .bk-mini{--bk:32px;gap:3px;justify-content:flex-start}
 .bk-mit{display:flex;flex-direction:column;align-items:center;gap:3px;width:calc(var(--bk,60px) + 16px)}
@@ -20,6 +20,8 @@
 /* Listen in den Fenstern (Tag, Stufe, Kriegsherr): Kacheln nebeneinander statt Zeilen */
 .lvlup-rewards:has(> .bk){flex-direction:row;flex-wrap:wrap;justify-content:center;gap:8px}
 .lvlup-rewards > li.bk{display:block;padding:0;border:0;border-radius:0;background:var(--ki-kachel) center/100% 100% no-repeat;--bk:58px}
+.lvlup-rewards:has(> .bk-mit){flex-direction:row;flex-wrap:wrap;justify-content:center;gap:10px} .lvlup-rewards > li.bk-mit{padding:0;border:0;border-radius:0;background:none;--bk:58px;width:96px;gap:5px}   /* Tages-Belohnung „Erhalten“: Bild + Name */
+.lvlup-rewards > li.bk-mit > .bk{flex:none} .lvlup-rewards > li.bk-mit small{font-size:12px;color:var(--tx-1)}
 /* Aufgaben, Abholfach, Events, Pass: kleine Kacheln in der Zeile */
 .quest-rew:has(.bk){padding:0;border:0;background:none;gap:3px} .quest-rew .bk{--bk:38px}
 .inbox-row .bk-raster{margin-top:4px}
@@ -38,7 +40,7 @@
 @media (max-width:480px){.rk-tabs .icon{display:none} .rk-tabs button{padding:0 2px;font-size:11px}}
 .rk-raster{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;--bk:56px}   /* 4–5 Kacheln je Reihe */
 .rk-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;border:1px solid transparent;border-radius:10px;background:none;cursor:pointer;min-width:0}
-.rk-item small{font:600 10px/1.15 var(--font-ui);color:var(--tx-2);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-item small{font:600 10px/1.15 var(--font-ui);color:var(--tx-2);text-align:center;max-width:100%;min-height:2.3em;overflow-wrap:anywhere;hyphens:auto}   /* voller Name, notfalls 2 Zeilen („Splitter / Brunhild“) */
 .rk-item.is-on{border-color:var(--gold-300);background:color-mix(in srgb,var(--gold-300) 14%,transparent)}
 .rk-leer .btn{margin-top:6px}
 @media (max-width:899px) and (min-height:501px){ #rucksackPopup .pbody{gap:8px} .rk-fach{--bk:46px;padding:4px 8px} .rk-liste{gap:4px} }   /* Handy: enger, damit die Splitter-Reihe ganz im Fenster steht */

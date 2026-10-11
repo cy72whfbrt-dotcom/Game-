@@ -345,7 +345,7 @@ function barbSheetHtml() {
             '<div class="field-lines"><span>Krieger</span><b>' + fmtNum(c.t) + (c.t < c.max ? ' <small>von ' + fmtCompact(c.max) + '</small>' : '') + '</b>' +
             '<span>Beute</span><b>' + lagerBeuteText(rec, c.L) + '</b>' +
             '<span>Tagesgrenze</span><b>' + fmtCompact(rec.m || 0) + ' / ' + fmtCompact(LAGER_GRENZE.m) + '</b>' +
-            '<span>Heute</span><b>' + rec.n + ' / ' + barbTagMax() + ' heute</b>' +
+            '<span>Heute</span><b>' + rec.n + ' / ' + barbTagMax() + '</b>' +
             '<span>Freigeschaltet</span><b>bis Stufe ' + Math.min(BARB_MAX_L, rec.b + 1) + '</b></div>' +
             (!open ? '<div class="notice">' + icon('lock') + '<span>Erst ein Lager der Stufe ' + (c.L - 1) + ' besiegen – dann ist Stufe ' + c.L + ' dran.</span></div>' :
              left <= 0 ? '<div class="notice notice--gold">' + icon('hourglass') + '<span>Für heute genug: ' + barbTagMax() + ' / ' + barbTagMax() + ' heute. Neue Lager in ' + mid + '.</span></div>' :

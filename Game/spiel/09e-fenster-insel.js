@@ -31,7 +31,7 @@ function isUiElement(target) {
 }
 const PANEL_NAV = { bundPopup: 'bundBtn', profilePopup: 'profileBtn', battleLogPopup: 'battleLogBtn', goalsPopup: 'goalsBtn', rucksackPopup: 'rucksackBtn', shopPopup: 'shopBtn' };   // das Dock zeigt, welches Fenster offen ist
 function isPanelOpen(el) { return el.classList.contains('is-open'); }
-function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); syncPanelState(); }
+function openPanel(el) { el.style.removeProperty('display'); el.classList.add('is-open'); feldRingZu(); syncPanelState(); }   // (die runden Knöpfe eines Karten-Felds schließen, sobald ein Fenster aufgeht)
 function closePanel(el) { el.classList.remove('is-open'); syncPanelState(); }
 function syncPanelState() {
   const open = [...document.querySelectorAll('.panel.is-open')];

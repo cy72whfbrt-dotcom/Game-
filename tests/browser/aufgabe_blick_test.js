@@ -16,8 +16,8 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   const ev = (f, a) => p.evaluate(f, a).catch(e => ({ fehler: e.message }));
   const bild = async n => { if (bilder) await p.screenshot({ path: path.join(bilder, 'blick_' + n + '.png') }).catch(() => {}); };
   // B) erster Start: nur das Tutorial – kein leeres „Willkommen zurück“, keine Tagesbelohnung davor
-  const s = await ev(() => ({ welcome: !document.getElementById('welcomeModal').hidden, daily: !document.getElementById('dailyModal').hidden, anl: !document.getElementById('tut').hidden, schritt: tut.s, wf: !!welcomeFrom }));
-  ok(!s.welcome && !s.wf && !s.daily && s.anl && s.schritt === 0, 'Erster Start: nur Tutorial Schritt 1 (kein „Willkommen zurück“, Tagesbelohnung erst später)', s);
+  const s = await ev(() => ({ welcome: !document.getElementById('welcomeModal').hidden, daily: !document.getElementById('dailyModal').hidden, anl: !document.getElementById('tutWillkommen').hidden, schritt: tut.s, wf: !!welcomeFrom }));
+  ok(!s.welcome && !s.wf && !s.daily && s.anl && s.schritt === 0, 'Erster Start: nur das Tutorial-Willkommen vor Schritt 1 (kein „Willkommen zurück“, Tagesbelohnung erst später)', s);
   const d = await ev(() => { tut.fertig = tut.alles = true; tutZeigen(); showDailyModal();   // (Tutorial übersprungen: ab hier alles sichtbar)
     const o = { rows: [...document.querySelectorAll('#dailyModalRewards li')].map(li => li.title || li.innerText.replace(/\s+/g, ' ')), tage: document.querySelectorAll('#dailyModalDays .daily-day').length, heute: !!document.querySelector('#dailyModalDays .is-today') };
     return o; });

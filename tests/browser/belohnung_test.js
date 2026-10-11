@@ -73,7 +73,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
   // 8) Tagesbelohnung, Abholfach, Pass, Stufe, Events, Kampfbericht: überall Kacheln
   const ue = await ev(async () => { const o = {};
     dailyState = { last: null, day: 0 }; showDailyModal(); o.tag = !!document.querySelector('#dailyModalRewards li.bk[data-beute="kiste"]');
-    document.getElementById('dailyModalBtn').click(); o.tagDanach = document.querySelectorAll('#dailyModalRewards li.bk[data-beute="item"]').length >= 1; closeDailyModal();
+    document.getElementById('dailyModalBtn').click(); o.tagDanach = document.querySelectorAll('#dailyModalRewards li.bk-mit .bk[data-beute="item"]').length >= 1; closeDailyModal();
     inboxAdd({ src: 'gift', title: 'Kachel-Test', gems: 7, crate: 3 }); openGoals('reward'); await new Promise(f => setTimeout(f, 300));
     o.fach = document.querySelectorAll('#inboxList .inbox-row .bk').length >= 2; const g0 = gems; document.querySelector('#inboxList [data-inbox]').click();
     const f = document.getElementById('beuteFenster'); o.fachAb = gems - g0 >= 7 && !f.hidden && /kiste_royal/.test(f.querySelector('.bf-kiste').getAttribute('src')); beuteFensterZu();

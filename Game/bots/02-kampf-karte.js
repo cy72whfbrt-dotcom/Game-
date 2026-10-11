@@ -152,7 +152,7 @@ function resolveBotAttack(attack) {
             type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,
             atkGear: fighterSnapshot(bot.id, attack.hx), defGear: fighterSnapshot(targetOwner, dHx), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, wounded: dw || 0,
             fallen: defWeg, won, capitalHolds, defGold: dg, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, defName: (botById[targetOwner] || {}).name, ...(parts || {}), ...verstInfo, ...atkInfo },
-            capitalHolds ? bot.name + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
+            capitalHolds ? bot.name + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? bot.name + ' hat ' + deineBasis(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
     if (vs) verstBerichte(vs, { type: 'botAttack', botName: bot.name, botId: bot.id, targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: attack.attackBonus || 0, atkFallen, atkWounded, atkFled: fled,   // die Helfer: derselbe Bericht
         atkGear: fighterSnapshot(bot.id, attack.hx), defGear: targetOwner ? fighterSnapshot(targetOwner, dHx) : null, enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense, fallen: defWeg, wounded: dwBesitzer,
@@ -197,7 +197,7 @@ function resolveBotAttack(attack) {
         flashHint((capitalHolds
             ? bot.name + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.'
             : won
-            ? bot.name + ' hat deine Basis ' + islandTitle(target) + ' erobert!'
+            ? bot.name + ' hat ' + deineBasis(target) + ' erobert!'
             : 'Verteidigung erfolgreich – ' + bot.name + ' bei ' + islandTitle(target) + ' zurückgeschlagen.') + (defWounded ? ' ' + fmtCompact(defWounded) + ' Verwundete ins Krankenhaus.' : ''), 5000);
         renderActiveMarches();
         if (isPanelOpen(popup) && popupIslandId === target.id) renderPopup();

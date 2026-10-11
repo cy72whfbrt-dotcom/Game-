@@ -20,8 +20,7 @@ updateHudPlayer();
 
 // Renders whichever screen (menu or the upgrade preview) is
 // currently active - never performs any game action itself.
-// Temples/Mega-Tempel get their own name instead of "Turm #N" -
-// regular towers keep the numbering players already know.
+// Temples/Mega-Tempel get their own name; a regular base is „Basis Stufe N“ (keine technische Nummer)
 function islandTitle(island) {
     const boss = bossAt(island.id); if (boss) return boss.name;
     if (island.type === 'megaTemple') return 'Königsthron';
@@ -30,11 +29,15 @@ function islandTitle(island) {
     if (island.type === 'gate') return island.gateKind === 'throne' ? 'Thron-Tor' : island.gateKind === 'guardian' ? 'Wächter-Tor' : 'Grenztor';
     if (island.id === playerIslandId) return 'Hauptstadt';
     for (const bot of BOT_DEFS) if (botCapitalOf(bot.id) === island.id) return 'Hauptstadt von ' + bot.name;
-    return 'Turm #' + (island.id + 1);
+    return 'Basis Stufe\u00a0' + baseLevelOf(island);
 }
-// Name für Spieler statt „Turm #N“: „Deine Basis“ / „Basis von …“ / „Neutrale Basis“ (+ Ort, wenn nicht ohneOrt)
+const basisOhneName = island => /^Basis Stufe/.test(islandTitle(island));   // eine normale Basis (kein Tempel, Tor, keine Hauptstadt)
+function deineBasis(island, dativ) {                                         // „deine Basis Stufe 3“ / „deine Hauptstadt“ / „deine Basis Wachturm“ (dativ: „deiner …“)
+    const t = islandTitle(island); return (dativ ? 'deiner ' : 'deine ') + (basisOhneName(island) || t === 'Hauptstadt' ? t : 'Basis ' + t);
+}
+// Name für Spieler statt „Basis Stufe N“: „Deine Basis“ / „Basis von …“ / „Neutrale Basis“ (+ Ort, wenn nicht ohneOrt)
 function ortName(island, ohneOrt) {
-    const t = islandTitle(island); if (!/^Turm #/.test(t)) return t;
+    const t = islandTitle(island); if (!basisOhneName(island)) return t;
     const ow = islandOwnerOf(island.id), n = ow === 'player' ? 'Deine Basis' : ow ? 'Basis von ' + ((botById[ow] || {}).name || 'Unbekannt') : 'Neutrale Basis';
     return ohneOrt ? n : n + ' · ' + coordText(island.x, island.y);
 }
@@ -217,7 +220,7 @@ function renderPopup() {
                 (thronKuppel(island.id) ? '<div class="notice notice--gold">' + icon('shield') + '<span>' + thronKuppelText() + '</span></div>' : '') +
                 (island.type === 'megaTemple' ? '<div class="notice">' + icon('rank') + '<span>' + (rulerOwner() ? escapeHtml(fieldWhoName(rulerOwner())) + (rulerOwner() === 'player' ? ' bist' : ' ist') + ' Herrscher und verteilt die Titel.' : 'Noch kein Herrscher.') + '</span><button type="button" class="btn btn--secondary btn--sm" data-view-titles>Herrscher</button></div>' : '') +
                 (isTemple ? '<div class="notice notice--gold">' + icon('temple') + '<span>' + (island.type === 'megaTemple' ? 'Königsthron: im Thron-Event (Sa 10 – So 22 Uhr) alle 3 Min. ' + THRONE_PTS_MEGA + ' Thron-Punkte für den Halter. Die Wachtürme schießen alle 10 Min. darauf. Platz 1 am Ende wird eine Woche Herrscher.' : island.guardian ? 'Wachturm: 3-facher Tempel-Bonus und im Thron-Event alle 3 Min. ' + THRONE_PTS_GUARD + ' Thron-Punkte. Gehört er nicht zum Bündnis des Halters, schießt er alle 10 Min. auf den Thron.' : 'Tempel: gibt Produktion, Edelsteine und Münzen, sobald erobert.') + '</span></div>' : '') +
-                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + RARITY_DEFS[WANDER_CRATE].label + ' Kiste + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
+                (bossAt(island.id) ? '<div class="notice notice--gold">' + icon('shop') + '<span><b>Belohnung:</b> ' + rarWort(WANDER_CRATE, 'Kiste') + ' + ' + WANDER_REWARD_GEMS + ' Edelsteine · zieht weiter in <b data-boss-clock>' + fmtClock((bossAt(island.id).campUntil - Date.now()) / 1000) + '</b></span></div>' : '') +
                 (scoutEnRoute && scouted ? '<div class="notice notice--warn">' + icon('hourglass') + '<span>Späher bereits unterwegs …</span></div>' : '') +
                 (shieldOw ? '<div class="notice notice--gold">' + icon('shield') + '<span>Friedensschild – ' + escapeHtml(shieldOw.name) + ' ist noch ' + uhrHtml(ownerShieldUntil(shieldOw.id)) +
                     ' geschützt. Solange der Schild hält, kann niemand die Türme von ' + escapeHtml(shieldOw.name) + ' angreifen (Tore und Tempel schon) – Spähen geht.</span></div>' : ''));

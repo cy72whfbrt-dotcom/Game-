@@ -153,8 +153,8 @@ function bundObenZeichnen() {
         feld('Name', '<input id="bdName" maxlength="20" placeholder="3–20 Buchstaben" autocomplete="off">') + feld('Kürzel', '<input id="bdTag" maxlength="4" placeholder="2–4 Buchstaben" autocomplete="off" class="bd-tag">') +
         feld('Farbe', '<div class="bd-farben" id="bdFarben">' + BUND.FARBEN.map((f, i) => '<button type="button" data-farbe="' + i + '" style="--bf:' + f + '"' + (i === 0 ? ' class="on"' : '') + ' aria-label="Farbe ' + (i + 1) + '"></button>').join('') + '</div>') +
         feld('Zeichen', '<div class="bd-zeichen" id="bdZeichen">' + BUND.ZEICHEN.map((z, i) => '<button type="button" data-zeichen="' + i + '"' + (i === 0 ? ' class="on"' : '') + '>' + icon(z) + '</button>').join('') + '</div>') +
-        '<label class="set-zeile"><span>Offen für alle<small>sonst nur auf Anfrage</small></span><input type="checkbox" id="bdOffen" checked></label>' +
-        '<button type="button" class="btn btn--primary bd-gf-los" data-bact="gruenden">' + icon('flag') + '<span class="lbl">Gründen</span><span class="cost">' + preis + '</span></button><p class="bd-fehler" id="bdFehler"></p></div>';
+        '<div class="bd-gf-fuss"><label class="set-zeile"><span>Offen für alle<small>sonst nur auf Anfrage</small></span><input type="checkbox" id="bdOffen" checked></label>' +   // unten fest (Handy): eine Leiste, nichts halb dahinter
+        '<button type="button" class="btn btn--primary bd-gf-los" data-bact="gruenden">' + icon('flag') + '<span class="lbl">Gründen</span><span class="cost">' + preis + '</span></button><p class="bd-fehler" id="bdFehler"></p></div></div>';
     bundVorschau(); bundGruendenKnopf();
 }
 function bundGruendenKnopf() {                                     // zu wenig Münzen: grau mit „Fehlt: … Münzen“ (wie die Gebäude) statt gold
@@ -166,7 +166,7 @@ function bundVorschau() {                                         // Gründen: s
     const box = document.getElementById('bdVorschau'); if (!box) return;
     const n = document.getElementById('bdName').value.trim(), t = document.getElementById('bdTag').value.trim();
     const farbe = +((bundUnten.querySelector('#bdFarben .on') || {}).dataset || {}).farbe || 0, zeichen = +((bundUnten.querySelector('#bdZeichen .on') || {}).dataset || {}).zeichen || 0;
-    box.innerHTML = bundZeichenHtml({ farbe, zeichen }, true) + '<div><b>[' + escapeHtml(t || '…') + '] ' + escapeHtml(n || 'Dein Bündnis') + '</b><small>So sehen dich die anderen auf der Karte und in der Liste.</small></div>';
+    box.innerHTML = bundZeichenHtml({ farbe, zeichen }, true) + '<div><b>' + (t ? '[' + escapeHtml(t) + '] ' : '') + escapeHtml(n || 'Dein Bündnis') + '</b><small>So sehen dich die anderen auf der Karte und in der Liste.</small></div>';
 }
 // Auswahl: Rally starten (Ziel t) · bei einer Rally mitmachen (rid) · Hilfe senden (nach)
 function bundQuellen(ziel, frist, toreEgal) {                     // eigene Basen, die ziel erreichen (frist: rechtzeitig bis dahin; toreEgal: Rally beitreten)

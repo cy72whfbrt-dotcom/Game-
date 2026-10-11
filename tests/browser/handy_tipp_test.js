@@ -13,6 +13,7 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     await p.goto('file://' + path.resolve(process.argv[2]) + '/index.html', { timeout: 120000 });
     await p.waitForFunction(() => typeof AUF !== 'undefined' && AUF && typeof islandById !== 'undefined' && islandById[playerIslandId] && typeof cityStartZoom === 'function', null, { timeout: 90000, polling: 500 }).catch(() => {});
     await p.waitForTimeout(3000);
+    await p.evaluate(() => { if (typeof tut !== 'undefined' && tut) { tut.w = 1; tut.fertig = tut.alles = true; tutSpeichern(); tutZeigen(); } });   // (frischer Spieler in der normalen Vorschau: Tutorial übersprungen – hier geht es um Tippflächen)
     const ev = (f, a) => p.evaluate(f, a), bild = async n => { if (bilder) await p.screenshot({ path: path.join(bilder, (art === 'Handy' ? 'm_' : 'd_') + n + '.png') }); };
     const tap = async sel => { const e = await p.$(sel); if (e) await e.scrollIntoViewIfNeeded().catch(() => {}); const r = e && await e.boundingBox(); if (!r) return false;
       if (art === 'Handy') await p.touchscreen.tap(r.x + r.width / 2, r.y + r.height / 2); else await p.mouse.click(r.x + r.width / 2, r.y + r.height / 2); return true; };

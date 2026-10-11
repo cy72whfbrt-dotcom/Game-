@@ -59,7 +59,12 @@ Die Weltkarte ist EINE große Landkarte wie das RoK-Königreich: Gebiete in Zone
   Stufen-Zahl (Alexander 8.10.). Verdeckte Schilde fallen weg. Code `bannerModel`/`TIER` (03b), `paintPlate`/`layoutBanners`
   (03c). Tests `karte_fahnen_test`, `merkliste_ui_test`.
 - Basis höchstens ein Drittel der Bildschirmbreite; mittlerer Zoom: Basen mit Besitzer mind. 22 px. Karte startet auf „mittel“.
-- Basis-Fenster und Berichte nennen Basen beim Namen (`ortName`, „Neutrale Basis“, „Basis von X“) statt „Turm #N“.
+- Nie technische Nummern: eine normale Basis heißt „Basis Stufe N“ (`islandTitle`), in Sätzen „deine Basis Stufe N“ /
+  „deiner Hauptstadt“ (`deineBasis`); Basis-Fenster und Berichte nennen Besitzer (`ortName`, „Neutrale Basis“, „Basis von X“).
+- Tipp auf freies Land: runde Knöpfe (Teleportieren · Markierung · Truppen hierher); sie gehen zu, sobald ein Fenster
+  aufgeht (`openPanel`), oben am Rand (< 190 px) stehen sie unter der Stelle, seitlich immer ganz im Bild (`feldRingFrame`).
+- Sieg-/Niederlage-Band weicht HUD, Hinweis-Leiste und Hinweis aus; findet es keinen Platz, tritt der Hinweis so lange
+  zurück (`mzObenFrei`, `toast--zurueck`) – nie übereinander.
 - `WORLD_VERSION` 9 verwirft alte Kartenteile (neue Zonen-Karte).
 
 ## Nebel

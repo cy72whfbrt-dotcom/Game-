@@ -298,7 +298,7 @@ function resolveAttack(attack) {
     addXp(kampfEp(won ? totalStrength : defenderCasualties, playerLvl, totalStrength, myTroops));
     heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
     scoutedIslands.add(target.id);
-    const ribbon = () => spawnBattleFx(target.id, won, capitalHolds ? 'Geplündert' : won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', capitalHolds ? 'die Hauptstadt hält' : won ? (/^Turm #/.test(islandTitle(target)) ? 'Basis' : islandTitle(target)) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
+    const ribbon = () => spawnBattleFx(target.id, won, capitalHolds ? 'Geplündert' : won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', capitalHolds ? 'die Hauptstadt hält' : won ? (basisOhneName(target) ? 'Basis' : islandTitle(target)) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
     finishMapBattle(attack, { hero: attack.hero || null, sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',   // fights the player watches play out on the map
             my: myTroops, myLoss: myTroops - (won ? remaining : retreatSurvivors), en: originalEnemyTroops,
             enLoss: won ? originalEnemyTroops : defenderCasualties, won, onEnd: ribbon });
@@ -343,7 +343,7 @@ function resolveAttack(attack) {
         WELT.bericht(targetOwner, { type: 'botAttack', botName: meinName, botId: 'player', targetId: target.id, myTroops, atkRaw: attack.rawTroops, atkBonus: atkBonus,
             atkGear: fighterSnapshot('player', attack.hx), defGear: fighterSnapshot(targetOwner, dHx), enemyTroops: originalEnemyTroops, enemyDefense: originalEnemyDefense,
             wounded: enemyWounded || 0, fallen: defWeg, won, capitalHolds, defGold: 0, plunder: plunder ? plunder.loot : 0, plunderSafe: plunder ? plunder.safe : 0, plunderRoh: plunder && plunder.roh || null, ...verstInfo },
-            capitalHolds ? meinName + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? meinName + ' hat deine Basis ' + islandTitle(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + meinName + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
+            capitalHolds ? meinName + ' hat deine Hauptstadt geplündert (' + (beuteText(plunder) || 'nichts über dem Schutz') + ') – die Garnison ist gefallen, die Stadt brennt, aber sie hält.' : won ? meinName + ' hat ' + deineBasis(target) + ' erobert!' : 'Verteidigung erfolgreich – ' + meinName + ' bei ' + islandTitle(target) + ' zurückgeschlagen.');
     }
 
     flashHint(capitalHolds ? 'Die Hauptstadt von ' + botById[targetOwner].name + ' brennt – ihre Garnison ist gefallen, ' + fmtCompact(remaining) + ' Truppen kehren mit der Beute zurück' + (beuteText(plunder) ? ': ' + beuteText(plunder) + '.' : '.') : (won

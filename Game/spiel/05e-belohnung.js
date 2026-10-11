@@ -55,7 +55,7 @@ function beuteR(b) {                                // Seltenheit der Kachel: ei
     const d = BEUTE_ART[b.a]; return d && d.r >= 0 ? d.r : 0;
 }
 function beuteName(b) {
-    if (b.a === 'item') return (RARITY_DEFS[beuteR(b)] || RARITY_DEFS[0]).label + ' ' + ((EQUIPMENT_DEFS[b.slot] || {}).name || 'Ausrüstung');
+    if (b.a === 'item') return rarTeil(beuteR(b), b.slot);
     if (b.a === 'kiste') return KISTE_NAME[b.k || 'aus'] + (b.min ? ' (mind. ' + RARITY_DEFS[b.r].label + ')' : '');
     if (b.a === 'sh' && b.held && typeof heroById === 'function' && heroById(b.held)) return 'Splitter ' + heroById(b.held).name;
     if (b.a === 'schild') return 'Friedensschild ' + b.n + ' Std.';
@@ -68,12 +68,12 @@ function beuteBild(b) {
     if (b.a === 'besch' && BESCH_MIN[b.dauer]) return beschBild(b.dauer);
     return (BEUTE_ART[b.a] || BEUTE_ART.gems).b;
 }
-function beuteMenge(b) {                            // unten rechts: Anzahl (Schild: Stunden); ein einzelnes Teil/eine Kiste ohne Zahl; ohneZahl: steht daneben
+function beuteMenge(b) {                            // unten rechts: Anzahl (Schild: Stunden); ein einzelnes Teil/eine Kiste ohne Zahl (mitZahl: doch „1“); ohneZahl: steht daneben
     if (b.ohneZahl) return '';
-    if (b.minus) return '−' + (b.n >= 1e4 ? fmtCompact(b.n) : fmtNum(b.n));
+    if (b.minus) return '−' + (b.n >= 1e4 ? fmtHud(b.n) : fmtNum(b.n));
     if (b.a === 'schild') return b.n + ' h';
-    if ((b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen') && !(b.n > 1)) return '';
-    return b.n >= 1e4 ? fmtCompact(b.n) : fmtNum(b.n || 1);
+    if ((b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen') && !(b.n > 1) && !b.mitZahl) return '';
+    return b.n >= 1e4 ? fmtHud(b.n) : fmtNum(b.n || 1);   // (ab 10.000 kurz wie oben im HUD: 154,6K – passt auf jede Kachel)
 }
 function beuteKachel(b, tag) {                      // tag: 'li' in Listen (Tages-, Stufen-, Boss-Fenster), sonst span
     tag = tag || 'span'; const r = beuteR(b), m = beuteMenge(b), name = beuteName(b);
@@ -81,7 +81,7 @@ function beuteKachel(b, tag) {                      // tag: 'li' in Listen (Tage
     return '<' + tag + ' class="bk" data-r="' + (RARITY_DEFS[r] || RARITY_DEFS[0]).key + '" data-beute="' + b.a + '"' + (b.minus ? ' data-minus' : '') + ' title="' + escapeHtml(name + (m ? ' · ' + m : '')) + '">' +
         '<img src="bilder/' + beuteBild(b) + '.webp" alt="' + escapeHtml(name) + '" draggable="false">' + held + (b.a === 'besch' && BESCH_MIN[b.dauer] ? '<i class="bk-zeit">' + beschText(b.dauer) + '</i>' : '') + (m ? '<b>' + m + '</b>' : '') + '</' + tag + '>';
 }
-function beuteZusammen(liste) {                     // gleiche Sachen in eine Kachel (10 Kisten: „3 × Episch Waffe“)
+function beuteZusammen(liste) {                     // gleiche Sachen in eine Kachel (10 Kisten: „3 × Epische Waffe“)
     const out = [], idx = {};
     for (const b of liste) { if (!b || !(b.n > 0 || b.a === 'item' || b.a === 'kiste' || b.a === 'rahmen')) continue;
         const k = [b.a, beuteR(b), b.slot || '', b.held || '', b.k || '', b.dauer || '', b.a === 'schild' ? b.n : '', b.minus ? 1 : ''].join('|');
@@ -94,8 +94,8 @@ function beuteRaster(liste, cls, mitNamen) {        // Reihe von Kacheln; mitNam
     return '<div class="bk-raster' + (cls ? ' ' + cls : '') + '">' + L.map((b, i) => mitNamen ? '<span class="bk-mit" style="--i:' + i + '">' + beuteKachel(b) + '<small>' + escapeHtml(beuteName(b)) + '</small></span>' : beuteKachel(b)).join('') + '</div>';
 }
 function itemBeute(it) { return { a: 'item', slot: it.slot, r: it.rarity }; }   // ein Ausrüstungs-Teil als Kachel
-function beuteLis(liste, el) {                      // Kacheln als <li> in die Listen der Fenster (Tag, Stufe, Kriegsherr) – kommen nacheinander
-    el.innerHTML = beuteZusammen(liste).map(b => beuteKachel(b, 'li')).join('');
+function beuteLis(liste, el, mitNamen) {            // Kacheln als <li> in die Listen der Fenster (Tag, Stufe, Kriegsherr) – kommen nacheinander; mitNamen: Name darunter
+    el.innerHTML = beuteZusammen(liste).map(b => mitNamen ? '<li class="bk-mit">' + beuteKachel(b) + '<small>' + escapeHtml(beuteName(b)) + '</small></li>' : beuteKachel(b, 'li')).join('');
     [...el.children].forEach((li, i) => { li.style.animationDelay = (120 + i * 110) + 'ms'; });
 }
 

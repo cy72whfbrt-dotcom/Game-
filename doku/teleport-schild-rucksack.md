@@ -27,7 +27,7 @@ Wie man seine Hauptstadt versetzt, sich schützt und was im Rucksack liegt. Wich
 - Eigener Knopf in der Leiste. Raster aus Bild-Kacheln (Anzahl, Seltenheits-Rahmen), nur was man besitzt, Reiter Tempo
   (Beschleuniger) · Schilde · Schlüssel · Sonstiges (Teleporter, Event-Münzen, Splitter je Held) – `rkSachen`, `RK_TABS`.
   Antippen → unten die Zeile mit „Einsetzen“/„Benutzen“/„Zum Helden“…; Schild: die Zeit kommt zum laufenden Schild DAZU.
-  Leerer Reiter → „Im Shop holen“. Keine Kaufen-Knöpfe im Rucksack.
+  Leerer Reiter → „Im Shop holen“. Keine Kaufen-Knöpfe im Rucksack. Namen unter den Kacheln ganz (notfalls 2 Zeilen).
 - Shop → Schilde: nur kaufen (eingesetzt wird im Rucksack); Teleporter 500 Edelsteine mit „Wirklich?“.
 - Shop → Kisten oben: **Gratis-Kiste** alle 8 Std. (`gratisOeffnen`, 06g; `openWaterGratisKiste` im Profil, Countdown): 60 %
   Beschleuniger 5 Min, 30 % 10 Edelsteine, 10 % 1 Schlüssel. Hauptbuch-Spielraum `HB_TAG` (10d3) +30 Gems, +3 Schlüssel, +15 Min. Test `features_test`.

@@ -279,7 +279,7 @@
             const z = [Math.max(0, Math.min(5, g.r | 0)), Math.max(1, Math.min(ITEM_MAX_LEVEL, g.lvl | 0 || 1)), Math.max(0, Math.min(STAR_MAX, g.st | 0))], A = hb.gear[s] || (hb.gear[s] = []);
             if (A.some(a => a[0] === z[0] && a[1] >= z[1] && a[2] >= z[2])) { hbGut(hb, 'gear:' + s); continue; }
             const grund = hbGearNeu(who, hb, m, s, z, forge);
-            if (grund) hbWarte(who, hb, 'gear:' + s, now, EQUIPMENT_DEFS[s].name + ' ' + RARITY_DEFS[z[0]].label + ' Stufe ' + z[1] + (z[2] ? ' mit ' + z[2] + ' Sternen' : '') + ': ' + grund + '.', z[0] + 1);
+            if (grund) hbWarte(who, hb, 'gear:' + s, now, rarTeil(z[0], s) + ' Stufe ' + z[1] + (z[2] ? ' mit ' + z[2] + ' Sternen' : '') + ': ' + grund + '.', z[0] + 1);
             else hbGut(hb, 'gear:' + s);
         }
         hbHeldenPruefen(who, hb, m, p, now);
