@@ -334,42 +334,53 @@
         })();
         window.__stopSplashScene = function () { aus = true; szene.stop(); clearInterval(tipTimer); };
     }
-    // ---- Bilder vorab: alles, was Start und Tutorial zeigen, wird geladen UND entpackt (decode), solange das Ladebild steht –
-    // der Balken zeigt den echten Stand (spiel.js finishSplash wartet darauf, höchstens 25 s). Danach holt spiel.js den Rest in Ruhe
-    // (bilderNachladen). Nur der normale Browser-Zwischenspeicher, nichts wird gespeichert. Die Liste prüft tutorial_test
-    // (im Tutorial wird kein Bild mehr nachgeladen, das hier fehlt).
+    // ---- Bilder vorab: was die ersten Minuten zeigen, wird geladen UND entpackt (decode), solange das Ladebild steht – der Balken
+    // zeigt den echten Stand (spiel.js finishSplash wartet darauf, höchstens 25 s). Gleich danach, noch vor dem Rest, die Bilder ab
+    // der Helden-Kiste (BILDER_BALD: Helden, Kisten, Ausrüstung – das Tutorial wartet dort notfalls kurz, tutBilderDa). Danach holt
+    // spiel.js den Rest in Ruhe (bilderNachladen). Nur der normale Browser-Zwischenspeicher, nichts wird gespeichert. Beide Listen
+    // prüft tutorial_test (im Tutorial wird kein Bild mehr nachgeladen, das hier fehlt).
     var BILDER_START = {
         basis: '01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 hauptstadt_1',
-        beute: 'beschleuniger beschleuniger_klein beschleuniger_mittel beschleuniger_gross edelsteine eisen eventmuenze holz muenzen punkte ruestung rundschild schild schluessel schluessel_episch splitter stein stiefel truppen waffe',
-        held: 'aldric bernhard brunhild bruno eskil fenn greta hagen ida kasimir lene mira nora otto pia ragna sigrun thora wolfram yrsa',
+        beute: 'beschleuniger beschleuniger_klein beschleuniger_mittel beschleuniger_gross edelsteine eisen eventmuenze holz muenzen punkte schluessel splitter stein truppen',
+        held: 'aldric aldric_kopf',
         karte: 'barbaren boden_aussen boden_innen boden_mitte boden_sand feld_edelstein feld_eisen feld_gold feld_holz feld_stein hauptstadt_ring kette_hoch1 kette_hoch2 kette_knoten kette_quer1 kette_quer2 kuppel schild tempel thron_neu tor_offen tor_senk_offen tor_senk_zu tor_zu wachturm',
-        kiste: 'ausruestung_offen ausruestung_zu episch_zu held_episch_zu held_offen held_zu',
+        kiste: 'ausruestung_zu',
         marsch: 'band_niederlage band_sieg geschoss_pfeil geschoss_pfeil_feuer geschoss_stein kampf_kreis kampf_saeule rahmen_eigen rahmen_feind sieg_blitz trupp_eigen_hoch trupp_eigen_kampf trupp_eigen_runter trupp_eigen_verletzt',
         stadt: 'gross',
-        ui: 'armee balken band_gold dock dock_bund dock_burg dock_events dock_kampf dock_rucksack dock_shop edelstein fahne fo_ertrag k_beute k_chip k_dunkel k_gold k_gold_an k_grau kachel_blau kachel_gold kachel_grau kachel_gruen kachel_lila kapsel karte karte_an kompass linie platz punkt rahmen rahmen_neuling reiter reiter_an res_edelstein res_eisen res_holz res_muenzen res_punkte res_stein res_truppen ring rund rund_an strahlen stufe sym_aufstieg sym_bauarbeiter sym_burg sym_haken sym_handeln sym_krone sym_macht sym_pokal sym_rolle sym_ruestung sym_schild sym_schloss sym_schwert sym_senden sym_spaeher sym_stern sym_stiefel sym_tempelbonus sym_turm sym_verlegen sym_verluste sym_waffe sym_zahnrad sym_zeit zoom_raus zoom_rein zu zurueck'
+        ui: 'balken band_gold dock dock_burg dock_events dock_kampf dock_rucksack dock_shop edelstein fahne k_beute k_chip k_dunkel k_gold k_gold_an k_grau kachel_blau kachel_gold kachel_gruen kapsel karte karte_an linie platz punkt rahmen reiter reiter_an res_edelstein res_eisen res_holz res_muenzen res_stein res_truppen ring rund rund_an stufe sym_aufstieg sym_bauarbeiter sym_burg sym_haken sym_krone sym_macht sym_rolle sym_schild sym_schloss sym_schwert sym_senden sym_spaeher sym_stern sym_turm sym_verlegen sym_verluste sym_waffe sym_zeit zu zurueck'
+    }, BILDER_BALD = {
+        beute: 'rundschild ruestung schild schluessel_episch stiefel waffe',
+        held: 'bernhard brunhild bruno eskil fenn greta hagen ida kasimir lene mira nora otto pia ragna sigrun thora wolfram yrsa',
+        kiste: 'ausruestung_offen episch_zu held_episch_zu held_offen held_zu',
+        ui: 'armee dock_bund fo_ertrag kachel_grau kachel_lila kompass rahmen_neuling res_punkte strahlen sym_handeln sym_pokal sym_ruestung sym_stiefel sym_tempelbonus sym_zahnrad zoom_raus zoom_rein'
     };
+    function bilderListe(o) {
+        var l = [], k;
+        for (k in o) o[k].split(' ').forEach(function (n) { l.push('bilder/' + k + '_' + n + '.webp'); if (k === 'held' && !/_kopf$/.test(n) && o[k].indexOf(n + '_kopf') < 0) l.push('bilder/held_' + n + '_kopf.webp'); });   // (Köpfe zu jedem Helden)
+        return l;
+    }
     function bilderVorab(fill, status) {
-        var liste = [], k, i = 0, offen = 0, v;
-        for (k in BILDER_START) BILDER_START[k].split(' ').forEach(function (n) { liste.push('bilder/' + k + '_' + n + '.webp'); });
-        if (BILDER_START.held) BILDER_START.held.split(' ').forEach(function (n) { liste.push('bilder/held_' + n + '_kopf.webp'); });   // (Köpfe zu jedem Helden)
-        v = window.__bilderVorab = { liste: liste, n: 0, img: [] };     // (img: festhalten – entpackt bleibt im Speicher)
+        var start = bilderListe(BILDER_START), bald = bilderListe(BILDER_BALD), liste = start.concat(bald), i = 0, offen = 0, v;
+        v = window.__bilderVorab = { liste: liste, n: 0, ns: 0, start: start.length, img: [], baldFertig: false };   // (img: festhalten – entpackt bleibt im Speicher)
         function zeig() {
-            var a = v.n / liste.length;
+            var a = v.ns / start.length;
             if (fill && !fill.closest('.is-done')) fill.style.width = (4 + 90 * a).toFixed(1) + '%';   // (100 % setzt spiel.js, wenn alles da ist)
-            if (status) status.textContent = a < .35 ? 'Welt wird erschaffen …' : a < .7 ? 'Inseln werden besiedelt …' : 'Truppen werden gerüstet …';
+            if (status && !fill.closest('.is-done')) status.textContent = a < .35 ? 'Welt wird erschaffen …' : a < .7 ? 'Inseln werden besiedelt …' : 'Truppen werden gerüstet …';
         }
-        v.fertig = new Promise(function (fertig) {
-            function weiter() {
-                while (offen < 6 && i < liste.length) (function (url) {
-                    var im = new Image(), da = function () { offen--; v.n++; zeig(); if (v.n >= liste.length) fertig(); else weiter(); };
-                    offen++; v.img.push(im);
-                    try { im.fetchPriority = 'low'; } catch (e) {}                // (die Skripte gehen vor)
-                    im.src = url;
-                    (im.decode ? im.decode() : new Promise(function (r) { im.onload = im.onerror = r; })).then(da, da);
-                })(liste[i++]);
-            }
-            zeig(); weiter();
-        });
+        var startDa, baldDa;
+        v.fertig = new Promise(function (f) { startDa = f; });
+        v.bald = new Promise(function (f) { baldDa = f; });
+        function weiter() {
+            while (offen < 6 && i < liste.length) (function (url, imStart) {
+                var im = new Image(), da = function () { offen--; v.n++; if (imStart && ++v.ns === start.length) startDa(); zeig();
+                    if (v.n === liste.length) { v.baldFertig = true; baldDa(); } else weiter(); };
+                offen++; v.img.push(im);
+                try { im.fetchPriority = 'low'; } catch (e) {}                // (die Skripte gehen vor)
+                im.src = url;
+                (im.decode ? im.decode() : new Promise(function (r) { im.onload = im.onerror = r; })).then(da, da);
+            })(liste[i], i++ < start.length);
+        }
+        zeig(); weiter();
     }
     if (cv) bilderVorab(document.getElementById('splashFill'), document.getElementById('splashStatus'));
     // ---- Startseite (index.php): dieselbe Szene hinter dem Anmelden ----

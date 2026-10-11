@@ -24,7 +24,7 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
   });
   // ---- einmal ganz durchspielen: jeder Tipp ins Loch; prüft dabei: Loch ganz im Bild (≥ 2 px), Blase deckt es nie, Teilschritte mit eigenem Satz ----
   const spielen = async (p, W, H, mitNeuladen) => {
-    const gesehen = [], banner = new Set(), neuer = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '', truppen = null, doppelt = null;
+    const gesehen = [], banner = new Set(), neuer = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '', truppen = null, doppelt = null, bildWarte = null;
     const geholt = new Set(), bild = r => { const u = r.url(); if (/\/bilder\//.test(u)) geholt.add('bilder/' + u.split('/bilder/')[1].split('?')[0]); };   // jedes Bild, das im Tutorial geholt wird
     p.on('request', bild); const bericht = { saetze: new Set(), kd: null, zu: null };
     for (let i = 0; i < 900; i++) {
@@ -45,6 +45,10 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
       if (z.k === 'bericht') { bericht.saetze.add(z.zl + ' ' + z.satz);
         if (z.zl === '4/4' && !bericht.kd) bericht.kd = await p.evaluate(() => { const kl = document.querySelector('.kl-seite'), e = document.elementFromPoint(innerWidth / 2, 3);
           return { offen: !kl.hidden, tutOben: !!(e && e.closest('#tut')), weiter: !document.getElementById('tutWeiter').hidden, loch: !document.getElementById('tutLoch').hidden }; }); }
+      if (z.k === 'kiste' && !z.modal && !bildWarte) bildWarte = await p.evaluate(async () => {   // Kisten-/Helden-Bilder noch nicht entpackt: „…“ ohne Loch, danach gleich weiter
+        const w = ms => new Promise(f => setTimeout(f, ms)), v = __bilderVorab, da = v.baldFertig; v.baldFertig = false; await w(500);
+        const r = { warten: document.getElementById('tutLoch').hidden && document.getElementById('tutSatz').textContent === '…', da }; v.baldFertig = true; await w(600);
+        r.danach = !document.getElementById('tutLoch').hidden; return r; });
       if (z.k === 'beute' && !bericht.zu) bericht.zu = await p.evaluate(() => ({ klZu: document.querySelector('.kl-seite').hidden }));
       if (z.s !== alt) {                                     // neuer Schritt: Foto, merken
         alt = z.s; schritte++; await p.waitForTimeout(500);
@@ -100,7 +104,7 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
     p.off('request', bild);
     const vorab = await p.evaluate(() => ({ liste: window.__bilderVorab ? __bilderVorab.liste : [], nach: window.__bilderVorab && __bilderVorab.nach ? [...__bilderVorab.nach] : [], e: Object.keys(tut.e || {}) }));
     const fehlt = [...geholt].filter(u => !vorab.liste.includes(u) && !vorab.nach.includes(u) && !/titel_/.test(u));   // (Titelbild: lädt das Ladebild selbst)
-    return { gesehen, banner, neuer: [...neuer], schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler], truppen, doppelt, bericht: { ...bericht, saetze: [...bericht.saetze] }, fehlt, vorabN: vorab.liste.length, erkl: vorab.e };
+    return { gesehen, banner, neuer: [...neuer], schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler], truppen, doppelt, bildWarte, bericht: { ...bericht, saetze: [...bericht.saetze] }, fehlt, vorabN: vorab.liste.length, erkl: vorab.e };
   };
   const pruefSicht = (r, wo) => {
     ok(r.truppen && r.truppen.satz === r.truppen.alle, wo + ': Schritt „Truppen“ nennt die echte Zahl aller Truppen des Spielers (Basen + unterwegs)', r.truppen);
@@ -109,6 +113,7 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
     ok(r.bericht.saetze.some(x => /^3\/4 .*Kampfdetails/.test(x)) && r.bericht.kd && r.bericht.kd.offen && r.bericht.kd.tutOben && r.bericht.kd.weiter && r.bericht.kd.loch && r.bericht.saetze.some(x => /^4\/4 .*Beute.*neue Truppen/.test(x)) && r.bericht.zu && r.bericht.zu.klZu,
       wo + ': Kampfbericht: Tipp auf „Kampfdetails“, dann erklärt Aldric die Seite (Loch über der Seite, „Weiter“), danach ist sie zu', r.bericht);
     ok(['bauinfo', 'angriff', 'halle'].every(k => r.erkl.includes(k)), wo + ': Erklär-Teilschritte gesehen (Bau-Info, Angriffsleiste, Helden)', r.erkl);
+    ok(r.bildWarte && r.bildWarte.da && r.bildWarte.warten && r.bildWarte.danach, wo + ': Kisten-Schritt: Bilder ab der Helden-Kiste sind schon entpackt – sonst wartet Aldric mit „…“ (kein Loch ins Leere)', r.bildWarte);
     ok(r.vorabN > 150 && !r.fehlt.length, wo + ': kein Bild wird im Tutorial erst nachgeladen – alle stehen in der Vorab-Liste des Ladebilds', { n: r.vorabN, fehlt: r.fehlt });
     ok(r.heldSaetze.length >= 3 && r.heldSaetze.some(x => /Karte/.test(x)) && r.heldSaetze.some(x => /Basis/.test(x)) && r.zaehler.some(x => /^\d\/5$/.test(x)), wo + ': Schritt „Held“ sagt je Teilschritt, was zu tun ist (mit Zähler x/5)', { s: r.heldSaetze, z: r.zaehler });
   };

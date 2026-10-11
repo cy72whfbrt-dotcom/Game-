@@ -13443,7 +13443,7 @@ function bilderNachladen() {
     const ruhe = f => window.requestIdleCallback ? requestIdleCallback(f, { timeout: 3000 }) : setTimeout(f, 300);
     const naechstes = () => { const u = rest.shift(); if (!u) return; nach.add(u); const im = new Image(); try { im.fetchPriority = 'low'; } catch (e) {}
         im.onload = im.onerror = () => ruhe(naechstes); im.src = u; };
-    setTimeout(() => ruhe(naechstes), 8000);
+    (v && v.bald || Promise.resolve()).then(() => setTimeout(() => ruhe(naechstes), 8000));   // (erst nach den Bildern ab der Helden-Kiste)
 }
 
 exploreOwned();                          // Nebel: the land around every own base is always known
@@ -13781,6 +13781,8 @@ function tutBanner(teile) {                                      // „Neu: …�
 const TUT_PAUSE = ['levelUpModal', 'rewardModal', 'dailyModal', 'welcomeModal', 'beuteFenster'];
 const tutPause = () => !!$t('wkName') || TUT_PAUSE.some(id => { const m = $t(id); return m && !m.hidden; });   // ein Belohnungs-Fenster geht vor
 let tutUhr = 0, tutFrage = false, tutErkl = null;
+const TUT_BALD = TUT.findIndex(x => x.k === 'kiste');           // ab hier braucht es die Bilder aus BILDER_BALD (ladebildschirm.js, gleich nach dem Ladebild)
+const tutBilderDa = () => !window.__bilderVorab || __bilderVorab.baldFertig;
 function tutWeiter() {                                           // nächster Schritt: aufräumen, Neues freischalten, vorher-Aktion
     tut.s++; tut.t0 = Date.now(); for (const k of Object.keys(tutTat)) delete tutTat[k];
     if (tut.s >= TUT.length) return tutEnde();
@@ -13857,6 +13859,7 @@ function tutZeigen() {
     let weiter = false; try { weiter = !!(tutTat.ok || (S.fertig && S.fertig())); } catch (e) {}
     if (weiter) { sfx('upgrade'); try { if (S.freude) tutFreude(S.freude(), S.bau); } catch (e) {} tutWeiter(); if (!tutLaeuft()) return; return tutZeigen(); }
     let z = {}; try { z = tutZiel(S.ziel()); } catch (e) {}
+    if (tut.s >= TUT_BALD && !tutBilderDa() && Date.now() - tut.t0 < 20000) { z = { warte: '…', fort: 0 }; tutBald(200); }   // (Helden-/Kisten-Bilder noch nicht entpackt: kurz warten statt ins Leere zeigen)
     el.hidden = false;
     const W = innerWidth, H = innerHeight, jetzt = Date.now(), be = $t('tutBerater');
     if (tutSchrittAlt !== tut.s) { tutSchrittAlt = tut.s; tutOhneSeit = jetzt; tutFokusN = 0; tutAlt = tutFokusVor = null; tutBlaseNeu = true; }

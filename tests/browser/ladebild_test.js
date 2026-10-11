@@ -33,8 +33,8 @@ const TYP = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css'
     ok(proben.every(x => x.pct === x.soll) && proben[2].pct !== '0 %', art + ': Prozent passt zur Füllung, auch ohne spiel.js', proben);
     await p.waitForTimeout(2500);   // Balken = echter Stand: geladene + entpackte Bilder (Vorab-Liste für Start und Tutorial), keine Schein-Animation
     const vb = await p.evaluate(() => { const v = window.__bilderVorab, f = document.getElementById('splashFill');
-      return v && { n: v.n, von: v.liste.length, breite: +(f.style.width || '0').replace('%', ''), anim: getComputedStyle(f).animationName, status: document.getElementById('splashStatus').textContent }; });
-    ok(vb && vb.von > 150 && vb.n > 0 && Math.abs(vb.breite - (4 + 90 * vb.n / vb.von)) < 1.5 && vb.anim === 'none' && vb.status !== 'Bereit', art + ': Balken zeigt, wie viele Bilder geladen und entpackt sind (ohne spiel.js nie „Bereit“)', vb);
+      return v && { n: v.ns, von: v.start, alle: v.liste.length, breite: +(f.style.width || '0').replace('%', ''), anim: getComputedStyle(f).animationName, status: document.getElementById('splashStatus').textContent }; });
+    ok(vb && vb.von > 120 && vb.alle > vb.von && vb.n > 0 && Math.abs(vb.breite - (4 + 90 * vb.n / vb.von)) < 1.5 && vb.anim === 'none' && vb.status !== 'Bereit', art + ': Balken zeigt, wie viele Bilder geladen und entpackt sind (ohne spiel.js nie „Bereit“)', vb);
     const r = await p.evaluate(() => { const c = document.getElementById('splashCanvas'), x = document.createElement('canvas'); x.width = 40; x.height = 40;
       const g = x.getContext('2d'); g.drawImage(c, 0, 0, 40, 40); const d = g.getImageData(0, 0, 40, 40).data; let farbig = 0; for (let i = 0; i < d.length; i += 4) if (d[i] + d[i + 1] + d[i + 2] > 60) farbig++;
       return { farbig, kasten: !!document.querySelector('.splash-tipcard, .splash-cap, #splashTipPic'), tipp: document.getElementById('splashTip').textContent.length,

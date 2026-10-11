@@ -220,7 +220,7 @@ function bilderNachladen() {
     const ruhe = f => window.requestIdleCallback ? requestIdleCallback(f, { timeout: 3000 }) : setTimeout(f, 300);
     const naechstes = () => { const u = rest.shift(); if (!u) return; nach.add(u); const im = new Image(); try { im.fetchPriority = 'low'; } catch (e) {}
         im.onload = im.onerror = () => ruhe(naechstes); im.src = u; };
-    setTimeout(() => ruhe(naechstes), 8000);
+    (v && v.bald || Promise.resolve()).then(() => setTimeout(() => ruhe(naechstes), 8000));   // (erst nach den Bildern ab der Helden-Kiste)
 }
 
 exploreOwned();                          // Nebel: the land around every own base is always known
