@@ -10402,19 +10402,27 @@ function cityFrame(now) {
     const vor = [cityCam.x, cityCam.y]; cityClampCam(W, H);
     if (cityCam.tx !== undefined && (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3 || Math.hypot(vor[0] - cityCam.x, vor[1] - cityCam.y) > .01)) cityCam.tx = cityCam.ty = undefined;   // angekommen (oder am Bildrand: weiter geht es nicht)
     const g = cityCtx, Z = cityCam.z * animZ, ox = W / 2 - cityCam.x * Z, oy = H / 2 - cityCam.y * Z, im = cityBild();
-    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = 'high';
-    g.fillStyle = '#1d2716'; g.fillRect(0, 0, W, H);
-    if (im) g.drawImage(im, ox, oy, CITY_BILD_W * Z, CITY_BILD_H * Z);
     cityHitRects = []; cityNamen = [];
-    const schilder = [];
+    const schilder = [], leer = [];
     for (const id of Object.keys(CITY_ORTE)) {
         const o = cityOrt(id), s = cityStand(c, id), sx = ox + o.x * Z, sy = oy + o.y * Z, rw = o.w * Z / 2, rh = o.h * Z / 2;
-        if (!s.lvl && im) { const r = Math.max(rw, rh), vg = g.createRadialGradient(sx, sy, r * .2, sx, sy, r);   // noch nicht gebaut: dunkel verschleiert
-            vg.addColorStop(0, 'rgba(24,26,30,.5)'); vg.addColorStop(.7, 'rgba(24,26,30,.38)'); vg.addColorStop(1, 'rgba(24,26,30,0)');
-            g.save(); g.translate(sx, sy); g.scale(rw / r, rh / r); g.translate(-sx, -sy); g.fillStyle = vg; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); g.restore(); }
+        if (!s.lvl) leer.push([sx, sy, rw, rh, id]);
         cityHitRects.push({ id, x: sx - rw, y: sy - rh, w: rw * 2, h: rh * 2, cx: sx, cy: sy });
         schilder.push({ id, s, x: sx, y: oy + o.sy * Z });
     }
+    // Hintergrund (Stadtbild + Schleier über Ungebautem): steht die Kamera, nur einmal groß zeichnen und danach 1:1 kopieren
+    // (läuft ein Bau, kommt 30× pro Sekunde ein neues Bild – nur Schilder und Hammer ändern sich)
+    const hinten = h => { h.setTransform(dpr2, 0, 0, dpr2, 0, 0); h.imageSmoothingQuality = 'high'; h.fillStyle = '#1d2716'; h.fillRect(0, 0, W, H);
+        if (!im) return; h.drawImage(im, ox, oy, CITY_BILD_W * Z, CITY_BILD_H * Z);
+        for (const [sx, sy, rw, rh] of leer) { const r = Math.max(rw, rh), vg = h.createRadialGradient(sx, sy, r * .2, sx, sy, r);   // noch nicht gebaut: dunkel verschleiert
+            vg.addColorStop(0, 'rgba(24,26,30,.5)'); vg.addColorStop(.7, 'rgba(24,26,30,.38)'); vg.addColorStop(1, 'rgba(24,26,30,0)');
+            h.save(); h.translate(sx, sy); h.scale(rw / r, rh / r); h.translate(-sx, -sy); h.fillStyle = vg; h.beginPath(); h.arc(sx, sy, r, 0, 7); h.fill(); h.restore(); } };
+    const hk = bewegt || animZ !== 1 ? '' : [cityCanvas.width, cityCanvas.height, ox, oy, Z, im ? im.width : 0, ...leer.map(x => x[4])].join();
+    if (!hk) hinten(g);
+    else { const v = cityFrame.hinten || (cityFrame.hinten = document.createElement('canvas'));
+        if (cityFrame.hk !== hk) { if (v.width !== cityCanvas.width || v.height !== cityCanvas.height) { v.width = cityCanvas.width; v.height = cityCanvas.height; } hinten(v.getContext('2d')); cityFrame.hk = hk; }
+        g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(v, 0, 0); }
+    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = 'high';
     const leiste = document.getElementById('cornerButtons'), lr = leiste && leiste.getBoundingClientRect();   // die untere Leiste: kein Schild darunter (Desktop: „Steinbruch Bauen“)
     if (lr && lr.height) { for (const p of schilder) p.w = citySchildBreite(cityCtx, p.s)[0];
         const trifft = (p, q) => Math.abs(p.x - q.x) < (p.w + q.w) / 2 && Math.abs(p.y - q.y) < 40;
@@ -13599,11 +13607,11 @@ function tutAngriff(feld, held) {                                // Karte → Ba
     return T(2, tutInsel(id), held ? 'Tipp die nächste freie Basis.' : 'Tipp die leuchtende Basis – sie gehört noch niemandem.');
 }
 function tutLager() {                                           // das eigene Lager der Stufe 1 (09b barbNeulingLager) antippen → Angreifen
+    if (!cityView.hidden) return tutT(1, 2, tutZurKarte(), 'Tipp auf „Karte“.');   // (zuerst: ein Lager-Fenster unter der Stadt ist nicht zu sehen)
     if (!barbSheetEl.hidden && barbView && barbView.kind === 'camp') { const b = document.querySelector('#barbSheet [data-bgo]:not([disabled])');
         return b ? tutT(2, 2, b, 'Das schaffst du locker. Tipp auf „Angreifen“!') : tutT(2, 2, document.querySelector('#barbSheet [data-bclose]'), 'Schließ das Fenster.'); }
     const c = barbState.camps.filter(x => x.fuer && barbFuerOk(x, 'player'))[0] || barbNearest();
     if (!c) return { weiter: true, satz: 'Barbaren-Lager bringen Münzen. Gerade ist keines in deiner Nähe – schau später auf der Karte.' };
-    if (!cityView.hidden) return tutT(1, 2, tutZurKarte(), 'Tipp auf „Karte“.');
     const h = islandById[playerIslandId], d = Math.hypot(c.x - h.x, c.y - h.y) || 1;   // Kamera: Hauptstadt und Lager zusammen im Bild (dazu ein paar Basen)
     const hin = () => flyTo((c.x + h.x) / 2, (c.y + h.y) / 2, { zoom: Math.min(maxZoom, Math.max(.008, .5 * Math.min(viewW, viewH * .55) / d)), screenY: viewH * .45 });
     if (tutFlug !== tut.s) { tutFlug = tut.s; hin(); }
@@ -13717,7 +13725,7 @@ function tutFrei() {
 }
 function tutRein(e) {                                            // neuer Knopf, neue Kapsel (oder die Leiste): kurz einblenden
     if (!e) return; e.classList.remove('tut-neu'); void e.offsetWidth; e.classList.add('tut-neu');
-    setTimeout(() => e.classList.remove('tut-neu'), 1600);
+    setTimeout(() => e.classList.remove('tut-neu'), 700);
 }
 function tutBanner(teile) {                                      // „Neu: …“ (Platzhalter bis banner_neu.webp kommt)
     const b = $t('tutBanner'); if (!b) return;
@@ -13768,12 +13776,17 @@ function tutZiel(z) {                                            // → { rect, 
     if (el.classList.contains('res') || el.classList.contains('nav-btn')) {   // Rohstoff oben / Knopf unten: nur Bild + Zahl bzw. Schrift (ein einzelner Knopf geht sonst über die ganze Leiste)
         const t = [...el.children].filter(tutSicht).map(x => x.getBoundingClientRect());
         if (t.length) { const l = Math.min(...t.map(x => x.left)), o = Math.min(...t.map(x => x.top)), r = Math.max(...t.map(x => x.right)), u = Math.max(...t.map(x => x.bottom));
-            return { rect: { left: l, top: Math.min(o, q.top), width: r - l, height: Math.max(u, q.bottom) - Math.min(o, q.top) }, nurZeigen: !!z.el }; }
+            return { rect: { left: l, top: Math.min(o, q.top), width: r - l, height: Math.max(u, q.bottom) - Math.min(o, q.top) }, nurZeigen: !!z.el, el }; }
     }
     const mitte = h(q.left + q.width / 2, q.top + q.height / 2);   // verdeckt (Kopf/Leiste) oder halb draußen: in die Mitte der Liste rollen
-    if (el.closest('.panel, .city-sheet') && !(mitte && (mitte === el || el.contains(mitte)))) { el.scrollIntoView({ block: 'center' }); return { rect: el.getBoundingClientRect(), nurZeigen: !!z.el }; }
-    return { rect: q, nurZeigen: !!z.el };
+    if (el.closest('.panel, .city-sheet') && !(mitte && (mitte === el || el.contains(mitte)))) { el.scrollIntoView({ block: 'center' }); return { rect: el.getBoundingClientRect(), nurZeigen: !!z.el, el }; }
+    return { rect: q, nurZeigen: !!z.el, el };
 }
+const TUT_LAGE = /^(transform|translate|scale|rotate|top|left|right|bottom|width|height|margin)/;   // Animationen, die ein Ziel verschieben
+const tutFaehrt = el => !!document.getAnimations && document.getAnimations().some(a => { const t = a.effect && a.effect.target;   // Ziel (oder sein Fenster) fährt noch ein
+    return a.playState === 'running' && t && t.contains && t.contains(el) && isFinite(a.effect.getComputedTiming().endTime) && a.effect.getKeyframes().some(k => Object.keys(k).some(n => TUT_LAGE.test(n))); });
+let tutBaldUhr = 0;
+function tutBald(ms) { if (!tutBaldUhr) tutBaldUhr = setTimeout(() => { tutBaldUhr = 0; if (tutLaeuft()) tutZeigen(); }, ms); }   // gleich noch mal nachsehen (nicht erst beim nächsten Takt)
 const tutDeckt = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;   // zwei Rechtecke {l,t,r,b} überlappen
 const tutBox = e => { const q = e.getBoundingClientRect(); return { l: q.left, t: q.top, r: q.right, b: q.bottom }; };
 let tutLetzt = null;                                             // das letzte Loch (dort schwebt die Freude auf)
@@ -13825,6 +13838,8 @@ function tutZeigen() {
         if (!drin && !fest && (ruht || !tutFokusN) && tutFokusN < 4 && jetzt - tutFokusZeit > 900) { tutFokusZeit = jetzt; tutFokusN++; tutFokusVor = r; z.fokus(); tutAlt = null; }   // (gleich hin, sonst noch einmal – nach 4 Versuchen gilt es so)
         if (jetzt - tutFokusZeit < 350 || !(drin && (ruht || tutLochAn)) && !(ruht && (tutFokusN >= 4 || fest))) r = null;   // (erst ausrollen lassen; schon gezeigt und noch drin: kein Flackern)
     }
+    if (r && (cityBusy || z.el && tutFaehrt(z.el))) r = null;   // Stadt blendet um, Fenster fährt noch ein: erst danach das Loch (sonst geht der Tipp daneben oder ins alte Ziel)
+    if (!r && (cityBusy || z.el || z.fokus)) tutBald(80);
     if (r && tutDeckt(oben ? bo : bu, r) && !tutDeckt(oben ? bu : bo, r)) oben = !oben;   // (nach der Kamera: das endgültige Loch nie unter der Blase)
     if (r && dy > 0 && tutDeckt(oben ? bo : bu, r) && !tutDeckt(bo0, r)) { oben = true; dy = 0; }   // (unter der Kopfzeile läge sie auf dem Loch: dann doch ganz oben)
     be.classList.toggle('oben', oben); be.style.marginTop = oben && dy > 0 ? dy + 'px' : '';
@@ -13842,6 +13857,9 @@ function tutZeigen() {
         if (d.dataset.s !== s.join()) { d.dataset.s = s.join(); Object.assign(d.style, { left: s[0], top: s[1], width: s[2], height: s[3] }); } };
     teil('o', 0, 0, W, loch.t); teil('u', 0, loch.b, W, H - loch.b); teil('l', 0, loch.t, loch.l, loch.b - loch.t); teil('r', loch.r, loch.t, W - loch.r, loch.b - loch.t);
     const sp = $t('tutSperre'), lo = $t('tutLoch'); sp.hidden = !(r && z.nurZeigen); lo.hidden = !r; lo.classList.toggle('rund', !!z.rund);   // Basis/Lager auf der Karte: rundes Loch   // nur gezeigt (Weiter-Knopf): das Loch nimmt keine Tipps
+    const lk = r ? [loch.l, loch.t, loch.r, loch.b].map(Math.round).join() : '';   // neues Ziel: das Loch springt hin (kein Gleiten über die Seite) und zieht sich kurz zusammen
+    if (lk && lo.dataset.k !== lk && !(lo.dataset.k || '').split(',').every((v, i) => Math.abs(v - lk.split(',')[i]) < 6)) { lo.classList.remove('neu'); void lo.offsetWidth; lo.classList.add('neu'); }
+    lo.dataset.k = lk;
     for (const x of [sp, lo]) Object.assign(x.style, { left: loch.l + 'px', top: loch.t + 'px', width: loch.r - loch.l + 'px', height: loch.b - loch.t + 'px' });
     const fi = $t('tutFinger'); fi.hidden = !r || z.nurZeigen;
     if (!fi.hidden) { const cx = (loch.l + loch.r) / 2, unten = loch.b + 60 < H - 70; Object.assign(fi.style, { left: Math.round(Math.min(W - 56, Math.max(2, cx - 27))) + 'px', top: Math.round(unten ? loch.b - 14 : loch.t - 40) + 'px' }); fi.classList.toggle('oben', !unten); }
@@ -13882,6 +13900,7 @@ function tutStarten() {
     tutZeigen(); if (!tutUhr) tutUhr = setInterval(tutLaeuft() ? tutZeigen : tutFrei, tutLaeuft() ? 250 : 5000);
 }
 $t('tutWeiter').addEventListener('click', () => { tutTat.ok = true; tutZeigen(); });
+document.addEventListener('click', () => { if (tutLaeuft()) tutBald(30); });   // nach jedem Tipp gleich das nächste Ziel (Takt sonst 250 ms)
 $t('tutWeg').addEventListener('click', () => { tutFrage = true; tutZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
 $t('tutNein').addEventListener('click', () => { tutFrage = false; tutZeigen(); });
 $t('tutJa').addEventListener('click', () => {

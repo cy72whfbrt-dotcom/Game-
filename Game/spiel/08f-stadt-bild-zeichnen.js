@@ -59,19 +59,27 @@ function cityFrame(now) {
     const vor = [cityCam.x, cityCam.y]; cityClampCam(W, H);
     if (cityCam.tx !== undefined && (Math.hypot(cityCam.tx - cityCam.x, cityCam.ty - cityCam.y) < .3 || Math.hypot(vor[0] - cityCam.x, vor[1] - cityCam.y) > .01)) cityCam.tx = cityCam.ty = undefined;   // angekommen (oder am Bildrand: weiter geht es nicht)
     const g = cityCtx, Z = cityCam.z * animZ, ox = W / 2 - cityCam.x * Z, oy = H / 2 - cityCam.y * Z, im = cityBild();
-    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = 'high';
-    g.fillStyle = '#1d2716'; g.fillRect(0, 0, W, H);
-    if (im) g.drawImage(im, ox, oy, CITY_BILD_W * Z, CITY_BILD_H * Z);
     cityHitRects = []; cityNamen = [];
-    const schilder = [];
+    const schilder = [], leer = [];
     for (const id of Object.keys(CITY_ORTE)) {
         const o = cityOrt(id), s = cityStand(c, id), sx = ox + o.x * Z, sy = oy + o.y * Z, rw = o.w * Z / 2, rh = o.h * Z / 2;
-        if (!s.lvl && im) { const r = Math.max(rw, rh), vg = g.createRadialGradient(sx, sy, r * .2, sx, sy, r);   // noch nicht gebaut: dunkel verschleiert
-            vg.addColorStop(0, 'rgba(24,26,30,.5)'); vg.addColorStop(.7, 'rgba(24,26,30,.38)'); vg.addColorStop(1, 'rgba(24,26,30,0)');
-            g.save(); g.translate(sx, sy); g.scale(rw / r, rh / r); g.translate(-sx, -sy); g.fillStyle = vg; g.beginPath(); g.arc(sx, sy, r, 0, 7); g.fill(); g.restore(); }
+        if (!s.lvl) leer.push([sx, sy, rw, rh, id]);
         cityHitRects.push({ id, x: sx - rw, y: sy - rh, w: rw * 2, h: rh * 2, cx: sx, cy: sy });
         schilder.push({ id, s, x: sx, y: oy + o.sy * Z });
     }
+    // Hintergrund (Stadtbild + Schleier über Ungebautem): steht die Kamera, nur einmal groß zeichnen und danach 1:1 kopieren
+    // (läuft ein Bau, kommt 30× pro Sekunde ein neues Bild – nur Schilder und Hammer ändern sich)
+    const hinten = h => { h.setTransform(dpr2, 0, 0, dpr2, 0, 0); h.imageSmoothingQuality = 'high'; h.fillStyle = '#1d2716'; h.fillRect(0, 0, W, H);
+        if (!im) return; h.drawImage(im, ox, oy, CITY_BILD_W * Z, CITY_BILD_H * Z);
+        for (const [sx, sy, rw, rh] of leer) { const r = Math.max(rw, rh), vg = h.createRadialGradient(sx, sy, r * .2, sx, sy, r);   // noch nicht gebaut: dunkel verschleiert
+            vg.addColorStop(0, 'rgba(24,26,30,.5)'); vg.addColorStop(.7, 'rgba(24,26,30,.38)'); vg.addColorStop(1, 'rgba(24,26,30,0)');
+            h.save(); h.translate(sx, sy); h.scale(rw / r, rh / r); h.translate(-sx, -sy); h.fillStyle = vg; h.beginPath(); h.arc(sx, sy, r, 0, 7); h.fill(); h.restore(); } };
+    const hk = bewegt || animZ !== 1 ? '' : [cityCanvas.width, cityCanvas.height, ox, oy, Z, im ? im.width : 0, ...leer.map(x => x[4])].join();
+    if (!hk) hinten(g);
+    else { const v = cityFrame.hinten || (cityFrame.hinten = document.createElement('canvas'));
+        if (cityFrame.hk !== hk) { if (v.width !== cityCanvas.width || v.height !== cityCanvas.height) { v.width = cityCanvas.width; v.height = cityCanvas.height; } hinten(v.getContext('2d')); cityFrame.hk = hk; }
+        g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(v, 0, 0); }
+    g.setTransform(dpr2, 0, 0, dpr2, 0, 0); g.imageSmoothingQuality = 'high';
     const leiste = document.getElementById('cornerButtons'), lr = leiste && leiste.getBoundingClientRect();   // die untere Leiste: kein Schild darunter (Desktop: „Steinbruch Bauen“)
     if (lr && lr.height) { for (const p of schilder) p.w = citySchildBreite(cityCtx, p.s)[0];
         const trifft = (p, q) => Math.abs(p.x - q.x) < (p.w + q.w) / 2 && Math.abs(p.y - q.y) < 40;

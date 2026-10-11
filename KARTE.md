@@ -644,7 +644,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `closeFieldSheet` → Game/spiel/09a-funde-felder.js:362
 - `closeHeroHall` → Game/spiel/08c-helden-fenster.js:281
 - `closeIslandPopup` → Game/spiel/09e-fenster-insel.js:111
-- `closeLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:128
+- `closeLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:136
 - `closeLookSheet` → Game/spiel/08b-stadt-burg-aussehen.js:68
 - `closeMarkerSheet` → Game/spiel/09d-karte-armeen-wegmarken.js:313
 - `closePanel` → Game/spiel/09e-fenster-insel.js:35
@@ -1178,6 +1178,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `hilfeName` → Game/buendnis/01-daten-regeln.js:379
 - `hilfeSchritt` → Game/buendnis/01-daten-regeln.js:373
 - `hin` → Game/spiel/10c2-tutorial.js:131
+- `hinten` → Game/spiel/08f-stadt-bild-zeichnen.js:72
 - `hintFrei` → Game/spiel/06d-schild-produktion.js:402
 - `hintFrisch` → Game/spiel/06d-schild-produktion.js:408
 - `hinweis` → Game/benachrichtigung.js:17
@@ -1308,7 +1309,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `letzte_sicherung_zeit` → Game/server/05-datenbank-welt.php:134
 - `levelRewardCoins` → Game/spiel/02a-shop-stufen.js:220
 - `levelRewardGems` → Game/spiel/02a-shop-stufen.js:223
-- `levelRewardText` → Game/spiel/08f-stadt-bild-zeichnen.js:100
+- `levelRewardText` → Game/spiel/08f-stadt-bild-zeichnen.js:108
 - `levelRewardTroops` → Game/spiel/02a-shop-stufen.js:214
 - `levelUpItem` → Game/spiel/02a-shop-stufen.js:161
 - `liste` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:75
@@ -1696,7 +1697,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `questStat` → Game/spiel/06a-aufgaben.js:119
 - `questTempelGeht` → Game/spiel/06a-aufgaben.js:123
 - `queueHover` → Game/spiel/03e-karte-kamera-eingabe.js:362
-- `queueLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:105
+- `queueLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:113
 - `rahmenAufKarte` → Game/spiel/03b-karte-basen-bilder.js:143
 - `rahmenDef` → Game/spiel/05a-profil-rahmen.js:18
 - `rahmenHat` → Game/spiel/05a-profil-rahmen.js:22
@@ -1757,7 +1758,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderKeepSheet` → Game/spiel/08b-stadt-burg-aussehen.js:4
 - `renderKistenChancen` → Game/spiel/06d-schild-produktion.js:128
 - `renderKistenReiter` → Game/spiel/06g-shop-gegenstaende.js:67
-- `renderLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:115
+- `renderLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:123
 - `renderLook` → Game/spiel/05a-profil-rahmen.js:55
 - `renderLookSheet` → Game/spiel/08b-stadt-burg-aussehen.js:44
 - `renderLookTop` → Game/spiel/08b-stadt-burg-aussehen.js:38
@@ -2035,7 +2036,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tapped` → Game/bots/05-verteidigen-takt.js:49
 - `tausch` → Game/welt.js:89
 - `teil` → Game/spiel/10c-start-einstellungen.js:240
-- `teil` → Game/spiel/10c2-tutorial.js:364
+- `teil` → Game/spiel/10c2-tutorial.js:371
 - `teleImRucksack` → Game/spiel/06d-schild-produktion.js:80
 - `teleportFx` → Game/spiel/08d2-stadt-teleport.js:97
 - `teleportOrt` → Game/spiel/08d2-stadt-teleport.js:72
@@ -2122,21 +2123,23 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tut` → Game/spiel/10c2-tutorial.js:19
 - `tutAngriff` → Game/spiel/10c2-tutorial.js:104
 - `tutAngriffe` → Game/spiel/10c2-tutorial.js:146
+- `tutBald` → Game/spiel/10c2-tutorial.js:304
 - `tutBanner` → Game/spiel/10c2-tutorial.js:245
 - `tutBaut` → Game/spiel/10c2-tutorial.js:30
 - `tutBauT` → Game/spiel/10c2-tutorial.js:61
 - `tutBauWarte` → Game/spiel/10c2-tutorial.js:46
 - `tutBesch` → Game/spiel/10c2-tutorial.js:78
 - `tutBeschT` → Game/spiel/10c2-tutorial.js:69
-- `tutBox` → Game/spiel/10c2-tutorial.js:301
+- `tutBox` → Game/spiel/10c2-tutorial.js:306
 - `tutBurgFrei` → Game/spiel/10c2-tutorial.js:222
 - `tutBurgK` → Game/spiel/10c2-tutorial.js:145
 - `tutDauer` → Game/spiel/10c2-tutorial.js:58
-- `tutDeckt` → Game/spiel/10c2-tutorial.js:300
+- `tutDeckt` → Game/spiel/10c2-tutorial.js:305
 - `tutEnde` → Game/spiel/10c2-tutorial.js:267
+- `tutFaehrt` → Game/spiel/10c2-tutorial.js:301
 - `tutFenster` → Game/spiel/10c2-tutorial.js:142
 - `tutFrei` → Game/spiel/10c2-tutorial.js:224
-- `tutFreude` → Game/spiel/10c2-tutorial.js:303
+- `tutFreude` → Game/spiel/10c2-tutorial.js:308
 - `tutFrisch` → Game/spiel/10c2-tutorial.js:20
 - `tutGeb` → Game/spiel/10c2-tutorial.js:33
 - `tutGeschenk` → Game/spiel/10c2-tutorial.js:215
@@ -2157,15 +2160,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutSicht` → Game/spiel/10c2-tutorial.js:28
 - `tutSpeichern` → Game/spiel/10c2-tutorial.js:25
 - `tutStart` → Game/spiel/10c2-tutorial.js:261
-- `tutStarten` → Game/spiel/10c2-tutorial.js:402
+- `tutStarten` → Game/spiel/10c2-tutorial.js:412
 - `tutStufe` → Game/spiel/10c2-tutorial.js:29
 - `tutT` → Game/spiel/10c2-tutorial.js:51
 - `tutUnd` → Game/spiel/10c2-tutorial.js:53
 - `tutUnterwegs` → Game/spiel/10c2-tutorial.js:147
 - `tutWeiter` → Game/spiel/10c2-tutorial.js:256
-- `tutWillkommen` → Game/spiel/10c2-tutorial.js:382
+- `tutWillkommen` → Game/spiel/10c2-tutorial.js:392
 - `tutZahl` → Game/spiel/10c2-tutorial.js:52
-- `tutZeigen` → Game/spiel/10c2-tutorial.js:312
+- `tutZeigen` → Game/spiel/10c2-tutorial.js:317
 - `tutZiel` → Game/spiel/10c2-tutorial.js:282
 - `tutZurKarte` → Game/spiel/10c2-tutorial.js:98
 - `u` → Game/ladebildschirm.js:47
@@ -4121,10 +4124,11 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `citySchild` :18 — → {x, y, w, h}; x/y = Mitte des Schilds
 - `rund` :20
 - `cityFrame` :45 — ---- ein Bild ----
-- `levelRewardText` :100
-- `queueLevelUpModal` :105
-- `renderLevelUpModal` :115
-- `closeLevelUpModal` :128
+- `hinten` :72 — Hintergrund (Stadtbild + Schleier über Ungebautem): steht die Kamera, nur einma…
+- `levelRewardText` :108
+- `queueLevelUpModal` :113
+- `renderLevelUpModal` :123
+- `closeLevelUpModal` :136
 
 ### Game/spiel/09a-funde-felder.js — Funde auf der Karte und Ressourcenfelder
 - `pickupAmount` :6
@@ -4504,13 +4508,15 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `tutStart` :261
 - `tutEnde` :267
 - `tutZiel` :282 — → { rect, weiter, warte, fort, satz, teil, fokus }
-- `tutDeckt` :300 — zwei Rechtecke {l,t,r,b} überlappen
-- `tutBox` :301
-- `tutFreude` :303 — Freude-Moment: Satz/Zahl steigt am Gebäude-Schild (sonst am letzten Ziel) auf, …
-- `tutZeigen` :312
-- `teil` :364
-- `tutWillkommen` :382 — true, solange das Willkommen offen ist
-- `tutStarten` :402
+- `tutFaehrt` :301 — Ziel (oder sein Fenster) fährt noch ein
+- `tutBald` :304
+- `tutDeckt` :305 — zwei Rechtecke {l,t,r,b} überlappen
+- `tutBox` :306
+- `tutFreude` :308 — Freude-Moment: Satz/Zahl steigt am Gebäude-Schild (sonst am letzten Ziel) auf, …
+- `tutZeigen` :317
+- `teil` :371
+- `tutWillkommen` :392 — true, solange das Willkommen offen ist
+- `tutStarten` :412
 
 ### Game/spiel/10d1-welt-verbindung.js — Die eine Welt: Verbindung zu welt.js, Zuschauer übernehmen Welt-Teile, Späher a…
 - `rechnerStatus` :10 — (welt.js meldet jede Änderung von „rechner“)

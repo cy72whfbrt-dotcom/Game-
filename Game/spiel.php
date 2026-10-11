@@ -448,10 +448,12 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-d{position:absolute;background:rgba(5,6,8,.55);pointer-events:auto}   /* Handlungs-Schritt: die Spielwelt bleibt gut sichtbar */
 .tut.is-hell .tut-d{background:rgba(5,6,8,.4)}   /* Erklär-Schritt (nur „Weiter“, Rohstoffe): heller – die eigene Hauptstadt dahinter */
 .tut.is-frei .tut-d{background:none}   /* warten (Marsch, Bau): man sieht alles, tippen geht trotzdem nicht */
-.tut-loch{position:absolute;box-sizing:border-box;border:2px solid var(--gold-300);border-radius:14px;pointer-events:none;box-shadow:0 0 0 4px rgba(212,173,102,.25),0 0 24px rgba(240,223,176,.45);animation:tut-glanz 1.2s ease-in-out infinite}
+.tut-loch{position:absolute;box-sizing:border-box;border:2px solid var(--gold-300);border-radius:14px;pointer-events:none;box-shadow:0 0 0 4px rgba(212,173,102,.25),0 0 24px rgba(240,223,176,.45)}
+.tut-loch::after{content:"";position:absolute;inset:-2px;border-radius:inherit;box-shadow:0 0 0 7px rgba(212,173,102,.4),0 0 30px rgba(240,223,176,.6);opacity:0;animation:tut-glanz 1.2s ease-in-out infinite}
 .tut-loch.rund{border-radius:50%}   /* Basis/Lager auf der Karte */
+.tut-loch.neu{animation:tut-loch-rein .22s ease-out} @keyframes tut-loch-rein{from{opacity:0;scale:1.25}}   /* neues Ziel: springt hin und zieht sich zusammen (nur scale/opacity) */
 .tut-sperre{position:absolute;pointer-events:auto}
-@keyframes tut-glanz{50%{box-shadow:0 0 0 7px rgba(212,173,102,.4),0 0 30px rgba(240,223,176,.6)}}   /* Puls nur im Schein: das Loch bleibt im Bild */
+@keyframes tut-glanz{50%{opacity:1}}   /* Puls nur im Schein (Deckkraft des Scheins, kein Neuzeichnen): das Loch bleibt im Bild */
 /* Finger: Platzhalter, bis das KI-Bild einstieg_finger.webp kommt (zeigt nach oben aufs Loch) */
 .tut-finger{position:absolute;width:54px;height:54px;pointer-events:none;animation:tut-tipp 1s ease-in-out infinite}
 .tut-finger::before{content:"";position:absolute;left:18px;top:0;width:18px;height:34px;border-radius:9px 9px 4px 4px;background:linear-gradient(90deg,#f2d68a,#c99a3e);border:2px solid #5a3d0e}
@@ -497,8 +499,6 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tw-name input{width:100%;box-sizing:border-box;padding:10px 12px;font:600 17px Georgia,serif;color:#24170a;background:#fffaf0;border:2px solid #b8913a;border-radius:10px}
 .tw-name em{min-height:0;color:#a33a2a;font-style:normal;font-size:13px} .tw-name em:empty{display:none}
 .tw-los{height:54px;border:0;cursor:pointer;font:700 19px Georgia,serif;color:#3a2203;text-shadow:0 1px 0 #fbe7a3;background:url(bilder/ui_k_gold.webp) center/100% 100% no-repeat;filter:drop-shadow(0 3px 6px #000a)}
-.tut-d,.tut-loch,.tut-sperre{transition:left .3s ease,top .3s ease,width .3s ease,height .3s ease}   /* Loch und Finger gleiten zum nächsten Ziel */
-.tut-finger{transition:left .3s ease,top .3s ease}
 .tut-berater.rein .tut-blase{animation:tut-rein .18s ease-out} @keyframes tut-rein{from{opacity:0;transform:translateY(8px)}}
 .tut-freude{position:fixed;z-index:61;transform:translate(-50%,-100%);font:700 18px/1.2 Georgia,serif;color:#f0dfb0;white-space:nowrap;pointer-events:none;
   text-shadow:0 0 3px #000,0 1px 2px #000,0 0 8px rgba(0,0,0,.8);animation:tut-freude 1.2s ease-out forwards}   /* Freude-Moment: steigt am Ziel auf */
@@ -512,7 +512,7 @@ body.tut-an #hint{display:none!important}   /* im Tutorial ruhen die normalen Hi
 body.tz-roh #hudRoh,body.tz-truppen #hud .res--troop,body.tz-gems #hud .res--gem{visibility:hidden}
 body.tz-leiste #cornerButtons{visibility:hidden}   /* noch kein Knopf frei: keine leere Leiste */
 #cornerButtons.tut-neu{animation:tut-leiste .5s ease-out} @keyframes tut-leiste{from{opacity:0}}
-.nav-btn.tut-neu,#hud .res.tut-neu{animation:tut-knopf 1.5s ease-out} @keyframes tut-knopf{0%{opacity:0;scale:.3;filter:drop-shadow(0 0 0 #f0dfb0)}25%{opacity:1;scale:1.18;filter:drop-shadow(0 0 12px #f0dfb0)}40%{scale:1}100%{filter:drop-shadow(0 0 0 transparent)}}   /* neu: fliegt ein und glüht */
+.nav-btn.tut-neu,#hud .res.tut-neu{animation:tut-knopf .6s ease-out} @keyframes tut-knopf{0%{opacity:0;scale:.3}25%{opacity:1;scale:1.18}100%{scale:1}}   /* neu: fliegt ein (nur scale/opacity) */
 .nav-btn.tut-neuer::after{content:"NEU";position:absolute;top:0;left:calc(50% + 6px);padding:0 4px;border-radius:4px;background:#9b2f2f;color:#f0dfb0;font:700 11px/15px var(--font-ui);box-shadow:0 1px 3px #000a}   /* bis er einmal getippt wurde */
 body.tut-an #citySpeedBtn{display:none!important}   /* Edelstein-Knopf „Fertig für …“: im Tutorial nur der Beschleuniger */
 body.tut-an .panel--item{z-index:58}   /* Gegenstand-Fenster (Ausrüsten) im Tutorial unter dem Dunkel: Loch und Finger liegen darüber */
