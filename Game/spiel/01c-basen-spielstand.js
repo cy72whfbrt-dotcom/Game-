@@ -43,16 +43,17 @@ for (const lm of landmasses) {
     // Im Gebiet: weit genug vom Gebirge und vom Kartenrand. (Die Saat liegt sicher im Gebiet, jeder neue Punkt nur bis 1,25 · d daneben –
     // über das Gebirge (2 · KETTE_FREI breit) kommt so keiner ins Nachbargebiet.)
     const inside = (x, y) => Math.abs(x) < FRAME_HALF - inset - 3000 && Math.abs(y) < FRAME_HALF - inset - 3000 && grenzAbstand(x, y) >= KETTE_FREI + inset;
+    const gk = (gx, gy) => gx * 1048576 + gy;                 // Raster-Schlüssel als Zahl (kein Text je Abfrage – beim Start sonst ~1 s am Handy)
     const free = (x, y) => {                                   // cheapest checks first
         const gx = Math.floor(x / d), gy = Math.floor(y / d);
-        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) for (const m of grid.get((gx + i) + ',' + (gy + j)) || []) if (Math.hypot(m.x - x, m.y - y) < d) return false;
+        for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) { const l = grid.get(gk(gx + i, gy + j)); if (l) for (const m of l) if (Math.hypot(m.x - x, m.y - y) < d) return false; }
         if (templeClear && Math.hypot(x - lm.x, y - lm.y) < templeClear) return false;
         for (const gsp of myGates) if (Math.hypot(x - gsp.x, y - gsp.y) < d * 1.1 || segDistW(x, y, gsp.x, gsp.y, gsp.ex, gsp.ey) < d * .7) return false;
         for (const sl of mySlots) if (Math.hypot(x - sl.x, y - sl.y) < d * 1.1) return false;
         for (const f of myFelder) if (Math.hypot(x - f.x, y - f.y) < d * .9) return false;                 // (die Felder aus KARTE_ZONEN stehen frei)
         return inside(x, y);
     };
-    const add = p => { mine.push(p); const k = Math.floor(p.x / d) + ',' + Math.floor(p.y / d); (grid.get(k) || grid.set(k, []).get(k)).push(p); };
+    const add = p => { mine.push(p); const k = gk(Math.floor(p.x / d), Math.floor(p.y / d)); (grid.get(k) || grid.set(k, []).get(k)).push(p); };
     // Even spread without gaps (Poisson-disc): start near the middle, grow outwards until the region is full.
     const active = [];
     const seed = () => { let best = null, bd = Infinity;

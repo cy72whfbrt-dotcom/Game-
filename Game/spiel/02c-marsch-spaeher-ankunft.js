@@ -298,7 +298,7 @@ function resolveAttack(attack) {
     addXp(kampfEp(won ? totalStrength : defenderCasualties, playerLvl, totalStrength, myTroops));
     heroFought('player', attack.hx);                                     // every fight the hero leads fills his rage
     scoutedIslands.add(target.id);
-    const ribbon = () => spawnBattleFx(target.id, won, capitalHolds ? 'Geplündert' : won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', capitalHolds ? 'die Hauptstadt hält' : won ? islandTitle(target) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
+    const ribbon = () => spawnBattleFx(target.id, won, capitalHolds ? 'Geplündert' : won ? (bossHere ? 'Boss besiegt' : 'Sieg') : 'Niederlage', capitalHolds ? 'die Hauptstadt hält' : won ? (/^Turm #/.test(islandTitle(target)) ? 'Basis' : islandTitle(target)) + ' erobert' : '−' + fmtCompact(attack.rawTroops - retreatSurvivors) + ' Truppen');
     finishMapBattle(attack, { hero: attack.hero || null, sourceId: source.id, targetId: target.id, atk: 'mine', def: bossHere ? 'boss' : targetOwner ? 'bot' : 'neutral',   // fights the player watches play out on the map
             my: myTroops, myLoss: myTroops - (won ? remaining : retreatSurvivors), en: originalEnemyTroops,
             enLoss: won ? originalEnemyTroops : defenderCasualties, won, onEnd: ribbon });

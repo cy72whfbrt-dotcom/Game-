@@ -1627,6 +1627,7 @@ function runBotTick() {
             if (botOwnedIslands[bot.id].size === 0) { botRespawn(bot, now); continue; }
             if (lage) botHandy(bot, now, lage);                               // angegriffen, während sie weg sind: die Meldung aufs Handy
             if (!botOnline(bot, now)) continue;                               // offline: the empire keeps producing, nobody acts
+            if (botNextAt[bot.id] === undefined && !SYSTEM && !splashFinished) { botNextAt[bot.id] = now + 1000 + Math.random() * 8000; continue; }   // Ladebild am Handy (Vorschau): der erste Zug verteilt, nicht alle auf einmal (sonst steht der Balken)
             if (now < (botNextAt[bot.id] || 0)) continue;
             const st = BOT_STYLES[bot.style];
             botNextAt[bot.id] = now + (st.moveMs ? st.moveMs * (.6 + Math.random() * .8) : 3000 + Math.random() * 9000);   // a few seconds between moves, never all at once

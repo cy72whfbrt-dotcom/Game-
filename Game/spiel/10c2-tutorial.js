@@ -62,7 +62,7 @@ const tutDauer = sek => sek < 60 ? sek + ' Sekunden' : Math.round(sek / 60) === 
 const tutRoh = x => AUF ? Math.round(AUF.rohJeStunde(x, Math.max(1, tutStufe({ h: 'lumber', s: 'quarry', e: 'mine' }[x])))) : 0;   // Rohstoff pro Stunde (mit Gebäude Stufe 1)
 const tutHeld = () => { const h = HEROES.find(x => heroOwned('player', x.id)); return h ? h.name : 'dein Held'; };
 function tutBauT(id, t) {                                        // bauen/aufwerten: Stadt → Schild → Bauen → (läuft) warten; t: { stadt, schild, bauen, warte(Sek.) }
-    if (tutBaut(id)) { const zg = t.zeig && tutSicht(t.zeig());   // (während des Wartens: im offenen Fenster etwas erklären, z. B. was Burg 2 freischaltet)
+    if (tutBaut(id)) { let zg = t.zeig && [].concat(t.zeig() || []).filter(e => e && tutSicht(e)); if (zg && !zg.length) zg = null;   // (während des Wartens: im offenen Fenster etwas erklären, z. B. was Burg 2 freischaltet)
         return { ...tutBauWarte(id), satz: zg && t.zeigSatz ? t.zeigSatz : t.warte ? t.warte(tutRest(id)) : 'Noch ' + tutSek(tutRest(id)) + ' …', zeig: zg || null }; }
     const z = tutGeb(id);
     if (z === $t('cityNavBtn')) return tutT(1, 3, z, t.stadt || 'Tipp auf „Stadt“.');
@@ -110,7 +110,7 @@ function tutAngriff(feld, held) {                                // Karte → Ba
     const id = tut[feld]; if (id === undefined) return { weiter: true, satz: TUT_OHNE[feld] };   // (keine Basis in Reichweite: nur erklären)
     const von = 5, T = (n, ziel, satz) => tutT(n, von, ziel, satz), H = tutHeld();
     const proStd = tutZahl(proStunde(coinsPerTick(islandLevels[id] || 1) * playerCoinMult()));
-    if (!cityView.hidden) return T(1, tutZurKarte(), held ? 'Dein erster Held ist ' + H + '. Nimm den Helden gleich mit in einen Angriff – geh zur Karte.' : 'Eine freie Basis bringt dir +' + proStd + ' Münzen pro Stunde. Geh zur Karte.');
+    if (!cityView.hidden) return T(1, tutZurKarte(), held ? (tutGesehen('halle') ? 'Nimm ' + H + ' gleich mit in einen Angriff – geh zur Karte.' : 'Dein erster Held ist ' + H + '. Nimm den Helden gleich mit in einen Angriff – geh zur Karte.') : 'Eine freie Basis bringt dir +' + proStd + ' Münzen pro Stunde. Geh zur Karte.');
     if (isPanelOpen(popup) && popupIslandId !== id) return T(2, $t('closeBtn'), 'Das ist die falsche Basis – schließ das Fenster.');
     if (isPanelOpen(popup)) {
         if (popupView !== 'preview') return T(3, tutSicht(attackBtn), held ? 'Tipp auf „Angreifen“.' : 'Wie stark sie ist, zeigt erst ein Späher. Deine Truppen sind viele – tipp auf „Angreifen“.');
@@ -175,7 +175,8 @@ const TUT = [
           warte: n => 'Noch ' + tutSek(n) + ' – dann laufen alle drei Rohstoffe von allein.' }) },
     { k: 'burg2', bau: '_keep', fertig: () => tutStufe('keep') >= 2, freude: () => 'Burg 2!',
       ziel: () => tutBauT('keep', { schild: 'Die Burg bestimmt, wie hoch alles wachsen darf. Tipp auf die Burg.', bauen: tutKost('keep') + ' – du hast genug. Bau aus!',
-          zeig: () => document.querySelector('#citySheet:not([hidden]) .auf-frei'), zeigSatz: 'Die Burg-Stufe ist die Grenze für alle Gebäude. Hier steht, was Burg 2 freischaltet.' }) },
+          zeig: () => { const l = document.querySelector('#citySheet:not([hidden]) .auf-frei'); return l && [l.previousElementSibling, l]; },   // (mit Überschrift)
+          zeigSatz: 'Die Burg-Stufe ist die Grenze für alle Gebäude. Hier steht, was Burg 2 freischaltet.' }) },
     { k: 'karte', satz: 'Deine Stadt steht. Jetzt raus aufs Meer – tipp auf „Karte“!', ziel: tutZurKarte, fertig: () => cityView.hidden },
     { k: 'lager', ziel: tutLager, fertig: () => barbMarches.some(m => m.who === 'player' && !m.back) || tutTat.lager },
     { k: 'marsch', ziel: tutMarschWarte,
@@ -183,7 +184,7 @@ const TUT = [
     { k: 'bericht', neu: ['kampf'], ruhe: 2500, satz: () => (combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '') + 'Im Bericht siehst du deine Verluste und die Beute.',
       ziel: () => { const kd = $t('klInhalt'), sieg = combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '';
           if (kd && !kd.closest('.kl-seite').hidden) { const v = kd.querySelector('.logCompare') || kd;   // die Kampfdetails sind offen: was steht da?
-              const g = kd.querySelector('.logGold') || v, sk = kd.closest('.kl-seite');   // (kleines Handy: hochrollen, bis unten Platz für Aldric ist – oben bleibt „Überspringen“ frei)
+              const g = kd.querySelector('.logRow details > :last-child') || kd.querySelector('.logGold') || v, sk = kd.closest('.kl-seite');   // (kleines Handy: hochrollen, bis unten Platz für Aldric ist – oben bleibt „Überspringen“ frei)
               if (tutRollt !== tut.s) { tutRollt = tut.s; const q = v.getBoundingClientRect(); if (g.getBoundingClientRect().bottom > innerHeight - 230) sk.scrollTop += Math.max(0, q.top - 110); }
               return tutT(4, 4, { els: [v, g] }, 'Oben du, darunter die Barbaren, ganz unten die Beute. Deine Basen ersetzen Gefallene: jede bringt stündlich neue Truppen.'); }
           return tutReihe([[tutFenster(battleLogPopup, 'battleLogBtn'), sieg + 'Tipp auf „Kampf“.'], [document.querySelector('#battleTabs [data-ktab="berichte"]:not(.active)'), 'Tipp auf „Berichte“.'],
@@ -199,7 +200,8 @@ const TUT = [
               : { warte: 'Deine Truppen kämpfen um die Basis …', fort: u.fightEndsAt ? (t - u.resolveAt) / Math.max(1, u.fightEndsAt - u.resolveAt) : .5 };
           return { el: document.querySelector('#hud .res--troop') }; } },
     { k: 'halle', bau: 'heroes', fertig: () => tutStufe('heroes') > 0, freude: () => 'Heldenhalle Stufe 1',
-      ziel: () => tutBauT('heroes', { stadt: 'Helden führen deine Truppen und machen jeden Angriff stärker. Tipp auf „Stadt“.', schild: 'Bau die Heldenhalle – ' + tutKost('heroes') + '.', bauen: 'Bau die Heldenhalle – ' + tutKost('heroes') + '.' }) },
+      ziel: () => tutBauT('heroes', { stadt: 'Helden führen deine Truppen und machen jeden Angriff stärker. Tipp auf „Stadt“.', schild: 'Bau die Heldenhalle – ' + tutKost('heroes') + '.', bauen: 'Bau die Heldenhalle – ' + tutKost('heroes') + '.',
+          warte: n => 'Noch ' + tutSek(n) + ' – dann führen Helden deine Angriffe an und machen deine Truppen stärker.' }) },
     { k: 'helden', bleib: true, fertig: () => tutGesehen('halle') || !tutStufe('heroes') || !HEROES.some(h => heroOwned('player', h.id)),
       ziel: () => { const H = HEROES.find(h => heroOwned('player', h.id));
           if (!$t('heroHall').hidden) { const k = document.querySelector('#heroHall .hh-card[data-hh="' + H.id + '"]');
@@ -220,7 +222,7 @@ const TUT = [
           [schluessel1 ? document.querySelector('[data-kiste="aus"][data-anz="1"]') : null, 'Mit dem zweiten Schlüssel öffnest du die Ausrüstungs-Kiste. Ausrüstung macht deine Truppen stärker.']]) },
     { k: 'anlegen', neu: ['profil'], satz: 'Leg die Ausrüstung an – erst dann wirkt sie.', fertig: () => Object.values(equippedItems).some(Boolean),
       ziel: () => { if (isPanelOpen(chestItemPopup)) { const b = chestItemStats.querySelector('b'), bonus = b && b.textContent.trim();   // (erste Zeile: was das Teil bringt)
-              return tutT(3, 3, tutSicht(chestItemEquipBtn), (bonus ? bonus + ' – das bringt dir ' + chestItemTitle.textContent.trim() + '. ' : '') + 'Tipp auf „Ausrüsten“.'); }
+              return tutT(3, 3, tutSicht(chestItemEquipBtn), (bonus ? 'Dieses Teil bringt dir ' + bonus + '. ' : '') + 'Tipp auf „Ausrüsten“.'); }
           if (!isPanelOpen(profilePopup)) { const pb = tutSicht($t('profileBtn')); return tutT(1, 3, pb || $t('hudPlayer'), 'Ausrüstung wirkt erst, wenn du sie anlegst. ' + (pb ? 'Tipp auf „Profil“.' : 'Tipp auf dein Wappen oben links.')); }   // (Handy: Profil über das Spielerbild oben)
           return profilePopup.dataset.tab !== 'equip' ? tutT(2, 3, $t('tabBtnEquip'), 'Tipp auf „Ausrüstung“.') : tutT(3, 3, document.querySelector('#chestInventoryGrid .tile[data-id]'), 'Tipp das neue Teil und dann „Ausrüsten“.'); } },
     { k: 'rucksack', neu: ['rucksack'], satz: 'Hier sammelt sich alles, was du gewinnst. Den Beschleuniger nimmst du mit in die Stadt.', fertig: () => !cityView.hidden || tutTat.ok,
@@ -230,7 +232,8 @@ const TUT = [
           return tutBaut('keep') ? tutBeschT('keep', 'Jetzt den Beschleuniger drauf – sofort fertig!')
               : tutBauT('keep', { schild: 'Burg 3 dauert ' + tutDauer(cityTimeSec('keep', tutStufe('keep'))) + '. Tipp auf die Burg und dann „Aufwerten“.', bauen: tutKost('keep').length <= 48 ? 'Burg 3: ' + tutKost('keep') + '. Tipp auf „Aufwerten“.' : 'Du hast alles. Tipp auf „Aufwerten“.' }); } },
     { k: 'labor', fertig: () => !!loadCity().foRun || tutTat.ok,
-      ziel: () => { if (!tutStufe('academy')) return tutBauT('academy', { schild: 'Im Labor wird alles stärker – für immer. Bau das Labor: ' + tutKost('academy') + '.', bauen: 'Im Labor wird alles stärker – für immer. Bau das Labor: ' + tutKost('academy') + '.' });
+      ziel: () => { if (!tutStufe('academy')) return tutBauT('academy', { schild: 'Im Labor wird alles stärker – für immer. Bau das Labor: ' + tutKost('academy') + '.', bauen: 'Im Labor wird alles stärker – für immer. Bau das Labor: ' + tutKost('academy') + '.',
+              warte: n => 'Noch ' + tutSek(n) + ' – dann forschst du dort: jede Forschung macht dich für immer stärker.' });
           const z = tutGeb('academy', 'nutz'), f = z && z.dataset && AUF && AUF.FORSCHUNG.find(d => d.id === z.dataset.fo);
           return tutT(2, 2, z, f ? 'Starte die erste Forschung: „' + f.name + '“' + (f.pro ? ' – ' + f.txt(f.pro) + '.' : '.') : 'Starte die erste Forschung.'); } },
     { k: 'aufgaben', neu: ['aufgaben'], satz: 'Unter „Events“ findest du jeden Tag neue Aufgaben mit Belohnung. So wächst du am schnellsten.',
@@ -317,7 +320,7 @@ function tutZiel(z) {                                            // → { rect, 
     if (z.ziel !== undefined) return { ...tutZiel(z.ziel), satz: z.satz, teil: z.n + '/' + z.von, erkl: z.erkl };   // Teilschritt (Angriff): eigener Satz + Zähler
     if (z === 'weiter') return { weiter: true };
     if (z.weiter) return { weiter: true, satz: z.satz };
-    if (z.warte) return { warte: z.warte, fort: z.fort, satz: z.satz, ...(z.zeig ? { rect: z.zeig.getBoundingClientRect(), zeigNur: true } : {}) };   // (Warten: dabei etwas im Fenster zeigen)
+    if (z.warte) return { warte: z.warte, fort: z.fort, satz: z.satz, ...(z.zeig ? { rect: tutUmriss(z.zeig), zeigNur: true } : {}) };   // (Warten: dabei etwas im Fenster zeigen)
     if (z.els) { const q = z.els.filter(e => e && tutSicht(e)).map(e => e.getBoundingClientRect()); if (!q.length) return {};   // mehrere Kästen zusammen (nur zeigen)
         const l = Math.min(...q.map(x => x.left)), t = Math.min(...q.map(x => x.top));
         return { rect: { left: l, top: t, width: Math.max(...q.map(x => x.right)) - l, height: Math.max(...q.map(x => x.bottom)) - t }, nurZeigen: true, el: z.els.find(Boolean) }; }
@@ -338,6 +341,8 @@ const tutFaehrt = el => !!document.getAnimations && document.getAnimations().som
     return a.playState === 'running' && t && t.contains && t.contains(el) && isFinite(z.endTime) && !(z.progress >= .6) && a.effect.getKeyframes().some(k => Object.keys(k).some(n => TUT_LAGE.test(n))); });   // (ab 60 % steht es fast: Loch schon zeigen)
 let tutBaldUhr = 0;
 function tutBald(ms) { if (!tutBaldUhr) tutBaldUhr = setTimeout(() => { tutBaldUhr = 0; if (tutLaeuft()) tutZeigen(); }, ms); }   // gleich noch mal nachsehen (nicht erst beim nächsten Takt)
+const tutUmriss = l => { const q = l.map(e => e.getBoundingClientRect()), x = Math.min(...q.map(v => v.left)), y = Math.min(...q.map(v => v.top));   // mehrere Kästen → ein Rechteck
+    return { left: x, top: y, width: Math.max(...q.map(v => v.right)) - x, height: Math.max(...q.map(v => v.bottom)) - y }; };
 const tutDeckt = (a, b) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;   // zwei Rechtecke {l,t,r,b} überlappen
 const tutBox = e => { const q = e.getBoundingClientRect(); return { l: q.left, t: q.top, r: q.right, b: q.bottom }; };
 let tutLetzt = null;                                             // das letzte Loch (dort schwebt die Freude auf)
@@ -368,7 +373,8 @@ function tutZeigen() {
     if (S.ruhe && jetzt - tut.t0 < S.ruhe) { el.hidden = true; return; }   // erst das Spiel zeigen lassen (z. B. „Lager besiegt“), dann Aldric
     if (S.nah && tutFlug !== tut.s && cityView.hidden) { tutFlug = tut.s; tutHeim(); }
     el.classList.toggle('is-hell', !!(S.nah || z.nurZeigen || z.weiter || z.rund));   // (auch Karten-Ziele: Burg, Lager und Basen gut sichtbar)   // Erklär-Schritt (nur „Weiter“): heller (Handlung: etwas dunkler)
-    let r = z.rect ? { l: z.rect.left - 8, t: z.rect.top - 8, r: z.rect.left + z.rect.width + 8, b: z.rect.top + z.rect.height + 8 } : null;
+    const rv = z.zeigNur || z.nurZeigen && z.el && z.el.closest && z.el.closest('.panel, .city-sheet, .kl-seite, #heroHall') ? 20 : 8;   // Erklär-Loch im Fenster: oben/unten mehr Rand (keine angeschnittene Zeile)
+    let r = z.rect ? { l: z.rect.left - 8, t: z.rect.top - rv, r: z.rect.left + z.rect.width + 8, b: z.rect.top + z.rect.height + rv } : null;
     // Blase: die Seite nehmen, die das Loch nicht überdeckt (ganzes Rechteck mit Berater-Bild, nicht nur die Mitte)
     const offen = [...document.querySelectorAll('.panel')].filter(p => isPanelOpen(p)); be.classList.toggle('klein', offen.length > 0);   // Fenster offen: kleine Blase (passt meist darüber)
     const war = be.classList.contains('oben'); be.style.marginTop = ''; be.classList.remove('oben'); const bu = tutBox(be); be.classList.add('oben'); const bo0 = tutBox(be); let bo = bo0;
@@ -414,7 +420,19 @@ function tutZeigen() {
     lo.dataset.k = lk;
     for (const x of [sp, lo]) Object.assign(x.style, { left: loch.l + 'px', top: loch.t + 'px', width: loch.r - loch.l + 'px', height: loch.b - loch.t + 'px' });
     const fi = $t('tutFinger'); fi.hidden = !r || z.nurZeigen || z.zeigNur; tutErkl = z.erkl || null;
-    if (!fi.hidden) { const cx = (loch.l + loch.r) / 2, imFenster = z.el && z.el.closest && z.el.closest('.panel, .city-sheet, .kl-seite'), unten = loch.b + 60 < H - 70 && !(imFenster && loch.t > 150); Object.assign(fi.style, { left: Math.round(Math.min(W - 56, Math.max(2, cx - 27))) + 'px', top: Math.round(unten ? loch.b - 14 : loch.t - 40) + 'px' }); fi.classList.toggle('oben', !unten); }   // (im Fenster von oben: darunter stehen oft Zahlen)
+    if (!fi.hidden) {                                            // Finger: im Fenster seitlich (über und unter Knöpfen stehen dort oft Zahlen), sonst von unten, notfalls von oben
+        const cx = (loch.l + loch.r) / 2, cy = (loch.t + loch.b) / 2, fk = lk + '|' + W + 'x' + H;
+        if (fi.dataset.k !== fk) { fi.dataset.k = fk;                // (nur bei neuem Loch neu wählen)
+            const imFenster = z.el && z.el.closest && z.el.closest('.panel, .city-sheet, .kl-seite, #heroHall');
+            const wahl = { rechts: [loch.r - 4, cy - 27, loch.r + 58 < W], links: [loch.l - 50, cy - 27, loch.l - 58 > 0],
+                unten: [Math.min(W - 56, Math.max(2, cx - 27)), loch.b - 14, loch.b + 60 < H - 70], oben: [Math.min(W - 56, Math.max(2, cx - 27)), loch.t - 40, loch.t > 60] };
+            const reihe = (imFenster ? ['rechts', 'links', 'unten', 'oben'] : ['unten', 'oben']).filter(k => wahl[k][2]);
+            const belegt = ([x, y]) => { const e = document.elementFromPoint(x, y);   // steht dort etwas (Knopf, Bild, Zahl, Text)?
+                return !!e && !e.closest('#tut') && (!!e.closest('button, img, svg, input, .bk, .chip, .lchip') || [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())); };
+            const punkte = k => { const [x, y] = wahl[k]; return [[x + 27, y + 27], [x + 27, y + 10], [x + 27, y + 44], [x + 10, y + 27], [x + 44, y + 27]]; };
+            el.classList.add('durch'); const k = reihe.find(q => !punkte(q).some(belegt)) || reihe[0] || 'unten'; el.classList.remove('durch');
+            Object.assign(fi.style, { left: Math.round(wahl[k][0]) + 'px', top: Math.round(wahl[k][1]) + 'px' });
+            for (const q of ['oben', 'rechts', 'links']) fi.classList.toggle(q, q === k); } }
     const satz = tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.fokus && !r ? '…' : z.satz || z.warte || (typeof S.satz === 'function' ? S.satz() : S.satz) || '';   // (Kamera fährt noch: erst mit Loch der Befehl)
     setText($t('tutSatz'), satz);
     const key = tut.s + '|' + (z.teil || '') + '|' + !!z.warte + '|' + tutFrage;   // neuer Schritt/Teilschritt: Blase blendet kurz ein (nicht bei jeder Zahl, die sich ändert)

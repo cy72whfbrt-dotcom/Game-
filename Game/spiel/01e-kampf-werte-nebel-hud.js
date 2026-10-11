@@ -8,12 +8,20 @@ function fogKey(cx, cy) { return cx + ',' + cy; }
 function fogLandCells() {                        // key → landmass id for every cell that touches land
     if (cellLm) return cellLm;
     cellLm = {};
+    // Je Zeile (y) einmal alle Schnittpunkte des Umrisses, dann zählt jeder Punkt nur die Schnitte rechts von sich – dasselbe Ergebnis
+    // wie pointInPolygon (gleiche Rechnung, gerade/ungerade), aber nicht 9 × Umriss je Feld (beim Start sonst Sekunden am Handy)
+    const schnitte = (poly, py) => { const xs = [];
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) { const a = poly[i], b = poly[j]; if ((a.y > py) !== (b.y > py)) xs.push((b.x - a.x) * (py - a.y) / (b.y - a.y) + a.x); }
+        return xs.sort((u, v) => u - v); };
+    const drin = (xs, px) => { let lo = 0, hi = xs.length; while (lo < hi) { const m = (lo + hi) >> 1; if (xs[m] <= px) lo = m + 1; else hi = m; } return (xs.length - lo) % 2 === 1; };   // Schnitte mit px < x
+    const pts = [[.5, .5], [.1, .1], [.9, .1], [.1, .9], [.9, .9], [.5, .1], [.5, .9], [.1, .5], [.9, .5]];
     for (const lm of landmasses) {
         lm.fogCells = [];
         const r = lm.shapeMaxR, x0 = Math.floor((lm.x - r) / FOG_CELL), x1 = Math.floor((lm.x + r) / FOG_CELL), y0 = Math.floor((lm.y - r) / FOG_CELL), y1 = Math.floor((lm.y + r) / FOG_CELL);
+        const zeile = new Map();                 // y → sortierte Schnitte
+        const xsAn = py => { let xs = zeile.get(py); if (!xs) zeile.set(py, xs = schnitte(lm.shape, py)); return xs; };
         for (let cx = x0; cx <= x1; cx++) for (let cy = y0; cy <= y1; cy++) {
-            const pts = [[.5, .5], [.1, .1], [.9, .1], [.1, .9], [.9, .9], [.5, .1], [.5, .9], [.1, .5], [.9, .5]];
-            if (!pts.some(([fx, fy]) => pointInPolygon((cx + fx) * FOG_CELL, (cy + fy) * FOG_CELL, lm.shape))) continue;
+            if (!pts.some(([fx, fy]) => drin(xsAn((cy + fy) * FOG_CELL), (cx + fx) * FOG_CELL))) continue;
             const k = fogKey(cx, cy); cellLm[k] = lm.id; lm.fogCells.push({ k, x: (cx + .5) * FOG_CELL, y: (cy + .5) * FOG_CELL });
         }
     }

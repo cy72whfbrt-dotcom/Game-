@@ -75,10 +75,12 @@ function bodenMasken() {
   const zg = zc.getContext('2d'); zg.setTransform(k, 0, 0, k, R * k, R * k);
   for (const lm of landmasses) { zg.fillStyle = 'rgb(' + lm.zone + ',0,0)'; zg.fill(lm.path); zg.lineWidth = 4 / k; zg.strokeStyle = zg.fillStyle; zg.stroke(lm.path); }
   const zd = zg.getImageData(0, 0, n, n).data; for (let p = 0; p < n * n; p++) zone[p] = zd[p * 4] || 1;
-  const weich = a => { const b = new Float32Array(n * n);                         // Kastenfilter ±1 px, zweimal, waagrecht und senkrecht
+  const weich = a => { const b = new Float32Array(n * n);                         // Kastenfilter ±1 px, zweimal, waagrecht und senkrecht (Ränder: nur die Nachbarn im Bild)
     for (let pass = 0; pass < 2; pass++) {
-      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { let s = 0, c = 0; for (let d = -1; d <= 1; d++) { const x = i + d; if (x >= 0 && x < n) { s += a[j * n + x]; c++; } } b[j * n + i] = s / c; }
-      for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) { let s = 0, c = 0; for (let d = -1; d <= 1; d++) { const y = j + d; if (y >= 0 && y < n) { s += b[y * n + i]; c++; } } a[j * n + i] = s / c; } }
+      for (let j = 0; j < n; j++) { const o = j * n; b[o] = (a[o] + a[o + 1]) / 2; for (let i = 1; i < n - 1; i++) b[o + i] = (a[o + i - 1] + a[o + i] + a[o + i + 1]) / 3; b[o + n - 1] = (a[o + n - 2] + a[o + n - 1]) / 2; }
+      for (let i = 0; i < n; i++) a[i] = (b[i] + b[n + i]) / 2;
+      for (let p = n; p < n * (n - 1); p++) a[p] = (b[p - n] + b[p] + b[p + n]) / 3;
+      for (let p = n * (n - 1); p < n * n; p++) a[p] = (b[p - n] + b[p]) / 2; }
     return a; };
   BM = { n, R, k, w: {}, maske: {}, farbe: document.createElement('canvas') };
   const fc = BM.farbe; fc.width = fc.height = n; const fd = fc.getContext('2d').createImageData(n, n), F = BODEN_FARBE;
@@ -206,10 +208,12 @@ function karteUebersicht() {                         // → Zeichenfläche über
   const g = c.getContext('2d'), bild = karteBilder(), welt = () => g.setTransform(k, 0, 0, k, H * k, H * k);
   welt();
   for (const lm of landmasses) { const farbe = ZONEN_FARBE[lm.zone][lm.id % 2];
+    let l = Infinity, t = Infinity, r = -Infinity, u = -Infinity; for (const p of lm.shape) { l = Math.min(l, p.x); t = Math.min(t, p.y); r = Math.max(r, p.x); u = Math.max(u, p.y); }
+    l -= 4 / k; t -= 4 / k; r += 4 / k; u += 4 / k;   // nur sein Rechteck füllen (der Umriss schneidet ohnehin zu) – nicht jedes Mal die ganze Karte
     g.save(); g.clip(lm.path);
-    if (bild) { for (const [art, a] of [['aussen', 1], ...BODEN_ZONE[lm.zone]]) bodenFuellen(g, art, k / dpr, -H, -H, 2 * H, 2 * H, a);
-      g.fillStyle = 'rgba(' + farbe + ',' + ZONEN_TOENUNG[lm.zone] + ')'; g.fillRect(-H, -H, 2 * H, 2 * H); }
-    else { g.fillStyle = 'rgb(' + farbe + ')'; g.fillRect(-H, -H, 2 * H, 2 * H); }
+    if (bild) { for (const [art, a] of [['aussen', 1], ...BODEN_ZONE[lm.zone]]) bodenFuellen(g, art, k / dpr, l, t, r - l, u - t, a);
+      g.fillStyle = 'rgba(' + farbe + ',' + ZONEN_TOENUNG[lm.zone] + ')'; g.fillRect(l, t, r - l, u - t); }
+    else { g.fillStyle = 'rgb(' + farbe + ')'; g.fillRect(l, t, r - l, u - t); }
     g.restore(); }
   if (bild) {
     g.lineJoin = 'round'; g.strokeStyle = 'rgba(58,52,40,.8)'; g.lineWidth = KARTE_MASS.quer * .48; g.stroke(gebirgsPfad());

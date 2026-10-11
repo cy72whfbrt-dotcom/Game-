@@ -38,6 +38,11 @@
   transition:width .3s ease-out}   /* echter Stand: ladebildschirm.js bilderVorab (Bilder geladen + entpackt) */
 .splash-bar i::after{content:"";position:absolute;right:-3px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#fff8e0;box-shadow:0 0 8px 2px rgba(255,214,140,.9)}
 .splash.is-done .splash-bar i{animation:none;width:100%;transition:width .6s ease-out}
+.splash-bar::before{content:"";position:absolute;left:0;top:0;bottom:0;width:30%;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(255,240,200,.6),transparent);
+  pointer-events:none;animation:sp-glanz 1.4s linear infinite}   /* Lichtschein läuft über den Balken – nur transform/opacity: läuft weiter, auch wenn das Spiel gerade die Welt baut */
+@keyframes sp-glanz{0%{opacity:0;transform:translateX(0)}15%,85%{opacity:1}100%{opacity:0;transform:translateX(233%)}}
+.splash.is-done .splash-bar::before{display:none}
+@media (prefers-reduced-motion:reduce){.splash-bar::before{display:none}}
 /* desktop: logo top left like a poster, bar centred */
 @media (min-width:900px) and (min-aspect-ratio:11/10){.splash{align-items:stretch;padding:15vh 4vw calc(var(--safe-b) + 56px)}.splash-top{align-items:flex-start;text-align:left}
   .splash-title{font-size:88px;align-items:flex-start}.splash-sub{margin-top:18px}.splash-bottom{align-self:center}.splash-tipline{font-size:15px}}

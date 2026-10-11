@@ -365,7 +365,7 @@
         function zeig() {
             var a = v.ns / start.length;
             if (fill && !fill.closest('.is-done')) fill.style.width = (4 + 90 * a).toFixed(1) + '%';   // (100 % setzt spiel.js, wenn alles da ist)
-            if (status && !fill.closest('.is-done')) status.textContent = a < .35 ? 'Welt wird erschaffen …' : a < .7 ? 'Inseln werden besiedelt …' : 'Truppen werden gerüstet …';
+            if (status && !fill.closest('.is-done')) status.textContent = a < .35 ? 'Welt wird erschaffen …' : a < .7 ? 'Inseln werden besiedelt …' : a < 1 ? 'Truppen werden gerüstet …' : 'Karte wird gezeichnet …';
         }
         var startDa, baldDa;
         v.fertig = new Promise(function (f) { startDa = f; });

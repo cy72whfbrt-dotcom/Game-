@@ -63,6 +63,13 @@ const holen = (port, pfad, gzip) => new Promise((ja, nein) => http.get({ host: '
       pruef(fremd.length === 0, 'keine Anfragen nach außen, keine 3D-Dateien: ' + (fremd.slice(0, 3).join(', ') || 'keine'));
       pruef(st.bilder === 15 && !st.ow && st.alt3D.length === 0, 'Basen-Bilder geladen, kein 3D-Code mehr im Spiel: ' + JSON.stringify(st));
       pruef(st.insel > 0 && errs.length === 0, 'Spiel läuft ohne Fehler' + (errs.length ? ': ' + errs.slice(0, 3).join(' | ') : ''));
+      const nebel = await p.evaluate(() => {   // Nebel-Felder (schnell je Zeile gerechnet) = dieselben wie mit pointInPolygon je Punkt (Stichprobe: 12 Gebiete)
+        const cl = fogLandCells(), pts = [[.5, .5], [.1, .1], [.9, .1], [.1, .9], [.9, .9], [.5, .1], [.5, .9], [.1, .5], [.9, .5]]; let n = 0, falsch = 0;
+        for (const lm of landmasses.filter((l, i) => i % Math.ceil(landmasses.length / 12) === 0)) { const r = lm.shapeMaxR;
+          for (let cx = Math.floor((lm.x - r) / FOG_CELL); cx <= Math.floor((lm.x + r) / FOG_CELL); cx++) for (let cy = Math.floor((lm.y - r) / FOG_CELL); cy <= Math.floor((lm.y + r) / FOG_CELL); cy++) {
+            const soll = pts.some(([fx, fy]) => pointInPolygon((cx + fx) * FOG_CELL, (cy + fy) * FOG_CELL, lm.shape)), ist = lm.fogCells.some(c => c.k === fogKey(cx, cy)); n++; if (soll !== ist) falsch++; } }
+        return { n, falsch }; });
+      pruef(nebel.n > 100 && nebel.falsch === 0, 'Nebel-Felder beim Start schnell gerechnet, aber genau wie vorher: ' + JSON.stringify(nebel));
       {   // Profil → Einstellungen → Version: aus jeder Skript-Adresse (früher stand dort „–“, weil nur spiel.js?v=<Zeit> ging)
         const sha7 = crypto.createHash('sha1').update(fs.readFileSync(path.join(GAME, 'spiel.js'))).digest('hex').slice(0, 7);
         const ver = await p.evaluate(() => {

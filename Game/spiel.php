@@ -451,7 +451,7 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-loch{position:absolute;box-sizing:border-box;border:2px solid var(--gold-300);border-radius:14px;pointer-events:none;box-shadow:0 0 0 4px rgba(212,173,102,.25),0 0 24px rgba(240,223,176,.45)}
 .tut-loch::after{content:"";position:absolute;inset:-2px;border-radius:inherit;box-shadow:0 0 0 7px rgba(212,173,102,.4),0 0 30px rgba(240,223,176,.6);opacity:0;animation:tut-glanz 1.2s ease-in-out infinite}
 .tut-loch.rund{border-radius:50%}   /* Basis/Lager auf der Karte */
-.tut-loch.neu{animation:tut-loch-rein .22s ease-out} @keyframes tut-loch-rein{from{opacity:0;scale:1.25}}   /* neues Ziel: springt hin und zieht sich zusammen (nur scale/opacity) */
+.tut-loch.neu{animation:tut-loch-rein .22s ease-out} @keyframes tut-loch-rein{from{opacity:0;scale:1.08}}   /* neues Ziel: springt hin und zieht sich zusammen (nur scale/opacity) */
 .tut-sperre{position:absolute;pointer-events:auto}
 @keyframes tut-glanz{50%{opacity:1}}   /* Puls nur im Schein (Deckkraft des Scheins, kein Neuzeichnen): das Loch bleibt im Bild */
 /* Finger: Platzhalter, bis das KI-Bild einstieg_finger.webp kommt (zeigt nach oben aufs Loch) */
@@ -459,6 +459,8 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-finger::before{content:"";position:absolute;left:18px;top:0;width:18px;height:34px;border-radius:9px 9px 4px 4px;background:linear-gradient(90deg,#f2d68a,#c99a3e);border:2px solid #5a3d0e}
 .tut-finger::after{content:"";position:absolute;left:8px;top:26px;width:38px;height:26px;border-radius:10px 10px 14px 14px;background:linear-gradient(90deg,#f2d68a,#c99a3e);border:2px solid #5a3d0e}
 .tut-finger.oben{transform:rotate(180deg);animation-name:tut-tipp2}
+.tut-finger.rechts{transform:rotate(-90deg);animation-name:tut-tipp3} .tut-finger.links{transform:rotate(90deg);animation-name:tut-tipp4}   /* im Fenster: von der Seite */
+@keyframes tut-tipp3{50%{translate:8px 0}} @keyframes tut-tipp4{50%{translate:-8px 0}}
 @keyframes tut-tipp{50%{translate:0 8px}} @keyframes tut-tipp2{50%{translate:0 -8px}}
 /* Berater mit Sprechblase: Platzhalter-Kopf, bis einstieg_berater.webp kommt; nie über dem Loch (.oben) */
 .tut-berater{position:absolute;left:calc(var(--safe-l,0px) + 8px);right:calc(var(--safe-r,0px) + 8px);bottom:calc(var(--dock-h,64px) + var(--safe-bd,0px) + 16px);max-width:440px;
@@ -477,8 +479,10 @@ body.is-multi .mapctl{display:none}   /* phones: pinch still works; desktop/land
 .tut-weg{position:absolute;top:calc(var(--safe-t,0px) + var(--hud-top-space,64px) - 6px);right:calc(var(--safe-r,0px) + 8px);min-height:32px;padding:0 10px;border-radius:8px;
   border:1px solid var(--line-2);background:rgba(10,12,16,.6);color:var(--tx-2);font:600 13px var(--font-ui);pointer-events:auto}
 .tut-weg[hidden]{display:none}
+body:has(#heroHall:not([hidden])) .tut-weg{top:calc(var(--safe-t,0px) + 18px);right:calc(var(--safe-r,0px) + 72px)}   /* Heldenhalle: neben dem X, nicht über den Reitern */
 /* Teilschritte als Punkte (aktiv Gold), Warte-Balken */
-.tut-blase{position:relative} .tut-zaehler{position:absolute;top:7px;right:10px;display:flex;gap:4px} .tut-zaehler[hidden]{display:none}
+.tut-blase{position:relative} .tut-zaehler{position:absolute;top:5px;right:10px;display:flex;gap:4px} .tut-zaehler[hidden]{display:none}
+.tut-zaehler:not([hidden]) + p{padding-top:6px}   /* Punkte nie am Text */
 .tut-zaehler i{width:6px;height:6px;border-radius:50%;background:var(--ink-5);box-shadow:inset 0 0 0 1px #0004} .tut-zaehler i.an{background:var(--gold-300)}
 .tut-fort{display:block;height:8px;border-radius:4px;background:#d6c39a;box-shadow:inset 0 1px 2px #0006;overflow:hidden} .tut-fort[hidden]{display:none}
 .tut-fort i{display:block;height:100%;width:0;background:linear-gradient(#f2d68a,#c99a3e);transition:width .25s linear}
@@ -1728,6 +1732,11 @@ main .besch-ic,.besch-ic{width:22px;height:22px;object-fit:contain} #beschInhalt
   transition:width .3s ease-out}   /* echter Stand: ladebildschirm.js bilderVorab (Bilder geladen + entpackt) */
 .splash-bar i::after{content:"";position:absolute;right:-3px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#fff8e0;box-shadow:0 0 8px 2px rgba(255,214,140,.9)}
 .splash.is-done .splash-bar i{animation:none;width:100%;transition:width .6s ease-out}
+.splash-bar::before{content:"";position:absolute;left:0;top:0;bottom:0;width:30%;border-radius:2px;background:linear-gradient(90deg,transparent,rgba(255,240,200,.6),transparent);
+  pointer-events:none;animation:sp-glanz 1.4s linear infinite}   /* Lichtschein läuft über den Balken – nur transform/opacity: läuft weiter, auch wenn das Spiel gerade die Welt baut */
+@keyframes sp-glanz{0%{opacity:0;transform:translateX(0)}15%,85%{opacity:1}100%{opacity:0;transform:translateX(233%)}}
+.splash.is-done .splash-bar::before{display:none}
+@media (prefers-reduced-motion:reduce){.splash-bar::before{display:none}}
 /* desktop: logo top left like a poster, bar centred */
 @media (min-width:900px) and (min-aspect-ratio:11/10){.splash{align-items:stretch;padding:15vh 4vw calc(var(--safe-b) + 56px)}.splash-top{align-items:flex-start;text-align:left}
   .splash-title{font-size:88px;align-items:flex-start}.splash-sub{margin-top:18px}.splash-bottom{align-self:center}.splash-tipline{font-size:15px}}
