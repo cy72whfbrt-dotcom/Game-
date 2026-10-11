@@ -66,7 +66,7 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   setzen `window.__owOhneTutorial` – dort startet es offline nicht. Tages-Belohnung erst nach dem Tutorial (`maybeShowDaily`).
 - Zuerst Willkommen (`#tutWillkommen`, Titelbild, Band, Aldric stellt sich vor, „Los geht's“, `tut.w`). Ohne Server (`!__OW`)
   mit Namensfeld (max. 16 Zeichen, Vorschlag „Kapitän 123“ → `openWaterPlayerName`); mit Server kommt der Name aus der Anmeldung.
-- 27 Schritte (`TUT`, Drehbuch `scratchpad/design_tutorial2.md`) im echten Spiel: abgedunkelt (Handlung .55, Erklär-Schritt .40), Loch
+- 27 Schritte (`TUT`, Drehbuch `scratchpad/design_tutorial2.md` + `design_tutorial3.md`; Stand merkt den Schritt-Namen `tut.k`) im echten Spiel: abgedunkelt (Handlung .55, Erklär-Schritt .40), Loch
   auf dem echten Element (Knopf, Stadt-Schild, rund auf Basis/Lager), Finger, Berater „Aldric“ (Namensschild) mit 1–2 Sätzen mit
   echten Zahlen aus dem Spiel (Kosten `stadtKosten`, Rohstoffe, Lager-Barbaren/-Münzen, Münzen/Std. einer Basis, Truppen). Jeder
   Teilschritt (Stadt → Schild → Bauen, Knopf → Reiter → Ziel, Angriff) hat seinen eigenen Satz und Punkte (`tutT`, `tutBauT`, `tutReihe`);
@@ -74,7 +74,12 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   Blase immer voll deckend (blendet nur bei neuem Teilschritt ein), bleibt im Schritt auf ihrer Seite, nie auf dem Loch; offenes Fenster:
   kleine Blase (`.klein`), sonst oben unter seiner Kopfzeile (Titel + X frei), ohne Loch unten (Gebäude-Fenster: oben); „Weiter“ in eigener Zeile. Fährt die Kamera noch: „…“ statt Befehl. Gegenstand-Fenster („Ausrüsten“) liegt im Tutorial unter dem Dunkel (z 58). Lager: Kamera zeigt
   Hauptstadt + Lager; Karten-Ziele heller (.40).
-  Nur das Loch nimmt Tipps. Belohnungs-Fenster gehen vor. Erklär-Schritte nur mit „Weiter“. Ablauf: Münzen → Holz → Stein → Eisen → Edelsteine
+  Nur das Loch nimmt Tipps. Belohnungs-Fenster gehen vor. Erklär-Schritte nur mit „Weiter“. Erklär-Teilschritte („so liest du das“, `tutE`,
+  abgehakt in `tut.e`, „Weiter“ beendet den Schritt nicht): Bau-Info im Holzfäller-Fenster (Ertrag + Kosten), Angriffsleiste (Regler,
+  Marschzeit, Kraft) vor dem Losmarschieren, Heldenhalle → „Helden“ → Karte des eigenen Helden (Sterne, Splitter), Aufgabe mit dem
+  vollsten Balken (oder „Abholen“). Beim Warten erklärt Aldric im offenen Fenster (Burg 2: „schaltet frei“-Liste mit Rahmen; Marsch:
+  Schild über den Truppen). Kampfbericht: Kampf → Berichte → „Kampfdetails“ → Erklärung der Seite (oben du, darunter die Barbaren,
+  Beute; die Basen ersetzen Gefallene jede Stunde) → Weiter; die Seite liegt im Tutorial unter dem Dunkel (z 58). Ablauf: Münzen → Holz → Stein + Eisen → Edelsteine
   (je ein Schritt mit Loch; Edelsteine nur in ihrem Schritt sichtbar, `zeig`; vorher kein Knopf unten) → Holzfäller (Stadt-Knopf kommt) (+ Geschenk 2 Beschleuniger)
   → Beschleunigen → Steinbruch → Eisenmine → Burg 2 → Karte → eigenes Barbaren-Lager Stufe 1 angreifen → Kampfbericht → Beute
   abholen → neutrale Basis erobern (keine in Reichweite: nur erklärt) → Truppen
@@ -83,6 +88,11 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   „Du hast N Truppen – X in deinen Basen, Y unterwegs“), Held-Schritt auch auf den Heimweg (`pendingRetreats`); Verteidiger nur mit Späher (sonst keine Zahl); Kampfbericht
   erst nach 2,5 s (`ruhe`: „Lager besiegt“ zuerst). Ende: 100 Edelsteine + Kiste (`TUT_GEMS`), gleich abgeholt im Fenster „Geschafft!“,
   danach Aldric „Gut gemacht …“ und die tägliche Belohnung.
+- Flüssig (11.10., Messung `scratchpad/tutflink/MESSUNG.md`): Loch springt zum Ziel (kein Gleiten über die Seite, kurzes Zusammenziehen
+  nur mit scale/opacity), Glanz und Knopf-Einflug nur mit opacity/scale. Kein Loch, solange die Stadt umblendet (`cityBusy`) oder das
+  Ziel/sein Fenster noch einfährt (`tutFaehrt`: laufende Animationen mit Lage-Eigenschaften); dann nach 80 ms nochmal (`tutBald`).
+  Nach jedem Tipp ist das Loch verbraucht (Sperre drüber) und wird nach 30 ms neu bestimmt – nie ein zweiter Tipp ins alte Ziel
+  (Doppeltipp auf „Karte“ öffnete sonst die Stadt wieder). Takt sonst 250 ms.
 - Sichtprüfung (`tutZeigen`): Ziele auf Karte/Stadt (`fokus`) mit Loch+Finger, sobald sie im Bild stehen (nicht unter Kopf/Leiste/Blase)
   und Karte/Stadt-Kamera ruhen; sonst gleich hinfahren (`flyTo`/`cityFocus`, max. 4×; ändert Hinfahren nichts – Bildrand –, gilt es so). Loch nie über
   den Bildrand (nach innen geschoben). Blase: die Seite, deren Rechteck (mit Berater-Bild) das Loch nicht überdeckt. Rohstoffe: Loch nur um Bild+Zahl.
@@ -90,7 +100,7 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
   ohne freien Helden ehrlich „ohne Helden los“. Warten (Bau, Marsch): „Kurz warten – …“ mit Balken (`fort`). Hängt ein Schritt
   > 20 s ohne Ziel: „Weiter“ als Notausgang. Kein Fortschrittsband oben. Rohstoff-Schritte (`nah`): Kamera nah auf die eigene
   Hauptstadt (`tutHeim`, schon beim Willkommen), weniger abgedunkelt (`.is-hell`). Zoom-/Kompass-Knöpfe erst nach dem Tutorial (`tz-karte`).
-  Neue Knöpfe: fliegen ein, glühen, Schild „NEU“ bis zum ersten Tipp (`tutRein`, `.tut-neuer`); neue Kapseln oben fliegen ein. Das Banner
+  Neue Knöpfe: fliegen ein (0,6 s), Schild „NEU“ bis zum ersten Tipp (`tutRein`, `.tut-neuer`); neue Kapseln oben fliegen ein. Das Banner
   „Neu: …“ nur nach dem Tutorial (Burg-Stufe). Im Tutorial ruhen normale Hinweise (auch über Geschenk-Fenstern), der Edelstein-Knopf
   „Fertig für …“ ist weg; Leiste unten nur so breit wie ihre Knöpfe (Handy, `body.tut-schmal`). Burg 3: ein offener Rucksack geht zu (Desktop).
 - Rohstoff-Kapseln oben, die noch fehlen, sind nur unsichtbar (`visibility`, Platz bleibt): jede Kapsel hat immer ihre normale Größe.
@@ -104,6 +114,8 @@ Lange Regeln hinter „i“ (`infoKlapp`), leere Zustände `leerHtml`. Hinweis u
 - „Überspringen“ fragt im Spiel, danach alles sichtbar. Das Welt-Namensfenster ruht im Tutorial. Tägliche Belohnung erst danach.
 - Hauptbuch: Spielraum am Anfang `fr.g 100`, `fr.k 1`, `fr.bm 2`, `fr.s1 2` (Geschenke + Belohnung). Start-Rohstoffe 5.000/3.000/1.800 (aufbau.js `ROH_START`): Tutorial braucht
   4.120/2.200/1.380 + 1. Forschung – kein Warten bis Burg 3.
+- Bilder: was Start und Tutorial zeigen, lädt und entpackt das Ladebild vorab (`ladebildschirm.js` `BILDER_START`; Test: im Tutorial
+  wird kein Bild nachgeladen, das dort fehlt) – neue Bilder im Tutorial dort eintragen.
 - Platzhalter-Bilder: `einstieg_finger` (jetzt CSS-Pilz, Prompt in der Vorgabe), `einstieg_berater` (jetzt Helden-Kopf). Tests `tutorial_test` (390, Rest) und `tutorial_klein_test` (375×667); Warten (Bau, Marsch) spult der Test vor.
 
 ## Offen

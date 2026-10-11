@@ -64,13 +64,15 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
         const alle = totalTroops() + pendingAttacks.filter(a => !a.attackerBotId).reduce((a, x) => a + x.rawTroops, 0) + pendingRetreats.reduce((a, x) => a + x.troops, 0);
         return { satz: zahl ? +zahl.replace(/\./g, '') : null, alle, kapsel: document.getElementById('troopCount').textContent }; });
       if (z.weiter) { await p.mouse.click(z.weiter.x, z.weiter.y); await p.waitForTimeout(400); continue; }
-      if (z.loch && z.k === 'karte' && !doppelt) {            // zweimal schnell auf „Karte“: die Stadt geht zu und bleibt zu (das alte Loch nimmt keinen zweiten Tipp)
+      if (z.loch && !doppelt && await p.evaluate(() => { const q = document.getElementById('tutLoch').getBoundingClientRect(), n = document.getElementById('cityNavBtn').getBoundingClientRect();
+          return q.left <= n.left + n.width / 2 && q.right >= n.left + n.width / 2 && q.top <= n.top + n.height / 2 && q.bottom >= n.top + n.height / 2; })) {   // Loch auf „Stadt“: zweimal tippen –
+        const vor = await p.evaluate(() => cityView.hidden);   // die Stadt geht auf und bleibt auf (das alte Loch nimmt keinen zweiten Tipp, kein Loch während sie umblendet)
         await p.mouse.click(z.loch.x, z.loch.y);
-        const busy = await p.evaluate(() => new Promise(f => { let loch = false; const t = setInterval(() => { loch = loch || cityBusy && !document.getElementById('tutLoch').hidden;   // (Stadt blendet um: kein Loch)
-          if (cityView.hidden && !cityBusy) { clearInterval(t); f([loch]); } }, 15); }));
-        await p.mouse.click(z.loch.x, z.loch.y);                // (genau, wenn die Karte da ist: ein Spieler tippt nochmal)
-        await p.waitForTimeout(1500); doppelt = await p.evaluate(() => ({ stadtZu: cityView.hidden, k: TUT[tut.s].k, lochWaehrendWechsel: false }));
-        doppelt.lochWaehrendWechsel = busy.some(Boolean); continue;
+        const busy = await p.evaluate(v => new Promise(f => { let loch = false; const t = setInterval(() => { loch = loch || cityBusy && !document.getElementById('tutLoch').hidden;
+          if (cityView.hidden !== v && !cityBusy) { clearInterval(t); f(loch); } }, 15); }), vor);
+        await p.mouse.click(z.loch.x, z.loch.y);                // (genau, wenn die Stadt da ist: ein Spieler tippt nochmal)
+        await p.waitForTimeout(1500); doppelt = await p.evaluate(v => ({ gewechselt: cityView.hidden !== v, k: TUT[tut.s].k }), vor);
+        doppelt.lochWaehrendWechsel = busy; continue;
       }
       if (z.loch) {
         await p.waitForTimeout(350);                         // (Loch gleitet zum Ziel; danach neu messen)
@@ -97,13 +99,13 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
     }
     p.off('request', bild);
     const vorab = await p.evaluate(() => ({ liste: window.__bilderVorab ? __bilderVorab.liste : [], nach: window.__bilderVorab && __bilderVorab.nach ? [...__bilderVorab.nach] : [], e: Object.keys(tut.e || {}) }));
-    const fehlt = [...geholt].filter(u => !vorab.liste.includes(u) && !vorab.nach.includes(u));
+    const fehlt = [...geholt].filter(u => !vorab.liste.includes(u) && !vorab.nach.includes(u) && !/titel_/.test(u));   // (Titelbild: lädt das Ladebild selbst)
     return { gesehen, banner, neuer: [...neuer], schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler], truppen, doppelt, bericht: { ...bericht, saetze: [...bericht.saetze] }, fehlt, vorabN: vorab.liste.length, erkl: vorab.e };
   };
   const pruefSicht = (r, wo) => {
     ok(r.truppen && r.truppen.satz === r.truppen.alle, wo + ': Schritt „Truppen“ nennt die echte Zahl aller Truppen des Spielers (Basen + unterwegs)', r.truppen);
     ok(!r.probleme.length, wo + ': bei jedem Schritt ist das Ziel ganz im Bild und die Blase liegt nie darüber', r.probleme.slice(0, 6));
-    ok(r.doppelt && r.doppelt.stadtZu && r.doppelt.k !== 'karte' && !r.doppelt.lochWaehrendWechsel, wo + ': zweimal schnell auf „Karte“ – die Stadt bleibt zu, kein Loch während die Stadt umblendet', r.doppelt);
+    ok(r.doppelt && r.doppelt.gewechselt && !r.doppelt.lochWaehrendWechsel, wo + ': zweimal auf „Stadt“ (zweiter Tipp genau, wenn die Stadt da ist) – sie bleibt offen, kein Loch während sie umblendet', r.doppelt);
     ok(r.bericht.saetze.some(x => /^3\/4 .*Kampfdetails/.test(x)) && r.bericht.kd && r.bericht.kd.offen && r.bericht.kd.tutOben && r.bericht.kd.weiter && r.bericht.kd.loch && r.bericht.saetze.some(x => /^4\/4 .*Beute.*neue Truppen/.test(x)) && r.bericht.zu && r.bericht.zu.klZu,
       wo + ': Kampfbericht: Tipp auf „Kampfdetails“, dann erklärt Aldric die Seite (Loch über der Seite, „Weiter“), danach ist sie zu', r.bericht);
     ok(['bauinfo', 'angriff', 'halle'].every(k => r.erkl.includes(k)), wo + ': Erklär-Teilschritte gesehen (Bau-Info, Angriffsleiste, Helden)', r.erkl);
@@ -206,6 +208,7 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
   ok(nm4.name === 'Seeräuberin Ida' && !nm4.wk && nm4.w, 'Name (max. 16 Zeichen) steht im Spielstand, Willkommen zu', nm4);
   const roh = [];
   for (let i = 0; i < 4; i++) {
+    await p.waitForFunction(() => !document.getElementById('tutLoch').hidden, null, { timeout: 5000 });   // (neue Kapseln fliegen erst ein: dann das Loch)
     const z = await p.evaluate(() => { const l = document.getElementById('tutLoch').getBoundingClientRect(), x = l.left + l.width / 2, y = l.top + l.height / 2;
       const t = document.getElementById('tut'); t.hidden = true; const e = document.elementFromPoint(x, y); t.hidden = false;
       const res = e && e.closest('.res'), m = document.querySelector('#hud .res--coin').getBoundingClientRect(), h = islandById[playerIslandId];

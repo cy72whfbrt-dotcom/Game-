@@ -13681,7 +13681,7 @@ const TUT = [
     { k: 'bericht', neu: ['kampf'], ruhe: 2500, satz: () => (combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '') + 'Im Bericht siehst du deine Verluste und die Beute.',
       ziel: () => { const kd = $t('klInhalt'), sieg = combatLog.some(e => e.type === 'barb' && e.won) ? 'Sieg! ' : '';
           if (kd && !kd.closest('.kl-seite').hidden) return tutT(4, 4, { els: [kd.querySelector('.logCompare') || kd, kd.querySelector('.logGold')] },   // die Kampfdetails sind offen: was steht da?
-              'Oben du, darunter die Barbaren: wer gekämpft hat und wer gefallen ist – ganz unten deine Beute. Gefallene ersetzen deine Basen: sie bringen jede Stunde neue Truppen.');
+              'Oben du, darunter die Barbaren: wer gekämpft hat und wer gefallen ist – ganz unten deine Beute. Deine Basen ersetzen Gefallene: jede bringt jede Stunde neue Truppen.');
           return tutReihe([[tutFenster(battleLogPopup, 'battleLogBtn'), sieg + 'Tipp auf „Kampf“.'], [document.querySelector('#battleTabs [data-ktab="berichte"]:not(.active)'), 'Tipp auf „Berichte“.'],
               [tutSicht(combatLogListEl.querySelector('.logRow details > summary')), 'Das ist dein Kampfbericht. Tipp auf „Kampfdetails“ – da steht alles genau.']], 4); } },
     { k: 'beute', neu: ['events'], fertig: () => !inboxFach().length,
