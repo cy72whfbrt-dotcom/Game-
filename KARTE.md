@@ -28,7 +28,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `adminBefehl` → Game/spiel/10d5-welt-befehle.js:186
 - `adminMelden` → Game/weltrechner/push.js:219
 - `adminSenden` → Game/weltrechner/push.js:220
-- `afterBesch` → Game/spiel/06g-shop-gegenstaende.js:179
+- `afterBesch` → Game/spiel/06g-shop-gegenstaende.js:180
 - `afterSplash` → Game/spiel/06d-schild-produktion.js:399
 - `ago` → Game/spiel/05c-profil-erfolge-rangliste.js:188
 - `ago` → Game/spiel/05d-marsch-liste-kampfbericht.js:297
@@ -201,14 +201,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `berlinTeile` → Game/spiel/09f-saison.js:31
 - `berlinUm` → Game/spiel/09f-saison.js:32
 - `berlinZeit` → Game/spiel/03d-karte-ebenen-tagnacht.js:27
-- `beschAuto` → Game/spiel/06g-shop-gegenstaende.js:167
-- `beschBenutzen` → Game/spiel/06g-shop-gegenstaende.js:159
+- `beschAuto` → Game/spiel/06g-shop-gegenstaende.js:168
+- `beschBenutzen` → Game/spiel/06g-shop-gegenstaende.js:160
 - `beschBild` → Game/spiel/05e-belohnung.js:19
-- `beschLauf` → Game/spiel/06g-shop-gegenstaende.js:145
+- `beschLauf` → Game/spiel/06g-shop-gegenstaende.js:146
 - `beschMinuten` → Game/spiel/05e-belohnung.js:32
 - `beschR` → Game/spiel/05e-belohnung.js:18
 - `beschText` → Game/spiel/05e-belohnung.js:17
-- `beschWahl` → Game/spiel/06g-shop-gegenstaende.js:149
+- `beschWahl` → Game/spiel/06g-shop-gegenstaende.js:150
 - `besondere.createImageData` → Game/weltrechner/start.js:227
 - `besondere.createLinearGradient` → Game/weltrechner/start.js:225
 - `besondere.createPattern` → Game/weltrechner/start.js:226
@@ -768,7 +768,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `eigeneTruppenDazu` → Game/spiel/01a-grundlagen.js:25
 - `einschalten` → Game/benachrichtigung.js:81
 - `einstellungenZeigen` → Game/spiel/10c-start-einstellungen.js:144
-- `emKnopf` → Game/spiel/06g-shop-gegenstaende.js:66
+- `emKnopf` → Game/spiel/06g-shop-gegenstaende.js:67
 - `empireSnapshot` → Game/spiel/06d-schild-produktion.js:282
 - `ende` → Game/spiel/09c-events-woche.js:31
 - `ende` → Game/weltrechner/start.js:34
@@ -781,25 +781,25 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `ereignisse_verbucht` → Game/server/05-datenbank-welt.php:269
 - `ertrag` → Game/aufbau.js:237
 - `escapeHtml` → Game/spiel/05c-profil-erfolge-rangliste.js:263
-- `EV_EM_WOCHE` → Game/spiel/06g-shop-gegenstaende.js:96
+- `EV_EM_WOCHE` → Game/spiel/06g-shop-gegenstaende.js:97
 - `EV_SZENE.rally` → Game/spiel/09c-events-woche.js:147
 - `EV_SZENE.tempel` → Game/spiel/09c-events-woche.js:150
 - `EV_SZENE.tour` → Game/spiel/09c-events-woche.js:144
 - `evBanner` → Game/spiel/09c-events-woche.js:160
 - `evBericht` → Game/spiel/09c-events-woche.js:114
-- `evBerlin` → Game/spiel/06g-shop-gegenstaende.js:90
+- `evBerlin` → Game/spiel/06g-shop-gegenstaende.js:91
 - `evBeute` → Game/spiel/09c-events-woche.js:172
 - `evBild` → Game/spiel/09c-events-woche.js:153
 - `evChips` → Game/spiel/09c-events-woche.js:297
 - `evChipStatus` → Game/spiel/09c-events-woche.js:291
 - `evDing` → Game/spiel/09c-events-woche.js:78
-- `evGekauft` → Game/spiel/06g-shop-gegenstaende.js:97
+- `evGekauft` → Game/spiel/06g-shop-gegenstaende.js:98
 - `evHolBereit` → Game/spiel/09c-events-woche.js:170
 - `evHolen` → Game/spiel/09c-events-woche.js:197
 - `evHolKnopf` → Game/spiel/09c-events-woche.js:178
 - `evKachelnHtml` → Game/spiel/09c-events-woche.js:205
 - `evKarte` → Game/spiel/09c-events-woche.js:137
-- `evKaufen` → Game/spiel/06g-shop-gegenstaende.js:109
+- `evKaufen` → Game/spiel/06g-shop-gegenstaende.js:110
 - `evLagerHtml` → Game/spiel/09c-events-woche.js:255
 - `evLeisteHtml` → Game/spiel/09c-events-woche.js:185
 - `evLeistePos` → Game/spiel/09c-events-woche.js:179
@@ -816,8 +816,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `evTourHtml` → Game/spiel/09c-events-woche.js:252
 - `evUhr` → Game/spiel/09c-events-woche.js:130
 - `evWann` → Game/spiel/09c-events-woche.js:131
-- `evWocheAb` → Game/spiel/06g-shop-gegenstaende.js:91
-- `evWocheEnde` → Game/spiel/06g-shop-gegenstaende.js:92
+- `evWocheAb` → Game/spiel/06g-shop-gegenstaende.js:92
+- `evWocheEnde` → Game/spiel/06g-shop-gegenstaende.js:93
 - `exploreOwned` → Game/spiel/01e-kampf-werte-nebel-hud.js:66
 - `extraBild` → Game/spiel/03b-karte-basen-bilder.js:62
 - `extraHtml` → Game/aufbau.js:375
@@ -1755,7 +1755,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderActiveMarches` → Game/spiel/05d-marsch-liste-kampfbericht.js:47
 - `renderArmySheet` → Game/spiel/09d-karte-armeen-wegmarken.js:221
 - `renderAttackPreview` → Game/spiel/10a-fenster-insel-vorschau.js:279
-- `renderBesch` → Game/spiel/06g-shop-gegenstaende.js:150
+- `renderBesch` → Game/spiel/06g-shop-gegenstaende.js:151
 - `renderChestEquipment` → Game/spiel/05b-profil-truhe-skills.js:46
 - `renderChestItemPopup` → Game/spiel/05b-profil-truhe-skills.js:189
 - `renderCitySheet` → Game/spiel/08b-stadt-burg-aussehen.js:143
@@ -1764,7 +1764,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderCrestCard` → Game/spiel/05a-profil-rahmen.js:71
 - `renderCrestEditor` → Game/spiel/05a-profil-rahmen.js:76
 - `renderEquipGrid` → Game/spiel/05b-profil-truhe-skills.js:7
-- `renderEventReiter` → Game/spiel/06g-shop-gegenstaende.js:101
+- `renderEventReiter` → Game/spiel/06g-shop-gegenstaende.js:102
 - `renderEvents` → Game/spiel/09c-events-woche.js:272
 - `renderGoalsSub` → Game/spiel/06a-aufgaben.js:332
 - `renderHeroHall` → Game/spiel/08c-helden-fenster.js:272
@@ -1773,7 +1773,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderKeep` → Game/aufbau.js:310
 - `renderKeepSheet` → Game/spiel/08b-stadt-burg-aussehen.js:4
 - `renderKistenChancen` → Game/spiel/06d-schild-produktion.js:128
-- `renderKistenReiter` → Game/spiel/06g-shop-gegenstaende.js:67
+- `renderKistenReiter` → Game/spiel/06g-shop-gegenstaende.js:68
 - `renderLevelUpModal` → Game/spiel/08f-stadt-bild-zeichnen.js:129
 - `renderLook` → Game/spiel/05a-profil-rahmen.js:55
 - `renderLookSheet` → Game/spiel/08b-stadt-burg-aussehen.js:44
@@ -1790,7 +1790,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `renderShieldState` → Game/spiel/06d-schild-produktion.js:58
 - `renderShop` → Game/spiel/06d-schild-produktion.js:156
 - `renderSkillGrid` → Game/spiel/05b-profil-truhe-skills.js:306
-- `renderTempoReiter` → Game/spiel/06g-shop-gegenstaende.js:123
+- `renderTempoReiter` → Game/spiel/06g-shop-gegenstaende.js:124
 - `renderTile` → Game/spiel/03a-karte-hintergrund.js:425
 - `repaintBackgroundRect` → Game/spiel/03a-karte-hintergrund.js:452
 - `requestRender` → Game/spiel/03e-karte-kamera-eingabe.js:381
@@ -2300,8 +2300,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wanderDepart` → Game/spiel/07b-kriegsherr.js:66
 - `wanderTick` → Game/spiel/07b-kriegsherr.js:136
 - `warDays` → Game/spiel/05c-profil-erfolge-rangliste.js:7
-- `ware` → Game/spiel/06g-shop-gegenstaende.js:103
-- `ware` → Game/spiel/06g-shop-gegenstaende.js:69
+- `ware` → Game/spiel/06g-shop-gegenstaende.js:104
+- `ware` → Game/spiel/06g-shop-gegenstaende.js:70
 - `warnen` → Game/spiel/10d2-welt-schummelschutz.js:20
 - `warStat` → Game/spiel/05c-profil-erfolge-rangliste.js:8
 - `wartung` → Game/server/02-sicherheit-datenlecks.php:26
@@ -3902,24 +3902,24 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `shopWare` :60 — Bausteine der Reiter (wie die Test-Datei werkzeuge/thronevent ?a=shopkisten|sho…
 - `shopGruppe` :62 — Spalten = Anzahl (2–3): volle Breite
 - `gemKnopf` :63 — Preis in Edelsteinen (ab 500 nach dem ersten Tipp „Wirklich?“ – übersteht das N…
-- `emKnopf` :66
-- `renderKistenReiter` :67
-- `ware` :69
-- `evBerlin` :90
-- `evWocheAb` :91
-- `evWocheEnde` :92 — nächster Montag 0 Uhr Berlin als echte Zeit (Winter-/Sommerzeit beachtet)
-- `EV_EM_WOCHE` :96 — so viele Event-Münzen gehen höchstens je Woche (Hauptbuch)
-- `evGekauft` :97
-- `renderEventReiter` :101
-- `ware` :103
-- `evKaufen` :109
-- `renderTempoReiter` :123 — TEMPO: Beschleuniger für Edelsteine (gelten für Bauen und Forschen – nicht für …
-- `beschLauf` :145 — → der laufende Bau bzw. die Forschung (mit endsAt) oder null
-- `beschWahl` :149
-- `renderBesch` :150
-- `beschBenutzen` :159 — einen Beschleuniger der Dauer d auf das Ziel → true, wenn benutzt
-- `beschAuto` :167 — so wenig wie möglich verschwenden: erst der größte, der noch ganz hineinpasst, …
-- `afterBesch` :179
+- `emKnopf` :67
+- `renderKistenReiter` :68
+- `ware` :70
+- `evBerlin` :91
+- `evWocheAb` :92
+- `evWocheEnde` :93 — nächster Montag 0 Uhr Berlin als echte Zeit (Winter-/Sommerzeit beachtet)
+- `EV_EM_WOCHE` :97 — so viele Event-Münzen gehen höchstens je Woche (Hauptbuch)
+- `evGekauft` :98
+- `renderEventReiter` :102
+- `ware` :104
+- `evKaufen` :110
+- `renderTempoReiter` :124 — TEMPO: Beschleuniger für Edelsteine (gelten für Bauen und Forschen – nicht für …
+- `beschLauf` :146 — → der laufende Bau bzw. die Forschung (mit endsAt) oder null
+- `beschWahl` :150
+- `renderBesch` :151
+- `beschBenutzen` :160 — einen Beschleuniger der Dauer d auf das Ziel → true, wenn benutzt
+- `beschAuto` :168 — so wenig wie möglich verschwenden: erst der größte, der noch ganz hineinpasst, …
+- `afterBesch` :180
 
 ### Game/spiel/07a-kampf-schlachten.js — Schlachten auf der Karte (auch Zuschauer-Anzeige) und Kampf-Effekte
 - `mbT` :8

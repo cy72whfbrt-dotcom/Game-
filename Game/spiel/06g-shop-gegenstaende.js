@@ -61,7 +61,8 @@ const shopWare = (bild, r, name, unter, knoepfe, zeit, leer) => '<div class="war
     '<span class="ware-txt"><b class="ware-name">' + name + '</b><small class="lim">' + unter + '</small></span><span class="ware-knoepfe">' + knoepfe + '</span></div>';
 const shopGruppe = (titel, waren) => '<div class="sort-kopf">' + titel + '</div><div class="waren waren--3" style="--n:' + Math.max(2, Math.min(3, waren.length)) + '">' + waren.join('') + '</div>';   // Spalten = Anzahl (2–3): volle Breite
 function gemKnopf(daten, key, g, vor, leer) {        // Preis in Edelsteinen (ab 500 nach dem ersten Tipp „Wirklich?“ – übersteht das Neuzeichnen)
-    return '<button type="button" class="ware-preis' + (gemsArmed(key) ? ' is-armed' : '') + '" ' + daten + (leer ? ' disabled' : '') + '>' + (gemsArmed(key) ? 'Wirklich? ' : vor || '') + icon('gem') + '<b>' + fmtNum(g) + '</b></button>';
+    // („zu-teuer“ schon hier wie preiseFaerben: sonst ersetzt das Neuzeichnen jede Sekunde den Knopf unter dem Finger)
+    return '<button type="button" class="ware-preis' + (g > 0 && g > Math.floor(gems) ? ' zu-teuer' : '') + (gemsArmed(key) ? ' is-armed' : '') + '" ' + daten + (leer ? ' disabled' : '') + '>' + (gemsArmed(key) ? 'Wirklich? ' : vor || '') + icon('gem') + '<b>' + fmtNum(g) + '</b></button>';
 }
 const emKnopf = (daten, em, leer) => '<button type="button" class="ware-preis ohne-g" ' + daten + (leer || eventMuenzen < em ? ' disabled' : '') + '><img src="bilder/beute_eventmuenze.webp" alt="">' + '<b>' + fmtNum(em) + '</b></button>';
 function renderKistenReiter() {
