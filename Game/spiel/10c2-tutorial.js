@@ -235,7 +235,7 @@ const TUT = [
       ziel: () => { if (!isPanelOpen(goalsPopup)) return tutT(1, 3, $t('goalsBtn'), 'Unter „Events“ findest du jeden Tag neue Aufgaben mit Belohnung. Tipp auf „Events“.');
           const tab = document.querySelector('[data-ggrp="aufgaben"]:not(.active)'); if (tab) return tutT(2, 3, tab, 'Tipp auf „Aufgaben“ – so wächst du am schnellsten.');
           const ab = tutSicht(document.querySelector('#questList [data-quest]')), q = [...document.querySelectorAll('#questList .quest:not(.is-claimed)')].filter(tutSicht)   // (die mit dem vollsten Balken: da sieht man ihn)
-              .sort((x, y) => (parseFloat(y.querySelector('.quest-bar i')?.style.getPropertyValue('--p')) || 0) - (parseFloat(x.querySelector('.quest-bar i')?.style.getPropertyValue('--p')) || 0))[0];
+              .map(x => [x, parseFloat((x.querySelector('.quest-bar i') || x).style.getPropertyValue('--p')) || 0]).sort((a, b) => b[1] - a[1]).map(x => x[0])[0];
           return ab ? tutT(3, 3, ab, 'Die hast du schon geschafft – hol dir die Belohnung!') : q ? tutT(3, 3, { el: q }, 'Der Balken zeigt, wie weit du bist. Rechts steht die Belohnung.') : 'weiter'; } }
 ];
 
@@ -447,7 +447,9 @@ function tutStarten() {
     tutZeigen(); if (!tutUhr) tutUhr = setInterval(tutLaeuft() ? tutZeigen : tutFrei, tutLaeuft() ? 250 : 5000);
 }
 $t('tutWeiter').addEventListener('click', () => { if (tutErkl) { (tut.e = tut.e || {})[tutErkl] = 1; tutSpeichern(); } else tutTat.ok = true; tutZeigen(); });   // Erklär-Teilschritt: abhaken, der Schritt läuft weiter
-document.addEventListener('click', () => { if (tutLaeuft()) tutBald(30); });   // nach jedem Tipp gleich das nächste Ziel (Takt sonst 250 ms)
+document.addEventListener('click', e => { if (!tutLaeuft()) return;   // nach jedem Tipp: das Loch ist verbraucht (kein zweiter Tipp ins alte Ziel), gleich das nächste
+    const lo = $t('tutLoch'); if (!lo.hidden && !e.target.closest('#tut')) { $t('tutSperre').hidden = false; lo.hidden = true; $t('tutFinger').hidden = true; }
+    tutBald(30); });
 $t('tutWeg').addEventListener('click', () => { tutFrage = true; tutZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
 $t('tutNein').addEventListener('click', () => { tutFrage = false; tutZeigen(); });
 $t('tutJa').addEventListener('click', () => {

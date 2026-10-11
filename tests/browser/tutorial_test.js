@@ -24,7 +24,9 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
   });
   // ---- einmal ganz durchspielen: jeder Tipp ins Loch; prüft dabei: Loch ganz im Bild (≥ 2 px), Blase deckt es nie, Teilschritte mit eigenem Satz ----
   const spielen = async (p, W, H, mitNeuladen) => {
-    const gesehen = [], banner = new Set(), neuer = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '', truppen = null;
+    const gesehen = [], banner = new Set(), neuer = new Set(), probleme = [], heldSaetze = new Set(), zaehler = new Set(); let neu = !mitNeuladen, alt = -1, schritte = 0, hinweis = '', truppen = null, doppelt = null;
+    const geholt = new Set(), bild = r => { const u = r.url(); if (/\/bilder\//.test(u)) geholt.add('bilder/' + u.split('/bilder/')[1].split('?')[0]); };   // jedes Bild, das im Tutorial geholt wird
+    p.on('request', bild); const bericht = { saetze: new Set(), kd: null, zu: null };
     for (let i = 0; i < 900; i++) {
       const z = await p.evaluate(() => {
         const el = id => document.getElementById(id), r = e => { const q = e.getBoundingClientRect(); return { x: q.left + q.width / 2, y: q.top + q.height / 2, w: q.width, h: q.height, l: q.left, t: q.top, r: q.right, b: q.bottom }; };
@@ -40,6 +42,10 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
       if (z.fertig) break;
       if (z.banner) banner.add(z.banner); for (const n of z.neuer || []) neuer.add(n);
       if (z.k === 'held') { heldSaetze.add(z.satz); if (z.zl) zaehler.add(z.zl); }
+      if (z.k === 'bericht') { bericht.saetze.add(z.zl + ' ' + z.satz);
+        if (z.zl === '4/4' && !bericht.kd) bericht.kd = await p.evaluate(() => { const kl = document.querySelector('.kl-seite'), e = document.elementFromPoint(innerWidth / 2, 3);
+          return { offen: !kl.hidden, tutOben: !!(e && e.closest('#tut')), weiter: !document.getElementById('tutWeiter').hidden, loch: !document.getElementById('tutLoch').hidden }; }); }
+      if (z.k === 'beute' && !bericht.zu) bericht.zu = await p.evaluate(() => ({ klZu: document.querySelector('.kl-seite').hidden }));
       if (z.s !== alt) {                                     // neuer Schritt: Foto, merken
         alt = z.s; schritte++; await p.waitForTimeout(500);
         if (bilder) await p.screenshot({ path: path.join(bilder, 't' + W + '_' + String(z.s + 1).padStart(2, '0') + '_' + z.k + '.png') });
@@ -58,6 +64,14 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
         const alle = totalTroops() + pendingAttacks.filter(a => !a.attackerBotId).reduce((a, x) => a + x.rawTroops, 0) + pendingRetreats.reduce((a, x) => a + x.troops, 0);
         return { satz: zahl ? +zahl.replace(/\./g, '') : null, alle, kapsel: document.getElementById('troopCount').textContent }; });
       if (z.weiter) { await p.mouse.click(z.weiter.x, z.weiter.y); await p.waitForTimeout(400); continue; }
+      if (z.loch && z.k === 'karte' && !doppelt) {            // zweimal schnell auf „Karte“: die Stadt geht zu und bleibt zu (das alte Loch nimmt keinen zweiten Tipp)
+        await p.mouse.click(z.loch.x, z.loch.y);
+        const busy = await p.evaluate(() => new Promise(f => { let loch = false; const t = setInterval(() => { loch = loch || cityBusy && !document.getElementById('tutLoch').hidden;   // (Stadt blendet um: kein Loch)
+          if (cityView.hidden && !cityBusy) { clearInterval(t); f([loch]); } }, 15); }));
+        await p.mouse.click(z.loch.x, z.loch.y);                // (genau, wenn die Karte da ist: ein Spieler tippt nochmal)
+        await p.waitForTimeout(1500); doppelt = await p.evaluate(() => ({ stadtZu: cityView.hidden, k: TUT[tut.s].k, lochWaehrendWechsel: false }));
+        doppelt.lochWaehrendWechsel = busy.some(Boolean); continue;
+      }
       if (z.loch) {
         await p.waitForTimeout(350);                         // (Loch gleitet zum Ziel; danach neu messen)
         const l = await p.evaluate(() => { const q = document.getElementById('tutLoch').getBoundingClientRect(), b = document.getElementById('tutBerater').getBoundingClientRect(), x = q.left + q.width / 2, y = q.top + q.height / 2;
@@ -81,11 +95,19 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
         barbMarches.filter(m => m.who === 'player' && !m.back).forEach(m => vor(m, 'resolveAt', 'startedAt')); loadCity().builds.forEach(b => vor(b, 'endsAt', 'startedAt')); });
       await p.waitForTimeout(500);                           // warten (Bau, Marsch, Kamera)
     }
-    return { gesehen, banner, neuer: [...neuer], schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler], truppen };
+    p.off('request', bild);
+    const vorab = await p.evaluate(() => ({ liste: window.__bilderVorab ? __bilderVorab.liste : [], nach: window.__bilderVorab && __bilderVorab.nach ? [...__bilderVorab.nach] : [], e: Object.keys(tut.e || {}) }));
+    const fehlt = [...geholt].filter(u => !vorab.liste.includes(u) && !vorab.nach.includes(u));
+    return { gesehen, banner, neuer: [...neuer], schritte, hinweis, probleme, heldSaetze: [...heldSaetze], zaehler: [...zaehler], truppen, doppelt, bericht: { ...bericht, saetze: [...bericht.saetze] }, fehlt, vorabN: vorab.liste.length, erkl: vorab.e };
   };
   const pruefSicht = (r, wo) => {
     ok(r.truppen && r.truppen.satz === r.truppen.alle, wo + ': Schritt „Truppen“ nennt die echte Zahl aller Truppen des Spielers (Basen + unterwegs)', r.truppen);
     ok(!r.probleme.length, wo + ': bei jedem Schritt ist das Ziel ganz im Bild und die Blase liegt nie darüber', r.probleme.slice(0, 6));
+    ok(r.doppelt && r.doppelt.stadtZu && r.doppelt.k !== 'karte' && !r.doppelt.lochWaehrendWechsel, wo + ': zweimal schnell auf „Karte“ – die Stadt bleibt zu, kein Loch während die Stadt umblendet', r.doppelt);
+    ok(r.bericht.saetze.some(x => /^3\/4 .*Kampfdetails/.test(x)) && r.bericht.kd && r.bericht.kd.offen && r.bericht.kd.tutOben && r.bericht.kd.weiter && r.bericht.kd.loch && r.bericht.saetze.some(x => /^4\/4 .*Beute.*neue Truppen/.test(x)) && r.bericht.zu && r.bericht.zu.klZu,
+      wo + ': Kampfbericht: Tipp auf „Kampfdetails“, dann erklärt Aldric die Seite (Loch über der Seite, „Weiter“), danach ist sie zu', r.bericht);
+    ok(['bauinfo', 'angriff', 'halle'].every(k => r.erkl.includes(k)), wo + ': Erklär-Teilschritte gesehen (Bau-Info, Angriffsleiste, Helden)', r.erkl);
+    ok(r.vorabN > 150 && !r.fehlt.length, wo + ': kein Bild wird im Tutorial erst nachgeladen – alle stehen in der Vorab-Liste des Ladebilds', { n: r.vorabN, fehlt: r.fehlt });
     ok(r.heldSaetze.length >= 3 && r.heldSaetze.some(x => /Karte/.test(x)) && r.heldSaetze.some(x => /Basis/.test(x)) && r.zaehler.some(x => /^\d\/5$/.test(x)), wo + ': Schritt „Held“ sagt je Teilschritt, was zu tun ist (mit Zähler x/5)', { s: r.heldSaetze, z: r.zaehler });
   };
   let p;
@@ -183,11 +205,12 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
   const nm4 = await p.evaluate(() => ({ name: store.get('openWaterPlayerName'), wk: !document.getElementById('tutWillkommen').hidden, w: tut.w }));
   ok(nm4.name === 'Seeräuberin Ida' && !nm4.wk && nm4.w, 'Name (max. 16 Zeichen) steht im Spielstand, Willkommen zu', nm4);
   const roh = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     const z = await p.evaluate(() => { const l = document.getElementById('tutLoch').getBoundingClientRect(), x = l.left + l.width / 2, y = l.top + l.height / 2;
       const t = document.getElementById('tut'); t.hidden = true; const e = document.elementFromPoint(x, y); t.hidden = false;
       const res = e && e.closest('.res'), m = document.querySelector('#hud .res--coin').getBoundingClientRect(), h = islandById[playerIslandId];
-      return { muenze: [m.left, m.width].map(Math.round).join(), nah: mapState.zoom >= maxZoom * .9 && toSX(h.x) > 0 && toSX(h.x) < innerWidth && toSY(h.y) > innerHeight * .2 && toSY(h.y) < innerHeight * .7,
+      const drin = sel => { const q = document.querySelector(sel).getBoundingClientRect(); return q.left >= l.left - 1 && q.right <= l.right + 1 && q.top >= l.top - 1 && q.bottom <= l.bottom + 1; };
+      return { beide: drin('#hud .res--s') && drin('#hud .res--e'), muenze: [m.left, m.width].map(Math.round).join(), nah: mapState.zoom >= maxZoom * .9 && toSX(h.x) > 0 && toSX(h.x) < innerWidth && toSY(h.y) > innerHeight * .2 && toSY(h.y) < innerHeight * .7,
         hell: document.getElementById('tut').classList.contains('is-hell'), k: TUT[tut.s].k, satz: document.getElementById('tutSatz').textContent, weiter: !document.getElementById('tutWeiter').hidden,
         res: res ? res.className.replace('res ', '') : '', stadt: !!document.getElementById('cityNavBtn').getClientRects().length, stadtOffen: !cityView.hidden }; });
     roh.push(z);
@@ -195,8 +218,8 @@ const KLEIN = process.env.OW_TUT_TEIL === 'klein';   // tutorial_klein_test: nur
     await p.waitForTimeout(1200); ok(await p.evaluate(k => TUT[tut.s].k === k, z.k), 'Ressourcen-Schritt „' + z.k + '“ springt nicht von selbst weiter');
     await p.click('#tutWeiter'); await p.waitForTimeout(500);
   }
-  ok(roh.map(x => x.k).join() === 'muenzen,r_holz,r_stein,r_eisen,r_gems' && roh.every(x => x.weiter && x.satz && !x.stadt && !x.stadtOffen)
-    && ['res--coin', 'res--h', 'res--s', 'res--e', 'res--gem'].every((c, i) => roh[i].res.includes(c)), 'Ressourcen einzeln erklärt (Loch auf Münzen, Holz, Stein, Eisen, Edelsteine), je mit „Weiter“; Stadt/Bauen noch zu', roh);
+  ok(roh.map(x => x.k).join() === 'muenzen,r_holz,r_stein,r_gems' && roh.every(x => x.weiter && x.satz && !x.stadt && !x.stadtOffen)
+    && ['res--coin', 'res--h', null, 'res--gem'].every((c, i) => c ? roh[i].res.includes(c) : roh[i].beide && /Stein und Eisen/.test(roh[i].satz)), 'Ressourcen erklärt (Loch auf Münzen, Holz, Stein + Eisen zusammen, Edelsteine), je mit „Weiter“; Stadt/Bauen noch zu', roh);
   ok(roh.every(x => x.muenze === roh[0].muenze) && +roh[0].muenze.split(',')[1] < 390 / 3, 'Münz-Kapsel behält Größe und Platz, auch wenn nur sie zu sehen ist (nie über die ganze Breite)', roh.map(x => x.muenze));
   ok(roh.every(x => x.nah && x.hell), 'Rohstoff-Schritte: Kamera nah auf der eigenen Hauptstadt, weniger abgedunkelt', roh.map(x => [x.nah, x.hell]));
   const nach4 = await p.evaluate(() => ({ k: TUT[tut.s].k, gem: getComputedStyle(document.querySelector('#hud .res--gem')).visibility !== 'hidden', leiste: getComputedStyle(document.getElementById('cornerButtons')).visibility, stadt: !!document.getElementById('cityNavBtn').getClientRects().length }));
