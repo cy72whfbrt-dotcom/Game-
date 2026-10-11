@@ -13963,7 +13963,7 @@ function tutZeigen() {
     const not = !r && !z.weiter && !(z.warte && z.fort < 1) && jetzt - tutOhneSeit > 20000;   // hängt der Schritt ohne Ziel (nicht beim Warten mit Fortschritt): „Weiter“ als Notausgang
     const ok = !!(z.weiter || z.nurZeigen || not);
     el.classList.toggle('is-frei', !!z.warte);                   // warten (Marsch, Bau): nicht abdunkeln, nur nichts antippen
-    const loch = r || { l: 0, t: H, r: 0, b: H };
+    const loch = r ? { l: Math.round(r.l), t: Math.round(r.t), r: Math.round(r.r), b: Math.round(r.b) } : { l: 0, t: H, r: 0, b: H };   // (ganze Pixel: die vier Teile stoßen ohne dunkle Naht aneinander)
     const teil = (n, l, t, w, h) => { const d = el.querySelector('[data-tut-d="' + n + '"]'), s = [l, t, w, h].map(v => Math.max(0, Math.round(v)) + 'px');
         if (d.dataset.s !== s.join()) { d.dataset.s = s.join(); Object.assign(d.style, { left: s[0], top: s[1], width: s[2], height: s[3] }); } };
     teil('o', 0, 0, W, loch.t); teil('u', 0, loch.b, W, H - loch.b); teil('l', 0, loch.t, loch.l, loch.b - loch.t); teil('r', loch.r, loch.t, W - loch.r, loch.b - loch.t);
