@@ -5909,7 +5909,7 @@ function gemsWirklich(key, cost, btn, immer, bisZu) {      // → true: jetzt za
     if (gemsArm && gemsArm.key === key && (gemsArm.bisZu ? gemsArm.btn === btn && btn.isConnected : now - gemsArm.at < 4000)) { if (now - gemsArm.at < 450) return false; gemsArmAus(); return true; }   // ein Doppel-Tipp ist keine Bestätigung
     gemsArmAus(); const t = btn && (btn.querySelector('.lbl') || btn.querySelector('small') || btn);
     gemsArm = { key, at: now, t, html: t ? t.innerHTML : '', btn, bisZu: !!bisZu, timer: bisZu ? 0 : setTimeout(gemsArmAus, 4000) };
-    if (t) { btn.classList.add('is-armed'); t.innerHTML = 'Wirklich? ' + icon('gem') + fmtNum(cost); }
+    if (t) { btn.classList.add('is-armed'); t.innerHTML = 'Wirklich? ' + icon('gem') + (t === btn && btn.querySelector('b') ? '<b>' + fmtNum(cost) + '</b>' : fmtNum(cost)); }   // (Preis-Knopf im Shop: genau wie gemKnopf – das Neuzeichnen jede Sekunde lässt den Knopf unter dem Finger stehen, sonst geht der zweite Tipp verloren)
     return false;
 }
 function gemsArmed(key) { return !!gemsArm && gemsArm.key === key; }

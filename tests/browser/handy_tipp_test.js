@@ -55,12 +55,13 @@ const ok = (b, t, x) => console.log((b ? 'OK   ' : 'FEHLER ') + t + (x !== undef
     const ks = {};
     for (const id of ['ausE', 'heldE']) { await p.waitForTimeout(900); const g0 = await ev(() => gems);   // (nach einem Kauf rollt das Ergebnis weich ins Bild)
       await tap('[data-kiste="' + id + '"][data-anz="1"]'); await p.waitForTimeout(200);
-      ks[id] = await ev(([id, g0]) => { const bt = document.querySelector('[data-kiste="' + id + '"][data-anz="1"]'); return { frage: /Wirklich\?/.test(bt.textContent), nichtsWeg: gems === g0 }; }, [id, g0]);
+      ks[id] = await ev(([id, g0]) => { const bt = document.querySelector('[data-kiste="' + id + '"][data-anz="1"]'), frage = /Wirklich\?/.test(bt.textContent); renderShop();   // (der Shop zeichnet jede Sekunde neu: der „Wirklich?“-Knopf muss stehen bleiben, sonst geht der zweite Tipp verloren)
+        return { frage, nichtsWeg: gems === g0, bleibt: bt.isConnected }; }, [id, g0]);
       await p.waitForTimeout(600); await tap('[data-kiste="' + id + '"][data-anz="1"]'); await p.waitForTimeout(300);
       ks[id].gekauft = await ev(([id, g0]) => g0 - gems === 500, [id, g0]);
       ks[id].fenster = await ev(() => !document.getElementById('beuteFenster').hidden); await tap('#beuteFenster .bf-ok'); await p.waitForTimeout(200); ks[id].zu = await ev(() => document.getElementById('beuteFenster').hidden); }   // Belohnungs-Fenster: „OK“ schließt
     await bild('kisten');
-    ok(Object.values(ks).every(x => x.frage && x.nichtsWeg && x.gekauft && x.fenster && x.zu), art + ': Epische Kisten (500): erster Tipp fragt „Wirklich?“, zweiter Tipp kauft, Belohnungs-Fenster mit „OK“ zu', ks);
+    ok(Object.values(ks).every(x => x.frage && x.nichtsWeg && x.bleibt && x.gekauft && x.fenster && x.zu), art + ': Epische Kisten (500): erster Tipp fragt „Wirklich?“ (Knopf bleibt beim Neuzeichnen), zweiter Tipp kauft, Belohnungs-Fenster mit „OK“ zu', ks);
     await ev(() => closeAllPopups());
     // 6) Wochen-Event-Chip: gleiche Breite ohne und mit Rang
     const wc = await ev(async () => { const on = woOn; woOn = () => true; midBarHtml = ''; renderMidBar(); await new Promise(f => setTimeout(f, 100));
