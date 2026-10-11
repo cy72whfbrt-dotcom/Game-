@@ -466,6 +466,16 @@
         W.pulse = (W.pulse || 0) + 1;
         if (SYSTEM) W.befehleGezaehlt = (W.befehleGezaehlt || 0) + (a.befehle || []).length;   // (für den Herzschlag, start.js)
         if (typeof a.sicht_v === 'number') W.sichtV = a.sicht_v;
+        // Befehl ausführen (nur Weltrechner) – jeden nur einmal
+        const befehlAus = b => {
+            if (b.id && (W.befehlFertig.has(b.id) || W.befehlWartet.has(b.id))) return;   // schon ausgeführt (noch nicht quittiert) oder wartet – nicht nochmal
+            if (W.leiter) gleichNochmal = true;                      // (nur wenn wirklich ein neuer Befehl ausgeführt wird – wartende lösten sonst ~16 Pulse/s aus)
+            let r; if (window.__weltBefehl) try { r = window.__weltBefehl('u' + b.von, b.b); } catch (e) { console.warn('Befehl', b, e); }
+            if (b.id) { if (r === 'wartet') W.befehlWartet.add(b.id); else W.befehlFertig.add(b.id); }
+        };
+        // Admin-Befehle (von 0, z. B. die Gutschrift für ein Geschenk) VOR den neuen Profilen: holt der Spieler sein Geschenk gleich ab,
+        // kommen Gutschrift und Profil im selben Puls – vorher sah der Schummel-Schutz zuerst das Profil („Gems springen“, falscher Hinweis)
+        if (W.leiter && a.leiter) for (const b of a.befehle || []) if (b.von === 0) befehlAus(b);   // (nur schon Leiter: beim Übernehmen kommt erst die Welt)
         if (a.spieler) {
             const vorher = new Set(Object.keys(W.menschen));
             menschenAktualisieren(a.spieler);
@@ -508,12 +518,7 @@
         if (!W.leiter && warLeiter && window.__weltLeiterWechsel) window.__weltLeiterWechsel(false);
         if (W.leiter && W.version === 0 && W.neueWelt) { W.neueWelt = false; for (const k of S.WELT) if (k in S.daten) S.weltGeaendert.add(k); }   // ganz neue Welt: alles schicken
         // Befehle der anderen ausführen (nur Weltrechner)
-        for (const b of a.befehle || []) {
-            if (b.id && (W.befehlFertig.has(b.id) || W.befehlWartet.has(b.id))) continue;   // schon ausgeführt (noch nicht quittiert) oder wartet – nicht nochmal
-            if (W.leiter) gleichNochmal = true;                      // (nur wenn wirklich ein neuer Befehl ausgeführt wird – wartende lösten sonst ~16 Pulse/s aus)
-            let r; if (window.__weltBefehl) try { r = window.__weltBefehl('u' + b.von, b.b); } catch (e) { console.warn('Befehl', b, e); }
-            if (b.id) { if (r === 'wartet') W.befehlWartet.add(b.id); else W.befehlFertig.add(b.id); }
-        }
+        for (const b of a.befehle || []) befehlAus(b);
         // Nachrichten an mich – jede genau einmal: die Nummern der verbuchten stehen im eigenen Spielstand und gehen mit der
         // nächsten Sicherung (zusammen mit Münzen, Gems … aus denselben Nachrichten) zum Server, erst dann gelten sie als abgeholt
         // Welt-Saison: nach der Nachricht „saison“ nichts mehr verbuchen – die Seite lädt gleich neu und übernimmt den Reset; was danach

@@ -14385,8 +14385,9 @@ if (window.WELT) {
     // Korrektur (Alexander 11.10.: „gehackte Münzen dürfen im echten Spiel nicht bleiben“): zeigt sein Handy über mehrere Profile
     // länger als KORR_MS mehr Münzen, Gems, Rohstoffe oder eine höhere Stufe, als möglich ist, schickt der Weltrechner eine Nachricht
     // „korrektur“ (coins/gems/res: −zu viel, lvl: höchstens) – sein Handy zieht es ab und speichert. Kurze Sprünge (Nachricht
-    // unterwegs, ein Puls später bezahlt) sind vorher wieder weg – ehrliche Spieler merken nichts. Bis sein Handy die Korrektur
-    // verbucht hat, zählt sie als unterwegs (m.flug M): das Konto bleibt beim Möglichen, keine zweite Warnung.
+    // unterwegs, ein Puls später bezahlt) sind vorher wieder weg – ehrliche Spieler merken nichts. Das Konto bleibt dabei beim
+    // Möglichen (nie als „unterwegs“ zählen: sonst stünde das Zuviel nach dem Abziehen als „ausgegeben“ im Topf hb.cA/gA);
+    // bis sein Handy sie verbucht hat, gibt es höchstens noch ein, zwei Warnungen, die nächste Korrektur frühestens nach KORR_MS.
     const KORR_MS = 120000;
     function korrFaellig(m, k, zuviel, now) {
         const z = m.korr || (m.korr = {});
@@ -14395,11 +14396,7 @@ if (window.WELT) {
         if (now - z[k] < KORR_MS) return false;
         delete z[k]; return true;
     }
-    function korrSenden(who, m, e, now) {
-        const M = {}; if (e.coins) M.c = -e.coins; if (e.gems) M.g = -e.gems; for (const k in e.res || {}) M[k] = -e.res[k];
-        if (Object.keys(M).length) m.flug.push({ t: now, n: 0, P: {}, M });
-        WELT.nachricht(parseInt(String(who).slice(1), 10), Object.assign({ art: 'korrektur' }, e));
-    }
+    const korrSenden = (who, e) => WELT.nachricht(parseInt(String(who).slice(1), 10), Object.assign({ art: 'korrektur' }, e));
     // Ausgegebene Gems für den Kisten-Beleg sammeln (unter Last kommen sie in mehreren Profilen), verfallen nach KISTE_FRIST
     function gAusMerken(m, now) {
         if (m.g.vor > 0) { m.gAus = (now - nn(m.gAusT) < KISTE_FRIST ? nn(m.gAus) : 0) + m.g.vor; m.gAusT = now; }
@@ -14435,7 +14432,7 @@ if (window.WELT) {
                 (m.rDeckel || (m.rDeckel = {}))[k] = pr - mehr; zuviel[k] = mehr; }   // (in der Welt nur, was möglich ist – hbKlemmen deckelt gleich – sonst holt ein anderer die erfundenen Rohstoffe als Beute)
         }
         let korr = null; for (const k of ROHK) if (korrFaellig(m, 'r' + k, zuviel[k] || 0, now)) (korr || (korr = {}))[k] = -Math.floor(zuviel[k]);
-        if (korr) korrSenden(who, m, { res: korr }, now);
+        if (korr) korrSenden(who, { res: korr });
     }
     // Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → Topf hb.cA (bezahlt Bauen/Forschen im Hauptbuch)
     function vorAltern(who, m, now) { if (m.c.vor > 0 && now - m.c.vorT > WACHE_WARTEN_MS) { const hb = hbDa(who); if (hb) hb.cA = nn(hb.cA) + m.c.vor; m.c.vor = 0; } }
@@ -14528,7 +14525,7 @@ if (window.WELT) {
                 }
                 if (korrFaellig(m, 'g', gz, now)) kz.gems = -Math.floor(gz);
             }
-            if (Object.keys(kz).length) korrSenden(who, m, kz, now);
+            if (Object.keys(kz).length) korrSenden(who, kz);
             rohWacheProfil(who, m, p, P, M, now);
         }
         if (m.geeicht) { d.u = Math.round(m.c.u); d.w = Math.round(m.w.u); flugMerken(d, m); }   // für den nächsten Start merken (geht mit der Welt mit)
@@ -14818,7 +14815,7 @@ if (window.WELT) {
             for (const t of [ein, f]) { const x = Math.min(d, nn(t[k])); t[k] = nn(t[k]) - x; d -= x; }
             if (d > 0 && HB_GG[k] > 0 && hbZahlen(who, hb, m, { g: d * HB_GG[k] })) d = 0;
             if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d);
-                if (hb.w['gg:' + k] === -1) { hb.w['gg:' + k] = -2; korrSenden(who, m, { gg: { [k]: -Math.floor(d) } }, now); } }   // (nach 2 Min. gemeldet: sein Handy bekommt einmal die Korrektur – 10d2)
+                if (hb.w['gg:' + k] === -1) { hb.w['gg:' + k] = -2; korrSenden(who, { gg: { [k]: -Math.floor(d) } }); } }   // (nach 2 Min. gemeldet: sein Handy bekommt einmal die Korrektur – 10d2)
             else { gg[k] = nn(q[k]); hbGut(hb, 'gg:' + k); }
         }
     }

@@ -122,7 +122,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `aufraeumen` → Game/server/05-datenbank-welt.php:219
 - `ausbauDrueber` → Game/spiel/10b-fenster-insel-knoepfe.js:6
 - `ausbauMerken` → Game/spiel/10b-fenster-insel-knoepfe.js:5
-- `ausbauPruefen` → Game/spiel/10d2-welt-schummelschutz.js:326
+- `ausbauPruefen` → Game/spiel/10d2-welt-schummelschutz.js:323
 - `ausgangSichern` → Game/welt.js:83
 - `ausgespaeht` → Game/bots/03-angreifen.js:87
 - `ausschalten` → Game/benachrichtigung.js:95
@@ -188,14 +188,14 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `bauStufe` → Game/aufbau.js:245
 - `befehl_ablegen` → Game/server/05-datenbank-welt.php:227
 - `befehl_ok` → Game/server/02-sicherheit-datenlecks.php:121
-- `befehlBezahlt` → Game/spiel/10d2-welt-schummelschutz.js:420
+- `befehlBezahlt` → Game/spiel/10d2-welt-schummelschutz.js:417
 - `befehle_abholen` → Game/server/05-datenbank-welt.php:240
 - `befehle_bezahlt_ok` → Game/server/05-datenbank-welt.php:236
 - `befehle_gerecht` → Game/server/05-datenbank-welt.php:252
 - `befehle_offen` → Game/server/05-datenbank-welt.php:230
 - `befehle_quittieren` → Game/server/05-datenbank-welt.php:231
 - `befehleGezaehlt` → Game/weltrechner/start.js:74
-- `befehlFertig` → Game/spiel/10d2-welt-schummelschutz.js:419
+- `befehlFertig` → Game/spiel/10d2-welt-schummelschutz.js:416
 - `befehlFrisch` → Game/welt.js:79
 - `BERLIN` → Game/spiel/09f-saison.js:30
 - `berlinTeile` → Game/spiel/09f-saison.js:31
@@ -879,9 +879,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `flicken_fuer_spieler` → Game/server/02-sicherheit-datenlecks.php:184
 - `flickenAnwenden` → Game/welt.js:41
 - `flickenBauen` → Game/welt.js:23
-- `flugAus` → Game/spiel/10d2-welt-schummelschutz.js:223
-- `flugMerken` → Game/spiel/10d2-welt-schummelschutz.js:217
-- `flugSumme` → Game/spiel/10d2-welt-schummelschutz.js:216
+- `flugAus` → Game/spiel/10d2-welt-schummelschutz.js:220
+- `flugMerken` → Game/spiel/10d2-welt-schummelschutz.js:214
+- `flugSumme` → Game/spiel/10d2-welt-schummelschutz.js:213
 - `flushBannerSprites` → Game/spiel/03c-karte-wappen-thronplatz.js:125
 - `flushBotState` → Game/bots/04-stand-stadt.js:71
 - `flute` → Game/spiel/10c-start-einstellungen.js:49
@@ -960,7 +960,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `gateControlsHtml` → Game/spiel/10a-fenster-insel-vorschau.js:45
 - `gateOnRoute` → Game/spiel/01b-weltkarte.js:267
 - `gateSettings` → Game/spiel/01b-weltkarte.js:275
-- `gAusMerken` → Game/spiel/10d2-welt-schummelschutz.js:177
+- `gAusMerken` → Game/spiel/10d2-welt-schummelschutz.js:174
 - `gear` → Game/spiel/05d-marsch-liste-kampfbericht.js:201
 - `geben` → Game/spiel/06c-thron-mitte.js:284
 - `gebietAn` → Game/spiel/01b-weltkarte.js:138
@@ -1283,8 +1283,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `konto` → Game/spiel/10d2-welt-schummelschutz.js:27
 - `kontoProfil` → Game/spiel/10d2-welt-schummelschutz.js:152
 - `kopfBild` → Game/spiel/05d-marsch-liste-kampfbericht.js:178
-- `korrFaellig` → Game/spiel/10d2-welt-schummelschutz.js:164
-- `korrSenden` → Game/spiel/10d2-welt-schummelschutz.js:171
+- `korrFaellig` → Game/spiel/10d2-welt-schummelschutz.js:165
+- `korrSenden` → Game/spiel/10d2-welt-schummelschutz.js:172
 - `kostenHtml` → Game/aufbau.js:77
 - `kraft` → Game/buendnis/03-mitspieler.js:408
 - `kraft` → Game/spiel/05d-marsch-liste-kampfbericht.js:189
@@ -1833,7 +1833,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `rohStunde` → Game/aufbau.js:47
 - `rohUmschalten` → Game/aufbau.js:297
 - `rohVon` → Game/aufbau.js:30
-- `rohWacheProfil` → Game/spiel/10d2-welt-schummelschutz.js:187
+- `rohWacheProfil` → Game/spiel/10d2-welt-schummelschutz.js:184
 - `routeFor` → Game/spiel/01b-weltkarte.js:216
 - `row` → Game/spiel/09b-lager-tagesboss.js:357
 - `row` → Game/spiel/09c-events-woche.js:134
@@ -1907,7 +1907,7 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `schnellerDrueber` → Game/spiel/02b-marsch-losschicken.js:269
 - `schnellerMerken` → Game/spiel/02b-marsch-losschicken.js:268
 - `schnitte` → Game/spiel/01e-kampf-werte-nebel-hud.js:13
-- `schonBezahlt` → Game/spiel/10d2-welt-schummelschutz.js:418
+- `schonBezahlt` → Game/spiel/10d2-welt-schummelschutz.js:415
 - `schutzText` → Game/aufbau.js:109
 - `schutzVon` → Game/spiel/08a-stadt-bauen.js:31
 - `scoutNote` → Game/bots/03-angreifen.js:103
@@ -2131,9 +2131,9 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `trunc` → Game/spiel/03b-karte-basen-bilder.js:343
 - `truppen` → Game/spiel/05d-marsch-liste-kampfbericht.js:182
 - `truppenBekannt` → Game/spiel/01e-kampf-werte-nebel-hud.js:46
-- `truppenGeben` → Game/spiel/10d2-welt-schummelschutz.js:392
+- `truppenGeben` → Game/spiel/10d2-welt-schummelschutz.js:389
 - `truppenMitRest` → Game/spiel/06d-schild-produktion.js:202
-- `truppenPruefen` → Game/spiel/10d2-welt-schummelschutz.js:342
+- `truppenPruefen` → Game/spiel/10d2-welt-schummelschutz.js:339
 - `truppenQuelle` → Game/spiel/05d-marsch-liste-kampfbericht.js:136
 - `truppenVon` → Game/spiel/10d5-welt-befehle.js:16
 - `trW` → Game/spiel/03c-karte-wappen-thronplatz.js:88
@@ -2276,21 +2276,21 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `vhSoll` → Game/spiel/08c-helden-fenster.js:146
 - `vhWaehlen` → Game/spiel/08d1-stadt-gebaeude-wirkung.js:91
 - `visibleIslands` → Game/spiel/03d-karte-ebenen-tagnacht.js:3
-- `vorAltern` → Game/spiel/10d2-welt-schummelschutz.js:214
+- `vorAltern` → Game/spiel/10d2-welt-schummelschutz.js:211
 - `vorhangZeigen` → Game/speichern.js:86
 - `vorlaeufigDazu` → Game/spiel/02b-marsch-losschicken.js:281
 - `vorlaeufigDrueber` → Game/spiel/02b-marsch-losschicken.js:285
-- `W.befehl` → Game/welt.js:536
+- `W.befehl` → Game/welt.js:541
 - `W.deltaBasis` → Game/welt.js:383
 - `W.deltaJetzt` → Game/welt.js:376
 - `W.nachricht` → Game/welt.js:386
-- `W.start` → Game/welt.js:545
-- `wacheAbarbeiten` → Game/spiel/10d2-welt-schummelschutz.js:394
-- `wacheBezahlen` → Game/spiel/10d2-welt-schummelschutz.js:313
+- `W.start` → Game/welt.js:550
+- `wacheAbarbeiten` → Game/spiel/10d2-welt-schummelschutz.js:391
+- `wacheBezahlen` → Game/spiel/10d2-welt-schummelschutz.js:310
 - `wacheDelta` → Game/spiel/10d2-welt-schummelschutz.js:103
 - `wacheNachricht` → Game/spiel/10d2-welt-schummelschutz.js:126
-- `wacheRunde` → Game/spiel/10d2-welt-schummelschutz.js:422
-- `wacheSehen` → Game/spiel/10d2-welt-schummelschutz.js:229
+- `wacheRunde` → Game/spiel/10d2-welt-schummelschutz.js:419
+- `wacheSehen` → Game/spiel/10d2-welt-schummelschutz.js:226
 - `wachhund_cron_da` → Game/weltrechner/wachhund.php:288
 - `wachhund_cron_einrichten` → Game/weltrechner/wachhund.php:289
 - `wachhund_entsperren` → Game/weltrechner/wachhund.php:263
@@ -4606,24 +4606,24 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `wacheNachricht` :126 — (3B) andere Nachrichten des Weltrechners an ihn: Preise (Gems, Splitter, Kisten…
 - `raus.push` :145
 - `kontoProfil` :152 — Ein Wert aus seinem neuen Profil gegen das Konto k halten (für Münzen und Verwu…
-- `korrFaellig` :164
-- `korrSenden` :171
-- `gAusMerken` :177 — Ausgegebene Gems für den Kisten-Beleg sammeln (unter Last kommen sie in mehrere…
-- `rohWacheProfil` :187
-- `vorAltern` :214 — Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → To…
-- `flugSumme` :216 — Nachrichten unterwegs (m.flug) zusammengezählt – für einen Neustart in der Welt…
-- `flugMerken` :217
-- `flugAus` :223 — (nach dem Neustart) → ein Eintrag für m.flug – zählt wieder bis zwei Profile sp…
-- `wacheSehen` :229
-- `wacheBezahlen` :313 — aus dem Konto bezahlen (Vorschuss → Konto → Topf (3B) → Admin-Geschenk → Spielr…
-- `ausbauPruefen` :326 — Ausbau prüfen: 'ok' | 'warten' (Münzen noch nicht zu sehen) | 'nein'
-- `truppenPruefen` :342
-- `truppenGeben` :392
-- `wacheAbarbeiten` :394 — Wartende Befehle (Ausbau/Truppen) der Reihe nach abarbeiten – nie überholen, so…
-- `schonBezahlt` :418 — Wartende Befehle (Ausbau, Truppen – bis 60 s, bis sein Profil die Zahlung zeigt…
-- `befehlFertig` :419
-- `befehlBezahlt` :420
-- `wacheRunde` :422 — (vor jedem Puls) alle echten Spieler ansehen, Wartendes erledigen
+- `korrFaellig` :165
+- `korrSenden` :172
+- `gAusMerken` :174 — Ausgegebene Gems für den Kisten-Beleg sammeln (unter Last kommen sie in mehrere…
+- `rohWacheProfil` :184
+- `vorAltern` :211 — Münzen, die er ausgegeben hat und die kein Befehl abgeholt hat (nach 60 s) → To…
+- `flugSumme` :213 — Nachrichten unterwegs (m.flug) zusammengezählt – für einen Neustart in der Welt…
+- `flugMerken` :214
+- `flugAus` :220 — (nach dem Neustart) → ein Eintrag für m.flug – zählt wieder bis zwei Profile sp…
+- `wacheSehen` :226
+- `wacheBezahlen` :310 — aus dem Konto bezahlen (Vorschuss → Konto → Topf (3B) → Admin-Geschenk → Spielr…
+- `ausbauPruefen` :323 — Ausbau prüfen: 'ok' | 'warten' (Münzen noch nicht zu sehen) | 'nein'
+- `truppenPruefen` :339
+- `truppenGeben` :389
+- `wacheAbarbeiten` :391 — Wartende Befehle (Ausbau/Truppen) der Reihe nach abarbeiten – nie überholen, so…
+- `schonBezahlt` :415 — Wartende Befehle (Ausbau, Truppen – bis 60 s, bis sein Profil die Zahlung zeigt…
+- `befehlFertig` :416
+- `befehlBezahlt` :417
+- `wacheRunde` :419 — (vor jedem Puls) alle echten Spieler ansehen, Wartendes erledigen
 
 ### Game/spiel/10d3-welt-hauptbuch.js — Weltrechner: Hauptbuch der echten Spieler, Saison-Konto (im Block „if (window.W…
 - `burgZeitAlt` :25
@@ -5020,8 +5020,8 @@ Server-Aktionen stehen als `Aktion 'name'`. Neu erzeugt von `werkzeuge/spiel_bau
 - `packen` :391
 - `puls` :393
 - `antwortVerarbeiten` :465
-- `W.befehl` :536 — Befehl an den Weltrechner (bin ich es selbst, führt spiel.js ihn direkt aus)
-- `W.start` :545
+- `W.befehl` :541 — Befehl an den Weltrechner (bin ich es selbst, führt spiel.js ihn direkt aus)
+- `W.start` :550
 
 ## Game/weltrechner/
 

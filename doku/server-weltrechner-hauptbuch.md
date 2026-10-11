@@ -48,6 +48,8 @@ schicken Befehle. Wichtigste Dateien: `Game/server/` (7 Teile → `server.php`: 
 - Befehle tragen eine Nummer vom Handy (`cid`), Nachrichten eine vom Weltrechner (`mid`); der Server legt keine Nummer
   zweimal ab. Abgeholt erst, wenn verbucht (`openWaterEreignisFertig`). Ausgang am Handy (`openWaterBefehlAus`) in derselben
   Sicherung wie das Bezahlte. Bezahlte Befehle (`BEFEHLE_BEZAHLT`) verfallen nie (bis 7 Tage), andere nach 10 Min.
+- Admin-Befehle (Spieler 0, z. B. Gutschrift eines Geschenks) führt der Weltrechner vor den neuen Profilen desselben Pulses aus
+  (sonst „Gems springen“, wenn der Spieler das Geschenk gleich abholt).
 - Event-Preise mit fester Nummer aus Auszahlung + Spieler. Höchstens 30 Befehle pro Puls, 400 offene je Spieler.
 
 ## Hauptbuch (3B, Schummel-Schutz beim Weltrechner)

@@ -167,7 +167,7 @@
             for (const t of [ein, f]) { const x = Math.min(d, nn(t[k])); t[k] = nn(t[k]) - x; d -= x; }
             if (d > 0 && HB_GG[k] > 0 && hbZahlen(who, hb, m, { g: d * HB_GG[k] })) d = 0;
             if (d >= 1) { gg[k] = nn(q[k]) - d; hbWarte(who, hb, 'gg:' + k, now, HB_GG_NAME[k] + ': +' + fz(roh) + ' im Handy, möglich wären höchstens +' + fz(roh - d) + '.', d);
-                if (hb.w['gg:' + k] === -1) { hb.w['gg:' + k] = -2; korrSenden(who, m, { gg: { [k]: -Math.floor(d) } }, now); } }   // (nach 2 Min. gemeldet: sein Handy bekommt einmal die Korrektur – 10d2)
+                if (hb.w['gg:' + k] === -1) { hb.w['gg:' + k] = -2; korrSenden(who, { gg: { [k]: -Math.floor(d) } }); } }   // (nach 2 Min. gemeldet: sein Handy bekommt einmal die Korrektur – 10d2)
             else { gg[k] = nn(q[k]); hbGut(hb, 'gg:' + k); }
         }
     }

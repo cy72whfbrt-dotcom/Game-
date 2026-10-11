@@ -72,16 +72,16 @@ let b;
   const h1 = await handy(pH), w1 = welt(H), hb = w1.hb || {}, gg = hb.gg || {};
   // ---- H: nichts davon in der Welt ----
   ok('Welt: erfundene Münzen nicht', weltMuenzen(H) < 5e7, weltMuenzen(H));
-  ok('Welt: Stufe, Fähigkeiten, Waffe, Forschung, Schmiede/Krankenhaus nicht', (w1.lvl || 1) < 10 && Object.values(w1.skills || {}).reduce((a, v) => a + v, 0) <= 3 && !(w1.gear && w1.gear.weapon && w1.gear.weapon.r >= 5)
-    && !((w1.city && w1.city.fo) || {}).w_prod && !((w1.city || {}).levels || {}).forge && (((w1.city || {}).levels || {}).hospital || 0) < 5, JSON.stringify({ lvl: w1.lvl, sk: w1.skills, gear: w1.gear, city: w1.city }));
+  ok('Welt: Stufe, Fähigkeiten, Waffe, Forschung nicht – Schmiede 5/Krankenhaus 20 höchstens eine Stufe (Bauzeit mit Gems aus dem Spielraum bezahlt)', (w1.lvl || 1) < 10 && Object.values(w1.skills || {}).reduce((a, v) => a + v, 0) <= 3 && !(w1.gear && w1.gear.weapon && w1.gear.weapon.r >= 5)
+    && !((w1.city && w1.city.fo) || {}).w_prod && (((w1.city || {}).levels || {}).forge || 0) <= 1 && (((w1.city || {}).levels || {}).hospital || 0) <= 1, JSON.stringify({ lvl: w1.lvl, sk: w1.skills, gear: w1.gear, city: w1.city }));
   ok('Welt: Holz/Stein/Eisen nicht', ['h', 's', 'e'].every(k => ((w1.res || {})[k] || 0) < 1e6), JSON.stringify(w1.res));
   ok('Welt: Eroberungen und Thron-Punkte (Rangliste) nicht', ((w1.stats || {}).caps || 0) < 1000 && ((w1.stats || {}).tpEarned || 0) < 1e6, JSON.stringify(w1.stats));
   ok('Hauptbuch: erfundene Schlüssel, Beschleuniger, Event-Münzen nicht', (gg.s1 || 0) < 100 && (gg.s2 || 0) < 10 && (gg.bm || 0) < 1000 && (gg.em || 0) < 1e5 && (hb.bMin || 0) < 1000, JSON.stringify({ gg, bMin: hb.bMin }));
   ok('Hauptbuch: zweiter Bauarbeiter nicht ohne die 500 Gems', !hb.b2, JSON.stringify({ b2: hb.b2 }));
   ok('Welt: geschenkte Truppen nur im Rahmen (keine Mrd.)', tr() - tr0 < 1e6, tr0 + ' → ' + tr());
   ok('Ausbau auf Stufe 99 nicht', (JSON.parse(sql("SELECT wert FROM ow_spielstand WHERE spieler_id=0 AND schluessel='openWaterIslandLevels'") || '{}')[cap] || 1) < 10);
-  const zs = await pZ.evaluate(id => { const x = loadBotState()['u' + id] || {}; return { lvl: x.lvl, caps: (x.stats || {}).caps || 0, tp: (x.stats || {}).tpEarned || 0, forge: ((x.city || {}).levels || {}).forge || 0 }; }, H);
-  ok('andere Spieler sehen nichts davon (Stufe, Eroberungen, Thron-Punkte)', (zs.lvl || 1) < 10 && zs.caps < 1000 && zs.tp < 1e6 && !zs.forge, JSON.stringify(zs));
+  const zs = await pZ.evaluate(id => { const x = loadBotState()['u' + id] || {}; return { lvl: x.lvl, caps: (x.stats || {}).caps || 0, tp: (x.stats || {}).tpEarned || 0, keep: ((x.city || {}).levels || {}).keep || 1 }; }, H);
+  ok('andere Spieler sehen nichts davon (Stufe, Eroberungen, Thron-Punkte)', (zs.lvl || 1) < 10 && zs.caps < 1000 && zs.tp < 1e6 && zs.keep < 5, JSON.stringify(zs));
   // ---- H: sein Handy und sein Spielstand beim Server sind zurückgesetzt ----
   ok('Handy: Münzen, Gems, Stufe, Rohstoffe zurückgesetzt', h1.coins < 5e8 && h1.gems < 1e5 && h1.lvl < 10 && ['h', 's', 'e'].every(k => h1.res[k] < 1e6), JSON.stringify(h1));
   ok('Handy: Schlüssel, Beschleuniger, Event-Münzen zurückgesetzt', h1.s1 < 100 && h1.s2 < 10 && h1.bm < 1000 && h1.em < 1e5, JSON.stringify(h1));
