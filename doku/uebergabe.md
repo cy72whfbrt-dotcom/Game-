@@ -1,36 +1,35 @@
-# Übergabe (Stand 9.10. abends)
+# Übergabe (Stand 11.10. abends)
 
 Erst lesen: `CLAUDE.md`, dann `doku/INDEX.md`. Offene Punkte: `doku/merkliste.md`.
 
 ## Stand
-- Haupt-Branch `claude/neues-projekt-8agldl` = alles fertig + geprüft (komplett.sh + Server-Tests mit MariaDB grün,
-  letzte Funde behoben). **Live: NICHTS hochgeladen** – Hochladen + Welt-Neustart erst, wenn Alexander es sagt
-  (beim Hochladen alte `baukunst.js` auf dem Server löschen, danach `werkzeuge/nach_hochladen.sh`).
-- Neu seit 8.10.: Wochen-Event Mo–Fr (Tages-Kisten, Rangliste Fr 20 Uhr), Thron-Event Sa 10–So 22 (Kuppel, Türme,
-  Herrscher, Titel, Kisten), Lager neu (feste Münzen + Schlüssel, Tagesgrenze 2,5 Mio), Shop (Kisten 1×/10×, Event,
-  Tempo, Gratis-Kiste 8 Std.), Schlüssel/Beschleuniger/Event-Münzen, Rucksack-Raster, Marsch-Plätze über Labor,
-  neuer Kampfbericht, Hauptstadt-Bilder je Stufe, Herrscherburg, Burg-Münzkosten höher, Aufgaben 60 Edelsteine,
-  Push „Thron startet“/„Tages-Kiste bereit“, Herrscher-Ansage, Code-Check-Fixes, alter Code raus.
-- MariaDB + Test-DB `owtest` im Container eingerichtet (Zugang nur lokal in scratchpad, nie ins Git;
-  im neuen Container neu einrichten, siehe Kopf `tests/server_tests.sh`).
+- Haupt-Branch `claude/neues-projekt-8agldl` = `claude/stoic-lovelace-m0udyj` = a552a38, alles gepusht.
+  **Live: NICHTS hochgeladen seit 8.10.** – Hochladen nur auf Alexanders Wort (alte `baukunst.js` dann löschen,
+  danach `werkzeuge/nach_hochladen.sh`).
+- Vorschau-Link für Alexander (Artifact, ohne Server): https://claude.ai/artifact/RPHX5uc6azfwmp8z1LWpPc – nach jeder
+  Änderung neu bauen (`php werkzeuge/vorschau_bauen.php <scratchpad>/spiel_pub`) und mit derselben Datei-Liste neu
+  veröffentlichen (index.html + spiel/bots/buendnis/aufbau/ladebildschirm.js und klein/…; Bilder nur wenn neu).
+- Tutorial Burg 1–3 fertig (10c2, Drehbuch in `doku/events-pass-aufgaben.md`): Willkommen + Name, Aldric-Blase ruhig
+  (feste Seite je Lage), Erklär-Teilschritte, Kampfdetails, Forschung mit Rohstoff-Geschenk (Variante B, Hauptbuch
+  `hb.fr.r`), Burg-Feier, Ende 100 Edelsteine + „Nächstes Ziel: Burg 4“. Bilder vorladen im Ladebild (`BILDER_START`/`BILDER_BALD`).
+- Fenster-Fixes der Testspieler (Tagesbelohnung, Grammatik „Epische Waffe“, keine Turm-Nummern, Shop-„Wirklich?“-Knopf
+  bleibt beim Neuzeichnen, Aufgaben-Stufen-Fehler).
+- **Prüfweise (Alexander 11.10.):** Nie nur per Code ins Loch tippen. `tests/browser/tutorial_mensch_test.js` tippt wie ein
+  Mensch (Touch, Pausen, daneben/doppelt). Bei Oberflächen-Änderungen 3 Testspieler-Agenten (Lena 15 / Herr Becker 52
+  iPhone SE / Deniz 27 RoK) spielen NUR nach Bildschirmfoto (kein DOM), Tagebuch + Funde an den Programmierer.
 
-## NÄCHSTER SCHRITT (Alexander 10.10.)
-Neues geführtes Tutorial Burg 1–3 ist IM SPIEL (Game/spiel/10c2-tutorial.js, Drehbuch in doku/events-pass-aufgaben.md):
-alte Anleitung raus, neuer Spieler sieht fast nichts, Finger/Loch/Berater, 23 Schritte bis Burg 3, eigenes Lager Stufe 1
-neben der Hauptstadt, Freischaltung Bündnis B4 / Events B5 / Teleport+Thron B6, „Tutorial noch mal“ in Einstellungen,
-Start-Rohstoffe 5.000/3.000/1.800. Grund: Freunde fanden das Spiel „viel zu viel“ (schon beim Reinkommen).
-Offen: Bilder einstieg_finger, einstieg_berater, banner_neu (Platzhalter); Alexander zeigt es den Freunden → Rückmeldung.
+## NÄCHSTER SCHRITT (Alexander 11.10.: „Dann verbessere es“)
+Zwei Agenten gleichzeitig, danach Testspieler-Runde, dann Link aktualisieren:
+1. **„Nächstes Ziel“-Leiste** nach dem Tutorial (oben links, immer sichtbar, Tipp führt hin; Ziele aus vorhandenen
+   Aufgaben/Burg-Stufen, keine neuen Regeln).
+2. **Karte lebendig:** eigene Hauptstadt hervorheben (Merkliste 11c Nr. 17), Basen je Stufe unterscheidbar
+   (KI-Bild-Prompts an Alexander), kleine Übersichtskarte/Orientierung. Design-Aufgabe → zuerst Designer (Vorbilder).
+Danach (wenn Alexander will): Hochladen + Freunde zusammen testen lassen; dann Wirtschaft (3) und Bündnis früh zeigen (4).
 
-## Offene Fragen an Alexander (Empfehlung jeweils A)
-- 25 Gratis-Kiste-Inhalt: 60 % Beschleuniger 5 Min, 30 % 10 Edelsteine, 10 % 1 Schlüssel – A so / B mehr.
-- 26 Roter Punkt am Shop-Knopf, wenn Gratis-Kiste bereit – A ja.
-- 27 Bauzeit Burg 11–20 geglättet (1/1,5/2/3/4,5/6,5/9/13/17,5 T) – A so lassen / B nur Burg 14.
-- 28 Pass-Tor-Symbole ganz weit größer – A ja.
-- Kampfbericht: Bilder für Feind-Wappen + VS fehlen (Prompts: scratchpad/kampfbericht/PROMPTS.md – im neuen Chat neu schreiben).
+## Offene Fragen an Alexander
+- Wirtschaft: Aufgaben geben Holz+Stein statt Münzen (RoK-Art)? Analyse: merkliste.md „Fragen“.
+- Bilder: einstieg_finger, einstieg_berater (Prompts in Designer-Vorgabe; Finger-Prompt im Chat gegeben), Feind-Wappen + VS.
 
-## Später (Merkliste)
-Helden-Event, Namensschild-Skins, Tages-Kisten-Bilder je Tag, Wachturm-Fahne in Bündnisfarbe, Ladebild mit Thron.
-
-## Arbeitsweise, die gut lief
-Test-Datei zuerst → Alexander sagt Ja → 2–3 Programmierer parallel (Worktrees) → Zusammenführer → Spieltester +
-Endprüfer am Ende. Gemeinsame Namen vorab in einem Bauplan festlegen.
+## Bekannt
+- `sicherung_test.php` rot ohne MariaDB (im neuen Container MariaDB neu einrichten, Kopf `tests/server_tests.sh`).
+- Sicherheitslücke: Hauptbuch zählt keine Bauarbeiter-Plätze (merkliste).
