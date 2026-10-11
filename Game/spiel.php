@@ -504,6 +504,7 @@ body:has(#heroHall:not([hidden])) .tut-weg{top:calc(var(--safe-t,0px) + 18px);ri
 .tw-name em{min-height:0;color:#a33a2a;font-style:normal;font-size:13px} .tw-name em:empty{display:none}
 .tw-los{height:54px;border:0;cursor:pointer;font:700 19px Georgia,serif;color:#3a2203;text-shadow:0 1px 0 #fbe7a3;background:url(bilder/ui_k_gold.webp) center/100% 100% no-repeat;filter:drop-shadow(0 3px 6px #000a)}
 .tut-berater.rein .tut-blase{animation:tut-rein .18s ease-out} @keyframes tut-rein{from{opacity:0;transform:translateY(8px)}}
+.tut-blase p.tausch{animation:tut-tausch .25s ease-out} @keyframes tut-tausch{from{opacity:.15}}   /* neuer Satz: nur der Text blendet über, die Blase bleibt stehen */
 .tut-freude{position:fixed;z-index:61;transform:translate(-50%,-100%);font:700 18px/1.2 Georgia,serif;color:#f0dfb0;white-space:nowrap;pointer-events:none;
   text-shadow:0 0 3px #000,0 1px 2px #000,0 0 8px rgba(0,0,0,.8);animation:tut-freude 1.2s ease-out forwards}   /* Freude-Moment: steigt am Ziel auf */
 @keyframes tut-freude{0%{opacity:0;translate:0 10px;scale:.8}15%{opacity:1;translate:0 0;scale:1.05}70%{opacity:1}100%{opacity:0;translate:0 -40px;scale:1}}

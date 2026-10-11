@@ -65,10 +65,11 @@ function tutBauT(id, t) {                                        // bauen/aufwer
     if (tutBaut(id)) { let zg = t.zeig && [].concat(t.zeig() || []).filter(e => e && tutSicht(e)); if (zg && !zg.length) zg = null;   // (während des Wartens: im offenen Fenster etwas erklären, z. B. was Burg 2 freischaltet)
         return { ...tutBauWarte(id), satz: zg && t.zeigSatz ? t.zeigSatz : t.warte ? t.warte(tutRest(id)) : 'Noch ' + tutSek(tutRest(id)) + ' …', zeig: zg || null }; }
     const z = tutGeb(id);
-    if (z === $t('cityNavBtn')) return tutT(1, 3, z, t.stadt || 'Tipp auf „Stadt“.');
-    if (z === $t('citySheetClose')) return tutT(2, 3, z, 'Das ist das falsche Gebäude – schließ das Fenster.');
-    if (z && z.dataset && (z.id === 'cityUpgradeBtn' || z.dataset.cring)) return tutT(3, 3, z, t.bauen);
-    return tutT(2, 3, z, t.schild);
+    if (z === $t('cityNavBtn')) return tutT(1, 4, z, t.stadt || 'Tipp auf „Stadt“.');
+    if (z === $t('citySheetClose')) return tutT(2, 4, z, 'Das ist das falsche Gebäude – schließ das Fenster.');
+    if (z && z.dataset && z.dataset.cring) return tutT(3, 4, z, 'Tipp auf „' + ((z.querySelector('small') || {}).textContent || 'Bauen') + '“.');   // (runder Knopf: sein Wort; die Kosten stehen erst im Fenster)
+    if (z && z.id === 'cityUpgradeBtn') return tutT(4, 4, z, t.bauen);
+    return tutT(2, 4, z, t.schild);
 }
 function tutBeschT(id, satz) {                                   // ein Bau läuft: Beschleuniger drauf (Knopf → 1-Min.-Kachel)
     const z = tutBesch(id);
@@ -163,8 +164,8 @@ const TUT = [
       ziel: () => { const z = tutBauT('lumber', { stadt: 'Ohne Holz steht alles still. Tipp auf „Stadt“.', schild: 'Hier ist der Platz für den Holzfäller – tipp drauf.', bauen: 'Kostet nur ' + tutKost('lumber') + '. Tipp auf „Bauen“!' });
           if (!z || !z.von) return z;
           const e = z.ziel === $t('cityUpgradeBtn') && tutE('bauinfo', { els: [$t('cityBNote'), document.querySelector('#cityBStats .anf-list')] },
-              'Oben steht, was der Bau bringt: +' + tutZahl(tutRoh('h')) + ' Holz pro Stunde. Unten die Kosten – grüner Haken heißt: du hast genug.', 3, 4);
-          return e || { ...z, von: 4, n: z.n === 3 ? 4 : z.n }; } },
+              'Oben steht, was der Bau bringt: +' + tutZahl(tutRoh('h')) + ' Holz pro Stunde. Unten die Kosten – grüner Haken heißt: du hast genug.', 4, 5);
+          return e || { ...z, von: 5, n: z.n === 4 ? 5 : z.n }; } },   // (Stadt, Schild, runder Knopf, Erklärung, Bauen)
     { k: 'tempo', bleib: true, bau: 'lumber', fertig: () => tutStufe('lumber') > 0, freude: () => '+' + tutZahl(tutRoh('h')) + ' Holz pro Stunde',
       ziel: () => tutBeschT('lumber', tutDauer(tutRest('lumber')) + ' sind zu lang für einen Feldherrn! Nimm einen Beschleuniger – sofort fertig.') },
     { k: 'stein', bau: 'quarry', fertig: () => tutStufe('quarry') > 0, freude: () => '+' + tutZahl(tutRoh('s')) + ' Stein pro Stunde',
@@ -174,7 +175,7 @@ const TUT = [
       ziel: () => tutBauT('mine', { schild: 'Fehlt nur noch Eisen: Bau die Eisenmine.', bauen: 'Die Eisenmine kostet ' + tutKost('mine') + '. Tipp auf „Bauen“!',
           warte: n => 'Noch ' + tutSek(n) + ' – dann laufen alle drei Rohstoffe von allein.' }) },
     { k: 'burg2', bau: '_keep', fertig: () => tutStufe('keep') >= 2, freude: () => 'Burg 2!',
-      ziel: () => tutBauT('keep', { schild: 'Die Burg bestimmt, wie hoch alles wachsen darf. Tipp auf die Burg.', bauen: tutKost('keep') + ' – du hast genug. Bau aus!',
+      ziel: () => tutBauT('keep', { schild: 'Die Burg bestimmt, wie hoch alles wachsen darf. Tipp auf die Burg.', bauen: tutKost('keep') + ' – du hast genug. Tipp auf „Aufwerten“!',
           zeig: () => { const l = document.querySelector('#citySheet:not([hidden]) .auf-frei'); return l && [l.previousElementSibling, l]; },   // (mit Überschrift)
           zeigSatz: 'Die Burg-Stufe ist die Grenze für alle Gebäude. Hier steht, was Burg 2 freischaltet.' }) },
     { k: 'karte', satz: 'Deine Stadt steht. Jetzt raus aufs Meer – tipp auf „Karte“!', ziel: tutZurKarte, fertig: () => cityView.hidden },
@@ -234,7 +235,11 @@ const TUT = [
     { k: 'labor', fertig: () => !!loadCity().foRun || tutTat.ok,
       ziel: () => { if (!tutStufe('academy')) return tutBauT('academy', { schild: 'Im Labor wird alles stärker – für immer. Bau das Labor: ' + tutKost('academy') + '.', bauen: 'Im Labor wird alles stärker – für immer. Bau das Labor: ' + tutKost('academy') + '.',
               warte: n => 'Noch ' + tutSek(n) + ' – dann forschst du dort: jede Forschung macht dich für immer stärker.' });
-          const z = tutGeb('academy', 'nutz'), f = z && z.dataset && AUF && AUF.FORSCHUNG.find(d => d.id === z.dataset.fo);
+          const z = tutGeb('academy', 'nutz'), zu = z === 'weiter' && tutSicht(document.querySelector('#citySheet .fo-go[disabled]'));
+          if (zu) { const d = AUF.FORSCHUNG.find(x => x.id === zu.dataset.fo), k = d ? AUF.foKosten(d, AUF.foStufe('player', d.id) + 1) : {}, h = AUF.rohVon('player') || {};   // (Rohstoffe reichen noch nicht: ehrlich sagen, was fehlt, und weiter)
+              const fehlt = tutUnd([['h', 'Holz'], ['s', 'Stein'], ['e', 'Eisen']].filter(([x]) => (k[x] || 0) > (h[x] || 0)).map(([x, n]) => tutZahl(k[x] - (h[x] || 0)) + ' ' + n));
+              return tutT(2, 2, { els: [document.querySelector('#citySheet .fo-detail .anf-list'), zu] }, (fehlt ? 'Für die erste Forschung fehlen noch ' + fehlt + '.' : 'Für die erste Forschung fehlt noch etwas.') + ' Deine Gebäude bringen jede Stunde neue – dann tippst du hier auf „Forschen“.'); }
+          const f = z && z.dataset && AUF && AUF.FORSCHUNG.find(d => d.id === z.dataset.fo);
           return tutT(2, 2, z, f ? 'Starte die erste Forschung: „' + f.name + '“' + (f.pro ? ' – ' + f.txt(f.pro) + '.' : '.') : 'Starte die erste Forschung.'); } },
     { k: 'aufgaben', neu: ['aufgaben'], satz: 'Unter „Events“ findest du jeden Tag neue Aufgaben mit Belohnung. So wächst du am schnellsten.',
       ziel: () => { if (!isPanelOpen(goalsPopup)) return tutT(1, 3, $t('goalsBtn'), 'Unter „Events“ findest du jeden Tag neue Aufgaben mit Belohnung. Tipp auf „Events“.');
@@ -315,13 +320,20 @@ function tutEnde() {
     };
     setTimeout(danach, 400);
 }
+function tutRoller(e) {                                         // der rollende Kasten um ein Element (Fenster-Inhalt)
+    for (let x = e && e.parentElement; x && x !== document.body; x = x.parentElement) if (x.scrollHeight > x.clientHeight + 2 && /auto|scroll/.test(getComputedStyle(x).overflowY)) return x;
+    return null;
+}
 function tutZiel(z) {                                            // → { rect, weiter, warte, fort, satz, teil, fokus }
     if (!z) return {};
     if (z.ziel !== undefined) return { ...tutZiel(z.ziel), satz: z.satz, teil: z.n + '/' + z.von, erkl: z.erkl };   // Teilschritt (Angriff): eigener Satz + Zähler
     if (z === 'weiter') return { weiter: true };
     if (z.weiter) return { weiter: true, satz: z.satz };
     if (z.warte) return { warte: z.warte, fort: z.fort, satz: z.satz, ...(z.zeig ? { rect: tutUmriss(z.zeig), zeigNur: true } : {}) };   // (Warten: dabei etwas im Fenster zeigen)
-    if (z.els) { const q = z.els.filter(e => e && tutSicht(e)).map(e => e.getBoundingClientRect()); if (!q.length) return {};   // mehrere Kästen zusammen (nur zeigen)
+    if (z.els) { const da = z.els.filter(e => e && tutSicht(e)); if (!da.length) return {};   // mehrere Kästen zusammen (nur zeigen)
+        let q = da.map(e => e.getBoundingClientRect()); const sc = tutRoller(da[0]);
+        if (sc) { const v = sc.getBoundingClientRect(), o = Math.min(...q.map(x => x.top)), u = Math.max(...q.map(x => x.bottom));   // halb aus dem Fenster gerollt: hinrollen (wischen geht im Dunkel nicht)
+            const d = u - o > v.height ? o - v.top - 8 : u > v.bottom ? u - v.bottom + 8 : o < v.top ? o - v.top - 8 : 0; if (d) { sc.scrollTop += d; q = da.map(e => e.getBoundingClientRect()); } }
         const l = Math.min(...q.map(x => x.left)), t = Math.min(...q.map(x => x.top));
         return { rect: { left: l, top: t, width: Math.max(...q.map(x => x.right)) - l, height: Math.max(...q.map(x => x.bottom)) - t }, nurZeigen: true, el: z.els.find(Boolean) }; }
     if (z.r) return { rect: { left: z.r.x, top: z.r.y, width: z.r.w, height: z.r.h }, fokus: z.fokus, rund: z.rund };
@@ -354,53 +366,67 @@ function tutFreude(text, bau) {                                  // Freude-Momen
     Object.assign(d.style, { left: Math.round(Math.min(innerWidth - 120, Math.max(120, x))) + 'px', top: Math.round(y) + 'px' });
     document.body.appendChild(d); setTimeout(() => d.remove(), 1300);
 }
-let tutBlaseNeu = true, tutFokusVor = null, tutAlt = null, tutLochAn = false, tutFokusZeit = 0, tutFokusN = 0, tutOhneSeit = 0, tutSchrittAlt = -1;
+let tutFokusVor = null, tutAlt = null, tutLochAn = false, tutFokusZeit = 0, tutFokusN = 0, tutOhneSeit = 0, tutSchrittAlt = -1, tutFokusAb = 0;
+// Blase ruhig (Alexander 11.10.: „Texte hüpfen“): je Bildschirm-Lage eine feste Seite – Karte/Stadt, Heldenhalle, Kampfdetails: unten; offenes Fenster: oben,
+// das Fenster rückt darunter (kürzer, sein Inhalt rollt). Die Seite wechselt nur, wenn die Blase sonst das Loch deckte; im Schritt wird sie nur größer, nie kleiner.
+let tutSeg = { k: '' }, tutDa = false, tutTippZeit = 0, tutZielEl = null;
+const tutKurz = new Set();                                       // Fenster, die gerade unter der Blase gekürzt sind
+const TUT_SPERRE = 300;                                          // nach einem Tipp so lange kein neues Ziel (ein Doppeltipp springt nicht weiter)
+const tutFensterOffen = () => [...document.querySelectorAll('.panel.is-open'), ...(!cityView.hidden && !$t('citySheet').hidden ? [$t('citySheet')] : [])];
+function tutLage() {                                             // Bildschirm-Lage: welt (Karte/Stadt), fenster, halle, kl (Kampfdetails)
+    if (!$t('heroHall').hidden) return 'halle';
+    const kl = document.querySelector('.kl-seite'); if (kl && !kl.hidden) return 'kl';
+    return tutFensterOffen().length ? 'fenster' : 'welt';
+}
+function tutKuerzen(fe, frei) {                                  // offene Fenster beginnen erst unter der Blase (nie wieder länger, solange sie offen sind)
+    for (const w of tutKurz) if (!fe.includes(w)) { w.style.removeProperty('max-height'); w.style.removeProperty('min-height'); tutKurz.delete(w); }
+    for (const w of fe) { const q = w.getBoundingClientRect(), cap = Math.floor(q.bottom - frei);
+        if (q.top < frei - 1 && cap > 120) { w.style.setProperty('max-height', cap + 'px', 'important'); w.style.setProperty('min-height', '0px', 'important'); tutKurz.add(w); } }
+}
 function tutZeigen() {
     const el = $t('tut'); if (!el) return;
     tutFrei();
     document.body.classList.toggle('tut-an', tutLaeuft());       // (normale Hinweise oben ruhen solange: nie über Sprechblase, „Überspringen“ oder einem Geschenk-Fenster)
-    if (!tutLaeuft()) { el.hidden = true; if (tutUhr) { clearInterval(tutUhr); tutUhr = setInterval(tutFrei, 5000); } return; }   // fertig: nur noch die Burg-Stufen freischalten
-    if (tutWillkommen()) { el.hidden = true; return; }
-    if (tutPause()) { el.hidden = true; return; }
+    if (!tutLaeuft()) { el.hidden = true; tutDa = false; tutKuerzen([], 0); if (tutUhr) { clearInterval(tutUhr); tutUhr = setInterval(tutFrei, 5000); } return; }   // fertig: nur noch die Burg-Stufen freischalten
+    if (tutWillkommen() || tutPause()) { el.hidden = true; tutDa = false; return; }
     const S = TUT[tut.s];
     let weiter = false; try { weiter = !!(tutTat.ok || (S.fertig && S.fertig())); } catch (e) {}
     if (weiter) { sfx('upgrade'); try { if (S.freude) tutFreude(S.freude(), S.bau); } catch (e) {} tutWeiter(); if (!tutLaeuft()) return; return tutZeigen(); }
     let z = {}; try { z = tutZiel(S.ziel()); } catch (e) {}
-    if (tut.s >= TUT_BALD && !tutBilderDa() && Date.now() - tut.t0 < 20000) { z = { warte: '…', fort: 0 }; tutBald(200); }   // (Helden-/Kisten-Bilder noch nicht entpackt: kurz warten statt ins Leere zeigen)
+    if (tut.s >= TUT_BALD && !tutBilderDa() && Date.now() - tut.t0 < 20000) { z = { warte: Date.now() - tut.t0 < 1200 ? '…' : 'Einen Moment – gleich geht es weiter.', fort: 0 }; tutBald(200); }   // (Helden-/Kisten-Bilder noch nicht entpackt: kurz warten statt ins Leere zeigen)
     el.hidden = false;
     const W = innerWidth, H = innerHeight, jetzt = Date.now(), be = $t('tutBerater');
-    if (tutSchrittAlt !== tut.s) { tutSchrittAlt = tut.s; tutOhneSeit = jetzt; tutFokusN = 0; tutAlt = tutFokusVor = null; tutBlaseNeu = true; }
-    if (S.ruhe && jetzt - tut.t0 < S.ruhe) { el.hidden = true; return; }   // erst das Spiel zeigen lassen (z. B. „Lager besiegt“), dann Aldric
+    if (tutSchrittAlt !== tut.s) { tutSchrittAlt = tut.s; tutOhneSeit = jetzt; tutFokusN = 0; tutAlt = tutFokusVor = null; tutFokusAb = 0; }
+    if (S.ruhe && jetzt - tut.t0 < S.ruhe) { el.hidden = true; tutDa = false; return; }   // erst das Spiel zeigen lassen (z. B. „Lager besiegt“), dann Aldric
     if (S.nah && tutFlug !== tut.s && cityView.hidden) { tutFlug = tut.s; tutHeim(); }
     el.classList.toggle('is-hell', !!(S.nah || z.nurZeigen || z.weiter || z.rund));   // (auch Karten-Ziele: Burg, Lager und Basen gut sichtbar)   // Erklär-Schritt (nur „Weiter“): heller (Handlung: etwas dunkler)
     const rv = z.zeigNur || z.nurZeigen && z.el && z.el.closest && z.el.closest('.panel, .city-sheet, .kl-seite, #heroHall') ? 20 : 8;   // Erklär-Loch im Fenster: oben/unten mehr Rand (keine angeschnittene Zeile)
     let r = z.rect ? { l: z.rect.left - 8, t: z.rect.top - rv, r: z.rect.left + z.rect.width + 8, b: z.rect.top + z.rect.height + rv } : null;
-    // Blase: die Seite nehmen, die das Loch nicht überdeckt (ganzes Rechteck mit Berater-Bild, nicht nur die Mitte)
-    const offen = [...document.querySelectorAll('.panel')].filter(p => isPanelOpen(p)); be.classList.toggle('klein', offen.length > 0);   // Fenster offen: kleine Blase (passt meist darüber)
-    const war = be.classList.contains('oben'); be.style.marginTop = ''; be.classList.remove('oben'); const bu = tutBox(be); be.classList.add('oben'); const bo0 = tutBox(be); let bo = bo0;
-    const kopfF = Math.max(0, ...offen.map(p => { const h = p.querySelector('.phead'), q = h && h.getBoundingClientRect();   // offenes Fenster: Blase oben erst unter seiner Kopfzeile (Titel + X frei)
-        return q && q.width && q.top < bo.b && q.right > bo.l && q.left < bo.r ? q.bottom : 0; }));
-    let dy = kopfF && kopfF + 6 + bo.b - bo.t < H - 90 ? kopfF + 6 - bo.t : 0; if (dy > 0) bo = { l: bo.l, r: bo.r, t: bo.t + dy, b: bo.b + dy };
-    const stadtF = !$t('citySheet').hidden;   // ohne Loch: Gebäude-Fenster offen → Blase oben (seine Knöpfe frei), anderes Fenster → unten (Kopf und erste Zeilen frei)
-    let oben = r ? (tutBlaseNeu ? (r.t + r.b) / 2 > H * .5 : war) : stadtF || !offen.length && !tutBlaseNeu && war;   // (im selben Schritt bleibt die Blase auf ihrer Seite, solange sie nichts verdeckt)
-    if (r && tutDeckt(oben ? bo : bu, r) && !tutDeckt(oben ? bu : bo, r)) oben = !oben;
-    tutBlaseNeu = false;
-    if (r && z.fokus) {                                          // Ziel auf Karte/Stadt: erst zeigen, wenn es ganz im Bild steht und die Kamera ruht
+    // Blase: feste Seite je Lage (oben: unter „Überspringen“); beide Lagen einmal ausmessen (ganzes Rechteck mit Berater-Bild)
+    const lage = tutLage(), fe = lage === 'fenster' ? tutFensterOffen() : [];
+    if (tutSeg.k !== tut.s + '|' + lage) tutSeg = { k: tut.s + '|' + lage, oben: lage === 'fenster', h: 0 };
+    be.classList.toggle('klein', lage === 'fenster');             // Fenster offen: kleine Blase
+    be.classList.remove('oben'); const bu = tutBox(be); be.classList.add('oben'); const bo = tutBox(be); be.classList.toggle('oben', tutSeg.oben);
+    const deckt = q => tutDeckt(tutSeg.oben ? bo : bu, q);
+    if (r && z.fokus) {                                          // Ziel auf Karte/Stadt: erst zeigen, wenn es ganz im Bild steht und die Kamera ruht – spätestens nach 1,2 s trotzdem
         const kopf = Math.max(...['hud', 'tutWeg'].map(id => { const x = $t(id); return x && tutSicht(x) ? x.getBoundingClientRect().bottom : 0; }));
         const nav = $t('cornerButtons'), fuss = nav && tutSicht(nav) ? nav.getBoundingClientRect().top : H;
         const still = !cameraFlight && !(cityCam && cityCam.tx !== undefined);   // Karte fliegt nicht, Stadt gleitet nicht
         const ruht = still && tutAlt && Math.abs(tutAlt.l - r.l) < 3 && Math.abs(tutAlt.t - r.t) < 3;
-        const drin = r.l >= -6 && r.r <= W + 6 && r.t >= kopf && r.b <= fuss && !tutDeckt(oben ? bo : bu, r);   // (Ziel selbst ganz im Bild; der Rand ums Loch wird unten nach innen geschoben)
+        const drin = r.l >= -6 && r.r <= W + 6 && r.t >= kopf && r.b <= fuss && !deckt(r);   // (Ziel selbst ganz im Bild; der Rand ums Loch wird unten nach innen geschoben)
         const fest = ruht && tutFokusVor && Math.abs(tutFokusVor.l - r.l) < 3 && Math.abs(tutFokusVor.t - r.t) < 3;   // Hinfahren ändert nichts (Bildrand): so zeigen
-        tutAlt = r;
+        tutAlt = r; if (!tutFokusAb) tutFokusAb = jetzt;
         if (!drin && !fest && (ruht || !tutFokusN) && tutFokusN < 4 && jetzt - tutFokusZeit > 900) { tutFokusZeit = jetzt; tutFokusN++; tutFokusVor = r; z.fokus(); tutAlt = null; }   // (gleich hin, sonst noch einmal – nach 4 Versuchen gilt es so)
-        if (jetzt - tutFokusZeit < 350 || !(drin && (ruht || tutLochAn)) && !(ruht && (tutFokusN >= 4 || fest))) r = null;   // (erst ausrollen lassen; schon gezeigt und noch drin: kein Flackern)
+        const sicht = r.r > 0 && r.l < W && r.b > kopf && r.t < fuss, lange = sicht && jetzt - tutFokusAb > 1200;   // (nie lange ohne Loch: ein Spieler wartet sonst vor „nichts“)
+        if (!lange && (jetzt - tutFokusZeit < 350 || !(drin && (ruht || tutLochAn)) && !(ruht && (tutFokusN >= 4 || fest)))) r = null;   // (erst ausrollen lassen; schon gezeigt und noch drin: kein Flackern)
     }
-    if (r && (cityBusy || z.el && tutFaehrt(z.el))) r = null;   // Stadt blendet um, Fenster fährt noch ein: erst danach das Loch (sonst geht der Tipp daneben oder ins alte Ziel)
+    if (r && (cityBusy || z.el && tutFaehrt(z.el))) r = null;   // Stadt blendet um, Fenster fährt noch ein: erst danach das Loch (ein Tipp genau aufs Ziel geht trotzdem durch, s. u.)
+    if (r && lage === 'fenster' && deckt(r)) { const ob = bo.b + 2; if (z.rect && z.rect.top >= ob - 4) r.t = Math.max(r.t, ob); else r = null; }   // (Fenster rückt erst unter die Blase)
+    if (r && jetzt - tutTippZeit < TUT_SPERRE) { r = null; tutBald(TUT_SPERRE + 20 - (jetzt - tutTippZeit)); }   // gerade getippt: das nächste Loch erst gleich (kein Doppeltipp hinein)
     if (!r && (cityBusy || z.el || z.fokus)) tutBald(80);
-    if (r && tutDeckt(oben ? bo : bu, r) && !tutDeckt(oben ? bu : bo, r)) oben = !oben;   // (nach der Kamera: das endgültige Loch nie unter der Blase)
-    if (r && dy > 0 && tutDeckt(oben ? bo : bu, r) && !tutDeckt(bo0, r)) { oben = true; dy = 0; }   // (unter der Kopfzeile läge sie auf dem Loch: dann doch ganz oben)
-    be.classList.toggle('oben', oben); be.style.marginTop = oben && dy > 0 ? dy + 'px' : '';
+    if (r && lage !== 'fenster' && deckt(r) && !tutDeckt(tutSeg.oben ? bu : bo, r)) { tutSeg.oben = !tutSeg.oben; be.classList.toggle('oben', tutSeg.oben); }   // das Loch nie unter der Blase: dann (für diesen Schritt) die andere Seite
+    if (r || !z.fokus) tutFokusAb = 0;
+    tutZielEl = !r && z.el && !z.nurZeigen && !z.zeigNur && !cityBusy ? z.el : null;
     tutLochAn = !!r; if (r) tutLetzt = r;
     if (r) {                                                     // Loch nie über den Bildrand: nach innen schieben
         const w = Math.min(r.r - r.l, W - 4), hh = Math.min(r.b - r.t, H - 4);
@@ -419,28 +445,33 @@ function tutZeigen() {
     if (lk && lo.dataset.k !== lk && !(lo.dataset.k || '').split(',').every((v, i) => Math.abs(v - lk.split(',')[i]) < 6)) { lo.classList.remove('neu'); void lo.offsetWidth; lo.classList.add('neu'); }
     lo.dataset.k = lk;
     for (const x of [sp, lo]) Object.assign(x.style, { left: loch.l + 'px', top: loch.t + 'px', width: loch.r - loch.l + 'px', height: loch.b - loch.t + 'px' });
+    const satz = tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.satz || z.warte || (typeof S.satz === 'function' ? S.satz() : S.satz) || '';
+    setText($t('tutSatz'), satz);
+    const key = tut.s + '|' + (z.teil || '') + '|' + !!z.warte + '|' + tutFrage;   // neuer Schritt/Teilschritt: nur der Text blendet weich über (nicht bei jeder Zahl, die sich ändert)
+    if (be.dataset.k !== key) { be.dataset.k = key; const p = $t('tutSatz'); p.classList.remove('tausch'); void p.offsetWidth; p.classList.add('tausch'); }
+    const sk = lage + '|' + tutSeg.oben;                         // die Blase selbst blendet nur ein, wenn sie neu kommt oder die Seite wechselt
+    if (!tutDa || be.dataset.lage !== sk) { be.dataset.lage = sk; be.classList.remove('rein'); void be.offsetWidth; be.classList.add('rein'); }
+    tutDa = true;
+    const zl = $t('tutZaehler'); zl.hidden = tutFrage || !z.teil;   // Teilschritte als Punkte (aktiv Gold)
+    if (z.teil && zl.dataset.teil !== z.teil) { zl.dataset.teil = z.teil; const [n, von] = z.teil.split('/').map(Number); liveHtml(zl, Array.from({ length: von }, (x, i) => '<i class="' + (i < n ? 'an' : '') + '"></i>').join('')); }
+    const fb = $t('tutFort'); fb.hidden = tutFrage || z.fort === undefined; if (z.fort !== undefined) fb.firstChild.style.width = Math.round(100 * Math.min(1, Math.max(0, z.fort))) + '%';
+    $t('tutWeiter').hidden = tutFrage || !ok; $t('tutFrage').hidden = !tutFrage; $t('tutWeg').hidden = tutFrage;
+    const bl = be.querySelector('.tut-blase'); bl.style.minHeight = ''; tutSeg.h = Math.max(tutSeg.h, bl.offsetHeight); bl.style.minHeight = tutSeg.h + 'px';   // (wächst nur: der Satz bleibt stehen)
+    const bb = tutBox(be); tutKuerzen(fe, bb.b + 6);
     const fi = $t('tutFinger'); fi.hidden = !r || z.nurZeigen || z.zeigNur; tutErkl = z.erkl || null;
-    if (!fi.hidden) {                                            // Finger: im Fenster seitlich (über und unter Knöpfen stehen dort oft Zahlen), sonst von unten, notfalls von oben
-        const cx = (loch.l + loch.r) / 2, cy = (loch.t + loch.b) / 2, fk = lk + '|' + W + 'x' + H;
+    if (!fi.hidden) {                                            // Finger: im Fenster seitlich (über und unter Knöpfen stehen dort oft Zahlen), sonst von unten, notfalls von oben/der Seite – nie unter der Blase
+        const cx = (loch.l + loch.r) / 2, cy = (loch.t + loch.b) / 2, fk = lk + '|' + W + 'x' + H + '|' + tutSeg.oben;
         if (fi.dataset.k !== fk) { fi.dataset.k = fk;                // (nur bei neuem Loch neu wählen)
             const imFenster = z.el && z.el.closest && z.el.closest('.panel, .city-sheet, .kl-seite, #heroHall');
             const wahl = { rechts: [loch.r - 4, cy - 27, loch.r + 58 < W], links: [loch.l - 50, cy - 27, loch.l - 58 > 0],
                 unten: [Math.min(W - 56, Math.max(2, cx - 27)), loch.b - 14, loch.b + 60 < H - 70], oben: [Math.min(W - 56, Math.max(2, cx - 27)), loch.t - 40, loch.t > 60] };
-            const reihe = (imFenster ? ['rechts', 'links', 'unten', 'oben'] : ['unten', 'oben']).filter(k => wahl[k][2]);
+            const reihe = (imFenster ? ['rechts', 'links', 'unten', 'oben'] : ['unten', 'oben', 'rechts', 'links']).filter(k => wahl[k][2] && !tutDeckt({ l: wahl[k][0], t: wahl[k][1], r: wahl[k][0] + 54, b: wahl[k][1] + 54 }, bb));
             const belegt = ([x, y]) => { const e = document.elementFromPoint(x, y);   // steht dort etwas (Knopf, Bild, Zahl, Text)?
                 return !!e && !e.closest('#tut') && (!!e.closest('button, img, svg, input, .bk, .chip, .lchip') || [...e.childNodes].some(n => n.nodeType === 3 && n.textContent.trim())); };
             const punkte = k => { const [x, y] = wahl[k]; return [[x + 27, y + 27], [x + 27, y + 10], [x + 27, y + 44], [x + 10, y + 27], [x + 44, y + 27]]; };
             el.classList.add('durch'); const k = reihe.find(q => !punkte(q).some(belegt)) || reihe[0] || 'unten'; el.classList.remove('durch');
             Object.assign(fi.style, { left: Math.round(wahl[k][0]) + 'px', top: Math.round(wahl[k][1]) + 'px' });
             for (const q of ['oben', 'rechts', 'links']) fi.classList.toggle(q, q === k); } }
-    const satz = tutFrage ? 'Tutorial wirklich überspringen? Dann siehst du sofort alles.' : z.fokus && !r ? '…' : z.satz || z.warte || (typeof S.satz === 'function' ? S.satz() : S.satz) || '';   // (Kamera fährt noch: erst mit Loch der Befehl)
-    setText($t('tutSatz'), satz);
-    const key = tut.s + '|' + (z.teil || '') + '|' + !!z.warte + '|' + tutFrage;   // neuer Schritt/Teilschritt: Blase blendet kurz ein (nicht bei jeder Zahl, die sich ändert)
-    if (be.dataset.k !== key) { be.dataset.k = key; be.classList.remove('rein'); void be.offsetWidth; be.classList.add('rein'); }
-    const zl = $t('tutZaehler'); zl.hidden = tutFrage || !z.teil;   // Teilschritte als Punkte (aktiv Gold)
-    if (z.teil && zl.dataset.teil !== z.teil) { zl.dataset.teil = z.teil; const [n, von] = z.teil.split('/').map(Number); liveHtml(zl, Array.from({ length: von }, (x, i) => '<i class="' + (i < n ? 'an' : '') + '"></i>').join('')); }
-    const fb = $t('tutFort'); fb.hidden = tutFrage || z.fort === undefined; if (z.fort !== undefined) fb.firstChild.style.width = Math.round(100 * Math.min(1, Math.max(0, z.fort))) + '%';
-    $t('tutWeiter').hidden = tutFrage || !ok; $t('tutFrage').hidden = !tutFrage; $t('tutWeg').hidden = tutFrage;
 }
 // ---- Willkommen (vor Schritt 1): Titelbild, kurze Geschichte, ohne Server auch der Name ----
 const TUT_NAME_MAX = 16;
@@ -469,10 +500,13 @@ function tutStarten() {
     if (tutLaeuft() && tut.w && !tut.g.s0 && tut.s === 0) { tut.g.s0 = 1; tutStart(); }   // ganz am Anfang (nach dem Willkommen)
     tutZeigen(); if (!tutUhr) tutUhr = setInterval(tutLaeuft() ? tutZeigen : tutFrei, tutLaeuft() ? 250 : 5000);
 }
-$t('tutWeiter').addEventListener('click', () => { if (tutErkl) { (tut.e = tut.e || {})[tutErkl] = 1; tutSpeichern(); } else tutTat.ok = true; tutZeigen(); });   // Erklär-Teilschritt: abhaken, der Schritt läuft weiter
+$t('tutWeiter').addEventListener('click', () => { if (Date.now() - tutTippZeit < TUT_SPERRE) return; tutTippZeit = Date.now(); if (tutErkl) { (tut.e = tut.e || {})[tutErkl] = 1; tutSpeichern(); } else tutTat.ok = true; tutZeigen(); });   // Erklär-Teilschritt: abhaken, der Schritt läuft weiter
 document.addEventListener('click', e => { if (!tutLaeuft()) return;   // nach jedem Tipp: das Loch ist verbraucht (kein zweiter Tipp ins alte Ziel), gleich das nächste
-    const lo = $t('tutLoch'); if (!lo.hidden && !e.target.closest('#tut')) { $t('tutSperre').hidden = false; lo.hidden = true; $t('tutFinger').hidden = true; }
+    const lo = $t('tutLoch'); if (!e.target.closest('#tut')) { tutTippZeit = Date.now(); tutZielEl = null; if (!lo.hidden) { $t('tutSperre').hidden = false; lo.hidden = true; $t('tutFinger').hidden = true; } }
     tutBald(30); });
+$t('tut').addEventListener('click', e => {                        // Loch noch nicht da (Fenster fährt ein): ein Tipp genau aufs Ziel wirkt trotzdem
+    const z = tutZielEl; if (!z || !z.isConnected || !e.target.closest('.tut-d, #tutSperre') || cityBusy || Date.now() - tutTippZeit < TUT_SPERRE || !tutSicht(z)) return;
+    const q = z.getBoundingClientRect(); if (e.clientX >= q.left && e.clientX <= q.right && e.clientY >= q.top && e.clientY <= q.bottom) z.click(); });
 $t('tutWeg').addEventListener('click', () => { tutFrage = true; tutZeigen(); });   // erst fragen (im Spiel, kein Browser-Fenster)
 $t('tutNein').addEventListener('click', () => { tutFrage = false; tutZeigen(); });
 $t('tutJa').addEventListener('click', () => {
